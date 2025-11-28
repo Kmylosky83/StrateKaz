@@ -1,0 +1,3 @@
+"""
+Utilidades globales del sistema
+"""

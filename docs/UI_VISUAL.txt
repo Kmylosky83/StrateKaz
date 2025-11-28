@@ -1,0 +1,32 @@
+INTERFAZ DE GESTIÓN DE USUARIOS - DESCRIPCIÓN VISUAL
+
+1. PÁGINA PRINCIPAL
+   - Header: "Gestión de Usuarios" + contador total + botón "Nuevo Usuario"
+   - Card de Filtros: Búsqueda, Select de Cargo, Select de Estado
+   - Tabla: Avatar circular con iniciales, nombre completo, username, email, badge de cargo, badge de estado, fecha
+   - Acciones por fila: Toggle activar/desactivar, Editar, Eliminar
+   - Footer: Paginación con contador y botones anterior/siguiente
+
+2. MODAL CREAR/EDITAR USUARIO
+   - Formulario en 2 columnas
+   - Campos: Username, Email, Nombres, Apellidos, Password (solo crear), Cargo (select), Teléfono, Tipo Doc (select), Número Doc
+   - Validación en tiempo real con mensajes de error
+   - Botones: Cancelar (ghost) y Crear/Actualizar (primary)
+
+3. MODAL CONFIRMAR ELIMINACIÓN
+   - Warning box amarillo con ícono de alerta
+   - Texto explicativo: "Es reversible, solo desactiva"
+   - Nombre del usuario a eliminar
+   - Botones: Cancelar y Desactivar (danger)
+
+4. COLORES DE BADGES
+   - Cargo Nivel 0: Azul
+   - Cargo Nivel 1: Verde  
+   - Cargo Nivel 2: Amarillo
+   - Cargo Nivel 3: Rojo
+   - Estado Activo: Verde con checkmark
+   - Estado Inactivo: Gris con X
+
+5. RESPONSIVE
+   - Desktop: Tabla completa
+   - Mobile: Cards apiladas con todos los datos

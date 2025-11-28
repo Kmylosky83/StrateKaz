@@ -1,0 +1,63 @@
+/**
+ * Tipos para autenticación y usuarios
+ */
+
+export interface Cargo {
+  id: number;
+  code: string;
+  name: string;
+  description?: string;
+  level: number;
+  level_display: string;
+  parent_cargo: number | null;
+  is_active: boolean;
+  subordinados_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  full_name?: string;
+  phone?: string;
+  cargo: Cargo | null;
+  cargo_code: string | null;
+  cargo_level: number | null;
+  document_type: string;
+  document_type_display: string;
+  document_number: string;
+  is_active: boolean;
+  is_staff: boolean;
+  is_superuser: boolean;
+  is_deleted: boolean;
+  date_joined: string;
+  last_login: string | null;
+  created_by: number | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+export interface LoginCredentials {
+  username: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  access: string;
+  refresh: string;
+}
+
+export interface AuthState {
+  user: User | null;
+  accessToken: string | null;
+  refreshToken: string | null;
+  isAuthenticated: boolean;
+  login: (credentials: LoginCredentials) => Promise<void>;
+  logout: () => void;
+  setUser: (user: User) => void;
+}

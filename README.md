@@ -1,6 +1,9 @@
-# Grasas y Huesos del Norte - Sistema de Gestión Integral
+# Grasas y Huesos del Norte - SGI
 
-Sistema integral de gestión para la recolección y procesamiento de ACU (Aceite de Cocina Usado) y subproductos cárnicos.
+Sistema integral de gestión para la recolección y procesamiento de materias primas (huesos, sebo, grasa) y subproductos cárnicos en Colombia.
+
+**Versión:** 1.0.0-beta.1
+**Repositorio:** [GitHub](https://github.com/Kmylosky83/Grasas-Huesos-SGI)
 
 ## Stack Tecnológico
 
@@ -57,6 +60,7 @@ Grasas y Huesos del Norte/
 
 | Módulo | Estado | Descripción |
 |--------|--------|-------------|
+| Gestión de Proveedores | Activo | CRUD, 18 tipos materia prima, precios independientes |
 | Gestión de Ecoaliados | Activo | CRUD, unidades de negocio, precios, geolocalización |
 | Programación de Recolecciones | Activo | Programación, asignación, estados, reprogramación |
 | Ejecución de Recolecciones | Activo | Registro, cálculos, vouchers, estadísticas |
@@ -64,6 +68,15 @@ Grasas y Huesos del Norte/
 | Liquidaciones | Pendiente | - |
 | Certificaciones | Pendiente | - |
 | Reportes y Analytics | Pendiente | - |
+
+### Tipos de Materia Prima (18 códigos)
+
+| Categoría | Tipos |
+|-----------|-------|
+| **HUESO** | Hueso Crudo, Hueso Cocinado, Hueso Frito, Carnaza |
+| **SEBO CRUDO** | Sebo de Res, Sebo de Cerdo, Grasa de Pollo, Chicharrón, Recorte de Grasa |
+| **SEBO PROCESADO** | Sebo Fundido Res, Sebo Fundido Cerdo, Manteca Cerdo, Grasa Fundida Pollo, Aceite Reciclado, Aceite Trampa Grasa |
+| **OTROS** | Vísceras, Sangre, Residuos Orgánicos |
 
 ## Roles del Sistema
 
@@ -190,6 +203,31 @@ docker restart grasas_huesos_backend
 
 ---
 
+## Despliegue
+
+### Staging (cPanel)
+
+- **Dominio:** `grasas.stratekaz.com`
+- **Hosting:** Ilimitado Host - Plan Corporativo
+- **Guía completa:** [deploy/cpanel/DEPLOY-CPANEL.md](deploy/cpanel/DEPLOY-CPANEL.md)
+
+```bash
+# Subir archivos por File Manager (cPanel)
+# 1. Comprimir proyecto
+# 2. Subir ZIP a cPanel → File Manager
+# 3. Extraer en directorio del subdominio
+# 4. Configurar Python App en cPanel
+# 5. Configurar .env con credenciales
+```
+
+### Archivos de Deploy
+
+| Archivo | Descripción |
+|---------|-------------|
+| `deploy/cpanel/passenger_wsgi.py` | Punto de entrada WSGI para Passenger |
+| `deploy/cpanel/.env.staging` | Template de variables de entorno |
+| `deploy/cpanel/DEPLOY-CPANEL.md` | Guía paso a paso |
+
 ## Licencia
 
 Propietario - Uso interno
@@ -197,3 +235,7 @@ Propietario - Uso interno
 ## Soporte
 
 Para soporte técnico, contactar al equipo de desarrollo.
+
+---
+
+**Última actualización:** Noviembre 2025

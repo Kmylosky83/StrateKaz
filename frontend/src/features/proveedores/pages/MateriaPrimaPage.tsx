@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { UserPlus, Search, Factory, Truck } from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
+import { Badge } from '@/components/common/Badge';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { ProveedoresTable } from '../components/ProveedoresTable';
@@ -52,6 +53,10 @@ export default function MateriaPrimaPage() {
   const user = useAuthStore((state) => state.user);
   const { data: proveedoresData, isLoading: isLoadingProveedores } = useProveedores(filters);
   const { data: unidadesNegocioData } = useUnidadesNegocio();
+
+  // Queries para conteos en header
+  const { data: externosCount } = useProveedores({ tipo_proveedor: 'MATERIA_PRIMA_EXTERNO', page_size: 1 });
+  const { data: internosCount } = useProveedores({ tipo_proveedor: 'UNIDAD_NEGOCIO', page_size: 1 });
   const createProveedorMutation = useCreateProveedor();
   const updateProveedorMutation = useUpdateProveedor();
   const deleteProveedorMutation = useDeleteProveedor();
@@ -234,9 +239,19 @@ export default function MateriaPrimaPage() {
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            Proveedores de Materia Prima
-          </h1>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              Proveedores de Materia Prima
+            </h1>
+            <div className="flex items-center gap-2">
+              <Badge variant="primary" size="sm">
+                {externosCount?.count ?? 0} externos
+              </Badge>
+              <Badge variant="info" size="sm">
+                {internosCount?.count ?? 0} internos
+              </Badge>
+            </div>
+          </div>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
             Gestión de proveedores de sebo, hueso, cabezas y ACU
           </p>
@@ -282,35 +297,6 @@ export default function MateriaPrimaPage() {
           </button>
         </nav>
       </div>
-
-      {/* INFO DE PESTAÑA */}
-      <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-        <div className="p-4">
-          {activeTab === 'externos' ? (
-            <div className="flex items-start gap-3">
-              <Truck className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-              <div>
-                <h3 className="font-medium text-blue-900 dark:text-blue-100">Proveedores Externos</h3>
-                <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                  Proveedores externos que entregan materia prima en planta o se les recoge en punto.
-                  Total: {totalProveedores} proveedor{totalProveedores !== 1 ? 'es' : ''}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-start gap-3">
-              <Factory className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-              <div>
-                <h3 className="font-medium text-blue-900 dark:text-blue-100">Unidades Internas</h3>
-                <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                  Unidades internas de la empresa matriz que proveen materia prima con administración propia.
-                  Total: {totalProveedores} unidad{totalProveedores !== 1 ? 'es' : ''}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-      </Card>
 
       {/* FILTROS */}
       <Card>

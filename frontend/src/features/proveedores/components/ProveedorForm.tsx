@@ -422,9 +422,9 @@ export const ProveedorForm = ({
       isOpen={isOpen}
       onClose={onClose}
       title={isEditMode ? 'Editar Proveedor' : 'Nuevo Proveedor'}
-      size="2xl"
+      size="3xl"
     >
-      <form onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col h-full">
+      <form onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col">
         {/* BARRA DE PROGRESO - Solo en modo creación */}
         {!isEditMode && (
           <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800 mb-4">
@@ -471,7 +471,7 @@ export const ProveedorForm = ({
         </div>
 
         {/* CONTENIDO DE TABS */}
-        <div className="flex-1 overflow-y-auto mb-6">
+        <div className="mb-6">
           {/* TAB: CLASIFICACIÓN (solo en creación) */}
           {activeTab === 'clasificacion' && !isEditMode && (
             <div className="space-y-4">
@@ -733,16 +733,21 @@ export const ProveedorForm = ({
 
           {/* TAB: OBSERVACIONES */}
           {activeTab === 'observaciones' && (
-            <div className="space-y-4">
-              <div>
+            <div className="space-y-4 overflow-hidden">
+              <div className="overflow-hidden">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Observaciones
                 </label>
                 <textarea
                   {...register('observaciones')}
                   rows={8}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full max-w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-y overflow-auto"
                   placeholder="Notas adicionales sobre el proveedor..."
+                  style={{
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
+                    whiteSpace: 'pre-wrap'
+                  }}
                 />
                 {errors.observaciones && (
                   <p className="mt-1 text-sm text-red-600">{errors.observaciones.message}</p>

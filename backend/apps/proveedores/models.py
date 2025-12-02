@@ -184,7 +184,7 @@ class Proveedor(models.Model):
         editable=False,
         db_index=True,
         verbose_name='Código interno',
-        help_text='Código único autogenerado (formato: PRV-0001)'
+        help_text='Código único autogenerado (MP-0001 para materia prima, PS-0001 para productos/servicios)'
     )
 
     # Identificación del tipo de proveedor
@@ -385,12 +385,28 @@ class Proveedor(models.Model):
         return f"{self.nombre_comercial} ({self.get_tipo_proveedor_display()})"
 
     @staticmethod
-    def generar_codigo_interno():
+    def generar_codigo_interno(tipo_proveedor):
         """
-        Genera el siguiente código interno único para un proveedor
-        Formato: PRV-0001, PRV-0002, etc.
+        Genera el siguiente código interno único para un proveedor según su tipo.
+
+        Prefijos:
+        - MP: Materia Prima (MATERIA_PRIMA_EXTERNO y UNIDAD_NEGOCIO)
+        - PS: Productos y Servicios (PRODUCTO_SERVICIO)
+
+        Formato: MP-0001, PS-0001, etc.
         """
-        ultimo = Proveedor.objects.order_by('-id').first()
+        # Determinar prefijo según tipo de proveedor
+        if tipo_proveedor == 'PRODUCTO_SERVICIO':
+            prefijo = 'PS'
+        else:
+            # MATERIA_PRIMA_EXTERNO y UNIDAD_NEGOCIO usan MP
+            prefijo = 'MP'
+
+        # Buscar el último código con ese prefijo
+        ultimo = Proveedor.objects.filter(
+            codigo_interno__startswith=f'{prefijo}-'
+        ).order_by('-codigo_interno').first()
+
         if ultimo and ultimo.codigo_interno:
             try:
                 numero = int(ultimo.codigo_interno.split('-')[1]) + 1
@@ -398,7 +414,8 @@ class Proveedor(models.Model):
                 numero = 1
         else:
             numero = 1
-        return f'PRV-{numero:04d}'
+
+        return f'{prefijo}-{numero:04d}'
 
     @property
     def is_deleted(self):
@@ -450,7 +467,7 @@ class Proveedor(models.Model):
         """
         # Generar código interno si es nuevo registro
         if not self.pk and not self.codigo_interno:
-            self.codigo_interno = self.generar_codigo_interno()
+            self.codigo_interno = self.generar_codigo_interno(self.tipo_proveedor)
 
         super().save(*args, **kwargs)
 

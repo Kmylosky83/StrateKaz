@@ -14,6 +14,7 @@ import { z } from 'zod';
 import { Modal } from '@/components/common/Modal';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
+import { formatCurrency } from '@/utils/formatters';
 import {
   Scale,
   DollarSign,
@@ -104,15 +105,6 @@ export const RegistrarRecoleccionModal = ({
     };
 
     onSubmit(formattedData);
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
   };
 
   if (!programacion) return null;

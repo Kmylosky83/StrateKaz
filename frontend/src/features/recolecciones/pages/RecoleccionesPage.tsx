@@ -8,7 +8,7 @@
  * - Visualizacion e impresion de vouchers
  * - Control de acceso por permisos
  */
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Plus,
   Receipt,
@@ -20,6 +20,7 @@ import {
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Card } from '@/components/common/Card';
+import { formatCurrency } from '@/utils/formatters';
 import {
   PageHeader,
   StatsGrid,
@@ -31,7 +32,6 @@ import { useAuthStore } from '@/store/authStore';
 import { RecoleccionesTable } from '../components/RecoleccionesTable';
 import { RegistrarRecoleccionModal } from '../components/RegistrarRecoleccionModal';
 import { VoucherModal } from '../components/VoucherModal';
-import { VoucherRecoleccion } from '../components/VoucherRecoleccion';
 import {
   useRecolecciones,
   useEstadisticasRecolecciones,
@@ -43,7 +43,6 @@ import type {
   RecoleccionFilters,
   ProgramacionEnRuta,
   RegistrarRecoleccionDTO,
-  VoucherData,
 } from '../types/recoleccion.types';
 
 interface RecoleccionesPageProps {
@@ -71,10 +70,6 @@ export const RecoleccionesPage = ({ embedded = false, triggerNewForm = 0 }: Reco
   const [isVoucherOpen, setIsVoucherOpen] = useState(false);
   const [selectedProgramacion, setSelectedProgramacion] = useState<ProgramacionEnRuta | null>(null);
   const [selectedRecoleccionId, setSelectedRecoleccionId] = useState<number | null>(null);
-
-  // Estado para voucher recien creado (impresion automatica)
-  const [voucherRecienCreado, setVoucherRecienCreado] = useState<VoucherData | null>(null);
-  const voucherPrintRef = useRef<HTMLDivElement>(null);
 
   // Queries
   const { data: recoleccionesData, isLoading: isLoadingRecolecciones } = useRecolecciones(filters);
@@ -122,10 +117,11 @@ export const RecoleccionesPage = ({ embedded = false, triggerNewForm = 0 }: Reco
   const handleSubmitRegistrar = async (data: RegistrarRecoleccionDTO) => {
     try {
       const response = await registrarMutation.mutateAsync(data);
-      setVoucherRecienCreado(response.voucher);
       handleCloseRegistrar();
+      // Abrir el voucher modal para que el usuario pueda imprimirlo
       setTimeout(() => {
-        handlePrintVoucher(response.voucher);
+        setSelectedRecoleccionId(response.recoleccion.id);
+        setIsVoucherOpen(true);
       }, 300);
     } catch (error) {
       console.error('Error al registrar recoleccion:', error);
@@ -146,113 +142,6 @@ export const RecoleccionesPage = ({ embedded = false, triggerNewForm = 0 }: Reco
   const handleReimprimir = (recoleccion: Recoleccion) => {
     setSelectedRecoleccionId(recoleccion.id);
     setIsVoucherOpen(true);
-  };
-
-  // Handlers - Imprimir Voucher
-  const handlePrintVoucher = (voucher: VoucherData) => {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      alert('Por favor permita las ventanas emergentes para imprimir');
-      return;
-    }
-    const voucherHtml = generateVoucherHtml(voucher);
-    printWindow.document.write(voucherHtml);
-    printWindow.document.close();
-  };
-
-  // Funcion auxiliar para generar HTML del voucher
-  const generateVoucherHtml = (voucher: VoucherData): string => {
-    const formatCurrency = (value: number) => {
-      return new Intl.NumberFormat('es-CO', {
-        style: 'currency',
-        currency: 'COP',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(value);
-    };
-
-    const formatDate = (dateString: string) => {
-      return new Date(dateString).toLocaleString('es-CO', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    };
-
-    return `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Voucher ${voucher.codigo_voucher}</title>
-          <style>
-            @page { size: 80mm auto; margin: 0; }
-            body { margin: 0; padding: 4mm; font-family: 'Courier New', monospace; font-size: 12px; width: 80mm; max-width: 80mm; box-sizing: border-box; }
-            .header { text-align: center; border-bottom: 1px dashed #333; padding-bottom: 2mm; margin-bottom: 2mm; }
-            .header .empresa { font-weight: bold; font-size: 14px; }
-            .title { text-align: center; font-weight: bold; border-bottom: 1px dashed #333; padding-bottom: 2mm; margin-bottom: 2mm; }
-            .title .codigo { font-size: 18px; }
-            .section { border-bottom: 1px dashed #333; padding-bottom: 2mm; margin-bottom: 2mm; }
-            .section-title { font-weight: bold; margin-bottom: 1mm; }
-            table { width: 100%; border-collapse: collapse; }
-            td { padding: 1mm 0; }
-            .text-right { text-align: right; }
-            .font-bold { font-weight: bold; }
-            .total-row { font-size: 14px; font-weight: bold; }
-            .letras { text-align: center; font-size: 10px; border-bottom: 1px dashed #333; padding-bottom: 2mm; margin-bottom: 2mm; }
-            .firmas { margin-top: 16mm; display: flex; justify-content: space-between; }
-            .firma { text-align: center; flex: 1; }
-            .firma-linea { border-top: 1px solid #000; width: 20mm; margin: 0 auto 1mm; }
-            .footer { text-align: center; margin-top: 4mm; font-size: 10px; }
-            @media print { body { print-color-adjust: exact; } }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <div class="empresa">${voucher.empresa.nombre}</div>
-            <div>NIT: ${voucher.empresa.nit}</div>
-            <div>${voucher.empresa.direccion}</div>
-            <div>Tel: ${voucher.empresa.telefono}</div>
-          </div>
-          <div class="title">
-            <div>COMPROBANTE DE RECOLECCION</div>
-            <div class="codigo">${voucher.codigo_voucher}</div>
-            <div style="font-size: 10px;">${formatDate(voucher.fecha_recoleccion)}</div>
-          </div>
-          <div class="section">
-            <div class="section-title">PROVEEDOR:</div>
-            <div>${voucher.ecoaliado_info.razon_social}</div>
-            <div>NIT: ${voucher.ecoaliado_info.nit}</div>
-            <div>Cod: ${voucher.ecoaliado_info.codigo}</div>
-            ${voucher.ecoaliado_info.direccion ? `<div>${voucher.ecoaliado_info.direccion}</div>` : ''}
-            <div>${voucher.ecoaliado_info.ciudad}</div>
-          </div>
-          <div class="section">
-            <div class="section-title">DETALLE:</div>
-            <table>
-              <tr><td>Cantidad:</td><td class="text-right font-bold">${voucher.detalle.cantidad_kg.toLocaleString('es-CO')} kg</td></tr>
-              <tr><td>Precio/kg:</td><td class="text-right">${formatCurrency(voucher.detalle.precio_kg)}</td></tr>
-            </table>
-          </div>
-          <div class="section">
-            <table>
-              <tr><td>Subtotal:</td><td class="text-right">${formatCurrency(voucher.detalle.subtotal)}</td></tr>
-              <tr><td>IVA:</td><td class="text-right">${formatCurrency(voucher.detalle.iva)}</td></tr>
-              <tr class="total-row"><td>TOTAL:</td><td class="text-right">${formatCurrency(voucher.detalle.total)}</td></tr>
-            </table>
-          </div>
-          <div class="letras"><div class="font-bold">SON:</div><div>${voucher.detalle.total_letras}</div></div>
-          <div class="section"><div>Recolector: ${voucher.recolector_nombre}</div></div>
-          <div class="firmas">
-            <div class="firma"><div class="firma-linea"></div><div style="font-size: 10px;">ENTREGA</div></div>
-            <div class="firma"><div class="firma-linea"></div><div style="font-size: 10px;">RECIBE</div></div>
-          </div>
-          <div class="footer"><div>*** ORIGINAL ***</div><div>Gracias por su preferencia</div></div>
-          <script>window.onload = function() { window.print(); window.onafterprint = function() { window.close(); }; };</script>
-        </body>
-      </html>
-    `;
   };
 
   // Handlers - Filtros
@@ -279,16 +168,6 @@ export const RecoleccionesPage = ({ embedded = false, triggerNewForm = 0 }: Reco
 
   const activeFiltersCount = [filters.fecha_desde, filters.fecha_hasta].filter(Boolean).length;
   const hasActiveFilters = activeFiltersCount > 0;
-
-  // Formatear moneda
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
 
   // Datos
   const recolecciones = recoleccionesData?.results || [];
@@ -465,13 +344,6 @@ export const RecoleccionesPage = ({ embedded = false, triggerNewForm = 0 }: Reco
         onClose={handleCloseVoucher}
         recoleccionId={selectedRecoleccionId}
       />
-
-      {/* Voucher oculto para impresion automatica */}
-      {voucherRecienCreado && (
-        <div className="hidden">
-          <VoucherRecoleccion ref={voucherPrintRef} voucher={voucherRecienCreado} />
-        </div>
-      )}
     </div>
   );
 };

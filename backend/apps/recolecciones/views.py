@@ -19,6 +19,14 @@ from .serializers import (
     VoucherRecoleccionSerializer,
     RecoleccionEstadisticasSerializer,
 )
+from .permissions import (
+    PuedeRegistrarRecoleccion,
+    PuedeVerRecolecciones,
+    PuedeGenerarVoucher,
+    PuedeVerEstadisticas,
+    PuedeEditarRecoleccion,
+    PuedeEliminarRecoleccion,
+)
 
 
 class RecoleccionViewSet(viewsets.ModelViewSet):
@@ -29,14 +37,52 @@ class RecoleccionViewSet(viewsets.ModelViewSet):
     - GET    /api/recolecciones/                    - Lista de recolecciones
     - POST   /api/recolecciones/                    - Crear recoleccion (NO usar, usar registrar/)
     - GET    /api/recolecciones/{id}/               - Detalle de recoleccion
+    - PUT    /api/recolecciones/{id}/               - Editar recoleccion (Solo Líder Logística+)
+    - DELETE /api/recolecciones/{id}/               - Eliminar recoleccion (Solo Gerente+)
     - POST   /api/recolecciones/registrar/          - Registrar recoleccion desde programacion
     - GET    /api/recolecciones/{id}/voucher/       - Obtener datos del voucher
     - GET    /api/recolecciones/estadisticas/       - Estadisticas generales
     - GET    /api/recolecciones/mis-recolecciones/  - Recolecciones del recolector actual
+
+    Permisos por acción:
+    - list/retrieve: PuedeVerRecolecciones (todos los autenticados)
+    - create (via registrar): PuedeRegistrarRecoleccion (recolector, líder logística, gerente)
+    - update/partial_update: PuedeEditarRecoleccion (líder logística, gerente)
+    - destroy: PuedeEliminarRecoleccion (gerente, superadmin)
+    - voucher: PuedeGenerarVoucher (recolector sus propias, líder logística, gerente)
+    - estadisticas: PuedeVerEstadisticas (comercial, líderes, gerente)
+    - mis_recolecciones: IsAuthenticated + recolector_econorte
     """
 
-    permission_classes = [IsAuthenticated]
     serializer_class = RecoleccionListSerializer
+
+    def get_permissions(self):
+        """
+        Retorna los permisos según la acción
+        """
+        if self.action == 'registrar':
+            # Registrar recolección: recolector, líder logística, gerente
+            permission_classes = [PuedeRegistrarRecoleccion]
+        elif self.action in ['update', 'partial_update']:
+            # Editar: solo líder logística o gerente
+            permission_classes = [PuedeEditarRecoleccion]
+        elif self.action == 'destroy':
+            # Eliminar: solo gerente o superadmin
+            permission_classes = [PuedeEliminarRecoleccion]
+        elif self.action == 'voucher':
+            # Ver voucher: recolector (sus propias), líder logística, gerente
+            permission_classes = [PuedeGenerarVoucher]
+        elif self.action == 'estadisticas':
+            # Ver estadísticas: comercial, líderes, gerente
+            permission_classes = [PuedeVerEstadisticas]
+        elif self.action in ['list', 'retrieve', 'mis_recolecciones', 'por_ecoaliado']:
+            # Ver recolecciones: todos los autenticados
+            permission_classes = [PuedeVerRecolecciones]
+        else:
+            # Por defecto, solo autenticación
+            permission_classes = [IsAuthenticated]
+
+        return [permission() for permission in permission_classes]
 
     def get_queryset(self):
         """
@@ -164,11 +210,21 @@ class RecoleccionViewSet(viewsets.ModelViewSet):
         """
         Obtiene los datos del voucher para impresion
 
+        Permisos:
+        - Recolector: Solo puede ver vouchers de sus propias recolecciones
+        - Líder Logística: Puede ver todos los vouchers
+        - Gerente/SuperAdmin: Puede ver todos los vouchers
+
         Response:
         - 200: Datos del voucher
+        - 403: Sin permisos para ver este voucher
         - 404: Recoleccion no encontrada
         """
         recoleccion = self.get_object()
+
+        # Verificar permisos a nivel de objeto
+        self.check_object_permissions(request, recoleccion)
+
         serializer = VoucherRecoleccionSerializer(recoleccion)
         return Response(serializer.data)
 
@@ -309,9 +365,14 @@ class ProgramacionesEnRutaViewSet(viewsets.ReadOnlyModelViewSet):
 
     Este endpoint es usado por el recolector para ver que programaciones
     tiene asignadas y listas para completar.
+
+    Permisos:
+    - Recolector: Solo ve sus programaciones asignadas
+    - Líder Logística: Ve todas las programaciones EN_RUTA
+    - Gerente/SuperAdmin: Ve todas las programaciones EN_RUTA
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [PuedeVerRecolecciones]
 
     def get_queryset(self):
         """

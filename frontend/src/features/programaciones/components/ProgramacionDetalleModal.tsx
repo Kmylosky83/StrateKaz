@@ -22,6 +22,7 @@ import {
   Trash2,
   AlertCircle,
   Clock,
+  RefreshCw,
 } from 'lucide-react';
 import type { Programacion } from '../types/programacion.types';
 
@@ -31,9 +32,11 @@ interface ProgramacionDetalleModalProps {
   programacion: Programacion | null;
   onAsignarRecolector?: (programacion: Programacion) => void;
   onReprogramar?: (programacion: Programacion) => void;
+  onCambiarEstado?: (programacion: Programacion) => void;
   onEliminar?: (programacion: Programacion) => void;
   canAsignarRecolector: boolean;
   canReprogramar: boolean;
+  canCambiarEstado?: boolean;
   canEliminar: boolean;
 }
 
@@ -43,9 +46,11 @@ export const ProgramacionDetalleModal = ({
   programacion,
   onAsignarRecolector,
   onReprogramar,
+  onCambiarEstado,
   onEliminar,
   canAsignarRecolector,
   canReprogramar,
+  canCambiarEstado = false,
   canEliminar,
 }: ProgramacionDetalleModalProps) => {
   if (!programacion) return null;
@@ -88,6 +93,9 @@ export const ProgramacionDetalleModal = ({
 
   const puedeReprogramar =
     canReprogramar && !['COMPLETADA', 'CANCELADA', 'REPROGRAMADA'].includes(programacion.estado);
+
+  const puedeCambiarEstado =
+    canCambiarEstado && !['COMPLETADA', 'CANCELADA', 'REPROGRAMADA'].includes(programacion.estado);
 
   const puedeEliminar =
     canEliminar && !['COMPLETADA', 'EN_RUTA'].includes(programacion.estado);
@@ -323,6 +331,19 @@ export const ProgramacionDetalleModal = ({
             >
               <UserPlus className="h-4 w-4 mr-2" />
               {programacion.esta_vencida ? 'Reprogramar y Asignar' : 'Asignar Recolector'}
+            </Button>
+          )}
+
+          {puedeCambiarEstado && onCambiarEstado && (
+            <Button
+              variant="info"
+              onClick={() => {
+                onClose();
+                onCambiarEstado(programacion);
+              }}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Cambiar Estado
             </Button>
           )}
 

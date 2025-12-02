@@ -208,12 +208,9 @@ class EcoaliadoViewSet(viewsets.ModelViewSet):
         ).select_related('modificado_por').order_by('-fecha_modificacion')
 
         return Response({
-            'ecoaliado': {
-                'id': ecoaliado.id,
-                'codigo': ecoaliado.codigo,
-                'razon_social': ecoaliado.razon_social,
-                'precio_actual': ecoaliado.precio_compra_kg,
-            },
+            'ecoaliado': ecoaliado.codigo,
+            'ecoaliado_nombre': ecoaliado.razon_social,
+            'precio_actual': str(ecoaliado.precio_compra_kg),
             'total_cambios': historial.count(),
             'historial': HistorialPrecioEcoaliadoSerializer(historial, many=True).data
         })

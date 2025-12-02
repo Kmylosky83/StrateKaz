@@ -37,7 +37,7 @@ export const HistorialPrecioModal = ({
 }: HistorialPrecioModalProps) => {
   const getTipoCambioBadge = (tipo: string) => {
     switch (tipo) {
-      case 'INICIAL':
+      case 'CREACION':
         return (
           <Badge variant="info" size="sm">
             Precio Inicial
@@ -53,6 +53,12 @@ export const HistorialPrecioModal = ({
         return (
           <Badge variant="success" size="sm">
             Disminución
+          </Badge>
+        );
+      case 'AJUSTE':
+        return (
+          <Badge variant="warning" size="sm">
+            Ajuste
           </Badge>
         );
       default:

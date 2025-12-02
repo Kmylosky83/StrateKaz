@@ -1,6 +1,7 @@
 import axiosInstance from './axios-config';
 import type {
   Proveedor,
+  PrecioMateriaPrima,
   CreateProveedorDTO,
   UpdateProveedorDTO,
   CambiarPrecioDTO,
@@ -107,12 +108,12 @@ export const proveedoresAPI = {
    */
   getHistorialPrecio: async (id: number): Promise<{
     proveedor: string;
-    precio_actual: string;
+    precios_actuales: PrecioMateriaPrima[];
     historial: HistorialPrecio[];
   }> => {
     const response = await axiosInstance.get<{
       proveedor: string;
-      precio_actual: string;
+      precios_actuales: PrecioMateriaPrima[];
       historial: HistorialPrecio[];
     }>(`/proveedores/proveedores/${id}/historial-precio/`);
     return response.data;

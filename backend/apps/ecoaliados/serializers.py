@@ -364,8 +364,12 @@ class HistorialPrecioEcoaliadoSerializer(serializers.ModelSerializer):
 
     ecoaliado_codigo = serializers.CharField(source='ecoaliado.codigo', read_only=True)
     ecoaliado_razon_social = serializers.CharField(source='ecoaliado.razon_social', read_only=True)
+    ecoaliado_nombre = serializers.CharField(source='ecoaliado.razon_social', read_only=True)
     modificado_por_nombre = serializers.CharField(source='modificado_por.get_full_name', read_only=True)
     tipo_cambio_display = serializers.CharField(source='get_tipo_cambio_display', read_only=True)
+
+    # Alias para compatibilidad con frontend
+    fecha_cambio = serializers.DateTimeField(source='fecha_modificacion', read_only=True)
 
     # Campos calculados
     diferencia_precio = serializers.SerializerMethodField()
@@ -378,6 +382,7 @@ class HistorialPrecioEcoaliadoSerializer(serializers.ModelSerializer):
             'ecoaliado',
             'ecoaliado_codigo',
             'ecoaliado_razon_social',
+            'ecoaliado_nombre',
             'precio_anterior',
             'precio_nuevo',
             'diferencia_precio',
@@ -388,17 +393,20 @@ class HistorialPrecioEcoaliadoSerializer(serializers.ModelSerializer):
             'modificado_por',
             'modificado_por_nombre',
             'fecha_modificacion',
+            'fecha_cambio',
+            'created_at',
         ]
-        read_only_fields = ['fecha_modificacion']
+        read_only_fields = ['fecha_modificacion', 'created_at']
 
     def get_diferencia_precio(self, obj):
         """Calcula la diferencia de precio"""
         if obj.precio_anterior:
-            return float(obj.precio_nuevo - obj.precio_anterior)
+            return str(obj.precio_nuevo - obj.precio_anterior)
         return None
 
     def get_porcentaje_cambio(self, obj):
         """Calcula el porcentaje de cambio"""
         if obj.precio_anterior and obj.precio_anterior > 0:
-            return round(float(((obj.precio_nuevo - obj.precio_anterior) / obj.precio_anterior) * 100), 2)
+            porcentaje = ((obj.precio_nuevo - obj.precio_anterior) / obj.precio_anterior) * 100
+            return str(round(float(porcentaje), 2))
         return None

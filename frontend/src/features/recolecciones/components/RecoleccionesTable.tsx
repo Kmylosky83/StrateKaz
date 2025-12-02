@@ -11,6 +11,7 @@
  * - Acciones (ver voucher, reimprimir)
  */
 import React, { useState } from 'react';
+import { formatCurrency } from '@/utils/formatters';
 import {
   Building2,
   User,
@@ -48,15 +49,6 @@ export const RecoleccionesTable = ({
       newExpanded.add(id);
     }
     setExpandedRows(newExpanded);
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
   };
 
   const formatDate = (dateString: string) => {

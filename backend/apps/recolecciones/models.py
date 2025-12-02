@@ -6,10 +6,11 @@ Este modulo registra las recolecciones completadas asociadas a programaciones.
 Cuando un recolector completa una programacion, se crea un registro de Recoleccion
 con los datos reales de la operacion.
 """
-from django.db import models
+from django.db import models, transaction, IntegrityError
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from decimal import Decimal
+import time
 from apps.core.models import User
 from apps.ecoaliados.models import Ecoaliado
 from apps.programaciones.models import Programacion
@@ -137,30 +138,74 @@ class Recoleccion(models.Model):
         return self.deleted_at is not None
 
     @classmethod
-    def generar_codigo_voucher(cls):
+    def generar_codigo_voucher(cls, max_retries=5):
         """
-        Genera un codigo unico para el voucher
+        Genera un codigo unico para el voucher de forma thread-safe
         Formato: REC-YYYYMMDD-XXXX (ej: REC-20241125-0001)
+
+        Implementa retry logic para manejar race conditions cuando
+        multiples recolecciones se crean simultaneamente.
+
+        Args:
+            max_retries: Numero maximo de intentos (default: 5)
+
+        Returns:
+            str: Codigo de voucher unico
+
+        Raises:
+            IntegrityError: Si no se pudo generar un codigo unico despues de max_retries
         """
         from datetime import date
         hoy = date.today()
         prefijo = f"REC-{hoy.strftime('%Y%m%d')}-"
 
-        # Buscar el ultimo codigo del dia
-        ultimo = cls.objects.filter(
-            codigo_voucher__startswith=prefijo
-        ).order_by('-codigo_voucher').first()
-
-        if ultimo:
-            # Extraer el numero y sumarle 1
+        for attempt in range(max_retries):
             try:
-                numero = int(ultimo.codigo_voucher.split('-')[-1]) + 1
-            except (ValueError, IndexError):
-                numero = 1
-        else:
-            numero = 1
+                # Usar transaccion atomica con bloqueo
+                with transaction.atomic():
+                    # Bloquear la tabla para lectura exclusiva del ultimo registro
+                    # Esto previene que otra transaccion concurrente lea el mismo valor
+                    ultimo = cls.objects.select_for_update().filter(
+                        codigo_voucher__startswith=prefijo
+                    ).order_by('-codigo_voucher').first()
 
-        return f"{prefijo}{numero:04d}"
+                    if ultimo:
+                        # Extraer el numero y sumarle 1
+                        try:
+                            numero = int(ultimo.codigo_voucher.split('-')[-1]) + 1
+                        except (ValueError, IndexError):
+                            numero = 1
+                    else:
+                        numero = 1
+
+                    codigo = f"{prefijo}{numero:04d}"
+
+                    # Verificar que no exista (doble verificacion)
+                    if not cls.objects.filter(codigo_voucher=codigo).exists():
+                        return codigo
+                    else:
+                        # Si existe, incrementar y reintentar
+                        numero += 1
+                        codigo = f"{prefijo}{numero:04d}"
+
+                        # Verificar de nuevo
+                        if not cls.objects.filter(codigo_voucher=codigo).exists():
+                            return codigo
+
+            except IntegrityError:
+                # Si hay conflicto, esperar un tiempo aleatorio y reintentar
+                if attempt < max_retries - 1:
+                    # Espera exponencial con jitter: 0.01s, 0.02s, 0.04s, 0.08s, 0.16s
+                    wait_time = (2 ** attempt) * 0.01
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    raise
+
+        # Si llegamos aqui, todos los intentos fallaron
+        raise IntegrityError(
+            f"No se pudo generar un codigo de voucher unico despues de {max_retries} intentos"
+        )
 
     def calcular_valor_total(self):
         """Calcula el valor total basado en cantidad y precio"""
@@ -209,7 +254,10 @@ class Recoleccion(models.Model):
         self.save(update_fields=['deleted_at', 'updated_at'])
 
     def save(self, *args, **kwargs):
-        # Generar codigo de voucher si no existe
+        """
+        Guarda la recoleccion con generacion thread-safe del codigo de voucher
+        """
+        # Generar codigo de voucher si no existe (thread-safe)
         if not self.codigo_voucher:
             self.codigo_voucher = self.generar_codigo_voucher()
 
@@ -221,4 +269,15 @@ class Recoleccion(models.Model):
         if not self.pk:
             self.full_clean()
 
-        super().save(*args, **kwargs)
+        # Guardar con transaccion atomica para asegurar consistencia
+        # Si hay IntegrityError en codigo_voucher, se propagara
+        try:
+            super().save(*args, **kwargs)
+        except IntegrityError as e:
+            # Si el error es por codigo_voucher duplicado, regenerar
+            if 'codigo_voucher' in str(e).lower() or 'unique' in str(e).lower():
+                # Reintentar con nuevo codigo
+                self.codigo_voucher = self.generar_codigo_voucher()
+                super().save(*args, **kwargs)
+            else:
+                raise

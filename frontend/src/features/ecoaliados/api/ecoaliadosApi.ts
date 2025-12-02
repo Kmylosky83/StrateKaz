@@ -97,12 +97,16 @@ export const ecoaliadosAPI = {
    */
   getHistorialPrecios: async (id: number): Promise<{
     ecoaliado: string;
+    ecoaliado_nombre: string;
     precio_actual: string;
+    total_cambios: number;
     historial: HistorialPrecioEcoaliado[];
   }> => {
     const response = await axiosInstance.get<{
       ecoaliado: string;
+      ecoaliado_nombre: string;
       precio_actual: string;
+      total_cambios: number;
       historial: HistorialPrecioEcoaliado[];
     }>(`/ecoaliados/ecoaliados/${id}/historial-precios/`);
     return response.data;

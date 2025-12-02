@@ -9,6 +9,7 @@
  * - Totales
  */
 import { forwardRef } from 'react';
+import { formatCurrency, formatDateTime } from '@/utils/formatters';
 import type { VoucherData } from '../types/recoleccion.types';
 
 interface VoucherRecoleccionProps {
@@ -17,24 +18,6 @@ interface VoucherRecoleccionProps {
 
 export const VoucherRecoleccion = forwardRef<HTMLDivElement, VoucherRecoleccionProps>(
   ({ voucher }, ref) => {
-    const formatCurrency = (value: number) => {
-      return new Intl.NumberFormat('es-CO', {
-        style: 'currency',
-        currency: 'COP',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(value);
-    };
-
-    const formatDate = (dateString: string) => {
-      return new Date(dateString).toLocaleString('es-CO', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    };
 
     return (
       <div
@@ -54,7 +37,7 @@ export const VoucherRecoleccion = forwardRef<HTMLDivElement, VoucherRecoleccionP
         <div className="text-center font-bold border-b border-dashed border-gray-400 pb-2 mb-2">
           <div className="text-sm">COMPROBANTE DE RECOLECCION</div>
           <div className="text-lg">{voucher.codigo_voucher}</div>
-          <div className="text-[10px]">{formatDate(voucher.fecha_recoleccion)}</div>
+          <div className="text-[10px]">{formatDateTime(voucher.fecha_recoleccion)}</div>
         </div>
 
         {/* DATOS ECOALIADO */}

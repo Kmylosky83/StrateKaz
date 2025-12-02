@@ -8,6 +8,7 @@ import {
   User,
   AlertCircle,
   MapPin,
+  RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
@@ -18,9 +19,11 @@ interface ProgramacionesTableProps {
   onDelete: (programacion: Programacion) => void;
   onAsignarRecolector: (programacion: Programacion) => void;
   onReprogramar: (programacion: Programacion) => void;
+  onCambiarEstado: (programacion: Programacion) => void;
   canDelete: boolean;
   canReprogramar: boolean;
   canAsignarRecolector: boolean;
+  canCambiarEstado: boolean;
   isLoading?: boolean;
 }
 
@@ -29,9 +32,11 @@ export const ProgramacionesTable = ({
   onDelete,
   onAsignarRecolector,
   onReprogramar,
+  onCambiarEstado,
   canDelete,
   canReprogramar,
   canAsignarRecolector,
+  canCambiarEstado,
   isLoading,
 }: ProgramacionesTableProps) => {
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
@@ -95,6 +100,11 @@ export const ProgramacionesTable = ({
 
   const canReprogramarInternal = (programacion: Programacion) => {
     return !['COMPLETADA', 'CANCELADA'].includes(programacion.estado);
+  };
+
+  const canCambiarEstadoInternal = (programacion: Programacion) => {
+    // No se puede cambiar el estado si está en estado final
+    return !['COMPLETADA', 'CANCELADA', 'REPROGRAMADA'].includes(programacion.estado);
   };
 
   if (isLoading) {
@@ -251,6 +261,17 @@ export const ProgramacionesTable = ({
                           title="Asignar recolector"
                         >
                           <UserPlus className="h-3 w-3" />
+                        </Button>
+                      )}
+
+                      {canCambiarEstado && canCambiarEstadoInternal(programacion) && (
+                        <Button
+                          variant="info"
+                          size="sm"
+                          onClick={() => onCambiarEstado(programacion)}
+                          title="Cambiar estado"
+                        >
+                          <RefreshCw className="h-3 w-3" />
                         </Button>
                       )}
 

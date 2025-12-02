@@ -302,6 +302,8 @@ export interface HistorialPrecio {
   id: number;
   proveedor: number;
   proveedor_nombre: string;
+  tipo_materia?: CodigoMateriaPrima;
+  tipo_materia_display?: string;
   precio_anterior?: string | null;
   precio_nuevo: string;
   variacion_precio?: string | null;

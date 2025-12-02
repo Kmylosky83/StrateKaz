@@ -74,20 +74,24 @@ export interface CambiarPrecioEcoaliadoDTO {
 
 // ==================== HISTORIAL DE PRECIO ====================
 
-export type TipoCambioPrecio = 'INICIAL' | 'AUMENTO' | 'DISMINUCION';
+export type TipoCambioPrecio = 'CREACION' | 'AUMENTO' | 'DISMINUCION' | 'AJUSTE';
 
 export interface HistorialPrecioEcoaliado {
   id: number;
   ecoaliado: number;
+  ecoaliado_codigo: string;
+  ecoaliado_razon_social: string;
   ecoaliado_nombre: string;
   precio_anterior?: string | null;
   precio_nuevo: string;
   diferencia_precio?: string | null;
   porcentaje_cambio?: string | null;
   tipo_cambio: TipoCambioPrecio;
+  tipo_cambio_display: string;
   justificacion: string;
   modificado_por: number;
   modificado_por_nombre: string;
+  fecha_modificacion: string;
   fecha_cambio: string;
   created_at: string;
 }

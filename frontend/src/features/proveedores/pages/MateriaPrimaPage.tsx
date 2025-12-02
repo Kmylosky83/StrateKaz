@@ -1,10 +1,16 @@
 import { useState, useMemo } from 'react';
-import { UserPlus, Search, Factory, Truck } from 'lucide-react';
+import { UserPlus, Factory, Truck, Users, CheckCircle, Building2 } from 'lucide-react';
 import { Button } from '@/components/common/Button';
-import { Card } from '@/components/common/Card';
-import { Badge } from '@/components/common/Badge';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
+import {
+  PageHeader,
+  StatsGrid,
+  FilterCard,
+  FilterGrid,
+  DataTableCard,
+  PageTabs,
+} from '@/components/layout';
 import { ProveedoresTable } from '../components/ProveedoresTable';
 import { ProveedorForm } from '../components/ProveedorForm';
 import { CambiarPrecioModal } from '../components/CambiarPrecioModal';
@@ -12,7 +18,6 @@ import { HistorialPrecioModal } from '../components/HistorialPrecioModal';
 import { DeleteConfirmModal } from '@/components/users/DeleteConfirmModal';
 import {
   useProveedores,
-  useUnidadesNegocio,
   useCreateProveedor,
   useUpdateProveedor,
   useDeleteProveedor,
@@ -52,7 +57,6 @@ export default function MateriaPrimaPage() {
 
   const user = useAuthStore((state) => state.user);
   const { data: proveedoresData, isLoading: isLoadingProveedores } = useProveedores(filters);
-  const { data: unidadesNegocioData } = useUnidadesNegocio();
 
   // Queries para conteos en header
   const { data: externosCount } = useProveedores({ tipo_proveedor: 'MATERIA_PRIMA_EXTERNO', page_size: 1 });
@@ -64,7 +68,8 @@ export default function MateriaPrimaPage() {
   const cambiarPrecioMutation = useCambiarPrecio();
 
   // Cambiar tipo de proveedor según pestaña
-  const handleTabChange = (tab: TabType) => {
+  const handleTabChange = (tabId: string) => {
+    const tab = tabId as TabType;
     setActiveTab(tab);
     setFilters((prev) => ({
       ...prev,
@@ -104,7 +109,6 @@ export default function MateriaPrimaPage() {
 
   const handleSubmit = async (data: CreateProveedorDTO | UpdateProveedorDTO) => {
     try {
-      // Forzar el tipo de proveedor según la pestaña activa
       const submitData = {
         ...data,
         tipo_proveedor: activeTab === 'externos' ? 'MATERIA_PRIMA_EXTERNO' : 'UNIDAD_NEGOCIO',
@@ -168,15 +172,12 @@ export default function MateriaPrimaPage() {
 
   const handleCambiarPrecio = async (data: CambiarPrecioDTO) => {
     if (selectedProveedor) {
-      try {
-        await cambiarPrecioMutation.mutateAsync({
-          id: selectedProveedor.id,
-          data,
-        });
-        handleClosePrecioModal();
-      } catch (error) {
-        console.error('Error cambiando precio:', error);
-      }
+      // El modal maneja el cierre internamente cuando todos los precios se guardan exitosamente
+      // Si hay error, la Promise es rechazada y el modal muestra feedback
+      await cambiarPrecioMutation.mutateAsync({
+        id: selectedProveedor.id,
+        data,
+      });
     }
   };
 
@@ -198,6 +199,10 @@ export default function MateriaPrimaPage() {
     }));
   };
 
+  const handleSearchChange = (value: string) => {
+    setFilters((prev) => ({ ...prev, search: value, page: 1 }));
+  };
+
   const handleClearFilters = () => {
     setFilters({
       search: '',
@@ -210,6 +215,15 @@ export default function MateriaPrimaPage() {
       page_size: 10,
     });
   };
+
+  const activeFiltersCount = [
+    filters.subtipo_materia,
+    filters.modalidad_logistica,
+    filters.ciudad,
+    filters.is_active !== undefined ? 'active' : '',
+  ].filter(Boolean).length;
+
+  const hasActiveFilters = activeFiltersCount > 0;
 
   const subtipoMateriaOptions = [
     { value: '', label: 'Todos' },
@@ -234,169 +248,147 @@ export default function MateriaPrimaPage() {
   const proveedores = proveedoresData?.results || [];
   const totalProveedores = proveedoresData?.count || 0;
 
+  // Calcular estadísticas
+  const proveedoresActivos = proveedores.filter((p) => p.is_active).length;
+  const totalExternos = externosCount?.count || 0;
+  const totalInternos = internosCount?.count || 0;
+
+  // Configuración de tabs
+  const tabs = [
+    { id: 'externos', label: 'Proveedores Externos', icon: Truck },
+    { id: 'unidades_internas', label: 'Unidades Internas', icon: Factory },
+  ];
+
   return (
     <div className="space-y-6">
-      {/* HEADER */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              Proveedores de Materia Prima
-            </h1>
-            <div className="flex items-center gap-2">
-              <Badge variant="primary" size="sm">
-                {externosCount?.count ?? 0} externos
-              </Badge>
-              <Badge variant="info" size="sm">
-                {internosCount?.count ?? 0} internos
-              </Badge>
-            </div>
-          </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Gestión de proveedores de sebo, hueso, cabezas y ACU
-          </p>
-        </div>
-        {canCreateProveedor && (
-          <Button
-            onClick={handleOpenCreateForm}
-            leftIcon={<UserPlus className="h-4 w-4" />}
-          >
-            {activeTab === 'externos' ? 'Nuevo Proveedor Externo' : 'Nueva Unidad Interna'}
-          </Button>
-        )}
-      </div>
-
-      {/* TABS */}
-      <div className="border-b border-gray-200 dark:border-gray-700">
-        <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => handleTabChange('externos')}
-            className={`
-              flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors
-              ${activeTab === 'externos'
-                ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-              }
-            `}
-          >
-            <Truck className="h-5 w-5" />
-            Proveedores Externos
-          </button>
-          <button
-            onClick={() => handleTabChange('unidades_internas')}
-            className={`
-              flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors
-              ${activeTab === 'unidades_internas'
-                ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
-              }
-            `}
-          >
-            <Factory className="h-5 w-5" />
-            Unidades Internas
-          </button>
-        </nav>
-      </div>
-
-      {/* FILTROS */}
-      <Card>
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Filtros</h2>
-            <Button variant="outline" size="sm" onClick={handleClearFilters}>
-              Limpiar Filtros
+      {/* HEADER con PageHeader */}
+      <PageHeader
+        title="Proveedores de Materia Prima"
+        description="Gestión de proveedores de sebo, hueso, cabezas y ACU"
+        actions={
+          canCreateProveedor ? (
+            <Button
+              onClick={handleOpenCreateForm}
+              leftIcon={<UserPlus className="h-4 w-4" />}
+            >
+              {activeTab === 'externos' ? 'Nuevo Proveedor Externo' : 'Nueva Unidad Interna'}
             </Button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Input
-              label="Buscar"
-              value={filters.search}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
-              placeholder="Nombre, documento..."
-              leftIcon={<Search className="h-4 w-4" />}
-            />
+          ) : undefined
+        }
+        tabs={
+          <PageTabs
+            tabs={tabs}
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+          />
+        }
+      />
 
-            <Select
-              label="Tipo de Materia"
-              value={filters.subtipo_materia}
-              onChange={(e) => handleFilterChange('subtipo_materia', e.target.value)}
-              options={subtipoMateriaOptions}
-            />
+      {/* ESTADÍSTICAS */}
+      {proveedoresData && (
+        <StatsGrid
+          stats={[
+            {
+              label: 'Total Proveedores',
+              value: totalProveedores,
+              icon: Users,
+              iconColor: 'gray',
+            },
+            {
+              label: 'Proveedores Externos',
+              value: totalExternos,
+              icon: Truck,
+              iconColor: 'primary',
+            },
+            {
+              label: 'Unidades Internas',
+              value: totalInternos,
+              icon: Building2,
+              iconColor: 'info',
+            },
+            {
+              label: 'Activos',
+              value: proveedoresActivos,
+              icon: CheckCircle,
+              iconColor: 'success',
+            },
+          ]}
+        />
+      )}
 
-            {activeTab === 'externos' && (
-              <Select
-                label="Modalidad Logística"
-                value={filters.modalidad_logistica}
-                onChange={(e) => handleFilterChange('modalidad_logistica', e.target.value)}
-                options={modalidadLogisticaOptions}
-              />
-            )}
-
-            <Input
-              label="Ciudad"
-              value={filters.ciudad}
-              onChange={(e) => handleFilterChange('ciudad', e.target.value)}
-              placeholder="Filtrar por ciudad"
-            />
-
-            <Select
-              label="Estado"
-              value={filters.is_active === undefined ? '' : String(filters.is_active)}
-              onChange={(e) =>
-                handleFilterChange(
-                  'is_active',
-                  e.target.value === '' ? undefined : e.target.value === 'true'
-                )
-              }
-              options={estadoOptions}
-            />
-          </div>
-        </div>
-      </Card>
-
-      {/* TABLA */}
-      <Card>
-        <div className="p-6">
-          <ProveedoresTable
-            proveedores={proveedores}
-            onEdit={handleOpenEditForm}
-            onDelete={handleOpenDeleteModal}
-            onCambiarPrecio={handleOpenPrecioModal}
-            onVerHistorial={handleOpenHistorialModal}
-            onToggleStatus={handleToggleStatus}
-            canChangePrecio={canChangePrecio}
-            isLoading={isLoadingProveedores}
+      {/* FILTROS con FilterCard */}
+      <FilterCard
+        collapsible
+        searchPlaceholder="Buscar por nombre, documento..."
+        searchValue={filters.search}
+        onSearchChange={handleSearchChange}
+        activeFiltersCount={activeFiltersCount}
+        hasActiveFilters={hasActiveFilters}
+        onClearFilters={handleClearFilters}
+      >
+        <FilterGrid columns={4}>
+          <Select
+            label="Tipo de Materia"
+            value={filters.subtipo_materia}
+            onChange={(e) => handleFilterChange('subtipo_materia', e.target.value)}
+            options={subtipoMateriaOptions}
           />
 
-          {/* PAGINACIÓN */}
-          {totalProveedores > filters.page_size! && (
-            <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                Mostrando {((filters.page! - 1) * filters.page_size!) + 1} -{' '}
-                {Math.min(filters.page! * filters.page_size!, totalProveedores)} de {totalProveedores}
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleFilterChange('page', filters.page! - 1)}
-                  disabled={!proveedoresData?.previous}
-                >
-                  Anterior
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleFilterChange('page', filters.page! + 1)}
-                  disabled={!proveedoresData?.next}
-                >
-                  Siguiente
-                </Button>
-              </div>
-            </div>
+          {activeTab === 'externos' && (
+            <Select
+              label="Modalidad Logística"
+              value={filters.modalidad_logistica}
+              onChange={(e) => handleFilterChange('modalidad_logistica', e.target.value)}
+              options={modalidadLogisticaOptions}
+            />
           )}
-        </div>
-      </Card>
+
+          <Input
+            label="Ciudad"
+            value={filters.ciudad}
+            onChange={(e) => handleFilterChange('ciudad', e.target.value)}
+            placeholder="Filtrar por ciudad"
+          />
+
+          <Select
+            label="Estado"
+            value={filters.is_active === undefined ? '' : String(filters.is_active)}
+            onChange={(e) =>
+              handleFilterChange(
+                'is_active',
+                e.target.value === '' ? undefined : e.target.value === 'true'
+              )
+            }
+            options={estadoOptions}
+          />
+        </FilterGrid>
+      </FilterCard>
+
+      {/* TABLA con DataTableCard */}
+      <DataTableCard
+        pagination={{
+          currentPage: filters.page!,
+          pageSize: filters.page_size!,
+          totalItems: totalProveedores,
+          hasPrevious: !!proveedoresData?.previous,
+          hasNext: !!proveedoresData?.next,
+          onPageChange: (page) => handleFilterChange('page', page),
+        }}
+        isEmpty={proveedores.length === 0}
+        isLoading={isLoadingProveedores}
+        emptyMessage="No se encontraron proveedores"
+      >
+        <ProveedoresTable
+          proveedores={proveedores}
+          onEdit={handleOpenEditForm}
+          onDelete={handleOpenDeleteModal}
+          onCambiarPrecio={handleOpenPrecioModal}
+          onVerHistorial={handleOpenHistorialModal}
+          onToggleStatus={handleToggleStatus}
+          canChangePrecio={canChangePrecio}
+          isLoading={isLoadingProveedores}
+        />
+      </DataTableCard>
 
       {/* MODALES */}
       <ProveedorForm
@@ -404,7 +396,6 @@ export default function MateriaPrimaPage() {
         onClose={handleCloseForm}
         onSubmit={handleSubmit}
         proveedor={selectedProveedor}
-        unidadesNegocio={unidadesNegocioData?.results || []}
         isLoading={createProveedorMutation.isPending || updateProveedorMutation.isPending}
         tipoProveedorForzado={activeTab === 'externos' ? 'MATERIA_PRIMA_EXTERNO' : 'UNIDAD_NEGOCIO'}
       />

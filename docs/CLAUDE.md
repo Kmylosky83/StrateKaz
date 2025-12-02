@@ -85,12 +85,21 @@ El sistema maneja 18 tipos de materia prima organizados en 4 categorías:
 ```python
 # backend/apps/proveedores/constants.py
 CATEGORIAS = {
-    'HUESO': ['HUESO_CRUDO', 'HUESO_COCINADO', 'HUESO_FRITO', 'CARNAZA'],
-    'SEBO_CRUDO': ['SEBO_RES', 'SEBO_CERDO', 'GRASA_POLLO', 'CHICHARRON', 'RECORTE_GRASA'],
-    'SEBO_PROCESADO': ['SEBO_FUNDIDO_RES', 'SEBO_FUNDIDO_CERDO', 'MANTECA_CERDO', 'GRASA_FUNDIDA_POLLO', 'ACEITE_RECICLADO', 'ACEITE_TRAMPA_GRASA'],
-    'OTROS': ['VISCERAS', 'SANGRE', 'RESIDUOS_ORGANICOS']
+    'HUESO': ['HUESO_CRUDO', 'HUESO_SECO', 'HUESO_CALCINADO', 'HUESO_CENIZA'],
+    'SEBO_CRUDO': ['SEBO_CRUDO_CARNICERIA', 'SEBO_CRUDO_MATADERO', 'SEBO_CUERO', 'SEBO_CUERO_VIRIL', 'SEBO_POLLO'],
+    'SEBO_PROCESADO': ['SEBO_PROCESADO_A', 'SEBO_PROCESADO_B', 'SEBO_PROCESADO_B1', 'SEBO_PROCESADO_B2', 'SEBO_PROCESADO_B4', 'SEBO_PROCESADO_C'],
+    'OTROS': ['CHICHARRON', 'CABEZAS', 'ACU']
 }
 ```
+
+### Compatibilidad Legacy
+
+Los proveedores pueden tener en `subtipo_materia`:
+
+- **Valores legacy**: `SEBO`, `HUESO`, `CABEZAS`, `ACU` (se expanden a códigos específicos en UI)
+- **Valores específicos**: `HUESO_CRUDO`, `SEBO_CUERO`, etc. (se usan directamente)
+
+El mapeo `NEW_TO_LEGACY_MAPPING` en `constants.py` permite validar precios contra ambos formatos.
 
 Cada tipo tiene precio independiente configurado en `PrecioMateriaPrima` con historial de auditoría.
 

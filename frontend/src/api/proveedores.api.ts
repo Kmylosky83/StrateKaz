@@ -4,8 +4,6 @@ import type {
   CreateProveedorDTO,
   UpdateProveedorDTO,
   CambiarPrecioDTO,
-  UnidadNegocio,
-  CreateUnidadNegocioDTO,
   ProveedorFilters,
   PaginatedResponse,
   HistorialPrecio,
@@ -117,37 +115,6 @@ export const proveedoresAPI = {
       precio_actual: string;
       historial: HistorialPrecio[];
     }>(`/proveedores/proveedores/${id}/historial-precio/`);
-    return response.data;
-  },
-
-  // ==================== UNIDADES DE NEGOCIO ====================
-
-  /**
-   * Obtener lista de unidades de negocio
-   */
-  getUnidadesNegocio: async (): Promise<PaginatedResponse<UnidadNegocio>> => {
-    const response = await axiosInstance.get<PaginatedResponse<UnidadNegocio>>(
-      '/proveedores/unidades-negocio/'
-    );
-    return response.data;
-  },
-
-  /**
-   * Crear nueva unidad de negocio
-   */
-  createUnidadNegocio: async (data: CreateUnidadNegocioDTO): Promise<UnidadNegocio> => {
-    const response = await axiosInstance.post<UnidadNegocio>(
-      '/proveedores/unidades-negocio/',
-      data
-    );
-    return response.data;
-  },
-
-  /**
-   * Obtener una unidad de negocio por ID
-   */
-  getUnidadNegocio: async (id: number): Promise<UnidadNegocio> => {
-    const response = await axiosInstance.get<UnidadNegocio>(`/proveedores/unidades-negocio/${id}/`);
     return response.data;
   },
 

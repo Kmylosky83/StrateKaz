@@ -1,9 +1,14 @@
 import { useState } from 'react';
-import { UserPlus, Search, Filter } from 'lucide-react';
+import { UserPlus } from 'lucide-react';
 import { Button } from '@/components/common/Button';
-import { Card } from '@/components/common/Card';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
+import {
+  PageHeader,
+  FilterCard,
+  FilterGrid,
+  DataTableCard,
+} from '@/components/layout';
 import { UsersTable } from '../components/UsersTable';
 import { UserForm } from '../components/UserForm';
 import { DeleteConfirmModal } from '@/components/users/DeleteConfirmModal';
@@ -107,6 +112,26 @@ export default function UsersPage() {
     setFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
   };
 
+  const handleSearchChange = (value: string) => {
+    setFilters((prev) => ({ ...prev, search: value, page: 1 }));
+  };
+
+  const handleClearFilters = () => {
+    setFilters({
+      search: '',
+      cargo: '',
+      is_active: undefined,
+      page: 1,
+      page_size: 10,
+    });
+  };
+
+  const activeFiltersCount = [filters.cargo, filters.is_active !== undefined ? 'active' : ''].filter(
+    Boolean
+  ).length;
+
+  const hasActiveFilters = activeFiltersCount > 0;
+
   const cargoFilterOptions = [
     { value: '', label: 'Todos los cargos' },
     ...cargos.map((cargo) => ({ value: String(cargo.id), label: cargo.name })),
@@ -123,91 +148,71 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            Gestión de Usuarios
-          </h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Total de usuarios: {totalUsers}
-          </p>
-        </div>
-        <Button onClick={handleOpenCreateForm} leftIcon={<UserPlus className="h-4 w-4" />}>
-          Nuevo Usuario
-        </Button>
-      </div>
-
-      {/* Filters */}
-      <Card>
-        <div className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Input
-              label="Buscar"
-              placeholder="Nombre o username..."
-              leftIcon={<Search className="h-4 w-4" />}
-              value={filters.search}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
-            />
-            <Select
-              label="Cargo"
-              options={cargoFilterOptions}
-              value={filters.cargo}
-              onChange={(e) => handleFilterChange('cargo', e.target.value)}
-            />
-            <Select
-              label="Estado"
-              options={statusFilterOptions}
-              value={String(filters.is_active || '')}
-              onChange={(e) =>
-                handleFilterChange(
-                  'is_active',
-                  e.target.value === '' ? undefined : e.target.value === 'true'
-                )
-              }
-            />
-          </div>
-        </div>
-      </Card>
-
-      {/* Users Table */}
-      <UsersTable
-        users={users}
-        isLoading={isLoadingUsers}
-        onEdit={handleOpenEditForm}
-        onDelete={handleOpenDeleteModal}
-        onToggleStatus={handleToggleStatus}
+      {/* HEADER */}
+      <PageHeader
+        title="Gestión de Usuarios"
+        description="Administración de usuarios del sistema"
+        badges={[{ label: `${totalUsers} usuarios`, variant: 'primary' }]}
+        actions={
+          <Button onClick={handleOpenCreateForm} leftIcon={<UserPlus className="h-4 w-4" />}>
+            Nuevo Usuario
+          </Button>
+        }
       />
 
-      {/* Pagination */}
-      {usersData && usersData.count > filters.page_size! && (
-        <Card>
-          <div className="p-4 flex justify-between items-center">
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              Mostrando {(filters.page! - 1) * filters.page_size! + 1} -{' '}
-              {Math.min(filters.page! * filters.page_size!, totalUsers)} de {totalUsers}
-            </span>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleFilterChange('page', filters.page! - 1)}
-                disabled={!usersData.previous}
-              >
-                Anterior
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleFilterChange('page', filters.page! + 1)}
-                disabled={!usersData.next}
-              >
-                Siguiente
-              </Button>
-            </div>
-          </div>
-        </Card>
-      )}
+      {/* FILTROS */}
+      <FilterCard
+        collapsible
+        searchPlaceholder="Buscar por nombre o username..."
+        searchValue={filters.search}
+        onSearchChange={handleSearchChange}
+        activeFiltersCount={activeFiltersCount}
+        hasActiveFilters={hasActiveFilters}
+        onClearFilters={handleClearFilters}
+      >
+        <FilterGrid columns={2}>
+          <Select
+            label="Cargo"
+            options={cargoFilterOptions}
+            value={filters.cargo}
+            onChange={(e) => handleFilterChange('cargo', e.target.value)}
+          />
+          <Select
+            label="Estado"
+            options={statusFilterOptions}
+            value={String(filters.is_active || '')}
+            onChange={(e) =>
+              handleFilterChange(
+                'is_active',
+                e.target.value === '' ? undefined : e.target.value === 'true'
+              )
+            }
+          />
+        </FilterGrid>
+      </FilterCard>
+
+      {/* TABLA */}
+      <DataTableCard
+        pagination={{
+          currentPage: filters.page || 1,
+          pageSize: filters.page_size || 10,
+          totalItems: totalUsers,
+          hasPrevious: !!usersData?.previous,
+          hasNext: !!usersData?.next,
+          onPageChange: (page) => handleFilterChange('page', page),
+        }}
+        isEmpty={users.length === 0}
+        isLoading={isLoadingUsers}
+        emptyMessage="No se encontraron usuarios"
+      >
+        <UsersTable
+          users={users}
+          isLoading={isLoadingUsers}
+          onEdit={handleOpenEditForm}
+          onDelete={handleOpenDeleteModal}
+          onToggleStatus={handleToggleStatus}
+        />
+      </DataTableCard>
 
       {/* Modals */}
       <UserForm

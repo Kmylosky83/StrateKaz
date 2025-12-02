@@ -19,6 +19,7 @@ from .constants import (
     CODIGOS_MATERIA_PRIMA_VALIDOS,
     CODIGO_A_TIPO_PRINCIPAL,
     JERARQUIA_MATERIA_PRIMA,
+    NEW_TO_LEGACY_MAPPING,
 )
 
 
@@ -123,6 +124,7 @@ class ProveedorListSerializer(serializers.ModelSerializer):
         model = Proveedor
         fields = [
             'id',
+            'codigo_interno',
             'tipo_proveedor',
             'tipo_proveedor_display',
             'subtipo_materia',
@@ -195,6 +197,7 @@ class ProveedorDetailSerializer(serializers.ModelSerializer):
         model = Proveedor
         fields = '__all__'
         read_only_fields = [
+            'codigo_interno',
             'created_at',
             'updated_at',
             'deleted_at',
@@ -493,16 +496,25 @@ class CambiarPrecioSerializer(serializers.Serializer):
         tipo_materia = attrs.get('tipo_materia')
         precio_nuevo = attrs.get('precio_nuevo')
 
-        # Obtener el tipo principal del código
-        tipo_principal = CODIGO_A_TIPO_PRINCIPAL.get(tipo_materia, tipo_materia)
-
-        # Validar que el proveedor maneja ese tipo principal de materia
+        # Validar que el proveedor maneja ese tipo de materia
+        # Los proveedores pueden tener en subtipo_materia:
+        #   - Valores legacy: SEBO, HUESO, CABEZAS, ACU
+        #   - Valores específicos: HUESO_CRUDO, SEBO_CUERO, etc.
+        # Debemos validar contra ambos formatos
         if proveedor and proveedor.subtipo_materia:
-            if tipo_principal not in proveedor.subtipo_materia:
-                tipo_display = dict(CODIGO_MATERIA_PRIMA_CHOICES).get(tipo_materia, tipo_materia)
-                raise serializers.ValidationError({
-                    'tipo_materia': f'El proveedor no maneja {tipo_display} (tipo principal: {tipo_principal})'
-                })
+            # Primero: verificar si el código específico está directamente en subtipo_materia
+            if tipo_materia in proveedor.subtipo_materia:
+                # El proveedor ya tiene códigos específicos y este coincide
+                pass
+            else:
+                # Segundo: verificar si el tipo legacy está en subtipo_materia
+                tipo_legacy = NEW_TO_LEGACY_MAPPING.get(tipo_materia, tipo_materia)
+                if tipo_legacy not in proveedor.subtipo_materia:
+                    # Ninguna coincidencia: el proveedor no maneja esta materia
+                    tipo_display = dict(CODIGO_MATERIA_PRIMA_CHOICES).get(tipo_materia, tipo_materia)
+                    raise serializers.ValidationError({
+                        'tipo_materia': f'El proveedor no maneja {tipo_display}'
+                    })
 
         # Obtener precio actual
         try:

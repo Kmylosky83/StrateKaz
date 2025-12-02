@@ -19,6 +19,7 @@ from .constants import (
     CODIGOS_MATERIA_PRIMA_VALIDOS,
     CODIGO_A_TIPO_PRINCIPAL,
     SUBTIPO_MATERIA_LEGACY_CHOICES,
+    NEW_TO_LEGACY_MAPPING,
 )
 
 
@@ -175,6 +176,16 @@ class Proveedor(models.Model):
         ('CREDITO', 'Crédito'),
         ('OTRO', 'Otro'),
     ]
+
+    # Código interno autogenerado
+    codigo_interno = models.CharField(
+        max_length=20,
+        unique=True,
+        editable=False,
+        db_index=True,
+        verbose_name='Código interno',
+        help_text='Código único autogenerado (formato: PRV-0001)'
+    )
 
     # Identificación del tipo de proveedor
     tipo_proveedor = models.CharField(
@@ -373,6 +384,22 @@ class Proveedor(models.Model):
     def __str__(self):
         return f"{self.nombre_comercial} ({self.get_tipo_proveedor_display()})"
 
+    @staticmethod
+    def generar_codigo_interno():
+        """
+        Genera el siguiente código interno único para un proveedor
+        Formato: PRV-0001, PRV-0002, etc.
+        """
+        ultimo = Proveedor.objects.order_by('-id').first()
+        if ultimo and ultimo.codigo_interno:
+            try:
+                numero = int(ultimo.codigo_interno.split('-')[1]) + 1
+            except (ValueError, IndexError):
+                numero = 1
+        else:
+            numero = 1
+        return f'PRV-{numero:04d}'
+
     @property
     def is_deleted(self):
         """Verifica si el proveedor está eliminado lógicamente"""
@@ -416,6 +443,16 @@ class Proveedor(models.Model):
 
         display_map = dict(self.FORMA_PAGO_CHOICES)
         return [display_map.get(forma, forma) for forma in self.formas_pago]
+
+    def save(self, *args, **kwargs):
+        """
+        Sobrescribe save para generar código interno automáticamente
+        """
+        # Generar código interno si es nuevo registro
+        if not self.pk and not self.codigo_interno:
+            self.codigo_interno = self.generar_codigo_interno()
+
+        super().save(*args, **kwargs)
 
     def clean(self):
         """
@@ -566,6 +603,11 @@ class PrecioMateriaPrima(models.Model):
         """Retorna el tipo principal de materia prima (HUESO, SEBO, CABEZAS, ACU)"""
         return CODIGO_A_TIPO_PRINCIPAL.get(self.tipo_materia, self.tipo_materia)
 
+    @property
+    def tipo_legacy(self):
+        """Retorna el tipo legacy de materia prima para validación con subtipo_materia del proveedor"""
+        return NEW_TO_LEGACY_MAPPING.get(self.tipo_materia, self.tipo_materia)
+
     def clean(self):
         """Validaciones personalizadas"""
         super().clean()
@@ -583,13 +625,14 @@ class PrecioMateriaPrima(models.Model):
             })
 
         # Validar que el código esté en la lista del proveedor
-        # Los proveedores ahora almacenan códigos específicos (HUESO_CRUDO, SEBO_PROCESADO_A, etc.)
+        # Los proveedores almacenan tipos legacy (SEBO, HUESO, etc.)
+        # pero los códigos de precio son específicos (HUESO_CRUDO, SEBO_CRUDO_CARNICERIA, etc.)
         if self.proveedor and self.proveedor.subtipo_materia:
             # Verificar si el código está directamente en la lista del proveedor
             if self.tipo_materia not in self.proveedor.subtipo_materia:
-                # Si no está, verificar si el proveedor tiene el tipo principal legacy
-                tipo_principal = self.tipo_principal
-                if tipo_principal not in self.proveedor.subtipo_materia:
+                # Si no está, verificar si el proveedor tiene el tipo legacy correspondiente
+                tipo_legacy = self.tipo_legacy
+                if tipo_legacy not in self.proveedor.subtipo_materia:
                     raise ValidationError({
                         'tipo_materia': f'El proveedor no maneja {self.tipo_materia}'
                     })

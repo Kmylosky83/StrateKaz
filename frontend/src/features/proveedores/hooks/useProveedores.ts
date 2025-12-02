@@ -6,7 +6,6 @@ import type {
   CreateProveedorDTO,
   UpdateProveedorDTO,
   CambiarPrecioDTO,
-  CreateUnidadNegocioDTO,
   PruebaAcidezFilters,
   CreatePruebaAcidezDTO,
 } from '@/types/proveedores.types';
@@ -179,41 +178,6 @@ export const useHistorialPrecio = (id: number) => {
     queryKey: ['historial-precio', id],
     queryFn: () => proveedoresAPI.getHistorialPrecio(id),
     enabled: !!id,
-  });
-};
-
-// ==================== UNIDADES DE NEGOCIO ====================
-
-export const useUnidadesNegocio = () => {
-  return useQuery({
-    queryKey: ['unidades-negocio'],
-    queryFn: () => proveedoresAPI.getUnidadesNegocio(),
-  });
-};
-
-export const useUnidadNegocio = (id: number) => {
-  return useQuery({
-    queryKey: ['unidad-negocio', id],
-    queryFn: () => proveedoresAPI.getUnidadNegocio(id),
-    enabled: !!id,
-  });
-};
-
-export const useCreateUnidadNegocio = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (data: CreateUnidadNegocioDTO) => proveedoresAPI.createUnidadNegocio(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['unidades-negocio'] });
-      toast.success('Unidad de negocio creada exitosamente');
-    },
-    onError: (error: any) => {
-      const message = error.response?.data?.message ||
-        error.response?.data?.error ||
-        'Error al crear la unidad de negocio';
-      toast.error(message);
-    },
   });
 };
 

@@ -15,9 +15,6 @@ export {
   useToggleProveedorStatus,
   useCambiarPrecio,
   useHistorialPrecio,
-  useUnidadesNegocio,
-  useUnidadNegocio,
-  useCreateUnidadNegocio,
   useCondicionesComerciales,
 } from './hooks/useProveedores';
 

@@ -8,9 +8,7 @@ import UsersPage from '@/features/users/pages/UsersPage';
 import MateriaPrimaPage from '@/features/proveedores/pages/MateriaPrimaPage';
 import ProductosServiciosPage from '@/features/proveedores/pages/ProductosServiciosPage';
 import PruebasAcidezPage from '@/features/proveedores/pages/PruebasAcidezPage';
-import { EcoaliadosPage } from '@/features/ecoaliados';
-import { ProgramacionesPage } from '@/features/programaciones';
-import { RecoleccionesPage } from '@/features/recolecciones';
+import { EcoNortePage } from '@/features/econorte';
 
 export const AppRoutes = () => {
   return (
@@ -28,13 +26,17 @@ export const AppRoutes = () => {
           <Route path="/proveedores" element={<Navigate to="/proveedores/materia-prima" replace />} />
           <Route path="/proveedores/materia-prima" element={<MateriaPrimaPage />} />
           <Route path="/proveedores/productos-servicios" element={<ProductosServiciosPage />} />
-          <Route path="/proveedores/ecoaliados" element={<EcoaliadosPage />} />
           <Route path="/proveedores/pruebas-acidez" element={<PruebasAcidezPage />} />
 
-          {/* Redirect para mantener compatibilidad con rutas antiguas */}
-          <Route path="/ecoaliados" element={<Navigate to="/proveedores/ecoaliados" replace />} />
-          <Route path="/programaciones" element={<ProgramacionesPage />} />
-          <Route path="/recolecciones" element={<RecoleccionesPage />} />
+          {/* EcoNorte - Submódulo de Proveedores con tabs */}
+          <Route path="/proveedores/econorte" element={<EcoNortePage />} />
+
+          {/* Redirects para compatibilidad con rutas antiguas */}
+          <Route path="/econorte" element={<Navigate to="/proveedores/econorte" replace />} />
+          <Route path="/proveedores/ecoaliados" element={<Navigate to="/proveedores/econorte" replace />} />
+          <Route path="/ecoaliados" element={<Navigate to="/proveedores/econorte" replace />} />
+          <Route path="/programaciones" element={<Navigate to="/proveedores/econorte" replace />} />
+          <Route path="/recolecciones" element={<Navigate to="/proveedores/econorte" replace />} />
         </Route>
       </Route>
 

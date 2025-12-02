@@ -3,48 +3,6 @@
  * Sistema de Gestión Grasas y Huesos del Norte
  */
 
-// ==================== UNIDAD DE NEGOCIO ====================
-
-export type TipoUnidad = 'SEDE' | 'SUCURSAL' | 'PLANTA' | 'CENTRO_ACOPIO' | 'ALMACEN' | 'OTRO';
-
-export interface UnidadNegocio {
-  id: number;
-  codigo: string;
-  nombre: string;
-  tipo_unidad: TipoUnidad;
-  tipo_unidad_display: string;
-  direccion: string;
-  ciudad: string;
-  departamento: string;
-  responsable?: number | null;
-  responsable_nombre?: string;
-  is_active: boolean;
-  is_deleted: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CreateUnidadNegocioDTO {
-  codigo: string;
-  nombre: string;
-  tipo_unidad: TipoUnidad;
-  direccion: string;
-  ciudad: string;
-  departamento: string;
-  responsable?: number | null;
-  is_active?: boolean;
-}
-
-export interface UpdateUnidadNegocioDTO {
-  nombre?: string;
-  tipo_unidad?: TipoUnidad;
-  direccion?: string;
-  ciudad?: string;
-  departamento?: string;
-  responsable?: number | null;
-  is_active?: boolean;
-}
-
 // ==================== PROVEEDOR ====================
 
 export type TipoProveedor = 'MATERIA_PRIMA_EXTERNO' | 'UNIDAD_NEGOCIO' | 'PRODUCTO_SERVICIO';
@@ -247,6 +205,7 @@ export interface PrecioMateriaPrima {
 
 export interface Proveedor {
   id: number;
+  codigo_interno: string;
   tipo_proveedor: TipoProveedor;
   tipo_proveedor_display: string;
   subtipo_materia?: string[];
@@ -265,7 +224,6 @@ export interface Proveedor {
   ciudad: string;
   departamento: string;
   unidad_negocio?: number | null;
-  unidad_negocio_data?: UnidadNegocio;
   unidad_negocio_nombre?: string;
   precios_materia_prima?: PrecioMateriaPrima[];
   formas_pago?: string[];
@@ -418,13 +376,6 @@ export interface PaginatedResponse<T> {
   results: T[];
 }
 
-export interface UnidadNegocioFilters {
-  search?: string;
-  tipo_unidad?: TipoUnidad | '';
-  is_active?: boolean | undefined;
-  page?: number;
-  page_size?: number;
-}
 
 // ==================== PRUEBA DE ACIDEZ ====================
 

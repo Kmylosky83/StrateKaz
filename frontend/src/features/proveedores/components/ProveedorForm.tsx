@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -7,13 +7,13 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { MateriasPrimasSelector } from '@/components/proveedores/MateriasPrimasSelector';
-import { AlertCircle, CheckCircle2, Info } from 'lucide-react';
+import { AlertCircle, CheckCircle2, FileText, MapPin, CreditCard, FileEdit, Layers } from 'lucide-react';
+import { cn } from '@/utils/cn';
 import type {
   Proveedor,
   CreateProveedorDTO,
   UpdateProveedorDTO,
   TipoProveedor,
-  UnidadNegocio,
   CodigoMateriaPrima,
 } from '@/types/proveedores.types';
 
@@ -53,12 +53,10 @@ const createProveedorSchema = z.object({
   nit: z.string().optional(),
   unidad_negocio: z.number().optional().nullable(),
   precios: z.record(z.string()).optional(),
-  dias_plazo_pago: z.number().optional().nullable(),
   categoria_producto_servicio: z.enum(['PRODUCTO', 'SERVICIO']).optional().nullable(),
   descripcion_productos_servicios: z.string().optional(),
 }).refine(
   (data) => {
-    // Si es MATERIA_PRIMA_EXTERNO o UNIDAD_NEGOCIO, subtipo_materia es obligatorio
     if (
       (data.tipo_proveedor === 'MATERIA_PRIMA_EXTERNO' || data.tipo_proveedor === 'UNIDAD_NEGOCIO') &&
       (!data.subtipo_materia || data.subtipo_materia.length === 0)
@@ -70,7 +68,6 @@ const createProveedorSchema = z.object({
   { message: 'Debe seleccionar al menos una materia prima', path: ['subtipo_materia'] }
 ).refine(
   (data) => {
-    // Si es MATERIA_PRIMA_EXTERNO, modalidad_logistica es obligatoria
     if (data.tipo_proveedor === 'MATERIA_PRIMA_EXTERNO' && !data.modalidad_logistica) {
       return false;
     }
@@ -79,7 +76,6 @@ const createProveedorSchema = z.object({
   { message: 'La modalidad logística es obligatoria', path: ['modalidad_logistica'] }
 ).refine(
   (data) => {
-    // Si es PRODUCTO_SERVICIO, categoría es obligatoria
     if (data.tipo_proveedor === 'PRODUCTO_SERVICIO' && !data.categoria_producto_servicio) {
       return false;
     }
@@ -88,7 +84,6 @@ const createProveedorSchema = z.object({
   { message: 'La categoría es obligatoria para productos/servicios', path: ['categoria_producto_servicio'] }
 ).refine(
   (data) => {
-    // Si es PRODUCTO_SERVICIO, descripción es obligatoria
     if (data.tipo_proveedor === 'PRODUCTO_SERVICIO' && !data.descripcion_productos_servicios) {
       return false;
     }
@@ -97,9 +92,7 @@ const createProveedorSchema = z.object({
   { message: 'La descripción de productos/servicios es obligatoria', path: ['descripcion_productos_servicios'] }
 ).refine(
   (data) => {
-    // Validación condicional de formato NIT - aceptar con o sin dígito de verificación
     if (data.tipo_documento === 'NIT') {
-      // Aceptar formatos: 900123456, 900123456-1, 9001234561
       const nitClean = data.numero_documento.replace(/[-.\s]/g, '');
       if (!/^\d{9,10}$/.test(nitClean)) {
         return false;
@@ -116,18 +109,24 @@ const createProveedorSchema = z.object({
 // Schema para actualizar proveedor (sin campos readonly)
 const updateProveedorSchema = z.object({
   ...baseSchema,
-  dias_plazo_pago: z.number().optional().nullable(),
 });
 
 type CreateProveedorFormData = z.infer<typeof createProveedorSchema>;
 type UpdateProveedorFormData = z.infer<typeof updateProveedorSchema>;
+
+type TabType = 'clasificacion' | 'basica' | 'ubicacion' | 'financiero' | 'observaciones';
+
+interface Tab {
+  id: TabType;
+  label: string;
+  icon: React.ElementType;
+}
 
 interface ProveedorFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: CreateProveedorDTO | UpdateProveedorDTO) => void;
   proveedor?: Proveedor;
-  unidadesNegocio: UnidadNegocio[];
   isLoading?: boolean;
   tipoProveedorForzado?: TipoProveedor;
 }
@@ -137,12 +136,14 @@ export const ProveedorForm = ({
   onClose,
   onSubmit,
   proveedor,
-  unidadesNegocio,
   isLoading,
   tipoProveedorForzado,
 }: ProveedorFormProps) => {
   const isEditMode = !!proveedor;
   const schema = isEditMode ? updateProveedorSchema : createProveedorSchema;
+
+  // Determinar tab inicial: en edición, empezar en "basica", en creación, en "clasificacion"
+  const [activeTab, setActiveTab] = useState<TabType>(isEditMode ? 'basica' : 'clasificacion');
 
   // FIX: Determinar el tipo de proveedor efectivo ANTES de crear defaultValues
   const tipoProveedorEfectivo = tipoProveedorForzado || proveedor?.tipo_proveedor;
@@ -156,7 +157,7 @@ export const ProveedorForm = ({
     setValue,
   } = useForm<CreateProveedorFormData | UpdateProveedorFormData>({
     resolver: zodResolver(schema),
-    mode: 'onChange', // Validar al cambiar para ver errores inmediatamente
+    mode: 'onChange',
     defaultValues: isEditMode
       ? {
           nombre_comercial: proveedor?.nombre_comercial || '',
@@ -174,14 +175,13 @@ export const ProveedorForm = ({
           titular_cuenta: proveedor?.titular_cuenta || '',
           observaciones: proveedor?.observaciones || '',
           formas_pago: proveedor?.formas_pago || [],
-          dias_plazo_pago: proveedor?.dias_plazo_pago || undefined,
         }
       : {
           tipo_documento: 'NIT',
-          tipo_proveedor: tipoProveedorEfectivo as any, // FIX: Incluir tipo_proveedor en defaultValues
+          tipo_proveedor: tipoProveedorEfectivo as any,
           subtipo_materia: [],
           formas_pago: [],
-          modalidad_logistica: 'ENTREGA_PLANTA', // Default value for required field
+          modalidad_logistica: 'ENTREGA_PLANTA',
           nombre_comercial: '',
           razon_social: '',
           numero_documento: '',
@@ -193,36 +193,10 @@ export const ProveedorForm = ({
 
   // Watch valores para renderizado condicional
   const watchedTipoProveedor = watch('tipo_proveedor' as any) as TipoProveedor | undefined;
-  // Usar el tipo forzado si está definido, de lo contrario usar el watched
   const tipoProveedor = tipoProveedorForzado || watchedTipoProveedor;
   const watchTipoDocumento = watch('tipo_documento');
   const watchSubtipoMateria = watch('subtipo_materia' as any);
   const watchFormasPago = watch('formas_pago');
-
-  // DEBUG: Log de tipo de proveedor para verificar
-  useEffect(() => {
-    console.log('🔍 Tipo Proveedor:', {
-      forzado: tipoProveedorForzado,
-      watched: watchedTipoProveedor,
-      efectivo: tipoProveedor,
-      formValue: watch('tipo_proveedor' as any),
-    });
-  }, [tipoProveedorForzado, watchedTipoProveedor, tipoProveedor]);
-
-  // Si hay tipo forzado, establecerlo en el formulario
-  useEffect(() => {
-    if (tipoProveedorForzado && !isEditMode) {
-      setValue('tipo_proveedor' as any, tipoProveedorForzado);
-      console.log('✅ Set tipo_proveedor to:', tipoProveedorForzado);
-    }
-  }, [tipoProveedorForzado, isEditMode, setValue]);
-
-  // DEBUG: Log de errores de validación
-  useEffect(() => {
-    if (Object.keys(errors).length > 0) {
-      console.log('❌ Errores de validación:', errors);
-    }
-  }, [errors]);
 
   // Determinar qué campos mostrar
   const showSubtipoMateria = useMemo(() => {
@@ -246,12 +220,35 @@ export const ProveedorForm = ({
     return !isEditMode && tipoProveedor === 'PRODUCTO_SERVICIO';
   }, [isEditMode, tipoProveedor]);
 
-  // No mostrar selector de tipo si está forzado
   const showTipoProveedorSelector = !tipoProveedorForzado && !isEditMode;
+
+  // Configurar tabs dinámicamente
+  const allTabs: Tab[] = [
+    { id: 'clasificacion', label: 'Clasificación', icon: Layers },
+    { id: 'basica', label: 'Información Básica', icon: FileText },
+    { id: 'ubicacion', label: 'Ubicación', icon: MapPin },
+    { id: 'financiero', label: 'Financiero', icon: CreditCard },
+    { id: 'observaciones', label: 'Observaciones', icon: FileEdit },
+  ];
+
+  // Filtrar tabs según modo
+  const tabs = useMemo(() => {
+    if (isEditMode) {
+      // En modo edición, ocultar el tab "clasificacion"
+      return allTabs.filter((tab) => tab.id !== 'clasificacion');
+    }
+    return allTabs;
+  }, [isEditMode]);
+
+  // Si hay tipo forzado, establecerlo en el formulario
+  useEffect(() => {
+    if (tipoProveedorForzado && !isEditMode) {
+      setValue('tipo_proveedor' as any, tipoProveedorForzado);
+    }
+  }, [tipoProveedorForzado, isEditMode, setValue]);
 
   useEffect(() => {
     if (isOpen && proveedor) {
-      // Cargar datos del proveedor en modo edición
       setValue('nombre_comercial', proveedor.nombre_comercial);
       setValue('razon_social', proveedor.razon_social);
       setValue('tipo_documento', proveedor.tipo_documento);
@@ -267,13 +264,10 @@ export const ProveedorForm = ({
       setValue('titular_cuenta', proveedor.titular_cuenta || '');
       setValue('observaciones', proveedor.observaciones || '');
       setValue('formas_pago', proveedor.formas_pago || []);
-      if (proveedor.dias_plazo_pago) {
-        setValue('dias_plazo_pago' as any, proveedor.dias_plazo_pago);
-      }
     } else if (isOpen && !proveedor) {
       reset({
         tipo_documento: 'NIT',
-        tipo_proveedor: tipoProveedorForzado as any, // FIX: Incluir en reset
+        tipo_proveedor: tipoProveedorForzado as any,
         subtipo_materia: [],
         formas_pago: [],
         modalidad_logistica: 'ENTREGA_PLANTA',
@@ -281,9 +275,14 @@ export const ProveedorForm = ({
     }
   }, [isOpen, proveedor, tipoProveedorForzado, setValue, reset]);
 
-  const handleFormSubmit = (data: CreateProveedorFormData | UpdateProveedorFormData) => {
-    console.log('📤 Enviando formulario:', data);
+  // Resetear tab cuando el modal se abre/cierra
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab(isEditMode ? 'basica' : 'clasificacion');
+    }
+  }, [isOpen, isEditMode]);
 
+  const handleFormSubmit = (data: CreateProveedorFormData | UpdateProveedorFormData) => {
     if (isEditMode) {
       onSubmit(data as UpdateProveedorDTO);
     } else {
@@ -292,25 +291,20 @@ export const ProveedorForm = ({
         ...createData,
       };
 
-      // FIX: Ensure tipo_proveedor is set if forced
       if (tipoProveedorForzado && !transformedData.tipo_proveedor) {
         transformedData.tipo_proveedor = tipoProveedorForzado;
       }
 
-      // FIX: Ensure modalidad_logistica is set for MATERIA_PRIMA_EXTERNO
       if (transformedData.tipo_proveedor === 'MATERIA_PRIMA_EXTERNO' && !transformedData.modalidad_logistica) {
         transformedData.modalidad_logistica = 'ENTREGA_PLANTA';
       }
 
-      // FIX: Convert undefined to null for optional fields
       if (transformedData.unidad_negocio === undefined) {
         transformedData.unidad_negocio = null;
       }
 
-      // Remove precios field if it exists (should be empty anyway)
       delete transformedData.precios;
 
-      console.log('📤 Datos transformados:', transformedData);
       onSubmit(transformedData as CreateProveedorDTO);
     }
   };
@@ -393,15 +387,9 @@ export const ProveedorForm = ({
   ];
 
   // Calcular campos completos para progreso visual
-  // NOTA: Solo contamos campos que el usuario debe llenar manualmente, NO valores por defecto
   const requiredFieldsCount = useMemo(() => {
-    // Campos que el usuario DEBE llenar (no tienen valor por defecto útil):
-    // - nombre_comercial, razon_social, numero_documento, direccion, ciudad, departamento = 6
-    // - tipo_proveedor (si no está forzado) = 0 o 1
-    // - subtipo_materia (si aplica) = 0 o 1
-    // - modalidad_logistica ya tiene default, no cuenta
-    let count = 6; // campos base que siempre se deben llenar
-    if (showTipoProveedorSelector) count += 1; // Solo si no está forzado
+    let count = 6;
+    if (showTipoProveedorSelector) count += 1;
     if (showSubtipoMateria) count += 1;
     if (showProductoServicioFields) count += 2;
     return count;
@@ -409,7 +397,6 @@ export const ProveedorForm = ({
 
   const completedFieldsCount = useMemo(() => {
     let count = 0;
-    // Solo contar campos que el usuario realmente llenó
     if (watch('nombre_comercial')?.trim()) count++;
     if (watch('razon_social')?.trim()) count++;
     if (watch('numero_documento')?.trim()) count++;
@@ -417,7 +404,6 @@ export const ProveedorForm = ({
     if (watch('ciudad')?.trim()) count++;
     if (watch('departamento')?.trim()) count++;
 
-    // tipo_proveedor solo cuenta si el usuario lo seleccionó (no si está forzado)
     if (showTipoProveedorSelector && watchedTipoProveedor) count++;
 
     if (showSubtipoMateria && watchSubtipoMateria?.length > 0) count++;
@@ -436,12 +422,12 @@ export const ProveedorForm = ({
       isOpen={isOpen}
       onClose={onClose}
       title={isEditMode ? 'Editar Proveedor' : 'Nuevo Proveedor'}
-      size="xl"
+      size="2xl"
     >
-      <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col h-full">
         {/* BARRA DE PROGRESO - Solo en modo creación */}
         {!isEditMode && (
-          <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800 mb-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
                 Progreso del Formulario
@@ -459,312 +445,316 @@ export const ProveedorForm = ({
           </div>
         )}
 
-        {/* SECCIÓN 1: TIPO DE PROVEEDOR (solo en creación y si no está forzado) */}
-        {!isEditMode && (
-          <div className="bg-gradient-to-br from-primary-50 to-primary-100/50 dark:from-primary-900/20 dark:to-primary-800/10 p-6 rounded-lg border-2 border-primary-200 dark:border-primary-700">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="p-2 bg-primary-500 rounded-lg">
-                <Info className="h-5 w-5 text-white" />
-              </div>
-              <h3 className="text-lg font-bold text-primary-900 dark:text-primary-100">
-                {tipoProveedorForzado
-                  ? tipoProveedorForzado === 'PRODUCTO_SERVICIO'
-                    ? 'Proveedor de Productos/Servicios'
-                    : tipoProveedorForzado === 'UNIDAD_NEGOCIO'
-                      ? 'Unidad Interna'
-                      : 'Proveedor de Materia Prima'
-                  : 'Tipo de Proveedor'
-                }
-              </h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {showTipoProveedorSelector && (
-                <div className="md:col-span-2">
-                  <Select
-                    label="Tipo de Proveedor *"
-                    {...register('tipo_proveedor' as any)}
-                    options={tipoProveedorOptions}
-                    error={(errors as any).tipo_proveedor?.message}
-                    placeholder="Seleccione tipo"
-                  />
-                </div>
-              )}
+        {/* TABS */}
+        <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
+          <nav className="flex gap-1 -mb-px" aria-label="Tabs">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={cn(
+                    'flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors',
+                    activeTab === tab.id
+                      ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
 
-              {showSubtipoMateria && (
-                <div className="md:col-span-2">
-                  <MateriasPrimasSelector
-                    value={(watchSubtipoMateria || []) as CodigoMateriaPrima[]}
-                    onChange={(materias) => setValue('subtipo_materia' as any, materias)}
-                    error={(errors as any).subtipo_materia?.message}
-                  />
-                </div>
-              )}
-
-              {showModalidadLogistica && (
-                <div className="md:col-span-2">
-                  <Select
-                    label="Modalidad Logística *"
-                    {...register('modalidad_logistica' as any)}
-                    options={modalidadLogisticaOptions}
-                    error={(errors as any).modalidad_logistica?.message}
-                    placeholder="Seleccione modalidad"
-                  />
-                </div>
-              )}
-
-              {showProductoServicioFields && (
-                <>
-                  <Select
-                    label="Categoría *"
-                    {...register('categoria_producto_servicio' as any)}
-                    options={categoriaProductoServicioOptions}
-                    error={(errors as any).categoria_producto_servicio?.message}
-                    placeholder="Seleccione categoría"
-                  />
-
-                  <div className="md:col-span-2">
-                    <Input
-                      label="Descripción de Productos/Servicios *"
-                      {...register('descripcion_productos_servicios' as any)}
-                      error={(errors as any).descripcion_productos_servicios?.message}
-                      placeholder="Ej: Químicos de limpieza, Mantenimiento de maquinaria..."
+        {/* CONTENIDO DE TABS */}
+        <div className="flex-1 overflow-y-auto mb-6">
+          {/* TAB: CLASIFICACIÓN (solo en creación) */}
+          {activeTab === 'clasificacion' && !isEditMode && (
+            <div className="space-y-4">
+              <div className="bg-gradient-to-br from-primary-50 to-primary-100/50 dark:from-primary-900/20 dark:to-primary-800/10 p-6 rounded-lg border-2 border-primary-200 dark:border-primary-700">
+                <h3 className="text-lg font-bold text-primary-900 dark:text-primary-100 mb-4">
+                  {tipoProveedorForzado
+                    ? tipoProveedorForzado === 'PRODUCTO_SERVICIO'
+                      ? 'Proveedor de Productos/Servicios'
+                      : tipoProveedorForzado === 'UNIDAD_NEGOCIO'
+                        ? 'Unidad Interna'
+                        : 'Proveedor de Materia Prima'
+                    : 'Seleccione el Tipo de Proveedor'
+                  }
+                </h3>
+                <div className="space-y-4">
+                  {showTipoProveedorSelector && (
+                    <Select
+                      label="Tipo de Proveedor *"
+                      {...register('tipo_proveedor' as any)}
+                      options={tipoProveedorOptions}
+                      error={(errors as any).tipo_proveedor?.message}
+                      placeholder="Seleccione tipo"
                     />
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        )}
+                  )}
 
-        {/* SECCIÓN 2: INFORMACIÓN BÁSICA */}
-        <div className="space-y-4 bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-700 dark:text-primary-300 font-bold">
-              1
-            </div>
-            Información Básica
-            <span className="text-sm text-red-500 font-normal ml-2">* Campos obligatorios</span>
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Nombre Comercial *"
-              {...register('nombre_comercial')}
-              error={errors.nombre_comercial?.message}
-              placeholder="Nombre del proveedor"
-            />
+                  {showSubtipoMateria && (
+                    <MateriasPrimasSelector
+                      value={(watchSubtipoMateria || []) as CodigoMateriaPrima[]}
+                      onChange={(materias) => setValue('subtipo_materia' as any, materias)}
+                      error={(errors as any).subtipo_materia?.message}
+                    />
+                  )}
 
-            <Input
-              label="Razón Social *"
-              {...register('razon_social')}
-              error={errors.razon_social?.message}
-              placeholder="Razón social"
-            />
+                  {showModalidadLogistica && (
+                    <Select
+                      label="Modalidad Logística *"
+                      {...register('modalidad_logistica' as any)}
+                      options={modalidadLogisticaOptions}
+                      error={(errors as any).modalidad_logistica?.message}
+                      placeholder="Seleccione modalidad"
+                    />
+                  )}
 
-            <Select
-              label="Tipo de Documento *"
-              {...register('tipo_documento')}
-              options={documentTypeOptions}
-              error={errors.tipo_documento?.message}
-              disabled={isEditMode}
-            />
+                  {showProductoServicioFields && (
+                    <>
+                      <Select
+                        label="Categoría *"
+                        {...register('categoria_producto_servicio' as any)}
+                        options={categoriaProductoServicioOptions}
+                        error={(errors as any).categoria_producto_servicio?.message}
+                        placeholder="Seleccione categoría"
+                      />
 
-            <Input
-              label="Número de Documento *"
-              {...register('numero_documento')}
-              error={errors.numero_documento?.message}
-              placeholder={watchTipoDocumento === 'NIT' ? 'Ej: 900123456-1' : 'Número de documento'}
-              disabled={isEditMode}
-            />
-
-            {/* Campo NIT - Solo si tipo_documento no es NIT */}
-            {!isEditMode && watchTipoDocumento && watchTipoDocumento !== 'NIT' && (
-              <Input
-                label="NIT"
-                {...register('nit' as any)}
-                error={(errors as any).nit?.message}
-                placeholder="Ej: 900123456-1"
-              />
-            )}
-
-            <Input
-              label="Teléfono"
-              {...register('telefono')}
-              error={errors.telefono?.message}
-              placeholder="Teléfono de contacto"
-            />
-
-            <Input
-              label="Email"
-              type="email"
-              {...register('email')}
-              error={errors.email?.message}
-              placeholder="correo@ejemplo.com"
-            />
-          </div>
-        </div>
-
-        {/* SECCIÓN 3: UBICACIÓN */}
-        <div className="space-y-4 bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-700 dark:text-primary-300 font-bold">
-              2
-            </div>
-            Ubicación
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Dirección *"
-              {...register('direccion')}
-              error={errors.direccion?.message}
-              placeholder="Dirección completa"
-            />
-
-            <Input
-              label="Ciudad *"
-              {...register('ciudad')}
-              error={errors.ciudad?.message}
-              placeholder="Ciudad"
-            />
-
-            <Select
-              label="Departamento *"
-              {...register('departamento')}
-              options={departamentosOptions}
-              error={errors.departamento?.message}
-              placeholder="Seleccione departamento"
-            />
-          </div>
-        </div>
-
-        {/* SECCIÓN 4: PRECIOS (readonly - solo muestra en edición) */}
-        {isEditMode && showPrecioCompra && proveedor?.precios_materia_prima && proveedor.precios_materia_prima.length > 0 && (
-          <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg border border-blue-200 dark:border-blue-800">
-            <h3 className="text-lg font-semibold mb-2 text-blue-900 dark:text-blue-100 flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5" />
-              Precios de Compra por Materia Prima
-            </h3>
-            <p className="text-sm text-blue-700 dark:text-blue-300 mb-4">
-              Los precios solo pueden ser modificados desde el botón "Cambiar Precio" por un Gerente.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {proveedor.precios_materia_prima.map((precio) => (
-                <div key={precio.id} className="bg-white dark:bg-blue-950 p-4 rounded-lg border border-blue-300 dark:border-blue-700">
-                  <div className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-1">
-                    {precio.tipo_materia_display}
-                  </div>
-                  <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-                    ${parseFloat(precio.precio_kg).toLocaleString('es-CO')} / kg
-                  </div>
-                  {precio.modificado_fecha && (
-                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
-                      Última modificación:{' '}
-                      {new Date(precio.modificado_fecha).toLocaleDateString('es-CO')}
-                      {precio.modificado_por_nombre && ` por ${precio.modificado_por_nombre}`}
-                    </p>
+                      <Input
+                        label="Descripción de Productos/Servicios *"
+                        {...register('descripcion_productos_servicios' as any)}
+                        error={(errors as any).descripcion_productos_servicios?.message}
+                        placeholder="Ej: Químicos de limpieza, Mantenimiento de maquinaria..."
+                      />
+                    </>
                   )}
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* SECCIÓN 5: INFORMACIÓN FINANCIERA */}
-        <div className="space-y-4 bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-700 dark:text-primary-300 font-bold">
-              3
-            </div>
-            Información Financiera (Opcional)
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Formas de Pago
-              </label>
-              <div className="space-y-2 p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800">
-                {formasPagoOptions.map((option) => (
-                  <label key={option.value} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-2 rounded">
-                    <input
-                      type="checkbox"
-                      value={option.value}
-                      checked={(watchFormasPago || []).includes(option.value)}
-                      onChange={(e) => {
-                        const current = watchFormasPago || [];
-                        if (e.target.checked) {
-                          setValue('formas_pago', [...current, option.value]);
-                        } else {
-                          setValue('formas_pago', current.filter((v: string) => v !== option.value));
-                        }
-                      }}
-                      className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700"
-                    />
-                    <span className="text-sm text-gray-900 dark:text-gray-100">{option.label}</span>
-                  </label>
-                ))}
               </div>
-              {errors.formas_pago && (
-                <p className="mt-1 text-sm text-red-600">{errors.formas_pago?.message}</p>
-              )}
             </div>
+          )}
 
-            <Input
-              label="Días de Plazo"
-              type="number"
-              {...register('dias_plazo_pago' as any, { valueAsNumber: true })}
-              error={(errors as any).dias_plazo_pago?.message}
-              placeholder="Días de plazo de pago"
-            />
-            <Input
-              label="Banco"
-              {...register('banco')}
-              error={errors.banco?.message}
-              placeholder="Nombre del banco"
-            />
+          {/* TAB: INFORMACIÓN BÁSICA */}
+          {activeTab === 'basica' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Nombre Comercial *"
+                  {...register('nombre_comercial')}
+                  error={errors.nombre_comercial?.message}
+                  placeholder="Nombre del proveedor"
+                />
 
-            <Select
-              label="Tipo de Cuenta"
-              {...register('tipo_cuenta')}
-              options={tipoCuentaOptions}
-              error={errors.tipo_cuenta?.message}
-              placeholder="Seleccione tipo de cuenta"
-            />
+                <Input
+                  label="Razón Social *"
+                  {...register('razon_social')}
+                  error={errors.razon_social?.message}
+                  placeholder="Razón social"
+                />
 
-            <Input
-              label="Número de Cuenta"
-              {...register('numero_cuenta')}
-              error={errors.numero_cuenta?.message}
-              placeholder="Número de cuenta"
-            />
+                <Select
+                  label="Tipo de Documento *"
+                  {...register('tipo_documento')}
+                  options={documentTypeOptions}
+                  error={errors.tipo_documento?.message}
+                  disabled={isEditMode}
+                />
 
-            <Input
-              label="Titular de la Cuenta"
-              {...register('titular_cuenta')}
-              error={errors.titular_cuenta?.message}
-              placeholder="Nombre del titular"
-            />
-          </div>
-        </div>
+                <Input
+                  label="Número de Documento *"
+                  {...register('numero_documento')}
+                  error={errors.numero_documento?.message}
+                  placeholder={watchTipoDocumento === 'NIT' ? 'Ej: 900123456-1' : 'Número de documento'}
+                  disabled={isEditMode}
+                />
 
-        {/* SECCIÓN 6: OBSERVACIONES */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Observaciones
-          </label>
-          <textarea
-            {...register('observaciones')}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
-            placeholder="Notas adicionales sobre el proveedor..."
-          />
-          {errors.observaciones && (
-            <p className="mt-1 text-sm text-red-600">{errors.observaciones.message}</p>
+                {!isEditMode && watchTipoDocumento && watchTipoDocumento !== 'NIT' && (
+                  <Input
+                    label="NIT"
+                    {...register('nit' as any)}
+                    error={(errors as any).nit?.message}
+                    placeholder="Ej: 900123456-1"
+                  />
+                )}
+
+                <Input
+                  label="Teléfono"
+                  {...register('telefono')}
+                  error={errors.telefono?.message}
+                  placeholder="Teléfono de contacto"
+                />
+
+                <Input
+                  label="Email"
+                  type="email"
+                  {...register('email')}
+                  error={errors.email?.message}
+                  placeholder="correo@ejemplo.com"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* TAB: UBICACIÓN */}
+          {activeTab === 'ubicacion' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <Input
+                    label="Dirección *"
+                    {...register('direccion')}
+                    error={errors.direccion?.message}
+                    placeholder="Dirección completa"
+                  />
+                </div>
+
+                <Input
+                  label="Ciudad *"
+                  {...register('ciudad')}
+                  error={errors.ciudad?.message}
+                  placeholder="Ciudad"
+                />
+
+                <Select
+                  label="Departamento *"
+                  {...register('departamento')}
+                  options={departamentosOptions}
+                  error={errors.departamento?.message}
+                  placeholder="Seleccione departamento"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* TAB: FINANCIERO */}
+          {activeTab === 'financiero' && (
+            <div className="space-y-6">
+              {/* Mostrar precios en modo edición (readonly) */}
+              {isEditMode && showPrecioCompra && proveedor?.precios_materia_prima && proveedor.precios_materia_prima.length > 0 && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <h3 className="text-lg font-semibold mb-2 text-blue-900 dark:text-blue-100 flex items-center gap-2">
+                    <CheckCircle2 className="h-5 w-5" />
+                    Precios de Compra por Materia Prima
+                  </h3>
+                  <p className="text-sm text-blue-700 dark:text-blue-300 mb-4">
+                    Los precios solo pueden ser modificados desde el botón "Cambiar Precio" por un Gerente.
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {proveedor.precios_materia_prima.map((precio) => (
+                      <div key={precio.id} className="bg-white dark:bg-blue-950 p-4 rounded-lg border border-blue-300 dark:border-blue-700">
+                        <div className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-1">
+                          {precio.tipo_materia_display}
+                        </div>
+                        <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                          ${parseFloat(precio.precio_kg).toLocaleString('es-CO')} / kg
+                        </div>
+                        {precio.modificado_fecha && (
+                          <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                            Última modificación:{' '}
+                            {new Date(precio.modificado_fecha).toLocaleDateString('es-CO')}
+                            {precio.modificado_por_nombre && ` por ${precio.modificado_por_nombre}`}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Formas de pago */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Formas de Pago
+                </label>
+                <div className="space-y-2 p-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800">
+                  {formasPagoOptions.map((option) => (
+                    <label key={option.value} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-2 rounded">
+                      <input
+                        type="checkbox"
+                        value={option.value}
+                        checked={(watchFormasPago || []).includes(option.value)}
+                        onChange={(e) => {
+                          const current = watchFormasPago || [];
+                          if (e.target.checked) {
+                            setValue('formas_pago', [...current, option.value]);
+                          } else {
+                            setValue('formas_pago', current.filter((v: string) => v !== option.value));
+                          }
+                        }}
+                        className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700"
+                      />
+                      <span className="text-sm text-gray-900 dark:text-gray-100">{option.label}</span>
+                    </label>
+                  ))}
+                </div>
+                {errors.formas_pago && (
+                  <p className="mt-1 text-sm text-red-600">{errors.formas_pago?.message}</p>
+                )}
+              </div>
+
+              {/* Datos bancarios */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Banco"
+                  {...register('banco')}
+                  error={errors.banco?.message}
+                  placeholder="Nombre del banco"
+                />
+
+                <Select
+                  label="Tipo de Cuenta"
+                  {...register('tipo_cuenta')}
+                  options={tipoCuentaOptions}
+                  error={errors.tipo_cuenta?.message}
+                  placeholder="Seleccione tipo de cuenta"
+                />
+
+                <Input
+                  label="Número de Cuenta"
+                  {...register('numero_cuenta')}
+                  error={errors.numero_cuenta?.message}
+                  placeholder="Número de cuenta"
+                />
+
+                <Input
+                  label="Titular de la Cuenta"
+                  {...register('titular_cuenta')}
+                  error={errors.titular_cuenta?.message}
+                  placeholder="Nombre del titular"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* TAB: OBSERVACIONES */}
+          {activeTab === 'observaciones' && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Observaciones
+                </label>
+                <textarea
+                  {...register('observaciones')}
+                  rows={8}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  placeholder="Notas adicionales sobre el proveedor..."
+                />
+                {errors.observaciones && (
+                  <p className="mt-1 text-sm text-red-600">{errors.observaciones.message}</p>
+                )}
+              </div>
+            </div>
           )}
         </div>
 
         {/* DEBUG: Mostrar errores de validación */}
         {Object.keys(errors).length > 0 && (
-          <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border-2 border-red-300 dark:border-red-700">
+          <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border-2 border-red-300 dark:border-red-700 mb-6">
             <div className="flex items-center gap-2 mb-2">
               <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
               <p className="text-sm font-bold text-red-800 dark:text-red-200">
@@ -781,7 +771,7 @@ export const ProveedorForm = ({
           </div>
         )}
 
-        {/* BOTONES */}
+        {/* FOOTER CON BOTONES */}
         <div className="flex justify-end gap-3 pt-4 border-t-2 border-gray-200 dark:border-gray-700">
           <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
             Cancelar

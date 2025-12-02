@@ -8,12 +8,18 @@
  * - Control de acceso por permisos
  * - Geolocalización GPS
  */
-import { useState } from 'react';
-import { Plus, Search, Filter, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Users, CheckCircle, MapPin, DollarSign } from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
-import { Card } from '@/components/common/Card';
+import {
+  PageHeader,
+  StatsGrid,
+  FilterCard,
+  FilterGrid,
+  DataTableCard,
+} from '@/components/layout';
 import { useAuthStore } from '@/store/authStore';
 import { EcoaliadosTable } from '../components/EcoaliadosTable';
 import { EcoaliadoForm } from '../components/EcoaliadoForm';
@@ -36,7 +42,14 @@ import type {
   EcoaliadoFilters,
 } from '../types/ecoaliado.types';
 
-export const EcoaliadosPage = () => {
+interface EcoaliadosPageProps {
+  /** Modo embebido: oculta el PageHeader y controles cuando se usa dentro de otro componente */
+  embedded?: boolean;
+  /** Trigger externo para abrir el formulario de nuevo ecoaliado */
+  triggerNewForm?: number;
+}
+
+export const EcoaliadosPage = ({ embedded = false, triggerNewForm = 0 }: EcoaliadosPageProps) => {
   // Obtener usuario autenticado
   const user = useAuthStore((state) => state.user);
 
@@ -50,8 +63,6 @@ export const EcoaliadosPage = () => {
     page: 1,
     page_size: 20,
   });
-
-  const [showFilters, setShowFilters] = useState(false);
 
   // Modales
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -197,6 +208,13 @@ export const EcoaliadosPage = () => {
     });
   };
 
+  // Efecto para abrir formulario desde trigger externo (EcoNortePage)
+  useEffect(() => {
+    if (triggerNewForm > 0 && canManage) {
+      handleOpenForm();
+    }
+  }, [triggerNewForm, canManage]);
+
   const hasActiveFilters =
     filters.unidad_negocio || filters.ciudad || filters.departamento || filters.is_active !== undefined;
 
@@ -215,156 +233,143 @@ export const EcoaliadosPage = () => {
     new Set(ecoaliadosData?.results.map((e) => e.departamento) || [])
   ).map((depto) => ({ value: depto, label: depto }));
 
+  // Calcular estadísticas
+  const totalEcoaliados = ecoaliadosData?.count || 0;
+  const ecoaliadosActivos = ecoaliadosData?.results.filter((e) => e.is_active).length || 0;
+  const ecoaliadosConGPS = ecoaliadosData?.results.filter((e) => e.tiene_geolocalizacion).length || 0;
+  const precioPromedio = ecoaliadosData?.results.length
+    ? ecoaliadosData.results.reduce((acc, e) => acc + parseFloat(e.precio_compra_kg), 0) /
+      ecoaliadosData.results.length
+    : 0;
+
+  const activeFiltersCount = [
+    filters.unidad_negocio,
+    filters.ciudad,
+    filters.departamento,
+    filters.is_active !== undefined ? 'active' : '',
+  ].filter(Boolean).length;
+
   return (
     <div className="space-y-6">
-      {/* HEADER */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Ecoaliados</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Gestión de proveedores de material reciclable
-          </p>
-        </div>
-        {canManage && (
-          <Button variant="primary" onClick={() => handleOpenForm()}>
-            <Plus className="h-5 w-5 mr-2" />
-            Nuevo Ecoaliado
-          </Button>
-        )}
-      </div>
-
-      {/* FILTROS */}
-      <Card>
-        <div className="space-y-4">
-          {/* Buscador Principal */}
-          <div className="flex items-center gap-3">
-            <div className="flex-1">
-              <Input
-                placeholder="Buscar por código o razón social..."
-                value={filters.search}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                leftIcon={<Search className="h-5 w-5 text-gray-400" />}
-              />
-            </div>
-            <Button
-              variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex-shrink-0"
-            >
-              <Filter className="h-5 w-5 mr-2" />
-              Filtros
-              {hasActiveFilters && (
-                <span className="ml-2 bg-primary-600 text-white text-xs px-2 py-0.5 rounded-full">
-                  {Object.values({
-                    unidad: filters.unidad_negocio,
-                    ciudad: filters.ciudad,
-                    depto: filters.departamento,
-                    estado: filters.is_active,
-                  }).filter(Boolean).length}
-                </span>
-              )}
-            </Button>
-            {hasActiveFilters && (
-              <Button variant="outline" onClick={handleClearFilters}>
-                <X className="h-5 w-5" />
+      {/* HEADER - Solo visible cuando NO está embebido */}
+      {!embedded && (
+        <PageHeader
+          title="Ecoaliados"
+          description="Gestión de proveedores de material reciclable"
+          badges={[{ label: `${totalEcoaliados} registros`, variant: 'primary' }]}
+          actions={
+            canManage ? (
+              <Button variant="primary" onClick={() => handleOpenForm()}>
+                <Plus className="h-5 w-5 mr-2" />
+                Nuevo Ecoaliado
               </Button>
-            )}
-          </div>
-
-          {/* Filtros Avanzados */}
-          {showFilters && (
-            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Select
-                  label="Unidad Interna"
-                  value={filters.unidad_negocio}
-                  onChange={(e) => handleFilterChange('unidad_negocio', e.target.value)}
-                  options={[{ value: '', label: 'Todas' }, ...unidadesOptions]}
-                  placeholder="Seleccionar"
-                />
-
-                <Input
-                  label="Ciudad"
-                  value={filters.ciudad}
-                  onChange={(e) => handleFilterChange('ciudad', e.target.value)}
-                  placeholder="Buscar ciudad"
-                />
-
-                <Input
-                  label="Departamento"
-                  value={filters.departamento}
-                  onChange={(e) => handleFilterChange('departamento', e.target.value)}
-                  placeholder="Buscar departamento"
-                />
-
-                <Select
-                  label="Estado"
-                  value={
-                    filters.is_active === undefined
-                      ? ''
-                      : filters.is_active
-                      ? 'true'
-                      : 'false'
-                  }
-                  onChange={(e) =>
-                    handleFilterChange(
-                      'is_active',
-                      e.target.value === '' ? undefined : e.target.value === 'true'
-                    )
-                  }
-                  options={[
-                    { value: '', label: 'Todos' },
-                    { value: 'true', label: 'Activos' },
-                    { value: 'false', label: 'Inactivos' },
-                  ]}
-                  placeholder="Seleccionar"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      </Card>
+            ) : undefined
+          }
+        />
+      )}
 
       {/* ESTADÍSTICAS */}
       {ecoaliadosData && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Total Ecoaliados</div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">
-              {ecoaliadosData.count}
-            </div>
-          </Card>
-          <Card>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Activos</div>
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">
-              {ecoaliadosData.results.filter((e) => e.is_active).length}
-            </div>
-          </Card>
-          <Card>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Con GPS</div>
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">
-              {ecoaliadosData.results.filter((e) => e.tiene_geolocalizacion).length}
-            </div>
-          </Card>
-          <Card>
-            <div className="text-sm text-gray-600 dark:text-gray-400">Precio Promedio</div>
-            <div className="text-2xl font-bold text-orange-600 dark:text-orange-400 mt-1">
-              $
-              {ecoaliadosData.results.length > 0
-                ? (
-                    ecoaliadosData.results.reduce(
-                      (acc, e) => acc + parseFloat(e.precio_compra_kg),
-                      0
-                    ) / ecoaliadosData.results.length
-                  ).toLocaleString('es-CO', { maximumFractionDigits: 0 })
-                : 0}
-            </div>
-          </Card>
-        </div>
+        <StatsGrid
+          stats={[
+            {
+              label: 'Total Ecoaliados',
+              value: totalEcoaliados,
+              icon: Users,
+              iconColor: 'gray',
+            },
+            {
+              label: 'Activos',
+              value: ecoaliadosActivos,
+              icon: CheckCircle,
+              iconColor: 'success',
+            },
+            {
+              label: 'Con GPS',
+              value: ecoaliadosConGPS,
+              icon: MapPin,
+              iconColor: 'info',
+            },
+            {
+              label: 'Precio Promedio',
+              value: `$${precioPromedio.toLocaleString('es-CO', { maximumFractionDigits: 0 })}`,
+              icon: DollarSign,
+              iconColor: 'warning',
+            },
+          ]}
+        />
       )}
 
+      {/* FILTROS */}
+      <FilterCard
+        collapsible
+        searchPlaceholder="Buscar por código o razón social..."
+        searchValue={filters.search}
+        onSearchChange={handleSearchChange}
+        activeFiltersCount={activeFiltersCount}
+        hasActiveFilters={hasActiveFilters}
+        onClearFilters={handleClearFilters}
+      >
+        <FilterGrid columns={4}>
+          <Select
+            label="Unidad Interna"
+            value={filters.unidad_negocio}
+            onChange={(e) => handleFilterChange('unidad_negocio', e.target.value)}
+            options={[{ value: '', label: 'Todas' }, ...unidadesOptions]}
+          />
+
+          <Input
+            label="Ciudad"
+            value={filters.ciudad}
+            onChange={(e) => handleFilterChange('ciudad', e.target.value)}
+            placeholder="Buscar ciudad"
+          />
+
+          <Input
+            label="Departamento"
+            value={filters.departamento}
+            onChange={(e) => handleFilterChange('departamento', e.target.value)}
+            placeholder="Buscar departamento"
+          />
+
+          <Select
+            label="Estado"
+            value={
+              filters.is_active === undefined
+                ? ''
+                : filters.is_active
+                ? 'true'
+                : 'false'
+            }
+            onChange={(e) =>
+              handleFilterChange(
+                'is_active',
+                e.target.value === '' ? undefined : e.target.value === 'true'
+              )
+            }
+            options={[
+              { value: '', label: 'Todos' },
+              { value: 'true', label: 'Activos' },
+              { value: 'false', label: 'Inactivos' },
+            ]}
+          />
+        </FilterGrid>
+      </FilterCard>
+
       {/* TABLA */}
-      <Card>
+      <DataTableCard
+        pagination={{
+          currentPage: filters.page || 1,
+          pageSize: filters.page_size || 20,
+          totalItems: totalEcoaliados,
+          hasPrevious: (filters.page || 1) > 1,
+          hasNext: (filters.page || 1) * (filters.page_size || 20) < totalEcoaliados,
+          onPageChange: (page) => setFilters((prev) => ({ ...prev, page })),
+        }}
+        isEmpty={(ecoaliadosData?.results || []).length === 0}
+        isLoading={isLoadingEcoaliados}
+        emptyMessage="No se encontraron ecoaliados"
+      >
         <EcoaliadosTable
           ecoaliados={ecoaliadosData?.results || []}
           onEdit={handleOpenForm}
@@ -376,7 +381,7 @@ export const EcoaliadosPage = () => {
           canManage={canManage}
           isLoading={isLoadingEcoaliados}
         />
-      </Card>
+      </DataTableCard>
 
       {/* MODALES */}
       <EcoaliadoForm

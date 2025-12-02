@@ -1,10 +1,16 @@
 import { useState, useMemo } from 'react';
-import { FlaskConical, Plus, Search, Calendar, BarChart3 } from 'lucide-react';
+import { FlaskConical, Plus, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Badge } from '@/components/common/Badge';
+import {
+  PageHeader,
+  FilterCard,
+  FilterGrid,
+  DataTableCard,
+} from '@/components/layout';
 import { PruebasAcidezTable } from '../components/PruebasAcidezTable';
 import { PruebaAcidezForm } from '../components/PruebaAcidezForm';
 import { VoucherAcidezModal } from '../components/VoucherAcidezModal';
@@ -149,6 +155,10 @@ export default function PruebasAcidezPage() {
     }));
   };
 
+  const handleSearchChange = (value: string) => {
+    setFilters((prev) => ({ ...prev, search: value, page: 1 }));
+  };
+
   const handleClearFilters = () => {
     setFilters({
       search: '',
@@ -160,6 +170,15 @@ export default function PruebasAcidezPage() {
       page_size: 10,
     });
   };
+
+  const activeFiltersCount = [
+    filters.proveedor,
+    filters.calidad_resultante,
+    filters.fecha_desde,
+    filters.fecha_hasta,
+  ].filter(Boolean).length;
+
+  const hasActiveFilters = activeFiltersCount > 0;
 
   // Opciones para el filtro de proveedor
   const proveedorOptions = [
@@ -187,22 +206,18 @@ export default function PruebasAcidezPage() {
   return (
     <div className="space-y-6">
       {/* HEADER */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-            <FlaskConical className="h-7 w-7 text-primary-600" />
-            Pruebas de Acidez
-          </h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Registro y seguimiento de pruebas de acidez para sebo
-          </p>
-        </div>
-        {canCreatePrueba && (
-          <Button onClick={handleOpenCreateForm} leftIcon={<Plus className="h-4 w-4" />}>
-            Registrar Prueba
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Pruebas de Acidez"
+        description="Registro y seguimiento de pruebas de acidez para sebo"
+        badges={[{ label: `${totalPruebas} pruebas`, variant: 'primary' }]}
+        actions={
+          canCreatePrueba ? (
+            <Button onClick={handleOpenCreateForm} leftIcon={<Plus className="h-4 w-4" />}>
+              Registrar Prueba
+            </Button>
+          ) : undefined
+        }
+      />
 
       {/* ESTADÍSTICAS */}
       {estadisticas && (
@@ -264,96 +279,68 @@ export default function PruebasAcidezPage() {
       )}
 
       {/* FILTROS */}
-      <Card>
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Filtros</h2>
-            <Button variant="outline" size="sm" onClick={handleClearFilters}>
-              Limpiar Filtros
-            </Button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <Input
-              label="Buscar"
-              value={filters.search}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
-              placeholder="Voucher, proveedor..."
-              leftIcon={<Search className="h-4 w-4" />}
-            />
-
-            <Select
-              label="Proveedor"
-              value={String(filters.proveedor || '')}
-              onChange={(e) => handleFilterChange('proveedor', e.target.value ? Number(e.target.value) : '')}
-              options={proveedorOptions}
-            />
-
-            <Select
-              label="Calidad"
-              value={filters.calidad_resultante || ''}
-              onChange={(e) => handleFilterChange('calidad_resultante', e.target.value)}
-              options={calidadOptions}
-            />
-
-            <Input
-              label="Fecha Desde"
-              type="date"
-              value={filters.fecha_desde}
-              onChange={(e) => handleFilterChange('fecha_desde', e.target.value)}
-              leftIcon={<Calendar className="h-4 w-4" />}
-            />
-
-            <Input
-              label="Fecha Hasta"
-              type="date"
-              value={filters.fecha_hasta}
-              onChange={(e) => handleFilterChange('fecha_hasta', e.target.value)}
-              leftIcon={<Calendar className="h-4 w-4" />}
-            />
-          </div>
-        </div>
-      </Card>
-
-      {/* TABLA */}
-      <Card>
-        <div className="p-6">
-          <PruebasAcidezTable
-            pruebas={pruebas}
-            onDelete={canDeletePrueba ? handleOpenDeleteModal : undefined}
-            onGenerarVoucher={handleGenerarVoucher}
-            isLoading={isLoadingPruebas}
-            showProveedorColumn={true}
+      <FilterCard
+        collapsible
+        searchPlaceholder="Buscar por voucher, proveedor..."
+        searchValue={filters.search}
+        onSearchChange={handleSearchChange}
+        activeFiltersCount={activeFiltersCount}
+        hasActiveFilters={hasActiveFilters}
+        onClearFilters={handleClearFilters}
+      >
+        <FilterGrid columns={4}>
+          <Select
+            label="Proveedor"
+            value={String(filters.proveedor || '')}
+            onChange={(e) => handleFilterChange('proveedor', e.target.value ? Number(e.target.value) : '')}
+            options={proveedorOptions}
           />
 
-          {/* PAGINACIÓN */}
-          {totalPruebas > filters.page_size! && (
-            <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                Mostrando {((filters.page! - 1) * filters.page_size!) + 1} -{' '}
-                {Math.min(filters.page! * filters.page_size!, totalPruebas)} de {totalPruebas}
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleFilterChange('page', filters.page! - 1)}
-                  disabled={!pruebasData?.previous}
-                >
-                  Anterior
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleFilterChange('page', filters.page! + 1)}
-                  disabled={!pruebasData?.next}
-                >
-                  Siguiente
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-      </Card>
+          <Select
+            label="Calidad"
+            value={filters.calidad_resultante || ''}
+            onChange={(e) => handleFilterChange('calidad_resultante', e.target.value)}
+            options={calidadOptions}
+          />
+
+          <Input
+            label="Fecha Desde"
+            type="date"
+            value={filters.fecha_desde}
+            onChange={(e) => handleFilterChange('fecha_desde', e.target.value)}
+          />
+
+          <Input
+            label="Fecha Hasta"
+            type="date"
+            value={filters.fecha_hasta}
+            onChange={(e) => handleFilterChange('fecha_hasta', e.target.value)}
+          />
+        </FilterGrid>
+      </FilterCard>
+
+      {/* TABLA */}
+      <DataTableCard
+        pagination={{
+          currentPage: filters.page || 1,
+          pageSize: filters.page_size || 10,
+          totalItems: totalPruebas,
+          hasPrevious: !!pruebasData?.previous,
+          hasNext: !!pruebasData?.next,
+          onPageChange: (page) => handleFilterChange('page', page),
+        }}
+        isEmpty={pruebas.length === 0}
+        isLoading={isLoadingPruebas}
+        emptyMessage="No se encontraron pruebas de acidez"
+      >
+        <PruebasAcidezTable
+          pruebas={pruebas}
+          onDelete={canDeletePrueba ? handleOpenDeleteModal : undefined}
+          onGenerarVoucher={handleGenerarVoucher}
+          isLoading={isLoadingPruebas}
+          showProveedorColumn={true}
+        />
+      </DataTableCard>
 
       {/* MODALES */}
       <PruebaAcidezForm

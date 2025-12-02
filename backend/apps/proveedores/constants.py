@@ -216,10 +216,21 @@ LEGACY_TO_NEW_MAPPING = {
         'SEBO_CUERO_VIRIL', 'SEBO_POLLO',
         'SEBO_PROCESADO_A', 'SEBO_PROCESADO_B', 'SEBO_PROCESADO_B1',
         'SEBO_PROCESADO_B2', 'SEBO_PROCESADO_B4', 'SEBO_PROCESADO_C',
+        'CHICHARRON',
     ],
     'CABEZAS': ['CABEZAS'],
     'ACU': ['ACU'],
 }
+
+# Mapeo inverso: de código nuevo a legacy (para validaciones)
+def _build_new_to_legacy():
+    mapping = {}
+    for legacy, codes in LEGACY_TO_NEW_MAPPING.items():
+        for code in codes:
+            mapping[code] = legacy
+    return mapping
+
+NEW_TO_LEGACY_MAPPING = _build_new_to_legacy()
 
 # ==============================================================================
 # DEPARTAMENTOS DE COLOMBIA

@@ -8,8 +8,6 @@ import {
   UserCog,
   Truck,
   Package,
-  DollarSign,
-  FileText,
   BarChart3,
   Settings,
   ChevronRight,
@@ -18,7 +16,6 @@ import {
   Heart,
   Layers,
   Leaf,
-  Calendar,
   Factory,
   Wrench,
   FlaskConical,
@@ -167,10 +164,13 @@ const navigationItems: NavItem[] = [
       // Planta - Operaciones de procesamiento
       // ─────────────────────────────────────────────────────────────
       {
-        name: 'Lotes de Planta',
-        href: '/lotes',
-        icon: Package,
-        allowedRoles: ['superadmin', 'gerente', 'jefe_planta', 'supervisor_planta'],
+        name: 'Planta',
+        icon: Factory,
+        allowedRoles: ['superadmin', 'gerente', 'jefe_planta', 'supervisor_planta', 'lider_log_econorte', 'operador_bascula'],
+        children: [
+          { name: 'Recepción MP', href: '/planta/recepciones', icon: Truck, allowedRoles: ['superadmin', 'gerente', 'jefe_planta', 'supervisor_planta', 'lider_log_econorte', 'operador_bascula'] },
+          { name: 'Lotes', href: '/planta/lotes', icon: Package, allowedRoles: ['superadmin', 'gerente', 'jefe_planta', 'supervisor_planta'] },
+        ],
       },
       {
         name: 'Reportes',
@@ -208,13 +208,28 @@ const navigationItems: NavItem[] = [
     icon: ShieldCheck,
     isCategory: true,
     color: 'orange',
-    allowedRoles: ['superadmin', 'gerente', 'admin', 'profesional_sst'],
+    allowedRoles: ['superadmin', 'gerente', 'admin', 'profesional_sst', 'profesional_calidad', 'profesional_ambiental'],
     children: [
       {
-        name: 'SST',
-        href: '/gestion-integral/sst',
+        name: 'SG-SST',
+        href: '/sst',
         icon: Layers,
         allowedRoles: ['superadmin', 'gerente', 'admin', 'profesional_sst'],
+        badge: 'Nuevo',
+      },
+      {
+        name: 'Calidad',
+        href: '/calidad',
+        icon: Target,
+        allowedRoles: ['superadmin', 'gerente', 'admin', 'profesional_calidad'],
+        badge: 'Nuevo',
+      },
+      {
+        name: 'Ambiental',
+        href: '/ambiental',
+        icon: Leaf,
+        allowedRoles: ['superadmin', 'gerente', 'admin', 'profesional_ambiental'],
+        badge: 'Nuevo',
       },
     ],
   },

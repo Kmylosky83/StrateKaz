@@ -17,19 +17,20 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Azul Corporativo (Primary) - del Design System
+        // Primary - Dinámico desde branding (CSS variables con fallback VERDE)
+        // Fallbacks: Verde corporativo #16A34A (success-600)
         primary: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
-          950: '#172554',
+          50: 'rgb(var(--color-primary-50, 240 253 244) / <alpha-value>)',
+          100: 'rgb(var(--color-primary-100, 220 252 231) / <alpha-value>)',
+          200: 'rgb(var(--color-primary-200, 187 247 208) / <alpha-value>)',
+          300: 'rgb(var(--color-primary-300, 134 239 172) / <alpha-value>)',
+          400: 'rgb(var(--color-primary-400, 74 222 128) / <alpha-value>)',
+          500: 'rgb(var(--color-primary-500, 34 197 94) / <alpha-value>)',
+          600: 'rgb(var(--color-primary-600, 22 163 74) / <alpha-value>)',
+          700: 'rgb(var(--color-primary-700, 21 128 61) / <alpha-value>)',
+          800: 'rgb(var(--color-primary-800, 22 101 52) / <alpha-value>)',
+          900: 'rgb(var(--color-primary-900, 20 83 45) / <alpha-value>)',
+          950: 'rgb(var(--color-primary-950, 5 46 22) / <alpha-value>)',
         },
         // Grises Neutrales
         gray: {

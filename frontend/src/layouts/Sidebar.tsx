@@ -1,36 +1,27 @@
-import { useState } from 'react';
+/**
+ * Sidebar Dinámico - Sistema de Gestión Grasas y Huesos del Norte
+ *
+ * Características:
+ * - Carga módulos, tabs y secciones desde la API (sin hardcoding)
+ * - Iconos dinámicos desde Lucide React
+ * - Colores por macroproceso
+ * - Control granular: desactivar módulo/tab en ConfiguracionTab → desaparece del sidebar
+ */
+import { useState, useMemo, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { cn } from '@/utils/cn';
-import {
-  LayoutDashboard,
-  Users,
-  UserCog,
-  Truck,
-  Package,
-  BarChart3,
-  Settings,
-  ChevronRight,
-  ChevronDown,
-  Target,
-  Heart,
-  Layers,
-  Leaf,
-  Factory,
-  Wrench,
-  FlaskConical,
-  Building2,
-  Briefcase,
-  ShieldCheck,
-  TrendingUp,
-} from 'lucide-react';
+import { useSidebarModules } from '@/features/gestion-estrategica/hooks/useModules';
+import type { SidebarModule } from '@/features/gestion-estrategica/types/modules.types';
+import * as LucideIcons from 'lucide-react';
+import { ChevronRight, ChevronDown, Circle, Loader2 } from 'lucide-react';
 
 interface SidebarProps {
   isCollapsed: boolean;
 }
 
 // Colores por macroproceso
-type MacroprocessColor = 'purple' | 'blue' | 'green' | 'orange';
+type MacroprocessColor = 'purple' | 'blue' | 'green' | 'orange' | 'gray';
 
 const macroprocessColors: Record<MacroprocessColor, {
   bg: string;
@@ -82,306 +73,78 @@ const macroprocessColors: Record<MacroprocessColor, {
     iconActive: 'text-orange-600 dark:text-orange-300',
     border: 'border-l-orange-500',
   },
+  gray: {
+    bg: 'bg-gray-50/50 dark:bg-gray-900/10',
+    bgHover: 'hover:bg-gray-50 dark:hover:bg-gray-900/20',
+    bgActive: 'bg-gray-100 dark:bg-gray-900/30',
+    text: 'text-gray-600 dark:text-gray-400',
+    textActive: 'text-gray-700 dark:text-gray-300',
+    icon: 'text-gray-500 dark:text-gray-400',
+    iconActive: 'text-gray-600 dark:text-gray-300',
+    border: 'border-l-gray-500',
+  },
 };
 
-// Interfaz recursiva para navegación multinivel
-interface NavItem {
-  name: string;
-  href?: string;
-  icon?: React.ElementType;
-  allowedRoles: string[];
-  badge?: string;
-  isCategory?: boolean; // Para macroprocesos (solo título, no navegable)
-  color?: MacroprocessColor; // Color del macroproceso
-  children?: NavItem[];
-}
+/**
+ * Obtener el componente de icono de Lucide React por nombre
+ * Si no existe, retorna Circle como fallback
+ */
+const getIconComponent = (iconName?: string | null): React.ElementType => {
+  if (!iconName) return Circle;
+  const icon = LucideIcons[iconName as keyof typeof LucideIcons];
+  // Los iconos de Lucide React son objetos (ForwardRefExoticComponent), no funciones puras
+  if (icon && typeof icon === 'object' && '$$typeof' in icon) {
+    return icon as React.ElementType;
+  }
+  return Circle;
+};
 
-const navigationItems: NavItem[] = [
-  // Dashboard principal
-  {
-    name: 'Dashboard',
-    href: '/dashboard',
-    icon: LayoutDashboard,
-    allowedRoles: ['all'],
-  },
-
-  // ═══════════════════════════════════════════════════════════════
-  // DIRECCIÓN ESTRATÉGICA - Planeación y control organizacional
-  // ═══════════════════════════════════════════════════════════════
-  {
-    name: 'Dirección Estratégica',
-    icon: Target,
-    isCategory: true,
-    color: 'purple',
-    allowedRoles: ['superadmin', 'gerente', 'admin'],
-    children: [
-      {
-        name: 'Planeación Estratégica',
-        href: '/direccion-estrategica/planeacion',
-        icon: TrendingUp,
-        allowedRoles: ['superadmin', 'gerente', 'admin'],
-      },
-      {
-        name: 'Configuración',
-        href: '/settings',
-        icon: Settings,
-        allowedRoles: ['superadmin', 'gerente'],
-      },
-      {
-        name: 'Usuarios',
-        href: '/usuarios',
-        icon: UserCog,
-        allowedRoles: ['superadmin', 'gerente', 'admin'],
-      },
-    ],
-  },
-
-  // ═══════════════════════════════════════════════════════════════
-  // GESTIÓN MISIONAL - Core del negocio (recolección y procesamiento)
-  // ═══════════════════════════════════════════════════════════════
-  {
-    name: 'Gestión Misional',
-    icon: Briefcase,
-    isCategory: true,
-    color: 'blue',
-    allowedRoles: ['superadmin', 'gerente', 'admin', 'lider_comercial', 'lider_compras', 'lider_com_econorte', 'comercial_econorte', 'lider_log_econorte', 'recolector_econorte', 'jefe_planta', 'supervisor_planta'],
-    children: [
-      // ─────────────────────────────────────────────────────────────
-      // Proveedores - Gestión de proveedores (externos e internos)
-      // ─────────────────────────────────────────────────────────────
-      {
-        name: 'Proveedores',
-        icon: Users,
-        allowedRoles: ['superadmin', 'gerente', 'admin', 'lider_comercial', 'lider_compras', 'lider_com_econorte', 'comercial_econorte', 'lider_log_econorte', 'recolector_econorte'],
-        children: [
-          { name: 'Materia Prima', href: '/proveedores/materia-prima', icon: Factory, allowedRoles: ['superadmin', 'gerente', 'admin', 'lider_comercial', 'lider_compras'] },
-          { name: 'Productos y Servicios', href: '/proveedores/productos-servicios', icon: Wrench, allowedRoles: ['superadmin', 'gerente', 'admin', 'lider_comercial', 'lider_compras'] },
-          { name: 'Pruebas de Acidez', href: '/proveedores/pruebas-acidez', icon: FlaskConical, allowedRoles: ['superadmin', 'gerente', 'admin', 'lider_comercial', 'lider_compras'] },
-          { name: 'EcoNorte', href: '/proveedores/econorte', icon: Leaf, allowedRoles: ['superadmin', 'gerente', 'lider_com_econorte', 'comercial_econorte', 'lider_log_econorte', 'recolector_econorte'] },
-        ],
-      },
-      // ─────────────────────────────────────────────────────────────
-      // Planta - Operaciones de procesamiento
-      // ─────────────────────────────────────────────────────────────
-      {
-        name: 'Planta',
-        icon: Factory,
-        allowedRoles: ['superadmin', 'gerente', 'jefe_planta', 'supervisor_planta', 'lider_log_econorte', 'operador_bascula'],
-        children: [
-          { name: 'Recepción MP', href: '/planta/recepciones', icon: Truck, allowedRoles: ['superadmin', 'gerente', 'jefe_planta', 'supervisor_planta', 'lider_log_econorte', 'operador_bascula'] },
-          { name: 'Lotes', href: '/planta/lotes', icon: Package, allowedRoles: ['superadmin', 'gerente', 'jefe_planta', 'supervisor_planta'] },
-        ],
-      },
-      {
-        name: 'Reportes',
-        href: '/reportes',
-        icon: BarChart3,
-        allowedRoles: ['superadmin', 'gerente', 'admin', 'lider_comercial', 'lider_compras', 'lider_com_econorte', 'lider_log_econorte'],
-      },
-    ],
-  },
-
-  // ═══════════════════════════════════════════════════════════════
-  // GESTIÓN DE APOYO - Recursos para el funcionamiento
-  // ═══════════════════════════════════════════════════════════════
-  {
-    name: 'Gestión de Apoyo',
-    icon: Building2,
-    isCategory: true,
-    color: 'green',
-    allowedRoles: ['superadmin', 'gerente', 'admin', 'lider_talento_humano'],
-    children: [
-      {
-        name: 'Talento Humano',
-        href: '/talento-humano',
-        icon: Heart,
-        allowedRoles: ['superadmin', 'gerente', 'admin', 'lider_talento_humano'],
-      },
-    ],
-  },
-
-  // ═══════════════════════════════════════════════════════════════
-  // GESTIÓN INTEGRAL - SST, Calidad, Ambiente, PESV
-  // ═══════════════════════════════════════════════════════════════
-  {
-    name: 'Gestión Integral',
-    icon: ShieldCheck,
-    isCategory: true,
-    color: 'orange',
-    allowedRoles: ['superadmin', 'gerente', 'admin', 'profesional_sst', 'profesional_calidad', 'profesional_ambiental'],
-    children: [
-      {
-        name: 'SG-SST',
-        href: '/sst',
-        icon: Layers,
-        allowedRoles: ['superadmin', 'gerente', 'admin', 'profesional_sst'],
-        badge: 'Nuevo',
-      },
-      {
-        name: 'Calidad',
-        href: '/calidad',
-        icon: Target,
-        allowedRoles: ['superadmin', 'gerente', 'admin', 'profesional_calidad'],
-        badge: 'Nuevo',
-      },
-      {
-        name: 'Ambiental',
-        href: '/ambiental',
-        icon: Leaf,
-        allowedRoles: ['superadmin', 'gerente', 'admin', 'profesional_ambiental'],
-        badge: 'Nuevo',
-      },
-    ],
-  },
-];
-
-// Componente recursivo para renderizar items de navegación
+/**
+ * Componente recursivo para renderizar items de navegación
+ */
 interface NavItemComponentProps {
-  item: NavItem;
-  level: number;
+  item: SidebarModule;
   isCollapsed: boolean;
   expandedItems: string[];
-  toggleExpanded: (name: string) => void;
-  isPathActive: (href?: string) => boolean;
-  isItemActiveRecursive: (item: NavItem) => boolean;
-  userCargoCode?: string;
-  parentColor?: MacroprocessColor; // Color heredado del macroproceso padre
+  toggleExpanded: (code: string) => void;
+  location: ReturnType<typeof useLocation>;
+  depth?: number;
 }
 
 const NavItemComponent = ({
   item,
-  level,
   isCollapsed,
   expandedItems,
   toggleExpanded,
-  isPathActive,
-  isItemActiveRecursive,
-  userCargoCode,
-  parentColor,
+  location,
+  depth = 0,
 }: NavItemComponentProps) => {
-  // Filtrar hijos según rol del usuario
-  const filteredChildren = item.children?.filter((child) => {
-    if (child.allowedRoles.includes('all')) return true;
-    return userCargoCode && child.allowedRoles.includes(userCargoCode);
-  });
+  const Icon = getIconComponent(item.icon);
+  const colors = item.color ? macroprocessColors[item.color as MacroprocessColor] : null;
+  const hasChildren = item.children && item.children.length > 0;
+  const isExpanded = expandedItems.includes(item.code);
 
-  const hasChildren = filteredChildren && filteredChildren.length > 0;
-  const isExpanded = expandedItems.includes(item.name);
-  const isActive = isItemActiveRecursive(item);
-  const Icon = item.icon;
+  // Verificar si este item o alguno de sus hijos está activo
+  const isActive = useMemo(() => {
+    if (item.route && location.pathname.startsWith(item.route)) {
+      return true;
+    }
+    if (item.children) {
+      return item.children.some(
+        (child) => child.route && location.pathname.startsWith(child.route)
+      );
+    }
+    return false;
+  }, [item, location.pathname]);
 
-  // Determinar el color a usar (propio o heredado del padre)
-  const colorKey = item.color || parentColor;
-  const colors = colorKey ? macroprocessColors[colorKey] : null;
-
-  // Estilos según nivel
-  const paddingLeft = level === 0 ? 'px-3' : level === 1 ? 'pl-6 pr-3' : 'pl-9 pr-3';
-  const fontSize = level === 0 ? 'text-sm' : 'text-sm';
-  const iconSize = level === 0 ? 'h-5 w-5' : 'h-4 w-4';
-
-  // Estilos para categorías (macroprocesos)
-  if (item.isCategory) {
+  // Si es categoría (macroproceso), renderizar como grupo expandible
+  if (item.is_category) {
     return (
       <div className="mt-4 first:mt-0">
-        {/* Header de categoría con color */}
         <button
-          onClick={() => toggleExpanded(item.name)}
+          onClick={() => toggleExpanded(item.code)}
           className={cn(
-            'w-full flex items-center px-3 py-2 rounded-lg transition-colors group relative',
-            colors
-              ? isActive
-                ? colors.bg
-                : colors.bgHover
-              : isActive
-                ? 'bg-primary-50/50 dark:bg-primary-900/10'
-                : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
-          )}
-        >
-          {Icon && (
-            <Icon
-              className={cn(
-                'h-4 w-4 flex-shrink-0',
-                colors
-                  ? isActive
-                    ? colors.iconActive
-                    : colors.icon
-                  : isActive
-                    ? 'text-primary-600 dark:text-primary-400'
-                    : 'text-gray-400 dark:text-gray-500'
-              )}
-            />
-          )}
-          {!isCollapsed && (
-            <>
-              <span
-                className={cn(
-                  'ml-2 text-xs font-semibold uppercase tracking-wider flex-1 text-left',
-                  colors
-                    ? isActive
-                      ? colors.textActive
-                      : colors.text
-                    : isActive
-                      ? 'text-primary-700 dark:text-primary-400'
-                      : 'text-gray-500 dark:text-gray-400'
-                )}
-              >
-                {item.name}
-              </span>
-              {hasChildren && (
-                isExpanded ? (
-                  <ChevronDown className={cn('h-3 w-3', colors ? colors.icon : 'text-gray-400')} />
-                ) : (
-                  <ChevronRight className={cn('h-3 w-3', colors ? colors.icon : 'text-gray-400')} />
-                )
-              )}
-            </>
-          )}
-          {isCollapsed && (
-            <div className={cn(
-              'absolute left-full ml-2 px-2 py-1 text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50',
-              colors ? `bg-${colorKey}-600` : 'bg-gray-900 dark:bg-gray-700'
-            )}>
-              {item.name}
-            </div>
-          )}
-        </button>
-
-        {/* Hijos de la categoría con borde de color */}
-        {hasChildren && isExpanded && !isCollapsed && (
-          <div className={cn(
-            'mt-1 space-y-0.5 ml-2 border-l-2',
-            colors ? colors.border : 'border-l-gray-200 dark:border-l-gray-700'
-          )}>
-            {filteredChildren!.map((child) => (
-              <NavItemComponent
-                key={child.name}
-                item={child}
-                level={1}
-                isCollapsed={isCollapsed}
-                expandedItems={expandedItems}
-                toggleExpanded={toggleExpanded}
-                isPathActive={isPathActive}
-                isItemActiveRecursive={isItemActiveRecursive}
-                userCargoCode={userCargoCode}
-                parentColor={colorKey}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // Item navegable con posibles hijos
-  if (hasChildren) {
-    return (
-      <div>
-        <button
-          onClick={() => toggleExpanded(item.name)}
-          className={cn(
-            'w-full flex items-center py-2 rounded-lg transition-colors group relative',
-            paddingLeft,
-            fontSize,
+            'w-full flex items-center px-3 py-2.5 rounded-lg transition-colors group relative',
             colors
               ? isActive
                 ? cn(colors.bgActive, colors.textActive)
@@ -391,28 +154,23 @@ const NavItemComponent = ({
                 : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
           )}
         >
-          {Icon && (
-            <Icon
-              className={cn(
-                iconSize,
-                'flex-shrink-0',
-                colors
-                  ? isActive
-                    ? colors.iconActive
-                    : colors.icon
-                  : isActive
-                    ? 'text-primary-600 dark:text-primary-400'
-                    : 'text-gray-500 dark:text-gray-400'
-              )}
-            />
-          )}
+          <Icon
+            className={cn(
+              'h-5 w-5 flex-shrink-0',
+              colors
+                ? isActive ? colors.iconActive : colors.icon
+                : isActive
+                  ? 'text-primary-600 dark:text-primary-400'
+                  : 'text-gray-500 dark:text-gray-400'
+            )}
+          />
           {!isCollapsed && (
             <>
-              <span className="ml-3 font-medium flex-1 text-left">{item.name}</span>
+              <span className="ml-3 font-medium flex-1 text-left text-sm">{item.name}</span>
               {isExpanded ? (
-                <ChevronDown className={cn('h-4 w-4', colors ? colors.icon : '')} />
+                <ChevronDown className="h-4 w-4" />
               ) : (
-                <ChevronRight className={cn('h-4 w-4', colors ? colors.icon : '')} />
+                <ChevronRight className="h-4 w-4" />
               )}
             </>
           )}
@@ -423,21 +181,21 @@ const NavItemComponent = ({
           )}
         </button>
 
-        {/* Hijos */}
-        {isExpanded && !isCollapsed && (
-          <div className="mt-0.5 space-y-0.5">
-            {filteredChildren!.map((child) => (
+        {/* Hijos de la categoría */}
+        {isExpanded && !isCollapsed && hasChildren && (
+          <div className={cn(
+            'mt-1 ml-3 space-y-0.5 border-l-2',
+            colors ? colors.border : 'border-l-gray-200 dark:border-l-gray-700'
+          )}>
+            {item.children!.map((child) => (
               <NavItemComponent
-                key={child.name}
+                key={child.code}
                 item={child}
-                level={level + 1}
                 isCollapsed={isCollapsed}
                 expandedItems={expandedItems}
                 toggleExpanded={toggleExpanded}
-                isPathActive={isPathActive}
-                isItemActiveRecursive={isItemActiveRecursive}
-                userCargoCode={userCargoCode}
-                parentColor={colorKey}
+                location={location}
+                depth={depth + 1}
               />
             ))}
           </div>
@@ -446,54 +204,110 @@ const NavItemComponent = ({
     );
   }
 
-  // Item sin hijos (link directo)
-  const isDirectlyActive = isPathActive(item.href);
+  // Si tiene hijos (módulo con tabs), renderizar como grupo expandible
+  if (hasChildren) {
+    return (
+      <div>
+        <button
+          onClick={() => toggleExpanded(item.code)}
+          className={cn(
+            'w-full flex items-center px-3 py-2.5 rounded-lg transition-colors group relative',
+            depth > 0 ? 'pl-4 pr-3 py-2' : '',
+            colors
+              ? isActive
+                ? cn(colors.bgActive, colors.textActive)
+                : cn('text-gray-700 dark:text-gray-300', colors.bgHover)
+              : isActive
+                ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400'
+                : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+          )}
+        >
+          <Icon
+            className={cn(
+              depth > 0 ? 'h-4 w-4' : 'h-5 w-5',
+              'flex-shrink-0',
+              colors
+                ? isActive ? colors.iconActive : colors.icon
+                : isActive
+                  ? 'text-primary-600 dark:text-primary-400'
+                  : 'text-gray-500 dark:text-gray-400'
+            )}
+          />
+          {!isCollapsed && (
+            <>
+              <span className={cn(
+                'ml-3 font-medium flex-1 text-left',
+                depth > 0 ? 'text-sm' : 'text-sm'
+              )}>{item.name}</span>
+              {isExpanded ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )}
+            </>
+          )}
+          {isCollapsed && (
+            <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 dark:bg-gray-700 text-white text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
+              {item.name}
+            </div>
+          )}
+        </button>
+
+        {/* Tabs del módulo */}
+        {isExpanded && !isCollapsed && (
+          <div className={cn(
+            'mt-1 ml-3 space-y-0.5 border-l-2',
+            colors ? colors.border : 'border-l-gray-200 dark:border-l-gray-700'
+          )}>
+            {item.children!.map((child) => (
+              <NavItemComponent
+                key={child.code}
+                item={child}
+                isCollapsed={isCollapsed}
+                expandedItems={expandedItems}
+                toggleExpanded={toggleExpanded}
+                location={location}
+                depth={depth + 1}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Item simple (hoja) - Link navegable
+  const isItemActive = item.route && location.pathname.startsWith(item.route);
 
   return (
     <Link
-      to={item.href || '#'}
+      to={item.route || '#'}
       className={cn(
-        'flex items-center py-2 rounded-lg transition-colors group relative',
-        paddingLeft,
-        fontSize,
+        'flex items-center rounded-lg transition-colors group relative',
+        depth > 0 ? 'pl-4 pr-3 py-2 rounded-r-lg text-sm' : 'px-3 py-2.5',
         colors
-          ? isDirectlyActive
+          ? isItemActive
             ? cn(colors.bgActive, colors.textActive)
-            : cn('text-gray-700 dark:text-gray-300', colors.bgHover)
-          : isDirectlyActive
+            : cn('text-gray-600 dark:text-gray-400', colors.bgHover)
+          : isItemActive
             ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-400'
-            : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+            : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700'
       )}
     >
-      {Icon && (
-        <Icon
-          className={cn(
-            iconSize,
-            'flex-shrink-0',
-            colors
-              ? isDirectlyActive
-                ? colors.iconActive
-                : colors.icon
-              : isDirectlyActive
-                ? 'text-primary-600 dark:text-primary-400'
-                : 'text-gray-500 dark:text-gray-400'
-          )}
-        />
-      )}
+      <Icon
+        className={cn(
+          depth > 0 ? 'h-4 w-4 mr-2' : 'h-5 w-5',
+          colors
+            ? isItemActive ? colors.iconActive : colors.icon
+            : isItemActive
+              ? 'text-primary-600 dark:text-primary-400'
+              : 'text-gray-500 dark:text-gray-400'
+        )}
+      />
       {!isCollapsed && (
-        <>
-          <span className="ml-3 font-medium">{item.name}</span>
-          {item.badge && (
-            <span className={cn(
-              'ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
-              colors
-                ? cn(colors.bg, colors.text)
-                : 'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-400'
-            )}>
-              {item.badge}
-            </span>
-          )}
-        </>
+        <span className={cn(
+          depth > 0 ? '' : 'ml-3 font-medium text-sm'
+        )}>{item.name}</span>
       )}
       {isCollapsed && (
         <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 dark:bg-gray-700 text-white text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
@@ -507,38 +321,76 @@ const NavItemComponent = ({
 export const Sidebar = ({ isCollapsed }: SidebarProps) => {
   const location = useLocation();
   const user = useAuthStore((state) => state.user);
+  const { data: sidebarModules, isLoading, error } = useSidebarModules();
 
-  // Iniciar con todos los menús colapsados - mejor UX
+  // Estado para items expandidos - inicializar dinámicamente
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
-  // Filtrar navegación según rol
-  const filteredNavigation = navigationItems.filter((item) => {
-    if (item.allowedRoles.includes('all')) return true;
-    return user?.cargo_code && item.allowedRoles.includes(user.cargo_code);
-  });
+  // Expandir automáticamente el módulo activo al cargar
+  useEffect(() => {
+    if (sidebarModules && location.pathname) {
+      const activeModules: string[] = [];
 
-  const toggleExpanded = (itemName: string) => {
+      const findActiveParents = (items: SidebarModule[], parents: string[] = []) => {
+        for (const item of items) {
+          const currentPath = [...parents, item.code];
+
+          if (item.route && location.pathname.startsWith(item.route)) {
+            activeModules.push(...parents);
+          }
+
+          if (item.children) {
+            findActiveParents(item.children, currentPath);
+          }
+        }
+      };
+
+      findActiveParents(sidebarModules);
+      if (activeModules.length > 0) {
+        setExpandedItems((prev) => [...new Set([...prev, ...activeModules])]);
+      }
+    }
+  }, [sidebarModules, location.pathname]);
+
+  const toggleExpanded = (code: string) => {
     setExpandedItems((prev) =>
-      prev.includes(itemName)
-        ? prev.filter((name) => name !== itemName)
-        : [...prev, itemName]
+      prev.includes(code)
+        ? prev.filter((c) => c !== code)
+        : [...prev, code]
     );
   };
 
-  // Verificar si una ruta está activa
-  const isPathActive = (href?: string) => {
-    if (!href) return false;
-    return location.pathname === href || location.pathname.startsWith(href + '/');
-  };
+  // Loading state
+  if (isLoading) {
+    return (
+      <aside
+        className={cn(
+          'fixed left-0 top-16 bottom-0 z-30 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300',
+          isCollapsed ? 'w-16' : 'w-64'
+        )}
+      >
+        <div className="flex items-center justify-center h-full">
+          <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+        </div>
+      </aside>
+    );
+  }
 
-  // Verificar recursivamente si algún hijo está activo
-  const isItemActiveRecursive = (item: NavItem): boolean => {
-    if (item.href && isPathActive(item.href)) return true;
-    if (item.children) {
-      return item.children.some((child) => isItemActiveRecursive(child));
-    }
-    return false;
-  };
+  // Error state - mostrar sidebar vacío con mensaje
+  if (error || !sidebarModules) {
+    return (
+      <aside
+        className={cn(
+          'fixed left-0 top-16 bottom-0 z-30 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300',
+          isCollapsed ? 'w-16' : 'w-64'
+        )}
+      >
+        <div className="flex items-center justify-center h-full px-4 text-center">
+          <p className="text-sm text-gray-500">Error al cargar menú</p>
+        </div>
+      </aside>
+    );
+  }
 
   return (
     <aside
@@ -548,19 +400,16 @@ export const Sidebar = ({ isCollapsed }: SidebarProps) => {
       )}
     >
       <nav className="h-full flex flex-col py-4">
-        {/* Navigation Items */}
+        {/* Navigation Items - Dinámico desde API */}
         <div className="flex-1 px-2 space-y-1 overflow-y-auto scrollbar-thin">
-          {filteredNavigation.map((item) => (
+          {sidebarModules.map((item) => (
             <NavItemComponent
-              key={item.name}
+              key={item.code}
               item={item}
-              level={0}
               isCollapsed={isCollapsed}
               expandedItems={expandedItems}
               toggleExpanded={toggleExpanded}
-              isPathActive={isPathActive}
-              isItemActiveRecursive={isItemActiveRecursive}
-              userCargoCode={user?.cargo_code ?? undefined}
+              location={location}
             />
           ))}
         </div>

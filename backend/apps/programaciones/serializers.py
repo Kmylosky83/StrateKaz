@@ -25,6 +25,7 @@ class ProgramacionListSerializer(serializers.ModelSerializer):
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     is_deleted = serializers.BooleanField(read_only=True)
     esta_vencida = serializers.SerializerMethodField(read_only=True)
+    cantidad_recolectada_kg = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Programacion
@@ -40,6 +41,7 @@ class ProgramacionListSerializer(serializers.ModelSerializer):
             'tipo_programacion_display',
             'fecha_programada',
             'cantidad_estimada_kg',
+            'cantidad_recolectada_kg',
             'recolector_asignado',
             'recolector_asignado_nombre',
             'estado',
@@ -52,6 +54,12 @@ class ProgramacionListSerializer(serializers.ModelSerializer):
     def get_esta_vencida(self, obj):
         """Retorna la propiedad esta_vencida del modelo"""
         return obj.esta_vencida
+
+    def get_cantidad_recolectada_kg(self, obj):
+        """Retorna la cantidad real recolectada desde la recoleccion asociada"""
+        if hasattr(obj, 'recoleccion') and obj.recoleccion:
+            return float(obj.recoleccion.cantidad_kg)
+        return None
 
 
 class ProgramacionDetailSerializer(serializers.ModelSerializer):
@@ -109,6 +117,10 @@ class ProgramacionDetailSerializer(serializers.ModelSerializer):
 
 class ProgramacionCreateSerializer(serializers.ModelSerializer):
     """Serializer para crear programaciones con validaciones específicas"""
+
+    # Usar NaiveDateField para evitar conversión de timezone
+    # que causa que la fecha se guarde un día antes
+    fecha_programada = NaiveDateField()
 
     class Meta:
         model = Programacion
@@ -187,6 +199,9 @@ class ProgramacionCreateSerializer(serializers.ModelSerializer):
 
 class ProgramacionUpdateSerializer(serializers.ModelSerializer):
     """Serializer para actualizar programaciones (solo campos permitidos)"""
+
+    # Usar NaiveDateField para evitar conversión de timezone
+    fecha_programada = NaiveDateField()
 
     class Meta:
         model = Programacion

@@ -24,6 +24,7 @@ import {
   useCambiarPrecio,
 } from '../hooks/useProveedores';
 import { useAuthStore } from '@/store/authStore';
+import { CargoCodes } from '@/constants/permissions';
 import type {
   Proveedor,
   CreateProveedorDTO,
@@ -71,7 +72,7 @@ export default function ProveedoresPage() {
   const canCreateProveedor = useMemo(() => {
     if (!user?.cargo) return false;
     const cargo = user.cargo.code;
-    return ['lider_comercial', 'lider_com_econorte', 'lider_log_econorte', 'admin', 'gerente', 'superadmin'].includes(cargo);
+    return ['lider_comercial', CargoCodes.LIDER_COMERCIAL_ECONORTE, CargoCodes.LIDER_LOGISTICA_ECONORTE, 'admin', 'gerente', 'superadmin'].includes(cargo);
   }, [user]);
 
   const handleOpenCreateForm = () => {

@@ -11,14 +11,18 @@ from django.utils import timezone
 from datetime import timedelta
 from decimal import Decimal
 
-from .models import Recoleccion
+from .models import Recoleccion, CertificadoRecoleccion
 from .serializers import (
     RecoleccionListSerializer,
     RecoleccionDetailSerializer,
     RegistrarRecoleccionSerializer,
     VoucherRecoleccionSerializer,
     RecoleccionEstadisticasSerializer,
+    CertificadoRecoleccionSerializer,
+    CertificadoListSerializer,
+    CertificadoDetailSerializer,
 )
+from apps.core.permissions_constants import CargoCodes
 from .permissions import (
     PuedeRegistrarRecoleccion,
     PuedeVerRecolecciones,
@@ -99,10 +103,10 @@ class RecoleccionViewSet(viewsets.ModelViewSet):
         # Filtrar por rol
         if user.cargo:
             cargo_code = user.cargo.code
-            if cargo_code == 'recolector_econorte':
+            if cargo_code == CargoCodes.RECOLECTOR_ECONORTE:
                 # Recolector solo ve sus recolecciones
                 queryset = queryset.filter(recolector=user)
-            elif cargo_code == 'comercial_econorte':
+            elif cargo_code == CargoCodes.COMERCIAL_ECONORTE:
                 # Comercial ve recolecciones de sus ecoaliados
                 queryset = queryset.filter(ecoaliado__comercial_asignado=user)
 
@@ -301,7 +305,7 @@ class RecoleccionViewSet(viewsets.ModelViewSet):
         """
         user = request.user
 
-        if not user.cargo or user.cargo.code != 'recolector_econorte':
+        if not user.cargo or user.cargo.code != CargoCodes.RECOLECTOR_ECONORTE:
             return Response(
                 {'detail': 'Este endpoint es solo para recolectores'},
                 status=status.HTTP_403_FORBIDDEN
@@ -358,6 +362,43 @@ class RecoleccionViewSet(viewsets.ModelViewSet):
             'results': serializer.data,
         })
 
+    @action(detail=False, methods=['post'])
+    def certificado(self, request):
+        """
+        Genera certificado de recoleccion para un ecoaliado
+
+        Este certificado resume las recolecciones de un periodo determinado
+        y es firmado por el Representante Legal.
+
+        Payload:
+        {
+            "ecoaliado_id": 123,
+            "periodo": "mensual",  // mensual, bimestral, trimestral, semestral, anual, personalizado
+            "año": 2025,           // opcional, default año actual
+            "mes": 12,             // requerido para mensual/bimestral
+            "fecha_inicio": "2025-01-01",  // solo para personalizado
+            "fecha_fin": "2025-12-31"      // solo para personalizado
+        }
+
+        Response:
+        - 200: Datos del certificado
+        - 400: Error de validacion
+        - 403: Sin permisos
+        """
+        serializer = CertificadoRecoleccionSerializer(
+            data=request.data,
+            context={
+                'request': request,
+                'usuario': request.user,
+            }
+        )
+
+        if serializer.is_valid():
+            certificado_data = serializer.generate_certificado()
+            return Response(certificado_data)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class ProgramacionesEnRutaViewSet(viewsets.ReadOnlyModelViewSet):
     """
@@ -389,7 +430,7 @@ class ProgramacionesEnRutaViewSet(viewsets.ReadOnlyModelViewSet):
         )
 
         # Si es recolector, solo sus programaciones
-        if user.cargo and user.cargo.code == 'recolector_econorte':
+        if user.cargo and user.cargo.code == CargoCodes.RECOLECTOR_ECONORTE:
             queryset = queryset.filter(recolector_asignado=user)
 
         return queryset.order_by('fecha_programada')
@@ -417,3 +458,126 @@ class ProgramacionesEnRutaViewSet(viewsets.ReadOnlyModelViewSet):
             'count': len(data),
             'results': data,
         })
+
+
+class CertificadoViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet para gestion de Certificados de Recoleccion
+
+    Endpoints:
+    - GET    /api/certificados/              - Lista de certificados emitidos
+    - GET    /api/certificados/{id}/         - Detalle de certificado (con datos para reimprimir)
+    - DELETE /api/certificados/{id}/         - Eliminar certificado (soft delete)
+
+    Permisos:
+    - list/retrieve: Usuarios autenticados con permisos de ver recolecciones
+    - destroy: Gerente/SuperAdmin
+    """
+
+    permission_classes = [PuedeVerRecolecciones]
+
+    def get_queryset(self):
+        """
+        Filtra certificados segun el rol del usuario
+        """
+        user = self.request.user
+        queryset = CertificadoRecoleccion.objects.select_related(
+            'ecoaliado', 'emitido_por'
+        ).filter(deleted_at__isnull=True)
+
+        # Filtrar por rol
+        if user.cargo:
+            cargo_code = user.cargo.code
+            if cargo_code == CargoCodes.COMERCIAL_ECONORTE:
+                # Comercial ve certificados de sus ecoaliados
+                queryset = queryset.filter(ecoaliado__comercial_asignado=user)
+
+        # Aplicar filtros de query params
+        queryset = self._aplicar_filtros(queryset)
+
+        return queryset.order_by('-fecha_emision')
+
+    def _aplicar_filtros(self, queryset):
+        """Aplica filtros desde query params"""
+        params = self.request.query_params
+
+        # Filtro por ecoaliado
+        ecoaliado_id = params.get('ecoaliado')
+        if ecoaliado_id:
+            queryset = queryset.filter(ecoaliado_id=ecoaliado_id)
+
+        # Filtro por periodo
+        periodo = params.get('periodo')
+        if periodo:
+            queryset = queryset.filter(periodo=periodo)
+
+        # Filtro por fecha emision desde
+        fecha_desde = params.get('fecha_desde')
+        if fecha_desde:
+            queryset = queryset.filter(fecha_emision__date__gte=fecha_desde)
+
+        # Filtro por fecha emision hasta
+        fecha_hasta = params.get('fecha_hasta')
+        if fecha_hasta:
+            queryset = queryset.filter(fecha_emision__date__lte=fecha_hasta)
+
+        # Busqueda general
+        search = params.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(numero_certificado__icontains=search) |
+                Q(ecoaliado__codigo__icontains=search) |
+                Q(ecoaliado__razon_social__icontains=search)
+            )
+
+        return queryset
+
+    def get_serializer_class(self):
+        """Retorna el serializer apropiado"""
+        if self.action == 'retrieve':
+            return CertificadoDetailSerializer
+        return CertificadoListSerializer
+
+    def list(self, request, *args, **kwargs):
+        """Lista certificados con paginacion y totales agregados"""
+        queryset = self.get_queryset()
+
+        # Calcular totales agregados ANTES de paginar
+        totales = queryset.aggregate(
+            total_kg=Sum('total_kg'),
+            total_valor=Sum('total_valor'),
+        )
+
+        # Paginacion
+        page_size = int(request.query_params.get('page_size', 20))
+        page = int(request.query_params.get('page', 1))
+        offset = (page - 1) * page_size
+
+        total = queryset.count()
+        certificados = queryset[offset:offset + page_size]
+
+        serializer = self.get_serializer(certificados, many=True)
+
+        return Response({
+            'count': total,
+            'page': page,
+            'page_size': page_size,
+            'results': serializer.data,
+            # Totales agregados de TODOS los certificados (no solo la pagina actual)
+            'totales': {
+                'total_kg': float(totales['total_kg'] or 0),
+                'total_valor': float(totales['total_valor'] or 0),
+            },
+        })
+
+    def destroy(self, request, *args, **kwargs):
+        """Soft delete del certificado (solo gerente/superadmin)"""
+        if not request.user.cargo or request.user.cargo.code not in ['gerente', 'superadmin']:
+            return Response(
+                {'detail': 'Solo gerentes pueden eliminar certificados'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        instance = self.get_object()
+        instance.soft_delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

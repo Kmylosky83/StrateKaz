@@ -20,6 +20,9 @@ export interface Recoleccion {
   cantidad_kg: number;
   precio_kg: number;
   valor_total: number;
+  porcentaje_acidez?: number | null;
+  calidad?: string | null; // A, B, B1, B2, B4, C
+  requiere_prueba_acidez?: boolean;
   is_deleted?: boolean;
   created_at: string;
 }
@@ -54,6 +57,8 @@ export interface RecoleccionDetalle extends Recoleccion {
 export interface RegistrarRecoleccionDTO {
   programacion_id: number;
   cantidad_kg: number;
+  valor_real_pagado?: number;  // Valor real que pagó el conductor (puede diferir del sugerido)
+  porcentaje_acidez?: number;  // Porcentaje de acidez para ACU y Sebo Procesado (0-100%)
   observaciones?: string;
 }
 
@@ -74,6 +79,7 @@ export interface VoucherData {
     nit: string;
     direccion: string;
     telefono: string;
+    logo?: string | null;
   };
   ecoaliado_info: {
     codigo: string;
@@ -147,4 +153,69 @@ export interface PaginatedRecolecciones {
 export interface PaginatedProgramacionesEnRuta {
   count: number;
   results: ProgramacionEnRuta[];
+}
+
+// ==================== CERTIFICADO DE RECOLECCION ====================
+
+export type PeriodoCertificado = 'mensual' | 'bimestral' | 'trimestral' | 'semestral' | 'anual' | 'personalizado';
+
+export interface CertificadoRecoleccionParams {
+  ecoaliado_id: number;
+  periodo: PeriodoCertificado;
+  fecha_inicio?: string; // Para periodo personalizado
+  fecha_fin?: string;    // Para periodo personalizado
+  año?: number;          // Para periodos predefinidos
+  mes?: number;          // Para periodo mensual
+}
+
+export interface RecoleccionResumen {
+  fecha: string;
+  codigo_voucher: string;
+  cantidad_kg: number;
+  precio_kg: number;
+  valor_total: number;
+}
+
+export interface CertificadoRecoleccionData {
+  // Datos de la empresa
+  empresa: {
+    nombre: string;
+    nit: string;
+    direccion: string;
+    telefono: string;
+    representante_legal: string;
+    logo?: string | null;
+  };
+  // Datos del ecoaliado
+  ecoaliado: {
+    codigo: string;
+    razon_social: string;
+    documento_tipo: string;
+    documento_numero: string;
+    direccion: string;
+    ciudad: string;
+    departamento: string;
+    telefono?: string;
+  };
+  // Periodo del certificado
+  periodo: {
+    tipo: PeriodoCertificado;
+    fecha_inicio: string;
+    fecha_fin: string;
+    descripcion: string; // Ej: "Enero 2025", "Primer Semestre 2025"
+  };
+  // Resumen de recolecciones
+  resumen: {
+    total_recolecciones: number;
+    total_kg: number;
+    total_valor: number;
+    promedio_kg_por_recoleccion: number;
+    precio_promedio_kg: number;
+  };
+  // Detalle de cada recoleccion
+  recolecciones: RecoleccionResumen[];
+  // Metadatos
+  numero_certificado: string;
+  fecha_emision: string;
+  emitido_por: string;
 }

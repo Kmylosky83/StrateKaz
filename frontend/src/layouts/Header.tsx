@@ -1,20 +1,20 @@
 import { Link } from 'react-router-dom';
-import { Menu, Bell, User, LogOut, Moon, Sun } from 'lucide-react';
+import { Menu, Bell, LogOut, Moon, Sun } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useThemeStore } from '@/store/themeStore';
-
-// Logos según el tema
-const logoLight = '/logo-ligth.png'; // Para modo oscuro (logo claro)
-const logoDark = '/logo-dark.png';   // Para modo claro (logo oscuro)
+import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 
 interface HeaderProps {
-  isSidebarCollapsed: boolean;
   onToggleSidebar: () => void;
 }
 
-export const Header = ({ isSidebarCollapsed, onToggleSidebar }: HeaderProps) => {
+export const Header = ({ onToggleSidebar }: HeaderProps) => {
   const { user, logout } = useAuthStore();
   const { theme, toggleTheme } = useThemeStore();
+  const { companyName, companySlogan, getLogoForTheme } = useBrandingConfig();
+
+  // Obtener logo según el tema actual
+  const currentLogo = getLogoForTheme(theme);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 h-16">
@@ -30,16 +30,16 @@ export const Header = ({ isSidebarCollapsed, onToggleSidebar }: HeaderProps) => 
 
           <Link to="/dashboard" className="flex items-center space-x-3">
             <img
-              src={theme === 'dark' ? logoLight : logoDark}
-              alt="Grasas y Huesos del Norte"
+              src={currentLogo}
+              alt={companyName}
               className="h-10 w-auto object-contain"
             />
             <div className="hidden md:block">
               <h1 className="text-base font-bold text-gray-900 dark:text-white leading-tight">
-                Grasas y Huesos del Norte
+                {companyName}
               </h1>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Sistema Integrado de Gestión
+                {companySlogan || 'Sistema Integrado de Gestión'}
               </p>
             </div>
           </Link>
@@ -69,7 +69,7 @@ export const Header = ({ isSidebarCollapsed, onToggleSidebar }: HeaderProps) => 
                 {user?.first_name || user?.username}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                {user?.cargo_nombre}
+                {user?.cargo?.name}
               </p>
             </div>
 

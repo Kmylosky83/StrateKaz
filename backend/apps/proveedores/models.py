@@ -389,33 +389,46 @@ class Proveedor(models.Model):
         """
         Genera el siguiente código interno único para un proveedor según su tipo.
 
+        Usa el sistema centralizado de consecutivos (ConsecutivoConfig).
+
         Prefijos:
-        - MP: Materia Prima (MATERIA_PRIMA_EXTERNO y UNIDAD_NEGOCIO)
-        - PS: Productos y Servicios (PRODUCTO_SERVICIO)
+        - MP: Materia Prima (MATERIA_PRIMA_EXTERNO y UNIDAD_NEGOCIO) -> PROVEEDOR_MP
+        - PS: Productos y Servicios (PRODUCTO_SERVICIO) -> PROVEEDOR_PS
 
         Formato: MP-0001, PS-0001, etc.
         """
-        # Determinar prefijo según tipo de proveedor
+        from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
+
+        # Determinar tipo de documento según tipo de proveedor
         if tipo_proveedor == 'PRODUCTO_SERVICIO':
-            prefijo = 'PS'
+            document_type = 'PROVEEDOR_PS'
         else:
-            # MATERIA_PRIMA_EXTERNO y UNIDAD_NEGOCIO usan MP
-            prefijo = 'MP'
+            # MATERIA_PRIMA_EXTERNO y UNIDAD_NEGOCIO usan PROVEEDOR_MP
+            document_type = 'PROVEEDOR_MP'
 
-        # Buscar el último código con ese prefijo
-        ultimo = Proveedor.objects.filter(
-            codigo_interno__startswith=f'{prefijo}-'
-        ).order_by('-codigo_interno').first()
+        try:
+            return ConsecutivoConfig.obtener_siguiente_consecutivo(document_type)
+        except ConsecutivoConfig.DoesNotExist:
+            # Fallback al método legacy si no existe configuración
+            # Esto permite que el sistema funcione durante la migración
+            if tipo_proveedor == 'PRODUCTO_SERVICIO':
+                prefijo = 'PS'
+            else:
+                prefijo = 'MP'
 
-        if ultimo and ultimo.codigo_interno:
-            try:
-                numero = int(ultimo.codigo_interno.split('-')[1]) + 1
-            except (ValueError, IndexError):
+            ultimo = Proveedor.objects.filter(
+                codigo_interno__startswith=f'{prefijo}-'
+            ).order_by('-codigo_interno').first()
+
+            if ultimo and ultimo.codigo_interno:
+                try:
+                    numero = int(ultimo.codigo_interno.split('-')[1]) + 1
+                except (ValueError, IndexError):
+                    numero = 1
+            else:
                 numero = 1
-        else:
-            numero = 1
 
-        return f'{prefijo}-{numero:04d}'
+            return f'{prefijo}-{numero:04d}'
 
     @property
     def is_deleted(self):
@@ -1060,27 +1073,34 @@ class PruebaAcidez(models.Model):
     @classmethod
     def generar_codigo_voucher(cls):
         """
-        Genera un código único para el voucher de prueba de acidez
+        Genera un código único para el voucher de prueba de acidez.
+
+        Usa el sistema centralizado de consecutivos (ConsecutivoConfig).
         Formato: ACID-YYYYMMDD-XXXX (ej: ACID-20241125-0001)
         """
-        from datetime import date
-        hoy = date.today()
-        prefijo = f"ACID-{hoy.strftime('%Y%m%d')}-"
+        from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
 
-        # Buscar el último código del día
-        ultimo = cls.objects.filter(
-            codigo_voucher__startswith=prefijo
-        ).order_by('-codigo_voucher').first()
+        try:
+            return ConsecutivoConfig.obtener_siguiente_consecutivo('PRUEBA_ACIDEZ')
+        except ConsecutivoConfig.DoesNotExist:
+            # Fallback al método legacy si no existe configuración
+            from datetime import date
+            hoy = date.today()
+            prefijo = f"ACID-{hoy.strftime('%Y%m%d')}-"
 
-        if ultimo:
-            try:
-                numero = int(ultimo.codigo_voucher.split('-')[-1]) + 1
-            except (ValueError, IndexError):
+            ultimo = cls.objects.filter(
+                codigo_voucher__startswith=prefijo
+            ).order_by('-codigo_voucher').first()
+
+            if ultimo:
+                try:
+                    numero = int(ultimo.codigo_voucher.split('-')[-1]) + 1
+                except (ValueError, IndexError):
+                    numero = 1
+            else:
                 numero = 1
-        else:
-            numero = 1
 
-        return f"{prefijo}{numero:04d}"
+            return f"{prefijo}{numero:04d}"
 
     def obtener_precio_por_calidad(self):
         """

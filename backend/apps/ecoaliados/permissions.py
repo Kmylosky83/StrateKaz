@@ -3,6 +3,7 @@ Permissions personalizados del módulo Ecoaliados
 Sistema de Gestión Grasas y Huesos del Norte
 """
 from rest_framework import permissions
+from apps.core.permissions_constants import CargoCodes
 
 
 class CanManageEcoaliados(permissions.BasePermission):
@@ -32,11 +33,11 @@ class CanManageEcoaliados(permissions.BasePermission):
             return False
 
         # Códigos de cargo permitidos para CRUD
-        cargos_permitidos = ['comercial_econorte', 'lider_com_econorte']
+        cargos_permitidos = [CargoCodes.COMERCIAL_ECONORTE, CargoCodes.LIDER_COMERCIAL_ECONORTE]
 
         # Para lectura (GET), permitir a comerciales, líderes comerciales y líder logístico
         if request.method in permissions.SAFE_METHODS:
-            if request.user.cargo.code in cargos_permitidos + ['lider_log_econorte']:
+            if request.user.cargo.code in cargos_permitidos + [CargoCodes.LIDER_LOGISTICA_ECONORTE]:
                 return True
             # Gerente también puede leer
             if request.user.has_cargo_level(3):
@@ -60,7 +61,7 @@ class CanManageEcoaliados(permissions.BasePermission):
 
         # Para eliminación (DELETE), solo líder comercial, gerente o superadmin
         if request.method == 'DELETE':
-            if request.user.cargo.code == 'lider_com_econorte':
+            if request.user.cargo.code == CargoCodes.LIDER_COMERCIAL_ECONORTE:
                 return True
             if request.user.has_cargo_level(3):
                 return True
@@ -82,17 +83,17 @@ class CanManageEcoaliados(permissions.BasePermission):
             return False
 
         # Líder Comercial Econorte puede gestionar todos los ecoaliados
-        if request.user.cargo.code == 'lider_com_econorte':
+        if request.user.cargo.code == CargoCodes.LIDER_COMERCIAL_ECONORTE:
             return True
 
         # Líder Logística Econorte solo puede VER ecoaliados (lectura)
-        if request.user.cargo.code == 'lider_log_econorte':
+        if request.user.cargo.code == CargoCodes.LIDER_LOGISTICA_ECONORTE:
             if request.method in permissions.SAFE_METHODS:
                 return True
             return False
 
         # Comercial Econorte solo puede gestionar SUS ecoaliados
-        if request.user.cargo.code == 'comercial_econorte':
+        if request.user.cargo.code == CargoCodes.COMERCIAL_ECONORTE:
             # Para lectura, puede ver todos
             if request.method in permissions.SAFE_METHODS:
                 return True
@@ -128,7 +129,7 @@ class CanChangePrecioEcoaliado(permissions.BasePermission):
             return False
 
         # Líder Comercial Econorte puede cambiar precios
-        if request.user.cargo.code == 'lider_com_econorte':
+        if request.user.cargo.code == CargoCodes.LIDER_COMERCIAL_ECONORTE:
             return True
 
         # Gerente (nivel 3+) puede cambiar precios

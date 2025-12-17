@@ -366,10 +366,11 @@ class Programacion(models.Model):
 
     def clean(self):
         """Validaciones personalizadas"""
-        # Validar que el ecoaliado esté activo
-        if self.ecoaliado and not self.ecoaliado.is_active:
+        # Validar que el ecoaliado esté activo (solo al crear nuevas programaciones)
+        # Al reprogramar una existente, se permite aunque el ecoaliado esté inactivo
+        if not self.pk and self.ecoaliado and not self.ecoaliado.is_active:
             raise ValidationError({
-                'ecoaliado': 'El ecoaliado debe estar activo'
+                'ecoaliado': 'El ecoaliado debe estar activo para crear nuevas programaciones'
             })
 
         # Validar cantidad estimada

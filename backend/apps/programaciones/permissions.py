@@ -3,6 +3,7 @@ Permissions personalizados del módulo Programaciones
 Sistema de Gestión Grasas y Huesos del Norte
 """
 from rest_framework import permissions
+from apps.core.permissions_constants import CargoCodes
 
 
 class CanManageProgramaciones(permissions.BasePermission):
@@ -35,10 +36,10 @@ class CanManageProgramaciones(permissions.BasePermission):
 
         # Códigos de cargo permitidos
         cargos_permitidos = [
-            'comercial_econorte',
-            'lider_com_econorte',
-            'lider_log_econorte',
-            'recolector_econorte'
+            CargoCodes.COMERCIAL_ECONORTE,
+            CargoCodes.LIDER_COMERCIAL_ECONORTE,
+            CargoCodes.LIDER_LOGISTICA_ECONORTE,
+            CargoCodes.RECOLECTOR_ECONORTE,
         ]
 
         # Para lectura (GET), permitir a todos los roles
@@ -51,7 +52,7 @@ class CanManageProgramaciones(permissions.BasePermission):
 
         # Para creación (POST), permitir a comerciales y líderes comerciales
         if request.method == 'POST':
-            if request.user.cargo.code in ['comercial_econorte', 'lider_com_econorte']:
+            if request.user.cargo.code in [CargoCodes.COMERCIAL_ECONORTE, CargoCodes.LIDER_COMERCIAL_ECONORTE]:
                 return True
             # Gerente también puede crear
             if request.user.has_cargo_level(3):
@@ -59,7 +60,7 @@ class CanManageProgramaciones(permissions.BasePermission):
 
         # Para modificación (PUT, PATCH), permitir a líderes y logística (NO comercial_econorte)
         if request.method in ['PUT', 'PATCH']:
-            if request.user.cargo.code in ['lider_com_econorte', 'lider_log_econorte', 'recolector_econorte']:
+            if request.user.cargo.code in [CargoCodes.LIDER_COMERCIAL_ECONORTE, CargoCodes.LIDER_LOGISTICA_ECONORTE, CargoCodes.RECOLECTOR_ECONORTE]:
                 return True
             # Gerente también puede modificar
             if request.user.has_cargo_level(3):
@@ -68,7 +69,7 @@ class CanManageProgramaciones(permissions.BasePermission):
         # Para eliminación (DELETE), comercial_econorte, líder comercial, gerente o superadmin
         # NOTA: lider_log_econorte NO puede eliminar, solo reprogram
         if request.method == 'DELETE':
-            if request.user.cargo.code in ['comercial_econorte', 'lider_com_econorte']:
+            if request.user.cargo.code in [CargoCodes.COMERCIAL_ECONORTE, CargoCodes.LIDER_COMERCIAL_ECONORTE]:
                 return True
             if request.user.has_cargo_level(3):
                 return True
@@ -92,15 +93,15 @@ class CanManageProgramaciones(permissions.BasePermission):
         cargo_code = request.user.cargo.code
 
         # Líder Comercial Econorte puede gestionar todas las programaciones
-        if cargo_code == 'lider_com_econorte':
+        if cargo_code == CargoCodes.LIDER_COMERCIAL_ECONORTE:
             return True
 
         # Líder Logística Econorte puede ver y modificar todas las programaciones
-        if cargo_code == 'lider_log_econorte':
+        if cargo_code == CargoCodes.LIDER_LOGISTICA_ECONORTE:
             return True
 
         # Comercial Econorte solo puede VER todas y ELIMINAR las suyas
-        if cargo_code == 'comercial_econorte':
+        if cargo_code == CargoCodes.COMERCIAL_ECONORTE:
             # Para lectura, puede ver todas
             if request.method in permissions.SAFE_METHODS:
                 return True
@@ -113,7 +114,7 @@ class CanManageProgramaciones(permissions.BasePermission):
             return False
 
         # Recolector solo puede ver las asignadas a él
-        if cargo_code == 'recolector_econorte':
+        if cargo_code == CargoCodes.RECOLECTOR_ECONORTE:
             # Solo lectura de las asignadas a él
             if request.method in permissions.SAFE_METHODS:
                 return obj.recolector_asignado == request.user
@@ -148,7 +149,7 @@ class CanAsignarRecolector(permissions.BasePermission):
             return False
 
         # Líder Logística Econorte o cargo superadmin pueden asignar recolectores
-        if request.user.cargo.code in ['lider_log_econorte', 'superadmin']:
+        if request.user.cargo.code in [CargoCodes.LIDER_LOGISTICA_ECONORTE, 'superadmin']:
             return True
 
         return False
@@ -185,9 +186,9 @@ class CanCambiarEstadoProgramacion(permissions.BasePermission):
 
         # Roles que pueden cambiar estados
         cargos_permitidos = [
-            'lider_com_econorte',
-            'lider_log_econorte',
-            'recolector_econorte'
+            CargoCodes.LIDER_COMERCIAL_ECONORTE,
+            CargoCodes.LIDER_LOGISTICA_ECONORTE,
+            CargoCodes.RECOLECTOR_ECONORTE,
         ]
 
         if request.user.cargo.code in cargos_permitidos:
@@ -229,7 +230,7 @@ class CanReprogramar(permissions.BasePermission):
             return False
 
         # Líder Logística Econorte puede reprogramar
-        if request.user.cargo.code == 'lider_log_econorte':
+        if request.user.cargo.code == CargoCodes.LIDER_LOGISTICA_ECONORTE:
             return True
 
         # Gerente (nivel 3+) puede reprogramar

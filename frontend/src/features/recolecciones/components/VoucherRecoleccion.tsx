@@ -1,12 +1,15 @@
 /**
- * Componente Voucher de Recoleccion
+ * Componente Voucher de Recoleccion - Entrega a Ecoaliados
  *
- * Genera un voucher para impresion en impresora termica (80mm)
+ * Genera un voucher para impresion en impresora termica de 55mm (58mm)
+ * Se entrega al ecoaliado como comprobante de la recoleccion realizada
+ *
  * Incluye:
- * - Datos de la empresa
+ * - Logo de Grasas y Huesos del Norte
+ * - Unidad EcoNorte
  * - Datos del ecoaliado
  * - Detalle de la recoleccion
- * - Totales
+ * - Totales y firmas
  */
 import { forwardRef } from 'react';
 import { formatCurrency, formatDateTime } from '@/utils/formatters';
@@ -18,48 +21,71 @@ interface VoucherRecoleccionProps {
 
 export const VoucherRecoleccion = forwardRef<HTMLDivElement, VoucherRecoleccionProps>(
   ({ voucher }, ref) => {
+    // Logo con fallback a default
+    const logoUrl = voucher.empresa.logo || '/logo-dark.png';
 
     return (
       <div
         ref={ref}
-        className="bg-white text-black p-4 font-mono text-xs"
-        style={{ width: '80mm', maxWidth: '80mm' }}
+        className="bg-white text-black p-2 font-mono"
+        style={{
+          width: '55mm',
+          maxWidth: '55mm',
+          fontSize: '9px',
+          lineHeight: '1.3',
+        }}
       >
-        {/* ENCABEZADO EMPRESA */}
+        {/* LOGO Y ENCABEZADO */}
         <div className="text-center border-b border-dashed border-gray-400 pb-2 mb-2">
-          <div className="font-bold text-sm">{voucher.empresa.nombre}</div>
-          <div>NIT: {voucher.empresa.nit}</div>
-          <div>{voucher.empresa.direccion}</div>
-          <div>Tel: {voucher.empresa.telefono}</div>
+          {/* Logo */}
+          <img
+            src={logoUrl}
+            alt={voucher.empresa.nombre}
+            className="mx-auto mb-1"
+            style={{ height: '28px', width: 'auto' }}
+          />
+          <div className="font-bold" style={{ fontSize: '8px' }}>
+            {voucher.empresa.nombre}
+          </div>
+          <div style={{ fontSize: '7px' }}>NIT: {voucher.empresa.nit}</div>
+          <div
+            className="font-bold mt-1 py-1 bg-gray-100"
+            style={{ fontSize: '9px' }}
+          >
+            UNIDAD ECONORTE
+          </div>
         </div>
 
         {/* TITULO VOUCHER */}
         <div className="text-center font-bold border-b border-dashed border-gray-400 pb-2 mb-2">
-          <div className="text-sm">COMPROBANTE DE RECOLECCION</div>
-          <div className="text-lg">{voucher.codigo_voucher}</div>
-          <div className="text-[10px]">{formatDateTime(voucher.fecha_recoleccion)}</div>
+          <div style={{ fontSize: '10px' }}>COMPROBANTE DE COMPRA</div>
+          <div className="font-bold" style={{ fontSize: '11px' }}>
+            {voucher.codigo_voucher}
+          </div>
+          <div style={{ fontSize: '7px' }}>{formatDateTime(voucher.fecha_recoleccion)}</div>
         </div>
 
-        {/* DATOS ECOALIADO */}
+        {/* DATOS ECOALIADO/PROVEEDOR */}
         <div className="border-b border-dashed border-gray-400 pb-2 mb-2">
-          <div className="font-bold mb-1">PROVEEDOR:</div>
-          <div>{voucher.ecoaliado_info.razon_social}</div>
+          <div className="font-bold mb-1" style={{ fontSize: '8px' }}>
+            PROVEEDOR:
+          </div>
+          <div className="font-bold">{voucher.ecoaliado_info.razon_social}</div>
           <div>NIT: {voucher.ecoaliado_info.nit}</div>
           <div>Cod: {voucher.ecoaliado_info.codigo}</div>
-          {voucher.ecoaliado_info.direccion && (
-            <div>{voucher.ecoaliado_info.direccion}</div>
-          )}
           <div>{voucher.ecoaliado_info.ciudad}</div>
         </div>
 
         {/* DETALLE RECOLECCION */}
         <div className="border-b border-dashed border-gray-400 pb-2 mb-2">
-          <div className="font-bold mb-1">DETALLE:</div>
+          <div className="font-bold mb-1" style={{ fontSize: '8px' }}>
+            DETALLE:
+          </div>
           <table className="w-full">
             <tbody>
               <tr>
                 <td>Cantidad:</td>
-                <td className="text-right font-bold">
+                <td className="text-right font-bold" style={{ fontSize: '10px' }}>
                   {voucher.detalle.cantidad_kg.toLocaleString('es-CO')} kg
                 </td>
               </tr>
@@ -71,19 +97,11 @@ export const VoucherRecoleccion = forwardRef<HTMLDivElement, VoucherRecoleccionP
           </table>
         </div>
 
-        {/* TOTALES */}
+        {/* TOTAL */}
         <div className="border-b border-dashed border-gray-400 pb-2 mb-2">
           <table className="w-full">
             <tbody>
-              <tr>
-                <td>Subtotal:</td>
-                <td className="text-right">{formatCurrency(voucher.detalle.subtotal)}</td>
-              </tr>
-              <tr>
-                <td>IVA:</td>
-                <td className="text-right">{formatCurrency(voucher.detalle.iva)}</td>
-              </tr>
-              <tr className="font-bold text-sm">
+              <tr className="font-bold" style={{ fontSize: '11px' }}>
                 <td>TOTAL:</td>
                 <td className="text-right">{formatCurrency(voucher.detalle.total)}</td>
               </tr>
@@ -92,34 +110,28 @@ export const VoucherRecoleccion = forwardRef<HTMLDivElement, VoucherRecoleccionP
         </div>
 
         {/* TOTAL EN LETRAS */}
-        <div className="text-center text-[10px] border-b border-dashed border-gray-400 pb-2 mb-2">
+        <div
+          className="text-center border-b border-dashed border-gray-400 pb-2 mb-2"
+          style={{ fontSize: '7px' }}
+        >
           <div className="font-bold">SON:</div>
           <div>{voucher.detalle.total_letras}</div>
         </div>
 
         {/* RECOLECTOR */}
-        <div className="border-b border-dashed border-gray-400 pb-2 mb-2">
-          <div>Recolector: {voucher.recolector_nombre}</div>
-        </div>
-
-        {/* FIRMAS */}
-        <div className="mt-8 pt-4">
-          <div className="flex justify-between">
-            <div className="text-center flex-1">
-              <div className="border-t border-black w-24 mx-auto mb-1"></div>
-              <div className="text-[10px]">ENTREGA</div>
-            </div>
-            <div className="text-center flex-1">
-              <div className="border-t border-black w-24 mx-auto mb-1"></div>
-              <div className="text-[10px]">RECIBE</div>
-            </div>
+        <div className="pb-2 mb-2" style={{ fontSize: '8px' }}>
+          <div>
+            <span className="font-bold">Recolector:</span> {voucher.recolector_nombre}
           </div>
         </div>
 
         {/* PIE DE PAGINA */}
-        <div className="text-center mt-4 text-[10px]">
-          <div>*** ORIGINAL ***</div>
-          <div>Gracias por su preferencia</div>
+        <div className="text-center mt-3" style={{ fontSize: '7px' }}>
+          <div className="font-bold">*** ORIGINAL CLIENTE ***</div>
+          <div>Conserve este comprobante</div>
+          <div className="mt-1" style={{ fontSize: '6px' }}>
+            www.grasasyhuesos.com
+          </div>
         </div>
       </div>
     );

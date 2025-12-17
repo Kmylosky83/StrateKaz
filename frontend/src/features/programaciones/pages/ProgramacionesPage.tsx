@@ -9,7 +9,7 @@
  * - Control de acceso por permisos
  * - Estadísticas en tiempo real
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Calendar, List, Package, Truck, CheckCircle, Clock } from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
@@ -22,12 +22,12 @@ import {
   DataTableCard,
 } from '@/components/layout';
 import { useAuthStore } from '@/store/authStore';
+import { CargoCodes } from '@/constants/permissions';
 import { ProgramacionesTable } from '../components/ProgramacionesTable';
 import { ProgramacionForm } from '../components/ProgramacionForm';
 import { AsignarRecolectorModal } from '../components/AsignarRecolectorModal';
 import { ReprogramarModal } from '../components/ReprogramarModal';
 import { ProgramacionDetalleModal } from '../components/ProgramacionDetalleModal';
-import { CambiarEstadoModal } from '../components/CambiarEstadoModal';
 import { CalendarioView } from '../components/CalendarioView';
 import {
   useProgramaciones,
@@ -35,7 +35,6 @@ import {
   useUpdateProgramacion,
   useDeleteProgramacion,
   useAsignarRecolector,
-  useCambiarEstado,
   useReprogramar,
   useEstadisticasProgramaciones,
   useUnidadesNegocioProgramacion,
@@ -46,7 +45,6 @@ import type {
   UpdateProgramacionDTO,
   ProgramacionFilters,
   AsignarRecolectorDTO,
-  CambiarEstadoDTO,
   ReprogramarDTO,
 } from '../types/programacion.types';
 
@@ -69,6 +67,7 @@ export const ProgramacionesPage = ({
 }: ProgramacionesPageProps) => {
   // Usuario autenticado
   const user = useAuthStore((state) => state.user);
+  const lastTriggerRef = useRef(0); // Para evitar abrir modal al cambiar de tab
 
   // Estado de vista (controlado internamente o externamente)
   const [vistaInterna, setVistaInterna] = useState<'tabla' | 'calendario'>('tabla');
@@ -90,7 +89,6 @@ export const ProgramacionesPage = ({
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isAsignarRecolectorOpen, setIsAsignarRecolectorOpen] = useState(false);
   const [isReprogramarOpen, setIsReprogramarOpen] = useState(false);
-  const [isCambiarEstadoOpen, setIsCambiarEstadoOpen] = useState(false);
   const [isDetalleOpen, setIsDetalleOpen] = useState(false);
   const [selectedProgramacion, setSelectedProgramacion] = useState<Programacion | null>(null);
 
@@ -108,19 +106,17 @@ export const ProgramacionesPage = ({
   const updateMutation = useUpdateProgramacion();
   const deleteMutation = useDeleteProgramacion();
   const asignarRecolectorMutation = useAsignarRecolector();
-  const cambiarEstadoMutation = useCambiarEstado();
   const reprogramarMutation = useReprogramar();
 
   // Permisos
-  const canCreate = ['comercial_econorte', 'lider_com_econorte', 'gerente', 'superadmin', 'coordinador_recoleccion'].includes(
+  const canCreate = [CargoCodes.COMERCIAL_ECONORTE, CargoCodes.LIDER_COMERCIAL_ECONORTE, 'gerente', 'superadmin', CargoCodes.COORDINADOR_RECOLECCION].includes(
     user?.cargo_code || ''
   );
-  const canDelete = ['comercial_econorte', 'lider_com_econorte', 'gerente', 'superadmin', 'coordinador_recoleccion'].includes(
+  const canDelete = [CargoCodes.COMERCIAL_ECONORTE, CargoCodes.LIDER_COMERCIAL_ECONORTE, 'gerente', 'superadmin', CargoCodes.COORDINADOR_RECOLECCION].includes(
     user?.cargo_code || ''
   );
-  const canReprogramar = ['lider_log_econorte', 'superadmin'].includes(user?.cargo_code || '');
-  const canAsignarRecolector = ['lider_log_econorte', 'superadmin'].includes(user?.cargo_code || '');
-  const canCambiarEstado = ['lider_log_econorte', 'superadmin', 'coordinador_recoleccion'].includes(user?.cargo_code || '');
+  const canReprogramar = [CargoCodes.LIDER_LOGISTICA_ECONORTE, 'superadmin'].includes(user?.cargo_code || '');
+  const canAsignarRecolector = [CargoCodes.LIDER_LOGISTICA_ECONORTE, 'superadmin'].includes(user?.cargo_code || '');
 
   // Handlers - Formulario
   const handleOpenForm = (programacion?: Programacion) => {
@@ -208,30 +204,6 @@ export const ProgramacionesPage = ({
     }
   };
 
-  // Handlers - Cambiar Estado
-  const handleOpenCambiarEstado = (programacion: Programacion) => {
-    setSelectedProgramacion(programacion);
-    setIsCambiarEstadoOpen(true);
-  };
-
-  const handleCloseCambiarEstado = () => {
-    setIsCambiarEstadoOpen(false);
-    setSelectedProgramacion(null);
-  };
-
-  const handleSubmitCambiarEstado = async (data: CambiarEstadoDTO) => {
-    if (!selectedProgramacion) return;
-    try {
-      await cambiarEstadoMutation.mutateAsync({
-        id: selectedProgramacion.id,
-        data,
-      });
-      handleCloseCambiarEstado();
-    } catch (error) {
-      console.error('Error al cambiar estado:', error);
-    }
-  };
-
   // Handlers - Acciones
   const handleDelete = async (programacion: Programacion) => {
     if (
@@ -265,8 +237,10 @@ export const ProgramacionesPage = ({
   };
 
   // Efecto para abrir formulario desde trigger externo (EcoNortePage)
+  // Solo abre cuando el trigger realmente cambia, no al montar el componente
   useEffect(() => {
-    if (triggerNewForm > 0 && canCreate) {
+    if (triggerNewForm > 0 && triggerNewForm !== lastTriggerRef.current && canCreate) {
+      lastTriggerRef.current = triggerNewForm;
       handleOpenForm();
     }
   }, [triggerNewForm, canCreate]);
@@ -430,11 +404,9 @@ export const ProgramacionesPage = ({
             onDelete={handleDelete}
             onAsignarRecolector={handleOpenAsignarRecolector}
             onReprogramar={handleOpenReprogramar}
-            onCambiarEstado={handleOpenCambiarEstado}
             canDelete={canDelete}
             canReprogramar={canReprogramar}
             canAsignarRecolector={canAsignarRecolector}
-            canCambiarEstado={canCambiarEstado}
             isLoading={isLoadingProgramaciones}
           />
         </DataTableCard>
@@ -468,11 +440,9 @@ export const ProgramacionesPage = ({
         onClose={handleCloseDetalle}
         programacion={selectedProgramacion}
         onAsignarRecolector={handleOpenAsignarRecolector}
-        onCambiarEstado={handleOpenCambiarEstado}
         onReprogramar={handleOpenReprogramar}
         onEliminar={handleDelete}
         canAsignarRecolector={canAsignarRecolector}
-        canCambiarEstado={canCambiarEstado}
         canReprogramar={canReprogramar}
         canEliminar={canDelete}
       />
@@ -484,14 +454,6 @@ export const ProgramacionesPage = ({
         programacion={selectedProgramacion}
         canReprogramar={canReprogramar}
         isLoading={reprogramarMutation.isPending}
-      />
-
-      <CambiarEstadoModal
-        isOpen={isCambiarEstadoOpen}
-        onClose={handleCloseCambiarEstado}
-        onSubmit={handleSubmitCambiarEstado}
-        programacion={selectedProgramacion}
-        isLoading={cambiarEstadoMutation.isPending}
       />
     </div>
   );

@@ -82,21 +82,27 @@ export const macroprocessColors: Record<MacroprocessColor, {
  */
 const routeToMacroprocess: Record<string, MacroprocessColor> = {
   // Dirección Estratégica - Purple
-  '/direccion-estrategica': 'purple',
-  '/settings': 'purple',
+  '/gestion-estrategica': 'purple',
   '/usuarios': 'purple',
 
-  // Gestión Misional - Blue
+  // Motor de Operaciones - Blue
+  '/motor-operaciones': 'blue',
+
+  // Gestión Misional (Cadena de Valor) - Blue
   '/proveedores': 'blue',
-  '/lotes': 'blue',
+  '/econorte': 'blue',
+  '/planta': 'blue',
   '/reportes': 'blue',
-  '/dashboard': 'blue',
+  '/cadena-valor': 'blue',
 
-  // Gestión de Apoyo - Green
-  '/talento-humano': 'green',
-
-  // Gestión Integral - Orange
+  // Gestión Integral (SST, PESV, Calidad, Ambiental) - Orange
   '/gestion-integral': 'orange',
+
+  // Procesos de Apoyo - Green
+  '/procesos-apoyo': 'green',
+
+  // Inteligencia de Negocios - Purple
+  '/inteligencia': 'purple',
 };
 
 /**

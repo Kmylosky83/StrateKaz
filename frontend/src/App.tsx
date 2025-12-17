@@ -1,9 +1,13 @@
 import { useEffect } from 'react';
 import { useThemeStore } from '@/store/themeStore';
+import { useDynamicTheme } from '@/hooks/useDynamicTheme';
 import { AppRoutes } from '@/routes';
 
 function App() {
   const theme = useThemeStore((state) => state.theme);
+
+  // Aplicar colores dinámicos del branding
+  useDynamicTheme();
 
   // Aplicar tema al cargar
   useEffect(() => {

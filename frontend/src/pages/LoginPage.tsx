@@ -8,6 +8,7 @@ import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { User, Lock } from 'lucide-react';
+import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Usuario requerido'),
@@ -20,6 +21,7 @@ export const LoginPage = () => {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
   const [isLoading, setIsLoading] = useState(false);
+  const { companyName, companySlogan, logo, logoWhite } = useBrandingConfig();
 
   const {
     register,
@@ -49,20 +51,20 @@ export const LoginPage = () => {
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <img
-            src="/logo-dark.png"
-            alt="Grasas y Huesos del Norte"
+            src={logo}
+            alt={companyName}
             className="mx-auto h-24 w-auto object-contain mb-4 dark:hidden"
           />
           <img
-            src="/logo-ligth.png"
-            alt="Grasas y Huesos del Norte"
+            src={logoWhite}
+            alt={companyName}
             className="mx-auto h-24 w-auto object-contain mb-4 hidden dark:block"
           />
           <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white">
-            Grasas y Huesos del Norte
+            {companyName}
           </h2>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-            Sistema Integrado de Gestión
+            {companySlogan || 'Sistema Integrado de Gestión'}
           </p>
         </div>
 

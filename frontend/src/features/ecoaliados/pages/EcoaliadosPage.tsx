@@ -8,7 +8,7 @@
  * - Control de acceso por permisos
  * - Geolocalización GPS
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Users, CheckCircle, MapPin, DollarSign } from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
@@ -21,6 +21,7 @@ import {
   DataTableCard,
 } from '@/components/layout';
 import { useAuthStore } from '@/store/authStore';
+import { CargoCodes } from '@/constants/permissions';
 import { EcoaliadosTable } from '../components/EcoaliadosTable';
 import { EcoaliadoForm } from '../components/EcoaliadoForm';
 import { CambiarPrecioModal } from '../components/CambiarPrecioModal';
@@ -32,7 +33,6 @@ import {
   useDeleteEcoaliado,
   useToggleEcoaliadoStatus,
   useCambiarPrecio,
-  useHistorialPrecios,
   useUnidadesNegocio,
 } from '../api/useEcoaliados';
 import type {
@@ -52,6 +52,7 @@ interface EcoaliadosPageProps {
 export const EcoaliadosPage = ({ embedded = false, triggerNewForm = 0 }: EcoaliadosPageProps) => {
   // Obtener usuario autenticado
   const user = useAuthStore((state) => state.user);
+  const lastTriggerRef = useRef(0); // Para evitar abrir modal al cambiar de tab
 
   // Estado de filtros
   const [filters, setFilters] = useState<EcoaliadoFilters>({
@@ -81,17 +82,12 @@ export const EcoaliadosPage = ({ embedded = false, triggerNewForm = 0 }: Ecoalia
   const toggleStatusMutation = useToggleEcoaliadoStatus();
   const cambiarPrecioMutation = useCambiarPrecio();
 
-  // Historial de precios query (solo se carga cuando se abre el modal)
-  const { data: historialData, isLoading: isLoadingHistorial } = useHistorialPrecios(
-    selectedEcoaliado?.id || 0
-  );
-
   // Permisos
-  const canChangePrecio = ['lider_com_econorte', 'gerente', 'superadmin'].includes(
+  const canChangePrecio = [CargoCodes.LIDER_COMERCIAL_ECONORTE, 'gerente', 'superadmin'].includes(
     user?.cargo_code || ''
   );
-  const isComercial = user?.cargo_code === 'comercial_econorte';
-  const isLiderLogistico = user?.cargo_code === 'lider_log_econorte';
+  const isComercial = user?.cargo_code === CargoCodes.COMERCIAL_ECONORTE;
+  const isLiderLogistico = user?.cargo_code === CargoCodes.LIDER_LOGISTICA_ECONORTE;
 
   // Permisos de gestión (crear, editar, eliminar, desactivar)
   const canManage = !isLiderLogistico; // Líder logístico SOLO puede ver
@@ -209,8 +205,10 @@ export const EcoaliadosPage = ({ embedded = false, triggerNewForm = 0 }: Ecoalia
   };
 
   // Efecto para abrir formulario desde trigger externo (EcoNortePage)
+  // Solo abre cuando el trigger realmente cambia, no al montar el componente
   useEffect(() => {
-    if (triggerNewForm > 0 && canManage) {
+    if (triggerNewForm > 0 && triggerNewForm !== lastTriggerRef.current && canManage) {
+      lastTriggerRef.current = triggerNewForm;
       handleOpenForm();
     }
   }, [triggerNewForm, canManage]);
@@ -405,17 +403,7 @@ export const EcoaliadosPage = ({ embedded = false, triggerNewForm = 0 }: Ecoalia
       <HistorialPrecioModal
         isOpen={isHistorialModalOpen}
         onClose={handleCloseHistorialModal}
-        ecoaliado={
-          selectedEcoaliado
-            ? {
-                razon_social: selectedEcoaliado.razon_social,
-                codigo: selectedEcoaliado.codigo,
-              }
-            : null
-        }
-        precioActual={historialData?.precio_actual || '0'}
-        historial={historialData?.historial || []}
-        isLoading={isLoadingHistorial}
+        ecoaliado={selectedEcoaliado}
       />
     </div>
   );

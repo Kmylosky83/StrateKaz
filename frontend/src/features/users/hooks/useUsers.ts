@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usersAPI } from '@/api/users.api';
 import toast from 'react-hot-toast';
 import type { UserFilters, CreateUserDTO, UpdateUserDTO, ChangePasswordDTO } from '@/types/users.types';
+import { CargoCodes } from '@/constants/permissions';
 
 export const useUsers = (filters?: UserFilters) => {
   return useQuery({
@@ -102,5 +103,15 @@ export const useChangePassword = () => {
       const message = error.response?.data?.message || 'Error al cambiar la contraseña';
       toast.error(message);
     },
+  });
+};
+
+/**
+ * Hook para obtener lista de recolectores (usuarios con rol de recolector)
+ */
+export const useRecolectores = () => {
+  return useQuery({
+    queryKey: ['users', { cargo__code: CargoCodes.RECOLECTOR_ECONORTE }],
+    queryFn: () => usersAPI.getUsers({ cargo__code: CargoCodes.RECOLECTOR_ECONORTE }),
   });
 };

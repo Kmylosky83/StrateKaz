@@ -21,6 +21,7 @@ export const usersAPI = {
 
     if (filters?.search) params.append('search', filters.search);
     if (filters?.cargo) params.append('cargo', filters.cargo);
+    if (filters?.cargo__code) params.append('cargo__code', filters.cargo__code);
     if (filters?.is_active !== undefined) {
       params.append('is_active', String(filters.is_active));
     }

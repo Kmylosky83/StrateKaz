@@ -23,10 +23,15 @@ urlpatterns = [
     path('api/ecoaliados/', include('apps.ecoaliados.urls')),
     path('api/programaciones/', include('apps.programaciones.urls')),
     path('api/recolecciones/', include('apps.recolecciones.urls')),
+    path('api/recepciones/', include('apps.recepciones.urls')),
     path('api/lotes/', include('apps.lotes.urls')),
     path('api/liquidaciones/', include('apps.liquidaciones.urls')),
     path('api/certificados/', include('apps.certificados.urls')),
     path('api/reportes/', include('apps.reportes.urls')),
+
+    # Dirección Estratégica (Módulo 1)
+    path('api/organizacion/', include('apps.gestion_estrategica.organizacion.urls')),
+    path('api/configuracion/', include('apps.gestion_estrategica.configuracion.urls')),
 ]
 
 # Serve media files in development

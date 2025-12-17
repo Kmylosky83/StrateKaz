@@ -34,6 +34,9 @@ export const VoucherModal = ({ isOpen, onClose, recoleccionId }: VoucherModalPro
 
     const voucherContent = voucherRef.current.innerHTML;
 
+    // Obtener la URL base para el logo
+    const logoUrl = `${window.location.origin}/logo-dark.png`;
+
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
@@ -41,57 +44,64 @@ export const VoucherModal = ({ isOpen, onClose, recoleccionId }: VoucherModalPro
           <title>Voucher ${voucher?.codigo_voucher || ''}</title>
           <style>
             @page {
-              size: 80mm auto;
+              size: 55mm auto;
               margin: 0;
             }
             body {
               margin: 0;
               padding: 0;
               font-family: 'Courier New', monospace;
-              font-size: 12px;
+              font-size: 9px;
+              line-height: 1.3;
             }
             .voucher-container {
-              width: 80mm;
-              max-width: 80mm;
-              padding: 4mm;
+              width: 55mm;
+              max-width: 55mm;
+              padding: 2mm;
               box-sizing: border-box;
             }
+            img { max-width: 100%; height: auto; }
             .text-center { text-align: center; }
             .text-right { text-align: right; }
             .font-bold { font-weight: bold; }
-            .text-sm { font-size: 14px; }
-            .text-lg { font-size: 18px; }
-            .text-xs { font-size: 10px; }
-            .mb-1 { margin-bottom: 2mm; }
-            .mb-2 { margin-bottom: 4mm; }
-            .mt-4 { margin-top: 8mm; }
-            .mt-8 { margin-top: 16mm; }
-            .pt-4 { padding-top: 8mm; }
-            .pb-2 { padding-bottom: 4mm; }
-            .border-b { border-bottom: 1px dashed #333; }
+            .mb-1 { margin-bottom: 1mm; }
+            .mb-2 { margin-bottom: 2mm; }
+            .mt-1 { margin-top: 1mm; }
+            .mt-3 { margin-top: 3mm; }
+            .mt-4 { margin-top: 4mm; }
+            .pt-2 { padding-top: 2mm; }
+            .pb-2 { padding-bottom: 2mm; }
+            .py-1 { padding-top: 1mm; padding-bottom: 1mm; }
+            .p-2 { padding: 2mm; }
+            .border-b { border-bottom: 1px dashed #666; }
             .border-t { border-top: 1px solid #000; }
+            .border-dashed { border-style: dashed; }
+            .border-gray-400 { border-color: #9ca3af; }
+            .bg-gray-100 { background-color: #f3f4f6; }
             table { width: 100%; border-collapse: collapse; }
-            td { padding: 1mm 0; }
+            td { padding: 0.5mm 0; }
             .flex { display: flex; }
             .justify-between { justify-content: space-between; }
+            .gap-2 { gap: 2mm; }
             .flex-1 { flex: 1; }
-            .w-24 { width: 20mm; }
             .mx-auto { margin-left: auto; margin-right: auto; }
             @media print {
-              body { print-color-adjust: exact; }
+              body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
             }
           </style>
         </head>
         <body>
           <div class="voucher-container">
-            ${voucherContent}
+            ${voucherContent.replace(/src="\/logo-dark\.png"/g, `src="${logoUrl}"`)}
           </div>
           <script>
             window.onload = function() {
-              window.print();
-              window.onafterprint = function() {
-                window.close();
-              };
+              setTimeout(function() {
+                window.print();
+                window.onafterprint = function() {
+                  window.close();
+                };
+              }, 300);
             };
           </script>
         </body>

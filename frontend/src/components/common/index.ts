@@ -99,3 +99,53 @@ export {
   Overline,
 } from './Typography';
 export type { TypographyProps } from './Typography';
+
+// Animated Components (Framer Motion)
+export {
+  AnimatedPage,
+  AnimatedModalBackdrop,
+  AnimatedModalContent,
+  AnimatedCard,
+  AnimatedList,
+  AnimatedListItem,
+  AnimatedTableRow,
+  AnimatedToast,
+  AnimatedDropdown,
+  AnimatedCollapse,
+  AnimatedSidebar,
+  FadeIn,
+  Skeleton,
+  PulseLoader,
+  Presence,
+  AnimatePresence,
+  motion,
+} from './AnimatedComponents';
+
+// Protected Components (RBAC)
+export {
+  ProtectedAction,
+  SuperAdminOnly,
+  CoordinationOnly,
+  DirectionOnly,
+  withProtection,
+} from './ProtectedAction';
+export type { default as ProtectedActionProps } from './ProtectedAction';
+
+// Navigation & Routing
+export { SmartRedirect } from './SmartRedirect';
+
+export { SubNavigation } from './SubNavigation';
+export type { SubNavigationProps, SubNavigationItem } from './SubNavigation';
+
+// Feature Toggle Cards (for module/feature flags)
+export { FeatureToggleCard, FeatureToggleGrid } from './FeatureToggleCard';
+export type {
+  FeatureToggleCardProps,
+  FeatureToggleGridProps,
+  FeatureToggleColor,
+  FeatureToggleLayout,
+} from './FeatureToggleCard';
+
+// Dynamic Sections (API-driven sub-navigation)
+export { DynamicSections } from './DynamicSections';
+export type { DynamicSectionsProps } from './DynamicSections';

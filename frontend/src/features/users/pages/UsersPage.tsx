@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { UserPlus } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { UserPlus, Users, UserCheck, UserX, Shield } from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
@@ -8,7 +8,10 @@ import {
   FilterCard,
   FilterGrid,
   DataTableCard,
+  StatsGrid,
+  StatsGridSkeleton,
 } from '@/components/layout';
+import type { StatItem } from '@/components/layout';
 import { UsersTable } from '../components/UsersTable';
 import { UserForm } from '../components/UserForm';
 import { DeleteConfirmModal } from '@/components/users/DeleteConfirmModal';
@@ -146,19 +149,39 @@ export default function UsersPage() {
   const users = usersData?.results || [];
   const totalUsers = usersData?.count || 0;
 
+  // Calcular estadísticas para StatsGrid
+  const userStats: StatItem[] = useMemo(() => {
+    const activos = users.filter((u) => u.is_active).length;
+    const inactivos = users.filter((u) => !u.is_active).length;
+    const conCargo = users.filter((u) => u.cargo).length;
+
+    return [
+      { label: 'Total Usuarios', value: totalUsers, icon: Users, iconColor: 'primary' as const },
+      { label: 'Activos', value: activos, icon: UserCheck, iconColor: 'success' as const },
+      { label: 'Inactivos', value: inactivos, icon: UserX, iconColor: 'gray' as const },
+      { label: 'Con Cargo Asignado', value: conCargo, icon: Shield, iconColor: 'info' as const },
+    ];
+  }, [users, totalUsers]);
+
   return (
     <div className="space-y-6">
       {/* HEADER */}
       <PageHeader
         title="Gestión de Usuarios"
         description="Administración de usuarios del sistema"
-        badges={[{ label: `${totalUsers} usuarios`, variant: 'primary' }]}
         actions={
           <Button onClick={handleOpenCreateForm} leftIcon={<UserPlus className="h-4 w-4" />}>
             Nuevo Usuario
           </Button>
         }
       />
+
+      {/* ESTADÍSTICAS */}
+      {isLoadingUsers ? (
+        <StatsGridSkeleton columns={4} />
+      ) : (
+        <StatsGrid stats={userStats} columns={4} macroprocessColor="purple" />
+      )}
 
       {/* FILTROS */}
       <FilterCard

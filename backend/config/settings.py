@@ -27,10 +27,16 @@ INSTALLED_APPS = [
     'apps.ecoaliados',
     'apps.programaciones',
     'apps.recolecciones',
+    'apps.recepciones',
     'apps.lotes',
     'apps.liquidaciones',
     'apps.certificados',
     'apps.reportes',
+    # Dirección Estratégica (Módulo 1) - TAB = Django App
+    'apps.gestion_estrategica.configuracion',    # TAB: Configuración
+    'apps.gestion_estrategica.organizacion',     # TAB: Organización
+    'apps.gestion_estrategica.identidad',        # TAB: Identidad Corporativa
+    'apps.gestion_estrategica.planeacion',       # TAB: Planeación Estratégica
 ]
 
 MIDDLEWARE = [

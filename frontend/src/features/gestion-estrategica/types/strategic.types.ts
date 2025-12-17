@@ -1,0 +1,998 @@
+/**
+ * Tipos TypeScript para el módulo de Dirección Estratégica
+ * Sistema de Gestión Grasas y Huesos del Norte
+ */
+
+// ==================== ENUMS ====================
+
+export type BSCPerspective = 'FINANCIERA' | 'CLIENTES' | 'PROCESOS' | 'APRENDIZAJE';
+
+export type ISOStandard =
+  | 'ISO_9001'
+  | 'ISO_14001'
+  | 'ISO_45001'
+  | 'ISO_27001'
+  | 'PESV'
+  | 'SG_SST'
+  | 'NINGUNO';
+
+export type ObjectiveStatus = 'PENDIENTE' | 'EN_PROGRESO' | 'COMPLETADO' | 'CANCELADO' | 'RETRASADO';
+
+export type ModuleCategory = 'ESTRATEGICO' | 'MOTOR' | 'INTEGRAL' | 'MISIONAL' | 'APOYO' | 'INTELIGENCIA';
+
+// Tipos de documento para consecutivos
+export type DocumentType =
+  // Operacionales
+  | 'RECOLECCION'
+  | 'RECEPCION'
+  | 'LOTE'
+  | 'DESPACHO'
+  | 'FACTURA'
+  | 'ORDEN_COMPRA'
+  | 'REQUISICION'
+  | 'REMISION'
+  | 'COTIZACION'
+  | 'ORDEN_TRABAJO'
+  | 'ACTA_COMITE'
+  // Sistema de Gestión
+  | 'PROCEDIMIENTO'
+  | 'INSTRUCTIVO'
+  | 'FORMATO'
+  | 'PROTOCOLO'
+  | 'MANUAL'
+  | 'PROGRAMA'
+  | 'PLAN'
+  // Calidad y SST
+  | 'NO_CONFORMIDAD'
+  | 'ACCION_CORRECTIVA'
+  | 'ACCION_PREVENTIVA'
+  | 'ACCION_MEJORA'
+  | 'INCIDENTE'
+  | 'ACCIDENTE'
+  | 'INVESTIGACION'
+  | 'AUDITORIA'
+  | 'CAPACITACION'
+  // Proveedores/Clientes
+  | 'PROVEEDOR_MP'
+  | 'PROVEEDOR_PS'
+  | 'CLIENTE'
+  | 'ECOALIADO'
+  // Pruebas
+  | 'PRUEBA_ACIDEZ'
+  | 'ANALISIS_CALIDAD';
+
+// Separadores disponibles
+export type SeparatorType = '-' | '/' | '_' | '';
+
+// Contextos (áreas/procesos)
+export type ContextCode =
+  | ''
+  // Sistemas de Gestión
+  | 'SST'
+  | 'CAL'
+  | 'AMB'
+  | 'PESV'
+  // Áreas Operativas
+  | 'PROD'
+  | 'LOG'
+  | 'COM'
+  | 'ADM'
+  | 'FIN'
+  | 'TH'
+  | 'MTO'
+  | 'TI';
+
+export type PeriodType = 'ANUAL' | 'BIANUAL' | 'TRIANUAL' | 'QUINQUENAL';
+
+// ==================== CATEGORIA DOCUMENTO ====================
+
+/**
+ * Categoría dinámica de documentos
+ * Las categorías pueden ser creadas por el usuario o ser del sistema
+ */
+export interface CategoriaDocumento {
+  id: number;
+  code: string;
+  name: string;
+  description?: string;
+  color: string;
+  icon?: string;
+  is_system: boolean;
+  is_active: boolean;
+  order: number;
+  count_tipos?: number;
+  puede_eliminar?: {
+    puede: boolean;
+    motivo?: string | null;
+  };
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CreateCategoriaDocumentoDTO {
+  code: string;
+  name: string;
+  description?: string;
+  color?: string;
+  icon?: string;
+  order?: number;
+  is_active?: boolean;
+}
+
+export interface UpdateCategoriaDocumentoDTO {
+  name?: string;
+  description?: string;
+  color?: string;
+  icon?: string;
+  order?: number;
+  is_active?: boolean;
+}
+
+export interface CategoriaDocumentoFilters {
+  is_system?: boolean;
+  is_active?: boolean;
+  search?: string;
+}
+
+// ==================== CORPORATE VALUE ====================
+
+export interface CorporateValue {
+  id: number;
+  name: string;
+  description: string;
+  icon?: string | null;
+  order: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface CreateCorporateValueDTO {
+  name: string;
+  description: string;
+  icon?: string;
+  order?: number;
+  is_active?: boolean;
+}
+
+export interface UpdateCorporateValueDTO {
+  name?: string;
+  description?: string;
+  icon?: string;
+  order?: number;
+  is_active?: boolean;
+}
+
+// ==================== CORPORATE IDENTITY ====================
+
+export interface CorporateIdentity {
+  id: number;
+  mission: string;
+  vision: string;
+  integral_policy: string;
+  policy_signed_by?: number | null;
+  policy_signed_at?: string | null;
+  policy_signature_hash?: string | null;
+  is_signed: boolean;
+  signed_by_name?: string | null;
+  effective_date: string;
+  version: string;
+  is_active: boolean;
+  values?: CorporateValue[];
+  created_by?: number | null;
+  created_by_name?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateCorporateIdentityDTO {
+  mission: string;
+  vision: string;
+  integral_policy: string;
+  effective_date: string;
+  version?: string;
+  is_active?: boolean;
+  values?: CreateCorporateValueDTO[];
+}
+
+export interface UpdateCorporateIdentityDTO {
+  mission?: string;
+  vision?: string;
+  integral_policy?: string;
+  effective_date?: string;
+  version?: string;
+  is_active?: boolean;
+  values?: CreateCorporateValueDTO[];
+}
+
+// ==================== STRATEGIC PLAN ====================
+
+export interface StrategicPlan {
+  id: number;
+  name: string;
+  description?: string | null;
+  period_type: PeriodType;
+  period_type_display?: string;
+  start_date: string;
+  end_date: string;
+  strategic_map_image?: string | null;
+  strategic_map_description?: string | null;
+  is_active: boolean;
+  approved_by?: number | null;
+  approved_by_name?: string | null;
+  approved_at?: string | null;
+  objectives_count?: number;
+  progress?: number;
+  bsc_summary?: Record<string, BSCSummaryItem>;
+  created_by?: number | null;
+  created_by_name?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BSCSummaryItem {
+  label: string;
+  total: number;
+  completed: number;
+  avg_progress: number;
+}
+
+export interface CreateStrategicPlanDTO {
+  name: string;
+  description?: string;
+  period_type: PeriodType;
+  start_date: string;
+  end_date: string;
+  strategic_map_description?: string;
+  is_active?: boolean;
+}
+
+export interface UpdateStrategicPlanDTO {
+  name?: string;
+  description?: string;
+  period_type?: PeriodType;
+  start_date?: string;
+  end_date?: string;
+  strategic_map_description?: string;
+  is_active?: boolean;
+}
+
+// ==================== STRATEGIC OBJECTIVE ====================
+
+export interface StrategicObjective {
+  id: number;
+  plan: number;
+  code: string;
+  name: string;
+  description?: string | null;
+  bsc_perspective: BSCPerspective;
+  bsc_perspective_display?: string;
+  iso_standards: ISOStandard[];
+  iso_standards_display?: string[];
+  responsible?: number | null;
+  responsible_name?: string | null;
+  responsible_cargo?: number | null;
+  responsible_cargo_name?: string | null;
+  target_value?: number | null;
+  current_value?: number | null;
+  unit?: string | null;
+  progress: number;
+  status: ObjectiveStatus;
+  status_display?: string;
+  start_date?: string | null;
+  due_date?: string | null;
+  completed_at?: string | null;
+  order: number;
+  is_active: boolean;
+  created_by?: number | null;
+  created_by_name?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateStrategicObjectiveDTO {
+  plan: number;
+  code: string;
+  name: string;
+  description?: string;
+  bsc_perspective: BSCPerspective;
+  iso_standards?: ISOStandard[];
+  responsible?: number;
+  responsible_cargo?: number;
+  target_value?: number;
+  current_value?: number;
+  unit?: string;
+  start_date?: string;
+  due_date?: string;
+  order?: number;
+  is_active?: boolean;
+}
+
+export interface UpdateStrategicObjectiveDTO {
+  name?: string;
+  description?: string;
+  bsc_perspective?: BSCPerspective;
+  iso_standards?: ISOStandard[];
+  responsible?: number;
+  responsible_cargo?: number;
+  target_value?: number;
+  current_value?: number;
+  unit?: string;
+  progress?: number;
+  status?: ObjectiveStatus;
+  start_date?: string;
+  due_date?: string;
+  order?: number;
+  is_active?: boolean;
+}
+
+export interface UpdateProgressDTO {
+  current_value: number;
+}
+
+// ==================== SYSTEM MODULE ====================
+
+export interface SystemModule {
+  id: number;
+  code: string;
+  name: string;
+  description?: string | null;
+  category: ModuleCategory;
+  category_display?: string;
+  icon?: string | null;
+  is_core: boolean;
+  is_enabled: boolean;
+  requires_license: boolean;
+  license_expires_at?: string | null;
+  dependencies_count?: number;
+  dependents_count?: number;
+  can_disable_info?: {
+    can_disable: boolean;
+    reason?: string | null;
+  };
+  order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateSystemModuleDTO {
+  code: string;
+  name: string;
+  description?: string;
+  category: ModuleCategory;
+  icon?: string;
+  is_core?: boolean;
+  is_enabled?: boolean;
+  requires_license?: boolean;
+  license_expires_at?: string;
+  order?: number;
+  dependency_ids?: number[];
+}
+
+export interface UpdateSystemModuleDTO {
+  name?: string;
+  description?: string;
+  category?: ModuleCategory;
+  icon?: string;
+  is_enabled?: boolean;
+  requires_license?: boolean;
+  license_expires_at?: string;
+  order?: number;
+  dependency_ids?: number[];
+}
+
+export interface ToggleModuleDTO {
+  enable: boolean;
+}
+
+// ==================== BRANDING CONFIG ====================
+
+export interface BrandingConfig {
+  id: number;
+  company_name: string;
+  company_short_name: string;
+  company_slogan?: string | null;
+  logo?: string | null;
+  logo_white?: string | null;
+  favicon?: string | null;
+  primary_color: string;
+  secondary_color: string;
+  accent_color: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateBrandingConfigDTO {
+  company_name: string;
+  company_short_name: string;
+  company_slogan?: string;
+  primary_color?: string;
+  secondary_color?: string;
+  accent_color?: string;
+  is_active?: boolean;
+}
+
+export interface UpdateBrandingConfigDTO {
+  company_name?: string;
+  company_short_name?: string;
+  company_slogan?: string;
+  primary_color?: string;
+  secondary_color?: string;
+  accent_color?: string;
+  is_active?: boolean;
+}
+
+// ==================== TIPO DOCUMENTO ====================
+
+export interface TipoDocumento {
+  id: number;
+  code: string;
+  name: string;
+  description?: string | null;
+  categoria: number; // FK a CategoriaDocumento
+  categoria_id?: number; // Alias para compatibilidad
+  categoria_code?: string;
+  categoria_name?: string;
+  categoria_color?: string;
+  categoria_icon?: string;
+  category_display?: string; // Deprecated: usar categoria_name
+  is_system: boolean;
+  is_active: boolean;
+  prefijo_sugerido?: string | null;
+  order: number;
+  puede_eliminar: {
+    puede: boolean;
+    motivo?: string | null;
+  };
+  tiene_consecutivo: boolean;
+  created_at: string;
+  created_by?: number | null;
+  created_by_name?: string | null;
+  updated_at: string;
+}
+
+export interface CreateTipoDocumentoDTO {
+  code: string;
+  name: string;
+  description?: string;
+  categoria: number; // ID de la categoría
+  prefijo_sugerido?: string;
+}
+
+export interface UpdateTipoDocumentoDTO {
+  name?: string;
+  description?: string;
+  categoria?: number; // ID de la categoría
+  prefijo_sugerido?: string;
+  is_active?: boolean;
+  order?: number;
+}
+
+// ==================== CONSECUTIVO CONFIG ====================
+
+/**
+ * Modelo de ConsecutivoConfig simplificado - SIN áreas
+ */
+export interface ConsecutivoConfig {
+  id: number;
+  // Tipo de documento (FK al modelo TipoDocumento)
+  tipo_documento: number;
+  tipo_documento_code?: string;
+  tipo_documento_name?: string;
+  tipo_documento_categoria_id?: number; // ID de la categoría del tipo de documento
+  tipo_documento_categoria_code?: string;
+  tipo_documento_categoria_name?: string;
+  tipo_documento_categoria_color?: string;
+  tipo_documento_categoria_icon?: string;
+  tipo_documento_category?: string; // Deprecated: para compatibilidad
+  // Configuración del consecutivo
+  prefix: string;
+  suffix?: string | null;
+  current_number: number;
+  padding: number;
+  include_year: boolean;
+  include_month: boolean;
+  include_day: boolean;
+  separator: SeparatorType;
+  separator_display?: string;
+  // Reinicio
+  reset_yearly: boolean;
+  reset_monthly: boolean;
+  last_reset_date?: string | null;
+  // Campos calculados
+  ejemplo_formato?: string;
+  ejemplo?: string;
+  // Estado
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateConsecutivoConfigDTO {
+  tipo_documento: number;
+  prefix: string;
+  suffix?: string;
+  padding?: number;
+  include_year?: boolean;
+  include_month?: boolean;
+  include_day?: boolean;
+  separator?: SeparatorType;
+  reset_yearly?: boolean;
+  reset_monthly?: boolean;
+}
+
+export interface UpdateConsecutivoConfigDTO {
+  prefix?: string;
+  suffix?: string;
+  current_number?: number;
+  padding?: number;
+  include_year?: boolean;
+  include_month?: boolean;
+  include_day?: boolean;
+  separator?: SeparatorType;
+  reset_yearly?: boolean;
+  reset_monthly?: boolean;
+  is_active?: boolean;
+}
+
+export interface GenerateConsecutivoDTO {
+  tipo_documento_code: string;
+  area_code?: string;
+}
+
+export interface GenerateConsecutivoResponse {
+  consecutivo: string;
+  current_number: number;
+}
+
+// Opciones para selects (value puede ser string o number según el endpoint)
+export interface SelectOption {
+  value: string | number;
+  label: string;
+}
+
+// ==================== STRATEGIC STATS ====================
+
+export interface StrategicStats {
+  // 1. Completitud del Sistema (% de configuracion completada)
+  system_completeness: number; // 0-100%
+  completeness_details: {
+    has_identity: boolean;
+    has_organization: boolean;
+    has_plan: boolean;
+    has_config: boolean;
+  };
+
+  // 2. Objetivos Estrategicos
+  total_objectives: number;
+  completed_objectives: number;
+  in_progress_objectives: number;
+  at_risk_objectives: number; // objetivos con progreso <50% y fecha limite cercana
+  avg_progress: number;
+  active_plan_name?: string | null;
+
+  // 3. Control de Acceso (RBAC)
+  total_users: number;
+  users_with_roles: number;
+  users_without_roles: number;
+  total_roles: number;
+  total_cargos: number;
+
+  // 4. Identidad Corporativa
+  has_active_identity: boolean;
+  identity_is_signed: boolean;
+  identity_version: number;
+  values_count: number;
+  policy_pending_signature: boolean;
+
+  // Configuracion del sistema
+  enabled_modules: number;
+  total_modules: number;
+}
+
+// ==================== PAGINATION ====================
+
+export interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
+// ==================== FILTERS ====================
+
+export interface ObjectiveFilters {
+  plan?: number;
+  bsc_perspective?: BSCPerspective;
+  status?: ObjectiveStatus;
+  responsible?: number;
+  include_inactive?: boolean;
+  search?: string;
+}
+
+export interface ModuleFilters {
+  category?: ModuleCategory;
+  is_enabled?: boolean;
+  is_core?: boolean;
+  search?: string;
+}
+
+export interface ConsecutivoFilters {
+  document_type?: DocumentType;
+  is_active?: boolean;
+}
+
+export interface TipoDocumentoFilters {
+  categoria?: number; // ID de la categoría
+  is_system?: boolean;
+  is_active?: boolean;
+  search?: string;
+}
+
+// ==================== TENANT CONFIG ====================
+
+export interface TenantConfig {
+  id: number;
+  // Modulos habilitados (codigos)
+  enabled_modules: string[];
+  // Feature flags
+  features: TenantFeatures;
+  // Configuraciones de UI
+  ui_settings: TenantUISettings;
+  // Metadata
+  tenant_name?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TenantFeatures {
+  // Modulos principales
+  enable_econorte: boolean;
+  enable_sst: boolean;
+  enable_pesv: boolean;
+  enable_iso: boolean;
+  enable_cadena_valor: boolean;
+  enable_inteligencia: boolean;
+  // Sub-features
+  enable_certificados: boolean;
+  enable_multiples_politicas: boolean;
+  enable_auditoria: boolean;
+}
+
+export interface TenantUISettings {
+  // Sidebar
+  sidebar_collapsed_default: boolean;
+  show_module_badges: boolean;
+  // Temas
+  dark_mode_enabled: boolean;
+  custom_theme_enabled: boolean;
+}
+
+export interface UpdateTenantFeaturesDTO {
+  enable_econorte?: boolean;
+  enable_sst?: boolean;
+  enable_pesv?: boolean;
+  enable_iso?: boolean;
+  enable_cadena_valor?: boolean;
+  enable_inteligencia?: boolean;
+  enable_certificados?: boolean;
+  enable_multiples_politicas?: boolean;
+  enable_auditoria?: boolean;
+}
+
+export interface UpdateTenantUISettingsDTO {
+  sidebar_collapsed_default?: boolean;
+  show_module_badges?: boolean;
+  dark_mode_enabled?: boolean;
+  custom_theme_enabled?: boolean;
+}
+
+// ==================== SELECT OPTIONS ====================
+
+export interface SelectOption {
+  value: string;
+  label: string;
+}
+
+// ==================== SEDE EMPRESA ====================
+
+export type TipoSede =
+  | 'SEDE_PRINCIPAL'
+  | 'SEDE'
+  | 'SUCURSAL'
+  | 'PLANTA'
+  | 'CENTRO_ACOPIO'
+  | 'ALMACEN'
+  | 'PUNTO_VENTA'
+  | 'BODEGA'
+  | 'OTRO';
+
+export interface SedeEmpresa {
+  id: number;
+  // Identificación
+  codigo: string;
+  nombre: string;
+  tipo_sede: TipoSede;
+  tipo_sede_display?: string;
+  descripcion?: string | null;
+  // Ubicación
+  direccion: string;
+  direccion_completa?: string;
+  ciudad: string;
+  departamento: string;
+  departamento_display?: string;
+  codigo_postal?: string | null;
+  // Geolocalización
+  latitud?: number | null;
+  longitud?: number | null;
+  tiene_geolocalizacion?: boolean;
+  // Administración
+  responsable?: number | null;
+  responsable_name?: string | null;
+  telefono?: string | null;
+  email?: string | null;
+  // Control
+  es_sede_principal: boolean;
+  fecha_apertura?: string | null;
+  fecha_cierre?: string | null;
+  capacidad_almacenamiento_kg?: number | null;
+  // Auditoría
+  is_active: boolean;
+  is_deleted?: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by?: number | null;
+  created_by_name?: string | null;
+  deleted_at?: string | null;
+}
+
+export interface SedeEmpresaList {
+  id: number;
+  codigo: string;
+  nombre: string;
+  tipo_sede: TipoSede;
+  tipo_sede_display?: string;
+  ciudad: string;
+  departamento_display?: string;
+  responsable?: number | null;
+  responsable_name?: string | null;
+  es_sede_principal: boolean;
+  is_active: boolean;
+}
+
+export interface CreateSedeEmpresaDTO {
+  codigo: string;
+  nombre: string;
+  tipo_sede: TipoSede;
+  descripcion?: string;
+  direccion: string;
+  ciudad: string;
+  departamento: string;
+  codigo_postal?: string;
+  latitud?: number;
+  longitud?: number;
+  responsable?: number;
+  telefono?: string;
+  email?: string;
+  es_sede_principal?: boolean;
+  fecha_apertura?: string;
+  fecha_cierre?: string;
+  capacidad_almacenamiento_kg?: number;
+  is_active?: boolean;
+}
+
+export interface UpdateSedeEmpresaDTO {
+  codigo?: string;
+  nombre?: string;
+  tipo_sede?: TipoSede;
+  descripcion?: string;
+  direccion?: string;
+  ciudad?: string;
+  departamento?: string;
+  codigo_postal?: string;
+  latitud?: number | null;
+  longitud?: number | null;
+  responsable?: number | null;
+  telefono?: string;
+  email?: string;
+  es_sede_principal?: boolean;
+  fecha_apertura?: string | null;
+  fecha_cierre?: string | null;
+  capacidad_almacenamiento_kg?: number | null;
+  is_active?: boolean;
+}
+
+export interface SedeFilters {
+  tipo_sede?: TipoSede;
+  departamento?: string;
+  is_active?: boolean;
+  es_sede_principal?: boolean;
+  search?: string;
+  include_deleted?: boolean;
+}
+
+// ==================== INTEGRACIONES EXTERNAS ====================
+
+export type TipoServicio =
+  | 'EMAIL'
+  | 'FACTURACION'
+  | 'SMS'
+  | 'WHATSAPP'
+  | 'MAPAS'
+  | 'ALMACENAMIENTO'
+  | 'BI'
+  | 'PAGOS'
+  | 'ERP'
+  | 'FIRMA_DIGITAL';
+
+export type Proveedor =
+  // Email
+  | 'GMAIL'
+  | 'OUTLOOK'
+  | 'SMTP_CUSTOM'
+  // SMS
+  | 'TWILIO'
+  | 'MESSAGEBIRD'
+  // WhatsApp
+  | 'WHATSAPP_BUSINESS'
+  // Facturación
+  | 'DIAN'
+  // Almacenamiento
+  | 'GOOGLE_DRIVE'
+  | 'AWS_S3'
+  | 'AZURE_BLOB'
+  | 'GCS'
+  // BI
+  | 'GOOGLE_LOOKER'
+  | 'GOOGLE_SHEETS'
+  // Pagos
+  | 'PSE'
+  | 'WOMPI'
+  | 'PAYU'
+  | 'MERCADOPAGO'
+  // ERP
+  | 'SIIGO'
+  | 'ALEGRA'
+  | 'WORLD_OFFICE'
+  | 'SAP'
+  // Firma Digital
+  | 'CERTICAMARA'
+  | 'GSE'
+  | 'ANDES_SCD'
+  // Mapas
+  | 'GOOGLE_MAPS'
+  | 'OSM'
+  // Transporte
+  | 'RUNT'
+  | 'MINTRANSPORTE';
+
+export type MetodoAutenticacion = 'API_KEY' | 'OAUTH2' | 'BASIC_AUTH' | 'SERVICE_ACCOUNT' | 'CERTIFICATE';
+
+export type Ambiente = 'PRODUCCION' | 'SANDBOX';
+
+export type StatusIndicator = 'success' | 'warning' | 'danger';
+
+export interface IntegracionExterna {
+  id: number;
+  // Identificación
+  nombre: string;
+  descripcion?: string | null;
+  tipo_servicio: TipoServicio;
+  tipo_servicio_display?: string;
+  proveedor: Proveedor;
+  proveedor_display?: string;
+  // Configuración
+  ambiente: Ambiente;
+  ambiente_display?: string;
+  metodo_autenticacion: MetodoAutenticacion;
+  metodo_autenticacion_display?: string;
+  url_base: string;
+  // Credenciales (siempre masked en respuestas)
+  credenciales_masked?: Record<string, string>;
+  // Configuración adicional
+  configuracion_adicional?: Record<string, unknown> | null;
+  timeout_segundos: number;
+  reintentos_max: number;
+  // Estado y salud
+  is_active: boolean;
+  is_healthy: boolean;
+  status_indicator: StatusIndicator;
+  ultima_verificacion?: string | null;
+  ultimo_error?: string | null;
+  // Metadatos
+  created_at: string;
+  updated_at: string;
+  created_by?: number | null;
+  created_by_name?: string | null;
+  // Estadísticas
+  total_llamadas?: number;
+  llamadas_exitosas?: number;
+  llamadas_fallidas?: number;
+  tasa_exito?: number;
+}
+
+export interface IntegracionExternaList {
+  id: number;
+  nombre: string;
+  tipo_servicio: TipoServicio;
+  tipo_servicio_display?: string;
+  proveedor: Proveedor;
+  proveedor_display?: string;
+  ambiente: Ambiente;
+  ambiente_display?: string;
+  is_active: boolean;
+  is_healthy: boolean;
+  status_indicator: StatusIndicator;
+  ultima_verificacion?: string | null;
+  tasa_exito?: number;
+}
+
+export interface CreateIntegracionDTO {
+  nombre: string;
+  descripcion?: string;
+  tipo_servicio: TipoServicio;
+  proveedor: Proveedor;
+  ambiente: Ambiente;
+  metodo_autenticacion: MetodoAutenticacion;
+  url_base: string;
+  credenciales: Record<string, string>;
+  configuracion_adicional?: Record<string, unknown>;
+  timeout_segundos?: number;
+  reintentos_max?: number;
+  is_active?: boolean;
+}
+
+export interface UpdateIntegracionDTO {
+  nombre?: string;
+  descripcion?: string;
+  ambiente?: Ambiente;
+  url_base?: string;
+  configuracion_adicional?: Record<string, unknown>;
+  timeout_segundos?: number;
+  reintentos_max?: number;
+  is_active?: boolean;
+}
+
+export interface UpdateCredencialesDTO {
+  credenciales: Record<string, string>;
+}
+
+export interface IntegracionFilters {
+  tipo_servicio?: TipoServicio;
+  proveedor?: Proveedor;
+  ambiente?: Ambiente;
+  is_active?: boolean;
+  is_healthy?: boolean;
+  search?: string;
+}
+
+export interface TestConnectionResult {
+  success: boolean;
+  message: string;
+  response_time_ms?: number;
+  details?: Record<string, unknown>;
+  error?: string | null;
+}
+
+export interface IntegracionLog {
+  id: number;
+  integracion: number;
+  integracion_nombre?: string;
+  metodo: string;
+  endpoint: string;
+  payload_size_bytes?: number;
+  response_status?: number;
+  response_time_ms?: number;
+  success: boolean;
+  error_message?: string | null;
+  created_at: string;
+}
+
+export interface IntegracionLogsFilters {
+  integracion?: number;
+  success?: boolean;
+  fecha_desde?: string;
+  fecha_hasta?: string;
+  limit?: number;
+}

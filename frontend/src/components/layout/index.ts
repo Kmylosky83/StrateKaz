@@ -59,7 +59,7 @@
  */
 
 export { PageHeader } from './PageHeader';
-export type { PageHeaderProps, PageHeaderBadge } from './PageHeader';
+export type { PageHeaderProps } from './PageHeader';
 
 export { FilterCard, FilterGrid } from './FilterCard';
 export type { FilterCardProps, FilterGridProps } from './FilterCard';

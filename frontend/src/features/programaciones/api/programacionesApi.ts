@@ -1,4 +1,5 @@
 import axiosInstance from '@/api/axios-config';
+import { CargoCodes } from '@/constants/permissions';
 import type {
   Programacion,
   CreateProgramacionDTO,
@@ -226,7 +227,7 @@ export const programacionesAPI = {
   getRecolectores: async (): Promise<PaginatedResponse<Recolector>> => {
     // Obtener usuarios con cargo de recolector
     const response = await axiosInstance.get<PaginatedResponse<Recolector>>(
-      '/core/users/?cargo__code=recolector_econorte&is_active=true&page_size=100'
+      `/core/users/?cargo__code=${CargoCodes.RECOLECTOR_ECONORTE}&is_active=true&page_size=100`
     );
     return response.data;
   },

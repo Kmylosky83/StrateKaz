@@ -25,6 +25,7 @@ import {
   endOfWeek,
 } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { parseLocalDate } from '@/utils/dateUtils';
 import type { Programacion } from '../types/programacion.types';
 
 interface CalendarioViewProps {
@@ -52,14 +53,18 @@ export const CalendarioView = ({
 
   const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
-  // Agrupar programaciones por día
+  // Agrupar programaciones por día (usando parseLocalDate para evitar timezone issues)
   const programacionesPorDia = useMemo(() => {
     const map = new Map<string, Programacion[]>();
 
     programaciones.forEach((prog) => {
-      const fecha = format(new Date(prog.fecha_programada), 'yyyy-MM-dd');
-      const existentes = map.get(fecha) || [];
-      map.set(fecha, [...existentes, prog]);
+      // Usar parseLocalDate para evitar que las fechas se muestren un día antes
+      const fechaObj = parseLocalDate(prog.fecha_programada);
+      if (fechaObj) {
+        const fecha = format(fechaObj, 'yyyy-MM-dd');
+        const existentes = map.get(fecha) || [];
+        map.set(fecha, [...existentes, prog]);
+      }
     });
 
     return map;

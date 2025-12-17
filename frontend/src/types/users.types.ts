@@ -69,6 +69,7 @@ export interface ChangePasswordDTO {
 export interface UserFilters {
   search?: string;
   cargo?: string;
+  cargo__code?: string;
   is_active?: boolean | string;
   page?: number;
   page_size?: number;

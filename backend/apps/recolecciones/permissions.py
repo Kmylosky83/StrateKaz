@@ -3,6 +3,7 @@ Permissions personalizados del módulo Recolecciones
 Sistema de Gestión Grasas y Huesos del Norte
 """
 from rest_framework import permissions
+from apps.core.permissions_constants import CargoCodes
 
 
 class PuedeRegistrarRecoleccion(permissions.BasePermission):
@@ -34,8 +35,8 @@ class PuedeRegistrarRecoleccion(permissions.BasePermission):
 
         # Códigos de cargo permitidos para registrar recolecciones
         cargos_permitidos = [
-            'recolector_econorte',
-            'lider_logistica_econorte',
+            CargoCodes.RECOLECTOR_ECONORTE,
+            CargoCodes.LIDER_LOGISTICA_ECONORTE,
         ]
 
         # Verificar si tiene el cargo permitido
@@ -97,8 +98,8 @@ class PuedeGenerarVoucher(permissions.BasePermission):
 
         # Códigos de cargo permitidos
         cargos_permitidos = [
-            'recolector_econorte',
-            'lider_logistica_econorte',
+            CargoCodes.RECOLECTOR_ECONORTE,
+            CargoCodes.LIDER_LOGISTICA_ECONORTE,
         ]
 
         if request.user.cargo.code in cargos_permitidos:
@@ -125,11 +126,11 @@ class PuedeGenerarVoucher(permissions.BasePermission):
             return False
 
         # Líder Logística puede ver todos los vouchers
-        if request.user.cargo.code == 'lider_logistica_econorte':
+        if request.user.cargo.code == CargoCodes.LIDER_LOGISTICA_ECONORTE:
             return True
 
         # Recolector solo puede ver sus propios vouchers
-        if request.user.cargo.code == 'recolector_econorte':
+        if request.user.cargo.code == CargoCodes.RECOLECTOR_ECONORTE:
             return obj.recolector == request.user
 
         return False
@@ -165,9 +166,9 @@ class PuedeVerEstadisticas(permissions.BasePermission):
 
         # Códigos de cargo permitidos para ver estadísticas
         cargos_permitidos = [
-            'lider_com_econorte',
-            'comercial_econorte',
-            'lider_logistica_econorte',
+            CargoCodes.LIDER_COMERCIAL_ECONORTE,
+            CargoCodes.COMERCIAL_ECONORTE,
+            CargoCodes.LIDER_LOGISTICA_ECONORTE,
         ]
 
         if request.user.cargo.code in cargos_permitidos:
@@ -209,7 +210,7 @@ class PuedeEditarRecoleccion(permissions.BasePermission):
             return False
 
         # Solo Líder Logística puede editar
-        if request.user.cargo.code == 'lider_logistica_econorte':
+        if request.user.cargo.code == CargoCodes.LIDER_LOGISTICA_ECONORTE:
             return True
 
         # Gerente (nivel 3+) puede editar

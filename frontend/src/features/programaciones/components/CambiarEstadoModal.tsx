@@ -13,6 +13,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Modal } from '@/components/common/Modal';
 import { Button } from '@/components/common/Button';
+import { Card } from '@/components/common/Card';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Badge } from '@/components/common/Badge';
@@ -195,7 +196,7 @@ export const CambiarEstadoModal = ({
     >
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
         {/* Información de la Programación */}
-        <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+        <Card variant="bordered" padding="sm">
           <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
             Programación
           </h4>
@@ -225,25 +226,29 @@ export const CambiarEstadoModal = ({
               </div>
             )}
           </div>
-        </div>
+        </Card>
 
         {/* Advertencia si no hay estados disponibles */}
         {estadosDisponibles.length === 0 && (
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
+          <Card
+            variant="bordered"
+            padding="sm"
+            className="bg-warning-50 dark:bg-warning-900/20 border-warning-200 dark:border-warning-800"
+          >
             <div className="flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+              <AlertCircle className="h-5 w-5 text-warning-600 dark:text-warning-400 mt-0.5" />
               <div>
-                <h4 className="font-medium text-yellow-900 dark:text-yellow-100">
+                <h4 className="font-medium text-warning-900 dark:text-warning-100">
                   Estado final alcanzado
                 </h4>
-                <p className="text-sm text-yellow-800 dark:text-yellow-200 mt-1">
+                <p className="text-sm text-warning-800 dark:text-warning-200 mt-1">
                   Esta programación está en un estado final (
                   {programacion.estado === 'COMPLETADA' ? 'Completada' : 'Cancelada'}) y no puede
                   ser modificada.
                 </p>
               </div>
             </div>
-          </div>
+          </Card>
         )}
 
         {estadosDisponibles.length > 0 && (
@@ -261,14 +266,18 @@ export const CambiarEstadoModal = ({
 
             {/* Cantidad Recolectada (solo si COMPLETADA) */}
             {mostrarCantidadRecolectada && (
-              <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+              <Card
+                variant="bordered"
+                padding="sm"
+                className="bg-success-50 dark:bg-success-900/20 border-success-200 dark:border-success-800"
+              >
                 <div className="flex items-start gap-3 mb-3">
-                  <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5" />
+                  <CheckCircle className="h-5 w-5 text-success-600 dark:text-success-400 mt-0.5" />
                   <div>
-                    <h4 className="font-medium text-green-900 dark:text-green-100">
+                    <h4 className="font-medium text-success-900 dark:text-success-100">
                       Completar Recolección
                     </h4>
-                    <p className="text-sm text-green-800 dark:text-green-200 mt-1">
+                    <p className="text-sm text-success-800 dark:text-success-200 mt-1">
                       Ingrese la cantidad real de material recolectado
                     </p>
                   </div>
@@ -283,45 +292,49 @@ export const CambiarEstadoModal = ({
                   step="0.01"
                 />
                 {programacion.cantidad_estimada_kg && (
-                  <p className="text-xs text-green-700 dark:text-green-300 mt-2">
+                  <p className="text-xs text-success-700 dark:text-success-300 mt-2">
                     Cantidad estimada: {programacion.cantidad_estimada_kg.toLocaleString('es-CO')}{' '}
                     kg
                   </p>
                 )}
-              </div>
+              </Card>
             )}
 
             {/* Motivo de Cancelación (solo si CANCELADA) */}
             {mostrarMotivoCancelacion && (
-              <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-200 dark:border-red-800">
+              <Card
+                variant="bordered"
+                padding="sm"
+                className="bg-danger-50 dark:bg-danger-900/20 border-danger-200 dark:border-danger-800"
+              >
                 <div className="flex items-start gap-3 mb-3">
-                  <XCircle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5" />
+                  <XCircle className="h-5 w-5 text-danger-600 dark:text-danger-400 mt-0.5" />
                   <div>
-                    <h4 className="font-medium text-red-900 dark:text-red-100">
+                    <h4 className="font-medium text-danger-900 dark:text-danger-100">
                       Cancelar Programación
                     </h4>
-                    <p className="text-sm text-red-800 dark:text-red-200 mt-1">
+                    <p className="text-sm text-danger-800 dark:text-danger-200 mt-1">
                       Debe especificar el motivo de la cancelación
                     </p>
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-red-900 dark:text-red-100">
+                  <label className="block text-sm font-medium text-danger-900 dark:text-danger-100">
                     Motivo de Cancelación *
                   </label>
                   <textarea
                     {...register('motivo_cancelacion')}
                     rows={3}
-                    className="w-full px-3 py-2 border border-red-300 dark:border-red-700 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent dark:bg-red-900/10 dark:text-gray-100"
+                    className="w-full px-3 py-2 border border-danger-300 dark:border-danger-700 rounded-lg focus:ring-2 focus:ring-danger-500 focus:border-transparent dark:bg-danger-900/10 dark:text-gray-100"
                     placeholder="Ej: Proveedor no disponible, material insuficiente..."
                   />
                   {errors.motivo_cancelacion && (
-                    <p className="text-sm text-red-600 dark:text-red-400">
+                    <p className="text-sm text-danger-600 dark:text-danger-400">
                       {errors.motivo_cancelacion.message}
                     </p>
                   )}
                 </div>
-              </div>
+              </Card>
             )}
 
             {/* Observaciones */}

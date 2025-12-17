@@ -13,6 +13,8 @@ import type {
   RegistrarRecoleccionDTO,
   RegistrarRecoleccionResponse,
   VoucherData,
+  CertificadoRecoleccionParams,
+  CertificadoRecoleccionData,
 } from '../types/recoleccion.types';
 
 /**
@@ -132,6 +134,21 @@ export const recoleccionesAPI = {
   ): Promise<PaginatedRecolecciones> => {
     const response = await axiosInstance.get<PaginatedRecolecciones>(
       `/recolecciones/por-ecoaliado/${ecoaliadoId}/?page=${page}&page_size=${pageSize}`
+    );
+    return response.data;
+  },
+
+  // ==================== CERTIFICADO ====================
+
+  /**
+   * Generar certificado de recoleccion para un ecoaliado
+   */
+  generarCertificado: async (
+    params: CertificadoRecoleccionParams
+  ): Promise<CertificadoRecoleccionData> => {
+    const response = await axiosInstance.post<CertificadoRecoleccionData>(
+      '/recolecciones/certificado/',
+      params
     );
     return response.data;
   },

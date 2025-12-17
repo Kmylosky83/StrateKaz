@@ -12,8 +12,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Modal } from '@/components/common/Modal';
 import { Button } from '@/components/common/Button';
+import { Card } from '@/components/common/Card';
 import { Select } from '@/components/forms/Select';
 import { AlertTriangle } from 'lucide-react';
+import { cn } from '@/utils/cn';
+import { getFechaColombia, formatFechaLocal, isFechaPasada } from '@/utils/dateUtils';
 import { useRecolectores } from '../api/useProgramaciones';
 import type { Programacion, AsignarRecolectorDTO } from '../types/programacion.types';
 
@@ -53,20 +56,15 @@ export const AsignarRecolectorModal = ({
 }: AsignarRecolectorModalProps) => {
   const { data: recolectoresData, isLoading: isLoadingRecolectores } = useRecolectores();
 
-  // Detectar si la fecha está vencida
+  // Detectar si la fecha está vencida (usando utilidad que respeta timezone Colombia)
   const fechaVencida = useMemo(() => {
     if (!programacion) return false;
-    const fechaProgramada = new Date(programacion.fecha_programada);
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    fechaProgramada.setHours(0, 0, 0, 0);
-    return fechaProgramada < hoy;
+    return isFechaPasada(programacion.fecha_programada);
   }, [programacion]);
 
-  // Fecha mínima para nueva fecha (hoy)
+  // Fecha mínima para nueva fecha (hoy en Colombia)
   const fechaMinima = useMemo(() => {
-    const hoy = new Date();
-    return hoy.toISOString().split('T')[0];
+    return getFechaColombia();
   }, []);
 
   const {
@@ -133,16 +131,20 @@ export const AsignarRecolectorModal = ({
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
         {/* Alerta de fecha vencida */}
         {fechaVencida && (
-          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg p-4">
+          <Card
+            variant="bordered"
+            padding="sm"
+            className="bg-warning-50 dark:bg-warning-900/20 border-warning-300 dark:border-warning-700"
+          >
             <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <AlertTriangle className="h-5 w-5 text-warning-600 dark:text-warning-400 flex-shrink-0 mt-0.5" />
               <div>
-                <h4 className="text-sm font-semibold text-amber-800 dark:text-amber-200">
+                <h4 className="text-sm font-semibold text-warning-800 dark:text-warning-200">
                   Fecha de recolección vencida
                 </h4>
-                <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                <p className="text-sm text-warning-700 dark:text-warning-300 mt-1">
                   La fecha programada ({' '}
-                  {new Date(programacion.fecha_programada).toLocaleDateString('es-CO', {
+                  {formatFechaLocal(programacion.fecha_programada, {
                     weekday: 'long',
                     day: '2-digit',
                     month: 'long',
@@ -151,11 +153,11 @@ export const AsignarRecolectorModal = ({
                 </p>
               </div>
             </div>
-          </div>
+          </Card>
         )}
 
         {/* Información de la Programación */}
-        <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+        <Card variant="bordered" padding="sm">
           <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
             Programación
           </h4>
@@ -181,13 +183,14 @@ export const AsignarRecolectorModal = ({
             <div className="flex justify-between">
               <span className="text-gray-600 dark:text-gray-400">Fecha original:</span>
               <span
-                className={`font-medium ${
+                className={cn(
+                  'font-medium',
                   fechaVencida
-                    ? 'text-red-600 dark:text-red-400 line-through'
+                    ? 'text-danger-600 dark:text-danger-400 line-through'
                     : 'text-gray-900 dark:text-gray-100'
-                }`}
+                )}
               >
-                {new Date(programacion.fecha_programada).toLocaleDateString('es-CO', {
+                {formatFechaLocal(programacion.fecha_programada, {
                   weekday: 'short',
                   day: '2-digit',
                   month: 'short',
@@ -196,7 +199,7 @@ export const AsignarRecolectorModal = ({
               </span>
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Nueva fecha (solo si está vencida) */}
         {fechaVencida && (
@@ -227,28 +230,32 @@ export const AsignarRecolectorModal = ({
           />
 
           {recolectorInfo && (
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+            <Card
+              variant="bordered"
+              padding="sm"
+              className="bg-info-50 dark:bg-info-900/20 border-info-200 dark:border-info-800"
+            >
               <div className="space-y-2 text-sm">
                 {recolectorInfo.email && (
                   <div>
-                    <span className="text-xs text-blue-700 dark:text-blue-300">Email:</span>
-                    <p className="font-medium text-blue-900 dark:text-blue-100">
+                    <span className="text-xs text-info-700 dark:text-info-300">Email:</span>
+                    <p className="font-medium text-info-900 dark:text-info-100">
                       {recolectorInfo.email}
                     </p>
                   </div>
                 )}
                 {(recolectorInfo.phone || recolectorInfo.telefono) && (
                   <div>
-                    <span className="text-xs text-blue-700 dark:text-blue-300">Teléfono:</span>
-                    <p className="font-medium text-blue-900 dark:text-blue-100">
+                    <span className="text-xs text-info-700 dark:text-info-300">Teléfono:</span>
+                    <p className="font-medium text-info-900 dark:text-info-100">
                       {recolectorInfo.phone || recolectorInfo.telefono}
                     </p>
                   </div>
                 )}
                 {recolectorInfo.zona_asignada && (
                   <div>
-                    <span className="text-xs text-blue-700 dark:text-blue-300">Zona:</span>
-                    <p className="font-medium text-blue-900 dark:text-blue-100">
+                    <span className="text-xs text-info-700 dark:text-info-300">Zona:</span>
+                    <p className="font-medium text-info-900 dark:text-info-100">
                       {recolectorInfo.zona_asignada}
                     </p>
                   </div>
@@ -256,16 +263,16 @@ export const AsignarRecolectorModal = ({
                 {recolectorInfo.vehiculos_asignados &&
                   recolectorInfo.vehiculos_asignados.length > 0 && (
                     <div>
-                      <span className="text-xs text-blue-700 dark:text-blue-300">
+                      <span className="text-xs text-info-700 dark:text-info-300">
                         Vehículos disponibles:
                       </span>
-                      <p className="font-medium text-blue-900 dark:text-blue-100">
+                      <p className="font-medium text-info-900 dark:text-info-100">
                         {recolectorInfo.vehiculos_asignados.join(', ')}
                       </p>
                     </div>
                   )}
               </div>
-            </div>
+            </Card>
           )}
         </div>
 

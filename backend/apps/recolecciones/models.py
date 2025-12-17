@@ -75,6 +75,28 @@ class Recoleccion(models.Model):
         help_text='Valor total pagado = cantidad_kg * precio_kg'
     )
 
+    # ============ CALIDAD Y ACIDEZ (para ACU y Sebo Procesado) ============
+    porcentaje_acidez = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Porcentaje de acidez (%)',
+        help_text='Porcentaje de acidez del ACU/Sebo (0-100%)'
+    )
+    calidad = models.CharField(
+        max_length=10,
+        null=True,
+        blank=True,
+        verbose_name='Calidad',
+        help_text='Calidad determinada por acidez: A (1-5%), B (5.1-8%), B1 (8.1-10%), B2 (10.1-15%), B4 (15.1-20%), C (>20%)'
+    )
+    requiere_prueba_acidez = models.BooleanField(
+        default=True,
+        verbose_name='Requiere prueba de acidez',
+        help_text='Indica si la recoleccion requiere prueba de acidez (ACU y Sebo Procesado)'
+    )
+
     # ============ INFORMACION ADICIONAL ============
     observaciones = models.TextField(
         blank=True,
@@ -140,11 +162,12 @@ class Recoleccion(models.Model):
     @classmethod
     def generar_codigo_voucher(cls, max_retries=5):
         """
-        Genera un codigo unico para el voucher de forma thread-safe
-        Formato: REC-YYYYMMDD-XXXX (ej: REC-20241125-0001)
+        Genera un codigo unico para el voucher de forma thread-safe.
 
-        Implementa retry logic para manejar race conditions cuando
-        multiples recolecciones se crean simultaneamente.
+        Usa el sistema centralizado de consecutivos (ConsecutivoConfig)
+        que ya implementa select_for_update() y manejo de reinicio automático.
+
+        Formato: REC-YYYYMMDD-XXXX (ej: REC-20241125-0001)
 
         Args:
             max_retries: Numero maximo de intentos (default: 5)
@@ -155,63 +178,89 @@ class Recoleccion(models.Model):
         Raises:
             IntegrityError: Si no se pudo generar un codigo unico despues de max_retries
         """
-        from datetime import date
-        hoy = date.today()
-        prefijo = f"REC-{hoy.strftime('%Y%m%d')}-"
+        from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
 
-        for attempt in range(max_retries):
-            try:
-                # Usar transaccion atomica con bloqueo
-                with transaction.atomic():
-                    # Bloquear la tabla para lectura exclusiva del ultimo registro
-                    # Esto previene que otra transaccion concurrente lea el mismo valor
-                    ultimo = cls.objects.select_for_update().filter(
-                        codigo_voucher__startswith=prefijo
-                    ).order_by('-codigo_voucher').first()
+        try:
+            # El servicio centralizado ya es thread-safe con select_for_update()
+            return ConsecutivoConfig.obtener_siguiente_consecutivo('RECOLECCION')
+        except ConsecutivoConfig.DoesNotExist:
+            # Fallback al método legacy si no existe configuración
+            # Esto permite que el sistema funcione durante la migración
+            from datetime import date
+            hoy = date.today()
+            prefijo = f"REC-{hoy.strftime('%Y%m%d')}-"
 
-                    if ultimo:
-                        # Extraer el numero y sumarle 1
-                        try:
-                            numero = int(ultimo.codigo_voucher.split('-')[-1]) + 1
-                        except (ValueError, IndexError):
+            for attempt in range(max_retries):
+                try:
+                    with transaction.atomic():
+                        ultimo = cls.objects.select_for_update().filter(
+                            codigo_voucher__startswith=prefijo
+                        ).order_by('-codigo_voucher').first()
+
+                        if ultimo:
+                            try:
+                                numero = int(ultimo.codigo_voucher.split('-')[-1]) + 1
+                            except (ValueError, IndexError):
+                                numero = 1
+                        else:
                             numero = 1
-                    else:
-                        numero = 1
 
-                    codigo = f"{prefijo}{numero:04d}"
-
-                    # Verificar que no exista (doble verificacion)
-                    if not cls.objects.filter(codigo_voucher=codigo).exists():
-                        return codigo
-                    else:
-                        # Si existe, incrementar y reintentar
-                        numero += 1
                         codigo = f"{prefijo}{numero:04d}"
 
-                        # Verificar de nuevo
                         if not cls.objects.filter(codigo_voucher=codigo).exists():
                             return codigo
+                        else:
+                            numero += 1
+                            codigo = f"{prefijo}{numero:04d}"
+                            if not cls.objects.filter(codigo_voucher=codigo).exists():
+                                return codigo
 
-            except IntegrityError:
-                # Si hay conflicto, esperar un tiempo aleatorio y reintentar
-                if attempt < max_retries - 1:
-                    # Espera exponencial con jitter: 0.01s, 0.02s, 0.04s, 0.08s, 0.16s
-                    wait_time = (2 ** attempt) * 0.01
-                    time.sleep(wait_time)
-                    continue
-                else:
-                    raise
+                except IntegrityError:
+                    if attempt < max_retries - 1:
+                        wait_time = (2 ** attempt) * 0.01
+                        time.sleep(wait_time)
+                        continue
+                    else:
+                        raise
 
-        # Si llegamos aqui, todos los intentos fallaron
-        raise IntegrityError(
-            f"No se pudo generar un codigo de voucher unico despues de {max_retries} intentos"
-        )
+            raise IntegrityError(
+                f"No se pudo generar un codigo de voucher unico despues de {max_retries} intentos"
+            )
 
     def calcular_valor_total(self):
         """Calcula el valor total basado en cantidad y precio"""
         if self.cantidad_kg and self.precio_kg:
             return Decimal(str(self.cantidad_kg)) * Decimal(str(self.precio_kg))
         return Decimal('0')
+
+    def calcular_calidad_por_acidez(self):
+        """
+        Determina la calidad basándose en el porcentaje de acidez.
+        Rangos:
+        - A: 1-5%
+        - B: 5.1-8%
+        - B1: 8.1-10%
+        - B2: 10.1-15%
+        - B4: 15.1-20%
+        - C: >20%
+        """
+        if self.porcentaje_acidez is None:
+            return None
+
+        acidez = float(self.porcentaje_acidez)
+
+        if acidez <= 5:
+            return 'A'
+        elif acidez <= 8:
+            return 'B'
+        elif acidez <= 10:
+            return 'B1'
+        elif acidez <= 15:
+            return 'B2'
+        elif acidez <= 20:
+            return 'B4'
+        else:
+            return 'C'
 
     def clean(self):
         """Validaciones personalizadas"""
@@ -261,12 +310,19 @@ class Recoleccion(models.Model):
         if not self.codigo_voucher:
             self.codigo_voucher = self.generar_codigo_voucher()
 
-        # Calcular valor total
-        if self.cantidad_kg and self.precio_kg:
+        # Calcular valor total SOLO si no esta establecido
+        # Esto permite que el serializer pase un valor_total diferente (valor real pagado)
+        if self.cantidad_kg and self.precio_kg and not self.valor_total:
             self.valor_total = self.calcular_valor_total()
 
+        # Auto-calcular calidad basada en acidez
+        if self.porcentaje_acidez is not None and not self.calidad:
+            self.calidad = self.calcular_calidad_por_acidez()
+
         # Ejecutar validaciones solo si es nuevo registro
-        if not self.pk:
+        # Omitir full_clean si skip_validation esta en kwargs
+        skip_validation = kwargs.pop('skip_validation', False)
+        if not self.pk and not skip_validation:
             self.full_clean()
 
         # Guardar con transaccion atomica para asegurar consistencia
@@ -281,3 +337,136 @@ class Recoleccion(models.Model):
                 super().save(*args, **kwargs)
             else:
                 raise
+
+
+class CertificadoRecoleccion(models.Model):
+    """
+    Modelo para almacenar certificados de recoleccion emitidos
+
+    Guarda un registro permanente de cada certificado generado,
+    permitiendo auditoria, reimpresion y consulta historica.
+    """
+
+    PERIODO_CHOICES = [
+        ('mensual', 'Mensual'),
+        ('bimestral', 'Bimestral'),
+        ('trimestral', 'Trimestral'),
+        ('semestral', 'Semestral'),
+        ('anual', 'Anual'),
+        ('personalizado', 'Personalizado'),
+    ]
+
+    # ============ IDENTIFICADOR UNICO ============
+    numero_certificado = models.CharField(
+        max_length=50,
+        unique=True,
+        verbose_name='Numero de certificado',
+        help_text='Codigo unico del certificado (formato: CERT-CODIGO-TIMESTAMP)'
+    )
+
+    # ============ ECOALIADO ============
+    ecoaliado = models.ForeignKey(
+        Ecoaliado,
+        on_delete=models.PROTECT,
+        related_name='certificados',
+        verbose_name='Ecoaliado',
+        help_text='Ecoaliado al que se emite el certificado'
+    )
+
+    # ============ PERIODO ============
+    periodo = models.CharField(
+        max_length=20,
+        choices=PERIODO_CHOICES,
+        verbose_name='Tipo de periodo'
+    )
+    fecha_inicio = models.DateField(
+        verbose_name='Fecha inicio del periodo'
+    )
+    fecha_fin = models.DateField(
+        verbose_name='Fecha fin del periodo'
+    )
+    descripcion_periodo = models.CharField(
+        max_length=100,
+        verbose_name='Descripcion del periodo',
+        help_text='Ej: Enero 2025, Primer Semestre 2025'
+    )
+
+    # ============ RESUMEN ============
+    total_recolecciones = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Total de recolecciones'
+    )
+    total_kg = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0'),
+        verbose_name='Total kilogramos'
+    )
+    total_valor = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        default=Decimal('0'),
+        verbose_name='Valor total pagado'
+    )
+    promedio_kg = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('0'),
+        verbose_name='Promedio kg por recoleccion'
+    )
+    precio_promedio_kg = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('0'),
+        verbose_name='Precio promedio por kg'
+    )
+
+    # ============ DATOS JSON COMPLETOS ============
+    datos_certificado = models.JSONField(
+        verbose_name='Datos completos del certificado',
+        help_text='JSON con todos los datos para reimprimir el certificado'
+    )
+
+    # ============ AUDITORIA ============
+    emitido_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='certificados_emitidos',
+        verbose_name='Emitido por'
+    )
+    fecha_emision = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de emision'
+    )
+
+    # ============ SOFT DELETE ============
+    deleted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de eliminacion'
+    )
+
+    class Meta:
+        db_table = 'recolecciones_certificado'
+        verbose_name = 'Certificado de Recoleccion'
+        verbose_name_plural = 'Certificados de Recoleccion'
+        ordering = ['-fecha_emision']
+        indexes = [
+            models.Index(fields=['ecoaliado', 'fecha_emision']),
+            models.Index(fields=['numero_certificado']),
+            models.Index(fields=['periodo', 'fecha_inicio', 'fecha_fin']),
+            models.Index(fields=['deleted_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.numero_certificado} - {self.ecoaliado.razon_social}"
+
+    @property
+    def is_deleted(self):
+        return self.deleted_at is not None
+
+    def soft_delete(self):
+        self.deleted_at = timezone.now()
+        self.save(update_fields=['deleted_at'])

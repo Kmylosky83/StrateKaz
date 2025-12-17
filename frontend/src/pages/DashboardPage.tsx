@@ -2,9 +2,11 @@ import { useAuthStore } from '@/store/authStore';
 import { Card } from '@/components/common/Card';
 import { Badge } from '@/components/common/Badge';
 import { Users, Package, Truck, DollarSign } from 'lucide-react';
+import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 
 export const DashboardPage = () => {
   const user = useAuthStore((state) => state.user);
+  const { companyName } = useBrandingConfig();
 
   const stats = [
     {
@@ -46,7 +48,7 @@ export const DashboardPage = () => {
       {/* Page Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Dashboard {user?.cargo_nombre}
+          Dashboard {user?.cargo?.name}
         </h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Bienvenido de nuevo, {user?.first_name || user?.username}
@@ -93,7 +95,7 @@ export const DashboardPage = () => {
             Sistema Integrado de Gestión
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto">
-            Bienvenido al sistema ERP de Grasas y Huesos del Norte. Aquí podrás
+            Bienvenido al sistema ERP de {companyName}. Aquí podrás
             gestionar proveedores, recolecciones, lotes de planta, liquidaciones y
             certificados de manera eficiente.
           </p>

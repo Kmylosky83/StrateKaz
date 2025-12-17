@@ -1,5 +1,6 @@
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { parseLocalDate } from './dateUtils';
 
 /**
  * Formatea un número como moneda colombiana (COP)
@@ -25,10 +26,22 @@ export const formatNumber = (num: number, decimals: number = 0): string => {
 
 /**
  * Formatea una fecha a formato DD/MM/YYYY
+ * NOTA: Para fechas 'YYYY-MM-DD' sin hora, usa parseLocalDate para evitar
+ * problemas de timezone donde la fecha se muestra un día antes
  */
 export const formatDate = (date: string | Date): string => {
   try {
-    const dateObj = typeof date === 'string' ? parseISO(date) : date;
+    let dateObj: Date;
+    if (typeof date === 'string') {
+      // Si es solo fecha (YYYY-MM-DD), usar parseLocalDate para evitar UTC
+      if (date.length === 10 && !date.includes('T')) {
+        dateObj = parseLocalDate(date) || new Date();
+      } else {
+        dateObj = parseISO(date);
+      }
+    } else {
+      dateObj = date;
+    }
     return format(dateObj, 'dd/MM/yyyy', { locale: es });
   } catch (error) {
     return '';

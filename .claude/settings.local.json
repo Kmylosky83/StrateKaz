@@ -47,7 +47,8 @@
       "Bash(done)",
       "mcp__ide__getDiagnostics",
       "Bash(npm run build:*)",
-      "Bash(docker logs:*)"
+      "Bash(docker logs:*)",
+      "Bash(timeout:*)"
     ],
     "deny": [],
     "ask": []

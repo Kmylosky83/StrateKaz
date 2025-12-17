@@ -12,16 +12,18 @@
  * según el tab activo.
  */
 import { useState, ReactNode } from 'react';
-import { Users, Calendar, Truck, FileText, DollarSign, Plus, List } from 'lucide-react';
+import { Users, Calendar, Truck, FileText, DollarSign, Plus, List, Award } from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import { PageHeader, PageTabs } from '@/components/layout';
 import type { TabItem } from '@/components/layout/PageTabs';
 import { useAuthStore } from '@/store/authStore';
+import { CargoCodes } from '@/constants/permissions';
 
 // Importar páginas directamente (ya son lazy en el nivel de ruta)
 import { EcoaliadosPage } from '@/features/ecoaliados/pages/EcoaliadosPage';
 import { ProgramacionesPage } from '@/features/programaciones/pages/ProgramacionesPage';
 import { RecoleccionesPage } from '@/features/recolecciones/pages/RecoleccionesPage';
+import { CertificadosPage } from '@/features/certificados';
 
 // Hooks para verificar datos disponibles
 import { useProgramacionesEnRuta } from '@/features/recolecciones/api/useRecolecciones';
@@ -61,31 +63,31 @@ export default function EcoNortePage() {
       id: 'ecoaliados',
       label: 'Ecoaliados',
       icon: Users,
-      allowedRoles: ['superadmin', 'gerente', 'lider_com_econorte', 'comercial_econorte', 'lider_log_econorte']
+      allowedRoles: ['superadmin', 'gerente', CargoCodes.LIDER_COMERCIAL_ECONORTE, CargoCodes.COMERCIAL_ECONORTE, CargoCodes.LIDER_LOGISTICA_ECONORTE]
     },
     {
       id: 'programaciones',
       label: 'Programaciones',
       icon: Calendar,
-      allowedRoles: ['superadmin', 'gerente', 'lider_com_econorte', 'comercial_econorte', 'lider_log_econorte', 'recolector_econorte']
+      allowedRoles: ['superadmin', 'gerente', CargoCodes.LIDER_COMERCIAL_ECONORTE, CargoCodes.COMERCIAL_ECONORTE, CargoCodes.LIDER_LOGISTICA_ECONORTE, CargoCodes.RECOLECTOR_ECONORTE]
     },
     {
       id: 'recolecciones',
       label: 'Recolecciones',
       icon: Truck,
-      allowedRoles: ['superadmin', 'gerente', 'lider_com_econorte', 'lider_log_econorte', 'recolector_econorte']
+      allowedRoles: ['superadmin', 'gerente', CargoCodes.LIDER_COMERCIAL_ECONORTE, CargoCodes.LIDER_LOGISTICA_ECONORTE, CargoCodes.RECOLECTOR_ECONORTE]
     },
     {
       id: 'certificados',
       label: 'Certificados',
       icon: FileText,
-      allowedRoles: ['superadmin', 'gerente', 'lider_com_econorte', 'comercial_econorte']
+      allowedRoles: ['superadmin', 'gerente', CargoCodes.LIDER_COMERCIAL_ECONORTE, CargoCodes.COMERCIAL_ECONORTE]
     },
     {
       id: 'liquidaciones',
       label: 'Liquidaciones',
       icon: DollarSign,
-      allowedRoles: ['superadmin', 'gerente', 'lider_log_econorte']
+      allowedRoles: ['superadmin', 'gerente', CargoCodes.LIDER_LOGISTICA_ECONORTE]
     },
   ];
 
@@ -106,16 +108,18 @@ export default function EcoNortePage() {
   const [triggerNuevoEcoaliado, setTriggerNuevoEcoaliado] = useState(0);
   const [triggerNuevaProgramacion, setTriggerNuevaProgramacion] = useState(0);
   const [triggerRegistrarRecoleccion, setTriggerRegistrarRecoleccion] = useState(0);
+  const [triggerNuevoCertificado, setTriggerNuevoCertificado] = useState(0);
 
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId as TabType);
   };
 
   // Permisos por tab
-  const isLiderLogistico = userCargoCode === 'lider_log_econorte';
+  const isLiderLogistico = userCargoCode === CargoCodes.LIDER_LOGISTICA_ECONORTE;
   const canManageEcoaliados = !isLiderLogistico;
-  const canCreateProgramacion = ['comercial_econorte', 'lider_com_econorte', 'gerente', 'superadmin', 'coordinador_recoleccion'].includes(userCargoCode);
-  const canRegistrarRecoleccion = ['recolector_econorte', 'lider_log_econorte', 'gerente', 'superadmin', 'coordinador_recoleccion'].includes(userCargoCode);
+  const canCreateProgramacion = [CargoCodes.COMERCIAL_ECONORTE, CargoCodes.LIDER_COMERCIAL_ECONORTE, 'gerente', 'superadmin', CargoCodes.COORDINADOR_RECOLECCION].includes(userCargoCode);
+  const canRegistrarRecoleccion = [CargoCodes.RECOLECTOR_ECONORTE, CargoCodes.LIDER_LOGISTICA_ECONORTE, 'gerente', 'superadmin', CargoCodes.COORDINADOR_RECOLECCION].includes(userCargoCode);
+  const canGenerateCertificado = ['gerente', 'superadmin', CargoCodes.LIDER_COMERCIAL_ECONORTE, CargoCodes.COMERCIAL_ECONORTE].includes(userCargoCode);
   const hasProgramacionesEnRuta = programacionesEnRuta?.results && programacionesEnRuta.results.length > 0;
 
   // Controles de vista (solo para Programaciones)
@@ -162,6 +166,13 @@ export default function EcoNortePage() {
             Registrar Recolección
           </Button>
         ) : undefined;
+      case 'certificados':
+        return canGenerateCertificado ? (
+          <Button variant="primary" onClick={() => setTriggerNuevoCertificado(prev => prev + 1)}>
+            <Award className="h-5 w-5 mr-2" />
+            Generar Certificado
+          </Button>
+        ) : undefined;
       default:
         return undefined;
     }
@@ -194,7 +205,7 @@ export default function EcoNortePage() {
           />
         );
       case 'certificados':
-        return <ComingSoonPlaceholder title="Certificados" />;
+        return <CertificadosPage embedded triggerNewForm={triggerNuevoCertificado} />;
       case 'liquidaciones':
         return <ComingSoonPlaceholder title="Liquidaciones" />;
       default:

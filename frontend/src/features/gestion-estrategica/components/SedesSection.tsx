@@ -1,0 +1,266 @@
+/**
+ * Sección de Sedes y Ubicaciones
+ *
+ * Gestión de sedes, plantas, sucursales y ubicaciones de la empresa.
+ * Sigue el patrón de BrandingSection del Design System.
+ *
+ * Usa Design System:
+ * - Card para contenedor
+ * - Button para acciones
+ * - Badge para estados
+ * - Table para listado
+ */
+import { useState } from 'react';
+import { Plus, Edit, Trash2, MapPin, Building2, Star, CheckCircle2 } from 'lucide-react';
+import { Card, Badge, Button } from '@/components/common';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { useSedes, useDeleteSede, useSetSedePrincipal } from '../hooks/useStrategic';
+import { SedeFormModal } from './modals/SedeFormModal';
+import type { SedeEmpresaList } from '../types/strategic.types';
+
+export const SedesSection = () => {
+  const { data: sedesData, isLoading } = useSedes();
+  const deleteMutation = useDeleteSede();
+  const setPrincipalMutation = useSetSedePrincipal();
+
+  const [showModal, setShowModal] = useState(false);
+  const [selectedSede, setSelectedSede] = useState<SedeEmpresaList | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [sedeToDelete, setSedeToDelete] = useState<SedeEmpresaList | null>(null);
+
+  const sedes = sedesData?.results || [];
+
+  const handleEdit = (sede: SedeEmpresaList) => {
+    setSelectedSede(sede);
+    setShowModal(true);
+  };
+
+  const handleAdd = () => {
+    setSelectedSede(null);
+    setShowModal(true);
+  };
+
+  const handleDeleteClick = (sede: SedeEmpresaList) => {
+    setSedeToDelete(sede);
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (sedeToDelete) {
+      await deleteMutation.mutateAsync(sedeToDelete.id);
+      setShowDeleteDialog(false);
+      setSedeToDelete(null);
+    }
+  };
+
+  const handleSetPrincipal = async (sede: SedeEmpresaList) => {
+    await setPrincipalMutation.mutateAsync(sede.id);
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <div className="p-6 animate-pulse">
+          <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-4" />
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded" />
+            ))}
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <>
+      <Card>
+        <div className="p-6">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                <MapPin className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  Sedes y Ubicaciones
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {sedes.length} sede{sedes.length !== 1 ? 's' : ''} configurada{sedes.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+            </div>
+            <Button variant="primary" size="sm" onClick={handleAdd}>
+              <Plus className="h-4 w-4 mr-2" />
+              Agregar Sede
+            </Button>
+          </div>
+
+          {/* Tabla de sedes */}
+          {sedes.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+                      Sede
+                    </th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+                      Tipo
+                    </th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+                      Ubicación
+                    </th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+                      Responsable
+                    </th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+                      Estado
+                    </th>
+                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+                      Acciones
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sedes.map((sede) => (
+                    <tr
+                      key={sede.id}
+                      className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                    >
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800">
+                            <Building2 className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-gray-900 dark:text-gray-100">
+                                {sede.nombre}
+                              </span>
+                              {sede.es_sede_principal && (
+                                <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
+                              )}
+                            </div>
+                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                              {sede.codigo}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <Badge variant="gray" size="sm">
+                          {sede.tipo_sede_display}
+                        </Badge>
+                      </td>
+                      <td className="py-3 px-4 text-gray-600 dark:text-gray-300">
+                        <div className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />
+                          {sede.ciudad}, {sede.departamento_display}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-gray-600 dark:text-gray-300">
+                        {sede.responsable_name || (
+                          <span className="text-gray-400 dark:text-gray-500 italic">
+                            Sin asignar
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        <Badge variant={sede.is_active ? 'success' : 'gray'} size="sm">
+                          {sede.is_active ? (
+                            <>
+                              <CheckCircle2 className="h-3 w-3 mr-1" />
+                              Activa
+                            </>
+                          ) : (
+                            'Inactiva'
+                          )}
+                        </Badge>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {!sede.es_sede_principal && sede.is_active && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleSetPrincipal(sede)}
+                              title="Establecer como sede principal"
+                            >
+                              <Star className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(sede)}
+                            title="Editar sede"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          {!sede.es_sede_principal && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteClick(sede)}
+                              title="Eliminar sede"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
+                <Building2 className="h-8 w-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+                No hay sedes configuradas
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-4">
+                Agregue la primera sede de su empresa para comenzar.
+              </p>
+              <Button variant="primary" onClick={handleAdd}>
+                <Plus className="h-4 w-4 mr-2" />
+                Agregar Primera Sede
+              </Button>
+            </div>
+          )}
+        </div>
+      </Card>
+
+      {/* Modal de formulario */}
+      <SedeFormModal
+        sede={selectedSede}
+        isOpen={showModal}
+        onClose={() => {
+          setShowModal(false);
+          setSelectedSede(null);
+        }}
+      />
+
+      {/* Diálogo de confirmación de eliminación */}
+      <ConfirmDialog
+        isOpen={showDeleteDialog}
+        onClose={() => {
+          setShowDeleteDialog(false);
+          setSedeToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Eliminar Sede"
+        message={`¿Está seguro de eliminar la sede "${sedeToDelete?.nombre}"? Esta acción se puede revertir.`}
+        confirmText="Eliminar"
+        confirmVariant="danger"
+        isLoading={deleteMutation.isPending}
+      />
+    </>
+  );
+};

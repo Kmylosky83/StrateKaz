@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import type {
   RecoleccionFilters,
   RegistrarRecoleccionDTO,
+  CertificadoRecoleccionParams,
 } from '../types/recoleccion.types';
 
 const QUERY_KEY = 'recolecciones';
@@ -112,6 +113,24 @@ export const useRegistrarRecoleccion = () => {
     },
     onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
       const message = error.response?.data?.detail || 'Error al registrar la recoleccion';
+      toast.error(message);
+    },
+  });
+};
+
+/**
+ * Hook para generar certificado de recoleccion de un ecoaliado
+ */
+export const useCertificadoRecoleccion = () => {
+  return useMutation({
+    mutationFn: (params: CertificadoRecoleccionParams) =>
+      recoleccionesAPI.generarCertificado(params),
+    onError: (error: Error & { response?: { data?: { detail?: string; mes?: string } } }) => {
+      const errorData = error.response?.data;
+      const message =
+        errorData?.detail ||
+        errorData?.mes ||
+        'Error al generar el certificado';
       toast.error(message);
     },
   });

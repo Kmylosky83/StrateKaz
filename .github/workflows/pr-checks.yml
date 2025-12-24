@@ -1,0 +1,211 @@
+name: PR Checks
+
+# Run on pull requests
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  # ═══════════════════════════════════════════════════
+  # PR VALIDATION
+  # ═══════════════════════════════════════════════════
+  pr-validation:
+    name: PR Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check PR title format
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+
+          # Check if title follows conventional commits
+          if [[ ! "$PR_TITLE" =~ ^(feat|fix|docs|style|refactor|perf|test|chore|build|ci)(\(.+\))?\!?:\ .+ ]]; then
+            echo "❌ PR title does not follow conventional commits format"
+            echo "Expected format: type(scope): description"
+            echo "Types: feat, fix, docs, style, refactor, perf, test, chore, build, ci"
+            echo "Example: feat(backend): add user authentication"
+            exit 1
+          else
+            echo "✅ PR title follows conventional commits format"
+          fi
+
+      - name: Check for merge conflicts
+        run: |
+          git fetch origin ${{ github.base_ref }}
+
+          if git merge-tree $(git merge-base HEAD origin/${{ github.base_ref }}) HEAD origin/${{ github.base_ref }} | grep -q '<<<<<'; then
+            echo "❌ This PR has merge conflicts. Please resolve them."
+            exit 1
+          else
+            echo "✅ No merge conflicts detected"
+          fi
+
+      - name: Check branch name
+        run: |
+          BRANCH_NAME="${{ github.head_ref }}"
+
+          # Check if branch name follows naming convention
+          if [[ ! "$BRANCH_NAME" =~ ^(feature|bugfix|hotfix|release|docs|refactor|test)/.+ ]]; then
+            echo "⚠️  Branch name does not follow recommended convention"
+            echo "Recommended format: type/description"
+            echo "Types: feature, bugfix, hotfix, release, docs, refactor, test"
+            echo "Example: feature/user-authentication"
+            echo "This is a warning only."
+          else
+            echo "✅ Branch name follows naming convention"
+          fi
+
+  # ═══════════════════════════════════════════════════
+  # CODE STATISTICS
+  # ═══════════════════════════════════════════════════
+  code-stats:
+    name: Code Statistics
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate code statistics
+        run: |
+          echo "## Code Changes Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Get changed files
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          TOTAL_FILES=$(echo "$CHANGED_FILES" | wc -l)
+
+          echo "**Total files changed:** $TOTAL_FILES" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Count by type
+          BACKEND_FILES=$(echo "$CHANGED_FILES" | grep -c "backend/" || true)
+          FRONTEND_FILES=$(echo "$CHANGED_FILES" | grep -c "frontend/" || true)
+          DOCS_FILES=$(echo "$CHANGED_FILES" | grep -c "docs/" || true)
+          CONFIG_FILES=$(echo "$CHANGED_FILES" | grep -c -E "\.(yml|yaml|json|toml|ini)$" || true)
+
+          echo "| Category | Files Changed |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|---------------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Backend | $BACKEND_FILES |" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend | $FRONTEND_FILES |" >> $GITHUB_STEP_SUMMARY
+          echo "| Documentation | $DOCS_FILES |" >> $GITHUB_STEP_SUMMARY
+          echo "| Configuration | $CONFIG_FILES |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Lines changed
+          LINES_ADDED=$(git diff --numstat origin/${{ github.base_ref }}...HEAD | awk '{sum+=$1} END {print sum}')
+          LINES_REMOVED=$(git diff --numstat origin/${{ github.base_ref }}...HEAD | awk '{sum+=$2} END {print sum}')
+
+          echo "**Lines added:** +$LINES_ADDED" >> $GITHUB_STEP_SUMMARY
+          echo "**Lines removed:** -$LINES_REMOVED" >> $GITHUB_STEP_SUMMARY
+
+  # ═══════════════════════════════════════════════════
+  # DEPENDENCY CHECK
+  # ═══════════════════════════════════════════════════
+  dependency-check:
+    name: Dependency Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for dependency changes
+        run: |
+          echo "## Dependency Changes" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Check Python dependencies
+          if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q "backend/requirements.txt"; then
+            echo "### Backend Dependencies (Python)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo '```diff' >> $GITHUB_STEP_SUMMARY
+            git diff origin/${{ github.base_ref }}...HEAD -- backend/requirements.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️  Backend dependencies have changed. Please review carefully." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ No backend dependency changes" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Check Node dependencies
+          if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q "frontend/package.json"; then
+            echo "### Frontend Dependencies (Node)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo '```diff' >> $GITHUB_STEP_SUMMARY
+            git diff origin/${{ github.base_ref }}...HEAD -- frontend/package.json >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️  Frontend dependencies have changed. Please review carefully." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ No frontend dependency changes" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # ═══════════════════════════════════════════════════
+  # COMMENT ON PR
+  # ═══════════════════════════════════════════════════
+  pr-comment:
+    name: PR Comment
+    runs-on: ubuntu-latest
+    needs: [pr-validation, code-stats, dependency-check]
+    if: always()
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('PR Checks Summary')
+            );
+
+            const commentBody = `## PR Checks Summary
+
+            | Check | Status |
+            |-------|--------|
+            | PR Validation | ${{ needs.pr-validation.result == 'success' && '✅' || '❌' }} |
+            | Code Statistics | ${{ needs.code-stats.result == 'success' && '✅' || '❌' }} |
+            | Dependency Check | ${{ needs.dependency-check.result == 'success' && '✅' || '❌' }} |
+
+            Please review the detailed results in the Actions tab.
+
+            ---
+            *This comment is automatically generated by GitHub Actions*`;
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: commentBody
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: commentBody
+              });
+            }

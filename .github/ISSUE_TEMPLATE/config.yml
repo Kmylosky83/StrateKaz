@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentación
+    url: https://github.com/YOUR_USERNAME/grasas-y-huesos-del-norte/tree/main/docs
+    about: Consulta la documentación del proyecto
+  - name: Preguntas y Discusiones
+    url: https://github.com/YOUR_USERNAME/grasas-y-huesos-del-norte/discussions
+    about: Haz preguntas y participa en discusiones

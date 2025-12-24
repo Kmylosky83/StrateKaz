@@ -24,6 +24,16 @@ django-filter==23.5
 django-auditlog==2.3.0
 
 # ═══════════════════════════════════════════════════
+# TAREAS ASÍNCRONAS Y CACHE
+# ═══════════════════════════════════════════════════
+celery==5.3.6
+redis==5.0.1
+django-redis==5.4.0
+django-celery-beat==2.6.0
+django-celery-results==2.5.1
+flower==2.0.1
+
+# ═══════════════════════════════════════════════════
 # GENERACIÓN DE DOCUMENTOS
 # ═══════════════════════════════════════════════════
 WeasyPrint==60.1

@@ -29,12 +29,8 @@ urlpatterns = [
     # API Core
     path('api/core/', include('apps.core.urls')),
 
-    # Apps Legacy Funcionales (pendiente migración)
+    # Apps Legacy Funcionales (pendiente migración a supply_chain)
     path('api/proveedores/', include('apps.proveedores.urls')),
-    path('api/ecoaliados/', include('apps.ecoaliados.urls')),
-    path('api/programaciones/', include('apps.programaciones.urls')),
-    path('api/recolecciones/', include('apps.recolecciones.urls')),
-    path('api/recepciones/', include('apps.recepciones.urls')),
 
     # Dirección Estratégica (Módulo 1 - Nivel Estratégico)
     path('api/organizacion/', include('apps.gestion_estrategica.organizacion.urls')),

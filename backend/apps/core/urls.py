@@ -10,7 +10,7 @@ Incluye endpoints para:
 """
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import health_check, current_user
+from .views import health_check, current_user, test_celery_task, task_status, revoke_task
 from .viewsets import CargoViewSet, UserViewSet, PermisoViewSet
 from .viewsets_rbac import (
     PermissionViewSet,
@@ -79,6 +79,11 @@ urlpatterns = [
     # Endpoints funcionales
     path('health/', health_check, name='health_check'),
     path('users/me/', current_user, name='current_user'),
+
+    # Endpoints Celery Tasks
+    path('test-celery/', test_celery_task, name='test_celery_task'),
+    path('task-status/<str:task_id>/', task_status, name='task_status'),
+    path('revoke-task/<str:task_id>/', revoke_task, name='revoke_task'),
 
     # Incluir rutas del router
     path('', include(router.urls)),

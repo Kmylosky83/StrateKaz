@@ -1,8 +1,10 @@
 # Logs
 *.log
 
-# Backups locales
-backups/
+# Backups locales (ignorar contenido pero mantener directorio)
+backups/*.sql
+backups/*.sql.gz
+backups/logs/
 
 # Archivos temporales
 *.tmp

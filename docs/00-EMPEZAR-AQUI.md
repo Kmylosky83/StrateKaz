@@ -2,42 +2,69 @@
 
 ## Bienvenida
 
-Documentacion completa del **Sistema de Gestión Integral (SGI)** multi-industria. Esta guia te ayudara a navegar la documentacion disponible.
+Documentacion completa del **ERP StrateKaz** - Sistema de Gestión Integral multi-industria. Esta guia te ayudara a navegar la documentacion disponible.
 
-> **Nota:** Este sistema es **completamente adaptable** a cualquier industria. Los cargos, roles y permisos se gestionan 100% desde la base de datos sin modificar código.
+> **IMPORTANTE:** Este sistema es **100% dinámico desde la base de datos**. El sidebar, módulos, tabs, cargos, roles y permisos se configuran completamente desde la DB sin modificar código.
+
+---
+
+## ESTRUCTURA FINAL - 14 MÓDULOS
+
+Validada: 23 Diciembre 2024 | Fuente: `Estructura Final 22.txt`
+
+| Orden | Módulo | Código | Tabs | Estado |
+|-------|--------|--------|------|--------|
+| **10** | **Direccion Estrategica** | gestion_estrategica | 6 | COMPLETO |
+| **20** | **Cumplimiento Normativo** | motor_cumplimiento | 4 | COMPLETO |
+| **21** | **Motor de Riesgos** | motor_riesgos | 7 | COMPLETO |
+| **22** | **Flujos de Trabajo** | workflow_engine | 3 | COMPLETO |
+| **30** | **Gestion Integral** | hseq_management | 11 | COMPLETO (10) / PARCIAL (1) |
+| **40** | **Cadena de Suministro** | supply_chain | 5 | ESTRUCTURA |
+| **41** | **Base de Operaciones** | production_ops | 4 | ESTRUCTURA |
+| **42** | **Logistica y Flota** | logistics_fleet | 4 | ESTRUCTURA |
+| **43** | **Ventas y CRM** | sales_crm | 4 | ESTRUCTURA |
+| **50** | **Centro de Talento** | talent_hub | 11 | ESTRUCTURA |
+| **51** | **Administracion y Financiero** | admin_finance | 4 | ESTRUCTURA |
+| **52** | **Contabilidad** | accounting | 4 | ESTRUCTURA |
+| **60** | **Inteligencia de Negocios** | analytics | 7 | ESTRUCTURA |
+| **61** | **Sistema de Auditorias** | audit_system | 4 | ESTRUCTURA |
+
+**Total: 14 módulos | 80 tabs | 6 niveles**
+**Backend: 29 apps COMPLETAS, 50 apps ESTRUCTURA**
+**Frontend: 4 features COMPLETAS, 4 PARCIALES, 2 ESTRUCTURA**
 
 ---
 
 ## ARQUITECTURA DEL SISTEMA
 
-### 6 Niveles Jerárquicos, 14 Módulos, 154 Tablas
+### 6 Niveles Jerárquicos
 
 ```text
-NIVEL 1: ESTRATÉGICO
-  └── gestion_estrategica/    [ACTIVO] 4 apps - identidad, organizacion, planeacion, configuracion
+NIVEL 1: ESTRATÉGICO (10)
+  └── Direccion Estrategica     → Configuración, Organización, Identidad, Planeación
 
-NIVEL 2: CUMPLIMIENTO
-  ├── motor_cumplimiento/     [PARCIAL] matriz_legal ACTIVO, 3 apps pendientes
-  ├── motor_riesgos/          [ESTRUCTURA] 7 apps - ipevr, aspectos_ambientales, sagrilaft
-  └── workflow_engine/        [ESTRUCTURA] 3 apps - disenador_flujos, ejecucion, monitoreo
+NIVEL 2: CUMPLIMIENTO (20-22)
+  ├── Cumplimiento Normativo    → Matriz Legal, Requisitos, Partes Interesadas
+  ├── Motor de Riesgos          → Contexto, IPEVR, Aspectos Ambientales, SAGRILAFT
+  └── Flujos de Trabajo         → Diseñador, Ejecución, Monitoreo
 
-NIVEL 3: TORRE DE CONTROL
-  └── hseq_management/        [ESTRUCTURA] 11 apps - calidad, sst, accidentalidad, emergencias
+NIVEL 3: TORRE DE CONTROL (30)
+  └── Gestion Integral          → Sistema Documental, Calidad, SST, Ambiental, Emergencias
 
-NIVEL 4: CADENA DE VALOR
-  ├── supply_chain/           [ESTRUCTURA] 5 apps - proveedores, compras, almacenamiento
-  ├── production_ops/         [ESTRUCTURA] 4 apps - recepcion, procesamiento, calidad
-  ├── logistics_fleet/        [ESTRUCTURA] 4 apps - transporte, flota, pesv_operativo
-  └── sales_crm/              [ESTRUCTURA] 4 apps - clientes, ventas, facturacion
+NIVEL 4: CADENA DE VALOR (40-43)
+  ├── Cadena de Suministro      → Proveedores, Catálogos, Compras, Almacenamiento
+  ├── Base de Operaciones       → Recepción, Procesamiento, Mantenimiento
+  ├── Logistica y Flota         → Transporte, Despachos, Flota, PESV
+  └── Ventas y CRM              → Clientes, Pipeline, Facturación
 
-NIVEL 5: HABILITADORES
-  ├── talent_hub/             [ESTRUCTURA] 11 apps - colaboradores, nomina, formacion
-  ├── admin_finance/          [ESTRUCTURA] 4 apps - tesoreria, presupuesto, activos
-  └── accounting/             [ESTRUCTURA] 4 apps - contabilidad (activable)
+NIVEL 5: HABILITADORES (50-52)
+  ├── Centro de Talento         → Colaboradores, Formación, Nómina
+  ├── Administracion y Finanzas → Tesorería, Presupuesto, Activos
+  └── Contabilidad              → Config Contable, Movimientos, Informes
 
-NIVEL 6: INTELIGENCIA
-  ├── analytics/              [ESTRUCTURA] 7 apps - indicadores, dashboards, reportes
-  └── audit_system/           [ESTRUCTURA] 4 apps - logs, notificaciones, alertas
+NIVEL 6: INTELIGENCIA (60-61)
+  ├── Inteligencia de Negocios  → KPIs, Dashboards, Reportes
+  └── Sistema de Auditorias     → Logs, Notificaciones, Alertas
 ```
 
 **Leyenda:**
@@ -66,10 +93,8 @@ NIVEL 6: INTELIGENCIA
 | App Legacy | Modelos | Destino Nueva Arquitectura | Prioridad |
 |------------|---------|---------------------------|-----------|
 | **proveedores** | UnidadNegocio, Proveedor, HistorialPrecio | supply_chain/gestion_proveedores | MEDIA |
-| **ecoaliados** | Ecoaliado | supply_chain/gestion_proveedores | MEDIA |
-| **programaciones** | Programacion | logistics_fleet/gestion_transporte | MEDIA |
-| **recolecciones** | Recoleccion | logistics_fleet/despachos | MEDIA |
-| **recepciones** | RecepcionMateriaPrima | production_ops/recepcion | MEDIA |
+
+> **Nota:** Las apps `ecoaliados`, `programaciones`, `recolecciones` y `recepciones` fueron eliminadas el 23/12/2024 por estar hardcodeadas y contener solo datos de prueba.
 
 ### Apps ELIMINADAS (22 Dic 2024)
 
@@ -112,6 +137,7 @@ Documentación técnica sobre la arquitectura del sistema.
 | Archivo | Descripcion |
 |---------|-------------|
 | **DATABASE-ARCHITECTURE.md** | Arquitectura completa de 154 tablas en 14 módulos |
+| **DIAGRAMA-ER.md** | Diagrama Entidad-Relación completo del sistema (Semana 1) |
 | **ESTRUCTURA-6-NIVELES-ERP.md** | Descripción de los 6 niveles jerárquicos del ERP |
 | **ANALISIS-SAAS-ARQUITECTURA.md** | Análisis de arquitectura SaaS multi-tenant |
 | **PLAN-MIGRACION-INCREMENTAL.md** | Plan de migración sin romper funcionalidad |
@@ -170,16 +196,41 @@ Documentación para desarrolladores.
 | **DESIGN-SYSTEM.md** | Design System completo |
 | **DESIGN-SYSTEM-INDEX.md** | Índice del Design System |
 | **COMPONENTES-DESIGN-SYSTEM.md** | Documentacion detallada de componentes |
+| **COMPONENTES-CATALOGO.md** | Catálogo de componentes UI reutilizables |
 | **GUIA-INICIO-DESIGN-SYSTEM.md** | Guía de inicio del Design System |
 | **LAYOUT-COMPONENTS.md** | Componentes de layout |
 | **RESUMEN-COMPONENTES.md** | Resumen de componentes disponibles |
 | **SNIPPETS-RAPIDOS.md** | Codigo copy & paste |
 | **DOCKER.md** | Configuración Docker para desarrollo y producción |
 | **LUCIDE_ICONS_REFERENCE.md** | Referencia de iconos Lucide |
-| **DOCKER_IMPROVEMENTS_SUMMARY.md** | Mejoras implementadas en Docker |
-| **RBAC-HIBRIDO-PLAN.md** | Plan de implementación RBAC híbrido |
-| **VISUAL-REFERENCE.md** | Referencia visual de componentes |
-| **REFACTOR-CONFIGURACION-TAB.md** | Refactorización del tab de configuración |
+
+#### desarrollo/celery/
+
+Documentación de Celery y tareas asíncronas.
+
+| Archivo | Descripcion |
+|---------|-------------|
+| **REDIS-CELERY-GUIDE.md** | Guía completa de Redis y Celery |
+| **CELERY_QUICKSTART.md** | Inicio rápido de Celery |
+| **CELERY_COMMANDS.md** | Comandos útiles de Celery |
+| **CELERY_SETUP_COMPLETE.md** | Configuración completa de Celery |
+
+#### desarrollo/ci-cd/
+
+Documentación de CI/CD y GitHub Actions.
+
+| Archivo | Descripcion |
+|---------|-------------|
+| **GITHUB_ACTIONS_SETUP.md** | Configuración de GitHub Actions |
+
+#### desarrollo/migraciones/
+
+Documentación de migraciones y limpieza de código.
+
+| Archivo | Descripcion |
+|---------|-------------|
+| **LIMPIEZA_LEGACY_COMPLETADA.md** | Registro de limpieza de módulos legacy |
+| **REORGANIZACION_FRONTEND.md** | Reorganización de estructura frontend |
 
 #### desarrollo/fixes/
 
@@ -310,11 +361,25 @@ Las apps legacy (proveedores, ecoaliados, programaciones, recolecciones, recepci
 | **Frontend** | React 18, TypeScript 5.3, Vite 5, Tailwind CSS 3.4 |
 | **Estado** | TanStack Query, Zustand |
 | **UI** | Framer Motion, Lucide React, Shadcn-UI |
-| **DevOps** | Docker, Docker Compose, Nginx |
+| **Async/Cache** | Redis 7, Celery 5.3, django-celery-beat |
+| **DevOps** | Docker, Docker Compose, GitHub Actions CI/CD |
+
+### Contenedores Docker (6 servicios)
+
+| Contenedor | Puerto | Descripción |
+|------------|--------|-------------|
+| grasas_huesos_db | 3307 | MySQL 8.0 - Base de datos |
+| grasas_huesos_redis | 6379 | Redis 7 - Message broker y cache |
+| grasas_huesos_backend | 8000 | Django - API REST |
+| grasas_huesos_celery_worker | - | Celery Worker - Tareas async |
+| grasas_huesos_celery_beat | - | Celery Beat - Tareas programadas |
+| grasas_huesos_frontend | 3010 | React + Vite - SPA |
 
 ---
 
 ## COMANDOS ÚTILES
+
+### Comandos Docker
 
 ```bash
 # Iniciar desarrollo
@@ -323,6 +388,16 @@ docker-compose up -d
 # Ver logs
 docker logs grasas_huesos_backend -f
 
+# Reiniciar servicios
+docker-compose restart
+
+# Detener servicios
+docker-compose down
+```
+
+### Comandos Django
+
+```bash
 # Django check
 docker exec grasas_huesos_backend python manage.py check
 
@@ -332,8 +407,91 @@ docker exec grasas_huesos_backend python manage.py makemigrations
 # Aplicar migraciones
 docker exec grasas_huesos_backend python manage.py migrate
 
-# Generar estructura de módulos (ya ejecutado)
-docker exec grasas_huesos_backend python create_erp_structure.py
+# Crear superusuario
+docker exec grasas_huesos_backend python manage.py createsuperuser
+
+# Shell interactivo
+docker exec -it grasas_huesos_backend python manage.py shell
+```
+
+### Seeds de Datos
+
+```bash
+# Configurar TODOS los 14 módulos según Estructura Final 22
+docker exec grasas_huesos_backend python manage.py seed_estructura_final
+
+# Limpiar módulos legacy (desactivar)
+docker exec grasas_huesos_backend python manage.py cleanup_legacy_modules
+
+# Limpiar módulos legacy (eliminar permanentemente)
+docker exec grasas_huesos_backend python manage.py cleanup_legacy_modules --delete
+
+# Verificar sidebar actual
+curl http://localhost:8000/api/core/system-modules/sidebar/
+```
+
+### Celery y Redis
+
+```bash
+# Ver estado del worker
+docker logs grasas_huesos_celery_worker -f
+
+# Ver tareas programadas
+docker logs grasas_huesos_celery_beat -f
+
+# Verificar conexión Redis
+docker exec grasas_huesos_redis redis-cli ping
+
+# Ejecutar tarea de prueba
+python test_celery.py
+```
+
+### Testing
+
+```bash
+# Backend tests
+docker exec grasas_huesos_backend pytest
+
+# Backend tests con coverage
+docker exec grasas_huesos_backend pytest --cov=apps --cov-report=html
+
+# Frontend tests
+cd frontend && npm test
+
+# Frontend tests con coverage
+cd frontend && npm run test:coverage
+
+# Storybook (catálogo de componentes)
+cd frontend && npm run storybook
+```
+
+### CI/CD
+
+```bash
+# Validar workflows de GitHub Actions
+gh workflow list
+
+# Ver estado de workflows
+gh workflow view ci.yml
+
+# Ejecutar workflow manualmente
+gh workflow run ci.yml
+```
+
+### Backups
+
+```bash
+# Backup de base de datos MySQL (recomendado)
+./docker/scripts/backup.sh
+
+# Restore de backup
+./docker/scripts/restore.sh docker/backups/backup_20251223_143000.sql.gz
+
+# Configurar backups automáticos
+./docker/scripts/setup-cron.sh
+
+# Ver backups disponibles
+ls -lh docker/backups/*.sql.gz
 ```
 
 ---
@@ -345,5 +503,5 @@ Para soporte técnico, consultar documentación en `/docs` o contactar al equipo
 ---
 
 **Estado:** En desarrollo activo
-**Última actualización:** 22 Diciembre 2024
-**Versión:** 2.0.0-alpha.2
+**Última actualización:** 23 Diciembre 2024
+**Versión:** 2.0.0-alpha.3

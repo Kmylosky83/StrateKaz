@@ -105,7 +105,7 @@
       "modulos": [
         {
           "codigo": "motor_cumplimiento",
-          "nombre": "Cumplimiento",
+          "nombre": "Cumplimiento Normativo",
           "descripcion": "Gestión de normatividad legal y requisitos",
           "tabs": [
             {
@@ -159,7 +159,7 @@
         },
         {
           "codigo": "motor_riesgos",
-          "nombre": "Riesgos",
+          "nombre": "Motor de Riesgos",
           "descripcion": "Gestión integral de riesgos organizacionales",
           "tabs": [
             {
@@ -302,7 +302,7 @@
       "modulos": [
         {
           "codigo": "hseq_management",
-          "nombre": "Gestión HSEQ",
+          "nombre": "Gestión Integral",
           "descripcion": "Sistema integrado de gestión de calidad, SST, ambiental y seguridad vial",
           "tabs": [
             {
@@ -514,7 +514,7 @@
         },
         {
           "codigo": "production_ops",
-          "nombre": "Operaciones de Producción",
+          "nombre": "Base de Operaciones",
           "descripcion": "Gestión de procesos productivos",
           "intercambiable_por_industria": true,
           "tabs": [
@@ -691,7 +691,7 @@
       "modulos": [
         {
           "codigo": "talent_hub",
-          "nombre": "Centro de Talento",
+          "nombre": "Talento Humano",
           "descripcion": "Gestión integral del ciclo del colaborador",
           "tabs": [
             {

@@ -57,7 +57,16 @@
       "Bash(find:*)",
       "Bash(cd:*)",
       "Bash(git log:*)",
-      "Bash(py manage.py check:*)"
+      "Bash(py manage.py check:*)",
+      "Bash(python manage.py shell:*)",
+      "Bash(ls -la \"c:\\\\Proyectos\\\\Grasas y Huesos del Norte\\\\frontend\\\\src\\\\features\"\" 2>/dev/null || echo \"Ruta no encontrada \")",
+      "Bash(xargs -I {} sh -c 'echo \"\"=== {} ===\"\" && wc -l {}')",
+      "Bash(ls:*)",
+      "Bash(chmod:*)",
+      "Bash(move CELERY_COMMANDS.md docs/desarrollo/celery/)",
+      "Bash(move CELERY_QUICKSTART.md docs/desarrollo/celery/)",
+      "Bash(move:*)",
+      "Bash(move \"docs/REDIS-CELERY-GUIDE.md\" docs/desarrollo/celery/)"
     ],
     "deny": [],
     "ask": []

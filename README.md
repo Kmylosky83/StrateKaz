@@ -54,6 +54,8 @@ El sistema implementa una arquitectura de **monolito modular** organizada en 6 n
 | **Backend** | Django 5.0.9, Django REST Framework, MySQL 8.0, Python 3.11+ |
 | **Frontend** | React 18, TypeScript 5.3, Vite 5, Tailwind CSS 3.4, TanStack Query, Zustand |
 | **UI/UX** | Framer Motion, Lucide React, Montserrat + Inter fonts |
+| **Async Tasks** | Celery 5.3+, Redis 7, django-celery-beat, Flower |
+| **Cache** | Redis (django-redis) |
 | **DevOps** | Docker & Docker Compose, Nginx (Producción) |
 
 ## Inicio Rápido
@@ -471,6 +473,319 @@ JWT (JSON Web Tokens):
 - Access Token: 60 minutos
 - Refresh Token: 7 días
 - Blacklist para tokens revocados
+
+---
+
+## Tareas Asíncronas y Cache
+
+El sistema implementa **Celery** con **Redis** para procesamiento asíncrono de tareas y cache distribuido.
+
+### Arquitectura
+
+```
+Django Backend → Redis (Broker) → Celery Worker
+                     ↓
+            Redis (Results Backend)
+                     ↓
+            Django (Resultados en DB)
+```
+
+### Servicios Docker
+
+| Servicio | Descripción | Puerto |
+|----------|-------------|--------|
+| `redis` | Message broker y cache | 6379 |
+| `celery_worker` | Procesa tareas asíncronas | - |
+| `celery_beat` | Scheduler de tareas periódicas | - |
+
+### Bases de Datos Redis
+
+- **DB 0**: Broker de Celery (cola de mensajes)
+- **DB 1**: Backend de resultados de Celery
+- **DB 2**: Cache de Django (general)
+- **DB 3**: Cache de sesiones
+
+### Tareas Disponibles
+
+```python
+from apps.core.tasks import (
+    send_email_async,         # Envío de emails
+    generate_report_async,    # Generación de reportes
+    process_file_upload,      # Procesamiento de archivos
+    cleanup_temp_files,       # Limpieza automática
+    backup_database,          # Backup de BD
+    system_health_check,      # Verificación de salud
+)
+```
+
+### Tareas Periódicas (Celery Beat)
+
+| Tarea | Schedule | Descripción |
+|-------|----------|-------------|
+| `cleanup_temp_files` | Diario 2:00 AM | Limpia archivos temporales |
+| `send_weekly_reports` | Lunes 8:00 AM | Reportes semanales |
+| `backup_database` | Cada 6 horas | Backup de BD |
+| `system_health_check` | Cada 15 minutos | Health check |
+
+### API Endpoints
+
+```bash
+# Ejecutar tarea
+POST /api/core/test-celery/
+{
+  "task_type": "example|email|report|health_check",
+  "params": {...}
+}
+
+# Consultar estado de tarea
+GET /api/core/task-status/{task_id}/
+
+# Revocar tarea
+POST /api/core/revoke-task/{task_id}/
+```
+
+### Quick Start
+
+```bash
+# 1. Iniciar servicios
+docker-compose up -d
+
+# 2. Verificar instalación
+python test_celery.py
+
+# 3. Ver logs
+docker-compose logs -f celery_worker
+
+# 4. Ejecutar tarea de ejemplo (Django shell)
+docker-compose exec backend python manage.py shell
+>>> from apps.core.tasks import example_task
+>>> result = example_task.delay('test', param2=42)
+>>> result.get()
+```
+
+### Documentación Completa
+
+- **[CELERY_QUICKSTART.md](CELERY_QUICKSTART.md)** - Guía rápida de inicio
+- **[docs/REDIS-CELERY-GUIDE.md](docs/REDIS-CELERY-GUIDE.md)** - Guía completa (60+ páginas)
+- **[CELERY_COMMANDS.md](CELERY_COMMANDS.md)** - Comandos de referencia
+- **[CELERY_SETUP_COMPLETE.md](CELERY_SETUP_COMPLETE.md)** - Resumen de configuración
+
+---
+
+## Sistema de Logging Estructurado
+
+El proyecto implementa logging estructurado en formato JSON para facilitar análisis, monitoreo y troubleshooting.
+
+### Características
+
+| Característica | Descripción |
+|----------------|-------------|
+| **Formato JSON** | Logs estructurados fáciles de parsear |
+| **Niveles estándar** | DEBUG, INFO, WARNING, ERROR, CRITICAL |
+| **Contexto automático** | Usuario, timestamp, módulo, función |
+| **Rotación de logs** | Archivo por día con retención configurable |
+| **Performance** | Logging asíncrono sin impacto en requests |
+
+### Archivo de Configuración
+
+**Ubicación:** `backend/utils/logging.py`
+
+Funciones disponibles:
+
+```python
+from utils.logging import log_info, log_error, log_warning, log_debug
+
+# Log de información
+log_info("Proceso completado", extra={"user_id": 123, "items": 45})
+
+# Log de error con excepción
+try:
+    resultado = procesar_datos()
+except Exception as e:
+    log_error("Error procesando datos", exc_info=e, extra={"data_id": 789})
+
+# Log de warning
+log_warning("Límite de cuota próximo", extra={"usage": "90%", "limit": 1000})
+```
+
+### Ubicación de Logs
+
+| Entorno | Ubicación | Formato |
+|---------|-----------|---------|
+| **Desarrollo** | `backend/logs/app.log` | JSON (1 archivo/día) |
+| **Producción** | `stdout` + Sentry | JSON estructurado |
+| **Docker** | `docker logs <container>` | JSON |
+
+### Rotación y Retención
+
+- Nuevo archivo cada día: `app-YYYY-MM-DD.log`
+- Retención: 30 días
+- Compresión automática de archivos antiguos
+
+---
+
+## Testing y QA
+
+El proyecto implementa un stack completo de testing para garantizar calidad y estabilidad.
+
+### Frontend Testing
+
+**Framework:** Vitest + React Testing Library
+
+**Ubicación:** `frontend/vitest.config.ts`
+
+```bash
+# Ejecutar tests
+npm test
+
+# Tests con coverage
+npm run test:coverage
+
+# Tests en modo watch
+npm run test:watch
+```
+
+**Configuración de Vitest:**
+
+- Entorno: jsdom (simulación de navegador)
+- Coverage: v8 provider
+- Globals: activados para compatibilidad con Jest
+- Setup: `src/setupTests.ts`
+
+**Archivos de test:** `frontend/src/__tests__/`
+
+### Backend Testing
+
+**Framework:** pytest + pytest-django
+
+```bash
+# Ejecutar todos los tests
+docker-compose exec backend pytest
+
+# Tests con coverage
+docker-compose exec backend pytest --cov=apps --cov-report=html
+
+# Tests de una app específica
+docker-compose exec backend pytest apps/core/tests/
+```
+
+### Storybook (Catálogo de Componentes)
+
+**Ubicación:** `frontend/.storybook/`
+
+Storybook permite visualizar y documentar componentes UI en aislamiento.
+
+```bash
+# Iniciar Storybook
+npm run storybook
+
+# Build para producción
+npm run build-storybook
+```
+
+**URL:** http://localhost:6006
+
+**Stories creadas:**
+
+- `src/components/common/Button.stories.tsx` - Componente Button
+- `src/components/common/Badge.stories.tsx` - Componente Badge
+
+**Documentación completa:** `frontend/.storybook/README.md`
+
+---
+
+## CI/CD con GitHub Actions
+
+El proyecto implementa pipelines de CI/CD automatizados para garantizar calidad y deployment continuo.
+
+### Workflows Configurados
+
+**Ubicación:** `.github/workflows/`
+
+| Workflow | Archivo | Trigger | Descripción |
+|----------|---------|---------|-------------|
+| **CI Pipeline** | `ci.yml` | Push, PR | Tests backend/frontend, linting, coverage |
+| **Docker Build** | `docker-build.yml` | Push a main | Build y push de imágenes Docker |
+| **PR Checks** | `pr-checks.yml` | Pull Request | Validaciones de código, tests, size check |
+| **CodeQL** | `codeql.yml` | Schedule | Análisis de seguridad del código |
+
+### CI Pipeline (ci.yml)
+
+Ejecuta en cada push y PR:
+
+1. Tests de backend (pytest)
+2. Tests de frontend (Vitest)
+3. Linting (Flake8, ESLint)
+4. Coverage report
+5. Build verification
+
+### Docker Build (docker-build.yml)
+
+Build automático de imágenes Docker:
+
+- Backend: Django + Gunicorn
+- Frontend: React + Nginx
+- Push a GitHub Container Registry
+
+### PR Checks (pr-checks.yml)
+
+Validaciones automáticas en PRs:
+
+- Tests unitarios
+- Linting
+- Type checking (TypeScript)
+- Bundle size check
+- Security scan
+
+### CodeQL (codeql.yml)
+
+Análisis de seguridad semanal:
+
+- Detección de vulnerabilidades
+- Code quality issues
+- Security best practices
+
+**Documentación completa:** `.github/workflows/README.md`
+
+---
+
+## Backups Automáticos
+
+El sistema incluye scripts de backup/restore para base de datos y archivos media.
+
+### Backups de Base de Datos
+
+**Ubicación:** `docker/scripts/backup.sh`
+
+```bash
+# Backup manual
+docker-compose exec backend python manage.py dumpdata > backup.json
+
+# Backup automático (ejecutado por Celery Beat cada 6 horas)
+# Ver tareas periódicas en sección Celery
+```
+
+### Restore de Base de Datos
+
+```bash
+# Restore desde backup
+docker-compose exec backend python manage.py loaddata backup.json
+```
+
+### Backups de Media Files
+
+Los archivos subidos (logos, documentos, imágenes) se guardan en:
+
+- Desarrollo: `backend/media/`
+- Producción: AWS S3 (configurar en `settings.py`)
+
+### Política de Retención
+
+| Tipo | Frecuencia | Retención |
+|------|-----------|-----------|
+| Base de datos | Cada 6 horas | 30 días |
+| Logs | Diario | 30 días |
+| Media files | Semanal | 90 días |
 
 ---
 

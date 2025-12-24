@@ -63,14 +63,10 @@ import {
 } from '@/features/hseq';
 
 // ==================== NIVEL 4: CADENA DE VALOR ====================
-// Supply Chain (Proveedores legacy → será refactorizado)
+// Supply Chain (Proveedores legacy → será refactorizado a supply_chain)
 import MateriaPrimaPage from '@/features/proveedores/pages/MateriaPrimaPage';
 import ProductosServiciosPage from '@/features/proveedores/pages/ProductosServiciosPage';
 import PruebasAcidezPage from '@/features/proveedores/pages/PruebasAcidezPage';
-import { EcoNortePage } from '@/features/econorte';
-
-// Production Ops (Recepciones legacy → será refactorizado)
-import { RecepcionPlantaPage } from '@/features/recepciones';
 
 // Logistics & Fleet - Próximamente
 // Sales & CRM - Próximamente
@@ -238,25 +234,10 @@ export const AppRoutes = () => {
           <Route path="/proveedores/productos-servicios" element={<ProductosServiciosPage />} />
           <Route path="/proveedores/pruebas-acidez" element={<PruebasAcidezPage />} />
 
-          {/* EcoNorte (legacy - temporal hasta refactor como Programación Abastecimiento) */}
+          {/* Módulo: Operaciones de Producción (production_ops) - Próximamente */}
           <Route
-            path="/econorte"
-            element={<Navigate to="/econorte/ecoaliados" replace />}
-          />
-          <Route path="/econorte/ecoaliados" element={<EcoNortePage />} />
-          <Route path="/econorte/programaciones" element={<EcoNortePage />} />
-          <Route path="/econorte/recolecciones" element={<EcoNortePage />} />
-
-          {/* Módulo: Operaciones de Producción (production_ops) */}
-          {/* NOTA: planta/recepciones es legacy, será refactorizado */}
-          <Route
-            path="/planta"
-            element={<Navigate to="/planta/recepciones" replace />}
-          />
-          <Route path="/planta/recepciones" element={<RecepcionPlantaPage />} />
-          <Route
-            path="/planta/lotes"
-            element={<div className="p-8 text-center text-gray-500">Lotes de Producción - Próximamente</div>}
+            path="/produccion"
+            element={<div className="p-8 text-center text-gray-500">Base de Operaciones - Próximamente</div>}
           />
 
           {/* Módulo: Logística y Flota (logistics_fleet) - Próximamente */}

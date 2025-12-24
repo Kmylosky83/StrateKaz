@@ -21,13 +21,11 @@ INSTALLED_APPS = [
     'django_filters',
     'auditlog',
     'debug_toolbar',
+    'django_celery_beat',
+    'django_celery_results',
     'apps.core',
     # Apps Legacy Funcionales (pendiente migración a nueva arquitectura)
     'apps.proveedores',          # -> supply_chain/gestion_proveedores
-    'apps.ecoaliados',           # -> supply_chain/gestion_proveedores
-    'apps.programaciones',       # -> logistics_fleet/gestion_transporte
-    'apps.recolecciones',        # -> logistics_fleet/despachos
-    'apps.recepciones',          # -> production_ops/recepcion
     # Dirección Estratégica (Módulo 1) - TAB = Django App
     'apps.gestion_estrategica.configuracion',    # TAB: Configuración
     'apps.gestion_estrategica.organizacion',     # TAB: Organización
@@ -177,45 +175,195 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@grasasyhuesos.com')
 
+# ═══════════════════════════════════════════════════
+# CELERY CONFIGURATION
+# ═══════════════════════════════════════════════════
+CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://localhost:6379/1')
+
+# Configuración de serialización y formatos
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ENABLE_UTC = True
+
+# Configuración de resultados
+CELERY_RESULT_EXPIRES = 3600  # 1 hora
+CELERY_RESULT_EXTENDED = True
+CELERY_RESULT_BACKEND_MAX_RETRIES = 10
+CELERY_RESULT_BACKEND_ALWAYS_RETRY = True
+
+# Configuración de tareas
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutos
+CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60  # 25 minutos
+CELERY_TASK_ACKS_LATE = True
+CELERY_TASK_REJECT_ON_WORKER_LOST = True
+CELERY_TASK_DEFAULT_QUEUE = 'default'
+CELERY_TASK_DEFAULT_EXCHANGE = 'default'
+CELERY_TASK_DEFAULT_ROUTING_KEY = 'default'
+
+# Configuración de worker
+CELERY_WORKER_PREFETCH_MULTIPLIER = 4
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 1000
+CELERY_WORKER_DISABLE_RATE_LIMITS = False
+CELERY_WORKER_SEND_TASK_EVENTS = True
+CELERY_WORKER_TASK_EVENTS = True
+
+# Configuración de broker
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_BROKER_POOL_LIMIT = 10
+CELERY_BROKER_HEARTBEAT = 30
+CELERY_BROKER_CONNECTION_TIMEOUT = 30
+
+# Configuración de Beat (tareas periódicas)
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+# Almacenar resultados en base de datos (opcional, además de Redis)
+CELERY_RESULT_BACKEND_DB = 'django-db'
+CELERY_CACHE_BACKEND = 'django-cache'
+
+# Configuración de logging de Celery
+CELERY_WORKER_HIJACK_ROOT_LOGGER = False
+
+# ═══════════════════════════════════════════════════
+# REDIS CACHE CONFIGURATION
+# ═══════════════════════════════════════════════════
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': config('REDIS_URL', default='redis://localhost:6379/2'),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'CONNECTION_POOL_KWARGS': {
+                'max_connections': 50,
+                'retry_on_timeout': True,
+            },
+        },
+        'KEY_PREFIX': 'grasas_huesos',
+        'TIMEOUT': 300,  # 5 minutos por defecto
+    },
+    'sessions': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': config('REDIS_URL', default='redis://localhost:6379/3'),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        },
+        'KEY_PREFIX': 'session',
+        'TIMEOUT': 86400,  # 24 horas
+    }
+}
+
+# Usar Redis para sesiones (opcional)
+# SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+# SESSION_CACHE_ALIAS = 'sessions'
+
 # Logging Configuration
+import os
+
+# Create logs directory if it doesn't exist
+LOGS_DIR = BASE_DIR / 'logs'
+LOGS_DIR.mkdir(exist_ok=True)
+
+# Choose formatter based on DEBUG setting
+# JSON for production, verbose for development
+CONSOLE_FORMATTER = 'verbose' if DEBUG else 'json'
+FILE_FORMATTER = 'json'  # Always use JSON for file logs
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': '[{levelname}] {asctime} {module} {message}',
+            'format': '[{levelname}] {asctime} {module} {process:d} {thread:d} {message}',
             'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
         },
         'simple': {
             'format': '{levelname} {message}',
             'style': '{',
         },
+        'json': {
+            '()': 'utils.logging.JSONFormatter',
+        },
+    },
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse',
+        },
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
     },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
+            'formatter': CONSOLE_FORMATTER,
+        },
+        'file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'app.log',
+            'maxBytes': 1024 * 1024 * 15,  # 15 MB
+            'backupCount': 10,
+            'formatter': FILE_FORMATTER,
+        },
+        'error_file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'error.log',
+            'maxBytes': 1024 * 1024 * 15,  # 15 MB
+            'backupCount': 10,
+            'formatter': FILE_FORMATTER,
+            'level': 'ERROR',
+        },
+        'security_file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': LOGS_DIR / 'security.log',
+            'maxBytes': 1024 * 1024 * 15,  # 15 MB
+            'backupCount': 10,
+            'formatter': FILE_FORMATTER,
+            'level': 'WARNING',
         },
     },
     'loggers': {
         'django': {
-            'handlers': ['console'],
+            'handlers': ['console', 'file'],
             'level': config('DJANGO_LOG_LEVEL', default='INFO'),
             'propagate': False,
         },
         'django.request': {
+            'handlers': ['console', 'file', 'error_file'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        'django.security': {
+            'handlers': ['console', 'security_file'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        'django.db.backends': {
             'handlers': ['console'],
-            'level': 'DEBUG',
+            'level': config('DB_LOG_LEVEL', default='INFO'),
             'propagate': False,
         },
         'apps': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG' if DEBUG else 'INFO',
+            'propagate': False,
+        },
+        'utils': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG' if DEBUG else 'INFO',
+            'propagate': False,
+        },
+        'celery': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
             'propagate': False,
         },
     },
     'root': {
-        'handlers': ['console'],
+        'handlers': ['console', 'file', 'error_file'],
         'level': 'INFO',
     },
 }

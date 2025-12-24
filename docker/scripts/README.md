@@ -67,10 +67,17 @@ Scripts de utilidad para gestión de Docker en el proyecto Grasas y Huesos del N
 
 **Funcionalidad:**
 - Dump completo de MySQL (estructura + datos)
-- Compresión gzip automática
-- Nomenclatura con timestamp
-- Limpieza automática (retención 30 días)
-- Ubicación: `../../backups/mysql/`
+- Compresión gzip automática (nivel 9)
+- Nomenclatura con timestamp: `backup_YYYYMMDD_HHMMSS.sql.gz`
+- Logging detallado dual (consola + archivo)
+- Verificación de integridad del archivo comprimido
+- Limpieza automática (retención 7 días)
+- Permisos seguros automáticos (600)
+- Cálculo de ratio de compresión
+- Ubicación: `../backups/`
+- Logs: `../backups/logs/`
+
+**Ver documentación completa:** `../backups/README.md`
 
 ---
 
@@ -79,16 +86,50 @@ Scripts de utilidad para gestión de Docker en el proyecto Grasas y Huesos del N
 ./restore.sh <backup_file> [mode]
 
 # Ejemplos:
-./restore.sh ../../backups/mysql/backup_20240101_120000.sql.gz
-./restore.sh ../../backups/mysql/backup_20240101_120000.sql.gz prod
+./restore.sh ../backups/backup_20231225_120000.sql.gz
+./restore.sh ../backups/backup_20231225_120000.sql.gz prod
 ```
 
 **Funcionalidad:**
 - Restaura backup comprimido o sin comprimir
-- Requiere confirmación (operación destructiva)
+- Verificación de integridad antes de restaurar
+- **Backup de seguridad automático** antes de restaurar
+- Logging detallado dual (consola + archivo)
+- Doble confirmación (operación destructiva)
+- Limpieza automática de archivos temporales
 - Soporta archivos .sql y .sql.gz
+- Instrucciones post-restauración
 
-**ADVERTENCIA:** Sobrescribe la base de datos actual.
+**ADVERTENCIA:** Sobrescribe la base de datos actual. El script crea un backup de seguridad automáticamente.
+
+---
+
+### setup-cron.sh - Configurar Backups Automáticos
+
+```bash
+./setup-cron.sh
+
+# Configuración interactiva de cron jobs
+```
+
+**Funcionalidad:**
+
+- Configuración interactiva de backups automáticos
+- Opciones predefinidas (diario, cada 6h, 12h, semanal, etc.)
+- Modo personalizado con expresión cron
+- Selección de modo (dev/prod)
+- Verificación de cron jobs existentes
+- Logging de ejecuciones automáticas
+
+**Opciones de frecuencia:**
+
+1. Diario a las 2:00 AM
+2. Cada 12 horas (02:00 AM y 02:00 PM)
+3. Cada 6 horas
+4. Cada 4 horas
+5. Cada hora
+6. Semanal (Domingos a las 3:00 AM)
+7. Personalizado
 
 ---
 

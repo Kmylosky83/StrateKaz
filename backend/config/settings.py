@@ -22,21 +22,48 @@ INSTALLED_APPS = [
     'auditlog',
     'debug_toolbar',
     'apps.core',
-    'apps.unidades',
-    'apps.proveedores',
-    'apps.ecoaliados',
-    'apps.programaciones',
-    'apps.recolecciones',
-    'apps.recepciones',
-    'apps.lotes',
-    'apps.liquidaciones',
-    'apps.certificados',
-    'apps.reportes',
+    # Apps Legacy Funcionales (pendiente migración a nueva arquitectura)
+    'apps.proveedores',          # -> supply_chain/gestion_proveedores
+    'apps.ecoaliados',           # -> supply_chain/gestion_proveedores
+    'apps.programaciones',       # -> logistics_fleet/gestion_transporte
+    'apps.recolecciones',        # -> logistics_fleet/despachos
+    'apps.recepciones',          # -> production_ops/recepcion
     # Dirección Estratégica (Módulo 1) - TAB = Django App
     'apps.gestion_estrategica.configuracion',    # TAB: Configuración
     'apps.gestion_estrategica.organizacion',     # TAB: Organización
     'apps.gestion_estrategica.identidad',        # TAB: Identidad Corporativa
     'apps.gestion_estrategica.planeacion',       # TAB: Planeación Estratégica
+    'apps.gestion_estrategica.gestion_proyectos',  # TAB: Gestión Proyectos (PMI)
+    'apps.gestion_estrategica.revision_direccion', # TAB: Revisión por Dirección
+    # Motor de Cumplimiento (Módulo 2)
+    'apps.motor_cumplimiento.matriz_legal',      # Matriz Legal y Cumplimiento
+    'apps.motor_cumplimiento.requisitos_legales',
+    'apps.motor_cumplimiento.partes_interesadas',
+    'apps.motor_cumplimiento.reglamentos_internos',
+    # Motor de Riesgos (Módulo 3)
+    'apps.motor_riesgos.contexto_organizacional',  # TAB: Contexto DOFA/PESTEL
+    'apps.motor_riesgos.riesgos_procesos',         # TAB: Riesgos Procesos ISO 31000
+    'apps.motor_riesgos.ipevr',                    # TAB: IPEVR GTC-45 (SST)
+    'apps.motor_riesgos.aspectos_ambientales',     # TAB: Aspectos Ambientales ISO 14001
+    'apps.motor_riesgos.riesgos_viales',           # TAB: Riesgos Viales PESV
+    'apps.motor_riesgos.sagrilaft_ptee',           # TAB: SAGRILAFT/PTEE
+    'apps.motor_riesgos.seguridad_informacion',    # TAB: Seguridad Info ISO 27001
+    # Motor de Flujos (Módulo 4)
+    'apps.workflow_engine.disenador_flujos',       # TAB: Diseñador BPMN
+    'apps.workflow_engine.ejecucion',              # TAB: Ejecución de Flujos
+    'apps.workflow_engine.monitoreo',              # TAB: Monitoreo y Analytics
+    # HSEQ Management - Torre de Control (Módulo 5)
+    'apps.hseq_management.sistema_documental',     # TAB: Sistema Documental
+    'apps.hseq_management.planificacion_sistema',  # TAB: Planificación del Sistema
+    'apps.hseq_management.calidad',                # TAB: Gestión de Calidad ISO 9001
+    'apps.hseq_management.medicina_laboral',       # TAB: Medicina Laboral
+    'apps.hseq_management.seguridad_industrial',   # TAB: Seguridad Industrial
+    'apps.hseq_management.higiene_industrial',     # TAB: Higiene Industrial
+    'apps.hseq_management.gestion_comites',        # TAB: Gestión de Comités
+    'apps.hseq_management.accidentalidad',         # TAB: Accidentalidad
+    'apps.hseq_management.emergencias',            # TAB: Emergencias
+    'apps.hseq_management.gestion_ambiental',      # TAB: Gestión Ambiental ISO 14001
+    'apps.hseq_management.mejora_continua',        # TAB: Mejora Continua
 ]
 
 MIDDLEWARE = [

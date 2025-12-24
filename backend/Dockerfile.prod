@@ -1,0 +1,93 @@
+# ============================================
+# Multi-stage build para Backend Django
+# Producción optimizada y segura
+# ============================================
+
+# ==================== STAGE 1: Builder ====================
+FROM python:3.11-slim AS builder
+
+LABEL maintainer="Grasas y Huesos del Norte"
+LABEL description="Django Backend - Build Stage"
+
+# Variables de entorno para Python
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_DEFAULT_TIMEOUT=100
+
+# Instalar dependencias de compilación
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    default-libmysqlclient-dev \
+    pkg-config \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Crear directorio de trabajo
+WORKDIR /build
+
+# Copiar requirements
+COPY requirements.txt .
+
+# Instalar dependencias en un directorio separado
+RUN pip install --prefix=/install --upgrade pip && \
+    pip install --prefix=/install -r requirements.txt
+
+# ==================== STAGE 2: Production ====================
+FROM python:3.11-slim AS production
+
+LABEL maintainer="Grasas y Huesos del Norte"
+LABEL description="Django Backend - Production Server"
+
+# Variables de entorno
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PATH="/usr/local/bin:$PATH" \
+    DJANGO_SETTINGS_MODULE=config.settings
+
+# Instalar solo dependencias de runtime
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    default-libmysqlclient-dev \
+    curl \
+    netcat-openbsd \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Copiar dependencias instaladas desde builder
+COPY --from=builder /install /usr/local
+
+# Crear usuario no-root
+RUN groupadd -r django && useradd -r -g django django
+
+# Crear directorios necesarios
+WORKDIR /app
+RUN mkdir -p /app/static /app/media /app/logs && \
+    chown -R django:django /app
+
+# Copiar código de la aplicación
+COPY --chown=django:django . .
+
+# Cambiar a usuario no-root
+USER django
+
+# Exponer puerto
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8000/api/health/ || exit 1
+
+# Comando de inicio con gunicorn
+CMD ["gunicorn", "config.wsgi:application", \
+     "--bind", "0.0.0.0:8000", \
+     "--workers", "4", \
+     "--worker-class", "sync", \
+     "--worker-tmp-dir", "/dev/shm", \
+     "--max-requests", "1000", \
+     "--max-requests-jitter", "50", \
+     "--timeout", "60", \
+     "--access-logfile", "-", \
+     "--error-logfile", "-", \
+     "--log-level", "info"]

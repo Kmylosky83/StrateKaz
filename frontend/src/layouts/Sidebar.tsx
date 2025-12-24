@@ -137,14 +137,27 @@ const NavItemComponent = ({
     return false;
   }, [item, location.pathname]);
 
-  // Si es categoría (macroproceso), renderizar como grupo expandible
+  // Si es categoría (macroproceso/nivel), renderizar como grupo expandible con separador visual
   if (item.is_category) {
+    // Detectar si es un nivel principal (NIVEL_1, NIVEL_2, etc.)
+    const isMainLevel = item.code.startsWith('NIVEL_');
+
     return (
-      <div className="mt-4 first:mt-0">
+      <div className={cn(
+        isMainLevel ? 'mt-6 first:mt-0' : 'mt-4 first:mt-0'
+      )}>
+        {/* Separador visual para niveles principales */}
+        {isMainLevel && depth === 0 && !isCollapsed && (
+          <div className="mb-3">
+            <div className="h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-transparent" />
+          </div>
+        )}
+
         <button
           onClick={() => toggleExpanded(item.code)}
           className={cn(
             'w-full flex items-center px-3 py-2.5 rounded-lg transition-colors group relative',
+            isMainLevel && 'font-semibold uppercase text-xs tracking-wide',
             colors
               ? isActive
                 ? cn(colors.bgActive, colors.textActive)
@@ -156,7 +169,8 @@ const NavItemComponent = ({
         >
           <Icon
             className={cn(
-              'h-5 w-5 flex-shrink-0',
+              isMainLevel ? 'h-4 w-4' : 'h-5 w-5',
+              'flex-shrink-0',
               colors
                 ? isActive ? colors.iconActive : colors.icon
                 : isActive
@@ -166,7 +180,10 @@ const NavItemComponent = ({
           />
           {!isCollapsed && (
             <>
-              <span className="ml-3 font-medium flex-1 text-left text-sm">{item.name}</span>
+              <span className={cn(
+                'ml-3 flex-1 text-left',
+                isMainLevel ? 'text-xs font-bold' : 'text-sm font-medium'
+              )}>{item.name}</span>
               {isExpanded ? (
                 <ChevronDown className="h-4 w-4" />
               ) : (
@@ -184,8 +201,9 @@ const NavItemComponent = ({
         {/* Hijos de la categoría */}
         {isExpanded && !isCollapsed && hasChildren && (
           <div className={cn(
-            'mt-1 ml-3 space-y-0.5 border-l-2',
-            colors ? colors.border : 'border-l-gray-200 dark:border-l-gray-700'
+            'mt-1 space-y-0.5',
+            isMainLevel ? 'ml-0' : 'ml-3 border-l-2',
+            !isMainLevel && (colors ? colors.border : 'border-l-gray-200 dark:border-l-gray-700')
           )}>
             {item.children!.map((child) => (
               <NavItemComponent

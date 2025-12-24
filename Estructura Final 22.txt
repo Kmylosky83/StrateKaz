@@ -1,0 +1,1148 @@
+{
+  "metadata": {
+    "nombre": "ERP Multi-Empresa StrateKaz",
+    "version": "1.0.0",
+    "fecha_validacion": "2025-12-22",
+    "total_niveles": 6,
+    "total_modulos": 14,
+    "total_tabs": 81,
+    "arquitectura": "Multi-empresa Uni-tenant",
+    "stack": {
+      "backend": "Django 5.0.9 + DRF",
+      "frontend": "React 18 + TypeScript",
+      "database": "MySQL 8.0",
+      "tareas": "Celery + Redis"
+    }
+  },
+  "niveles": [
+    {
+      "nivel": 1,
+      "nombre": "Estratégico",
+      "descripcion": "Configuración base y dirección estratégica",
+      "modulos": [
+        {
+          "codigo": "Gestion_Estrategica",
+          "nombre": "Direccion Estrategica",
+          "descripcion": "Base del sistema, configuración y planificación estratégica",
+          "tabs": [
+            {
+              "orden": 1,
+              "codigo": "configuracion",
+              "nombre": "Configuración",
+              "subtabs": [
+                "Datos de Empresa",
+                "Sedes y Ubicaciones",
+                "Branding",
+                "Módulos y Features",
+                "Integraciones Externas"
+              ]
+            },
+            {
+              "orden": 2,
+              "codigo": "organizacion",
+              "nombre": "Organización",
+              "subtabs": [
+                "Áreas",
+                "Cargos",
+                "Organigrama",
+                "Roles (RBAC)",
+                "Consecutivos",
+                "Tipos Documentos"
+              ]
+            },
+            {
+              "orden": 3,
+              "codigo": "identidad_corporativa",
+              "nombre": "Identidad Corporativa",
+              "subtabs": [
+                "Misión y Visión",
+                "Valores Corporativos",
+                "Alcance Sistema",
+                "Política Integral",
+                "Políticas Específicas"
+              ]
+            },
+            {
+              "orden": 4,
+              "codigo": "planeacion_estrategica",
+              "nombre": "Planeación Estratégica",
+              "subtabs": [
+                "Mapa Estratégico",
+                "Objetivos + KPIs (BSC)",
+                "Gestión del Cambio"
+              ]
+            },
+            {
+              "orden": 5,
+              "codigo": "gestion_proyectos",
+              "nombre": "Gestión Proyectos (PMI)",
+              "subtabs": [
+                "Portafolio",
+                "Iniciación (Charter)",
+                "Planificación",
+                "Ejecución/Monitoreo",
+                "Cierre"
+              ]
+            },
+            {
+              "orden": 6,
+              "codigo": "revision_direccion",
+              "nombre": "Revisión por Dirección",
+              "subtabs": [
+                "Programación",
+                "Actas de Revisión",
+                "Seguimiento Compromisos"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "nivel": 2,
+      "nombre": "Cumplimiento",
+      "descripcion": "Motores de cumplimiento, riesgo y flujos de trabajo",
+      "modulos": [
+        {
+          "codigo": "motor_cumplimiento",
+          "nombre": "Cumplimiento",
+          "descripcion": "Gestión de normatividad legal y requisitos",
+          "tabs": [
+            {
+              "orden": 1,
+              "codigo": "matriz_legal",
+              "nombre": "Matriz Legal",
+              "subtabs": [
+                "Decretos",
+                "Leyes",
+                "Resoluciones",
+                "Circulares",
+                "Normas Técnicas",
+                "Web Scraping"
+              ]
+            },
+            {
+              "orden": 2,
+              "codigo": "requisitos_legales",
+              "nombre": "Requisitos Legales",
+              "subtabs": [
+                "Licencias",
+                "Permisos",
+                "Conceptos",
+                "Vencimientos",
+                "Alertas"
+              ]
+            },
+            {
+              "orden": 3,
+              "codigo": "partes_interesadas",
+              "nombre": "Partes Interesadas",
+              "subtabs": [
+                "Identificación PI",
+                "Requisitos PI",
+                "Matriz Comunicaciones"
+              ]
+            },
+            {
+              "orden": 4,
+              "codigo": "reglamentos_internos",
+              "nombre": "Reglamentos Internos",
+              "subtabs": [
+                "Config. Tipos",
+                "Reglamentos Vigentes",
+                "Versiones",
+                "Publicación",
+                "Socialización"
+              ]
+            }
+          ]
+        },
+        {
+          "codigo": "motor_riesgos",
+          "nombre": "Riesgos",
+          "descripcion": "Gestión integral de riesgos organizacionales",
+          "tabs": [
+            {
+              "orden": 1,
+              "codigo": "contexto_organizacional",
+              "nombre": "Contexto Organizacional",
+              "subtabs": [
+                "Identificacion del Contexto" 
+                "Análisis Interno (PCI)",
+                "Análisis Externo (POAM)",
+                "PESTEL",
+                "5 Fuerzas",
+                "DOFA",
+                "Estrategias TOWS"
+              ]
+            },
+            {
+              "orden": 2,
+              "codigo": "riesgos_procesos",
+              "nombre": "Riesgos y Oportunidades",
+              "subtabs": [
+                "Identificación",
+                "Análisis/Evaluación",
+                "Tratamiento",
+                "Oportunidades",
+                "Controles Operacionales"
+              ]
+            },
+            {
+              "orden": 3,
+              "codigo": "ipevr",
+              "nombre": "IPEVR (GTC-45)",
+              "subtabs": [
+                "Identificación Peligros",
+                "Matriz GTC-45",
+                "Controles SST",
+                "Seguimiento",
+                "← Hereda Cargos"
+              ]
+            },
+            {
+              "orden": 4,
+              "codigo": "aspectos_ambientales",
+              "nombre": "Aspectos Ambientales",
+              "subtabs": [
+                "Identificación",
+                "Matriz Impactos",
+                "Controles Ambientales",
+                "Seguimiento"
+              ]
+            },
+            {
+              "orden": 5,
+              "codigo": "riesgos_viales",
+              "nombre": "Riesgos Viales",
+              "subtabs": [
+                "Rutas/Desplazamientos",
+                "Puntos Críticos",
+                "Controles Viales"
+              ]
+            },
+            {
+              "orden": 6,
+              "codigo": "sagrilaft_ptee",
+              "nombre": "SAGRILAFT/PTEE",
+              "activable": true,
+              "subtabs": [
+                "Factores Riesgo",
+                "Matriz LA/FT",
+                "Controles",
+                "Señales Alerta",
+                "Reportes",
+                "Oficial Cumplimiento"
+              ]
+            },
+            {
+              "orden": 7,
+              "codigo": "seguridad_informacion",
+              "nombre": "Seguridad Información",
+              "nuevo": true,
+              "subtabs": [
+                "Activos Info",
+                "Análisis Riesgos SI",
+                "Controles SI",
+                "Incidentes SI",
+                "Plan Continuidad"
+              ]
+            }
+          ]
+        },
+        {
+          "codigo": "workflow_engine",
+          "nombre": "Flujos de Trabajo",
+          "descripcion": "Motor BPM para automatización de procesos",
+          "nuevo": true,
+          "tabs": [
+            {
+              "orden": 1,
+              "codigo": "disenador_flujos",
+              "nombre": "Diseñador de Flujos",
+              "subtabs": [
+                "Canvas Visual",
+                "Estados",
+                "Transiciones",
+                "Condiciones",
+                "Notificaciones",
+                "Roles x Paso"
+              ]
+            },
+            {
+              "orden": 2,
+              "codigo": "ejecucion",
+              "nombre": "Ejecución",
+              "subtabs": [
+                "Instancias Activas",
+                "Tareas Pendientes",
+                "Historial",
+                "Reasignación"
+              ]
+            },
+            {
+              "orden": 3,
+              "codigo": "monitoreo",
+              "nombre": "Monitoreo",
+              "subtabs": [
+                "Métricas Proceso",
+                "Tiempos Promedio",
+                "Cuellos Botella",
+                "SLA"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "nivel": 3,
+      "nombre": "Torre de Control",
+      "descripcion": "Centro de gestión HSEQ integrado",
+      "modulos": [
+        {
+          "codigo": "hseq_management",
+          "nombre": "Gestión HSEQ",
+          "descripcion": "Sistema integrado de gestión de calidad, SST, ambiental y seguridad vial",
+          "tabs": [
+            {
+              "orden": 1,
+              "codigo": "sistema_documental",
+              "nombre": "Sistema Documental",
+              "subtabs": [
+                "Constructor Docs",
+                "Form Builder",
+                "Firmas Digitales",
+                "Control Documental",
+                "Listado Maestro",
+                "Versiones"
+              ]
+            },
+            {
+              "orden": 2,
+              "codigo": "planificacion_sistema",
+              "nombre": "Planificación Sistema",
+              "subtabs": [
+                "Plan Trabajo Anual",
+                "Objetivos (→BSC)",
+                "Programas Gestión",
+                "Cronograma"
+              ]
+            },
+            {
+              "orden": 3,
+              "codigo": "calidad",
+              "nombre": "Calidad",
+              "subtabs": [
+                "No Conformidades",
+                "Salidas No Conformes",
+                "Control Cambios"
+              ]
+            },
+            {
+              "orden": 4,
+              "codigo": "medicina_laboral",
+              "nombre": "Medicina Laboral",
+              "subtabs": [
+                "Resultados Exámenes",
+                "Restricciones",
+                "Vigilancia Epidemiológica",
+                "Estadísticas",
+                "Diagnósticos"
+              ]
+            },
+            {
+              "orden": 5,
+              "codigo": "seguridad_industrial",
+              "nombre": "Seguridad Industrial",
+              "subtabs": [
+                "Permisos Trabajo",
+                "Inspecciones (dinámico)",
+                "Control EPP",
+                "Programas Seguridad"
+              ]
+            },
+            {
+              "orden": 6,
+              "codigo": "higiene_industrial",
+              "nombre": "Higiene Industrial",
+              "activable": true,
+              "subtabs": [
+                "Mediciones Ambientales",
+                "Controles Exposición",
+                "Monitoreo Biológico"
+              ]
+            },
+            {
+              "orden": 7,
+              "codigo": "gestion_comites",
+              "nombre": "Gestión de Comités",
+              "subtabs": [
+                "Config. Comités",
+                "Comités Activos",
+                "Gestión Actas",
+                "Votaciones",
+                "Seguimiento"
+              ]
+            },
+            {
+              "orden": 8,
+              "codigo": "accidentalidad",
+              "nombre": "Accidentalidad (ATEL)",
+              "subtabs": [
+                "Reporte AT",
+                "Investigación",
+                "Lecciones Aprendidas",
+                "Planes de Acción"
+              ]
+            },
+            {
+              "orden": 9,
+              "codigo": "emergencias",
+              "nombre": "Emergencias",
+              "subtabs": [
+                "Análisis Vulnerabilidad",
+                "Plan Emergencias",
+                "Planos Evacuación",
+                "Brigadas",
+                "Simulacros",
+                "Recursos"
+              ]
+            },
+            {
+              "orden": 10,
+              "codigo": "gestion_ambiental",
+              "nombre": "Gestión Ambiental",
+              "subtabs": [
+                "Residuos",
+                "Vertimientos",
+                "Emisiones",
+                "Consumo Recursos",
+                "Huella Carbono",
+                "Certificados"
+              ]
+            },
+            {
+              "orden": 11,
+              "codigo": "mejora_continua",
+              "nombre": "Mejora Continua",
+              "subtabs": [
+                "Acciones C/P/M",
+                "Programa Auditorías",
+                "Ejecución",
+                "Hallazgos",
+                "Eval. Cumplimiento",
+                "Seguimiento"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "nivel": 4,
+      "nombre": "Cadena de Valor",
+      "descripcion": "Procesos operativos del negocio",
+      "modulos": [
+        {
+          "codigo": "supply_chain",
+          "nombre": "Cadena de Suministro",
+          "descripcion": "Gestión de proveedores, compras e inventarios",
+          "tabs": [
+            {
+              "orden": 1,
+              "codigo": "gestion_proveedores",
+              "nombre": "Gestión Proveedores",
+              "subtabs": [
+                "Config. Tipos Proveedor",
+                "Proveedores Activos",
+                "Selección/Evaluación",
+                "Reevaluación",
+                "Proveedores Críticos"
+              ]
+            },
+            {
+              "orden": 2,
+              "codigo": "catalogos",
+              "nombre": "Catálogos",
+              "subtabs": [
+                "Config. Categorías",
+                "Materia Prima",
+                "Productos",
+                "Servicios",
+                "Precios/Historial"
+              ]
+            },
+            {
+              "orden": 3,
+              "codigo": "programacion_abastecimiento",
+              "nombre": "Programación Abastecimiento",
+              "subtabs": [
+                "Config. Tipos Operación",
+                "Programación",
+                "Ejecución",
+                "Liquidaciones",
+                "→ Genera CxP"
+              ]
+            },
+            {
+              "orden": 4,
+              "codigo": "compras",
+              "nombre": "Compras",
+              "subtabs": [
+                "Requisiciones",
+                "Cotizaciones",
+                "Eval. Cotizaciones",
+                "Órdenes Compra",
+                "Contratos",
+                "Recepción"
+              ]
+            },
+            {
+              "orden": 5,
+              "codigo": "almacenamiento",
+              "nombre": "Almacenamiento",
+              "subtabs": [
+                "Config. Almacenes",
+                "Inventario",
+                "Movimientos",
+                "Kardex",
+                "Alertas Stock"
+              ]
+            }
+          ]
+        },
+        {
+          "codigo": "production_ops",
+          "nombre": "Operaciones de Producción",
+          "descripcion": "Gestión de procesos productivos",
+          "intercambiable_por_industria": true,
+          "tabs": [
+            {
+              "orden": 1,
+              "codigo": "recepcion",
+              "nombre": "Recepción",
+              "subtabs": [
+                "Config. Puntos",
+                "Báscula/Pesaje",
+                "Calidad Entrada",
+                "Clasificación",
+                "Lotes Entrada"
+              ]
+            },
+            {
+              "orden": 2,
+              "codigo": "procesamiento",
+              "nombre": "Procesamiento",
+              "subtabs": [
+                "Config. Procesos",
+                "Órdenes Producción",
+                "Registro Variables",
+                "Control Operacional",
+                "Lotes",
+                "Trazabilidad"
+              ]
+            },
+            {
+              "orden": 3,
+              "codigo": "mantenimiento_industrial",
+              "nombre": "Mantenimiento Industrial",
+              "subtabs": [
+                "Activos Producción",
+                "Equipos Medición",
+                "Planes Mtto P/P/C",
+                "Calibración",
+                "Órdenes Trabajo",
+                "Paradas"
+              ]
+            },
+            {
+              "orden": 4,
+              "codigo": "producto_terminado",
+              "nombre": "Producto Terminado",
+              "subtabs": [
+                "Stock",
+                "Lotes Producción",
+                "Calidad Salida",
+                "Certificados",
+                "Liberación"
+              ]
+            }
+          ]
+        },
+        {
+          "codigo": "logistics_fleet",
+          "nombre": "Logística y Flota",
+          "descripcion": "Gestión de transporte y vehículos",
+          "tabs": [
+            {
+              "orden": 1,
+              "codigo": "gestion_transporte",
+              "nombre": "Gestión Transporte",
+              "subtabs": [
+                "Config. Tipos Operación",
+                "Programación Rutas",
+                "Asignación Recursos",
+                "Ejecución",
+                "Seguimiento"
+              ]
+            },
+            {
+              "orden": 2,
+              "codigo": "despachos",
+              "nombre": "Despachos",
+              "subtabs": [
+                "Programación",
+                "Manifiestos",
+                "Remisiones",
+                "Guías Transporte",
+                "Confirmación"
+              ]
+            },
+            {
+              "orden": 3,
+              "codigo": "gestion_flota",
+              "nombre": "Gestión de Flota",
+              "subtabs": [
+                "Config. Tipos Vehículo",
+                "Vehículos Activos",
+                "HV y Documentos",
+                "Verificación Terceros",
+                "Costos Operación"
+              ]
+            },
+            {
+              "orden": 4,
+              "codigo": "pesv_operativo",
+              "nombre": "PESV Operativo",
+              "subtabs": [
+                "Pre-operacionales",
+                "Mtto Preventivo",
+                "Control Siniestros",
+                "Control Velocidad",
+                "Alcoholimetría",
+                "→ Reporta HSEQ"
+              ]
+            }
+          ]
+        },
+        {
+          "codigo": "sales_crm",
+          "nombre": "Ventas y CRM",
+          "descripcion": "Gestión comercial y relación con clientes",
+          "tabs": [
+            {
+              "orden": 1,
+              "codigo": "gestion_clientes",
+              "nombre": "Gestión de Clientes",
+              "subtabs": [
+                "Clientes",
+                "Contactos",
+                "Segmentación",
+                "Historial Interacciones",
+                "Historial Compras",
+                "Scoring"
+              ]
+            },
+            {
+              "orden": 2,
+              "codigo": "pipeline_ventas",
+              "nombre": "Pipeline Ventas",
+              "subtabs": [
+                "Config. Etapas",
+                "Oportunidades",
+                "Cotizaciones",
+                "Seguimiento",
+                "Conversión"
+              ]
+            },
+            {
+              "orden": 3,
+              "codigo": "pedidos_facturacion",
+              "nombre": "Pedidos y Facturación",
+              "subtabs": [
+                "Pedidos",
+                "Aprobación",
+                "Facturación Electrónica",
+                "Notas Cr/Db",
+                "→ Cartera"
+              ]
+            },
+            {
+              "orden": 4,
+              "codigo": "servicio_cliente",
+              "nombre": "Servicio al Cliente",
+              "subtabs": [
+                "PQRS",
+                "→ NC si aplica",
+                "Encuestas Satisfacción",
+                "Tiempos Respuesta",
+                "Fidelización"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "nivel": 5,
+      "nombre": "Habilitadores",
+      "descripcion": "Recursos de soporte organizacional",
+      "modulos": [
+        {
+          "codigo": "talent_hub",
+          "nombre": "Centro de Talento",
+          "descripcion": "Gestión integral del ciclo del colaborador",
+          "tabs": [
+            {
+              "orden": 1,
+              "codigo": "estructura_cargos",
+              "nombre": "Estructura de Cargos",
+              "subtabs": [
+                "Cargos (←Organización)",
+                "Profesiogramas",
+                "Matriz Competencias",
+                "Requisitos Especiales",
+                "Vacantes Auto"
+              ]
+            },
+            {
+              "orden": 2,
+              "codigo": "seleccion_contratacion",
+              "nombre": "Selección/Contratación",
+              "subtabs": [
+                "Vacantes Activas",
+                "Candidatos",
+                "Entrevistas/Pruebas",
+                "Tipos Contrato",
+                "Afiliaciones SS",
+                "→ Onboarding"
+              ]
+            },
+            {
+              "orden": 3,
+              "codigo": "colaboradores",
+              "nombre": "Colaboradores",
+              "subtabs": [
+                "Directorio",
+                "Hoja de Vida",
+                "Info Personal",
+                "Historial Laboral",
+                "Estado"
+              ]
+            },
+            {
+              "orden": 4,
+              "codigo": "onboarding_induccion",
+              "nombre": "Onboarding/Inducción",
+              "subtabs": [
+                "Config. Módulos Inducción",
+                "Asignación x Cargo",
+                "Checklist Ingreso",
+                "Ejecución Integral",
+                "Entregas EPP/Activos",
+                "Firmas Docs"
+              ]
+            },
+            {
+              "orden": 5,
+              "codigo": "formacion_reinduccion",
+              "nombre": "Formación/Reinducción",
+              "subtabs": [
+                "Plan Formación",
+                "Programación",
+                "Ejecución",
+                "Gamificación",
+                "Eval. Eficacia",
+                "Certificados"
+              ]
+            },
+            {
+              "orden": 6,
+              "codigo": "desempeno",
+              "nombre": "Desempeño",
+              "subtabs": [
+                "Evaluación",
+                "Planes Mejora",
+                "Reconocimientos"
+              ]
+            },
+            {
+              "orden": 7,
+              "codigo": "control_tiempo",
+              "nombre": "Control de Tiempo",
+              "subtabs": [
+                "Registro Ing/Sal",
+                "Asistencia",
+                "Horas Extras",
+                "Turnos",
+                "→ Nómina"
+              ]
+            },
+            {
+              "orden": 8,
+              "codigo": "novedades",
+              "nombre": "Novedades",
+              "subtabs": [
+                "Incapacidades",
+                "Licencias",
+                "Permisos",
+                "Vacaciones",
+                "→ Nómina"
+              ]
+            },
+            {
+              "orden": 9,
+              "codigo": "proceso_disciplinario",
+              "nombre": "Proceso Disciplinario",
+              "subtabs": [
+                "Llamados Atención",
+                "Descargos",
+                "Memorandos",
+                "Suspensiones",
+                "Historial"
+              ]
+            },
+            {
+              "orden": 10,
+              "codigo": "nomina",
+              "nombre": "Nómina",
+              "subtabs": [
+                "Configuración",
+                "Pre-liquidación",
+                "Liquidación",
+                "Prestaciones",
+                "Exportación/API"
+              ]
+            },
+            {
+              "orden": 11,
+              "codigo": "off_boarding",
+              "nombre": "Off Boarding",
+              "subtabs": [
+                "Tipos Retiro",
+                "Paz y Salvo",
+                "Examen Egreso",
+                "Entrevista Retiro",
+                "Liquidación Final",
+                "→ Libera Vacante"
+              ]
+            }
+          ]
+        },
+        {
+          "codigo": "admin_finance",
+          "nombre": "Administración y Finanzas",
+          "descripcion": "Gestión financiera y administrativa",
+          "tabs": [
+            {
+              "orden": 1,
+              "codigo": "tesoreria",
+              "nombre": "Tesorería",
+              "subtabs": [
+                "CxP (←Liquidaciones)",
+                "CxC (←Facturas)",
+                "Bancos",
+                "Flujo Caja",
+                "Pagos/Recaudos"
+              ]
+            },
+            {
+              "orden": 2,
+              "codigo": "presupuesto",
+              "nombre": "Presupuesto",
+              "subtabs": [
+                "Config. CC/Rubros",
+                "Elaboración x Área",
+                "Aprobación",
+                "Ejecución",
+                "Seguimiento"
+              ]
+            },
+            {
+              "orden": 3,
+              "codigo": "activos_fijos",
+              "nombre": "Activos Fijos",
+              "subtabs": [
+                "Categorías",
+                "Inventario",
+                "HV Activos",
+                "Programa Mtto",
+                "Depreciación",
+                "Bajas"
+              ]
+            },
+            {
+              "orden": 4,
+              "codigo": "servicios_generales",
+              "nombre": "Servicios Generales",
+              "subtabs": [
+                "Mtto Locativo",
+                "Servicios Públicos",
+                "Contratos Servicios"
+              ]
+            }
+          ]
+        },
+        {
+          "codigo": "accounting",
+          "nombre": "Contabilidad",
+          "descripcion": "Contabilidad básica (módulo activable)",
+          "activable": true,
+          "tabs": [
+            {
+              "orden": 1,
+              "codigo": "config_contable",
+              "nombre": "Config. Contable",
+              "subtabs": [
+                "Plan de Cuentas",
+                "Centros de Costo",
+                "Terceros"
+              ]
+            },
+            {
+              "orden": 2,
+              "codigo": "movimientos",
+              "nombre": "Movimientos",
+              "subtabs": [
+                "Comprobantes",
+                "Libro Diario",
+                "Libro Mayor"
+              ]
+            },
+            {
+              "orden": 3,
+              "codigo": "informes_contables",
+              "nombre": "Informes Contables",
+              "subtabs": [
+                "Balance Prueba",
+                "Balance General",
+                "Estado Resultados",
+                "Otros Informes"
+              ]
+            },
+            {
+              "orden": 4,
+              "codigo": "integracion",
+              "nombre": "Integración",
+              "subtabs": [
+                "Exportación",
+                "Importación",
+                "API Contable"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "nivel": 6,
+      "nombre": "Inteligencia",
+      "descripcion": "Business Intelligence y auditoría",
+      "modulos": [
+        {
+          "codigo": "analytics",
+          "nombre": "Analítica",
+          "descripcion": "BI, indicadores y generación de informes",
+          "tabs": [
+            {
+              "orden": 1,
+              "codigo": "config_indicadores",
+              "nombre": "Config. Indicadores",
+              "subtabs": [
+                "Catálogo KPIs",
+                "Ficha Técnica",
+                "Fórmulas/Fuentes",
+                "Metas/Semáforo",
+                "Acciones Auto",
+                "→ Genera AC"
+              ]
+            },
+            {
+              "orden": 2,
+              "codigo": "dashboard_gerencial",
+              "nombre": "Dashboard Gerencial",
+              "subtabs": [
+                "Vista Ejecutiva",
+                "Perspectiva Financiera",
+                "Perspectiva Cliente",
+                "Perspectiva Procesos",
+                "Perspectiva Aprendizaje",
+                "Drill-down"
+              ]
+            },
+            {
+              "orden": 3,
+              "codigo": "indicadores_area",
+              "nombre": "Indicadores por Área",
+              "subtabs": [
+                "SST (Res.0312, E-P-R)",
+                "PESV",
+                "Ambiental",
+                "Calidad",
+                "Comercial",
+                "Operación/RRHH/Financiero"
+              ]
+            },
+            {
+              "orden": 4,
+              "codigo": "analisis_tendencias",
+              "nombre": "Análisis y Tendencias",
+              "subtabs": [
+                "vs Meta",
+                "vs Período Anterior",
+                "Tendencias",
+                "Proyecciones",
+                "Anomalías"
+              ]
+            },
+            {
+              "orden": 5,
+              "codigo": "generador_informes",
+              "nombre": "Generador Informes",
+              "subtabs": [
+                "Plantillas Norma",
+                "Constructor Dinámico",
+                "Programación Auto",
+                "Historial",
+                "Envío Email"
+              ]
+            },
+            {
+              "orden": 6,
+              "codigo": "acciones_indicador",
+              "nombre": "Acciones x Indicador",
+              "subtabs": [
+                "KPIs en Rojo",
+                "ACs Generadas",
+                "Seguimiento Planes",
+                "Efectividad",
+                "→ Link HSEQ"
+              ]
+            },
+            {
+              "orden": 7,
+              "codigo": "exportacion_integracion",
+              "nombre": "Exportación/Integración",
+              "subtabs": [
+                "Excel",
+                "PDF",
+                "Power BI",
+                "API Datos",
+                "Webhooks"
+              ]
+            }
+          ]
+        },
+        {
+          "codigo": "audit_system",
+          "nombre": "Sistema de Auditoría",
+          "descripcion": "Logs, notificaciones y alertas del sistema",
+          "tabs": [
+            {
+              "orden": 1,
+              "codigo": "logs_sistema",
+              "nombre": "Logs del Sistema",
+              "subtabs": [
+                "Trazabilidad",
+                "Cambios Datos",
+                "Accesos",
+                "Retención Config.",
+                "Exportación"
+              ]
+            },
+            {
+              "orden": 2,
+              "codigo": "centro_notificaciones",
+              "nombre": "Centro Notificaciones",
+              "subtabs": [
+                "Bandeja x Usuario",
+                "Por Rol (🔔)",
+                "Preferencias",
+                "Canales"
+              ]
+            },
+            {
+              "orden": 3,
+              "codigo": "config_alertas",
+              "nombre": "Config. Alertas",
+              "subtabs": [
+                "Por Vencimiento",
+                "Por Umbral KPI",
+                "Por Evento",
+                "Escalamiento"
+              ]
+            },
+            {
+              "orden": 4,
+              "codigo": "tareas_recordatorios",
+              "nombre": "Tareas/Recordatorios",
+              "subtabs": [
+                "Pendientes x Usuario",
+                "Calendario",
+                "Recordatorios",
+                "Vista Equipo"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "cumplimiento_normativo": [
+    "ISO 9001:2015 - Calidad",
+    "ISO 45001:2018 - SST",
+    "ISO 14001:2015 - Ambiental",
+    "ISO 27001:2022 - Seguridad Información",
+    "Decreto 1072/2015 - SG-SST Colombia",
+    "Resolución 0312/2019 - Estándares Mínimos",
+    "Resolución 40595/2022 - PESV",
+    "SAGRILAFT - Prevención LA/FT"
+  ],
+  "caracteristicas_dinamicas": {
+    "proveedores": "Tipos configurables (ACU, MP, Servicios, etc.)",
+    "comites": "100% dinámico (COPASST, COCOLA, CSV, cualquier otro)",
+    "indicadores": "Ficha técnica configurable + fórmulas dinámicas",
+    "pipeline_ventas": "Etapas configurables por empresa",
+    "flujos_trabajo": "BPM visual drag & drop",
+    "formularios": "Constructor dinámico + firmas digitales",
+    "inspecciones": "Tipos configurables por empresa",
+    "capacitaciones": "LMS + Gamificación"
+  },
+  "automatizaciones": {
+    "web_scraping": "Matriz legal cada 15 días",
+    "indicadores": "Cálculo según frecuencia configurada",
+    "alertas": "Vencimientos, umbrales, eventos",
+    "informes": "Generación programada",
+    "acciones_correctivas": "Auto desde KPI en rojo",
+    "vacantes": "Auto desde organigrama",
+    "nomina": "Pre-liquidación automática"
+  },
+  "integraciones": {
+    "facturacion_electronica": "DIAN Colombia",
+    "nomina_electronica": "DIAN Colombia",
+    "contabilidad": "Siigo, Alegra, World Office",
+    "gps_telemetria": "Dispositivos GPS vehiculares",
+    "biometricos": "Control de acceso"
+  },
+  "plan_migracion": {
+    "orden": [
+      "1. core_corporate",
+      "2. compliance_engine + risk_engine",
+      "3. hseq_management",
+      "4. supply_chain (refactorizar existente)",
+      "5. production_ops (refactorizar existente)",
+      "6. talent_hub + admin_finance",
+      "7. logistics_fleet + sales_crm",
+      "8. analytics + audit_system",
+      "9. workflow_engine + accounting"
+    ],
+    "codigo_a_eliminar": [
+      "unidades/ (hardcoded, ahora dinámico)"
+    ],
+    "codigo_a_fusionar": [
+      "proveedores/ + ecoaliados/ → supply_chain/proveedores/",
+      "programaciones/ + recolecciones/ + liquidaciones/ → supply_chain/programacion_abastec/"
+    ]
+  }
+}

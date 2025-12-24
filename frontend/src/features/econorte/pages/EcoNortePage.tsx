@@ -23,7 +23,6 @@ import { CargoCodes } from '@/constants/permissions';
 import { EcoaliadosPage } from '@/features/ecoaliados/pages/EcoaliadosPage';
 import { ProgramacionesPage } from '@/features/programaciones/pages/ProgramacionesPage';
 import { RecoleccionesPage } from '@/features/recolecciones/pages/RecoleccionesPage';
-import { CertificadosPage } from '@/features/certificados';
 
 // Hooks para verificar datos disponibles
 import { useProgramacionesEnRuta } from '@/features/recolecciones/api/useRecolecciones';
@@ -205,7 +204,7 @@ export default function EcoNortePage() {
           />
         );
       case 'certificados':
-        return <CertificadosPage embedded triggerNewForm={triggerNuevoCertificado} />;
+        return <ComingSoonPlaceholder title="Certificados" />;
       case 'liquidaciones':
         return <ComingSoonPlaceholder title="Liquidaciones" />;
       default:

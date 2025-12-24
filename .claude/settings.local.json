@@ -48,7 +48,16 @@
       "mcp__ide__getDiagnostics",
       "Bash(npm run build:*)",
       "Bash(docker logs:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(python3:*)",
+      "Bash(python create_erp_structure.py:*)",
+      "Bash(docker cp:*)",
+      "Bash(grep:*)",
+      "Bash(wc:*)",
+      "Bash(find:*)",
+      "Bash(cd:*)",
+      "Bash(git log:*)",
+      "Bash(py manage.py check:*)"
     ],
     "deny": [],
     "ask": []

@@ -2,8 +2,50 @@
 
 Sistema integral de gestión para la recolección y procesamiento de materias primas (huesos, sebo, grasa) y subproductos cárnicos en Colombia.
 
-**Versión:** 1.0.0-beta.2
+**Versión:** 2.0.0-alpha.2
+**Última actualización:** 23 Diciembre 2025
 **Repositorio:** [GitHub](https://github.com/Kmylosky83/Grasas-Huesos-SGI)
+
+## Arquitectura Modular (6 Niveles, 14 Módulos)
+
+El sistema implementa una arquitectura de **monolito modular** organizada en 6 niveles jerárquicos:
+
+```text
+┌──────────────────────────────────────────────────────────────────┐
+│ NIVEL 1: ESTRATÉGICO                                              │
+│   └── gestion_estrategica/ (identidad, organizacion, planeacion,  │
+│                             configuracion)                        │
+├──────────────────────────────────────────────────────────────────┤
+│ NIVEL 2: CUMPLIMIENTO                                             │
+│   ├── motor_cumplimiento/ (matriz_legal, requisitos, partes)     │
+│   ├── motor_riesgos/ (ipevr, aspectos_ambientales, sagrilaft)    │
+│   └── workflow_engine/ (disenador_flujos, ejecucion, monitoreo)  │
+├──────────────────────────────────────────────────────────────────┤
+│ NIVEL 3: TORRE DE CONTROL (HSEQ)                                  │
+│   └── hseq_management/ (calidad, sst, ambiental, comites,        │
+│                         accidentalidad, emergencias, mejora)      │
+├──────────────────────────────────────────────────────────────────┤
+│ NIVEL 4: CADENA DE VALOR                                          │
+│   ├── supply_chain/ (proveedores, compras, almacenamiento)       │
+│   ├── production_ops/ (recepcion, procesamiento, calidad)        │
+│   ├── logistics_fleet/ (transporte, flota, pesv_operativo)       │
+│   └── sales_crm/ (clientes, ventas, facturacion)                 │
+├──────────────────────────────────────────────────────────────────┤
+│ NIVEL 5: HABILITADORES                                            │
+│   ├── talent_hub/ (colaboradores, nomina, formacion, desempeno)  │
+│   ├── admin_finance/ (tesoreria, presupuesto, activos_fijos)     │
+│   └── accounting/ (contabilidad - módulo activable)              │
+├──────────────────────────────────────────────────────────────────┤
+│ NIVEL 6: INTELIGENCIA                                             │
+│   ├── analytics/ (indicadores, dashboards, reportes)             │
+│   └── audit_system/ (logs, notificaciones, alertas)              │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+**Documentación de arquitectura:**
+
+- [DATABASE-ARCHITECTURE.md](docs/DATABASE-ARCHITECTURE.md) - 154 tablas documentadas
+- [00-EMPEZAR-AQUI.md](docs/00-EMPEZAR-AQUI.md) - Índice de documentación
 
 ## Stack Tecnológico
 
@@ -36,12 +78,27 @@ docker-compose up -d
 Grasas y Huesos del Norte/
 ├── backend/                 # Django Backend
 │   ├── apps/
-│   │   ├── core/           # Usuarios, Cargos, Campos personalizados
-│   │   ├── ecoaliados/     # Gestión de Ecoaliados (proveedores)
-│   │   ├── programaciones/ # Programación de recolecciones
-│   │   ├── recolecciones/  # Registro de recolecciones y vouchers
-│   │   ├── proveedores/    # Proveedores externos
-│   │   └── sst/            # Seguridad y Salud en el Trabajo
+│   │   ├── core/           # Usuarios, RBAC, Campos personalizados
+│   │   ├── gestion_estrategica/  # ✅ Nivel 1 - Dirección Estratégica
+│   │   │   ├── configuracion/
+│   │   │   ├── organizacion/
+│   │   │   ├── identidad/
+│   │   │   ├── planeacion/
+│   │   │   ├── gestion_proyectos/ (PMI)
+│   │   │   └── revision_direccion/
+│   │   ├── motor_cumplimiento/   # 🔜 Nivel 2 - Cumplimiento
+│   │   ├── motor_riesgos/        # ✅ Nivel 2 - Riesgos
+│   │   ├── workflow_engine/      # ✅ Nivel 2 - Workflows
+│   │   ├── hseq_management/      # ✅ Nivel 3 - Torre HSEQ (11 tabs)
+│   │   ├── supply_chain/         # ⚠️ Nivel 4 (refactor pendiente)
+│   │   ├── production_ops/       # ⚠️ Nivel 4 (refactor pendiente)
+│   │   ├── logistics_fleet/      # 🔜 Nivel 4
+│   │   ├── sales_crm/            # 🔜 Nivel 4
+│   │   ├── talent_hub/           # 🔜 Nivel 5
+│   │   ├── admin_finance/        # 🔜 Nivel 5
+│   │   ├── accounting/           # 🔜 Nivel 5 (activable)
+│   │   ├── analytics/            # 🔜 Nivel 6
+│   │   └── audit_system/         # 🔜 Nivel 6
 │   └── config/             # Configuración Django
 ├── frontend/               # React Frontend
 │   └── src/
@@ -49,17 +106,27 @@ Grasas y Huesos del Norte/
 │       ├── components/     # Design System
 │       │   ├── common/     # Componentes UI (Button, Card, Modal, etc.)
 │       │   ├── forms/      # Inputs, Select, DatePicker, etc.
-│       │   ├── layout/     # PageHeader, Sidebar, etc.
+│       │   ├── layout/     # PageHeader, Sidebar dinámico
 │       │   └── modals/     # Sistema de modales estandarizado
-│       ├── features/       # Módulos por funcionalidad
+│       ├── features/       # Módulos por funcionalidad (6 niveles)
+│       │   ├── gestion-estrategica/  # ✅ Nivel 1
+│       │   ├── riesgos/              # ✅ Nivel 2
+│       │   ├── workflows/            # ✅ Nivel 2
+│       │   ├── hseq/                 # ✅ Nivel 3
+│       │   ├── proveedores/          # ⚠️ Legacy → supply-chain
+│       │   ├── econorte/             # ⚠️ Legacy → supply-chain
+│       │   ├── recepciones/          # ⚠️ Legacy → production-ops
+│       │   └── [otros...]            # 🔜 Próximamente
 │       ├── hooks/          # Custom hooks
 │       ├── lib/            # Utilidades (animaciones, etc.)
+│       ├── routes/         # ✅ Reorganizado por 6 niveles
 │       └── store/          # Zustand stores
 ├── docker/                 # Configuración Docker
 ├── docs/                   # Documentación del proyecto
 ├── .claude/                # Configuración Claude Code
 │   └── agents/             # Agentes especializados
 ├── docker-compose.yml
+├── REORGANIZACION_FRONTEND.md  # ✅ Documentación reorganización
 └── README.md
 ```
 
@@ -116,20 +183,51 @@ import { DynamicSections } from '@/components/common';
 />
 ```
 
-## Módulos del Sistema
+## Módulos del Sistema (6 Niveles)
 
-| Módulo | Código | Estado | Descripción |
-|--------|--------|--------|-------------|
-| **Dirección Estratégica** | `gestion_estrategica` | Activo | Identidad, planeación, organización, configuración |
-| **Usuarios** | `usuarios` | Activo | Gestión de usuarios del sistema |
-| **Proveedores** | `proveedores` | Activo | Materia prima, productos/servicios, pruebas acidez |
-| **Ecoaliados** | `ecoaliados` | Activo | Gestión de ecoaliados, precios, geolocalización |
-| **Programaciones** | `programaciones` | Activo | Programación y asignación de recolecciones |
-| **Recolecciones** | `recolecciones` | Activo | Ejecución, vouchers, estadísticas |
-| **Gestión Integral** | `gestion_integral` | Activo | SST, PESV, ISO, Riesgos |
-| **Cadena de Valor** | `cadena_valor` | Activo | Control calidad, producción, entregas |
-| **Procesos de Apoyo** | `procesos_apoyo` | Activo | Talento humano, financiero, TI, legal |
-| **Inteligencia de Negocios** | `inteligencia` | Activo | Dashboards, reportes, KPIs |
+### Nivel 1 - Estratégico
+
+| Módulo | Código | Estado | Tabs |
+|--------|--------|--------|------|
+| **Dirección Estratégica** | `Gestion_Estrategica` | ✅ Activo | Configuración, Organización, Identidad, Planeación, Proyectos PMI, Revisión Dirección |
+
+### Nivel 2 - Cumplimiento
+
+| Módulo | Código | Estado | Tabs |
+|--------|--------|--------|------|
+| **Cumplimiento** | `motor_cumplimiento` | ✅ Backend | Matriz Legal, Requisitos Legales, Partes Interesadas, Reglamentos Internos |
+| **Riesgos** | `motor_riesgos` | ✅ Backend | Contexto, Riesgos y Oportunidades, IPEVR, Aspectos Ambientales, Riesgos Viales, SAGRILAFT, Seguridad Info |
+| **Flujos de Trabajo** | `workflow_engine` | ✅ Backend | Diseñador de Flujos, Ejecución, Monitoreo |
+
+### Nivel 3 - Torre de Control
+
+| Módulo | Código | Estado | Tabs |
+|--------|--------|--------|------|
+| **Gestión HSEQ** | `hseq_management` | ✅ Backend | Sistema Documental, Planificación, Calidad, Medicina Laboral, Seguridad Industrial, Higiene Industrial, Comités, Accidentalidad, Emergencias, Gestión Ambiental, Mejora Continua |
+
+### Nivel 4 - Cadena de Valor
+
+| Módulo | Código | Estado | Tabs |
+|--------|--------|--------|------|
+| **Cadena de Suministro** | `supply_chain` | ⚠️ Legacy | Proveedores, Catálogos, Compras, Almacenamiento, Liquidaciones |
+| **Operaciones de Producción** | `production_ops` | ⚠️ Legacy | Recepción, Lotes, Procesamiento, Mantenimiento |
+| **Logística y Flota** | `logistics_fleet` | 🔜 Próximo | Transporte, Despachos, Flota Vehicular, PESV Operativo |
+| **Ventas y CRM** | `sales_crm` | 🔜 Próximo | Clientes, Pipeline, Facturación, PQRS |
+
+### Nivel 5 - Habilitadores
+
+| Módulo | Código | Estado | Tabs |
+|--------|--------|--------|------|
+| **Centro de Talento** | `talent_hub` | 🔜 Próximo | Colaboradores, Formación, Nómina, Desempeño, Bienestar |
+| **Administración y Finanzas** | `admin_finance` | 🔜 Próximo | Tesorería, Presupuesto, Activos Fijos, Servicios Generales |
+| **Contabilidad** | `accounting` | 🔜 Activable | Plan de Cuentas, Movimientos, Informes, Cierre |
+
+### Nivel 6 - Inteligencia
+
+| Módulo | Código | Estado | Tabs |
+|--------|--------|--------|------|
+| **Analítica** | `analytics` | 🔜 Próximo | Indicadores, Dashboard Gerencial, Reportes, Benchmarking |
+| **Sistema de Auditoría** | `audit_system` | 🔜 Próximo | Logs de Sistema, Notificaciones, Centro de Alertas, Auditoría |
 
 ### Tipos de Materia Prima (18 códigos)
 
@@ -281,14 +379,60 @@ function MyPage() {
 }
 ```
 
-### Roles Funcionales
+### Roles Funcionales (Ejemplos)
 
-| Rol | Descripcion |
+| Rol | Descripción |
 |-----|-------------|
 | `superadmin` | Acceso total al sistema |
 | `aprobador_recolecciones` | Aprobar/rechazar recolecciones |
 | `gestor_programaciones` | Gestionar programaciones |
 | `gestor_proveedores` | Gestionar proveedores y precios |
+
+**Nota:** Los roles son configurables según las necesidades de cada empresa.
+
+---
+
+## 🎯 Sistema de Cargos Completamente Dinámico
+
+El sistema gestiona los cargos de forma **100% dinámica** desde la base de datos. **No hay cargos hardcodeados en el código.**
+
+### Características Clave
+
+✅ **Creación dinámica** de cargos desde interfaz admin
+✅ **Manual de funciones completo** por cargo (5 tabs)
+✅ **Permisos personalizables** por cargo
+✅ **Adaptable a cualquier industria** sin cambiar código
+✅ **Multi-empresa**: Cada implementación define sus propios cargos
+
+### Gestión de Cargos
+
+**Ruta:** Dirección Estratégica > Organización > Cargos
+
+Cada cargo incluye:
+
+- **Código único**: Identificador (ej: `lider_comercial`, `gerente_general`)
+- **Nivel jerárquico**: 0-Operativo, 1-Supervisión, 2-Coordinación, 3-Dirección
+- **Manual de funciones**: Identificación, Funciones, Requisitos, SST, Permisos
+- **Riesgos ocupacionales**: GTC-45 (78 riesgos en 7 categorías)
+- **Permisos asociados**: Asignación directa de permisos
+
+### Ejemplos Multi-Industria
+
+| Industria | Ejemplos de Cargos |
+|-----------|-------------------|
+| **Rendering** | Coordinador Recolección, Operador Báscula, Jefe Planta |
+| **Manufactura** | Supervisor Producción, Operador Máquina, Ingeniero Calidad |
+| **Servicios** | Coordinador Proyectos, Analista, Consultor Senior |
+| **Logística** | Coordinador Flota, Conductor, Auxiliar Bodega |
+
+**Flexibilidad total:** Cada empresa define sus cargos sin modificar código.
+
+### Ver Documentación Completa
+
+- **[Sistema de Cargos Dinámicos](docs/RBAC-SYSTEM.md#sistema-de-cargos-dinámicos)** - Guía completa
+- **[Implementación del Sistema Dinámico](IMPLEMENTACION_SISTEMA_DINAMICO.md)** - Detalles técnicos
+
+---
 
 ### Uso en Backend
 
@@ -705,4 +849,4 @@ Para soporte técnico, contactar al equipo de desarrollo.
 
 ---
 
-**Última actualización:** 16 Diciembre 2025
+**Última actualización:** 23 Diciembre 2025

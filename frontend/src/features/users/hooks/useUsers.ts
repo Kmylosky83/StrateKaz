@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usersAPI } from '@/api/users.api';
 import toast from 'react-hot-toast';
 import type { UserFilters, CreateUserDTO, UpdateUserDTO, ChangePasswordDTO } from '@/types/users.types';
-import { CargoCodes } from '@/constants/permissions';
 
 export const useUsers = (filters?: UserFilters) => {
   return useQuery({
@@ -107,11 +106,45 @@ export const useChangePassword = () => {
 };
 
 /**
- * Hook para obtener lista de recolectores (usuarios con rol de recolector)
+ * Hook genérico para obtener usuarios por código de cargo
+ * @param cargoCode - Código del cargo a filtrar (opcional)
+ * @param enabled - Si el query debe ejecutarse (default: true)
+ */
+export const useUsersByCargoCode = (cargoCode?: string, enabled: boolean = true) => {
+  return useQuery({
+    queryKey: ['users', cargoCode ? { cargo__code: cargoCode } : {}],
+    queryFn: () => {
+      if (!cargoCode) {
+        return usersAPI.getUsers({});
+      }
+      return usersAPI.getUsers({ cargo__code: cargoCode });
+    },
+    enabled: enabled && !!cargoCode,
+  });
+};
+
+/**
+ * Hook para obtener usuarios con un permiso específico
+ * @param permission - Código del permiso requerido
+ * @param enabled - Si el query debe ejecutarse (default: true)
+ */
+export const useUsersByPermission = (permission: string, enabled: boolean = true) => {
+  return useQuery({
+    queryKey: ['users', { has_permission: permission }],
+    queryFn: () => usersAPI.getUsers({ has_permission: permission } as any),
+    enabled: enabled && !!permission,
+  });
+};
+
+/**
+ * @deprecated Use useUsersByCargoCode('cargo_code') or useUsersByPermission('recolecciones.register') instead
+ * Hook para obtener lista de recolectores - mantener por compatibilidad
  */
 export const useRecolectores = () => {
+  console.warn('useRecolectores is deprecated. Use useUsersByCargoCode or useUsersByPermission instead.');
+  // Mantener funcionalidad básica - obtener todos los usuarios para no romper código existente
   return useQuery({
-    queryKey: ['users', { cargo__code: CargoCodes.RECOLECTOR_ECONORTE }],
-    queryFn: () => usersAPI.getUsers({ cargo__code: CargoCodes.RECOLECTOR_ECONORTE }),
+    queryKey: ['users', {}],
+    queryFn: () => usersAPI.getUsers({}),
   });
 };

@@ -13,29 +13,27 @@ const LAST_ROUTE_KEY = 'last_route';
 const EXCLUDED_ROUTES = ['/login', '/logout', '/404', '/unauthorized'];
 
 // Landing pages por rol (cuando no hay última ruta)
+// NOTA: Estos son ejemplos. Los cargos son dinámicos y cada empresa define los suyos.
+// Para producción, considerar obtener este mapeo desde la API o configuración.
 const ROLE_LANDING_PAGES: Record<string, string> = {
+  // Nivel Estratégico
   superadmin: '/gestion-estrategica/configuracion',
   [CargoCodes.GERENTE]: '/gestion-estrategica/configuracion',
   [CargoCodes.ADMIN]: '/gestion-estrategica/configuracion',
-  // Roles de EcoNorte
-  [CargoCodes.LIDER_COMERCIAL_ECONORTE]: '/econorte/ecoaliados',
-  [CargoCodes.COMERCIAL_ECONORTE]: '/econorte/ecoaliados',
-  [CargoCodes.LIDER_LOGISTICA_ECONORTE]: '/econorte/ecoaliados',
-  [CargoCodes.RECOLECTOR_ECONORTE]: '/econorte/ecoaliados',
-  // Roles de Compras/Comercial
+  // Nivel Coordinación - Compras/Comercial
   [CargoCodes.LIDER_COMERCIAL]: '/proveedores/materia-prima',
   [CargoCodes.LIDER_COMPRAS]: '/proveedores/materia-prima',
-  // Roles de Planta
+  // Nivel Coordinación - Planta
   [CargoCodes.JEFE_PLANTA]: '/planta/recepciones',
   [CargoCodes.SUPERVISOR_PLANTA]: '/planta/recepciones',
   [CargoCodes.OPERADOR_BASCULA]: '/planta/recepciones',
-  // Roles de SST/Calidad
+  // Nivel Coordinación - Gestión Integral
   [CargoCodes.LIDER_SST]: '/gestion-integral/sst',
   [CargoCodes.PROFESIONAL_SST]: '/gestion-integral/sst',
   [CargoCodes.LIDER_CALIDAD]: '/gestion-integral/calidad',
   [CargoCodes.PROFESIONAL_CALIDAD]: '/gestion-integral/calidad',
   [CargoCodes.PROFESIONAL_AMBIENTAL]: '/gestion-integral/ambiental',
-  // Roles de Apoyo
+  // Nivel Coordinación - Apoyo
   [CargoCodes.LIDER_TALENTO_HUMANO]: '/procesos-apoyo/talento-humano',
 };
 
@@ -112,7 +110,7 @@ export const useSmartRedirect = (): void => {
     }
 
     const lastRoute = getLastRoute();
-    const landingByRole = getLandingByRole(user?.cargo_code);
+    const landingByRole = getLandingByRole(user?.cargo_code ?? undefined);
 
     // Prioridad: última ruta > landing por rol
     const targetRoute = lastRoute || landingByRole;

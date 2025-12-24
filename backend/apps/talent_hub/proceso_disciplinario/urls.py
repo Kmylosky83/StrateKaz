@@ -1,0 +1,14 @@
+"""
+URLs para proceso_disciplinario - talent_hub
+"""
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+
+app_name = 'proceso_disciplinario'
+
+router = DefaultRouter()
+# TODO: Registrar ViewSets cuando se implementen
+
+urlpatterns = [
+    path('', include(router.urls)),
+]

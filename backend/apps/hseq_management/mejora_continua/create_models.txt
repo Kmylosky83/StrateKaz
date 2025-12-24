@@ -1,0 +1,21 @@
+# Este archivo contiene el código completo de models.py
+# Se debe copiar manualmente o usar un script para crearlo
+
+Ver el archivo models.py completo con los siguientes modelos:
+
+1. OrigenAccion - Orígenes de acciones
+2. AccionMejora - Acciones correctivas/preventivas/mejora
+3. ProgramaAuditoria - Programa anual de auditorías
+4. AuditorInterno - Pool de auditores internos
+5. Auditoria - Auditorías internas/externas
+6. EquipoAuditor - Equipos asignados a auditorías
+7. Hallazgo - Hallazgos de auditoría (NC, observaciones, etc.)
+8. EvaluacionCumplimiento - Evaluaciones de cumplimiento legal
+9. RequisitoEvaluado - Requisitos legales evaluados
+10. SeguimientoAccion - Seguimiento a acciones de mejora
+
+Todos los modelos incluyen:
+- empresa_id para multi-tenant
+- Estados apropiados (ABIERTA, EN_EJECUCION, VERIFICACION_EFICACIA, CERRADA_EFICAZ, CERRADA_NO_EFICAZ)
+- Campos de auditoría (created_at, updated_at, created_by)
+- Relaciones apropiadas entre modelos

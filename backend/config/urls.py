@@ -6,9 +6,19 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import JsonResponse
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+
+def health_check(request):
+    """Health check endpoint for Docker."""
+    return JsonResponse({"status": "healthy", "service": "grasas-huesos-backend"})
+
+
 urlpatterns = [
+    # Health check
+    path('api/health/', health_check, name='health_check'),
+
     # Admin panel
     path('admin/', admin.site.urls),
     
@@ -16,22 +26,35 @@ urlpatterns = [
     path('api/auth/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     
-    # API Apps
+    # API Core
     path('api/core/', include('apps.core.urls')),
-    path('api/unidades/', include('apps.unidades.urls')),
+
+    # Apps Legacy Funcionales (pendiente migración)
     path('api/proveedores/', include('apps.proveedores.urls')),
     path('api/ecoaliados/', include('apps.ecoaliados.urls')),
     path('api/programaciones/', include('apps.programaciones.urls')),
     path('api/recolecciones/', include('apps.recolecciones.urls')),
     path('api/recepciones/', include('apps.recepciones.urls')),
-    path('api/lotes/', include('apps.lotes.urls')),
-    path('api/liquidaciones/', include('apps.liquidaciones.urls')),
-    path('api/certificados/', include('apps.certificados.urls')),
-    path('api/reportes/', include('apps.reportes.urls')),
 
-    # Dirección Estratégica (Módulo 1)
+    # Dirección Estratégica (Módulo 1 - Nivel Estratégico)
     path('api/organizacion/', include('apps.gestion_estrategica.organizacion.urls')),
     path('api/configuracion/', include('apps.gestion_estrategica.configuracion.urls')),
+    path('api/identidad/', include('apps.gestion_estrategica.identidad.urls')),
+    path('api/planeacion/', include('apps.gestion_estrategica.planeacion.urls')),
+    path('api/proyectos/', include('apps.gestion_estrategica.gestion_proyectos.urls')),
+    path('api/revision-direccion/', include('apps.gestion_estrategica.revision_direccion.urls')),
+
+    # Motor de Cumplimiento (Módulo 2 - Nivel Cumplimiento)
+    path('api/cumplimiento/', include('apps.motor_cumplimiento.urls')),
+
+    # Motor de Riesgos (Módulo 3 - Nivel Riesgos)
+    path('api/riesgos/', include('apps.motor_riesgos.urls')),
+
+    # Motor de Flujos (Módulo 4 - Automatización)
+    path('api/workflows/', include('apps.workflow_engine.urls')),
+
+    # HSEQ Management - Torre de Control (Módulo 5)
+    path('api/hseq/', include('apps.hseq_management.urls')),
 ]
 
 # Serve media files in development

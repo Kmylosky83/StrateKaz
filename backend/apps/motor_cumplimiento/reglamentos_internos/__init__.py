@@ -1,0 +1,1 @@
+default_app_config = 'apps.motor_cumplimiento.reglamentos_internos.apps.ReglamentosInternosConfig'

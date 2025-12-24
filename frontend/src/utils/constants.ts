@@ -2,25 +2,12 @@
  * Constantes globales del sistema
  */
 
-export const APP_NAME = import.meta.env.VITE_APP_NAME || 'Grasas y Huesos del Norte';
+export const APP_NAME = import.meta.env.VITE_APP_NAME || 'Sistema de Gestión Empresarial';
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
-// Roles del sistema
-export const ROLES = {
-  SUPERADMIN: 'superadmin',
-  GERENTE: 'gerente',
-  ADMIN: 'admin',
-  LIDER_COMERCIAL: 'lider_comercial',
-  LIDER_COMPRAS: 'lider_compras',
-  LIDER_COM_ECONORTE: 'lider_com_econorte',
-  LIDER_LOG_ECONORTE: 'lider_log_econorte',
-  SUPERVISOR_PLANTA: 'supervisor_planta',
-  JEFE_PLANTA: 'jefe_planta',
-  COMERCIAL_ECONORTE: 'comercial_econorte',
-  RECOLECTOR_ECONORTE: 'recolector_econorte',
-  LIDER_TALENTO_HUMANO: 'lider_talento_humano',
-  PROFESIONAL_SST: 'profesional_sst',
-} as const;
+// Nota: Los cargos/roles son completamente dinámicos y se gestionan desde
+// Dirección Estratégica > Organización > Cargos y Roles
+// No se deben hardcodear en el código
 
 // Estados de recolección
 export const ESTADO_RECOLECCION = {

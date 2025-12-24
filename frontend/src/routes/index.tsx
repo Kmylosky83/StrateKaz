@@ -1,127 +1,333 @@
+/**
+ * Rutas del Sistema ERP - Estructura de 6 Niveles
+ *
+ * NIVEL 1 - Estratégico: Dirección Estratégica
+ * NIVEL 2 - Cumplimiento: Cumplimiento, Riesgos, Workflows
+ * NIVEL 3 - Torre de Control: Gestión HSEQ
+ * NIVEL 4 - Cadena de Valor: Supply Chain, Producción, Logística, Ventas
+ * NIVEL 5 - Habilitadores: Talento, Finanzas, Contabilidad
+ * NIVEL 6 - Inteligencia: Analítica, Auditoría
+ */
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { LoginPage } from '@/pages/LoginPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { SmartRedirect } from '@/components/common/SmartRedirect';
+
+// ==================== NIVEL 1: DIRECCIÓN ESTRATÉGICA ====================
 import UsersPage from '@/features/users/pages/UsersPage';
-import MateriaPrimaPage from '@/features/proveedores/pages/MateriaPrimaPage';
-import ProductosServiciosPage from '@/features/proveedores/pages/ProductosServiciosPage';
-import PruebasAcidezPage from '@/features/proveedores/pages/PruebasAcidezPage';
-import { EcoNortePage } from '@/features/econorte';
-import { RecepcionPlantaPage } from '@/features/recepciones';
-import { SSTPage } from '@/features/sst';
 import {
   ConfiguracionPage,
   OrganizacionPage,
   IdentidadPage,
   PlaneacionPage,
 } from '@/features/gestion-estrategica';
-import { MotorOperacionesPage } from '@/features/motor-operaciones';
-import { GestionIntegralPage } from '@/features/gestion-integral';
-import { CadenaValorPage } from '@/features/cadena-valor';
-import { ProcesosApoyoPage } from '@/features/procesos-apoyo';
-import { InteligenciaNegociosPage } from '@/features/inteligencia-negocios';
+
+// ==================== NIVEL 2: CUMPLIMIENTO ====================
+// Motor de Cumplimiento - Próximamente (en features/cumplimiento)
+// Motor de Riesgos
+import {
+  RiesgosPage,
+  ContextoOrganizacionalPage,
+  RiesgosProcesosPage,
+  IPEVRPage,
+  AspectosAmbientalesPage,
+  RiesgosVialesPage,
+  SagrilaftPteePage,
+  SeguridadInformacionPage,
+} from '@/features/riesgos';
+
+// Workflows Engine
+import {
+  WorkflowsPage,
+  DisenadorFlujosPage,
+  EjecucionPage,
+  MonitoreoPage,
+} from '@/features/workflows';
+
+// ==================== NIVEL 3: TORRE DE CONTROL (HSEQ) ====================
+import {
+  HSEQPage,
+  SistemaDocumentalPage,
+  PlanificacionSistemaPage,
+  CalidadPage,
+  MedicinaLaboralPage,
+  SeguridadIndustrialPage,
+  HigieneIndustrialPage,
+  GestionComitesPage,
+  AccidentalidadPage,
+  EmergenciasPage,
+  GestionAmbientalPage,
+  MejoraContinuaPage,
+} from '@/features/hseq';
+
+// ==================== NIVEL 4: CADENA DE VALOR ====================
+// Supply Chain (Proveedores legacy → será refactorizado)
+import MateriaPrimaPage from '@/features/proveedores/pages/MateriaPrimaPage';
+import ProductosServiciosPage from '@/features/proveedores/pages/ProductosServiciosPage';
+import PruebasAcidezPage from '@/features/proveedores/pages/PruebasAcidezPage';
+import { EcoNortePage } from '@/features/econorte';
+
+// Production Ops (Recepciones legacy → será refactorizado)
+import { RecepcionPlantaPage } from '@/features/recepciones';
+
+// Logistics & Fleet - Próximamente
+// Sales & CRM - Próximamente
+
+// ==================== NIVEL 5: HABILITADORES ====================
+// Centro de Talento - Próximamente
+// Administración y Finanzas - Próximamente
+// Contabilidad - Próximamente
+
+// ==================== NIVEL 6: INTELIGENCIA ====================
+// Analítica - Próximamente
+// Sistema de Auditoría - Próximamente
 
 export const AppRoutes = () => {
   return (
     <Routes>
-      {/* Public Routes */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      {/* RUTAS PÚBLICAS */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
       <Route path="/login" element={<LoginPage />} />
 
-      {/* Protected Routes */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      {/* RUTAS PROTEGIDAS */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
+
           {/* ═══════════════════════════════════════════════════════════════ */}
-          {/* MODULO 1: GESTION ESTRATEGICA - Cada tab es una ruta separada */}
+          {/* NIVEL 1: DIRECCIÓN ESTRATÉGICA */}
+          {/* Código: Gestion_Estrategica */}
           {/* ═══════════════════════════════════════════════════════════════ */}
-          <Route path="/gestion-estrategica" element={<Navigate to="/gestion-estrategica/configuracion" replace />} />
+          <Route
+            path="/gestion-estrategica"
+            element={<Navigate to="/gestion-estrategica/configuracion" replace />}
+          />
+
+          {/* Tab 1: Configuración */}
           <Route path="/gestion-estrategica/configuracion" element={<ConfiguracionPage />} />
+
+          {/* Tab 2: Organización */}
           <Route path="/gestion-estrategica/organizacion" element={<OrganizacionPage />} />
+
+          {/* Tab 3: Identidad Corporativa */}
           <Route path="/gestion-estrategica/identidad" element={<IdentidadPage />} />
+
+          {/* Tab 4: Planeación Estratégica */}
           <Route path="/gestion-estrategica/planeacion" element={<PlaneacionPage />} />
 
-          {/* Usuarios - Módulo independiente dentro de Dirección Estratégica */}
+          {/* Tab 5: Gestión de Proyectos (PMI) - Próximamente */}
+          <Route
+            path="/gestion-estrategica/proyectos"
+            element={<div className="p-8 text-center text-gray-500">Gestión de Proyectos (PMI) - Próximamente</div>}
+          />
+
+          {/* Tab 6: Revisión por Dirección - Próximamente */}
+          <Route
+            path="/gestion-estrategica/revision-direccion"
+            element={<div className="p-8 text-center text-gray-500">Revisión por Dirección - Próximamente</div>}
+          />
+
+          {/* Usuarios - Módulo transversal dentro de Dirección Estratégica */}
           <Route path="/usuarios" element={<UsersPage />} />
 
           {/* ═══════════════════════════════════════════════════════════════ */}
-          {/* MODULO 2: MOTOR DE OPERACIONES */}
-          {/* ═══════════════════════════════════════════════════════════════ */}
-          <Route path="/motor-operaciones" element={<Navigate to="/motor-operaciones/abastecimiento" replace />} />
-          <Route path="/motor-operaciones/abastecimiento" element={<MotorOperacionesPage />} />
-          <Route path="/motor-operaciones/planta-motor" element={<div className="p-8 text-center text-gray-500">Operaciones Planta - Próximamente</div>} />
-          <Route path="/motor-operaciones/comercializacion" element={<div className="p-8 text-center text-gray-500">Comercialización - Próximamente</div>} />
-
-          {/* ═══════════════════════════════════════════════════════════════ */}
-          {/* MODULO 3: GESTION INTEGRAL */}
-          {/* ═══════════════════════════════════════════════════════════════ */}
-          <Route path="/gestion-integral" element={<Navigate to="/gestion-integral/sst" replace />} />
-          <Route path="/gestion-integral/sst" element={<SSTPage />} />
-          <Route path="/gestion-integral/pesv" element={<div className="p-8 text-center text-gray-500">PESV - Próximamente</div>} />
-          <Route path="/gestion-integral/calidad" element={<div className="p-8 text-center text-gray-500">ISO 9001 - Próximamente</div>} />
-          <Route path="/gestion-integral/ambiental" element={<div className="p-8 text-center text-gray-500">ISO 14001 - Próximamente</div>} />
-
-          {/* SST Sub-rutas */}
-          <Route path="/sst" element={<Navigate to="/gestion-integral/sst" replace />} />
-          <Route path="/sst/recursos" element={<div className="p-8 text-center text-gray-500">Módulo Recursos SST - Próximamente</div>} />
-          <Route path="/sst/gestion-integral" element={<div className="p-8 text-center text-gray-500">Módulo Gestión Integral SG-SST - Próximamente</div>} />
-          <Route path="/sst/gestion-salud" element={<div className="p-8 text-center text-gray-500">Módulo Gestión de la Salud - Próximamente</div>} />
-          <Route path="/sst/peligros-riesgos" element={<div className="p-8 text-center text-gray-500">Módulo Peligros y Riesgos - Próximamente</div>} />
-          <Route path="/sst/amenazas" element={<div className="p-8 text-center text-gray-500">Módulo Amenazas - Próximamente</div>} />
-          <Route path="/sst/verificacion" element={<div className="p-8 text-center text-gray-500">Módulo Verificación - Próximamente</div>} />
-          <Route path="/sst/mejoramiento" element={<div className="p-8 text-center text-gray-500">Módulo Mejoramiento - Próximamente</div>} />
-
-          {/* ═══════════════════════════════════════════════════════════════ */}
-          {/* MODULO 4: CADENA DE VALOR (Nivel Misional) */}
+          {/* NIVEL 2: CUMPLIMIENTO */}
           {/* ═══════════════════════════════════════════════════════════════ */}
 
-          {/* Proveedores */}
-          <Route path="/proveedores" element={<Navigate to="/proveedores/materia-prima" replace />} />
+          {/* Módulo: Motor de Cumplimiento (motor_cumplimiento) - Próximamente */}
+          <Route
+            path="/cumplimiento"
+            element={<div className="p-8 text-center text-gray-500">Motor de Cumplimiento - Próximamente</div>}
+          />
+          <Route
+            path="/cumplimiento/matriz-legal"
+            element={<div className="p-8 text-center text-gray-500">Matriz Legal - Próximamente</div>}
+          />
+          <Route
+            path="/cumplimiento/requisitos-legales"
+            element={<div className="p-8 text-center text-gray-500">Requisitos Legales - Próximamente</div>}
+          />
+          <Route
+            path="/cumplimiento/partes-interesadas"
+            element={<div className="p-8 text-center text-gray-500">Partes Interesadas - Próximamente</div>}
+          />
+          <Route
+            path="/cumplimiento/reglamentos-internos"
+            element={<div className="p-8 text-center text-gray-500">Reglamentos Internos - Próximamente</div>}
+          />
+
+          {/* Módulo: Motor de Riesgos (motor_riesgos) */}
+          <Route
+            path="/riesgos"
+            element={<RiesgosPage />}
+          />
+          <Route path="/riesgos/contexto" element={<ContextoOrganizacionalPage />} />
+          <Route path="/riesgos/procesos" element={<RiesgosProcesosPage />} />
+          <Route path="/riesgos/ipevr" element={<IPEVRPage />} />
+          <Route path="/riesgos/ambientales" element={<AspectosAmbientalesPage />} />
+          <Route path="/riesgos/viales" element={<RiesgosVialesPage />} />
+          <Route path="/riesgos/sagrilaft" element={<SagrilaftPteePage />} />
+          <Route path="/riesgos/seguridad-info" element={<SeguridadInformacionPage />} />
+
+          {/* Módulo: Flujos de Trabajo (workflow_engine) */}
+          <Route path="/workflows" element={<WorkflowsPage />} />
+          <Route path="/workflows/disenador" element={<DisenadorFlujosPage />} />
+          <Route path="/workflows/ejecucion" element={<EjecucionPage />} />
+          <Route path="/workflows/monitoreo" element={<MonitoreoPage />} />
+
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          {/* NIVEL 3: TORRE DE CONTROL (HSEQ MANAGEMENT) */}
+          {/* Código: hseq_management */}
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          <Route
+            path="/hseq"
+            element={<Navigate to="/hseq/dashboard" replace />}
+          />
+          <Route path="/hseq/dashboard" element={<HSEQPage />} />
+
+          {/* Tab 1: Sistema Documental */}
+          <Route path="/hseq/sistema-documental" element={<SistemaDocumentalPage />} />
+
+          {/* Tab 2: Planificación Sistema */}
+          <Route path="/hseq/planificacion" element={<PlanificacionSistemaPage />} />
+
+          {/* Tab 3: Calidad */}
+          <Route path="/hseq/calidad" element={<CalidadPage />} />
+
+          {/* Tab 4: Medicina Laboral */}
+          <Route path="/hseq/medicina-laboral" element={<MedicinaLaboralPage />} />
+
+          {/* Tab 5: Seguridad Industrial */}
+          <Route path="/hseq/seguridad-industrial" element={<SeguridadIndustrialPage />} />
+
+          {/* Tab 6: Higiene Industrial */}
+          <Route path="/hseq/higiene-industrial" element={<HigieneIndustrialPage />} />
+
+          {/* Tab 7: Gestión de Comités */}
+          <Route path="/hseq/comites" element={<GestionComitesPage />} />
+
+          {/* Tab 8: Accidentalidad (ATEL) */}
+          <Route path="/hseq/accidentalidad" element={<AccidentalidadPage />} />
+
+          {/* Tab 9: Emergencias */}
+          <Route path="/hseq/emergencias" element={<EmergenciasPage />} />
+
+          {/* Tab 10: Gestión Ambiental */}
+          <Route path="/hseq/gestion-ambiental" element={<GestionAmbientalPage />} />
+
+          {/* Tab 11: Mejora Continua */}
+          <Route path="/hseq/mejora-continua" element={<MejoraContinuaPage />} />
+
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          {/* NIVEL 4: CADENA DE VALOR */}
+          {/* ═══════════════════════════════════════════════════════════════ */}
+
+          {/* Módulo: Cadena de Suministro (supply_chain) */}
+          {/* NOTA: proveedores/ y econorte/ son legacy, serán refactorizados */}
+
+          {/* Proveedores (legacy - temporal hasta refactor) */}
+          <Route
+            path="/proveedores"
+            element={<Navigate to="/proveedores/materia-prima" replace />}
+          />
           <Route path="/proveedores/materia-prima" element={<MateriaPrimaPage />} />
           <Route path="/proveedores/productos-servicios" element={<ProductosServiciosPage />} />
           <Route path="/proveedores/pruebas-acidez" element={<PruebasAcidezPage />} />
 
-          {/* EcoNorte */}
-          <Route path="/econorte" element={<Navigate to="/econorte/ecoaliados" replace />} />
+          {/* EcoNorte (legacy - temporal hasta refactor como Programación Abastecimiento) */}
+          <Route
+            path="/econorte"
+            element={<Navigate to="/econorte/ecoaliados" replace />}
+          />
           <Route path="/econorte/ecoaliados" element={<EcoNortePage />} />
           <Route path="/econorte/programaciones" element={<EcoNortePage />} />
           <Route path="/econorte/recolecciones" element={<EcoNortePage />} />
 
-          {/* Planta */}
-          <Route path="/planta" element={<Navigate to="/planta/recepciones" replace />} />
+          {/* Módulo: Operaciones de Producción (production_ops) */}
+          {/* NOTA: planta/recepciones es legacy, será refactorizado */}
+          <Route
+            path="/planta"
+            element={<Navigate to="/planta/recepciones" replace />}
+          />
           <Route path="/planta/recepciones" element={<RecepcionPlantaPage />} />
-          <Route path="/planta/lotes" element={<div className="p-8 text-center text-gray-500">Lotes de Planta - Próximamente</div>} />
+          <Route
+            path="/planta/lotes"
+            element={<div className="p-8 text-center text-gray-500">Lotes de Producción - Próximamente</div>}
+          />
 
-          {/* Reportes */}
-          <Route path="/reportes" element={<div className="p-8 text-center text-gray-500">Reportes - Próximamente</div>} />
+          {/* Módulo: Logística y Flota (logistics_fleet) - Próximamente */}
+          <Route
+            path="/logistica"
+            element={<div className="p-8 text-center text-gray-500">Logística y Flota - Próximamente</div>}
+          />
 
-          {/* Cadena de Valor */}
-          <Route path="/cadena-valor" element={<Navigate to="/cadena-valor/trazabilidad" replace />} />
-          <Route path="/cadena-valor/trazabilidad" element={<CadenaValorPage />} />
-          <Route path="/cadena-valor/calidad-cv" element={<div className="p-8 text-center text-gray-500">Control de Calidad - Próximamente</div>} />
-          <Route path="/cadena-valor/certificaciones" element={<div className="p-8 text-center text-gray-500">Certificaciones - Próximamente</div>} />
-          <Route path="/cadena-valor/logistica" element={<div className="p-8 text-center text-gray-500">Logística - Próximamente</div>} />
-
-          {/* ═══════════════════════════════════════════════════════════════ */}
-          {/* MODULO 5: PROCESOS DE APOYO */}
-          {/* ═══════════════════════════════════════════════════════════════ */}
-          <Route path="/procesos-apoyo" element={<Navigate to="/procesos-apoyo/talento-humano" replace />} />
-          <Route path="/procesos-apoyo/talento-humano" element={<ProcesosApoyoPage />} />
-          <Route path="/procesos-apoyo/financiero" element={<div className="p-8 text-center text-gray-500">Financiero - Próximamente</div>} />
-          <Route path="/procesos-apoyo/tecnologia" element={<div className="p-8 text-center text-gray-500">Tecnología - Próximamente</div>} />
-          <Route path="/procesos-apoyo/juridico" element={<div className="p-8 text-center text-gray-500">Jurídico - Próximamente</div>} />
+          {/* Módulo: Ventas y CRM (sales_crm) - Próximamente */}
+          <Route
+            path="/ventas"
+            element={<div className="p-8 text-center text-gray-500">Ventas y CRM - Próximamente</div>}
+          />
 
           {/* ═══════════════════════════════════════════════════════════════ */}
-          {/* MODULO 6: INTELIGENCIA DE NEGOCIOS */}
+          {/* NIVEL 5: HABILITADORES */}
           {/* ═══════════════════════════════════════════════════════════════ */}
-          <Route path="/inteligencia" element={<Navigate to="/inteligencia/dashboards" replace />} />
-          <Route path="/inteligencia/dashboards" element={<InteligenciaNegociosPage />} />
-          <Route path="/inteligencia/reportes-bi" element={<div className="p-8 text-center text-gray-500">Reportes BI - Próximamente</div>} />
-          <Route path="/inteligencia/analytics" element={<div className="p-8 text-center text-gray-500">Analytics - Próximamente</div>} />
-          <Route path="/inteligencia/data-warehouse" element={<div className="p-8 text-center text-gray-500">Data Warehouse - Próximamente</div>} />
+
+          {/* Módulo: Centro de Talento (talent_hub) - Próximamente */}
+          <Route
+            path="/talento"
+            element={<div className="p-8 text-center text-gray-500">Centro de Talento - Próximamente</div>}
+          />
+
+          {/* Módulo: Administración y Finanzas (admin_finance) - Próximamente */}
+          <Route
+            path="/finanzas"
+            element={<div className="p-8 text-center text-gray-500">Administración y Finanzas - Próximamente</div>}
+          />
+
+          {/* Módulo: Contabilidad (accounting) - Próximamente */}
+          <Route
+            path="/contabilidad"
+            element={<div className="p-8 text-center text-gray-500">Contabilidad - Próximamente</div>}
+          />
+
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          {/* NIVEL 6: INTELIGENCIA */}
+          {/* ═══════════════════════════════════════════════════════════════ */}
+
+          {/* Módulo: Analítica (analytics) - Próximamente */}
+          <Route
+            path="/analitica"
+            element={<div className="p-8 text-center text-gray-500">Analítica - Próximamente</div>}
+          />
+
+          {/* Módulo: Sistema de Auditoría (audit_system) - Próximamente */}
+          <Route
+            path="/auditoria"
+            element={<div className="p-8 text-center text-gray-500">Sistema de Auditoría - Próximamente</div>}
+          />
+
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          {/* RUTAS LEGACY - DEPRECADAS (Mantener temporalmente para compatibilidad) */}
+          {/* ═══════════════════════════════════════════════════════════════ */}
+
+          {/* Redirigir rutas antiguas a nuevas ubicaciones */}
+          <Route path="/motor-operaciones/*" element={<Navigate to="/proveedores" replace />} />
+          <Route path="/gestion-integral/*" element={<Navigate to="/hseq" replace />} />
+          <Route path="/cadena-valor/*" element={<Navigate to="/proveedores" replace />} />
+          <Route path="/procesos-apoyo/*" element={<Navigate to="/talento" replace />} />
+          <Route path="/inteligencia/*" element={<Navigate to="/analitica" replace />} />
+          <Route path="/sst/*" element={<Navigate to="/hseq" replace />} />
+          <Route path="/reportes" element={<Navigate to="/analitica" replace />} />
 
         </Route>
       </Route>
+
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      {/* SMART REDIRECT Y 404 */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
 
       {/* Smart Redirect - Landing inteligente según rol y última ruta */}
       <Route path="/" element={<SmartRedirect />} />

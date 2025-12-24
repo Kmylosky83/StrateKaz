@@ -4,7 +4,7 @@
 # ============================================
 
 # ==================== STAGE 1: Builder ====================
-FROM node:20-alpine AS builder
+FROM node:25-alpine AS builder
 
 LABEL maintainer="Grasas y Huesos del Norte"
 LABEL description="Frontend React/Vite - Build Stage"

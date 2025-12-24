@@ -101,18 +101,6 @@ class PermissionCodes:
         CANCEL = 'recepciones.cancel'
         STANDBY = 'recepciones.standby'
 
-    # ==================== CERTIFICADOS ====================
-    class CERTIFICADOS:
-        MODULE = 'certificados'
-
-        VIEW_LIST = 'certificados.view_list'
-        VIEW_DETAIL = 'certificados.view_detail'
-
-        CREATE = 'certificados.create'
-        DELETE = 'certificados.delete'
-        GENERATE = 'certificados.generate'
-        DOWNLOAD = 'certificados.download'
-
     # ==================== USUARIOS ====================
     class USERS:
         MODULE = 'users'
@@ -168,8 +156,6 @@ class CargoCodes:
     # Nivel 2 - Coordinacion
     LIDER_COMERCIAL = 'lider_comercial'
     LIDER_COMPRAS = 'lider_compras'
-    LIDER_COMERCIAL_ECONORTE = 'lider_com_econorte'
-    LIDER_LOGISTICA_ECONORTE = 'lider_log_econorte'
     LIDER_CALIDAD = 'lider_calidad'
     LIDER_SST = 'lider_sst'
     LIDER_TALENTO_HUMANO = 'lider_talento_humano'
@@ -177,7 +163,6 @@ class CargoCodes:
     JEFE_PLANTA = 'jefe_planta'
 
     # Nivel 1 - Supervision
-    COMERCIAL_ECONORTE = 'comercial_econorte'
     COORDINADOR_RECOLECCION = 'coordinador_recoleccion'
     OPERADOR_BASCULA = 'operador_bascula'
     SUPERVISOR_PLANTA = 'supervisor_planta'
@@ -186,7 +171,6 @@ class CargoCodes:
     PROFESIONAL_AMBIENTAL = 'profesional_ambiental'
 
     # Nivel 0 - Operativo
-    RECOLECTOR_ECONORTE = 'recolector_econorte'
     AUXILIAR_OPERACIONES = 'auxiliar_operaciones'
 
 
@@ -286,14 +270,6 @@ PERMISSIONS_DEFINITIONS = [
     {'code': PermissionCodes.RECEPCIONES.CANCEL, 'name': 'Cancelar recepcion', 'module': 'RECEPCIONES', 'action': 'EDIT', 'scope': 'ALL'},
     {'code': PermissionCodes.RECEPCIONES.STANDBY, 'name': 'Pasar a standby', 'module': 'RECEPCIONES', 'action': 'EDIT', 'scope': 'ALL'},
 
-    # Certificados
-    {'code': PermissionCodes.CERTIFICADOS.VIEW_LIST, 'name': 'Ver lista de certificados', 'module': 'CERTIFICADOS', 'action': 'VIEW', 'scope': 'ALL'},
-    {'code': PermissionCodes.CERTIFICADOS.VIEW_DETAIL, 'name': 'Ver detalle de certificado', 'module': 'CERTIFICADOS', 'action': 'VIEW', 'scope': 'ALL'},
-    {'code': PermissionCodes.CERTIFICADOS.CREATE, 'name': 'Crear certificado', 'module': 'CERTIFICADOS', 'action': 'CREATE', 'scope': 'ALL'},
-    {'code': PermissionCodes.CERTIFICADOS.DELETE, 'name': 'Eliminar certificado', 'module': 'CERTIFICADOS', 'action': 'DELETE', 'scope': 'ALL'},
-    {'code': PermissionCodes.CERTIFICADOS.GENERATE, 'name': 'Generar certificado', 'module': 'CERTIFICADOS', 'action': 'CREATE', 'scope': 'ALL'},
-    {'code': PermissionCodes.CERTIFICADOS.DOWNLOAD, 'name': 'Descargar certificado', 'module': 'CERTIFICADOS', 'action': 'EXPORT', 'scope': 'ALL'},
-
     # Usuarios
     {'code': PermissionCodes.USERS.VIEW_LIST, 'name': 'Ver lista de usuarios', 'module': 'CORE', 'action': 'VIEW', 'scope': 'ALL'},
     {'code': PermissionCodes.USERS.VIEW_DETAIL, 'name': 'Ver detalle de usuario', 'module': 'CORE', 'action': 'VIEW', 'scope': 'ALL'},
@@ -333,8 +309,6 @@ CARGOS_DEFINITIONS = [
     # Nivel 2 - Coordinacion
     {'code': CargoCodes.LIDER_COMERCIAL, 'name': 'Lider Comercial', 'level': 2},
     {'code': CargoCodes.LIDER_COMPRAS, 'name': 'Lider de Compras', 'level': 2},
-    {'code': CargoCodes.LIDER_COMERCIAL_ECONORTE, 'name': 'Lider Comercial EcoNorte', 'level': 2},
-    {'code': CargoCodes.LIDER_LOGISTICA_ECONORTE, 'name': 'Lider Logistica EcoNorte', 'level': 2},
     {'code': CargoCodes.LIDER_CALIDAD, 'name': 'Lider de Calidad', 'level': 2},
     {'code': CargoCodes.LIDER_SST, 'name': 'Lider SST', 'level': 2},
     {'code': CargoCodes.LIDER_TALENTO_HUMANO, 'name': 'Lider Talento Humano', 'level': 2},
@@ -342,7 +316,6 @@ CARGOS_DEFINITIONS = [
     {'code': CargoCodes.JEFE_PLANTA, 'name': 'Jefe de Planta', 'level': 2},
 
     # Nivel 1 - Supervision
-    {'code': CargoCodes.COMERCIAL_ECONORTE, 'name': 'Comercial EcoNorte', 'level': 1},
     {'code': CargoCodes.COORDINADOR_RECOLECCION, 'name': 'Coordinador de Recoleccion', 'level': 1},
     {'code': CargoCodes.OPERADOR_BASCULA, 'name': 'Operador de Bascula', 'level': 1},
     {'code': CargoCodes.SUPERVISOR_PLANTA, 'name': 'Supervisor de Planta', 'level': 1},
@@ -351,7 +324,6 @@ CARGOS_DEFINITIONS = [
     {'code': CargoCodes.PROFESIONAL_AMBIENTAL, 'name': 'Profesional Ambiental', 'level': 1},
 
     # Nivel 0 - Operativo
-    {'code': CargoCodes.RECOLECTOR_ECONORTE, 'name': 'Recolector EcoNorte', 'level': 0},
     {'code': CargoCodes.AUXILIAR_OPERACIONES, 'name': 'Auxiliar de Operaciones', 'level': 0},
 ]
 

@@ -86,17 +86,6 @@ export const PermissionCodes = {
     STANDBY: 'recepciones.standby',
   },
 
-  // ==================== CERTIFICADOS ====================
-  CERTIFICADOS: {
-    MODULE: 'certificados',
-    VIEW_LIST: 'certificados.view_list',
-    VIEW_DETAIL: 'certificados.view_detail',
-    CREATE: 'certificados.create',
-    DELETE: 'certificados.delete',
-    GENERATE: 'certificados.generate',
-    DOWNLOAD: 'certificados.download',
-  },
-
   // ==================== USUARIOS (CORE) ====================
   USERS: {
     MODULE: 'users',
@@ -147,8 +136,6 @@ export const CargoCodes = {
   // Nivel 2 - Coordinacion
   LIDER_COMERCIAL: 'lider_comercial',
   LIDER_COMPRAS: 'lider_compras',
-  LIDER_COMERCIAL_ECONORTE: 'lider_com_econorte',
-  LIDER_LOGISTICA_ECONORTE: 'lider_log_econorte',
   LIDER_CALIDAD: 'lider_calidad',
   LIDER_SST: 'lider_sst',
   LIDER_TALENTO_HUMANO: 'lider_talento_humano',
@@ -156,7 +143,6 @@ export const CargoCodes = {
   JEFE_PLANTA: 'jefe_planta',
 
   // Nivel 1 - Supervision
-  COMERCIAL_ECONORTE: 'comercial_econorte',
   COORDINADOR_RECOLECCION: 'coordinador_recoleccion',
   OPERADOR_BASCULA: 'operador_bascula',
   SUPERVISOR_PLANTA: 'supervisor_planta',
@@ -165,7 +151,6 @@ export const CargoCodes = {
   PROFESIONAL_AMBIENTAL: 'profesional_ambiental',
 
   // Nivel 0 - Operativo
-  RECOLECTOR_ECONORTE: 'recolector_econorte',
   AUXILIAR_OPERACIONES: 'auxiliar_operaciones',
 } as const;
 
@@ -230,23 +215,11 @@ export const VIEWERS_CARGOS: CargoCode[] = [
   CargoCodes.ADMIN,
   CargoCodes.LIDER_COMERCIAL,
   CargoCodes.LIDER_COMPRAS,
-  CargoCodes.LIDER_COMERCIAL_ECONORTE,
-  CargoCodes.LIDER_LOGISTICA_ECONORTE,
   CargoCodes.LIDER_CALIDAD,
   CargoCodes.LIDER_SST,
   CargoCodes.LIDER_TALENTO_HUMANO,
   CargoCodes.CONTADOR,
   CargoCodes.JEFE_PLANTA,
-];
-
-/**
- * Cargos del equipo EcoNorte (recolecciones)
- */
-export const ECONORTE_CARGOS: CargoCode[] = [
-  CargoCodes.LIDER_COMERCIAL_ECONORTE,
-  CargoCodes.LIDER_LOGISTICA_ECONORTE,
-  CargoCodes.COMERCIAL_ECONORTE,
-  CargoCodes.RECOLECTOR_ECONORTE,
 ];
 
 /**
@@ -278,8 +251,6 @@ export const COORDINATION_LEVEL_CARGOS: CargoCode[] = [
   CargoCodes.ADMIN,
   CargoCodes.LIDER_COMERCIAL,
   CargoCodes.LIDER_COMPRAS,
-  CargoCodes.LIDER_COMERCIAL_ECONORTE,
-  CargoCodes.LIDER_LOGISTICA_ECONORTE,
   CargoCodes.LIDER_CALIDAD,
   CargoCodes.LIDER_SST,
   CargoCodes.LIDER_TALENTO_HUMANO,

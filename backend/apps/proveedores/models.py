@@ -8,9 +8,9 @@ Define:
 - CondicionComercialProveedor: Condiciones comerciales para productos/servicios
 """
 from django.db import models
+from django.conf import settings
 from django.utils import timezone
 from django.core.exceptions import ValidationError
-from apps.core.models import User
 from .constants import (
     TIPO_CUENTA_CHOICES,
     DEPARTAMENTOS_COLOMBIA,
@@ -73,7 +73,7 @@ class UnidadNegocio(models.Model):
         help_text='Departamento de Colombia'
     )
     responsable = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name='unidades_negocio_responsable',
         null=True,
@@ -346,7 +346,7 @@ class Proveedor(models.Model):
         help_text='Si el proveedor está activo'
     )
     created_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         related_name='proveedores_creados',
         null=True,
@@ -594,7 +594,7 @@ class PrecioMateriaPrima(models.Model):
         help_text='Precio de compra por kilogramo'
     )
     modificado_por = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name='precios_materia_modificados',
         verbose_name='Modificado por',
@@ -705,7 +705,7 @@ class HistorialPrecioProveedor(models.Model):
         help_text='Nuevo precio por kg'
     )
     modificado_por = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name='historiales_precio_proveedor',
         verbose_name='Modificado por',
@@ -814,7 +814,7 @@ class CondicionComercialProveedor(models.Model):
         help_text='Fecha hasta la cual es válida la condición (null = indefinida)'
     )
     created_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         related_name='condiciones_comerciales_creadas',
         null=True,
@@ -1005,7 +1005,7 @@ class PruebaAcidez(models.Model):
 
     # ============ AUDITORÍA ============
     realizado_por = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name='pruebas_acidez_realizadas',
         verbose_name='Realizado por',

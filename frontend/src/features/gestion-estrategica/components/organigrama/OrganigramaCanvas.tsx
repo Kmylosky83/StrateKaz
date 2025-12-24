@@ -20,6 +20,7 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import { useQuery } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import axiosInstance from '@/api/axios-config';
 import { Card, EmptyState, Spinner } from '@/components/common';
 import { Building2, Network } from 'lucide-react';
@@ -30,7 +31,7 @@ import CompactNode from './CompactNode';
 import OrganigramaToolbar from './OrganigramaToolbar';
 
 import { generateLayout } from '../../utils/organigramaLayout';
-import { exportOrganigrama } from '../../utils/organigramaExport';
+import { exportOrganigrama, ExportError } from '../../utils/organigramaExport';
 import type {
   OrganigramaResponse,
   ViewMode,
@@ -75,6 +76,7 @@ const OrganigramaCanvasInner = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('cargos');
   const [filters, setFilters] = useState<OrganigramaFilters>(DEFAULT_FILTERS);
   const [config, setConfig] = useState<CanvasConfig>(DEFAULT_CANVAS_CONFIG);
+  const [isExporting, setIsExporting] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [nodes, setNodes, onNodesChange] = useNodesState<any>([]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -161,10 +163,26 @@ const OrganigramaCanvasInner = () => {
 
   const handleExport = useCallback(
     async (format: ExportFormat) => {
-      if (!canvasRef.current) return;
+      if (!canvasRef.current) {
+        toast.error('No se pudo encontrar el organigrama para exportar');
+        return;
+      }
 
       const exportElement = canvasRef.current.querySelector('.react-flow__viewport') as HTMLElement;
-      if (!exportElement) return;
+      if (!exportElement) {
+        toast.error('No se pudo encontrar el canvas del organigrama');
+        return;
+      }
+
+      setIsExporting(true);
+
+      // Mostrar toast de loading
+      const loadingToast = toast.loading(
+        `Exportando organigrama como ${format.toUpperCase()}...`,
+        {
+          duration: Infinity,
+        }
+      );
 
       try {
         await exportOrganigrama(
@@ -173,8 +191,34 @@ const OrganigramaCanvasInner = () => {
           data?.stats,
           'Organigrama Organizacional'
         );
+
+        // Éxito
+        toast.success(
+          `Organigrama exportado exitosamente como ${format.toUpperCase()}`,
+          {
+            id: loadingToast,
+            duration: 3000,
+          }
+        );
       } catch (error) {
         console.error('Error al exportar:', error);
+
+        // Determinar mensaje de error específico
+        let errorMessage = 'No se pudo exportar el organigrama';
+
+        if (error instanceof ExportError) {
+          errorMessage = error.message;
+        } else if (error instanceof Error) {
+          errorMessage = error.message;
+        }
+
+        // Mostrar error
+        toast.error(errorMessage, {
+          id: loadingToast,
+          duration: 5000,
+        });
+      } finally {
+        setIsExporting(false);
       }
     },
     [data?.stats]
@@ -248,6 +292,7 @@ const OrganigramaCanvasInner = () => {
         onCollapseAll={handleCollapseAll}
         stats={data?.stats}
         isLoading={isLoading}
+        isExporting={isExporting}
       />
 
       {/* Canvas */}

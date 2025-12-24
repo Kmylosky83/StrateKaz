@@ -7,11 +7,11 @@ from .models import Area
 
 @admin.register(Area)
 class AreaAdmin(admin.ModelAdmin):
-    list_display = ['code', 'name', 'parent', 'cost_center', 'manager', 'is_active', 'order']
+    list_display = ['code', 'name', 'parent', 'cost_center', 'manager', 'is_active', 'orden']
     list_filter = ['is_active', 'parent']
     search_fields = ['code', 'name', 'description', 'cost_center']
-    ordering = ['order', 'name']
-    list_editable = ['order', 'is_active']
+    ordering = ['orden', 'name']
+    list_editable = ['orden', 'is_active']
     raw_id_fields = ['parent', 'manager', 'created_by']
 
     fieldsets = (
@@ -19,7 +19,7 @@ class AreaAdmin(admin.ModelAdmin):
             'fields': ('code', 'name', 'description')
         }),
         ('Jerarquía', {
-            'fields': ('parent', 'order')
+            'fields': ('parent', 'orden')
         }),
         ('Gestión', {
             'fields': ('cost_center', 'manager', 'is_active')

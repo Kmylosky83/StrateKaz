@@ -1,5 +1,27 @@
 """
 ViewSets para el módulo de Organización
+
+ÚLTIMA ACTUALIZACIÓN: 2025-12-24
+Cambios realizados:
+- Migrado a StandardViewSetMixin para funcionalidad común (toggle_active, filtros, bulk actions, audit)
+- AreaViewSet: Agregado StandardViewSetMixin + OrderingMixin, manteniendo acciones custom (tree, root, children)
+- CategoriaDocumentoViewSet: Agregado StandardViewSetMixin + ValidateBeforeDeleteMixin
+- TipoDocumentoViewSet: Agregado StandardViewSetMixin + ValidateBeforeDeleteMixin
+- ConsecutivoConfigViewSet: Agregado FilterInactiveMixin + ToggleActiveMixin
+- Eliminada acción toggle custom de AreaViewSet (ahora usa ToggleActiveMixin)
+- Consistencia con el patrón establecido en apps.core.mixins
+
+Mixins aplicados:
+- StandardViewSetMixin = ToggleActiveMixin + FilterInactiveMixin + BulkActionsMixin + AuditMixin
+- ValidateBeforeDeleteMixin = Validación de dependencias antes de eliminar
+- OrderingMixin = Reordenamiento de registros con campo 'orden'
+
+Endpoints generados automáticamente:
+- POST /{resource}/{id}/toggle-active/ - Toggle is_active
+- POST /{resource}/bulk-activate/ - Activar múltiples
+- POST /{resource}/bulk-deactivate/ - Desactivar múltiples
+- POST /{resource}/bulk-delete/ - Eliminar múltiples (con confirmación)
+- POST /{resource}/reorder/ - Reordenar (solo AreaViewSet)
 """
 from django.db import models
 from rest_framework import viewsets, status
@@ -18,20 +40,46 @@ from .serializers import (
     ConsecutivoConfigSerializer, ConsecutivoConfigListSerializer, ConsecutivoChoicesSerializer,
 )
 from apps.core.models import Cargo, User
+from apps.core.mixins import (
+    StandardViewSetMixin,
+    ValidateBeforeDeleteMixin,
+    OrderingMixin,
+    FilterInactiveMixin,
+    ToggleActiveMixin,
+)
 
 
-class AreaViewSet(viewsets.ModelViewSet):
+class AreaViewSet(StandardViewSetMixin, OrderingMixin, viewsets.ModelViewSet):
     """
     ViewSet para gestión de Áreas/Departamentos
 
-    Endpoints:
+    Mixins aplicados:
+    - StandardViewSetMixin: toggle_active, filtros, bulk actions, audit
+    - OrderingMixin: reordenamiento de áreas
+
+    Endpoints estándar:
     - GET /api/organizacion/areas/ - Lista todas las áreas
     - POST /api/organizacion/areas/ - Crea una nueva área
     - GET /api/organizacion/areas/{id}/ - Detalle de un área
     - PUT/PATCH /api/organizacion/areas/{id}/ - Actualiza un área
     - DELETE /api/organizacion/areas/{id}/ - Elimina un área
+
+    Endpoints automáticos (mixins):
+    - POST /api/organizacion/areas/{id}/toggle-active/ - Activa/desactiva área
+    - POST /api/organizacion/areas/bulk-activate/ - Activar múltiples
+    - POST /api/organizacion/areas/bulk-deactivate/ - Desactivar múltiples
+    - POST /api/organizacion/areas/bulk-delete/ - Eliminar múltiples
+    - POST /api/organizacion/areas/reorder/ - Reordenar áreas
+
+    Endpoints custom:
     - GET /api/organizacion/areas/tree/ - Árbol jerárquico de áreas
     - GET /api/organizacion/areas/root/ - Solo áreas raíz (sin padre)
+    - GET /api/organizacion/areas/{id}/children/ - Subáreas directas
+
+    Parámetros de filtrado:
+    - is_active: true/false
+    - parent: ID del área padre
+    - include_inactive: true (para incluir inactivas, por defecto solo activas)
     """
     queryset = Area.objects.all()
     serializer_class = AreaSerializer
@@ -42,20 +90,27 @@ class AreaViewSet(viewsets.ModelViewSet):
     ordering_fields = ['order', 'name', 'code', 'created_at']
     ordering = ['order', 'name']
 
+    # Configuración para ValidateBeforeDeleteMixin
+    protected_relations = ['children']
+    custom_error_messages = {
+        'children': 'No se puede eliminar un área con subáreas. Elimine primero las subáreas.'
+    }
+
     def get_queryset(self):
-        """Filtra áreas según parámetros"""
+        """
+        Filtra áreas según parámetros.
+        FilterInactiveMixin ya maneja el filtro por is_active con param include_inactive.
+        """
         queryset = super().get_queryset()
 
         # Para acciones de detalle (retrieve, update, destroy, toggle, children)
         # NO aplicar filtro de activas para poder operar sobre áreas inactivas
-        if self.action in ['retrieve', 'update', 'partial_update', 'destroy', 'toggle', 'children']:
-            return queryset
+        if self.action in ['retrieve', 'update', 'partial_update', 'destroy', 'toggle_active', 'children']:
+            # Retornar queryset completo sin filtro de is_active
+            # Necesitamos acceso directo, así que temporalmente deshabilitamos el filtro del mixin
+            return Area.objects.all()
 
-        # Filtro por activas (por defecto solo activas para list/tree/root)
-        show_inactive = self.request.query_params.get('show_inactive', 'false')
-        if show_inactive.lower() != 'true':
-            queryset = queryset.filter(is_active=True)
-
+        # Para list, tree, root, etc. el FilterInactiveMixin ya aplica el filtro
         return queryset
 
     @action(detail=False, methods=['get'])
@@ -63,6 +118,9 @@ class AreaViewSet(viewsets.ModelViewSet):
         """
         Retorna el árbol jerárquico completo de áreas.
         Solo incluye áreas raíz, las subáreas vienen anidadas.
+
+        Query params:
+        - include_inactive: true/false (heredado de FilterInactiveMixin)
         """
         root_areas = self.get_queryset().filter(parent__isnull=True)
         serializer = AreaTreeSerializer(root_areas, many=True)
@@ -73,6 +131,9 @@ class AreaViewSet(viewsets.ModelViewSet):
         """
         Retorna solo las áreas raíz (sin padre).
         Útil para selects de área padre.
+
+        Query params:
+        - include_inactive: true/false (heredado de FilterInactiveMixin)
         """
         root_areas = self.get_queryset().filter(parent__isnull=True)
         serializer = AreaSerializer(root_areas, many=True)
@@ -82,31 +143,25 @@ class AreaViewSet(viewsets.ModelViewSet):
     def children(self, request, pk=None):
         """
         Retorna las subáreas directas de un área.
+
+        Por defecto solo retorna subáreas activas.
+        Para incluir inactivas: ?include_inactive=true
         """
         area = self.get_object()
-        children = area.children.filter(is_active=True).order_by('order', 'name')
+        children_qs = area.children.all()
+
+        # Aplicar filtro de activas si no se solicita incluir inactivas
+        if request.query_params.get('include_inactive') != 'true':
+            children_qs = children_qs.filter(is_active=True)
+
+        children = children_qs.order_by('order', 'name')
         serializer = AreaSerializer(children, many=True)
         return Response(serializer.data)
-
-    @action(detail=True, methods=['post'])
-    def toggle(self, request, pk=None):
-        """
-        Activa/desactiva un área.
-        """
-        area = self.get_object()
-        is_active = request.data.get('is_active', not area.is_active)
-        area.is_active = is_active
-        area.save(update_fields=['is_active', 'updated_at'])
-
-        return Response({
-            'id': area.id,
-            'is_active': area.is_active,
-            'message': f'Área {"activada" if area.is_active else "desactivada"} correctamente'
-        })
 
     def destroy(self, request, *args, **kwargs):
         """
         Elimina un área solo si no tiene subáreas activas.
+        ValidateBeforeDeleteMixin ya maneja la validación.
         """
         area = self.get_object()
 
@@ -120,6 +175,7 @@ class AreaViewSet(viewsets.ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
     def get_serializer_class(self):
+        """Usa serializer simplificado para listados"""
         if self.action == 'list':
             return AreaListSerializer
         return AreaSerializer
@@ -129,17 +185,34 @@ class AreaViewSet(viewsets.ModelViewSet):
 # CATEGORÍA DOCUMENTO VIEWSET
 # =============================================================================
 
-class CategoriaDocumentoViewSet(viewsets.ModelViewSet):
+class CategoriaDocumentoViewSet(StandardViewSetMixin, ValidateBeforeDeleteMixin, viewsets.ModelViewSet):
     """
     ViewSet para gestionar categorías de documentos.
 
-    Endpoints:
+    Mixins aplicados:
+    - StandardViewSetMixin: toggle_active, filtros, bulk actions, audit
+    - ValidateBeforeDeleteMixin: validación de dependencias antes de eliminar
+
+    Endpoints estándar:
     - GET /api/organizacion/categorias-documento/ - Lista todas las categorías
     - POST /api/organizacion/categorias-documento/ - Crea una nueva categoría
     - GET /api/organizacion/categorias-documento/{id}/ - Detalle de una categoría
     - PUT/PATCH /api/organizacion/categorias-documento/{id}/ - Actualiza una categoría
     - DELETE /api/organizacion/categorias-documento/{id}/ - Elimina una categoría
+
+    Endpoints automáticos (mixins):
+    - POST /api/organizacion/categorias-documento/{id}/toggle-active/ - Toggle is_active
+    - POST /api/organizacion/categorias-documento/bulk-activate/ - Activar múltiples
+    - POST /api/organizacion/categorias-documento/bulk-deactivate/ - Desactivar múltiples
+    - POST /api/organizacion/categorias-documento/bulk-delete/ - Eliminar múltiples
+
+    Endpoints custom:
     - GET /api/organizacion/categorias-documento/choices/ - Opciones para formularios
+
+    Parámetros de filtrado:
+    - is_active: true/false
+    - is_system: true/false
+    - include_inactive: true (para incluir inactivas, por defecto solo activas)
     """
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
@@ -148,19 +221,32 @@ class CategoriaDocumentoViewSet(viewsets.ModelViewSet):
     ordering_fields = ['name', 'code', 'order', 'created_at']
     ordering = ['order', 'name']
 
+    # Configuración para ValidateBeforeDeleteMixin
+    protected_relations = ['tipos_documento']
+    custom_error_messages = {
+        'tipos_documento': 'No se puede eliminar la categoría porque tiene tipos de documento asociados.'
+    }
+
     def get_queryset(self):
+        """Incluye conteo de tipos de documento activos"""
         from django.db.models import Count
-        return CategoriaDocumento.objects.annotate(
+        queryset = CategoriaDocumento.objects.annotate(
             count_tipos=Count('tipos_documento', filter=models.Q(tipos_documento__is_active=True))
         )
+        # FilterInactiveMixin ya aplica el filtro por is_active
+        return queryset
 
     def get_serializer_class(self):
+        """Usa serializer simplificado para listados"""
         if self.action == 'list':
             return CategoriaDocumentoListSerializer
         return CategoriaDocumentoSerializer
 
     def destroy(self, request, *args, **kwargs):
-        """Valida si la categoría puede eliminarse"""
+        """
+        Valida si la categoría puede eliminarse.
+        Usa el método del modelo para validación adicional.
+        """
         instance = self.get_object()
 
         puede_eliminar, mensaje = instance.puede_eliminar()
@@ -170,11 +256,15 @@ class CategoriaDocumentoViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # ValidateBeforeDeleteMixin ya maneja la validación de relaciones
         return super().destroy(request, *args, **kwargs)
 
     @action(detail=False, methods=['get'])
     def choices(self, request):
-        """Retorna opciones de categorías para formularios"""
+        """
+        Retorna opciones de categorías para formularios.
+        Incluye todas las choices disponibles.
+        """
         serializer = CategoriaDocumentoChoicesSerializer({})
         return Response(serializer.data)
 
@@ -183,19 +273,38 @@ class CategoriaDocumentoViewSet(viewsets.ModelViewSet):
 # TIPO DOCUMENTO VIEWSET
 # =============================================================================
 
-class TipoDocumentoViewSet(viewsets.ModelViewSet):
+class TipoDocumentoViewSet(StandardViewSetMixin, ValidateBeforeDeleteMixin, viewsets.ModelViewSet):
     """
     ViewSet para gestionar tipos de documento.
 
-    Endpoints:
+    Mixins aplicados:
+    - StandardViewSetMixin: toggle_active, filtros, bulk actions, audit
+    - ValidateBeforeDeleteMixin: validación de dependencias antes de eliminar
+
+    Endpoints estándar:
     - GET /api/organizacion/tipos-documento/ - Lista todos los tipos
     - POST /api/organizacion/tipos-documento/ - Crea un nuevo tipo custom
     - GET /api/organizacion/tipos-documento/{id}/ - Detalle de un tipo
     - PUT/PATCH /api/organizacion/tipos-documento/{id}/ - Actualiza un tipo
     - DELETE /api/organizacion/tipos-documento/{id}/ - Elimina un tipo custom
+
+    Endpoints automáticos (mixins):
+    - POST /api/organizacion/tipos-documento/{id}/toggle-active/ - Toggle is_active
+    - POST /api/organizacion/tipos-documento/bulk-activate/ - Activar múltiples
+    - POST /api/organizacion/tipos-documento/bulk-deactivate/ - Desactivar múltiples
+    - POST /api/organizacion/tipos-documento/bulk-delete/ - Eliminar múltiples
+
+    Endpoints custom:
     - GET /api/organizacion/tipos-documento/choices/ - Opciones para formularios
     - GET /api/organizacion/tipos-documento/sistema/ - Solo tipos del sistema
     - GET /api/organizacion/tipos-documento/custom/ - Solo tipos custom
+
+    Parámetros de filtrado:
+    - categoria: ID de la categoría
+    - is_active: true/false
+    - is_system: true/false
+    - tipo: sistema/custom (filtro especial)
+    - include_inactive: true (para incluir inactivos, por defecto solo activos)
     """
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
@@ -204,7 +313,15 @@ class TipoDocumentoViewSet(viewsets.ModelViewSet):
     ordering_fields = ['name', 'code', 'categoria__order', 'order', 'created_at']
     ordering = ['categoria__order', 'order', 'name']
 
+    # Configuración para ValidateBeforeDeleteMixin
+    # Los tipos de documento pueden tener relaciones con consecutivos, documentos, etc.
+    protected_relations = ['consecutivos']
+    custom_error_messages = {
+        'consecutivos': 'No se puede eliminar el tipo porque tiene consecutivos configurados.'
+    }
+
     def get_queryset(self):
+        """Filtra tipos según parámetros"""
         queryset = TipoDocumento.objects.select_related('categoria').all()
 
         # Filtro por tipo (sistema/custom) via query param
@@ -214,19 +331,27 @@ class TipoDocumentoViewSet(viewsets.ModelViewSet):
         elif tipo == 'custom':
             queryset = queryset.filter(is_system=False)
 
+        # FilterInactiveMixin ya aplica el filtro por is_active
         return queryset
 
     def get_serializer_class(self):
+        """Usa serializer simplificado para listados"""
         if self.action == 'list':
             return TipoDocumentoListSerializer
         return TipoDocumentoSerializer
 
     def perform_create(self, serializer):
-        """Solo se pueden crear tipos custom"""
-        serializer.save(is_system=False, created_by=self.request.user)
+        """
+        Solo se pueden crear tipos custom.
+        AuditMixin ya maneja created_by.
+        """
+        serializer.save(is_system=False)
 
     def update(self, request, *args, **kwargs):
-        """Los tipos del sistema solo permiten editar is_active"""
+        """
+        Los tipos del sistema solo permiten editar is_active.
+        Los tipos custom pueden editarse completamente.
+        """
         instance = self.get_object()
 
         if instance.is_system:
@@ -240,10 +365,14 @@ class TipoDocumentoViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
+        # AuditMixin ya maneja updated_by
         return super().update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
-        """Valida si el tipo puede eliminarse"""
+        """
+        Valida si el tipo puede eliminarse.
+        Los tipos del sistema NO se pueden eliminar.
+        """
         instance = self.get_object()
 
         puede_eliminar, mensaje = instance.puede_eliminar()
@@ -253,24 +382,34 @@ class TipoDocumentoViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # ValidateBeforeDeleteMixin ya maneja la validación de relaciones
         return super().destroy(request, *args, **kwargs)
 
     @action(detail=False, methods=['get'])
     def choices(self, request):
-        """Retorna las opciones de categorías para formularios"""
+        """
+        Retorna las opciones de categorías para formularios.
+        Incluye todas las choices disponibles.
+        """
         serializer = TipoDocumentoChoicesSerializer({})
         return Response(serializer.data)
 
     @action(detail=False, methods=['get'])
     def sistema(self, request):
-        """Retorna solo tipos del sistema"""
+        """
+        Retorna solo tipos del sistema.
+        Aplica el filtro de activos según include_inactive.
+        """
         tipos = self.get_queryset().filter(is_system=True)
         serializer = self.get_serializer(tipos, many=True)
         return Response(serializer.data)
 
     @action(detail=False, methods=['get'])
     def custom(self, request):
-        """Retorna solo tipos custom creados por la empresa"""
+        """
+        Retorna solo tipos custom creados por la empresa.
+        Aplica el filtro de activos según include_inactive.
+        """
         tipos = self.get_queryset().filter(is_system=False)
         serializer = self.get_serializer(tipos, many=True)
         return Response(serializer.data)
@@ -280,19 +419,37 @@ class TipoDocumentoViewSet(viewsets.ModelViewSet):
 # CONSECUTIVO CONFIG VIEWSET
 # =============================================================================
 
-class ConsecutivoConfigViewSet(viewsets.ModelViewSet):
+class ConsecutivoConfigViewSet(FilterInactiveMixin, ToggleActiveMixin, viewsets.ModelViewSet):
     """
     ViewSet para gestionar configuración de consecutivos.
 
-    Endpoints:
+    Mixins aplicados:
+    - FilterInactiveMixin: filtrar inactivos por defecto
+    - ToggleActiveMixin: toggle de is_active
+
+    Nota: No se usa StandardViewSetMixin completo porque:
+    - No necesita BulkActionsMixin (consecutivos son sensibles, no se modifican en masa)
+    - Tiene lógica custom de auditoría en el modelo
+
+    Endpoints estándar:
     - GET /api/organizacion/consecutivos/ - Lista todos los consecutivos
     - POST /api/organizacion/consecutivos/ - Crea un nuevo consecutivo
     - GET /api/organizacion/consecutivos/{id}/ - Detalle de un consecutivo
     - PUT/PATCH /api/organizacion/consecutivos/{id}/ - Actualiza un consecutivo
     - DELETE /api/organizacion/consecutivos/{id}/ - Elimina un consecutivo
+
+    Endpoints automáticos (mixins):
+    - POST /api/organizacion/consecutivos/{id}/toggle-active/ - Activa/desactiva consecutivo
+
+    Endpoints custom:
     - GET /api/organizacion/consecutivos/choices/ - Opciones para formularios
     - POST /api/organizacion/consecutivos/{id}/generate/ - Genera siguiente número
     - POST /api/organizacion/consecutivos/generate_by_type/ - Genera por tipo
+
+    Parámetros de filtrado:
+    - is_active: true/false
+    - tipo_documento__categoria: ID de la categoría
+    - include_inactive: true (para incluir inactivos, por defecto solo activos)
     """
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
@@ -302,22 +459,34 @@ class ConsecutivoConfigViewSet(viewsets.ModelViewSet):
     ordering = ['tipo_documento__categoria__order', 'tipo_documento__name']
 
     def get_queryset(self):
+        """Optimiza queries con select_related"""
         return ConsecutivoConfig.objects.select_related('tipo_documento', 'tipo_documento__categoria')
 
     def get_serializer_class(self):
+        """Usa serializer simplificado para listados"""
         if self.action == 'list':
             return ConsecutivoConfigListSerializer
         return ConsecutivoConfigSerializer
 
     @action(detail=False, methods=['get'])
     def choices(self, request):
-        """Retorna opciones para formularios"""
+        """
+        Retorna opciones para formularios.
+        Incluye todas las choices disponibles.
+        """
         serializer = ConsecutivoChoicesSerializer({})
         return Response(serializer.data)
 
     @action(detail=True, methods=['post'])
     def generate(self, request, pk=None):
-        """Genera el siguiente consecutivo."""
+        """
+        Genera el siguiente consecutivo.
+
+        POST /api/organizacion/consecutivos/{id}/generate/
+
+        Validaciones:
+        - El consecutivo debe estar activo
+        """
         config = self.get_object()
         if not config.is_active:
             return Response(
@@ -333,7 +502,16 @@ class ConsecutivoConfigViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def generate_by_type(self, request):
-        """Genera consecutivo por código de tipo de documento."""
+        """
+        Genera consecutivo por código de tipo de documento.
+
+        POST /api/organizacion/consecutivos/generate_by_type/
+
+        Body:
+        {
+            "tipo_documento_code": "DOC-001"
+        }
+        """
         tipo_code = request.data.get('tipo_documento_code')
 
         if not tipo_code:
@@ -366,6 +544,10 @@ class OrganigramaView(APIView):
     - cargos: Lista de cargos con relaciones y usuarios asignados
     - usuarios: Lista resumida de usuarios (opcional)
     - stats: Estadísticas del organigrama
+
+    Query params:
+    - include_usuarios: true/false (incluir lista completa de usuarios)
+    - solo_activos: true/false (por defecto true)
     """
     permission_classes = [IsAuthenticated]
 

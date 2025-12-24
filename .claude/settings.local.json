@@ -66,7 +66,21 @@
       "Bash(move CELERY_COMMANDS.md docs/desarrollo/celery/)",
       "Bash(move CELERY_QUICKSTART.md docs/desarrollo/celery/)",
       "Bash(move:*)",
-      "Bash(move \"docs/REDIS-CELERY-GUIDE.md\" docs/desarrollo/celery/)"
+      "Bash(move \"docs/REDIS-CELERY-GUIDE.md\" docs/desarrollo/celery/)",
+      "Bash(docker-compose ps:*)",
+      "Bash(docker-compose restart:*)",
+      "Bash(docker-compose logs:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(python3 -m pytest:*)",
+      "Bash(py -m pytest apps/gestion_estrategica/configuracion/tests/test_empresa_config.py -v --tb=short)",
+      "Bash(py -m pytest apps/gestion_estrategica/organizacion/tests/test_consecutivo.py -v)",
+      "Bash(echo:*)",
+      "Bash(/c/Python313/python.exe -m pytest:*)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(npm test:*)",
+      "Bash(npm install)",
+      "Bash(py -m pytest:*)",
+      "Bash(python -c:*)"
     ],
     "deny": [],
     "ask": []

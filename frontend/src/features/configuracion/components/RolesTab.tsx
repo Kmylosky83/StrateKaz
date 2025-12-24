@@ -1,7 +1,15 @@
 /**
- * Tab de gestión de Roles (RBAC Híbrido)
+ * Tab de gestión de Roles (RBAC Híbrido) - COMPONENTE LEGACY
  *
- * Muestra:
+ * IMPORTANTE: Este componente NO se usa actualmente en la aplicación.
+ * La funcionalidad de roles está implementada en:
+ * - gestion-estrategica/components/rbac/RolesPermisosWrapper.tsx (wrapper con subtabs)
+ * - gestion-estrategica/components/rbac/RolesAdicionalesSubTab.tsx (gestión completa)
+ *
+ * Este archivo se mantiene por compatibilidad y referencia histórica.
+ * Se exporta en configuracion/index.ts pero no se importa en ningún componente activo.
+ *
+ * Contenido original:
  * - Plantillas sugeridas (roles predefinidos)
  * - Tabla de roles adicionales existentes
  * - CRUD de roles

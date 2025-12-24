@@ -1,14 +1,44 @@
 """
 Modelos del módulo Identidad Corporativa - Dirección Estratégica
 
-Secciones: mision_vision, valores, politica
+Secciones: mision_vision, valores, politica, alcances, politicas_especificas
+
+Modelos:
+- CorporateIdentity: Identidad corporativa (misión, visión, política integral)
+- CorporateValue: Valores corporativos
+- AlcanceSistema: Alcance del sistema de gestión por norma ISO
+- PoliticaIntegral: Versiones de la política integral con firma digital
+- PoliticaEspecifica: Políticas específicas por área/módulo
 """
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
 
+from apps.core.base_models import TimestampedModel, AuditModel, SoftDeleteModel, OrderedModel
 
-class CorporateIdentity(models.Model):
+
+# =============================================================================
+# CHOICES COMPARTIDOS
+# =============================================================================
+
+ISO_STANDARD_CHOICES = [
+    ('ISO_9001', 'ISO 9001 - Calidad'),
+    ('ISO_14001', 'ISO 14001 - Ambiental'),
+    ('ISO_45001', 'ISO 45001 - SST'),
+    ('ISO_27001', 'ISO 27001 - Seguridad de la Información'),
+    ('PESV', 'PESV - Plan Estratégico de Seguridad Vial'),
+    ('SG_SST', 'SG-SST - Sistema de Gestión SST'),
+]
+
+POLICY_STATUS_CHOICES = [
+    ('BORRADOR', 'Borrador'),
+    ('EN_REVISION', 'En Revisión'),
+    ('VIGENTE', 'Vigente'),
+    ('OBSOLETO', 'Obsoleto'),
+]
+
+
+class CorporateIdentity(AuditModel, SoftDeleteModel):
     """
     Identidad Corporativa - Misión, Visión, Política Integral
 
@@ -60,27 +90,8 @@ class CorporateIdentity(models.Model):
         verbose_name='Versión',
         help_text='Versión del documento (ej: 1.0, 2.1)'
     )
-    is_active = models.BooleanField(
-        default=True,
-        db_index=True,
-        verbose_name='Activo',
-        help_text='Solo una identidad puede estar activa'
-    )
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='identities_created',
-        verbose_name='Creado por'
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Fecha de creación'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Fecha de actualización'
-    )
+    # Campos heredados de AuditModel: created_at, updated_at, created_by, updated_by
+    # Campos heredados de SoftDeleteModel: is_active, deleted_at
 
     class Meta:
         db_table = 'identidad_corporate_identity'
@@ -117,7 +128,7 @@ class CorporateIdentity(models.Model):
         return cls.objects.filter(is_active=True).first()
 
 
-class CorporateValue(models.Model):
+class CorporateValue(TimestampedModel, SoftDeleteModel, OrderedModel):
     """
     Valores Corporativos
 
@@ -146,25 +157,406 @@ class CorporateValue(models.Model):
         verbose_name='Icono',
         help_text='Nombre del icono de Lucide (ej: Heart, Shield)'
     )
-    order = models.IntegerField(
-        default=0,
-        verbose_name='Orden',
-        help_text='Orden de aparición'
-    )
-    is_active = models.BooleanField(
-        default=True,
-        verbose_name='Activo'
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Fecha de creación'
-    )
+    # Campos heredados de TimestampedModel: created_at, updated_at
+    # Campos heredados de SoftDeleteModel: is_active, deleted_at
+    # Campos heredados de OrderedModel: orden
 
     class Meta:
         db_table = 'identidad_corporate_value'
         verbose_name = 'Valor Corporativo'
         verbose_name_plural = 'Valores Corporativos'
-        ordering = ['order', 'name']
+        ordering = ['orden', 'name']
 
     def __str__(self):
         return self.name
+
+
+# =============================================================================
+# NUEVOS MODELOS - Semana 4
+# =============================================================================
+
+class AlcanceSistema(AuditModel, SoftDeleteModel):
+    """
+    Alcance del Sistema de Gestión por norma ISO.
+
+    Define el alcance de cada sistema de gestión implementado,
+    incluyendo exclusiones justificadas y datos de certificación.
+    """
+
+    identity = models.ForeignKey(
+        CorporateIdentity,
+        on_delete=models.CASCADE,
+        related_name='alcances',
+        verbose_name='Identidad Corporativa'
+    )
+    iso_standard = models.CharField(
+        max_length=20,
+        choices=ISO_STANDARD_CHOICES,
+        verbose_name='Norma ISO',
+        db_index=True
+    )
+    scope = models.TextField(
+        verbose_name='Alcance',
+        help_text='Descripción del alcance del sistema de gestión'
+    )
+    exclusions = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Exclusiones',
+        help_text='Requisitos excluidos del sistema (si aplica)'
+    )
+    exclusion_justification = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Justificación de Exclusiones',
+        help_text='Justificación de por qué se excluyen ciertos requisitos'
+    )
+    is_certified = models.BooleanField(
+        default=False,
+        verbose_name='¿Certificado?',
+        db_index=True
+    )
+    certification_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='Fecha de Certificación'
+    )
+    certification_body = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        verbose_name='Organismo Certificador',
+        help_text='Nombre del ente certificador (ej: ICONTEC, Bureau Veritas)'
+    )
+    certificate_number = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='Número de Certificado'
+    )
+    expiry_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='Fecha de Vencimiento',
+        help_text='Fecha de vencimiento del certificado'
+    )
+    last_audit_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='Última Auditoría'
+    )
+    next_audit_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='Próxima Auditoría'
+    )
+    certificate_file = models.FileField(
+        upload_to='certificates/',
+        blank=True,
+        null=True,
+        verbose_name='Archivo del Certificado'
+    )
+
+    class Meta:
+        db_table = 'identidad_alcance_sistema'
+        verbose_name = 'Alcance del Sistema'
+        verbose_name_plural = 'Alcances del Sistema'
+        ordering = ['iso_standard']
+        unique_together = [['identity', 'iso_standard']]
+        indexes = [
+            models.Index(fields=['iso_standard', 'is_certified'], name='alcance_iso_cert_idx'),
+        ]
+
+    def __str__(self):
+        cert_status = "✓" if self.is_certified else "○"
+        return f"{cert_status} {self.get_iso_standard_display()}"
+
+    @property
+    def is_certificate_valid(self):
+        """Verifica si el certificado está vigente"""
+        if not self.is_certified or not self.expiry_date:
+            return False
+        return self.expiry_date >= timezone.now().date()
+
+    @property
+    def days_until_expiry(self):
+        """Días hasta el vencimiento del certificado"""
+        if not self.expiry_date:
+            return None
+        delta = self.expiry_date - timezone.now().date()
+        return delta.days
+
+
+class PoliticaIntegral(AuditModel, SoftDeleteModel, OrderedModel):
+    """
+    Política Integral con versionamiento y firma digital.
+
+    Gestiona las diferentes versiones de la política integral,
+    permitiendo trazabilidad histórica y firma electrónica.
+    """
+
+    identity = models.ForeignKey(
+        CorporateIdentity,
+        on_delete=models.CASCADE,
+        related_name='politicas_integrales',
+        verbose_name='Identidad Corporativa'
+    )
+    version = models.CharField(
+        max_length=20,
+        verbose_name='Versión',
+        help_text='Versión de la política (ej: 1.0, 2.1)'
+    )
+    title = models.CharField(
+        max_length=200,
+        default='Política Integral del Sistema de Gestión',
+        verbose_name='Título'
+    )
+    content = models.TextField(
+        verbose_name='Contenido',
+        help_text='Texto completo de la política integral'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=POLICY_STATUS_CHOICES,
+        default='BORRADOR',
+        verbose_name='Estado',
+        db_index=True
+    )
+    effective_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='Fecha de Vigencia'
+    )
+    expiry_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='Fecha de Vencimiento'
+    )
+    signed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='politicas_firmadas',
+        verbose_name='Firmada por'
+    )
+    signed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Firma'
+    )
+    signature_hash = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name='Hash de Firma',
+        help_text='Hash SHA-256 de la firma digital'
+    )
+    applicable_standards = models.JSONField(
+        default=list,
+        verbose_name='Normas Aplicables',
+        help_text='Lista de normas ISO que cubre esta política'
+    )
+    document_file = models.FileField(
+        upload_to='policies/integral/',
+        blank=True,
+        null=True,
+        verbose_name='Documento PDF'
+    )
+    change_reason = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Motivo del Cambio',
+        help_text='Razón del cambio respecto a la versión anterior'
+    )
+
+    class Meta:
+        db_table = 'identidad_politica_integral'
+        verbose_name = 'Política Integral'
+        verbose_name_plural = 'Políticas Integrales'
+        ordering = ['-version']
+        unique_together = [['identity', 'version']]
+        indexes = [
+            models.Index(fields=['status', 'is_active'], name='pol_int_status_idx'),
+        ]
+
+    def __str__(self):
+        return f"Política Integral v{self.version} - {self.get_status_display()}"
+
+    def sign(self, user):
+        """Firma digitalmente la política"""
+        import hashlib
+        content = f"{self.content}|{user.id}|{timezone.now().isoformat()}"
+        self.signature_hash = hashlib.sha256(content.encode()).hexdigest()
+        self.signed_by = user
+        self.signed_at = timezone.now()
+        self.save(update_fields=['signature_hash', 'signed_by', 'signed_at', 'updated_at'])
+
+    def publish(self, user):
+        """Publica la política (cambia a VIGENTE y obsoleta las anteriores)"""
+        if self.status != 'BORRADOR' and self.status != 'EN_REVISION':
+            raise ValueError("Solo se pueden publicar políticas en borrador o en revisión")
+
+        # Obsoleta las políticas vigentes anteriores
+        PoliticaIntegral.objects.filter(
+            identity=self.identity,
+            status='VIGENTE'
+        ).update(status='OBSOLETO')
+
+        self.status = 'VIGENTE'
+        self.effective_date = timezone.now().date()
+        self.updated_by = user
+        self.save()
+
+    @property
+    def is_signed(self):
+        """Verifica si la política está firmada"""
+        return self.signed_by is not None and self.signature_hash is not None
+
+    @classmethod
+    def get_current(cls, identity):
+        """Obtiene la política vigente actual"""
+        return cls.objects.filter(
+            identity=identity,
+            status='VIGENTE',
+            is_active=True
+        ).first()
+
+
+class PoliticaEspecifica(AuditModel, SoftDeleteModel, OrderedModel):
+    """
+    Políticas Específicas por área o módulo.
+
+    Define políticas particulares para áreas funcionales o
+    sistemas de gestión específicos.
+    """
+
+    identity = models.ForeignKey(
+        CorporateIdentity,
+        on_delete=models.CASCADE,
+        related_name='politicas_especificas',
+        verbose_name='Identidad Corporativa'
+    )
+    iso_standard = models.CharField(
+        max_length=20,
+        choices=ISO_STANDARD_CHOICES,
+        verbose_name='Norma ISO',
+        db_index=True,
+        help_text='Norma ISO a la que aplica esta política'
+    )
+    code = models.CharField(
+        max_length=20,
+        verbose_name='Código',
+        help_text='Código único de la política (ej: POL-SST-001)'
+    )
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Título',
+        help_text='Título de la política'
+    )
+    content = models.TextField(
+        verbose_name='Contenido',
+        help_text='Texto completo de la política'
+    )
+    area = models.ForeignKey(
+        'organizacion.Area',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='politicas',
+        verbose_name='Área Responsable'
+    )
+    responsible = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='politicas_responsable',
+        verbose_name='Responsable'
+    )
+    responsible_cargo = models.ForeignKey(
+        'core.Cargo',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='politicas_cargo',
+        verbose_name='Cargo Responsable'
+    )
+    version = models.CharField(
+        max_length=20,
+        default='1.0',
+        verbose_name='Versión'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=POLICY_STATUS_CHOICES,
+        default='BORRADOR',
+        verbose_name='Estado',
+        db_index=True
+    )
+    effective_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='Fecha de Vigencia'
+    )
+    review_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='Fecha de Revisión',
+        help_text='Próxima fecha de revisión programada'
+    )
+    approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='politicas_aprobadas',
+        verbose_name='Aprobada por'
+    )
+    approved_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Aprobación'
+    )
+    document_file = models.FileField(
+        upload_to='policies/specific/',
+        blank=True,
+        null=True,
+        verbose_name='Documento PDF'
+    )
+    keywords = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Palabras Clave',
+        help_text='Lista de tags para búsqueda'
+    )
+
+    class Meta:
+        db_table = 'identidad_politica_especifica'
+        verbose_name = 'Política Específica'
+        verbose_name_plural = 'Políticas Específicas'
+        ordering = ['iso_standard', 'orden', 'code']
+        unique_together = [['identity', 'code']]
+        indexes = [
+            models.Index(fields=['iso_standard', 'status'], name='pol_esp_iso_status_idx'),
+            models.Index(fields=['area', 'is_active'], name='pol_esp_area_active_idx'),
+        ]
+
+    def __str__(self):
+        return f"{self.code} - {self.title}"
+
+    def approve(self, user):
+        """Aprueba la política"""
+        self.approved_by = user
+        self.approved_at = timezone.now()
+        self.status = 'VIGENTE'
+        self.effective_date = timezone.now().date()
+        self.updated_by = user
+        self.save()
+
+    @property
+    def needs_review(self):
+        """Indica si la política necesita revisión"""
+        if not self.review_date:
+            return False
+        return self.review_date <= timezone.now().date()

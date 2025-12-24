@@ -2,9 +2,141 @@
 
 Sistema integral de gestión para la recolección y procesamiento de materias primas (huesos, sebo, grasa) y subproductos cárnicos en Colombia.
 
-**Versión:** 2.0.0-alpha.2
-**Última actualización:** 23 Diciembre 2025
+**Versión:** 2.0.0-alpha.4
+**Última actualización:** 24 Diciembre 2025 (Semana 4 completada)
 **Repositorio:** [GitHub](https://github.com/Kmylosky83/Grasas-Huesos-SGI)
+
+---
+
+## PRINCIPIO FUNDAMENTAL: SISTEMA 100% DINÁMICO
+
+> **IMPORTANTE PARA DESARROLLADORES:** Este sistema es **100% dinámico desde la base de datos**.
+> **NO SE PERMITE HARDCODING** de ningún tipo.
+
+### Qué es dinámico (desde BD, sin tocar código):
+
+| Elemento | Configuración | Ejemplo |
+|----------|---------------|---------|
+| **Sidebar/Navegación** | Módulos, tabs, secciones desde API | `GET /api/core/modulos/` |
+| **Cargos y Roles** | RBAC completo desde BD | Admin crea "Gerente SST" sin código |
+| **Permisos** | Granulares por módulo/acción | `sst.view_matriz_peligros` |
+| **Branding** | Logos, colores, nombre empresa | `EmpresaConfig.logo_claro` |
+| **Formularios** | Campos dinámicos con JSON Schema | `TipoRecoleccion.form_schema` |
+| **Tipos de documentos** | Categorías configurables | `TipoDocumento` model |
+| **Iconos** | Lucide React por nombre desde BD | `icon_name: "Shield"` |
+
+### Lo que NUNCA debe estar en código:
+
+```typescript
+// PROHIBIDO - Hardcoding de cargos
+const CARGOS = ['GERENTE', 'LIDER_SST', 'OPERARIO'];
+
+// CORRECTO - Cargar desde API
+const { data: cargos } = useCargos();
+```
+
+```python
+# PROHIBIDO - Hardcoding de permisos
+if user.cargo == 'LIDER_SST':
+    return True
+
+# CORRECTO - Verificar permiso dinámico
+if user.has_perm('sst.manage_matriz_peligros'):
+    return True
+```
+
+### Documentación del sistema dinámico:
+
+- [RBAC-SYSTEM.md](docs/desarrollo/RBAC-SYSTEM.md) - Sistema de roles y permisos
+- [CLAUDE.md](docs/guias/CLAUDE.md) - Guía para IA/desarrolladores
+- [SESSION-navegacion-dinamica.md](docs/desarrollo/sesiones/SESSION-2025-12-13-navegacion-dinamica.md) - Implementación
+
+---
+
+## PRINCIPIO #2: CÓDIGO REUTILIZABLE (NO DUPLICAR)
+
+> **IMPORTANTE:** Antes de escribir código nuevo, verificar si existe funcionalidad similar.
+> **Usar abstract models, mixins y hooks genéricos.**
+
+### Abstract Models Base (Backend) - ✅ IMPLEMENTADO 24/12/2025
+
+```python
+# Ubicación: backend/apps/core/base_models/base.py
+from apps.core.base_models import TimestampedModel, SoftDeleteModel, AuditModel, BaseCompanyModel, OrderedModel
+
+# Para modelos con timestamps básicos
+class MiModelo(TimestampedModel):
+    pass  # Incluye: created_at, updated_at
+
+# Para modelos con soft delete
+class MiModelo(SoftDeleteModel):
+    pass  # Incluye: is_active, deleted_at, soft_delete(), restore()
+
+# Para modelos con auditoría de usuario
+class MiModelo(AuditModel):
+    pass  # Incluye: created_at, updated_at, created_by, updated_by
+
+# Para modelos completos con empresa (RECOMENDADO)
+class MiModelo(BaseCompanyModel):
+    pass  # Incluye: empresa, timestamps, auditoría, soft_delete
+```
+
+### ViewSet Mixins (Backend) - ✅ IMPLEMENTADO 24/12/2025
+
+```python
+# Ubicación: backend/apps/core/mixins.py
+from apps.core.mixins import StandardViewSetMixin, ToggleActiveMixin
+
+class MiViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+    queryset = MiModelo.objects.all()
+    # Incluye: toggle_active, filter_inactive, bulk_actions, audit
+```
+
+### Hooks Reutilizables (Frontend) - ✅ IMPLEMENTADO 24/12/2025
+
+```typescript
+// Ubicación: frontend/src/hooks/
+import { useGenericCRUD } from '@/hooks/useGenericCRUD';
+import { useFormModal } from '@/hooks/useFormModal';
+
+// CRUD genérico con React Query
+const { data, create, update, delete: remove, toggleActive } = useGenericCRUD({
+  queryKey: ['areas'],
+  endpoint: '/api/areas/',
+  entityName: 'Área'
+});
+
+// Estado de modales
+const { isOpen, data, openCreate, openEdit, close } = useFormModal<Area>();
+```
+
+### Modelos Migrados (9 modelos usando abstract models) - ✅ 24/12/2025
+
+| App | Modelos | Abstract Models Usados |
+| --- | ------- | ---------------------- |
+| configuracion | EmpresaConfig, SedeEmpresa, IntegracionExterna | TimestampedModel, AuditModel, SoftDeleteModel |
+| organizacion | Area, CategoriaDocumento, TipoDocumento, ConsecutivoConfig | AuditModel, TimestampedModel, SoftDeleteModel, OrderedModel |
+| identidad | CorporateIdentity, CorporateValue | AuditModel, TimestampedModel, SoftDeleteModel, OrderedModel |
+
+### Documentación de Reutilización:
+
+- [REFACTORING-PLAN.md](docs/desarrollo/REFACTORING-PLAN.md) - **Plan de refactoring y abstract models**
+- ✅ Migración de modelos Semana 1-2: COMPLETADA
+
+---
+
+## Índice de Documentación
+
+| Categoría | Documento | Descripción |
+|-----------|-----------|-------------|
+| **Inicio** | [00-EMPEZAR-AQUI.md](docs/00-EMPEZAR-AQUI.md) | Punto de entrada para nuevos desarrolladores |
+| **Planificación** | [CRONOGRAMA-26-SEMANAS.md](docs/planificacion/CRONOGRAMA-26-SEMANAS.md) | Plan de desarrollo completo |
+| **Refactoring** | [REFACTORING-PLAN.md](docs/desarrollo/REFACTORING-PLAN.md) | **PRIORITARIO: Plan de eliminación de código duplicado** |
+| **Arquitectura** | [DATABASE-ARCHITECTURE.md](docs/arquitectura/DATABASE-ARCHITECTURE.md) | 154 tablas documentadas |
+| **RBAC** | [RBAC-SYSTEM.md](docs/desarrollo/RBAC-SYSTEM.md) | Sistema de roles y permisos |
+| **Guía IA** | [CLAUDE.md](docs/guias/CLAUDE.md) | Guía para IA/desarrolladores |
+
+---
 
 ## Arquitectura Modular (6 Niveles, 14 Módulos)
 
@@ -668,6 +800,22 @@ docker-compose exec backend pytest --cov=apps --cov-report=html
 # Tests de una app específica
 docker-compose exec backend pytest apps/core/tests/
 ```
+
+**Tests implementados (Semana 3 - 310+ tests totales):**
+
+| Categoría | Tests | Descripción |
+|-----------|-------|-------------|
+| RBAC System | 106+ | Permisos, roles, grupos, jerarquías |
+| Jerarquía Áreas | 29 | Tests de árbol jerárquico |
+| Modelo Cargo | 32 | Manual de funciones completo |
+| EmpresaConfig | 32 | Singleton, validaciones DIAN |
+| ConsecutivoConfig | 40 | Thread-safe, reinicio automático |
+| Frontend | 71 | Componentes React |
+
+Ver documentación detallada:
+- [INFORME_TESTING_SEMANA_3.md](docs/desarrollo/INFORME_TESTING_SEMANA_3.md)
+- [TESTS_RBAC_COMPLETADO.md](docs/desarrollo/TESTS_RBAC_COMPLETADO.md)
+- [TESTS_CARGO_SUMMARY.md](docs/desarrollo/TESTS_CARGO_SUMMARY.md)
 
 ### Storybook (Catálogo de Componentes)
 

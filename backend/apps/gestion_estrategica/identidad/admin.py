@@ -9,7 +9,7 @@ class CorporateValueInline(admin.TabularInline):
     """Inline para valores corporativos"""
     model = CorporateValue
     extra = 1
-    fields = ['name', 'description', 'icon', 'order', 'is_active']
+    fields = ['name', 'description', 'icon', 'orden', 'is_active']
 
 
 @admin.register(CorporateIdentity)
@@ -64,7 +64,7 @@ class CorporateIdentityAdmin(admin.ModelAdmin):
 class CorporateValueAdmin(admin.ModelAdmin):
     """Admin para Valores Corporativos"""
 
-    list_display = ['name', 'identity', 'icon', 'order', 'is_active']
+    list_display = ['name', 'identity', 'icon', 'orden', 'is_active']
     list_filter = ['identity', 'is_active']
     search_fields = ['name', 'description']
-    ordering = ['identity', 'order', 'name']
+    ordening = ['identity', 'orden', 'name']

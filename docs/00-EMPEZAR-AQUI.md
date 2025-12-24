@@ -130,6 +130,19 @@ NIVEL 6: INTELIGENCIA (60-61)
 
 La documentación está organizada en las siguientes carpetas:
 
+### ⚠️ DOCUMENTOS PRIORITARIOS
+
+| Documento | Descripción | Acción |
+|-----------|-------------|--------|
+| **[REFACTORING-PLAN.md](desarrollo/REFACTORING-PLAN.md)** | Plan de eliminación de código duplicado | **LEER PRIMERO** |
+| **[CRONOGRAMA-26-SEMANAS.md](planificacion/CRONOGRAMA-26-SEMANAS.md)** | Plan de trabajo semanal | Seguir cronograma |
+| **[SEMANA-1-RESUMEN.md](../SEMANA-1-RESUMEN.md)** | Resumen Semana 1 completada | Referencia |
+
+> **PRINCIPIO CRÍTICO:** Antes de escribir código nuevo, verificar si existe funcionalidad reutilizable.
+> Ver [REFACTORING-PLAN.md](desarrollo/REFACTORING-PLAN.md) para abstract models, mixins y hooks genéricos.
+
+---
+
 ### arquitectura/
 
 Documentación técnica sobre la arquitectura del sistema.
@@ -192,6 +205,7 @@ Documentación para desarrolladores.
 
 | Archivo | Descripcion |
 |---------|-------------|
+| **REFACTORING-PLAN.md** | **PRIORITARIO: Plan de refactoring y código reutilizable** |
 | **RBAC-SYSTEM.md** | Sistema completo de permisos, roles y grupos |
 | **DESIGN-SYSTEM.md** | Design System completo |
 | **DESIGN-SYSTEM-INDEX.md** | Índice del Design System |
@@ -465,6 +479,26 @@ cd frontend && npm run test:coverage
 cd frontend && npm run storybook
 ```
 
+**Estado de Tests (Semana 3 - 24 Dic 2025):**
+
+| Categoría | Tests | Estado |
+|-----------|-------|--------|
+| **Backend Total** | 239+ | PASANDO |
+| - RBAC System | 106+ | PASANDO |
+| - Jerarquía Áreas | 29 | PASANDO |
+| - Modelo Cargo | 32 | PASANDO |
+| - EmpresaConfig | 32 | PASANDO |
+| - ConsecutivoConfig | 40 | PASANDO |
+| **Frontend Total** | 71+ | PASANDO |
+| **Total General** | 310+ | PASANDO |
+
+**Documentación de Tests:**
+- [INFORME_TESTING_SEMANA_3.md](desarrollo/INFORME_TESTING_SEMANA_3.md)
+- [TESTS_RBAC_COMPLETADO.md](desarrollo/TESTS_RBAC_COMPLETADO.md)
+- [TESTS_CARGO_SUMMARY.md](desarrollo/TESTS_CARGO_SUMMARY.md)
+- [TESTS_CONSECUTIVO_SUMMARY.md](desarrollo/TESTS_CONSECUTIVO_SUMMARY.md)
+- [TESTS_EMPRESA_CONFIG_COMPLETADO.md](desarrollo/TESTS_EMPRESA_CONFIG_COMPLETADO.md)
+
 ### CI/CD
 
 ```bash
@@ -503,5 +537,5 @@ Para soporte técnico, consultar documentación en `/docs` o contactar al equipo
 ---
 
 **Estado:** En desarrollo activo
-**Última actualización:** 23 Diciembre 2024
+**Última actualización:** 24 Diciembre 2025
 **Versión:** 2.0.0-alpha.3

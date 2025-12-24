@@ -100,7 +100,8 @@ def send_notification_email(self, user_id: int, template: str, context: Dict[str
         Dict con el resultado del envío
     """
     try:
-        from apps.core.models import User
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
 
         user = User.objects.get(id=user_id)
 
@@ -162,7 +163,8 @@ def generate_report_async(self, report_type: str, params: Dict[str, Any],
 
         # Si se especificó un usuario, enviar email con el reporte
         if user_id:
-            from apps.core.models import User
+            from django.contrib.auth import get_user_model
+        User = get_user_model()
             user = User.objects.get(id=user_id)
 
             send_email_async.delay(
@@ -193,7 +195,8 @@ def send_weekly_reports(self) -> Dict[str, Any]:
     Esta tarea se ejecuta automáticamente según el schedule configurado en celery.py
     """
     try:
-        from apps.core.models import User
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
 
         logger.info(f"[Task {self.request.id}] Generando reportes semanales")
 

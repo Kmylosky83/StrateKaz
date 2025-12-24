@@ -3,11 +3,9 @@ Modelos para Aspectos Ambientales - ISO 14001
 Sistema de Gestión Ambiental
 """
 from django.db import models
-from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
-
-User = get_user_model()
 
 
 class CategoriaAspecto(models.Model):
@@ -266,7 +264,7 @@ class AspectoAmbiental(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha Creación')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Fecha Actualización')
     created_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='aspectos_ambientales_created',
@@ -460,7 +458,7 @@ class ImpactoAmbiental(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha Creación')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Fecha Actualización')
     created_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='impactos_ambientales_created',
@@ -532,14 +530,14 @@ class ProgramaAmbiental(models.Model):
 
     # Responsabilidades
     responsable = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='programas_ambientales_responsable',
         verbose_name='Responsable del Programa'
     )
     equipo_apoyo = models.ManyToManyField(
-        User,
+        settings.AUTH_USER_MODEL,
         blank=True,
         related_name='programas_ambientales_equipo',
         verbose_name='Equipo de Apoyo'
@@ -632,7 +630,7 @@ class ProgramaAmbiental(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha Creación')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Fecha Actualización')
     created_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='programas_ambientales_created',
@@ -807,7 +805,7 @@ class MonitoreoAmbiental(models.Model):
         verbose_name='Equipo Utilizado'
     )
     responsable_medicion = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='monitoreos_ambientales_responsable',
@@ -861,7 +859,7 @@ class MonitoreoAmbiental(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha Creación')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Fecha Actualización')
     created_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='monitoreos_ambientales_created',

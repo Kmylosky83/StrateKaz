@@ -2,11 +2,31 @@
  * Utilidades de Exportación para el Organigrama
  *
  * Usa html-to-image para PNG y jsPDF para PDF
+ *
+ * Mejoras implementadas:
+ * - Manejo de errores específico por tipo
+ * - Soporte para forzar light mode durante exportación
+ * - Mensajes de error descriptivos
  */
 
 import { toPng, toSvg } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 import type { ExportOptions, OrganigramaStats } from '../types/organigrama.types';
+
+// =============================================================================
+// TIPOS DE ERROR
+// =============================================================================
+
+export class ExportError extends Error {
+  constructor(
+    message: string,
+    public readonly type: 'PERMISSION' | 'RENDER' | 'DOWNLOAD' | 'UNKNOWN' = 'UNKNOWN',
+    public readonly originalError?: Error
+  ) {
+    super(message);
+    this.name = 'ExportError';
+  }
+}
 
 // =============================================================================
 // CONSTANTES
@@ -16,6 +36,31 @@ const EXPORT_PADDING = 20;
 const TITLE_HEIGHT = 60;
 const LEGEND_HEIGHT = 80;
 const DATE_HEIGHT = 30;
+
+// =============================================================================
+// UTILIDADES DE TEMA
+// =============================================================================
+
+/**
+ * Fuerza light mode temporalmente para evitar problemas con dark mode en exportación
+ * Retorna función de cleanup para restaurar el tema original
+ */
+const forceLightModeTemporarily = (): (() => void) => {
+  const htmlElement = document.documentElement;
+  const originalClasses = htmlElement.className;
+  const hadDarkMode = htmlElement.classList.contains('dark');
+
+  if (hadDarkMode) {
+    htmlElement.classList.remove('dark');
+  }
+
+  // Retornar función para restaurar el tema original
+  return () => {
+    if (hadDarkMode) {
+      htmlElement.classList.add('dark');
+    }
+  };
+};
 
 // =============================================================================
 // EXPORTAR A PNG
@@ -30,6 +75,10 @@ export const exportToPng = async (
   stats?: OrganigramaStats,
   title?: string
 ): Promise<void> => {
+  // Forzar light mode temporalmente
+  const restoreTheme = forceLightModeTemporarily();
+  let container: HTMLElement | null = null;
+
   try {
     // Calcular dimensiones adicionales
     let additionalHeight = EXPORT_PADDING * 2;
@@ -38,7 +87,7 @@ export const exportToPng = async (
     if (options.includeLegend) additionalHeight += LEGEND_HEIGHT;
 
     // Crear contenedor temporal para agregar título, fecha y leyenda
-    const container = document.createElement('div');
+    container = document.createElement('div');
     container.style.backgroundColor = '#ffffff';
     container.style.padding = `${EXPORT_PADDING}px`;
 
@@ -86,21 +135,47 @@ export const exportToPng = async (
     container.style.left = '-9999px';
     document.body.appendChild(container);
 
-    // Generar imagen
-    const dataUrl = await toPng(container, {
-      quality: options.quality,
-      pixelRatio: options.quality,
-      backgroundColor: '#ffffff',
-    });
-
-    // Limpiar
-    document.body.removeChild(container);
+    // Generar imagen con timeout
+    const dataUrl = await Promise.race([
+      toPng(container, {
+        quality: options.quality,
+        pixelRatio: options.quality,
+        backgroundColor: '#ffffff',
+      }),
+      new Promise<string>((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout al generar imagen')), 30000)
+      ),
+    ]);
 
     // Descargar
     downloadFile(dataUrl, `organigrama_${formatDateForFilename()}.png`);
   } catch (error) {
     console.error('Error al exportar a PNG:', error);
-    throw new Error('No se pudo exportar el organigrama a PNG');
+
+    // Determinar tipo de error
+    let errorType: ExportError['type'] = 'UNKNOWN';
+    let errorMessage = 'No se pudo exportar el organigrama a PNG';
+
+    if (error instanceof Error) {
+      if (error.message.includes('Timeout')) {
+        errorType = 'RENDER';
+        errorMessage = 'La exportación tardó demasiado. Intenta con un organigrama más pequeño.';
+      } else if (error.message.includes('permission') || error.message.includes('SecurityError')) {
+        errorType = 'PERMISSION';
+        errorMessage = 'No se tienen los permisos necesarios para exportar. Verifica la configuración del navegador.';
+      } else if (error.message.includes('render') || error.message.includes('canvas')) {
+        errorType = 'RENDER';
+        errorMessage = 'Error al renderizar el organigrama. Intenta ajustar el zoom o el tamaño.';
+      }
+    }
+
+    throw new ExportError(errorMessage, errorType, error instanceof Error ? error : undefined);
+  } finally {
+    // Limpiar DOM y restaurar tema
+    if (container && container.parentNode) {
+      document.body.removeChild(container);
+    }
+    restoreTheme();
   }
 };
 
@@ -117,13 +192,21 @@ export const exportToPdf = async (
   stats?: OrganigramaStats,
   title?: string
 ): Promise<void> => {
+  // Forzar light mode temporalmente
+  const restoreTheme = forceLightModeTemporarily();
+
   try {
-    // Generar imagen PNG primero
-    const dataUrl = await toPng(element, {
-      quality: options.quality,
-      pixelRatio: options.quality,
-      backgroundColor: '#ffffff',
-    });
+    // Generar imagen PNG primero con timeout
+    const dataUrl = await Promise.race([
+      toPng(element, {
+        quality: options.quality,
+        pixelRatio: options.quality,
+        backgroundColor: '#ffffff',
+      }),
+      new Promise<string>((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout al generar imagen')), 30000)
+      ),
+    ]);
 
     // Crear PDF
     const pdf = new jsPDF({
@@ -201,7 +284,31 @@ export const exportToPdf = async (
     pdf.save(`organigrama_${formatDateForFilename()}.pdf`);
   } catch (error) {
     console.error('Error al exportar a PDF:', error);
-    throw new Error('No se pudo exportar el organigrama a PDF');
+
+    // Determinar tipo de error
+    let errorType: ExportError['type'] = 'UNKNOWN';
+    let errorMessage = 'No se pudo exportar el organigrama a PDF';
+
+    if (error instanceof Error) {
+      if (error.message.includes('Timeout')) {
+        errorType = 'RENDER';
+        errorMessage = 'La exportación tardó demasiado. Intenta con un organigrama más pequeño.';
+      } else if (error.message.includes('permission') || error.message.includes('SecurityError')) {
+        errorType = 'PERMISSION';
+        errorMessage = 'No se tienen los permisos necesarios para exportar. Verifica la configuración del navegador.';
+      } else if (error.message.includes('render') || error.message.includes('canvas')) {
+        errorType = 'RENDER';
+        errorMessage = 'Error al renderizar el organigrama. Intenta ajustar el zoom o el tamaño.';
+      } else if (error.message.includes('jsPDF') || error.message.includes('PDF')) {
+        errorType = 'DOWNLOAD';
+        errorMessage = 'Error al generar el archivo PDF. Intenta exportar como PNG.';
+      }
+    }
+
+    throw new ExportError(errorMessage, errorType, error instanceof Error ? error : undefined);
+  } finally {
+    // Restaurar tema
+    restoreTheme();
   }
 };
 

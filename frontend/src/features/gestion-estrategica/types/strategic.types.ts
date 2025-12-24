@@ -688,13 +688,6 @@ export interface UpdateTenantUISettingsDTO {
   custom_theme_enabled?: boolean;
 }
 
-// ==================== SELECT OPTIONS ====================
-
-export interface SelectOption {
-  value: string;
-  label: string;
-}
-
 // ==================== SEDE EMPRESA ====================
 
 export type TipoSede =
@@ -995,4 +988,475 @@ export interface IntegracionLogsFilters {
   fecha_desde?: string;
   fecha_hasta?: string;
   limit?: number;
+}
+
+// ==================== SEMANA 4: PLANEACIÓN ESTRATÉGICA ====================
+
+// --- Tipos de Frecuencia y Tendencia para KPIs ---
+export type FrequencyType =
+  | 'DIARIA'
+  | 'SEMANAL'
+  | 'QUINCENAL'
+  | 'MENSUAL'
+  | 'BIMESTRAL'
+  | 'TRIMESTRAL'
+  | 'SEMESTRAL'
+  | 'ANUAL';
+
+export type TrendType = 'MAYOR_MEJOR' | 'MENOR_MEJOR' | 'EN_RANGO';
+
+export type SemaforoStatus = 'VERDE' | 'AMARILLO' | 'ROJO' | 'SIN_DATOS';
+
+// --- Tipos de Gestión de Cambio ---
+export type ChangeType =
+  | 'ESTRATEGICO'
+  | 'ORGANIZACIONAL'
+  | 'PROCESO'
+  | 'TECNOLOGICO'
+  | 'CULTURAL'
+  | 'NORMATIVO'
+  | 'OTRO';
+
+export type ChangePriority = 'BAJA' | 'MEDIA' | 'ALTA' | 'CRITICA';
+
+export type ChangeStatus =
+  | 'IDENTIFICADO'
+  | 'ANALISIS'
+  | 'PLANIFICADO'
+  | 'EN_EJECUCION'
+  | 'COMPLETADO'
+  | 'CANCELADO';
+
+// --- Tipos de Política ---
+export type PoliticaStatus = 'BORRADOR' | 'EN_REVISION' | 'VIGENTE' | 'OBSOLETO';
+
+// ==================== MAPA ESTRATÉGICO ====================
+
+export interface MapaEstrategico {
+  id: number;
+  plan: number;
+  plan_name?: string;
+  name: string;
+  description?: string | null;
+  canvas_data?: Record<string, unknown> | null;
+  image?: string | null;
+  version: number;
+  is_active: boolean;
+  relaciones?: CausaEfecto[];
+  relaciones_count?: number;
+  created_by?: number | null;
+  created_by_name?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CausaEfecto {
+  id: number;
+  mapa: number;
+  source_objective: number;
+  source_objective_code?: string;
+  source_objective_name?: string;
+  target_objective: number;
+  target_objective_code?: string;
+  target_objective_name?: string;
+  description?: string | null;
+  weight: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateMapaEstrategicoDTO {
+  plan: number;
+  name: string;
+  description?: string;
+  canvas_data?: Record<string, unknown>;
+  version?: number;
+  is_active?: boolean;
+}
+
+export interface UpdateMapaEstrategicoDTO {
+  name?: string;
+  description?: string;
+  canvas_data?: Record<string, unknown>;
+  image?: string;
+  version?: number;
+  is_active?: boolean;
+}
+
+export interface CreateCausaEfectoDTO {
+  mapa: number;
+  source_objective: number;
+  target_objective: number;
+  description?: string;
+  weight?: number;
+}
+
+export interface UpdateCausaEfectoDTO {
+  description?: string;
+  weight?: number;
+}
+
+// ==================== KPI Y MEDICIONES ====================
+
+export interface MedicionKPI {
+  id: number;
+  kpi: number;
+  period: string;
+  value: string;
+  notes?: string | null;
+  evidence_file?: string | null;
+  measured_by?: number | null;
+  measured_by_name?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface KPIObjetivo {
+  id: number;
+  objective: number;
+  objective_code?: string;
+  objective_name?: string;
+  name: string;
+  description?: string | null;
+  formula?: string | null;
+  unit: string;
+  frequency: FrequencyType;
+  frequency_display?: string;
+  trend_type: TrendType;
+  trend_type_display?: string;
+  target_value: string;
+  warning_threshold?: string | null;
+  critical_threshold?: string | null;
+  min_value?: string | null;
+  max_value?: string | null;
+  data_source?: string | null;
+  responsible?: number | null;
+  responsible_name?: string | null;
+  responsible_cargo?: number | null;
+  responsible_cargo_name?: string | null;
+  last_value?: string | null;
+  last_measurement_date?: string | null;
+  status_semaforo: SemaforoStatus;
+  measurements_count?: number;
+  recent_measurements?: MedicionKPI[];
+  is_active: boolean;
+  created_by?: number | null;
+  created_by_name?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateKPIObjetivoDTO {
+  objective: number;
+  name: string;
+  description?: string;
+  formula?: string;
+  unit: string;
+  frequency: FrequencyType;
+  trend_type: TrendType;
+  target_value: string;
+  warning_threshold?: string;
+  critical_threshold?: string;
+  min_value?: string;
+  max_value?: string;
+  data_source?: string;
+  responsible?: number;
+  responsible_cargo?: number;
+  is_active?: boolean;
+}
+
+export interface UpdateKPIObjetivoDTO {
+  name?: string;
+  description?: string;
+  formula?: string;
+  unit?: string;
+  frequency?: FrequencyType;
+  trend_type?: TrendType;
+  target_value?: string;
+  warning_threshold?: string;
+  critical_threshold?: string;
+  min_value?: string;
+  max_value?: string;
+  data_source?: string;
+  responsible?: number;
+  responsible_cargo?: number;
+  is_active?: boolean;
+}
+
+export interface AddMeasurementDTO {
+  value: string;
+  period?: string;
+  notes?: string;
+  evidence_file?: File;
+}
+
+export interface KPIFilters {
+  objective?: number;
+  frequency?: FrequencyType;
+  trend_type?: TrendType;
+  status_semaforo?: SemaforoStatus;
+  responsible?: number;
+  is_active?: boolean;
+  search?: string;
+}
+
+// ==================== GESTIÓN DEL CAMBIO ====================
+
+export interface GestionCambio {
+  id: number;
+  code: string;
+  title: string;
+  description?: string | null;
+  change_type: ChangeType;
+  change_type_display?: string;
+  priority: ChangePriority;
+  priority_display?: string;
+  status: ChangeStatus;
+  status_display?: string;
+  impact_analysis?: string | null;
+  risk_assessment?: string | null;
+  action_plan?: string | null;
+  resources_required?: string | null;
+  responsible?: number | null;
+  responsible_name?: string | null;
+  responsible_cargo?: number | null;
+  responsible_cargo_name?: string | null;
+  start_date?: string | null;
+  due_date?: string | null;
+  completed_date?: string | null;
+  related_objectives?: number[];
+  related_objectives_details?: Array<{
+    id: number;
+    code: string;
+    name: string;
+  }>;
+  lessons_learned?: string | null;
+  is_active: boolean;
+  created_by?: number | null;
+  created_by_name?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateGestionCambioDTO {
+  code: string;
+  title: string;
+  description?: string;
+  change_type: ChangeType;
+  priority: ChangePriority;
+  status?: ChangeStatus;
+  impact_analysis?: string;
+  risk_assessment?: string;
+  action_plan?: string;
+  resources_required?: string;
+  responsible?: number;
+  responsible_cargo?: number;
+  start_date?: string;
+  due_date?: string;
+  related_objectives?: number[];
+  is_active?: boolean;
+}
+
+export interface UpdateGestionCambioDTO {
+  title?: string;
+  description?: string;
+  change_type?: ChangeType;
+  priority?: ChangePriority;
+  status?: ChangeStatus;
+  impact_analysis?: string;
+  risk_assessment?: string;
+  action_plan?: string;
+  resources_required?: string;
+  responsible?: number;
+  responsible_cargo?: number;
+  start_date?: string;
+  due_date?: string;
+  related_objectives?: number[];
+  lessons_learned?: string;
+  is_active?: boolean;
+}
+
+export interface TransitionStatusDTO {
+  new_status: ChangeStatus;
+}
+
+export interface GestionCambioFilters {
+  change_type?: ChangeType;
+  priority?: ChangePriority;
+  status?: ChangeStatus;
+  responsible?: number;
+  is_active?: boolean;
+  search?: string;
+}
+
+// ==================== ALCANCE DEL SISTEMA ====================
+
+export interface AlcanceSistema {
+  id: number;
+  identity: number;
+  iso_standard: ISOStandard;
+  iso_standard_display?: string;
+  scope: string;
+  exclusions?: string | null;
+  justification?: string | null;
+  is_certified: boolean;
+  certification_body?: string | null;
+  certificate_number?: string | null;
+  certification_date?: string | null;
+  expiry_date?: string | null;
+  is_certificate_valid?: boolean;
+  days_until_expiry?: number | null;
+  is_active: boolean;
+  created_by?: number | null;
+  created_by_name?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateAlcanceSistemaDTO {
+  identity: number;
+  iso_standard: ISOStandard;
+  scope: string;
+  exclusions?: string;
+  justification?: string;
+  is_certified?: boolean;
+  certification_body?: string;
+  certificate_number?: string;
+  certification_date?: string;
+  expiry_date?: string;
+  is_active?: boolean;
+}
+
+export interface UpdateAlcanceSistemaDTO {
+  scope?: string;
+  exclusions?: string;
+  justification?: string;
+  is_certified?: boolean;
+  certification_body?: string;
+  certificate_number?: string;
+  certification_date?: string;
+  expiry_date?: string;
+  is_active?: boolean;
+}
+
+export interface AlcanceSistemaFilters {
+  identity?: number;
+  iso_standard?: ISOStandard;
+  is_certified?: boolean;
+  is_active?: boolean;
+}
+
+// ==================== POLÍTICA INTEGRAL ====================
+
+export interface PoliticaIntegral {
+  id: number;
+  identity: number;
+  version: string;
+  content: string;
+  effective_date: string;
+  status: PoliticaStatus;
+  status_display?: string;
+  is_signed: boolean;
+  signed_by?: number | null;
+  signed_by_name?: string | null;
+  signed_at?: string | null;
+  signature_hash?: string | null;
+  applicable_standards: ISOStandard[];
+  applicable_standards_display?: string[];
+  review_date?: string | null;
+  is_active: boolean;
+  created_by?: number | null;
+  created_by_name?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreatePoliticaIntegralDTO {
+  identity: number;
+  version: string;
+  content: string;
+  effective_date: string;
+  status?: PoliticaStatus;
+  applicable_standards?: ISOStandard[];
+  review_date?: string;
+  is_active?: boolean;
+}
+
+export interface UpdatePoliticaIntegralDTO {
+  version?: string;
+  content?: string;
+  effective_date?: string;
+  status?: PoliticaStatus;
+  applicable_standards?: ISOStandard[];
+  review_date?: string;
+  is_active?: boolean;
+}
+
+export interface PoliticaIntegralFilters {
+  identity?: number;
+  status?: PoliticaStatus;
+  is_signed?: boolean;
+  is_active?: boolean;
+}
+
+// ==================== POLÍTICA ESPECÍFICA ====================
+
+export interface PoliticaEspecifica {
+  id: number;
+  identity: number;
+  iso_standard: ISOStandard;
+  iso_standard_display?: string;
+  name: string;
+  version: string;
+  content: string;
+  objectives?: string | null;
+  commitments?: string | null;
+  effective_date: string;
+  status: PoliticaStatus;
+  status_display?: string;
+  is_signed: boolean;
+  signed_by?: number | null;
+  signed_by_name?: string | null;
+  signed_at?: string | null;
+  signature_hash?: string | null;
+  review_date?: string | null;
+  is_active: boolean;
+  created_by?: number | null;
+  created_by_name?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreatePoliticaEspecificaDTO {
+  identity: number;
+  iso_standard: ISOStandard;
+  name: string;
+  version: string;
+  content: string;
+  objectives?: string;
+  commitments?: string;
+  effective_date: string;
+  status?: PoliticaStatus;
+  review_date?: string;
+  is_active?: boolean;
+}
+
+export interface UpdatePoliticaEspecificaDTO {
+  name?: string;
+  version?: string;
+  content?: string;
+  objectives?: string;
+  commitments?: string;
+  effective_date?: string;
+  status?: PoliticaStatus;
+  review_date?: string;
+  is_active?: boolean;
+}
+
+export interface PoliticaEspecificaFilters {
+  identity?: number;
+  iso_standard?: ISOStandard;
+  status?: PoliticaStatus;
+  is_signed?: boolean;
+  is_active?: boolean;
 }

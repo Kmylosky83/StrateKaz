@@ -13,9 +13,9 @@ Características:
 - Roles y permisos por flujo
 """
 from django.db import models
+from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
-from apps.core.models import User
 
 
 # ============================================================================
@@ -146,7 +146,7 @@ class CategoriaFlujo(models.Model):
         verbose_name='Fecha de actualización'
     )
     created_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -324,7 +324,7 @@ class PlantillaFlujo(models.Model):
         verbose_name='Fecha de actualización'
     )
     created_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -332,7 +332,7 @@ class PlantillaFlujo(models.Model):
         verbose_name='Creado por'
     )
     activado_por = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -571,7 +571,7 @@ class NodoFlujo(models.Model):
         verbose_name='Fecha de actualización'
     )
     created_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -724,7 +724,7 @@ class TransicionFlujo(models.Model):
         verbose_name='Fecha de actualización'
     )
     created_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -981,7 +981,7 @@ class CampoFormulario(models.Model):
         verbose_name='Fecha de actualización'
     )
     created_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -1166,7 +1166,7 @@ class RolFlujo(models.Model):
         verbose_name='Fecha de actualización'
     )
     created_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

@@ -3,10 +3,8 @@ Modelos para IPEVR - Identificación de Peligros, Evaluación y Valoración de R
 Basado en GTC-45 (Guía Técnica Colombiana)
 """
 from django.db import models
-from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
-
-User = get_user_model()
 
 
 class ClasificacionPeligro(models.Model):
@@ -61,7 +59,7 @@ class Peligro(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True,
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
         related_name='peligros_created', verbose_name='Creado por'
     )
 
@@ -181,7 +179,7 @@ class MatrizIPEVR(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True,
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
         related_name='matrices_ipevr_created', verbose_name='Creado por'
     )
 
@@ -266,7 +264,7 @@ class ControlPropuesto(models.Model):
     )
     descripcion = models.TextField(verbose_name='Descripción del Control')
     responsable = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True,
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
         related_name='controles_ipevr_responsable', verbose_name='Responsable'
     )
     fecha_implementacion = models.DateField(

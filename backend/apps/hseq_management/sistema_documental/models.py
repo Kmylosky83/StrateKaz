@@ -3,11 +3,9 @@ Modelos para Sistema Documental - HSEQ Management
 Sistema de gestión documental integral con control de versiones, firmas digitales y flujos de aprobación
 """
 from django.db import models
-from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.core.validators import MinValueValidator
 from decimal import Decimal
-
-User = get_user_model()
 
 
 class TipoDocumento(models.Model):
@@ -96,7 +94,7 @@ class TipoDocumento(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='hseq_tipos_documento_created',
@@ -207,7 +205,7 @@ class PlantillaDocumento(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='plantillas_created',
@@ -358,13 +356,13 @@ class Documento(models.Model):
 
     # Responsables
     elaborado_por = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name='documentos_elaborados',
         verbose_name='Elaborado por'
     )
     revisado_por = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -372,7 +370,7 @@ class Documento(models.Model):
         verbose_name='Revisado por'
     )
     aprobado_por = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -394,7 +392,7 @@ class Documento(models.Model):
         help_text='Puestos de trabajo que deben conocer este documento'
     )
     usuarios_autorizados = models.ManyToManyField(
-        User,
+        settings.AUTH_USER_MODEL,
         blank=True,
         related_name='documentos_autorizados',
         verbose_name='Usuarios Autorizados',
@@ -539,13 +537,13 @@ class VersionDocumento(models.Model):
         verbose_name='Fecha de la Versión'
     )
     creado_por = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name='versiones_documento_creadas',
         verbose_name='Creado por'
     )
     aprobado_por = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -775,7 +773,7 @@ class CampoFormulario(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='campos_formulario_created',
@@ -837,7 +835,7 @@ class FirmaDocumento(models.Model):
         verbose_name='Tipo de Firma'
     )
     firmante = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name='firmas_realizadas',
         verbose_name='Firmante'
@@ -1018,7 +1016,7 @@ class ControlDocumental(models.Model):
         help_text='Áreas que recibieron el documento'
     )
     usuarios_distribucion = models.ManyToManyField(
-        User,
+        settings.AUTH_USER_MODEL,
         blank=True,
         related_name='documentos_recibidos',
         verbose_name='Usuarios que Recibieron el Documento'
@@ -1073,7 +1071,7 @@ class ControlDocumental(models.Model):
         help_text='Cómo se destruyó el documento físico/digital'
     )
     responsable_destruccion = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -1103,7 +1101,7 @@ class ControlDocumental(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='controles_documentales_created',

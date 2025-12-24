@@ -4,11 +4,9 @@ Financiación del Terrorismo / Programa de Transparencia y Ética Empresarial
 Basado en regulación colombiana (Circular Externa 100-000016 de 2020 - Superintendencia de Sociedades)
 """
 from django.db import models
-from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from decimal import Decimal
-
-User = get_user_model()
 
 
 class FactorRiesgoLAFT(models.Model):
@@ -179,7 +177,7 @@ class SegmentoCliente(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='segmentos_cliente_created',
@@ -353,7 +351,7 @@ class MatrizRiesgoLAFT(models.Model):
         verbose_name='Observaciones'
     )
     aprobado_por = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -376,7 +374,7 @@ class MatrizRiesgoLAFT(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='matrices_laft_created',
@@ -554,7 +552,7 @@ class SeñalAlerta(models.Model):
 
     # Análisis
     analista_asignado = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -603,7 +601,7 @@ class SeñalAlerta(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -732,7 +730,7 @@ class ReporteOperacionSospechosa(models.Model):
 
     # Responsables
     elaborado_por = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name='ros_elaborados',
         verbose_name='Elaborado por'
@@ -741,7 +739,7 @@ class ReporteOperacionSospechosa(models.Model):
         verbose_name='Fecha de Elaboración'
     )
     revisado_por = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -754,7 +752,7 @@ class ReporteOperacionSospechosa(models.Model):
         verbose_name='Fecha de Revisión'
     )
     aprobado_por = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -995,14 +993,14 @@ class DebidaDiligencia(models.Model):
 
     # Responsables
     responsable = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='diligencias_responsable',
         verbose_name='Responsable'
     )
     aprobado_por = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -1041,7 +1039,7 @@ class DebidaDiligencia(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='diligencias_created',

@@ -1,6 +1,6 @@
 from django.db import models
+from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
-from apps.core.models import User
 
 
 class ActivoInformacion(models.Model):
@@ -26,13 +26,13 @@ class ActivoInformacion(models.Model):
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, verbose_name="Tipo")
 
     propietario = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name="activos_propietario",
         verbose_name="Propietario"
     )
     custodio = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name="activos_custodio",
         null=True,
@@ -286,7 +286,7 @@ class RiesgoSeguridad(models.Model):
         verbose_name='Aceptabilidad'
     )
     responsable_tratamiento = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -310,7 +310,7 @@ class RiesgoSeguridad(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='riesgos_seguridad_creados',
@@ -399,7 +399,7 @@ class ControlSeguridad(models.Model):
         verbose_name='Efectividad (%)'
     )
     responsable = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -518,7 +518,7 @@ class IncidenteSeguridad(models.Model):
         verbose_name='Estado'
     )
     reportado_por = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='incidentes_reportados',

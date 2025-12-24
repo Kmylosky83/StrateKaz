@@ -3,10 +3,8 @@ Modelos para contexto_organizacional - motor_riesgos
 Análisis DOFA y PESTEL para contexto organizacional
 """
 from django.db import models
-from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
-
-User = get_user_model()
 
 
 class FactorExterno(models.Model):
@@ -49,7 +47,7 @@ class FactorExterno(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True,
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
         related_name='factores_externos_created', verbose_name='Creado por'
     )
 
@@ -96,7 +94,7 @@ class FactorInterno(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True,
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
         related_name='factores_internos_created', verbose_name='Creado por'
     )
 
@@ -135,11 +133,11 @@ class AnalisisDOFA(models.Model):
     )
     conclusiones = models.TextField(blank=True, verbose_name='Conclusiones')
     elaborado_por = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True,
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
         related_name='dofa_elaborados', verbose_name='Elaborado por'
     )
     aprobado_por = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True, blank=True,
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='dofa_aprobados', verbose_name='Aprobado por'
     )
 
@@ -191,7 +189,7 @@ class EstrategiaDOFA(models.Model):
     descripcion = models.TextField(verbose_name='Descripción')
     objetivo = models.TextField(verbose_name='Objetivo')
     responsable = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True,
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
         related_name='estrategias_responsable', verbose_name='Responsable'
     )
     fecha_limite = models.DateField(null=True, blank=True, verbose_name='Fecha Límite')
@@ -205,7 +203,7 @@ class EstrategiaDOFA(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True,
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
         related_name='estrategias_created', verbose_name='Creado por'
     )
 

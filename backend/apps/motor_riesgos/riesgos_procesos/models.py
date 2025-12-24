@@ -3,11 +3,9 @@ Modelos para riesgos_procesos - ISO 31000 Process Risk Management
 Gestión de Riesgos de Procesos según ISO 31000
 """
 from django.db import models
-from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
-
-User = get_user_model()
 
 
 class CategoriaRiesgo(models.Model):
@@ -178,7 +176,7 @@ class RiesgoProceso(models.Model):
 
     # Propietario del riesgo
     propietario = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='riesgos_propietario',
@@ -221,7 +219,7 @@ class RiesgoProceso(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='riesgos_proceso_created',
@@ -338,7 +336,7 @@ class TratamientoRiesgo(models.Model):
 
     # Planificación
     responsable = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='tratamientos_responsable',
@@ -423,7 +421,7 @@ class TratamientoRiesgo(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='tratamientos_created',
@@ -563,7 +561,7 @@ class MonitoreoRiesgo(models.Model):
 
     # Responsable del monitoreo
     monitoreado_por = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='monitoreos_realizados',
@@ -573,7 +571,7 @@ class MonitoreoRiesgo(models.Model):
     # Aprobación
     aprobado = models.BooleanField(default=False, verbose_name='Aprobado')
     aprobado_por = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -724,14 +722,14 @@ class MapaCalor(models.Model):
 
     # Elaboración y aprobación
     elaborado_por = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='mapas_calor_elaborados',
         verbose_name='Elaborado por'
     )
     aprobado_por = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

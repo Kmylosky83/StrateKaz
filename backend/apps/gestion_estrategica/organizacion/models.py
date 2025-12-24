@@ -7,13 +7,25 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 
+from apps.core.base_models import (
+    TimestampedModel,
+    AuditModel,
+    SoftDeleteModel,
+    OrderedModel
+)
 
-class Area(models.Model):
+
+class Area(AuditModel, SoftDeleteModel, OrderedModel):
     """
     Modelo para gestionar áreas/departamentos de la organización.
 
     Estructura jerárquica que permite definir la estructura organizacional
     con centros de costo y responsables asignados.
+
+    Hereda de:
+    - AuditModel: created_at, updated_at, created_by, updated_by
+    - SoftDeleteModel: is_active, deleted_at, soft_delete(), restore()
+    - OrderedModel: orden, move_up(), move_down()
     """
     code = models.CharField(
         max_length=20,
@@ -57,34 +69,12 @@ class Area(models.Model):
         verbose_name='Responsable',
         help_text='Usuario responsable del área'
     )
-    is_active = models.BooleanField(
-        default=True,
-        verbose_name='Activo',
-        db_index=True
-    )
-    order = models.PositiveIntegerField(
-        default=0,
-        verbose_name='Orden',
-        help_text='Orden de visualización'
-    )
-
-    # Auditoría
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Creado')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Actualizado')
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='areas_created',
-        verbose_name='Creado por'
-    )
 
     class Meta:
         db_table = 'organizacion_area'
         verbose_name = 'Área'
         verbose_name_plural = 'Áreas'
-        ordering = ['order', 'name']
+        ordering = ['orden', 'name']
         indexes = [
             models.Index(fields=['code']),
             models.Index(fields=['is_active']),
@@ -147,12 +137,17 @@ class Area(models.Model):
 # CATEGORÍA DE DOCUMENTO - Dinámica y configurable
 # =============================================================================
 
-class CategoriaDocumento(models.Model):
+class CategoriaDocumento(TimestampedModel, SoftDeleteModel, OrderedModel):
     """
     Categoría de Documento - Configurable dinámicamente.
 
     Permite agrupar tipos de documentos en categorías personalizables
     para mejor organización y filtrado en el frontend.
+
+    Hereda de:
+    - TimestampedModel: created_at, updated_at
+    - SoftDeleteModel: is_active, deleted_at, soft_delete(), restore()
+    - OrderedModel: orden, move_up(), move_down()
     """
 
     code = models.CharField(
@@ -187,29 +182,17 @@ class CategoriaDocumento(models.Model):
         verbose_name='Es del sistema',
         help_text='Las categorías del sistema no pueden eliminarse'
     )
-    is_active = models.BooleanField(
-        default=True,
-        db_index=True,
-        verbose_name='Activo'
-    )
-    order = models.PositiveIntegerField(
-        default=0,
-        verbose_name='Orden',
-        help_text='Orden de visualización'
-    )
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Creado')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Actualizado')
 
     class Meta:
         db_table = 'organizacion_categoria_documento'
         verbose_name = 'Categoría de Documento'
         verbose_name_plural = 'Categorías de Documento'
         unique_together = [['code']]
-        ordering = ['order', 'name']
+        ordering = ['orden', 'name']
         indexes = [
             models.Index(fields=['code']),
             models.Index(fields=['is_active']),
-            models.Index(fields=['order']),
+            models.Index(fields=['orden']),
         ]
 
     def __str__(self):
@@ -244,12 +227,17 @@ class CategoriaDocumento(models.Model):
 # TIPO DE DOCUMENTO - Configurable por empresa
 # =============================================================================
 
-class TipoDocumento(models.Model):
+class TipoDocumento(AuditModel, SoftDeleteModel, OrderedModel):
     """
     Tipo de Documento - Configurable por empresa para consecutivos.
 
     17 tipos universales predefinidos del sistema (is_system=True).
     Las empresas pueden crear tipos custom adicionales.
+
+    Hereda de:
+    - AuditModel: created_at, updated_at, created_by, updated_by
+    - SoftDeleteModel: is_active, deleted_at, soft_delete(), restore()
+    - OrderedModel: orden, move_up(), move_down()
     """
 
     code = models.CharField(
@@ -287,31 +275,12 @@ class TipoDocumento(models.Model):
         verbose_name='Es del sistema',
         help_text='Los tipos del sistema no pueden eliminarse ni editarse (excepto is_active)'
     )
-    is_active = models.BooleanField(
-        default=True,
-        db_index=True,
-        verbose_name='Activo'
-    )
-    order = models.PositiveIntegerField(
-        default=0,
-        verbose_name='Orden'
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='tipos_documento_created',
-        verbose_name='Creado por'
-    )
 
     class Meta:
         db_table = 'organizacion_tipo_documento'
         verbose_name = 'Tipo de Documento'
         verbose_name_plural = 'Tipos de Documento'
-        ordering = ['categoria__order', 'order', 'name']
+        ordering = ['categoria__orden', 'orden', 'name']
         indexes = [
             models.Index(fields=['code']),
             models.Index(fields=['categoria']),
@@ -347,12 +316,16 @@ class TipoDocumento(models.Model):
 # CONSECUTIVO CONFIG - Numeración automática centralizada
 # =============================================================================
 
-class ConsecutivoConfig(models.Model):
+class ConsecutivoConfig(TimestampedModel, SoftDeleteModel):
     """
     Configuración de Consecutivos - Numeración automática centralizada.
 
     Formato simplificado: PREFIX-YYYY-00001
     Sin incluir área/proceso (simplificación).
+
+    Hereda de:
+    - TimestampedModel: created_at, updated_at
+    - SoftDeleteModel: is_active, deleted_at, soft_delete(), restore()
     """
 
     SEPARATOR_CHOICES = [
@@ -400,15 +373,12 @@ class ConsecutivoConfig(models.Model):
     reset_yearly = models.BooleanField(default=True, verbose_name='Reiniciar Anualmente')
     reset_monthly = models.BooleanField(default=False, verbose_name='Reiniciar Mensualmente')
     last_reset_date = models.DateField(blank=True, null=True, verbose_name='Última Fecha Reinicio')
-    is_active = models.BooleanField(default=True, verbose_name='Activo')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'organizacion_consecutivo_config'
         verbose_name = 'Configuración de Consecutivo'
         verbose_name_plural = 'Configuraciones de Consecutivos'
-        ordering = ['tipo_documento__categoria__order', 'tipo_documento__name']
+        ordering = ['tipo_documento__categoria__orden', 'tipo_documento__name']
         indexes = [
             models.Index(fields=['is_active']),
             models.Index(fields=['tipo_documento']),

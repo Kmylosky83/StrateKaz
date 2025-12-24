@@ -10,6 +10,8 @@ from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 import re
 
+from apps.core.base_models import TimestampedModel, AuditModel, SoftDeleteModel
+
 
 # ==============================================================================
 # CONSTANTES
@@ -144,13 +146,16 @@ def validar_nit_colombiano(value):
 # MODELO EMPRESA CONFIG (SINGLETON)
 # ==============================================================================
 
-class EmpresaConfig(models.Model):
+class EmpresaConfig(TimestampedModel):
     """
     Configuración de Datos Fiscales y Legales de la Empresa
 
     Modelo Singleton: Solo puede existir un registro en la base de datos.
     Almacena toda la información fiscal, legal y de configuración regional
     de la empresa para uso en reportes, certificados y documentos oficiales.
+
+    Hereda de TimestampedModel:
+    - created_at, updated_at (automáticos)
     """
 
     # =========================================================================
@@ -338,17 +343,9 @@ class EmpresaConfig(models.Model):
     )
 
     # =========================================================================
-    # AUDITORÍA
+    # AUDITORÍA (created_at, updated_at heredados de TimestampedModel)
     # =========================================================================
 
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Fecha de Creación'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Última Actualización'
-    )
     updated_by = models.ForeignKey(
         'core.User',
         on_delete=models.SET_NULL,
@@ -516,7 +513,7 @@ TIPO_SEDE_CHOICES = [
 ]
 
 
-class SedeEmpresa(models.Model):
+class SedeEmpresa(AuditModel, SoftDeleteModel):
     """
     Sedes y Ubicaciones de la Empresa
 
@@ -528,6 +525,12 @@ class SedeEmpresa(models.Model):
     - Vehiculo.sede_asignada (ForeignKey)
     - Equipo.sede_asignada (ForeignKey)
     - RecepcionMateriaPrima.sede_recepcion (ForeignKey)
+
+    Hereda de AuditModel, SoftDeleteModel:
+    - created_at, updated_at (de TimestampedModel vía AuditModel)
+    - created_by, updated_by (de AuditModel)
+    - is_active, deleted_at (de SoftDeleteModel)
+    - soft_delete(), restore(), is_deleted (métodos de SoftDeleteModel)
     """
 
     # =========================================================================
@@ -663,37 +666,11 @@ class SedeEmpresa(models.Model):
     )
 
     # =========================================================================
-    # AUDITORÍA
+    # AUDITORÍA (Todos los campos heredados de AuditModel y SoftDeleteModel)
     # =========================================================================
-
-    is_active = models.BooleanField(
-        default=True,
-        db_index=True,
-        verbose_name='Activo',
-        help_text='Si la sede está activa'
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Fecha de Creación'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Última Actualización'
-    )
-    created_by = models.ForeignKey(
-        'core.User',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='sedes_creadas',
-        verbose_name='Creado por'
-    )
-    deleted_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        verbose_name='Fecha de Eliminación',
-        help_text='Fecha de eliminación lógica (soft delete)'
-    )
+    # created_at, updated_at: heredados de AuditModel -> TimestampedModel
+    # created_by, updated_by: heredados de AuditModel
+    # is_active, deleted_at: heredados de SoftDeleteModel
 
     class Meta:
         db_table = 'configuracion_sede_empresa'
@@ -710,10 +687,7 @@ class SedeEmpresa(models.Model):
     def __str__(self):
         return f"{self.nombre} ({self.codigo})"
 
-    @property
-    def is_deleted(self):
-        """Verifica si la sede está eliminada lógicamente."""
-        return self.deleted_at is not None
+    # is_deleted: heredado de SoftDeleteModel como property
 
     @property
     def tiene_geolocalizacion(self):
@@ -733,18 +707,7 @@ class SedeEmpresa(models.Model):
                     break
         return ', '.join(partes)
 
-    def soft_delete(self):
-        """Eliminación lógica de la sede."""
-        from django.utils import timezone
-        self.deleted_at = timezone.now()
-        self.is_active = False
-        self.save(update_fields=['deleted_at', 'is_active', 'updated_at'])
-
-    def restore(self):
-        """Restaura una sede eliminada lógicamente."""
-        self.deleted_at = None
-        self.is_active = True
-        self.save(update_fields=['deleted_at', 'is_active', 'updated_at'])
+    # soft_delete(), restore(): heredados de SoftDeleteModel
 
     def clean(self):
         """Validaciones personalizadas."""
@@ -853,7 +816,7 @@ def get_encryption_key():
     return encryption_key.encode() if isinstance(encryption_key, str) else encryption_key
 
 
-class IntegracionExterna(models.Model):
+class IntegracionExterna(AuditModel, SoftDeleteModel):
     """
     Integración Externa - Configuración de Servicios Externos
 
@@ -868,6 +831,12 @@ class IntegracionExterna(models.Model):
     - Firma Digital
 
     SEGURIDAD: Las credenciales se almacenan ENCRIPTADAS con cryptography.fernet
+
+    Hereda de AuditModel, SoftDeleteModel:
+    - created_at, updated_at (de TimestampedModel vía AuditModel)
+    - created_by, updated_by (de AuditModel)
+    - is_active, deleted_at (de SoftDeleteModel)
+    - soft_delete(), restore(), is_deleted (métodos de SoftDeleteModel)
     """
 
     # =========================================================================
@@ -1080,12 +1049,7 @@ class IntegracionExterna(models.Model):
         verbose_name='Ambiente',
         help_text='Ambiente de la integración'
     )
-    is_active = models.BooleanField(
-        default=True,
-        db_index=True,
-        verbose_name='Activo',
-        help_text='Si la integración está activa y puede usarse'
-    )
+    # is_active: heredado de SoftDeleteModel
     ultima_conexion_exitosa = models.DateTimeField(
         null=True,
         blank=True,
@@ -1127,39 +1091,11 @@ class IntegracionExterna(models.Model):
     )
 
     # =========================================================================
-    # AUDITORÍA
+    # AUDITORÍA (Todos los campos heredados de AuditModel y SoftDeleteModel)
     # =========================================================================
-
-    created_by = models.ForeignKey(
-        'core.User',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='integraciones_creadas',
-        verbose_name='Creado por'
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Fecha de Creación'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Última Actualización'
-    )
-    updated_by = models.ForeignKey(
-        'core.User',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='integraciones_actualizadas',
-        verbose_name='Actualizado por'
-    )
-    deleted_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        verbose_name='Fecha de Eliminación',
-        help_text='Fecha de eliminación lógica (soft delete)'
-    )
+    # created_at, updated_at: heredados de AuditModel -> TimestampedModel
+    # created_by, updated_by: heredados de AuditModel
+    # deleted_at: heredado de SoftDeleteModel
 
     class Meta:
         db_table = 'configuracion_integracion_externa'
@@ -1177,7 +1113,7 @@ class IntegracionExterna(models.Model):
         return f"{self.get_tipo_servicio_display()} - {self.nombre} ({self.get_proveedor_display()})"
 
     # =========================================================================
-    # PROPIEDADES DE ENCRIPTACIÓN
+    # PROPIEDADES DE ENCRIPTACIÓN (Específicas de IntegracionExterna)
     # =========================================================================
 
     @property
@@ -1230,7 +1166,7 @@ class IntegracionExterna(models.Model):
             raise ValidationError(f"Error al encriptar credenciales: {e}")
 
     # =========================================================================
-    # PROPIEDADES DE SALUD Y MONITOREO
+    # PROPIEDADES DE SALUD Y MONITOREO (Específicas de IntegracionExterna)
     # =========================================================================
 
     @property
@@ -1268,10 +1204,7 @@ class IntegracionExterna(models.Model):
 
         return True
 
-    @property
-    def is_deleted(self):
-        """Verifica si la integración está eliminada lógicamente."""
-        return self.deleted_at is not None
+    # is_deleted: heredado de SoftDeleteModel como property
 
     @property
     def porcentaje_uso_limite(self):
@@ -1325,7 +1258,7 @@ class IntegracionExterna(models.Model):
         return 'success'
 
     # =========================================================================
-    # MÉTODOS DE GESTIÓN
+    # MÉTODOS DE GESTIÓN (Específicos de IntegracionExterna)
     # =========================================================================
 
     def registrar_exito(self):
@@ -1374,18 +1307,9 @@ class IntegracionExterna(models.Model):
         self.contador_llamadas = 0
         self.save(update_fields=['contador_llamadas', 'updated_at'])
 
-    def soft_delete(self):
-        """Eliminación lógica de la integración."""
-        from django.utils import timezone
-        self.deleted_at = timezone.now()
-        self.is_active = False
-        self.save(update_fields=['deleted_at', 'is_active', 'updated_at'])
-
-    def restore(self):
-        """Restaura una integración eliminada lógicamente."""
-        self.deleted_at = None
-        # No activar automáticamente, requiere validación manual
-        self.save(update_fields=['deleted_at', 'updated_at'])
+    # soft_delete(), restore(): heredados de SoftDeleteModel
+    # NOTA: El restore() de IntegracionExterna no activa automáticamente (requiere validación manual)
+    # Si se necesita comportamiento especial, se puede override aquí
 
     def get_credencial(self, key, default=None):
         """

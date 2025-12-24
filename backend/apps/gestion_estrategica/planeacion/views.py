@@ -1,5 +1,14 @@
 """
 Views del módulo Planeación Estratégica - Dirección Estratégica
+
+ViewSets para:
+- StrategicPlan: Plan estratégico
+- StrategicObjective: Objetivos estratégicos
+- MapaEstrategico: Mapa estratégico con perspectivas BSC
+- CausaEfecto: Relaciones causa-efecto
+- KPIObjetivo: Indicadores clave
+- MedicionKPI: Mediciones de KPI
+- GestionCambio: Gestión de cambios
 """
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -9,19 +18,33 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django.utils import timezone
 
-from apps.core.permissions import HasModulePermission
-from .models import StrategicPlan, StrategicObjective
+from apps.core.mixins import StandardViewSetMixin, OrderingMixin
+from .models import (
+    StrategicPlan, StrategicObjective, MapaEstrategico,
+    CausaEfecto, KPIObjetivo, MedicionKPI, GestionCambio
+)
 from .serializers import (
     StrategicPlanSerializer,
     StrategicPlanCreateUpdateSerializer,
     StrategicObjectiveSerializer,
     StrategicObjectiveCreateUpdateSerializer,
     ApprovePlanSerializer,
-    UpdateProgressSerializer
+    UpdateProgressSerializer,
+    MapaEstrategicoSerializer,
+    MapaEstrategicoCreateUpdateSerializer,
+    UpdateCanvasSerializer,
+    CausaEfectoSerializer,
+    KPIObjetivoSerializer,
+    KPIObjetivoCreateUpdateSerializer,
+    AddMeasurementSerializer,
+    MedicionKPISerializer,
+    GestionCambioSerializer,
+    GestionCambioCreateUpdateSerializer,
+    TransitionStatusSerializer,
 )
 
 
-class StrategicPlanViewSet(viewsets.ModelViewSet):
+class StrategicPlanViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gestionar Planes Estratégicos.
 
@@ -34,23 +57,21 @@ class StrategicPlanViewSet(viewsets.ModelViewSet):
     - GET /planes/active/ - Obtener plan activo
     - POST /planes/{id}/approve/ - Aprobar plan
     - GET /planes/{id}/dashboard/ - Dashboard del plan
+    - POST /planes/{id}/toggle-active/ - Toggle estado activo
     """
 
-    queryset = StrategicPlan.objects.prefetch_related('objectives').all()
+    queryset = StrategicPlan.objects.prefetch_related('objectives', 'mapas').all()
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['is_active', 'period_type']
+    filterset_fields = ['is_active', 'period_type', 'status']
     search_fields = ['name', 'description']
-    ordering_fields = ['start_date', 'end_date', 'created_at']
+    ordering_fields = ['start_date', 'end_date', 'created_at', 'status']
     ordering = ['-start_date']
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
             return StrategicPlanCreateUpdateSerializer
         return StrategicPlanSerializer
-
-    def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
 
     @action(detail=False, methods=['get'])
     def active(self, request):
@@ -128,7 +149,7 @@ class StrategicPlanViewSet(viewsets.ModelViewSet):
         })
 
 
-class StrategicObjectiveViewSet(viewsets.ModelViewSet):
+class StrategicObjectiveViewSet(StandardViewSetMixin, OrderingMixin, viewsets.ModelViewSet):
     """
     ViewSet para gestionar Objetivos Estratégicos.
 
@@ -140,25 +161,24 @@ class StrategicObjectiveViewSet(viewsets.ModelViewSet):
     - DELETE /objetivos/{id}/ - Eliminar objetivo
     - POST /objetivos/{id}/update_progress/ - Actualizar progreso
     - GET /objetivos/by_perspective/ - Objetivos por perspectiva BSC
+    - POST /objetivos/{id}/toggle-active/ - Toggle estado activo
+    - POST /objetivos/reorder/ - Reordenar objetivos
     """
 
     queryset = StrategicObjective.objects.select_related(
         'plan', 'responsible', 'responsible_cargo', 'created_by'
-    ).all()
+    ).prefetch_related('kpis').all()
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['plan', 'bsc_perspective', 'status', 'is_active']
     search_fields = ['code', 'name', 'description']
-    ordering_fields = ['code', 'order', 'due_date', 'progress']
+    ordering_fields = ['code', 'order', 'due_date', 'progress', 'bsc_perspective']
     ordering = ['bsc_perspective', 'order', 'code']
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
             return StrategicObjectiveCreateUpdateSerializer
         return StrategicObjectiveSerializer
-
-    def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
 
     @action(detail=True, methods=['post'])
     def update_progress(self, request, pk=None):
@@ -198,21 +218,325 @@ class StrategicObjectiveViewSet(viewsets.ModelViewSet):
 
         return Response(result)
 
-    @action(detail=False, methods=['post'])
-    def reorder(self, request):
-        """Reordena los objetivos estratégicos"""
-        order_data = request.data.get('order', [])
+    @action(detail=True, methods=['get'])
+    def kpis(self, request, pk=None):
+        """Obtiene los KPIs del objetivo"""
+        objective = self.get_object()
+        kpis = objective.kpis.filter(is_active=True)
+        serializer = KPIObjetivoSerializer(kpis, many=True)
+        return Response(serializer.data)
 
-        if not order_data:
+
+# =============================================================================
+# NUEVOS VIEWSETS - Semana 4
+# =============================================================================
+
+class MapaEstrategicoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar Mapas Estratégicos.
+
+    Endpoints:
+    - GET /mapas/ - Lista de mapas
+    - POST /mapas/ - Crear nuevo mapa
+    - GET /mapas/{id}/ - Detalle del mapa
+    - PUT/PATCH /mapas/{id}/ - Actualizar mapa
+    - DELETE /mapas/{id}/ - Eliminar mapa
+    - GET /mapas/{id}/canvas/ - Obtener datos del canvas
+    - POST /mapas/{id}/update-canvas/ - Actualizar canvas
+    - GET /mapas/{id}/objectives-by-perspective/ - Objetivos organizados
+    """
+
+    queryset = MapaEstrategico.objects.select_related(
+        'plan', 'created_by'
+    ).prefetch_related('relaciones').all()
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['plan', 'is_active']
+    search_fields = ['name', 'description']
+    ordering_fields = ['name', 'version', 'created_at']
+    ordering = ['-created_at']
+
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return MapaEstrategicoCreateUpdateSerializer
+        return MapaEstrategicoSerializer
+
+    @action(detail=True, methods=['get'])
+    def canvas(self, request, pk=None):
+        """Obtiene los datos del canvas"""
+        mapa = self.get_object()
+        return Response({
+            'canvas_data': mapa.canvas_data,
+            'version': mapa.version
+        })
+
+    @action(detail=True, methods=['post'], url_path='update-canvas')
+    def update_canvas(self, request, pk=None):
+        """Actualiza los datos del canvas"""
+        mapa = self.get_object()
+
+        serializer = UpdateCanvasSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        mapa.canvas_data = serializer.validated_data['canvas_data']
+        mapa.save(update_fields=['canvas_data', 'updated_at'])
+
+        return Response({
+            'detail': 'Canvas actualizado exitosamente',
+            'canvas_data': mapa.canvas_data
+        })
+
+    @action(detail=True, methods=['get'], url_path='objectives-by-perspective')
+    def objectives_by_perspective(self, request, pk=None):
+        """Obtiene objetivos del plan organizados por perspectiva BSC"""
+        mapa = self.get_object()
+        objectives = StrategicObjective.objects.filter(
+            plan=mapa.plan,
+            is_active=True
+        )
+
+        result = {}
+        for perspective, label in StrategicObjective.BSC_PERSPECTIVE_CHOICES:
+            objs = objectives.filter(bsc_perspective=perspective)
+            result[perspective] = {
+                'label': label,
+                'objectives': [
+                    {
+                        'id': o.id,
+                        'code': o.code,
+                        'name': o.name,
+                        'progress': o.progress,
+                        'status': o.status
+                    }
+                    for o in objs
+                ]
+            }
+
+        return Response(result)
+
+
+class CausaEfectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+    """ViewSet para gestionar Relaciones Causa-Efecto"""
+
+    queryset = CausaEfecto.objects.select_related(
+        'mapa', 'source_objective', 'target_objective'
+    ).all()
+    serializer_class = CausaEfectoSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['mapa', 'source_objective', 'target_objective']
+
+
+class KPIObjetivoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar KPIs de Objetivos.
+
+    Endpoints:
+    - GET /kpis/ - Lista de KPIs
+    - POST /kpis/ - Crear nuevo KPI
+    - GET /kpis/{id}/ - Detalle del KPI
+    - PUT/PATCH /kpis/{id}/ - Actualizar KPI
+    - DELETE /kpis/{id}/ - Eliminar KPI
+    - POST /kpis/{id}/add-measurement/ - Agregar medición
+    - GET /kpis/{id}/trend/ - Obtener tendencia
+    - GET /kpis/semaforo/ - Semáforo de todos los KPIs
+    """
+
+    queryset = KPIObjetivo.objects.select_related(
+        'objective', 'responsible', 'responsible_cargo', 'created_by'
+    ).prefetch_related('measurements').all()
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['objective', 'frequency', 'is_active']
+    search_fields = ['name', 'description', 'formula']
+    ordering_fields = ['name', 'frequency', 'last_measurement_date', 'created_at']
+    ordering = ['objective', 'name']
+
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return KPIObjetivoCreateUpdateSerializer
+        return KPIObjetivoSerializer
+
+    @action(detail=True, methods=['post'], url_path='add-measurement')
+    def add_measurement(self, request, pk=None):
+        """Agrega una medición al KPI"""
+        kpi = self.get_object()
+
+        serializer = AddMeasurementSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        measurement = kpi.add_measurement(
+            value=serializer.validated_data['value'],
+            measured_by=request.user,
+            period=serializer.validated_data.get('period'),
+            notes=serializer.validated_data.get('notes'),
+            evidence=serializer.validated_data.get('evidence_file')
+        )
+
+        return Response({
+            'detail': 'Medición agregada exitosamente',
+            'measurement': MedicionKPISerializer(measurement).data,
+            'kpi_status': kpi.status_semaforo
+        })
+
+    @action(detail=True, methods=['get'])
+    def trend(self, request, pk=None):
+        """Obtiene la tendencia histórica del KPI"""
+        kpi = self.get_object()
+        limit = int(request.query_params.get('limit', 12))
+
+        measurements = kpi.measurements.order_by('-period')[:limit]
+
+        return Response({
+            'kpi_id': kpi.id,
+            'kpi_name': kpi.name,
+            'target_value': str(kpi.target_value),
+            'current_status': kpi.status_semaforo,
+            'measurements': [
+                {
+                    'period': m.period,
+                    'value': str(m.value)
+                }
+                for m in reversed(list(measurements))
+            ]
+        })
+
+    @action(detail=False, methods=['get'])
+    def semaforo(self, request):
+        """Retorna el semáforo de todos los KPIs"""
+        queryset = self.filter_queryset(self.get_queryset()).filter(is_active=True)
+
+        result = {
+            'VERDE': [],
+            'AMARILLO': [],
+            'ROJO': [],
+            'SIN_DATOS': []
+        }
+
+        for kpi in queryset:
+            status = kpi.status_semaforo
+            result[status].append({
+                'id': kpi.id,
+                'name': kpi.name,
+                'objective_code': kpi.objective.code,
+                'last_value': str(kpi.last_value) if kpi.last_value else None,
+                'target_value': str(kpi.target_value)
+            })
+
+        return Response({
+            'total': queryset.count(),
+            'verde': len(result['VERDE']),
+            'amarillo': len(result['AMARILLO']),
+            'rojo': len(result['ROJO']),
+            'sin_datos': len(result['SIN_DATOS']),
+            'details': result
+        })
+
+
+class MedicionKPIViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+    """ViewSet para gestionar Mediciones de KPI"""
+
+    queryset = MedicionKPI.objects.select_related('kpi', 'measured_by').all()
+    serializer_class = MedicionKPISerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_fields = ['kpi', 'period']
+    ordering_fields = ['period', 'created_at']
+    ordering = ['-period']
+
+
+class GestionCambioViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar Gestión de Cambios.
+
+    Endpoints:
+    - GET /cambios/ - Lista de cambios
+    - POST /cambios/ - Crear nuevo cambio
+    - GET /cambios/{id}/ - Detalle del cambio
+    - PUT/PATCH /cambios/{id}/ - Actualizar cambio
+    - DELETE /cambios/{id}/ - Eliminar cambio
+    - POST /cambios/{id}/transition/ - Transicionar estado
+    - GET /cambios/kanban/ - Vista kanban por estado
+    - GET /cambios/stats/ - Estadísticas
+    """
+
+    queryset = GestionCambio.objects.select_related(
+        'responsible', 'responsible_cargo', 'created_by'
+    ).prefetch_related('related_objectives').all()
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['change_type', 'priority', 'status', 'is_active']
+    search_fields = ['code', 'title', 'description']
+    ordering_fields = ['code', 'priority', 'status', 'due_date', 'created_at']
+    ordering = ['-priority', '-created_at']
+
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return GestionCambioCreateUpdateSerializer
+        return GestionCambioSerializer
+
+    @action(detail=True, methods=['post'])
+    def transition(self, request, pk=None):
+        """Transiciona el estado del cambio"""
+        cambio = self.get_object()
+
+        serializer = TransitionStatusSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            cambio.transition_status(
+                serializer.validated_data['new_status'],
+                user=request.user
+            )
+        except ValueError as e:
             return Response(
-                {'detail': 'Se requiere lista de ordenamiento'},
+                {'detail': str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        for item in order_data:
-            obj_id = item.get('id')
-            new_order = item.get('order')
-            if obj_id and new_order is not None:
-                StrategicObjective.objects.filter(id=obj_id).update(order=new_order)
+        return Response({
+            'detail': 'Estado actualizado exitosamente',
+            'status': cambio.status,
+            'status_display': cambio.get_status_display()
+        })
 
-        return Response({'detail': 'Objetivos reordenados exitosamente'})
+    @action(detail=False, methods=['get'])
+    def kanban(self, request):
+        """Retorna cambios organizados para vista kanban"""
+        queryset = self.filter_queryset(self.get_queryset()).filter(is_active=True)
+
+        result = {}
+        for status_code, status_label in GestionCambio.STATUS_CHOICES:
+            cambios = queryset.filter(status=status_code)
+            result[status_code] = {
+                'label': status_label,
+                'count': cambios.count(),
+                'items': GestionCambioSerializer(cambios, many=True).data
+            }
+
+        return Response(result)
+
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        """Estadísticas de gestión de cambios"""
+        queryset = self.get_queryset().filter(is_active=True)
+
+        return Response({
+            'total': queryset.count(),
+            'by_type': {
+                code: queryset.filter(change_type=code).count()
+                for code, _ in GestionCambio.CHANGE_TYPE_CHOICES
+            },
+            'by_priority': {
+                code: queryset.filter(priority=code).count()
+                for code, _ in GestionCambio.PRIORITY_CHOICES
+            },
+            'by_status': {
+                code: queryset.filter(status=code).count()
+                for code, _ in GestionCambio.STATUS_CHOICES
+            },
+            'overdue': queryset.filter(
+                due_date__lt=timezone.now().date(),
+                status__in=['IDENTIFICADO', 'ANALISIS', 'PLANIFICADO', 'EN_EJECUCION']
+            ).count()
+        })

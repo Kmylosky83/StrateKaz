@@ -17,6 +17,7 @@ export interface DropdownProps {
   items: DropdownItem[];
   align?: 'left' | 'right';
   className?: string;
+  disabled?: boolean;
 }
 
 export const Dropdown = ({
@@ -24,10 +25,17 @@ export const Dropdown = ({
   items,
   align = 'right',
   className,
+  disabled = false,
 }: DropdownProps) => {
   return (
     <Menu as="div" className={cn('relative inline-block text-left', className)}>
-      <Menu.Button className="inline-flex items-center justify-center rounded-lg p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2">
+      <Menu.Button
+        disabled={disabled}
+        className={cn(
+          'inline-flex items-center justify-center rounded-lg p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+          disabled && 'opacity-50 cursor-not-allowed hover:bg-transparent dark:hover:bg-transparent'
+        )}
+      >
         {trigger || <MoreVertical className="h-5 w-5" />}
       </Menu.Button>
 

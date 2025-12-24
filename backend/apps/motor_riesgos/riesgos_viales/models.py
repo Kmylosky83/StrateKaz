@@ -3,11 +3,9 @@ Modelos para riesgos_viales - PESV (Plan Estratégico de Seguridad Vial)
 Basado en Resolución 40595/2022 - Ministerio de Transporte de Colombia
 """
 from django.db import models
-from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from decimal import Decimal
-
-User = get_user_model()
 
 
 class TipoRiesgoVial(models.Model):
@@ -218,7 +216,7 @@ class RiesgoVial(models.Model):
 
     # Responsable
     responsable = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='riesgos_viales_responsable',
@@ -262,7 +260,7 @@ class RiesgoVial(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='riesgos_viales_created',
@@ -419,7 +417,7 @@ class ControlVial(models.Model):
 
     # Responsabilidad
     responsable = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='controles_viales_responsable',
@@ -519,7 +517,7 @@ class ControlVial(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='controles_viales_created',
@@ -717,7 +715,7 @@ class IncidenteVial(models.Model):
         verbose_name='Estado de Investigación'
     )
     investigador = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -792,7 +790,7 @@ class IncidenteVial(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='incidentes_viales_created',
@@ -1068,7 +1066,7 @@ class InspeccionVehiculo(models.Model):
 
     # Firma digital / confirmación
     inspeccion_confirmada_por = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -1091,7 +1089,7 @@ class InspeccionVehiculo(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='inspecciones_vehiculo_created',

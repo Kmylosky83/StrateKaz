@@ -20,6 +20,7 @@ import {
   Grid3X3,
   Network,
   LayoutList,
+  Loader2,
 } from 'lucide-react';
 import { Button, Badge, Dropdown } from '@/components/common';
 import type { DropdownItem } from '@/components/common/Dropdown';
@@ -62,8 +63,10 @@ interface OrganigramaToolbarProps {
   onCollapseAll: () => void;
   /** Estadísticas del organigrama */
   stats?: OrganigramaStats;
-  /** Cargando */
+  /** Cargando datos */
   isLoading?: boolean;
+  /** Exportando */
+  isExporting?: boolean;
 }
 
 export const OrganigramaToolbar = ({
@@ -82,6 +85,7 @@ export const OrganigramaToolbar = ({
   onCollapseAll,
   stats,
   isLoading,
+  isExporting = false,
 }: OrganigramaToolbarProps) => {
   const [searchValue, setSearchValue] = useState(filters.search);
 
@@ -252,8 +256,12 @@ export const OrganigramaToolbar = ({
         <Dropdown
           trigger={
             <span className="flex items-center gap-2">
-              <Download className="h-4 w-4" />
-              <span>Exportar</span>
+              {isExporting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              <span>{isExporting ? 'Exportando...' : 'Exportar'}</span>
             </span>
           }
           items={[
@@ -261,13 +269,16 @@ export const OrganigramaToolbar = ({
               label: 'Exportar como PNG',
               icon: <Image className="h-4 w-4" />,
               onClick: () => onExport('png'),
+              disabled: isExporting,
             },
             {
               label: 'Exportar como PDF',
               icon: <FileText className="h-4 w-4" />,
               onClick: () => onExport('pdf'),
+              disabled: isExporting,
             },
           ]}
+          disabled={isExporting}
         />
 
         {/* Estadísticas */}

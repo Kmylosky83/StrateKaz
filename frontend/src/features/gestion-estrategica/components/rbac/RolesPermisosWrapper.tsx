@@ -1,5 +1,8 @@
 /**
- * RolesTab - Tab principal para gestión RBAC híbrido
+ * RolesPermisosWrapper - Wrapper para gestión RBAC híbrido
+ *
+ * IMPORTANTE: Renombrado de RolesTab → RolesPermisosWrapper para evitar
+ * conflicto de nombres con configuracion/RolesTab.tsx (componente legacy).
  *
  * Contiene 3 subtabs:
  * - Permisos por Cargo: Gestión de permisos directos de cargos
@@ -15,7 +18,7 @@ import { TodosPermisosSubTab } from './TodosPermisosSubTab';
 
 type SubTab = 'permisos-cargo' | 'roles-adicionales' | 'todos-permisos';
 
-export const RolesTab = () => {
+export const RolesPermisosWrapper = () => {
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('permisos-cargo');
 
   const subTabs = [

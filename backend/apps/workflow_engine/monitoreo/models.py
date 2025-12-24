@@ -1,7 +1,5 @@
 from django.db import models
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
+from django.conf import settings
 
 
 class MetricaFlujo(models.Model):
@@ -40,7 +38,7 @@ class AlertaFlujo(models.Model):
     descripcion = models.TextField()
     fecha_generacion = models.DateTimeField(auto_now_add=True)
     fecha_atencion = models.DateTimeField(null=True, blank=True)
-    atendida_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='alertas_atendidas')
+    atendida_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='alertas_atendidas')
     acciones_tomadas = models.TextField(blank=True)
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='activa')
     empresa_id = models.PositiveBigIntegerField()
@@ -71,7 +69,7 @@ class ReglaSLA(models.Model):
 
 class DashboardWidget(models.Model):
     TIPO_CHOICES = [('kpi', 'KPI'), ('grafico', 'Gráfico'), ('lista', 'Lista'), ('tabla', 'Tabla')]
-    usuario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='dashboard_widgets')
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='dashboard_widgets')
     tipo_widget = models.CharField(max_length=20, choices=TIPO_CHOICES)
     titulo = models.CharField(max_length=255)
     configuracion = models.JSONField(default=dict)

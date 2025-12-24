@@ -14,11 +14,9 @@ Integrado con:
 - monitoreo: AlertaFlujo, MetricaFlujo para análisis
 """
 from django.db import models
-from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-
-User = get_user_model()
 
 
 class InstanciaFlujo(models.Model):
@@ -184,7 +182,7 @@ class InstanciaFlujo(models.Model):
 
     # ============ PARTICIPANTES ============
     iniciado_por = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='instancias_iniciadas',
@@ -193,7 +191,7 @@ class InstanciaFlujo(models.Model):
     )
 
     responsable_actual = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -204,7 +202,7 @@ class InstanciaFlujo(models.Model):
     )
 
     finalizado_por = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -415,7 +413,7 @@ class TareaActiva(models.Model):
 
     # ============ ASIGNACIÓN ============
     asignado_a = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -434,7 +432,7 @@ class TareaActiva(models.Model):
     )
 
     asignado_por = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -505,7 +503,7 @@ class TareaActiva(models.Model):
 
     # ============ ESCALAMIENTO ============
     escalada_a = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -552,7 +550,7 @@ class TareaActiva(models.Model):
     )
 
     created_by = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -715,7 +713,7 @@ class HistorialTarea(models.Model):
 
     # ============ ASIGNACIONES (para cambios de asignado_a) ============
     asignado_anterior = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -725,7 +723,7 @@ class HistorialTarea(models.Model):
     )
 
     asignado_nuevo = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -744,7 +742,7 @@ class HistorialTarea(models.Model):
 
     # ============ USUARIO Y FECHA ============
     usuario = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='historial_tareas_realizadas',
@@ -900,7 +898,7 @@ class ArchivoAdjunto(models.Model):
 
     # ============ AUDITORÍA ============
     subido_por = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='archivos_subidos',
@@ -1010,7 +1008,7 @@ class NotificacionFlujo(models.Model):
 
     # ============ DESTINATARIO ============
     destinatario = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='notificaciones_flujo',
         db_index=True,
@@ -1134,7 +1132,7 @@ class NotificacionFlujo(models.Model):
     )
 
     generada_por = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

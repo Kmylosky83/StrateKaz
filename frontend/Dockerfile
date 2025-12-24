@@ -37,7 +37,7 @@ ENV NODE_ENV=production
 RUN npm run build
 
 # ==================== STAGE 2: Production ====================
-FROM nginx:1.25-alpine AS production
+FROM nginx:1.29-alpine AS production
 
 LABEL maintainer="Grasas y Huesos del Norte"
 LABEL description="Frontend React/Vite - Production Server"

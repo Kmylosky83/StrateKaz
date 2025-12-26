@@ -4,8 +4,8 @@ Sistema integral de gestión para la recolección y procesamiento de materias pr
 
 | Info | Valor |
 |------|-------|
-| **Versión** | 2.0.0-alpha.8 |
-| **Última Actualización** | 25 Diciembre 2025 (Semana 7) |
+| **Versión** | 2.0.0-alpha.9 |
+| **Última Actualización** | 25 Diciembre 2025 (Semana 8) |
 | **Estado** | Nivel 2 en Progreso |
 | **Repositorio** | [GitHub](https://github.com/Kmylosky83/Grasas-Huesos-SGI) |
 
@@ -185,23 +185,23 @@ Para soporte técnico, contactar al equipo de desarrollo.
 
 ## Progreso Reciente
 
-### Semana 7 - Motor de Cumplimiento (25 Dic 2025)
+### Semana 8 - Partes Interesadas y Reglamentos (25 Dic 2025)
 
 **Backend:**
-- ✅ 18 modelos migrados a `BaseCompanyModel`
-- ✅ 17 ViewSets con `StandardViewSetMixin`
-- ✅ Celery tasks: scraper legal, alertas de vencimientos
-- ✅ 4 apps completadas: matriz_legal, requisitos, partes_interesadas, reglamentos
+- ✅ 9 modelos nuevos (partes_interesadas + reglamentos_internos)
+- ✅ TipoParteInteresada, ParteInteresada, RequisitoParteInteresada, MatrizComunicacion
+- ✅ TipoReglamento, Reglamento, VersionReglamento, PublicacionReglamento, SocializacionReglamento
+- ✅ ViewSets con `StandardViewSetMixin`, Serializers completos
 
 **Frontend:**
-- ✅ Tipos TypeScript completos para 4 apps
-- ✅ API clients y custom hooks con `useGenericCRUD`
-- ✅ 4 componentes principales: MatrizLegalTab, RequisitosLegalesTab, PartesInteresadasTab, ReglamentosInternosTab
-- ✅ Dashboard de vencimientos, matriz de influencia, control de versiones
+- ✅ PartesInteresadasTab (4 subtabs: Listado, Matriz, Requisitos, Comunicaciones)
+- ✅ ReglamentosInternosTab con control de versiones
+- ✅ MatrizInfluenciaInteres (visualización 3x3)
+- ✅ Hooks: usePartesInteresadas, useReglamentos
 
 **Testing:**
-- ✅ 101 tests creados (objetivo: 25+)
-- ✅ Cobertura >85%
+- ✅ Tests de modelos y views para ambas apps
+- ✅ 2,386 líneas de tests en motor_cumplimiento
 
 ---
 

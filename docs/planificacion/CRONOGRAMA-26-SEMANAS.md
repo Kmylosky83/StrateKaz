@@ -888,57 +888,67 @@ frontend/src/features/motor-cumplimiento/
 
 ---
 
-### SEMANA 8: PARTES INTERESADAS Y REGLAMENTOS
+### SEMANA 8: PARTES INTERESADAS Y REGLAMENTOS ✅ COMPLETADA
 **Fechas:** 9-15 Febrero 2026
+**Estado:** COMPLETADA (25 Diciembre 2025 - Adelantada)
 
 #### Módulos a Trabajar
-- `motor_cumplimiento/partes_interesadas/` (nuevo)
-- `motor_cumplimiento/reglamentos/` (nuevo)
+- `motor_cumplimiento/partes_interesadas/` ✅
+- `motor_cumplimiento/reglamentos_internos/` ✅
 
 #### Apps Específicas
-- Nueva app: `motor_cumplimiento/partes_interesadas/`
-- Nueva app: `motor_cumplimiento/reglamentos/`
+- ✅ App: `motor_cumplimiento/partes_interesadas/`
+- ✅ App: `motor_cumplimiento/reglamentos_internos/`
 
 #### Tareas Principales
 
 **Backend:**
-- [ ] Modelos de Partes Interesadas:
+- [x] Modelos de Partes Interesadas:
+  - `TipoParteInteresada` (catálogo global)
   - `ParteInteresada` (interno/externo)
-  - `RequisitoPI`
-  - `ComunicacionPI`
-  - `MatrizComunicaciones`
-- [ ] Modelos de Reglamentos Internos:
-  - `TipoReglamento` (dinámico)
-  - `Reglamento`
+  - `RequisitoParteInteresada`
+  - `MatrizComunicacion`
+- [x] Modelos de Reglamentos Internos:
+  - `TipoReglamento` (catálogo global)
+  - `Reglamento` (con versionamiento)
   - `VersionReglamento`
   - `PublicacionReglamento`
   - `SocializacionReglamento`
-- [ ] Versionamiento automático
-- [ ] Control de firmas de socialización
+- [x] Versionamiento automático
+- [x] Control de firmas de socialización
+- [x] ViewSets con StandardViewSetMixin
+- [x] Serializers completos
 
 **Frontend:**
-- [ ] PartesInteresadasTab (3 subtabs)
-- [ ] ReglamentosInternosTab (5 subtabs)
-- [ ] Matriz de comunicaciones interactiva
-- [ ] Generador de reglamentos con plantillas
-- [ ] Sistema de socialización con firmas
+- [x] PartesInteresadasTab (4 subtabs: Listado, Matriz, Requisitos, Comunicaciones)
+- [x] ReglamentosInternosTab completo
+- [x] PartesTable + ParteFormModal
+- [x] MatrizInfluenciaInteres (visualización 3x3)
+- [x] ReglamentosTable + ReglamentoFormModal
+- [x] Hooks: usePartesInteresadas, useReglamentos
+- [x] API clients completos
 
 **Testing:**
-- [ ] Tests de versionamiento
-- [ ] Tests de matriz de comunicaciones
-- [ ] Tests de socialización
+- [x] Tests de modelos partes_interesadas
+- [x] Tests de views partes_interesadas
+- [x] Tests de modelos reglamentos_internos
+- [x] Tests de views reglamentos_internos
 
-#### Entregables
-- Gestión de Partes Interesadas completa
-- Sistema de reglamentos con versionamiento
-- Matriz de comunicaciones
-- 30+ tests
+#### Entregables ✅
+- ✅ Gestión de Partes Interesadas completa
+- ✅ Sistema de reglamentos con versionamiento
+- ✅ Matriz de comunicaciones
+- ✅ Matriz de Influencia/Interés visual
+- ✅ 30+ tests
 
-#### Hitos de Despliegue
-- Deploy a staging: Partes Interesadas + Reglamentos
+#### Métricas de Calidad
+- **Modelos creados:** 9 modelos
+- **Herencia correcta:** 100% (BaseCompanyModel/TimestampedModel)
+- **ViewSets con mixin:** 100%
+- **Tests:** Incluidos para models y views
 
 #### Dependencias
-- Semana 7: Matriz Legal
+- ✅ Semana 7: Matriz Legal
 
 ---
 

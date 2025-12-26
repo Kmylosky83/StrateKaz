@@ -87,8 +87,8 @@ class AreaViewSet(StandardViewSetMixin, OrderingMixin, viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['is_active', 'parent']
     search_fields = ['code', 'name', 'description', 'cost_center']
-    ordering_fields = ['order', 'name', 'code', 'created_at']
-    ordering = ['order', 'name']
+    ordering_fields = ['orden', 'name', 'code', 'created_at']
+    ordering = ['orden', 'name']
 
     # Configuración para ValidateBeforeDeleteMixin
     protected_relations = ['children']
@@ -154,7 +154,7 @@ class AreaViewSet(StandardViewSetMixin, OrderingMixin, viewsets.ModelViewSet):
         if request.query_params.get('include_inactive') != 'true':
             children_qs = children_qs.filter(is_active=True)
 
-        children = children_qs.order_by('order', 'name')
+        children = children_qs.order_by('orden', 'name')
         serializer = AreaSerializer(children, many=True)
         return Response(serializer.data)
 
@@ -218,8 +218,8 @@ class CategoriaDocumentoViewSet(StandardViewSetMixin, ValidateBeforeDeleteMixin,
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['is_active', 'is_system']
     search_fields = ['code', 'name', 'description']
-    ordering_fields = ['name', 'code', 'order', 'created_at']
-    ordering = ['order', 'name']
+    ordering_fields = ['name', 'code', 'orden', 'created_at']
+    ordering = ['orden', 'name']
 
     # Configuración para ValidateBeforeDeleteMixin
     protected_relations = ['tipos_documento']
@@ -231,7 +231,7 @@ class CategoriaDocumentoViewSet(StandardViewSetMixin, ValidateBeforeDeleteMixin,
         """Incluye conteo de tipos de documento activos"""
         from django.db.models import Count
         queryset = CategoriaDocumento.objects.annotate(
-            count_tipos=Count('tipos_documento', filter=models.Q(tipos_documento__is_active=True))
+            tipos_count=Count('tipos_documento', filter=models.Q(tipos_documento__is_active=True))
         )
         # FilterInactiveMixin ya aplica el filtro por is_active
         return queryset
@@ -310,8 +310,8 @@ class TipoDocumentoViewSet(StandardViewSetMixin, ValidateBeforeDeleteMixin, view
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['categoria', 'is_active', 'is_system']
     search_fields = ['code', 'name', 'description']
-    ordering_fields = ['name', 'code', 'categoria__order', 'order', 'created_at']
-    ordering = ['categoria__order', 'order', 'name']
+    ordering_fields = ['name', 'code', 'categoria__orden', 'orden', 'created_at']
+    ordering = ['categoria__orden', 'orden', 'name']
 
     # Configuración para ValidateBeforeDeleteMixin
     # Los tipos de documento pueden tener relaciones con consecutivos, documentos, etc.
@@ -456,7 +456,7 @@ class ConsecutivoConfigViewSet(FilterInactiveMixin, ToggleActiveMixin, viewsets.
     filterset_fields = ['is_active', 'tipo_documento__categoria']
     search_fields = ['prefix', 'tipo_documento__code', 'tipo_documento__name']
     ordering_fields = ['tipo_documento__name', 'prefix', 'created_at']
-    ordering = ['tipo_documento__categoria__order', 'tipo_documento__name']
+    ordering = ['tipo_documento__categoria__orden', 'tipo_documento__name']
 
     def get_queryset(self):
         """Optimiza queries con select_related"""
@@ -571,7 +571,7 @@ class OrganigramaView(APIView):
             areas_qs = areas_qs.filter(is_active=True)
 
         areas_data = []
-        for area in areas_qs.order_by('order', 'name'):
+        for area in areas_qs.order_by('orden', 'name'):
             area_dict = {
                 'id': area.id,
                 'code': area.code,
@@ -583,7 +583,7 @@ class OrganigramaView(APIView):
                 'manager': area.manager_id,
                 'manager_name': area.manager.get_full_name() if area.manager else None,
                 'is_active': area.is_active,
-                'order': area.order,
+                'orden': area.orden,
                 'level': area.level,
                 'children_count': area.children.filter(is_active=True).count() if solo_activos else area.children.count(),
             }

@@ -63,43 +63,81 @@ app.conf.update(
 
 # Configuración de tareas periódicas (Celery Beat)
 app.conf.beat_schedule = {
-    # Ejemplo: Limpieza de archivos temporales cada día a las 2 AM
+    # ═══════════════════════════════════════════════════
+    # CORE - MANTENIMIENTO Y MONITOREO
+    # ═══════════════════════════════════════════════════
+
+    # Limpieza de archivos temporales cada día a las 2 AM
     'cleanup-temp-files-daily': {
         'task': 'apps.core.tasks.cleanup_temp_files',
         'schedule': crontab(hour=2, minute=0),
         'options': {'queue': 'maintenance'}
     },
 
-    # Ejemplo: Envío de reportes semanales cada lunes a las 8 AM
+    # Envío de reportes semanales cada lunes a las 8 AM
     'send-weekly-reports': {
         'task': 'apps.core.tasks.send_weekly_reports',
         'schedule': crontab(hour=8, minute=0, day_of_week=1),
         'options': {'queue': 'reports'}
     },
 
-    # Ejemplo: Backup de base de datos cada 6 horas
+    # Backup de base de datos cada 6 horas
     'database-backup': {
         'task': 'apps.core.tasks.backup_database',
         'schedule': crontab(minute=0, hour='*/6'),
         'options': {'queue': 'maintenance'}
     },
 
-    # Ejemplo: Verificación de estado del sistema cada 15 minutos
+    # Verificación de estado del sistema cada 15 minutos
     'system-health-check': {
         'task': 'apps.core.tasks.system_health_check',
         'schedule': crontab(minute='*/15'),
         'options': {'queue': 'monitoring'}
     },
+
+    # ═══════════════════════════════════════════════════
+    # MOTOR DE CUMPLIMIENTO - NORMAS Y REQUISITOS LEGALES
+    # ═══════════════════════════════════════════════════
+
+    # Web scraping de normas legales colombianas cada 15 días
+    # Ejecutar el día 1 y 15 de cada mes a las 3 AM
+    'scrape-legal-updates-biweekly': {
+        'task': 'apps.motor_cumplimiento.tasks.scrape_legal_updates',
+        'schedule': crontab(hour=3, minute=0, day_of_month='1,15'),
+        'options': {'queue': 'scraping'},
+    },
+
+    # Verificación de vencimientos de requisitos legales - Diario a las 6 AM
+    'check-license-expirations-daily': {
+        'task': 'apps.motor_cumplimiento.tasks.check_license_expirations',
+        'schedule': crontab(hour=6, minute=0),
+        'options': {'queue': 'compliance'},
+    },
+
+    # Envío de notificaciones de vencimientos - Diario a las 7 AM
+    'send-expiration-notifications-daily': {
+        'task': 'apps.motor_cumplimiento.tasks.send_expiration_notifications',
+        'schedule': crontab(hour=7, minute=0),
+        'options': {'queue': 'notifications'},
+    },
 }
 
 # Configuración de colas (routing)
 app.conf.task_routes = {
+    # Core tasks
     'apps.core.tasks.send_email_async': {'queue': 'emails'},
     'apps.core.tasks.generate_report_async': {'queue': 'reports'},
     'apps.core.tasks.process_file_upload': {'queue': 'files'},
     'apps.core.tasks.cleanup_*': {'queue': 'maintenance'},
     'apps.core.tasks.backup_*': {'queue': 'maintenance'},
     'apps.core.tasks.*_health_check': {'queue': 'monitoring'},
+
+    # Motor de Cumplimiento tasks
+    'apps.motor_cumplimiento.tasks.scrape_legal_updates': {'queue': 'scraping'},
+    'apps.motor_cumplimiento.tasks.check_license_expirations': {'queue': 'compliance'},
+    'apps.motor_cumplimiento.tasks.send_expiration_notifications': {'queue': 'notifications'},
+    'apps.motor_cumplimiento.tasks.generate_compliance_report': {'queue': 'reports'},
+    'apps.motor_cumplimiento.tasks.update_requisito_status': {'queue': 'compliance'},
 }
 
 # Configuración de prioridades de cola

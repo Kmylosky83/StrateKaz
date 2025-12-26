@@ -692,7 +692,7 @@ class MenuViewSet(viewsets.ModelViewSet):
     queryset = MenuItem.objects.filter(parent__isnull=True)
     permission_classes = [IsAuthenticated]
     filter_backends = [filters.OrderingFilter]
-    ordering = ['order']
+    ordering = ['orden']
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -745,7 +745,7 @@ class MenuViewSet(viewsets.ModelViewSet):
 
         with transaction.atomic():
             for item_data in items:
-                MenuItem.objects.filter(id=item_data['id']).update(order=item_data['order'])
+                MenuItem.objects.filter(id=item_data['id']).update(orden=item_data.get('orden', item_data.get('order')))
 
         return Response({'message': 'Menu reordenado exitosamente'})
 

@@ -12,73 +12,132 @@ Subtabs:
 from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
+from apps.core.base_models import BaseCompanyModel
 
 
-class Portafolio(models.Model):
+class Portafolio(BaseCompanyModel):
     """Agrupación estratégica de programas y proyectos"""
-    empresa_id = models.PositiveBigIntegerField(default=1, db_index=True)
-    codigo = models.CharField(max_length=20)
-    nombre = models.CharField(max_length=200)
-    descripcion = models.TextField(blank=True)
-    objetivo_estrategico = models.TextField(blank=True, help_text="Objetivo estratégico al que contribuye")
+    codigo = models.CharField(
+        max_length=20,
+        verbose_name='Código',
+        help_text='Código único del portafolio'
+    )
+    nombre = models.CharField(
+        max_length=200,
+        verbose_name='Nombre',
+        help_text='Nombre del portafolio'
+    )
+    descripcion = models.TextField(
+        blank=True,
+        verbose_name='Descripción',
+        help_text='Descripción del portafolio'
+    )
+    objetivo_estrategico = models.TextField(
+        blank=True,
+        verbose_name='Objetivo Estratégico',
+        help_text='Objetivo estratégico al que contribuye'
+    )
     presupuesto_asignado = models.DecimalField(
         max_digits=18, decimal_places=2, default=0,
-        help_text="Presupuesto total del portafolio"
+        verbose_name='Presupuesto Asignado',
+        help_text='Presupuesto total del portafolio'
     )
     responsable = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
-        null=True, blank=True, related_name='portafolios_responsable'
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='portafolios_responsable',
+        verbose_name='Responsable',
+        help_text='Responsable del portafolio'
     )
-    fecha_inicio = models.DateField(null=True, blank=True)
-    fecha_fin = models.DateField(null=True, blank=True)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
-        null=True, related_name='portafolios_creados'
+    fecha_inicio = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Inicio',
+        help_text='Fecha de inicio del portafolio'
+    )
+    fecha_fin = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Fin',
+        help_text='Fecha estimada de finalización'
     )
 
     class Meta:
         verbose_name = 'Portafolio'
         verbose_name_plural = 'Portafolios'
-        unique_together = ['empresa_id', 'codigo']
+        unique_together = ['empresa', 'codigo']
         ordering = ['nombre']
+        db_table = 'gestion_proyectos_portafolio'
 
     def __str__(self):
         return f"{self.codigo} - {self.nombre}"
 
 
-class Programa(models.Model):
+class Programa(BaseCompanyModel):
     """Agrupación de proyectos relacionados"""
-    empresa_id = models.PositiveBigIntegerField(default=1, db_index=True)
     portafolio = models.ForeignKey(
-        Portafolio, on_delete=models.CASCADE, related_name='programas'
+        Portafolio,
+        on_delete=models.CASCADE,
+        related_name='programas',
+        verbose_name='Portafolio',
+        help_text='Portafolio al que pertenece'
     )
-    codigo = models.CharField(max_length=20)
-    nombre = models.CharField(max_length=200)
-    descripcion = models.TextField(blank=True)
+    codigo = models.CharField(
+        max_length=20,
+        verbose_name='Código',
+        help_text='Código único del programa'
+    )
+    nombre = models.CharField(
+        max_length=200,
+        verbose_name='Nombre',
+        help_text='Nombre del programa'
+    )
+    descripcion = models.TextField(
+        blank=True,
+        verbose_name='Descripción',
+        help_text='Descripción del programa'
+    )
     responsable = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
-        null=True, blank=True, related_name='programas_responsable'
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='programas_responsable',
+        verbose_name='Responsable',
+        help_text='Responsable del programa'
     )
-    presupuesto = models.DecimalField(max_digits=18, decimal_places=2, default=0)
-    fecha_inicio = models.DateField(null=True, blank=True)
-    fecha_fin = models.DateField(null=True, blank=True)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    presupuesto = models.DecimalField(
+        max_digits=18,
+        decimal_places=2,
+        default=0,
+        verbose_name='Presupuesto',
+        help_text='Presupuesto total del programa'
+    )
+    fecha_inicio = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Inicio'
+    )
+    fecha_fin = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Fin'
+    )
 
     class Meta:
         verbose_name = 'Programa'
         verbose_name_plural = 'Programas'
-        unique_together = ['empresa_id', 'codigo']
+        unique_together = ['empresa', 'codigo']
+        ordering = ['nombre']
+        db_table = 'gestion_proyectos_programa'
 
     def __str__(self):
         return f"{self.codigo} - {self.nombre}"
 
 
-class Proyecto(models.Model):
+class Proyecto(BaseCompanyModel):
     """Proyecto individual - Entidad principal"""
 
     class Estado(models.TextChoices):
@@ -105,74 +164,156 @@ class Proyecto(models.Model):
         NORMATIVO = 'normativo', 'Cumplimiento Normativo'
         OTRO = 'otro', 'Otro'
 
-    empresa_id = models.PositiveBigIntegerField(default=1, db_index=True)
     programa = models.ForeignKey(
-        Programa, on_delete=models.SET_NULL,
-        null=True, blank=True, related_name='proyectos'
+        Programa,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='proyectos',
+        verbose_name='Programa',
+        help_text='Programa al que pertenece el proyecto'
     )
-    codigo = models.CharField(max_length=30)
-    nombre = models.CharField(max_length=200)
-    descripcion = models.TextField(blank=True)
+    codigo = models.CharField(
+        max_length=30,
+        verbose_name='Código',
+        help_text='Código único del proyecto'
+    )
+    nombre = models.CharField(
+        max_length=200,
+        verbose_name='Nombre',
+        help_text='Nombre del proyecto'
+    )
+    descripcion = models.TextField(
+        blank=True,
+        verbose_name='Descripción',
+        help_text='Descripción del proyecto'
+    )
     tipo = models.CharField(
-        max_length=20, choices=TipoProyecto.choices,
-        default=TipoProyecto.MEJORA
+        max_length=20,
+        choices=TipoProyecto.choices,
+        default=TipoProyecto.MEJORA,
+        verbose_name='Tipo de Proyecto',
+        help_text='Categoría del proyecto'
     )
     estado = models.CharField(
-        max_length=20, choices=Estado.choices,
-        default=Estado.PROPUESTO, db_index=True
+        max_length=20,
+        choices=Estado.choices,
+        default=Estado.PROPUESTO,
+        db_index=True,
+        verbose_name='Estado',
+        help_text='Estado actual del proyecto'
     )
     prioridad = models.CharField(
-        max_length=10, choices=Prioridad.choices,
-        default=Prioridad.MEDIA
+        max_length=10,
+        choices=Prioridad.choices,
+        default=Prioridad.MEDIA,
+        verbose_name='Prioridad',
+        help_text='Prioridad del proyecto'
     )
 
     # Fechas
-    fecha_propuesta = models.DateField(auto_now_add=True)
-    fecha_inicio_plan = models.DateField(null=True, blank=True)
-    fecha_fin_plan = models.DateField(null=True, blank=True)
-    fecha_inicio_real = models.DateField(null=True, blank=True)
-    fecha_fin_real = models.DateField(null=True, blank=True)
+    fecha_propuesta = models.DateField(
+        auto_now_add=True,
+        verbose_name='Fecha de Propuesta',
+        help_text='Fecha en que se propuso el proyecto'
+    )
+    fecha_inicio_plan = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Inicio Planificada',
+        help_text='Fecha planificada de inicio'
+    )
+    fecha_fin_plan = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Fin Planificada',
+        help_text='Fecha planificada de finalización'
+    )
+    fecha_inicio_real = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Inicio Real',
+        help_text='Fecha real de inicio'
+    )
+    fecha_fin_real = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Fin Real',
+        help_text='Fecha real de finalización'
+    )
 
     # Recursos
-    presupuesto_estimado = models.DecimalField(max_digits=18, decimal_places=2, default=0)
-    presupuesto_aprobado = models.DecimalField(max_digits=18, decimal_places=2, default=0)
-    costo_real = models.DecimalField(max_digits=18, decimal_places=2, default=0)
+    presupuesto_estimado = models.DecimalField(
+        max_digits=18,
+        decimal_places=2,
+        default=0,
+        verbose_name='Presupuesto Estimado',
+        help_text='Presupuesto inicial estimado'
+    )
+    presupuesto_aprobado = models.DecimalField(
+        max_digits=18,
+        decimal_places=2,
+        default=0,
+        verbose_name='Presupuesto Aprobado',
+        help_text='Presupuesto aprobado para el proyecto'
+    )
+    costo_real = models.DecimalField(
+        max_digits=18,
+        decimal_places=2,
+        default=0,
+        verbose_name='Costo Real',
+        help_text='Costo real acumulado'
+    )
 
     # Avance
     porcentaje_avance = models.PositiveSmallIntegerField(
-        default=0, validators=[MinValueValidator(0), MaxValueValidator(100)]
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        verbose_name='Porcentaje de Avance',
+        help_text='Porcentaje de avance del proyecto (0-100)'
     )
 
     # Responsables
     sponsor = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
-        null=True, blank=True, related_name='proyectos_sponsor'
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='proyectos_sponsor',
+        verbose_name='Sponsor',
+        help_text='Patrocinador del proyecto'
     )
     gerente_proyecto = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
-        null=True, blank=True, related_name='proyectos_gerente'
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='proyectos_gerente',
+        verbose_name='Gerente de Proyecto',
+        help_text='Gerente/Director del proyecto'
     )
 
     # Justificación
-    justificacion = models.TextField(blank=True, help_text="Justificación del proyecto")
-    beneficios_esperados = models.TextField(blank=True)
-
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
-        null=True, related_name='proyectos_creados'
+    justificacion = models.TextField(
+        blank=True,
+        verbose_name='Justificación',
+        help_text='Justificación del proyecto'
+    )
+    beneficios_esperados = models.TextField(
+        blank=True,
+        verbose_name='Beneficios Esperados',
+        help_text='Beneficios esperados del proyecto'
     )
 
     class Meta:
         verbose_name = 'Proyecto'
         verbose_name_plural = 'Proyectos'
-        unique_together = ['empresa_id', 'codigo']
+        unique_together = ['empresa', 'codigo']
         ordering = ['-created_at']
+        db_table = 'gestion_proyectos_proyecto'
         indexes = [
-            models.Index(fields=['empresa_id', 'estado']),
-            models.Index(fields=['empresa_id', 'prioridad']),
+            models.Index(fields=['empresa', 'estado']),
+            models.Index(fields=['empresa', 'prioridad']),
         ]
 
     def __str__(self):

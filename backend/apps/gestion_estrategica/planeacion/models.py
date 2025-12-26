@@ -299,7 +299,7 @@ class StrategicObjective(AuditModel, SoftDeleteModel):
         null=True,
         verbose_name='Fecha de completado'
     )
-    order = models.IntegerField(
+    orden = models.IntegerField(
         default=0,
         db_index=True,
         verbose_name='Orden'
@@ -309,7 +309,7 @@ class StrategicObjective(AuditModel, SoftDeleteModel):
         db_table = 'planeacion_strategic_objective'
         verbose_name = 'Objetivo Estratégico'
         verbose_name_plural = 'Objetivos Estratégicos'
-        ordering = ['bsc_perspective', 'order', 'code']
+        ordering = ['bsc_perspective', 'orden', 'code']
         unique_together = [['plan', 'code']]
         indexes = [
             models.Index(fields=['plan', 'bsc_perspective'], name='obj_plan_perspective_idx'),

@@ -6,6 +6,13 @@ export * from './useTenantConfig';
 export * from './useModules';
 export * from './useEmpresa';
 
+// Gestión de Proyectos PMI
+export * from './useProyectos';
+export * from './usePortafolios';
+
+// Revisión por Dirección (ISO 9.3)
+export * from './useRevisionDireccion';
+
 // Areas hooks - exportados explícitamente para evitar colisiones
 export {
   areaKeys,

@@ -7,13 +7,13 @@ from .views import (
     ProgramaRevisionViewSet, ParticipanteRevisionViewSet,
     TemaRevisionViewSet, ActaRevisionViewSet,
     AnalisisTemaActaViewSet, CompromisoRevisionViewSet,
-    SeguimientoCompromisoViewSet
+    SeguimientoCompromisoViewSet, RevisionDireccionStatsViewSet
 )
 
 router = DefaultRouter()
 
 # Programación
-router.register(r'programas', ProgramaRevisionViewSet)
+router.register(r'programaciones', ProgramaRevisionViewSet)
 router.register(r'participantes', ParticipanteRevisionViewSet)
 router.register(r'temas', TemaRevisionViewSet)
 
@@ -25,6 +25,15 @@ router.register(r'analisis-temas', AnalisisTemaActaViewSet)
 router.register(r'compromisos', CompromisoRevisionViewSet)
 router.register(r'seguimientos', SeguimientoCompromisoViewSet)
 
+# Estadísticas y Dashboard
+router.register(r'stats', RevisionDireccionStatsViewSet, basename='stats')
+
+# Crear instancia del ViewSet para usar en URLs manuales
+stats_view = RevisionDireccionStatsViewSet.as_view({'get': 'list'})
+dashboard_view = RevisionDireccionStatsViewSet.as_view({'get': 'dashboard'})
+
 urlpatterns = [
     path('', include(router.urls)),
+    # URLs adicionales para compatibilidad con frontend
+    path('dashboard/', dashboard_view, name='revision-dashboard'),
 ]

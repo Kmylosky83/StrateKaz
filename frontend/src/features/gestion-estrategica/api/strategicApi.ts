@@ -59,7 +59,10 @@ import type {
   IntegracionLogsFilters,
 } from '../types/strategic.types';
 
-const BASE_URL = '/core';
+// URLs por módulo según backend Django
+const CORE_URL = '/core';  // Para system-modules, branding, strategic stats
+const IDENTIDAD_URL = '/identidad';
+const PLANEACION_URL = '/planeacion';
 const ORGANIZACION_URL = '/organizacion';
 const CONFIGURACION_URL = '/configuracion';
 
@@ -67,13 +70,13 @@ const CONFIGURACION_URL = '/configuracion';
 
 export const identityApi = {
   getAll: async (): Promise<PaginatedResponse<CorporateIdentity>> => {
-    const response = await axiosInstance.get(`${BASE_URL}/corporate-identity/`);
+    const response = await axiosInstance.get(`${IDENTIDAD_URL}/identidad/`);
     return response.data;
   },
 
   getActive: async (): Promise<CorporateIdentity | null> => {
     try {
-      const response = await axiosInstance.get(`${BASE_URL}/corporate-identity/active/`);
+      const response = await axiosInstance.get(`${IDENTIDAD_URL}/identidad/active/`);
       return response.data;
     } catch (error: unknown) {
       // 404 significa que no hay identidad activa, retornar null
@@ -88,26 +91,26 @@ export const identityApi = {
   },
 
   getById: async (id: number): Promise<CorporateIdentity> => {
-    const response = await axiosInstance.get(`${BASE_URL}/corporate-identity/${id}/`);
+    const response = await axiosInstance.get(`${IDENTIDAD_URL}/identidad/${id}/`);
     return response.data;
   },
 
   create: async (data: CreateCorporateIdentityDTO): Promise<CorporateIdentity> => {
-    const response = await axiosInstance.post(`${BASE_URL}/corporate-identity/`, data);
+    const response = await axiosInstance.post(`${IDENTIDAD_URL}/identidad/`, data);
     return response.data;
   },
 
   update: async (id: number, data: UpdateCorporateIdentityDTO): Promise<CorporateIdentity> => {
-    const response = await axiosInstance.patch(`${BASE_URL}/corporate-identity/${id}/`, data);
+    const response = await axiosInstance.patch(`${IDENTIDAD_URL}/identidad/${id}/`, data);
     return response.data;
   },
 
   delete: async (id: number): Promise<void> => {
-    await axiosInstance.delete(`${BASE_URL}/corporate-identity/${id}/`);
+    await axiosInstance.delete(`${IDENTIDAD_URL}/identidad/${id}/`);
   },
 
   signPolicy: async (id: number): Promise<CorporateIdentity> => {
-    const response = await axiosInstance.post(`${BASE_URL}/corporate-identity/${id}/sign-policy/`, {
+    const response = await axiosInstance.post(`${IDENTIDAD_URL}/identidad/${id}/sign-policy/`, {
       confirm: true,
     });
     return response.data.identity;
@@ -115,7 +118,7 @@ export const identityApi = {
 
   addValue: async (id: number, data: CreateCorporateValueDTO): Promise<CorporateValue> => {
     const response = await axiosInstance.post(
-      `${BASE_URL}/corporate-identity/${id}/add-value/`,
+      `${IDENTIDAD_URL}/identidad/${id}/add-value/`,
       data
     );
     return response.data;
@@ -123,7 +126,7 @@ export const identityApi = {
 
   removeValue: async (identityId: number, valueId: number): Promise<void> => {
     await axiosInstance.delete(
-      `${BASE_URL}/corporate-identity/${identityId}/remove-value/${valueId}/`
+      `${IDENTIDAD_URL}/identidad/${identityId}/remove-value/${valueId}/`
     );
   },
 };
@@ -133,27 +136,27 @@ export const identityApi = {
 export const valuesApi = {
   getAll: async (identityId?: number): Promise<PaginatedResponse<CorporateValue>> => {
     const params = identityId ? { identity: identityId } : {};
-    const response = await axiosInstance.get(`${BASE_URL}/corporate-values/`, { params });
+    const response = await axiosInstance.get(`${IDENTIDAD_URL}/valores/`, { params });
     return response.data;
   },
 
   getById: async (id: number): Promise<CorporateValue> => {
-    const response = await axiosInstance.get(`${BASE_URL}/corporate-values/${id}/`);
+    const response = await axiosInstance.get(`${IDENTIDAD_URL}/valores/${id}/`);
     return response.data;
   },
 
   create: async (data: CreateCorporateValueDTO & { identity: number }): Promise<CorporateValue> => {
-    const response = await axiosInstance.post(`${BASE_URL}/corporate-values/`, data);
+    const response = await axiosInstance.post(`${IDENTIDAD_URL}/valores/`, data);
     return response.data;
   },
 
   update: async (id: number, data: UpdateCorporateValueDTO): Promise<CorporateValue> => {
-    const response = await axiosInstance.patch(`${BASE_URL}/corporate-values/${id}/`, data);
+    const response = await axiosInstance.patch(`${IDENTIDAD_URL}/valores/${id}/`, data);
     return response.data;
   },
 
   delete: async (id: number): Promise<void> => {
-    await axiosInstance.delete(`${BASE_URL}/corporate-values/${id}/`);
+    await axiosInstance.delete(`${IDENTIDAD_URL}/valores/${id}/`);
   },
 };
 
@@ -161,13 +164,13 @@ export const valuesApi = {
 
 export const plansApi = {
   getAll: async (): Promise<PaginatedResponse<StrategicPlan>> => {
-    const response = await axiosInstance.get(`${BASE_URL}/strategic-plans/`);
+    const response = await axiosInstance.get(`${PLANEACION_URL}/planes/`);
     return response.data;
   },
 
   getActive: async (): Promise<StrategicPlan | null> => {
     try {
-      const response = await axiosInstance.get(`${BASE_URL}/strategic-plans/active/`);
+      const response = await axiosInstance.get(`${PLANEACION_URL}/planes/active/`);
       return response.data;
     } catch (error: unknown) {
       if (error && typeof error === 'object' && 'response' in error) {
@@ -181,43 +184,43 @@ export const plansApi = {
   },
 
   getById: async (id: number): Promise<StrategicPlan> => {
-    const response = await axiosInstance.get(`${BASE_URL}/strategic-plans/${id}/`);
+    const response = await axiosInstance.get(`${PLANEACION_URL}/planes/${id}/`);
     return response.data;
   },
 
   create: async (data: CreateStrategicPlanDTO): Promise<StrategicPlan> => {
-    const response = await axiosInstance.post(`${BASE_URL}/strategic-plans/`, data);
+    const response = await axiosInstance.post(`${PLANEACION_URL}/planes/`, data);
     return response.data;
   },
 
   update: async (id: number, data: UpdateStrategicPlanDTO): Promise<StrategicPlan> => {
-    const response = await axiosInstance.patch(`${BASE_URL}/strategic-plans/${id}/`, data);
+    const response = await axiosInstance.patch(`${PLANEACION_URL}/planes/${id}/`, data);
     return response.data;
   },
 
   delete: async (id: number): Promise<void> => {
-    await axiosInstance.delete(`${BASE_URL}/strategic-plans/${id}/`);
+    await axiosInstance.delete(`${PLANEACION_URL}/planes/${id}/`);
   },
 
   approve: async (id: number): Promise<StrategicPlan> => {
-    const response = await axiosInstance.post(`${BASE_URL}/strategic-plans/${id}/approve/`, {
+    const response = await axiosInstance.post(`${PLANEACION_URL}/planes/${id}/approve/`, {
       confirm: true,
     });
     return response.data.plan;
   },
 
   getBSCPerspectives: async (): Promise<SelectOption[]> => {
-    const response = await axiosInstance.get(`${BASE_URL}/strategic-plans/bsc-perspectives/`);
+    const response = await axiosInstance.get(`${PLANEACION_URL}/planes/bsc-perspectives/`);
     return response.data;
   },
 
   getISOStandards: async (): Promise<SelectOption[]> => {
-    const response = await axiosInstance.get(`${BASE_URL}/strategic-plans/iso-standards/`);
+    const response = await axiosInstance.get(`${PLANEACION_URL}/planes/iso-standards/`);
     return response.data;
   },
 
   getPeriodTypes: async (): Promise<SelectOption[]> => {
-    const response = await axiosInstance.get(`${BASE_URL}/strategic-plans/period-types/`);
+    const response = await axiosInstance.get(`${PLANEACION_URL}/planes/period-types/`);
     return response.data;
   },
 };
@@ -226,41 +229,41 @@ export const plansApi = {
 
 export const objectivesApi = {
   getAll: async (filters?: ObjectiveFilters): Promise<PaginatedResponse<StrategicObjective>> => {
-    const response = await axiosInstance.get(`${BASE_URL}/strategic-objectives/`, {
+    const response = await axiosInstance.get(`${PLANEACION_URL}/objetivos/`, {
       params: filters,
     });
     return response.data;
   },
 
   getById: async (id: number): Promise<StrategicObjective> => {
-    const response = await axiosInstance.get(`${BASE_URL}/strategic-objectives/${id}/`);
+    const response = await axiosInstance.get(`${PLANEACION_URL}/objetivos/${id}/`);
     return response.data;
   },
 
   create: async (data: CreateStrategicObjectiveDTO): Promise<StrategicObjective> => {
-    const response = await axiosInstance.post(`${BASE_URL}/strategic-objectives/`, data);
+    const response = await axiosInstance.post(`${PLANEACION_URL}/objetivos/`, data);
     return response.data;
   },
 
   update: async (id: number, data: UpdateStrategicObjectiveDTO): Promise<StrategicObjective> => {
-    const response = await axiosInstance.patch(`${BASE_URL}/strategic-objectives/${id}/`, data);
+    const response = await axiosInstance.patch(`${PLANEACION_URL}/objetivos/${id}/`, data);
     return response.data;
   },
 
   delete: async (id: number): Promise<void> => {
-    await axiosInstance.delete(`${BASE_URL}/strategic-objectives/${id}/`);
+    await axiosInstance.delete(`${PLANEACION_URL}/objetivos/${id}/`);
   },
 
   updateProgress: async (id: number, data: UpdateProgressDTO): Promise<StrategicObjective> => {
     const response = await axiosInstance.post(
-      `${BASE_URL}/strategic-objectives/${id}/update-progress/`,
+      `${PLANEACION_URL}/objetivos/${id}/update-progress/`,
       data
     );
     return response.data.objective;
   },
 
   getStatuses: async (): Promise<SelectOption[]> => {
-    const response = await axiosInstance.get(`${BASE_URL}/strategic-objectives/statuses/`);
+    const response = await axiosInstance.get(`${PLANEACION_URL}/objetivos/statuses/`);
     return response.data;
   },
 };
@@ -269,41 +272,41 @@ export const objectivesApi = {
 
 export const modulesApi = {
   getAll: async (filters?: ModuleFilters): Promise<PaginatedResponse<SystemModule>> => {
-    const response = await axiosInstance.get(`${BASE_URL}/system-modules/`, { params: filters });
+    const response = await axiosInstance.get(`${CORE_URL}/system-modules/`, { params: filters });
     return response.data;
   },
 
   getEnabled: async (): Promise<SystemModule[]> => {
-    const response = await axiosInstance.get(`${BASE_URL}/system-modules/enabled/`);
+    const response = await axiosInstance.get(`${CORE_URL}/system-modules/enabled/`);
     return response.data;
   },
 
   getById: async (id: number): Promise<SystemModule> => {
-    const response = await axiosInstance.get(`${BASE_URL}/system-modules/${id}/`);
+    const response = await axiosInstance.get(`${CORE_URL}/system-modules/${id}/`);
     return response.data;
   },
 
   create: async (data: CreateSystemModuleDTO): Promise<SystemModule> => {
-    const response = await axiosInstance.post(`${BASE_URL}/system-modules/`, data);
+    const response = await axiosInstance.post(`${CORE_URL}/system-modules/`, data);
     return response.data;
   },
 
   update: async (id: number, data: UpdateSystemModuleDTO): Promise<SystemModule> => {
-    const response = await axiosInstance.patch(`${BASE_URL}/system-modules/${id}/`, data);
+    const response = await axiosInstance.patch(`${CORE_URL}/system-modules/${id}/`, data);
     return response.data;
   },
 
   delete: async (id: number): Promise<void> => {
-    await axiosInstance.delete(`${BASE_URL}/system-modules/${id}/`);
+    await axiosInstance.delete(`${CORE_URL}/system-modules/${id}/`);
   },
 
   toggle: async (id: number, data: ToggleModuleDTO): Promise<SystemModule> => {
-    const response = await axiosInstance.post(`${BASE_URL}/system-modules/${id}/toggle/`, data);
+    const response = await axiosInstance.post(`${CORE_URL}/system-modules/${id}/toggle/`, data);
     return response.data.module;
   },
 
   getCategories: async (): Promise<SelectOption[]> => {
-    const response = await axiosInstance.get(`${BASE_URL}/system-modules/categories/`);
+    const response = await axiosInstance.get(`${CORE_URL}/system-modules/categories/`);
     return response.data;
   },
 };
@@ -312,13 +315,13 @@ export const modulesApi = {
 
 export const brandingApi = {
   getAll: async (): Promise<PaginatedResponse<BrandingConfig>> => {
-    const response = await axiosInstance.get(`${BASE_URL}/branding/`);
+    const response = await axiosInstance.get(`${CORE_URL}/branding/`);
     return response.data;
   },
 
   getActive: async (): Promise<BrandingConfig | null> => {
     try {
-      const response = await axiosInstance.get(`${BASE_URL}/branding/active/`);
+      const response = await axiosInstance.get(`${CORE_URL}/branding/active/`);
       return response.data;
     } catch (error: unknown) {
       // 404 significa que no hay branding activo, retornar null
@@ -333,13 +336,13 @@ export const brandingApi = {
   },
 
   getById: async (id: number): Promise<BrandingConfig> => {
-    const response = await axiosInstance.get(`${BASE_URL}/branding/${id}/`);
+    const response = await axiosInstance.get(`${CORE_URL}/branding/${id}/`);
     return response.data;
   },
 
   create: async (data: CreateBrandingConfigDTO | FormData): Promise<BrandingConfig> => {
     const isFormData = data instanceof FormData;
-    const response = await axiosInstance.post(`${BASE_URL}/branding/`, data, {
+    const response = await axiosInstance.post(`${CORE_URL}/branding/`, data, {
       headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
     });
     return response.data;
@@ -347,14 +350,14 @@ export const brandingApi = {
 
   update: async (id: number, data: UpdateBrandingConfigDTO | FormData): Promise<BrandingConfig> => {
     const isFormData = data instanceof FormData;
-    const response = await axiosInstance.patch(`${BASE_URL}/branding/${id}/`, data, {
+    const response = await axiosInstance.patch(`${CORE_URL}/branding/${id}/`, data, {
       headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
     });
     return response.data;
   },
 
   delete: async (id: number): Promise<void> => {
-    await axiosInstance.delete(`${BASE_URL}/branding/${id}/`);
+    await axiosInstance.delete(`${CORE_URL}/branding/${id}/`);
   },
 };
 
@@ -495,7 +498,7 @@ export interface ConfigStatsResponse {
 
 export const statsApi = {
   getStats: async (): Promise<StrategicStats> => {
-    const response = await axiosInstance.get(`${BASE_URL}/strategic/stats/`);
+    const response = await axiosInstance.get(`${CORE_URL}/strategic/stats/`);
     return response.data;
   },
 

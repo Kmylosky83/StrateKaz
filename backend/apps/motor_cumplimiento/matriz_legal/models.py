@@ -8,14 +8,19 @@ Tablas implementadas según DATABASE-ARCHITECTURE.md:
 """
 from django.db import models
 from django.conf import settings
+from apps.core.base_models import TimestampedModel, SoftDeleteModel, BaseCompanyModel
 
 
-class TipoNorma(models.Model):
+class TipoNorma(TimestampedModel, SoftDeleteModel):
     """
     Catálogo de tipos de norma legal.
 
     Tabla global (no tiene empresa_id).
     Ejemplos: Ley, Decreto, Resolución, Circular, Acuerdo
+
+    Hereda de:
+    - TimestampedModel: created_at, updated_at
+    - SoftDeleteModel: is_active, deleted_at, soft_delete(), restore()
     """
 
     codigo = models.CharField(
@@ -34,36 +39,33 @@ class TipoNorma(models.Model):
         null=True,
         verbose_name='Descripción'
     )
-    is_active = models.BooleanField(
-        default=True,
-        verbose_name='Activo'
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Fecha de creación'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Fecha de actualización'
-    )
 
     class Meta:
         db_table = 'cumplimiento_tipo_norma'
         verbose_name = 'Tipo de Norma'
         verbose_name_plural = 'Tipos de Norma'
         ordering = ['nombre']
+        indexes = [
+            models.Index(fields=['codigo', 'is_active']),
+        ]
 
     def __str__(self):
         return f"{self.codigo} - {self.nombre}"
 
 
-class NormaLegal(models.Model):
+class NormaLegal(TimestampedModel, SoftDeleteModel):
     """
     Normas legales del sistema.
 
     Almacena todas las normas legales colombianas aplicables
     a los sistemas de gestión (SST, Ambiental, Calidad, PESV).
     Soporta scraping automático de contenido.
+
+    Tabla global (catálogo compartido por todas las empresas).
+
+    Hereda de:
+    - TimestampedModel: created_at, updated_at
+    - SoftDeleteModel: is_active, deleted_at, soft_delete(), restore()
     """
 
     tipo_norma = models.ForeignKey(
@@ -155,16 +157,6 @@ class NormaLegal(models.Model):
         help_text='Última vez que se actualizó el contenido por scraping'
     )
 
-    # Auditoría
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Fecha de creación'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Fecha de actualización'
-    )
-
     class Meta:
         db_table = 'cumplimiento_norma_legal'
         verbose_name = 'Norma Legal'
@@ -195,15 +187,22 @@ class NormaLegal(models.Model):
             'calidad': {'aplica_calidad': True},
             'pesv': {'aplica_pesv': True},
         }
-        return cls.objects.filter(vigente=True, **filters.get(sistema, {}))
+        return cls.objects.filter(vigente=True, is_active=True, **filters.get(sistema, {}))
 
 
-class EmpresaNorma(models.Model):
+class EmpresaNorma(BaseCompanyModel):
     """
     Relación entre empresa y norma legal.
 
     Permite definir qué normas aplican a cada empresa,
     justificar exclusiones y trackear cumplimiento.
+
+    Hereda de BaseCompanyModel:
+    - empresa (FK a EmpresaConfig)
+    - created_at, updated_at (de TimestampedModel)
+    - created_by, updated_by (de AuditModel)
+    - is_active, deleted_at (de SoftDeleteModel)
+    - soft_delete(), restore(), get_empresa_info()
     """
 
     CUMPLIMIENTO_CHOICES = [
@@ -214,14 +213,6 @@ class EmpresaNorma(models.Model):
         (100, '100% - Cumple'),
     ]
 
-    # TODO: Cambiar a FK cuando exista modelo Empresa en gestion_estrategica.organizacion
-    # Por ahora usamos campo simple para desarrollo inicial del módulo
-    empresa_id = models.PositiveBigIntegerField(
-        default=1,
-        db_index=True,
-        verbose_name='ID Empresa',
-        help_text='ID de la empresa (para multi-tenant)'
-    )
     norma = models.ForeignKey(
         NormaLegal,
         on_delete=models.PROTECT,
@@ -268,36 +259,19 @@ class EmpresaNorma(models.Model):
         verbose_name='Observaciones'
     )
 
-    # Auditoría
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='empresa_normas_created',
-        verbose_name='Creado por'
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Fecha de creación'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Fecha de actualización'
-    )
-
     class Meta:
         db_table = 'cumplimiento_empresa_norma'
         verbose_name = 'Norma por Empresa'
         verbose_name_plural = 'Normas por Empresa'
-        unique_together = ['empresa_id', 'norma']
+        unique_together = ['empresa', 'norma']
         ordering = ['-fecha_evaluacion', 'norma__numero']
         indexes = [
-            models.Index(fields=['empresa_id', 'aplica']),
-            models.Index(fields=['empresa_id', 'porcentaje_cumplimiento']),
+            models.Index(fields=['empresa', 'aplica']),
+            models.Index(fields=['empresa', 'porcentaje_cumplimiento']),
         ]
 
     def __str__(self):
-        return f"Empresa {self.empresa_id} - {self.norma}"
+        return f"{self.empresa.razon_social} - {self.norma}"
 
     @property
     def estado_cumplimiento(self):

@@ -8,6 +8,13 @@ export { PlaneacionTab } from './PlaneacionTab';
 export { OrganizacionTab } from './OrganizacionTab';
 export { ConfiguracionTab } from './ConfiguracionTab';
 
+// Gestión de Proyectos PMI
+export { GestionProyectosTab } from './proyectos';
+
+// Revisión por Dirección (ISO 9.3)
+export { GeneradorActaModal } from './revision-direccion/GeneradorActaModal';
+export { RevisionDireccionTab, CompromisosDashboard, ProgramacionTab, ActasTab } from './revision-direccion';
+
 // Modales
 export * from './modals';
 

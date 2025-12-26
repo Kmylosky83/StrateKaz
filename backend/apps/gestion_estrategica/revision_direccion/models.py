@@ -11,8 +11,10 @@ from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 
+from apps.core.base_models import BaseCompanyModel, AuditModel, SoftDeleteModel, TimestampedModel
 
-class ProgramaRevision(models.Model):
+
+class ProgramaRevision(BaseCompanyModel):
     """Programación de revisiones por la dirección"""
 
     class Frecuencia(models.TextChoices):
@@ -30,7 +32,7 @@ class ProgramaRevision(models.Model):
         CANCELADA = 'cancelada', 'Cancelada'
         REPROGRAMADA = 'reprogramada', 'Reprogramada'
 
-    empresa_id = models.PositiveBigIntegerField(default=1, db_index=True)
+    # empresa heredado de BaseCompanyModel
     anio = models.PositiveSmallIntegerField(help_text="Año del programa")
     periodo = models.CharField(max_length=50, help_text="Ej: 'Primer Semestre 2025'")
 
@@ -69,19 +71,14 @@ class ProgramaRevision(models.Model):
     incluye_seguridad_info = models.BooleanField(default=False, verbose_name="ISO 27001")
 
     observaciones = models.TextField(blank=True)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
-        null=True, related_name='programas_revision_creados'
-    )
+    # Campos heredados de BaseCompanyModel: empresa, is_active, deleted_at,
+    # created_at, updated_at, created_by, updated_by
 
     class Meta:
         verbose_name = 'Programa de Revisión'
         verbose_name_plural = 'Programas de Revisión'
         ordering = ['-anio', 'fecha_programada']
-        unique_together = ['empresa_id', 'anio', 'periodo']
+        unique_together = ['empresa', 'anio', 'periodo']
 
     def __str__(self):
         return f"Revisión {self.periodo} - {self.get_estado_display()}"
@@ -177,7 +174,7 @@ class TemaRevision(models.Model):
         return f"{self.orden}. {self.titulo}"
 
 
-class ActaRevision(models.Model):
+class ActaRevision(AuditModel, SoftDeleteModel):
     """Acta de la Revisión por la Dirección"""
 
     programa = models.OneToOneField(
@@ -245,9 +242,8 @@ class ActaRevision(models.Model):
     )
 
     version = models.PositiveSmallIntegerField(default=1)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    # Campos heredados de AuditModel y SoftDeleteModel:
+    # created_at, updated_at, created_by, updated_by, is_active, deleted_at
 
     class Meta:
         verbose_name = 'Acta de Revisión'
@@ -285,7 +281,7 @@ class AnalisisTemaActa(models.Model):
         return f"Análisis: {self.tema.titulo}"
 
 
-class CompromisoRevision(models.Model):
+class CompromisoRevision(AuditModel, SoftDeleteModel):
     """Compromisos derivados de la revisión por la dirección"""
 
     class Estado(models.TextChoices):
@@ -353,9 +349,8 @@ class CompromisoRevision(models.Model):
     )
 
     observaciones = models.TextField(blank=True)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    # Campos heredados de AuditModel y SoftDeleteModel:
+    # created_at, updated_at, created_by, updated_by, is_active, deleted_at
 
     class Meta:
         verbose_name = 'Compromiso de Revisión'
@@ -379,7 +374,7 @@ class CompromisoRevision(models.Model):
         return dias is not None and dias < 0
 
 
-class SeguimientoCompromiso(models.Model):
+class SeguimientoCompromiso(TimestampedModel):
     """Registro de seguimiento a compromisos"""
     compromiso = models.ForeignKey(
         CompromisoRevision, on_delete=models.CASCADE, related_name='seguimientos'
@@ -397,7 +392,7 @@ class SeguimientoCompromiso(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
         null=True, related_name='seguimientos_compromiso'
     )
-    created_at = models.DateTimeField(auto_now_add=True)
+    # created_at heredado de TimestampedModel
 
     class Meta:
         verbose_name = 'Seguimiento de Compromiso'

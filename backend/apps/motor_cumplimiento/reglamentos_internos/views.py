@@ -5,28 +5,44 @@ from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
 from django.db.models import Count
+
+from apps.core.mixins import StandardViewSetMixin
 from .models import TipoReglamento, Reglamento, VersionReglamento, PublicacionReglamento, SocializacionReglamento
 from .serializers import TipoReglamentoSerializer, ReglamentoSerializer, VersionReglamentoSerializer, PublicacionReglamentoSerializer, SocializacionReglamentoSerializer
 
 
-class TipoReglamentoViewSet(viewsets.ModelViewSet):
+class TipoReglamentoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar Tipos de Reglamento.
+
+    Incluye funcionalidad del StandardViewSetMixin:
+    - toggle_active, bulk_activate, bulk_deactivate
+    - Filtrado automático de inactivos (use ?include_inactive=true para incluir todos)
+    - Auditoría automática (created_by, updated_by)
+    """
     queryset = TipoReglamento.objects.all()
     serializer_class = TipoReglamentoSerializer
     permission_classes = [IsAuthenticated]
-    filter_backends = [SearchFilter]
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ['is_active']
     search_fields = ["codigo", "nombre"]
 
 
-class ReglamentoViewSet(viewsets.ModelViewSet):
+class ReglamentoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar Reglamentos Internos.
+
+    Incluye funcionalidad del StandardViewSetMixin:
+    - toggle_active, bulk_activate, bulk_deactivate
+    - Filtrado automático de inactivos (use ?include_inactive=true para incluir todos)
+    - Auditoría automática (created_by, updated_by)
+    """
     queryset = Reglamento.objects.select_related("tipo", "aprobado_por").all()
     serializer_class = ReglamentoSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = ["empresa_id", "tipo", "estado", "aplica_sst", "aplica_ambiental", "aplica_calidad", "aplica_pesv", "is_active"]
     search_fields = ["codigo", "nombre"]
-
-    def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
 
     @action(detail=False, methods=["get"])
     def vigentes(self, request):
@@ -43,28 +59,49 @@ class ReglamentoViewSet(viewsets.ModelViewSet):
         return Response({"por_estado": list(stats), "total": queryset.count()})
 
 
-class VersionReglamentoViewSet(viewsets.ModelViewSet):
+class VersionReglamentoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar Versiones de Reglamento.
+
+    Incluye funcionalidad del StandardViewSetMixin:
+    - toggle_active, bulk_activate, bulk_deactivate
+    - Filtrado automático de inactivos (use ?include_inactive=true para incluir todos)
+    - Auditoría automática (created_by, updated_by)
+    """
     queryset = VersionReglamento.objects.select_related("reglamento", "elaborado_por").all()
     serializer_class = VersionReglamentoSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["reglamento"]
+    filterset_fields = ["reglamento", "is_active"]
 
 
-class PublicacionReglamentoViewSet(viewsets.ModelViewSet):
+class PublicacionReglamentoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar Publicaciones de Reglamento.
+
+    Incluye funcionalidad del StandardViewSetMixin:
+    - toggle_active, bulk_activate, bulk_deactivate
+    - Filtrado automático de inactivos (use ?include_inactive=true para incluir todos)
+    - Auditoría automática (created_by, updated_by)
+    """
     queryset = PublicacionReglamento.objects.select_related("reglamento", "publicado_por").all()
     serializer_class = PublicacionReglamentoSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["reglamento", "medio"]
+    filterset_fields = ["reglamento", "medio", "is_active"]
 
 
-class SocializacionReglamentoViewSet(viewsets.ModelViewSet):
+class SocializacionReglamentoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar Socializaciones de Reglamento.
+
+    Incluye funcionalidad del StandardViewSetMixin:
+    - toggle_active, bulk_activate, bulk_deactivate
+    - Filtrado automático de inactivos (use ?include_inactive=true para incluir todos)
+    - Auditoría automática (created_by, updated_by)
+    """
     queryset = SocializacionReglamento.objects.select_related("reglamento", "facilitador").all()
     serializer_class = SocializacionReglamentoSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["reglamento", "tipo"]
-
-    def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+    filterset_fields = ["reglamento", "tipo", "is_active"]

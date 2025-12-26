@@ -32,7 +32,7 @@ class CorporateValueSerializer(serializers.ModelSerializer):
     class Meta:
         model = CorporateValue
         fields = [
-            'id', 'name', 'description', 'icon', 'order',
+            'id', 'name', 'description', 'icon', 'orden',
             'is_active', 'created_at'
         ]
         read_only_fields = ['created_at']
@@ -43,7 +43,7 @@ class CorporateValueCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CorporateValue
-        fields = ['name', 'description', 'icon', 'order', 'is_active']
+        fields = ['name', 'description', 'icon', 'orden', 'is_active']
 
 
 class CorporateIdentityListSerializer(serializers.ModelSerializer):
@@ -125,7 +125,7 @@ class CorporateIdentityCreateSerializer(serializers.ModelSerializer):
         for idx, value_data in enumerate(values_data):
             CorporateValue.objects.create(
                 identity=identity,
-                order=value_data.get('order', idx),
+                orden=value_data.get('orden', idx),
                 **value_data
             )
 
@@ -159,7 +159,7 @@ class CorporateIdentityUpdateSerializer(serializers.ModelSerializer):
             for idx, value_data in enumerate(values_data):
                 CorporateValue.objects.create(
                     identity=instance,
-                    order=value_data.get('order', idx),
+                    orden=value_data.get('orden', idx),
                     **value_data
                 )
 
@@ -203,7 +203,7 @@ class StrategicObjectiveListSerializer(serializers.ModelSerializer):
             'progress', 'status', 'status_display',
             'target_value', 'current_value', 'unit',
             'responsible', 'responsible_name',
-            'start_date', 'due_date', 'order'
+            'start_date', 'due_date', 'orden'
         ]
 
     def get_responsible_name(self, obj):
@@ -243,7 +243,7 @@ class StrategicObjectiveDetailSerializer(serializers.ModelSerializer):
             'target_value', 'current_value', 'unit',
             'progress', 'status', 'status_display',
             'start_date', 'due_date', 'completed_at',
-            'order', 'is_active',
+            'orden', 'is_active',
             'created_by', 'created_by_name',
             'created_at', 'updated_at'
         ]
@@ -280,7 +280,7 @@ class StrategicObjectiveCreateSerializer(serializers.ModelSerializer):
             'bsc_perspective', 'iso_standards',
             'responsible', 'responsible_cargo',
             'target_value', 'current_value', 'unit',
-            'start_date', 'due_date', 'order', 'is_active'
+            'start_date', 'due_date', 'orden', 'is_active'
         ]
 
     def validate_code(self, value):
@@ -304,7 +304,7 @@ class StrategicObjectiveUpdateSerializer(serializers.ModelSerializer):
             'responsible', 'responsible_cargo',
             'target_value', 'current_value', 'unit',
             'progress', 'status',
-            'start_date', 'due_date', 'order', 'is_active'
+            'start_date', 'due_date', 'orden', 'is_active'
         ]
 
 
@@ -462,7 +462,7 @@ class SystemModuleListSerializer(serializers.ModelSerializer):
             'is_core', 'is_enabled',
             'requires_license', 'license_expires_at',
             'dependencies_count', 'dependents_count',
-            'order'
+            'orden'
         ]
 
     def get_dependencies_count(self, obj):
@@ -490,7 +490,7 @@ class SystemModuleDetailSerializer(serializers.ModelSerializer):
             'is_core', 'is_enabled',
             'requires_license', 'license_expires_at',
             'dependencies', 'dependents', 'can_disable_info',
-            'order', 'created_at', 'updated_at'
+            'orden', 'created_at', 'updated_at'
         ]
 
     def get_can_disable_info(self, obj):
@@ -513,7 +513,7 @@ class SystemModuleCreateSerializer(serializers.ModelSerializer):
         fields = [
             'code', 'name', 'description', 'category', 'icon',
             'is_core', 'is_enabled', 'requires_license',
-            'license_expires_at', 'order', 'dependency_ids'
+            'license_expires_at', 'orden', 'dependency_ids'
         ]
 
     def validate_code(self, value):
@@ -547,7 +547,7 @@ class SystemModuleUpdateSerializer(serializers.ModelSerializer):
         fields = [
             'name', 'description', 'category', 'icon',
             'is_enabled', 'requires_license',
-            'license_expires_at', 'order', 'dependency_ids'
+            'license_expires_at', 'orden', 'dependency_ids'
         ]
 
     @transaction.atomic
@@ -725,7 +725,7 @@ class TabSectionSerializer(serializers.ModelSerializer):
         model = TabSection
         fields = [
             'id', 'code', 'name', 'description', 'icon',
-            'order', 'is_enabled', 'is_core', 'can_disable'
+            'orden', 'is_enabled', 'is_core', 'can_disable'
         ]
 
     def get_can_disable(self, obj):
@@ -742,7 +742,7 @@ class ModuleTabSerializer(serializers.ModelSerializer):
     class Meta:
         model = ModuleTab
         fields = [
-            'id', 'code', 'name', 'description', 'icon', 'order',
+            'id', 'code', 'name', 'description', 'icon', 'orden',
             'is_enabled', 'is_core', 'can_disable',
             'sections', 'enabled_sections_count', 'total_sections_count'
         ]
@@ -769,7 +769,7 @@ class SystemModuleTreeSerializer(serializers.ModelSerializer):
         model = SystemModule
         fields = [
             'id', 'code', 'name', 'description', 'icon', 'color',
-            'category', 'category_display', 'order',
+            'category', 'category_display', 'orden',
             'is_enabled', 'is_core', 'requires_license', 'license_expires_at',
             'can_disable',
             'tabs', 'enabled_tabs_count', 'total_tabs_count'
@@ -817,7 +817,7 @@ class TabSectionSerializer(serializers.ModelSerializer):
         model = TabSection
         fields = [
             'id', 'tab', 'tab_name', 'module_name',
-            'code', 'name', 'description', 'icon', 'order',
+            'code', 'name', 'description', 'icon', 'orden',
             'is_enabled', 'is_core', 'created_at', 'updated_at'
         ]
         read_only_fields = ['created_at', 'updated_at']
@@ -828,7 +828,7 @@ class TabSectionCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TabSection
-        fields = ['tab', 'code', 'name', 'description', 'icon', 'order', 'is_enabled', 'is_core']
+        fields = ['tab', 'code', 'name', 'description', 'icon', 'orden', 'is_enabled', 'is_core']
 
 
 class ToggleSectionSerializer(serializers.Serializer):
@@ -847,7 +847,7 @@ class ModuleTabSerializer(serializers.ModelSerializer):
         model = ModuleTab
         fields = [
             'id', 'module', 'module_name',
-            'code', 'name', 'description', 'icon', 'order',
+            'code', 'name', 'description', 'icon', 'orden',
             'is_enabled', 'is_core',
             'sections', 'section_count', 'enabled_section_count',
             'created_at', 'updated_at'
@@ -866,7 +866,7 @@ class ModuleTabCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ModuleTab
-        fields = ['module', 'code', 'name', 'description', 'icon', 'order', 'is_enabled', 'is_core']
+        fields = ['module', 'code', 'name', 'description', 'icon', 'orden', 'is_enabled', 'is_core']
 
 
 class ToggleTabSerializer(serializers.Serializer):

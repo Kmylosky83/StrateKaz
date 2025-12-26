@@ -10,7 +10,7 @@ Este módulo contiene los ViewSets para:
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db import transaction
 from django.utils import timezone
@@ -153,13 +153,13 @@ class CorporateIdentityViewSet(viewsets.ModelViewSet):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         # Obtener el orden máximo actual
-        max_order = identity.values.order_by('-order').values_list(
-            'order', flat=True
+        max_order = identity.values.order_by('-orden').values_list(
+            'orden', flat=True
         ).first() or 0
 
         value = CorporateValue.objects.create(
             identity=identity,
-            order=max_order + 1,
+            orden=max_order + 1,
             **serializer.validated_data
         )
 
@@ -205,7 +205,7 @@ class CorporateValueViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['identity', 'is_active']
     search_fields = ['name', 'description']
-    ordering = ['order', 'name']
+    ordering = ['orden', 'name']
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
@@ -365,7 +365,7 @@ class StrategicObjectiveViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['plan', 'bsc_perspective', 'status', 'is_active', 'responsible']
     search_fields = ['code', 'name', 'description']
-    ordering = ['bsc_perspective', 'order', 'code']
+    ordering = ['bsc_perspective', 'orden', 'code']
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -453,7 +453,7 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['category', 'is_enabled', 'is_core', 'requires_license']
     search_fields = ['code', 'name', 'description']
-    ordering = ['category', 'order', 'name']
+    ordering = ['category', 'orden', 'name']
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -473,7 +473,7 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         if self.action in ['tree', 'sidebar']:
-            return queryset.prefetch_related('tabs__sections').order_by('order', 'name')
+            return queryset.prefetch_related('tabs__sections').order_by('orden', 'name')
         return queryset.prefetch_related('dependencies', 'dependents')
 
     def perform_destroy(self, instance):
@@ -594,9 +594,9 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
         ).prefetch_related(
             Prefetch(
                 'tabs',
-                queryset=ModuleTab.objects.filter(is_enabled=True).order_by('order')
+                queryset=ModuleTab.objects.filter(is_enabled=True).order_by('orden')
             )
-        ).order_by('order', 'name')
+        ).order_by('orden', 'name')
 
         # Serializar módulos directamente (sin agrupar por categoría)
         result = []
@@ -652,14 +652,14 @@ class ModuleTabViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['module', 'is_enabled', 'is_core']
     search_fields = ['code', 'name', 'description']
-    ordering = ['module', 'order', 'name']
+    ordering = ['module__orden', 'orden', 'name']
 
     def get_queryset(self):
         queryset = ModuleTab.objects.prefetch_related('sections')
         module_id = self.request.query_params.get('module')
         if module_id:
             queryset = queryset.filter(module_id=module_id)
-        return queryset.order_by('order', 'name')
+        return queryset.order_by('orden', 'name')
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
@@ -718,14 +718,14 @@ class TabSectionViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['tab', 'is_enabled', 'is_core']
     search_fields = ['code', 'name', 'description']
-    ordering = ['tab', 'order', 'name']
+    ordering = ['tab__orden', 'orden', 'name']
 
     def get_queryset(self):
         queryset = TabSection.objects.all()
         tab_id = self.request.query_params.get('tab')
         if tab_id:
             queryset = queryset.filter(tab_id=tab_id)
-        return queryset.order_by('order', 'name')
+        return queryset.order_by('orden', 'name')
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
@@ -792,13 +792,16 @@ class BrandingConfigViewSet(viewsets.ModelViewSet):
             return BrandingConfigUpdateSerializer
         return BrandingConfigSerializer
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
     def active(self, request):
         """
         GET /api/core/branding/active/
 
         Retorna la configuración de branding activa.
         Retorna 404 si no hay configuración activa (el frontend usa defaults locales).
+
+        NOTA: Este endpoint es público (sin autenticación) porque el branding
+        se necesita en la página de login, antes de que el usuario se autentique.
         """
         branding = BrandingConfig.objects.filter(is_active=True).first()
         if not branding:

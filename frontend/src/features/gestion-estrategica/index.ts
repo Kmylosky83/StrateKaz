@@ -7,6 +7,8 @@
  * - OrganizacionPage: Estructura, Cargos, Roles, Permisos
  * - IdentidadPage: Misión, Visión, Valores, Política
  * - PlaneacionPage: Plan Estratégico, Objetivos BSC
+ * - ProyectosPage: Gestión de Proyectos PMI
+ * - RevisionDireccionPage: Revisión por Dirección ISO 9.3
  */
 
 // Páginas individuales por tab (cada tab = ruta separada)
@@ -14,15 +16,76 @@ export { ConfiguracionPage } from './pages/ConfiguracionPage';
 export { OrganizacionPage } from './pages/OrganizacionPage';
 export { IdentidadPage } from './pages/IdentidadPage';
 export { PlaneacionPage } from './pages/PlaneacionPage';
+export { ProyectosPage } from './pages/ProyectosPage';
+export { RevisionDireccionPage } from './pages/RevisionDireccionPage';
 
-// Componentes
-export * from './components';
+// Componentes principales (exportaciones explícitas para evitar colisiones)
+export {
+  IdentidadTab,
+  PlaneacionTab,
+  OrganizacionTab,
+  ConfiguracionTab,
+  GestionProyectosTab,
+  RevisionDireccionTab,
+  CompromisosDashboard,
+  GeneradorActaModal,
+  IntegracionesSection,
+  IntegracionFormModal,
+  IntegracionStatusBadge,
+  TestConnectionButton,
+  CredencialesEditor,
+} from './components';
 
-// Hooks
-export * from './hooks';
+// Hooks - Strategic
+export {
+  useStrategicStats,
+  useIdentities,
+  useActiveIdentity,
+  useValues,
+  usePlans,
+  useActivePlan,
+  useBSCPerspectives,
+  useISOStandards,
+} from './hooks/useStrategic';
 
-// API
-export * from './api';
+// Hooks - Tenant & Modules
+export { useTenantConfig } from './hooks/useTenantConfig';
+export { useModulesTree, useTabSections, useSidebarModules } from './hooks/useModules';
 
-// Types
-export * from './types';
+// Hooks - Areas
+export {
+  areaKeys,
+  useAreas,
+  useArea,
+  useAreasTree,
+  useAreasRoot,
+  useAreaChildren,
+  useCreateArea,
+  useUpdateArea,
+  useDeleteArea,
+  useToggleArea,
+} from './hooks/useAreas';
+
+// Hooks - Proyectos
+export {
+  useProyectos,
+  useProyecto,
+  useProyectosDashboard,
+  useCreateProyecto,
+  useUpdateProyecto,
+  useDeleteProyecto,
+  useCambiarEstadoProyecto,
+} from './hooks/useProyectos';
+
+// Hooks - Portafolios
+export {
+  usePortafolios,
+  usePortafolio,
+} from './hooks/usePortafolios';
+
+// Hooks - Revisión por Dirección
+export {
+  useRevisionDireccionStats,
+  useProgramasRevision,
+  useActasRevision,
+} from './hooks/useRevisionDireccion';

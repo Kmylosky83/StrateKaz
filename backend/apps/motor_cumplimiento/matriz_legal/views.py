@@ -14,6 +14,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django.utils import timezone
 
+from apps.core.mixins import StandardViewSetMixin
 from .models import TipoNorma, NormaLegal, EmpresaNorma
 from .serializers import (
     TipoNormaSerializer,
@@ -26,7 +27,7 @@ from .serializers import (
 )
 
 
-class TipoNormaViewSet(viewsets.ModelViewSet):
+class TipoNormaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gestionar Tipos de Norma.
 
@@ -46,7 +47,7 @@ class TipoNormaViewSet(viewsets.ModelViewSet):
     search_fields = ['codigo', 'nombre']
 
 
-class NormaLegalViewSet(viewsets.ModelViewSet):
+class NormaLegalViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gestionar Normas Legales.
 
@@ -56,6 +57,9 @@ class NormaLegalViewSet(viewsets.ModelViewSet):
     - GET /normas/{id}/ - Detalle
     - PUT/PATCH /normas/{id}/ - Actualizar
     - DELETE /normas/{id}/ - Eliminar
+    - POST /normas/{id}/toggle-active/ - Activar/desactivar (StandardViewSetMixin)
+    - POST /normas/bulk-activate/ - Activar múltiples (StandardViewSetMixin)
+    - POST /normas/bulk-deactivate/ - Desactivar múltiples (StandardViewSetMixin)
     - GET /normas/by_sistema/ - Filtrar por sistema (sst/ambiental/calidad/pesv)
     - GET /normas/vigentes/ - Solo normas vigentes
     """
@@ -64,7 +68,7 @@ class NormaLegalViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = [
-        'tipo_norma', 'anio', 'vigente',
+        'tipo_norma', 'anio', 'vigente', 'is_active',
         'aplica_sst', 'aplica_ambiental', 'aplica_calidad', 'aplica_pesv'
     ]
     search_fields = ['numero', 'titulo', 'entidad_emisora', 'resumen']
@@ -118,7 +122,7 @@ class NormaLegalViewSet(viewsets.ModelViewSet):
         })
 
 
-class EmpresaNormaViewSet(viewsets.ModelViewSet):
+class EmpresaNormaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gestionar relación Empresa-Norma.
 
@@ -128,6 +132,9 @@ class EmpresaNormaViewSet(viewsets.ModelViewSet):
     - GET /empresa-normas/{id}/ - Detalle
     - PUT/PATCH /empresa-normas/{id}/ - Actualizar
     - DELETE /empresa-normas/{id}/ - Eliminar
+    - POST /empresa-normas/{id}/toggle-active/ - Activar/desactivar (StandardViewSetMixin)
+    - POST /empresa-normas/bulk-activate/ - Activar múltiples (StandardViewSetMixin)
+    - POST /empresa-normas/bulk-deactivate/ - Desactivar múltiples (StandardViewSetMixin)
     - POST /empresa-normas/{id}/evaluar/ - Evaluar cumplimiento
     - GET /empresa-normas/matriz/ - Matriz de cumplimiento
     """
@@ -138,7 +145,7 @@ class EmpresaNormaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = [
-        'empresa_id', 'aplica', 'porcentaje_cumplimiento',
+        'empresa_id', 'aplica', 'porcentaje_cumplimiento', 'is_active',
         'norma__aplica_sst', 'norma__aplica_ambiental',
         'norma__aplica_calidad', 'norma__aplica_pesv'
     ]
@@ -150,9 +157,6 @@ class EmpresaNormaViewSet(viewsets.ModelViewSet):
         if self.action in ['create', 'update', 'partial_update']:
             return EmpresaNormaCreateUpdateSerializer
         return EmpresaNormaSerializer
-
-    def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
 
     @action(detail=True, methods=['post'])
     def evaluar(self, request, pk=None):

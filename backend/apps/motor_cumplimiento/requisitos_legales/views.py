@@ -6,19 +6,38 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
 from django.utils import timezone
 from django.db.models import Count
+
+from apps.core.mixins import StandardViewSetMixin
 from .models import TipoRequisito, RequisitoLegal, EmpresaRequisito, AlertaVencimiento
 from .serializers import TipoRequisitoSerializer, RequisitoLegalSerializer, EmpresaRequisitoSerializer, AlertaVencimientoSerializer
 
 
-class TipoRequisitoViewSet(viewsets.ModelViewSet):
+class TipoRequisitoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar Tipos de Requisito.
+
+    Incluye funcionalidad del StandardViewSetMixin:
+    - toggle_active, bulk_activate, bulk_deactivate
+    - Filtrado automático de inactivos (use ?include_inactive=true para incluir todos)
+    - Auditoría automática (created_by, updated_by)
+    """
     queryset = TipoRequisito.objects.all()
     serializer_class = TipoRequisitoSerializer
     permission_classes = [IsAuthenticated]
-    filter_backends = [SearchFilter]
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ['is_active']
     search_fields = ["codigo", "nombre"]
 
 
-class RequisitoLegalViewSet(viewsets.ModelViewSet):
+class RequisitoLegalViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar Requisitos Legales.
+
+    Incluye funcionalidad del StandardViewSetMixin:
+    - toggle_active, bulk_activate, bulk_deactivate
+    - Filtrado automático de inactivos (use ?include_inactive=true para incluir todos)
+    - Auditoría automática (created_by, updated_by)
+    """
     queryset = RequisitoLegal.objects.select_related("tipo").all()
     serializer_class = RequisitoLegalSerializer
     permission_classes = [IsAuthenticated]
@@ -26,20 +45,22 @@ class RequisitoLegalViewSet(viewsets.ModelViewSet):
     filterset_fields = ["tipo", "aplica_sst", "aplica_ambiental", "aplica_calidad", "aplica_pesv", "is_active"]
     search_fields = ["codigo", "nombre", "entidad_emisora"]
 
-    def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
 
+class EmpresaRequisitoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar Requisitos de Empresa.
 
-class EmpresaRequisitoViewSet(viewsets.ModelViewSet):
+    Incluye funcionalidad del StandardViewSetMixin:
+    - toggle_active, bulk_activate, bulk_deactivate
+    - Filtrado automático de inactivos (use ?include_inactive=true para incluir todos)
+    - Auditoría automática (created_by, updated_by)
+    """
     queryset = EmpresaRequisito.objects.select_related("requisito", "responsable").all()
     serializer_class = EmpresaRequisitoSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = ["empresa_id", "requisito", "estado", "is_active"]
     search_fields = ["numero_documento", "requisito__nombre"]
-
-    def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
 
     @action(detail=False, methods=["get"])
     def por_vencer(self, request):
@@ -74,12 +95,20 @@ class EmpresaRequisitoViewSet(viewsets.ModelViewSet):
         return Response({"estadisticas_por_estado": list(stats), "total": queryset.count()})
 
 
-class AlertaVencimientoViewSet(viewsets.ModelViewSet):
+class AlertaVencimientoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar Alertas de Vencimiento.
+
+    Incluye funcionalidad del StandardViewSetMixin:
+    - toggle_active, bulk_activate, bulk_deactivate
+    - Filtrado automático de inactivos (use ?include_inactive=true para incluir todos)
+    - Auditoría automática (created_by, updated_by)
+    """
     queryset = AlertaVencimiento.objects.select_related("empresa_requisito").all()
     serializer_class = AlertaVencimientoSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["empresa_requisito", "enviada"]
+    filterset_fields = ["empresa_requisito", "enviada", "is_active"]
 
     @action(detail=False, methods=["get"])
     def pendientes(self, request):

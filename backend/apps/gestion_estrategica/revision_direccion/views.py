@@ -2,7 +2,7 @@
 Views para Revisión por la Dirección
 
 Endpoints por subtab:
-- Programación: /programas/, /participantes/, /temas/
+- Programación: /programaciones/, /participantes/, /temas/
 - Actas de Revisión: /actas/, /analisis-temas/
 - Seguimiento Compromisos: /compromisos/, /seguimientos/
 """
@@ -15,6 +15,7 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from django.db.models import Count, Q
 from django.utils import timezone
 
+from apps.core.mixins import StandardViewSetMixin
 from .models import (
     ProgramaRevision, ParticipanteRevision, TemaRevision,
     ActaRevision, AnalisisTemaActa, CompromisoRevision,
@@ -29,23 +30,24 @@ from .serializers import (
 )
 
 
-class ProgramaRevisionViewSet(viewsets.ModelViewSet):
+class ProgramaRevisionViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gestionar Programas de Revisión por la Dirección.
 
     Endpoints:
-    - GET /programas/ - Lista de programas
-    - POST /programas/ - Crear programa
-    - GET /programas/{id}/ - Detalle
-    - GET /programas/dashboard/ - Dashboard de revisiones
-    - GET /programas/calendario/ - Calendario de revisiones
+    - GET /programaciones/ - Lista de programas
+    - POST /programaciones/ - Crear programa
+    - GET /programaciones/{id}/ - Detalle
+    - GET /programaciones/dashboard/ - Dashboard de revisiones
+    - GET /programaciones/stats/ - Alias de dashboard
+    - GET /programaciones/calendario/ - Calendario de revisiones
     """
     queryset = ProgramaRevision.objects.select_related(
         'responsable_convocatoria', 'created_by'
     ).prefetch_related('participantes', 'temas').all()
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['empresa_id', 'anio', 'estado', 'frecuencia', 'is_active']
+    filterset_fields = ['empresa', 'anio', 'estado', 'frecuencia', 'is_active']
     search_fields = ['periodo', 'lugar']
     ordering_fields = ['fecha_programada', 'anio']
     ordering = ['-fecha_programada']
@@ -64,7 +66,7 @@ class ProgramaRevisionViewSet(viewsets.ModelViewSet):
         empresa_id = request.query_params.get('empresa', 1)
         anio = request.query_params.get('anio', timezone.now().year)
 
-        programas = self.get_queryset().filter(empresa_id=empresa_id, anio=anio)
+        programas = self.get_queryset().filter(empresa=empresa_id, anio=anio)
 
         total = programas.count()
         realizadas = programas.filter(estado='realizada').count()
@@ -78,7 +80,7 @@ class ProgramaRevisionViewSet(viewsets.ModelViewSet):
 
         # Compromisos
         compromisos = CompromisoRevision.objects.filter(
-            acta__programa__empresa_id=empresa_id,
+            acta__programa__empresa=empresa_id,
             is_active=True
         )
         total_compromisos = compromisos.count()
@@ -108,13 +110,53 @@ class ProgramaRevisionViewSet(viewsets.ModelViewSet):
         })
 
     @action(detail=False, methods=['get'])
+    def stats(self, request):
+        """
+        Alias de dashboard para compatibilidad con frontend.
+        GET /api/revision-direccion/programaciones/stats/
+        """
+        return self.dashboard(request)
+
+    @action(detail=False, methods=['get'])
+    def proximas(self, request):
+        """
+        Retorna las próximas revisiones programadas.
+        GET /api/revision-direccion/programaciones/proximas/?limit=5
+        """
+        empresa_id = request.query_params.get('empresa', 1)
+        limit = int(request.query_params.get('limit', 5))
+
+        proximas = self.get_queryset().filter(
+            empresa=empresa_id,
+            estado__in=['programada', 'convocada'],
+            fecha_programada__gte=timezone.now().date(),
+            is_active=True
+        ).order_by('fecha_programada')[:limit]
+
+        data = [
+            {
+                'id': p.id,
+                'periodo': p.periodo,
+                'fecha_programada': p.fecha_programada,
+                'hora_inicio': p.hora_inicio,
+                'lugar': p.lugar,
+                'estado': p.estado,
+                'estado_display': p.get_estado_display(),
+                'total_participantes': p.participantes.filter(is_active=True).count(),
+            }
+            for p in proximas
+        ]
+
+        return Response(data)
+
+    @action(detail=False, methods=['get'])
     def calendario(self, request):
         """Retorna revisiones para vista de calendario"""
         empresa_id = request.query_params.get('empresa', 1)
         anio = request.query_params.get('anio', timezone.now().year)
 
         programas = self.get_queryset().filter(
-            empresa_id=empresa_id, anio=anio, is_active=True
+            empresa=empresa_id, anio=anio, is_active=True
         )
 
         eventos = []
@@ -159,7 +201,7 @@ class ProgramaRevisionViewSet(viewsets.ModelViewSet):
         })
 
 
-class ParticipanteRevisionViewSet(viewsets.ModelViewSet):
+class ParticipanteRevisionViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para gestionar Participantes de revisiones"""
     queryset = ParticipanteRevision.objects.select_related('programa', 'usuario').all()
     serializer_class = ParticipanteRevisionSerializer
@@ -168,7 +210,7 @@ class ParticipanteRevisionViewSet(viewsets.ModelViewSet):
     filterset_fields = ['programa', 'rol', 'es_obligatorio', 'asistio']
 
 
-class TemaRevisionViewSet(viewsets.ModelViewSet):
+class TemaRevisionViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para gestionar Temas de revisión"""
     queryset = TemaRevision.objects.select_related('programa', 'responsable').all()
     serializer_class = TemaRevisionSerializer
@@ -200,7 +242,7 @@ class TemaRevisionViewSet(viewsets.ModelViewSet):
         return Response(temas_iso)
 
 
-class ActaRevisionViewSet(viewsets.ModelViewSet):
+class ActaRevisionViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para gestionar Actas de Revisión"""
     queryset = ActaRevision.objects.select_related(
         'programa', 'elaborado_por', 'revisado_por', 'aprobado_por'
@@ -222,7 +264,7 @@ class ActaRevisionViewSet(viewsets.ModelViewSet):
             programa.save(update_fields=['estado', 'fecha_realizada'])
 
 
-class AnalisisTemaActaViewSet(viewsets.ModelViewSet):
+class AnalisisTemaActaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para análisis de temas en actas"""
     queryset = AnalisisTemaActa.objects.select_related('acta', 'tema', 'presentado_por').all()
     serializer_class = AnalisisTemaActaSerializer
@@ -231,7 +273,7 @@ class AnalisisTemaActaViewSet(viewsets.ModelViewSet):
     filterset_fields = ['acta', 'tema']
 
 
-class CompromisoRevisionViewSet(viewsets.ModelViewSet):
+class CompromisoRevisionViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gestionar Compromisos de revisión.
 
@@ -261,7 +303,7 @@ class CompromisoRevisionViewSet(viewsets.ModelViewSet):
         """Retorna compromisos pendientes"""
         empresa_id = request.query_params.get('empresa', 1)
         queryset = self.get_queryset().filter(
-            acta__programa__empresa_id=empresa_id,
+            acta__programa__empresa=empresa_id,
             estado__in=['pendiente', 'en_progreso'],
             is_active=True
         ).order_by('fecha_compromiso')
@@ -274,7 +316,7 @@ class CompromisoRevisionViewSet(viewsets.ModelViewSet):
         """Retorna compromisos vencidos"""
         empresa_id = request.query_params.get('empresa', 1)
         queryset = self.get_queryset().filter(
-            acta__programa__empresa_id=empresa_id,
+            acta__programa__empresa=empresa_id,
             estado__in=['pendiente', 'en_progreso'],
             fecha_compromiso__lt=timezone.now().date(),
             is_active=True
@@ -288,7 +330,7 @@ class CompromisoRevisionViewSet(viewsets.ModelViewSet):
         """Agrupa compromisos por responsable"""
         empresa_id = request.query_params.get('empresa', 1)
         queryset = self.get_queryset().filter(
-            acta__programa__empresa_id=empresa_id,
+            acta__programa__empresa=empresa_id,
             estado__in=['pendiente', 'en_progreso'],
             is_active=True
         )
@@ -343,7 +385,7 @@ class CompromisoRevisionViewSet(viewsets.ModelViewSet):
         })
 
 
-class SeguimientoCompromisoViewSet(viewsets.ModelViewSet):
+class SeguimientoCompromisoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para seguimientos de compromisos"""
     queryset = SeguimientoCompromiso.objects.select_related(
         'compromiso', 'registrado_por'
@@ -356,3 +398,142 @@ class SeguimientoCompromisoViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(registrado_por=self.request.user)
+
+
+class RevisionDireccionStatsViewSet(viewsets.ViewSet):
+    """
+    ViewSet para estadísticas y dashboard de Revisión por Dirección.
+
+    Endpoints:
+    - GET /api/revision-direccion/stats/ - Estadísticas generales
+    - GET /api/revision-direccion/dashboard/ - Dashboard completo
+    """
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        """
+        GET /api/revision-direccion/stats/
+        Retorna estadísticas generales de revisión por dirección
+        """
+        empresa_id = request.query_params.get('empresa', 1)
+        anio = request.query_params.get('anio', timezone.now().year)
+
+        programas = ProgramaRevision.objects.filter(empresa=empresa_id, anio=anio)
+
+        total = programas.count()
+        realizadas = programas.filter(estado='realizada').count()
+        pendientes = programas.filter(estado__in=['programada', 'convocada']).count()
+
+        # Próxima revisión
+        proxima = programas.filter(
+            estado__in=['programada', 'convocada'],
+            fecha_programada__gte=timezone.now().date()
+        ).order_by('fecha_programada').first()
+
+        # Compromisos
+        compromisos = CompromisoRevision.objects.filter(
+            acta__programa__empresa=empresa_id,
+            is_active=True
+        )
+        total_compromisos = compromisos.count()
+        pendientes_comp = compromisos.filter(estado__in=['pendiente', 'en_progreso']).count()
+        vencidos = compromisos.filter(
+            estado__in=['pendiente', 'en_progreso'],
+            fecha_compromiso__lt=timezone.now().date()
+        ).count()
+        cumplidos = compromisos.filter(estado='completado').count()
+
+        porcentaje_cumplimiento = (cumplidos / total_compromisos * 100) if total_compromisos > 0 else 0
+
+        return Response({
+            'total_revisiones': total,
+            'revisiones_realizadas': realizadas,
+            'revisiones_pendientes': pendientes,
+            'proxima_revision': {
+                'id': proxima.id,
+                'periodo': proxima.periodo,
+                'fecha': proxima.fecha_programada,
+                'estado': proxima.estado,
+            } if proxima else None,
+            'compromisos_totales': total_compromisos,
+            'compromisos_pendientes': pendientes_comp,
+            'compromisos_vencidos': vencidos,
+            'porcentaje_cumplimiento': round(porcentaje_cumplimiento, 1),
+        })
+
+    @action(detail=False, methods=['get'])
+    def dashboard(self, request):
+        """
+        GET /api/revision-direccion/stats/dashboard/
+        Retorna dashboard completo de revisión por dirección
+        """
+        empresa_id = request.query_params.get('empresa', 1)
+        anio = request.query_params.get('anio', timezone.now().year)
+
+        programas = ProgramaRevision.objects.filter(empresa=empresa_id, anio=anio)
+
+        # Estadísticas de programas
+        stats_programas = {
+            'total': programas.count(),
+            'realizadas': programas.filter(estado='realizada').count(),
+            'pendientes': programas.filter(estado__in=['programada', 'convocada']).count(),
+            'canceladas': programas.filter(estado='cancelada').count(),
+        }
+
+        # Compromisos por estado
+        compromisos = CompromisoRevision.objects.filter(
+            acta__programa__empresa=empresa_id,
+            is_active=True
+        )
+
+        stats_compromisos = {
+            'total': compromisos.count(),
+            'pendientes': compromisos.filter(estado='pendiente').count(),
+            'en_progreso': compromisos.filter(estado='en_progreso').count(),
+            'completados': compromisos.filter(estado='completado').count(),
+            'vencidos': compromisos.filter(
+                estado__in=['pendiente', 'en_progreso'],
+                fecha_compromiso__lt=timezone.now().date()
+            ).count(),
+        }
+
+        # Próximas revisiones (siguientes 3)
+        proximas = programas.filter(
+            estado__in=['programada', 'convocada'],
+            fecha_programada__gte=timezone.now().date()
+        ).order_by('fecha_programada')[:3]
+
+        proximas_data = [
+            {
+                'id': p.id,
+                'periodo': p.periodo,
+                'fecha': p.fecha_programada,
+                'estado': p.estado,
+                'lugar': p.lugar,
+            }
+            for p in proximas
+        ]
+
+        # Compromisos vencidos recientes (últimos 5)
+        vencidos_recientes = compromisos.filter(
+            estado__in=['pendiente', 'en_progreso'],
+            fecha_compromiso__lt=timezone.now().date()
+        ).order_by('fecha_compromiso')[:5]
+
+        vencidos_data = [
+            {
+                'id': c.id,
+                'descripcion': c.descripcion[:100] + '...' if len(c.descripcion) > 100 else c.descripcion,
+                'fecha_compromiso': c.fecha_compromiso,
+                'responsable': c.responsable.get_full_name() if c.responsable else None,
+                'prioridad': c.prioridad,
+            }
+            for c in vencidos_recientes
+        ]
+
+        return Response({
+            'programas': stats_programas,
+            'compromisos': stats_compromisos,
+            'proximas_revisiones': proximas_data,
+            'compromisos_vencidos': vencidos_data,
+        })

@@ -29,7 +29,7 @@ class AreaSerializer(serializers.ModelSerializer):
             'manager',
             'manager_name',
             'is_active',
-            'order',
+            'orden',
             'children_count',
             'full_path',
             'level',
@@ -62,13 +62,13 @@ class AreaTreeSerializer(serializers.ModelSerializer):
             'manager',
             'manager_name',
             'is_active',
-            'order',
+            'orden',
             'children',
         ]
 
     def get_children(self, obj):
         """Obtiene las subáreas recursivamente"""
-        children = obj.children.filter(is_active=True).order_by('order', 'name')
+        children = obj.children.filter(is_active=True).order_by('orden', 'name')
         return AreaTreeSerializer(children, many=True).data
 
 
@@ -88,15 +88,15 @@ class AreaListSerializer(serializers.ModelSerializer):
 class CategoriaDocumentoSerializer(serializers.ModelSerializer):
     """Serializer completo para CategoriaDocumento"""
     puede_eliminar = serializers.SerializerMethodField()
-    count_tipos = serializers.IntegerField(read_only=True)
+    tipos_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = CategoriaDocumento
         fields = [
             'id', 'code', 'name', 'description',
             'color', 'icon',
-            'is_system', 'is_active', 'order',
-            'count_tipos', 'puede_eliminar',
+            'is_system', 'is_active', 'orden',
+            'tipos_count', 'puede_eliminar',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
@@ -109,11 +109,11 @@ class CategoriaDocumentoSerializer(serializers.ModelSerializer):
 
 class CategoriaDocumentoListSerializer(serializers.ModelSerializer):
     """Serializer simplificado para listas y selects"""
-    count_tipos = serializers.IntegerField(read_only=True)
+    tipos_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = CategoriaDocumento
-        fields = ['id', 'code', 'name', 'color', 'icon', 'is_system', 'is_active', 'order', 'count_tipos']
+        fields = ['id', 'code', 'name', 'color', 'icon', 'is_system', 'is_active', 'orden', 'tipos_count']
 
 
 class CategoriaDocumentoChoicesSerializer(serializers.Serializer):
@@ -122,7 +122,7 @@ class CategoriaDocumentoChoicesSerializer(serializers.Serializer):
 
     def get_categorias(self, obj):
         """Retorna categorías activas para selects"""
-        categorias = CategoriaDocumento.objects.filter(is_active=True).order_by('order', 'name')
+        categorias = CategoriaDocumento.objects.filter(is_active=True).order_by('orden', 'name')
         return [
             {
                 'value': c.id,
@@ -156,7 +156,7 @@ class TipoDocumentoSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'code', 'name',
             'categoria', 'categoria_code', 'categoria_name', 'categoria_color', 'categoria_icon',
-            'description', 'prefijo_sugerido', 'is_system', 'is_active', 'order',
+            'description', 'prefijo_sugerido', 'is_system', 'is_active', 'orden',
             'tiene_consecutivo', 'puede_eliminar',
             'created_at', 'updated_at', 'created_by', 'created_by_name'
         ]
@@ -201,7 +201,7 @@ class TipoDocumentoChoicesSerializer(serializers.Serializer):
 
     def get_categorias(self, obj):
         """Retorna categorías activas con sus tipos"""
-        categorias = CategoriaDocumento.objects.filter(is_active=True).order_by('order', 'name')
+        categorias = CategoriaDocumento.objects.filter(is_active=True).order_by('orden', 'name')
         return [
             {
                 'value': c.id,
@@ -292,7 +292,7 @@ class ConsecutivoChoicesSerializer(serializers.Serializer):
         """Retorna tipos disponibles para configurar consecutivos"""
         tipos = TipoDocumento.objects.filter(
             is_active=True
-        ).select_related('categoria').order_by('categoria__order', 'name')
+        ).select_related('categoria').order_by('categoria__orden', 'name')
         return [
             {
                 'value': t.id,
@@ -308,7 +308,7 @@ class ConsecutivoChoicesSerializer(serializers.Serializer):
 
     def get_categorias(self, obj):
         """Retorna categorías para filtrar tipos de documento"""
-        categorias = CategoriaDocumento.objects.filter(is_active=True).order_by('order', 'name')
+        categorias = CategoriaDocumento.objects.filter(is_active=True).order_by('orden', 'name')
         return [
             {
                 'value': c.id,

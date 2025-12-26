@@ -151,11 +151,12 @@ class BaseCompanyModel(AuditModel, SoftDeleteModel):
     """
 
     empresa = models.ForeignKey(
-        'gestion_estrategica.EmpresaConfig',
+        'configuracion.EmpresaConfig',
         on_delete=models.CASCADE,
         related_name='%(class)s_set',
         verbose_name='Empresa',
-        help_text='Empresa a la que pertenece este registro'
+        help_text='Empresa a la que pertenece este registro',
+        default=1  # Default temporal para migraciones
     )
 
     class Meta:

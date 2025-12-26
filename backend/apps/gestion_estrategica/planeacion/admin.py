@@ -87,7 +87,7 @@ class StrategicObjectiveAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('Identificación', {
-            'fields': ('plan', 'code', 'name', 'description', 'order', 'is_active')
+            'fields': ('plan', 'code', 'name', 'description', 'orden', 'is_active')
         }),
         ('Clasificación', {
             'fields': ('bsc_perspective', 'iso_standards')

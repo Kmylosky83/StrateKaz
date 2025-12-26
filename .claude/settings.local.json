@@ -80,7 +80,11 @@
       "Bash(npm test:*)",
       "Bash(npm install)",
       "Bash(py -m pytest:*)",
-      "Bash(python -c:*)"
+      "Bash(python -c:*)",
+      "Bash(docker compose exec:*)",
+      "Bash(docker compose:*)",
+      "Bash(docker exec grasas_huesos_backend grep:*)",
+      "Bash(docker compose exec backend python manage.py shell:*)"
     ],
     "deny": [],
     "ask": []

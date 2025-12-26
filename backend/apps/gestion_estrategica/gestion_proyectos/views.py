@@ -16,6 +16,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django.db.models import Count, Sum, Avg
 
+from apps.core.mixins import StandardViewSetMixin
 from .models import (
     Portafolio, Programa, Proyecto, ProjectCharter,
     InteresadoProyecto, FaseProyecto, ActividadProyecto,
@@ -33,7 +34,7 @@ from .serializers import (
 )
 
 
-class PortafolioViewSet(viewsets.ModelViewSet):
+class PortafolioViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gestionar Portafolios de proyectos.
     """
@@ -48,7 +49,7 @@ class PortafolioViewSet(viewsets.ModelViewSet):
         serializer.save(created_by=self.request.user)
 
 
-class ProgramaViewSet(viewsets.ModelViewSet):
+class ProgramaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gestionar Programas de proyectos.
     """
@@ -60,7 +61,7 @@ class ProgramaViewSet(viewsets.ModelViewSet):
     search_fields = ['codigo', 'nombre']
 
 
-class ProyectoViewSet(viewsets.ModelViewSet):
+class ProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """
     ViewSet para gestionar Proyectos.
 
@@ -93,7 +94,7 @@ class ProyectoViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def dashboard(self, request):
-        """Retorna estadísticas del dashboard de proyectos"""
+        """Retorna estadísticas completas del dashboard de proyectos"""
         empresa_id = request.query_params.get('empresa', 1)
         queryset = self.get_queryset().filter(empresa_id=empresa_id, is_active=True)
 
@@ -115,21 +116,82 @@ class ProyectoViewSet(viewsets.ModelViewSet):
             costo_total=Sum('costo_real')
         )
 
-        # Proyectos críticos (en rojo según último seguimiento)
-        criticos = SeguimientoProyecto.objects.filter(
+        # Salud de proyectos (según último seguimiento)
+        proyectos_verde = SeguimientoProyecto.objects.filter(
+            proyecto__empresa_id=empresa_id,
+            proyecto__is_active=True,
+            estado_general='verde'
+        ).values('proyecto').distinct().count()
+
+        proyectos_amarillo = SeguimientoProyecto.objects.filter(
+            proyecto__empresa_id=empresa_id,
+            proyecto__is_active=True,
+            estado_general='amarillo'
+        ).values('proyecto').distinct().count()
+
+        proyectos_rojo = SeguimientoProyecto.objects.filter(
             proyecto__empresa_id=empresa_id,
             proyecto__is_active=True,
             estado_general='rojo'
         ).values('proyecto').distinct().count()
 
+        # Portafolios y programas
+        portafolios_activos = Portafolio.objects.filter(
+            empresa_id=empresa_id, is_active=True
+        ).count()
+        total_portafolios = Portafolio.objects.filter(empresa_id=empresa_id).count()
+
+        programas_activos = Programa.objects.filter(
+            empresa_id=empresa_id, is_active=True
+        ).count()
+        total_programas = Programa.objects.filter(empresa_id=empresa_id).count()
+
+        # Cálculos de presupuesto
+        presupuesto_total = float(stats['presupuesto_total'] or 0)
+        costo_real = float(stats['costo_total'] or 0)
+        presupuesto_disponible = presupuesto_total - costo_real
+        porcentaje_ejecucion = round((costo_real / presupuesto_total * 100), 1) if presupuesto_total > 0 else 0
+
         return Response({
+            # Totales generales
             'total_proyectos': stats['total'] or 0,
+            'progreso_promedio': round(stats['avance_promedio'] or 0, 1),
+
+            # Por estado
+            'propuestos': por_estado.get('propuesto', 0),
+            'en_iniciacion': por_estado.get('iniciacion', 0),
+            'en_planificacion': por_estado.get('planificacion', 0),
+            'en_ejecucion': por_estado.get('ejecucion', 0),
+            'en_monitoreo': por_estado.get('monitoreo', 0),
+            'en_cierre': por_estado.get('cierre', 0),
+            'completados': por_estado.get('completado', 0),
+            'cancelados': por_estado.get('cancelado', 0),
             'proyectos_por_estado': por_estado,
+
+            # Salud del portafolio
+            'proyectos_verde': proyectos_verde,
+            'proyectos_amarillo': proyectos_amarillo,
+            'proyectos_rojo': proyectos_rojo,
+            'proyectos_atrasados': 0,  # TODO: Calcular basado en fechas
+
+            # Por prioridad
+            'criticos': proyectos_rojo,
+            'alta_prioridad': por_prioridad.get('alta', 0),
+            'media_prioridad': por_prioridad.get('media', 0),
+            'baja_prioridad': por_prioridad.get('baja', 0),
             'proyectos_por_prioridad': por_prioridad,
-            'proyectos_criticos': criticos,
-            'porcentaje_avance_promedio': round(stats['avance_promedio'] or 0, 1),
-            'presupuesto_total': stats['presupuesto_total'] or 0,
-            'costo_total_real': stats['costo_total'] or 0,
+
+            # Presupuesto
+            'presupuesto_total': presupuesto_total,
+            'presupuesto_ejecutado': costo_real,
+            'presupuesto_disponible': presupuesto_disponible,
+            'porcentaje_ejecucion': porcentaje_ejecucion,
+
+            # Portafolios y programas
+            'portafolios_activos': portafolios_activos,
+            'total_portafolios': total_portafolios,
+            'programas_activos': programas_activos,
+            'total_programas': total_programas,
         })
 
     @action(detail=False, methods=['get'])
@@ -166,7 +228,7 @@ class ProyectoViewSet(viewsets.ModelViewSet):
         })
 
 
-class ProjectCharterViewSet(viewsets.ModelViewSet):
+class ProjectCharterViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para Project Charters (Actas de Constitución)"""
     queryset = ProjectCharter.objects.select_related('proyecto', 'aprobado_por').all()
     serializer_class = ProjectCharterSerializer
@@ -175,7 +237,7 @@ class ProjectCharterViewSet(viewsets.ModelViewSet):
     filterset_fields = ['proyecto']
 
 
-class InteresadoProyectoViewSet(viewsets.ModelViewSet):
+class InteresadoProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para gestionar Interesados/Stakeholders"""
     queryset = InteresadoProyecto.objects.select_related('proyecto').all()
     serializer_class = InteresadoProyectoSerializer
@@ -220,7 +282,7 @@ class InteresadoProyectoViewSet(viewsets.ModelViewSet):
         return Response(cuadrantes)
 
 
-class FaseProyectoViewSet(viewsets.ModelViewSet):
+class FaseProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para gestionar Fases del proyecto"""
     queryset = FaseProyecto.objects.select_related('proyecto').all()
     serializer_class = FaseProyectoSerializer
@@ -230,7 +292,7 @@ class FaseProyectoViewSet(viewsets.ModelViewSet):
     ordering = ['orden']
 
 
-class ActividadProyectoViewSet(viewsets.ModelViewSet):
+class ActividadProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para gestionar Actividades/WBS"""
     queryset = ActividadProyecto.objects.select_related(
         'proyecto', 'fase', 'responsable'
@@ -273,7 +335,7 @@ class ActividadProyectoViewSet(viewsets.ModelViewSet):
         return Response(data)
 
 
-class RecursoProyectoViewSet(viewsets.ModelViewSet):
+class RecursoProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para gestionar Recursos del proyecto"""
     queryset = RecursoProyecto.objects.select_related('proyecto', 'usuario').all()
     serializer_class = RecursoProyectoSerializer
@@ -283,7 +345,7 @@ class RecursoProyectoViewSet(viewsets.ModelViewSet):
     search_fields = ['nombre', 'rol_proyecto']
 
 
-class RiesgoProyectoViewSet(viewsets.ModelViewSet):
+class RiesgoProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para gestionar Riesgos del proyecto"""
     queryset = RiesgoProyecto.objects.select_related('proyecto', 'responsable').all()
     serializer_class = RiesgoProyectoSerializer
@@ -325,7 +387,7 @@ class RiesgoProyectoViewSet(viewsets.ModelViewSet):
         })
 
 
-class SeguimientoProyectoViewSet(viewsets.ModelViewSet):
+class SeguimientoProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para gestionar Seguimientos del proyecto"""
     queryset = SeguimientoProyecto.objects.select_related('proyecto', 'registrado_por').all()
     serializer_class = SeguimientoProyectoSerializer
@@ -372,7 +434,7 @@ class SeguimientoProyectoViewSet(viewsets.ModelViewSet):
         return Response(data)
 
 
-class LeccionAprendidaViewSet(viewsets.ModelViewSet):
+class LeccionAprendidaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para gestionar Lecciones Aprendidas"""
     queryset = LeccionAprendida.objects.select_related('proyecto', 'registrado_por').all()
     serializer_class = LeccionAprendidaSerializer
@@ -408,7 +470,7 @@ class LeccionAprendidaViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-class ActaCierreViewSet(viewsets.ModelViewSet):
+class ActaCierreViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para gestionar Actas de Cierre"""
     queryset = ActaCierre.objects.select_related('proyecto', 'aprobado_por', 'created_by').all()
     serializer_class = ActaCierreSerializer

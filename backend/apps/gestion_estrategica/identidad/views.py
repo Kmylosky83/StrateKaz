@@ -11,7 +11,7 @@ ViewSets para:
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -69,9 +69,14 @@ class CorporateIdentityViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             return CorporateIdentityCreateUpdateSerializer
         return CorporateIdentitySerializer
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
     def active(self, request):
-        """Obtiene la identidad corporativa activa"""
+        """
+        Obtiene la identidad corporativa activa.
+
+        NOTA: Este endpoint es público (sin autenticación) porque la identidad
+        se puede mostrar en la página de login antes de autenticarse.
+        """
         identity = CorporateIdentity.get_active()
         if identity:
             serializer = CorporateIdentitySerializer(identity)

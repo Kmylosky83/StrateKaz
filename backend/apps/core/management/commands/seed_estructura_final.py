@@ -74,8 +74,8 @@ class Command(BaseCommand):
                 'tabs': [
                     {'code': 'configuracion', 'name': 'Configuración', 'icon': 'Settings', 'order': 1},
                     {'code': 'organizacion', 'name': 'Organización', 'icon': 'Network', 'order': 2},
-                    {'code': 'identidad_corporativa', 'name': 'Identidad Corporativa', 'icon': 'Award', 'order': 3},
-                    {'code': 'planeacion_estrategica', 'name': 'Planeación Estratégica', 'icon': 'Target', 'order': 4},
+                    {'code': 'identidad', 'name': 'Identidad Corporativa', 'icon': 'Award', 'order': 3},
+                    {'code': 'planeacion', 'name': 'Planeación Estratégica', 'icon': 'Target', 'order': 4},
                     {'code': 'gestion_proyectos', 'name': 'Gestión Proyectos (PMI)', 'icon': 'Gantt', 'order': 5},
                     {'code': 'revision_direccion', 'name': 'Revisión por Dirección', 'icon': 'ClipboardCheck', 'order': 6},
                 ]

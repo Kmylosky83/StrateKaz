@@ -119,7 +119,9 @@ export function FeatureToggleCard({
   className,
   children,
 }: FeatureToggleCardProps) {
-  const colors = colorConfig[color];
+  // Validación defensiva: si el color no existe en colorConfig, usar 'green' como fallback
+  const safeColor = colorConfig[color] ? color : 'green';
+  const colors = colorConfig[safeColor];
 
   // Card layout (for module grids)
   if (layout === 'card') {

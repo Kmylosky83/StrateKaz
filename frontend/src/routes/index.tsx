@@ -22,6 +22,8 @@ import {
   OrganizacionPage,
   IdentidadPage,
   PlaneacionPage,
+  ProyectosPage,
+  RevisionDireccionPage,
 } from '@/features/gestion-estrategica';
 
 // ==================== NIVEL 2: CUMPLIMIENTO ====================
@@ -115,17 +117,11 @@ export const AppRoutes = () => {
           {/* Tab 4: Planeación Estratégica */}
           <Route path="/gestion-estrategica/planeacion" element={<PlaneacionPage />} />
 
-          {/* Tab 5: Gestión de Proyectos (PMI) - Próximamente */}
-          <Route
-            path="/gestion-estrategica/proyectos"
-            element={<div className="p-8 text-center text-gray-500">Gestión de Proyectos (PMI) - Próximamente</div>}
-          />
+          {/* Tab 5: Gestión de Proyectos (PMI) */}
+          <Route path="/gestion-estrategica/proyectos" element={<ProyectosPage />} />
 
-          {/* Tab 6: Revisión por Dirección - Próximamente */}
-          <Route
-            path="/gestion-estrategica/revision-direccion"
-            element={<div className="p-8 text-center text-gray-500">Revisión por Dirección - Próximamente</div>}
-          />
+          {/* Tab 6: Revisión por Dirección (ISO 9.3) */}
+          <Route path="/gestion-estrategica/revision-direccion" element={<RevisionDireccionPage />} />
 
           {/* Usuarios - Módulo transversal dentro de Dirección Estratégica */}
           <Route path="/usuarios" element={<UsersPage />} />

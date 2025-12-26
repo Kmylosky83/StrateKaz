@@ -4,11 +4,21 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
+
+from apps.core.mixins import StandardViewSetMixin
 from .models import TipoParteInteresada, ParteInteresada, RequisitoParteInteresada, MatrizComunicacion
 from .serializers import TipoParteInteresadaSerializer, ParteInteresadaSerializer, RequisitoParteInteresadaSerializer, MatrizComunicacionSerializer
 
 
-class TipoParteInteresadaViewSet(viewsets.ModelViewSet):
+class TipoParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar Tipos de Parte Interesada.
+
+    Incluye funcionalidad del StandardViewSetMixin:
+    - toggle_active, bulk_activate, bulk_deactivate
+    - Filtrado automático de inactivos (use ?include_inactive=true para incluir todos)
+    - Auditoría automática (created_by, updated_by)
+    """
     queryset = TipoParteInteresada.objects.all()
     serializer_class = TipoParteInteresadaSerializer
     permission_classes = [IsAuthenticated]
@@ -17,16 +27,21 @@ class TipoParteInteresadaViewSet(viewsets.ModelViewSet):
     search_fields = ["codigo", "nombre"]
 
 
-class ParteInteresadaViewSet(viewsets.ModelViewSet):
+class ParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar Partes Interesadas.
+
+    Incluye funcionalidad del StandardViewSetMixin:
+    - toggle_active, bulk_activate, bulk_deactivate
+    - Filtrado automático de inactivos (use ?include_inactive=true para incluir todos)
+    - Auditoría automática (created_by, updated_by)
+    """
     queryset = ParteInteresada.objects.select_related("tipo").all()
     serializer_class = ParteInteresadaSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = ["empresa_id", "tipo", "nivel_influencia", "nivel_interes", "is_active"]
     search_fields = ["nombre", "representante"]
-
-    def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
 
     @action(detail=False, methods=["get"])
     def matriz_poder_interes(self, request):
@@ -51,7 +66,15 @@ class ParteInteresadaViewSet(viewsets.ModelViewSet):
         return Response(cuadrantes)
 
 
-class RequisitoParteInteresadaViewSet(viewsets.ModelViewSet):
+class RequisitoParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar Requisitos de Parte Interesada.
+
+    Incluye funcionalidad del StandardViewSetMixin:
+    - toggle_active, bulk_activate, bulk_deactivate
+    - Filtrado automático de inactivos (use ?include_inactive=true para incluir todos)
+    - Auditoría automática (created_by, updated_by)
+    """
     queryset = RequisitoParteInteresada.objects.select_related("parte_interesada").all()
     serializer_class = RequisitoParteInteresadaSerializer
     permission_classes = [IsAuthenticated]
@@ -60,7 +83,15 @@ class RequisitoParteInteresadaViewSet(viewsets.ModelViewSet):
     search_fields = ["descripcion"]
 
 
-class MatrizComunicacionViewSet(viewsets.ModelViewSet):
+class MatrizComunicacionViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar Matriz de Comunicación.
+
+    Incluye funcionalidad del StandardViewSetMixin:
+    - toggle_active, bulk_activate, bulk_deactivate
+    - Filtrado automático de inactivos (use ?include_inactive=true para incluir todos)
+    - Auditoría automática (created_by, updated_by)
+    """
     queryset = MatrizComunicacion.objects.select_related("parte_interesada", "responsable").all()
     serializer_class = MatrizComunicacionSerializer
     permission_classes = [IsAuthenticated]

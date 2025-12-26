@@ -67,4 +67,4 @@ class CorporateValueAdmin(admin.ModelAdmin):
     list_display = ['name', 'identity', 'icon', 'orden', 'is_active']
     list_filter = ['identity', 'is_active']
     search_fields = ['name', 'description']
-    ordening = ['identity', 'orden', 'name']
+    ordering = ['identity', 'orden', 'name']

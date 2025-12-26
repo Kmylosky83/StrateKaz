@@ -50,7 +50,7 @@ class StrategicObjectiveSerializer(serializers.ModelSerializer):
             'responsible_cargo', 'responsible_cargo_name',
             'target_value', 'current_value', 'unit', 'progress',
             'status', 'status_display', 'start_date', 'due_date',
-            'completed_at', 'order', 'is_active',
+            'completed_at', 'orden', 'is_active',
             'created_by', 'created_by_name', 'created_at', 'updated_at'
         ]
         read_only_fields = [
@@ -68,7 +68,7 @@ class StrategicObjectiveCreateUpdateSerializer(serializers.ModelSerializer):
             'bsc_perspective', 'iso_standards',
             'responsible', 'responsible_cargo',
             'target_value', 'current_value', 'unit',
-            'start_date', 'due_date', 'order', 'is_active'
+            'start_date', 'due_date', 'orden', 'is_active'
         ]
 
 

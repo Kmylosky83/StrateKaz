@@ -330,14 +330,19 @@ export const IdentidadTab = ({ activeSection, triggerNewForm }: IdentidadTabProp
     );
   }
 
-  // Empty state
+  // Empty state - con botón para crear
   if (!identity) {
     return (
       <>
         <EmptyState
           icon={<Compass className="h-12 w-12" />}
           title="Sin Identidad Corporativa"
-          description="No hay una identidad corporativa configurada. Usa el botón 'Crear Identidad' en la parte superior para comenzar."
+          description="No hay una identidad corporativa configurada. Crea una para definir la misión, visión y valores de la organización."
+          action={{
+            label: 'Crear Identidad Corporativa',
+            onClick: () => setShowIdentityModal(true),
+            icon: <Plus className="h-4 w-4" />,
+          }}
         />
         <IdentityFormModal
           identity={null}

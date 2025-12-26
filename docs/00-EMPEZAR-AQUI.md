@@ -1,541 +1,213 @@
-# EMPEZAR AQUI - Documentacion del Proyecto
+# Punto de Entrada - Documentación del Proyecto
 
 ## Bienvenida
 
-Documentacion completa del **ERP StrateKaz** - Sistema de Gestión Integral multi-industria. Esta guia te ayudara a navegar la documentacion disponible.
+Documentación del **SGI Grasas y Huesos del Norte** - Sistema de Gestión Integral para recolección y procesamiento de materias primas.
 
-> **IMPORTANTE:** Este sistema es **100% dinámico desde la base de datos**. El sidebar, módulos, tabs, cargos, roles y permisos se configuran completamente desde la DB sin modificar código.
+| Info | Valor |
+|------|-------|
+| **Versión** | 2.0.0-alpha.8 |
+| **Estado** | Nivel 2 en Progreso - Motor Cumplimiento |
+| **Última Actualización** | 25 Diciembre 2025 |
 
----
-
-## ESTRUCTURA FINAL - 14 MÓDULOS
-
-Validada: 23 Diciembre 2024 | Fuente: `Estructura Final 22.txt`
-
-| Orden | Módulo | Código | Tabs | Estado |
-|-------|--------|--------|------|--------|
-| **10** | **Direccion Estrategica** | gestion_estrategica | 6 | COMPLETO |
-| **20** | **Cumplimiento Normativo** | motor_cumplimiento | 4 | COMPLETO |
-| **21** | **Motor de Riesgos** | motor_riesgos | 7 | COMPLETO |
-| **22** | **Flujos de Trabajo** | workflow_engine | 3 | COMPLETO |
-| **30** | **Gestion Integral** | hseq_management | 11 | COMPLETO (10) / PARCIAL (1) |
-| **40** | **Cadena de Suministro** | supply_chain | 5 | ESTRUCTURA |
-| **41** | **Base de Operaciones** | production_ops | 4 | ESTRUCTURA |
-| **42** | **Logistica y Flota** | logistics_fleet | 4 | ESTRUCTURA |
-| **43** | **Ventas y CRM** | sales_crm | 4 | ESTRUCTURA |
-| **50** | **Centro de Talento** | talent_hub | 11 | ESTRUCTURA |
-| **51** | **Administracion y Financiero** | admin_finance | 4 | ESTRUCTURA |
-| **52** | **Contabilidad** | accounting | 4 | ESTRUCTURA |
-| **60** | **Inteligencia de Negocios** | analytics | 7 | ESTRUCTURA |
-| **61** | **Sistema de Auditorias** | audit_system | 4 | ESTRUCTURA |
-
-**Total: 14 módulos | 80 tabs | 6 niveles**
-**Backend: 29 apps COMPLETAS, 50 apps ESTRUCTURA**
-**Frontend: 4 features COMPLETAS, 4 PARCIALES, 2 ESTRUCTURA**
+> **PRINCIPIO FUNDAMENTAL:** Este sistema es **100% dinámico desde la base de datos**. NO se permite hardcoding.
 
 ---
 
-## ARQUITECTURA DEL SISTEMA
+## Navegación Rápida
 
-### 6 Niveles Jerárquicos
+### Para Nuevos Desarrolladores
 
-```text
-NIVEL 1: ESTRATÉGICO (10)
-  └── Direccion Estrategica     → Configuración, Organización, Identidad, Planeación
+1. Leer este documento
+2. Revisar [README.md](../README.md) para quick start
+3. Consultar [ARQUITECTURA-DINAMICA.md](desarrollo/ARQUITECTURA-DINAMICA.md)
+4. Ver [CRONOGRAMA-26-SEMANAS.md](planificacion/CRONOGRAMA-26-SEMANAS.md)
 
-NIVEL 2: CUMPLIMIENTO (20-22)
-  ├── Cumplimiento Normativo    → Matriz Legal, Requisitos, Partes Interesadas
-  ├── Motor de Riesgos          → Contexto, IPEVR, Aspectos Ambientales, SAGRILAFT
-  └── Flujos de Trabajo         → Diseñador, Ejecución, Monitoreo
+### Para Actualizar Documentación
 
-NIVEL 3: TORRE DE CONTROL (30)
-  └── Gestion Integral          → Sistema Documental, Calidad, SST, Ambiental, Emergencias
-
-NIVEL 4: CADENA DE VALOR (40-43)
-  ├── Cadena de Suministro      → Proveedores, Catálogos, Compras, Almacenamiento
-  ├── Base de Operaciones       → Recepción, Procesamiento, Mantenimiento
-  ├── Logistica y Flota         → Transporte, Despachos, Flota, PESV
-  └── Ventas y CRM              → Clientes, Pipeline, Facturación
-
-NIVEL 5: HABILITADORES (50-52)
-  ├── Centro de Talento         → Colaboradores, Formación, Nómina
-  ├── Administracion y Finanzas → Tesorería, Presupuesto, Activos
-  └── Contabilidad              → Config Contable, Movimientos, Informes
-
-NIVEL 6: INTELIGENCIA (60-61)
-  ├── Inteligencia de Negocios  → KPIs, Dashboards, Reportes
-  └── Sistema de Auditorias     → Logs, Notificaciones, Alertas
-```
-
-**Leyenda:**
-
-- `[ACTIVO]` - Módulo completamente funcional con modelos, APIs y frontend
-- `[PARCIAL]` - Algunas apps implementadas, otras pendientes
-- `[ESTRUCTURA]` - Estructura de archivos creada, pendiente implementación de modelos
+Seguir la guía: [GUIA-ACTUALIZACION-DOCS.md](GUIA-ACTUALIZACION-DOCS.md)
 
 ---
 
-## ESTADO ACTUAL DEL PROYECTO
+## Arquitectura del Sistema
 
-### Apps ACTIVAS y Funcionales
+### 6 Niveles, 14 Módulos
 
-| App | Ubicación | Modelos | Estado |
-|-----|-----------|---------|--------|
-| **core** | apps/core | User, Cargo, Permiso, Grupo | PRODUCCION |
-| **configuracion** | apps/gestion_estrategica/configuracion | EmpresaConfig, SedeEmpresa, IntegracionExterna | PRODUCCION |
-| **organizacion** | apps/gestion_estrategica/organizacion | Area, ConsecutivoConfig | PRODUCCION |
-| **identidad** | apps/gestion_estrategica/identidad | CorporateIdentity, CorporateValue | PRODUCCION |
-| **planeacion** | apps/gestion_estrategica/planeacion | StrategicPlan, StrategicObjective | PRODUCCION |
-| **matriz_legal** | apps/motor_cumplimiento/matriz_legal | TipoNorma, NormaLegal, EmpresaNorma | PRODUCCION |
+| Nivel | Módulos | Estado |
+|-------|---------|--------|
+| **1. Estratégico** | gestion_estrategica | ✅ Completo |
+| **2. Cumplimiento** | motor_cumplimiento, motor_riesgos, workflow_engine | ⚙️ En Progreso |
+| **3. Torre Control** | hseq_management | ✅ Backend |
+| **4. Cadena Valor** | supply_chain, production_ops, logistics_fleet, sales_crm | ⚠️ Legacy |
+| **5. Habilitadores** | talent_hub, admin_finance, accounting | 🔜 Próximo |
+| **6. Inteligencia** | analytics, audit_system | 🔜 Próximo |
 
-### Apps LEGACY Funcionales (Pendiente Migración)
-
-| App Legacy | Modelos | Destino Nueva Arquitectura | Prioridad |
-|------------|---------|---------------------------|-----------|
-| **proveedores** | UnidadNegocio, Proveedor, HistorialPrecio | supply_chain/gestion_proveedores | MEDIA |
-
-> **Nota:** Las apps `ecoaliados`, `programaciones`, `recolecciones` y `recepciones` fueron eliminadas el 23/12/2024 por estar hardcodeadas y contener solo datos de prueba.
-
-### Apps ELIMINADAS (22 Dic 2024)
-
-- ~~apps/unidades/~~ - Duplicaba proveedores.UnidadNegocio
-- ~~apps/lotes/~~ - Vacío, sin modelos
-- ~~apps/liquidaciones/~~ - Vacío, sin modelos
-- ~~apps/certificados/~~ - Vacío, sin modelos
-- ~~apps/reportes/~~ - Vacío, sin modelos
-
-### Módulos con Estructura (Pendiente Implementación)
-
-| Nivel | Módulo | Apps | Estado |
-|-------|--------|------|--------|
-| 2 | motor_cumplimiento | 4 | 1 ACTIVO, 3 pendientes |
-| 2 | motor_riesgos | 7 | Estructura creada |
-| 2 | workflow_engine | 3 | Estructura creada |
-| 3 | hseq_management | 11 | Estructura creada |
-| 4 | supply_chain | 5 | Estructura creada |
-| 4 | production_ops | 4 | Estructura creada |
-| 4 | logistics_fleet | 4 | Estructura creada |
-| 4 | sales_crm | 4 | Estructura creada |
-| 5 | talent_hub | 11 | Estructura creada |
-| 5 | admin_finance | 4 | Estructura creada |
-| 5 | accounting | 4 | Estructura creada |
-| 6 | analytics | 7 | Estructura creada |
-| 6 | audit_system | 4 | Estructura creada |
-
-**Total: 14 módulos, 69 apps nuevas + 6 apps activas + 5 apps legacy = 80 apps**
+Ver detalle: [arquitectura/CATALOGO-MODULOS.md](arquitectura/CATALOGO-MODULOS.md)
 
 ---
 
-## INDICE DE DOCUMENTACION
+## Índice de Documentación
 
-La documentación está organizada en las siguientes carpetas:
+### Documentos Prioritarios
 
-### ⚠️ DOCUMENTOS PRIORITARIOS
+| Documento | Descripción | Cuándo Leer |
+|-----------|-------------|-------------|
+| [GUIA-ACTUALIZACION-DOCS.md](GUIA-ACTUALIZACION-DOCS.md) | Qué documentos actualizar según cambios | Al modificar funcionalidades |
+| [CRONOGRAMA-26-SEMANAS.md](planificacion/CRONOGRAMA-26-SEMANAS.md) | Plan de desarrollo semanal | Para planificación |
+| [REFACTORING-PLAN.md](desarrollo/REFACTORING-PLAN.md) | Código reutilizable y refactoring | Antes de escribir código |
 
-| Documento | Descripción | Acción |
-|-----------|-------------|--------|
-| **[REFACTORING-PLAN.md](desarrollo/REFACTORING-PLAN.md)** | Plan de eliminación de código duplicado | **LEER PRIMERO** |
-| **[CRONOGRAMA-26-SEMANAS.md](planificacion/CRONOGRAMA-26-SEMANAS.md)** | Plan de trabajo semanal | Seguir cronograma |
-| **[SEMANA-1-RESUMEN.md](../SEMANA-1-RESUMEN.md)** | Resumen Semana 1 completada | Referencia |
+### Por Categoría
 
-> **PRINCIPIO CRÍTICO:** Antes de escribir código nuevo, verificar si existe funcionalidad reutilizable.
-> Ver [REFACTORING-PLAN.md](desarrollo/REFACTORING-PLAN.md) para abstract models, mixins y hooks genéricos.
+#### Arquitectura (`arquitectura/`)
 
----
+| Documento | Descripción |
+|-----------|-------------|
+| [CATALOGO-MODULOS.md](arquitectura/CATALOGO-MODULOS.md) | 6 niveles, 14 módulos detallados |
+| [DATABASE-ARCHITECTURE.md](arquitectura/DATABASE-ARCHITECTURE.md) | 154 tablas documentadas |
+| [DIAGRAMA-ER.md](arquitectura/DIAGRAMA-ER.md) | Diagrama Entidad-Relación |
+| [ESTRUCTURA-6-NIVELES-ERP.md](arquitectura/ESTRUCTURA-6-NIVELES-ERP.md) | Descripción de niveles |
 
-### arquitectura/
+#### Desarrollo (`desarrollo/`)
 
-Documentación técnica sobre la arquitectura del sistema.
+| Documento | Descripción |
+|-----------|-------------|
+| [ARQUITECTURA-DINAMICA.md](desarrollo/ARQUITECTURA-DINAMICA.md) | Sistema 100% dinámico |
+| [CODIGO-REUTILIZABLE.md](desarrollo/CODIGO-REUTILIZABLE.md) | Abstract models, mixins, hooks |
+| [NAVEGACION-DINAMICA.md](desarrollo/NAVEGACION-DINAMICA.md) | Sistema de navegación |
+| [RBAC-SYSTEM.md](desarrollo/RBAC-SYSTEM.md) | Roles y permisos |
+| [AUTENTICACION.md](desarrollo/AUTENTICACION.md) | Sistema JWT |
+| [BRANDING-DINAMICO.md](desarrollo/BRANDING-DINAMICO.md) | Logos, colores dinámicos |
+| [LOGGING.md](desarrollo/LOGGING.md) | Sistema de logs |
+| [TESTING.md](desarrollo/TESTING.md) | pytest, Vitest, Storybook |
+| [POLITICAS-DESARROLLO.md](desarrollo/POLITICAS-DESARROLLO.md) | Convenciones de código |
+| [REFACTORING-PLAN.md](desarrollo/REFACTORING-PLAN.md) | Plan de refactoring |
 
-| Archivo | Descripcion |
-|---------|-------------|
-| **DATABASE-ARCHITECTURE.md** | Arquitectura completa de 154 tablas en 14 módulos |
-| **DIAGRAMA-ER.md** | Diagrama Entidad-Relación completo del sistema (Semana 1) |
-| **ESTRUCTURA-6-NIVELES-ERP.md** | Descripción de los 6 niveles jerárquicos del ERP |
-| **ANALISIS-SAAS-ARQUITECTURA.md** | Análisis de arquitectura SaaS multi-tenant |
-| **PLAN-MIGRACION-INCREMENTAL.md** | Plan de migración sin romper funcionalidad |
-| **INTEGRACIONES-ARQUITECTURA.md** | Arquitectura de integraciones externas |
+#### DevOps (`devops/`)
 
-### modulos/
+| Documento | Descripción |
+|-----------|-------------|
+| [CI-CD.md](devops/CI-CD.md) | GitHub Actions |
+| [BACKUPS.md](devops/BACKUPS.md) | Sistema de backups |
+| [DESPLIEGUE.md](devops/DESPLIEGUE.md) | Staging y producción |
 
-Documentación específica de cada módulo funcional.
+#### Planificación (`planificacion/`)
 
-#### modulos/hseq/
+| Documento | Descripción |
+|-----------|-------------|
+| [CRONOGRAMA-26-SEMANAS.md](planificacion/CRONOGRAMA-26-SEMANAS.md) | Plan de desarrollo |
+| [CRONOGRAMA-VISUAL.md](planificacion/CRONOGRAMA-VISUAL.md) | Visualización |
 
-| Archivo | Descripcion |
-|---------|-------------|
-| **HSEQ_MODULES_SETUP.md** | Configuración del sistema HSEQ |
-| **INDEX_HSEQ_MODULES.md** | Índice de módulos HSEQ |
-| **QUICK_START_HSEQ.md** | Guía rápida de inicio HSEQ |
-| **RESUMEN_HSEQ_MODULES.md** | Resumen de funcionalidades HSEQ |
+#### Guías (`guias/`)
 
-#### modulos/riesgos/
+| Documento | Descripción |
+|-----------|-------------|
+| [CLAUDE.md](guias/CLAUDE.md) | Configuración para IA/desarrolladores |
 
-| Archivo | Descripcion |
-|---------|-------------|
-| **MOTOR_RIESGOS_REGISTRO_COMPLETO.md** | Registro completo del motor de riesgos |
-| **RIESGO-SELECTOR-IMPLEMENTATION.md** | Implementación del selector de riesgos |
-| **RIESGO-SELECTOR-UX-DESIGN.md** | Diseño UX del selector |
-| **RIESGO-SELECTOR-VISUAL-GUIDE.md** | Guía visual del selector |
+#### Usuarios (`usuarios/`)
 
-#### modulos/cumplimiento/
+| Documento | Descripción |
+|-----------|-------------|
+| [CONFIGURACION-MARCA.md](usuarios/CONFIGURACION-MARCA.md) | Guía de branding para usuarios |
 
-| Archivo | Descripcion |
-|---------|-------------|
-| **REQUISITOS_LEGALES_FILES.md** | Gestión de archivos de requisitos legales |
+#### Módulos (`modulos/`)
 
-#### modulos/recepciones/
+| Carpeta | Contenido |
+|---------|-----------|
+| `hseq/` | Documentación HSEQ (4 docs) |
+| `riesgos/` | Motor de riesgos (4 docs) |
+| `cumplimiento/` | Requisitos legales |
+| `consecutivos/` | Sistema de consecutivos |
 
-| Archivo | Descripcion |
-|---------|-------------|
-| **RECEPCIONES-DIAGRAMS.md** | Diagramas del módulo de recepciones |
-| **RECEPCIONES-MODELS.md** | Modelos de datos de recepciones |
-| **RECEPCIONES-SUMMARY.md** | Resumen del módulo de recepciones |
-| **EJEMPLO-IMPLEMENTACION-RECEPCION.md** | Ejemplo de implementación |
+#### Desarrollo - Sesiones (`desarrollo/sesiones/`)
 
-#### modulos/consecutivos/
+Registros históricos de sesiones de desarrollo significativas.
 
-| Archivo | Descripcion |
-|---------|-------------|
-| **SISTEMA-CONSECUTIVOS-INFORME-TECNICO.md** | Informe técnico del sistema de consecutivos |
+#### Desarrollo - Celery (`desarrollo/celery/`)
 
-### desarrollo/
-
-Documentación para desarrolladores.
-
-| Archivo | Descripcion |
-|---------|-------------|
-| **REFACTORING-PLAN.md** | **PRIORITARIO: Plan de refactoring y código reutilizable** |
-| **RBAC-SYSTEM.md** | Sistema completo de permisos, roles y grupos |
-| **DESIGN-SYSTEM.md** | Design System completo |
-| **DESIGN-SYSTEM-INDEX.md** | Índice del Design System |
-| **COMPONENTES-DESIGN-SYSTEM.md** | Documentacion detallada de componentes |
-| **COMPONENTES-CATALOGO.md** | Catálogo de componentes UI reutilizables |
-| **GUIA-INICIO-DESIGN-SYSTEM.md** | Guía de inicio del Design System |
-| **LAYOUT-COMPONENTS.md** | Componentes de layout |
-| **RESUMEN-COMPONENTES.md** | Resumen de componentes disponibles |
-| **SNIPPETS-RAPIDOS.md** | Codigo copy & paste |
-| **DOCKER.md** | Configuración Docker para desarrollo y producción |
-| **LUCIDE_ICONS_REFERENCE.md** | Referencia de iconos Lucide |
-
-#### desarrollo/celery/
-
-Documentación de Celery y tareas asíncronas.
-
-| Archivo | Descripcion |
-|---------|-------------|
-| **REDIS-CELERY-GUIDE.md** | Guía completa de Redis y Celery |
-| **CELERY_QUICKSTART.md** | Inicio rápido de Celery |
-| **CELERY_COMMANDS.md** | Comandos útiles de Celery |
-| **CELERY_SETUP_COMPLETE.md** | Configuración completa de Celery |
-
-#### desarrollo/ci-cd/
-
-Documentación de CI/CD y GitHub Actions.
-
-| Archivo | Descripcion |
-|---------|-------------|
-| **GITHUB_ACTIONS_SETUP.md** | Configuración de GitHub Actions |
-
-#### desarrollo/migraciones/
-
-Documentación de migraciones y limpieza de código.
-
-| Archivo | Descripcion |
-|---------|-------------|
-| **LIMPIEZA_LEGACY_COMPLETADA.md** | Registro de limpieza de módulos legacy |
-| **REORGANIZACION_FRONTEND.md** | Reorganización de estructura frontend |
-
-#### desarrollo/fixes/
-
-Documentación de correcciones y soluciones técnicas.
-
-| Archivo | Descripcion |
-|---------|-------------|
-| **RACE_CONDITION_DIAGRAM.md** | Diagrama de race condition |
-| **RACE_CONDITION_FIX.md** | Solución a race condition |
-| **CHANGELOG_RACE_CONDITION.md** | Registro de cambios de race condition |
-| **SOLUCION_TIMEZONE.md** | Solución a problemas de timezone |
-
-#### desarrollo/sesiones/
-
-Registro de sesiones de desarrollo.
-
-| Archivo | Descripcion |
-|---------|-------------|
-| **SESSION-2025-12-13-navegacion-dinamica.md** | Sesión de navegación dinámica |
-
-### planificacion/
-
-Planificación y cronogramas del proyecto.
-
-| Archivo | Descripcion |
-|---------|-------------|
-| **CRONOGRAMA-26-SEMANAS.md** | Cronograma de desarrollo por sprints |
-| **CRONOGRAMA-VISUAL.md** | Visualización del cronograma |
-
-### sistema-integraciones/
-
-Documentación del sistema de integraciones externas.
-
-| Archivo | Descripcion |
-|---------|-------------|
-| **INTEGRACIONES-COMPONENTES-EJEMPLO.md** | Ejemplos de componentes de integración |
-| **INTEGRACIONES-EXTERNAS.md** | Documentación de integraciones externas |
-| **INTEGRACIONES-EXTERNAS-API.md** | API de integraciones externas |
-| **INTEGRACION-EXTERNA-API.md** | Especificación de API de integración |
-| **RESUMEN-INTEGRACION-EXTERNA.md** | Resumen del sistema de integraciones |
-
-### guias/
-
-Guías de uso y configuración.
-
-| Archivo | Descripcion |
-|---------|-------------|
-| **CLAUDE.md** | Configuracion de Claude Code y agentes especializados |
+| Documento | Descripción |
+|-----------|-------------|
+| [CELERY_QUICKSTART.md](desarrollo/celery/CELERY_QUICKSTART.md) | Inicio rápido |
+| [REDIS-CELERY-GUIDE.md](desarrollo/celery/REDIS-CELERY-GUIDE.md) | Guía completa |
 
 ---
 
-## GUÍA DE IMPLEMENTACIÓN
-
-### Para implementar un nuevo módulo:
-
-1. **Leer DATABASE-ARCHITECTURE.md** - Entender los modelos requeridos
-2. **Crear modelos** en `apps/{modulo}/{app}/models.py`
-3. **Crear serializers** en `apps/{modulo}/{app}/serializers.py`
-4. **Crear views** en `apps/{modulo}/{app}/views.py`
-5. **Registrar URLs** en `apps/{modulo}/{app}/urls.py`
-6. **Agregar a INSTALLED_APPS** en `config/settings.py`
-7. **Ejecutar migraciones**: `python manage.py makemigrations && migrate`
-8. **Crear componentes frontend** siguiendo DESIGN-SYSTEM.md
-
-### Orden recomendado de implementación:
-
-```text
-FASE 2 (Cumplimiento) - EN PROGRESO:
-  1. motor_cumplimiento/matriz_legal    [COMPLETADO]
-  2. motor_riesgos/ipevr                [PENDIENTE]
-  3. motor_riesgos/aspectos_ambientales [PENDIENTE]
-
-FASE 3 (HSEQ):
-  4. hseq_management/sistema_documental
-  5. hseq_management/accidentalidad
-  6. hseq_management/gestion_comites
-
-FASE 4 (Migración Legacy → Nueva Arquitectura):
-  7. supply_chain/gestion_proveedores (migrar desde proveedores/, ecoaliados/)
-  8. logistics_fleet/gestion_transporte (migrar desde programaciones/, recolecciones/)
-  9. production_ops/recepcion (migrar desde recepciones/)
-```
-
----
-
-## PRESERVAR - NO MODIFICAR
-
-Los siguientes componentes son críticos y no deben modificarse sin análisis previo:
-
-- **apps/core/** - Sistema RBAC, Usuario, Cargo, Permiso
-- **apps/gestion_estrategica/organizacion/** - Áreas, ConsecutivoConfig
-- **apps/gestion_estrategica/configuracion/** - EmpresaConfig, SedeEmpresa, IntegracionExterna
-- **frontend/src/hooks/usePermissions.ts** - Hook de permisos
-- **frontend/src/store/authStore.ts** - Store de autenticación
-- **backend/apps/core/permissions_constants.py** - Códigos de permisos
-
----
-
-## PLAN DE MIGRACIÓN LEGACY
-
-### Estrategia Recomendada: Migración Progresiva
-
-Las apps legacy (proveedores, ecoaliados, programaciones, recolecciones, recepciones) tienen datos en producción y NO deben eliminarse hasta completar la migración:
-
-1. **Fase 1**: Crear nuevos módulos con modelos que referencien a los legacy
-2. **Fase 2**: Migrar lógica de negocio a nuevos módulos
-3. **Fase 3**: Actualizar frontend para usar nuevas APIs
-4. **Fase 4**: Crear migraciones de datos
-5. **Fase 5**: Deprecar y eliminar apps legacy
-
-### Mapeo de Migración
-
-| App Legacy | Destino | Modelos a Migrar |
-|------------|---------|------------------|
-| proveedores | supply_chain/gestion_proveedores | UnidadNegocio, Proveedor, HistorialPrecio |
-| ecoaliados | supply_chain/gestion_proveedores | Ecoaliado (merge con proveedores) |
-| programaciones | logistics_fleet/gestion_transporte | Programacion |
-| recolecciones | logistics_fleet/despachos | Recoleccion |
-| recepciones | production_ops/recepcion | RecepcionMateriaPrima |
-
----
-
-## STACK TECNOLÓGICO
+## Stack Tecnológico
 
 | Capa | Tecnología |
 |------|------------|
-| **Backend** | Django 5.0.9, DRF, MySQL 8.0, Python 3.11+ |
-| **Frontend** | React 18, TypeScript 5.3, Vite 5, Tailwind CSS 3.4 |
-| **Estado** | TanStack Query, Zustand |
-| **UI** | Framer Motion, Lucide React, Shadcn-UI |
-| **Async/Cache** | Redis 7, Celery 5.3, django-celery-beat |
-| **DevOps** | Docker, Docker Compose, GitHub Actions CI/CD |
-
-### Contenedores Docker (6 servicios)
-
-| Contenedor | Puerto | Descripción |
-|------------|--------|-------------|
-| grasas_huesos_db | 3307 | MySQL 8.0 - Base de datos |
-| grasas_huesos_redis | 6379 | Redis 7 - Message broker y cache |
-| grasas_huesos_backend | 8000 | Django - API REST |
-| grasas_huesos_celery_worker | - | Celery Worker - Tareas async |
-| grasas_huesos_celery_beat | - | Celery Beat - Tareas programadas |
-| grasas_huesos_frontend | 3010 | React + Vite - SPA |
+| **Backend** | Django 5.0, DRF, MySQL 8.0, Python 3.11+ |
+| **Frontend** | React 18, TypeScript 5.3, Vite, Tailwind, Zustand |
+| **Async** | Celery 5.3+, Redis 7 |
+| **DevOps** | Docker, GitHub Actions |
 
 ---
 
-## COMANDOS ÚTILES
+## Comandos Útiles
 
-### Comandos Docker
+### Docker
 
 ```bash
-# Iniciar desarrollo
-docker-compose up -d
-
-# Ver logs
-docker logs grasas_huesos_backend -f
-
-# Reiniciar servicios
-docker-compose restart
-
-# Detener servicios
-docker-compose down
+docker-compose up -d              # Iniciar
+docker-compose logs -f            # Logs
+docker-compose restart            # Reiniciar
 ```
 
-### Comandos Django
+### Backend
 
 ```bash
-# Django check
-docker exec grasas_huesos_backend python manage.py check
-
-# Crear migraciones
-docker exec grasas_huesos_backend python manage.py makemigrations
-
-# Aplicar migraciones
-docker exec grasas_huesos_backend python manage.py migrate
-
-# Crear superusuario
-docker exec grasas_huesos_backend python manage.py createsuperuser
-
-# Shell interactivo
-docker exec -it grasas_huesos_backend python manage.py shell
+docker-compose exec backend python manage.py migrate
+docker-compose exec backend python manage.py createsuperuser
+docker-compose exec backend pytest
 ```
 
-### Seeds de Datos
+### Frontend
 
 ```bash
-# Configurar TODOS los 14 módulos según Estructura Final 22
-docker exec grasas_huesos_backend python manage.py seed_estructura_final
-
-# Limpiar módulos legacy (desactivar)
-docker exec grasas_huesos_backend python manage.py cleanup_legacy_modules
-
-# Limpiar módulos legacy (eliminar permanentemente)
-docker exec grasas_huesos_backend python manage.py cleanup_legacy_modules --delete
-
-# Verificar sidebar actual
-curl http://localhost:8000/api/core/system-modules/sidebar/
-```
-
-### Celery y Redis
-
-```bash
-# Ver estado del worker
-docker logs grasas_huesos_celery_worker -f
-
-# Ver tareas programadas
-docker logs grasas_huesos_celery_beat -f
-
-# Verificar conexión Redis
-docker exec grasas_huesos_redis redis-cli ping
-
-# Ejecutar tarea de prueba
-python test_celery.py
-```
-
-### Testing
-
-```bash
-# Backend tests
-docker exec grasas_huesos_backend pytest
-
-# Backend tests con coverage
-docker exec grasas_huesos_backend pytest --cov=apps --cov-report=html
-
-# Frontend tests
-cd frontend && npm test
-
-# Frontend tests con coverage
-cd frontend && npm run test:coverage
-
-# Storybook (catálogo de componentes)
-cd frontend && npm run storybook
-```
-
-**Estado de Tests (Semana 3 - 24 Dic 2025):**
-
-| Categoría | Tests | Estado |
-|-----------|-------|--------|
-| **Backend Total** | 239+ | PASANDO |
-| - RBAC System | 106+ | PASANDO |
-| - Jerarquía Áreas | 29 | PASANDO |
-| - Modelo Cargo | 32 | PASANDO |
-| - EmpresaConfig | 32 | PASANDO |
-| - ConsecutivoConfig | 40 | PASANDO |
-| **Frontend Total** | 71+ | PASANDO |
-| **Total General** | 310+ | PASANDO |
-
-**Documentación de Tests:**
-- [INFORME_TESTING_SEMANA_3.md](desarrollo/INFORME_TESTING_SEMANA_3.md)
-- [TESTS_RBAC_COMPLETADO.md](desarrollo/TESTS_RBAC_COMPLETADO.md)
-- [TESTS_CARGO_SUMMARY.md](desarrollo/TESTS_CARGO_SUMMARY.md)
-- [TESTS_CONSECUTIVO_SUMMARY.md](desarrollo/TESTS_CONSECUTIVO_SUMMARY.md)
-- [TESTS_EMPRESA_CONFIG_COMPLETADO.md](desarrollo/TESTS_EMPRESA_CONFIG_COMPLETADO.md)
-
-### CI/CD
-
-```bash
-# Validar workflows de GitHub Actions
-gh workflow list
-
-# Ver estado de workflows
-gh workflow view ci.yml
-
-# Ejecutar workflow manualmente
-gh workflow run ci.yml
-```
-
-### Backups
-
-```bash
-# Backup de base de datos MySQL (recomendado)
-./docker/scripts/backup.sh
-
-# Restore de backup
-./docker/scripts/restore.sh docker/backups/backup_20251223_143000.sql.gz
-
-# Configurar backups automáticos
-./docker/scripts/setup-cron.sh
-
-# Ver backups disponibles
-ls -lh docker/backups/*.sql.gz
+cd frontend && npm run dev        # Desarrollo
+cd frontend && npm test           # Tests
+cd frontend && npm run storybook  # Componentes
 ```
 
 ---
 
-## CONTACTO
+## Preservar - No Modificar Sin Análisis
 
-Para soporte técnico, consultar documentación en `/docs` o contactar al equipo de desarrollo.
+- `apps/core/` - Sistema RBAC, Usuario, Cargo, Permiso
+- `apps/gestion_estrategica/organizacion/` - Áreas, Consecutivos
+- `apps/gestion_estrategica/configuracion/` - EmpresaConfig
+- `frontend/src/hooks/usePermissions.ts` - Hook de permisos
+- `frontend/src/store/authStore.ts` - Store de autenticación
 
 ---
 
-**Estado:** En desarrollo activo
-**Última actualización:** 24 Diciembre 2025
-**Versión:** 2.0.0-alpha.3
+## Progreso del Proyecto
+
+| Semana | Estado | Entregables |
+|--------|--------|-------------|
+| 1 | ✅ Completada | Infraestructura, CI/CD, Testing |
+| 2 | ✅ Completada | Configuración base, Branding |
+| 3 | ✅ Completada | RBAC, Testing 310+ tests |
+| 4 | ✅ Completada | Identidad Corporativa |
+| 5 | ✅ Completada | Planeación Estratégica |
+| 6 | ✅ Completada | Proyectos PMI, Revisión Dirección |
+| 7 | ✅ Completada | Motor Cumplimiento - Matriz Legal (101 tests) |
+| 8+ | 🔜 Próximo | Partes Interesadas, Reglamentos |
+
+Ver detalle: [CRONOGRAMA-26-SEMANAS.md](planificacion/CRONOGRAMA-26-SEMANAS.md)
+
+---
+
+## Logros Recientes
+
+### Semana 7 - Motor de Cumplimiento (25 Dic 2025)
+
+- ✅ **Backend:** 18 modelos migrados a BaseCompanyModel
+- ✅ **Backend:** 17 ViewSets con StandardViewSetMixin
+- ✅ **Backend:** Celery tasks para scraper y alertas
+- ✅ **Frontend:** 4 apps con TypeScript, API clients y hooks
+- ✅ **Testing:** 101 tests creados (>85% cobertura)
+- ✅ **Componentes:** MatrizLegalTab, RequisitosLegalesTab, PartesInteresadasTab, ReglamentosInternosTab
+
+---
+
+**Última actualización:** 25 Diciembre 2025

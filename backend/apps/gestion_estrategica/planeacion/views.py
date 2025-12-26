@@ -148,6 +148,15 @@ class StrategicPlanViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             'by_iso_standard': by_iso,
         })
 
+    @action(detail=False, methods=['get'], url_path='period-types')
+    def period_types(self, request):
+        """Retorna los tipos de período disponibles para planes estratégicos"""
+        choices = [
+            {'value': code, 'label': label}
+            for code, label in StrategicPlan.PERIOD_CHOICES
+        ]
+        return Response(choices)
+
 
 class StrategicObjectiveViewSet(StandardViewSetMixin, OrderingMixin, viewsets.ModelViewSet):
     """
@@ -172,8 +181,8 @@ class StrategicObjectiveViewSet(StandardViewSetMixin, OrderingMixin, viewsets.Mo
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['plan', 'bsc_perspective', 'status', 'is_active']
     search_fields = ['code', 'name', 'description']
-    ordering_fields = ['code', 'order', 'due_date', 'progress', 'bsc_perspective']
-    ordering = ['bsc_perspective', 'order', 'code']
+    ordering_fields = ['code', 'orden', 'due_date', 'progress', 'bsc_perspective']
+    ordering = ['bsc_perspective', 'orden', 'code']
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:

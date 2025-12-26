@@ -1651,7 +1651,7 @@ class MenuItem(models.Model):
         verbose_name='Color',
         help_text='Color del macroproceso (solo para items de nivel 0)'
     )
-    order = models.IntegerField(
+    orden = models.IntegerField(
         default=0,
         verbose_name='Orden',
         help_text='Orden de aparición en el menú'
@@ -1712,10 +1712,10 @@ class MenuItem(models.Model):
         db_table = 'core_menu_item'
         verbose_name = 'Item de Menú'
         verbose_name_plural = 'Items de Menú'
-        ordering = ['order', 'name']
+        ordering = ['orden', 'name']
         indexes = [
             models.Index(fields=['code']),
-            models.Index(fields=['is_active', 'order']),
+            models.Index(fields=['is_active', 'orden']),
             models.Index(fields=['parent', 'is_active']),
         ]
 
@@ -1798,11 +1798,11 @@ class MenuItem(models.Model):
                         'color': item.color,
                         'badge': item.badge,
                         'is_category': item.is_category,
-                        'order': item.order,
+                        'orden': item.orden,
                         'children': children if children else None
                     }
                     result.append(item_data)
-            return sorted(result, key=lambda x: x['order'])
+            return sorted(result, key=lambda x: x['orden'])
 
         all_items = cls.objects.filter(is_active=True).prefetch_related(
             'allowed_cargos', 'allowed_roles', 'required_permissions'
@@ -1979,7 +1979,7 @@ class SystemModule(models.Model):
         verbose_name='Dependencias',
         help_text='Módulos que deben estar activos para que este funcione'
     )
-    order = models.IntegerField(
+    orden = models.IntegerField(
         default=0,
         verbose_name='Orden'
     )
@@ -1996,7 +1996,7 @@ class SystemModule(models.Model):
         db_table = 'core_system_module'
         verbose_name = 'Módulo del Sistema'
         verbose_name_plural = 'Módulos del Sistema'
-        ordering = ['category', 'order', 'name']
+        ordering = ['category', 'orden', 'name']
 
     def __str__(self):
         return f"{self.name} ({self.code})"
@@ -2034,7 +2034,7 @@ class SystemModule(models.Model):
 
     def get_enabled_tabs(self):
         """Obtiene todos los tabs habilitados del módulo"""
-        return self.tabs.filter(is_enabled=True).order_by('order', 'name')
+        return self.tabs.filter(is_enabled=True).order_by('orden', 'name')
 
     def get_tab_count(self):
         """Cuenta el total de tabs del módulo"""
@@ -2084,7 +2084,7 @@ class ModuleTab(models.Model):
         verbose_name='Icono',
         help_text='Nombre del icono de Lucide (ej: Building2, Target, BarChart)'
     )
-    order = models.PositiveIntegerField(
+    orden = models.PositiveIntegerField(
         default=0,
         verbose_name='Orden',
         help_text='Orden de aparición del tab'
@@ -2113,7 +2113,7 @@ class ModuleTab(models.Model):
         db_table = 'core_module_tab'
         verbose_name = 'Tab de Módulo'
         verbose_name_plural = 'Tabs de Módulos'
-        ordering = ['module', 'order', 'name']
+        ordering = ['module', 'orden', 'name']
         unique_together = [['module', 'code']]
         indexes = [
             models.Index(fields=['module', 'is_enabled']),
@@ -2144,7 +2144,7 @@ class ModuleTab(models.Model):
 
     def get_enabled_sections(self):
         """Obtiene todas las secciones habilitadas del tab"""
-        return self.sections.filter(is_enabled=True).order_by('order', 'name')
+        return self.sections.filter(is_enabled=True).order_by('orden', 'name')
 
     def get_section_count(self):
         """Cuenta el total de secciones del tab"""
@@ -2194,7 +2194,7 @@ class TabSection(models.Model):
         verbose_name='Icono',
         help_text='Nombre del icono de Lucide (ej: Eye, Heart, FileText)'
     )
-    order = models.PositiveIntegerField(
+    orden = models.PositiveIntegerField(
         default=0,
         verbose_name='Orden',
         help_text='Orden de aparición de la sección'
@@ -2223,7 +2223,7 @@ class TabSection(models.Model):
         db_table = 'core_tab_section'
         verbose_name = 'Sección de Tab'
         verbose_name_plural = 'Secciones de Tabs'
-        ordering = ['tab', 'order', 'name']
+        ordering = ['tab', 'orden', 'name']
         unique_together = [['tab', 'code']]
         indexes = [
             models.Index(fields=['tab', 'is_enabled']),

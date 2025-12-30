@@ -119,7 +119,7 @@ class AuditModel(TimestampedModel):
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
-        related_name='%(class)s_created',
+        related_name='%(app_label)s_%(class)s_created',
         null=True,
         blank=True,
         verbose_name='Creado por',
@@ -128,7 +128,7 @@ class AuditModel(TimestampedModel):
     updated_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
-        related_name='%(class)s_updated',
+        related_name='%(app_label)s_%(class)s_updated',
         null=True,
         blank=True,
         verbose_name='Actualizado por',
@@ -153,7 +153,7 @@ class BaseCompanyModel(AuditModel, SoftDeleteModel):
     empresa = models.ForeignKey(
         'configuracion.EmpresaConfig',
         on_delete=models.CASCADE,
-        related_name='%(class)s_set',
+        related_name='%(app_label)s_%(class)s_set',
         verbose_name='Empresa',
         help_text='Empresa a la que pertenece este registro',
         default=1  # Default temporal para migraciones

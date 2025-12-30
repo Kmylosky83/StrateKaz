@@ -1,13 +1,18 @@
 """
-URLs para proceso_disciplinario - talent_hub
+URLs para Proceso Disciplinario - Talent Hub
 """
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from . import views
 
 app_name = 'proceso_disciplinario'
 
 router = DefaultRouter()
-# TODO: Registrar ViewSets cuando se implementen
+router.register(r'tipos-falta', views.TipoFaltaViewSet, basename='tipofalta')
+router.register(r'llamados-atencion', views.LlamadoAtencionViewSet, basename='llamadoatencion')
+router.register(r'descargos', views.DescargoViewSet, basename='descargo')
+router.register(r'memorandos', views.MemorandoViewSet, basename='memorando')
+router.register(r'historial', views.HistorialDisciplinarioViewSet, basename='historial')
 
 urlpatterns = [
     path('', include(router.urls)),

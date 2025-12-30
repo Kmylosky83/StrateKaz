@@ -1,292 +1,486 @@
 """
-Modelos para IPEVR - Identificación de Peligros, Evaluación y Valoración de Riesgos
-Basado en GTC-45 (Guía Técnica Colombiana)
+Modelos para IPEVR - Identificacion de Peligros, Evaluacion y Valoracion de Riesgos
+====================================================================================
+
+Sistema basado en GTC-45 (Guia Tecnica Colombiana) para la identificacion
+de peligros y valoracion de riesgos ocupacionales.
+
+Incluye:
+- Clasificacion de 78 peligros en 7 categorias
+- Matriz IPEVR con calculo automatico de NP, NR y aceptabilidad
+- Controles segun jerarquia GTC-45
+
+Autor: Sistema ERP StrateKaz
+Fecha: 26 Diciembre 2025
 """
 from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 
+from apps.core.base_models import BaseCompanyModel, TimestampedModel, SoftDeleteModel, OrderedModel
 
-class ClasificacionPeligro(models.Model):
-    """Clasificación de peligros según GTC-45"""
-    TIPO_CHOICES = [
-        ('BIOLOGICO', 'Biológico'),
-        ('FISICO', 'Físico'),
-        ('QUIMICO', 'Químico'),
-        ('PSICOSOCIAL', 'Psicosocial'),
-        ('BIOMECANICO', 'Biomecánico'),
-        ('CONDICIONES_SEGURIDAD', 'Condiciones de Seguridad'),
-        ('FENOMENOS_NATURALES', 'Fenómenos Naturales'),
-    ]
 
-    codigo = models.CharField(max_length=20, unique=True, verbose_name='Código')
-    tipo = models.CharField(max_length=30, choices=TIPO_CHOICES, verbose_name='Tipo')
-    nombre = models.CharField(max_length=200, verbose_name='Nombre')
-    descripcion = models.TextField(blank=True, verbose_name='Descripción')
-    efectos_posibles = models.TextField(blank=True, verbose_name='Efectos Posibles en la Salud')
-    is_active = models.BooleanField(default=True, verbose_name='Activo')
+class ClasificacionPeligro(TimestampedModel, SoftDeleteModel, OrderedModel):
+    """
+    Catalogo global de clasificaciones de peligros segun GTC-45.
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    Las 7 categorias principales de peligros ocupacionales:
+    - Biologico: Virus, bacterias, hongos, parasitos
+    - Fisico: Ruido, iluminacion, vibracion, temperaturas
+    - Quimico: Gases, vapores, polvos, liquidos
+    - Psicosocial: Carga mental, estres, acoso
+    - Biomecanico: Posturas, movimientos repetitivos, cargas
+    - Seguridad: Mecanico, electrico, locativo, accidentes
+    - Fenomenos naturales: Sismos, inundaciones, tormentas
+    """
+
+    class Categoria(models.TextChoices):
+        BIOLOGICO = "biologico", "Biologico"
+        FISICO = "fisico", "Fisico"
+        QUIMICO = "quimico", "Quimico"
+        PSICOSOCIAL = "psicosocial", "Psicosocial"
+        BIOMECANICO = "biomecanico", "Biomecanico"
+        SEGURIDAD = "seguridad", "Condiciones de Seguridad"
+        FENOMENOS = "fenomenos", "Fenomenos Naturales"
+
+    codigo = models.CharField(
+        max_length=10,
+        unique=True,
+        db_index=True,
+        verbose_name='Codigo'
+    )
+    nombre = models.CharField(
+        max_length=100,
+        verbose_name='Nombre'
+    )
+    categoria = models.CharField(
+        max_length=15,
+        choices=Categoria.choices,
+        default=Categoria.SEGURIDAD,
+        verbose_name='Categoria GTC-45'
+    )
+    descripcion = models.TextField(
+        blank=True,
+        verbose_name='Descripcion'
+    )
+    color = models.CharField(
+        max_length=7,
+        default='#6B7280',
+        verbose_name='Color',
+        help_text='Color hexadecimal para visualizacion'
+    )
+    icono = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name='Icono',
+        help_text='Nombre del icono Lucide'
+    )
 
     class Meta:
-        db_table = 'ipevr_clasificacion_peligro'
-        verbose_name = 'Clasificación de Peligro'
+        db_table = 'motor_riesgos_clasificacion_peligro'
+        verbose_name = 'Clasificacion de Peligro'
         verbose_name_plural = 'Clasificaciones de Peligros'
-        ordering = ['tipo', 'codigo']
+        ordering = ['orden', 'categoria', 'codigo']
 
     def __str__(self):
-        return f"{self.get_tipo_display()} - {self.nombre}"
+        return f"{self.codigo} - {self.nombre}"
 
 
-class Peligro(models.Model):
-    """Peligros identificados en la organización"""
+class PeligroGTC45(TimestampedModel, SoftDeleteModel, OrderedModel):
+    """
+    Catalogo de peligros segun GTC-45.
+
+    Contiene los 78 peligros tipificados en la guia tecnica colombiana,
+    organizados por clasificacion.
+    """
+
     clasificacion = models.ForeignKey(
         ClasificacionPeligro,
         on_delete=models.PROTECT,
         related_name='peligros',
-        verbose_name='Clasificación'
+        verbose_name='Clasificacion'
     )
-    codigo = models.CharField(max_length=50, verbose_name='Código')
-    descripcion = models.TextField(verbose_name='Descripción del Peligro')
-    fuente = models.CharField(max_length=200, verbose_name='Fuente Generadora')
-    medio = models.CharField(max_length=200, blank=True, verbose_name='Medio de Transmisión')
-    efectos = models.TextField(verbose_name='Efectos Posibles')
-
-    # Multi-tenancy
-    empresa_id = models.PositiveBigIntegerField(db_index=True, verbose_name='Empresa ID')
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
-        related_name='peligros_created', verbose_name='Creado por'
+    codigo = models.CharField(
+        max_length=20,
+        unique=True,
+        db_index=True,
+        verbose_name='Codigo'
+    )
+    nombre = models.CharField(
+        max_length=200,
+        verbose_name='Nombre del Peligro'
+    )
+    descripcion = models.TextField(
+        verbose_name='Descripcion'
+    )
+    efectos_posibles = models.TextField(
+        verbose_name='Efectos Posibles en la Salud',
+        help_text='Consecuencias potenciales para la salud del trabajador'
     )
 
     class Meta:
-        db_table = 'ipevr_peligro'
-        verbose_name = 'Peligro'
-        verbose_name_plural = 'Peligros'
-        ordering = ['clasificacion', 'codigo']
-        unique_together = ['empresa_id', 'codigo']
-        indexes = [
-            models.Index(fields=['empresa_id', 'clasificacion']),
-        ]
+        db_table = 'motor_riesgos_peligro_gtc45'
+        verbose_name = 'Peligro GTC-45'
+        verbose_name_plural = 'Peligros GTC-45'
+        ordering = ['clasificacion', 'orden', 'codigo']
 
     def __str__(self):
-        return f"{self.codigo} - {self.descripcion[:50]}"
+        return f"{self.codigo} - {self.nombre}"
 
 
-class MatrizIPEVR(models.Model):
-    """Matriz de Identificación de Peligros y Valoración de Riesgos GTC-45"""
+class MatrizIPEVR(BaseCompanyModel):
+    """
+    Matriz de Identificacion de Peligros y Valoracion de Riesgos.
 
-    ACEPTABILIDAD_CHOICES = [
-        ('I', 'No Aceptable'),
-        ('II', 'No Aceptable o Aceptable con Control Específico'),
-        ('III', 'Aceptable'),
-        ('IV', 'Aceptable'),
-    ]
+    Implementa el metodo GTC-45 para valoracion de riesgos ocupacionales:
+    - NP (Nivel de Probabilidad) = ND x NE
+    - NR (Nivel de Riesgo) = NP x NC
+    - Aceptabilidad segun interpretacion del NR
 
-    ESTADO_CHOICES = [
-        ('BORRADOR', 'Borrador'),
-        ('VIGENTE', 'Vigente'),
-        ('EN_REVISION', 'En Revisión'),
-        ('OBSOLETO', 'Obsoleto'),
-    ]
+    Escala de Nivel de Deficiencia (ND):
+    - 10: Muy Alto - Se ha(n) detectado peligro(s) que determina(n) como muy posible
+    - 6: Alto - Se ha(n) detectado algun(os) peligro(s) que pueden dar lugar
+    - 2: Medio - Se han detectado peligros que pueden dar lugar
+    - 0: Sin deficiencia - No se ha detectado peligro
 
-    # Identificación
-    codigo = models.CharField(max_length=50, verbose_name='Código')
-    proceso = models.CharField(max_length=200, verbose_name='Proceso')
-    zona_lugar = models.CharField(max_length=200, verbose_name='Zona/Lugar')
-    actividad = models.CharField(max_length=300, verbose_name='Actividad')
-    tarea = models.CharField(max_length=300, verbose_name='Tarea')
-    rutinaria = models.BooleanField(default=True, verbose_name='Tarea Rutinaria')
+    Escala de Nivel de Exposicion (NE):
+    - 4: Continua - La situacion de exposicion se presenta sin interrupcion
+    - 3: Frecuente - La situacion de exposicion varias veces durante jornada
+    - 2: Ocasional - Alguna vez durante la jornada laboral
+    - 1: Esporadica - Involucra por tiempos cortos
 
-    # Peligro
+    Escala de Nivel de Consecuencia (NC):
+    - 100: Mortal o Catastrofico - Muerte
+    - 60: Muy Grave - Lesiones graves irreparables
+    - 25: Grave - Lesiones con incapacidad temporal
+    - 10: Leve - Lesiones que no requieren hospitalizacion
+    """
+
+    class EstadoMatriz(models.TextChoices):
+        BORRADOR = "borrador", "Borrador"
+        EN_REVISION = "en_revision", "En Revision"
+        APROBADA = "aprobada", "Aprobada"
+        VIGENTE = "vigente", "Vigente"
+        OBSOLETA = "obsoleta", "Obsoleta"
+
+    # Identificacion del puesto/actividad
+    area = models.CharField(
+        max_length=200,
+        verbose_name='Area/Seccion'
+    )
+    cargo = models.CharField(
+        max_length=200,
+        verbose_name='Cargo'
+    )
+    proceso = models.CharField(
+        max_length=200,
+        verbose_name='Proceso'
+    )
+    actividad = models.CharField(
+        max_length=300,
+        verbose_name='Actividad'
+    )
+    tarea = models.TextField(
+        verbose_name='Tarea Especifica'
+    )
+    rutinaria = models.BooleanField(
+        default=True,
+        verbose_name='Tarea Rutinaria',
+        help_text='Marcar si la tarea se realiza de forma habitual'
+    )
+
+    # Peligro identificado
     peligro = models.ForeignKey(
-        Peligro, on_delete=models.PROTECT,
-        related_name='matrices', verbose_name='Peligro'
+        PeligroGTC45,
+        on_delete=models.PROTECT,
+        related_name='matrices_ipevr',
+        verbose_name='Peligro'
+    )
+    fuente = models.CharField(
+        max_length=200,
+        verbose_name='Fuente Generadora',
+        help_text='Que genera el peligro'
+    )
+    medio = models.CharField(
+        max_length=200,
+        verbose_name='Medio de Propagacion',
+        help_text='Como se transmite el peligro'
+    )
+    trabajador = models.CharField(
+        max_length=200,
+        verbose_name='Receptor/Trabajador',
+        help_text='Quien esta expuesto'
+    )
+    efectos = models.TextField(
+        verbose_name='Efectos Posibles'
     )
 
     # Controles existentes
-    control_fuente = models.TextField(blank=True, verbose_name='Control en la Fuente')
-    control_medio = models.TextField(blank=True, verbose_name='Control en el Medio')
-    control_individuo = models.TextField(blank=True, verbose_name='Control en el Individuo')
+    control_fuente = models.TextField(
+        blank=True,
+        verbose_name='Control en la Fuente'
+    )
+    control_medio = models.TextField(
+        blank=True,
+        verbose_name='Control en el Medio'
+    )
+    control_individuo = models.TextField(
+        blank=True,
+        verbose_name='Control en el Individuo (EPP)'
+    )
 
-    # Evaluación del riesgo - GTC-45
-    # Nivel de Deficiencia (ND)
-    nivel_deficiencia = models.IntegerField(
+    # Evaluacion del riesgo GTC-45
+    nivel_deficiencia = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(0), MaxValueValidator(10)],
         verbose_name='Nivel de Deficiencia (ND)',
-        help_text='0=No deficiencia, 2=Bajo, 6=Medio, 10=Alto'
+        help_text='0=Sin deficiencia, 2=Medio, 6=Alto, 10=Muy Alto'
     )
-    # Nivel de Exposición (NE)
-    nivel_exposicion = models.IntegerField(
+    nivel_exposicion = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(4)],
-        verbose_name='Nivel de Exposición (NE)',
-        help_text='1=Esporádica, 2=Ocasional, 3=Frecuente, 4=Continua'
+        verbose_name='Nivel de Exposicion (NE)',
+        help_text='1=Esporadica, 2=Ocasional, 3=Frecuente, 4=Continua'
     )
-    # Nivel de Probabilidad (NP = ND x NE) - Calculado
-    nivel_probabilidad = models.IntegerField(
-        editable=False, verbose_name='Nivel de Probabilidad (NP)'
-    )
-    # Nivel de Consecuencia (NC)
-    nivel_consecuencia = models.IntegerField(
+    nivel_consecuencia = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(10), MaxValueValidator(100)],
         verbose_name='Nivel de Consecuencia (NC)',
         help_text='10=Leve, 25=Grave, 60=Muy Grave, 100=Mortal'
     )
-    # Nivel de Riesgo (NR = NP x NC) - Calculado
-    nivel_riesgo = models.IntegerField(
-        editable=False, verbose_name='Nivel de Riesgo (NR)'
-    )
-    # Interpretación del NR
-    interpretacion_nr = models.CharField(
-        max_length=20, editable=False,
-        verbose_name='Interpretación del NR'
-    )
-    # Aceptabilidad
-    aceptabilidad = models.CharField(
-        max_length=5, choices=ACEPTABILIDAD_CHOICES,
-        editable=False, verbose_name='Aceptabilidad del Riesgo'
+
+    # Numero de expuestos
+    num_expuestos = models.PositiveSmallIntegerField(
+        default=1,
+        verbose_name='Numero de Expuestos'
     )
 
-    # Número de expuestos
-    num_expuestos = models.PositiveIntegerField(
-        default=1, verbose_name='Número de Expuestos'
+    # Peor consecuencia y requisito legal
+    peor_consecuencia = models.TextField(
+        verbose_name='Peor Consecuencia',
+        help_text='Descripcion del peor escenario posible'
+    )
+    requisito_legal = models.TextField(
+        blank=True,
+        verbose_name='Requisito Legal Asociado'
     )
 
-    # Peor consecuencia
-    peor_consecuencia = models.TextField(verbose_name='Peor Consecuencia')
+    # Medidas de intervencion propuestas
+    eliminacion = models.TextField(
+        blank=True,
+        verbose_name='Eliminacion'
+    )
+    sustitucion = models.TextField(
+        blank=True,
+        verbose_name='Sustitucion'
+    )
+    controles_ingenieria = models.TextField(
+        blank=True,
+        verbose_name='Controles de Ingenieria'
+    )
+    controles_administrativos = models.TextField(
+        blank=True,
+        verbose_name='Controles Administrativos'
+    )
+    epp = models.TextField(
+        blank=True,
+        verbose_name='Equipos de Proteccion Personal'
+    )
 
-    # Requisito legal asociado
-    requisito_legal = models.TextField(blank=True, verbose_name='Requisito Legal Asociado')
+    # Responsable y fechas
+    responsable = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='matrices_ipevr_responsable',
+        verbose_name='Responsable'
+    )
+    fecha_valoracion = models.DateField(
+        verbose_name='Fecha de Valoracion'
+    )
+    fecha_proxima_revision = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Proxima Revision'
+    )
 
-    # Estado y gestión
+    # Estado
     estado = models.CharField(
-        max_length=20, choices=ESTADO_CHOICES,
-        default='BORRADOR', verbose_name='Estado'
-    )
-    fecha_evaluacion = models.DateField(verbose_name='Fecha de Evaluación')
-    proxima_revision = models.DateField(
-        null=True, blank=True, verbose_name='Próxima Revisión'
-    )
-
-    # Multi-tenancy
-    empresa_id = models.PositiveBigIntegerField(db_index=True, verbose_name='Empresa ID')
-
-    # Auditoría
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
-        related_name='matrices_ipevr_created', verbose_name='Creado por'
+        max_length=15,
+        choices=EstadoMatriz.choices,
+        default=EstadoMatriz.BORRADOR,
+        verbose_name='Estado'
     )
 
     class Meta:
-        db_table = 'ipevr_matriz'
+        db_table = 'motor_riesgos_matriz_ipevr'
         verbose_name = 'Matriz IPEVR'
         verbose_name_plural = 'Matrices IPEVR'
-        ordering = ['-nivel_riesgo', 'proceso']
+        ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['empresa_id', 'estado']),
-            models.Index(fields=['empresa_id', 'proceso']),
-            models.Index(fields=['empresa_id', 'aceptabilidad']),
+            models.Index(fields=['empresa', 'area']),
+            models.Index(fields=['empresa', 'cargo']),
+            models.Index(fields=['empresa', 'estado']),
+            models.Index(fields=['empresa', 'peligro']),
         ]
 
     def __str__(self):
-        return f"{self.codigo} - {self.proceso} - {self.actividad[:30]}"
+        return f"{self.area} - {self.cargo} - {self.peligro.nombre[:30]}"
 
-    def save(self, *args, **kwargs):
-        # Calcular NP (Nivel de Probabilidad)
-        self.nivel_probabilidad = self.nivel_deficiencia * self.nivel_exposicion
+    @property
+    def nivel_probabilidad(self):
+        """NP = ND x NE"""
+        return self.nivel_deficiencia * self.nivel_exposicion
 
-        # Calcular NR (Nivel de Riesgo)
-        self.nivel_riesgo = self.nivel_probabilidad * self.nivel_consecuencia
+    @property
+    def interpretacion_np(self):
+        """Interpreta el nivel de probabilidad segun GTC-45."""
+        np = self.nivel_probabilidad
+        if np >= 24:
+            return "muy_alto"
+        elif np >= 10:
+            return "alto"
+        elif np >= 6:
+            return "medio"
+        return "bajo"
 
-        # Interpretar NR según GTC-45
-        self.interpretacion_nr = self._interpretar_nivel_riesgo()
-        self.aceptabilidad = self._calcular_aceptabilidad()
+    @property
+    def nivel_riesgo(self):
+        """NR = NP x NC"""
+        return self.nivel_probabilidad * self.nivel_consecuencia
 
-        super().save(*args, **kwargs)
-
-    def _interpretar_nivel_riesgo(self):
-        """Interpreta el nivel de riesgo según GTC-45"""
+    @property
+    def interpretacion_nr(self):
+        """
+        Interpreta el nivel de riesgo segun GTC-45.
+        I: NR >= 600
+        II: 150 <= NR < 600
+        III: 40 <= NR < 150
+        IV: NR < 40
+        """
         nr = self.nivel_riesgo
         if nr >= 600:
-            return 'I'
+            return "I"
         elif nr >= 150:
-            return 'II'
+            return "II"
         elif nr >= 40:
-            return 'III'
-        else:
-            return 'IV'
+            return "III"
+        return "IV"
 
-    def _calcular_aceptabilidad(self):
-        """Calcula aceptabilidad según interpretación"""
-        return self.interpretacion_nr
+    @property
+    def aceptabilidad(self):
+        """
+        Determina la aceptabilidad del riesgo.
+        I, II: No aceptable
+        III, IV: Aceptable (con control)
+        """
+        interp = self.interpretacion_nr
+        if interp in ["I", "II"]:
+            return "no_aceptable"
+        return "aceptable"
 
-    def get_interpretacion_display(self):
-        """Texto descriptivo de la interpretación"""
-        interpretaciones = {
-            'I': 'Situación crítica. Suspender actividades hasta control.',
-            'II': 'Corregir y adoptar medidas de control inmediato.',
-            'III': 'Mejorar si es posible. Justificar intervención.',
-            'IV': 'Mantener medidas de control existentes.',
+    @property
+    def significado_aceptabilidad(self):
+        """Texto descriptivo de la aceptabilidad."""
+        significados = {
+            "I": "Situacion critica. Suspender actividades hasta controlar el riesgo.",
+            "II": "Corregir y adoptar medidas de control de inmediato.",
+            "III": "Mejorar si es posible. Seria conveniente justificar la intervencion.",
+            "IV": "Mantener medidas de control existentes. Considerar soluciones rentables.",
         }
-        return interpretaciones.get(self.interpretacion_nr, '')
+        return significados.get(self.interpretacion_nr, "")
 
 
-class ControlPropuesto(models.Model):
-    """Controles propuestos para la matriz IPEVR"""
-    TIPO_CONTROL_CHOICES = [
-        ('ELIMINACION', 'Eliminación'),
-        ('SUSTITUCION', 'Sustitución'),
-        ('CONTROLES_INGENIERIA', 'Controles de Ingeniería'),
-        ('CONTROLES_ADMIN', 'Controles Administrativos'),
-        ('EPP', 'Equipos de Protección Personal'),
-    ]
+class ControlSST(BaseCompanyModel):
+    """
+    Controles de SST implementados para una matriz IPEVR.
 
-    ESTADO_CHOICES = [
-        ('PROPUESTO', 'Propuesto'),
-        ('EN_IMPLEMENTACION', 'En Implementación'),
-        ('IMPLEMENTADO', 'Implementado'),
-        ('VERIFICADO', 'Verificado'),
-    ]
+    Sigue la jerarquia de controles de la GTC-45:
+    1. Eliminacion
+    2. Sustitucion
+    3. Controles de Ingenieria
+    4. Controles Administrativos
+    5. EPP (Equipos de Proteccion Personal)
+    """
 
-    matriz = models.ForeignKey(
-        MatrizIPEVR, on_delete=models.CASCADE,
-        related_name='controles_propuestos', verbose_name='Matriz IPEVR'
+    class TipoControl(models.TextChoices):
+        ELIMINACION = "eliminacion", "Eliminacion"
+        SUSTITUCION = "sustitucion", "Sustitucion"
+        INGENIERIA = "ingenieria", "Control de Ingenieria"
+        ADMINISTRATIVO = "administrativo", "Control Administrativo"
+        EPP = "epp", "Equipo de Proteccion Personal"
+
+    class EstadoControl(models.TextChoices):
+        PROPUESTO = "propuesto", "Propuesto"
+        EN_IMPLEMENTACION = "en_implementacion", "En Implementacion"
+        IMPLEMENTADO = "implementado", "Implementado"
+        VERIFICADO = "verificado", "Verificado"
+        CANCELADO = "cancelado", "Cancelado"
+
+    class Efectividad(models.TextChoices):
+        ALTA = "alta", "Alta"
+        MEDIA = "media", "Media"
+        BAJA = "baja", "Baja"
+        NO_EVALUADA = "no_evaluada", "No Evaluada"
+
+    matriz_ipevr = models.ForeignKey(
+        MatrizIPEVR,
+        on_delete=models.CASCADE,
+        related_name='controles_sst',
+        verbose_name='Matriz IPEVR'
     )
     tipo_control = models.CharField(
-        max_length=25, choices=TIPO_CONTROL_CHOICES,
+        max_length=15,
+        choices=TipoControl.choices,
         verbose_name='Tipo de Control'
     )
-    descripcion = models.TextField(verbose_name='Descripción del Control')
+    descripcion = models.TextField(
+        verbose_name='Descripcion del Control'
+    )
     responsable = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
-        related_name='controles_ipevr_responsable', verbose_name='Responsable'
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='controles_sst_responsable',
+        verbose_name='Responsable'
     )
     fecha_implementacion = models.DateField(
-        null=True, blank=True, verbose_name='Fecha de Implementación'
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Implementacion'
     )
     estado = models.CharField(
-        max_length=20, choices=ESTADO_CHOICES,
-        default='PROPUESTO', verbose_name='Estado'
+        max_length=20,
+        choices=EstadoControl.choices,
+        default=EstadoControl.PROPUESTO,
+        verbose_name='Estado'
     )
-    evidencia = models.TextField(blank=True, verbose_name='Evidencia')
-
-    # Multi-tenancy
-    empresa_id = models.PositiveBigIntegerField(db_index=True, verbose_name='Empresa ID')
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    efectividad = models.CharField(
+        max_length=15,
+        choices=Efectividad.choices,
+        default=Efectividad.NO_EVALUADA,
+        verbose_name='Efectividad'
+    )
+    evidencia = models.FileField(
+        upload_to='sst/controles/',
+        blank=True,
+        null=True,
+        verbose_name='Evidencia'
+    )
+    observaciones = models.TextField(
+        blank=True,
+        verbose_name='Observaciones'
+    )
 
     class Meta:
-        db_table = 'ipevr_control_propuesto'
-        verbose_name = 'Control Propuesto'
-        verbose_name_plural = 'Controles Propuestos'
-        ordering = ['tipo_control', 'fecha_implementacion']
+        db_table = 'motor_riesgos_control_sst'
+        verbose_name = 'Control SST'
+        verbose_name_plural = 'Controles SST'
+        ordering = ['tipo_control', '-created_at']
+        indexes = [
+            models.Index(fields=['empresa', 'matriz_ipevr']),
+            models.Index(fields=['empresa', 'tipo_control']),
+            models.Index(fields=['empresa', 'estado']),
+        ]
 
     def __str__(self):
         return f"{self.get_tipo_control_display()} - {self.descripcion[:50]}"

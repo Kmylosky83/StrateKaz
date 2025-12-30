@@ -1,114 +1,125 @@
 """
-Serializers para IPEVR - GTC-45
+Serializers para IPEVR - Identificacion de Peligros, Evaluacion y Valoracion de Riesgos
+========================================================================================
+
+Serializers para la gestion de la matriz IPEVR segun GTC-45.
+
+Autor: Sistema ERP StrateKaz
+Fecha: 26 Diciembre 2025
 """
 from rest_framework import serializers
-from .models import ClasificacionPeligro, Peligro, MatrizIPEVR, ControlPropuesto
+from .models import ClasificacionPeligro, PeligroGTC45, MatrizIPEVR, ControlSST
 
 
 class ClasificacionPeligroSerializer(serializers.ModelSerializer):
-    tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
+    """Serializer para Clasificaciones de Peligros GTC-45."""
+    categoria_display = serializers.CharField(source='get_categoria_display', read_only=True)
+    total_peligros = serializers.SerializerMethodField()
 
     class Meta:
         model = ClasificacionPeligro
         fields = [
-            'id', 'codigo', 'tipo', 'tipo_display', 'nombre',
-            'descripcion', 'efectos_posibles', 'is_active',
-            'created_at', 'updated_at'
+            'id', 'codigo', 'nombre', 'categoria', 'categoria_display',
+            'descripcion', 'color', 'icono', 'orden', 'is_active',
+            'total_peligros', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['created_at', 'updated_at']
+
+    def get_total_peligros(self, obj):
+        return obj.peligros.filter(is_active=True).count()
+
+
+class PeligroGTC45Serializer(serializers.ModelSerializer):
+    """Serializer para Peligros GTC-45."""
+    clasificacion_nombre = serializers.CharField(source='clasificacion.nombre', read_only=True)
+    clasificacion_categoria = serializers.CharField(source='clasificacion.categoria', read_only=True)
+    clasificacion_color = serializers.CharField(source='clasificacion.color', read_only=True)
+
+    class Meta:
+        model = PeligroGTC45
+        fields = [
+            'id', 'clasificacion', 'clasificacion_nombre', 'clasificacion_categoria',
+            'clasificacion_color', 'codigo', 'nombre', 'descripcion',
+            'efectos_posibles', 'orden', 'is_active', 'created_at', 'updated_at'
         ]
         read_only_fields = ['created_at', 'updated_at']
 
 
-class PeligroSerializer(serializers.ModelSerializer):
-    clasificacion_nombre = serializers.CharField(
-        source='clasificacion.nombre', read_only=True
-    )
-    clasificacion_tipo = serializers.CharField(
-        source='clasificacion.get_tipo_display', read_only=True
-    )
+class ControlSSTSerializer(serializers.ModelSerializer):
+    """Serializer para Controles SST."""
+    tipo_control_display = serializers.CharField(source='get_tipo_control_display', read_only=True)
+    estado_display = serializers.CharField(source='get_estado_display', read_only=True)
+    efectividad_display = serializers.CharField(source='get_efectividad_display', read_only=True)
+    responsable_nombre = serializers.CharField(source='responsable.get_full_name', read_only=True)
+    matriz_area = serializers.CharField(source='matriz_ipevr.area', read_only=True)
+    matriz_cargo = serializers.CharField(source='matriz_ipevr.cargo', read_only=True)
 
     class Meta:
-        model = Peligro
+        model = ControlSST
         fields = [
-            'id', 'clasificacion', 'clasificacion_nombre', 'clasificacion_tipo',
-            'codigo', 'descripcion', 'fuente', 'medio', 'efectos',
-            'empresa_id', 'created_at', 'updated_at', 'created_by'
-        ]
-        read_only_fields = ['created_at', 'updated_at', 'created_by']
-
-
-class ControlPropuestoSerializer(serializers.ModelSerializer):
-    tipo_control_display = serializers.CharField(
-        source='get_tipo_control_display', read_only=True
-    )
-    estado_display = serializers.CharField(
-        source='get_estado_display', read_only=True
-    )
-    responsable_nombre = serializers.CharField(
-        source='responsable.get_full_name', read_only=True
-    )
-
-    class Meta:
-        model = ControlPropuesto
-        fields = [
-            'id', 'matriz', 'tipo_control', 'tipo_control_display',
-            'descripcion', 'responsable', 'responsable_nombre',
+            'id', 'matriz_ipevr', 'matriz_area', 'matriz_cargo',
+            'tipo_control', 'tipo_control_display', 'descripcion',
+            'responsable', 'responsable_nombre',
             'fecha_implementacion', 'estado', 'estado_display',
-            'evidencia', 'empresa_id', 'created_at', 'updated_at'
+            'efectividad', 'efectividad_display',
+            'evidencia', 'observaciones',
+            'empresa_id', 'is_active', 'created_at', 'updated_at'
         ]
         read_only_fields = ['created_at', 'updated_at']
 
 
 class MatrizIPEVRListSerializer(serializers.ModelSerializer):
-    """Serializer simplificado para listados"""
-    peligro_descripcion = serializers.CharField(
-        source='peligro.descripcion', read_only=True
-    )
-    peligro_tipo = serializers.CharField(
-        source='peligro.clasificacion.get_tipo_display', read_only=True
-    )
+    """Serializer simplificado para listado de Matriz IPEVR."""
+    peligro_nombre = serializers.CharField(source='peligro.nombre', read_only=True)
+    peligro_clasificacion = serializers.CharField(source='peligro.clasificacion.nombre', read_only=True)
+    peligro_categoria = serializers.CharField(source='peligro.clasificacion.categoria', read_only=True)
+    responsable_nombre = serializers.CharField(source='responsable.get_full_name', read_only=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
-    interpretacion_texto = serializers.CharField(
-        source='get_interpretacion_display', read_only=True
-    )
+
+    # Campos calculados
+    nivel_probabilidad = serializers.IntegerField(read_only=True)
+    interpretacion_np = serializers.CharField(read_only=True)
+    nivel_riesgo = serializers.IntegerField(read_only=True)
+    interpretacion_nr = serializers.CharField(read_only=True)
+    aceptabilidad = serializers.CharField(read_only=True)
 
     class Meta:
         model = MatrizIPEVR
         fields = [
-            'id', 'codigo', 'proceso', 'zona_lugar', 'actividad',
-            'peligro', 'peligro_descripcion', 'peligro_tipo',
+            'id', 'area', 'cargo', 'proceso', 'actividad', 'rutinaria',
+            'peligro', 'peligro_nombre', 'peligro_clasificacion', 'peligro_categoria',
+            'nivel_deficiencia', 'nivel_exposicion', 'nivel_consecuencia',
+            'nivel_probabilidad', 'interpretacion_np',
             'nivel_riesgo', 'interpretacion_nr', 'aceptabilidad',
-            'estado', 'estado_display', 'interpretacion_texto',
-            'num_expuestos', 'fecha_evaluacion'
+            'num_expuestos', 'estado', 'estado_display',
+            'responsable', 'responsable_nombre',
+            'fecha_valoracion', 'is_active', 'empresa_id', 'created_at'
         ]
 
 
 class MatrizIPEVRDetailSerializer(serializers.ModelSerializer):
-    """Serializer completo para detalle"""
-    peligro_data = PeligroSerializer(source='peligro', read_only=True)
-    controles_propuestos = ControlPropuestoSerializer(many=True, read_only=True)
+    """Serializer completo para detalle de Matriz IPEVR."""
+    peligro_detail = PeligroGTC45Serializer(source='peligro', read_only=True)
+    responsable_nombre = serializers.CharField(source='responsable.get_full_name', read_only=True)
+    created_by_nombre = serializers.CharField(source='created_by.get_full_name', read_only=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
-    interpretacion_texto = serializers.CharField(
-        source='get_interpretacion_display', read_only=True
-    )
-    created_by_nombre = serializers.CharField(
-        source='created_by.get_full_name', read_only=True
-    )
+
+    # Campos calculados
+    nivel_probabilidad = serializers.IntegerField(read_only=True)
+    interpretacion_np = serializers.CharField(read_only=True)
+    nivel_riesgo = serializers.IntegerField(read_only=True)
+    interpretacion_nr = serializers.CharField(read_only=True)
+    aceptabilidad = serializers.CharField(read_only=True)
+    significado_aceptabilidad = serializers.CharField(read_only=True)
+
+    # Controles relacionados
+    controles_sst = serializers.SerializerMethodField()
 
     class Meta:
         model = MatrizIPEVR
-        fields = [
-            'id', 'codigo', 'proceso', 'zona_lugar', 'actividad', 'tarea',
-            'rutinaria', 'peligro', 'peligro_data',
-            'control_fuente', 'control_medio', 'control_individuo',
-            'nivel_deficiencia', 'nivel_exposicion', 'nivel_probabilidad',
-            'nivel_consecuencia', 'nivel_riesgo', 'interpretacion_nr',
-            'aceptabilidad', 'interpretacion_texto',
-            'num_expuestos', 'peor_consecuencia', 'requisito_legal',
-            'estado', 'estado_display', 'fecha_evaluacion', 'proxima_revision',
-            'controles_propuestos', 'empresa_id',
-            'created_at', 'updated_at', 'created_by', 'created_by_nombre'
-        ]
-        read_only_fields = [
-            'nivel_probabilidad', 'nivel_riesgo', 'interpretacion_nr',
-            'aceptabilidad', 'created_at', 'updated_at', 'created_by'
-        ]
+        fields = '__all__'
+        read_only_fields = ['created_at', 'updated_at', 'created_by']
+
+    def get_controles_sst(self, obj):
+        controles = obj.controles_sst.filter(is_active=True)
+        return ControlSSTSerializer(controles, many=True).data

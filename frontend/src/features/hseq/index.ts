@@ -24,5 +24,14 @@ export { default as EmergenciasPage } from './pages/EmergenciasPage';
 export { default as GestionAmbientalPage } from './pages/GestionAmbientalPage';
 export { default as MejoraContinuaPage } from './pages/MejoraContinuaPage';
 
+// API Clients
+export * from './api';
+
+// Types
+export * from './types';
+
+// Hooks
+export * from './hooks';
+
 // Components (se agregarán a medida que se desarrollen los módulos)
 // export * from './components';

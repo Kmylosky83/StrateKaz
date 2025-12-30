@@ -1,14 +1,14 @@
-"""
-URLs para config_alertas - audit_system
-"""
+"""URLs para config_alertas"""
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from .views import TipoAlertaViewSet, ConfiguracionAlertaViewSet, AlertaGeneradaViewSet, EscalamientoAlertaViewSet
 
 app_name = 'config_alertas'
 
 router = DefaultRouter()
-# TODO: Registrar ViewSets cuando se implementen
+router.register(r'tipos', TipoAlertaViewSet, basename='tipos')
+router.register(r'configuraciones', ConfiguracionAlertaViewSet, basename='configuraciones')
+router.register(r'', AlertaGeneradaViewSet, basename='alertas')
+router.register(r'escalamientos', EscalamientoAlertaViewSet, basename='escalamientos')
 
-urlpatterns = [
-    path('', include(router.urls)),
-]
+urlpatterns = [path('', include(router.urls))]

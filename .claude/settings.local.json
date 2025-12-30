@@ -84,7 +84,8 @@
       "Bash(docker compose exec:*)",
       "Bash(docker compose:*)",
       "Bash(docker exec grasas_huesos_backend grep:*)",
-      "Bash(docker compose exec backend python manage.py shell:*)"
+      "Bash(docker compose exec backend python manage.py shell:*)",
+      "Bash(docker-compose exec:*)"
     ],
     "deny": [],
     "ask": []

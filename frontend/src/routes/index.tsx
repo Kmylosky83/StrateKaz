@@ -71,16 +71,60 @@ import ProductosServiciosPage from '@/features/proveedores/pages/ProductosServic
 import PruebasAcidezPage from '@/features/proveedores/pages/PruebasAcidezPage';
 
 // Logistics & Fleet - Próximamente
-// Sales & CRM - Próximamente
+
+// Sales & CRM
+import {
+  ClientesPage,
+  PipelinePage,
+  CotizacionesPage,
+  PedidosPage,
+  FacturasPage,
+  PQRSPage,
+  EncuestasPage,
+  FidelizacionPage,
+} from '@/features/sales-crm';
 
 // ==================== NIVEL 5: HABILITADORES ====================
-// Centro de Talento - Próximamente
-// Administración y Finanzas - Próximamente
-// Contabilidad - Próximamente
+// Centro de Talento (Talent Hub)
+import { TalentHubPage } from '@/features/talent-hub';
+// Administración y Finanzas
+import {
+  AdminFinancePage,
+  TesoreriaPage,
+  PresupuestoPage,
+  ActivosFijosPage,
+  ServiciosGeneralesPage,
+} from '@/features/admin-finance';
+// Contabilidad (Módulo Activable)
+import {
+  AccountingPage,
+  ConfigContablePage,
+  MovimientosContablesPage,
+  InformesContablesPage,
+  IntegracionContablePage,
+} from '@/features/accounting';
 
 // ==================== NIVEL 6: INTELIGENCIA ====================
-// Analítica - Próximamente
-// Sistema de Auditoría - Próximamente
+// Analítica
+import {
+  AnalyticsPage,
+  ConfigIndicadoresPage,
+  DashboardGerencialPage,
+  IndicadoresAreaPage,
+  AnalisisTendenciasPage,
+  GeneradorInformesPage,
+  AccionesIndicadorPage,
+  ExportacionPage,
+} from '@/features/analytics';
+
+// Sistema de Auditoría
+import {
+  AuditSystemPage,
+  LogsSistemaPage,
+  NotificacionesPage,
+  AlertasPage,
+  TareasPage,
+} from '@/features/audit-system';
 
 export const AppRoutes = () => {
   return (
@@ -242,49 +286,82 @@ export const AppRoutes = () => {
             element={<div className="p-8 text-center text-gray-500">Logística y Flota - Próximamente</div>}
           />
 
-          {/* Módulo: Ventas y CRM (sales_crm) - Próximamente */}
+          {/* Módulo: Ventas y CRM (sales_crm) */}
           <Route
             path="/ventas"
-            element={<div className="p-8 text-center text-gray-500">Ventas y CRM - Próximamente</div>}
+            element={<Navigate to="/ventas/clientes" replace />}
           />
+          {/* Tab 1: Gestión de Clientes */}
+          <Route path="/ventas/clientes" element={<ClientesPage />} />
+          {/* Tab 2: Pipeline de Ventas */}
+          <Route path="/ventas/pipeline" element={<PipelinePage />} />
+          {/* Tab 3: Cotizaciones */}
+          <Route path="/ventas/cotizaciones" element={<CotizacionesPage />} />
+          {/* Tab 4: Pedidos */}
+          <Route path="/ventas/pedidos" element={<PedidosPage />} />
+          {/* Tab 5: Facturas */}
+          <Route path="/ventas/facturas" element={<FacturasPage />} />
+          {/* Tab 6: PQRS */}
+          <Route path="/ventas/pqrs" element={<PQRSPage />} />
+          {/* Tab 7: Encuestas NPS */}
+          <Route path="/ventas/encuestas" element={<EncuestasPage />} />
+          {/* Tab 8: Fidelización */}
+          <Route path="/ventas/fidelizacion" element={<FidelizacionPage />} />
 
           {/* ═══════════════════════════════════════════════════════════════ */}
           {/* NIVEL 5: HABILITADORES */}
           {/* ═══════════════════════════════════════════════════════════════ */}
 
-          {/* Módulo: Centro de Talento (talent_hub) - Próximamente */}
-          <Route
-            path="/talento"
-            element={<div className="p-8 text-center text-gray-500">Centro de Talento - Próximamente</div>}
-          />
+          {/* Módulo: Talent Hub - Gestión del Talento Humano */}
+          <Route path="/talento" element={<TalentHubPage />} />
+          <Route path="/talento/estructura" element={<TalentHubPage />} />
+          <Route path="/talento/seleccion" element={<TalentHubPage />} />
+          <Route path="/talento/colaboradores" element={<TalentHubPage />} />
 
-          {/* Módulo: Administración y Finanzas (admin_finance) - Próximamente */}
-          <Route
-            path="/finanzas"
-            element={<div className="p-8 text-center text-gray-500">Administración y Finanzas - Próximamente</div>}
-          />
+          {/* Módulo: Administración y Finanzas (admin_finance) */}
+          <Route path="/finanzas" element={<Navigate to="/finanzas/dashboard" replace />} />
+          <Route path="/finanzas/dashboard" element={<AdminFinancePage />} />
+          <Route path="/finanzas/tesoreria" element={<TesoreriaPage />} />
+          <Route path="/finanzas/presupuesto" element={<PresupuestoPage />} />
+          <Route path="/finanzas/activos-fijos" element={<ActivosFijosPage />} />
+          <Route path="/finanzas/servicios-generales" element={<ServiciosGeneralesPage />} />
 
-          {/* Módulo: Contabilidad (accounting) - Próximamente */}
-          <Route
-            path="/contabilidad"
-            element={<div className="p-8 text-center text-gray-500">Contabilidad - Próximamente</div>}
-          />
+          {/* Módulo: Contabilidad (accounting) - MÓDULO ACTIVABLE */}
+          <Route path="/contabilidad" element={<Navigate to="/contabilidad/dashboard" replace />} />
+          <Route path="/contabilidad/dashboard" element={<AccountingPage />} />
+          <Route path="/contabilidad/configuracion" element={<ConfigContablePage />} />
+          <Route path="/contabilidad/movimientos" element={<MovimientosContablesPage />} />
+          <Route path="/contabilidad/informes" element={<InformesContablesPage />} />
+          <Route path="/contabilidad/integracion" element={<IntegracionContablePage />} />
 
           {/* ═══════════════════════════════════════════════════════════════ */}
           {/* NIVEL 6: INTELIGENCIA */}
           {/* ═══════════════════════════════════════════════════════════════ */}
 
-          {/* Módulo: Analítica (analytics) - Próximamente */}
-          <Route
-            path="/analitica"
-            element={<div className="p-8 text-center text-gray-500">Analítica - Próximamente</div>}
-          />
+          {/* Módulo: Analítica (analytics) */}
+          <Route path="/analytics" element={<Navigate to="/analytics/dashboard" replace />} />
 
-          {/* Módulo: Sistema de Auditoría (audit_system) - Próximamente */}
-          <Route
-            path="/auditoria"
-            element={<div className="p-8 text-center text-gray-500">Sistema de Auditoría - Próximamente</div>}
-          />
+          {/* Semana 23 - Configuración e Indicadores */}
+          <Route path="/analytics/dashboard" element={<AnalyticsPage />} />
+          <Route path="/analytics/configuracion" element={<ConfigIndicadoresPage />} />
+          <Route path="/analytics/dashboards" element={<DashboardGerencialPage />} />
+          <Route path="/analytics/indicadores" element={<IndicadoresAreaPage />} />
+
+          {/* Semana 24 - Análisis, Informes, Acciones y Exportación */}
+          <Route path="/analytics/analisis" element={<AnalisisTendenciasPage />} />
+          <Route path="/analytics/informes" element={<GeneradorInformesPage />} />
+          <Route path="/analytics/acciones" element={<AccionesIndicadorPage />} />
+          <Route path="/analytics/exportacion" element={<ExportacionPage />} />
+
+          {/* Módulo: Sistema de Auditoría (audit_system) */}
+          <Route path="/auditoria" element={<Navigate to="/auditoria/dashboard" replace />} />
+
+          {/* Semana 25 - Sistema de Auditoría */}
+          <Route path="/auditoria/dashboard" element={<AuditSystemPage />} />
+          <Route path="/auditoria/logs" element={<LogsSistemaPage />} />
+          <Route path="/auditoria/notificaciones" element={<NotificacionesPage />} />
+          <Route path="/auditoria/alertas" element={<AlertasPage />} />
+          <Route path="/auditoria/tareas" element={<TareasPage />} />
 
           {/* ═══════════════════════════════════════════════════════════════ */}
           {/* RUTAS LEGACY - DEPRECADAS (Mantener temporalmente para compatibilidad) */}

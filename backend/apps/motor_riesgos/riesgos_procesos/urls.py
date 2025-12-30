@@ -1,19 +1,30 @@
+"""
+URLs para Riesgos de Procesos - ISO 31000
+==========================================
+
+Endpoints:
+- /api/motor-riesgos/riesgos/categorias/
+- /api/motor-riesgos/riesgos/riesgos/
+- /api/motor-riesgos/riesgos/tratamientos/
+- /api/motor-riesgos/riesgos/controles/
+- /api/motor-riesgos/riesgos/oportunidades/
+"""
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
     CategoriaRiesgoViewSet,
-    RiesgoProcesosViewSet,
+    RiesgoProcesoViewSet,
     TratamientoRiesgoViewSet,
-    MonitoreoRiesgoViewSet,
-    MapaCalorViewSet
+    ControlOperacionalViewSet,
+    OportunidadViewSet
 )
 
 router = DefaultRouter()
 router.register(r'categorias', CategoriaRiesgoViewSet, basename='categoria-riesgo')
-router.register(r'riesgos', RiesgoProcesosViewSet, basename='riesgo-proceso')
+router.register(r'riesgos', RiesgoProcesoViewSet, basename='riesgo-proceso')
 router.register(r'tratamientos', TratamientoRiesgoViewSet, basename='tratamiento-riesgo')
-router.register(r'monitoreos', MonitoreoRiesgoViewSet, basename='monitoreo-riesgo')
-router.register(r'mapas-calor', MapaCalorViewSet, basename='mapa-calor')
+router.register(r'controles', ControlOperacionalViewSet, basename='control-operacional')
+router.register(r'oportunidades', OportunidadViewSet, basename='oportunidad')
 
 urlpatterns = [
     path('', include(router.urls)),

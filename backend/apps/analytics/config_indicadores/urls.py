@@ -1,14 +1,17 @@
 """
-URLs para config_indicadores - analytics
+URLs para Config Indicadores - Analytics
 """
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-
-app_name = 'config_indicadores'
+from .views import (
+    CatalogoKPIViewSet, FichaTecnicaKPIViewSet,
+    MetaKPIViewSet, ConfiguracionSemaforoViewSet
+)
 
 router = DefaultRouter()
-# TODO: Registrar ViewSets cuando se implementen
+router.register(r'kpis', CatalogoKPIViewSet, basename='catalogo-kpi')
+router.register(r'fichas-tecnicas', FichaTecnicaKPIViewSet, basename='ficha-tecnica-kpi')
+router.register(r'metas', MetaKPIViewSet, basename='meta-kpi')
+router.register(r'semaforos', ConfiguracionSemaforoViewSet, basename='configuracion-semaforo')
 
-urlpatterns = [
-    path('', include(router.urls)),
-]
+urlpatterns = router.urls

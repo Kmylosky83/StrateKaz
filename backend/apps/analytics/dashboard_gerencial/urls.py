@@ -1,14 +1,13 @@
 """
-URLs para dashboard_gerencial - analytics
+URLs para Dashboard Gerencial - Analytics
 """
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-
-app_name = 'dashboard_gerencial'
+from .views import VistaDashboardViewSet, WidgetDashboardViewSet, FavoritoDashboardViewSet
 
 router = DefaultRouter()
-# TODO: Registrar ViewSets cuando se implementen
+router.register(r'vistas', VistaDashboardViewSet, basename='vista-dashboard')
+router.register(r'widgets', WidgetDashboardViewSet, basename='widget-dashboard')
+router.register(r'favoritos', FavoritoDashboardViewSet, basename='favorito-dashboard')
 
-urlpatterns = [
-    path('', include(router.urls)),
-]
+urlpatterns = router.urls

@@ -1,261 +1,220 @@
 """
-Modelos para riesgos_procesos - ISO 31000 Process Risk Management
-Gestión de Riesgos de Procesos según ISO 31000
+Modelos para Riesgos de Procesos - ISO 31000
+==============================================
+
+Sistema de gestión de riesgos de procesos según ISO 31000.
+Incluye categorización, evaluación inherente/residual, tratamiento y controles operacionales.
+
+Autor: Sistema ERP StrateKaz
+Fecha: 26 Diciembre 2025
 """
 from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
+from django.db.models import CASCADE, SET_NULL, PROTECT
+
+from apps.core.base_models import BaseCompanyModel, TimestampedModel, SoftDeleteModel, OrderedModel
 
 
-class CategoriaRiesgo(models.Model):
+class CategoriaRiesgo(TimestampedModel, SoftDeleteModel, OrderedModel):
     """
-    Categorías de riesgos según ISO 31000
-    Catálogo de clasificación de riesgos
+    Catálogo global de categorías de riesgo.
+
+    Clasificación estándar según ISO 31000:
+    - Estratégico, Operativo, Financiero, Cumplimiento,
+      Tecnológico, Reputacional, SST, Ambiental, etc.
     """
-    TIPO_CHOICES = [
-        ('ESTRATEGICO', 'Estratégico'),
-        ('OPERACIONAL', 'Operacional'),
-        ('FINANCIERO', 'Financiero'),
-        ('CUMPLIMIENTO', 'Cumplimiento'),
-        ('REPUTACIONAL', 'Reputacional'),
-        ('TECNOLOGICO', 'Tecnológico'),
-        ('AMBIENTAL', 'Ambiental'),
-        ('SEGURIDAD', 'Seguridad y Salud'),
-    ]
 
     codigo = models.CharField(
-        max_length=20,
+        max_length=10,
         unique=True,
         db_index=True,
-        verbose_name='Código'
+        verbose_name='Código',
+        help_text='Código único de categoría (ej: EST, OPE, FIN)'
     )
-    nombre = models.CharField(max_length=200, verbose_name='Nombre')
-    tipo = models.CharField(
-        max_length=20,
-        choices=TIPO_CHOICES,
-        verbose_name='Tipo de Categoría'
+    nombre = models.CharField(
+        max_length=100,
+        verbose_name='Nombre',
+        help_text='Nombre descriptivo de la categoría'
     )
-    descripcion = models.TextField(blank=True, verbose_name='Descripción')
-    color_hex = models.CharField(
-        max_length=7,
+    descripcion = models.TextField(
         blank=True,
-        verbose_name='Color Hexadecimal',
-        help_text='Color para visualización en mapa de calor (ej: #FF5733)'
+        verbose_name='Descripción',
+        help_text='Descripción detallada del tipo de riesgo'
     )
-    is_active = models.BooleanField(default=True, verbose_name='Activo')
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    color = models.CharField(
+        max_length=7,
+        default='#6B7280',
+        verbose_name='Color',
+        help_text='Color hexadecimal para visualización (#RRGGBB)'
+    )
 
     class Meta:
         db_table = 'motor_riesgos_categoria_riesgo'
         verbose_name = 'Categoría de Riesgo'
         verbose_name_plural = 'Categorías de Riesgos'
-        ordering = ['tipo', 'codigo']
+        ordering = ['orden', 'codigo']
 
     def __str__(self):
         return f"{self.codigo} - {self.nombre}"
 
 
-class RiesgoProceso(models.Model):
+class RiesgoProceso(BaseCompanyModel):
     """
-    Registro de riesgos de procesos según ISO 31000
-    Incluye evaluación de riesgo inherente y residual
+    Registro de riesgos de procesos según ISO 31000.
+
+    Gestiona el ciclo completo de riesgo:
+    - Identificación y clasificación
+    - Evaluación inherente (sin controles)
+    - Evaluación residual (con controles)
+    - Causa raíz y consecuencias
+    - Responsable y estado
     """
-    PROBABILIDAD_CHOICES = [
-        (1, '1 - Muy Baja'),
-        (2, '2 - Baja'),
-        (3, '3 - Media'),
-        (4, '4 - Alta'),
-        (5, '5 - Muy Alta'),
-    ]
 
-    IMPACTO_CHOICES = [
-        (1, '1 - Insignificante'),
-        (2, '2 - Menor'),
-        (3, '3 - Moderado'),
-        (4, '4 - Mayor'),
-        (5, '5 - Catastrófico'),
-    ]
+    class TipoRiesgo(models.TextChoices):
+        ESTRATEGICO = 'estrategico', 'Estratégico'
+        OPERATIVO = 'operativo', 'Operativo'
+        FINANCIERO = 'financiero', 'Financiero'
+        CUMPLIMIENTO = 'cumplimiento', 'Cumplimiento'
+        TECNOLOGICO = 'tecnologico', 'Tecnológico'
+        REPUTACIONAL = 'reputacional', 'Reputacional'
+        SST = 'sst', 'Seguridad y Salud en el Trabajo'
+        AMBIENTAL = 'ambiental', 'Ambiental'
 
-    NIVEL_RIESGO_CHOICES = [
-        ('BAJO', 'Bajo (1-4)'),
-        ('MODERADO', 'Moderado (5-9)'),
-        ('ALTO', 'Alto (10-14)'),
-        ('CRITICO', 'Crítico (15-25)'),
-    ]
-
-    ESTADO_CHOICES = [
-        ('IDENTIFICADO', 'Identificado'),
-        ('EN_EVALUACION', 'En Evaluación'),
-        ('EN_TRATAMIENTO', 'En Tratamiento'),
-        ('MONITOREADO', 'Monitoreado'),
-        ('CERRADO', 'Cerrado'),
-    ]
+    class EstadoRiesgo(models.TextChoices):
+        IDENTIFICADO = 'identificado', 'Identificado'
+        EN_ANALISIS = 'en_analisis', 'En Análisis'
+        EN_TRATAMIENTO = 'en_tratamiento', 'En Tratamiento'
+        MONITOREADO = 'monitoreado', 'Monitoreado'
+        CERRADO = 'cerrado', 'Cerrado'
 
     # Identificación
-    codigo = models.CharField(max_length=50, verbose_name='Código')
-    nombre = models.CharField(max_length=300, verbose_name='Nombre del Riesgo')
-    descripcion = models.TextField(verbose_name='Descripción')
+    codigo = models.CharField(
+        max_length=20,
+        verbose_name='Código',
+        help_text='Código único del riesgo'
+    )
+    nombre = models.CharField(
+        max_length=200,
+        verbose_name='Nombre del Riesgo',
+        help_text='Descripción corta del riesgo'
+    )
+    descripcion = models.TextField(
+        verbose_name='Descripción Detallada',
+        help_text='Descripción completa del evento de riesgo'
+    )
 
     # Clasificación
+    tipo = models.CharField(
+        max_length=20,
+        choices=TipoRiesgo.choices,
+        verbose_name='Tipo de Riesgo'
+    )
     categoria = models.ForeignKey(
         CategoriaRiesgo,
-        on_delete=models.PROTECT,
+        on_delete=PROTECT,
+        null=True,
+        blank=True,
         related_name='riesgos',
-        verbose_name='Categoría'
+        verbose_name='Categoría',
+        help_text='Categoría específica del riesgo'
     )
     proceso = models.CharField(
         max_length=200,
-        verbose_name='Proceso',
-        help_text='Proceso al que pertenece el riesgo'
-    )
-    subproceso = models.CharField(
-        max_length=200,
-        blank=True,
-        verbose_name='Subproceso'
+        verbose_name='Proceso Asociado',
+        help_text='Proceso de negocio al que pertenece el riesgo'
     )
 
     # Análisis de causas y consecuencias
-    causas = models.TextField(verbose_name='Causas del Riesgo')
-    consecuencias = models.TextField(verbose_name='Consecuencias Potenciales')
-
-    # Controles existentes
-    controles_existentes = models.TextField(
-        blank=True,
-        verbose_name='Controles Existentes',
-        help_text='Controles actuales para mitigar el riesgo'
+    causa_raiz = models.TextField(
+        verbose_name='Causa Raíz',
+        help_text='Causa o causas fundamentales del riesgo'
+    )
+    consecuencia = models.TextField(
+        verbose_name='Consecuencia Potencial',
+        help_text='Impacto potencial si el riesgo se materializa'
     )
 
-    # Evaluación del riesgo INHERENTE (sin controles)
-    probabilidad_inherente = models.IntegerField(
-        choices=PROBABILIDAD_CHOICES,
+    # Evaluación INHERENTE (sin controles) - Escala 1-5
+    probabilidad_inherente = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
         verbose_name='Probabilidad Inherente',
-        help_text='Probabilidad sin controles (1-5)'
+        help_text='Probabilidad sin controles (1=Muy Baja, 5=Muy Alta)'
     )
-    impacto_inherente = models.IntegerField(
-        choices=IMPACTO_CHOICES,
+    impacto_inherente = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
         verbose_name='Impacto Inherente',
-        help_text='Impacto sin controles (1-5)'
-    )
-    nivel_inherente = models.IntegerField(
-        editable=False,
-        verbose_name='Nivel de Riesgo Inherente',
-        help_text='Probabilidad × Impacto (1-25)'
-    )
-    interpretacion_inherente = models.CharField(
-        max_length=20,
-        choices=NIVEL_RIESGO_CHOICES,
-        editable=False,
-        verbose_name='Interpretación Riesgo Inherente'
+        help_text='Impacto sin controles (1=Insignificante, 5=Catastrófico)'
     )
 
-    # Evaluación del riesgo RESIDUAL (con controles)
-    probabilidad_residual = models.IntegerField(
-        choices=PROBABILIDAD_CHOICES,
+    # Evaluación RESIDUAL (con controles) - Escala 1-5
+    probabilidad_residual = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
         verbose_name='Probabilidad Residual',
-        help_text='Probabilidad con controles (1-5)'
+        help_text='Probabilidad con controles (1=Muy Baja, 5=Muy Alta)'
     )
-    impacto_residual = models.IntegerField(
-        choices=IMPACTO_CHOICES,
+    impacto_residual = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
         verbose_name='Impacto Residual',
-        help_text='Impacto con controles (1-5)'
-    )
-    nivel_residual = models.IntegerField(
-        editable=False,
-        verbose_name='Nivel de Riesgo Residual',
-        help_text='Probabilidad × Impacto (1-25)'
-    )
-    interpretacion_residual = models.CharField(
-        max_length=20,
-        choices=NIVEL_RIESGO_CHOICES,
-        editable=False,
-        verbose_name='Interpretación Riesgo Residual'
+        help_text='Impacto con controles (1=Insignificante, 5=Catastrófico)'
     )
 
-    # Propietario del riesgo
-    propietario = models.ForeignKey(
+    # Responsable y estado
+    responsable = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
+        on_delete=SET_NULL,
         null=True,
-        related_name='riesgos_propietario',
-        verbose_name='Propietario del Riesgo',
-        help_text='Responsable de gestionar el riesgo'
+        blank=True,
+        related_name='riesgos_responsable',
+        verbose_name='Responsable del Riesgo',
+        help_text='Propietario del riesgo'
     )
-
-    # Estado y fechas
     estado = models.CharField(
         max_length=20,
-        choices=ESTADO_CHOICES,
-        default='IDENTIFICADO',
-        verbose_name='Estado'
-    )
-    fecha_identificacion = models.DateField(verbose_name='Fecha de Identificación')
-    fecha_evaluacion = models.DateField(
-        null=True,
-        blank=True,
-        verbose_name='Fecha de Evaluación'
-    )
-    proxima_revision = models.DateField(
-        null=True,
-        blank=True,
-        verbose_name='Próxima Revisión'
-    )
-
-    # Requisitos legales o normativos
-    requisito_legal = models.TextField(
-        blank=True,
-        verbose_name='Requisito Legal/Normativo Asociado'
-    )
-
-    # Observaciones
-    observaciones = models.TextField(blank=True, verbose_name='Observaciones')
-
-    # Multi-tenancy
-    empresa_id = models.PositiveBigIntegerField(db_index=True, verbose_name='Empresa ID')
-
-    # Auditoría
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='riesgos_proceso_created',
-        verbose_name='Creado por'
+        choices=EstadoRiesgo.choices,
+        default=EstadoRiesgo.IDENTIFICADO,
+        verbose_name='Estado del Riesgo'
     )
 
     class Meta:
         db_table = 'motor_riesgos_riesgo_proceso'
         verbose_name = 'Riesgo de Proceso'
         verbose_name_plural = 'Riesgos de Procesos'
-        ordering = ['-nivel_residual', 'proceso', 'codigo']
-        unique_together = ['empresa_id', 'codigo']
+        ordering = ['-created_at']
+        unique_together = [['empresa', 'codigo']]
         indexes = [
-            models.Index(fields=['empresa_id', 'estado']),
-            models.Index(fields=['empresa_id', 'categoria']),
-            models.Index(fields=['empresa_id', 'proceso']),
-            models.Index(fields=['empresa_id', 'interpretacion_residual']),
+            models.Index(fields=['empresa', 'tipo']),
+            models.Index(fields=['empresa', 'estado']),
+            models.Index(fields=['empresa', 'proceso']),
         ]
 
     def __str__(self):
         return f"{self.codigo} - {self.nombre}"
 
-    def save(self, *args, **kwargs):
-        # Calcular nivel inherente
-        self.nivel_inherente = self.probabilidad_inherente * self.impacto_inherente
-        self.interpretacion_inherente = self._interpretar_nivel(self.nivel_inherente)
+    @property
+    def nivel_inherente(self):
+        """Calcula nivel de riesgo inherente (Probabilidad × Impacto)."""
+        return self.probabilidad_inherente * self.impacto_inherente
 
-        # Calcular nivel residual
-        self.nivel_residual = self.probabilidad_residual * self.impacto_residual
-        self.interpretacion_residual = self._interpretar_nivel(self.nivel_residual)
+    @property
+    def nivel_residual(self):
+        """Calcula nivel de riesgo residual (Probabilidad × Impacto)."""
+        return self.probabilidad_residual * self.impacto_residual
 
-        super().save(*args, **kwargs)
+    @property
+    def interpretacion_inherente(self):
+        """Interpreta el nivel inherente según escala ISO 31000."""
+        return self._interpretar_nivel(self.nivel_inherente)
+
+    @property
+    def interpretacion_residual(self):
+        """Interpreta el nivel residual según escala ISO 31000."""
+        return self._interpretar_nivel(self.nivel_residual)
 
     def _interpretar_nivel(self, nivel):
         """
-        Interpreta el nivel de riesgo según escala ISO 31000
+        Interpreta el nivel de riesgo según escala:
         1-4: Bajo
         5-9: Moderado
         10-14: Alto
@@ -270,566 +229,250 @@ class RiesgoProceso(models.Model):
         else:
             return 'BAJO'
 
-    def get_color_nivel(self, nivel):
-        """Retorna color para visualización según nivel"""
-        interpretacion = self._interpretar_nivel(nivel)
-        colores = {
-            'BAJO': '#28a745',      # Verde
-            'MODERADO': '#ffc107',  # Amarillo
-            'ALTO': '#fd7e14',      # Naranja
-            'CRITICO': '#dc3545',   # Rojo
-        }
-        return colores.get(interpretacion, '#6c757d')
-
-    def calcular_reduccion_riesgo(self):
-        """Calcula el % de reducción del riesgo con controles"""
+    @property
+    def reduccion_riesgo_porcentaje(self):
+        """Calcula el porcentaje de reducción del riesgo con controles."""
         if self.nivel_inherente == 0:
             return 0
         reduccion = ((self.nivel_inherente - self.nivel_residual) / self.nivel_inherente) * 100
         return round(reduccion, 2)
 
 
-class TratamientoRiesgo(models.Model):
+class TratamientoRiesgo(BaseCompanyModel):
     """
-    Planes de tratamiento para riesgos según ISO 31000
-    Estrategias: Evitar, Reducir, Transferir, Aceptar
+    Planes de tratamiento para riesgos según ISO 31000.
+
+    Estrategias de respuesta al riesgo:
+    - Evitar: Eliminar la actividad que genera el riesgo
+    - Mitigar: Reducir probabilidad o impacto
+    - Transferir: Compartir con terceros (seguros, outsourcing)
+    - Aceptar: Retener el riesgo de forma informada
     """
-    ESTRATEGIA_CHOICES = [
-        ('EVITAR', 'Evitar - Eliminar la actividad que genera el riesgo'),
-        ('REDUCIR', 'Reducir - Implementar controles para mitigar'),
-        ('TRANSFERIR', 'Transferir - Compartir con terceros (seguros, outsourcing)'),
-        ('ACEPTAR', 'Aceptar - Retener el riesgo informadamente'),
-    ]
 
-    PRIORIDAD_CHOICES = [
-        ('ALTA', 'Alta'),
-        ('MEDIA', 'Media'),
-        ('BAJA', 'Baja'),
-    ]
+    class TipoTratamiento(models.TextChoices):
+        EVITAR = 'evitar', 'Evitar'
+        MITIGAR = 'mitigar', 'Mitigar'
+        TRANSFERIR = 'transferir', 'Transferir'
+        ACEPTAR = 'aceptar', 'Aceptar'
 
-    ESTADO_CHOICES = [
-        ('PROPUESTO', 'Propuesto'),
-        ('APROBADO', 'Aprobado'),
-        ('EN_IMPLEMENTACION', 'En Implementación'),
-        ('IMPLEMENTADO', 'Implementado'),
-        ('VERIFICADO', 'Verificado'),
-        ('CANCELADO', 'Cancelado'),
-    ]
+    class EstadoTratamiento(models.TextChoices):
+        PENDIENTE = 'pendiente', 'Pendiente'
+        EN_CURSO = 'en_curso', 'En Curso'
+        COMPLETADO = 'completado', 'Completado'
+        CANCELADO = 'cancelado', 'Cancelado'
 
     riesgo = models.ForeignKey(
         RiesgoProceso,
-        on_delete=models.CASCADE,
+        on_delete=CASCADE,
         related_name='tratamientos',
         verbose_name='Riesgo'
     )
-
-    # Estrategia de tratamiento
-    estrategia = models.CharField(
-        max_length=20,
-        choices=ESTRATEGIA_CHOICES,
-        verbose_name='Estrategia de Tratamiento'
+    tipo = models.CharField(
+        max_length=15,
+        choices=TipoTratamiento.choices,
+        verbose_name='Tipo de Tratamiento'
     )
     descripcion = models.TextField(
         verbose_name='Descripción del Tratamiento',
         help_text='Detalle de las acciones a implementar'
     )
-
-    # Planificación
+    control_propuesto = models.TextField(
+        verbose_name='Control Propuesto',
+        help_text='Control específico a implementar'
+    )
     responsable = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
+        on_delete=SET_NULL,
         null=True,
+        blank=True,
         related_name='tratamientos_responsable',
-        verbose_name='Responsable'
+        verbose_name='Responsable de Implementación'
     )
-    fecha_inicio_planificada = models.DateField(
+    fecha_implementacion = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Fecha Inicio Planificada'
-    )
-    fecha_fin_planificada = models.DateField(verbose_name='Fecha Fin Planificada')
-
-    # Ejecución
-    fecha_inicio_real = models.DateField(
-        null=True,
-        blank=True,
-        verbose_name='Fecha Inicio Real'
-    )
-    fecha_fin_real = models.DateField(
-        null=True,
-        blank=True,
-        verbose_name='Fecha Fin Real'
-    )
-
-    # Costos
-    costo_estimado = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        null=True,
-        blank=True,
-        verbose_name='Costo Estimado',
-        help_text='Costo estimado de implementación'
-    )
-    costo_real = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        null=True,
-        blank=True,
-        verbose_name='Costo Real'
-    )
-
-    # Prioridad y estado
-    prioridad = models.CharField(
-        max_length=10,
-        choices=PRIORIDAD_CHOICES,
-        default='MEDIA',
-        verbose_name='Prioridad'
+        verbose_name='Fecha de Implementación Planificada'
     )
     estado = models.CharField(
         max_length=20,
-        choices=ESTADO_CHOICES,
-        default='PROPUESTO',
-        verbose_name='Estado'
+        choices=EstadoTratamiento.choices,
+        default=EstadoTratamiento.PENDIENTE,
+        verbose_name='Estado del Tratamiento'
     )
-
-    # Efectividad
-    efectividad_esperada = models.TextField(
+    efectividad = models.CharField(
+        max_length=10,
         blank=True,
-        verbose_name='Efectividad Esperada',
-        help_text='Resultados esperados del tratamiento'
-    )
-    efectividad_real = models.TextField(
-        blank=True,
-        verbose_name='Efectividad Real',
-        help_text='Resultados obtenidos tras implementación'
-    )
-
-    # Evidencia
-    evidencia = models.TextField(
-        blank=True,
-        verbose_name='Evidencia',
-        help_text='Documentos, registros, etc. que soportan la implementación'
-    )
-
-    # Observaciones
-    observaciones = models.TextField(blank=True, verbose_name='Observaciones')
-
-    # Multi-tenancy
-    empresa_id = models.PositiveBigIntegerField(db_index=True, verbose_name='Empresa ID')
-
-    # Auditoría
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='tratamientos_created',
-        verbose_name='Creado por'
+        verbose_name='Efectividad',
+        help_text='Evaluación de efectividad: Alta/Media/Baja'
     )
 
     class Meta:
         db_table = 'motor_riesgos_tratamiento_riesgo'
         verbose_name = 'Tratamiento de Riesgo'
         verbose_name_plural = 'Tratamientos de Riesgos'
-        ordering = ['prioridad', 'fecha_fin_planificada']
+        ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['empresa_id', 'estado']),
-            models.Index(fields=['empresa_id', 'estrategia']),
-            models.Index(fields=['empresa_id', 'prioridad']),
+            models.Index(fields=['empresa', 'riesgo']),
+            models.Index(fields=['empresa', 'estado']),
         ]
 
     def __str__(self):
-        return f"{self.riesgo.codigo} - {self.get_estrategia_display()}"
-
-    def esta_vencido(self):
-        """Verifica si el tratamiento está vencido"""
-        if self.estado in ['IMPLEMENTADO', 'VERIFICADO', 'CANCELADO']:
-            return False
-        if self.fecha_fin_planificada and self.fecha_fin_planificada < timezone.now().date():
-            return True
-        return False
-
-    def dias_restantes(self):
-        """Calcula días restantes para completar el tratamiento"""
-        if self.fecha_fin_planificada:
-            delta = self.fecha_fin_planificada - timezone.now().date()
-            return delta.days
-        return None
-
-    def porcentaje_avance(self):
-        """Calcula porcentaje de avance según estado"""
-        avances = {
-            'PROPUESTO': 0,
-            'APROBADO': 20,
-            'EN_IMPLEMENTACION': 50,
-            'IMPLEMENTADO': 80,
-            'VERIFICADO': 100,
-            'CANCELADO': 0,
-        }
-        return avances.get(self.estado, 0)
+        return f"{self.riesgo.codigo} - {self.get_tipo_display()}"
 
 
-class MonitoreoRiesgo(models.Model):
+class ControlOperacional(BaseCompanyModel):
     """
-    Registro de monitoreo y seguimiento de riesgos
-    Permite tracking de tendencias y cambios en el tiempo
+    Controles operacionales implementados para gestionar riesgos.
+
+    Clasificación según naturaleza:
+    - Preventivo: Previene la ocurrencia del riesgo
+    - Detectivo: Detecta cuando el riesgo se materializa
+    - Correctivo: Corrige después de la materialización
     """
-    TENDENCIA_CHOICES = [
-        ('AUMENTANDO', 'Aumentando'),
-        ('ESTABLE', 'Estable'),
-        ('DISMINUYENDO', 'Disminuyendo'),
-    ]
+
+    class TipoControl(models.TextChoices):
+        PREVENTIVO = 'preventivo', 'Preventivo'
+        DETECTIVO = 'detectivo', 'Detectivo'
+        CORRECTIVO = 'correctivo', 'Correctivo'
 
     riesgo = models.ForeignKey(
         RiesgoProceso,
-        on_delete=models.CASCADE,
-        related_name='monitoreos',
+        on_delete=CASCADE,
+        related_name='controles',
         verbose_name='Riesgo'
     )
-
-    # Fecha del monitoreo
-    fecha_monitoreo = models.DateField(verbose_name='Fecha de Monitoreo')
-    periodo = models.CharField(
-        max_length=50,
-        verbose_name='Período',
-        help_text='Ej: Q1-2025, Enero 2025, Semestre 1-2025'
+    nombre = models.CharField(
+        max_length=200,
+        verbose_name='Nombre del Control'
     )
-
-    # Reevaluación del riesgo
-    probabilidad_actual = models.IntegerField(
-        choices=RiesgoProceso.PROBABILIDAD_CHOICES,
-        verbose_name='Probabilidad Actual'
+    descripcion = models.TextField(
+        verbose_name='Descripción del Control',
+        help_text='Cómo funciona el control'
     )
-    impacto_actual = models.IntegerField(
-        choices=RiesgoProceso.IMPACTO_CHOICES,
-        verbose_name='Impacto Actual'
+    tipo_control = models.CharField(
+        max_length=15,
+        choices=TipoControl.choices,
+        verbose_name='Tipo de Control'
     )
-    nivel_actual = models.IntegerField(
-        editable=False,
-        verbose_name='Nivel de Riesgo Actual'
-    )
-    interpretacion_actual = models.CharField(
+    frecuencia = models.CharField(
         max_length=20,
-        choices=RiesgoProceso.NIVEL_RIESGO_CHOICES,
-        editable=False,
-        verbose_name='Interpretación Actual'
+        verbose_name='Frecuencia',
+        help_text='Ej: Diaria, Semanal, Mensual, Por evento'
     )
-
-    # Análisis de tendencia
-    tendencia = models.CharField(
-        max_length=20,
-        choices=TENDENCIA_CHOICES,
-        verbose_name='Tendencia'
-    )
-
-    # Indicadores de riesgo (KRIs - Key Risk Indicators)
-    kri_data = models.JSONField(
-        null=True,
-        blank=True,
-        verbose_name='Indicadores de Riesgo (KRI)',
-        help_text='JSON con indicadores específicos del riesgo'
-    )
-
-    # Eventos materializados
-    eventos_materializados = models.TextField(
-        blank=True,
-        verbose_name='Eventos Materializados',
-        help_text='Descripción de eventos ocurridos relacionados con este riesgo'
-    )
-    numero_eventos = models.PositiveIntegerField(
-        default=0,
-        verbose_name='Número de Eventos'
-    )
-
-    # Efectividad de controles
-    controles_efectivos = models.BooleanField(
-        default=True,
-        verbose_name='Controles Efectivos'
-    )
-    controles_observaciones = models.TextField(
-        blank=True,
-        verbose_name='Observaciones sobre Controles'
-    )
-
-    # Acciones requeridas
-    acciones_requeridas = models.TextField(
-        blank=True,
-        verbose_name='Acciones Requeridas',
-        help_text='Nuevas acciones identificadas durante el monitoreo'
-    )
-
-    # Responsable del monitoreo
-    monitoreado_por = models.ForeignKey(
+    responsable = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='monitoreos_realizados',
-        verbose_name='Monitoreado por'
-    )
-
-    # Aprobación
-    aprobado = models.BooleanField(default=False, verbose_name='Aprobado')
-    aprobado_por = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
+        on_delete=SET_NULL,
         null=True,
         blank=True,
-        related_name='monitoreos_aprobados',
-        verbose_name='Aprobado por'
+        related_name='controles_responsable',
+        verbose_name='Responsable del Control'
     )
-    fecha_aprobacion = models.DateField(
+    documentacion = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Documentación Asociada',
+        help_text='Procedimientos, formatos, instrucciones'
+    )
+    efectividad = models.CharField(
+        max_length=10,
+        blank=True,
+        verbose_name='Efectividad',
+        help_text='Alta/Media/Baja'
+    )
+    fecha_ultima_evaluacion = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Aprobación'
+        verbose_name='Fecha Última Evaluación'
     )
-
-    # Observaciones generales
-    observaciones = models.TextField(blank=True, verbose_name='Observaciones')
-
-    # Multi-tenancy
-    empresa_id = models.PositiveBigIntegerField(db_index=True, verbose_name='Empresa ID')
-
-    # Auditoría
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'motor_riesgos_monitoreo_riesgo'
-        verbose_name = 'Monitoreo de Riesgo'
-        verbose_name_plural = 'Monitoreos de Riesgos'
-        ordering = ['-fecha_monitoreo']
+        db_table = 'motor_riesgos_control_operacional'
+        verbose_name = 'Control Operacional'
+        verbose_name_plural = 'Controles Operacionales'
+        ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['empresa_id', 'periodo']),
-            models.Index(fields=['empresa_id', 'riesgo', 'fecha_monitoreo']),
+            models.Index(fields=['empresa', 'riesgo']),
+            models.Index(fields=['empresa', 'tipo_control']),
         ]
 
     def __str__(self):
-        return f"{self.riesgo.codigo} - Monitoreo {self.fecha_monitoreo}"
-
-    def save(self, *args, **kwargs):
-        # Calcular nivel actual
-        self.nivel_actual = self.probabilidad_actual * self.impacto_actual
-
-        # Interpretar nivel
-        if self.nivel_actual >= 15:
-            self.interpretacion_actual = 'CRITICO'
-        elif self.nivel_actual >= 10:
-            self.interpretacion_actual = 'ALTO'
-        elif self.nivel_actual >= 5:
-            self.interpretacion_actual = 'MODERADO'
-        else:
-            self.interpretacion_actual = 'BAJO'
-
-        super().save(*args, **kwargs)
-
-    def comparar_con_anterior(self):
-        """Compara con el monitoreo anterior para detectar cambios"""
-        anterior = MonitoreoRiesgo.objects.filter(
-            riesgo=self.riesgo,
-            fecha_monitoreo__lt=self.fecha_monitoreo
-        ).order_by('-fecha_monitoreo').first()
-
-        if not anterior:
-            return None
-
-        return {
-            'nivel_anterior': anterior.nivel_actual,
-            'nivel_actual': self.nivel_actual,
-            'cambio': self.nivel_actual - anterior.nivel_actual,
-            'porcentaje_cambio': round(
-                ((self.nivel_actual - anterior.nivel_actual) / anterior.nivel_actual) * 100, 2
-            ) if anterior.nivel_actual > 0 else 0
-        }
+        return f"{self.riesgo.codigo} - {self.nombre}"
 
 
-class MapaCalor(models.Model):
+class Oportunidad(BaseCompanyModel):
     """
-    Mapa de calor de riesgos (Heat Map)
-    Snapshot de la matriz de riesgos en un punto del tiempo
-    """
-    TIPO_CHOICES = [
-        ('INHERENTE', 'Riesgo Inherente'),
-        ('RESIDUAL', 'Riesgo Residual'),
-    ]
+    Registro de oportunidades identificadas según ISO 31000.
 
-    nombre = models.CharField(max_length=200, verbose_name='Nombre del Mapa')
-    descripcion = models.TextField(blank=True, verbose_name='Descripción')
-    tipo_mapa = models.CharField(
+    Las oportunidades son el lado positivo del riesgo:
+    eventos potenciales que pueden generar valor o beneficio.
+    """
+
+    class EstadoOportunidad(models.TextChoices):
+        IDENTIFICADA = 'identificada', 'Identificada'
+        EN_EVALUACION = 'en_evaluacion', 'En Evaluación'
+        APROBADA = 'aprobada', 'Aprobada'
+        EN_EJECUCION = 'en_ejecucion', 'En Ejecución'
+        MATERIALIZADA = 'materializada', 'Materializada'
+        DESCARTADA = 'descartada', 'Descartada'
+
+    codigo = models.CharField(
         max_length=20,
-        choices=TIPO_CHOICES,
-        default='RESIDUAL',
-        verbose_name='Tipo de Mapa'
+        verbose_name='Código',
+        help_text='Código único de la oportunidad'
     )
-
-    # Período y alcance
-    periodo = models.CharField(
+    nombre = models.CharField(
+        max_length=200,
+        verbose_name='Nombre de la Oportunidad'
+    )
+    descripcion = models.TextField(
+        verbose_name='Descripción',
+        help_text='Descripción detallada de la oportunidad'
+    )
+    fuente = models.CharField(
         max_length=50,
-        verbose_name='Período',
-        help_text='Ej: Q1-2025, Año 2025'
+        verbose_name='Fuente',
+        help_text='Origen de la oportunidad: Mercado, Tecnología, Proceso, etc.'
     )
-    fecha_snapshot = models.DateField(verbose_name='Fecha del Snapshot')
-
-    # Filtros aplicados
-    procesos_incluidos = models.TextField(
+    impacto_potencial = models.CharField(
+        max_length=10,
+        verbose_name='Impacto Potencial',
+        help_text='Alto/Medio/Bajo'
+    )
+    viabilidad = models.CharField(
+        max_length=10,
+        verbose_name='Viabilidad',
+        help_text='Alta/Media/Baja'
+    )
+    recursos_requeridos = models.TextField(
         blank=True,
-        verbose_name='Procesos Incluidos',
-        help_text='Lista de procesos incluidos en el mapa'
+        verbose_name='Recursos Requeridos',
+        help_text='Recursos necesarios para aprovechar la oportunidad'
     )
-    categorias_incluidas = models.TextField(
-        blank=True,
-        verbose_name='Categorías Incluidas'
-    )
-
-    # Datos del mapa (JSON)
-    datos_matriz = models.JSONField(
-        verbose_name='Datos de la Matriz',
-        help_text='Matriz 5x5 con los riesgos posicionados'
-    )
-
-    # Estadísticas
-    total_riesgos = models.PositiveIntegerField(
-        default=0,
-        verbose_name='Total de Riesgos'
-    )
-    riesgos_criticos = models.PositiveIntegerField(
-        default=0,
-        verbose_name='Riesgos Críticos'
-    )
-    riesgos_altos = models.PositiveIntegerField(
-        default=0,
-        verbose_name='Riesgos Altos'
-    )
-    riesgos_moderados = models.PositiveIntegerField(
-        default=0,
-        verbose_name='Riesgos Moderados'
-    )
-    riesgos_bajos = models.PositiveIntegerField(
-        default=0,
-        verbose_name='Riesgos Bajos'
-    )
-
-    # Análisis y conclusiones
-    analisis = models.TextField(
-        blank=True,
-        verbose_name='Análisis',
-        help_text='Análisis de los resultados del mapa de calor'
-    )
-    recomendaciones = models.TextField(
-        blank=True,
-        verbose_name='Recomendaciones'
-    )
-
-    # Elaboración y aprobación
-    elaborado_por = models.ForeignKey(
+    responsable = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='mapas_calor_elaborados',
-        verbose_name='Elaborado por'
-    )
-    aprobado_por = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
+        on_delete=SET_NULL,
         null=True,
         blank=True,
-        related_name='mapas_calor_aprobados',
-        verbose_name='Aprobado por'
+        related_name='oportunidades_responsable',
+        verbose_name='Responsable'
     )
-    fecha_aprobacion = models.DateField(
-        null=True,
-        blank=True,
-        verbose_name='Fecha de Aprobación'
+    estado = models.CharField(
+        max_length=20,
+        choices=EstadoOportunidad.choices,
+        default=EstadoOportunidad.IDENTIFICADA,
+        verbose_name='Estado'
     )
-
-    # Multi-tenancy
-    empresa_id = models.PositiveBigIntegerField(db_index=True, verbose_name='Empresa ID')
-
-    # Auditoría
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'motor_riesgos_mapa_calor'
-        verbose_name = 'Mapa de Calor'
-        verbose_name_plural = 'Mapas de Calor'
-        ordering = ['-fecha_snapshot']
+        db_table = 'motor_riesgos_oportunidad'
+        verbose_name = 'Oportunidad'
+        verbose_name_plural = 'Oportunidades'
+        ordering = ['-created_at']
+        unique_together = [['empresa', 'codigo']]
         indexes = [
-            models.Index(fields=['empresa_id', 'periodo']),
-            models.Index(fields=['empresa_id', 'tipo_mapa']),
+            models.Index(fields=['empresa', 'estado']),
+            models.Index(fields=['empresa', 'fuente']),
         ]
 
     def __str__(self):
-        return f"{self.nombre} - {self.periodo}"
-
-    def generar_datos_matriz(self, queryset_riesgos):
-        """
-        Genera los datos JSON de la matriz 5x5 a partir de un queryset de riesgos
-        """
-        matriz = {
-            'celdas': {},  # Formato: 'probabilidad_impacto': [lista de riesgos]
-            'metadata': {
-                'generado': timezone.now().isoformat(),
-                'total_riesgos': 0,
-            }
-        }
-
-        contadores = {
-            'CRITICO': 0,
-            'ALTO': 0,
-            'MODERADO': 0,
-            'BAJO': 0,
-        }
-
-        for riesgo in queryset_riesgos:
-            if self.tipo_mapa == 'INHERENTE':
-                prob = riesgo.probabilidad_inherente
-                imp = riesgo.impacto_inherente
-                interpretacion = riesgo.interpretacion_inherente
-            else:
-                prob = riesgo.probabilidad_residual
-                imp = riesgo.impacto_residual
-                interpretacion = riesgo.interpretacion_residual
-
-            key = f"{prob}_{imp}"
-
-            if key not in matriz['celdas']:
-                matriz['celdas'][key] = []
-
-            matriz['celdas'][key].append({
-                'codigo': riesgo.codigo,
-                'nombre': riesgo.nombre,
-                'categoria': riesgo.categoria.nombre,
-                'proceso': riesgo.proceso,
-                'nivel': prob * imp,
-                'interpretacion': interpretacion,
-            })
-
-            contadores[interpretacion] += 1
-
-        matriz['metadata']['total_riesgos'] = queryset_riesgos.count()
-        matriz['metadata']['distribucion'] = contadores
-
-        self.datos_matriz = matriz
-        self.total_riesgos = queryset_riesgos.count()
-        self.riesgos_criticos = contadores['CRITICO']
-        self.riesgos_altos = contadores['ALTO']
-        self.riesgos_moderados = contadores['MODERADO']
-        self.riesgos_bajos = contadores['BAJO']
-
-    def get_distribucion_porcentaje(self):
-        """Retorna la distribución de riesgos en porcentajes"""
-        if self.total_riesgos == 0:
-            return {
-                'criticos': 0,
-                'altos': 0,
-                'moderados': 0,
-                'bajos': 0,
-            }
-
-        return {
-            'criticos': round((self.riesgos_criticos / self.total_riesgos) * 100, 2),
-            'altos': round((self.riesgos_altos / self.total_riesgos) * 100, 2),
-            'moderados': round((self.riesgos_moderados / self.total_riesgos) * 100, 2),
-            'bajos': round((self.riesgos_bajos / self.total_riesgos) * 100, 2),
-        }
+        return f"{self.codigo} - {self.nombre}"

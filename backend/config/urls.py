@@ -30,7 +30,10 @@ urlpatterns = [
     path('api/core/', include('apps.core.urls')),
 
     # Apps Legacy Funcionales (pendiente migración a supply_chain)
-    path('api/proveedores/', include('apps.proveedores.urls')),
+    path('api/proveedores/', include('apps.proveedores.urls')),  # LEGACY - pendiente eliminar
+
+    # Supply Chain (Módulo 6 - Nivel Operativo)
+    path('api/supply-chain/', include('apps.supply_chain.gestion_proveedores.urls')),
 
     # Dirección Estratégica (Módulo 1 - Nivel Estratégico)
     path('api/organizacion/', include('apps.gestion_estrategica.organizacion.urls')),
@@ -51,6 +54,30 @@ urlpatterns = [
 
     # HSEQ Management - Torre de Control (Módulo 5)
     path('api/hseq/', include('apps.hseq_management.urls')),
+
+    # Production Ops - Operaciones de Producción (Módulo 7)
+    path('api/production-ops/', include('apps.production_ops.urls')),
+
+    # Logistics Fleet - Logística y Flota (Módulo 8)
+    path('api/logistics-fleet/', include('apps.logistics_fleet.urls')),
+
+    # Sales CRM - Ventas y CRM (Módulo 9)
+    path('api/sales-crm/', include('apps.sales_crm.urls')),
+
+    # Talent Hub - Gestión del Talento Humano (Módulo 10 - Habilitadores)
+    path('api/talent-hub/', include('apps.talent_hub.urls')),
+
+    # Admin Finance - Administración Financiera (Módulo 11 - Habilitadores)
+    path('api/admin-finance/', include('apps.admin_finance.urls')),
+
+    # Accounting - Contabilidad (Módulo 12 - ACTIVABLE)
+    path('api/accounting/', include('apps.accounting.urls')),
+
+    # Analytics - Analítica y Gestión de Indicadores (Módulo 13)
+    path('api/analytics/', include('apps.analytics.urls')),
+
+    # Audit System - Sistema de Auditoría y Notificaciones (Módulo 14)
+    path('api/audit/', include('apps.audit_system.urls')),
 ]
 
 # Serve media files in development

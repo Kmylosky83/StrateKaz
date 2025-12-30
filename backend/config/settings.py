@@ -25,7 +25,13 @@ INSTALLED_APPS = [
     'django_celery_results',
     'apps.core',
     # Apps Legacy Funcionales (pendiente migración a nueva arquitectura)
-    'apps.proveedores',          # -> supply_chain/gestion_proveedores
+    'apps.proveedores',          # LEGACY -> supply_chain/gestion_proveedores (pendiente eliminar)
+    # Supply Chain (Módulo 6 - Nivel Operativo)
+    'apps.supply_chain.catalogos',                   # TAB: Catálogos Supply Chain
+    'apps.supply_chain.gestion_proveedores',         # TAB: Gestión de Proveedores
+    'apps.supply_chain.programacion_abastecimiento', # TAB: Programación Abastecimiento
+    'apps.supply_chain.compras',                     # TAB: Compras
+    'apps.supply_chain.almacenamiento',              # TAB: Almacenamiento
     # Dirección Estratégica (Módulo 1) - TAB = Django App
     'apps.gestion_estrategica.configuracion',    # TAB: Configuración
     'apps.gestion_estrategica.organizacion',     # TAB: Organización
@@ -62,6 +68,54 @@ INSTALLED_APPS = [
     'apps.hseq_management.emergencias',            # TAB: Emergencias
     'apps.hseq_management.gestion_ambiental',      # TAB: Gestión Ambiental ISO 14001
     'apps.hseq_management.mejora_continua',        # TAB: Mejora Continua
+    # Production Ops - Operaciones de Producción (Módulo 7 - Nivel Operativo)
+    'apps.production_ops.recepcion',              # TAB: Recepción de Materia Prima
+    'apps.production_ops.procesamiento',          # TAB: Procesamiento y Lotes
+    'apps.production_ops.mantenimiento',          # TAB: Mantenimiento de Activos
+    'apps.production_ops.producto_terminado',     # TAB: Producto Terminado
+    # Logistics Fleet - Logística y Flota (Módulo 8 - Nivel Operativo)
+    'apps.logistics_fleet.gestion_flota',         # TAB: Gestión de Flota
+    'apps.logistics_fleet.gestion_transporte',    # TAB: Gestión de Transporte
+    # Sales CRM - Ventas y CRM (Módulo 9 - Nivel Comercial)
+    'apps.sales_crm.gestion_clientes',            # TAB: Gestión de Clientes
+    'apps.sales_crm.pipeline_ventas',             # TAB: Pipeline de Ventas
+    'apps.sales_crm.pedidos_facturacion',         # TAB: Pedidos y Facturación
+    'apps.sales_crm.servicio_cliente',            # TAB: Servicio al Cliente
+    # Talent Hub - Gestión del Talento Humano (Módulo 10 - Habilitadores)
+    'apps.talent_hub.estructura_cargos',          # TAB: Estructura de Cargos y Profesiogramas
+    'apps.talent_hub.seleccion_contratacion',     # TAB: Selección y Contratación
+    'apps.talent_hub.colaboradores',              # TAB: Colaboradores (Empleados)
+    'apps.talent_hub.onboarding_induccion',       # TAB: Onboarding e Inducción
+    'apps.talent_hub.formacion_reinduccion',      # TAB: Formación y Reinducción (LMS)
+    'apps.talent_hub.desempeno',                  # TAB: Desempeño (Evaluaciones, Reconocimientos)
+    'apps.talent_hub.control_tiempo',             # TAB: Control de Tiempo (Asistencia, Horas Extras)
+    'apps.talent_hub.novedades',                  # TAB: Novedades (Incapacidades, Licencias, Permisos, Vacaciones)
+    'apps.talent_hub.proceso_disciplinario',      # TAB: Proceso Disciplinario
+    'apps.talent_hub.nomina',                     # TAB: Nómina y Prestaciones
+    'apps.talent_hub.off_boarding',               # TAB: Off-Boarding y Liquidaciones
+    # Admin Finance - Administración Financiera (Módulo 11 - Habilitadores)
+    'apps.admin_finance.tesoreria',               # TAB: Tesorería y Flujo de Caja
+    'apps.admin_finance.presupuesto',             # TAB: Presupuesto y Control
+    'apps.admin_finance.activos_fijos',           # TAB: Activos Fijos y Depreciaciones
+    'apps.admin_finance.servicios_generales',     # TAB: Servicios Generales
+    # Accounting - Contabilidad (Módulo 12 - ACTIVABLE)
+    'apps.accounting.config_contable',            # TAB: Configuración Contable (PUC)
+    'apps.accounting.movimientos',                # TAB: Movimientos y Comprobantes
+    'apps.accounting.informes_contables',         # TAB: Informes Contables
+    'apps.accounting.integracion',                # TAB: Integración Contable
+    # Analytics - Analítica y Gestión de Indicadores (Módulo 13 - Semanas 23-24)
+    'apps.analytics.config_indicadores',          # TAB: Configuración de KPIs
+    'apps.analytics.dashboard_gerencial',         # TAB: Dashboards Gerenciales
+    'apps.analytics.indicadores_area',            # TAB: Valores y Seguimiento
+    'apps.analytics.analisis_tendencias',         # TAB: Análisis de Tendencias (Semana 24)
+    'apps.analytics.generador_informes',          # TAB: Generador de Informes (Semana 24)
+    'apps.analytics.acciones_indicador',          # TAB: Planes de Acción KPI (Semana 24)
+    'apps.analytics.exportacion_integracion',     # TAB: Exportación de Datos (Semana 24)
+    # Audit System - Sistema de Auditoría y Notificaciones (Módulo 14 - Semana 25)
+    'apps.audit_system.logs_sistema',             # TAB: Logs del Sistema
+    'apps.audit_system.centro_notificaciones',    # TAB: Centro de Notificaciones
+    'apps.audit_system.config_alertas',           # TAB: Configuración de Alertas
+    'apps.audit_system.tareas_recordatorios',     # TAB: Tareas y Recordatorios
 ]
 
 MIDDLEWARE = [

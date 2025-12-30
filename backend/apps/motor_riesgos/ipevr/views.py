@@ -1,203 +1,269 @@
 """
-Views para IPEVR - GTC-45
+Views para IPEVR - Identificacion de Peligros, Evaluacion y Valoracion de Riesgos
+==================================================================================
+
+ViewSets para la gestion de la matriz IPEVR segun GTC-45.
+Incluye acciones especiales para resumen, estadisticas y filtrado por criterios.
+
+Autor: Sistema ERP StrateKaz
+Fecha: 26 Diciembre 2025
 """
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from django.db.models import Count, Q
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter, OrderingFilter
+from django.db.models import Count, Q, Sum
 
-from .models import ClasificacionPeligro, Peligro, MatrizIPEVR, ControlPropuesto
+from apps.core.mixins import StandardViewSetMixin
+from .models import ClasificacionPeligro, PeligroGTC45, MatrizIPEVR, ControlSST
 from .serializers import (
     ClasificacionPeligroSerializer,
-    PeligroSerializer,
+    PeligroGTC45Serializer,
     MatrizIPEVRListSerializer,
     MatrizIPEVRDetailSerializer,
-    ControlPropuestoSerializer
+    ControlSSTSerializer
 )
 
 
-class ClasificacionPeligroViewSet(viewsets.ModelViewSet):
-    """ViewSet para ClasificacionPeligro"""
+class ClasificacionPeligroViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+    """
+    ViewSet para Clasificaciones de Peligros GTC-45.
+
+    Catalogo global de las 7 categorias de peligros ocupacionales.
+    Incluye funcionalidad del StandardViewSetMixin.
+    """
     queryset = ClasificacionPeligro.objects.all()
     serializer_class = ClasificacionPeligroSerializer
     permission_classes = [IsAuthenticated]
-    filterset_fields = ['tipo', 'is_active']
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['categoria', 'is_active']
     search_fields = ['codigo', 'nombre', 'descripcion']
-    ordering_fields = ['tipo', 'codigo', 'nombre']
-    ordering = ['tipo', 'codigo']
+    ordering_fields = ['orden', 'categoria', 'codigo']
+    ordering = ['orden', 'categoria']
+
+    @action(detail=False, methods=['get'])
+    def por_categoria(self, request):
+        """Retorna clasificaciones agrupadas por categoria."""
+        clasificaciones = self.get_queryset().filter(is_active=True)
+        resultado = {}
+        for cat in ClasificacionPeligro.Categoria.choices:
+            cat_code = cat[0]
+            cat_name = cat[1]
+            items = clasificaciones.filter(categoria=cat_code)
+            resultado[cat_code] = {
+                'nombre': cat_name,
+                'items': ClasificacionPeligroSerializer(items, many=True).data
+            }
+        return Response(resultado)
 
 
-class PeligroViewSet(viewsets.ModelViewSet):
-    """ViewSet para Peligro"""
-    queryset = Peligro.objects.select_related('clasificacion', 'created_by')
-    serializer_class = PeligroSerializer
+class PeligroGTC45ViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+    """
+    ViewSet para Peligros GTC-45.
+
+    Catalogo de 78 peligros segun la guia tecnica colombiana.
+    Incluye funcionalidad del StandardViewSetMixin.
+    """
+    queryset = PeligroGTC45.objects.select_related('clasificacion').all()
+    serializer_class = PeligroGTC45Serializer
     permission_classes = [IsAuthenticated]
-    filterset_fields = ['clasificacion', 'clasificacion__tipo']
-    search_fields = ['codigo', 'descripcion', 'fuente', 'efectos']
-    ordering_fields = ['codigo', 'created_at']
-    ordering = ['clasificacion', 'codigo']
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['clasificacion', 'clasificacion__categoria', 'is_active']
+    search_fields = ['codigo', 'nombre', 'descripcion', 'efectos_posibles']
+    ordering_fields = ['orden', 'codigo', 'nombre']
+    ordering = ['clasificacion', 'orden']
 
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        if hasattr(self.request.user, 'empresa_id'):
-            queryset = queryset.filter(empresa_id=self.request.user.empresa_id)
-        return queryset
+    @action(detail=False, methods=['get'])
+    def por_clasificacion(self, request):
+        """Retorna peligros agrupados por clasificacion."""
+        clasificacion_id = request.query_params.get('clasificacion_id')
+        peligros = self.get_queryset().filter(is_active=True)
 
-    def perform_create(self, serializer):
-        serializer.save(
-            created_by=self.request.user,
-            empresa_id=getattr(self.request.user, 'empresa_id', 1)
-        )
+        if clasificacion_id:
+            peligros = peligros.filter(clasificacion_id=clasificacion_id)
+
+        resultado = {}
+        for clasificacion in ClasificacionPeligro.objects.filter(is_active=True):
+            items = peligros.filter(clasificacion=clasificacion)
+            if items.exists():
+                resultado[clasificacion.codigo] = {
+                    'nombre': clasificacion.nombre,
+                    'categoria': clasificacion.categoria,
+                    'color': clasificacion.color,
+                    'peligros': PeligroGTC45Serializer(items, many=True).data
+                }
+        return Response(resultado)
 
 
-class MatrizIPEVRViewSet(viewsets.ModelViewSet):
-    """ViewSet para MatrizIPEVR con acciones personalizadas"""
-    queryset = MatrizIPEVR.objects.select_related('peligro', 'peligro__clasificacion', 'created_by')
+class MatrizIPEVRViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+    """
+    ViewSet para Matriz IPEVR.
+
+    Gestion completa de la matriz de identificacion de peligros
+    y valoracion de riesgos segun GTC-45.
+    Incluye funcionalidad del StandardViewSetMixin.
+    """
+    queryset = MatrizIPEVR.objects.select_related(
+        'peligro', 'peligro__clasificacion', 'responsable', 'created_by'
+    ).all()
     permission_classes = [IsAuthenticated]
-    filterset_fields = ['proceso', 'estado', 'aceptabilidad', 'interpretacion_nr', 'rutinaria']
-    search_fields = ['codigo', 'proceso', 'zona_lugar', 'actividad', 'tarea']
-    ordering_fields = ['nivel_riesgo', 'proceso', 'fecha_evaluacion', 'created_at']
-    ordering = ['-nivel_riesgo']
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['empresa_id', 'area', 'cargo', 'proceso', 'estado', 'rutinaria', 'is_active']
+    search_fields = ['area', 'cargo', 'proceso', 'actividad', 'tarea']
+    ordering_fields = ['created_at', 'fecha_valoracion', 'area', 'cargo']
+    ordering = ['-created_at']
 
     def get_serializer_class(self):
         if self.action == 'list':
             return MatrizIPEVRListSerializer
         return MatrizIPEVRDetailSerializer
 
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        if hasattr(self.request.user, 'empresa_id'):
-            queryset = queryset.filter(empresa_id=self.request.user.empresa_id)
-        return queryset
-
-    def perform_create(self, serializer):
-        serializer.save(
-            created_by=self.request.user,
-            empresa_id=getattr(self.request.user, 'empresa_id', 1)
-        )
-
     @action(detail=False, methods=['get'])
-    def resumen_riesgos(self, request):
-        """Resumen de riesgos por nivel de interpretación"""
-        empresa_id = getattr(request.user, 'empresa_id', 1)
+    def resumen(self, request):
+        """Resumen estadistico de la matriz IPEVR."""
+        empresa_id = request.query_params.get('empresa', 1)
+        matrices = self.get_queryset().filter(empresa_id=empresa_id, is_active=True)
 
-        matrices = MatrizIPEVR.objects.filter(
-            empresa_id=empresa_id,
-            estado='VIGENTE'
-        )
+        # Contar por interpretacion NR
+        nivel_i = matrices.filter(estado='vigente').count()
 
+        # Calcular manualmente ya que son properties
         resumen = {
-            'I': matrices.filter(interpretacion_nr='I').count(),
-            'II': matrices.filter(interpretacion_nr='II').count(),
-            'III': matrices.filter(interpretacion_nr='III').count(),
-            'IV': matrices.filter(interpretacion_nr='IV').count(),
             'total': matrices.count(),
-            'total_expuestos': sum(m.num_expuestos for m in matrices),
+            'vigentes': matrices.filter(estado='vigente').count(),
+            'borradores': matrices.filter(estado='borrador').count(),
+            'total_expuestos': matrices.aggregate(total=Sum('num_expuestos'))['total'] or 0,
+            'por_estado': list(
+                matrices.values('estado').annotate(cantidad=Count('id')).order_by('estado')
+            ),
+            'por_area': list(
+                matrices.values('area').annotate(cantidad=Count('id')).order_by('-cantidad')[:10]
+            ),
+            'por_cargo': list(
+                matrices.values('cargo').annotate(cantidad=Count('id')).order_by('-cantidad')[:10]
+            ),
         }
-
         return Response(resumen)
 
     @action(detail=False, methods=['get'])
-    def por_proceso(self, request):
-        """Estadísticas agrupadas por proceso"""
-        empresa_id = getattr(request.user, 'empresa_id', 1)
-
-        stats = MatrizIPEVR.objects.filter(
+    def criticos(self, request):
+        """Lista de riesgos criticos (niveles I y II)."""
+        empresa_id = request.query_params.get('empresa', 1)
+        matrices = self.get_queryset().filter(
             empresa_id=empresa_id,
-            estado='VIGENTE'
-        ).values('proceso').annotate(
-            total=Count('id'),
-            criticos=Count('id', filter=Q(interpretacion_nr='I')),
-            altos=Count('id', filter=Q(interpretacion_nr='II')),
-            medios=Count('id', filter=Q(interpretacion_nr='III')),
-            bajos=Count('id', filter=Q(interpretacion_nr='IV')),
-        ).order_by('-criticos', '-altos')
+            estado='vigente',
+            is_active=True
+        )
 
+        # Filtrar por nivel de riesgo alto (NR >= 150)
+        criticos = [m for m in matrices if m.nivel_riesgo >= 150]
+        serializer = MatrizIPEVRListSerializer(criticos, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def por_area(self, request):
+        """Matrices agrupadas por area."""
+        empresa_id = request.query_params.get('empresa', 1)
+        stats = self.get_queryset().filter(
+            empresa_id=empresa_id,
+            estado='vigente',
+            is_active=True
+        ).values('area').annotate(
+            total=Count('id'),
+        ).order_by('-total')
         return Response(list(stats))
 
     @action(detail=False, methods=['get'])
-    def por_tipo_peligro(self, request):
-        """Estadísticas agrupadas por tipo de peligro"""
-        empresa_id = getattr(request.user, 'empresa_id', 1)
-
-        stats = MatrizIPEVR.objects.filter(
+    def por_cargo(self, request):
+        """Matrices agrupadas por cargo."""
+        empresa_id = request.query_params.get('empresa', 1)
+        stats = self.get_queryset().filter(
             empresa_id=empresa_id,
-            estado='VIGENTE'
+            estado='vigente',
+            is_active=True
+        ).values('cargo').annotate(
+            total=Count('id'),
+        ).order_by('-total')
+        return Response(list(stats))
+
+    @action(detail=False, methods=['get'])
+    def por_peligro(self, request):
+        """Matrices agrupadas por tipo de peligro."""
+        empresa_id = request.query_params.get('empresa', 1)
+        stats = self.get_queryset().filter(
+            empresa_id=empresa_id,
+            estado='vigente',
+            is_active=True
         ).values(
-            'peligro__clasificacion__tipo',
+            'peligro__clasificacion__categoria',
             'peligro__clasificacion__nombre'
         ).annotate(
             total=Count('id'),
-            criticos=Count('id', filter=Q(interpretacion_nr='I')),
-            altos=Count('id', filter=Q(interpretacion_nr='II')),
-        ).order_by('-criticos', '-total')
-
+        ).order_by('-total')
         return Response(list(stats))
-
-    @action(detail=False, methods=['get'])
-    def criticos(self, request):
-        """Lista de riesgos críticos (Nivel I y II)"""
-        empresa_id = getattr(request.user, 'empresa_id', 1)
-
-        matrices = MatrizIPEVR.objects.filter(
-            empresa_id=empresa_id,
-            estado='VIGENTE',
-            interpretacion_nr__in=['I', 'II']
-        ).order_by('-nivel_riesgo')
-
-        serializer = MatrizIPEVRListSerializer(matrices, many=True)
-        return Response(serializer.data)
 
     @action(detail=True, methods=['post'])
     def cambiar_estado(self, request, pk=None):
-        """Cambiar estado de la matriz"""
+        """Cambiar el estado de una matriz IPEVR."""
         matriz = self.get_object()
         nuevo_estado = request.data.get('estado')
 
-        if nuevo_estado not in dict(MatrizIPEVR.ESTADO_CHOICES):
+        estados_validos = [e[0] for e in MatrizIPEVR.EstadoMatriz.choices]
+        if nuevo_estado not in estados_validos:
             return Response(
-                {'error': 'Estado inválido'},
+                {'error': f'Estado invalido. Opciones: {estados_validos}'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         matriz.estado = nuevo_estado
         matriz.save()
-
-        serializer = self.get_serializer(matriz)
+        serializer = MatrizIPEVRDetailSerializer(matriz)
         return Response(serializer.data)
 
 
-class ControlPropuestoViewSet(viewsets.ModelViewSet):
-    """ViewSet para ControlPropuesto"""
-    queryset = ControlPropuesto.objects.select_related('matriz', 'responsable')
-    serializer_class = ControlPropuestoSerializer
+class ControlSSTViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+    """
+    ViewSet para Controles SST.
+
+    Gestion de controles de seguridad y salud en el trabajo
+    asociados a la matriz IPEVR.
+    Incluye funcionalidad del StandardViewSetMixin.
+    """
+    queryset = ControlSST.objects.select_related(
+        'matriz_ipevr', 'responsable', 'created_by'
+    ).all()
+    serializer_class = ControlSSTSerializer
     permission_classes = [IsAuthenticated]
-    filterset_fields = ['matriz', 'tipo_control', 'estado', 'responsable']
-    search_fields = ['descripcion']
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['empresa_id', 'matriz_ipevr', 'tipo_control', 'estado', 'efectividad', 'is_active']
+    search_fields = ['descripcion', 'observaciones']
     ordering_fields = ['tipo_control', 'fecha_implementacion', 'created_at']
-    ordering = ['tipo_control', 'fecha_implementacion']
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        if hasattr(self.request.user, 'empresa_id'):
-            queryset = queryset.filter(empresa_id=self.request.user.empresa_id)
-        return queryset
-
-    def perform_create(self, serializer):
-        serializer.save(
-            empresa_id=getattr(self.request.user, 'empresa_id', 1)
-        )
+    ordering = ['tipo_control', '-created_at']
 
     @action(detail=False, methods=['get'])
     def pendientes(self, request):
-        """Controles pendientes de implementación"""
-        empresa_id = getattr(request.user, 'empresa_id', 1)
-
-        controles = ControlPropuesto.objects.filter(
+        """Controles pendientes de implementacion."""
+        empresa_id = request.query_params.get('empresa', 1)
+        controles = self.get_queryset().filter(
             empresa_id=empresa_id,
-            estado__in=['PROPUESTO', 'EN_IMPLEMENTACION']
+            estado__in=['propuesto', 'en_implementacion'],
+            is_active=True
         ).order_by('fecha_implementacion')
-
         serializer = self.get_serializer(controles, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def por_tipo(self, request):
+        """Estadisticas de controles por tipo."""
+        empresa_id = request.query_params.get('empresa', 1)
+        stats = self.get_queryset().filter(
+            empresa_id=empresa_id,
+            is_active=True
+        ).values('tipo_control').annotate(
+            total=Count('id'),
+            implementados=Count('id', filter=Q(estado='implementado')),
+            verificados=Count('id', filter=Q(estado='verificado')),
+        ).order_by('tipo_control')
+        return Response(list(stats))

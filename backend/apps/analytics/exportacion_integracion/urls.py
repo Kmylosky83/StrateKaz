@@ -1,14 +1,9 @@
-"""
-URLs para exportacion_integracion - analytics
-"""
-from django.urls import path, include
+"""URLs para Exportación e Integración"""
 from rest_framework.routers import DefaultRouter
-
-app_name = 'exportacion_integracion'
+from .views import ConfiguracionExportacionViewSet, LogExportacionViewSet
 
 router = DefaultRouter()
-# TODO: Registrar ViewSets cuando se implementen
+router.register(r'configuraciones', ConfiguracionExportacionViewSet, basename='configuracion-exportacion')
+router.register(r'logs', LogExportacionViewSet, basename='log-exportacion')
 
-urlpatterns = [
-    path('', include(router.urls)),
-]
+urlpatterns = router.urls

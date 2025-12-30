@@ -39,15 +39,14 @@ class TipoRequisito(TimestampedModel, SoftDeleteModel):
         return self.nombre
 
 
-class RequisitoLegal(TimestampedModel, SoftDeleteModel, AuditModel):
+class RequisitoLegal(AuditModel, SoftDeleteModel):
     """
     Catálogo global de requisitos legales aplicables.
     Define qué documentos/licencias/permisos existen y a qué módulos aplican.
 
     Hereda de:
-    - TimestampedModel: created_at, updated_at
+    - AuditModel: created_at, updated_at (de TimestampedModel) + created_by, updated_by
     - SoftDeleteModel: is_active, deleted_at, soft_delete(), restore()
-    - AuditModel: created_by, updated_by
     """
     class Estado(models.TextChoices):
         VIGENTE = "vigente", "Vigente"

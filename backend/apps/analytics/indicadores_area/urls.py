@@ -1,14 +1,13 @@
 """
-URLs para indicadores_area - analytics
+URLs para Indicadores Área - Analytics
 """
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-
-app_name = 'indicadores_area'
+from .views import ValorKPIViewSet, AccionPorKPIViewSet, AlertaKPIViewSet
 
 router = DefaultRouter()
-# TODO: Registrar ViewSets cuando se implementen
+router.register(r'valores', ValorKPIViewSet, basename='valor-kpi')
+router.register(r'acciones', AccionPorKPIViewSet, basename='accion-kpi')
+router.register(r'alertas', AlertaKPIViewSet, basename='alerta-kpi')
 
-urlpatterns = [
-    path('', include(router.urls)),
-]
+urlpatterns = router.urls

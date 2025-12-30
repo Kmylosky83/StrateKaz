@@ -161,6 +161,15 @@ class BaseCompanyModel(AuditModel, SoftDeleteModel):
 
     class Meta:
         abstract = True
+        # Índices compuestos para optimización de queries multi-tenant
+        indexes = [
+            # Índice compuesto: empresa + activo + fecha creación (queries más comunes)
+            models.Index(fields=['empresa', 'is_active', '-created_at'], name='%(app_label)s_%(class)s_emp_act_cre'),
+            # Índice compuesto: empresa + fecha actualización (reportes)
+            models.Index(fields=['empresa', '-updated_at'], name='%(app_label)s_%(class)s_emp_upd'),
+            # Índice para soft delete con empresa
+            models.Index(fields=['empresa', 'deleted_at'], name='%(app_label)s_%(class)s_emp_del'),
+        ]
 
     def get_empresa_info(self):
         """Método de conveniencia para obtener información de la empresa."""

@@ -18,6 +18,8 @@ from django.db.models import Q, Count, Sum, Avg, F, DecimalField
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from datetime import timedelta
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 
 from .models import (
     TipoCliente, EstadoCliente, CanalVenta, Cliente,
@@ -118,21 +120,58 @@ class CanalVentaViewSet(viewsets.ModelViewSet):
 # VIEWSETS PRINCIPALES - CLIENTES
 # ==============================================================================
 
+@extend_schema_view(
+    list=extend_schema(
+        summary='Listar clientes',
+        description='Obtiene el listado de clientes con paginación, filtros y búsqueda avanzada',
+        tags=['Sales CRM']
+    ),
+    retrieve=extend_schema(
+        summary='Obtener detalle de cliente',
+        description='Obtiene el detalle completo de un cliente incluyendo contactos, scoring y segmentos',
+        tags=['Sales CRM']
+    ),
+    create=extend_schema(
+        summary='Crear nuevo cliente',
+        description='Registra un nuevo cliente en el sistema',
+        tags=['Sales CRM']
+    ),
+    update=extend_schema(
+        summary='Actualizar cliente',
+        description='Actualiza completamente la información de un cliente',
+        tags=['Sales CRM']
+    ),
+    partial_update=extend_schema(
+        summary='Actualizar parcialmente cliente',
+        description='Actualiza campos específicos de un cliente',
+        tags=['Sales CRM']
+    ),
+    destroy=extend_schema(
+        summary='Eliminar cliente',
+        description='Elimina un cliente del sistema (soft delete)',
+        tags=['Sales CRM']
+    )
+)
 class ClienteViewSet(viewsets.ModelViewSet):
     """
-    ViewSet para clientes.
+    ViewSet para gestión completa de clientes
 
-    list: Listar clientes con paginación y filtros
-    retrieve: Obtener detalle completo de un cliente
-    create: Crear nuevo cliente
-    update: Actualizar cliente
-    partial_update: Actualizar parcialmente cliente
-    destroy: Eliminar cliente (soft delete)
+    Permite administrar el portafolio de clientes del sistema, incluyendo:
+    - Información de contacto y documentación
+    - Asignación de vendedores y canales de venta
+    - Segmentación de clientes
+    - Scoring y análisis de comportamiento
+    - Historial de compras y métricas
+    - Dashboard con indicadores clave
 
-    Acciones adicionales:
-    - actualizar_scoring: Recalcular scoring del cliente
-    - historial_compras: Obtener historial de compras
-    - dashboard: Dashboard con métricas de clientes
+    Filtros disponibles:
+    - tipo_cliente: Tipo de cliente (PERSONA_NATURAL, JURIDICA, etc.)
+    - estado_cliente: Estado actual del cliente
+    - canal_venta: Canal de venta asignado
+    - vendedor_asignado: Vendedor responsable
+    - ciudad, departamento: Ubicación geográfica
+    - sin_compras: Clientes que no han comprado (true/false)
+    - dias_inactividad: Días sin comprar (número)
     """
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
@@ -214,6 +253,11 @@ class ClienteViewSet(viewsets.ModelViewSet):
         """Actualizar usuario de modificación."""
         serializer.save(updated_by=self.request.user)
 
+    @extend_schema(
+        summary='Actualizar scoring del cliente',
+        description='Recalcula el scoring del cliente basado en su comportamiento de compras y actividad',
+        tags=['Sales CRM']
+    )
     @action(detail=True, methods=['post'])
     def actualizar_scoring(self, request, pk=None):
         """
@@ -235,6 +279,11 @@ class ClienteViewSet(viewsets.ModelViewSet):
             'scoring': serializer.data
         })
 
+    @extend_schema(
+        summary='Obtener historial de compras',
+        description='Retorna el historial completo de compras del cliente con métricas y estadísticas',
+        tags=['Sales CRM']
+    )
     @action(detail=True, methods=['get'])
     def historial_compras(self, request, pk=None):
         """
@@ -258,6 +307,19 @@ class ClienteViewSet(viewsets.ModelViewSet):
             'historial': historial
         })
 
+    @extend_schema(
+        summary='Dashboard de clientes',
+        description='''
+        Retorna un dashboard completo con métricas de clientes:
+        - Total de clientes y clientes activos
+        - Distribución por estado y tipo
+        - Clientes por vendedor
+        - Top 10 clientes por compras
+        - Métricas de scoring
+        - Clientes sin compras e inactivos
+        ''',
+        tags=['Sales CRM']
+    )
     @action(detail=False, methods=['get'])
     def dashboard(self, request):
         """

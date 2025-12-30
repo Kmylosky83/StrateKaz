@@ -1,11 +1,39 @@
 from pathlib import Path
 from decouple import config
 from datetime import timedelta
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
+from sentry_sdk.integrations.celery import CeleryIntegration
+from sentry_sdk.integrations.redis import RedisIntegration
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-me-in-production')
 DEBUG = config('DEBUG', default=True, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
+
+# ═══════════════════════════════════════════════════
+# SENTRY CONFIGURATION - ERROR TRACKING
+# ═══════════════════════════════════════════════════
+SENTRY_DSN = config('SENTRY_DSN', default='')
+SENTRY_ENVIRONMENT = config('SENTRY_ENVIRONMENT', default='development')
+
+if SENTRY_DSN and not DEBUG:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[
+            DjangoIntegration(),
+            CeleryIntegration(),
+            RedisIntegration(),
+        ],
+        environment=SENTRY_ENVIRONMENT,
+        traces_sample_rate=config('SENTRY_TRACES_SAMPLE_RATE', default=0.1, cast=float),
+        profiles_sample_rate=config('SENTRY_PROFILES_SAMPLE_RATE', default=0.1, cast=float),
+        send_default_pii=False,
+        attach_stacktrace=True,
+        request_bodies='medium',
+        max_breadcrumbs=50,
+        before_send=lambda event, hint: event if not DEBUG else None,
+    )
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -18,9 +46,11 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
+    'csp',
     'django_filters',
     'auditlog',
     'debug_toolbar',
+    'drf_spectacular',
     'django_celery_beat',
     'django_celery_results',
     'apps.core',
@@ -121,6 +151,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    'csp.middleware.CSPMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -130,6 +161,9 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
     'auditlog.middleware.AuditlogMiddleware',
+    # Custom Security Middleware
+    'apps.core.middleware.IPBlockMiddleware',
+    'apps.core.middleware.SecurityMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -198,6 +232,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 SIMPLE_JWT = {
@@ -211,8 +246,129 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
+# ═══════════════════════════════════════════════════
+# DRF-SPECTACULAR (API DOCUMENTATION)
+# ═══════════════════════════════════════════════════
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'SGI Grasas y Huesos del Norte API',
+    'DESCRIPTION': '''
+    API del Sistema de Gestión Integral para Grasas y Huesos del Norte S.A.S
+
+    **Arquitectura del Sistema:**
+    - 6 Niveles Organizacionales
+    - 16 Módulos Principales
+    - ~92 Aplicaciones Django
+    - ~300 Endpoints REST
+
+    **Módulos Principales:**
+    1. Dirección Estratégica - Gestión corporativa y planeación
+    2. Motor de Cumplimiento - Requisitos legales y partes interesadas
+    3. Motor de Riesgos - Gestión integral de riesgos
+    4. Motor de Flujos - Automatización BPMN
+    5. HSEQ Management - Torre de control de calidad, seguridad y ambiente
+    6. Supply Chain - Gestión de proveedores y abastecimiento
+    7. Production Ops - Operaciones de producción
+    8. Logistics Fleet - Logística y gestión de flota
+    9. Sales CRM - Ventas y relación con clientes
+    10. Talent Hub - Gestión del talento humano
+    11. Admin Finance - Administración financiera
+    12. Accounting - Contabilidad (activable)
+    13. Analytics - Analítica e indicadores
+    14. Audit System - Auditoría y notificaciones
+    ''',
+    'VERSION': '2.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SCHEMA_PATH_PREFIX': r'/api/',
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+        'persistAuthorization': True,
+        'displayOperationId': True,
+        'filter': True,
+        'syntaxHighlight.theme': 'monokai',
+    },
+    'CONTACT': {
+        'name': 'Grasas y Huesos del Norte S.A.S',
+        'url': 'https://grasasyhuesos.com',
+        'email': 'soporte@grasasyhuesos.com',
+    },
+    'LICENSE': {
+        'name': 'Propietario - Uso Interno',
+    },
+    'TAGS': [
+        {'name': 'Autenticación', 'description': 'Endpoints de autenticación JWT'},
+        {'name': 'Core', 'description': 'Funcionalidades centrales del sistema'},
+        {'name': 'Dirección Estratégica', 'description': 'Organización, identidad y planeación'},
+        {'name': 'Motor de Cumplimiento', 'description': 'Requisitos legales y cumplimiento normativo'},
+        {'name': 'Motor de Riesgos', 'description': 'Gestión integral de riesgos'},
+        {'name': 'HSEQ', 'description': 'Calidad, seguridad y gestión ambiental'},
+        {'name': 'Supply Chain', 'description': 'Gestión de proveedores y abastecimiento'},
+        {'name': 'Production Ops', 'description': 'Operaciones de producción'},
+        {'name': 'Logistics Fleet', 'description': 'Logística y gestión de flota'},
+        {'name': 'Sales CRM', 'description': 'Ventas y relación con clientes'},
+        {'name': 'Talent Hub', 'description': 'Gestión del talento humano'},
+        {'name': 'Admin Finance', 'description': 'Administración financiera'},
+        {'name': 'Analytics', 'description': 'Analítica e indicadores KPI'},
+        {'name': 'Audit System', 'description': 'Auditoría, notificaciones y alertas'},
+    ],
+}
+
 CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:5173,http://localhost:3000').split(',')
 CORS_ALLOW_CREDENTIALS = True
+
+# ═══════════════════════════════════════════════════
+# SECURITY HEADERS (OWASP)
+# ═══════════════════════════════════════════════════
+# Activar solo en producción
+if not DEBUG:
+    # SSL/HTTPS
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
+    # HSTS (HTTP Strict Transport Security)
+    SECURE_HSTS_SECONDS = 31536000  # 1 año
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+# Headers de seguridad (siempre activos)
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+
+# Content Security Policy (CSP)
+CSP_DEFAULT_SRC = ("'self'",)
+CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", "'unsafe-eval'")  # unsafe-eval para desarrollo
+CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
+CSP_IMG_SRC = ("'self'", "data:", "blob:", "https:")
+CSP_FONT_SRC = ("'self'", "data:")
+CSP_CONNECT_SRC = ("'self'", config('FRONTEND_URL', default='http://localhost:5173'))
+CSP_FRAME_ANCESTORS = ("'none'",)
+CSP_BASE_URI = ("'self'",)
+CSP_FORM_ACTION = ("'self'",)
+
+# ═══════════════════════════════════════════════════
+# RATE LIMITING
+# ═══════════════════════════════════════════════════
+RATELIMIT_ENABLE = True
+RATELIMIT_USE_CACHE = 'default'
+RATELIMIT_VIEW = 'apps.core.views.ratelimit_error_view'
+
+# ═══════════════════════════════════════════════════
+# CSRF PROTECTION
+# ═══════════════════════════════════════════════════
+CSRF_FAILURE_VIEW = 'apps.core.views.csrf_failure_view'
+CSRF_COOKIE_HTTPONLY = False  # Necesario para que el frontend pueda leer el cookie
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='http://localhost:5173,http://localhost:3000').split(',')
+
+# ═══════════════════════════════════════════════════
+# SESSION SECURITY
+# ═══════════════════════════════════════════════════
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_AGE = 86400  # 24 horas
+SESSION_SAVE_EVERY_REQUEST = False
 
 INTERNAL_IPS = ['127.0.0.1', 'localhost']
 AUDITLOG_INCLUDE_ALL_MODELS = True

@@ -6,6 +6,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Count, Q
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 from apps.core.mixins import StandardViewSetMixin
 from .models import CatalogoKPI, FichaTecnicaKPI, MetaKPI, ConfiguracionSemaforo
 from .serializers import (
@@ -14,8 +16,48 @@ from .serializers import (
 )
 
 
+@extend_schema_view(
+    list=extend_schema(
+        summary='Listar todos los KPIs',
+        description='Obtiene el catálogo completo de indicadores (KPIs) configurados en el sistema',
+        tags=['Analytics']
+    ),
+    retrieve=extend_schema(
+        summary='Obtener detalle de un KPI',
+        description='Obtiene la información detallada de un indicador específico',
+        tags=['Analytics']
+    ),
+    create=extend_schema(
+        summary='Crear nuevo KPI',
+        description='Crea un nuevo indicador en el catálogo de KPIs',
+        tags=['Analytics']
+    ),
+    update=extend_schema(
+        summary='Actualizar KPI',
+        description='Actualiza completamente un indicador existente',
+        tags=['Analytics']
+    ),
+    partial_update=extend_schema(
+        summary='Actualizar parcialmente KPI',
+        description='Actualiza campos específicos de un indicador',
+        tags=['Analytics']
+    ),
+    destroy=extend_schema(
+        summary='Eliminar KPI',
+        description='Elimina un indicador del catálogo (soft delete)',
+        tags=['Analytics']
+    )
+)
 class CatalogoKPIViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
-    """ViewSet para CatalogoKPI"""
+    """
+    ViewSet para gestión de KPIs (Indicadores Clave de Desempeño)
+
+    Permite administrar el catálogo de indicadores del sistema, incluyendo:
+    - Configuración de fórmulas de cálculo
+    - Definición de frecuencia de medición
+    - Categorización por área funcional
+    - Configuración de semáforos y alertas
+    """
     queryset = CatalogoKPI.objects.select_related('empresa')
     serializer_class = CatalogoKPISerializer
     permission_classes = [IsAuthenticated]
@@ -31,6 +73,19 @@ class CatalogoKPIViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             queryset = queryset.filter(empresa_id=empresa_id)
         return queryset
 
+    @extend_schema(
+        summary='KPIs agrupados por categoría',
+        description='Obtiene la cantidad de KPIs agrupados por categoría funcional',
+        tags=['Analytics'],
+        parameters=[
+            OpenApiParameter(
+                name='empresa_id',
+                type=OpenApiTypes.UUID,
+                location=OpenApiParameter.QUERY,
+                description='ID de la empresa para filtrar KPIs'
+            )
+        ]
+    )
     @action(detail=False, methods=['get'])
     def por_categoria(self, request):
         """Obtener KPIs agrupados por categoría"""
@@ -45,6 +100,12 @@ class CatalogoKPIViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
         return Response(list(resultado))
 
+    @extend_schema(
+        summary='KPIs agrupados por área',
+        description='Alias de por_categoria para compatibilidad con versiones anteriores',
+        tags=['Analytics'],
+        deprecated=True
+    )
     @action(detail=False, methods=['get'])
     def por_area(self, request):
         """Alias de por_categoria para compatibilidad"""

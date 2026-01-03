@@ -21,16 +21,17 @@ def add_sedes_section(apps, schema_editor):
         return
 
     # Obtener el orden de la sección 'empresa' (debería ser 1)
+    # Usar 'orden' ya que el campo fue renombrado de 'order' a 'orden'
     empresa_section = TabSection.objects.filter(
         tab=tab_configuracion, code='empresa'
     ).first()
-    new_order = (empresa_section.order + 1) if empresa_section else 2
+    new_orden = (empresa_section.orden + 1) if empresa_section else 2
 
     # Mover las secciones posteriores
     TabSection.objects.filter(
         tab=tab_configuracion,
-        order__gte=new_order
-    ).update(order=models.F('order') + 1)
+        orden__gte=new_orden
+    ).update(orden=models.F('orden') + 1)
 
     # Crear la sección de sedes
     TabSection.objects.create(
@@ -39,7 +40,7 @@ def add_sedes_section(apps, schema_editor):
         name='Sedes y Ubicaciones',
         description='Gestión de sedes, plantas, sucursales y ubicaciones de la empresa',
         icon='MapPin',
-        order=new_order,
+        orden=new_orden,
         is_enabled=True,
         is_core=True
     )

@@ -49,7 +49,6 @@ INSTALLED_APPS = [
     'csp',
     'django_filters',
     'auditlog',
-    'debug_toolbar',
     'drf_spectacular',
     'django_celery_beat',
     'django_celery_results',
@@ -159,7 +158,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'auditlog.middleware.AuditlogMiddleware',
     # Custom Security Middleware
     'apps.core.middleware.IPBlockMiddleware',

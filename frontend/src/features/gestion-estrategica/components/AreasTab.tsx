@@ -232,7 +232,7 @@ export const AreasTab = () => {
         label: 'Total Áreas',
         value: areas.length,
         icon: Building2,
-        iconColor: 'primary' as const,
+        iconColor: 'info' as const,
       },
       {
         label: 'Áreas Activas',
@@ -401,7 +401,7 @@ export const AreasTab = () => {
   return (
     <div className="space-y-6">
       {/* StatsGrid de Áreas */}
-      <StatsGrid stats={areaStats} columns={4} macroprocessColor="purple" />
+      <StatsGrid stats={areaStats} columns={4} moduleColor="purple" />
 
       <Card>
         <div className="p-6">

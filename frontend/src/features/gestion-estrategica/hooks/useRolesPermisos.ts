@@ -1,6 +1,6 @@
 /**
  * Hooks para gestión de Roles y Permisos (RBAC Híbrido)
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';

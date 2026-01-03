@@ -1,6 +1,6 @@
 /**
  * Types para Audit System
- * Sistema de Auditoría Grasas y Huesos del Norte
+ * Sistema de Auditoría StrateKaz
  */
 
 // ==================== LOGS SISTEMA ====================

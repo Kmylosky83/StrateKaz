@@ -1,6 +1,6 @@
 # API Clients - HSEQ Management
 
-API clients para el módulo de Gestión HSEQ del Sistema de Gestión Grasas y Huesos del Norte.
+API clients para el módulo de Gestión HSEQ del Sistema de Gestión StrateKaz.
 
 ## Estructura
 

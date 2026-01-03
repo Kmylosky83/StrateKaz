@@ -189,7 +189,7 @@ jobs:
         working-directory: ./frontend
         env:
           VITE_API_URL: http://localhost:8000/api
-          VITE_APP_NAME: Grasas y Huesos del Norte
+          VITE_APP_NAME: StrateKaz
         run: npm run build
 
       - name: Check build size

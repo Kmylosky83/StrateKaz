@@ -1,6 +1,6 @@
 /**
  * React Query Hooks para Portafolios y Programas
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  * Semana 5: Gestión de Proyectos
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';

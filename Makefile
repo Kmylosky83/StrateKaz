@@ -1,5 +1,5 @@
 # ==============================================
-# Makefile - Grasas y Huesos del Norte S.A.S
+# Makefile - StrateKaz
 # Sistema de Gestión Integral
 # ==============================================
 
@@ -12,7 +12,7 @@ PROJECT_NAME = grasas_huesos
 # Default target
 help:
 	@echo "======================================"
-	@echo "Grasas y Huesos del Norte - Makefile"
+	@echo "StrateKaz - Makefile"
 	@echo "======================================"
 	@echo ""
 	@echo "Comandos disponibles:"

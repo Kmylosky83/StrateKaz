@@ -429,6 +429,6 @@ La suite está lista para ser ejecutada y puede ser extendida fácilmente para c
 ---
 
 **Archivos de Referencia:**
-- `c:\Proyectos\Grasas y Huesos del Norte\backend\apps\analytics\config_indicadores\tests\`
-- `c:\Proyectos\Grasas y Huesos del Norte\backend\apps\analytics\dashboard_gerencial\tests\`
-- `c:\Proyectos\Grasas y Huesos del Norte\backend\apps\analytics\indicadores_area\tests\`
+- `c:\Proyectos\StrateKaz\backend\apps\analytics\config_indicadores\tests\`
+- `c:\Proyectos\StrateKaz\backend\apps\analytics\dashboard_gerencial\tests\`
+- `c:\Proyectos\StrateKaz\backend\apps\analytics\indicadores_area\tests\`

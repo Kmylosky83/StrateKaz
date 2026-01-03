@@ -1,6 +1,6 @@
 """
 Ejemplos de Optimización de ViewSets
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Este archivo muestra ejemplos ANTES y DESPUÉS de aplicar optimizaciones.
 NO ejecutar directamente, solo referencia.

@@ -1,6 +1,6 @@
 """
 Admin para Compras - Supply Chain
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Registro básico de modelos para el panel de administración.
 """

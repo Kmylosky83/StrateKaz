@@ -1,6 +1,6 @@
 """
 Filtros personalizados para Gestión de Proveedores - Supply Chain
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 100% DINÁMICO: Filtros adaptados a modelos de catálogo dinámicos.
 """

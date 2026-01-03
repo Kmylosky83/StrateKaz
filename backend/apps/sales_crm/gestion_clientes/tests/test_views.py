@@ -1,6 +1,6 @@
 """
 Tests para views de Gestión de Clientes - Sales CRM
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 """
 import pytest
 from decimal import Decimal

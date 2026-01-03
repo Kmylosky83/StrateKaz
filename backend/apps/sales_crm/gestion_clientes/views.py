@@ -1,6 +1,6 @@
 """
 Views para Gestión de Clientes - Sales CRM
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 ViewSets para la gestión de clientes, contactos, segmentos,
 interacciones y scoring de clientes.

@@ -2,7 +2,7 @@
  * Tipos para el sistema RBAC
  *
  * Gestion de Cargos (con Manual de Funciones), Roles y Permisos
- * Sistema de Gestion Grasas y Huesos del Norte
+ * Sistema de Gestion StrateKaz
  */
 
 // ==================== PERMISSION ====================

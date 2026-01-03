@@ -9,6 +9,7 @@ Define acciones vinculadas a KPIs:
 - IntegracionAccionCorrectiva: Vinculación con mejora continua
 """
 from django.db import models
+from django.conf import settings
 from apps.core.base_models import BaseCompanyModel
 
 
@@ -66,7 +67,7 @@ class PlanAccionKPI(BaseCompanyModel):
         help_text='Cuándo se debe alcanzar la meta'
     )
     responsable = models.ForeignKey(
-        'auth.User',
+        settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name='planes_kpi_responsable',
         verbose_name='Responsable'
@@ -140,7 +141,7 @@ class ActividadPlanKPI(BaseCompanyModel):
         help_text='Descripción detallada de la actividad'
     )
     responsable = models.ForeignKey(
-        'auth.User',
+        settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name='actividades_kpi',
         verbose_name='Responsable'
@@ -248,7 +249,7 @@ class SeguimientoPlanKPI(BaseCompanyModel):
         verbose_name='Comentarios'
     )
     realizado_por = models.ForeignKey(
-        'auth.User',
+        settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name='seguimientos_kpi',
         verbose_name='Realizado Por'
@@ -286,11 +287,11 @@ class IntegracionAccionCorrectiva(BaseCompanyModel):
         related_name='integraciones_mejora',
         verbose_name='Plan KPI'
     )
-    accion_correctiva = models.ForeignKey(
-        'mejora_continua.AccionMejora',
-        on_delete=models.CASCADE,
-        related_name='integraciones_kpi',
-        verbose_name='Acción de Mejora'
+    accion_correctiva_id = models.PositiveIntegerField(
+        verbose_name='ID Acción de Mejora',
+        help_text='ID de referencia a AccionMejora (módulo mejora_continua pendiente)',
+        null=True,
+        blank=True
     )
     tipo_vinculo = models.CharField(
         max_length=15,
@@ -314,9 +315,9 @@ class IntegracionAccionCorrectiva(BaseCompanyModel):
         ordering = ['-fecha_vinculacion']
         indexes = [
             models.Index(fields=['plan_kpi']),
-            models.Index(fields=['accion_correctiva']),
+            models.Index(fields=['accion_correctiva_id']),
             models.Index(fields=['empresa', 'is_active']),
         ]
 
     def __str__(self):
-        return f"{self.plan_kpi.nombre} <-> {self.accion_correctiva.codigo}"
+        return f"{self.plan_kpi.nombre} <-> Acción #{self.accion_correctiva_id}"

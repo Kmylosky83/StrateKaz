@@ -1,6 +1,6 @@
 """
 Utilidades de Caché - Core
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Funciones helper para gestionar el caché Redis de forma eficiente.
 Incluye decoradores y funciones para cachear queries, serializers y listas.

@@ -6,7 +6,7 @@ Los índices compuestos agregados en `BaseCompanyModel` necesitan ser aplicados 
 
 ```bash
 # Posicionarse en el directorio backend
-cd "c:\Proyectos\Grasas y Huesos del Norte\backend"
+cd "c:\Proyectos\StrateKaz"
 
 # Generar migraciones automáticamente
 python manage.py makemigrations

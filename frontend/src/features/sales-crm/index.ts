@@ -1,6 +1,6 @@
 /**
  * Sales CRM Module - Main Index
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Exporta todos los componentes públicos del módulo CRM
  */

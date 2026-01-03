@@ -17,12 +17,14 @@ import { DynamicSections } from '@/components/common';
 import { useStrategicStats } from '../hooks/useStrategic';
 import { useTabSections } from '../hooks/useModules';
 import { PlaneacionTab } from '../components/PlaneacionTab';
+import { useModuleColor } from '@/hooks/useModuleColor';
 
 // Códigos del módulo y tab en la BD (lowercase para coincidir con BD)
 const MODULE_CODE = 'gestion_estrategica';
 const TAB_CODE = 'planeacion';
 
 export const PlaneacionPage = () => {
+  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
   const { data: stats, isLoading: statsLoading } = useStrategicStats();
   const { sections, isLoading: sectionsLoading } = useTabSections(MODULE_CODE, TAB_CODE);
 
@@ -43,7 +45,7 @@ export const PlaneacionPage = () => {
       label: 'Objetivos Estratégicos',
       value: stats?.total_objectives ?? 0,
       icon: Target,
-      iconColor: 'primary',
+      iconColor: 'info',
       description: `${stats?.completed_objectives ?? 0} completados`,
     },
     {
@@ -68,14 +70,14 @@ export const PlaneacionPage = () => {
         activeSection={activeSection}
         onChange={setActiveSection}
         isLoading={sectionsLoading}
-        macroprocessColor="purple"
+        moduleColor={moduleColor}
         variant="pills"
       />
 
       {statsLoading ? (
         <StatsGridSkeleton count={2} />
       ) : (
-        <StatsGrid stats={statsItems} columns={4} macroprocessColor="purple" />
+        <StatsGrid stats={statsItems} columns={4} moduleColor={moduleColor} />
       )}
 
       {/* Contenido */}

@@ -1,4 +1,4 @@
-# ANALISIS ARQUITECTURA SAAS - Grasas y Huesos del Norte SGI
+# ANALISIS ARQUITECTURA SAAS - StrateKaz SGI
 
 **Fecha de Análisis:** 17 Diciembre 2025
 **Versión Sistema:** 1.0.0-beta.2
@@ -10,7 +10,7 @@
 
 ### Estado Actual del Proyecto
 
-**Grasas y Huesos del Norte SGI** es un **sistema monolítico de gestión interna** diseñado para una empresa específica de recolección y procesamiento de materias primas en Colombia. **NO es actualmente un SaaS multi-tenant**.
+**StrateKaz SGI** es un **sistema monolítico de gestión interna** diseñado para una empresa específica de recolección y procesamiento de materias primas en Colombia. **NO es actualmente un SaaS multi-tenant**.
 
 **Características Actuales:**
 - Sistema de gestión integral (SGI) vertical para una sola empresa
@@ -47,7 +47,7 @@ El sistema tiene una **arquitectura sólida y modular** que puede convertirse en
 
 **Evidencia:**
 ```python
-# C:\Proyectos\Grasas y Huesos del Norte\backend\apps\gestion_estrategica\configuracion\models.py
+# C:\Proyectos\StrateKaz\backend\apps\gestion_estrategica\configuracion\models.py
 # Líneas 147-444
 
 class EmpresaConfig(models.Model):
@@ -1028,11 +1028,11 @@ class OnboardingViewSet(viewsets.ViewSet):
         """Enviar email de bienvenida"""
 
         send_mail(
-            subject=f"Bienvenido a Grasas y Huesos SGI - {company.legal_name}",
+            subject=f"Bienvenido a StrateKaz SGI - {company.legal_name}",
             message=f"""
             Hola {user.first_name},
 
-            ¡Bienvenido a Grasas y Huesos del Norte SGI!
+            ¡Bienvenido a StrateKaz SGI!
 
             Tu cuenta ha sido creada exitosamente.
             Empresa: {company.legal_name}
@@ -1042,7 +1042,7 @@ class OnboardingViewSet(viewsets.ViewSet):
 
             Accede a tu panel: https://app.grasasyhuesos.com/login
 
-            Equipo Grasas y Huesos
+            Equipo StrateKaz
             """,
             from_email='noreply@grasasyhuesos.com',
             recipient_list=[user.email],

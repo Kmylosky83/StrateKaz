@@ -1,6 +1,6 @@
 /**
  * Motor de Riesgos - Feature Module
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Exportación centralizada de:
  * - Pages

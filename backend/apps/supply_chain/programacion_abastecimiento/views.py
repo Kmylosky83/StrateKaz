@@ -1,6 +1,6 @@
 """
 ViewSets para Programación de Abastecimiento - Supply Chain
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 100% DINÁMICO: ViewSets usan modelos de catálogo dinámicos.
 """

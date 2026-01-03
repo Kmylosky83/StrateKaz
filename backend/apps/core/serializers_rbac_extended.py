@@ -1,6 +1,6 @@
 """
 Serializers Extendidos para el Sistema RBAC Híbrido
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Este módulo complementa serializers_rbac.py con serializers específicos para:
 - Gestión de permisos de cargos

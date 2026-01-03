@@ -1,6 +1,6 @@
 /**
  * Tipos TypeScript para Formacion y Reinduccion - Talent Hub
- * Sistema de Gestion Grasas y Huesos del Norte
+ * Sistema de Gestion StrateKaz
  *
  * Basado en: backend/apps/talent_hub/formacion_reinduccion/models.py
  */

@@ -1,6 +1,6 @@
 /**
  * Custom Hooks para Planificación del Sistema - HSEQ Management
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Hooks basados en TanStack Query (React Query) para gestión de estado del servidor
  */

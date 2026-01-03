@@ -1,6 +1,6 @@
 """
 Views para Procesamiento de Materia Prima - Production Ops
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Autor: Sistema de Gestión
 Fecha: 2025-12-28

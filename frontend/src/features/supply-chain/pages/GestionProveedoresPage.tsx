@@ -1,6 +1,6 @@
 /**
  * Página Principal - Gestión de Proveedores (Supply Chain)
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Tabs:
  * 1. Proveedores - Lista, crear, editar proveedores
@@ -271,7 +271,16 @@ export default function GestionProveedoresPage() {
       <PageHeader
         title="Gestión de Proveedores"
         description="Sistema de gestión de proveedores, precios, calidad y evaluación - Supply Chain"
-        tabs={<PageTabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />}
+        tabs={
+          <PageTabs
+            tabs={tabs}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            variant="pills"
+            moduleColor="teal"
+            size="md"
+          />
+        }
       />
 
       {/* Renderizado condicional de tabs */}

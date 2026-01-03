@@ -296,4 +296,4 @@ function CumplimientoPage() {
 
 ---
 
-Creado siguiendo las especificaciones de la Semana 7 del cronograma del proyecto SGI Grasas y Huesos del Norte.
+Creado siguiendo las especificaciones de la Semana 7 del cronograma del proyecto SGI StrateKaz.

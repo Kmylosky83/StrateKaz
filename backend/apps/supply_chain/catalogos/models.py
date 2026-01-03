@@ -1,6 +1,6 @@
 """
 Modelos para catálogos de Supply Chain
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 """
 from django.db import models
 from apps.core.base_models.base import BaseCompanyModel

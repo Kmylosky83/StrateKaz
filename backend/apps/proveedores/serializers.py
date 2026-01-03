@@ -1,6 +1,6 @@
 """
 Serializers del módulo Proveedores - API REST
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 """
 from rest_framework import serializers
 from django.core.exceptions import ValidationError as DjangoValidationError

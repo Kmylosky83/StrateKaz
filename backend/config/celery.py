@@ -1,5 +1,5 @@
 """
-Configuración de Celery para Grasas y Huesos del Norte S.A.S
+Configuración de Celery para StrateKaz
 Sistema de tareas asíncronas usando Redis como broker y backend
 """
 import os

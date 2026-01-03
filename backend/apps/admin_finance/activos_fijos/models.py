@@ -1,6 +1,6 @@
 """
 Modelos para Activos Fijos - Admin Finance
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Gestiona:
 - Categorías de activos fijos

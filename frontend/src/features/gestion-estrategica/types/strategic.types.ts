@@ -1,6 +1,6 @@
 /**
  * Tipos TypeScript para el módulo de Dirección Estratégica
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  */
 
 // ==================== ENUMS ====================
@@ -397,9 +397,11 @@ export interface BrandingConfig {
   logo?: string | null;
   logo_white?: string | null;
   favicon?: string | null;
+  login_background?: string | null;
   primary_color: string;
   secondary_color: string;
   accent_color: string;
+  app_version: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -409,9 +411,11 @@ export interface CreateBrandingConfigDTO {
   company_name: string;
   company_short_name: string;
   company_slogan?: string;
+  login_background?: File;
   primary_color?: string;
   secondary_color?: string;
   accent_color?: string;
+  app_version?: string;
   is_active?: boolean;
 }
 
@@ -419,9 +423,12 @@ export interface UpdateBrandingConfigDTO {
   company_name?: string;
   company_short_name?: string;
   company_slogan?: string;
+  login_background?: File;
+  login_background_clear?: boolean;
   primary_color?: string;
   secondary_color?: string;
   accent_color?: string;
+  app_version?: string;
   is_active?: boolean;
 }
 
@@ -732,6 +739,12 @@ export interface SedeEmpresa {
   es_sede_principal: boolean;
   fecha_apertura?: string | null;
   fecha_cierre?: string | null;
+  // Capacidad - Sistema dinámico multi-industria
+  capacidad_almacenamiento?: number | null;
+  unidad_capacidad?: number | null;
+  unidad_capacidad_display?: string | null;
+  capacidad_formateada?: string;
+  // DEPRECATED: Mantener para compatibilidad temporal
   capacidad_almacenamiento_kg?: number | null;
   // Auditoría
   is_active: boolean;
@@ -774,6 +787,10 @@ export interface CreateSedeEmpresaDTO {
   es_sede_principal?: boolean;
   fecha_apertura?: string;
   fecha_cierre?: string;
+  // Capacidad - Sistema dinámico multi-industria
+  capacidad_almacenamiento?: number;
+  unidad_capacidad?: number;
+  // DEPRECATED: Mantener para compatibilidad temporal
   capacidad_almacenamiento_kg?: number;
   is_active?: boolean;
 }
@@ -795,8 +812,21 @@ export interface UpdateSedeEmpresaDTO {
   es_sede_principal?: boolean;
   fecha_apertura?: string | null;
   fecha_cierre?: string | null;
+  // Capacidad - Sistema dinámico multi-industria
+  capacidad_almacenamiento?: number | null;
+  unidad_capacidad?: number | null;
+  // DEPRECATED: Mantener para compatibilidad temporal
   capacidad_almacenamiento_kg?: number | null;
   is_active?: boolean;
+}
+
+// ==================== UNIDAD DE CAPACIDAD ====================
+
+export interface UnidadCapacidad {
+  value: number;
+  label: string;
+  simbolo: string;
+  categoria: 'MASA' | 'VOLUMEN' | 'CONTENEDOR';
 }
 
 export interface SedeFilters {

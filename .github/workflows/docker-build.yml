@@ -134,7 +134,7 @@ jobs:
             VCS_REF=${{ github.sha }}
             VERSION=${{ steps.meta.outputs.version }}
             VITE_API_URL=/api
-            VITE_APP_NAME=Grasas y Huesos del Norte
+            VITE_APP_NAME=StrateKaz
 
       - name: Frontend image digest
         run: echo "Frontend image digest - ${{ steps.meta.outputs.digest }}"

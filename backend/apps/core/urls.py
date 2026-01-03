@@ -1,6 +1,6 @@
 """
 URLs para el modulo Core - API REST
-Sistema de Gestion Grasas y Huesos del Norte
+Sistema de Gestion StrateKaz
 
 Incluye endpoints para:
 - Gestion de usuarios

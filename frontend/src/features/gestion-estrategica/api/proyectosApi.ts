@@ -1,6 +1,6 @@
 /**
  * API Client para el módulo de Gestión de Proyectos PMI
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  * Semana 5: Gestión de Proyectos
  */
 import axiosInstance from '@/api/axios-config';

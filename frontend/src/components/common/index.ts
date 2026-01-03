@@ -31,7 +31,7 @@ export { Button } from './Button';
 export type { ButtonProps } from './Button';
 
 export { Badge } from './Badge';
-export type { BadgeProps } from './Badge';
+export type { BadgeVariant, BadgeSize } from './Badge';
 
 export { Card } from './Card';
 export type { CardProps } from './Card';
@@ -149,3 +149,11 @@ export type {
 // Dynamic Sections (API-driven sub-navigation)
 export { DynamicSections } from './DynamicSections';
 export type { DynamicSectionsProps } from './DynamicSections';
+
+// Module Card (Dashboard modules with animated hover)
+export { ModuleCard, ModuleCardSkeleton, ModuleGrid } from './ModuleCard';
+export type { ModuleCardProps, ModuleCardColor } from './ModuleCard';
+
+// Time Elapsed Display (Real-time uptime counter)
+export { TimeElapsedDisplay } from './TimeElapsedDisplay';
+export type { TimeElapsedDisplayProps, TimeElapsedVariant, TimeElapsedSize } from './TimeElapsedDisplay';

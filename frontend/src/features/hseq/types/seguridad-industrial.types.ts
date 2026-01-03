@@ -1,6 +1,6 @@
 /**
  * Tipos TypeScript para Módulo de Seguridad Industrial - HSEQ Management
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Incluye:
  * - Permisos de Trabajo

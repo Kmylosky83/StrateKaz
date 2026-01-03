@@ -1,6 +1,6 @@
 /**
  * Audit System Feature Index
- * Sistema de Auditoría Grasas y Huesos del Norte
+ * Sistema de Auditoría StrateKaz
  */
 
 // Types

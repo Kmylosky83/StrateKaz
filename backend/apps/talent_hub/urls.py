@@ -1,6 +1,6 @@
 """
 URLs para Talent Hub
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Unifica las URLs de todas las apps del módulo Talent Hub:
 - estructura_cargos: Profesiogramas, competencias, requisitos, vacantes

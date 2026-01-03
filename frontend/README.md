@@ -1,4 +1,4 @@
-# Grasas y Huesos del Norte - Frontend
+# StrateKaz - Frontend
 
 Sistema Integrado de Gestión ERP para recolección de ACU (Aceite de Cocina Usado).
 
@@ -46,4 +46,4 @@ Implementar módulos de:
 5. Certificados
 6. Reportes
 
-© 2025 Grasas y Huesos del Norte S.A.S. | Powered by StrateKaz
+© 2025 StrateKaz. | Powered by StrateKaz

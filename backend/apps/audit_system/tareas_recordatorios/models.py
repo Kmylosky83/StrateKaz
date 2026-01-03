@@ -53,8 +53,8 @@ class Tarea(TimestampedModel):
     prioridad = models.CharField(max_length=10, choices=PRIORIDAD_TAREA_CHOICES, default='normal', db_index=True)
     estado = models.CharField(max_length=20, choices=ESTADO_TAREA_CHOICES, default='pendiente', db_index=True)
     
-    asignado_a = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tareas_asignadas', verbose_name='Asignado a')
-    creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='tareas_creadas', verbose_name='Creado por')
+    asignado_a = models.ForeignKey(User, on_delete=models.CASCADE, related_name='audit_tareas_asignadas', verbose_name='Asignado a')
+    creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='audit_tareas_creadas', verbose_name='Creado por')
     
     fecha_limite = models.DateTimeField(verbose_name='Fecha Límite', db_index=True)
     fecha_completada = models.DateTimeField(null=True, blank=True, verbose_name='Fecha Completada')

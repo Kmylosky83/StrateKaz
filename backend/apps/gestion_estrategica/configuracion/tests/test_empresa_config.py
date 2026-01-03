@@ -1,6 +1,6 @@
 """
 Tests Unitarios para el modelo EmpresaConfig
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Cobertura de tests:
 1. Patrón Singleton - Solo permite una instancia
@@ -28,8 +28,8 @@ def datos_empresa_validos():
     """Fixture con datos válidos para crear una EmpresaConfig."""
     return {
         'nit': '900123456-7',
-        'razon_social': 'GRASAS Y HUESOS DEL NORTE S.A.S.',
-        'nombre_comercial': 'Grasas del Norte',
+        'razon_social': 'STRATEKAZ S.A.S.',
+        'nombre_comercial': 'StrateKaz',
         'representante_legal': 'Juan Pérez García',
         'cedula_representante': '1234567890',
         'tipo_sociedad': 'SAS',

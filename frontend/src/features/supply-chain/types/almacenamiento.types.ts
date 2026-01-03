@@ -1,6 +1,6 @@
 /**
  * Tipos TypeScript para Gestión de Almacenamiento e Inventario - Supply Chain
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Incluye:
  * - Inventario - Stock actual por almacén/producto

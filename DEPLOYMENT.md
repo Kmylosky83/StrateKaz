@@ -1,5 +1,5 @@
 # Guía de Despliegue en Producción
-## SGI Grasas y Huesos del Norte S.A.S
+## SGI StrateKaz
 
 ---
 

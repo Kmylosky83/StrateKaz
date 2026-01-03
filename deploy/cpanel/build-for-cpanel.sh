@@ -1,13 +1,13 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
 # Script de Build para Despliegue en cPanel
-# Sistema de Gestión - Grasas y Huesos del Norte
+# Sistema de Gestión - StrateKaz
 # ═══════════════════════════════════════════════════════════════════════════════
 
 set -e  # Salir si hay errores
 
 echo "═══════════════════════════════════════════════════════════════════════════════"
-echo " Build para cPanel - Grasas y Huesos del Norte"
+echo " Build para cPanel - StrateKaz"
 echo "═══════════════════════════════════════════════════════════════════════════════"
 
 # Directorio raíz del proyecto

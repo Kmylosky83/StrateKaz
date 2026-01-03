@@ -1,12 +1,12 @@
 # ═══════════════════════════════════════════════════
 # BACKUP SERVICE DOCKERFILE
-# Grasas y Huesos del Norte S.A.S
+# StrateKaz
 # ═══════════════════════════════════════════════════
 
 FROM alpine:3.19
 
 # Labels
-LABEL maintainer="Grasas y Huesos del Norte S.A.S"
+LABEL maintainer="StrateKaz"
 LABEL description="Automated Backup Service"
 LABEL version="1.0.0"
 

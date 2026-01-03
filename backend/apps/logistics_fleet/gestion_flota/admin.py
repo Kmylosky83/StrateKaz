@@ -1,6 +1,6 @@
 """
 Admin para Gestión de Flota - Logistics Fleet Management
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 """
 from django.contrib import admin
 from django.utils.html import format_html

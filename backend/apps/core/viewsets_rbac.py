@@ -1,6 +1,6 @@
 """
 ViewSets para el Sistema RBAC Dinamico
-Sistema de Gestion Grasas y Huesos del Norte
+Sistema de Gestion StrateKaz
 
 Este modulo contiene los ViewSets para la gestion de:
 - Permisos (solo lectura)

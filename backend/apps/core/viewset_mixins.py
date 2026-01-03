@@ -1,6 +1,6 @@
 """
 ViewSet Mixins - Core
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Mixins reutilizables para optimizar ViewSets con select_related,
 prefetch_related y caché automático.

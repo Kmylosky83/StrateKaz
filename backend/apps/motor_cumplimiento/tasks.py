@@ -1,6 +1,6 @@
 """
 Tareas asíncronas de Celery para Motor de Cumplimiento
-Grasas y Huesos del Norte S.A.S
+StrateKaz
 
 Tareas principales:
 1. scrape_legal_updates - Web scraping de normas legales colombianas (cada 15 días)

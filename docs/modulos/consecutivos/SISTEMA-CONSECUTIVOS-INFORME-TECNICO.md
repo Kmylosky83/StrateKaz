@@ -1,6 +1,6 @@
 # Sistema de Consecutivos - Informe Técnico Completo
 
-**Sistema de Gestión: Grasas y Huesos del Norte**
+**Sistema de Gestión: StrateKaz**
 **Fecha:** Diciembre 15, 2025
 **Versión del Sistema:** 1.0
 **Autor:** Documentación Técnica
@@ -24,7 +24,7 @@
 
 ## 1. Resumen Ejecutivo
 
-El Sistema de Consecutivos de Grasas y Huesos del Norte es un servicio centralizado que proporciona generación automática de códigos únicos para documentos y entidades del sistema. Esta solución reemplaza los métodos hardcodeados anteriores, ofreciendo:
+El Sistema de Consecutivos de StrateKaz es un servicio centralizado que proporciona generación automática de códigos únicos para documentos y entidades del sistema. Esta solución reemplaza los métodos hardcodeados anteriores, ofreciendo:
 
 - **Configurabilidad total** por tipo de documento
 - **Thread-safety** mediante transacciones atómicas y bloqueos SELECT FOR UPDATE
@@ -1858,4 +1858,4 @@ WHERE c.current_number = 0
 **Fin del Informe Técnico**
 
 **Generado el:** 15 de Diciembre de 2025
-**Contacto Técnico:** Equipo de Desarrollo - Grasas y Huesos del Norte
+**Contacto Técnico:** Equipo de Desarrollo - StrateKaz

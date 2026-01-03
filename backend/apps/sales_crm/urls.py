@@ -1,6 +1,6 @@
 """
 URLs principal para Sales CRM (Módulo 9)
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Incluye todas las sub-apps:
 - gestion_clientes: Gestión de clientes y contactos

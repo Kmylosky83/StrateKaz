@@ -1,6 +1,6 @@
 """
 URLs para Accounting - Módulo 12 (ACTIVABLE)
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Consolidación de todas las apps del módulo contable:
 - config_contable: Configuración del plan de cuentas

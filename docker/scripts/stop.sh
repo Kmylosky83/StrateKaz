@@ -2,7 +2,7 @@
 
 # ===================================================================
 # Script de detención de Docker Compose
-# Grasas y Huesos del Norte S.A.S
+# StrateKaz
 # ===================================================================
 
 set -e

@@ -1,6 +1,6 @@
 """
 Tests Unitarios para el modelo Cargo - Manual de Funciones Completo
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Cobertura de tests para los 5 tabs del manual de funciones:
 1. TAB IDENTIFICACIÓN - Datos básicos y ubicación organizacional

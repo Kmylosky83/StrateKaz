@@ -1,4 +1,4 @@
-# Diagrama Entidad-Relación (ER) - Sistema ERP Grasas y Huesos del Norte
+# Diagrama Entidad-Relación (ER) - Sistema ERP StrateKaz
 
 **Fecha de generación:** 2025-12-23
 **Versión:** 1.0

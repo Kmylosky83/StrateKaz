@@ -1,6 +1,6 @@
 """
 Serializers para Gestión de Almacenamiento e Inventario - Supply Chain
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 100% DINÁMICO: Serializers usan modelos de catálogo dinámicos.
 """

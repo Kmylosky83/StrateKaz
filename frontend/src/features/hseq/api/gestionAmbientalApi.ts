@@ -1,6 +1,6 @@
 /**
  * API Client para Gestión Ambiental - HSEQ Management
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Incluye:
  * - Gestión de Residuos (Tipos, Gestores, Registros)

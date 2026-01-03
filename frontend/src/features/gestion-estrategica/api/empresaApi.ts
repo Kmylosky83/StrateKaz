@@ -1,6 +1,6 @@
 /**
  * API para EmpresaConfig - Datos Fiscales y Legales de la Empresa
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  */
 import axiosInstance from '@/api/axios-config';
 import type {

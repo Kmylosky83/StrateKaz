@@ -1,6 +1,6 @@
 """
 Modelos de Onboarding e Inducción - Talent Hub
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Gestión del proceso de incorporación de nuevos colaboradores:
 - ModuloInduccion: Contenido de inducción configurable

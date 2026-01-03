@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
                 (
                     "company_name",
                     models.CharField(
-                        default="Grasas y Huesos del Norte",
+                        default="StrateKaz",
                         max_length=200,
                         verbose_name="Nombre de la Empresa",
                     ),

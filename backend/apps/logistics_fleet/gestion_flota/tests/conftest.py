@@ -41,9 +41,9 @@ User = get_user_model()
 def empresa(db):
     """Empresa de prueba."""
     return EmpresaConfig.objects.create(
-        nombre='Grasas y Huesos del Norte',
+        nombre='StrateKaz',
         nit='900123456-1',
-        razon_social='Grasas y Huesos del Norte S.A.S.',
+        razon_social='StrateKaz.',
         nombre_comercial='GHN',
         email='info@ghn.com',
         telefono='3001234567',
@@ -208,7 +208,7 @@ def vehiculo(db, empresa, tipo_vehiculo_camion, estado_disponible, usuario):
         fecha_matricula=date(2020, 1, 15),
         fecha_soat=date.today() + timedelta(days=60),
         fecha_tecnomecanica=date.today() + timedelta(days=90),
-        propietario_nombre='Grasas y Huesos del Norte S.A.S.',
+        propietario_nombre='StrateKaz.',
         propietario_documento='900123456-1',
         es_propio=True,
         es_contratado=False,

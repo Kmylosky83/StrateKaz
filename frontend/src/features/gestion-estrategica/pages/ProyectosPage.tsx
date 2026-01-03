@@ -17,12 +17,14 @@ import { DynamicSections } from '@/components/common';
 import { useTabSections } from '../hooks/useModules';
 import { GestionProyectosTab } from '../components/proyectos';
 import { useProyectosDashboard } from '../hooks/useProyectos';
+import { useModuleColor } from '@/hooks/useModuleColor';
 
 // Códigos del módulo y tab en la BD (lowercase para coincidir con BD)
 const MODULE_CODE = 'gestion_estrategica';
 const TAB_CODE = 'gestion_proyectos';
 
 export const ProyectosPage = () => {
+  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
   const { data: dashboard, isLoading: dashboardLoading } = useProyectosDashboard();
   const { sections, isLoading: sectionsLoading } = useTabSections(MODULE_CODE, TAB_CODE);
 
@@ -45,7 +47,7 @@ export const ProyectosPage = () => {
       label: 'Total Proyectos',
       value: dashboard?.total_proyectos ?? 0,
       icon: FolderKanban,
-      iconColor: 'primary',
+      iconColor: 'info',
       description: `${proyectosActivos} activos`,
     },
     {
@@ -84,14 +86,14 @@ export const ProyectosPage = () => {
         activeSection={activeSection}
         onChange={setActiveSection}
         isLoading={sectionsLoading}
-        macroprocessColor="purple"
+        moduleColor={moduleColor}
         variant="pills"
       />
 
       {dashboardLoading ? (
         <StatsGridSkeleton count={4} />
       ) : (
-        <StatsGrid stats={statsItems} columns={4} macroprocessColor="purple" />
+        <StatsGrid stats={statsItems} columns={4} moduleColor={moduleColor} />
       )}
 
       {/* Contenido */}

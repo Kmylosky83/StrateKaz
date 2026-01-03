@@ -226,6 +226,6 @@ Sigue el design system del proyecto:
 
 ## Autor
 
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 Módulo: Motor de Riesgos
 Fecha: 2025-01

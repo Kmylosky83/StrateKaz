@@ -1,6 +1,6 @@
 /**
  * API Client para Gestión de Comités - HSEQ Management
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Incluye:
  * - Tipos de Comité

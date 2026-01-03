@@ -59,7 +59,7 @@ if ($Help) {
 }
 
 Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Blue
-Write-Host "  Local CI Testing - Grasas y Huesos del Norte" -ForegroundColor Blue
+Write-Host "  Local CI Testing - StrateKaz" -ForegroundColor Blue
 Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Blue
 Write-Host ""
 

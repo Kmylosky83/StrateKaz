@@ -340,7 +340,7 @@ Entrada inesperada de competidor internacional con precios 30% menores.
 **Objetivo**: Verificar que empresas no acceden a datos de otras.
 
 **Escenario**:
-- Empresa A: "Grasas y Huesos del Norte"
+- Empresa A: "StrateKaz"
 - Empresa B: "Competidor S.A."
 
 **Validaciones**:
@@ -401,7 +401,7 @@ Entrada inesperada de competidor internacional con precios 30% menores.
 
 ## Datos de Prueba Recomendados
 
-### Ejemplo Real: Grasas y Huesos del Norte
+### Ejemplo Real: StrateKaz
 
 #### Fortalezas
 1. Planta con certificación ISO 9001:2015

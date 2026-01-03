@@ -9,6 +9,7 @@ Define la generación automática de informes:
 - HistorialInforme: Historial de generaciones
 """
 from django.db import models
+from django.conf import settings
 from apps.core.base_models import BaseCompanyModel
 
 
@@ -175,7 +176,7 @@ class InformeDinamico(BaseCompanyModel):
         help_text='Detalle del error si la generación falló'
     )
     generado_por = models.ForeignKey(
-        'auth.User',
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

@@ -9,7 +9,7 @@ Cobertura de tests:
 5. TestRBACRolesAdicionales: Sistema RBAC híbrido (roles adicionales)
 6. TestRBACIntegracion: Flujo completo usuario->cargo->permisos
 
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 """
 import pytest
 from datetime import timedelta

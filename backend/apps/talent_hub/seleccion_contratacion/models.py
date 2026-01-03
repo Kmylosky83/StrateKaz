@@ -1,6 +1,6 @@
 """
 Modelos para Selección y Contratación - Talent Hub
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Gestiona el proceso completo de reclutamiento, selección y contratación de personal:
 - Vacantes activas

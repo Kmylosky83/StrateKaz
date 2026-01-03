@@ -1,5 +1,5 @@
 """
-WSGI config for Grasas y Huesos del Norte S.A.S project.
+WSGI config for StrateKaz project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 

@@ -1,6 +1,6 @@
 # Guía de Inicio - Design System del Proyecto
 
-Bienvenido a la guía del Design System disponible en el proyecto "Grasas y Huesos del Norte".
+Bienvenido a la guía del Design System disponible en el proyecto "StrateKaz".
 
 ---
 
@@ -145,7 +145,7 @@ Componentes disponibles:
 ### Ubicación en el Proyecto
 
 ```
-c:\Proyectos\Grasas y Huesos del Norte\
+c:\Proyectos\StrateKaz\
 ├── frontend\src\components\
 │   ├── layout\              ← Componentes de estructura
 │   ├── common\              ← Componentes básicos

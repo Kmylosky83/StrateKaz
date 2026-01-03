@@ -59,7 +59,7 @@
       "Bash(git log:*)",
       "Bash(py manage.py check:*)",
       "Bash(python manage.py shell:*)",
-      "Bash(ls -la \"c:\\\\Proyectos\\\\Grasas y Huesos del Norte\\\\frontend\\\\src\\\\features\"\" 2>/dev/null || echo \"Ruta no encontrada \")",
+      "Bash(ls -la \"c:\\\\Proyectos\\\\StrateKaz\\\\frontend\\\\src\\\\features\"\" 2>/dev/null || echo \"Ruta no encontrada \")",
       "Bash(xargs -I {} sh -c 'echo \"\"=== {} ===\"\" && wc -l {}')",
       "Bash(ls:*)",
       "Bash(chmod:*)",
@@ -85,7 +85,9 @@
       "Bash(docker compose:*)",
       "Bash(docker exec grasas_huesos_backend grep:*)",
       "Bash(docker compose exec backend python manage.py shell:*)",
-      "Bash(docker-compose exec:*)"
+      "Bash(docker-compose exec:*)",
+      "Bash(dir /B)",
+      "Bash(docker-compose exec frontend sh -c \"ls -la /app/public/\")"
     ],
     "deny": [],
     "ask": []

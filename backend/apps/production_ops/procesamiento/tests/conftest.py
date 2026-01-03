@@ -30,9 +30,9 @@ User = get_user_model()
 def empresa(db):
     """Empresa de prueba."""
     return EmpresaConfig.objects.create(
-        nombre='Grasas y Huesos del Norte',
+        nombre='StrateKaz',
         nit='900123456-1',
-        razon_social='Grasas y Huesos del Norte S.A.S.',
+        razon_social='StrateKaz.',
         nombre_comercial='GHN',
         email='info@ghn.com',
         telefono='3001234567',

@@ -1,5 +1,5 @@
 # Generated migration for RolAdicional - Sistema RBAC Híbrido
-# Grasas y Huesos del Norte / StrateKaz
+# StrateKaz / StrateKaz
 
 from django.conf import settings
 from django.db import migrations, models

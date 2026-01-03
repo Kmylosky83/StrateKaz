@@ -113,7 +113,7 @@ services:
       - "${FRONTEND_PORT:-3010}:3010"
     environment:
       - VITE_API_URL=${VITE_API_URL:-http://localhost:8000/api}
-      - VITE_APP_NAME=${VITE_APP_NAME:-Grasas y Huesos del Norte}
+      - VITE_APP_NAME=${VITE_APP_NAME:-StrateKaz}
     depends_on:
       - backend
     networks:

@@ -1,6 +1,6 @@
 /**
  * Hooks React Query para Contexto Organizacional
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { dofaApi, pestelApi, porterApi } from '../api/contextoApi';

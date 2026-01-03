@@ -361,6 +361,6 @@ GET    /api/motor_cumplimiento/partes-interesadas/partes/matriz-influencia-inter
 
 ## Autor
 
-Sistema de Gestión Integral - Grasas y Huesos del Norte
+Sistema de Gestión Integral - StrateKaz
 Módulo de Cumplimiento - Partes Interesadas
 Desarrollado siguiendo estándares ISO 9001:2015

@@ -1,6 +1,6 @@
 # Logistics Fleet Management Module
 
-Sistema completo de Gestión de Flota y Transporte para Grasas y Huesos del Norte.
+Sistema completo de Gestión de Flota y Transporte para StrateKaz.
 
 ## Características Principales
 
@@ -246,6 +246,6 @@ function CreateVehicleForm() {
 
 ## Autor
 
-Módulo desarrollado para el sistema ERP de Grasas y Huesos del Norte.
+Módulo desarrollado para el sistema ERP de StrateKaz.
 
 Cumplimiento: Resolución 40595 de 2022 - Plan Estratégico de Seguridad Vial (PESV)

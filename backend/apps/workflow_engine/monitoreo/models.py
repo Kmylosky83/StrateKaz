@@ -38,7 +38,7 @@ class AlertaFlujo(models.Model):
     descripcion = models.TextField()
     fecha_generacion = models.DateTimeField(auto_now_add=True)
     fecha_atencion = models.DateTimeField(null=True, blank=True)
-    atendida_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='alertas_atendidas')
+    atendida_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='workflow_alertas_atendidas')
     acciones_tomadas = models.TextField(blank=True)
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='activa')
     empresa_id = models.PositiveBigIntegerField()

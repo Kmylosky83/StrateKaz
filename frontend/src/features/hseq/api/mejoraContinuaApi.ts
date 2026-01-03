@@ -1,6 +1,6 @@
 /**
  * API Client para Mejora Continua - HSEQ Management
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Incluye:
  * - Programa de Auditorías

@@ -1,6 +1,6 @@
 """
 Views para Selección y Contratación - Talent Hub
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 ViewSets CRUD completos para vacantes, candidatos, entrevistas,
 pruebas y afiliaciones de seguridad social.

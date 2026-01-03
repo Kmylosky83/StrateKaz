@@ -1,6 +1,6 @@
 /**
  * React Query Hooks para el módulo de Áreas/Departamentos
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Gestiona:
  * - CRUD completo de áreas

@@ -1,6 +1,6 @@
 /**
  * API Client para Contexto Organizacional
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  */
 import { apiClient } from '@/lib/api-client';
 import type {

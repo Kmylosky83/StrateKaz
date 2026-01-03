@@ -1,6 +1,6 @@
 """
 Serializers para Servicios Generales - Admin Finance
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Serializa datos de:
 - Mantenimiento Locativo

@@ -1,11 +1,11 @@
-# Grasas y Huesos del Norte - SGI
+# StrateKaz - SGI
 
 Sistema integral de gestión para la recolección y procesamiento de materias primas (huesos, sebo, grasa) y subproductos cárnicos en Colombia.
 
 | Info | Valor |
 |------|-------|
-| **Versión** | 2.0.0 |
-| **Última Actualización** | 30 Diciembre 2025 (Fase 7 - Semana 26 - GO-LIVE) |
+| **Versión** | 2.1.0 |
+| **Última Actualización** | 01 Enero 2026 (Post GO-LIVE - Design System v2) |
 | **Estado** | ✅ DESARROLLO COMPLETO - Listo para Producción |
 | **Repositorio** | [GitHub](https://github.com/Kmylosky83/Grasas-Huesos-SGI) |
 
@@ -22,7 +22,8 @@ Sistema integral de gestión para la recolección y procesamiento de materias pr
 | Navegación | Módulos, tabs, secciones | `GET /api/core/modulos/` |
 | Cargos/Roles | RBAC completo | Admin crea cargos sin código |
 | Permisos | Granulares por acción | `sst.view_matriz_peligros` |
-| Branding | Logos, colores, nombre | `EmpresaConfig` |
+| Branding | Logos, 3 colores, nombre | `EmpresaConfig` (Primary, Secondary, Accent) |
+| Colores módulos | 10 colores base + mapeo | API devuelve color, frontend mapea automáticamente |
 
 Ver detalles: [docs/desarrollo/ARQUITECTURA-DINAMICA.md](docs/desarrollo/ARQUITECTURA-DINAMICA.md)
 
@@ -94,7 +95,7 @@ Ver detalle de módulos: [docs/arquitectura/CATALOGO-MODULOS.md](docs/arquitectu
 ```bash
 # 1. Clonar
 git clone <repository-url>
-cd "Grasas y Huesos del Norte"
+cd "StrateKaz"
 
 # 2. Iniciar
 docker-compose up -d
@@ -110,7 +111,7 @@ docker-compose up -d
 ## Estructura del Proyecto
 
 ```
-Grasas y Huesos del Norte/
+StrateKaz/
 ├── backend/
 │   ├── apps/
 │   │   ├── core/                    # Usuarios, RBAC, base models
@@ -144,7 +145,7 @@ Grasas y Huesos del Norte/
 |-----------|------------------|
 | **Arquitectura** | [CATALOGO-MODULOS.md](docs/arquitectura/CATALOGO-MODULOS.md), [DATABASE-ARCHITECTURE.md](docs/arquitectura/DATABASE-ARCHITECTURE.md) |
 | **Desarrollo** | [ARQUITECTURA-DINAMICA.md](docs/desarrollo/ARQUITECTURA-DINAMICA.md), [CODIGO-REUTILIZABLE.md](docs/desarrollo/CODIGO-REUTILIZABLE.md), [RBAC-SYSTEM.md](docs/desarrollo/RBAC-SYSTEM.md) |
-| **Frontend** | [DESIGN-SYSTEM.md](docs/DESIGN-SYSTEM.md), [NAVEGACION-DINAMICA.md](docs/desarrollo/NAVEGACION-DINAMICA.md) |
+| **Frontend** | [DESIGN-SYSTEM.md](docs/desarrollo/DESIGN-SYSTEM.md), [NAVEGACION-DINAMICA.md](docs/desarrollo/NAVEGACION-DINAMICA.md) |
 | **Backend** | [TESTING.md](docs/desarrollo/TESTING.md), [LOGGING.md](docs/desarrollo/LOGGING.md), [AUTENTICACION.md](docs/desarrollo/AUTENTICACION.md) |
 | **DevOps** | [CI-CD.md](docs/devops/CI-CD.md), [DESPLIEGUE.md](docs/devops/DESPLIEGUE.md), [BACKUPS.md](docs/devops/BACKUPS.md) |
 | **Planificación** | [CRONOGRAMA-26-SEMANAS.md](docs/planificacion/CRONOGRAMA-26-SEMANAS.md) |
@@ -622,4 +623,38 @@ FASE 6: NIVEL 5 - HABILITADORES COMPLETADO (S19-S22)
 
 ---
 
-**Última actualización:** 30 Diciembre 2025 (Semana 26 - DESARROLLO COMPLETO) | [Ver historial de cambios](docs/planificacion/CRONOGRAMA-26-SEMANAS.md)
+---
+
+### Post GO-LIVE - Design System v2 (01 Enero 2026)
+
+**Sistema de 3 Colores de Branding:**
+
+| Color | Uso | Elementos |
+|-------|-----|-----------|
+| **Primary** | Acciones críticas | Botones Guardar/Crear, Tabs activos, Focus |
+| **Secondary** | Acciones secundarias | Botones Editar, Cancelar, Links internos |
+| **Accent** | Notificaciones | Badge notificaciones, Highlights, Alertas |
+
+**Mejoras implementadas:**
+- ✅ Sistema de branding de 3 colores configurables por tenant
+- ✅ Separación colores branding vs colores semánticos (success, warning, danger, info)
+- ✅ Hook `useModuleColor` para colores dinámicos de módulos
+- ✅ Componente `ModuleCard` con animaciones Framer Motion
+- ✅ StatsGrid con `iconColor` semántico (no usa branding)
+- ✅ Botones Edit en tablas usan `secondary` (distintos de Delete)
+- ✅ Badge notificaciones en Header usa `accent`
+- ✅ Mapeo automático de colores extendidos de Tailwind
+
+**Variantes de Button actualizadas:**
+- `primary` - Acciones principales (configurable)
+- `secondary` - Acciones secundarias (configurable)
+- `accent` - Destacados (configurable)
+- `danger` - Eliminar (fijo: rojo)
+- `ghost` - Enlaces sutiles
+- `outline-secondary` / `outline-accent` - Variantes outline
+
+Ver documentación completa: [DESIGN-SYSTEM.md](docs/desarrollo/DESIGN-SYSTEM.md)
+
+---
+
+**Última actualización:** 01 Enero 2026 (Post GO-LIVE - Design System v2) | [Ver historial de cambios](docs/planificacion/CRONOGRAMA-26-SEMANAS.md)

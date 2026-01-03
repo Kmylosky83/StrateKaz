@@ -58,7 +58,7 @@ Guía para configurar la identidad visual de su empresa en el sistema.
 
 | Campo | Uso | Ejemplo |
 |-------|-----|---------|
-| **Nombre Completo** | Header, Reportes, Documentos | "Grasas y Huesos del Norte S.A.S." |
+| **Nombre Completo** | Header, Reportes, Documentos | "StrateKaz." |
 | **Nombre Corto** | Sidebar, Espacios reducidos | "GHN" |
 | **Eslogan** | Login, Pie de página | "Procesando calidad desde 1990" |
 

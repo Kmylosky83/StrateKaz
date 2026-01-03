@@ -1,6 +1,6 @@
 /**
  * React Query Hooks para Partes Interesadas
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Usa useGenericCRUD como base para operaciones CRUD estándar
  */

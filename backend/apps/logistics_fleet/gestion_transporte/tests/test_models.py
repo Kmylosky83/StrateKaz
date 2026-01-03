@@ -351,7 +351,7 @@ class TestManifiesto:
         assert manifiesto.pk is not None
         assert manifiesto.numero_manifiesto is not None
         assert manifiesto.numero_manifiesto.startswith('MAN-')
-        assert manifiesto.remitente_nombre == 'Grasas y Huesos del Norte S.A.S.'
+        assert manifiesto.remitente_nombre == 'StrateKaz.'
 
     def test_str_representation(self, manifiesto):
         """Test representación en string."""

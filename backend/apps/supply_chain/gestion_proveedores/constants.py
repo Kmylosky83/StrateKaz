@@ -1,6 +1,6 @@
 """
 Constantes del módulo Gestión de Proveedores
-Sistema de Gestión Grasas y Huesos del Norte - Supply Chain
+Sistema de Gestión StrateKaz - Supply Chain
 
 Jerarquía de Materia Prima v2.0:
 ├── HUESO

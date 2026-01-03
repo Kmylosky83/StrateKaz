@@ -6,12 +6,12 @@
 # ==================== STAGE 1: Builder ====================
 FROM node:20-alpine AS builder
 
-LABEL maintainer="Grasas y Huesos del Norte"
+LABEL maintainer="StrateKaz"
 LABEL description="Frontend React/Vite - Build Stage"
 
 # Variables de build
 ARG VITE_API_URL
-ARG VITE_APP_NAME="Grasas y Huesos del Norte"
+ARG VITE_APP_NAME="StrateKaz"
 
 # Instalar dependencias necesarias para compilación
 RUN apk add --no-cache \
@@ -39,7 +39,7 @@ RUN npm run build
 # ==================== STAGE 2: Production ====================
 FROM nginx:1.25-alpine AS production
 
-LABEL maintainer="Grasas y Huesos del Norte"
+LABEL maintainer="StrateKaz"
 LABEL description="Frontend React/Vite - Production Server"
 
 # Instalar curl para healthcheck

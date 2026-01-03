@@ -1,6 +1,6 @@
 """
 Serializers para Roles Adicionales - Sistema RBAC Híbrido
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Serializers para:
 - RolAdicional CRUD

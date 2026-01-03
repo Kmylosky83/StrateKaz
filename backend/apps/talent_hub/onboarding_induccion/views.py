@@ -1,6 +1,6 @@
 """
 Views para Onboarding e Inducción - Talent Hub
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 """
 from rest_framework import viewsets, status
 from rest_framework.decorators import action

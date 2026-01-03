@@ -1,5 +1,5 @@
 """
-URL Configuration for Grasas y Huesos del Norte S.A.S
+URL Configuration for StrateKaz
 Sistema Integrado de Gestión para Recolección de ACU
 """
 from django.contrib import admin

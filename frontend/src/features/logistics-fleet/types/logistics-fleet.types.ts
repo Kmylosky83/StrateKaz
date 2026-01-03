@@ -1,7 +1,7 @@
 /**
  * Tipos para Logistics Fleet Management
  * Sistema de Gestion de Flota y Transporte
- * Grasas y Huesos del Norte
+ * StrateKaz
  */
 
 // ==================== COMMON TYPES ====================

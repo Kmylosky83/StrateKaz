@@ -23,6 +23,6 @@ class SeguimientoPlanKPIAdmin(admin.ModelAdmin):
 
 @admin.register(IntegracionAccionCorrectiva)
 class IntegracionAccionCorrectivaAdmin(admin.ModelAdmin):
-    list_display = ['plan_kpi', 'accion_correctiva', 'tipo_vinculo', 'is_active']
+    list_display = ['plan_kpi', 'accion_correctiva_id', 'tipo_vinculo', 'is_active']
     list_filter = ['tipo_vinculo', 'is_active']
     ordering = ['-fecha_vinculacion']

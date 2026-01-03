@@ -1,6 +1,6 @@
 """
 Modelos para config_contable - accounting
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Módulo ACTIVABLE de Contabilidad - Configuración:
 - PlanCuentas: Plan de cuentas PUC colombiano
@@ -598,7 +598,7 @@ class CentroCostoContable(BaseCompanyModel):
         on_delete=models.PROTECT,
         null=True,
         blank=True,
-        related_name='centros_costo_responsable',
+        related_name='accounting_centros_costo_responsable',
         verbose_name='Responsable'
     )
 

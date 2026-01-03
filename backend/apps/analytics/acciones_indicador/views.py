@@ -33,5 +33,5 @@ class IntegracionAccionCorrectivaViewSet(StandardViewSetMixin, viewsets.ModelVie
     queryset = IntegracionAccionCorrectiva.objects.all()
     serializer_class = IntegracionAccionCorrectivaSerializer
     permission_classes = [IsAuthenticated]
-    filterset_fields = ['plan_kpi', 'accion_correctiva', 'tipo_vinculo', 'is_active']
+    filterset_fields = ['plan_kpi', 'accion_correctiva_id', 'tipo_vinculo', 'is_active']
     ordering = ['-fecha_vinculacion']

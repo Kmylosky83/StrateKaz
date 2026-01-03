@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script para ejecutar tests del módulo de Configuración
-# Sistema de Gestión Grasas y Huesos del Norte
+# Sistema de Gestión StrateKaz
 
 set -e
 

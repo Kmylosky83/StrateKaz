@@ -1,9 +1,12 @@
 """
 Modelos del módulo Configuración - Dirección Estratégica
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Define:
 - EmpresaConfig: Datos fiscales y legales de la empresa (Singleton)
+- SedeEmpresa: Sedes y ubicaciones
+- IntegracionExterna: Integraciones con servicios externos
+- UnidadMedida: Catálogo de unidades de medida (importado)
 """
 from django.db import models
 from django.core.exceptions import ValidationError
@@ -11,6 +14,9 @@ from django.core.validators import RegexValidator
 import re
 
 from apps.core.base_models import TimestampedModel, AuditModel, SoftDeleteModel
+
+# Importar modelo de unidades de medida
+from .models_unidades import UnidadMedida
 
 
 # ==============================================================================
@@ -343,6 +349,20 @@ class EmpresaConfig(TimestampedModel):
     )
 
     # =========================================================================
+    # UNIDADES DE MEDIDA
+    # =========================================================================
+
+    unidad_capacidad_default = models.ForeignKey(
+        'UnidadMedida',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='empresas_capacidad_default',
+        verbose_name='Unidad de Capacidad por Defecto',
+        help_text='Unidad de medida predeterminada para capacidad de almacenamiento (ej: kg, ton, m³)'
+    )
+
+    # =========================================================================
     # AUDITORÍA (created_at, updated_at heredados de TimestampedModel)
     # =========================================================================
 
@@ -656,13 +676,37 @@ class SedeEmpresa(AuditModel, SoftDeleteModel):
         verbose_name='Fecha de Cierre',
         help_text='Fecha de cierre (si aplica)'
     )
+
+    # =========================================================================
+    # CAPACIDAD - SISTEMA DINÁMICO (sin hardcoding de unidades)
+    # =========================================================================
+
+    capacidad_almacenamiento = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Capacidad de Almacenamiento',
+        help_text='Capacidad máxima de almacenamiento (cantidad numérica)'
+    )
+    unidad_capacidad = models.ForeignKey(
+        'UnidadMedida',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='sedes_capacidad',
+        verbose_name='Unidad de Capacidad',
+        help_text='Unidad de medida de la capacidad (ej: kg, ton, m³, pallets)'
+    )
+
+    # DEPRECATED: Mantener temporalmente para migración
     capacidad_almacenamiento_kg = models.DecimalField(
         max_digits=12,
         decimal_places=2,
         null=True,
         blank=True,
-        verbose_name='Capacidad de Almacenamiento (kg)',
-        help_text='Capacidad máxima de almacenamiento en kilogramos'
+        verbose_name='[DEPRECATED] Capacidad de Almacenamiento (kg)',
+        help_text='DEPRECATED: Use capacidad_almacenamiento + unidad_capacidad'
     )
 
     # =========================================================================
@@ -707,11 +751,79 @@ class SedeEmpresa(AuditModel, SoftDeleteModel):
                     break
         return ', '.join(partes)
 
+    @property
+    def capacidad_formateada(self):
+        """
+        Retorna la capacidad formateada con su unidad.
+
+        Returns:
+            str: Capacidad formateada (ej: "5.2 ton", "1,200 m³") o cadena vacía
+        """
+        if self.capacidad_almacenamiento is None:
+            # Fallback: usar capacidad_almacenamiento_kg deprecated
+            if self.capacidad_almacenamiento_kg is not None:
+                # Formatear como kg/ton según el valor
+                valor = float(self.capacidad_almacenamiento_kg)
+                if valor >= 1000:
+                    return f"{valor/1000:.1f} ton"
+                else:
+                    return f"{valor:.0f} kg"
+            return ''
+
+        if not self.unidad_capacidad:
+            # Sin unidad configurada, mostrar solo el número
+            return str(self.capacidad_almacenamiento)
+
+        # Usar el método de formateo de la unidad
+        empresa_config = EmpresaConfig.get_instance()
+        locale_config = None
+        if empresa_config:
+            locale_config = {
+                'separador_miles': empresa_config.separador_miles,
+                'separador_decimales': empresa_config.separador_decimales,
+            }
+
+        return self.unidad_capacidad.formatear(
+            self.capacidad_almacenamiento,
+            incluir_simbolo=True,
+            locale_config=locale_config
+        )
+
+    def obtener_capacidad_en_unidad(self, unidad_destino):
+        """
+        Obtiene la capacidad convertida a otra unidad.
+
+        Args:
+            unidad_destino (UnidadMedida): Unidad de medida destino
+
+        Returns:
+            Decimal: Capacidad en la unidad destino
+
+        Raises:
+            ValidationError: Si las unidades no son compatibles
+        """
+        if self.capacidad_almacenamiento is None or not self.unidad_capacidad:
+            return None
+
+        return self.unidad_capacidad.convertir_a(
+            self.capacidad_almacenamiento,
+            unidad_destino
+        )
+
     # soft_delete(), restore(): heredados de SoftDeleteModel
 
     def clean(self):
         """Validaciones personalizadas."""
         super().clean()
+
+        # Validar que exista EmpresaConfig antes de crear sedes
+        if not self.pk:  # Solo en creación
+            empresa_config = EmpresaConfig.get_instance()
+            if not empresa_config:
+                raise ValidationError(
+                    'Debe configurar los datos de la empresa antes de crear sedes. '
+                    'Vaya a Configuración > Datos de Empresa para completar la información.'
+                )
 
         # Validar que solo haya una sede principal
         if self.es_sede_principal:

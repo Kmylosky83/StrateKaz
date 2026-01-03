@@ -1,6 +1,6 @@
 """
 Views para Gestión de Almacenamiento e Inventario - Supply Chain
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 ViewSets con lógica de negocio para gestión de inventarios, movimientos,
 kardex, alertas y configuración de stock.

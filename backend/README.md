@@ -1,4 +1,4 @@
-# Grasas y Huesos del Norte - Backend
+# StrateKaz - Backend
 
 Sistema Integrado de Gestión para Recolección de ACU (Aceite de Cocina Usado)
 

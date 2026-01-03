@@ -1,6 +1,6 @@
 # Sistema de Backup Automático - Base de Datos MySQL
 
-Sistema completo de backup y restauración para la base de datos MySQL del proyecto ERP Grasas y Huesos del Norte.
+Sistema completo de backup y restauración para la base de datos MySQL del proyecto ERP StrateKaz.
 
 ## Características
 
@@ -485,4 +485,4 @@ Para reportar problemas o sugerencias:
 
 **Última actualización**: 2024-12-23
 **Versión**: 1.0
-**Autor**: DevOps Team - Grasas y Huesos del Norte S.A.S
+**Autor**: DevOps Team - StrateKaz

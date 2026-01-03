@@ -1,6 +1,6 @@
 /**
  * Hooks Barrel Export - Gestión de Proveedores (Supply Chain)
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  */
 
 // ==================== CATÁLOGOS ====================

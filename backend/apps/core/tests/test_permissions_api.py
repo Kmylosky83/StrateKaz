@@ -7,7 +7,7 @@ Cobertura de tests:
 3. TestPermissionsScope: Tests de alcance de permisos (OWN, TEAM, ALL)
 4. TestPermissionsDenied: Tests de denegación de acceso (403 Forbidden)
 
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 """
 import pytest
 from django.urls import reverse

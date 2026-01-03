@@ -1,6 +1,6 @@
 /**
  * RiesgosOportunidadesTab - Tab principal para gestión de riesgos y oportunidades
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Incluye:
  * - Resumen ejecutivo de riesgos

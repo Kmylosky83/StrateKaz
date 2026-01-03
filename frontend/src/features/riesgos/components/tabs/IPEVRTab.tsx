@@ -1,6 +1,6 @@
 /**
  * IPEVRTab - Tab Principal de Identificación de Peligros, Evaluación y Valoración de Riesgos
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Implementa la metodología GTC-45 con 4 subtabs:
  * 1. Resumen - Cards estadísticos y métricas clave

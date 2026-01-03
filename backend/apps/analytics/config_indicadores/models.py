@@ -134,14 +134,14 @@ class FichaTecnicaKPI(BaseCompanyModel):
         help_text='De dónde se obtienen los datos para el cálculo'
     )
     responsable_medicion = models.ForeignKey(
-        'talent_hub.Cargo',
+        'core.Cargo',
         on_delete=models.PROTECT,
         related_name='kpis_medir',
         verbose_name='Responsable de Medición',
         help_text='Cargo responsable de recopilar y registrar los datos'
     )
     responsable_analisis = models.ForeignKey(
-        'talent_hub.Cargo',
+        'core.Cargo',
         on_delete=models.PROTECT,
         related_name='kpis_analizar',
         verbose_name='Responsable de Análisis',

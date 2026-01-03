@@ -1,5 +1,5 @@
 """
-Módulo Analytics - Sistema de Gestión Grasas y Huesos del Norte
+Módulo Analytics - Sistema de Gestión StrateKaz
 ================================================================
 
 Módulo de analítica y gestión de indicadores para:

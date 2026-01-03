@@ -24,8 +24,11 @@ import {
   useToggleUserStatus,
 } from '../hooks/useUsers';
 import type { User, CreateUserDTO, UpdateUserDTO, UserFilters } from '@/types/users.types';
+import { useModuleColor } from '@/hooks/useModuleColor';
 
 export default function UsersPage() {
+  const { color: moduleColor } = useModuleColor('USUARIOS');
+
   const [filters, setFilters] = useState<UserFilters>({
     search: '',
     cargo: '',
@@ -156,7 +159,7 @@ export default function UsersPage() {
     const conCargo = users.filter((u) => u.cargo).length;
 
     return [
-      { label: 'Total Usuarios', value: totalUsers, icon: Users, iconColor: 'primary' as const },
+      { label: 'Total Usuarios', value: totalUsers, icon: Users, iconColor: 'info' as const },
       { label: 'Activos', value: activos, icon: UserCheck, iconColor: 'success' as const },
       { label: 'Inactivos', value: inactivos, icon: UserX, iconColor: 'gray' as const },
       { label: 'Con Cargo Asignado', value: conCargo, icon: Shield, iconColor: 'info' as const },
@@ -180,7 +183,7 @@ export default function UsersPage() {
       {isLoadingUsers ? (
         <StatsGridSkeleton columns={4} />
       ) : (
-        <StatsGrid stats={userStats} columns={4} macroprocessColor="purple" />
+        <StatsGrid stats={userStats} columns={4} moduleColor={moduleColor} />
       )}
 
       {/* FILTROS */}

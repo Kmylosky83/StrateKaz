@@ -1,6 +1,6 @@
 """
 Admin para Gestión de Almacenamiento e Inventario - Supply Chain
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Admin básico - solo registra los modelos sin configuraciones.
 """

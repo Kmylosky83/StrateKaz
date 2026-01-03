@@ -125,7 +125,7 @@ export const TiposDocumentoSection = () => {
     const tiposConConsecutivo = tipos.filter((t) => t.tiene_consecutivo).length;
 
     return [
-      { label: 'Categorías', value: cats.length, icon: FolderOpen, iconColor: 'primary' as const },
+      { label: 'Categorías', value: cats.length, icon: FolderOpen, iconColor: 'info' as const },
       { label: 'Tipos de Documento', value: tipos.length, icon: FileText, iconColor: 'info' as const },
       { label: 'Tipos Activos', value: tiposActivos, icon: CheckCircle, iconColor: 'success' as const },
       { label: 'Con Consecutivo', value: tiposConConsecutivo, icon: Tag, iconColor: 'purple' as const, description: 'Configurados' },
@@ -190,7 +190,7 @@ export const TiposDocumentoSection = () => {
       {isLoading ? (
         <StatsGridSkeleton columns={4} />
       ) : (
-        <StatsGrid stats={documentStats} columns={4} macroprocessColor="purple" />
+        <StatsGrid stats={documentStats} columns={4} moduleColor="purple" />
       )}
 
       {/* Tabs */}

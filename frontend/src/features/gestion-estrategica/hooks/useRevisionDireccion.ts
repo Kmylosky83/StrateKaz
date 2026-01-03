@@ -1,6 +1,6 @@
 /**
  * React Query Hooks para Revisión por Dirección (ISO 9.3)
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';

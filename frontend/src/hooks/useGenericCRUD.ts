@@ -1,6 +1,6 @@
 /**
  * Hook genérico para operaciones CRUD con React Query
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Provee funcionalidad CRUD completa con:
  * - Queries tipadas con React Query

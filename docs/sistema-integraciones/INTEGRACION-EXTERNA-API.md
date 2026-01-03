@@ -587,7 +587,7 @@ POST /api/gestion-estrategica/configuracion/integraciones-externas/
   "ambiente": "PRODUCCION",
   "configuracion_adicional": {
     "from_email": "noreply@empresa.com",
-    "from_name": "Sistema de Gestión Grasas y Huesos"
+    "from_name": "Sistema de Gestión StrateKaz"
   },
   "limite_llamadas_dia": 500
 }

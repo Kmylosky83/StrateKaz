@@ -1,4 +1,4 @@
-# Documentación Docker - Grasas y Huesos del Norte
+# Documentación Docker - StrateKaz
 
 ## Tabla de Contenidos
 
@@ -16,7 +16,7 @@
 
 ## Introducción
 
-Esta documentación describe la configuración Docker del proyecto **Grasas y Huesos del Norte**, incluyendo configuraciones para desarrollo y producción, scripts de utilidad y mejores prácticas.
+Esta documentación describe la configuración Docker del proyecto **StrateKaz**, incluyendo configuraciones para desarrollo y producción, scripts de utilidad y mejores prácticas.
 
 ### Servicios Dockerizados
 
@@ -774,4 +774,4 @@ Para problemas o preguntas:
 
 **Última actualización:** 2024-12-22
 **Versión:** 1.0.0
-**Mantenedor:** DevOps Team - Grasas y Huesos del Norte
+**Mantenedor:** DevOps Team - StrateKaz

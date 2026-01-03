@@ -426,7 +426,7 @@ class TestLogCambioViewSet:
         """
         # Act
         response = authenticated_client.get(
-            '/api/audit/logs/logs-cambio/?search=Grasas'
+            '/api/audit/logs/logs-cambio/?search=StrateKaz'
         )
 
         # Assert

@@ -1,6 +1,6 @@
 """
 Modelos para Gestión de Flota - Logistics Fleet Management
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Cumplimiento PESV (Resolución 40595/2022) para gestión de flota vehicular
 de recolección y distribución.
@@ -729,7 +729,7 @@ class MantenimientoVehiculo(BaseCompanyModel):
     responsable = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
-        related_name='mantenimientos_responsable',
+        related_name='flota_mantenimientos_responsable',
         null=True,
         blank=True,
         verbose_name='Responsable del mantenimiento'

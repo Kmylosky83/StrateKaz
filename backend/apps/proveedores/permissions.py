@@ -1,6 +1,6 @@
 """
 Permissions personalizados del módulo Proveedores
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 """
 from rest_framework import permissions
 

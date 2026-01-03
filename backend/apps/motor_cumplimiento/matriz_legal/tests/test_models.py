@@ -383,5 +383,5 @@ class TestEmpresaNorma:
         str_result = str(empresa_norma)
 
         # Assert
-        assert 'Grasas y Huesos del Norte' in str_result
+        assert 'StrateKaz' in str_result
         assert '1072' in str_result

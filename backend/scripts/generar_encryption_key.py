@@ -109,7 +109,7 @@ def main():
         print("Documentar estas claves en tu vault con el formato:")
         print()
         for ambiente, clave in claves.items():
-            print(f"Proyecto: Grasas y Huesos del Norte")
+            print(f"Proyecto: StrateKaz")
             print(f"Ambiente: {ambiente}")
             print(f"Variable: ENCRYPTION_KEY")
             print(f"Valor: {clave}")

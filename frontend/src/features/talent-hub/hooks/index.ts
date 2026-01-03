@@ -1,6 +1,6 @@
 /**
  * Hooks para Talent Hub
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Re-exporta todos los hooks del módulo Talent Hub
  */

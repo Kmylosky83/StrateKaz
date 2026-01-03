@@ -836,7 +836,7 @@ export default function AccidentalidadPage() {
 ```typescript
 /**
  * Módulo HSEQ - Feature Module
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  */
 
 // ==================== PAGES ====================

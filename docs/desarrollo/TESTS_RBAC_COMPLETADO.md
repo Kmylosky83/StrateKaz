@@ -1,7 +1,7 @@
 # Tests del Sistema RBAC - Completado ✅
 
 **Fecha**: 2025-12-24
-**Sistema**: ERP StrateKaz - Grasas y Huesos del Norte
+**Sistema**: ERP StrateKaz - StrateKaz
 **Módulo**: Sistema RBAC (Role-Based Access Control)
 
 ---
@@ -473,11 +473,11 @@ Los tests están listos para ejecutarse y validar la funcionalidad del sistema d
 
 **Archivos creados:**
 
-- `c:\Proyectos\Grasas y Huesos del Norte\backend\apps\core\tests\test_rbac.py`
-- `c:\Proyectos\Grasas y Huesos del Norte\backend\apps\core\tests\test_permissions_api.py`
-- `c:\Proyectos\Grasas y Huesos del Norte\backend\apps\core\tests\README.md`
-- `c:\Proyectos\Grasas y Huesos del Norte\backend\apps\core\tests\INDEX.md`
-- `c:\Proyectos\Grasas y Huesos del Norte\backend\apps\core\tests\run_tests.sh`
+- `c:\Proyectos\StrateKaz\backend\apps\core\tests\test_rbac.py`
+- `c:\Proyectos\StrateKaz\backend\apps\core\tests\test_permissions_api.py`
+- `c:\Proyectos\StrateKaz\backend\apps\core\tests\README.md`
+- `c:\Proyectos\StrateKaz\backend\apps\core\tests\INDEX.md`
+- `c:\Proyectos\StrateKaz\backend\apps\core\tests\run_tests.sh`
 
 **Tests totales**: 106+
 **Cobertura**: 100% de modelos RBAC

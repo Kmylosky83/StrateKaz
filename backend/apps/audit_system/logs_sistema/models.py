@@ -1,6 +1,6 @@
 """
 Modelos del módulo Logs del Sistema - Audit System
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Define:
 - ConfiguracionAuditoria: Configuración de qué auditar por modelo

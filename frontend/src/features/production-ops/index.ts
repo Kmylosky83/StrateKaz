@@ -1,6 +1,6 @@
 /**
  * Production Ops Module - Main Exports
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  */
 
 // Types

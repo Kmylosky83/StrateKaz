@@ -106,7 +106,7 @@ python manage.py verify_hseq_modules  # Verificar
 ## 📂 Estructura de Archivos Creados
 
 ```
-Grasas y Huesos del Norte/
+StrateKaz/
 │
 ├── backend/
 │   ├── apps/core/management/commands/

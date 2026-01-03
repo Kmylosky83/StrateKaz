@@ -1,6 +1,6 @@
 /**
  * Types Index - Sales CRM Module
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Exporta todos los tipos del módulo CRM
  */

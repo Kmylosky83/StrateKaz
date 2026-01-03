@@ -2,7 +2,7 @@
 
 # ===================================================================
 # Script para ver logs de Docker Compose
-# Grasas y Huesos del Norte S.A.S
+# StrateKaz
 # ===================================================================
 
 # Colores

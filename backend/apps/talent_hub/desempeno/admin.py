@@ -1,6 +1,6 @@
 """
 Admin para Desempeño - Talent Hub
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 """
 from django.contrib import admin
 from .models import (

@@ -13,11 +13,11 @@ from django.views.decorators.csrf import csrf_exempt
 def health_check(request):
     """
     Endpoint de health check para Docker healthcheck
-    
+
     Verifica:
     - Conectividad a la base de datos
     - Estado general de la aplicación
-    
+
     Returns:
         JsonResponse con status 200 si todo está OK
         JsonResponse con status 503 si hay problemas
@@ -27,14 +27,14 @@ def health_check(request):
         with connection.cursor() as cursor:
             cursor.execute("SELECT 1")
             db_status = 'connected'
-        
+
         return JsonResponse({
             'status': 'healthy',
             'database': db_status,
             'service': 'grasas-huesos-backend',
             'version': '1.0.0'
         }, status=200)
-    
+
     except Exception as e:
         return JsonResponse({
             'status': 'unhealthy',

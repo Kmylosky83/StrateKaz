@@ -1,6 +1,6 @@
 """
 ViewSets para el Módulo de Dirección Estratégica
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Este módulo contiene los ViewSets para:
 - Tab 1: Identidad Corporativa (Misión, Visión, Valores, Política Integral)
@@ -604,8 +604,9 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
             # Obtener tabs habilitados
             enabled_tabs = list(module.tabs.all())  # Ya filtrados por el prefetch
 
-            # Construir hijos (tabs)
+            # Construir hijos (tabs) - heredan color del módulo padre
             children = None
+            module_effective_color = module.get_effective_color()
             if enabled_tabs:
                 children = []
                 for tab in enabled_tabs:
@@ -613,7 +614,7 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
                         'code': tab.code,
                         'name': tab.name,
                         'icon': tab.icon,
-                        'color': module.color,
+                        'color': module_effective_color,  # Hereda color efectivo del módulo
                         'route': f"/{module.code.replace('_', '-')}/{tab.code.replace('_', '-')}",
                         'is_category': False,
                         'children': None
@@ -624,7 +625,7 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
                 'code': module.code,
                 'name': module.name,
                 'icon': module.icon,
-                'color': module.color,
+                'color': module_effective_color,  # Color efectivo (asignado o por categoría)
                 'route': f"/{module.code.replace('_', '-')}" if not children else None,
                 'is_category': False,
                 'children': children
@@ -791,6 +792,23 @@ class BrandingConfigViewSet(viewsets.ModelViewSet):
         elif self.action in ['update', 'partial_update']:
             return BrandingConfigUpdateSerializer
         return BrandingConfigSerializer
+
+    def partial_update(self, request, *args, **kwargs):
+        """Override para debugging de errores 400"""
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"[BRANDING DEBUG] Request data: {request.data}")
+        logger.info(f"[BRANDING DEBUG] Content-Type: {request.content_type}")
+
+        serializer = self.get_serializer(
+            self.get_object(),
+            data=request.data,
+            partial=True
+        )
+        if not serializer.is_valid():
+            logger.error(f"[BRANDING DEBUG] Validation errors: {serializer.errors}")
+
+        return super().partial_update(request, *args, **kwargs)
 
     @action(detail=False, methods=['get'], permission_classes=[AllowAny])
     def active(self, request):

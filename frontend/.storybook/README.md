@@ -1,6 +1,6 @@
 # Storybook Configuration
 
-This directory contains the Storybook configuration for the Grasas y Huesos del Norte frontend application.
+This directory contains the Storybook configuration for the StrateKaz frontend application.
 
 ## What is Storybook?
 

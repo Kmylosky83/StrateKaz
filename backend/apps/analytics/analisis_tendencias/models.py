@@ -8,6 +8,7 @@ Define el análisis avanzado de KPIs:
 - AnomaliaDetectada: Detección automática de valores anómalos
 """
 from django.db import models
+from django.conf import settings
 from apps.core.base_models import BaseCompanyModel
 
 
@@ -300,7 +301,7 @@ class AnomaliaDetectada(BaseCompanyModel):
         help_text='Cuándo se revisó la anomalía'
     )
     usuario_revision = models.ForeignKey(
-        'auth.User',
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

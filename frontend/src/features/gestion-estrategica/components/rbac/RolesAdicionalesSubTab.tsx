@@ -480,7 +480,7 @@ export const RolesAdicionalesSubTab = () => {
     const totalPermisos = roles.reduce((sum, r) => sum + (r.permisos_count || 0), 0);
 
     return [
-      { label: 'Total Roles', value: roles.length, icon: Shield, iconColor: 'primary' as const },
+      { label: 'Total Roles', value: roles.length, icon: Shield, iconColor: 'info' as const },
       { label: 'Roles Activos', value: activos, icon: Users, iconColor: 'success' as const },
       { label: 'Con Certificación', value: conCertificacion, icon: Award, iconColor: 'warning' as const, description: 'Requieren certificado' },
       { label: 'Usuarios Asignados', value: totalUsuarios, icon: Users, iconColor: 'info' as const },
@@ -565,7 +565,7 @@ export const RolesAdicionalesSubTab = () => {
       {loadingRoles ? (
         <StatsGridSkeleton columns={4} />
       ) : (
-        <StatsGrid stats={roleStats} columns={4} macroprocessColor="purple" />
+        <StatsGrid stats={roleStats} columns={4} moduleColor="purple" />
       )}
 
       {/* Plantillas sugeridas */}

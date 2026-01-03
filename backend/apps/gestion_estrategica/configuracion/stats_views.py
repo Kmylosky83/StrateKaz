@@ -1,6 +1,6 @@
 """
 Views de Estadisticas para Configuracion - Gestion Estrategica
-Sistema de Gestion Grasas y Huesos del Norte
+Sistema de Gestion StrateKaz
 
 Endpoint de estadisticas dinamicas por seccion del modulo Configuracion.
 """
@@ -124,15 +124,45 @@ def calculate_empresa_stats():
             'iconColor': 'primary',
         })
 
-    # Campos completos
+    # Campos completos - CORREGIDO: usar nombres de campos reales del modelo
+    # Verificar en models.py (EmpresaConfig) para nombres exactos
     campos_requeridos = [
-        'razon_social', 'nit', 'digito_verificacion', 'direccion',
-        'ciudad', 'departamento', 'telefono', 'email', 'representante_legal',
-        'tipo_empresa', 'regimen_tributario', 'actividad_economica'
+        # Datos de identificación fiscal
+        'razon_social',           # CharField - requerido
+        'nit',                    # CharField - requerido (unique)
+        'representante_legal',    # CharField - requerido
+        'tipo_sociedad',         # CharField con choices - requerido (no tipo_empresa)
+        'regimen_tributario',     # CharField con choices - requerido
+
+        # Datos de contacto oficial
+        'direccion_fiscal',       # TextField - requerido (no direccion)
+        'ciudad',                 # CharField - requerido
+        'departamento',           # CharField con choices - requerido
+        'telefono_principal',     # CharField - requerido (no telefono)
+        'email_corporativo',      # EmailField - requerido (no email)
+
+        # Datos opcionales pero importantes para funcionalidad completa
+        'actividad_economica',    # CharField - opcional pero importante (CIIU)
+        'nombre_comercial',       # CharField - opcional
     ]
-    campos_completos = sum(1 for campo in campos_requeridos if getattr(instance, campo, None))
+
+    # Contar cuántos de estos campos tienen valor
+    campos_completos = 0
+    for campo in campos_requeridos:
+        valor = getattr(instance, campo, None)
+        # Un campo se considera completo si:
+        # 1. No es None
+        # 2. No es una cadena vacía (si es string)
+        # 3. No es solo espacios en blanco
+        if valor is not None:
+            if isinstance(valor, str):
+                if valor.strip():  # Tiene contenido no vacío
+                    campos_completos += 1
+            else:
+                campos_completos += 1
+
     total_campos = len(campos_requeridos)
-    porcentaje = int((campos_completos / total_campos) * 100)
+    porcentaje = int((campos_completos / total_campos) * 100) if total_campos > 0 else 0
 
     stats.append({
         'key': 'campos_completos',
@@ -185,22 +215,35 @@ def calculate_sedes_stats():
         'iconColor': 'success' if sedes_con_gps == total else 'primary',
     })
 
-    # Capacidad total (si aplica)
-    capacidad_total = sedes.aggregate(
-        total=Sum('capacidad_almacenamiento_kg')
-    )['total'] or 0
+    # Capacidad total - SIMPLIFICADO
+    # Suma directa de todas las capacidades sin conversiones complejas
+    from decimal import Decimal
 
+    # Intentar primero con el nuevo campo capacidad_almacenamiento
+    capacidad_total = sedes.exclude(
+        capacidad_almacenamiento__isnull=True
+    ).aggregate(
+        total=Sum('capacidad_almacenamiento')
+    )['total'] or Decimal('0')
+
+    # Fallback: usar campo legacy si no hay capacidad nueva
+    if capacidad_total == 0:
+        capacidad_total = sedes.aggregate(
+            total=Sum('capacidad_almacenamiento_kg')
+        )['total'] or Decimal('0')
+
+    # Solo mostrar stat si hay capacidad configurada
     if capacidad_total > 0:
-        # Formatear capacidad
-        if capacidad_total >= 1000:
-            cap_text = f'{capacidad_total/1000:.1f} ton'
-        else:
-            cap_text = f'{capacidad_total:.0f} kg'
+        # Formatear con separador de miles
+        try:
+            cap_formateada = f'{capacidad_total:,.2f}'.replace(',', '.')
+        except:
+            cap_formateada = str(capacidad_total)
 
         stats.append({
             'key': 'capacidad_total',
             'label': 'Capacidad Total',
-            'value': cap_text,
+            'value': cap_formateada,
             'icon': 'Warehouse',
             'iconColor': 'primary',
         })

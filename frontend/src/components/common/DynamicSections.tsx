@@ -27,8 +27,8 @@ export interface DynamicSectionsProps {
   isLoading?: boolean;
   /** Variante visual */
   variant?: 'pills' | 'underline';
-  /** Color del macroproceso para estilizado */
-  macroprocessColor?: 'purple' | 'blue' | 'green' | 'orange' | 'gray';
+  /** Color del módulo para estilizado */
+  moduleColor?: 'purple' | 'blue' | 'green' | 'orange' | 'gray' | 'teal' | 'red' | 'yellow' | 'pink' | 'indigo';
   /** Clases adicionales */
   className?: string;
 }
@@ -47,7 +47,7 @@ const getIconComponent = (iconName?: string | null): React.ElementType => {
 };
 
 /**
- * Colores por macroproceso
+ * Colores por módulo - Sincronizado con los 6 niveles del sistema
  */
 const colorStyles = {
   purple: {
@@ -75,6 +75,31 @@ const colorStyles = {
     inactive: 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800',
     border: 'border-gray-600 text-gray-600 dark:border-gray-400 dark:text-gray-400',
   },
+  teal: {
+    active: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300',
+    inactive: 'text-gray-600 dark:text-gray-400 hover:bg-teal-50 dark:hover:bg-teal-900/10',
+    border: 'border-teal-600 text-teal-600 dark:border-teal-400 dark:text-teal-400',
+  },
+  red: {
+    active: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+    inactive: 'text-gray-600 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/10',
+    border: 'border-red-600 text-red-600 dark:border-red-400 dark:text-red-400',
+  },
+  yellow: {
+    active: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
+    inactive: 'text-gray-600 dark:text-gray-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/10',
+    border: 'border-yellow-600 text-yellow-600 dark:border-yellow-400 dark:text-yellow-400',
+  },
+  pink: {
+    active: 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300',
+    inactive: 'text-gray-600 dark:text-gray-400 hover:bg-pink-50 dark:hover:bg-pink-900/10',
+    border: 'border-pink-600 text-pink-600 dark:border-pink-400 dark:text-pink-400',
+  },
+  indigo: {
+    active: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300',
+    inactive: 'text-gray-600 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/10',
+    border: 'border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400',
+  },
 };
 
 export const DynamicSections = ({
@@ -83,10 +108,10 @@ export const DynamicSections = ({
   onChange,
   isLoading = false,
   variant = 'pills',
-  macroprocessColor = 'purple',
+  moduleColor = 'purple',
   className,
 }: DynamicSectionsProps) => {
-  const colors = colorStyles[macroprocessColor];
+  const colors = colorStyles[moduleColor];
 
   // Convertir secciones a formato de tabs con iconos
   const tabs = useMemo(() => {

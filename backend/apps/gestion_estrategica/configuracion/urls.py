@@ -1,6 +1,6 @@
 """
 URLs del módulo Configuración - Dirección Estratégica
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Define rutas para:
 - EmpresaConfig: /empresa-config/

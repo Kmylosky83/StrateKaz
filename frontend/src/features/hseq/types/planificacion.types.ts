@@ -1,6 +1,6 @@
 /**
  * Tipos TypeScript para el módulo de Planificación del Sistema HSEQ
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Mapea los modelos del backend:
  * - Plan de Trabajo Anual

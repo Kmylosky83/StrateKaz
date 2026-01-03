@@ -37,7 +37,7 @@ export const ConfiguracionTab = () => {
       },
       configuracion_adicional: {
         from_email: 'noreply@grasasyhuesos.com',
-        from_name: 'Grasas y Huesos del Norte',
+        from_name: 'StrateKaz',
       },
       ambiente: 'PRODUCCION',
       activo: true,

@@ -3,7 +3,7 @@
 ## Componentes Listos para el Módulo de Recepción
 
 ### LAYOUT (Estructuras de Página)
-Ubicación: `c:\Proyectos\Grasas y Huesos del Norte\frontend\src\components\layout\`
+Ubicación: `c:\Proyectos\StrateKaz\frontend\src\components\layout\`
 
 | Componente | Uso | Ejemplo |
 |-----------|-----|---------|
@@ -16,7 +16,7 @@ Ubicación: `c:\Proyectos\Grasas y Huesos del Norte\frontend\src\components\layo
 ---
 
 ### COMPONENTES COMUNES (Básicos)
-Ubicación: `c:\Proyectos\Grasas y Huesos del Norte\frontend\src\components\common\`
+Ubicación: `c:\Proyectos\StrateKaz\frontend\src\components\common\`
 
 | Componente | Props Principales | Variantes |
 |-----------|-------------------|----------|
@@ -29,7 +29,7 @@ Ubicación: `c:\Proyectos\Grasas y Huesos del Norte\frontend\src\components\comm
 ---
 
 ### FORMULARIOS
-Ubicación: `c:\Proyectos\Grasas y Huesos del Norte\frontend\src\components\forms\`
+Ubicación: `c:\Proyectos\StrateKaz\frontend\src\components\forms\`
 
 | Componente | Uso |
 |-----------|-----|

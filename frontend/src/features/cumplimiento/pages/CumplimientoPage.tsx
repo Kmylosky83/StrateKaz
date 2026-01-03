@@ -24,8 +24,20 @@ import {
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
 import { SelectionCard, SelectionCardGrid } from '@/components/common/SelectionCard';
+import { useModuleColor } from '@/hooks/useModuleColor';
+import { Spinner } from '@/components/common/Spinner';
 
 export default function CumplimientoPage() {
+  const { color: moduleColor, isLoading } = useModuleColor('MOTOR_CUMPLIMIENTO');
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Spinner />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       {/* HEADER */}
@@ -35,7 +47,7 @@ export default function CumplimientoPage() {
       />
 
       {/* HERO SECTION */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-8 text-white">
+      <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br from-${moduleColor}-600 via-${moduleColor}-700 to-indigo-800 p-8 text-white`}>
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48Y2lyY2xlIGN4PSIzMCIgY3k9IjMwIiByPSIyIi8+PC9nPjwvZz48L3N2Zz4=')] opacity-30"></div>
         <div className="relative z-10">
           <h2 className="text-2xl font-bold mb-2">Bienvenido al Motor de Cumplimiento</h2>
@@ -101,38 +113,38 @@ export default function CumplimientoPage() {
 
       {/* INFO ADICIONAL - ÁREAS DE CUMPLIMIENTO */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl p-4">
+        <div className={`bg-${moduleColor}-50 dark:bg-${moduleColor}-900/20 border border-${moduleColor}-100 dark:border-${moduleColor}-800 rounded-xl p-4`}>
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-              <Building2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <div className={`w-10 h-10 bg-${moduleColor}-100 dark:bg-${moduleColor}-900/30 rounded-lg flex items-center justify-center`}>
+              <Building2 className={`w-5 h-5 text-${moduleColor}-600 dark:text-${moduleColor}-400`} />
             </div>
-            <h4 className="font-medium text-blue-900 dark:text-blue-100">Cumplimiento Corporativo</h4>
+            <h4 className={`font-medium text-${moduleColor}-900 dark:text-${moduleColor}-100`}>Cumplimiento Corporativo</h4>
           </div>
-          <p className="text-sm text-blue-700 dark:text-blue-300">
+          <p className={`text-sm text-${moduleColor}-700 dark:text-${moduleColor}-300`}>
             Gestión de requisitos comerciales, tributarios y societarios de la organización.
           </p>
         </div>
 
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl p-4">
+        <div className={`bg-${moduleColor}-50 dark:bg-${moduleColor}-900/20 border border-${moduleColor}-100 dark:border-${moduleColor}-800 rounded-xl p-4`}>
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-              <ShieldCheck className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <div className={`w-10 h-10 bg-${moduleColor}-100 dark:bg-${moduleColor}-900/30 rounded-lg flex items-center justify-center`}>
+              <ShieldCheck className={`w-5 h-5 text-${moduleColor}-600 dark:text-${moduleColor}-400`} />
             </div>
-            <h4 className="font-medium text-blue-900 dark:text-blue-100">Cumplimiento Operativo</h4>
+            <h4 className={`font-medium text-${moduleColor}-900 dark:text-${moduleColor}-100`}>Cumplimiento Operativo</h4>
           </div>
-          <p className="text-sm text-blue-700 dark:text-blue-300">
+          <p className={`text-sm text-${moduleColor}-700 dark:text-${moduleColor}-300`}>
             Control de licencias, permisos y autorizaciones para operación legal del negocio.
           </p>
         </div>
 
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl p-4">
+        <div className={`bg-${moduleColor}-50 dark:bg-${moduleColor}-900/20 border border-${moduleColor}-100 dark:border-${moduleColor}-800 rounded-xl p-4`}>
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-              <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <div className={`w-10 h-10 bg-${moduleColor}-100 dark:bg-${moduleColor}-900/30 rounded-lg flex items-center justify-center`}>
+              <AlertCircle className={`w-5 h-5 text-${moduleColor}-600 dark:text-${moduleColor}-400`} />
             </div>
-            <h4 className="font-medium text-blue-900 dark:text-blue-100">Alertas y Vencimientos</h4>
+            <h4 className={`font-medium text-${moduleColor}-900 dark:text-${moduleColor}-100`}>Alertas y Vencimientos</h4>
           </div>
-          <p className="text-sm text-blue-700 dark:text-blue-300">
+          <p className={`text-sm text-${moduleColor}-700 dark:text-${moduleColor}-300`}>
             Sistema de notificaciones automáticas para renovaciones y actualizaciones normativas.
           </p>
         </div>
@@ -143,7 +155,7 @@ export default function CumplimientoPage() {
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-gray-600 dark:text-gray-400">Normativas Vigentes</span>
-            <Scale className="w-4 h-4 text-blue-600" />
+            <Scale className={`w-4 h-4 text-${moduleColor}-600`} />
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">127</p>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Aplicables a la organización</p>

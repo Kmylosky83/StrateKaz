@@ -1,6 +1,6 @@
 """
 Admin para Activos Fijos - Admin Finance
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Configuración de Django Admin para:
 - Categoría de Activo

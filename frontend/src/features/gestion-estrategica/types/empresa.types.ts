@@ -1,6 +1,6 @@
 /**
  * Tipos para EmpresaConfig - Datos Fiscales y Legales de la Empresa
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  */
 
 // Reutilizar SelectOption de strategic.types.ts

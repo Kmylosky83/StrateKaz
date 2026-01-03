@@ -1,6 +1,6 @@
 """
 Serializers para Gestión de Flota - Logistics Fleet Management
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 """
 from rest_framework import serializers
 from decimal import Decimal

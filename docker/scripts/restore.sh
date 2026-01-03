@@ -2,7 +2,7 @@
 
 # ===================================================================
 # Script de restauración de base de datos MySQL
-# Grasas y Huesos del Norte S.A.S
+# StrateKaz
 # ===================================================================
 #
 # Características:

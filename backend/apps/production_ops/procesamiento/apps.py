@@ -1,6 +1,6 @@
 """
 Configuración de la App de Procesamiento de Producción
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 """
 from django.apps import AppConfig
 

@@ -374,7 +374,7 @@ Optimizaciones implementadas:
 
 ## Contacto y Soporte
 
-**Sistema:** Grasas y Huesos del Norte - SGI
+**Sistema:** StrateKaz - SGI
 **Módulo:** Recepciones de Materia Prima
 **Versión:** 1.0.0
 **Fecha:** 2024-12-04

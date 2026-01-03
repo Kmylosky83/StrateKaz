@@ -250,9 +250,9 @@ SIMPLE_JWT = {
 # DRF-SPECTACULAR (API DOCUMENTATION)
 # ═══════════════════════════════════════════════════
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'SGI Grasas y Huesos del Norte API',
+    'TITLE': 'SGI StrateKaz API',
     'DESCRIPTION': '''
-    API del Sistema de Gestión Integral para Grasas y Huesos del Norte S.A.S
+    API del Sistema de Gestión Integral para StrateKaz
 
     **Arquitectura del Sistema:**
     - 6 Niveles Organizacionales
@@ -288,7 +288,7 @@ SPECTACULAR_SETTINGS = {
         'syntaxHighlight.theme': 'monokai',
     },
     'CONTACT': {
-        'name': 'Grasas y Huesos del Norte S.A.S',
+        'name': 'StrateKaz',
         'url': 'https://grasasyhuesos.com',
         'email': 'soporte@grasasyhuesos.com',
     },
@@ -386,12 +386,29 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@grasasyhuesos.com')
 
 # ═══════════════════════════════════════════════════
+# ENVIRONMENT DETECTION (cPanel vs Docker/VPS)
+# ═══════════════════════════════════════════════════
+# En cPanel no hay Redis ni Celery workers disponibles
+# USE_CPANEL=True activa alternativas basadas en base de datos
+USE_CPANEL = config('USE_CPANEL', default=False, cast=bool)
+
+# ═══════════════════════════════════════════════════
 # CELERY CONFIGURATION
 # ═══════════════════════════════════════════════════
-CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://localhost:6379/0')
-CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://localhost:6379/1')
+if USE_CPANEL:
+    # cPanel: Ejecutar tareas de forma síncrona (sin worker)
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_EAGER_PROPAGATES = True
+    # No necesita broker ni backend en modo eager
+    CELERY_BROKER_URL = None
+    CELERY_RESULT_BACKEND = None
+else:
+    # Docker/VPS: Usar Redis como broker
+    CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://localhost:6379/0')
+    CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://localhost:6379/1')
+    CELERY_TASK_ALWAYS_EAGER = False
 
-# Configuración de serialización y formatos
+# Configuración de serialización y formatos (común)
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_RESULT_SERIALIZER = 'json'
@@ -414,7 +431,7 @@ CELERY_TASK_DEFAULT_QUEUE = 'default'
 CELERY_TASK_DEFAULT_EXCHANGE = 'default'
 CELERY_TASK_DEFAULT_ROUTING_KEY = 'default'
 
-# Configuración de worker
+# Configuración de worker (solo aplica en Docker/VPS)
 CELERY_WORKER_PREFETCH_MULTIPLIER = 4
 CELERY_WORKER_MAX_TASKS_PER_CHILD = 1000
 CELERY_WORKER_DISABLE_RATE_LIMITS = False
@@ -430,7 +447,7 @@ CELERY_BROKER_CONNECTION_TIMEOUT = 30
 # Configuración de Beat (tareas periódicas)
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
-# Almacenar resultados en base de datos (opcional, además de Redis)
+# Almacenar resultados en base de datos
 CELERY_RESULT_BACKEND_DB = 'django-db'
 CELERY_CACHE_BACKEND = 'django-cache'
 
@@ -438,34 +455,40 @@ CELERY_CACHE_BACKEND = 'django-cache'
 CELERY_WORKER_HIJACK_ROOT_LOGGER = False
 
 # ═══════════════════════════════════════════════════
-# REDIS CACHE CONFIGURATION
+# CACHE CONFIGURATION
 # ═══════════════════════════════════════════════════
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': config('REDIS_URL', default='redis://localhost:6379/2'),
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-            'CONNECTION_POOL_KWARGS': {
-                'max_connections': 50,
-                'retry_on_timeout': True,
-            },
-        },
-        'KEY_PREFIX': 'grasas_huesos',
-        'TIMEOUT': 300,  # 5 minutos por defecto
-    },
-    'sessions': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': config('REDIS_URL', default='redis://localhost:6379/3'),
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-        },
-        'KEY_PREFIX': 'session',
-        'TIMEOUT': 86400,  # 24 horas
+if USE_CPANEL:
+    # cPanel: Usar cache basado en base de datos
+    # Requiere ejecutar: python manage.py createcachetable
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+            'LOCATION': 'django_cache_table',
+            'TIMEOUT': 300,  # 5 minutos por defecto
+            'OPTIONS': {
+                'MAX_ENTRIES': 1000,
+                'CULL_FREQUENCY': 3,
+            }
+        }
     }
-}
+else:
+    # Docker/VPS: Usar Redis para cache
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': config('REDIS_URL', default='redis://redis:6379/2'),
+            'KEY_PREFIX': 'grasas_huesos',
+            'TIMEOUT': 300,  # 5 minutos por defecto
+        },
+        'sessions': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': config('REDIS_URL', default='redis://redis:6379/3'),
+            'KEY_PREFIX': 'session',
+            'TIMEOUT': 86400,  # 24 horas
+        }
+    }
 
-# Usar Redis para sesiones (opcional)
+# Usar Redis para sesiones (solo en Docker/VPS)
 # SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 # SESSION_CACHE_ALIAS = 'sessions'
 

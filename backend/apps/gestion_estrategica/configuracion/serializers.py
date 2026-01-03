@@ -1,6 +1,6 @@
 """
 Serializers del módulo Configuración - Dirección Estratégica
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Define serializers para:
 - EmpresaConfig: Datos fiscales y legales de la empresa
@@ -18,6 +18,7 @@ from .models import (
     TIMEZONE_CHOICES,
     TIPO_SEDE_CHOICES,
 )
+from .models_unidades import UnidadMedida
 
 
 class EmpresaConfigSerializer(serializers.ModelSerializer):
@@ -210,6 +211,7 @@ class SedeEmpresaSerializer(serializers.ModelSerializer):
     direccion_completa = serializers.CharField(read_only=True)
     tiene_geolocalizacion = serializers.BooleanField(read_only=True)
     is_deleted = serializers.BooleanField(read_only=True)
+    capacidad_formateada = serializers.CharField(read_only=True)
 
     # Display names
     tipo_sede_display = serializers.CharField(
@@ -224,6 +226,9 @@ class SedeEmpresaSerializer(serializers.ModelSerializer):
     # Información del responsable
     responsable_name = serializers.SerializerMethodField()
     created_by_name = serializers.SerializerMethodField()
+
+    # Unidad de capacidad - display
+    unidad_capacidad_display = serializers.SerializerMethodField()
 
     class Meta:
         model = SedeEmpresa
@@ -255,6 +260,12 @@ class SedeEmpresaSerializer(serializers.ModelSerializer):
             'es_sede_principal',
             'fecha_apertura',
             'fecha_cierre',
+            # Capacidad - Sistema dinámico multi-industria
+            'capacidad_almacenamiento',
+            'unidad_capacidad',
+            'unidad_capacidad_display',
+            'capacidad_formateada',
+            # DEPRECATED: Mantener para compatibilidad temporal
             'capacidad_almacenamiento_kg',
             # Auditoría
             'is_active',
@@ -273,7 +284,15 @@ class SedeEmpresaSerializer(serializers.ModelSerializer):
             'direccion_completa',
             'tiene_geolocalizacion',
             'is_deleted',
+            'capacidad_formateada',
+            'unidad_capacidad_display',
         ]
+
+    def get_unidad_capacidad_display(self, obj):
+        """Retorna el nombre de la unidad de capacidad"""
+        if obj.unidad_capacidad:
+            return f"{obj.unidad_capacidad.nombre} ({obj.unidad_capacidad.simbolo})"
+        return None
 
     def get_responsable_name(self, obj):
         """Retorna el nombre completo del responsable"""
@@ -393,15 +412,53 @@ class SedeEmpresaListSerializer(serializers.ModelSerializer):
 class SedeEmpresaChoicesSerializer(serializers.Serializer):
     """
     Serializer para exponer las opciones de choices de SedeEmpresa al frontend
+
+    Incluye:
+    - Tipos de sede
+    - Departamentos de Colombia
+    - Unidades de capacidad disponibles (sistema dinámico multi-industria)
     """
     tipos_sede = serializers.SerializerMethodField()
     departamentos = serializers.SerializerMethodField()
+    unidades_capacidad = serializers.SerializerMethodField()
+    unidad_capacidad_default = serializers.SerializerMethodField()
 
     def get_tipos_sede(self, obj):
         return [{'value': code, 'label': name} for code, name in TIPO_SEDE_CHOICES]
 
     def get_departamentos(self, obj):
         return [{'value': code, 'label': name} for code, name in DEPARTAMENTOS_COLOMBIA]
+
+    def get_unidades_capacidad(self, obj):
+        """Retorna las unidades de medida disponibles para capacidad (MASA, VOLUMEN, CONTENEDOR)"""
+        categorias_capacidad = ['MASA', 'VOLUMEN', 'CONTENEDOR']
+        unidades = UnidadMedida.objects.filter(
+            categoria__in=categorias_capacidad,
+            is_active=True,
+            deleted_at__isnull=True
+        ).order_by('categoria', 'orden_display', 'nombre')
+
+        return [
+            {
+                'value': u.id,
+                'label': f"{u.nombre} ({u.simbolo})",
+                'simbolo': u.simbolo,
+                'categoria': u.categoria,
+            }
+            for u in unidades
+        ]
+
+    def get_unidad_capacidad_default(self, obj):
+        """Retorna la unidad de capacidad por defecto de la empresa"""
+        empresa_config = EmpresaConfig.get_instance()
+        if empresa_config and empresa_config.unidad_capacidad_default:
+            u = empresa_config.unidad_capacidad_default
+            return {
+                'value': u.id,
+                'label': f"{u.nombre} ({u.simbolo})",
+                'simbolo': u.simbolo,
+            }
+        return None
 
 
 # ==============================================================================

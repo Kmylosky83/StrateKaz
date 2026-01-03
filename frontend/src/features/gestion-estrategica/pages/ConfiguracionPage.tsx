@@ -35,6 +35,7 @@ import { DynamicSections } from '@/components/common';
 import { useConfiguracionStats } from '../hooks/useStrategic';
 import { useTabSections } from '../hooks/useModules';
 import { ConfiguracionTab } from '../components/ConfiguracionTab';
+import { useModuleColor } from '@/hooks/useModuleColor';
 
 // Códigos del módulo y tab en la BD (lowercase para coincidir con BD)
 const MODULE_CODE = 'gestion_estrategica';
@@ -61,6 +62,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
 };
 
 export const ConfiguracionPage = () => {
+  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
   const { sections, isLoading: sectionsLoading } = useTabSections(MODULE_CODE, TAB_CODE);
 
   // Sección activa - inicializar con la primera sección habilitada
@@ -86,7 +88,7 @@ export const ConfiguracionPage = () => {
       label: stat.label,
       value: stat.value,
       icon: stat.icon ? ICON_MAP[stat.icon] || Settings : Settings,
-      iconColor: stat.iconColor || 'primary',
+      iconColor: stat.iconColor || 'info',
       description: stat.description,
     }));
   }, [sectionStats, activeSection]);
@@ -112,7 +114,7 @@ export const ConfiguracionPage = () => {
         activeSection={activeSection}
         onChange={setActiveSection}
         isLoading={sectionsLoading}
-        macroprocessColor="purple"
+        moduleColor={moduleColor}
         variant="pills"
       />
 
@@ -121,7 +123,7 @@ export const ConfiguracionPage = () => {
         statsLoading ? (
           <StatsGridSkeleton count={4} />
         ) : statsItems.length > 0 ? (
-          <StatsGrid stats={statsItems} columns={statsColumns} macroprocessColor="purple" />
+          <StatsGrid stats={statsItems} columns={statsColumns} moduleColor={moduleColor} />
         ) : null
       )}
 

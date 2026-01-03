@@ -108,8 +108,8 @@ export async function waitForQueryClient(queryClient: QueryClient) {
 export const createMockEmpresa = (overrides = {}) => ({
   id: 1,
   nit: '900123456-7',
-  razon_social: 'Grasas y Huesos del Norte S.A.S.',
-  nombre_comercial: 'Grasas del Norte',
+  razon_social: 'StrateKaz.',
+  nombre_comercial: 'StrateKaz',
   tipo_sociedad: 'SAS',
   tipo_sociedad_display: 'Sociedad por Acciones Simplificada',
   regimen_tributario: 'COMUN',

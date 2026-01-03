@@ -1,6 +1,6 @@
 # Módulo de Gestión de Usuarios
 
-Módulo completo para administrar usuarios del sistema Grasas y Huesos del Norte.
+Módulo completo para administrar usuarios del sistema StrateKaz.
 
 ## Estructura
 

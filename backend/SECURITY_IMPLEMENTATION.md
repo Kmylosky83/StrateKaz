@@ -1,4 +1,4 @@
-# Implementación de Seguridad - SGI Grasas y Huesos del Norte
+# Implementación de Seguridad - SGI StrateKaz
 
 ## Resumen de Implementación
 

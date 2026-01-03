@@ -1,6 +1,6 @@
 /**
  * Tipos TypeScript para Análisis de Contexto
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Incluye:
  * - DOFA (Debilidades, Oportunidades, Fortalezas, Amenazas)

@@ -1,6 +1,6 @@
 # Docker Utility Scripts
 
-Scripts de utilidad para gestión de Docker en el proyecto Grasas y Huesos del Norte.
+Scripts de utilidad para gestión de Docker en el proyecto StrateKaz.
 
 ## Scripts Disponibles
 

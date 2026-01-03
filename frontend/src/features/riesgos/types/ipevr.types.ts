@@ -1,6 +1,6 @@
 /**
  * Tipos TypeScript para IPEVR - Matriz GTC-45
- * Sistema de Gestion Grasas y Huesos del Norte
+ * Sistema de Gestion StrateKaz
  *
  * Incluye:
  * - Clasificacion de Peligros (7 categorias)

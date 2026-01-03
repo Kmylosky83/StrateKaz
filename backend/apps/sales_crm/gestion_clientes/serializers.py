@@ -1,6 +1,6 @@
 """
 Serializers para Gestión de Clientes - Sales CRM
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Serializers para API REST de gestión de clientes, contactos,
 interacciones y segmentación.

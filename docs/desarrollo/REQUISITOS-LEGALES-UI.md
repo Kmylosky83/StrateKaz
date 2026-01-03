@@ -365,7 +365,7 @@ describe('VencimientosCard', () => {
 
 - **Creado por:** Claude Sonnet 4.5
 - **Fecha:** 2025-12-25
-- **Proyecto:** SGI Grasas y Huesos del Norte
+- **Proyecto:** SGI StrateKaz
 - **Sprint:** Semana 7 - Motor de Cumplimiento
 - **Patrón de referencia:** MatrizLegalTab
 

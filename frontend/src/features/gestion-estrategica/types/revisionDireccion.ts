@@ -1,6 +1,6 @@
 /**
  * Tipos TypeScript para Revisión por Dirección (ISO 9.3)
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  */
 
 import type { ISOStandard } from './strategic.types';

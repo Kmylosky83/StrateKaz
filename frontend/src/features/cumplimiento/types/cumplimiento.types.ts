@@ -1,6 +1,6 @@
 /**
  * Tipos TypeScript para el módulo de Cumplimiento Legal
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Mapea los modelos del backend:
  * - Matriz Legal

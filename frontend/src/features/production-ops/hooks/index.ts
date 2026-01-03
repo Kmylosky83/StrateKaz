@@ -1,6 +1,6 @@
 /**
  * Hooks Index - Production Ops
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Exporta todos los hooks del módulo Production Ops
  */

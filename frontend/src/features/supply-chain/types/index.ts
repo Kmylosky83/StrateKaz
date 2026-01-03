@@ -1,6 +1,6 @@
 /**
  * Types Index - Gestión de Proveedores (Supply Chain)
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Exporta todos los tipos del módulo de Gestión de Proveedores
  */

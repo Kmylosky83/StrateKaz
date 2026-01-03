@@ -16,6 +16,7 @@ import { ProtectedRoute } from './ProtectedRoute';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { LoginPage } from '@/pages/LoginPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
+import { DashboardPage } from '@/pages/DashboardPage';
 import { SmartRedirect } from '@/components/common/SmartRedirect';
 import { PageLoader } from '@/components/common/PageLoader';
 
@@ -131,6 +132,11 @@ export const AppRoutes = () => {
       {/* ═══════════════════════════════════════════════════════════════ */}
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
+
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          {/* DASHBOARD PRINCIPAL - Página de inicio post-login */}
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          <Route path="/dashboard" element={<DashboardPage />} />
 
           {/* ═══════════════════════════════════════════════════════════════ */}
           {/* NIVEL 1: DIRECCIÓN ESTRATÉGICA */}
@@ -372,12 +378,11 @@ export const AppRoutes = () => {
       </Route>
 
       {/* ═══════════════════════════════════════════════════════════════ */}
-      {/* SMART REDIRECT Y 404 */}
+      {/* REDIRECT RAÍZ Y 404 */}
       {/* ═══════════════════════════════════════════════════════════════ */}
 
-      {/* Smart Redirect - Landing inteligente según rol y última ruta */}
-      <Route path="/" element={<SmartRedirect />} />
-      <Route path="/dashboard" element={<SmartRedirect />} />
+      {/* Ruta raíz redirige al dashboard */}
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
       {/* 404 */}
       <Route path="*" element={<NotFoundPage />} />

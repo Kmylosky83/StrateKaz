@@ -1,6 +1,6 @@
 /**
  * API Client para Roles Adicionales (RBAC Híbrido)
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  */
 import axiosInstance from '@/api/axios-config';
 

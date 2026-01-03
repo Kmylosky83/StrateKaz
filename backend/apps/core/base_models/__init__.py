@@ -1,5 +1,5 @@
 """
-Core Base Models Package - Sistema de Gestión Grasas y Huesos del Norte
+Core Base Models Package - Sistema de Gestión StrateKaz
 ========================================================================
 
 Este paquete contiene los modelos base abstractos del sistema.

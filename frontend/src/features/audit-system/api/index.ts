@@ -1,6 +1,6 @@
 /**
  * API Client - Audit System
- * Sistema de Auditoría Grasas y Huesos del Norte
+ * Sistema de Auditoría StrateKaz
  */
 
 import { apiClient } from '@/lib/api-client';

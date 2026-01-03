@@ -1,6 +1,6 @@
 /**
  * Pages Index - Sales CRM Module
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Exporta todas las páginas del módulo CRM
  */

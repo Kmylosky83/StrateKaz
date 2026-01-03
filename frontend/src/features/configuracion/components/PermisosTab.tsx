@@ -76,7 +76,7 @@ export const PermisosTab = () => {
     const totalModules = permissionGroups?.length || 0;
 
     return [
-      { label: 'Total Permisos', value: allPermissions.length, icon: Key, iconColor: 'primary' as const },
+      { label: 'Total Permisos', value: allPermissions.length, icon: Key, iconColor: 'info' as const },
       { label: 'Módulos', value: totalModules, icon: Layers, iconColor: 'info' as const },
       { label: 'Alcance Global', value: scopeAll, icon: Shield, iconColor: 'success' as const, description: 'Acceso a todos' },
       { label: 'Alcance Propio', value: scopeOwn, icon: Eye, iconColor: 'gray' as const, description: 'Solo propios' },
@@ -117,7 +117,7 @@ export const PermisosTab = () => {
       {isLoading ? (
         <StatsGridSkeleton columns={4} />
       ) : (
-        <StatsGrid stats={permissionStats} columns={4} macroprocessColor="purple" />
+        <StatsGrid stats={permissionStats} columns={4} moduleColor="purple" />
       )}
 
       {/* Filtros */}

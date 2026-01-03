@@ -2,7 +2,7 @@
 
 **Documento de referencia para desarrollo del módulo HSEQ**
 **Fecha**: 26 de diciembre de 2025
-**Proyecto**: Grasas y Huesos del Norte - ERP StrateKaz
+**Proyecto**: StrateKaz - ERP StrateKaz
 
 ---
 
@@ -102,7 +102,7 @@ frontend/src/features/hseq/
 ```typescript
 /**
  * Módulo HSEQ - Feature Module
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Exportación centralizada de:
  * - Pages

@@ -1,6 +1,6 @@
 # GitHub Configuration
 
-Este directorio contiene la configuración de GitHub para el proyecto **Grasas y Huesos del Norte**.
+Este directorio contiene la configuración de GitHub para el proyecto **StrateKaz**.
 
 ## Estructura del Directorio
 

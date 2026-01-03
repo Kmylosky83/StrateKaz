@@ -2,7 +2,7 @@
 
 ## Resumen Ejecutivo
 
-Este documento describe el plan para implementar el Sistema RBAC Híbrido solicitado en la plataforma StrateKaz/Grasas y Huesos del Norte.
+Este documento describe el plan para implementar el Sistema RBAC Híbrido solicitado en la plataforma StrateKaz/StrateKaz.
 
 ## Estado Actual vs. Requerido
 

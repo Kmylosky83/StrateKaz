@@ -1,7 +1,7 @@
 # Análisis de Migración: Módulo Legacy Proveedores a Supply Chain
 
 **Fecha:** 2025-12-27
-**Sistema:** ERP StrateKaz - Grasas y Huesos del Norte
+**Sistema:** ERP StrateKaz - StrateKaz
 **Módulo Legacy:** apps/proveedores/
 **Módulo Nuevo:** apps/supply_chain/gestion_proveedores/
 

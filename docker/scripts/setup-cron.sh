@@ -2,7 +2,7 @@
 
 # ===================================================================
 # Script para configurar backups automáticos con cron
-# Grasas y Huesos del Norte S.A.S
+# StrateKaz
 # ===================================================================
 #
 # Este script ayuda a configurar cron jobs para backups automáticos

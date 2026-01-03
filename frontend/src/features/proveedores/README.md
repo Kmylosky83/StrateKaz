@@ -1,6 +1,6 @@
 # Módulo de Proveedores - Frontend
 
-Módulo completo para la gestión de proveedores en el sistema ERP "Grasas y Huesos del Norte".
+Módulo completo para la gestión de proveedores en el sistema ERP "StrateKaz".
 
 ## Estructura del Módulo
 

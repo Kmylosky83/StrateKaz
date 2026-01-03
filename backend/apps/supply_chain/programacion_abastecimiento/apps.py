@@ -1,6 +1,6 @@
 """
 App Config para Programación de Abastecimiento - Supply Chain
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 """
 from django.apps import AppConfig
 

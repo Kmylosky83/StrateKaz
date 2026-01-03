@@ -1,6 +1,6 @@
 /**
  * API Client para Calidad - HSEQ Management
- * Sistema de Gestion Grasas y Huesos del Norte
+ * Sistema de Gestion StrateKaz
  *
  * Incluye:
  * - No Conformidades

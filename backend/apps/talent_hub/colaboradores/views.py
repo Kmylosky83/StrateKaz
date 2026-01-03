@@ -1,6 +1,6 @@
 """
 Views para Colaboradores - Talent Hub
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 ViewSets CRUD completos para colaboradores, hojas de vida,
 información personal e historial laboral.

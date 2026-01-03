@@ -1,6 +1,6 @@
 /**
  * Hooks para Control de Tiempo - Talent Hub
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';

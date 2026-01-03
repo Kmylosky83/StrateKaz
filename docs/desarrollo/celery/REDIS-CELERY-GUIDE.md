@@ -1,4 +1,4 @@
-# Guía de Redis y Celery - Grasas y Huesos del Norte
+# Guía de Redis y Celery - StrateKaz
 
 ## Tabla de Contenidos
 1. [Introducción](#introducción)

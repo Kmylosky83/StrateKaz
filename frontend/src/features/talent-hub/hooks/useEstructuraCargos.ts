@@ -1,6 +1,6 @@
 /**
  * React Query Hooks para Estructura de Cargos - Talent Hub
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Gestión de profesiogramas, competencias, requisitos especiales y vacantes.
  *

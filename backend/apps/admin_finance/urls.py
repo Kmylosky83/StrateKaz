@@ -1,6 +1,6 @@
 """
 URLs para Admin Finance - Módulo 11
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Consolidación de todas las apps del módulo:
 - Tesorería

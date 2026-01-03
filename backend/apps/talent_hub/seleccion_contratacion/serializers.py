@@ -1,6 +1,6 @@
 """
 Serializers para Selección y Contratación - Talent Hub
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 100% DINÁMICO: Serializers para API REST del proceso de selección,
 candidatos, entrevistas, pruebas y afiliaciones.

@@ -42,9 +42,9 @@ User = get_user_model()
 def empresa(db):
     """Empresa de prueba."""
     return EmpresaConfig.objects.create(
-        nombre='Grasas y Huesos del Norte',
+        nombre='StrateKaz',
         nit='900123456-1',
-        razon_social='Grasas y Huesos del Norte S.A.S.',
+        razon_social='StrateKaz.',
         nombre_comercial='GHN',
         email='info@ghn.com',
         telefono='3001234567',
@@ -375,7 +375,7 @@ def manifiesto(db, empresa, programacion_ruta, usuario):
         empresa=empresa,
         programacion_ruta=programacion_ruta,
         fecha_expedicion=timezone.now(),
-        remitente_nombre='Grasas y Huesos del Norte S.A.S.',
+        remitente_nombre='StrateKaz.',
         remitente_nit='900123456-1',
         remitente_direccion='Calle 123 # 45-67',
         destinatario_nombre='Carnicería El Buen Sabor',

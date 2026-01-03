@@ -536,7 +536,7 @@ class TestLogCambio:
 
         # Assert
         assert 'modificar' in str_result
-        assert 'Grasas y Huesos del Norte' in str_result
+        assert 'StrateKaz' in str_result
 
     def test_log_cambio_filtrar_por_content_type(self, user):
         """

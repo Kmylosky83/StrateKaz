@@ -43,7 +43,7 @@ const DEFAULT_TENANT_CONFIG: TenantConfig = {
     dark_mode_enabled: true,
     custom_theme_enabled: false,
   },
-  tenant_name: 'Grasas y Huesos del Norte',
+  tenant_name: 'StrateKaz',
   is_active: true,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),

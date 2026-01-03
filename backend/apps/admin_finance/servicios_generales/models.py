@@ -1,6 +1,6 @@
 """
 Modelos para Servicios Generales - Admin Finance
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Gestiona:
 - Mantenimiento locativo (preventivo/correctivo/mejora)
@@ -146,7 +146,7 @@ class MantenimientoLocativo(BaseCompanyModel):
         on_delete=models.PROTECT,
         null=True,
         blank=True,
-        related_name='mantenimientos_responsable',
+        related_name='servicios_mantenimientos_responsable',
         verbose_name='Responsable',
         help_text='Usuario responsable del seguimiento'
     )

@@ -1,6 +1,6 @@
 /**
  * Tipos TypeScript para el Sistema Dinámico de Módulos
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Este archivo contiene los tipos específicos para la navegación dinámica,
  * tabs, secciones y árbol de módulos. Los tipos base de módulos están en strategic.types.ts
@@ -8,13 +8,16 @@
 
 import type { ModuleCategory } from './strategic.types';
 
+// Re-export ModuleCategory para uso externo
+export type { ModuleCategory };
+
 // ==================== TIPOS BASE ====================
 
 /**
  * Colores disponibles para módulos
- * Deben coincidir con FeatureToggleColor del Design System
+ * Sincronizado con MODULE_COLORS del backend (apps/core/models.py)
  */
-export type ModuleColor = 'purple' | 'blue' | 'green' | 'orange' | 'gray';
+export type ModuleColor = 'purple' | 'blue' | 'green' | 'orange' | 'gray' | 'teal' | 'red' | 'yellow' | 'pink' | 'indigo';
 
 // ==================== SECCIONES ====================
 
@@ -162,10 +165,11 @@ export const CATEGORY_LABELS: Record<ModuleCategory, string> = {
 
 /**
  * Mapeo de categorías a colores del Design System
+ * NOTA: Debe coincidir con CATEGORY_DEFAULT_COLORS en backend/apps/core/models.py
  */
 export const CATEGORY_COLORS: Record<ModuleCategory, ModuleColor> = {
   ESTRATEGICO: 'purple',
-  MOTOR: 'blue',
+  MOTOR: 'teal',
   INTEGRAL: 'orange',
   MISIONAL: 'blue',
   APOYO: 'green',

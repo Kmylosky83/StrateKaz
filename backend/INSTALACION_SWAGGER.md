@@ -55,7 +55,7 @@ path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'
 
 ### Configuración General
 
-- **Título**: SGI Grasas y Huesos del Norte API
+- **Título**: SGI StrateKaz API
 - **Versión**: 2.0.0
 - **Descripción**: Incluye arquitectura de 6 niveles, 16 módulos, ~92 apps, ~300 endpoints
 

@@ -13,12 +13,14 @@ import { PageHeader } from '@/components/layout';
 import { DynamicSections } from '@/components/common';
 import { useTabSections } from '../hooks/useModules';
 import { OrganizacionTab } from '../components/OrganizacionTab';
+import { useModuleColor } from '@/hooks/useModuleColor';
 
 // Códigos del módulo y tab en la BD (lowercase para coincidir con BD)
 const MODULE_CODE = 'gestion_estrategica';
 const TAB_CODE = 'organizacion';
 
 export const OrganizacionPage = () => {
+  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
   const { sections, isLoading: sectionsLoading } = useTabSections(MODULE_CODE, TAB_CODE);
 
   // Sección activa - inicializar con la primera sección habilitada
@@ -44,7 +46,7 @@ export const OrganizacionPage = () => {
         activeSection={activeSection}
         onChange={setActiveSection}
         isLoading={sectionsLoading}
-        macroprocessColor="purple"
+        moduleColor={moduleColor}
         variant="pills"
       />
 

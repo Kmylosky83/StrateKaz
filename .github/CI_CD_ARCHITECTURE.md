@@ -1,4 +1,4 @@
-# Arquitectura CI/CD - Grasas y Huesos del Norte
+# Arquitectura CI/CD - StrateKaz
 
 ## Diagrama de Flujo General
 

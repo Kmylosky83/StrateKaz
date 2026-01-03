@@ -1,6 +1,6 @@
 /**
  * React Query Hooks para el Sistema Dinámico de Módulos
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Hooks especializados para la gestión de módulos, tabs y secciones
  * con funcionalidad de toggle y navegación dinámica
@@ -14,6 +14,7 @@ import type {
   ToggleResponse,
   SidebarModule
 } from '../types/modules.types';
+import { strategicKeys } from './useStrategic';
 
 // ============================================================================
 // QUERY KEYS
@@ -164,6 +165,8 @@ export function useToggleModule() {
       // Invalidar tanto el árbol como el sidebar
       queryClient.invalidateQueries({ queryKey: modulesKeys.tree() });
       queryClient.invalidateQueries({ queryKey: modulesKeys.sidebar() });
+      // Invalidar StatsGrid de módulos para actualización automática
+      queryClient.invalidateQueries({ queryKey: strategicKeys.configStats('modulos') });
 
       // Mostrar mensaje de éxito con información de elementos afectados
       if (response.affected_items && Object.keys(response.affected_items).length > 0) {
@@ -210,6 +213,8 @@ export function useToggleTab() {
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: modulesKeys.tree() });
       queryClient.invalidateQueries({ queryKey: modulesKeys.sidebar() });
+      // Invalidar StatsGrid de módulos para actualización automática
+      queryClient.invalidateQueries({ queryKey: strategicKeys.configStats('modulos') });
 
       if (response.affected_items && response.affected_items.sections?.length) {
         toast.success(`${response.message} (${response.affected_items.sections.length} secciones afectadas)`);
@@ -249,6 +254,8 @@ export function useToggleSection() {
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: modulesKeys.tree() });
       queryClient.invalidateQueries({ queryKey: modulesKeys.sidebar() });
+      // Invalidar StatsGrid de módulos para actualización automática
+      queryClient.invalidateQueries({ queryKey: strategicKeys.configStats('modulos') });
       toast.success(response.message);
     },
     onError: (error: any) => {

@@ -281,6 +281,9 @@ export default function MateriaPrimaPage() {
             tabs={tabs}
             activeTab={activeTab}
             onTabChange={handleTabChange}
+            variant="pills"
+            moduleColor="orange"
+            size="md"
           />
         }
       />

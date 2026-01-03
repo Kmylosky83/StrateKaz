@@ -1,6 +1,6 @@
 /**
  * API Client Index - Production Ops
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Exporta todos los API clients del módulo Production Ops
  */

@@ -17,7 +17,7 @@ import { useBrandingConfig } from './useBrandingConfig';
  */
 function hexToRgb(hex: string): string {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  if (!result) return '22 163 74'; // Default verde
+  if (!result) return '236 38 143'; // Default rosa StrateKaz #ec268f
   return `${parseInt(result[1], 16)} ${parseInt(result[2], 16)} ${parseInt(result[3], 16)}`;
 }
 
@@ -69,16 +69,64 @@ function generateColorVariants(hex: string): Record<number, { r: number; g: numb
     700: adjustBrightness(r, g, b, -0.3),
     800: adjustBrightness(r, g, b, -0.45),
     900: adjustBrightness(r, g, b, -0.6),
+    950: adjustBrightness(r, g, b, -0.75),
   };
 }
 
 /**
- * Hook que aplica los colores del branding como CSS variables
+ * Hook que aplica la configuración dinámica del branding:
+ * - Colores como CSS variables
+ * - Favicon dinámico
+ * - Título de la página
+ *
  * Debe usarse en el componente raíz de la aplicación
  */
 export function useDynamicTheme() {
-  const { primaryColor, secondaryColor, accentColor, isLoading, isError, branding } = useBrandingConfig();
+  const {
+    primaryColor,
+    secondaryColor,
+    accentColor,
+    favicon,
+    companyName,
+    isLoading,
+    isError,
+    branding
+  } = useBrandingConfig();
 
+  // Efecto para aplicar favicon y título
+  // IMPORTANTE: Usa favicon y companyName del hook (ya tienen fallbacks)
+  // No usar branding?.favicon porque si branding es null, no aplica nada
+  useEffect(() => {
+    if (isLoading) return;
+
+    // Aplicar favicon - usa 'favicon' del hook que ya incluye fallback
+    if (favicon && favicon.trim() !== '') {
+      const faviconLink = document.getElementById('dynamic-favicon') as HTMLLinkElement;
+      if (faviconLink) {
+        // Agregar timestamp para evitar cache del navegador
+        const faviconWithCache = favicon.includes('?')
+          ? `${favicon}&_t=${Date.now()}`
+          : `${favicon}?_t=${Date.now()}`;
+        faviconLink.href = faviconWithCache;
+
+        // Actualizar el type según la extensión del archivo
+        if (favicon.endsWith('.png')) {
+          faviconLink.type = 'image/png';
+        } else if (favicon.endsWith('.svg')) {
+          faviconLink.type = 'image/svg+xml';
+        } else {
+          faviconLink.type = 'image/x-icon';
+        }
+      }
+    }
+
+    // Aplicar título - usa 'companyName' del hook que ya incluye fallback
+    if (companyName && companyName.trim() !== '') {
+      document.title = companyName;
+    }
+  }, [favicon, companyName, isLoading]);
+
+  // Efecto para aplicar colores
   useEffect(() => {
     // No hacer nada si está cargando
     if (isLoading) return;

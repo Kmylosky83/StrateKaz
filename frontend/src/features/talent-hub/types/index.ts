@@ -1,6 +1,6 @@
 /**
  * Tipos TypeScript para Talent Hub
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Re-exporta todos los tipos del módulo Talent Hub
  */

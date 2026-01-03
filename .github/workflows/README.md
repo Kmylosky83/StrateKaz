@@ -1,6 +1,6 @@
 # GitHub Actions Workflows
 
-Este directorio contiene los workflows de CI/CD para el proyecto Grasas y Huesos del Norte.
+Este directorio contiene los workflows de CI/CD para el proyecto StrateKaz.
 
 ## Workflows Disponibles
 

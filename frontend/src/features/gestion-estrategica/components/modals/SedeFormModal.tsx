@@ -6,13 +6,17 @@
  * - Ubicación (dirección, ciudad, departamento)
  * - Geolocalización (latitud, longitud)
  * - Administración (responsable, teléfono, email)
- * - Control (sede principal, fechas, capacidad)
+ * - Control (sede principal, fechas, capacidad con unidades dinámicas)
  *
  * Usa Design System:
  * - BaseModal para el contenedor
  * - Input, Select, Textarea para formulario
  * - Switch para opciones booleanas
  * - Button para acciones
+ *
+ * Sistema multi-industria:
+ * - Unidades de capacidad dinámicas (kg, ton, m³, pallets, etc.)
+ * - Sin hardcoding de unidades
  */
 import { useState, useEffect } from 'react';
 import { BaseModal } from '@/components/modals/BaseModal';
@@ -49,7 +53,9 @@ interface FormData {
   es_sede_principal: boolean;
   fecha_apertura: string;
   fecha_cierre: string;
-  capacidad_almacenamiento_kg: string;
+  // Sistema dinámico de unidades multi-industria
+  capacidad_almacenamiento: string;
+  unidad_capacidad: string;
   is_active: boolean;
 }
 
@@ -70,7 +76,8 @@ const defaultFormData: FormData = {
   es_sede_principal: false,
   fecha_apertura: '',
   fecha_cierre: '',
-  capacidad_almacenamiento_kg: '',
+  capacidad_almacenamiento: '',
+  unidad_capacidad: '',
   is_active: true,
 };
 
@@ -106,13 +113,16 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
         es_sede_principal: sedeDetail.es_sede_principal,
         fecha_apertura: sedeDetail.fecha_apertura || '',
         fecha_cierre: sedeDetail.fecha_cierre || '',
-        capacidad_almacenamiento_kg: sedeDetail.capacidad_almacenamiento_kg?.toString() || '',
+        capacidad_almacenamiento: sedeDetail.capacidad_almacenamiento?.toString() || '',
+        unidad_capacidad: sedeDetail.unidad_capacidad?.toString() || '',
         is_active: sedeDetail.is_active,
       });
     } else if (!isEditing) {
-      setFormData(defaultFormData);
+      // Para nuevo registro, usar unidad por defecto de la empresa si existe
+      const defaultUnit = choices?.unidad_capacidad_default?.value?.toString() || '';
+      setFormData({ ...defaultFormData, unidad_capacidad: defaultUnit });
     }
-  }, [sedeDetail, isEditing]);
+  }, [sedeDetail, isEditing, choices?.unidad_capacidad_default]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,8 +144,12 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
       es_sede_principal: formData.es_sede_principal,
       fecha_apertura: formData.fecha_apertura || undefined,
       fecha_cierre: formData.fecha_cierre || undefined,
-      capacidad_almacenamiento_kg: formData.capacidad_almacenamiento_kg
-        ? parseFloat(formData.capacidad_almacenamiento_kg)
+      // Sistema dinámico de unidades
+      capacidad_almacenamiento: formData.capacidad_almacenamiento
+        ? parseFloat(formData.capacidad_almacenamiento)
+        : undefined,
+      unidad_capacidad: formData.unidad_capacidad
+        ? parseInt(formData.unidad_capacidad)
         : undefined,
       is_active: formData.is_active,
     };
@@ -168,6 +182,12 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
   ];
 
   const departamentoOptions = choices?.departamentos || [];
+
+  // Unidades de capacidad dinámicas (multi-industria)
+  const unidadesCapacidadOptions = choices?.unidades_capacidad?.map((u: { value: number; label: string }) => ({
+    value: u.value.toString(),
+    label: u.label,
+  })) || [];
 
   const userOptions = usersData?.results?.map((user) => ({
     value: user.id.toString(),
@@ -348,7 +368,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
             Control
           </h4>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <Input
               label="Fecha de Apertura"
               type="date"
@@ -361,14 +381,28 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
               value={formData.fecha_cierre}
               onChange={(e) => setFormData({ ...formData, fecha_cierre: e.target.value })}
             />
+          </div>
+
+          {/* Capacidad con unidades dinámicas */}
+          <div className="grid grid-cols-2 gap-4">
             <Input
-              label="Capacidad (kg)"
+              label="Capacidad de Almacenamiento"
               type="number"
               step="0.01"
-              value={formData.capacidad_almacenamiento_kg}
-              onChange={(e) => setFormData({ ...formData, capacidad_almacenamiento_kg: e.target.value })}
+              value={formData.capacidad_almacenamiento}
+              onChange={(e) => setFormData({ ...formData, capacidad_almacenamiento: e.target.value })}
               placeholder="10000.00"
-              helperText="Capacidad de almacenamiento"
+              helperText="Cantidad numérica"
+            />
+            <Select
+              label="Unidad de Medida"
+              value={formData.unidad_capacidad}
+              onChange={(e) => setFormData({ ...formData, unidad_capacidad: e.target.value })}
+              options={[
+                { value: '', label: 'Seleccione unidad...' },
+                ...unidadesCapacidadOptions
+              ]}
+              helperText="Unidad para la capacidad"
             />
           </div>
 

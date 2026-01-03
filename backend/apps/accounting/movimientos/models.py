@@ -1,6 +1,6 @@
 """
 Modelos para movimientos - accounting
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Módulo ACTIVABLE de Contabilidad - Movimientos:
 - ComprobanteContable: Encabezado de asiento contable

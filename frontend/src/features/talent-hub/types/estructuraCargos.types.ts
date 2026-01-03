@@ -1,6 +1,6 @@
 /**
  * Tipos TypeScript para Estructura de Cargos - Talent Hub
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Basado en: backend/apps/talent_hub/estructura_cargos/models.py
  */

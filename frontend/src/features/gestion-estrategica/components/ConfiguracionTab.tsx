@@ -22,6 +22,7 @@ import {
   Sidebar,
   BadgeCheck,
   Circle,
+  Lock,
   type LucideIcon,
 } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
@@ -392,15 +393,29 @@ const ModulosAndFeaturesSection = () => {
                     <FeatureToggleCard
                       key={module.id}
                       icon={IconComponent}
-                      title={module.name}
-                      description={module.description || `Módulo ${module.name}`}
+                      title={
+                        <span className="flex items-center gap-2">
+                          {module.name}
+                          {module.is_core && (
+                            <Badge variant="gray" size="sm" className="inline-flex items-center gap-1">
+                              <Lock className="h-3 w-3" />
+                              Core
+                            </Badge>
+                          )}
+                        </span>
+                      }
+                      description={
+                        module.is_core
+                          ? 'Módulo core del sistema - No puede ser desactivado'
+                          : (module.description || `Módulo ${module.name}`)
+                      }
                       checked={module.is_enabled}
                       onChange={() => toggleModule.mutate({
                         id: module.id,
                         isEnabled: !module.is_enabled
                       })}
                       color={module.color || categoryColor}
-                      disabled={!module.is_core && isPending}
+                      disabled={module.is_core || isPending}
                     />
                   );
                 })}
@@ -440,7 +455,7 @@ const ModulosAndFeaturesSection = () => {
                                 isEnabled: !tab.is_enabled
                               })}
                               color={module.color || categoryColor}
-                              disabled={!tab.is_core && (isPending || !module.is_enabled)}
+                              disabled={tab.is_core || isPending || !module.is_enabled}
                             />
 
                             {/* Secciones del tab (si existen) */}
@@ -462,7 +477,7 @@ const ModulosAndFeaturesSection = () => {
                                         isEnabled: !section.is_enabled
                                       })}
                                       color={module.color || categoryColor}
-                                      disabled={!section.is_core && (isPending || !tab.is_enabled)}
+                                      disabled={section.is_core || isPending || !tab.is_enabled}
                                     />
                                   );
                                 })}

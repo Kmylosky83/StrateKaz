@@ -1,6 +1,6 @@
 # ═══════════════════════════════════════════════════
 # MULTI-STAGE DOCKERFILE - PRODUCTION
-# React Frontend - Grasas y Huesos del Norte S.A.S
+# React Frontend - StrateKaz
 # ═══════════════════════════════════════════════════
 
 # ═══════════════════════════════════════════════════
@@ -10,7 +10,7 @@ FROM node:20-alpine as builder
 
 # Build arguments
 ARG VITE_API_URL
-ARG VITE_APP_NAME="Grasas y Huesos del Norte"
+ARG VITE_APP_NAME="StrateKaz"
 
 # Set working directory
 WORKDIR /app
@@ -39,7 +39,7 @@ RUN ls -la /app/dist
 FROM nginx:1.25-alpine
 
 # Labels for image metadata
-LABEL maintainer="Grasas y Huesos del Norte S.A.S"
+LABEL maintainer="StrateKaz"
 LABEL description="React Frontend - Production Image"
 LABEL version="2.0.0"
 

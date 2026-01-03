@@ -1,5 +1,7 @@
 import { Shield, TrendingUp, AlertTriangle, Leaf, Car, Landmark, Lock, FileCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useModuleColor } from '@/hooks/useModuleColor';
+import { Spinner } from '@/components/common/Spinner';
 
 const riskModules = [
   {
@@ -61,11 +63,21 @@ const riskModules = [
 ];
 
 export default function RiesgosPage() {
+  const { color: moduleColor, isLoading } = useModuleColor('MOTOR_RIESGOS');
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Spinner />
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-3">
-        <div className="p-3 bg-orange-100 rounded-lg">
-          <Shield className="h-8 w-8 text-orange-600" />
+        <div className={`p-3 bg-${moduleColor}-100 rounded-lg`}>
+          <Shield className={`h-8 w-8 text-${moduleColor}-600`} />
         </div>
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Riesgos</h1>
@@ -114,14 +126,14 @@ export default function RiesgosPage() {
         })}
       </div>
 
-      <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
+      <div className={`bg-${moduleColor}-50 border border-${moduleColor}-200 rounded-lg p-6`}>
         <div className="flex items-start gap-4">
-          <div className="p-2 bg-orange-100 rounded-lg">
-            <Shield className="h-6 w-6 text-orange-600" />
+          <div className={`p-2 bg-${moduleColor}-100 rounded-lg`}>
+            <Shield className={`h-6 w-6 text-${moduleColor}-600`} />
           </div>
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-orange-900 mb-2">Acerca del Módulo de Riesgos</h3>
-            <p className="text-orange-800 text-sm leading-relaxed">
+            <h3 className={`text-lg font-semibold text-${moduleColor}-900 mb-2`}>Acerca del Módulo de Riesgos</h3>
+            <p className={`text-${moduleColor}-800 text-sm leading-relaxed`}>
               El Motor de Riesgos integra todas las metodologías de gestión de riesgos requeridas por las normas ISO 9001,
               ISO 14001, ISO 45001, ISO 27001, y regulaciones colombianas como SAGRILAFT y PESV. Permite una visión
               holística del contexto organizacional, identificación, evaluación y tratamiento de riesgos y oportunidades

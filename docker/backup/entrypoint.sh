@@ -1,7 +1,7 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════
 # BACKUP SERVICE ENTRYPOINT
-# Grasas y Huesos del Norte S.A.S
+# StrateKaz
 # ═══════════════════════════════════════════════════
 
 set -e

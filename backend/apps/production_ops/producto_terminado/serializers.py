@@ -1,6 +1,6 @@
 """
 Serializers para Producto Terminado - Production Ops
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Serializers para API REST de gestión de producto terminado,
 liberación de calidad y certificados.

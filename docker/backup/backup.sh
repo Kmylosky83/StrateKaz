@@ -1,7 +1,7 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════
 # AUTOMATED BACKUP SCRIPT
-# Grasas y Huesos del Norte S.A.S
+# StrateKaz
 # ═══════════════════════════════════════════════════
 
 set -e

@@ -1,6 +1,6 @@
 """
 Configuración de la App de Recepción de Materia Prima
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 """
 from django.apps import AppConfig
 

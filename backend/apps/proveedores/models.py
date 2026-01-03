@@ -1,5 +1,5 @@
 """
-Modelos del módulo Proveedores - Sistema de Gestión Grasas y Huesos del Norte
+Modelos del módulo Proveedores - Sistema de Gestión StrateKaz
 
 Define:
 - UnidadNegocio: Unidades internas de la organización
@@ -28,7 +28,7 @@ class UnidadNegocio(models.Model):
     Modelo de Unidad de Negocio - Unidades internas de la organización
 
     Ejemplos: Plantas de producción, Sucursales, Sedes administrativas
-    Estas unidades pueden ser proveedoras de materia prima para Grasas y Huesos
+    Estas unidades pueden ser proveedoras de materia prima para StrateKaz
     """
 
     TIPO_UNIDAD_CHOICES = [

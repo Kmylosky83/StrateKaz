@@ -1,6 +1,6 @@
 """
 Filtros personalizados para el módulo de Proveedores
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 """
 import django_filters
 from .models import Proveedor

@@ -2,7 +2,7 @@
 
 ## Descripción
 
-Sistema integral de auditoría, notificaciones, alertas y gestión de tareas para el ERP Grasas y Huesos del Norte.
+Sistema integral de auditoría, notificaciones, alertas y gestión de tareas para el ERP StrateKaz.
 
 **Semana**: 25 (Fase 7)
 **Módulo**: 14 - Audit System

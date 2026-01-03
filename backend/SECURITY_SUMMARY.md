@@ -3,7 +3,7 @@
 ## Estado: ✅ COMPLETADO
 
 **Fecha:** 2025-12-30
-**Proyecto:** SGI Grasas y Huesos del Norte
+**Proyecto:** SGI StrateKaz
 **Backend:** Django 5.0 + DRF
 
 ---

@@ -1,6 +1,6 @@
 """
 Modelos para Tesorería - Admin Finance
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Gestiona:
 - Bancos y cuentas bancarias de la empresa

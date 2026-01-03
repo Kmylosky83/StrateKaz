@@ -1,109 +1,110 @@
+/**
+ * Dashboard Principal - Página de inicio post-login
+ *
+ * Muestra todos los módulos del sistema en un grid uniforme.
+ * Usa componentes del Design System para animaciones.
+ */
+import { useMemo } from 'react';
+import { motion, type Variants } from 'framer-motion';
 import { useAuthStore } from '@/store/authStore';
-import { Card } from '@/components/common/Card';
-import { Badge } from '@/components/common/Badge';
-import { Users, Package, Truck, DollarSign } from 'lucide-react';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
+import { useModulesTree } from '@/features/gestion-estrategica/hooks/useModules';
+import { ModuleCard, ModuleCardSkeleton, ModuleGrid } from '@/components/common';
+import type { ModuleCardColor } from '@/components/common';
+import * as LucideIcons from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+
+// ============================================================================
+// UTILIDADES
+// ============================================================================
+
+const getIconComponent = (iconName: string | undefined): LucideIcon => {
+  if (!iconName) return LucideIcons.Settings;
+  const icon = (LucideIcons as unknown as Record<string, LucideIcon>)[iconName];
+  return icon || LucideIcons.Settings;
+};
+
+const getModuleRoute = (module: { code: string; route?: string; tabs?: { code: string; is_enabled: boolean }[] }): string => {
+  if (module.tabs && module.tabs.length > 0) {
+    const firstTab = module.tabs.find(t => t.is_enabled) || module.tabs[0];
+    const moduleSlug = module.code.toLowerCase().replace(/_/g, '-');
+    const tabSlug = firstTab.code.toLowerCase().replace(/_/g, '-');
+    return `/${moduleSlug}/${tabSlug}`;
+  }
+  if (module.route) return module.route;
+  return `/${module.code.toLowerCase().replace(/_/g, '-')}`;
+};
+
+// ============================================================================
+// PÁGINA PRINCIPAL
+// ============================================================================
 
 export const DashboardPage = () => {
   const user = useAuthStore((state) => state.user);
   const { companyName } = useBrandingConfig();
+  const { data: modulesTree, isLoading } = useModulesTree();
 
-  const stats = [
-    {
-      name: 'Proveedores Activos',
-      value: '45',
-      change: '+5%',
-      icon: Users,
-      color: 'text-primary-600',
-      bgColor: 'bg-primary-100 dark:bg-primary-900/20',
+  const enabledModules = useMemo(() => {
+    if (!modulesTree?.modules) return [];
+    return modulesTree.modules
+      .filter(m => m.is_enabled)
+      .sort((a, b) => a.order - b.order);
+  }, [modulesTree]);
+
+  const headerVariants: Variants = {
+    hidden: { opacity: 0, y: -10 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] },
     },
-    {
-      name: 'Recolecciones Hoy',
-      value: '12',
-      change: '+8%',
-      icon: Truck,
-      color: 'text-success-600',
-      bgColor: 'bg-success-100 dark:bg-success-900/20',
-    },
-    {
-      name: 'Lotes en Proceso',
-      value: '3',
-      change: '0%',
-      icon: Package,
-      color: 'text-warning-600',
-      bgColor: 'bg-warning-100 dark:bg-warning-900/20',
-    },
-    {
-      name: 'Liquidación del Mes',
-      value: '$2.5M',
-      change: '+15%',
-      icon: DollarSign,
-      color: 'text-info-600',
-      bgColor: 'bg-info-100 dark:bg-info-900/20',
-    },
-  ];
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Dashboard {user?.cargo?.name}
+    <motion.div
+      className="space-y-6"
+      initial="hidden"
+      animate="visible"
+      variants={{
+        hidden: { opacity: 0 },
+        visible: { opacity: 1, transition: { duration: 0.25, staggerChildren: 0.03 } },
+      }}
+    >
+      {/* Header */}
+      <motion.header variants={headerVariants}>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+          Bienvenido, {user?.first_name || user?.username}
         </h1>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Bienvenido de nuevo, {user?.first_name || user?.username}
+        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+          Sistema Integrado de Gestión •{' '}
+          <span className="font-medium text-primary-600 dark:text-primary-400">
+            {companyName}
+          </span>
         </p>
-      </div>
+      </motion.header>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
-
-          return (
-            <Card key={stat.name} className="relative overflow-hidden">
-              <div className="flex items-center">
-                <div
-                  className={`flex-shrink-0 rounded-lg p-3 ${stat.bgColor}`}
-                >
-                  <Icon className={`h-6 w-6 ${stat.color}`} />
-                </div>
-
-                <div className="ml-4 flex-1">
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    {stat.name}
-                  </p>
-                  <div className="flex items-baseline space-x-2">
-                    <p className="text-2xl font-semibold text-gray-900 dark:text-white">
-                      {stat.value}
-                    </p>
-                    <Badge variant="success" size="sm">
-                      {stat.change}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          );
-        })}
-      </div>
-
-      {/* Welcome Card */}
-      <Card>
-        <div className="text-center py-12">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Sistema Integrado de Gestión
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto">
-            Bienvenido al sistema ERP de {companyName}. Aquí podrás
-            gestionar proveedores, recolecciones, lotes de planta, liquidaciones y
-            certificados de manera eficiente.
-          </p>
-          <Badge variant="primary" size="lg">
-            Versión 1.0.0
-          </Badge>
+      {/* Grid de módulos */}
+      {isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <ModuleCardSkeleton key={i} />
+          ))}
         </div>
-      </Card>
-    </div>
+      ) : (
+        <ModuleGrid>
+          {enabledModules.map((module) => (
+            <ModuleCard
+              key={module.code}
+              icon={getIconComponent(module.icon)}
+              title={module.name}
+              description={module.description}
+              color={module.color as ModuleCardColor}
+              sectionsCount={module.tabs?.filter(t => t.is_enabled).length}
+              to={getModuleRoute(module)}
+            />
+          ))}
+        </ModuleGrid>
+      )}
+    </motion.div>
   );
 };

@@ -1,6 +1,6 @@
 """
 Modelos de Formación y Reinducción - Talent Hub
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Gestión del desarrollo profesional y capacitación continua:
 - PlanFormacion: Plan anual de capacitaciones

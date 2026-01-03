@@ -1,6 +1,6 @@
 /**
  * Hooks React Query para Riesgos de Procesos
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { riesgosApi, controlesRiesgoApi, tratamientosApi, oportunidadesApi } from '../api/riesgosApi';

@@ -1,4 +1,4 @@
-# Docker Configuration - Grasas y Huesos del Norte
+# Docker Configuration - StrateKaz
 
 Configuración Docker para desarrollo y producción del sistema de gestión.
 

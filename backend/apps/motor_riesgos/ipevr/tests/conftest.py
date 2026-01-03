@@ -37,7 +37,7 @@ def usuario_test(db):
 def empresa_test(db):
     """Fixture para crear una empresa de prueba."""
     return Empresa.objects.create(
-        razon_social='Grasas y Huesos del Norte Test',
+        razon_social='StrateKaz Test',
         nombre_comercial='GHDN Test',
         nit='900123456-7',
         tipo_identificacion='nit',

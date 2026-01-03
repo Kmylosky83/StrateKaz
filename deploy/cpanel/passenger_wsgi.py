@@ -1,27 +1,61 @@
 """
 Passenger WSGI Configuration for cPanel
-Sistema de Gestión - Grasas y Huesos del Norte
+Sistema de Gestión Integral - StrateKaz
 
 Este archivo es requerido por Passenger para ejecutar Django en cPanel.
 Debe colocarse en el directorio raíz de la aplicación Python en cPanel.
+
+Estructura esperada:
+    ~/grasas.stratekaz.com/
+    ├── passenger_wsgi.py  (este archivo)
+    ├── tmp/
+    │   └── restart.txt    (touch para reiniciar)
+    ├── backend/
+    │   ├── .env           (variables de entorno)
+    │   ├── config/
+    │   ├── apps/
+    │   └── manage.py
+    └── public_html/       (frontend React)
 """
 import os
 import sys
 
-# Ruta al directorio del proyecto Django (ajustar según cPanel)
-# En cPanel típicamente: /home/usuario/grasas.stratekaz.com/backend
-DJANGO_PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
-BACKEND_DIR = os.path.join(DJANGO_PROJECT_DIR, 'backend')
+# ═══════════════════════════════════════════════════
+# PyMySQL: Alternativa a mysqlclient para cPanel
+# ═══════════════════════════════════════════════════
+# mysqlclient requiere compilación con mysql-devel
+# PyMySQL es Python puro y funciona sin compilación
+try:
+    import pymysql
+    pymysql.install_as_MySQLdb()
+except ImportError:
+    pass  # mysqlclient está instalado
 
-# Agregar el directorio del backend al path
-if BACKEND_DIR not in sys.path:
-    sys.path.insert(0, BACKEND_DIR)
+# ═══════════════════════════════════════════════════
+# Configuración de rutas
+# ═══════════════════════════════════════════════════
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+BACKEND_DIR = os.path.join(CURRENT_DIR, 'backend')
 
-# Agregar el directorio del proyecto al path
-if DJANGO_PROJECT_DIR not in sys.path:
-    sys.path.insert(0, DJANGO_PROJECT_DIR)
+# Agregar directorios al path de Python
+for path in [BACKEND_DIR, CURRENT_DIR]:
+    if path not in sys.path:
+        sys.path.insert(0, path)
 
-# Configurar Django settings
+# ═══════════════════════════════════════════════════
+# Cargar variables de entorno desde .env
+# ═══════════════════════════════════════════════════
+try:
+    from dotenv import load_dotenv
+    env_path = os.path.join(BACKEND_DIR, '.env')
+    if os.path.exists(env_path):
+        load_dotenv(env_path)
+except ImportError:
+    pass  # python-decouple manejará el .env
+
+# ═══════════════════════════════════════════════════
+# Configurar Django
+# ═══════════════════════════════════════════════════
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
 # Importar la aplicación WSGI de Django

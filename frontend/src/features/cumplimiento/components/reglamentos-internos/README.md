@@ -296,4 +296,4 @@ Navegar a: `http://localhost:5173/cumplimiento/reglamentos-internos`
 
 **Fecha de creación**: 2025-12-25
 **Versión**: 1.0.0
-**Autor**: Sistema de Gestión Grasas y Huesos del Norte
+**Autor**: Sistema de Gestión StrateKaz

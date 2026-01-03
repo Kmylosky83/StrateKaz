@@ -39,7 +39,7 @@ export const Header = ({ onToggleSidebar }: HeaderProps) => {
                 {companyName}
               </h1>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                {companySlogan || 'Sistema Integrado de Gestión'}
+                {companySlogan}
               </p>
             </div>
           </Link>
@@ -49,7 +49,7 @@ export const Header = ({ onToggleSidebar }: HeaderProps) => {
         <div className="flex items-center space-x-2">
           <button className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             <Bell className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-            <span className="absolute top-1 right-1 h-2 w-2 bg-danger-500 rounded-full ring-2 ring-white dark:ring-gray-800" />
+            <span className="absolute top-1 right-1 h-2 w-2 bg-accent-500 dark:bg-accent-400 rounded-full ring-2 ring-white dark:ring-gray-800" />
           </button>
 
           <button

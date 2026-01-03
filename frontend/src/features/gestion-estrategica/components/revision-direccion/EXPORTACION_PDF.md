@@ -218,7 +218,7 @@ const acta: ActaRevisionExpandida = {
 
   // Branding (opcional)
   empresa_logo: "https://...",  // URL del logo
-  empresa_nombre: "Grasas y Huesos del Norte S.A.S.",
+  empresa_nombre: "StrateKaz.",
 };
 ```
 

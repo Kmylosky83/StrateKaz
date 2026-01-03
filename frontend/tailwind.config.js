@@ -8,6 +8,8 @@ export default {
   safelist: [
     // Badge variants - ensure these classes are always generated
     'bg-primary-100', 'text-primary-800', 'bg-primary-900/30', 'text-primary-400',
+    'bg-secondary-100', 'text-secondary-800', 'bg-secondary-900/30', 'text-secondary-400',
+    'bg-accent-100', 'text-accent-800', 'bg-accent-900/30', 'text-accent-400',
     'bg-success-100', 'text-success-800', 'bg-success-900/30', 'text-success-400',
     'bg-warning-100', 'text-warning-800', 'bg-warning-900/30', 'text-warning-400',
     'bg-danger-100', 'text-danger-800', 'bg-danger-900/30', 'text-danger-400',
@@ -17,20 +19,50 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Primary - Dinámico desde branding (CSS variables con fallback VERDE)
-        // Fallbacks: Verde corporativo #16A34A (success-600)
+        // Primary - Dinámico desde branding (CSS variables con fallback ROSA StrateKaz)
+        // Fallbacks: Rosa StrateKaz #ec268f
         primary: {
-          50: 'rgb(var(--color-primary-50, 240 253 244) / <alpha-value>)',
-          100: 'rgb(var(--color-primary-100, 220 252 231) / <alpha-value>)',
-          200: 'rgb(var(--color-primary-200, 187 247 208) / <alpha-value>)',
-          300: 'rgb(var(--color-primary-300, 134 239 172) / <alpha-value>)',
-          400: 'rgb(var(--color-primary-400, 74 222 128) / <alpha-value>)',
-          500: 'rgb(var(--color-primary-500, 34 197 94) / <alpha-value>)',
-          600: 'rgb(var(--color-primary-600, 22 163 74) / <alpha-value>)',
-          700: 'rgb(var(--color-primary-700, 21 128 61) / <alpha-value>)',
-          800: 'rgb(var(--color-primary-800, 22 101 52) / <alpha-value>)',
-          900: 'rgb(var(--color-primary-900, 20 83 45) / <alpha-value>)',
-          950: 'rgb(var(--color-primary-950, 5 46 22) / <alpha-value>)',
+          50: 'rgb(var(--color-primary-50, 253 242 248) / <alpha-value>)',
+          100: 'rgb(var(--color-primary-100, 252 231 243) / <alpha-value>)',
+          200: 'rgb(var(--color-primary-200, 251 207 232) / <alpha-value>)',
+          300: 'rgb(var(--color-primary-300, 249 168 212) / <alpha-value>)',
+          400: 'rgb(var(--color-primary-400, 244 114 182) / <alpha-value>)',
+          500: 'rgb(var(--color-primary-500, 236 38 143) / <alpha-value>)',
+          600: 'rgb(var(--color-primary-600, 219 39 119) / <alpha-value>)',
+          700: 'rgb(var(--color-primary-700, 190 24 93) / <alpha-value>)',
+          800: 'rgb(var(--color-primary-800, 157 23 77) / <alpha-value>)',
+          900: 'rgb(var(--color-primary-900, 131 24 67) / <alpha-value>)',
+          950: 'rgb(var(--color-primary-950, 80 7 36) / <alpha-value>)',
+        },
+        // Secondary - Dinámico desde branding (CSS variables con fallback GRIS)
+        // Fallbacks: Tonos de gris neutral
+        secondary: {
+          50: 'rgb(var(--color-secondary-50, 250 250 250) / <alpha-value>)',
+          100: 'rgb(var(--color-secondary-100, 245 245 245) / <alpha-value>)',
+          200: 'rgb(var(--color-secondary-200, 229 231 235) / <alpha-value>)',
+          300: 'rgb(var(--color-secondary-300, 209 213 219) / <alpha-value>)',
+          400: 'rgb(var(--color-secondary-400, 156 163 175) / <alpha-value>)',
+          500: 'rgb(var(--color-secondary-500, 107 114 128) / <alpha-value>)',
+          600: 'rgb(var(--color-secondary-600, 75 85 99) / <alpha-value>)',
+          700: 'rgb(var(--color-secondary-700, 55 65 81) / <alpha-value>)',
+          800: 'rgb(var(--color-secondary-800, 31 41 55) / <alpha-value>)',
+          900: 'rgb(var(--color-secondary-900, 17 24 39) / <alpha-value>)',
+          950: 'rgb(var(--color-secondary-950, 3 7 18) / <alpha-value>)',
+        },
+        // Accent - Dinámico desde branding (CSS variables con fallback AMARILLO/ÁMBAR)
+        // Fallbacks: Tonos de amarillo/ámbar
+        accent: {
+          50: 'rgb(var(--color-accent-50, 255 251 235) / <alpha-value>)',
+          100: 'rgb(var(--color-accent-100, 254 243 199) / <alpha-value>)',
+          200: 'rgb(var(--color-accent-200, 253 230 138) / <alpha-value>)',
+          300: 'rgb(var(--color-accent-300, 252 211 77) / <alpha-value>)',
+          400: 'rgb(var(--color-accent-400, 251 191 36) / <alpha-value>)',
+          500: 'rgb(var(--color-accent-500, 245 158 11) / <alpha-value>)',
+          600: 'rgb(var(--color-accent-600, 217 119 6) / <alpha-value>)',
+          700: 'rgb(var(--color-accent-700, 180 83 9) / <alpha-value>)',
+          800: 'rgb(var(--color-accent-800, 146 64 14) / <alpha-value>)',
+          900: 'rgb(var(--color-accent-900, 120 53 15) / <alpha-value>)',
+          950: 'rgb(var(--color-accent-950, 69 26 3) / <alpha-value>)',
         },
         // Grises Neutrales
         gray: {

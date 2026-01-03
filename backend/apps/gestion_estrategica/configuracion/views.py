@@ -1,6 +1,6 @@
 """
 Views del módulo Configuración - Dirección Estratégica
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Define viewsets para:
 - EmpresaConfig: Gestión de datos fiscales de la empresa (Singleton)

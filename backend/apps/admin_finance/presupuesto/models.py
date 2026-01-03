@@ -1,6 +1,6 @@
 """
 Modelos para Presupuesto - Admin Finance
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Gestiona:
 - Centros de costo
@@ -118,7 +118,7 @@ class CentroCosto(BaseCompanyModel):
         on_delete=models.PROTECT,
         null=True,
         blank=True,
-        related_name='centros_costo_responsable',
+        related_name='presupuesto_centros_costo_responsable',
         verbose_name='Responsable',
         help_text='Usuario responsable del centro de costo'
     )

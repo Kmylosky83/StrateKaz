@@ -1,6 +1,6 @@
 /**
  * React Query Hooks para el módulo de Dirección Estratégica
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
@@ -579,14 +579,11 @@ export const useBrandingConfigs = () => {
 };
 
 export const useActiveBranding = () => {
-  // Solo ejecutar la query si hay token de autenticación
-  const hasToken = !!localStorage.getItem('access_token');
-
+  // Este endpoint es público (AllowAny) - se usa en login para mostrar branding dinámico
   return useQuery({
     queryKey: strategicKeys.activeBranding,
     queryFn: brandingApi.getActive,
-    retry: false,
-    enabled: hasToken, // No hacer llamada API si no hay autenticación
+    retry: 1, // Un reintento en caso de error temporal
     staleTime: 5 * 60 * 1000, // 5 minutos - evitar refetch excesivo
   });
 };
@@ -977,6 +974,7 @@ export const useCreateSede = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: strategicKeys.sedes() });
       queryClient.invalidateQueries({ queryKey: strategicKeys.sedePrincipal });
+      queryClient.invalidateQueries({ queryKey: strategicKeys.configStats('sedes') });
       toast.success('Sede creada exitosamente');
     },
     onError: () => {
@@ -994,6 +992,7 @@ export const useUpdateSede = () => {
       queryClient.invalidateQueries({ queryKey: strategicKeys.sedes() });
       queryClient.invalidateQueries({ queryKey: strategicKeys.sede(id) });
       queryClient.invalidateQueries({ queryKey: strategicKeys.sedePrincipal });
+      queryClient.invalidateQueries({ queryKey: strategicKeys.configStats('sedes') });
       toast.success('Sede actualizada exitosamente');
     },
     onError: () => {
@@ -1009,6 +1008,7 @@ export const useDeleteSede = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: strategicKeys.sedes() });
       queryClient.invalidateQueries({ queryKey: strategicKeys.sedePrincipal });
+      queryClient.invalidateQueries({ queryKey: strategicKeys.configStats('sedes') });
       toast.success('Sede eliminada exitosamente');
     },
     onError: () => {
@@ -1024,6 +1024,7 @@ export const useRestoreSede = () => {
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: strategicKeys.sedes() });
       queryClient.invalidateQueries({ queryKey: strategicKeys.sede(id) });
+      queryClient.invalidateQueries({ queryKey: strategicKeys.configStats('sedes') });
       toast.success('Sede restaurada exitosamente');
     },
     onError: () => {
@@ -1040,6 +1041,7 @@ export const useSetSedePrincipal = () => {
       queryClient.invalidateQueries({ queryKey: strategicKeys.sedes() });
       queryClient.invalidateQueries({ queryKey: strategicKeys.sede(id) });
       queryClient.invalidateQueries({ queryKey: strategicKeys.sedePrincipal });
+      queryClient.invalidateQueries({ queryKey: strategicKeys.configStats('sedes') });
       toast.success('Sede principal actualizada');
     },
     onError: () => {

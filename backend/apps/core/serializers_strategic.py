@@ -1,6 +1,6 @@
 """
 Serializers para el Módulo de Dirección Estratégica
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Este módulo contiene los serializers para:
 - Tab 1: Identidad Corporativa (Misión, Visión, Valores, Política Integral)
@@ -579,14 +579,15 @@ class BrandingConfigSerializer(serializers.ModelSerializer):
     logo = serializers.SerializerMethodField()
     logo_white = serializers.SerializerMethodField()
     favicon = serializers.SerializerMethodField()
+    login_background = serializers.SerializerMethodField()
 
     class Meta:
         model = BrandingConfig
         fields = [
             'id', 'company_name', 'company_short_name', 'company_slogan',
-            'logo', 'logo_white', 'favicon',
+            'logo', 'logo_white', 'favicon', 'login_background',
             'primary_color', 'secondary_color', 'accent_color',
-            'is_active', 'created_at', 'updated_at'
+            'app_version', 'is_active', 'created_at', 'updated_at'
         ]
         read_only_fields = ['created_at', 'updated_at']
 
@@ -608,6 +609,9 @@ class BrandingConfigSerializer(serializers.ModelSerializer):
     def get_favicon(self, obj):
         return self._build_absolute_url(obj.favicon)
 
+    def get_login_background(self, obj):
+        return self._build_absolute_url(obj.login_background)
+
 
 class BrandingConfigCreateSerializer(serializers.ModelSerializer):
     """Serializer para crear Configuración de Branding"""
@@ -616,9 +620,9 @@ class BrandingConfigCreateSerializer(serializers.ModelSerializer):
         model = BrandingConfig
         fields = [
             'company_name', 'company_short_name', 'company_slogan',
-            'logo', 'logo_white', 'favicon',
+            'logo', 'logo_white', 'favicon', 'login_background',
             'primary_color', 'secondary_color', 'accent_color',
-            'is_active'
+            'app_version', 'is_active'
         ]
 
     def validate_primary_color(self, value):
@@ -650,20 +654,22 @@ class BrandingConfigUpdateSerializer(serializers.ModelSerializer):
     logo_clear = serializers.BooleanField(write_only=True, required=False, default=False)
     logo_white_clear = serializers.BooleanField(write_only=True, required=False, default=False)
     favicon_clear = serializers.BooleanField(write_only=True, required=False, default=False)
+    login_background_clear = serializers.BooleanField(write_only=True, required=False, default=False)
 
     class Meta:
         model = BrandingConfig
         fields = [
             'company_name', 'company_short_name', 'company_slogan',
-            'logo', 'logo_white', 'favicon',
-            'logo_clear', 'logo_white_clear', 'favicon_clear',
+            'logo', 'logo_white', 'favicon', 'login_background',
+            'logo_clear', 'logo_white_clear', 'favicon_clear', 'login_background_clear',
             'primary_color', 'secondary_color', 'accent_color',
-            'is_active'
+            'app_version', 'is_active'
         ]
         extra_kwargs = {
             'logo': {'required': False},
             'logo_white': {'required': False},
             'favicon': {'required': False},
+            'login_background': {'required': False},
         }
 
     def validate_primary_color(self, value):
@@ -686,6 +692,7 @@ class BrandingConfigUpdateSerializer(serializers.ModelSerializer):
         logo_clear = validated_data.pop('logo_clear', False)
         logo_white_clear = validated_data.pop('logo_white_clear', False)
         favicon_clear = validated_data.pop('favicon_clear', False)
+        login_background_clear = validated_data.pop('login_background_clear', False)
 
         # Eliminar archivos si se solicitó
         if logo_clear and instance.logo:
@@ -699,6 +706,10 @@ class BrandingConfigUpdateSerializer(serializers.ModelSerializer):
         if favicon_clear and instance.favicon:
             instance.favicon.delete(save=False)
             instance.favicon = None
+
+        if login_background_clear and instance.login_background:
+            instance.login_background.delete(save=False)
+            instance.login_background = None
 
         # Actualizar campos restantes
         for attr, value in validated_data.items():
@@ -764,6 +775,7 @@ class SystemModuleTreeSerializer(serializers.ModelSerializer):
     total_tabs_count = serializers.SerializerMethodField()
     can_disable = serializers.SerializerMethodField()
     category_display = serializers.CharField(source='get_category_display', read_only=True)
+    color = serializers.SerializerMethodField()
 
     class Meta:
         model = SystemModule
@@ -774,6 +786,10 @@ class SystemModuleTreeSerializer(serializers.ModelSerializer):
             'can_disable',
             'tabs', 'enabled_tabs_count', 'total_tabs_count'
         ]
+
+    def get_color(self, obj):
+        """Retorna color efectivo (asignado o por categoría)"""
+        return obj.get_effective_color()
 
     def get_enabled_tabs_count(self, obj):
         return obj.get_enabled_tab_count()
@@ -914,18 +930,19 @@ class SidebarModuleSerializer(serializers.Serializer):
     def get_route(self, obj):
         """
         Genera la ruta del módulo basada en su código.
-        Los macroprocesos (categorías) no tienen ruta.
+        Las categorías (6 niveles) no tienen ruta.
         """
         if isinstance(obj, dict):
-            # Es una categoría (macroproceso)
+            # Es una categoría
             return None
         # Es un módulo
         return f"/{obj.code.lower().replace('_', '-')}"
 
     def get_is_category(self, obj):
         """
-        Determina si es una categoría (macroproceso) o un módulo navegable.
-        Las categorías son grupos que contienen módulos.
+        Determina si es una categoría o un módulo navegable.
+        Las 6 categorías (ESTRATEGICO, MOTOR, INTEGRAL, MISIONAL, APOYO, INTELIGENCIA)
+        son grupos que contienen módulos.
         """
         return isinstance(obj, dict)
 

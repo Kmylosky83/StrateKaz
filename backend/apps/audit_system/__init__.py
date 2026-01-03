@@ -1,5 +1,5 @@
 """
-Módulo Audit System - Sistema de Gestión Grasas y Huesos del Norte
+Módulo Audit System - Sistema de Gestión StrateKaz
 ====================================================================
 
 Sistema integral de auditoría, notificaciones, alertas y tareas.

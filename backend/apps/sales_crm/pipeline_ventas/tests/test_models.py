@@ -1,6 +1,6 @@
 """
 Tests para modelos de Pipeline de Ventas - Sales CRM
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 """
 import pytest
 from decimal import Decimal

@@ -1,6 +1,6 @@
 """
 Serializers para Estructura de Cargos - Talent Hub
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 100% DINÁMICO: Serializers para API REST de profesiogramas, competencias,
 requisitos especiales y vacantes.

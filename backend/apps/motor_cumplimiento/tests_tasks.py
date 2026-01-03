@@ -1,6 +1,6 @@
 """
 Tests para tareas Celery del Motor de Cumplimiento
-Grasas y Huesos del Norte S.A.S
+StrateKaz
 
 Ejecutar con:
     python manage.py test apps.motor_cumplimiento.tests_tasks

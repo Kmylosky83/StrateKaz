@@ -162,7 +162,7 @@ CUSTOM (Para Recepción)
 
 ### Componentes Desarrollados
 ```
-c:\Proyectos\Grasas y Huesos del Norte\frontend\src\components\
+c:\Proyectos\StrateKaz\frontend\src\components\
 ├── layout\                          (PageHeader, StatsGrid, etc.)
 ├── common\                          (Button, Badge, Card, Modal)
 ├── forms\                           (Input, Select)
@@ -172,7 +172,7 @@ c:\Proyectos\Grasas y Huesos del Norte\frontend\src\components\
 
 ### Módulo de Recepción (A crear)
 ```
-c:\Proyectos\Grasas y Huesos del Norte\frontend\src\features\recepcion\
+c:\Proyectos\StrateKaz\frontend\src\features\recepcion\
 ├── components\
 │   ├── RecepcionStatusBadge.tsx
 │   ├── RecepcionTable.tsx
@@ -301,17 +301,17 @@ Consulta estas páginas como referencia:
 
 1. **ProveedoresPage** - Implementación completa
    ```
-   c:\Proyectos\Grasas y Huesos del Norte\frontend\src\features\proveedores\pages\ProveedoresPage.tsx
+   c:\Proyectos\StrateKaz\frontend\src\features\proveedores\pages\ProveedoresPage.tsx
    ```
 
 2. **UsersPage** - Otra implementación completa
    ```
-   c:\Proyectos\Grasas y Huesos del Norte\frontend\src\features\users\pages\UsersPage.tsx
+   c:\Proyectos\StrateKaz\frontend\src\features\users\pages\UsersPage.tsx
    ```
 
 3. **ProveedoresTable** - Tabla con acciones
    ```
-   c:\Proyectos\Grasas y Huesos del Norte\frontend\src\features\proveedores\components\ProveedoresTable.tsx
+   c:\Proyectos\StrateKaz\frontend\src\features\proveedores\components\ProveedoresTable.tsx
    ```
 
 ---

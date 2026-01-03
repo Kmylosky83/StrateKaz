@@ -53,7 +53,7 @@ class VistaDashboard(BaseCompanyModel, OrderedModel):
         help_text='True = visible para todos, False = solo para roles específicos'
     )
     roles_permitidos = models.ManyToManyField(
-        'core.Rol',
+        'core.Role',
         blank=True,
         related_name='dashboards_permitidos',
         verbose_name='Roles Permitidos',

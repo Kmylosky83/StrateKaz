@@ -7,6 +7,7 @@ Define exportación de datos y logs:
 - LogExportacion: Historial de exportaciones
 """
 from django.db import models
+from django.conf import settings
 from apps.core.base_models import BaseCompanyModel
 
 
@@ -133,7 +134,7 @@ class LogExportacion(BaseCompanyModel):
         verbose_name='Tipo'
     )
     usuario = models.ForeignKey(
-        'auth.User',
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

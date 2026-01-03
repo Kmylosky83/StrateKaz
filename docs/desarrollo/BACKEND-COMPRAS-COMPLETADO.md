@@ -6,12 +6,12 @@
 
 ## Resumen Ejecutivo
 
-Se ha desarrollado completamente el backend para el módulo de Compras siguiendo las políticas del proyecto SGI Grasas y Huesos del Norte. El desarrollo es 100% dinámico, sin hardcodeo de choices, heredando patrones de `gestion_proveedores` y `programacion_abastecimiento`.
+Se ha desarrollado completamente el backend para el módulo de Compras siguiendo las políticas del proyecto SGI StrateKaz. El desarrollo es 100% dinámico, sin hardcodeo de choices, heredando patrones de `gestion_proveedores` y `programacion_abastecimiento`.
 
 ## Archivos Creados/Modificados
 
 ### 1. Models (`models.py`) - 1,414 líneas
-**Ruta:** `c:\Proyectos\Grasas y Huesos del Norte\backend\apps\supply_chain\compras\models.py`
+**Ruta:** `c:\Proyectos\StrateKaz\backend\apps\supply_chain\compras\models.py`
 
 #### Catálogos Dinámicos (8 modelos):
 1. **EstadoRequisicion** - Estados para requisiciones de compra
@@ -82,7 +82,7 @@ Se ha desarrollado completamente el backend para el módulo de Compras siguiendo
 - ✅ Indexes en campos clave
 
 ### 2. Serializers (`serializers.py`) - 690 líneas
-**Ruta:** `c:\Proyectos\Grasas y Huesos del Norte\backend\apps\supply_chain\compras\serializers.py`
+**Ruta:** `c:\Proyectos\StrateKaz\backend\apps\supply_chain\compras\serializers.py`
 
 #### Serializers de Catálogo (8):
 - EstadoRequisicionSerializer
@@ -120,7 +120,7 @@ Se ha desarrollado completamente el backend para el módulo de Compras siguiendo
 - EvaluacionCotizacionSerializer
 
 ### 3. Views (`views.py`) - 505 líneas
-**Ruta:** `c:\Proyectos\Grasas y Huesos del Norte\backend\apps\supply_chain\compras\views.py`
+**Ruta:** `c:\Proyectos\StrateKaz\backend\apps\supply_chain\compras\views.py`
 
 #### ViewSets de Catálogo (8):
 Todos heredan de `viewsets.ModelViewSet` con:
@@ -165,7 +165,7 @@ Todos heredan de `viewsets.ModelViewSet` con:
 - ✅ Respuestas consistentes con status codes
 
 ### 4. URLs (`urls.py`) - 120 líneas
-**Ruta:** `c:\Proyectos\Grasas y Huesos del Norte\backend\apps\supply_chain\compras\urls.py`
+**Ruta:** `c:\Proyectos\StrateKaz\backend\apps\supply_chain\compras\urls.py`
 
 **Router de DRF configurado con:**
 
@@ -198,7 +198,7 @@ Todos heredan de `viewsets.ModelViewSet` con:
 - `GET /api/compras/recepciones/no_conformes/`
 
 ### 5. Admin (`admin.py`) - 542 líneas
-**Ruta:** `c:\Proyectos\Grasas y Huesos del Norte\backend\apps\supply_chain\compras\admin.py`
+**Ruta:** `c:\Proyectos\StrateKaz\backend\apps\supply_chain\compras\admin.py`
 
 **Admin configurado con:**
 
@@ -232,7 +232,7 @@ Con características avanzadas:
 - `tiene_no_conformidades_display()` - Alerta de no conformidades
 
 ### 6. Apps (`apps.py`) - 22 líneas
-**Ruta:** `c:\Proyectos\Grasas y Huesos del Norte\backend\apps\supply_chain\compras\apps.py`
+**Ruta:** `c:\Proyectos\StrateKaz\backend\apps\supply_chain\compras\apps.py`
 
 ```python
 class ComprasConfig(AppConfig):
@@ -493,5 +493,5 @@ Cumple con todas las políticas del proyecto:
 
 ---
 **Desarrollado por:** Claude Opus 4.5
-**Proyecto:** SGI Grasas y Huesos del Norte
+**Proyecto:** SGI StrateKaz
 **Fecha:** 27 de diciembre de 2025

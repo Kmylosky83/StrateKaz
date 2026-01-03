@@ -1,7 +1,7 @@
 import { Card } from '@/components/common/Card';
 import { cn } from '@/utils/cn';
 import { LucideIcon } from 'lucide-react';
-import { useMacroprocessColor, macroprocessColors, type MacroprocessColor } from '@/hooks/useMacroprocessColor';
+import type { ModuleColor } from '@/features/gestion-estrategica/types/modules.types';
 
 export interface StatItem {
   /** Etiqueta de la estadística */
@@ -29,8 +29,8 @@ export interface StatsGridProps {
   className?: string;
   /** Variante de estilo */
   variant?: 'default' | 'compact';
-  /** Color del macroproceso (si no se pasa, se detecta automáticamente) */
-  macroprocessColor?: MacroprocessColor;
+  /** Color del módulo para estilos de hover */
+  moduleColor?: ModuleColor;
 }
 
 const iconColors = {
@@ -48,6 +48,50 @@ const changeColors = {
   neutral: 'text-gray-600 dark:text-gray-400',
 };
 
+// Configuración de colores de hover por módulo - Sincronizado con los 6 niveles del sistema
+const moduleHoverColors: Record<ModuleColor, { shadow: string; border: string }> = {
+  purple: {
+    shadow: 'hover:shadow-purple-200/50 dark:hover:shadow-purple-900/30',
+    border: 'hover:border-purple-300 dark:hover:border-purple-700',
+  },
+  blue: {
+    shadow: 'hover:shadow-blue-200/50 dark:hover:shadow-blue-900/30',
+    border: 'hover:border-blue-300 dark:hover:border-blue-700',
+  },
+  green: {
+    shadow: 'hover:shadow-emerald-200/50 dark:hover:shadow-emerald-900/30',
+    border: 'hover:border-emerald-300 dark:hover:border-emerald-700',
+  },
+  orange: {
+    shadow: 'hover:shadow-orange-200/50 dark:hover:shadow-orange-900/30',
+    border: 'hover:border-orange-300 dark:hover:border-orange-700',
+  },
+  teal: {
+    shadow: 'hover:shadow-teal-200/50 dark:hover:shadow-teal-900/30',
+    border: 'hover:border-teal-300 dark:hover:border-teal-700',
+  },
+  gray: {
+    shadow: 'hover:shadow-gray-200/50 dark:hover:shadow-gray-900/30',
+    border: 'hover:border-gray-300 dark:hover:border-gray-700',
+  },
+  red: {
+    shadow: 'hover:shadow-red-200/50 dark:hover:shadow-red-900/30',
+    border: 'hover:border-red-300 dark:hover:border-red-700',
+  },
+  yellow: {
+    shadow: 'hover:shadow-yellow-200/50 dark:hover:shadow-yellow-900/30',
+    border: 'hover:border-yellow-300 dark:hover:border-yellow-700',
+  },
+  pink: {
+    shadow: 'hover:shadow-pink-200/50 dark:hover:shadow-pink-900/30',
+    border: 'hover:border-pink-300 dark:hover:border-pink-700',
+  },
+  indigo: {
+    shadow: 'hover:shadow-indigo-200/50 dark:hover:shadow-indigo-900/30',
+    border: 'hover:border-indigo-300 dark:hover:border-indigo-700',
+  },
+};
+
 /**
  * StatsGrid - Grid de cards de estadísticas/métricas
  *
@@ -58,19 +102,16 @@ const changeColors = {
  * │ +12% vs anterior                        │
  * └─────────────────────────────────────────┘
  *
- * El hover de las cards usa el color del macroproceso actual
- * (detectado automáticamente según la ruta o pasado como prop)
+ * El hover de las cards usa el color del módulo pasado como prop
  */
 export function StatsGrid({
   stats,
   columns = 4,
   className,
   variant = 'default',
-  macroprocessColor: propColor,
+  moduleColor = 'blue',
 }: StatsGridProps) {
-  // Detectar color del macroproceso automáticamente si no se pasa como prop
-  const detectedColor = useMacroprocessColor();
-  const colorKey = propColor || detectedColor || 'blue';
+  const colorKey = moduleColor;
 
   const colsClass = {
     2: 'sm:grid-cols-2',
@@ -97,18 +138,18 @@ export function StatsGrid({
 interface StatCardProps {
   stat: StatItem;
   variant: 'default' | 'compact';
-  colorKey: MacroprocessColor;
+  colorKey: ModuleColor;
 }
 
 function StatCard({ stat, variant, colorKey }: StatCardProps) {
   const Icon = stat.icon;
-  const colors = macroprocessColors[colorKey];
+  const colors = moduleHoverColors[colorKey];
 
-  // Clases base con hover del color del macroproceso
+  // Clases base con hover del color del módulo
   const cardClasses = cn(
     'shadow-sm transition-all duration-200 hover:-translate-y-0.5 cursor-default border-gray-200/60 dark:border-gray-700/60',
-    colors.hoverShadow,
-    colors.hoverBorder,
+    colors.shadow,
+    colors.border,
     'hover:shadow-md'
   );
 

@@ -1,6 +1,6 @@
 """
 Modelos del módulo Centro de Notificaciones - Audit System
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Define:
 - TipoNotificacion: Tipos de notificación configurables

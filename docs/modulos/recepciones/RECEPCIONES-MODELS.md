@@ -16,7 +16,7 @@
 
 ### Proceso de Recepción de ACU
 
-El módulo de **Recepciones** gestiona el proceso de recepción de Aceite Comestible Usado (ACU) en la planta de Grasas y Huesos del Norte.
+El módulo de **Recepciones** gestiona el proceso de recepción de Aceite Comestible Usado (ACU) en la planta de StrateKaz.
 
 **Flujo operativo:**
 
@@ -758,5 +758,5 @@ Para completar el módulo:
 ---
 
 **Fecha de creación:** 2024-12-04
-**Autor:** Sistema de Gestión Grasas y Huesos del Norte
+**Autor:** Sistema de Gestión StrateKaz
 **Versión:** 1.0

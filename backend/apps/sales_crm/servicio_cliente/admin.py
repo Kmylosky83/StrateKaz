@@ -1,6 +1,6 @@
 """
 Admin para Servicio al Cliente - Sales CRM
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 """
 from django.contrib import admin
 from django.utils.html import format_html

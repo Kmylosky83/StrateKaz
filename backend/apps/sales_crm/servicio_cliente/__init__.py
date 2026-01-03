@@ -1,6 +1,6 @@
 """
 Aplicación Servicio al Cliente - Sales CRM
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Gestiona:
 - PQRS (Peticiones, Quejas, Reclamos, Sugerencias)

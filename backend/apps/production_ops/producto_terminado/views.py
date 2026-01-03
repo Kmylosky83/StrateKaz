@@ -1,6 +1,6 @@
 """
 Views para Producto Terminado - Production Ops
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 ViewSets para gestión de producto terminado, liberación de calidad y certificados.
 

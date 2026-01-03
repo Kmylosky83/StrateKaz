@@ -1,6 +1,6 @@
 """
 Tareas asíncronas de Celery para el módulo Core
-Grasas y Huesos del Norte S.A.S
+StrateKaz
 """
 import logging
 from typing import List, Dict, Any

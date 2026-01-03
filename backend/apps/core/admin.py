@@ -1,6 +1,6 @@
 """
 Django Admin Configuration - Módulo Core
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 """
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
@@ -336,6 +336,6 @@ class CargoPermisoAdmin(admin.ModelAdmin):
 
 
 # Personalizar el sitio admin
-admin.site.site_header = 'Grasas y Huesos del Norte - Administración'
-admin.site.site_title = 'Admin Grasas y Huesos'
+admin.site.site_header = 'StrateKaz - Administración'
+admin.site.site_title = 'Admin StrateKaz'
 admin.site.index_title = 'Panel de Administración'

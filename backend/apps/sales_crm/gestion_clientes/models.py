@@ -1,6 +1,6 @@
 """
 Modelos para Gestión de Clientes - Sales CRM
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 100% DINÁMICO: Todos los catálogos se gestionan desde la base de datos.
 

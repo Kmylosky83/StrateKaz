@@ -2,7 +2,7 @@
 
 ## Resumen de Cambios
 
-La configuración de Redis y Celery ha sido completada exitosamente en el proyecto Grasas y Huesos del Norte S.A.S.
+La configuración de Redis y Celery ha sido completada exitosamente en el proyecto StrateKaz.
 
 ### Fecha de Configuración
 2024-12-23

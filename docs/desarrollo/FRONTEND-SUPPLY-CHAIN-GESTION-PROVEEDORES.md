@@ -1,7 +1,7 @@
 # Frontend Supply Chain - Gestión de Proveedores
 
 **Fecha de Creación**: 27 de diciembre de 2025
-**Proyecto**: Grasas y Huesos del Norte - ERP StrateKaz
+**Proyecto**: StrateKaz - ERP StrateKaz
 **Módulo**: Supply Chain / Gestión de Proveedores
 
 ---

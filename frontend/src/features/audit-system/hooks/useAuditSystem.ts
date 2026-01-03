@@ -1,6 +1,6 @@
 /**
  * Custom Hooks - Audit System
- * Sistema de Auditoría Grasas y Huesos del Norte
+ * Sistema de Auditoría StrateKaz
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';

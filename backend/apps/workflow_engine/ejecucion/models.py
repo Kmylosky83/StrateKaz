@@ -417,7 +417,7 @@ class TareaActiva(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='tareas_asignadas',
+        related_name='workflow_tareas_asignadas',
         db_index=True,
         verbose_name='Asignado a',
         help_text='Usuario responsable de ejecutar la tarea'
@@ -554,7 +554,7 @@ class TareaActiva(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='tareas_creadas',
+        related_name='workflow_tareas_creadas',
         verbose_name='Creado por',
         help_text='Usuario que creó la tarea (usualmente el sistema)'
     )

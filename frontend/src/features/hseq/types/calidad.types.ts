@@ -1,6 +1,6 @@
 /**
  * Tipos TypeScript para Módulo de Calidad - HSEQ Management
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Incluye:
  * - No Conformidades

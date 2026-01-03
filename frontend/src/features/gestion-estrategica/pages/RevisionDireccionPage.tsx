@@ -48,7 +48,7 @@ export const RevisionDireccionPage = () => {
       label: 'Revisiones Programadas',
       value: stats?.total_programaciones ?? 0,
       icon: Calendar,
-      iconColor: 'primary',
+      iconColor: 'info',
       description: proximaRevisionText,
     },
     {
@@ -87,14 +87,14 @@ export const RevisionDireccionPage = () => {
         activeSection={activeSection}
         onChange={setActiveSection}
         isLoading={sectionsLoading}
-        macroprocessColor="purple"
+        moduleColor="purple"
         variant="pills"
       />
 
       {statsLoading ? (
         <StatsGridSkeleton count={4} />
       ) : (
-        <StatsGrid stats={statsItems} columns={4} macroprocessColor="purple" />
+        <StatsGrid stats={statsItems} columns={4} moduleColor="purple" />
       )}
 
       {/* Contenido */}

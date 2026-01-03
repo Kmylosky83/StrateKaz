@@ -1,6 +1,6 @@
 """
 Views para Estructura de Cargos - Talent Hub
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 ViewSets CRUD completos para profesiogramas, competencias,
 requisitos especiales y vacantes.

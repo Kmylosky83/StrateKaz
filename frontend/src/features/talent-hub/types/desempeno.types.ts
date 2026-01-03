@@ -1,6 +1,6 @@
 /**
  * Tipos TypeScript para Desempeno - Talent Hub
- * Sistema de Gestion Grasas y Huesos del Norte
+ * Sistema de Gestion StrateKaz
  *
  * Basado en: backend/apps/talent_hub/desempeno/models.py
  */

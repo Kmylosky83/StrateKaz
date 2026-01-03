@@ -5,6 +5,7 @@
  * de la empresa. Usa el modelo Singleton EmpresaConfig.
  *
  * Usa Design System:
+ * - DataCard, DataField, DataGrid para visualización mejorada
  * - Card para contenedores
  * - Button para acciones
  * - Alert para mensajes
@@ -26,8 +27,10 @@ import {
   DollarSign,
   Clock,
   Loader2,
+  User,
 } from 'lucide-react';
 import { Card, Button, Alert } from '@/components/common';
+import { DataCard, DataField, DataGrid, DataSection } from '@/components/data-display';
 import { Input, Select } from '@/components/forms';
 import {
   useEmpresaConfig,
@@ -82,6 +85,7 @@ const DEPARTAMENTOS_COLOMBIA = [
 
 /**
  * Componente de vista (solo lectura) de la información de la empresa
+ * Usa DataCard, DataField, DataGrid para mejor visualización
  */
 const EmpresaView = ({
   empresa,
@@ -91,104 +95,60 @@ const EmpresaView = ({
   onEdit: () => void;
 }) => {
   return (
-    <div className="space-y-6">
-      {/* Header - Patrón Design System (igual a BrandingSection) */}
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          Datos Fiscales y Legales
-        </h3>
+    <DataSection
+      title="Datos Fiscales y Legales"
+      description="Información registrada de la empresa"
+      icon={Building2}
+      iconVariant="purple"
+      action={
         <Button variant="secondary" size="sm" onClick={onEdit}>
           <Edit className="h-4 w-4 mr-2" />
           Editar
         </Button>
-      </div>
-
-      {/* Grid de información */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Identificación Fiscal */}
-        <Card className="p-4">
-          <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Identificación Fiscal
-          </h4>
-          <div className="space-y-3">
-            <div>
-              <label className="text-xs text-gray-500 dark:text-gray-400">NIT</label>
-              <p className="font-medium text-gray-900 dark:text-gray-100">{empresa.nit}</p>
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 dark:text-gray-400">Razón Social</label>
-              <p className="font-medium text-gray-900 dark:text-gray-100">{empresa.razon_social}</p>
-            </div>
-            {empresa.nombre_comercial && (
-              <div>
-                <label className="text-xs text-gray-500 dark:text-gray-400">Nombre Comercial</label>
-                <p className="text-gray-900 dark:text-gray-100">{empresa.nombre_comercial}</p>
-              </div>
-            )}
-            <div>
-              <label className="text-xs text-gray-500 dark:text-gray-400">Tipo de Sociedad</label>
-              <p className="text-gray-900 dark:text-gray-100">{empresa.tipo_sociedad_display}</p>
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 dark:text-gray-400">Régimen Tributario</label>
-              <p className="text-gray-900 dark:text-gray-100">{empresa.regimen_tributario_display}</p>
-            </div>
-          </div>
-        </Card>
+      }
+    >
+      <DataGrid columns={3} gap="md">
+        {/* Identificación Fiscal - Card destacada */}
+        <DataCard
+          title="Identificación Fiscal"
+          icon={FileText}
+          variant="purple"
+          elevated
+          accentBorder
+        >
+          <DataField label="NIT" value={empresa.nit} valueVariant="bold" copyable />
+          <DataField label="Razón Social" value={empresa.razon_social} valueVariant="bold" />
+          <DataField label="Nombre Comercial" value={empresa.nombre_comercial} emptyText="No registrado" />
+          <DataField label="Tipo de Sociedad" value={empresa.tipo_sociedad_display} />
+          <DataField label="Régimen Tributario" value={empresa.regimen_tributario_display} />
+        </DataCard>
 
         {/* Representante Legal */}
-        <Card className="p-4">
-          <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-2">
-            <Building2 className="h-4 w-4" />
-            Representante Legal
-          </h4>
-          <div className="space-y-3">
-            <div>
-              <label className="text-xs text-gray-500 dark:text-gray-400">Nombre</label>
-              <p className="font-medium text-gray-900 dark:text-gray-100">
-                {empresa.representante_legal}
-              </p>
-            </div>
-            {empresa.cedula_representante && (
-              <div>
-                <label className="text-xs text-gray-500 dark:text-gray-400">Cédula</label>
-                <p className="text-gray-900 dark:text-gray-100">{empresa.cedula_representante}</p>
-              </div>
-            )}
-            {empresa.actividad_economica && (
-              <div>
-                <label className="text-xs text-gray-500 dark:text-gray-400">Actividad Económica (CIIU)</label>
-                <p className="text-gray-900 dark:text-gray-100">{empresa.actividad_economica}</p>
-              </div>
-            )}
-          </div>
-        </Card>
+        <DataCard
+          title="Representante Legal"
+          icon={User}
+          variant="blue"
+          accentBorder
+        >
+          <DataField label="Nombre Completo" value={empresa.representante_legal} valueVariant="bold" />
+          <DataField label="Cédula" value={empresa.cedula_representante} copyable />
+          <DataField label="Actividad Económica (CIIU)" value={empresa.actividad_economica} emptyText="No especificada" />
+        </DataCard>
 
         {/* Contacto */}
-        <Card className="p-4">
-          <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-2">
-            <Phone className="h-4 w-4" />
-            Contacto
-          </h4>
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Phone className="h-4 w-4 text-gray-400" />
-              <span className="text-gray-900 dark:text-gray-100">{empresa.telefono_principal}</span>
-            </div>
-            {empresa.telefono_secundario && (
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-gray-400" />
-                <span className="text-gray-900 dark:text-gray-100">{empresa.telefono_secundario}</span>
-              </div>
-            )}
-            <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4 text-gray-400" />
-              <span className="text-gray-900 dark:text-gray-100">{empresa.email_corporativo}</span>
-            </div>
-            {empresa.sitio_web && (
-              <div className="flex items-center gap-2">
-                <Globe className="h-4 w-4 text-gray-400" />
+        <DataCard
+          title="Información de Contacto"
+          icon={Phone}
+          variant="green"
+          accentBorder
+        >
+          <DataField label="Teléfono Principal" value={empresa.telefono_principal} icon={Phone} inline copyable />
+          <DataField label="Teléfono Secundario" value={empresa.telefono_secundario} icon={Phone} inline />
+          <DataField label="Email Corporativo" value={empresa.email_corporativo} icon={Mail} inline copyable truncate />
+          <DataField
+            label="Sitio Web"
+            value={
+              empresa.sitio_web ? (
                 <a
                   href={empresa.sitio_web}
                   target="_blank"
@@ -197,96 +157,68 @@ const EmpresaView = ({
                 >
                   {empresa.sitio_web}
                 </a>
-              </div>
-            )}
-          </div>
-        </Card>
+              ) : null
+            }
+            icon={Globe}
+            inline
+          />
+        </DataCard>
 
         {/* Ubicación */}
-        <Card className="p-4">
-          <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
-            Ubicación
-          </h4>
-          <div className="space-y-3">
-            <div>
-              <label className="text-xs text-gray-500 dark:text-gray-400">Dirección Fiscal</label>
-              <p className="text-gray-900 dark:text-gray-100">{empresa.direccion_fiscal}</p>
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 dark:text-gray-400">Ciudad</label>
-              <p className="text-gray-900 dark:text-gray-100">
-                {empresa.ciudad}, {empresa.departamento_display}
-              </p>
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 dark:text-gray-400">País</label>
-              <p className="text-gray-900 dark:text-gray-100">{empresa.pais}</p>
-            </div>
-          </div>
-        </Card>
+        <DataCard
+          title="Ubicación"
+          icon={MapPin}
+          variant="orange"
+          accentBorder
+        >
+          <DataField label="Dirección Fiscal" value={empresa.direccion_fiscal} />
+          <DataField
+            label="Ciudad"
+            value={empresa.ciudad && empresa.departamento_display ? `${empresa.ciudad}, ${empresa.departamento_display}` : empresa.ciudad}
+          />
+          <DataField label="País" value={empresa.pais} />
+          <DataField label="Código Postal" value={empresa.codigo_postal} />
+        </DataCard>
 
         {/* Registro Mercantil */}
-        <Card className="p-4">
-          <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Registro Mercantil
-          </h4>
-          <div className="space-y-3">
-            {empresa.matricula_mercantil && (
-              <div>
-                <label className="text-xs text-gray-500 dark:text-gray-400">Matrícula Mercantil</label>
-                <p className="text-gray-900 dark:text-gray-100">{empresa.matricula_mercantil}</p>
-              </div>
-            )}
-            {empresa.camara_comercio && (
-              <div>
-                <label className="text-xs text-gray-500 dark:text-gray-400">Cámara de Comercio</label>
-                <p className="text-gray-900 dark:text-gray-100">{empresa.camara_comercio}</p>
-              </div>
-            )}
-            {empresa.fecha_constitucion && (
-              <div>
-                <label className="text-xs text-gray-500 dark:text-gray-400">Fecha de Constitución</label>
-                <p className="text-gray-900 dark:text-gray-100">{empresa.fecha_constitucion}</p>
-              </div>
-            )}
-          </div>
-        </Card>
+        <DataCard
+          title="Registro Mercantil"
+          icon={Calendar}
+          variant="teal"
+          accentBorder
+        >
+          <DataField label="Matrícula Mercantil" value={empresa.matricula_mercantil} />
+          <DataField label="Cámara de Comercio" value={empresa.camara_comercio} />
+          <DataField label="Fecha de Constitución" value={empresa.fecha_constitucion} />
+          <DataField label="Fecha de Inscripción" value={empresa.fecha_inscripcion_registro} />
+        </DataCard>
 
         {/* Configuración Regional */}
-        <Card className="p-4">
-          <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4 flex items-center gap-2">
-            <Clock className="h-4 w-4" />
-            Configuración Regional
-          </h4>
-          <div className="space-y-3">
-            <div>
-              <label className="text-xs text-gray-500 dark:text-gray-400">Zona Horaria</label>
-              <p className="text-gray-900 dark:text-gray-100">{empresa.zona_horaria_display}</p>
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 dark:text-gray-400">Formato de Fecha</label>
-              <p className="text-gray-900 dark:text-gray-100">{empresa.formato_fecha_display}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-gray-400" />
-              <span className="text-gray-900 dark:text-gray-100">
-                {empresa.moneda_display} ({empresa.simbolo_moneda})
-              </span>
-            </div>
-          </div>
-        </Card>
-      </div>
+        <DataCard
+          title="Configuración Regional"
+          icon={Clock}
+          variant="gray"
+          accentBorder
+        >
+          <DataField label="Zona Horaria" value={empresa.zona_horaria_display} />
+          <DataField label="Formato de Fecha" value={empresa.formato_fecha_display} />
+          <DataField
+            label="Moneda"
+            value={empresa.moneda_display ? `${empresa.moneda_display} (${empresa.simbolo_moneda})` : null}
+            icon={DollarSign}
+            inline
+          />
+        </DataCard>
+      </DataGrid>
 
       {/* Última actualización */}
       {empresa.updated_at && (
-        <div className="text-sm text-gray-500 dark:text-gray-400 text-right">
+        <div className="text-sm text-gray-500 dark:text-gray-400 text-right pt-4">
           Última actualización: {new Date(empresa.updated_at).toLocaleString('es-CO')}
           {empresa.updated_by_name && ` por ${empresa.updated_by_name}`}
         </div>
       )}
-    </div>
+    </DataSection>
   );
 };
 
@@ -730,11 +662,5 @@ export const EmpresaSection = () => {
     );
   }
 
-  return (
-    <Card>
-      <div className="p-6">
-        <EmpresaView empresa={empresa} onEdit={() => setIsEditing(true)} />
-      </div>
-    </Card>
-  );
+  return <EmpresaView empresa={empresa} onEdit={() => setIsEditing(true)} />;
 };

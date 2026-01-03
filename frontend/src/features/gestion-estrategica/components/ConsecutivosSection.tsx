@@ -133,7 +133,7 @@ export const ConsecutivosSection = () => {
     const totalGenerados = items.reduce((sum, c) => sum + (c.current_number || 0), 0);
 
     return [
-      { label: 'Total Consecutivos', value: items.length, icon: Hash, iconColor: 'primary' as const },
+      { label: 'Total Consecutivos', value: items.length, icon: Hash, iconColor: 'info' as const },
       { label: 'Activos', value: activos, icon: CheckCircle, iconColor: 'success' as const },
       { label: 'Reset Anual', value: conResetAnual, icon: Calendar, iconColor: 'info' as const, description: 'Se reinician cada año' },
       { label: 'Docs Generados', value: totalGenerados, icon: List, iconColor: 'gray' as const, description: 'Total acumulado' },
@@ -146,7 +146,7 @@ export const ConsecutivosSection = () => {
       {loadingConsecutivos ? (
         <StatsGridSkeleton columns={4} />
       ) : (
-        <StatsGrid stats={consecutivoStats} columns={4} macroprocessColor="purple" />
+        <StatsGrid stats={consecutivoStats} columns={4} moduleColor="purple" />
       )}
 
       {/* Filtros */}

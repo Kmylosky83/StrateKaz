@@ -1,6 +1,6 @@
 # Sistema RBAC (Role-Based Access Control)
 
-Sistema de control de acceso basado en roles para Grasas y Huesos del Norte SGI.
+Sistema de control de acceso basado en roles para StrateKaz SGI.
 
 ## Arquitectura
 

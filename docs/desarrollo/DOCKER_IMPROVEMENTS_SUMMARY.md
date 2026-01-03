@@ -1,4 +1,4 @@
-# Resumen de Mejoras Docker - Grasas y Huesos del Norte
+# Resumen de Mejoras Docker - StrateKaz
 
 ## Fecha de Implementación
 **2024-12-22**

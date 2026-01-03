@@ -176,21 +176,20 @@ class AccionPorKPI(BaseCompanyModel):
         choices=TIPO_ACCION_CHOICES,
         verbose_name='Tipo de Acción'
     )
-    accion_correctiva = models.ForeignKey(
-        'mejora_continua.AccionCorrectiva',
-        on_delete=models.SET_NULL,
+    # Vinculación con acciones correctivas del módulo HSEQ (opcional)
+    # NOTA: La app mejora_continua no tiene modelo AccionCorrectiva, se debe crear o usar calidad.NoConformidad
+    accion_correctiva_id = models.PositiveBigIntegerField(
         null=True,
         blank=True,
-        related_name='kpis_relacionados',
-        verbose_name='Acción Correctiva HSEQ',
-        help_text='Acción correctiva del módulo HSEQ (si aplica)'
+        verbose_name='ID Acción Correctiva HSEQ',
+        help_text='ID de acción correctiva del módulo HSEQ (si aplica)'
     )
     descripcion = models.TextField(
         verbose_name='Descripción',
         help_text='Descripción de la acción a tomar'
     )
     responsable = models.ForeignKey(
-        'talent_hub.Colaborador',
+        'colaboradores.Colaborador',
         on_delete=models.PROTECT,
         related_name='acciones_kpi',
         verbose_name='Responsable',

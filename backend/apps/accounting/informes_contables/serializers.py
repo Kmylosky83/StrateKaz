@@ -1,6 +1,6 @@
 """
 Serializers para informes_contables - accounting
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 """
 from rest_framework import serializers
 from .models import InformeContable, LineaInforme, GeneracionInforme

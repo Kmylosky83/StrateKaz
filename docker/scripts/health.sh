@@ -2,7 +2,7 @@
 
 # ===================================================================
 # Script de verificación de salud de servicios
-# Grasas y Huesos del Norte S.A.S
+# StrateKaz
 # ===================================================================
 
 # Colores

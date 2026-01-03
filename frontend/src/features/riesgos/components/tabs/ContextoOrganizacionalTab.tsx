@@ -1,6 +1,6 @@
 /**
  * Tab de Contexto Organizacional - Motor de Riesgos
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Gestión completa del análisis de contexto organizacional:
  * - Análisis DOFA (Debilidades, Oportunidades, Fortalezas, Amenazas)

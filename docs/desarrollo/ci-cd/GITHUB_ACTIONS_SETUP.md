@@ -2,7 +2,7 @@
 
 ## Resumen de Implementación
 
-Se ha creado una configuración completa de CI/CD usando GitHub Actions para el proyecto **Grasas y Huesos del Norte**.
+Se ha creado una configuración completa de CI/CD usando GitHub Actions para el proyecto **StrateKaz**.
 
 ### Fecha de Creación
 2025-12-23
@@ -68,7 +68,7 @@ Se ha creado una configuración completa de CI/CD usando GitHub Actions para el 
 ## Estructura de Archivos
 
 ```
-c:\Proyectos\Grasas y Huesos del Norte\
+c:\Proyectos\StrateKaz\
 ├── .github/
 │   ├── workflows/
 │   │   ├── ci.yml                    # CI Pipeline

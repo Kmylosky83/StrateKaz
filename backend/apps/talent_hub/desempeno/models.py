@@ -1,6 +1,6 @@
 """
 Modelos para Desempeño - Talent Hub
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Este módulo implementa:
 - Ciclos de Evaluación de Desempeño

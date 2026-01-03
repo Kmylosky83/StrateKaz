@@ -478,7 +478,7 @@ GET    /api/motor_cumplimiento/partes-interesadas/partes/matriz-influencia-inter
 
 ## Autor
 
-**Sistema de Gestión Integral - Grasas y Huesos del Norte**
+**Sistema de Gestión Integral - StrateKaz**
 Módulo: Motor de Cumplimiento
 Submódulo: Partes Interesadas
 Fecha: 2025-12-26

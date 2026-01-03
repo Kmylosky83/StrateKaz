@@ -1,6 +1,6 @@
 /**
  * Types para Proceso Disciplinario - Talent Hub
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  */
 
 // ============== ENUMS ==============

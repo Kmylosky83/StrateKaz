@@ -1,6 +1,6 @@
 /**
  * React Query Hooks para Onboarding e Induccion - Talent Hub
- * Sistema de Gestion Grasas y Huesos del Norte
+ * Sistema de Gestion StrateKaz
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';

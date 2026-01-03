@@ -1,6 +1,6 @@
 /**
  * Index principal del módulo Dirección Estratégica
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Arquitectura: Cada tab tiene su propia página (sin redundancia de tabs)
  * - ConfiguracionPage: Módulos, Branding, Consecutivos

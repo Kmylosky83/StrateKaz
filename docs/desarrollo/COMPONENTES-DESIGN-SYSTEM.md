@@ -1,12 +1,12 @@
 # Design System del Proyecto - Guía de Componentes Reutilizables
 
-Este documento describe los componentes disponibles en el Design System del proyecto "Grasas y Huesos del Norte" y cómo usarlos en el módulo de Recepción.
+Este documento describe los componentes disponibles en el Design System del proyecto "StrateKaz" y cómo usarlos en el módulo de Recepción.
 
 ---
 
 ## 1. COMPONENTES LAYOUT (Estructuras de página)
 
-Ubicación: `c:\Proyectos\Grasas y Huesos del Norte\frontend\src\components\layout\`
+Ubicación: `c:\Proyectos\StrateKaz\frontend\src\components\layout\`
 
 ### 1.1 PageHeader
 
@@ -456,7 +456,7 @@ function RecepcionWithTabs() {
 
 ## 2. COMPONENTES COMUNES (Básicos)
 
-Ubicación: `c:\Proyectos\Grasas y Huesos del Norte\frontend\src\components\common\`
+Ubicación: `c:\Proyectos\StrateKaz\frontend\src\components\common\`
 
 ### 2.1 Button
 
@@ -731,7 +731,7 @@ import { Spinner } from '@/components/common/Spinner';
 
 ## 3. COMPONENTES DE FORMULARIO
 
-Ubicación: `c:\Proyectos\Grasas y Huesos del Norte\frontend\src\components\forms\`
+Ubicación: `c:\Proyectos\StrateKaz\frontend\src\components\forms\`
 
 ### 3.1 Input
 
@@ -864,14 +864,14 @@ import { Select } from '@/components/forms/Select';
 
 ## 4. COMPONENTES ESPECÍFICOS (Reutilizables para Recepción)
 
-Ubicación: `c:\Proyectos\Grasas y Huesos del Norte\frontend\src\components\`
+Ubicación: `c:\Proyectos\StrateKaz\frontend\src\components\`
 
 ### 4.1 ProveedorStatusBadge
 
 Un ejemplo de componente específico que puedes adaptar para Recepción:
 
 ```tsx
-// c:\Proyectos\Grasas y Huesos del Norte\frontend\src\components\proveedores\ProveedorStatusBadge.tsx
+// c:\Proyectos\StrateKaz\frontend\src\components\proveedores\ProveedorStatusBadge.tsx
 import { Badge } from '@/components/common/Badge';
 
 interface ProveedorStatusBadgeProps {

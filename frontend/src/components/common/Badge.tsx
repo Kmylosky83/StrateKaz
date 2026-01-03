@@ -1,9 +1,12 @@
 import { HTMLAttributes } from 'react';
 import { cn } from '@/utils/cn';
 
+export type BadgeVariant = 'primary' | 'secondary' | 'accent' | 'success' | 'warning' | 'danger' | 'info' | 'gray';
+export type BadgeSize = 'sm' | 'md' | 'lg';
+
 interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
-  variant?: 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'gray';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: BadgeVariant;
+  size?: BadgeSize;
 }
 
 export const Badge = ({
@@ -16,6 +19,10 @@ export const Badge = ({
   const variants = {
     primary:
       'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-400',
+    secondary:
+      'bg-secondary-100 text-secondary-800 dark:bg-secondary-900/30 dark:text-secondary-300',
+    accent:
+      'bg-accent-100 text-accent-800 dark:bg-accent-900/30 dark:text-accent-300',
     success:
       'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-400',
     warning:

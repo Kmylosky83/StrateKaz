@@ -49,7 +49,7 @@ export const CargosTab = () => {
     const cargosSistema = cargos.filter((c) => c.is_system).length;
 
     return [
-      { label: 'Total Cargos', value: cargos.length, icon: Briefcase, iconColor: 'primary' as const },
+      { label: 'Total Cargos', value: cargos.length, icon: Briefcase, iconColor: 'info' as const },
       { label: 'Del Sistema', value: cargosSistema, icon: Lock, iconColor: 'gray' as const, description: 'No eliminables' },
       { label: 'Usuarios Asignados', value: totalUsuarios, icon: Users, iconColor: 'success' as const },
       { label: 'Total Permisos', value: totalPermisos, icon: Shield, iconColor: 'info' as const },
@@ -129,7 +129,7 @@ export const CargosTab = () => {
       {isLoading ? (
         <StatsGridSkeleton columns={4} />
       ) : (
-        <StatsGrid stats={cargoStats} columns={4} macroprocessColor="purple" />
+        <StatsGrid stats={cargoStats} columns={4} moduleColor="purple" />
       )}
 
       {/* Filtros */}

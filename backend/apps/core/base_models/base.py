@@ -1,5 +1,5 @@
 """
-Abstract Base Models - Sistema de Gestión Grasas y Huesos del Norte
+Abstract Base Models - Sistema de Gestión StrateKaz
 =====================================================================
 
 Modelos base abstractos reutilizables para eliminar duplicación de código

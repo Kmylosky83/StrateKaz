@@ -1,29 +1,66 @@
 /**
- * Sidebar Dinámico - Sistema de Gestión Grasas y Huesos del Norte
+ * Sidebar Dinámico - Sistema de Gestión StrateKaz
  *
  * Características:
  * - Carga módulos, tabs y secciones desde la API (sin hardcoding)
  * - Iconos dinámicos desde Lucide React
- * - Colores por macroproceso
+ * - Colores por módulo/categoría (6 niveles: ESTRATEGICO, MOTOR, INTEGRAL, MISIONAL, APOYO, INTELIGENCIA)
  * - Control granular: desactivar módulo/tab en ConfiguracionTab → desaparece del sidebar
  */
 import { useState, useMemo, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useAuthStore } from '@/store/authStore';
 import { cn } from '@/utils/cn';
 import { useSidebarModules } from '@/features/gestion-estrategica/hooks/useModules';
+import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import type { SidebarModule } from '@/features/gestion-estrategica/types/modules.types';
 import * as LucideIcons from 'lucide-react';
-import { ChevronRight, ChevronDown, Circle, Loader2 } from 'lucide-react';
+import { ChevronRight, ChevronDown, Circle, Loader2, LayoutDashboard } from 'lucide-react';
 
 interface SidebarProps {
   isCollapsed: boolean;
 }
 
-// Colores por macroproceso
-type MacroprocessColor = 'purple' | 'blue' | 'green' | 'orange' | 'gray';
+// Colores por módulo - Sincronizado con backend CATEGORY_DEFAULT_COLORS
+type ModuleColor = 'purple' | 'blue' | 'green' | 'orange' | 'gray' | 'teal' | 'red' | 'yellow' | 'pink' | 'indigo';
 
-const macroprocessColors: Record<MacroprocessColor, {
+/**
+ * Mapea colores extendidos de Tailwind a los 10 colores soportados
+ * Permite que la BD use cualquier color y el frontend lo convierta
+ */
+const colorMapping: Record<string, ModuleColor> = {
+  // Colores directos (ya soportados)
+  purple: 'purple',
+  blue: 'blue',
+  green: 'green',
+  orange: 'orange',
+  gray: 'gray',
+  teal: 'teal',
+  red: 'red',
+  yellow: 'yellow',
+  pink: 'pink',
+  indigo: 'indigo',
+  // Colores extendidos → mapeados al más cercano
+  amber: 'orange',
+  cyan: 'teal',
+  rose: 'pink',
+  violet: 'purple',
+  emerald: 'green',
+  lime: 'green',
+  slate: 'gray',
+  stone: 'gray',
+  zinc: 'gray',
+  neutral: 'gray',
+  fuchsia: 'pink',
+  sky: 'blue',
+};
+
+/** Obtiene el color mapeado o null si no hay color */
+const getMappedColor = (color: string | undefined | null): ModuleColor | null => {
+  if (!color) return null;
+  return colorMapping[color] || null;
+};
+
+const moduleColors: Record<ModuleColor, {
   bg: string;
   bgHover: string;
   bgActive: string;
@@ -83,6 +120,56 @@ const macroprocessColors: Record<MacroprocessColor, {
     iconActive: 'text-gray-600 dark:text-gray-300',
     border: 'border-l-gray-500',
   },
+  teal: {
+    bg: 'bg-teal-50/50 dark:bg-teal-900/10',
+    bgHover: 'hover:bg-teal-50 dark:hover:bg-teal-900/20',
+    bgActive: 'bg-teal-100 dark:bg-teal-900/30',
+    text: 'text-teal-600 dark:text-teal-400',
+    textActive: 'text-teal-700 dark:text-teal-300',
+    icon: 'text-teal-500 dark:text-teal-400',
+    iconActive: 'text-teal-600 dark:text-teal-300',
+    border: 'border-l-teal-500',
+  },
+  red: {
+    bg: 'bg-red-50/50 dark:bg-red-900/10',
+    bgHover: 'hover:bg-red-50 dark:hover:bg-red-900/20',
+    bgActive: 'bg-red-100 dark:bg-red-900/30',
+    text: 'text-red-600 dark:text-red-400',
+    textActive: 'text-red-700 dark:text-red-300',
+    icon: 'text-red-500 dark:text-red-400',
+    iconActive: 'text-red-600 dark:text-red-300',
+    border: 'border-l-red-500',
+  },
+  yellow: {
+    bg: 'bg-yellow-50/50 dark:bg-yellow-900/10',
+    bgHover: 'hover:bg-yellow-50 dark:hover:bg-yellow-900/20',
+    bgActive: 'bg-yellow-100 dark:bg-yellow-900/30',
+    text: 'text-yellow-600 dark:text-yellow-400',
+    textActive: 'text-yellow-700 dark:text-yellow-300',
+    icon: 'text-yellow-500 dark:text-yellow-400',
+    iconActive: 'text-yellow-600 dark:text-yellow-300',
+    border: 'border-l-yellow-500',
+  },
+  pink: {
+    bg: 'bg-pink-50/50 dark:bg-pink-900/10',
+    bgHover: 'hover:bg-pink-50 dark:hover:bg-pink-900/20',
+    bgActive: 'bg-pink-100 dark:bg-pink-900/30',
+    text: 'text-pink-600 dark:text-pink-400',
+    textActive: 'text-pink-700 dark:text-pink-300',
+    icon: 'text-pink-500 dark:text-pink-400',
+    iconActive: 'text-pink-600 dark:text-pink-300',
+    border: 'border-l-pink-500',
+  },
+  indigo: {
+    bg: 'bg-indigo-50/50 dark:bg-indigo-900/10',
+    bgHover: 'hover:bg-indigo-50 dark:hover:bg-indigo-900/20',
+    bgActive: 'bg-indigo-100 dark:bg-indigo-900/30',
+    text: 'text-indigo-600 dark:text-indigo-400',
+    textActive: 'text-indigo-700 dark:text-indigo-300',
+    icon: 'text-indigo-500 dark:text-indigo-400',
+    iconActive: 'text-indigo-600 dark:text-indigo-300',
+    border: 'border-l-indigo-500',
+  },
 };
 
 /**
@@ -94,7 +181,7 @@ const getIconComponent = (iconName?: string | null): React.ElementType => {
   const icon = LucideIcons[iconName as keyof typeof LucideIcons];
   // Los iconos de Lucide React son objetos (ForwardRefExoticComponent), no funciones puras
   if (icon && typeof icon === 'object' && '$$typeof' in icon) {
-    return icon as React.ElementType;
+    return icon as unknown as React.ElementType;
   }
   return Circle;
 };
@@ -120,24 +207,31 @@ const NavItemComponent = ({
   depth = 0,
 }: NavItemComponentProps) => {
   const Icon = getIconComponent(item.icon);
-  const colors = item.color ? macroprocessColors[item.color as MacroprocessColor] : null;
+  // Mapear color extendido de Tailwind a los 10 soportados
+  const mappedColor = getMappedColor(item.color);
+  const colors = mappedColor ? moduleColors[mappedColor] : null;
   const hasChildren = item.children && item.children.length > 0;
   const isExpanded = expandedItems.includes(item.code);
 
   // Verificar si este item o alguno de sus hijos está activo
   const isActive = useMemo(() => {
-    if (item.route && location.pathname.startsWith(item.route)) {
+    // Match exacto o con subruta (evita falsos positivos)
+    const matchesRoute = (route: string | undefined | null) => {
+      if (!route) return false;
+      return location.pathname === route ||
+             location.pathname.startsWith(route + '/');
+    };
+
+    if (item.route && matchesRoute(item.route)) {
       return true;
     }
     if (item.children) {
-      return item.children.some(
-        (child) => child.route && location.pathname.startsWith(child.route)
-      );
+      return item.children.some((child) => matchesRoute(child.route));
     }
     return false;
   }, [item, location.pathname]);
 
-  // Si es categoría (macroproceso/nivel), renderizar como grupo expandible con separador visual
+  // Si es categoría, renderizar como grupo expandible con separador visual
   if (item.is_category) {
     // Detectar si es un nivel principal (NIVEL_1, NIVEL_2, etc.)
     const isMainLevel = item.code.startsWith('NIVEL_');
@@ -295,7 +389,10 @@ const NavItemComponent = ({
   }
 
   // Item simple (hoja) - Link navegable
-  const isItemActive = item.route && location.pathname.startsWith(item.route);
+  const isItemActive = item.route && (
+    location.pathname === item.route ||
+    location.pathname.startsWith(item.route + '/')
+  );
 
   return (
     <Link
@@ -338,8 +435,8 @@ const NavItemComponent = ({
 
 export const Sidebar = ({ isCollapsed }: SidebarProps) => {
   const location = useLocation();
-  const user = useAuthStore((state) => state.user);
   const { data: sidebarModules, isLoading, error } = useSidebarModules();
+  const { appVersion } = useBrandingConfig();
 
   // Estado para items expandidos - inicializar dinámicamente
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
@@ -353,7 +450,11 @@ export const Sidebar = ({ isCollapsed }: SidebarProps) => {
         for (const item of items) {
           const currentPath = [...parents, item.code];
 
-          if (item.route && location.pathname.startsWith(item.route)) {
+          // Match exacto o con subruta (evita falsos positivos)
+          if (item.route && (
+            location.pathname === item.route ||
+            location.pathname.startsWith(item.route + '/')
+          )) {
             activeModules.push(...parents);
           }
 
@@ -418,6 +519,34 @@ export const Sidebar = ({ isCollapsed }: SidebarProps) => {
       )}
     >
       <nav className="h-full flex flex-col py-4">
+        {/* Dashboard Link - Siempre visible al inicio */}
+        <div className="px-2 mb-2">
+          <Link
+            to="/dashboard"
+            className={cn(
+              'flex items-center rounded-lg transition-colors px-3 py-2.5',
+              location.pathname === '/dashboard'
+                ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
+                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'
+            )}
+          >
+            <LayoutDashboard className={cn(
+              'h-5 w-5 flex-shrink-0',
+              location.pathname === '/dashboard'
+                ? 'text-primary-600 dark:text-primary-400'
+                : 'text-gray-500 dark:text-gray-400'
+            )} />
+            {!isCollapsed && (
+              <span className="ml-3 font-medium">Dashboard</span>
+            )}
+          </Link>
+        </div>
+
+        {/* Separador */}
+        <div className="px-4 mb-2">
+          <div className="border-t border-gray-200 dark:border-gray-700" />
+        </div>
+
         {/* Navigation Items - Dinámico desde API */}
         <div className="flex-1 px-2 space-y-1 overflow-y-auto scrollbar-thin">
           {sidebarModules.map((item) => (
@@ -436,7 +565,7 @@ export const Sidebar = ({ isCollapsed }: SidebarProps) => {
         {!isCollapsed && (
           <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700">
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Versión 1.0.0
+              Versión {appVersion}
             </p>
           </div>
         )}

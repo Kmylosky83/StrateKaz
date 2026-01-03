@@ -1,6 +1,6 @@
 """
 ViewSets del módulo Proveedores - API REST
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 """
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action

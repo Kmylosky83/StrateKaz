@@ -1,6 +1,6 @@
 /**
  * React Query Hooks para EmpresaConfig
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Hooks para gestionar los datos fiscales y legales de la empresa
  */

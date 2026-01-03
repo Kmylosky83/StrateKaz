@@ -161,6 +161,7 @@ export const UsersTable = ({
                       size="sm"
                       onClick={() => onEdit(user)}
                       title="Editar"
+                      className="text-secondary-600 hover:text-secondary-700 hover:bg-secondary-50 dark:text-secondary-400 dark:hover:text-secondary-300 dark:hover:bg-secondary-900/20"
                     >
                       <Edit className="h-4 w-4" />
                     </Button>

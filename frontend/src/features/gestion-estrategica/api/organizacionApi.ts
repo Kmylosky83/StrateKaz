@@ -1,6 +1,6 @@
 /**
  * API Client para el módulo de Organización
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  */
 import axiosInstance from '@/api/axios-config';
 

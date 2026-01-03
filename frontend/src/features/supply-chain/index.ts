@@ -1,6 +1,6 @@
 /**
  * Módulo Supply Chain - Gestión Integral de Cadena de Suministro
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Gestión integral de:
  * - Proveedores, Precios, Calidad (Pruebas Acidez) y Evaluación

@@ -58,14 +58,15 @@ export const RevisionDireccionTab = () => {
         description="Gestión de revisiones periódicas del Sistema de Gestión (ISO 9.3)"
       />
 
-      {/* Subtabs */}
-      <div className="border-b border-gray-200 dark:border-gray-700">
-        <PageTabs
-          tabs={subtabs}
-          activeTab={activeSubTab}
-          onTabChange={setActiveSubTab}
-        />
-      </div>
+      {/* Subtabs - Enhanced Pills */}
+      <PageTabs
+        tabs={subtabs}
+        activeTab={activeSubTab}
+        onTabChange={setActiveSubTab}
+        variant="pills"
+        moduleColor="purple"
+        size="md"
+      />
 
       {/* Contenido del subtab activo */}
       <div className="mt-6">

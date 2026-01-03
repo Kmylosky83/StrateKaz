@@ -1,5 +1,5 @@
 """
-Modelos del módulo Core - Sistema de Gestión Grasas y Huesos del Norte
+Modelos del módulo Core - Sistema de Gestión StrateKaz
 """
 from django.contrib.auth.models import AbstractUser
 from django.db import models
@@ -1573,7 +1573,7 @@ class MenuItem(models.Model):
     Item de menú del sistema - Permite configurar el Sidebar dinámicamente
 
     Estructura jerárquica:
-    - Macroprocesos (nivel 0): Dirección Estratégica, Gestión Misional, etc.
+    - Categorías (nivel 0): Las 6 categorías del sistema (Estratégico, Motor, Integral, Misional, Apoyo, Inteligencia)
     - Módulos (nivel 1): Proveedores, Planta, SST, etc.
     - Submódulos (nivel 2): EcoNorte, Recepciones, etc.
 
@@ -1640,8 +1640,8 @@ class MenuItem(models.Model):
         blank=True,
         null=True,
         db_index=True,
-        verbose_name='Macroproceso',
-        help_text='Macroproceso al que pertenece (solo para items de nivel 0)'
+        verbose_name='Categoría',
+        help_text='Categoría del sistema a la que pertenece (solo para items de nivel 0 - Legacy: usar SystemModule.category)'
     )
     color = models.CharField(
         max_length=20,
@@ -1649,7 +1649,7 @@ class MenuItem(models.Model):
         blank=True,
         null=True,
         verbose_name='Color',
-        help_text='Color del macroproceso (solo para items de nivel 0)'
+        help_text='Color del item (solo para items de nivel 0)'
     )
     orden = models.IntegerField(
         default=0,
@@ -1687,7 +1687,7 @@ class MenuItem(models.Model):
     is_category = models.BooleanField(
         default=False,
         verbose_name='Es categoría',
-        help_text='Si es un macroproceso (categoría sin ruta)'
+        help_text='Si es una categoría (sin ruta)'
     )
     allow_all = models.BooleanField(
         default=False,
@@ -1911,6 +1911,16 @@ class SystemModule(models.Model):
         ('teal', 'Verde azulado'),
     ]
 
+    # Mapeo de colores por categoría (Design System)
+    CATEGORY_DEFAULT_COLORS = {
+        'ESTRATEGICO': 'purple',
+        'MOTOR': 'teal',
+        'INTEGRAL': 'orange',
+        'MISIONAL': 'blue',
+        'APOYO': 'green',
+        'INTELIGENCIA': 'purple',
+    }
+
     code = models.CharField(
         max_length=50,
         unique=True,
@@ -1941,7 +1951,7 @@ class SystemModule(models.Model):
         blank=True,
         null=True,
         verbose_name='Color',
-        help_text='Color del macroproceso/módulo (para visualización en UI)'
+        help_text='Color del módulo (para visualización en UI)'
     )
     icon = models.CharField(
         max_length=50,
@@ -2043,6 +2053,15 @@ class SystemModule(models.Model):
     def get_enabled_tab_count(self):
         """Cuenta los tabs habilitados del módulo"""
         return self.tabs.filter(is_enabled=True).count()
+
+    def get_effective_color(self):
+        """
+        Obtiene el color efectivo del módulo.
+        Si tiene color asignado lo usa, sino usa el color de la categoría.
+        """
+        if self.color:
+            return self.color
+        return self.CATEGORY_DEFAULT_COLORS.get(self.category, 'gray')
 
 
 class ModuleTab(models.Model):
@@ -2267,7 +2286,7 @@ class BrandingConfig(models.Model):
 
     company_name = models.CharField(
         max_length=200,
-        default='Grasas y Huesos del Norte',
+        default='StrateKaz',
         verbose_name='Nombre de la Empresa'
     )
     company_short_name = models.CharField(
@@ -2314,6 +2333,19 @@ class BrandingConfig(models.Model):
         max_length=7,
         default='#10B981',
         verbose_name='Color de Acento'
+    )
+    login_background = models.ImageField(
+        upload_to='branding/backgrounds/',
+        blank=True,
+        null=True,
+        verbose_name='Imagen de Fondo Login',
+        help_text='Imagen de fondo para la página de login (recomendado: 1920x1080)'
+    )
+    app_version = models.CharField(
+        max_length=20,
+        default='2.0.0',
+        verbose_name='Versión de la Aplicación',
+        help_text='Versión que se muestra en el login y footer'
     )
     is_active = models.BooleanField(
         default=True,

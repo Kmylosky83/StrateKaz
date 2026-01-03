@@ -1,5 +1,5 @@
 # Reporte de Optimizaciones Backend Django
-**Proyecto:** SGI Grasas y Huesos del Norte
+**Proyecto:** SGI StrateKaz
 **Fecha:** 2025-12-30
 **Ejecutor:** Optimización Automática Backend
 

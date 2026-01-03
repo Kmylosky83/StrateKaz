@@ -1,6 +1,6 @@
 """
 Gestión de Flota - Logistics & Fleet Management
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Gestión completa de flota vehicular con cumplimiento PESV (Resolución 40595/2022)
 para operaciones de recolección y distribución.

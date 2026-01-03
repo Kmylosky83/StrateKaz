@@ -1,6 +1,6 @@
 """
 Modelos para informes_contables - accounting
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 
 Módulo ACTIVABLE de Contabilidad - Informes:
 - InformeContable: Definición de informes (Balance, P&G, etc.)

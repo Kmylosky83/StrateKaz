@@ -307,8 +307,8 @@ const isActive = location.pathname.startsWith(item.route);
 
 ### Los colores no se aplican
 
-1. Verificar que el módulo tenga `color` definido
-2. Verificar que el color esté en `macroprocessColors`
+1. Verificar que el módulo tenga `color` definido en la API
+2. Verificar que el color esté en `moduleColors` (Sidebar.tsx)
 3. Reiniciar servidor de desarrollo
 
 ### Los iconos no aparecen

@@ -1,6 +1,6 @@
 /**
  * Tipos TypeScript para Gestión de Riesgos
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Incluye:
  * - Riesgos de Proceso

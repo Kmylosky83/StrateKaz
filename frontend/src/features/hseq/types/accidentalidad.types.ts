@@ -1,6 +1,6 @@
 /**
  * Tipos TypeScript para Módulo de Accidentalidad (ATEL) - HSEQ Management
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Incluye:
  * - Accidentes de Trabajo (AT)

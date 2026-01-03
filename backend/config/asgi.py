@@ -1,5 +1,5 @@
 """
-ASGI config for Grasas y Huesos del Norte S.A.S project.
+ASGI config for StrateKaz project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 

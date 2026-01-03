@@ -1,6 +1,6 @@
 /**
  * Talent Hub - Gestión del Talento Humano
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  *
  * Módulo 10 - Nivel Habilitadores
  *

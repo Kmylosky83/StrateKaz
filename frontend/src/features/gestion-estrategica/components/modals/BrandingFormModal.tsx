@@ -8,7 +8,9 @@
  * - logo: Logo principal (fondo claro)
  * - logo_white: Logo blanco (fondo oscuro)
  * - favicon: Icono del navegador
+ * - login_background: Imagen de fondo para la página de login
  * - primary_color, secondary_color, accent_color: Paleta de colores
+ * - app_version: Versión de la aplicación
  *
  * Usa Design System:
  * - BaseModal para el contenedor
@@ -17,7 +19,7 @@
  * - Button para acciones
  */
 import { useState, useEffect, useRef } from 'react';
-import { Upload, X, Image as ImageIcon } from 'lucide-react';
+import { Upload, X, Image as ImageIcon, Settings } from 'lucide-react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
@@ -119,11 +121,10 @@ const ImageUpload = ({
       {preview ? (
         <div className="relative inline-block">
           <div
-            className={`p-4 rounded-lg border-2 border-dashed ${
-              darkPreview
-                ? 'bg-gray-800 border-gray-600'
-                : 'bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600'
-            }`}
+            className={`p-4 rounded-lg border-2 border-dashed ${darkPreview
+              ? 'bg-gray-800 border-gray-600'
+              : 'bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600'
+              }`}
           >
             <img
               src={preview}
@@ -170,17 +171,20 @@ export const BrandingFormModal = ({ branding, isOpen, onClose }: BrandingFormMod
     primary_color: '#16A34A',
     secondary_color: '#059669',
     accent_color: '#10B981',
+    app_version: '2.0.0',
     is_active: true,
   });
 
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoWhiteFile, setLogoWhiteFile] = useState<File | null>(null);
   const [faviconFile, setFaviconFile] = useState<File | null>(null);
+  const [loginBackgroundFile, setLoginBackgroundFile] = useState<File | null>(null);
 
   // Estados para rastrear qué archivos del servidor deben eliminarse
   const [clearLogo, setClearLogo] = useState(false);
   const [clearLogoWhite, setClearLogoWhite] = useState(false);
   const [clearFavicon, setClearFavicon] = useState(false);
+  const [clearLoginBackground, setClearLoginBackground] = useState(false);
 
   const createMutation = useCreateBranding();
   const updateMutation = useUpdateBranding();
@@ -194,16 +198,19 @@ export const BrandingFormModal = ({ branding, isOpen, onClose }: BrandingFormMod
         primary_color: branding.primary_color,
         secondary_color: branding.secondary_color || '#059669',
         accent_color: branding.accent_color || '#10B981',
+        app_version: branding.app_version || '2.0.0',
         is_active: branding.is_active,
       });
       // Reset file states when editing
       setLogoFile(null);
       setLogoWhiteFile(null);
       setFaviconFile(null);
+      setLoginBackgroundFile(null);
       // Reset clear states
       setClearLogo(false);
       setClearLogoWhite(false);
       setClearFavicon(false);
+      setClearLoginBackground(false);
     } else {
       setFormData({
         company_name: '',
@@ -212,14 +219,17 @@ export const BrandingFormModal = ({ branding, isOpen, onClose }: BrandingFormMod
         primary_color: '#16A34A',
         secondary_color: '#059669',
         accent_color: '#10B981',
+        app_version: '2.0.0',
         is_active: true,
       });
       setLogoFile(null);
       setLogoWhiteFile(null);
       setFaviconFile(null);
+      setLoginBackgroundFile(null);
       setClearLogo(false);
       setClearLogoWhite(false);
       setClearFavicon(false);
+      setClearLoginBackground(false);
     }
   }, [branding]);
 
@@ -227,7 +237,8 @@ export const BrandingFormModal = ({ branding, isOpen, onClose }: BrandingFormMod
     e.preventDefault();
 
     // Determinar si hay archivos nuevos o campos a limpiar
-    const hasFileChanges = logoFile || logoWhiteFile || faviconFile || clearLogo || clearLogoWhite || clearFavicon;
+    const hasFileChanges = logoFile || logoWhiteFile || faviconFile || loginBackgroundFile ||
+                           clearLogo || clearLogoWhite || clearFavicon || clearLoginBackground;
 
     // Para subir archivos o limpiarlos, necesitamos usar FormData
     const formDataToSend = new FormData();
@@ -241,6 +252,7 @@ export const BrandingFormModal = ({ branding, isOpen, onClose }: BrandingFormMod
     formDataToSend.append('primary_color', formData.primary_color);
     formDataToSend.append('secondary_color', formData.secondary_color);
     formDataToSend.append('accent_color', formData.accent_color);
+    formDataToSend.append('app_version', formData.app_version);
     formDataToSend.append('is_active', String(formData.is_active));
 
     // Archivos nuevos
@@ -253,6 +265,9 @@ export const BrandingFormModal = ({ branding, isOpen, onClose }: BrandingFormMod
     if (faviconFile) {
       formDataToSend.append('favicon', faviconFile);
     }
+    if (loginBackgroundFile) {
+      formDataToSend.append('login_background', loginBackgroundFile);
+    }
 
     // Campos a limpiar (eliminar archivo del servidor)
     if (clearLogo && !logoFile) {
@@ -263,6 +278,9 @@ export const BrandingFormModal = ({ branding, isOpen, onClose }: BrandingFormMod
     }
     if (clearFavicon && !faviconFile) {
       formDataToSend.append('favicon_clear', 'true');
+    }
+    if (clearLoginBackground && !loginBackgroundFile) {
+      formDataToSend.append('login_background_clear', 'true');
     }
 
     if (isEditing && branding && branding.id) {
@@ -275,6 +293,7 @@ export const BrandingFormModal = ({ branding, isOpen, onClose }: BrandingFormMod
           primary_color: formData.primary_color,
           secondary_color: formData.secondary_color,
           accent_color: formData.accent_color,
+          app_version: formData.app_version,
           is_active: formData.is_active,
         };
         await updateMutation.mutateAsync({ id: branding.id, data: updateData });
@@ -291,6 +310,7 @@ export const BrandingFormModal = ({ branding, isOpen, onClose }: BrandingFormMod
           primary_color: formData.primary_color,
           secondary_color: formData.secondary_color,
           accent_color: formData.accent_color,
+          app_version: formData.app_version,
         };
         await createMutation.mutateAsync(createData);
       } else {
@@ -342,7 +362,7 @@ export const BrandingFormModal = ({ branding, isOpen, onClose }: BrandingFormMod
               label="Nombre Completo *"
               value={formData.company_name}
               onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-              placeholder="Grasas y Huesos del Norte S.A.S."
+              placeholder="StrateKaz Consultoria 4.0"
               required
             />
 
@@ -350,8 +370,8 @@ export const BrandingFormModal = ({ branding, isOpen, onClose }: BrandingFormMod
               label="Nombre Corto *"
               value={formData.company_short_name}
               onChange={(e) => setFormData({ ...formData, company_short_name: e.target.value })}
-              placeholder="GRASHNORTE"
-              helperText="Se usa en el sidebar y encabezados"
+              placeholder="StrateKaz"
+              helperText="Se usa para diferentes documentos del SGI"
               required
             />
           </div>
@@ -404,6 +424,20 @@ export const BrandingFormModal = ({ branding, isOpen, onClose }: BrandingFormMod
               hint="Icono del navegador (32x32 o 64x64)"
               onClear={() => setClearFavicon(true)}
               isCleared={clearFavicon}
+            />
+          </div>
+
+          {/* Imagen de fondo del Login */}
+          <div className="pt-2">
+            <ImageUpload
+              label="Fondo de Login"
+              value={loginBackgroundFile}
+              onChange={setLoginBackgroundFile}
+              previewUrl={branding?.login_background}
+              accept="image/png,image/jpeg,image/webp"
+              hint="Imagen de fondo para la página de login (recomendado: 1920x1080)"
+              onClear={() => setClearLoginBackground(true)}
+              isCleared={clearLoginBackground}
             />
           </div>
         </div>
@@ -502,6 +536,24 @@ export const BrandingFormModal = ({ branding, isOpen, onClose }: BrandingFormMod
                 <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 block">Acento</span>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Configuración del Sistema */}
+        <div className="space-y-4">
+          <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            Configuración del Sistema
+          </h4>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+              label="Versión de la Aplicación"
+              value={formData.app_version}
+              onChange={(e) => setFormData({ ...formData, app_version: e.target.value })}
+              placeholder="2.0.0"
+              helperText="Se muestra en el login y footer del sistema"
+            />
           </div>
         </div>
 

@@ -321,7 +321,7 @@ export function ProveedoresTable({ onView, onEdit, onNew }: ProveedoresTableProp
                         </Button>
                       )}
                       {onEdit && (
-                        <Button variant="ghost" size="sm" onClick={() => onEdit(proveedor)}>
+                        <Button variant="ghost" size="sm" onClick={() => onEdit(proveedor)} className="text-secondary-600 hover:text-secondary-700 hover:bg-secondary-50 dark:text-secondary-400 dark:hover:text-secondary-300 dark:hover:bg-secondary-900/20">
                           <Edit className="w-4 h-4" />
                         </Button>
                       )}

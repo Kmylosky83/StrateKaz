@@ -1,6 +1,6 @@
 """
 URLs del módulo Proveedores - API REST
-Sistema de Gestión Grasas y Huesos del Norte
+Sistema de Gestión StrateKaz
 """
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter

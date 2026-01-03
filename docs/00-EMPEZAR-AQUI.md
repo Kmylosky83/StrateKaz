@@ -2,7 +2,7 @@
 
 ## Bienvenida
 
-Documentación del **SGI Grasas y Huesos del Norte** - Sistema de Gestión Integral para multi Industria.
+Documentación del **SGI StrateKaz** - Sistema de Gestión Integral para multi Industria.
 
 | Info | Valor |
 |------|-------|

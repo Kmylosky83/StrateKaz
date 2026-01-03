@@ -1,6 +1,6 @@
 /**
  * Tipos TypeScript para el módulo de Proveedores
- * Sistema de Gestión Grasas y Huesos del Norte
+ * Sistema de Gestión StrateKaz
  */
 
 // ==================== PROVEEDOR ====================

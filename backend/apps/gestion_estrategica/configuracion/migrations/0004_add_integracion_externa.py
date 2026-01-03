@@ -20,8 +20,9 @@ def add_integraciones_section(apps, schema_editor):
         return
 
     # Obtener el último orden
-    last_section = TabSection.objects.filter(tab=tab_configuracion).order_by('-order').first()
-    new_order = (last_section.order + 1) if last_section else 5
+    # Usar 'orden' ya que el campo fue renombrado de 'order' a 'orden'
+    last_section = TabSection.objects.filter(tab=tab_configuracion).order_by('-orden').first()
+    new_orden = (last_section.orden + 1) if last_section else 5
 
     # Crear la sección de integraciones
     TabSection.objects.create(
@@ -30,7 +31,7 @@ def add_integraciones_section(apps, schema_editor):
         name='Integraciones Externas',
         description='Configuración de servicios externos (Email, DIAN, SMS, Almacenamiento, etc.)',
         icon='Plug',
-        order=new_order,
+        orden=new_orden,
         is_enabled=True,
         is_core=False
     )

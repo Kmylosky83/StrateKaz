@@ -3,6 +3,13 @@
 import os
 import sys
 
+# PyMySQL: Alternativa a mysqlclient para cPanel
+try:
+    import pymysql
+    pymysql.install_as_MySQLdb()
+except ImportError:
+    pass
+
 
 def main():
     """Run administrative tasks."""

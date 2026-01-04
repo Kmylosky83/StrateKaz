@@ -2,11 +2,13 @@
 URL Configuration for StrateKaz
 Sistema Integrado de Gestión para Recolección de ACU
 """
+import os
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
-from django.http import JsonResponse
+from django.http import JsonResponse, FileResponse, Http404
+from django.views.static import serve
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
@@ -14,6 +16,30 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, Sp
 def health_check(request):
     """Health check endpoint for Docker."""
     return JsonResponse({"status": "healthy", "service": "grasas-huesos-backend"})
+
+
+# ═══════════════════════════════════════════════════════════════
+# Vista para servir el frontend SPA (React/Vite) en producción
+# ═══════════════════════════════════════════════════════════════
+FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'public')
+
+
+def serve_frontend(request, path=''):
+    """
+    Sirve archivos estáticos del frontend o index.html para SPA routing.
+    """
+    if path and not path.startswith('api/') and not path.startswith('admin/'):
+        # Intentar servir el archivo estático
+        file_path = os.path.join(FRONTEND_DIR, path)
+        if os.path.isfile(file_path):
+            return FileResponse(open(file_path, 'rb'))
+
+    # Para cualquier otra ruta (SPA routing), servir index.html
+    index_path = os.path.join(FRONTEND_DIR, 'index.html')
+    if os.path.isfile(index_path):
+        return FileResponse(open(index_path, 'rb'), content_type='text/html')
+
+    raise Http404("Frontend not found")
 
 
 urlpatterns = [
@@ -95,3 +121,12 @@ if settings.DEBUG:
         pass
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+# ═══════════════════════════════════════════════════════════════
+# Catch-all para servir el frontend SPA en producción (cPanel)
+# IMPORTANTE: Esta ruta debe ir AL FINAL para no interferir con API
+# ═══════════════════════════════════════════════════════════════
+if os.environ.get('USE_CPANEL', 'False').lower() == 'true':
+    urlpatterns += [
+        re_path(r'^(?P<path>.*)$', serve_frontend, name='frontend'),
+    ]

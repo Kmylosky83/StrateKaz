@@ -26,6 +26,7 @@ FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__fi
 
 # Asegurar tipos MIME correctos para assets modernos
 mimetypes.add_type('application/javascript', '.js')
+mimetypes.add_type('text/javascript', '.mjs')
 mimetypes.add_type('text/css', '.css')
 mimetypes.add_type('application/json', '.json')
 mimetypes.add_type('image/svg+xml', '.svg')
@@ -36,21 +37,50 @@ mimetypes.add_type('font/woff2', '.woff2')
 def serve_frontend(request, path=''):
     """
     Sirve archivos estáticos del frontend o index.html para SPA routing.
+
+    IMPORTANTE: Configurado para servir módulos ES6 con headers correctos
+    para evitar problemas de carga de dependencias (React, Recharts, etc.)
     """
     if path and not path.startswith('api/') and not path.startswith('admin/'):
         # Intentar servir el archivo estático
         file_path = os.path.join(FRONTEND_DIR, path)
         if os.path.isfile(file_path):
             # Detectar content-type correcto
-            content_type, _ = mimetypes.guess_type(file_path)
-            if content_type is None:
+            content_type, encoding = mimetypes.guess_type(file_path)
+
+            # Override para archivos JavaScript modernos
+            if path.endswith('.js') or path.endswith('.mjs'):
+                content_type = 'application/javascript'
+            elif content_type is None:
                 content_type = 'application/octet-stream'
-            return FileResponse(open(file_path, 'rb'), content_type=content_type)
+
+            # Crear respuesta con headers apropiados
+            response = FileResponse(open(file_path, 'rb'), content_type=content_type)
+
+            # Headers críticos para módulos ES6
+            if content_type == 'application/javascript':
+                response['X-Content-Type-Options'] = 'nosniff'
+                # Cache agresivo para assets con hash en producción
+                if '-' in path or '.min.' in path:
+                    response['Cache-Control'] = 'public, max-age=31536000, immutable'
+                else:
+                    response['Cache-Control'] = 'public, max-age=3600'
+
+            # CORS headers si es necesario
+            if request.META.get('HTTP_ORIGIN'):
+                response['Access-Control-Allow-Origin'] = '*'
+
+            return response
 
     # Para cualquier otra ruta (SPA routing), servir index.html
     index_path = os.path.join(FRONTEND_DIR, 'index.html')
     if os.path.isfile(index_path):
-        return FileResponse(open(index_path, 'rb'), content_type='text/html')
+        response = FileResponse(open(index_path, 'rb'), content_type='text/html; charset=utf-8')
+        # No cachear el index.html para que siempre se obtenga la última versión
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+        return response
 
     raise Http404("Frontend not found")
 

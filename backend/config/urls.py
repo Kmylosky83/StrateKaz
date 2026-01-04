@@ -21,7 +21,16 @@ def health_check(request):
 # ═══════════════════════════════════════════════════════════════
 # Vista para servir el frontend SPA (React/Vite) en producción
 # ═══════════════════════════════════════════════════════════════
+import mimetypes
 FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'public')
+
+# Asegurar tipos MIME correctos para assets modernos
+mimetypes.add_type('application/javascript', '.js')
+mimetypes.add_type('text/css', '.css')
+mimetypes.add_type('application/json', '.json')
+mimetypes.add_type('image/svg+xml', '.svg')
+mimetypes.add_type('font/woff', '.woff')
+mimetypes.add_type('font/woff2', '.woff2')
 
 
 def serve_frontend(request, path=''):
@@ -32,7 +41,11 @@ def serve_frontend(request, path=''):
         # Intentar servir el archivo estático
         file_path = os.path.join(FRONTEND_DIR, path)
         if os.path.isfile(file_path):
-            return FileResponse(open(file_path, 'rb'))
+            # Detectar content-type correcto
+            content_type, _ = mimetypes.guess_type(file_path)
+            if content_type is None:
+                content_type = 'application/octet-stream'
+            return FileResponse(open(file_path, 'rb'), content_type=content_type)
 
     # Para cualquier otra ruta (SPA routing), servir index.html
     index_path = os.path.join(FRONTEND_DIR, 'index.html')

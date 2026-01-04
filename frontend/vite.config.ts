@@ -18,10 +18,12 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          // Vendor chunks - React core
+          // React core + dependencias que usan React context (DEBEN ir juntos)
           if (id.includes('node_modules/react') ||
               id.includes('node_modules/react-dom') ||
-              id.includes('node_modules/react-router-dom')) {
+              id.includes('node_modules/react-router-dom') ||
+              id.includes('node_modules/@tanstack/react-query') ||
+              id.includes('node_modules/zustand')) {
             return 'vendor-react';
           }
 
@@ -45,11 +47,9 @@ export default defineConfig({
             return 'vendor-ui';
           }
 
-          // Data fetching & state
-          if (id.includes('node_modules/@tanstack/react-query') ||
-              id.includes('node_modules/zustand') ||
-              id.includes('node_modules/axios')) {
-            return 'vendor-data';
+          // HTTP client
+          if (id.includes('node_modules/axios')) {
+            return 'vendor-http';
           }
 
           // Charts & Visualization
@@ -109,6 +109,6 @@ export default defineConfig({
       },
     },
     // Aumentar el límite de advertencia de chunk size
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 800,
   },
 })

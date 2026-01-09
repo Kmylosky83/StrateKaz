@@ -2,18 +2,8 @@
  * Tipos comunes del sistema
  */
 
-export interface ApiResponse<T> {
-  data: T;
-  message?: string;
-  errors?: Record<string, string[]>;
-}
-
-export interface PaginatedResponse<T> {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
-}
+// Re-export common API types for convenience
+export type { PaginatedResponse, ApiResponse, FilterParams } from './api.types';
 
 export interface SelectOption {
   value: string | number;
@@ -21,12 +11,22 @@ export interface SelectOption {
   disabled?: boolean;
 }
 
-export interface FilterParams {
-  page?: number;
-  page_size?: number;
-  search?: string;
-  ordering?: string;
-  [key: string]: any;
+export type Status = 'idle' | 'loading' | 'success' | 'error';
+
+// Re-export base types
+export * from './base.types';
+
+// Extended select option
+export interface SelectOptionWithMeta<T = string | number> extends SelectOption {
+  value: T;
+  icon?: string;
+  description?: string;
+  color?: string;
 }
 
-export type Status = 'idle' | 'loading' | 'success' | 'error';
+export type SortDirection = 'asc' | 'desc';
+
+export interface SortConfig {
+  field: string;
+  direction: SortDirection;
+}

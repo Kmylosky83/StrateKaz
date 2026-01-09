@@ -12,11 +12,23 @@ export interface Permission {
   code: string;
   name: string;
   description?: string;
-  module: string;
+  // Campos dinámicos (FKs)
+  modulo?: number;
+  modulo_code?: string;
+  modulo_name?: string;
+  accion?: number;
+  accion_code?: string;
+  accion_name?: string;
+  alcance?: number;
+  alcance_code?: string;
+  alcance_name?: string;
+  recurso?: string;
+  // Campos legacy (para compatibilidad)
+  module?: string;
   module_display?: string;
-  action: string;
+  action?: string;
   action_display?: string;
-  scope: 'ALL' | 'OWN' | 'TEAM';
+  scope?: 'ALL' | 'OWN' | 'TEAM';
   scope_display?: string;
   is_active: boolean;
   created_at?: string;
@@ -25,6 +37,7 @@ export interface Permission {
 export interface PermissionGroup {
   module: string;
   module_name: string;
+  module_icon?: string | null;
   permissions: Permission[];
 }
 
@@ -109,7 +122,7 @@ export interface AreaReference {
 
 // ==================== CARGO (EXTENDIDO CON MANUAL DE FUNCIONES) ====================
 
-export type NivelJerarquico = 'ESTRATEGICO' | 'TACTICO' | 'OPERATIVO' | 'APOYO';
+export type NivelJerarquico = 'ESTRATEGICO' | 'TACTICO' | 'OPERATIVO' | 'APOYO' | 'EXTERNO';
 
 export type NivelEducativo =
   | 'PRIMARIA'
@@ -173,6 +186,7 @@ export interface Cargo {
   nivel_jerarquico_display?: string;
   cantidad_posiciones: number;
   is_jefatura: boolean;
+  is_externo: boolean;
   requiere_licencia_conduccion: boolean;
   categoria_licencia?: string;
   requiere_licencia_sst: boolean;
@@ -243,6 +257,7 @@ export interface CargoList {
   area_code?: string;
   cantidad_posiciones: number;
   is_jefatura: boolean;
+  is_externo: boolean;
   is_system: boolean;
   is_active: boolean;
   version: number;
@@ -268,6 +283,7 @@ export interface CreateCargoDTO {
   // Configuracion
   cantidad_posiciones?: number;
   is_jefatura?: boolean;
+  is_externo?: boolean;
   requiere_licencia_conduccion?: boolean;
   categoria_licencia?: string;
   requiere_licencia_sst?: boolean;
@@ -320,6 +336,7 @@ export interface UpdateCargoDTO {
   // Configuracion
   cantidad_posiciones?: number;
   is_jefatura?: boolean;
+  is_externo?: boolean;
   requiere_licencia_conduccion?: boolean;
   categoria_licencia?: string;
   requiere_licencia_sst?: boolean;
@@ -453,12 +470,8 @@ export interface RiesgoFilters {
 
 // ==================== PAGINATED RESPONSES ====================
 
-export interface PaginatedResponse<T> {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
-}
+// PaginatedResponse: importar desde '@/types'
+import type { PaginatedResponse } from '@/types';
 
 export type PaginatedCargosResponse = PaginatedResponse<CargoList>;
 export type PaginatedRolesResponse = PaginatedResponse<Role>;
@@ -503,6 +516,7 @@ export const NivelJerarquicoLabels: Record<NivelJerarquico, string> = {
   TACTICO: 'Tactico',
   OPERATIVO: 'Operativo',
   APOYO: 'Apoyo',
+  EXTERNO: 'Externo',
 };
 
 export const NivelJerarquicoColors: Record<NivelJerarquico, string> = {
@@ -510,6 +524,7 @@ export const NivelJerarquicoColors: Record<NivelJerarquico, string> = {
   TACTICO: 'blue',
   OPERATIVO: 'green',
   APOYO: 'gray',
+  EXTERNO: 'orange',
 };
 
 export const NivelEducativoLabels: Record<NivelEducativo, string> = {
@@ -570,6 +585,7 @@ export const NIVEL_JERARQUICO_OPTIONS: SelectOption[] = [
   { value: 'TACTICO', label: 'Tactico' },
   { value: 'OPERATIVO', label: 'Operativo' },
   { value: 'APOYO', label: 'Apoyo' },
+  { value: 'EXTERNO', label: 'Externo' },  // Contratistas, consultores, auditores, socios
 ];
 
 export const NIVEL_EDUCATIVO_OPTIONS: SelectOption[] = [

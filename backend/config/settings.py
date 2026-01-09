@@ -35,13 +35,43 @@ if SENTRY_DSN and not DEBUG:
         before_send=lambda event, hint: event if not DEBUG else None,
     )
 
+# ═══════════════════════════════════════════════════════════════════════════
+# SISTEMA MODULAR DE APPS - ACTIVAR POR NIVELES (6 NIVELES)
+# ═══════════════════════════════════════════════════════════════════════════
+# Referencia: docs/planificacion/CRONOGRAMA-26-SEMANAS.md
+#
+# ARQUITECTURA DE 6 NIVELES:
+# ┌─────────────────────────────────────────────────────────────────────────┐
+# │ Nivel 0: CORE BASE    → Usuarios, RBAC, Menú, Config Sistema           │
+# │ Nivel 1: ESTRATÉGICO  → Dirección Estratégica (6 apps)                 │
+# │ Nivel 2: CUMPLIMIENTO → Motor Cumplimiento + Riesgos + Workflows (14)  │
+# │ Nivel 3: TORRE CTRL   → HSEQ Management (11 apps)                      │
+# │ Nivel 4: CADENA VALOR → Supply + Production + Logistics + Sales (18)   │
+# │ Nivel 5: HABILITADORES→ Talent + Finance + Accounting (19 apps)        │
+# │ Nivel 6: INTELIGENCIA → Analytics + Audit System (11 apps)             │
+# └─────────────────────────────────────────────────────────────────────────┘
+#
+# INSTRUCCIONES:
+# 1. Comenzar con NIVEL 0 (solo core base)
+# 2. Probar: migrate + createsuperuser + runserver + admin
+# 3. Si funciona, descomentar NIVEL 1
+# 4. Repetir hasta tener todos los módulos funcionando
+# ═══════════════════════════════════════════════════════════════════════════
+
 INSTALLED_APPS = [
+    # ─────────────────────────────────────────────────────────────────────────
+    # DJANGO CORE (siempre activo)
+    # ─────────────────────────────────────────────────────────────────────────
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # THIRD PARTY (siempre activo)
+    # ─────────────────────────────────────────────────────────────────────────
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
@@ -52,108 +82,145 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'django_celery_beat',
     'django_celery_results',
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # NIVEL 0: CORE BASE (Usuarios, RBAC, Menú, Configuración Sistema)
+    # ═══════════════════════════════════════════════════════════════════════════
     'apps.core',
-    # Apps Legacy Funcionales (pendiente migración a nueva arquitectura)
-    'apps.proveedores',          # LEGACY -> supply_chain/gestion_proveedores (pendiente eliminar)
-    # Supply Chain (Módulo 6 - Nivel Operativo)
-    'apps.supply_chain.catalogos',                   # TAB: Catálogos Supply Chain
-    'apps.supply_chain.gestion_proveedores',         # TAB: Gestión de Proveedores
-    'apps.supply_chain.programacion_abastecimiento', # TAB: Programación Abastecimiento
-    'apps.supply_chain.compras',                     # TAB: Compras
-    'apps.supply_chain.almacenamiento',              # TAB: Almacenamiento
-    # Dirección Estratégica (Módulo 1) - TAB = Django App
-    'apps.gestion_estrategica.configuracion',    # TAB: Configuración
-    'apps.gestion_estrategica.organizacion',     # TAB: Organización
-    'apps.gestion_estrategica.identidad',        # TAB: Identidad Corporativa
-    'apps.gestion_estrategica.planeacion',       # TAB: Planeación Estratégica
-    'apps.gestion_estrategica.gestion_proyectos',  # TAB: Gestión Proyectos (PMI)
-    'apps.gestion_estrategica.revision_direccion', # TAB: Revisión por Dirección
-    # Motor de Cumplimiento (Módulo 2)
-    'apps.motor_cumplimiento.matriz_legal',      # Matriz Legal y Cumplimiento
-    'apps.motor_cumplimiento.requisitos_legales',
-    'apps.motor_cumplimiento.partes_interesadas',
-    'apps.motor_cumplimiento.reglamentos_internos',
-    # Motor de Riesgos (Módulo 3)
-    'apps.motor_riesgos.contexto_organizacional',  # TAB: Contexto DOFA/PESTEL
-    'apps.motor_riesgos.riesgos_procesos',         # TAB: Riesgos Procesos ISO 31000
-    'apps.motor_riesgos.ipevr',                    # TAB: IPEVR GTC-45 (SST)
-    'apps.motor_riesgos.aspectos_ambientales',     # TAB: Aspectos Ambientales ISO 14001
-    'apps.motor_riesgos.riesgos_viales',           # TAB: Riesgos Viales PESV
-    'apps.motor_riesgos.sagrilaft_ptee',           # TAB: SAGRILAFT/PTEE
-    'apps.motor_riesgos.seguridad_informacion',    # TAB: Seguridad Info ISO 27001
-    # Motor de Flujos (Módulo 4)
-    'apps.workflow_engine.disenador_flujos',       # TAB: Diseñador BPMN
-    'apps.workflow_engine.ejecucion',              # TAB: Ejecución de Flujos
-    'apps.workflow_engine.monitoreo',              # TAB: Monitoreo y Analytics
-    # HSEQ Management - Torre de Control (Módulo 5)
-    'apps.hseq_management.sistema_documental',     # TAB: Sistema Documental
-    'apps.hseq_management.planificacion_sistema',  # TAB: Planificación del Sistema
-    'apps.hseq_management.calidad',                # TAB: Gestión de Calidad ISO 9001
-    'apps.hseq_management.medicina_laboral',       # TAB: Medicina Laboral
-    'apps.hseq_management.seguridad_industrial',   # TAB: Seguridad Industrial
-    'apps.hseq_management.higiene_industrial',     # TAB: Higiene Industrial
-    'apps.hseq_management.gestion_comites',        # TAB: Gestión de Comités
-    'apps.hseq_management.accidentalidad',         # TAB: Accidentalidad
-    'apps.hseq_management.emergencias',            # TAB: Emergencias
-    'apps.hseq_management.gestion_ambiental',      # TAB: Gestión Ambiental ISO 14001
-    'apps.hseq_management.mejora_continua',        # TAB: Mejora Continua
-    # Production Ops - Operaciones de Producción (Módulo 7 - Nivel Operativo)
-    'apps.production_ops.recepcion',              # TAB: Recepción de Materia Prima
-    'apps.production_ops.procesamiento',          # TAB: Procesamiento y Lotes
-    'apps.production_ops.mantenimiento',          # TAB: Mantenimiento de Activos
-    'apps.production_ops.producto_terminado',     # TAB: Producto Terminado
-    # Logistics Fleet - Logística y Flota (Módulo 8 - Nivel Operativo)
-    'apps.logistics_fleet.gestion_flota',         # TAB: Gestión de Flota
-    'apps.logistics_fleet.gestion_transporte',    # TAB: Gestión de Transporte
-    # Sales CRM - Ventas y CRM (Módulo 9 - Nivel Comercial)
-    'apps.sales_crm.gestion_clientes',            # TAB: Gestión de Clientes
-    'apps.sales_crm.pipeline_ventas',             # TAB: Pipeline de Ventas
-    'apps.sales_crm.pedidos_facturacion',         # TAB: Pedidos y Facturación
-    'apps.sales_crm.servicio_cliente',            # TAB: Servicio al Cliente
-    # Talent Hub - Gestión del Talento Humano (Módulo 10 - Habilitadores)
-    'apps.talent_hub.estructura_cargos',          # TAB: Estructura de Cargos y Profesiogramas
-    'apps.talent_hub.seleccion_contratacion',     # TAB: Selección y Contratación
-    'apps.talent_hub.colaboradores',              # TAB: Colaboradores (Empleados)
-    'apps.talent_hub.onboarding_induccion',       # TAB: Onboarding e Inducción
-    'apps.talent_hub.formacion_reinduccion',      # TAB: Formación y Reinducción (LMS)
-    'apps.talent_hub.desempeno',                  # TAB: Desempeño (Evaluaciones, Reconocimientos)
-    'apps.talent_hub.control_tiempo',             # TAB: Control de Tiempo (Asistencia, Horas Extras)
-    'apps.talent_hub.novedades',                  # TAB: Novedades (Incapacidades, Licencias, Permisos, Vacaciones)
-    'apps.talent_hub.proceso_disciplinario',      # TAB: Proceso Disciplinario
-    'apps.talent_hub.nomina',                     # TAB: Nómina y Prestaciones
-    'apps.talent_hub.off_boarding',               # TAB: Off-Boarding y Liquidaciones
-    # Admin Finance - Administración Financiera (Módulo 11 - Habilitadores)
-    'apps.admin_finance.tesoreria',               # TAB: Tesorería y Flujo de Caja
-    'apps.admin_finance.presupuesto',             # TAB: Presupuesto y Control
-    'apps.admin_finance.activos_fijos',           # TAB: Activos Fijos y Depreciaciones
-    'apps.admin_finance.servicios_generales',     # TAB: Servicios Generales
-    # Accounting - Contabilidad (Módulo 12 - ACTIVABLE)
-    'apps.accounting.config_contable',            # TAB: Configuración Contable (PUC)
-    'apps.accounting.movimientos',                # TAB: Movimientos y Comprobantes
-    'apps.accounting.informes_contables',         # TAB: Informes Contables
-    'apps.accounting.integracion',                # TAB: Integración Contable
-    # Analytics - Analítica y Gestión de Indicadores (Módulo 13 - Semanas 23-24)
-    'apps.analytics.config_indicadores',          # TAB: Configuración de KPIs
-    'apps.analytics.dashboard_gerencial',         # TAB: Dashboards Gerenciales
-    'apps.analytics.indicadores_area',            # TAB: Valores y Seguimiento
-    'apps.analytics.analisis_tendencias',         # TAB: Análisis de Tendencias (Semana 24)
-    'apps.analytics.generador_informes',          # TAB: Generador de Informes (Semana 24)
-    'apps.analytics.acciones_indicador',          # TAB: Planes de Acción KPI (Semana 24)
-    'apps.analytics.exportacion_integracion',     # TAB: Exportación de Datos (Semana 24)
-    # Audit System - Sistema de Auditoría y Notificaciones (Módulo 14 - Semana 25)
-    'apps.audit_system.logs_sistema',             # TAB: Logs del Sistema
-    'apps.audit_system.centro_notificaciones',    # TAB: Centro de Notificaciones
-    'apps.audit_system.config_alertas',           # TAB: Configuración de Alertas
-    'apps.audit_system.tareas_recordatorios',     # TAB: Tareas y Recordatorios
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # NIVEL 1: ESTRATÉGICO - Dirección Estratégica (6 apps)
+    # Deploy: Semana 6 a Producción
+    # ═══════════════════════════════════════════════════════════════════════════
+    'apps.gestion_estrategica.configuracion',      # EmpresaConfig, SedeEmpresa, NormaISO, TipoCambio
+    'apps.gestion_estrategica.organizacion',       # Area, ConsecutivoConfig
+    'apps.gestion_estrategica.identidad',          # CorporateIdentity, AlcanceSistema
+    'apps.gestion_estrategica.planeacion',         # StrategicPlan, StrategicObjective, GestionCambio
+    'apps.gestion_estrategica.gestion_proyectos',  # Portafolio, Programa, Proyecto
+    'apps.gestion_estrategica.revision_direccion', # ActaRevision, CompromisoRevision
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # NIVEL 2: CUMPLIMIENTO - Motor Cumplimiento + Riesgos + Workflows (14 apps)
+    # Deploy: Semana 10 a Producción
+    # Activado: DÍA 7 de refactorización (2026-01-05)
+    # ═══════════════════════════════════════════════════════════════════════════
+    # --- Motor de Cumplimiento (4 apps) ---
+    'apps.motor_cumplimiento.matriz_legal',        # MatrizLegal, NormaLegal
+    'apps.motor_cumplimiento.requisitos_legales',  # Requisito, Evaluacion
+    'apps.motor_cumplimiento.partes_interesadas',  # ParteInteresada, Comunicacion
+    'apps.motor_cumplimiento.reglamentos_internos',# Reglamento, Publicacion
+    # --- Motor de Riesgos (7 apps) ---
+    'apps.motor_riesgos.contexto_organizacional',  # DOFA, PESTEL (ISO 31000)
+    'apps.motor_riesgos.riesgos_procesos',         # Riesgo, Control, Tratamiento
+    'apps.motor_riesgos.ipevr',                    # Peligro, RiesgoSST (GTC-45)
+    'apps.motor_riesgos.aspectos_ambientales',     # AspectoAmbiental (ISO 14001)
+    'apps.motor_riesgos.riesgos_viales',           # RiesgoVial (PESV)
+    'apps.motor_riesgos.sagrilaft_ptee',           # RiesgoLAFT, Señal
+    'apps.motor_riesgos.seguridad_informacion',    # RiesgoTI (ISO 27001)
+    # --- Workflow Engine (3 apps) ---
+    'apps.workflow_engine.disenador_flujos',       # PlantillaFlujo, Paso (BPMN)
+    'apps.workflow_engine.ejecucion',              # InstanciaFlujo, TareaActiva
+    'apps.workflow_engine.monitoreo',              # MetricaFlujo, AlertaFlujo
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # NIVEL 3: TORRE DE CONTROL - HSEQ Management (11 apps)
+    # Deploy: Semana 14 a Producción
+    # Activado: DÍA 8 de refactorización (2026-01-05)
+    # ═══════════════════════════════════════════════════════════════════════════
+    'apps.hseq_management.sistema_documental',     # Documento, VersionDocumento
+    'apps.hseq_management.planificacion_sistema',  # PlanAnual, Objetivo, Meta
+    'apps.hseq_management.calidad',                # NoConformidad, AccionCorrectiva
+    'apps.hseq_management.medicina_laboral',       # ExamenMedico, Restriccion
+    'apps.hseq_management.seguridad_industrial',   # Inspeccion, PermisoTrabajo
+    'apps.hseq_management.higiene_industrial',     # Medicion, AgenteRiesgo
+    'apps.hseq_management.gestion_comites',        # Comite, Reunion, Acta
+    'apps.hseq_management.accidentalidad',         # Accidente, Incidente
+    'apps.hseq_management.emergencias',            # PlanEmergencia, Simulacro
+    'apps.hseq_management.gestion_ambiental',      # ProgramaAmbiental, Residuo
+    'apps.hseq_management.mejora_continua',        # Auditoria, Hallazgo
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # NIVEL 4: CADENA DE VALOR - Supply + Production + Logistics + Sales (17 apps)
+    # Deploy: Semana 18 a Producción
+    # Activado: DÍA 9 de refactorización (2026-01-05)
+    # ═══════════════════════════════════════════════════════════════════════════
+    # --- Supply Chain (5 apps) ---
+    'apps.supply_chain.catalogos',                 # TipoMateriaPrima, UnidadMedida
+    'apps.supply_chain.gestion_proveedores',       # Proveedor, Evaluacion, Contrato
+    'apps.supply_chain.programacion_abastecimiento', # Programacion, Ruta
+    'apps.supply_chain.compras',                   # OrdenCompra, Recepcion
+    'apps.supply_chain.almacenamiento',            # Bodega, Inventario, Movimiento
+    # --- Production Ops (4 apps) ---
+    'apps.production_ops.recepcion',               # RecepcionMP, PesajeBruto
+    'apps.production_ops.procesamiento',           # Lote, Proceso, Rendimiento
+    'apps.production_ops.mantenimiento',           # Equipo, OrdenTrabajo
+    'apps.production_ops.producto_terminado',      # Stock, Producto, Despacho
+    # --- Logistics Fleet (4 apps) ---
+    'apps.logistics_fleet.gestion_flota',          # Vehiculo, Conductor
+    'apps.logistics_fleet.gestion_transporte',     # Ruta, Despacho, GuiaTransporte
+    'apps.logistics_fleet.despachos',              # Despachos de mercancía
+    'apps.logistics_fleet.pesv_operativo',         # PESV operativo (placeholder)
+    # --- Sales CRM (4 apps) ---
+    'apps.sales_crm.gestion_clientes',             # Cliente, Contacto, Segmento
+    'apps.sales_crm.pipeline_ventas',              # Oportunidad, Cotizacion
+    'apps.sales_crm.pedidos_facturacion',          # Pedido, Factura (DIAN)
+    'apps.sales_crm.servicio_cliente',             # Ticket, Reclamacion
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # NIVEL 5: HABILITADORES - Talent + Finance + Accounting (19 apps)
+    # Deploy: Semana 22 a Producción
+    # Activado: DÍA 10 de refactorización (2026-01-05)
+    # ═══════════════════════════════════════════════════════════════════════════
+    # --- Talent Hub (11 apps) ---
+    'apps.talent_hub.estructura_cargos',           # Profesiograma, NivelSalarial
+    'apps.talent_hub.seleccion_contratacion',      # Vacante, Candidato
+    'apps.talent_hub.colaboradores',               # Colaborador, Contrato
+    'apps.talent_hub.onboarding_induccion',        # PlanInduccion, Checklist
+    'apps.talent_hub.formacion_reinduccion',       # Curso, Capacitacion (LMS)
+    'apps.talent_hub.desempeno',                   # Evaluacion360, Reconocimiento
+    'apps.talent_hub.control_tiempo',              # Marcacion, HoraExtra
+    'apps.talent_hub.novedades',                   # Incapacidad, Licencia, Vacaciones
+    'apps.talent_hub.proceso_disciplinario',       # Descargo, Sancion
+    'apps.talent_hub.nomina',                      # Nomina, Devengado, Deduccion
+    'apps.talent_hub.off_boarding',                # EntrevistaRetiro, PazSalvo
+    # --- Admin Finance (4 apps) ---
+    'apps.admin_finance.tesoreria',                # CuentaBancaria, FlujoCaja
+    'apps.admin_finance.presupuesto',              # Presupuesto, CDP, CRP
+    'apps.admin_finance.activos_fijos',            # Activo, Depreciacion
+    'apps.admin_finance.servicios_generales',      # Contrato, Gasto
+    # --- Accounting (4 apps) - Siempre instalado, control por permisos/licencia ---
+    'apps.accounting.config_contable',             # PUC, CuentaContable
+    'apps.accounting.movimientos',                 # Comprobante, Detalle
+    'apps.accounting.informes_contables',          # Balance, EstadoResultados
+    'apps.accounting.integracion',                 # ColaContabilizacion
+
+    # ═══════════════════════════════════════════════════════════════════════════
+    # NIVEL 6: INTELIGENCIA - Analytics + Audit System (11 apps)
+    # Deploy: Semana 26 - GO-LIVE COMPLETO
+    # Activado: DÍA 10 de refactorización (2026-01-05)
+    # ═══════════════════════════════════════════════════════════════════════════
+    # --- Analytics (7 apps) ---
+    'apps.analytics.config_indicadores',           # Indicador, Formula, MetaKPI
+    'apps.analytics.dashboard_gerencial',          # Dashboard, Widget
+    'apps.analytics.indicadores_area',             # ValorIndicador, Seguimiento
+    'apps.analytics.analisis_tendencias',          # Tendencia, Proyeccion
+    'apps.analytics.generador_informes',           # PlantillaInforme
+    'apps.analytics.acciones_indicador',           # PlanAccion
+    'apps.analytics.exportacion_integracion',      # ConfigExportacion
+    # --- Audit System (4 apps) ---
+    'apps.audit_system.logs_sistema',              # LogActividad, LogAcceso
+    'apps.audit_system.centro_notificaciones',     # Notificacion, Canal
+    'apps.audit_system.config_alertas',            # ReglaAlerta, Destinatario
+    'apps.audit_system.tareas_recordatorios',      # Tarea, Recordatorio
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
-    'csp.middleware.CSPMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'csp.middleware.CSPMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -311,8 +378,31 @@ SPECTACULAR_SETTINGS = {
     ],
 }
 
-CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:5173,http://localhost:3000').split(',')
+# En desarrollo permitir todos los orígenes
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+else:
+    CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:5173,http://localhost:3000,http://localhost:3010').split(',')
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
 
 # ═══════════════════════════════════════════════════
 # SECURITY HEADERS (OWASP)
@@ -340,7 +430,7 @@ CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", "'unsafe-eval'")  # unsafe-eval p
 CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
 CSP_IMG_SRC = ("'self'", "data:", "blob:", "https:")
 CSP_FONT_SRC = ("'self'", "data:")
-CSP_CONNECT_SRC = ("'self'", config('FRONTEND_URL', default='http://localhost:5173'))
+CSP_CONNECT_SRC = ("'self'", "http://localhost:5173", "http://localhost:3000", "http://localhost:3010")
 CSP_FRAME_ANCESTORS = ("'none'",)
 CSP_BASE_URI = ("'self'",)
 CSP_FORM_ACTION = ("'self'",)

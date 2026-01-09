@@ -1,9 +1,9 @@
-/**
+﻿/**
  * Hook para gestionar la configuración del tenant
  * Feature Flags y UI Settings para control dinámico del sistema
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import type {
   TenantConfig,
   TenantFeatures,

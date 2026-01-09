@@ -9,6 +9,7 @@
  * - Badge para etiquetas
  * - Button para acciones
  * - EmptyState para estados vacíos
+ * - DynamicIcon para iconos dinámicos desde BD
  *
  * Conectado a API real: /api/organizacion/areas/
  */
@@ -28,10 +29,9 @@ import {
   PowerOff,
   Search,
   CheckCircle,
-  XCircle,
   GitBranch,
 } from 'lucide-react';
-import { Card, Badge, Button, EmptyState, ConfirmDialog } from '@/components/common';
+import { Card, Badge, Button, EmptyState, ConfirmDialog, DynamicIcon } from '@/components/common';
 import { Input, Switch } from '@/components/forms';
 import { StatsGrid, StatsGridSkeleton } from '@/components/layout';
 import type { StatItem } from '@/components/layout';
@@ -44,6 +44,26 @@ import {
   type Area,
   type AreaList,
 } from '../hooks/useAreas';
+
+// =============================================================================
+// HELPER: CLASES DE COLOR DINÁMICO
+// =============================================================================
+const getColorClasses = (color: string) => {
+  const colorMap: Record<string, { bg: string; bgDark: string; text: string; textDark: string; border: string; borderDark: string }> = {
+    purple: { bg: 'bg-purple-100', bgDark: 'dark:bg-purple-900/30', text: 'text-purple-600', textDark: 'dark:text-purple-400', border: 'hover:border-purple-300', borderDark: 'dark:hover:border-purple-600' },
+    blue: { bg: 'bg-blue-100', bgDark: 'dark:bg-blue-900/30', text: 'text-blue-600', textDark: 'dark:text-blue-400', border: 'hover:border-blue-300', borderDark: 'dark:hover:border-blue-600' },
+    green: { bg: 'bg-green-100', bgDark: 'dark:bg-green-900/30', text: 'text-green-600', textDark: 'dark:text-green-400', border: 'hover:border-green-300', borderDark: 'dark:hover:border-green-600' },
+    red: { bg: 'bg-red-100', bgDark: 'dark:bg-red-900/30', text: 'text-red-600', textDark: 'dark:text-red-400', border: 'hover:border-red-300', borderDark: 'dark:hover:border-red-600' },
+    amber: { bg: 'bg-amber-100', bgDark: 'dark:bg-amber-900/30', text: 'text-amber-600', textDark: 'dark:text-amber-400', border: 'hover:border-amber-300', borderDark: 'dark:hover:border-amber-600' },
+    orange: { bg: 'bg-orange-100', bgDark: 'dark:bg-orange-900/30', text: 'text-orange-600', textDark: 'dark:text-orange-400', border: 'hover:border-orange-300', borderDark: 'dark:hover:border-orange-600' },
+    teal: { bg: 'bg-teal-100', bgDark: 'dark:bg-teal-900/30', text: 'text-teal-600', textDark: 'dark:text-teal-400', border: 'hover:border-teal-300', borderDark: 'dark:hover:border-teal-600' },
+    cyan: { bg: 'bg-cyan-100', bgDark: 'dark:bg-cyan-900/30', text: 'text-cyan-600', textDark: 'dark:text-cyan-400', border: 'hover:border-cyan-300', borderDark: 'dark:hover:border-cyan-600' },
+    indigo: { bg: 'bg-indigo-100', bgDark: 'dark:bg-indigo-900/30', text: 'text-indigo-600', textDark: 'dark:text-indigo-400', border: 'hover:border-indigo-300', borderDark: 'dark:hover:border-indigo-600' },
+    pink: { bg: 'bg-pink-100', bgDark: 'dark:bg-pink-900/30', text: 'text-pink-600', textDark: 'dark:text-pink-400', border: 'hover:border-pink-300', borderDark: 'dark:hover:border-pink-600' },
+    gray: { bg: 'bg-gray-100', bgDark: 'dark:bg-gray-700', text: 'text-gray-600', textDark: 'dark:text-gray-400', border: 'hover:border-gray-300', borderDark: 'dark:hover:border-gray-500' },
+  };
+  return colorMap[color] || colorMap.purple;
+};
 
 // =============================================================================
 // COMPONENTE: TARJETA DE ÁREA
@@ -69,12 +89,15 @@ const AreaCard = ({
   onDelete,
   onToggleActive,
 }: AreaCardProps) => {
+  // Obtener clases de color dinámicas
+  const colorClasses = getColorClasses(area.color || 'purple');
+
   return (
     <div
       className={`
         flex items-center justify-between p-4 bg-white dark:bg-gray-800
         rounded-lg border border-gray-200 dark:border-gray-700
-        hover:border-purple-300 dark:hover:border-purple-600
+        ${colorClasses.border} ${colorClasses.borderDark}
         transition-colors
         ${!area.is_active ? 'opacity-60' : ''}
       `}
@@ -97,9 +120,13 @@ const AreaCard = ({
           <div className="w-6" /> // Spacer para alineación
         )}
 
-        {/* Icono */}
-        <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex-shrink-0">
-          <Building2 className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+        {/* Icono dinámico */}
+        <div className={`p-2 rounded-lg ${colorClasses.bg} ${colorClasses.bgDark} flex-shrink-0`}>
+          <DynamicIcon
+            name={area.icon || 'Building2'}
+            size={20}
+            className={`${colorClasses.text} ${colorClasses.textDark}`}
+          />
         </div>
 
         {/* Información */}
@@ -193,7 +220,7 @@ export const AreasTab = () => {
   const [showInactive, setShowInactive] = useState(true); // Por defecto mostrar todas
 
   // Queries
-  // NOTA: El backend usa 'show_inactive=true' para mostrar todas (activas + inactivas)
+  // NOTA: El backend usa 'include_inactive=true' para mostrar todas (activas + inactivas)
   // Por defecto solo muestra activas
   const {
     data: areasData,
@@ -203,7 +230,7 @@ export const AreasTab = () => {
     isFetching,
   } = useAreas({
     search: searchTerm || undefined,
-    show_inactive: showInactive || undefined, // true = mostrar todas, undefined = solo activas
+    include_inactive: showInactive || undefined, // true = mostrar todas, undefined = solo activas
   });
 
   const { data: treeData } = useAreasTree();
@@ -224,7 +251,8 @@ export const AreasTab = () => {
   const areaStats: StatItem[] = useMemo(() => {
     const activas = areas.filter((a) => a.is_active).length;
     const inactivas = areas.filter((a) => !a.is_active).length;
-    const conManager = areas.filter((a) => 'manager_name' in a && a.manager_name).length;
+    // Buscar por manager (ID) en lugar de manager_name ya que el nombre puede estar vacío
+    const conManager = areas.filter((a) => a.manager !== null && a.manager !== undefined).length;
     const areasRaiz = areas.filter((a) => !a.parent).length;
 
     return [

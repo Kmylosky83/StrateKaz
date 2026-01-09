@@ -3,16 +3,16 @@
  *
  * Secciones dinámicas desde BD (TabSection.code):
  * - mision_vision: Misión y Visión
- * - valores: Valores Corporativos
- * - politica: Política Integral
+ * - valores: Valores Corporativos (con Drag & Drop)
+ * - politica: Política Integral (con workflow y firma digital)
  * - politicas: Políticas Específicas (por sistema de gestión)
  *
- * Usa Design System:
- * - Card para contenedores
- * - Badge para etiquetas
- * - Button para acciones
- * - Alert para mensajes
- * - EmptyState para estados vacíos
+ * Mejoras implementadas:
+ * - Editor de texto enriquecido (TipTap) para políticas
+ * - Drag & Drop para reordenar valores corporativos
+ * - Workflow completo de políticas: BORRADOR → EN_REVISION → VIGENTE → OBSOLETO
+ * - Sistema de revisión periódica con alertas
+ * - Firma digital SHA-256
  */
 import { useState, useEffect } from 'react';
 import {
@@ -24,13 +24,32 @@ import {
   Plus,
   CheckCircle2,
   AlertTriangle,
-  Sparkles,
   FileText,
 } from 'lucide-react';
 import { Card, Badge, Button, Alert, EmptyState } from '@/components/common';
-import { useActiveIdentity, useSignPolicy } from '../hooks/useStrategic';
+import {
+  useActiveIdentity,
+  useSignPolicy,
+  useValues,
+  useCreateValue,
+  useUpdateValue,
+  useDeleteValue,
+  useReorderValues,
+  usePoliticasIntegrales,
+  useCreatePoliticaIntegral,
+  useUpdatePoliticaIntegral,
+  useDeletePoliticaIntegral,
+  useSignPoliticaIntegral,
+  usePublishPoliticaIntegral,
+  usePoliticasEspecificas,
+  useCreatePoliticaEspecifica,
+  useUpdatePoliticaEspecifica,
+  useDeletePoliticaEspecifica,
+  useApprovePoliticaEspecifica,
+} from '../hooks/useStrategic';
 import { IdentityFormModal } from './modals/IdentityFormModal';
-import { ValueFormModal } from './modals/ValueFormModal';
+import { ValoresDragDrop } from './ValoresDragDrop';
+import { PoliticasManager } from './PoliticasManager';
 import type { CorporateIdentity, CorporateValue } from '../types/strategic.types';
 
 interface IdentidadTabProps {
@@ -90,9 +109,10 @@ const MisionVisionSection = ({ identity, onEdit }: MisionVisionSectionProps) => 
                 Misión
               </h3>
             </div>
-            <p className="text-gray-600 dark:text-gray-300 whitespace-pre-line">
-              {identity.mission}
-            </p>
+            <div
+              className="text-gray-600 dark:text-gray-300 prose prose-sm max-w-none dark:prose-invert"
+              dangerouslySetInnerHTML={{ __html: identity.mission }}
+            />
           </div>
         </Card>
 
@@ -107,9 +127,10 @@ const MisionVisionSection = ({ identity, onEdit }: MisionVisionSectionProps) => 
                 Visión
               </h3>
             </div>
-            <p className="text-gray-600 dark:text-gray-300 whitespace-pre-line">
-              {identity.vision}
-            </p>
+            <div
+              className="text-gray-600 dark:text-gray-300 prose prose-sm max-w-none dark:prose-invert"
+              dangerouslySetInnerHTML={{ __html: identity.vision }}
+            />
           </div>
         </Card>
       </div>
@@ -118,68 +139,61 @@ const MisionVisionSection = ({ identity, onEdit }: MisionVisionSectionProps) => 
 };
 
 // =============================================================================
-// SECCIÓN: VALORES CORPORATIVOS
+// SECCIÓN: VALORES (con Drag & Drop)
 // =============================================================================
 interface ValoresSectionProps {
   identity: CorporateIdentity;
-  onAddValue: () => void;
-  onEditValue: (value: CorporateValue) => void;
 }
 
-const ValoresSection = ({ identity, onAddValue, onEditValue }: ValoresSectionProps) => {
-  return (
-    <Card>
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-pink-100 dark:bg-pink-900/30">
-              <Heart className="h-5 w-5 text-pink-600 dark:text-pink-400" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              Valores Corporativos
-            </h3>
-            <Badge variant="gray" size="sm">
-              {identity.values?.length || 0}
-            </Badge>
-          </div>
-          <Button variant="primary" size="sm" onClick={onAddValue}>
-            <Plus className="h-4 w-4 mr-2" />
-            Agregar Valor
-          </Button>
-        </div>
+const ValoresSection = ({ identity }: ValoresSectionProps) => {
+  const { data: valuesData, isLoading } = useValues(identity.id);
+  const createValueMutation = useCreateValue();
+  const updateValueMutation = useUpdateValue();
+  const deleteValueMutation = useDeleteValue();
+  const reorderMutation = useReorderValues();
 
-        {identity.values && identity.values.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {identity.values.map((value) => (
-              <div
-                key={value.id}
-                className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600 transition-colors cursor-pointer"
-                onClick={() => onEditValue(value)}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="h-4 w-4 text-purple-500" />
-                  <span className="font-medium text-gray-900 dark:text-gray-100">
-                    {value.name}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
-                  {value.description}
-                </p>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-            No hay valores corporativos definidos
-          </div>
-        )}
-      </div>
-    </Card>
+  const values = valuesData?.results || identity.values || [];
+
+  if (isLoading) {
+    return (
+      <Card className="p-6">
+        <div className="animate-pulse space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-20 bg-gray-200 dark:bg-gray-700 rounded-lg" />
+          ))}
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <ValoresDragDrop
+      values={values}
+      identityId={identity.id}
+      onReorder={async (newOrder) => {
+        await reorderMutation.mutateAsync(newOrder);
+      }}
+      onCreate={async (data) => {
+        await createValueMutation.mutateAsync(data);
+      }}
+      onUpdate={async (id, data) => {
+        await updateValueMutation.mutateAsync({ id, data });
+      }}
+      onDelete={async (id) => {
+        await deleteValueMutation.mutateAsync(id);
+      }}
+      isLoading={
+        createValueMutation.isPending ||
+        updateValueMutation.isPending ||
+        deleteValueMutation.isPending ||
+        reorderMutation.isPending
+      }
+    />
   );
 };
 
 // =============================================================================
-// SECCIÓN: POLÍTICA INTEGRAL
+// SECCIÓN: POLÍTICA INTEGRAL (versión simplificada para backward compat)
 // =============================================================================
 interface PoliticaSectionProps {
   identity: CorporateIdentity;
@@ -221,38 +235,101 @@ const PoliticaSection = ({ identity, onSign, isSigningPolicy }: PoliticaSectionP
           />
         )}
 
-        <p className="text-gray-600 dark:text-gray-300 whitespace-pre-line">
-          {identity.integral_policy}
-        </p>
+        <div
+          className="text-gray-600 dark:text-gray-300 prose prose-sm max-w-none dark:prose-invert"
+          dangerouslySetInnerHTML={{ __html: identity.integral_policy }}
+        />
       </div>
     </Card>
   );
 };
 
 // =============================================================================
-// SECCIÓN: POLÍTICAS ESPECÍFICAS (Por sistema de gestión)
+// SECCIÓN: POLÍTICAS (Manager completo con workflow)
 // =============================================================================
-const PoliticasSection = () => {
-  // TODO: Implementar cuando existan modelos de políticas específicas
-  return (
-    <Card>
-      <div className="p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900/30">
-            <FileText className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Políticas Específicas
-          </h3>
-        </div>
+interface PoliticasSectionProps {
+  identity: CorporateIdentity;
+}
 
-        <EmptyState
-          icon={<FileText className="h-12 w-12" />}
-          title="Próximamente"
-          description="Aquí podrás gestionar políticas específicas por sistema de gestión: SST, Calidad, Ambiental, PESV, etc."
-        />
-      </div>
-    </Card>
+const PoliticasSection = ({ identity }: PoliticasSectionProps) => {
+  // Hooks para políticas integrales
+  const { data: politicasIntegralesData, isLoading: loadingIntegrales } = usePoliticasIntegrales({
+    identity: identity.id,
+  });
+  const createIntegralMutation = useCreatePoliticaIntegral();
+  const updateIntegralMutation = useUpdatePoliticaIntegral();
+  const deleteIntegralMutation = useDeletePoliticaIntegral();
+  const signIntegralMutation = useSignPoliticaIntegral();
+  const publishIntegralMutation = usePublishPoliticaIntegral();
+
+  // Hooks para políticas específicas
+  const { data: politicasEspecificasData, isLoading: loadingEspecificas } = usePoliticasEspecificas({
+    identity: identity.id,
+  });
+  const createEspecificaMutation = useCreatePoliticaEspecifica();
+  const updateEspecificaMutation = useUpdatePoliticaEspecifica();
+  const deleteEspecificaMutation = useDeletePoliticaEspecifica();
+  const approveEspecificaMutation = useApprovePoliticaEspecifica();
+
+  if (loadingIntegrales || loadingEspecificas) {
+    return (
+      <Card className="p-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded w-1/3" />
+          {[1, 2].map((i) => (
+            <div key={i} className="h-32 bg-gray-200 dark:bg-gray-700 rounded-lg" />
+          ))}
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <PoliticasManager
+      identityId={identity.id}
+      // Políticas Integrales
+      politicasIntegrales={politicasIntegralesData?.results || []}
+      onCreateIntegral={async (data) => {
+        await createIntegralMutation.mutateAsync(data);
+      }}
+      onUpdateIntegral={async (id, data) => {
+        await updateIntegralMutation.mutateAsync({ id, data });
+      }}
+      onDeleteIntegral={async (id) => {
+        await deleteIntegralMutation.mutateAsync(id);
+      }}
+      onSignIntegral={async (id) => {
+        await signIntegralMutation.mutateAsync(id);
+      }}
+      onPublishIntegral={async (id) => {
+        await publishIntegralMutation.mutateAsync(id);
+      }}
+      // Políticas Específicas
+      politicasEspecificas={politicasEspecificasData?.results || []}
+      onCreateEspecifica={async (data) => {
+        await createEspecificaMutation.mutateAsync(data);
+      }}
+      onUpdateEspecifica={async (id, data) => {
+        await updateEspecificaMutation.mutateAsync({ id, data });
+      }}
+      onDeleteEspecifica={async (id) => {
+        await deleteEspecificaMutation.mutateAsync(id);
+      }}
+      onApproveEspecifica={async (id) => {
+        await approveEspecificaMutation.mutateAsync(id);
+      }}
+      isLoading={
+        createIntegralMutation.isPending ||
+        updateIntegralMutation.isPending ||
+        deleteIntegralMutation.isPending ||
+        signIntegralMutation.isPending ||
+        publishIntegralMutation.isPending ||
+        createEspecificaMutation.isPending ||
+        updateEspecificaMutation.isPending ||
+        deleteEspecificaMutation.isPending ||
+        approveEspecificaMutation.isPending
+      }
+    />
   );
 };
 
@@ -276,8 +353,6 @@ export const IdentidadTab = ({ activeSection, triggerNewForm }: IdentidadTabProp
   const signPolicyMutation = useSignPolicy();
 
   const [showIdentityModal, setShowIdentityModal] = useState(false);
-  const [showValueModal, setShowValueModal] = useState(false);
-  const [selectedValue, setSelectedValue] = useState<CorporateValue | null>(null);
   const [editingIdentity, setEditingIdentity] = useState<CorporateIdentity | null>(null);
 
   // Trigger desde el header para abrir modal de nueva versión
@@ -293,16 +368,6 @@ export const IdentidadTab = ({ activeSection, triggerNewForm }: IdentidadTabProp
     if (window.confirm('Esta acción firmará digitalmente la Política Integral. ¿Desea continuar?')) {
       await signPolicyMutation.mutateAsync(identity.id);
     }
-  };
-
-  const handleEditValue = (value: CorporateValue) => {
-    setSelectedValue(value);
-    setShowValueModal(true);
-  };
-
-  const handleAddValue = () => {
-    setSelectedValue(null);
-    setShowValueModal(true);
   };
 
   const handleEditIdentity = () => {
@@ -365,13 +430,7 @@ export const IdentidadTab = ({ activeSection, triggerNewForm }: IdentidadTabProp
         );
 
       case SECTION_KEYS.VALORES:
-        return (
-          <ValoresSection
-            identity={identity}
-            onAddValue={handleAddValue}
-            onEditValue={handleEditValue}
-          />
-        );
+        return <ValoresSection identity={identity} />;
 
       case SECTION_KEYS.POLITICA:
         return (
@@ -383,7 +442,7 @@ export const IdentidadTab = ({ activeSection, triggerNewForm }: IdentidadTabProp
         );
 
       case SECTION_KEYS.POLITICAS:
-        return <PoliticasSection />;
+        return <PoliticasSection identity={identity} />;
 
       default:
         // Si no hay sección activa, mostrar Misión y Visión por defecto
@@ -406,23 +465,13 @@ export const IdentidadTab = ({ activeSection, triggerNewForm }: IdentidadTabProp
     <>
       <div className="space-y-6">{renderSection()}</div>
 
-      {/* Modales */}
+      {/* Modal de Identidad */}
       <IdentityFormModal
         identity={editingIdentity}
         isOpen={showIdentityModal}
         onClose={() => {
           setShowIdentityModal(false);
           setEditingIdentity(null);
-        }}
-      />
-
-      <ValueFormModal
-        value={selectedValue}
-        identityId={identity.id}
-        isOpen={showValueModal}
-        onClose={() => {
-          setShowValueModal(false);
-          setSelectedValue(null);
         }}
       />
     </>

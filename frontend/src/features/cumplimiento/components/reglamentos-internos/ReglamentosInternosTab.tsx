@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Tab de Reglamentos Internos
  *
  * Gestión completa de reglamentos internos de la empresa:
@@ -34,7 +34,7 @@ import { useReglamentos } from '../../hooks/useReglamentos';
 import type { Reglamento, EstadoReglamento, ReglamentoFilters } from '../../types/cumplimiento.types';
 import { useAuthStore } from '@/store/authStore';
 import { reglamentosApi } from '../../api/reglamentosApi';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 
 interface ReglamentosInternosTabProps {
   /** Código de la subsección activa (desde API/DynamicSections) */

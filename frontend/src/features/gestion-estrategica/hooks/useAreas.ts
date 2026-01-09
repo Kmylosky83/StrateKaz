@@ -1,4 +1,4 @@
-/**
+﻿/**
  * React Query Hooks para el módulo de Áreas/Departamentos
  * Sistema de Gestión StrateKaz
  *
@@ -8,7 +8,7 @@
  * - Toggle de estado activo/inactivo
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import { AxiosError } from 'axios';
 import {
   areasApi,
@@ -87,7 +87,7 @@ const getFieldLabel = (field: string): string => {
     cost_center: 'Centro de costo',
     manager: 'Responsable',
     is_active: 'Estado',
-    order: 'Orden',
+    orden: 'Orden',
     non_field_errors: 'Error general',
   };
   return labels[field] || field;

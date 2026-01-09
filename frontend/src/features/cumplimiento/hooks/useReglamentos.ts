@@ -1,4 +1,4 @@
-/**
+﻿/**
  * React Query Hooks para Reglamentos Internos
  * Sistema de Gestión StrateKaz
  *
@@ -6,7 +6,7 @@
  */
 import { useGenericCRUD } from '@/hooks/useGenericCRUD';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import { tiposReglamentoApi, reglamentosApi } from '../api';
 import type {
   TipoReglamento,

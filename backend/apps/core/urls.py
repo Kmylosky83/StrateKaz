@@ -6,9 +6,13 @@ Incluye endpoints para:
 - Gestion de usuarios
 - Sistema RBAC (Cargos, Roles, Grupos, Permisos)
 - Menu dinamico
-- Dirección Estratégica (Identidad, Planeación, Configuración)
+- Configuración del Sistema (Módulos, Tabs, Branding)
+
+NOTA: Los endpoints de Identidad y Planeación se registran condicionalmente
+cuando las apps gestion_estrategica.identidad/planeacion están activas.
 """
 from django.urls import path, include
+from django.apps import apps
 from rest_framework.routers import DefaultRouter
 from .views import health_check, current_user, test_celery_task, task_status, revoke_task
 from .viewsets import CargoViewSet, UserViewSet, PermisoViewSet
@@ -23,16 +27,12 @@ from .viewsets_rbac import (
     RolAdicionalViewSet,
     UserRolesAdicionalesViewSet,
 )
-from .viewsets_strategic import (
-    CorporateIdentityViewSet,
-    CorporateValueViewSet,
-    StrategicPlanViewSet,
-    StrategicObjectiveViewSet,
+# ViewSets de Configuración (solo modelos de core, sin dependencias externas)
+from .viewsets_config import (
     SystemModuleViewSet,
     ModuleTabViewSet,
     TabSectionViewSet,
     BrandingConfigViewSet,
-    StrategicStatsViewSet,
 )
 
 app_name = 'core'
@@ -57,23 +57,34 @@ router.register(r'riesgos-ocupacionales', RiesgoOcupacionalViewSet, basename='ri
 # Endpoints RBAC Híbrido - Roles Adicionales
 router.register(r'roles-adicionales', RolAdicionalViewSet, basename='rol-adicional')
 
-# Endpoints Dirección Estratégica - Tab 1: Identidad
-router.register(r'corporate-identity', CorporateIdentityViewSet, basename='corporate-identity')
-router.register(r'corporate-values', CorporateValueViewSet, basename='corporate-value')
-
-# Endpoints Dirección Estratégica - Tab 2: Planeación
-router.register(r'strategic-plans', StrategicPlanViewSet, basename='strategic-plan')
-router.register(r'strategic-objectives', StrategicObjectiveViewSet, basename='strategic-objective')
-
-# Endpoints Dirección Estratégica - Tab 4: Configuración
+# Endpoints Configuración del Sistema (Tab 4) - Solo modelos de core
 router.register(r'system-modules', SystemModuleViewSet, basename='system-module')
 router.register(r'module-tabs', ModuleTabViewSet, basename='module-tab')
 router.register(r'tab-sections', TabSectionViewSet, basename='tab-section')
 router.register(r'branding', BrandingConfigViewSet, basename='branding')
-# NOTA: Consecutivos fue migrado a /api/organizacion/consecutivos/
 
-# Endpoints Estadísticas Dirección Estratégica
-router.register(r'strategic', StrategicStatsViewSet, basename='strategic')
+# ═══════════════════════════════════════════════════════════════════════════
+# REGISTRO CONDICIONAL: Endpoints que dependen de apps externas
+# ═══════════════════════════════════════════════════════════════════════════
+# Solo registrar si las apps de identidad y planeacion están instaladas
+if apps.is_installed('apps.gestion_estrategica.identidad') and apps.is_installed('apps.gestion_estrategica.planeacion'):
+    from .viewsets_strategic import (
+        CorporateIdentityViewSet,
+        CorporateValueViewSet,
+        StrategicPlanViewSet,
+        StrategicObjectiveViewSet,
+        StrategicStatsViewSet,
+    )
+    # Endpoints Dirección Estratégica - Tab 1: Identidad
+    router.register(r'corporate-identity', CorporateIdentityViewSet, basename='corporate-identity')
+    router.register(r'corporate-values', CorporateValueViewSet, basename='corporate-value')
+
+    # Endpoints Dirección Estratégica - Tab 2: Planeación
+    router.register(r'strategic-plans', StrategicPlanViewSet, basename='strategic-plan')
+    router.register(r'strategic-objectives', StrategicObjectiveViewSet, basename='strategic-objective')
+
+    # Endpoints Estadísticas Dirección Estratégica
+    router.register(r'strategic', StrategicStatsViewSet, basename='strategic')
 
 urlpatterns = [
     # Endpoints funcionales

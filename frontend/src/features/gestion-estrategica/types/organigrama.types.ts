@@ -21,6 +21,10 @@ export interface AreaData {
   cost_center?: string | null;
   manager?: number | null;
   manager_name?: string | null;
+  /** Nombre del icono Lucide (ej: Building2, Users, Briefcase) */
+  icon?: string | null;
+  /** Color del área */
+  color?: string | null;
   is_active: boolean;
   order: number;
   children_count?: number;
@@ -88,7 +92,7 @@ export interface OrganigramaStats {
 // NIVELES JERÁRQUICOS Y COLORES
 // =============================================================================
 
-export type NivelJerarquico = 'ESTRATEGICO' | 'TACTICO' | 'OPERATIVO' | 'APOYO';
+export type NivelJerarquico = 'ESTRATEGICO' | 'TACTICO' | 'OPERATIVO' | 'APOYO' | 'EXTERNO';
 
 /** Colores por nivel jerárquico */
 export const NIVEL_COLORS: Record<NivelJerarquico, {
@@ -131,6 +135,14 @@ export const NIVEL_COLORS: Record<NivelJerarquico, {
     darkBg: 'dark:bg-purple-900/30',
     darkBorder: 'dark:border-purple-800',
   },
+  EXTERNO: {
+    bg: 'bg-orange-500',
+    bgLight: 'bg-orange-50',
+    border: 'border-orange-300',
+    text: 'text-orange-700',
+    darkBg: 'dark:bg-orange-900/30',
+    darkBorder: 'dark:border-orange-800',
+  },
 };
 
 /** Labels de niveles jerárquicos */
@@ -139,6 +151,7 @@ export const NIVEL_LABELS: Record<NivelJerarquico, string> = {
   TACTICO: 'Táctico',
   OPERATIVO: 'Operativo',
   APOYO: 'Apoyo',
+  EXTERNO: 'Externo',
 };
 
 // =============================================================================

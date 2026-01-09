@@ -1,10 +1,118 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.ico', 'logo-dark.png', 'logo-light.png', 'pwa-icon.svg'],
+      manifest: {
+        name: 'StrateKaz - Sistema de Gestión Integral',
+        short_name: 'StrateKaz',
+        description: 'ERP de Consultoría 4.0 - SST, PESV, ISO, Calidad',
+        theme_color: '#ec268f',
+        background_color: '#ffffff',
+        display: 'standalone',
+        orientation: 'portrait',
+        scope: '/',
+        start_url: '/',
+        categories: ['business', 'productivity'],
+        icons: [
+          {
+            src: 'pwa-icon.svg',
+            sizes: 'any',
+            type: 'image/svg+xml',
+            purpose: 'any'
+          },
+          {
+            src: 'pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png'
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png'
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
+          }
+        ],
+        shortcuts: [
+          {
+            name: 'Dashboard',
+            short_name: 'Dashboard',
+            url: '/dashboard',
+            icons: [{ src: 'pwa-icon.svg', sizes: 'any' }]
+          },
+          {
+            name: 'HSEQ',
+            short_name: 'HSEQ',
+            url: '/hseq',
+            icons: [{ src: 'pwa-icon.svg', sizes: 'any' }]
+          }
+        ]
+      },
+      workbox: {
+        // Cache de archivos estáticos
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+
+        // Estrategias de cache para API
+        runtimeCaching: [
+          {
+            // Cache de API para consultas GET (NetworkFirst)
+            urlPattern: /^https?:\/\/.*\/api\/.*$/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-cache',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 // 24 horas
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              },
+              networkTimeoutSeconds: 10
+            }
+          },
+          {
+            // Cache de imágenes (CacheFirst)
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'images-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 días
+              }
+            }
+          },
+          {
+            // Cache de fuentes (CacheFirst)
+            urlPattern: /\.(?:woff|woff2|ttf|eot)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'fonts-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 año
+              }
+            }
+          }
+        ]
+      },
+      devOptions: {
+        enabled: true // Habilitar en desarrollo para testing
+      }
+    })
+  ],
   server: {
     port: 3010,
     host: true,
@@ -23,8 +131,9 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           // ============================================================
-          // CRÍTICO: React SOLO (sin dependencias externas)
-          // Se carga primero para evitar "Cannot read properties of undefined (reading 'createContext')"
+          // CRÍTICO: React Core + State Management
+          // TODAS las librerías que usan createContext deben estar aquí
+          // para evitar "Cannot read properties of undefined (reading 'createContext')"
           // ============================================================
           if (id.includes('node_modules/react/') && !id.includes('node_modules/react-')) {
             return 'vendor-react-core';
@@ -35,9 +144,21 @@ export default defineConfig({
           if (id.includes('node_modules/scheduler/')) {
             return 'vendor-react-core';
           }
+          // State management - DEBE estar con React core porque usa createContext
+          if (id.includes('node_modules/@tanstack/react-query') ||
+              id.includes('node_modules/zustand')) {
+            return 'vendor-react-core';
+          }
+          // Charts - DEBE estar con React core porque usa createContext
+          if (id.includes('node_modules/recharts') ||
+              id.includes('node_modules/d3') ||
+              id.includes('node_modules/@xyflow') ||
+              id.includes('node_modules/@dagrejs')) {
+            return 'vendor-react-core';
+          }
 
           // ============================================================
-          // React ecosystem (usa React pero no crítico para el arranque)
+          // React Router (usa React pero carga después de core)
           // ============================================================
           if (id.includes('node_modules/react-router-dom') ||
               id.includes('node_modules/react-router') ||
@@ -45,28 +166,11 @@ export default defineConfig({
             return 'vendor-react-router';
           }
 
-          // State management
-          if (id.includes('node_modules/@tanstack/react-query') ||
-              id.includes('node_modules/zustand')) {
-            return 'vendor-state';
-          }
-
           // Forms & Validation
           if (id.includes('node_modules/react-hook-form') ||
               id.includes('node_modules/@hookform') ||
               id.includes('node_modules/zod')) {
             return 'vendor-forms';
-          }
-
-          // ============================================================
-          // Librerías que usan React context (DEBEN cargarse después de React)
-          // ============================================================
-
-          // Charts & Visualization (usa createContext internamente)
-          if (id.includes('node_modules/recharts') ||
-              id.includes('node_modules/@xyflow') ||
-              id.includes('node_modules/@dagrejs')) {
-            return 'vendor-charts';
           }
 
           // UI Libraries (pueden usar context)
@@ -102,9 +206,8 @@ export default defineConfig({
             return 'vendor-utils';
           }
 
-          // Toast/Notifications
-          if (id.includes('node_modules/react-hot-toast') ||
-              id.includes('node_modules/sonner')) {
+          // Toast/Notifications (Sonner)
+          if (id.includes('node_modules/sonner')) {
             return 'vendor-notifications';
           }
 

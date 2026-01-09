@@ -220,9 +220,4 @@ export interface UsuarioRolesFilters {
   vigencia?: 'VIGENTES' | 'EXPIRADOS' | 'POR_VENCER' | 'ALL';
 }
 
-export interface PaginatedResponse<T> {
-  results: T[];
-  count: number;
-  next: string | null;
-  previous: string | null;
-}
+// PaginatedResponse importado desde @/types

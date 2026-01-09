@@ -9,7 +9,7 @@
  * - Mensajes de error descriptivos
  */
 
-import { toPng, toSvg } from 'html-to-image';
+import { toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 import type { ExportOptions, OrganigramaStats } from '../types/organigrama.types';
 
@@ -47,7 +47,6 @@ const DATE_HEIGHT = 30;
  */
 const forceLightModeTemporarily = (): (() => void) => {
   const htmlElement = document.documentElement;
-  const originalClasses = htmlElement.className;
   const hadDarkMode = htmlElement.classList.contains('dark');
 
   if (hadDarkMode) {
@@ -68,6 +67,7 @@ const forceLightModeTemporarily = (): (() => void) => {
 
 /**
  * Exporta el canvas del organigrama a PNG
+ * Captura directamente el ReactFlow completo sin clonar
  */
 export const exportToPng = async (
   element: HTMLElement,
@@ -77,78 +77,65 @@ export const exportToPng = async (
 ): Promise<void> => {
   // Forzar light mode temporalmente
   const restoreTheme = forceLightModeTemporarily();
-  let container: HTMLElement | null = null;
 
   try {
-    // Calcular dimensiones adicionales
-    let additionalHeight = EXPORT_PADDING * 2;
-    if (options.includeTitle) additionalHeight += TITLE_HEIGHT;
-    if (options.includeDate) additionalHeight += DATE_HEIGHT;
-    if (options.includeLegend) additionalHeight += LEGEND_HEIGHT;
-
-    // Crear contenedor temporal para agregar título, fecha y leyenda
-    container = document.createElement('div');
-    container.style.backgroundColor = '#ffffff';
-    container.style.padding = `${EXPORT_PADDING}px`;
-
-    // Agregar título
-    if (options.includeTitle && title) {
-      const titleEl = document.createElement('div');
-      titleEl.style.fontSize = '24px';
-      titleEl.style.fontWeight = 'bold';
-      titleEl.style.textAlign = 'center';
-      titleEl.style.marginBottom = '10px';
-      titleEl.style.color = '#111827';
-      titleEl.textContent = title;
-      container.appendChild(titleEl);
+    // Buscar el contenedor principal de ReactFlow (no el viewport)
+    const reactFlowContainer = element.closest('.react-flow') as HTMLElement;
+    if (!reactFlowContainer) {
+      throw new Error('No se encontró el contenedor de ReactFlow');
     }
 
-    // Agregar fecha
-    if (options.includeDate) {
-      const dateEl = document.createElement('div');
-      dateEl.style.fontSize = '14px';
-      dateEl.style.textAlign = 'center';
-      dateEl.style.marginBottom = '20px';
-      dateEl.style.color = '#6b7280';
-      dateEl.textContent = `Generado el ${new Date().toLocaleDateString('es-CO', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      })}`;
-      container.appendChild(dateEl);
-    }
+    // Ocultar temporalmente elementos que no queremos en la exportación
+    const minimap = reactFlowContainer.querySelector('.react-flow__minimap') as HTMLElement;
+    const controls = reactFlowContainer.querySelector('.react-flow__controls') as HTMLElement;
+    const panel = reactFlowContainer.querySelector('.react-flow__panel') as HTMLElement;
 
-    // Clonar el elemento del canvas
-    const clonedElement = element.cloneNode(true) as HTMLElement;
-    container.appendChild(clonedElement);
+    const hiddenElements: HTMLElement[] = [];
+    [minimap, controls, panel].forEach(el => {
+      if (el) {
+        el.style.display = 'none';
+        hiddenElements.push(el);
+      }
+    });
 
-    // Agregar leyenda
-    if (options.includeLegend) {
-      const legendEl = createLegendElement(stats);
-      container.appendChild(legendEl);
-    }
-
-    // Agregar temporalmente al DOM
-    container.style.position = 'absolute';
-    container.style.left = '-9999px';
-    document.body.appendChild(container);
-
-    // Generar imagen con timeout
+    // Generar imagen directamente del contenedor ReactFlow
     const dataUrl = await Promise.race([
-      toPng(container, {
+      toPng(reactFlowContainer, {
         quality: options.quality,
         pixelRatio: options.quality,
         backgroundColor: '#ffffff',
+        filter: (node) => {
+          // Excluir minimapa, controles y paneles
+          if (node instanceof Element) {
+            const className = node.className?.toString() || '';
+            if (
+              className.includes('react-flow__minimap') ||
+              className.includes('react-flow__controls') ||
+              className.includes('react-flow__panel')
+            ) {
+              return false;
+            }
+          }
+          return true;
+        },
       }),
       new Promise<string>((_, reject) =>
         setTimeout(() => reject(new Error('Timeout al generar imagen')), 30000)
       ),
     ]);
 
-    // Descargar
-    downloadFile(dataUrl, `organigrama_${formatDateForFilename()}.png`);
+    // Restaurar elementos ocultos
+    hiddenElements.forEach(el => {
+      el.style.display = '';
+    });
+
+    // Si necesitamos agregar título/fecha/leyenda, crear un canvas compuesto
+    if (options.includeTitle || options.includeDate || options.includeLegend) {
+      const finalDataUrl = await addHeaderAndLegend(dataUrl, options, stats, title);
+      downloadFile(finalDataUrl, `organigrama_${formatDateForFilename()}.png`);
+    } else {
+      downloadFile(dataUrl, `organigrama_${formatDateForFilename()}.png`);
+    }
   } catch (error) {
     console.error('Error al exportar a PNG:', error);
 
@@ -171,12 +158,134 @@ export const exportToPng = async (
 
     throw new ExportError(errorMessage, errorType, error instanceof Error ? error : undefined);
   } finally {
-    // Limpiar DOM y restaurar tema
-    if (container && container.parentNode) {
-      document.body.removeChild(container);
-    }
+    // Restaurar tema
     restoreTheme();
   }
+};
+
+/**
+ * Agrega título, fecha y leyenda a una imagen existente usando Canvas
+ */
+const addHeaderAndLegend = async (
+  imageDataUrl: string,
+  options: ExportOptions,
+  stats?: OrganigramaStats,
+  title?: string
+): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      // Calcular dimensiones adicionales
+      let headerHeight = 0;
+      let footerHeight = 0;
+      const padding = EXPORT_PADDING;
+
+      if (options.includeTitle) headerHeight += 40;
+      if (options.includeDate) headerHeight += 25;
+      if (options.includeLegend) footerHeight += 60;
+
+      // Crear canvas
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width + padding * 2;
+      canvas.height = img.height + headerHeight + footerHeight + padding * 2;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('No se pudo crear el contexto del canvas'));
+        return;
+      }
+
+      // Fondo blanco
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      let yPos = padding;
+
+      // Título
+      if (options.includeTitle && title) {
+        ctx.font = 'bold 24px system-ui, -apple-system, sans-serif';
+        ctx.fillStyle = '#111827';
+        ctx.textAlign = 'center';
+        ctx.fillText(title, canvas.width / 2, yPos + 28);
+        yPos += 40;
+      }
+
+      // Fecha
+      if (options.includeDate) {
+        ctx.font = '14px system-ui, -apple-system, sans-serif';
+        ctx.fillStyle = '#6b7280';
+        ctx.textAlign = 'center';
+        const dateText = `Generado el ${new Date().toLocaleDateString('es-CO', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        })}`;
+        ctx.fillText(dateText, canvas.width / 2, yPos + 18);
+        yPos += 25;
+      }
+
+      // Imagen del organigrama
+      ctx.drawImage(img, padding, yPos);
+      yPos += img.height + 10;
+
+      // Leyenda
+      if (options.includeLegend && stats) {
+        ctx.font = '12px system-ui, -apple-system, sans-serif';
+        ctx.fillStyle = '#6b7280';
+        ctx.textAlign = 'center';
+
+        // Niveles jerárquicos
+        const levels = [
+          { label: 'Estratégico', color: '#ef4444' },
+          { label: 'Táctico', color: '#3b82f6' },
+          { label: 'Operativo', color: '#22c55e' },
+          { label: 'Apoyo', color: '#a855f7' },
+        ];
+
+        const legendWidth = levels.length * 100;
+        let xPos = (canvas.width - legendWidth) / 2;
+
+        levels.forEach(({ label, color }) => {
+          // Círculo de color
+          ctx.beginPath();
+          ctx.arc(xPos + 8, yPos, 6, 0, Math.PI * 2);
+          ctx.fillStyle = color;
+          ctx.fill();
+
+          // Texto
+          ctx.fillStyle = '#4b5563';
+          ctx.textAlign = 'left';
+          ctx.fillText(label, xPos + 20, yPos + 4);
+          xPos += 100;
+        });
+
+        yPos += 25;
+
+        // Stats
+        ctx.fillStyle = '#6b7280';
+        ctx.textAlign = 'center';
+        const statsText = `Áreas: ${stats.areas_activas}/${stats.total_areas} | Cargos: ${stats.cargos_activos}/${stats.total_cargos} | Usuarios: ${stats.total_usuarios}`;
+        ctx.fillText(statsText, canvas.width / 2, yPos);
+        yPos += 20;
+      }
+
+      // Footer: Powered by StrateKaz
+      ctx.font = 'italic 11px system-ui, -apple-system, sans-serif';
+      ctx.fillStyle = '#9ca3af';
+      ctx.textAlign = 'center';
+      ctx.fillText('Powered by StrateKaz', canvas.width / 2, canvas.height - padding / 2);
+
+      resolve(canvas.toDataURL('image/png', 1.0));
+    };
+
+    img.onerror = () => {
+      reject(new Error('Error al cargar la imagen para composición'));
+    };
+
+    img.src = imageDataUrl;
+  });
 };
 
 // =============================================================================
@@ -277,8 +386,14 @@ export const exportToPdf = async (
         `Total Usuarios: ${stats.total_usuarios}`,
       ].join(' | ');
 
-      pdf.text(legendText, pageWidth / 2, pageHeight - margin, { align: 'center' });
+      pdf.text(legendText, pageWidth / 2, pageHeight - margin - 5, { align: 'center' });
     }
+
+    // Footer: Powered by StrateKaz
+    pdf.setFontSize(8);
+    pdf.setTextColor(156, 163, 175); // gray-400
+    pdf.setFont('helvetica', 'italic');
+    pdf.text('Powered by StrateKaz', pageWidth / 2, pageHeight - 3, { align: 'center' });
 
     // Descargar
     pdf.save(`organigrama_${formatDateForFilename()}.pdf`);
@@ -323,12 +438,16 @@ export const exportOrganigrama = async (
   element: HTMLElement,
   options: ExportOptions,
   stats?: OrganigramaStats,
-  title: string = 'Organigrama Organizacional'
+  title: string = 'Organigrama Organizacional',
+  empresaNombre?: string
 ): Promise<void> => {
+  // Si hay nombre de empresa, usarlo en el título
+  const finalTitle = empresaNombre ? `${title} - ${empresaNombre}` : title;
+
   if (options.format === 'png') {
-    await exportToPng(element, options, stats, title);
+    await exportToPng(element, options, stats, finalTitle);
   } else {
-    await exportToPdf(element, options, stats, title);
+    await exportToPdf(element, options, stats, finalTitle);
   }
 };
 

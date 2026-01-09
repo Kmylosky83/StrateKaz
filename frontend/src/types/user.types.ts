@@ -1,4 +1,6 @@
 // Types para gestión de usuarios
+import { PaginatedResponse } from './api.types';
+
 export interface Cargo {
   id: number;
   code: string;
@@ -43,11 +45,4 @@ export interface UsersFilters {
   is_active?: boolean;
   page?: number;
   page_size?: number;
-}
-
-export interface PaginatedResponse<T> {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
 }

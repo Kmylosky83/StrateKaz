@@ -1,16 +1,22 @@
 /**
  * Modal para crear/editar Identidad Corporativa
  *
+ * Mejoras v2.0:
+ * - Editor de texto enriquecido (TipTap) para misión, visión y política
+ * - Soporte para formato rico (negrita, cursiva, listas, etc.)
+ * - Validación mejorada
+ *
  * Usa Design System:
  * - BaseModal para el contenedor
- * - Input, Textarea para formulario
+ * - Input para campos simples
+ * - RichTextEditor para contenido formateado
  * - Button para acciones
  */
 import { useState, useEffect } from 'react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
-import { Textarea } from '@/components/forms/Textarea';
+import { RichTextEditor } from '@/components/forms/RichTextEditor';
 import { useCreateIdentity, useUpdateIdentity } from '../../hooks/useStrategic';
 import type { CorporateIdentity, CreateCorporateIdentityDTO, UpdateCorporateIdentityDTO } from '../../types/strategic.types';
 
@@ -52,7 +58,7 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
         version: '1.0',
       });
     }
-  }, [identity]);
+  }, [identity, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,6 +86,18 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
     onClose();
   };
 
+  // Validar contenido de editores (quitar tags HTML vacíos)
+  const stripHtml = (html: string) => {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || '';
+  };
+
+  const isValid =
+    stripHtml(formData.mission).trim().length > 0 &&
+    stripHtml(formData.vision).trim().length > 0 &&
+    stripHtml(formData.integral_policy).trim().length > 0;
+
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
   const footer = (
@@ -91,7 +109,7 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
         type="submit"
         variant="primary"
         onClick={handleSubmit}
-        disabled={isLoading || !formData.mission || !formData.vision || !formData.integral_policy}
+        disabled={isLoading || !isValid}
         isLoading={isLoading}
       >
         {isEditing ? 'Guardar Cambios' : 'Crear Identidad'}
@@ -105,10 +123,10 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
       onClose={onClose}
       title={isEditing ? 'Editar Identidad Corporativa' : 'Nueva Identidad Corporativa'}
       subtitle="Define la misión, visión y política integral de la organización"
-      size="2xl"
+      size="4xl"
       footer={footer}
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-2 gap-4">
           <Input
             label="Fecha de Vigencia *"
@@ -125,31 +143,28 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
           />
         </div>
 
-        <Textarea
+        <RichTextEditor
           label="Misión *"
           value={formData.mission}
-          onChange={(e) => setFormData({ ...formData, mission: e.target.value })}
-          placeholder="Describa la misión de la organización..."
-          rows={4}
-          required
+          onChange={(value) => setFormData({ ...formData, mission: value })}
+          placeholder="Describa la misión de la organización: razón de ser, propósito fundamental..."
+          minHeight="120px"
         />
 
-        <Textarea
+        <RichTextEditor
           label="Visión *"
           value={formData.vision}
-          onChange={(e) => setFormData({ ...formData, vision: e.target.value })}
-          placeholder="Describa la visión de la organización..."
-          rows={4}
-          required
+          onChange={(value) => setFormData({ ...formData, vision: value })}
+          placeholder="Describa la visión de la organización: hacia dónde se dirige, aspiración a futuro..."
+          minHeight="120px"
         />
 
-        <Textarea
+        <RichTextEditor
           label="Política Integral *"
           value={formData.integral_policy}
-          onChange={(e) => setFormData({ ...formData, integral_policy: e.target.value })}
-          placeholder="Describa la política integral (calidad, SST, ambiente, seguridad vial)..."
-          rows={6}
-          required
+          onChange={(value) => setFormData({ ...formData, integral_policy: value })}
+          placeholder="Describa la política integral que abarca: calidad, seguridad y salud en el trabajo, medio ambiente, seguridad vial..."
+          minHeight="180px"
         />
       </form>
     </BaseModal>

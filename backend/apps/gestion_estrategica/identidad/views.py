@@ -175,10 +175,10 @@ class AlcanceSistemaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     queryset = AlcanceSistema.objects.select_related('identity', 'created_by').all()
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['identity', 'iso_standard', 'is_certified', 'is_active']
+    filterset_fields = ['identity', 'norma_iso', 'is_certified', 'is_active']
     search_fields = ['scope', 'exclusions', 'certification_body', 'certificate_number']
-    ordering_fields = ['iso_standard', 'certification_date', 'expiry_date', 'created_at']
-    ordering = ['iso_standard']
+    ordering_fields = ['norma_iso', 'certification_date', 'expiry_date', 'created_at']
+    ordering = ['norma_iso']
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
@@ -187,16 +187,17 @@ class AlcanceSistemaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='by-standard')
     def by_standard(self, request):
-        """Retorna alcances agrupados por norma ISO"""
-        from .models import ISO_STANDARD_CHOICES
+        """Retorna alcances agrupados por norma ISO (dinámico desde BD)"""
+        from apps.gestion_estrategica.configuracion.models import NormaISO
 
         queryset = self.filter_queryset(self.get_queryset())
+        normas = NormaISO.objects.filter(is_active=True).order_by('orden')
         result = {}
 
-        for code, label in ISO_STANDARD_CHOICES:
-            alcance = queryset.filter(iso_standard=code, is_active=True).first()
-            result[code] = {
-                'label': label,
+        for norma in normas:
+            alcance = queryset.filter(norma_iso=norma, is_active=True).first()
+            result[norma.code] = {
+                'label': norma.short_name,
                 'has_scope': alcance is not None,
                 'is_certified': alcance.is_certified if alcance else False,
                 'is_valid': alcance.is_certificate_valid if alcance else False,
@@ -218,8 +219,8 @@ class AlcanceSistemaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             if alcance.days_until_expiry is not None and alcance.days_until_expiry <= 90:
                 expiring_soon.append({
                     'id': alcance.id,
-                    'iso_standard': alcance.iso_standard,
-                    'iso_standard_display': alcance.get_iso_standard_display(),
+                    'norma_iso': alcance.norma_iso.code if alcance.norma_iso else None,
+                    'norma_iso_display': alcance.norma_iso.short_name if alcance.norma_iso else 'Sin Norma',
                     'expiry_date': alcance.expiry_date,
                     'days_until_expiry': alcance.days_until_expiry,
                 })
@@ -375,10 +376,10 @@ class PoliticaEspecificaViewSet(
     ).all()
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['identity', 'iso_standard', 'status', 'area', 'is_active']
+    filterset_fields = ['identity', 'norma_iso', 'status', 'area', 'is_active']
     search_fields = ['code', 'title', 'content', 'keywords']
-    ordering_fields = ['code', 'iso_standard', 'status', 'effective_date', 'orden', 'created_at']
-    ordering = ['iso_standard', 'orden', 'code']
+    ordering_fields = ['code', 'norma_iso', 'status', 'effective_date', 'orden', 'created_at']
+    ordering = ['norma_iso', 'orden', 'code']
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
@@ -410,16 +411,17 @@ class PoliticaEspecificaViewSet(
 
     @action(detail=False, methods=['get'], url_path='by-standard')
     def by_standard(self, request):
-        """Retorna políticas agrupadas por norma ISO"""
-        from .models import ISO_STANDARD_CHOICES
+        """Retorna políticas agrupadas por norma ISO (dinámico desde BD)"""
+        from apps.gestion_estrategica.configuracion.models import NormaISO
 
         queryset = self.filter_queryset(self.get_queryset())
+        normas = NormaISO.objects.filter(is_active=True).order_by('orden')
         result = {}
 
-        for code, label in ISO_STANDARD_CHOICES:
-            politicas = queryset.filter(iso_standard=code, is_active=True)
-            result[code] = {
-                'label': label,
+        for norma in normas:
+            politicas = queryset.filter(norma_iso=norma, is_active=True)
+            result[norma.code] = {
+                'label': norma.short_name,
                 'total': politicas.count(),
                 'vigentes': politicas.filter(status='VIGENTE').count(),
                 'borradores': politicas.filter(status='BORRADOR').count(),

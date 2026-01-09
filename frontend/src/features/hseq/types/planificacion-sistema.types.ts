@@ -485,12 +485,7 @@ export interface UpdateSeguimientoCronogramaDTO {
 
 // ==================== RESPONSE TYPES ====================
 
-export interface PaginatedResponse<T> {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
-}
+// PaginatedResponse: importar desde '@/types'
 
 /**
  * Estadísticas del Plan de Trabajo

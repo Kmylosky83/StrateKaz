@@ -725,9 +725,4 @@ export interface UpdateCertificadoAmbientalDTO extends Partial<CreateCertificado
 
 // ==================== RESPONSE TYPES ====================
 
-export interface PaginatedResponse<T> {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
-}
+// PaginatedResponse: importar desde '@/types'

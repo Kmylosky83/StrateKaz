@@ -20,6 +20,7 @@ export interface User {
   cargo: Cargo | null;
   cargo_name?: string;
   phone?: string | null;
+  photo?: string | null;
   document_type: 'CC' | 'CE' | 'NIT' | '';
   document_type_display?: string;
   document_number: string;

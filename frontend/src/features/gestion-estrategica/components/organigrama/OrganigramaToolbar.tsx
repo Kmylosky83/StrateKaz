@@ -117,6 +117,7 @@ export const OrganigramaToolbar = ({
     { value: 'TACTICO', label: 'Táctico' },
     { value: 'OPERATIVO', label: 'Operativo' },
     { value: 'APOYO', label: 'Apoyo' },
+    { value: 'EXTERNO', label: 'Externo' },
   ];
 
   return (
@@ -316,6 +317,10 @@ export const OrganigramaToolbar = ({
           <div className="flex items-center gap-1">
             <span className="w-3 h-3 rounded-full bg-purple-500" />
             <span className="text-xs text-gray-600 dark:text-gray-400">Apoyo</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="w-3 h-3 rounded-full bg-orange-500" />
+            <span className="text-xs text-gray-600 dark:text-gray-400">Externo</span>
           </div>
         </div>
       )}

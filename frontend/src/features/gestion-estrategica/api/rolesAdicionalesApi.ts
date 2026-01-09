@@ -150,12 +150,8 @@ export interface RolesAdicionalesFilters {
   include_inactive?: boolean;
 }
 
-export interface PaginatedResponse<T> {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
-}
+// PaginatedResponse: importar desde '@/types'
+import type { PaginatedResponse } from '@/types';
 
 export interface PermisosEfectivos {
   user_id: number;

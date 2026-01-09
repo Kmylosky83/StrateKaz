@@ -1,9 +1,9 @@
-/**
+﻿/**
  * React Query Hooks para Revisión por Dirección (ISO 9.3)
  * Sistema de Gestión StrateKaz
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import {
   programacionApi,
   participantesConvocadosApi,

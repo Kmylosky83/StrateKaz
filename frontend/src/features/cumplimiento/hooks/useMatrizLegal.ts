@@ -1,4 +1,4 @@
-/**
+﻿/**
  * React Query Hooks para Matriz Legal
  * Sistema de Gestión StrateKaz
  *
@@ -6,7 +6,7 @@
  */
 import { useGenericCRUD } from '@/hooks/useGenericCRUD';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import { tiposNormaApi, normasLegalesApi, empresaNormasApi } from '../api';
 import type {
   TipoNorma,

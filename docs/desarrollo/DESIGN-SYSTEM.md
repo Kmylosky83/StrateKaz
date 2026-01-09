@@ -953,24 +953,153 @@ import {
 
 ---
 
-## 6. Iconos
+## 6. Iconos - Sistema Dinamico
 
-### Librería: Lucide React
+### Principio: Iconos desde la Base de Datos
+
+Este sistema NO hardcodea iconos. Todos los iconos se gestionan desde la base de datos usando el modelo `IconRegistry`.
+
+Ver documentacion completa: [SISTEMA-ICONOS-DINAMICOS.md](./SISTEMA-ICONOS-DINAMICOS.md)
+
+### Componentes de Iconos
+
+| Componente | Uso | Archivo |
+|------------|-----|---------|
+| `DynamicIcon` | Renderiza iconos por nombre string | `@/components/common/DynamicIcon` |
+| `IconPicker` | Selector visual con busqueda | `@/components/common/IconPicker` |
+| `useIcons` | Hook para consumir API de iconos | `@/hooks/useIcons` |
+
+### DynamicIcon - Renderizado Dinamico
 
 ```tsx
-import { Plus, Edit, Trash2, Search, X, Check } from 'lucide-react';
+import { DynamicIcon } from '@/components/common';
 
-<Plus className="h-5 w-5" />
-<Edit className="h-4 w-4 text-primary-600" />
+// Basico - icono desde BD
+<DynamicIcon name="Heart" />
+
+// Con tamano y estilo
+<DynamicIcon
+  name={valor.icono_nombre}
+  size={24}
+  className="text-purple-600"
+/>
+
+// Con fallback personalizado
+<DynamicIcon
+  name={item.icon_name}
+  fallback={<span>?</span>}
+/>
+```
+
+### IconPicker - Selector de Iconos
+
+```tsx
+import { IconPicker } from '@/components/common';
+
+// Selector basico
+<IconPicker
+  value={selectedIcon}
+  onChange={setSelectedIcon}
+/>
+
+// Filtrado por categoria
+<IconPicker
+  value={valor.icono_nombre}
+  onChange={(name) => setValue('icono_nombre', name)}
+  category="VALORES"
+  label="Icono del Valor"
+/>
+
+// Con validacion de formulario
+<IconPicker
+  value={form.icon_name}
+  onChange={(name) => form.setValue('icon_name', name)}
+  error={form.errors.icon_name?.message}
+  helperText="Selecciona un icono representativo"
+/>
+```
+
+### Categorias de Iconos Disponibles
+
+| Categoria | Codigo | Iconos | Uso |
+|-----------|--------|--------|-----|
+| Valores Corporativos | `VALORES` | 18 | Mision, vision, valores |
+| Normas y Sistemas | `NORMAS` | 6 | ISO, certificaciones |
+| Estados y Status | `ESTADOS` | 6 | Workflows, estados |
+| Riesgos y Alertas | `RIESGOS` | 5 | Peligros, emergencias |
+| Personas y Equipos | `PERSONAS` | 5 | Usuarios, colaboradores |
+| Documentos | `DOCUMENTOS` | 6 | Archivos, carpetas |
+| Uso General | `GENERAL` | 10 | Acciones, botones |
+
+Total: 56 iconos del sistema precargados
+
+### API de Iconos
+
+```typescript
+import { useIcons, useIconsByCategory } from '@/hooks/useIcons';
+
+// Obtener todos los iconos
+const { icons, categories, isLoading } = useIcons();
+
+// Filtrar por categoria
+const { icons: valoresIcons } = useIconsByCategory('VALORES');
+
+// Buscar iconos
+const results = searchIcons('corazon');
+
+// Obtener icono por nombre
+const icon = getIconByName('Heart');
+```
+
+### Endpoints Backend
+
+```http
+GET /api/configuracion/icons/                      # Lista todos
+GET /api/configuracion/icons/categories/           # Categorias con conteo
+GET /api/configuracion/icons/by_category/?category=VALORES
+GET /api/configuracion/icons/search/?q=corazon
+POST /api/configuracion/icons/load_system_icons/   # Cargar sistema
 ```
 
 ### Tamaños Estándar
 
 | Tamaño | Clase | Uso |
 |--------|-------|-----|
-| Small | `h-4 w-4` | Botones pequeños, badges |
-| Default | `h-5 w-5` | Botones, menús |
-| Large | `h-6 w-6` | Headers, destacados |
+| Small | `size={16}` o `h-4 w-4` | Botones pequeños, badges |
+| Default | `size={20}` o `h-5 w-5` | Botones, menús |
+| Large | `size={24}` o `h-6 w-6` | Headers, destacados |
+| XLarge | `size={32}` o `h-8 w-8` | Cards, features |
+
+### Migracion de Codigo Legacy
+
+```tsx
+// PROHIBIDO - Iconos hardcodeados
+import { Heart, Shield, Star } from 'lucide-react';
+
+const ICON_MAP = {
+  heart: Heart,
+  shield: Shield,
+  star: Star,
+};
+
+<Select>
+  <option value="heart">Corazon</option>
+  <option value="shield">Escudo</option>
+</Select>
+
+{ICON_MAP[item.icon] && createElement(ICON_MAP[item.icon], props)}
+
+// CORRECTO - Sistema dinamico desde BD
+import { DynamicIcon, IconPicker } from '@/components/common';
+
+<IconPicker
+  value={item.icon_name}
+  onChange={(name) => updateItem({ icon_name: name })}
+  category="VALORES"
+/>
+
+<DynamicIcon name={item.icon_name} {...props} />
+```
 
 ---
 

@@ -5,18 +5,25 @@ Sistema de Gestión StrateKaz
 Define serializers para:
 - EmpresaConfig: Datos fiscales y legales de la empresa
 - SedeEmpresa: Sedes y ubicaciones de la empresa
+- TipoSede, TipoServicioIntegracion, ProveedorIntegracion: Modelos dinámicos
 """
 from rest_framework import serializers
 from .models import (
     EmpresaConfig,
     SedeEmpresa,
+    IntegracionExterna,
+    TipoSede,
+    TipoServicioIntegracion,
+    ProveedorIntegracion,
+    IconRegistry,
+    NormaISO,
     DEPARTAMENTOS_COLOMBIA,
     TIPO_SOCIEDAD_CHOICES,
     REGIMEN_TRIBUTARIO_CHOICES,
     FORMATO_FECHA_CHOICES,
     MONEDA_CHOICES,
     TIMEZONE_CHOICES,
-    TIPO_SEDE_CHOICES,
+    ICON_CATEGORY_CHOICES,
 )
 from .models_unidades import UnidadMedida
 
@@ -213,11 +220,8 @@ class SedeEmpresaSerializer(serializers.ModelSerializer):
     is_deleted = serializers.BooleanField(read_only=True)
     capacidad_formateada = serializers.CharField(read_only=True)
 
-    # Display names
-    tipo_sede_display = serializers.CharField(
-        source='get_tipo_sede_display',
-        read_only=True
-    )
+    # Display names - tipo_sede ahora es ForeignKey
+    tipo_sede_display = serializers.SerializerMethodField()
     departamento_display = serializers.CharField(
         source='get_departamento_display',
         read_only=True
@@ -287,6 +291,12 @@ class SedeEmpresaSerializer(serializers.ModelSerializer):
             'capacidad_formateada',
             'unidad_capacidad_display',
         ]
+
+    def get_tipo_sede_display(self, obj):
+        """Retorna el nombre del tipo de sede"""
+        if obj.tipo_sede:
+            return obj.tipo_sede.name
+        return None
 
     def get_unidad_capacidad_display(self, obj):
         """Retorna el nombre de la unidad de capacidad"""
@@ -377,10 +387,7 @@ class SedeEmpresaListSerializer(serializers.ModelSerializer):
     """
     Serializer simplificado para listados de sedes
     """
-    tipo_sede_display = serializers.CharField(
-        source='get_tipo_sede_display',
-        read_only=True
-    )
+    tipo_sede_display = serializers.SerializerMethodField()
     departamento_display = serializers.CharField(
         source='get_departamento_display',
         read_only=True
@@ -403,6 +410,11 @@ class SedeEmpresaListSerializer(serializers.ModelSerializer):
             'is_active',
         ]
 
+    def get_tipo_sede_display(self, obj):
+        if obj.tipo_sede:
+            return obj.tipo_sede.name
+        return None
+
     def get_responsable_name(self, obj):
         if obj.responsable:
             return obj.responsable.get_full_name() or obj.responsable.username
@@ -414,7 +426,7 @@ class SedeEmpresaChoicesSerializer(serializers.Serializer):
     Serializer para exponer las opciones de choices de SedeEmpresa al frontend
 
     Incluye:
-    - Tipos de sede
+    - Tipos de sede (dinámico desde modelo TipoSede)
     - Departamentos de Colombia
     - Unidades de capacidad disponibles (sistema dinámico multi-industria)
     """
@@ -424,7 +436,21 @@ class SedeEmpresaChoicesSerializer(serializers.Serializer):
     unidad_capacidad_default = serializers.SerializerMethodField()
 
     def get_tipos_sede(self, obj):
-        return [{'value': code, 'label': name} for code, name in TIPO_SEDE_CHOICES]
+        """Retorna tipos de sede desde modelo dinámico"""
+        tipos = TipoSede.objects.filter(
+            is_active=True,
+            deleted_at__isnull=True
+        ).order_by('orden', 'name')
+        return [
+            {
+                'value': t.id,
+                'label': t.name,
+                'code': t.code,
+                'icon': t.icon,
+                'color': t.color,
+            }
+            for t in tipos
+        ]
 
     def get_departamentos(self, obj):
         return [{'value': code, 'label': name} for code, name in DEPARTAMENTOS_COLOMBIA]
@@ -465,8 +491,6 @@ class SedeEmpresaChoicesSerializer(serializers.Serializer):
 # SERIALIZERS DE INTEGRACION EXTERNA
 # ==============================================================================
 
-from .models import IntegracionExterna
-
 
 class IntegracionExternaSerializer(serializers.ModelSerializer):
     """
@@ -486,15 +510,9 @@ class IntegracionExternaSerializer(serializers.ModelSerializer):
     porcentaje_uso_limite = serializers.FloatField(read_only=True)
     requiere_alerta_limite = serializers.BooleanField(read_only=True)
 
-    # Display names para choices
-    tipo_servicio_display = serializers.CharField(
-        source='get_tipo_servicio_display',
-        read_only=True
-    )
-    proveedor_display = serializers.CharField(
-        source='get_proveedor_display',
-        read_only=True
-    )
+    # Display names - tipo_servicio y proveedor ahora son ForeignKey
+    tipo_servicio_display = serializers.SerializerMethodField()
+    proveedor_display = serializers.SerializerMethodField()
     metodo_autenticacion_display = serializers.CharField(
         source='get_metodo_autenticacion_display',
         read_only=True
@@ -570,6 +588,18 @@ class IntegracionExternaSerializer(serializers.ModelSerializer):
             'requiere_alerta_limite',
         ]
 
+    def get_tipo_servicio_display(self, obj):
+        """Retorna el nombre del tipo de servicio"""
+        if obj.tipo_servicio:
+            return obj.tipo_servicio.name
+        return None
+
+    def get_proveedor_display(self, obj):
+        """Retorna el nombre del proveedor"""
+        if obj.proveedor:
+            return obj.proveedor.name
+        return None
+
     def get_created_by_name(self, obj):
         """Retorna el nombre del usuario que creó"""
         if obj.created_by:
@@ -628,14 +658,8 @@ class IntegracionExternaListSerializer(serializers.ModelSerializer):
     Solo incluye campos relevantes para tablas y listas.
     """
 
-    tipo_servicio_display = serializers.CharField(
-        source='get_tipo_servicio_display',
-        read_only=True
-    )
-    proveedor_display = serializers.CharField(
-        source='get_proveedor_display',
-        read_only=True
-    )
+    tipo_servicio_display = serializers.SerializerMethodField()
+    proveedor_display = serializers.SerializerMethodField()
     ambiente_display = serializers.CharField(
         source='get_ambiente_display',
         read_only=True
@@ -663,12 +687,23 @@ class IntegracionExternaListSerializer(serializers.ModelSerializer):
             'ultima_falla',
         ]
 
+    def get_tipo_servicio_display(self, obj):
+        if obj.tipo_servicio:
+            return obj.tipo_servicio.name
+        return None
+
+    def get_proveedor_display(self, obj):
+        if obj.proveedor:
+            return obj.proveedor.name
+        return None
+
 
 class IntegracionExternaChoicesSerializer(serializers.Serializer):
     """
     Serializer para exponer opciones de choices al frontend.
 
     Útil para poblar selects/dropdowns.
+    Tipos de servicio y proveedores ahora son dinámicos desde modelos.
     """
 
     tipos_servicio = serializers.SerializerMethodField()
@@ -677,15 +712,37 @@ class IntegracionExternaChoicesSerializer(serializers.Serializer):
     ambientes = serializers.SerializerMethodField()
 
     def get_tipos_servicio(self, obj):
+        """Retorna tipos de servicio desde modelo dinámico"""
+        tipos = TipoServicioIntegracion.objects.filter(
+            is_active=True,
+            deleted_at__isnull=True
+        ).order_by('orden', 'name')
         return [
-            {'value': code, 'label': name}
-            for code, name in IntegracionExterna.TIPO_SERVICIO_CHOICES
+            {
+                'value': t.id,
+                'label': t.name,
+                'code': t.code,
+                'category': t.category,
+                'icon': t.icon,
+            }
+            for t in tipos
         ]
 
     def get_proveedores(self, obj):
+        """Retorna proveedores desde modelo dinámico"""
+        proveedores = ProveedorIntegracion.objects.filter(
+            is_active=True,
+            deleted_at__isnull=True
+        ).order_by('orden', 'name')
         return [
-            {'value': code, 'label': name}
-            for code, name in IntegracionExterna.PROVEEDOR_CHOICES
+            {
+                'value': p.id,
+                'label': p.name,
+                'code': p.code,
+                'tipo_servicio_id': p.tipo_servicio_id,
+                'pais_origen': p.pais_origen,
+            }
+            for p in proveedores
         ]
 
     def get_metodos_autenticacion(self, obj):
@@ -754,3 +811,106 @@ class IntegracionExternaCredencialesSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
+
+
+# ==============================================================================
+# ICON REGISTRY SERIALIZERS
+# ==============================================================================
+
+class IconRegistrySerializer(serializers.ModelSerializer):
+    """
+    Serializer para IconRegistry - Sistema Dinamico de Iconos
+
+    Expone los iconos disponibles para uso en el frontend
+    """
+    category_display = serializers.CharField(
+        source='get_category_display',
+        read_only=True
+    )
+
+    class Meta:
+        model = IconRegistry
+        fields = [
+            'id',
+            'name',
+            'label',
+            'category',
+            'category_display',
+            'description',
+            'keywords',
+            'orden',
+            'es_sistema',
+            'is_active',
+        ]
+        read_only_fields = ['es_sistema']
+
+
+class IconRegistryListSerializer(serializers.ModelSerializer):
+    """
+    Serializer reducido para listados de iconos
+    """
+    class Meta:
+        model = IconRegistry
+        fields = ['id', 'name', 'label', 'category']
+
+
+class IconCategorySerializer(serializers.Serializer):
+    """
+    Serializer para categorias de iconos
+    """
+    code = serializers.CharField()
+    name = serializers.CharField()
+    icon_count = serializers.IntegerField()
+
+
+# ==============================================================================
+# NORMA ISO SERIALIZERS
+# ==============================================================================
+
+class NormaISOSerializer(serializers.ModelSerializer):
+    """
+    Serializer para NormaISO - Sistema Dinámico de Normas ISO y Sistemas de Gestión
+
+    Expone las normas ISO disponibles para uso en políticas, alcances, etc.
+    """
+    category_display = serializers.CharField(
+        source='get_category_display',
+        read_only=True
+    )
+
+    class Meta:
+        model = NormaISO
+        fields = [
+            'id',
+            'code',
+            'name',
+            'short_name',
+            'description',
+            'category',
+            'category_display',
+            'version',
+            'icon',
+            'color',
+            'orden',
+            'es_sistema',
+            'is_active',
+        ]
+        read_only_fields = ['es_sistema']
+
+
+class NormaISOListSerializer(serializers.ModelSerializer):
+    """
+    Serializer reducido para listados y selects de normas ISO
+    """
+    class Meta:
+        model = NormaISO
+        fields = ['id', 'code', 'name', 'short_name', 'icon', 'color', 'category']
+
+
+class NormaISOChoicesSerializer(serializers.Serializer):
+    """
+    Serializer para exponer categorías de normas ISO
+    """
+    code = serializers.CharField()
+    name = serializers.CharField()
+    count = serializers.IntegerField()

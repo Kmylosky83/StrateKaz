@@ -15,7 +15,8 @@ from django.db import transaction
 from .models import (
     Permiso, Role, RolePermiso, Cargo, CargoPermiso,
     Group, GroupRole, UserRole, UserGroup, User, MenuItem,
-    RiesgoOcupacional, RolAdicional, RolAdicionalPermiso, UserRolAdicional
+    RiesgoOcupacional, RolAdicional, RolAdicionalPermiso, UserRolAdicional,
+    PermisoModulo, PermisoAccion, PermisoAlcance
 )
 
 
@@ -26,27 +27,34 @@ from .models import (
 class PermisoListSerializer(serializers.ModelSerializer):
     """Serializer para listado de permisos"""
 
-    module_display = serializers.CharField(source='get_module_display', read_only=True)
-    action_display = serializers.CharField(source='get_action_display', read_only=True)
-    scope_display = serializers.CharField(source='get_scope_display', read_only=True)
+    # Campos dinamicos con relaciones FK
+    modulo_code = serializers.CharField(source='modulo.code', read_only=True)
+    modulo_name = serializers.CharField(source='modulo.name', read_only=True)
+    accion_code = serializers.CharField(source='accion.code', read_only=True)
+    accion_name = serializers.CharField(source='accion.name', read_only=True)
+    alcance_code = serializers.CharField(source='alcance.code', read_only=True)
+    alcance_name = serializers.CharField(source='alcance.name', read_only=True)
 
     class Meta:
         model = Permiso
         fields = [
             'id', 'code', 'name', 'description',
-            'module', 'module_display',
-            'action', 'action_display',
-            'scope', 'scope_display',
-            'is_active', 'created_at',
+            'modulo', 'modulo_code', 'modulo_name',
+            'accion', 'accion_code', 'accion_name',
+            'alcance', 'alcance_code', 'alcance_name',
+            'recurso', 'is_active', 'created_at',
         ]
 
 
 class PermisoDetailSerializer(serializers.ModelSerializer):
     """Serializer para detalle de permiso con estadisticas"""
 
-    module_display = serializers.CharField(source='get_module_display', read_only=True)
-    action_display = serializers.CharField(source='get_action_display', read_only=True)
-    scope_display = serializers.CharField(source='get_scope_display', read_only=True)
+    modulo_code = serializers.CharField(source='modulo.code', read_only=True)
+    modulo_name = serializers.CharField(source='modulo.name', read_only=True)
+    accion_code = serializers.CharField(source='accion.code', read_only=True)
+    accion_name = serializers.CharField(source='accion.name', read_only=True)
+    alcance_code = serializers.CharField(source='alcance.code', read_only=True)
+    alcance_name = serializers.CharField(source='alcance.name', read_only=True)
     roles_count = serializers.SerializerMethodField()
     cargos_count = serializers.SerializerMethodField()
 
@@ -54,10 +62,10 @@ class PermisoDetailSerializer(serializers.ModelSerializer):
         model = Permiso
         fields = [
             'id', 'code', 'name', 'description',
-            'module', 'module_display',
-            'action', 'action_display',
-            'scope', 'scope_display',
-            'is_active', 'roles_count', 'cargos_count', 'created_at',
+            'modulo', 'modulo_code', 'modulo_name',
+            'accion', 'accion_code', 'accion_name',
+            'alcance', 'alcance_code', 'alcance_name',
+            'recurso', 'is_active', 'roles_count', 'cargos_count', 'created_at',
         ]
         read_only_fields = ['created_at']
 
@@ -72,6 +80,7 @@ class PermissionGroupSerializer(serializers.Serializer):
     """Serializer para permisos agrupados por modulo"""
     module = serializers.CharField()
     module_name = serializers.CharField()
+    module_icon = serializers.CharField(allow_null=True)
     permissions = PermisoListSerializer(many=True)
 
 
@@ -302,7 +311,7 @@ class CargoListRBACSerializer(serializers.ModelSerializer):
             'id', 'code', 'name', 'description',
             'nivel_jerarquico', 'nivel_jerarquico_display',
             'area', 'area_nombre', 'area_code',
-            'cantidad_posiciones', 'is_jefatura',
+            'cantidad_posiciones', 'is_jefatura', 'is_externo',
             'is_system', 'is_active', 'version',
             'permissions_count', 'users_count', 'posiciones_disponibles',
             'default_roles_count',
@@ -311,7 +320,8 @@ class CargoListRBACSerializer(serializers.ModelSerializer):
         read_only_fields = ['created_at', 'updated_at']
 
     def get_permissions_count(self, obj):
-        return obj.permisos.filter(is_active=True).count()
+        # Usa CargoSectionAccess (sistema actual de permisos por secciones)
+        return obj.section_accesses.count()
 
     def get_users_count(self, obj):
         return obj.usuarios.filter(is_active=True, deleted_at__isnull=True).count()
@@ -353,7 +363,7 @@ class CargoDetailRBACSerializer(serializers.ModelSerializer):
             'area', 'area_detail',
             'parent_cargo', 'parent_cargo_detail',
             'nivel_jerarquico', 'nivel_jerarquico_display',
-            'cantidad_posiciones', 'is_jefatura',
+            'cantidad_posiciones', 'is_jefatura', 'is_externo',
             'requiere_licencia_conduccion', 'categoria_licencia',
             'requiere_licencia_sst', 'requiere_tarjeta_contador', 'requiere_tarjeta_abogado',
 
@@ -416,7 +426,8 @@ class CargoDetailRBACSerializer(serializers.ModelSerializer):
         return None
 
     def get_permissions_count(self, obj):
-        return obj.permisos.filter(is_active=True).count()
+        # Usa CargoSectionAccess (sistema actual de permisos por secciones)
+        return obj.section_accesses.count()
 
     def get_users_count(self, obj):
         return obj.usuarios.filter(is_active=True, deleted_at__isnull=True).count()
@@ -466,7 +477,7 @@ class CargoCreateSerializer(serializers.ModelSerializer):
             # Ubicación
             'area', 'parent_cargo', 'nivel_jerarquico',
             # Configuración
-            'cantidad_posiciones', 'is_jefatura',
+            'cantidad_posiciones', 'is_jefatura', 'is_externo',
             'requiere_licencia_conduccion', 'categoria_licencia',
             'requiere_licencia_sst', 'requiere_tarjeta_contador', 'requiere_tarjeta_abogado',
             # Manual de funciones
@@ -551,7 +562,7 @@ class CargoUpdateSerializer(serializers.ModelSerializer):
             # Ubicación
             'area', 'parent_cargo', 'nivel_jerarquico',
             # Configuración
-            'cantidad_posiciones', 'is_jefatura',
+            'cantidad_posiciones', 'is_jefatura', 'is_externo',
             'requiere_licencia_conduccion', 'categoria_licencia',
             'requiere_licencia_sst', 'requiere_tarjeta_contador', 'requiere_tarjeta_abogado',
             # Manual de funciones

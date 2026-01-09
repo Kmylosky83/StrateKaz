@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+﻿import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usersAPI } from '@/api/users.api';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import type { UserFilters, CreateUserDTO, UpdateUserDTO, ChangePasswordDTO } from '@/types/users.types';
 
 export const useUsers = (filters?: UserFilters) => {

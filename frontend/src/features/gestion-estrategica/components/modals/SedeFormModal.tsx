@@ -18,7 +18,8 @@
  * - Unidades de capacidad dinámicas (kg, ton, m³, pallets, etc.)
  * - Sin hardcoding de unidades
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { MapPin, Loader2 } from 'lucide-react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Alert } from '@/components/common/Alert';
@@ -28,7 +29,7 @@ import { Textarea } from '@/components/forms/Textarea';
 import { Switch } from '@/components/forms/Switch';
 import { useCreateSede, useUpdateSede, useSede, useSedeChoices } from '../../hooks/useStrategic';
 import { useUsers } from '@/features/users/hooks/useUsers';
-import type { SedeEmpresaList, TipoSede, CreateSedeEmpresaDTO, UpdateSedeEmpresaDTO } from '../../types/strategic.types';
+import type { SedeEmpresaList, CreateSedeEmpresaDTO, UpdateSedeEmpresaDTO } from '../../types/strategic.types';
 
 interface SedeFormModalProps {
   sede: SedeEmpresaList | null;
@@ -39,7 +40,7 @@ interface SedeFormModalProps {
 interface FormData {
   codigo: string;
   nombre: string;
-  tipo_sede: TipoSede;
+  tipo_sede: string; // ID numérico como string para el select
   descripcion: string;
   direccion: string;
   ciudad: string;
@@ -62,7 +63,7 @@ interface FormData {
 const defaultFormData: FormData = {
   codigo: '',
   nombre: '',
-  tipo_sede: 'SEDE',
+  tipo_sede: '', // Se selecciona del dropdown
   descripcion: '',
   direccion: '',
   ciudad: '',
@@ -85,6 +86,51 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
   const isEditing = sede !== null;
 
   const [formData, setFormData] = useState<FormData>(defaultFormData);
+  const [gpsLoading, setGpsLoading] = useState(false);
+  const [gpsError, setGpsError] = useState<string | null>(null);
+
+  // Función para obtener ubicación GPS del dispositivo
+  const handleGetGPS = useCallback(() => {
+    if (!navigator.geolocation) {
+      setGpsError('Tu navegador no soporta geolocalización');
+      return;
+    }
+
+    setGpsLoading(true);
+    setGpsError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setFormData(prev => ({
+          ...prev,
+          latitud: position.coords.latitude.toFixed(8),
+          longitud: position.coords.longitude.toFixed(8),
+        }));
+        setGpsLoading(false);
+      },
+      (error) => {
+        setGpsLoading(false);
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            setGpsError('Permiso de ubicación denegado. Habilítalo en tu navegador.');
+            break;
+          case error.POSITION_UNAVAILABLE:
+            setGpsError('Ubicación no disponible');
+            break;
+          case error.TIMEOUT:
+            setGpsError('Tiempo de espera agotado');
+            break;
+          default:
+            setGpsError('Error al obtener ubicación');
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
+  }, []);
 
   // Queries y mutations
   const { data: sedeDetail } = useSede(sede?.id || 0);
@@ -99,7 +145,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
       setFormData({
         codigo: sedeDetail.codigo,
         nombre: sedeDetail.nombre,
-        tipo_sede: sedeDetail.tipo_sede,
+        tipo_sede: sedeDetail.tipo_sede?.toString() || '',
         descripcion: sedeDetail.descripcion || '',
         direccion: sedeDetail.direccion,
         ciudad: sedeDetail.ciudad,
@@ -130,7 +176,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
     const baseData = {
       codigo: formData.codigo,
       nombre: formData.nombre,
-      tipo_sede: formData.tipo_sede,
+      tipo_sede: formData.tipo_sede ? parseInt(formData.tipo_sede) : undefined,
       descripcion: formData.descripcion || undefined,
       direccion: formData.direccion,
       ciudad: formData.ciudad,
@@ -168,18 +214,11 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
-  // Opciones para selects
-  const tipoSedeOptions = choices?.tipos_sede || [
-    { value: 'SEDE_PRINCIPAL', label: 'Sede Principal' },
-    { value: 'SEDE', label: 'Sede Administrativa' },
-    { value: 'SUCURSAL', label: 'Sucursal' },
-    { value: 'PLANTA', label: 'Planta de Producción' },
-    { value: 'CENTRO_ACOPIO', label: 'Centro de Acopio' },
-    { value: 'ALMACEN', label: 'Almacén' },
-    { value: 'PUNTO_VENTA', label: 'Punto de Venta' },
-    { value: 'BODEGA', label: 'Bodega' },
-    { value: 'OTRO', label: 'Otro' },
-  ];
+  // Opciones para selects - tipos de sede vienen como IDs numéricos del backend
+  const tipoSedeOptions = choices?.tipos_sede?.map((t: { value: number; label: string }) => ({
+    value: t.value.toString(),
+    label: t.label,
+  })) || [];
 
   const departamentoOptions = choices?.departamentos || [];
 
@@ -241,8 +280,8 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
             <Select
               label="Tipo de Sede *"
               value={formData.tipo_sede}
-              onChange={(e) => setFormData({ ...formData, tipo_sede: e.target.value as TipoSede })}
-              options={tipoSedeOptions}
+              onChange={(e) => setFormData({ ...formData, tipo_sede: e.target.value })}
+              options={[{ value: '', label: 'Seleccione...' }, ...tipoSedeOptions]}
               required
             />
           </div>
@@ -251,7 +290,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
             label="Nombre *"
             value={formData.nombre}
             onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-            placeholder="Sede Principal Barranquilla"
+            placeholder="Sede Principal Bogotá"
             required
           />
 
@@ -284,7 +323,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
               label="Ciudad *"
               value={formData.ciudad}
               onChange={(e) => setFormData({ ...formData, ciudad: e.target.value })}
-              placeholder="Barranquilla"
+              placeholder="Bogotá"
               required
             />
             <Select
@@ -305,9 +344,37 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
 
         {/* Sección: Geolocalización */}
         <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-3">
-            Geolocalización (Opcional)
-          </h4>
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+              Geolocalización (Opcional)
+            </h4>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={handleGetGPS}
+              disabled={gpsLoading}
+            >
+              {gpsLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  Obteniendo...
+                </>
+              ) : (
+                <>
+                  <MapPin className="h-4 w-4 mr-1" />
+                  Usar mi ubicación
+                </>
+              )}
+            </Button>
+          </div>
+
+          {gpsError && (
+            <Alert variant="warning" className="mb-3">
+              {gpsError}
+            </Alert>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <Input
               label="Latitud"
@@ -315,7 +382,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
               step="0.00000001"
               value={formData.latitud}
               onChange={(e) => setFormData({ ...formData, latitud: e.target.value })}
-              placeholder="10.96854"
+              placeholder="4.60971"
               helperText="Entre -90 y 90"
             />
             <Input
@@ -324,7 +391,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
               step="0.00000001"
               value={formData.longitud}
               onChange={(e) => setFormData({ ...formData, longitud: e.target.value })}
-              placeholder="-74.78132"
+              placeholder="-74.08175"
               helperText="Entre -180 y 180"
             />
           </div>

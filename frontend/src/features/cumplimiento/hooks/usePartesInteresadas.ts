@@ -1,4 +1,4 @@
-/**
+﻿/**
  * React Query Hooks para Partes Interesadas
  * Sistema de Gestión StrateKaz
  *
@@ -6,7 +6,7 @@
  */
 import { useGenericCRUD } from '@/hooks/useGenericCRUD';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import { tiposParteInteresadaApi, partesInteresadasApi } from '../api';
 import type {
   TipoParteInteresada,

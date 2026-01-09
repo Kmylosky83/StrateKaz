@@ -13,7 +13,20 @@ from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
+
+
+class CatalogoPagination(PageNumberPagination):
+    """
+    Paginacion para catalogos pequenos (cargos, roles, etc.)
+    Soporta page_size como query param con un maximo de 200
+    """
+    page_size = 100  # Por defecto devuelve 100 registros
+    page_size_query_param = 'page_size'
+    max_page_size = 200
+
+
 from django.db import transaction
 from django.db.models import Count, Q
 from collections import defaultdict
@@ -21,7 +34,9 @@ from collections import defaultdict
 from .models import (
     Permiso, Role, RolePermiso, Cargo, CargoPermiso,
     Group, GroupRole, UserRole, UserGroup, User, MenuItem, CargoRole,
-    RiesgoOcupacional, RolAdicional, RolAdicionalPermiso, UserRolAdicional
+    RiesgoOcupacional, RolAdicional, RolAdicionalPermiso, UserRolAdicional,
+    PermisoModulo, PermisoAccion, PermisoAlcance,
+    TabSection, CargoSectionAccess
 )
 from .serializers_rbac import (
     PermisoListSerializer, PermisoDetailSerializer, PermissionGroupSerializer,
@@ -66,10 +81,10 @@ class PermissionViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Permiso.objects.all()
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['module', 'action', 'scope', 'is_active']
+    filterset_fields = ['modulo', 'accion', 'alcance', 'is_active']
     search_fields = ['code', 'name', 'description']
-    ordering_fields = ['module', 'action', 'created_at']
-    ordering = ['module', 'action', 'scope']
+    ordering_fields = ['modulo__orden', 'accion__orden', 'created_at']
+    ordering = ['modulo__orden', 'accion__orden', 'alcance__nivel']
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -84,6 +99,9 @@ class PermissionViewSet(viewsets.ReadOnlyModelViewSet):
         if include_inactive.lower() != 'true':
             queryset = queryset.filter(is_active=True)
 
+        # Prefetch para optimizar
+        queryset = queryset.select_related('modulo', 'accion', 'alcance')
+
         return queryset
 
     @action(detail=False, methods=['get'])
@@ -91,37 +109,60 @@ class PermissionViewSet(viewsets.ReadOnlyModelViewSet):
         """
         GET /api/core/permissions/modules/
 
-        Retorna lista de modulos disponibles
+        Retorna lista de modulos disponibles (dinamico desde PermisoModulo)
         """
+        modulos = PermisoModulo.objects.filter(is_active=True).order_by('orden', 'name')
         modules = [
-            {'value': code, 'label': label}
-            for code, label in Permiso.MODULE_CHOICES
+            {'value': m.code, 'label': m.name, 'icon': m.icon}
+            for m in modulos
         ]
         return Response(modules)
+
+    @action(detail=False, methods=['get'])
+    def actions(self, request):
+        """
+        GET /api/core/permissions/actions/
+
+        Retorna lista de acciones disponibles (dinamico desde PermisoAccion)
+        """
+        acciones = PermisoAccion.objects.filter(is_active=True).order_by('orden', 'name')
+        actions = [
+            {'value': a.code, 'label': a.name, 'icon': a.icon}
+            for a in acciones
+        ]
+        return Response(actions)
 
     @action(detail=False, methods=['get'])
     def grouped(self, request):
         """
         GET /api/core/permissions/grouped/
 
-        Retorna permisos agrupados por modulo
+        Retorna permisos agrupados por modulo (dinamico)
         """
         permisos = self.get_queryset()
         result = defaultdict(list)
-        module_names = dict(Permiso.MODULE_CHOICES)
 
         for permiso in permisos:
-            result[permiso.module].append(PermisoListSerializer(permiso).data)
+            # Agrupar por codigo de modulo
+            modulo_code = permiso.modulo.code if permiso.modulo else 'SIN_MODULO'
+            result[modulo_code].append(PermisoListSerializer(permiso).data)
+
+        # Obtener nombres de modulos
+        modulos = {m.code: m for m in PermisoModulo.objects.filter(is_active=True)}
 
         # Formatear respuesta
         grouped = [
             {
-                'module': module,
-                'module_name': module_names.get(module, module),
+                'module': module_code,
+                'module_name': modulos.get(module_code, None) and modulos[module_code].name or module_code,
+                'module_icon': modulos.get(module_code, None) and modulos[module_code].icon or None,
                 'permissions': perms
             }
-            for module, perms in result.items()
+            for module_code, perms in result.items()
         ]
+
+        # Ordenar por orden del modulo
+        grouped.sort(key=lambda x: modulos.get(x['module'], None) and modulos[x['module']].orden or 999)
 
         return Response(grouped)
 
@@ -298,6 +339,8 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
     filterset_fields = ['nivel_jerarquico', 'area', 'is_active', 'is_system', 'is_jefatura']
     search_fields = ['code', 'name', 'description', 'objetivo_cargo']
     ordering = ['nivel_jerarquico', 'name']
+    # Paginacion para catalogos: 100 por defecto, soporta page_size query param (max 200)
+    pagination_class = CatalogoPagination
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -499,6 +542,149 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
                 {'value': area['id'], 'label': f"{area['code']} - {area['name']}"}
                 for area in areas
             ],
+        })
+
+    # =========================================================================
+    # ACCESO A SECCIONES (Matriz de Permisos por Cargo)
+    # =========================================================================
+
+    @action(detail=True, methods=['get'])
+    def section_accesses(self, request, pk=None):
+        """
+        GET /api/core/cargos-rbac/{id}/section-accesses/
+
+        Retorna las secciones a las que el cargo tiene acceso.
+        Usado por la Matriz de Permisos para cargar el estado actual.
+
+        Response:
+        {
+            "cargo_id": 1,
+            "cargo_name": "Gerente General",
+            "section_ids": [1, 2, 3, 5, 7],
+            "total_sections": 5
+        }
+        """
+        cargo = self.get_object()
+
+        # Obtener IDs de secciones asignadas
+        section_ids = list(
+            CargoSectionAccess.objects.filter(cargo=cargo)
+            .values_list('section_id', flat=True)
+        )
+
+        return Response({
+            'cargo_id': cargo.id,
+            'cargo_name': cargo.name,
+            'section_ids': section_ids,
+            'total_sections': len(section_ids)
+        })
+
+    @action(detail=True, methods=['post'])
+    def assign_section_accesses(self, request, pk=None):
+        """
+        POST /api/core/cargos-rbac/{id}/assign-section-accesses/
+
+        Asigna acceso a secciones para un cargo.
+        Usado por la Matriz de Permisos para guardar cambios.
+
+        Body:
+        {
+            "section_ids": [1, 2, 3, 5, 7],
+            "replace": true  // true = reemplaza todas las secciones
+        }
+
+        Response:
+        {
+            "message": "Accesos actualizados exitosamente",
+            "cargo_id": 1,
+            "cargo_name": "Gerente General",
+            "sections_added": 3,
+            "sections_removed": 2,
+            "total_sections": 5
+        }
+        """
+        cargo = self.get_object()
+
+        section_ids = request.data.get('section_ids', [])
+        replace = request.data.get('replace', True)
+
+        # Validar que section_ids sea una lista
+        if not isinstance(section_ids, list):
+            return Response(
+                {'error': 'section_ids debe ser una lista de IDs'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Obtener secciones existentes antes del cambio
+        existing_ids = set(
+            CargoSectionAccess.objects.filter(cargo=cargo)
+            .values_list('section_id', flat=True)
+        )
+        new_ids = set(section_ids)
+
+        with transaction.atomic():
+            if replace:
+                # Eliminar todas las secciones existentes
+                CargoSectionAccess.objects.filter(cargo=cargo).delete()
+                sections_removed = len(existing_ids)
+
+                # Agregar nuevas secciones
+                sections_to_add = TabSection.objects.filter(
+                    id__in=section_ids,
+                    is_enabled=True
+                )
+                sections_added = 0
+                for section in sections_to_add:
+                    CargoSectionAccess.objects.create(
+                        cargo=cargo,
+                        section=section,
+                        granted_by=request.user
+                    )
+                    sections_added += 1
+            else:
+                # Solo agregar las nuevas (no eliminar existentes)
+                ids_to_add = new_ids - existing_ids
+                sections_to_add = TabSection.objects.filter(
+                    id__in=ids_to_add,
+                    is_enabled=True
+                )
+                sections_added = 0
+                for section in sections_to_add:
+                    CargoSectionAccess.objects.get_or_create(
+                        cargo=cargo,
+                        section=section,
+                        defaults={'granted_by': request.user}
+                    )
+                    sections_added += 1
+                sections_removed = 0
+
+        # Contar total final
+        total_sections = CargoSectionAccess.objects.filter(cargo=cargo).count()
+
+        return Response({
+            'message': 'Accesos actualizados exitosamente',
+            'cargo_id': cargo.id,
+            'cargo_name': cargo.name,
+            'sections_added': sections_added,
+            'sections_removed': sections_removed,
+            'total_sections': total_sections
+        })
+
+    @action(detail=True, methods=['delete'])
+    def clear_section_accesses(self, request, pk=None):
+        """
+        DELETE /api/core/cargos-rbac/{id}/clear-section-accesses/
+
+        Elimina todos los accesos a secciones de un cargo.
+        """
+        cargo = self.get_object()
+
+        deleted_count = CargoSectionAccess.objects.filter(cargo=cargo).delete()[0]
+
+        return Response({
+            'message': f'Se eliminaron {deleted_count} accesos del cargo {cargo.name}',
+            'cargo_id': cargo.id,
+            'deleted_count': deleted_count
         })
 
 
@@ -885,7 +1071,6 @@ class RolAdicionalViewSet(viewsets.ModelViewSet):
     - GET /api/core/roles-adicionales/{id}/ - Detalle de rol adicional
     - PATCH /api/core/roles-adicionales/{id}/ - Actualizar rol adicional
     - DELETE /api/core/roles-adicionales/{id}/ - Eliminar rol adicional
-    - GET /api/core/roles-adicionales/sugeridos/ - Plantillas de roles sugeridos
     - GET /api/core/roles-adicionales/tipos/ - Listar tipos de roles
     - GET /api/core/roles-adicionales/{id}/usuarios/ - Usuarios con este rol
     - POST /api/core/roles-adicionales/asignar/ - Asignar rol a usuario
@@ -954,273 +1139,6 @@ class RolAdicionalViewSet(viewsets.ModelViewSet):
             for code, label in RolAdicional.TIPO_CHOICES
         ]
         return Response(tipos)
-
-    @action(detail=False, methods=['get'])
-    def sugeridos(self, request):
-        """
-        GET /api/core/roles-adicionales/sugeridos/
-
-        Retorna plantillas de roles sugeridos (legales, sistemas de gestión, operativos)
-        que pueden ser creados con un clic.
-        """
-        # Obtener roles que ya existen para marcarlos
-        roles_existentes = set(
-            RolAdicional.objects.values_list('code', flat=True)
-        )
-
-        plantillas = self._get_plantillas_roles()
-
-        # Marcar cuáles ya existen
-        for plantilla in plantillas:
-            plantilla['ya_existe'] = plantilla['code'] in roles_existentes
-
-        return Response(plantillas)
-
-    def _get_plantillas_roles(self):
-        """
-        Retorna las plantillas de roles sugeridos según normativa colombiana.
-
-        Basado en:
-        - Decreto 1072/2015 (SG-SST)
-        - Resolución 0312/2019 (Estándares mínimos SG-SST)
-        - Resolución 2013/1986 (COPASST)
-        - Resolución 652/2012 y 1356/2012 (COCOLA)
-        - Resolución 1016/1989 (Brigadas)
-        - Resolución 40595/2022 (PESV)
-        - Normas ISO 9001, 14001, 45001
-        """
-        return [
-            # =========================================
-            # COPASST - Comité Paritario de SST
-            # =========================================
-            {
-                'code': 'presidente_copasst',
-                'nombre': 'Presidente del COPASST',
-                'descripcion': 'Preside el Comité Paritario de Seguridad y Salud en el Trabajo. '
-                              'Coordina reuniones mensuales, lidera investigación de accidentes '
-                              'y firma actas oficiales.',
-                'tipo': 'LEGAL_OBLIGATORIO',
-                'tipo_display': 'Legal Obligatorio',
-                'justificacion_legal': 'Resolución 2013/1986, Decreto 1072/2015 Art. 2.2.4.6.24',
-                'requiere_certificacion': True,
-                'certificacion_requerida': 'Curso 50 horas SG-SST',
-                'permisos_sugeridos': ['sst.view_list', 'sst.manage', 'sst.manage_investigations'],
-            },
-            {
-                'code': 'secretario_copasst',
-                'nombre': 'Secretario(a) del COPASST',
-                'descripcion': 'Elabora las actas de reunión del COPASST, coordina citaciones '
-                              'y gestiona documentación del comité.',
-                'tipo': 'LEGAL_OBLIGATORIO',
-                'tipo_display': 'Legal Obligatorio',
-                'justificacion_legal': 'Resolución 2013/1986, Decreto 1072/2015',
-                'requiere_certificacion': True,
-                'certificacion_requerida': 'Curso 50 horas SG-SST',
-                'permisos_sugeridos': ['sst.view_list', 'sst.view_own'],
-            },
-            {
-                'code': 'representante_trabajadores_copasst',
-                'nombre': 'Representante de los Trabajadores COPASST',
-                'descripcion': 'Representa a los trabajadores en el COPASST. Elegido por votación '
-                              'de los trabajadores con voz y voto en las reuniones del comité.',
-                'tipo': 'LEGAL_OBLIGATORIO',
-                'tipo_display': 'Legal Obligatorio',
-                'justificacion_legal': 'Resolución 2013/1986, Decreto 1072/2015',
-                'requiere_certificacion': True,
-                'certificacion_requerida': 'Curso 50 horas SG-SST',
-                'permisos_sugeridos': ['sst.view_list', 'sst.view_own'],
-            },
-            {
-                'code': 'representante_direccion_copasst',
-                'nombre': 'Representante de la Alta Dirección COPASST',
-                'descripcion': 'Representa a la Alta Dirección en el COPASST. Designado por el '
-                              'empleador con voz y voto en las reuniones del comité.',
-                'tipo': 'LEGAL_OBLIGATORIO',
-                'tipo_display': 'Legal Obligatorio',
-                'justificacion_legal': 'Resolución 2013/1986, Decreto 1072/2015',
-                'requiere_certificacion': True,
-                'certificacion_requerida': 'Curso 50 horas SG-SST',
-                'permisos_sugeridos': ['sst.view_list', 'sst.view_own', 'sst.manage'],
-            },
-            {
-                'code': 'vigia_sst',
-                'nombre': 'Vigía SST',
-                'descripcion': 'Vigía de Seguridad y Salud en el Trabajo para empresas con menos '
-                              'de 10 trabajadores. Reemplaza al COPASST en estas empresas.',
-                'tipo': 'LEGAL_OBLIGATORIO',
-                'tipo_display': 'Legal Obligatorio',
-                'justificacion_legal': 'Resolución 0312/2019 Art. 4',
-                'requiere_certificacion': True,
-                'certificacion_requerida': 'Curso 50 horas SG-SST',
-                'permisos_sugeridos': ['sst.view_list', 'sst.manage'],
-            },
-            # =========================================
-            # COCOLA - Comité de Convivencia Laboral
-            # =========================================
-            {
-                'code': 'presidente_cocola',
-                'nombre': 'Presidente del COCOLA',
-                'descripcion': 'Preside el Comité de Convivencia Laboral. Lidera reuniones '
-                              'trimestrales y recibe quejas de acoso laboral.',
-                'tipo': 'LEGAL_OBLIGATORIO',
-                'tipo_display': 'Legal Obligatorio',
-                'justificacion_legal': 'Resolución 652/2012, Resolución 1356/2012',
-                'requiere_certificacion': False,
-                'certificacion_requerida': '',
-                'permisos_sugeridos': ['users.view_list', 'sst.view_list'],
-            },
-            {
-                'code': 'secretario_cocola',
-                'nombre': 'Secretario(a) del COCOLA',
-                'descripcion': 'Elabora las actas del COCOLA, gestiona documentación confidencial '
-                              'y coordina citaciones del comité.',
-                'tipo': 'LEGAL_OBLIGATORIO',
-                'tipo_display': 'Legal Obligatorio',
-                'justificacion_legal': 'Resolución 652/2012, Resolución 1356/2012',
-                'requiere_certificacion': False,
-                'certificacion_requerida': '',
-                'permisos_sugeridos': ['users.view_list'],
-            },
-            {
-                'code': 'representante_trabajadores_cocola',
-                'nombre': 'Representante de los Trabajadores COCOLA',
-                'descripcion': 'Representa a los trabajadores en el COCOLA. Elegido por votación '
-                              'de los trabajadores con voz y voto en las reuniones del comité.',
-                'tipo': 'LEGAL_OBLIGATORIO',
-                'tipo_display': 'Legal Obligatorio',
-                'justificacion_legal': 'Resolución 652/2012, Resolución 1356/2012',
-                'requiere_certificacion': False,
-                'certificacion_requerida': '',
-                'permisos_sugeridos': ['users.view_list'],
-            },
-            {
-                'code': 'representante_direccion_cocola',
-                'nombre': 'Representante de la Alta Dirección COCOLA',
-                'descripcion': 'Representa a la Alta Dirección en el COCOLA. Designado por el '
-                              'empleador con voz y voto en las reuniones del comité.',
-                'tipo': 'LEGAL_OBLIGATORIO',
-                'tipo_display': 'Legal Obligatorio',
-                'justificacion_legal': 'Resolución 652/2012, Resolución 1356/2012',
-                'requiere_certificacion': False,
-                'certificacion_requerida': '',
-                'permisos_sugeridos': ['users.view_list', 'sst.view_list'],
-            },
-            # =========================================
-            # BRIGADAS DE EMERGENCIA
-            # =========================================
-            {
-                'code': 'lider_brigada',
-                'nombre': 'Líder de Brigada',
-                'descripcion': 'Líder general de la brigada de emergencias. Coordina a todos los '
-                              'líderes de área (incendios, evacuación, primeros auxilios) durante emergencias.',
-                'tipo': 'LEGAL_OBLIGATORIO',
-                'tipo_display': 'Legal Obligatorio',
-                'justificacion_legal': 'Resolución 1016/1989 Art. 11, Decreto 1072/2015',
-                'requiere_certificacion': True,
-                'certificacion_requerida': 'Curso Brigadas de Emergencia (min. 40h) + Liderazgo',
-                'permisos_sugeridos': ['sst.view_list', 'sst.manage'],
-            },
-            {
-                'code': 'lider_control_incendios',
-                'nombre': 'Líder Control de Incendios',
-                'descripcion': 'Lidera el grupo de control de incendios. Coordina uso de extintores, '
-                              'gabinetes y equipos contra incendio.',
-                'tipo': 'LEGAL_OBLIGATORIO',
-                'tipo_display': 'Legal Obligatorio',
-                'justificacion_legal': 'Resolución 1016/1989 Art. 11',
-                'requiere_certificacion': True,
-                'certificacion_requerida': 'Curso Brigadas de Emergencia - Énfasis Incendios (min. 20h)',
-                'permisos_sugeridos': ['sst.view_list'],
-            },
-            {
-                'code': 'lider_evacuacion',
-                'nombre': 'Líder Evacuación',
-                'descripcion': 'Lidera el grupo de evacuación. Coordina rutas de evacuación, '
-                              'puntos de encuentro y conteo de personal.',
-                'tipo': 'LEGAL_OBLIGATORIO',
-                'tipo_display': 'Legal Obligatorio',
-                'justificacion_legal': 'Resolución 1016/1989 Art. 11',
-                'requiere_certificacion': True,
-                'certificacion_requerida': 'Curso Brigadas de Emergencia - Énfasis Evacuación (min. 20h)',
-                'permisos_sugeridos': ['sst.view_list'],
-            },
-            {
-                'code': 'lider_primeros_auxilios',
-                'nombre': 'Líder Primeros Auxilios',
-                'descripcion': 'Lidera el grupo de primeros auxilios. Coordina atención inicial '
-                              'de lesionados y traslado a centros de atención.',
-                'tipo': 'LEGAL_OBLIGATORIO',
-                'tipo_display': 'Legal Obligatorio',
-                'justificacion_legal': 'Resolución 1016/1989 Art. 11',
-                'requiere_certificacion': True,
-                'certificacion_requerida': 'Curso Primeros Auxilios Avanzados (min. 40h)',
-                'permisos_sugeridos': ['sst.view_list'],
-            },
-            {
-                'code': 'brigadista',
-                'nombre': 'Brigadista',
-                'descripcion': 'Integrante de brigada de emergencias. Capacitado en primeros auxilios, '
-                              'evacuación y control de incendios básico.',
-                'tipo': 'LEGAL_OBLIGATORIO',
-                'tipo_display': 'Legal Obligatorio',
-                'justificacion_legal': 'Resolución 1016/1989 Art. 11',
-                'requiere_certificacion': True,
-                'certificacion_requerida': 'Curso Brigadas de Emergencia (min. 20h)',
-                'permisos_sugeridos': ['sst.view_list'],
-            },
-            # =========================================
-            # SISTEMAS DE GESTIÓN
-            # =========================================
-            {
-                'code': 'lider_pesv',
-                'nombre': 'Líder PESV',
-                'descripcion': 'Líder del Plan Estratégico de Seguridad Vial. Coordina la '
-                              'implementación y seguimiento del PESV organizacional.',
-                'tipo': 'SISTEMA_GESTION',
-                'tipo_display': 'Sistema de Gestión',
-                'justificacion_legal': 'Resolución 40595/2022 (Mintransporte)',
-                'requiere_certificacion': True,
-                'certificacion_requerida': 'Curso 50 horas Seguridad Vial',
-                'permisos_sugeridos': ['pesv.view_list', 'pesv.manage'],
-            },
-            {
-                'code': 'auditor_interno_sig',
-                'nombre': 'Auditor Interno ISO 9001 | 45001 | 14001',
-                'descripcion': 'Auditor interno certificado para Sistema Integrado de Gestión: '
-                              'Calidad (ISO 9001), SST (ISO 45001) y Ambiental (ISO 14001).',
-                'tipo': 'SISTEMA_GESTION',
-                'tipo_display': 'Sistema de Gestión',
-                'justificacion_legal': 'ISO 9001:2015, ISO 45001:2018, ISO 14001:2015 Cláusula 9.2',
-                'requiere_certificacion': True,
-                'certificacion_requerida': 'Formación Auditor Interno SIG (ISO 9001, 45001, 14001)',
-                'permisos_sugeridos': ['sgc.view_list', 'sgc.manage_audits', 'sst.view_list', 'sst.manage_audits'],
-            },
-            {
-                'code': 'responsable_sgsst',
-                'nombre': 'Responsable del SG-SST',
-                'descripcion': 'Responsable del diseño, implementación y mantenimiento del Sistema '
-                              'de Gestión de Seguridad y Salud en el Trabajo.',
-                'tipo': 'SISTEMA_GESTION',
-                'tipo_display': 'Sistema de Gestión',
-                'justificacion_legal': 'Decreto 1072/2015 Art. 2.2.4.6.8',
-                'requiere_certificacion': True,
-                'certificacion_requerida': 'Licencia SST vigente',
-                'permisos_sugeridos': ['sst.view_list', 'sst.manage', 'sst.approve'],
-            },
-            {
-                'code': 'director_sig',
-                'nombre': 'Director del Sistema Integrado de Gestión',
-                'descripcion': 'Dirige el Sistema Integrado de Gestión organizacional. '
-                              'Responsable de la integración de ISO 9001, 14001, 45001 y otros sistemas.',
-                'tipo': 'SISTEMA_GESTION',
-                'tipo_display': 'Sistema de Gestión',
-                'justificacion_legal': 'ISO 9001:2015, ISO 14001:2015, ISO 45001:2018',
-                'requiere_certificacion': True,
-                'certificacion_requerida': 'Formación en Sistemas Integrados de Gestión',
-                'permisos_sugeridos': ['sgc.view_list', 'sgc.manage', 'sst.view_list', 'sst.manage', 'sga.view_list', 'sga.manage'],
-            },
-        ]
-
     @action(detail=True, methods=['get'])
     def usuarios(self, request, pk=None):
         """
@@ -1290,71 +1208,6 @@ class RolAdicionalViewSet(viewsets.ModelViewSet):
 
         return Response({'message': 'Rol revocado exitosamente'})
 
-    @action(detail=False, methods=['post'])
-    def crear_desde_plantilla(self, request):
-        """
-        POST /api/core/roles-adicionales/crear-desde-plantilla/
-
-        Crea un rol adicional a partir de una plantilla sugerida
-
-        Body:
-        {
-            "code": "lider_copasst"  # código de la plantilla
-        }
-        """
-        code = request.data.get('code')
-        if not code:
-            return Response(
-                {'error': 'Se requiere el código de la plantilla'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Verificar que no exista
-        if RolAdicional.objects.filter(code=code).exists():
-            return Response(
-                {'error': f'Ya existe un rol con el código {code}'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Buscar plantilla
-        plantillas = {p['code']: p for p in self._get_plantillas_roles()}
-        if code not in plantillas:
-            return Response(
-                {'error': f'No se encontró plantilla con código {code}'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        plantilla = plantillas[code]
-
-        # Crear rol
-        with transaction.atomic():
-            rol = RolAdicional.objects.create(
-                code=plantilla['code'],
-                nombre=plantilla['nombre'],
-                descripcion=plantilla['descripcion'],
-                tipo=plantilla['tipo'],
-                justificacion_legal=plantilla.get('justificacion_legal', ''),
-                requiere_certificacion=plantilla['requiere_certificacion'],
-                certificacion_requerida=plantilla.get('certificacion_requerida', ''),
-                is_system=True,  # Plantillas son del sistema
-                created_by=request.user,
-            )
-
-            # Asignar permisos sugeridos si existen
-            permisos_codes = plantilla.get('permisos_sugeridos', [])
-            if permisos_codes:
-                permisos = Permiso.objects.filter(code__in=permisos_codes, is_active=True)
-                for permiso in permisos:
-                    RolAdicionalPermiso.objects.create(
-                        rol_adicional=rol,
-                        permiso=permiso,
-                        granted_by=request.user
-                    )
-
-        return Response(
-            RolAdicionalDetailSerializer(rol).data,
-            status=status.HTTP_201_CREATED
-        )
 
 
 # =============================================================================

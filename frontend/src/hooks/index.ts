@@ -9,3 +9,4 @@ export { useBrandingConfig, type UseBrandingConfigReturn } from './useBrandingCo
 export { useDynamicTheme } from './useDynamicTheme';
 export { useModuleColor, type UseModuleColorReturn, type ModuleColor } from './useModuleColor';
 export { useTimeElapsed, type TimeElapsedConfig, type TimeElapsedValue, type UseTimeElapsedReturn } from './useTimeElapsed';
+export { useIcons, useIconsByCategory, useIconSearch, type IconRegistryItem, type IconCategory, type UseIconsReturn } from './useIcons';

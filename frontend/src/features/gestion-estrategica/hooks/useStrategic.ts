@@ -1,9 +1,9 @@
-/**
+﻿/**
  * React Query Hooks para el módulo de Dirección Estratégica
  * Sistema de Gestión StrateKaz
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import {
   identityApi,
   valuesApi,
@@ -11,12 +11,11 @@ import {
   objectivesApi,
   modulesApi,
   brandingApi,
-  categoriasDocumentoApi,
-  tiposDocumentoApi,
-  consecutivosApi,
   statsApi,
   sedesApi,
   integracionesApi,
+  alcancesApi,
+  normasISOApi,
 } from '../api/strategicApi';
 import type {
   CreateCorporateIdentityDTO,
@@ -33,18 +32,8 @@ import type {
   ToggleModuleDTO,
   CreateBrandingConfigDTO,
   UpdateBrandingConfigDTO,
-  CreateCategoriaDocumentoDTO,
-  UpdateCategoriaDocumentoDTO,
-  CategoriaDocumentoFilters,
-  CreateTipoDocumentoDTO,
-  UpdateTipoDocumentoDTO,
-  TipoDocumentoFilters,
-  CreateConsecutivoConfigDTO,
-  UpdateConsecutivoConfigDTO,
-  GenerateConsecutivoDTO,
   ObjectiveFilters,
   ModuleFilters,
-  ConsecutivoFilters,
   CreateSedeEmpresaDTO,
   UpdateSedeEmpresaDTO,
   SedeFilters,
@@ -53,6 +42,9 @@ import type {
   UpdateCredencialesDTO,
   IntegracionFilters,
   IntegracionLogsFilters,
+  CreateAlcanceSistemaDTO,
+  UpdateAlcanceSistemaDTO,
+  AlcanceSistemaFilters,
 } from '../types/strategic.types';
 
 // ==================== QUERY KEYS ====================
@@ -91,23 +83,6 @@ export const strategicKeys = {
   branding: (id: number) => ['branding', id] as const,
   activeBranding: ['branding', 'active'] as const,
 
-  // Categorías de Documento
-  categoriasDocumento: ['categorias-documento'] as const,
-  categoriaDocumento: (id: number) => ['categoria-documento', id] as const,
-  categoriaDocumentoChoices: ['categoria-documento-choices'] as const,
-
-  // Tipos de Documento
-  tiposDocumento: (filters?: TipoDocumentoFilters) => ['tipos-documento', filters] as const,
-  tipoDocumento: (id: number) => ['tipo-documento', id] as const,
-  tiposSistema: ['tipos-documento', 'sistema'] as const,
-  tiposCustom: ['tipos-documento', 'custom'] as const,
-  tipoDocumentoChoices: ['tipo-documento-choices'] as const,
-
-  // Consecutivos
-  consecutivos: (filters?: ConsecutivoFilters) => ['consecutivos', filters] as const,
-  consecutivo: (id: number) => ['consecutivo', id] as const,
-  consecutivoChoices: ['consecutivo-choices'] as const,
-
   // Stats
   stats: ['strategic-stats'] as const,
   configStats: (section: string) => ['config-stats', section] as const,
@@ -124,6 +99,17 @@ export const strategicKeys = {
   integracionLogs: (id: number, filters?: IntegracionLogsFilters) =>
     ['integracion', id, 'logs', filters] as const,
   integracionChoices: ['integracion-choices'] as const,
+
+  // Alcances del Sistema
+  alcances: (filters?: AlcanceSistemaFilters) => ['alcances', filters] as const,
+  alcance: (id: number) => ['alcance', id] as const,
+  alcancesByStandard: (identityId: number) => ['alcances', 'by-standard', identityId] as const,
+  alcancesCertifications: (identityId: number) => ['alcances', 'certifications', identityId] as const,
+
+  // Normas ISO (Dinámico)
+  normasISO: ['normas-iso'] as const,
+  normasISOChoices: ['normas-iso', 'choices'] as const,
+  normasISOByCategory: ['normas-iso', 'by-category'] as const,
 };
 
 // ==================== CORPORATE IDENTITY HOOKS ====================
@@ -643,280 +629,6 @@ export const useDeleteBranding = () => {
   });
 };
 
-// ==================== CATEGORIAS DE DOCUMENTO HOOKS ====================
-
-export const useCategorias = (filters?: CategoriaDocumentoFilters) => {
-  return useQuery({
-    queryKey: strategicKeys.categoriasDocumento,
-    queryFn: () => categoriasDocumentoApi.getAll(filters),
-  });
-};
-
-export const useCategoria = (id: number) => {
-  return useQuery({
-    queryKey: strategicKeys.categoriaDocumento(id),
-    queryFn: () => categoriasDocumentoApi.getById(id),
-    enabled: !!id,
-  });
-};
-
-export const useCreateCategoria = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreateCategoriaDocumentoDTO) => categoriasDocumentoApi.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.categoriasDocumento });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.categoriaDocumentoChoices });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.consecutivoChoices });
-      toast.success('Categoría creada exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al crear la categoría');
-    },
-  });
-};
-
-export const useUpdateCategoria = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateCategoriaDocumentoDTO }) =>
-      categoriasDocumentoApi.update(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.categoriasDocumento });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.categoriaDocumento(id) });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.categoriaDocumentoChoices });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.consecutivoChoices });
-      toast.success('Categoría actualizada exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al actualizar la categoría');
-    },
-  });
-};
-
-export const useDeleteCategoria = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => categoriasDocumentoApi.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.categoriasDocumento });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.categoriaDocumentoChoices });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.consecutivoChoices });
-      toast.success('Categoría eliminada exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al eliminar la categoría');
-    },
-  });
-};
-
-export const useCategoriasChoices = () => {
-  return useQuery({
-    queryKey: strategicKeys.categoriaDocumentoChoices,
-    queryFn: categoriasDocumentoApi.getChoices,
-    staleTime: Infinity,
-  });
-};
-
-// ==================== TIPOS DE DOCUMENTO HOOKS ====================
-
-export const useTiposDocumento = (filters?: TipoDocumentoFilters) => {
-  return useQuery({
-    queryKey: strategicKeys.tiposDocumento(filters),
-    queryFn: () => tiposDocumentoApi.getAll(filters),
-  });
-};
-
-export const useTipoDocumento = (id: number) => {
-  return useQuery({
-    queryKey: strategicKeys.tipoDocumento(id),
-    queryFn: () => tiposDocumentoApi.getById(id),
-    enabled: !!id,
-  });
-};
-
-export const useTiposSistema = () => {
-  return useQuery({
-    queryKey: strategicKeys.tiposSistema,
-    queryFn: tiposDocumentoApi.getSistema,
-  });
-};
-
-export const useTiposCustom = () => {
-  return useQuery({
-    queryKey: strategicKeys.tiposCustom,
-    queryFn: tiposDocumentoApi.getCustom,
-  });
-};
-
-export const useCreateTipoDocumento = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreateTipoDocumentoDTO) => tiposDocumentoApi.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.tiposDocumento() });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.tiposCustom });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.consecutivoChoices });
-      toast.success('Tipo de documento creado exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al crear el tipo de documento');
-    },
-  });
-};
-
-export const useUpdateTipoDocumento = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateTipoDocumentoDTO }) =>
-      tiposDocumentoApi.update(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.tiposDocumento() });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.tipoDocumento(id) });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.tiposCustom });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.consecutivoChoices });
-      toast.success('Tipo de documento actualizado exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al actualizar el tipo de documento');
-    },
-  });
-};
-
-export const useDeleteTipoDocumento = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => tiposDocumentoApi.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.tiposDocumento() });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.tiposCustom });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.consecutivoChoices });
-      toast.success('Tipo de documento eliminado exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al eliminar el tipo de documento');
-    },
-  });
-};
-
-export const useTipoDocumentoChoices = () => {
-  return useQuery({
-    queryKey: strategicKeys.tipoDocumentoChoices,
-    queryFn: tiposDocumentoApi.getChoices,
-    staleTime: Infinity,
-  });
-};
-
-// ==================== CONSECUTIVOS CONFIG HOOKS ====================
-
-export const useConsecutivos = (filters?: ConsecutivoFilters) => {
-  return useQuery({
-    queryKey: strategicKeys.consecutivos(filters),
-    queryFn: () => consecutivosApi.getAll(filters),
-  });
-};
-
-export const useConsecutivo = (id: number) => {
-  return useQuery({
-    queryKey: strategicKeys.consecutivo(id),
-    queryFn: () => consecutivosApi.getById(id),
-    enabled: !!id,
-  });
-};
-
-export const useCreateConsecutivo = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreateConsecutivoConfigDTO) => consecutivosApi.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.consecutivos() });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.tiposDocumento() });
-      toast.success('Consecutivo configurado exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al configurar el consecutivo');
-    },
-  });
-};
-
-export const useUpdateConsecutivo = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateConsecutivoConfigDTO }) =>
-      consecutivosApi.update(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.consecutivos() });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.consecutivo(id) });
-      toast.success('Consecutivo actualizado exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al actualizar el consecutivo');
-    },
-  });
-};
-
-export const useDeleteConsecutivo = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => consecutivosApi.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.consecutivos() });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.tiposDocumento() });
-      toast.success('Consecutivo eliminado exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al eliminar el consecutivo');
-    },
-  });
-};
-
-export const useGenerateConsecutivo = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: GenerateConsecutivoDTO) => consecutivosApi.generate(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.consecutivos() });
-    },
-    onError: () => {
-      toast.error('Error al generar el consecutivo');
-    },
-  });
-};
-
-/**
- * Hook unificado para obtener todas las opciones de consecutivos
- * Retorna: tipos_documento, separators (sin areas)
- */
-export const useConsecutivoChoices = () => {
-  return useQuery({
-    queryKey: strategicKeys.consecutivoChoices,
-    queryFn: consecutivosApi.getChoices,
-    staleTime: Infinity,
-  });
-};
-
-/**
- * Hook para tipos de documento (extrae de choices)
- */
-export const useDocumentTypes = () => {
-  const { data: choices, ...rest } = useConsecutivoChoices();
-  return {
-    ...rest,
-    data: choices?.tipos_documento,
-  };
-};
-
-/**
- * Hook para separadores (extrae de choices)
- */
-export const useSeparators = () => {
-  const { data: choices, ...rest } = useConsecutivoChoices();
-  return {
-    ...rest,
-    data: choices?.separators,
-  };
-};
-
 // ==================== STRATEGIC STATS HOOK ====================
 
 export const useStrategicStats = () => {
@@ -1170,5 +882,375 @@ export const useIntegracionLogs = (id: number, filters?: IntegracionLogsFilters)
     queryKey: strategicKeys.integracionLogs(id, filters),
     queryFn: () => integracionesApi.getLogs(id, filters),
     enabled: !!id,
+  });
+};
+
+// ==================== POLÍTICAS INTEGRALES HOOKS ====================
+
+import {
+  politicasIntegralesApi,
+  politicasEspecificasApi,
+} from '../api/strategicApi';
+import type {
+  CreatePoliticaIntegralDTO,
+  UpdatePoliticaIntegralDTO,
+  PoliticaIntegralFilters,
+  CreatePoliticaEspecificaDTO,
+  UpdatePoliticaEspecificaDTO,
+  PoliticaEspecificaFilters,
+} from '../types/strategic.types';
+
+// Extend strategic keys for políticas
+export const politicasKeys = {
+  // Políticas Integrales
+  integrales: (filters?: PoliticaIntegralFilters) => ['politicas-integrales', filters] as const,
+  integral: (id: number) => ['politica-integral', id] as const,
+  integralCurrent: (identityId: number) => ['politica-integral', 'current', identityId] as const,
+  integralVersions: (identityId: number) => ['politica-integral', 'versions', identityId] as const,
+
+  // Políticas Específicas
+  especificas: (filters?: PoliticaEspecificaFilters) => ['politicas-especificas', filters] as const,
+  especifica: (id: number) => ['politica-especifica', id] as const,
+  especificasByStandard: ['politicas-especificas', 'by-standard'] as const,
+  especificasPendingReview: ['politicas-especificas', 'pending-review'] as const,
+  especificasStats: ['politicas-especificas', 'stats'] as const,
+};
+
+// --- Políticas Integrales ---
+
+export const usePoliticasIntegrales = (filters?: PoliticaIntegralFilters) => {
+  return useQuery({
+    queryKey: politicasKeys.integrales(filters),
+    queryFn: () => politicasIntegralesApi.getAll(filters),
+  });
+};
+
+export const usePoliticaIntegral = (id: number) => {
+  return useQuery({
+    queryKey: politicasKeys.integral(id),
+    queryFn: () => politicasIntegralesApi.getById(id),
+    enabled: !!id,
+  });
+};
+
+export const usePoliticaIntegralCurrent = (identityId: number) => {
+  return useQuery({
+    queryKey: politicasKeys.integralCurrent(identityId),
+    queryFn: () => politicasIntegralesApi.getCurrent(identityId),
+    enabled: !!identityId,
+    retry: false,
+  });
+};
+
+export const usePoliticaIntegralVersions = (identityId: number) => {
+  return useQuery({
+    queryKey: politicasKeys.integralVersions(identityId),
+    queryFn: () => politicasIntegralesApi.getVersions(identityId),
+    enabled: !!identityId,
+  });
+};
+
+export const useCreatePoliticaIntegral = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreatePoliticaIntegralDTO) => politicasIntegralesApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['politicas-integrales'] });
+      queryClient.invalidateQueries({ queryKey: strategicKeys.activeIdentity });
+      toast.success('Política integral creada exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al crear la política integral');
+    },
+  });
+};
+
+export const useUpdatePoliticaIntegral = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UpdatePoliticaIntegralDTO }) =>
+      politicasIntegralesApi.update(id, data),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ['politicas-integrales'] });
+      queryClient.invalidateQueries({ queryKey: politicasKeys.integral(id) });
+      toast.success('Política integral actualizada exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al actualizar la política integral');
+    },
+  });
+};
+
+export const useDeletePoliticaIntegral = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => politicasIntegralesApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['politicas-integrales'] });
+      toast.success('Política integral eliminada exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al eliminar la política integral');
+    },
+  });
+};
+
+export const useSignPoliticaIntegral = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => politicasIntegralesApi.sign(id),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ['politicas-integrales'] });
+      queryClient.invalidateQueries({ queryKey: politicasKeys.integral(id) });
+      toast.success('Política integral firmada exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al firmar la política integral');
+    },
+  });
+};
+
+export const usePublishPoliticaIntegral = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => politicasIntegralesApi.publish(id),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ['politicas-integrales'] });
+      queryClient.invalidateQueries({ queryKey: politicasKeys.integral(id) });
+      queryClient.invalidateQueries({ queryKey: strategicKeys.activeIdentity });
+      toast.success('Política integral publicada exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al publicar la política integral');
+    },
+  });
+};
+
+// --- Políticas Específicas ---
+
+export const usePoliticasEspecificas = (filters?: PoliticaEspecificaFilters) => {
+  return useQuery({
+    queryKey: politicasKeys.especificas(filters),
+    queryFn: () => politicasEspecificasApi.getAll(filters),
+  });
+};
+
+export const usePoliticaEspecifica = (id: number) => {
+  return useQuery({
+    queryKey: politicasKeys.especifica(id),
+    queryFn: () => politicasEspecificasApi.getById(id),
+    enabled: !!id,
+  });
+};
+
+export const usePoliticasByStandard = () => {
+  return useQuery({
+    queryKey: politicasKeys.especificasByStandard,
+    queryFn: () => politicasEspecificasApi.getByStandard(),
+  });
+};
+
+export const usePoliticasPendingReview = () => {
+  return useQuery({
+    queryKey: politicasKeys.especificasPendingReview,
+    queryFn: () => politicasEspecificasApi.getPendingReview(),
+  });
+};
+
+export const usePoliticasStats = () => {
+  return useQuery({
+    queryKey: politicasKeys.especificasStats,
+    queryFn: () => politicasEspecificasApi.getStats(),
+  });
+};
+
+export const useCreatePoliticaEspecifica = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreatePoliticaEspecificaDTO) => politicasEspecificasApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['politicas-especificas'] });
+      queryClient.invalidateQueries({ queryKey: strategicKeys.activeIdentity });
+      toast.success('Política específica creada exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al crear la política específica');
+    },
+  });
+};
+
+export const useUpdatePoliticaEspecifica = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UpdatePoliticaEspecificaDTO }) =>
+      politicasEspecificasApi.update(id, data),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ['politicas-especificas'] });
+      queryClient.invalidateQueries({ queryKey: politicasKeys.especifica(id) });
+      toast.success('Política específica actualizada exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al actualizar la política específica');
+    },
+  });
+};
+
+export const useDeletePoliticaEspecifica = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => politicasEspecificasApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['politicas-especificas'] });
+      toast.success('Política específica eliminada exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al eliminar la política específica');
+    },
+  });
+};
+
+export const useApprovePoliticaEspecifica = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => politicasEspecificasApi.approve(id),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ['politicas-especificas'] });
+      queryClient.invalidateQueries({ queryKey: politicasKeys.especifica(id) });
+      toast.success('Política específica aprobada exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al aprobar la política específica');
+    },
+  });
+};
+
+// --- Reorder Values (for Drag & Drop) ---
+
+export const useReorderValues = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (newOrder: { id: number; orden: number }[]) => {
+      // Update each value's order
+      await Promise.all(
+        newOrder.map(({ id, orden }) =>
+          valuesApi.update(id, { orden })
+        )
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: strategicKeys.values() });
+      queryClient.invalidateQueries({ queryKey: strategicKeys.activeIdentity });
+      toast.success('Orden de valores actualizado');
+    },
+    onError: () => {
+      toast.error('Error al reordenar los valores');
+    },
+  });
+};
+
+// ==================== ALCANCES DEL SISTEMA HOOKS ====================
+
+export const useAlcances = (filters?: AlcanceSistemaFilters) => {
+  return useQuery({
+    queryKey: strategicKeys.alcances(filters),
+    queryFn: () => alcancesApi.getAll(filters),
+    enabled: filters?.identity !== undefined,
+  });
+};
+
+export const useAlcance = (id: number) => {
+  return useQuery({
+    queryKey: strategicKeys.alcance(id),
+    queryFn: () => alcancesApi.getById(id),
+    enabled: !!id,
+  });
+};
+
+export const useAlcancesByStandard = (identityId: number) => {
+  return useQuery({
+    queryKey: strategicKeys.alcancesByStandard(identityId),
+    queryFn: () => alcancesApi.getByStandard(identityId),
+    enabled: !!identityId,
+  });
+};
+
+export const useAlcancesCertifications = (identityId: number) => {
+  return useQuery({
+    queryKey: strategicKeys.alcancesCertifications(identityId),
+    queryFn: () => alcancesApi.getCertifications(identityId),
+    enabled: !!identityId,
+  });
+};
+
+export const useCreateAlcance = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateAlcanceSistemaDTO) => alcancesApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['alcances'] });
+      queryClient.invalidateQueries({ queryKey: strategicKeys.activeIdentity });
+      toast.success('Alcance del sistema creado exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al crear el alcance del sistema');
+    },
+  });
+};
+
+export const useUpdateAlcance = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UpdateAlcanceSistemaDTO }) =>
+      alcancesApi.update(id, data),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: ['alcances'] });
+      queryClient.invalidateQueries({ queryKey: strategicKeys.alcance(id) });
+      queryClient.invalidateQueries({ queryKey: strategicKeys.activeIdentity });
+      toast.success('Alcance del sistema actualizado exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al actualizar el alcance del sistema');
+    },
+  });
+};
+
+export const useDeleteAlcance = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => alcancesApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['alcances'] });
+      queryClient.invalidateQueries({ queryKey: strategicKeys.activeIdentity });
+      toast.success('Alcance del sistema eliminado exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al eliminar el alcance del sistema');
+    },
+  });
+};
+
+// ==================== NORMAS ISO HOOKS (Dinámico) ====================
+
+export const useNormasISO = () => {
+  return useQuery({
+    queryKey: strategicKeys.normasISO,
+    queryFn: normasISOApi.getAll,
+    staleTime: 10 * 60 * 1000, // 10 minutos - datos relativamente estáticos
+  });
+};
+
+export const useNormasISOChoices = () => {
+  return useQuery({
+    queryKey: strategicKeys.normasISOChoices,
+    queryFn: normasISOApi.getChoices,
+    staleTime: 10 * 60 * 1000, // 10 minutos
+  });
+};
+
+export const useNormasISOByCategory = () => {
+  return useQuery({
+    queryKey: strategicKeys.normasISOByCategory,
+    queryFn: normasISOApi.getByCategory,
+    staleTime: 10 * 60 * 1000, // 10 minutos
   });
 };

@@ -22,7 +22,7 @@ Uso:
     docker exec -it backend python manage.py seed_estructura_final
 """
 from django.core.management.base import BaseCommand
-from apps.core.models import SystemModule, ModuleTab
+from apps.core.models import SystemModule, ModuleTab, TabSection
 
 
 class Command(BaseCommand):
@@ -34,7 +34,7 @@ class Command(BaseCommand):
             '  SEED ESTRUCTURA FINAL - ERP STRATEKAZ'
         ))
         self.stdout.write(self.style.MIGRATE_HEADING(
-            '  14 Módulos | 81 Tabs | 6 Niveles'
+            '  14 Módulos | 81 Tabs | Secciones | 6 Niveles'
         ))
         self.stdout.write('=' * 80)
 
@@ -43,17 +43,37 @@ class Command(BaseCommand):
 
         total_modules = 0
         total_tabs = 0
+        total_sections = 0
+        deleted_sections = 0
+
+        # Construir mapa de secciones válidas por tab
+        valid_sections_map = {}  # {(module_code, tab_code): [section_codes]}
 
         for module_data in modules_config:
+            module_code = module_data['code']
             tabs = module_data.pop('tabs', [])
             module = self.create_or_update_module(module_data)
             total_modules += 1
 
             for tab_data in tabs:
-                self.create_or_update_tab(module, tab_data)
+                tab_code = tab_data['code']
+                sections = tab_data.pop('sections', [])
+                tab = self.create_or_update_tab(module, tab_data)
                 total_tabs += 1
 
-        self.print_summary(total_modules, total_tabs)
+                # Registrar secciones válidas para este tab
+                valid_sections_map[(module_code, tab_code)] = [s['code'] for s in sections]
+
+                # Crear secciones del tab
+                for section_data in sections:
+                    self.create_or_update_section(tab, section_data)
+                    total_sections += 1
+
+                # Eliminar secciones que ya no están en la configuración
+                deleted_count = self.cleanup_obsolete_sections(tab, [s['code'] for s in sections])
+                deleted_sections += deleted_count
+
+        self.print_summary(total_modules, total_tabs, total_sections, deleted_sections)
 
     def get_modules_config(self):
         """Retorna la configuración completa de los 14 módulos"""
@@ -70,14 +90,49 @@ class Command(BaseCommand):
                 'icon': 'Building2',
                 'is_core': True,
                 'is_enabled': True,
-                'order': 10,
+                'orden': 10,
                 'tabs': [
-                    {'code': 'configuracion', 'name': 'Configuración', 'icon': 'Settings', 'order': 1},
-                    {'code': 'organizacion', 'name': 'Organización', 'icon': 'Network', 'order': 2},
-                    {'code': 'identidad', 'name': 'Identidad Corporativa', 'icon': 'Award', 'order': 3},
-                    {'code': 'planeacion', 'name': 'Planeación Estratégica', 'icon': 'Target', 'order': 4},
-                    {'code': 'gestion_proyectos', 'name': 'Gestión Proyectos (PMI)', 'icon': 'Gantt', 'order': 5},
-                    {'code': 'revision_direccion', 'name': 'Revisión por Dirección', 'icon': 'ClipboardCheck', 'order': 6},
+                    {
+                        'code': 'configuracion',
+                        'name': 'Configuración',
+                        'icon': 'Settings',
+                        'orden': 1,
+                        'sections': [
+                            {'code': 'empresa', 'name': 'Datos de Empresa', 'icon': 'Building2', 'orden': 1},
+                            {'code': 'sedes', 'name': 'Sedes', 'icon': 'MapPin', 'orden': 2},
+                            {'code': 'integraciones', 'name': 'Integraciones', 'icon': 'Plug', 'orden': 3},
+                            {'code': 'branding', 'name': 'Branding', 'icon': 'Palette', 'orden': 4},
+                            {'code': 'modulos', 'name': 'Módulos y Funciones', 'icon': 'LayoutGrid', 'orden': 5},
+                        ]
+                    },
+                    {
+                        'code': 'organizacion',
+                        'name': 'Organización',
+                        'icon': 'Network',
+                        'orden': 2,
+                        'sections': [
+                            {'code': 'areas', 'name': 'Áreas', 'icon': 'FolderTree', 'orden': 1},
+                            {'code': 'cargos', 'name': 'Cargos', 'icon': 'Briefcase', 'orden': 2},
+                            {'code': 'organigrama', 'name': 'Organigrama', 'icon': 'Network', 'orden': 3},
+                            {'code': 'colaboradores', 'name': 'Colaboradores', 'icon': 'Users', 'orden': 4},
+                            {'code': 'roles', 'name': 'Control de Acceso', 'icon': 'ShieldCheck', 'orden': 5},
+                        ]
+                    },
+                    {
+                        'code': 'identidad',
+                        'name': 'Identidad Corporativa',
+                        'icon': 'Award',
+                        'orden': 3,
+                        'sections': [
+                            {'code': 'mision_vision', 'name': 'Misión y Visión', 'icon': 'Eye', 'orden': 1},
+                            {'code': 'valores', 'name': 'Valores Corporativos', 'icon': 'Heart', 'orden': 2},
+                            {'code': 'politica', 'name': 'Política Integral', 'icon': 'FileText', 'orden': 3},
+                            {'code': 'politicas', 'name': 'Políticas Específicas', 'icon': 'FileCheck', 'orden': 4},
+                        ]
+                    },
+                    {'code': 'planeacion', 'name': 'Planeación Estratégica', 'icon': 'Target', 'orden': 4},
+                    {'code': 'gestion_proyectos', 'name': 'Gestión Proyectos (PMI)', 'icon': 'Gantt', 'orden': 5},
+                    {'code': 'revision_direccion', 'name': 'Revisión por Dirección', 'icon': 'ClipboardCheck', 'orden': 6},
                 ]
             },
 
@@ -93,12 +148,12 @@ class Command(BaseCommand):
                 'icon': 'Scale',
                 'is_core': False,
                 'is_enabled': True,
-                'order': 20,
+                'orden': 20,
                 'tabs': [
-                    {'code': 'matriz_legal', 'name': 'Matriz Legal', 'icon': 'BookOpen', 'order': 1},
-                    {'code': 'requisitos_legales', 'name': 'Requisitos Legales', 'icon': 'FileCheck', 'order': 2},
-                    {'code': 'partes_interesadas', 'name': 'Partes Interesadas', 'icon': 'Users2', 'order': 3},
-                    {'code': 'reglamentos_internos', 'name': 'Reglamentos Internos', 'icon': 'Gavel', 'order': 4},
+                    {'code': 'matriz_legal', 'name': 'Matriz Legal', 'icon': 'BookOpen', 'orden': 1},
+                    {'code': 'requisitos_legales', 'name': 'Requisitos Legales', 'icon': 'FileCheck', 'orden': 2},
+                    {'code': 'partes_interesadas', 'name': 'Partes Interesadas', 'icon': 'Users2', 'orden': 3},
+                    {'code': 'reglamentos_internos', 'name': 'Reglamentos Internos', 'icon': 'Gavel', 'orden': 4},
                 ]
             },
             {
@@ -110,15 +165,15 @@ class Command(BaseCommand):
                 'icon': 'AlertTriangle',
                 'is_core': False,
                 'is_enabled': True,
-                'order': 21,
+                'orden': 21,
                 'tabs': [
-                    {'code': 'contexto_organizacional', 'name': 'Contexto Organizacional', 'icon': 'Building2', 'order': 1},
-                    {'code': 'riesgos_procesos', 'name': 'Riesgos y Oportunidades', 'icon': 'GitBranch', 'order': 2},
-                    {'code': 'ipevr', 'name': 'IPEVR (GTC-45)', 'icon': 'ShieldAlert', 'order': 3},
-                    {'code': 'aspectos_ambientales', 'name': 'Aspectos Ambientales', 'icon': 'Leaf', 'order': 4},
-                    {'code': 'riesgos_viales', 'name': 'Riesgos Viales', 'icon': 'Car', 'order': 5},
-                    {'code': 'sagrilaft_ptee', 'name': 'SAGRILAFT/PTEE', 'icon': 'ShieldCheck', 'order': 6},
-                    {'code': 'seguridad_informacion', 'name': 'Seguridad Información', 'icon': 'Lock', 'order': 7},
+                    {'code': 'contexto_organizacional', 'name': 'Contexto Organizacional', 'icon': 'Building2', 'orden': 1},
+                    {'code': 'riesgos_procesos', 'name': 'Riesgos y Oportunidades', 'icon': 'GitBranch', 'orden': 2},
+                    {'code': 'ipevr', 'name': 'IPEVR (GTC-45)', 'icon': 'ShieldAlert', 'orden': 3},
+                    {'code': 'aspectos_ambientales', 'name': 'Aspectos Ambientales', 'icon': 'Leaf', 'orden': 4},
+                    {'code': 'riesgos_viales', 'name': 'Riesgos Viales', 'icon': 'Car', 'orden': 5},
+                    {'code': 'sagrilaft_ptee', 'name': 'SAGRILAFT/PTEE', 'icon': 'ShieldCheck', 'orden': 6},
+                    {'code': 'seguridad_informacion', 'name': 'Seguridad Información', 'icon': 'Lock', 'orden': 7},
                 ]
             },
             {
@@ -130,11 +185,11 @@ class Command(BaseCommand):
                 'icon': 'Workflow',
                 'is_core': False,
                 'is_enabled': True,
-                'order': 22,
+                'orden': 22,
                 'tabs': [
-                    {'code': 'disenador_flujos', 'name': 'Diseñador de Flujos', 'icon': 'PenTool', 'order': 1},
-                    {'code': 'ejecucion', 'name': 'Ejecución', 'icon': 'Play', 'order': 2},
-                    {'code': 'monitoreo', 'name': 'Monitoreo', 'icon': 'Activity', 'order': 3},
+                    {'code': 'disenador_flujos', 'name': 'Diseñador de Flujos', 'icon': 'PenTool', 'orden': 1},
+                    {'code': 'ejecucion', 'name': 'Ejecución', 'icon': 'Play', 'orden': 2},
+                    {'code': 'monitoreo', 'name': 'Monitoreo', 'icon': 'Activity', 'orden': 3},
                 ]
             },
 
@@ -150,19 +205,19 @@ class Command(BaseCommand):
                 'icon': 'Shield',
                 'is_core': False,
                 'is_enabled': True,
-                'order': 30,
+                'orden': 30,
                 'tabs': [
-                    {'code': 'sistema_documental', 'name': 'Sistema Documental', 'icon': 'FileText', 'order': 1},
-                    {'code': 'planificacion_sistema', 'name': 'Planificación Sistema', 'icon': 'Calendar', 'order': 2},
-                    {'code': 'calidad', 'name': 'Calidad', 'icon': 'CheckCircle', 'order': 3},
-                    {'code': 'medicina_laboral', 'name': 'Medicina Laboral', 'icon': 'Heart', 'order': 4},
-                    {'code': 'seguridad_industrial', 'name': 'Seguridad Industrial', 'icon': 'HardHat', 'order': 5},
-                    {'code': 'higiene_industrial', 'name': 'Higiene Industrial', 'icon': 'Thermometer', 'order': 6},
-                    {'code': 'gestion_comites', 'name': 'Gestión de Comités', 'icon': 'Users', 'order': 7},
-                    {'code': 'accidentalidad', 'name': 'Accidentalidad (ATEL)', 'icon': 'AlertCircle', 'order': 8},
-                    {'code': 'emergencias', 'name': 'Emergencias', 'icon': 'Siren', 'order': 9},
-                    {'code': 'gestion_ambiental', 'name': 'Gestión Ambiental', 'icon': 'Leaf', 'order': 10},
-                    {'code': 'mejora_continua', 'name': 'Mejora Continua', 'icon': 'TrendingUp', 'order': 11},
+                    {'code': 'sistema_documental', 'name': 'Sistema Documental', 'icon': 'FileText', 'orden': 1},
+                    {'code': 'planificacion_sistema', 'name': 'Planificación Sistema', 'icon': 'Calendar', 'orden': 2},
+                    {'code': 'calidad', 'name': 'Calidad', 'icon': 'CheckCircle', 'orden': 3},
+                    {'code': 'medicina_laboral', 'name': 'Medicina Laboral', 'icon': 'Heart', 'orden': 4},
+                    {'code': 'seguridad_industrial', 'name': 'Seguridad Industrial', 'icon': 'HardHat', 'orden': 5},
+                    {'code': 'higiene_industrial', 'name': 'Higiene Industrial', 'icon': 'Thermometer', 'orden': 6},
+                    {'code': 'gestion_comites', 'name': 'Gestión de Comités', 'icon': 'Users', 'orden': 7},
+                    {'code': 'accidentalidad', 'name': 'Accidentalidad (ATEL)', 'icon': 'AlertCircle', 'orden': 8},
+                    {'code': 'emergencias', 'name': 'Emergencias', 'icon': 'Siren', 'orden': 9},
+                    {'code': 'gestion_ambiental', 'name': 'Gestión Ambiental', 'icon': 'Leaf', 'orden': 10},
+                    {'code': 'mejora_continua', 'name': 'Mejora Continua', 'icon': 'TrendingUp', 'orden': 11},
                 ]
             },
 
@@ -178,13 +233,13 @@ class Command(BaseCommand):
                 'icon': 'Package',
                 'is_core': False,
                 'is_enabled': True,
-                'order': 40,
+                'orden': 40,
                 'tabs': [
-                    {'code': 'gestion_proveedores', 'name': 'Gestión Proveedores', 'icon': 'Users', 'order': 1},
-                    {'code': 'catalogos', 'name': 'Catálogos', 'icon': 'List', 'order': 2},
-                    {'code': 'programacion_abastecimiento', 'name': 'Programación Abastecimiento', 'icon': 'Calendar', 'order': 3},
-                    {'code': 'compras', 'name': 'Compras', 'icon': 'ShoppingCart', 'order': 4},
-                    {'code': 'almacenamiento', 'name': 'Almacenamiento', 'icon': 'Warehouse', 'order': 5},
+                    {'code': 'gestion_proveedores', 'name': 'Gestión Proveedores', 'icon': 'Users', 'orden': 1},
+                    {'code': 'catalogos', 'name': 'Catálogos', 'icon': 'List', 'orden': 2},
+                    {'code': 'programacion_abastecimiento', 'name': 'Programación Abastecimiento', 'icon': 'Calendar', 'orden': 3},
+                    {'code': 'compras', 'name': 'Compras', 'icon': 'ShoppingCart', 'orden': 4},
+                    {'code': 'almacenamiento', 'name': 'Almacenamiento', 'icon': 'Warehouse', 'orden': 5},
                 ]
             },
             {
@@ -196,12 +251,12 @@ class Command(BaseCommand):
                 'icon': 'Factory',
                 'is_core': False,
                 'is_enabled': True,
-                'order': 41,
+                'orden': 41,
                 'tabs': [
-                    {'code': 'recepcion', 'name': 'Recepción', 'icon': 'Download', 'order': 1},
-                    {'code': 'procesamiento', 'name': 'Procesamiento', 'icon': 'Cog', 'order': 2},
-                    {'code': 'mantenimiento_industrial', 'name': 'Mantenimiento Industrial', 'icon': 'Wrench', 'order': 3},
-                    {'code': 'producto_terminado', 'name': 'Producto Terminado', 'icon': 'PackageCheck', 'order': 4},
+                    {'code': 'recepcion', 'name': 'Recepción', 'icon': 'Download', 'orden': 1},
+                    {'code': 'procesamiento', 'name': 'Procesamiento', 'icon': 'Cog', 'orden': 2},
+                    {'code': 'mantenimiento_industrial', 'name': 'Mantenimiento Industrial', 'icon': 'Wrench', 'orden': 3},
+                    {'code': 'producto_terminado', 'name': 'Producto Terminado', 'icon': 'PackageCheck', 'orden': 4},
                 ]
             },
             {
@@ -213,12 +268,12 @@ class Command(BaseCommand):
                 'icon': 'Truck',
                 'is_core': False,
                 'is_enabled': True,
-                'order': 42,
+                'orden': 42,
                 'tabs': [
-                    {'code': 'gestion_transporte', 'name': 'Gestión Transporte', 'icon': 'Route', 'order': 1},
-                    {'code': 'despachos', 'name': 'Despachos', 'icon': 'Send', 'order': 2},
-                    {'code': 'gestion_flota', 'name': 'Gestión de Flota', 'icon': 'Car', 'order': 3},
-                    {'code': 'pesv_operativo', 'name': 'PESV Operativo', 'icon': 'Shield', 'order': 4},
+                    {'code': 'gestion_transporte', 'name': 'Gestión Transporte', 'icon': 'Route', 'orden': 1},
+                    {'code': 'despachos', 'name': 'Despachos', 'icon': 'Send', 'orden': 2},
+                    {'code': 'gestion_flota', 'name': 'Gestión de Flota', 'icon': 'Car', 'orden': 3},
+                    {'code': 'pesv_operativo', 'name': 'PESV Operativo', 'icon': 'Shield', 'orden': 4},
                 ]
             },
             {
@@ -230,12 +285,12 @@ class Command(BaseCommand):
                 'icon': 'TrendingUp',
                 'is_core': False,
                 'is_enabled': True,
-                'order': 43,
+                'orden': 43,
                 'tabs': [
-                    {'code': 'gestion_clientes', 'name': 'Gestión de Clientes', 'icon': 'Users', 'order': 1},
-                    {'code': 'pipeline_ventas', 'name': 'Pipeline Ventas', 'icon': 'Funnel', 'order': 2},
-                    {'code': 'pedidos_facturacion', 'name': 'Pedidos y Facturación', 'icon': 'FileText', 'order': 3},
-                    {'code': 'servicio_cliente', 'name': 'Servicio al Cliente', 'icon': 'Headphones', 'order': 4},
+                    {'code': 'gestion_clientes', 'name': 'Gestión de Clientes', 'icon': 'Users', 'orden': 1},
+                    {'code': 'pipeline_ventas', 'name': 'Pipeline Ventas', 'icon': 'Funnel', 'orden': 2},
+                    {'code': 'pedidos_facturacion', 'name': 'Pedidos y Facturación', 'icon': 'FileText', 'orden': 3},
+                    {'code': 'servicio_cliente', 'name': 'Servicio al Cliente', 'icon': 'Headphones', 'orden': 4},
                 ]
             },
 
@@ -251,19 +306,19 @@ class Command(BaseCommand):
                 'icon': 'GraduationCap',
                 'is_core': False,
                 'is_enabled': True,
-                'order': 50,
+                'orden': 50,
                 'tabs': [
-                    {'code': 'estructura_cargos', 'name': 'Estructura de Cargos', 'icon': 'Network', 'order': 1},
-                    {'code': 'seleccion_contratacion', 'name': 'Selección/Contratación', 'icon': 'UserPlus', 'order': 2},
-                    {'code': 'colaboradores', 'name': 'Colaboradores', 'icon': 'Users', 'order': 3},
-                    {'code': 'onboarding_induccion', 'name': 'Onboarding/Inducción', 'icon': 'Rocket', 'order': 4},
-                    {'code': 'formacion_reinduccion', 'name': 'Formación/Reinducción', 'icon': 'BookOpen', 'order': 5},
-                    {'code': 'desempeno', 'name': 'Desempeño', 'icon': 'Award', 'order': 6},
-                    {'code': 'control_tiempo', 'name': 'Control de Tiempo', 'icon': 'Clock', 'order': 7},
-                    {'code': 'novedades', 'name': 'Novedades', 'icon': 'Bell', 'order': 8},
-                    {'code': 'proceso_disciplinario', 'name': 'Proceso Disciplinario', 'icon': 'Gavel', 'order': 9},
-                    {'code': 'nomina', 'name': 'Nómina', 'icon': 'DollarSign', 'order': 10},
-                    {'code': 'off_boarding', 'name': 'Off Boarding', 'icon': 'LogOut', 'order': 11},
+                    {'code': 'estructura_cargos', 'name': 'Estructura de Cargos', 'icon': 'Network', 'orden': 1},
+                    {'code': 'seleccion_contratacion', 'name': 'Selección/Contratación', 'icon': 'UserPlus', 'orden': 2},
+                    {'code': 'colaboradores', 'name': 'Colaboradores', 'icon': 'Users', 'orden': 3},
+                    {'code': 'onboarding_induccion', 'name': 'Onboarding/Inducción', 'icon': 'Rocket', 'orden': 4},
+                    {'code': 'formacion_reinduccion', 'name': 'Formación/Reinducción', 'icon': 'BookOpen', 'orden': 5},
+                    {'code': 'desempeno', 'name': 'Desempeño', 'icon': 'Award', 'orden': 6},
+                    {'code': 'control_tiempo', 'name': 'Control de Tiempo', 'icon': 'Clock', 'orden': 7},
+                    {'code': 'novedades', 'name': 'Novedades', 'icon': 'Bell', 'orden': 8},
+                    {'code': 'proceso_disciplinario', 'name': 'Proceso Disciplinario', 'icon': 'Gavel', 'orden': 9},
+                    {'code': 'nomina', 'name': 'Nómina', 'icon': 'DollarSign', 'orden': 10},
+                    {'code': 'off_boarding', 'name': 'Off Boarding', 'icon': 'LogOut', 'orden': 11},
                 ]
             },
             {
@@ -275,12 +330,12 @@ class Command(BaseCommand):
                 'icon': 'Wallet',
                 'is_core': False,
                 'is_enabled': True,
-                'order': 51,
+                'orden': 51,
                 'tabs': [
-                    {'code': 'tesoreria', 'name': 'Tesorería', 'icon': 'Landmark', 'order': 1},
-                    {'code': 'presupuesto', 'name': 'Presupuesto', 'icon': 'PieChart', 'order': 2},
-                    {'code': 'activos_fijos', 'name': 'Activos Fijos', 'icon': 'Building', 'order': 3},
-                    {'code': 'servicios_generales', 'name': 'Servicios Generales', 'icon': 'Wrench', 'order': 4},
+                    {'code': 'tesoreria', 'name': 'Tesorería', 'icon': 'Landmark', 'orden': 1},
+                    {'code': 'presupuesto', 'name': 'Presupuesto', 'icon': 'PieChart', 'orden': 2},
+                    {'code': 'activos_fijos', 'name': 'Activos Fijos', 'icon': 'Building', 'orden': 3},
+                    {'code': 'servicios_generales', 'name': 'Servicios Generales', 'icon': 'Wrench', 'orden': 4},
                 ]
             },
             {
@@ -292,12 +347,12 @@ class Command(BaseCommand):
                 'icon': 'Calculator',
                 'is_core': False,
                 'is_enabled': True,
-                'order': 52,
+                'orden': 52,
                 'tabs': [
-                    {'code': 'config_contable', 'name': 'Config. Contable', 'icon': 'Settings', 'order': 1},
-                    {'code': 'movimientos', 'name': 'Movimientos', 'icon': 'ArrowLeftRight', 'order': 2},
-                    {'code': 'informes_contables', 'name': 'Informes Contables', 'icon': 'FileText', 'order': 3},
-                    {'code': 'integracion', 'name': 'Integración', 'icon': 'Link', 'order': 4},
+                    {'code': 'config_contable', 'name': 'Config. Contable', 'icon': 'Settings', 'orden': 1},
+                    {'code': 'movimientos', 'name': 'Movimientos', 'icon': 'ArrowLeftRight', 'orden': 2},
+                    {'code': 'informes_contables', 'name': 'Informes Contables', 'icon': 'FileText', 'orden': 3},
+                    {'code': 'integracion', 'name': 'Integración', 'icon': 'Link', 'orden': 4},
                 ]
             },
 
@@ -313,15 +368,15 @@ class Command(BaseCommand):
                 'icon': 'BarChart3',
                 'is_core': False,
                 'is_enabled': True,
-                'order': 60,
+                'orden': 60,
                 'tabs': [
-                    {'code': 'config_indicadores', 'name': 'Config. Indicadores', 'icon': 'Settings', 'order': 1},
-                    {'code': 'dashboard_gerencial', 'name': 'Dashboard Gerencial', 'icon': 'LayoutDashboard', 'order': 2},
-                    {'code': 'indicadores_area', 'name': 'Indicadores por Área', 'icon': 'TrendingUp', 'order': 3},
-                    {'code': 'analisis_tendencias', 'name': 'Análisis y Tendencias', 'icon': 'LineChart', 'order': 4},
-                    {'code': 'generador_informes', 'name': 'Generador Informes', 'icon': 'FileText', 'order': 5},
-                    {'code': 'acciones_indicador', 'name': 'Acciones x Indicador', 'icon': 'Zap', 'order': 6},
-                    {'code': 'exportacion_integracion', 'name': 'Exportación/Integración', 'icon': 'Download', 'order': 7},
+                    {'code': 'config_indicadores', 'name': 'Config. Indicadores', 'icon': 'Settings', 'orden': 1},
+                    {'code': 'dashboard_gerencial', 'name': 'Dashboard Gerencial', 'icon': 'LayoutDashboard', 'orden': 2},
+                    {'code': 'indicadores_area', 'name': 'Indicadores por Área', 'icon': 'TrendingUp', 'orden': 3},
+                    {'code': 'analisis_tendencias', 'name': 'Análisis y Tendencias', 'icon': 'LineChart', 'orden': 4},
+                    {'code': 'generador_informes', 'name': 'Generador Informes', 'icon': 'FileText', 'orden': 5},
+                    {'code': 'acciones_indicador', 'name': 'Acciones x Indicador', 'icon': 'Zap', 'orden': 6},
+                    {'code': 'exportacion_integracion', 'name': 'Exportación/Integración', 'icon': 'Download', 'orden': 7},
                 ]
             },
             {
@@ -333,12 +388,12 @@ class Command(BaseCommand):
                 'icon': 'Shield',
                 'is_core': True,
                 'is_enabled': True,
-                'order': 61,
+                'orden': 61,
                 'tabs': [
-                    {'code': 'logs_sistema', 'name': 'Logs del Sistema', 'icon': 'Terminal', 'order': 1},
-                    {'code': 'centro_notificaciones', 'name': 'Centro Notificaciones', 'icon': 'Bell', 'order': 2},
-                    {'code': 'config_alertas', 'name': 'Config. Alertas', 'icon': 'BellRing', 'order': 3},
-                    {'code': 'tareas_recordatorios', 'name': 'Tareas/Recordatorios', 'icon': 'CheckSquare', 'order': 4},
+                    {'code': 'logs_sistema', 'name': 'Logs del Sistema', 'icon': 'Terminal', 'orden': 1},
+                    {'code': 'centro_notificaciones', 'name': 'Centro Notificaciones', 'icon': 'Bell', 'orden': 2},
+                    {'code': 'config_alertas', 'name': 'Config. Alertas', 'icon': 'BellRing', 'orden': 3},
+                    {'code': 'tareas_recordatorios', 'name': 'Tareas/Recordatorios', 'icon': 'CheckSquare', 'orden': 4},
                 ]
             },
         ]
@@ -354,7 +409,7 @@ class Command(BaseCommand):
 
         if created:
             self.stdout.write(
-                self.style.SUCCESS(f'  ✓ [{data["order"]:02d}] {data["name"]} (CREADO)')
+                self.style.SUCCESS(f'  [OK] [{data["orden"]:02d}] {data["name"]} (CREADO)')
             )
         else:
             # Actualizar todos los campos
@@ -363,7 +418,7 @@ class Command(BaseCommand):
                     setattr(module, key, value)
             module.save()
             self.stdout.write(
-                self.style.WARNING(f'  ↻ [{data["order"]:02d}] {data["name"]} (ACTUALIZADO)')
+                self.style.WARNING(f'  [UPD] [{data["orden"]:02d}] {data["name"]} (ACTUALIZADO)')
             )
 
         return module
@@ -378,7 +433,7 @@ class Command(BaseCommand):
             defaults={
                 'name': data['name'],
                 'icon': data['icon'],
-                'order': data['order'],
+                'orden': data['orden'],
                 'is_enabled': True,
                 'is_core': False,
             }
@@ -387,20 +442,61 @@ class Command(BaseCommand):
         if not created:
             tab.name = data['name']
             tab.icon = data['icon']
-            tab.order = data['order']
+            tab.orden = data['orden']
             tab.is_enabled = True
             tab.save()
 
         return tab
 
-    def print_summary(self, total_modules, total_tabs):
+    def create_or_update_section(self, tab, data):
+        """Crear o actualizar una sección de tab"""
+        code = data['code']
+
+        section, created = TabSection.objects.get_or_create(
+            tab=tab,
+            code=code,
+            defaults={
+                'name': data['name'],
+                'icon': data.get('icon', ''),
+                'orden': data['orden'],
+                'is_enabled': True,
+                'is_core': data.get('is_core', False),
+            }
+        )
+
+        if not created:
+            section.name = data['name']
+            section.icon = data.get('icon', '')
+            section.orden = data['orden']
+            section.is_enabled = True
+            section.save()
+
+        return section
+
+    def cleanup_obsolete_sections(self, tab, valid_section_codes):
+        """Eliminar secciones que ya no están en la configuración"""
+        # Obtener secciones existentes en la BD para este tab
+        existing_sections = TabSection.objects.filter(tab=tab)
+        deleted_count = 0
+
+        for section in existing_sections:
+            if section.code not in valid_section_codes:
+                self.stdout.write(
+                    self.style.ERROR(f'    [DEL] Eliminando sección obsoleta: {section.name} ({section.code})')
+                )
+                section.delete()
+                deleted_count += 1
+
+        return deleted_count
+
+    def print_summary(self, total_modules, total_tabs, total_sections=0, deleted_sections=0):
         """Imprimir resumen final"""
         self.stdout.write('\n' + '=' * 80)
         self.stdout.write(self.style.SUCCESS('  ESTRUCTURA FINAL CONFIGURADA'))
         self.stdout.write('=' * 80)
 
         # Obtener módulos ordenados
-        modules = SystemModule.objects.all().order_by('order')
+        modules = SystemModule.objects.all().order_by('orden')
 
         self.stdout.write('\n  ORDEN DEL SIDEBAR:')
         self.stdout.write('  ' + '-' * 50)
@@ -408,14 +504,16 @@ class Command(BaseCommand):
         for module in modules:
             tab_count = module.tabs.filter(is_enabled=True).count()
             self.stdout.write(
-                f'  [{module.order:02d}] {module.name:<30} ({tab_count} tabs)'
+                f'  [{module.orden:02d}] {module.name:<30} ({tab_count} tabs)'
             )
 
         self.stdout.write('\n  ' + '-' * 50)
-        self.stdout.write(f'  TOTAL: {total_modules} módulos | {total_tabs} tabs')
+        self.stdout.write(f'  TOTAL: {total_modules} módulos | {total_tabs} tabs | {total_sections} secciones')
+        if deleted_sections > 0:
+            self.stdout.write(self.style.WARNING(f'  ELIMINADAS: {deleted_sections} secciones obsoletas'))
         self.stdout.write('=' * 80)
 
         self.stdout.write('\n  VERIFICAR EN:')
-        self.stdout.write('  → GET /api/core/system-modules/sidebar/')
-        self.stdout.write('  → Frontend: El sidebar debería reflejar el nuevo orden')
+        self.stdout.write('  GET /api/core/system-modules/sidebar/')
+        self.stdout.write('  Frontend: El sidebar deberia reflejar el nuevo orden')
         self.stdout.write('')

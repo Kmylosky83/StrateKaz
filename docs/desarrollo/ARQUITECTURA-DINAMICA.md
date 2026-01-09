@@ -18,12 +18,11 @@ El sistema está diseñado para que **cualquier configuración** pueda modificar
 |----------|---------------|------------|---------|
 | **Sidebar/Navegación** | Módulos, tabs, secciones | `GET /api/core/modulos/` | Admin activa/desactiva módulos |
 | **Cargos y Roles** | RBAC completo | `Cargo`, `Rol`, `Permiso` | Crear "Gerente SST" sin código |
-| **Permisos** | Granulares por módulo/acción | `user.has_perm()` | `sst.view_matriz_peligros` |
+| **Permisos de Acciones** | 68 permisos granulares | `CargoPermiso` | CRUD por módulo/sección |
+| **Acceso a Secciones** | Visibilidad de UI | `CargoSectionAccess` | Qué tabs/secciones puede ver |
 | **Branding** | Logos, colores, nombre | `EmpresaConfig` | Cambiar logo en caliente |
 | **Formularios** | Campos dinámicos | JSON Schema | `TipoRecoleccion.form_schema` |
-| **Tipos de documentos** | Categorías configurables | `TipoDocumento` | Añadir categorías desde admin |
 | **Iconos** | Lucide React por nombre | `icon_name` field | `icon_name: "Shield"` |
-| **Consecutivos** | Formatos configurables | `ConsecutivoConfig` | `{PREFIJO}-{YYYY}-{####}` |
 
 ---
 
@@ -47,11 +46,16 @@ cargos = Cargo.objects.filter(is_active=True)
 ```
 
 ```python
-# PROHIBIDO - Hardcoding de tipos
-TIPOS_DOCUMENTO = ['PROCEDIMIENTO', 'FORMATO', 'MANUAL']
+# PROHIBIDO - Hardcoding de permisos
+if user.cargo.codigo == 'ADMIN':
+    return True
 
-# CORRECTO - Modelo dinámico
-tipos = TipoDocumento.objects.filter(is_active=True)
+# CORRECTO - Verificar acceso a sección
+from apps.core.models import CargoSectionAccess
+has_access = CargoSectionAccess.objects.filter(
+    cargo=user.cargo,
+    section__code='areas'
+).exists()
 ```
 
 ### Frontend (TypeScript/React)
@@ -146,30 +150,90 @@ class TabSection(models.Model):
 
 ---
 
-## Iconos Dinámicos
+## Iconos Dinámicos - Sistema Completo desde BD
 
-Los iconos se cargan dinámicamente desde Lucide React usando el nombre almacenado en BD:
+El sistema de iconos es 100% dinámico desde la base de datos. NUNCA hardcodear iconos en el código.
+
+Ver documentación completa: [SISTEMA-ICONOS-DINAMICOS.md](./SISTEMA-ICONOS-DINAMICOS.md)
+
+### Modelo Backend: IconRegistry
+
+```python
+class IconRegistry(TimestampedModel, SoftDeleteModel):
+    """
+    Registro de Iconos Disponibles - 100% dinámico.
+    56 iconos precargados en 7 categorías.
+    """
+    name = models.CharField(max_length=50)           # "Heart"
+    label = models.CharField(max_length=100)         # "Corazón"
+    category = models.CharField(max_length=30)       # "VALORES"
+    keywords = models.CharField(max_length=200)      # "amor,pasión,compromiso"
+    orden = models.PositiveIntegerField(default=0)
+    es_sistema = models.BooleanField(default=False)
+
+# Métodos disponibles
+IconRegistry.cargar_iconos_sistema()           # Cargar 56 iconos
+IconRegistry.obtener_por_categoria('VALORES')  # Filtrar por categoría
+IconRegistry.buscar('corazon')                 # Buscar iconos
+```
+
+### API Endpoints
+
+```http
+GET /api/configuracion/icons/                      # Lista todos
+GET /api/configuracion/icons/categories/           # Categorías con conteo
+GET /api/configuracion/icons/by_category/?category=VALORES
+GET /api/configuracion/icons/search/?q=corazon
+POST /api/configuracion/icons/load_system_icons/   # Solo admin
+```
+
+### Componentes Frontend
 
 ```typescript
-import * as LucideIcons from 'lucide-react';
+import { DynamicIcon, IconPicker } from '@/components/common';
+import { useIcons } from '@/hooks/useIcons';
 
-interface DynamicIconProps {
-  name: string;
-  className?: string;
-}
+// Hook para obtener iconos
+const { icons, categories, searchIcons, getIconsByCategory } = useIcons();
 
-export const DynamicIcon: React.FC<DynamicIconProps> = ({ name, className }) => {
-  const IconComponent = LucideIcons[name as keyof typeof LucideIcons];
+// Renderizar icono dinámicamente
+<DynamicIcon
+  name={valor.icono_nombre}
+  size={24}
+  className="text-purple-600"
+/>
 
-  if (!IconComponent) {
-    return <LucideIcons.HelpCircle className={className} />;
-  }
+// Selector de iconos
+<IconPicker
+  value={selectedIcon}
+  onChange={setSelectedIcon}
+  category="VALORES"
+  label="Seleccionar Icono"
+/>
+```
 
-  return <IconComponent className={className} />;
-};
+### Categorías de Iconos
 
-// Uso
-<DynamicIcon name={module.icon_name} className="w-5 h-5" />
+| Categoría | Código | Iconos | Uso |
+|-----------|--------|--------|-----|
+| Valores Corporativos | VALORES | 18 | Misión, visión, valores |
+| Normas y Sistemas | NORMAS | 6 | ISO, certificaciones |
+| Estados y Status | ESTADOS | 6 | Workflows, procesos |
+| Riesgos y Alertas | RIESGOS | 5 | Peligros, emergencias |
+| Personas y Equipos | PERSONAS | 5 | Usuarios, colaboradores |
+| Documentos | DOCUMENTOS | 6 | Archivos, carpetas |
+| Uso General | GENERAL | 10 | Acciones, botones |
+
+### Ejemplo: Migración de Código Hardcodeado
+
+```typescript
+// PROHIBIDO - Hardcoding
+import { Heart, Shield, Star } from 'lucide-react';
+const ICON_MAP = { heart: Heart, shield: Shield };
+
+// CORRECTO - Sistema dinámico
+import { DynamicIcon, IconPicker } from '@/components/common';
+<DynamicIcon name={item.icon_name} />
 ```
 
 ---

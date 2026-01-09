@@ -51,11 +51,11 @@ interface CargoAPI {
 
 const NivelBadge = ({ nivel }: { nivel: number }) => {
   const config = {
-    0: { label: 'Operativo', color: 'bg-gray-100 text-gray-700' },
-    1: { label: 'Supervisión', color: 'bg-blue-100 text-blue-700' },
-    2: { label: 'Coordinación', color: 'bg-purple-100 text-purple-700' },
-    3: { label: 'Dirección', color: 'bg-amber-100 text-amber-700' },
-  }[nivel] || { label: 'Desconocido', color: 'bg-gray-100 text-gray-700' };
+    0: { label: 'Operativo', color: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300' },
+    1: { label: 'Supervisión', color: 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300' },
+    2: { label: 'Coordinación', color: 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300' },
+    3: { label: 'Dirección', color: 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300' },
+  }[nivel] || { label: 'Desconocido', color: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300' };
 
   return (
     <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${config.color}`}>
@@ -118,16 +118,16 @@ const PermisosCheckboxTree = ({
         const someSelected = selectedCount > 0 && !allSelected;
 
         return (
-          <div key={grupo.module} className="border rounded-lg overflow-hidden">
+          <div key={grupo.module} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
             {/* Header del módulo */}
             <div
-              className="flex items-center gap-3 p-3 bg-gray-50 cursor-pointer hover:bg-gray-100"
+              className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
               onClick={() => toggleModule(grupo.module)}
             >
               {isExpanded ? (
-                <ChevronDown className="h-4 w-4 text-gray-500" />
+                <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
               ) : (
-                <ChevronRight className="h-4 w-4 text-gray-500" />
+                <ChevronRight className="h-4 w-4 text-gray-500 dark:text-gray-400" />
               )}
 
               <input
@@ -140,33 +140,33 @@ const PermisosCheckboxTree = ({
                   e.stopPropagation();
                   toggleModulePermisos(grupo.permissions);
                 }}
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 dark:bg-gray-700"
               />
 
-              <span className="font-medium text-gray-900">{grupo.label}</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100">{grupo.label}</span>
 
-              <span className="ml-auto text-sm text-gray-500">
+              <span className="ml-auto text-sm text-gray-500 dark:text-gray-400">
                 {selectedCount} / {grupo.permissions.length}
               </span>
             </div>
 
             {/* Lista de permisos */}
             {isExpanded && (
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-gray-100 dark:divide-gray-700">
                 {grupo.permissions.map((permiso) => (
                   <label
                     key={permiso.id}
-                    className="flex items-center gap-3 px-3 py-2 pl-10 hover:bg-gray-50 cursor-pointer"
+                    className="flex items-center gap-3 px-3 py-2 pl-10 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
                   >
                     <input
                       type="checkbox"
                       checked={selectedIds.includes(permiso.id)}
                       onChange={() => togglePermiso(permiso.id)}
-                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 dark:bg-gray-700"
                     />
                     <div className="flex-1">
-                      <div className="text-sm text-gray-900">{permiso.name}</div>
-                      <div className="text-xs text-gray-500">{permiso.code}</div>
+                      <div className="text-sm text-gray-900 dark:text-gray-100">{permiso.name}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">{permiso.code}</div>
                     </div>
                   </label>
                 ))}
@@ -223,15 +223,15 @@ const CargoPermisosModal = ({
     >
       <div className="space-y-4">
         {/* Info del cargo */}
-        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-          <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-            <Shield className="h-6 w-6 text-blue-600" />
+        <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+          <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+            <Shield className="h-6 w-6 text-blue-600 dark:text-blue-400" />
           </div>
           <div>
-            <h4 className="font-medium text-gray-900">{cargo.name}</h4>
+            <h4 className="font-medium text-gray-900 dark:text-gray-100">{cargo.name}</h4>
             <div className="flex items-center gap-2 mt-1">
               <NivelBadge nivel={cargo.level} />
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-gray-500 dark:text-gray-400">
                 {cargo.users_count} usuario(s) afectado(s)
               </span>
             </div>
@@ -239,9 +239,9 @@ const CargoPermisosModal = ({
         </div>
 
         {/* Advertencia */}
-        <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-          <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-amber-700">
+        <div className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg">
+          <AlertCircle className="h-5 w-5 text-amber-500 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+          <div className="text-sm text-amber-700 dark:text-amber-300">
             <strong>Importante:</strong> Los cambios en permisos afectan
             inmediatamente a todos los usuarios con este cargo (
             {cargo.users_count} usuario(s)).
@@ -250,13 +250,13 @@ const CargoPermisosModal = ({
 
         {/* Selector de permisos */}
         <div>
-          <h4 className="font-medium text-gray-900 mb-3">
+          <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-3">
             Seleccionar permisos ({selectedIds.length} seleccionados)
           </h4>
           {loadingDetalle ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
-              <span className="ml-2 text-gray-500">Cargando permisos...</span>
+              <Loader2 className="h-6 w-6 animate-spin text-blue-500 dark:text-blue-400" />
+              <span className="ml-2 text-gray-500 dark:text-gray-400">Cargando permisos...</span>
             </div>
           ) : (
             <PermisosCheckboxTree
@@ -269,7 +269,7 @@ const CargoPermisosModal = ({
       </div>
 
       {/* Footer */}
-      <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+      <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
         <Button variant="outline" onClick={onClose} disabled={isLoadingAll}>
           Cancelar
         </Button>
@@ -355,10 +355,10 @@ export const PermisosCargoSubTab = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             Permisos por Cargo
           </h3>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             Asigna permisos a cada cargo. Los usuarios heredan automáticamente
             los permisos de su cargo.
           </p>
@@ -403,50 +403,47 @@ export const PermisosCargoSubTab = () => {
       <Card>
         {loadingCargos ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-            <span className="ml-2 text-gray-500">Cargando cargos...</span>
+            <Loader2 className="h-8 w-8 animate-spin text-blue-500 dark:text-blue-400" />
+            <span className="ml-2 text-gray-500 dark:text-gray-400">Cargando cargos...</span>
           </div>
         ) : (
           <>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Cargo
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Nivel
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Área
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Permisos
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Usuarios
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Acciones
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredCargos.map((cargo) => (
-                    <tr key={cargo.id} className="hover:bg-gray-50">
+                    <tr key={cargo.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                       <td className="px-4 py-4">
-                        <div>
-                          <div className="font-medium text-gray-900">
-                            {cargo.name}
-                          </div>
-                          <div className="text-sm text-gray-500">{cargo.code}</div>
-                        </div>
+                        <span className="font-medium text-gray-900 dark:text-gray-100">
+                          {cargo.name}
+                        </span>
                       </td>
                       <td className="px-4 py-4">
                         <NivelBadge nivel={cargo.level} />
                       </td>
-                      <td className="px-4 py-4 text-sm text-gray-500">
+                      <td className="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">
                         {cargo.level_display || cargo.area_nombre || '-'}
                       </td>
                       <td className="px-4 py-4 text-center">
@@ -455,7 +452,7 @@ export const PermisosCargoSubTab = () => {
                         </Badge>
                       </td>
                       <td className="px-4 py-4 text-center">
-                        <div className="flex items-center justify-center gap-1 text-sm text-gray-500">
+                        <div className="flex items-center justify-center gap-1 text-sm text-gray-500 dark:text-gray-400">
                           <Users className="h-4 w-4" />
                           {cargo.users_count}
                         </div>
@@ -478,11 +475,11 @@ export const PermisosCargoSubTab = () => {
 
             {filteredCargos.length === 0 && !loadingCargos && (
               <div className="text-center py-12">
-                <Shield className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                <Shield className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
                   No se encontraron cargos
                 </h3>
-                <p className="text-gray-500">
+                <p className="text-gray-500 dark:text-gray-400">
                   Ajusta los filtros para ver los cargos disponibles.
                 </p>
               </div>

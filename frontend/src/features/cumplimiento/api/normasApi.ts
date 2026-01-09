@@ -32,12 +32,8 @@ export interface NormasListParams {
   ordering?: string;
 }
 
-export interface PaginatedResponse<T> {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
-}
+// PaginatedResponse: importar desde '@/types'
+import type { PaginatedResponse } from '@/types';
 
 export const normasApi = {
   /**

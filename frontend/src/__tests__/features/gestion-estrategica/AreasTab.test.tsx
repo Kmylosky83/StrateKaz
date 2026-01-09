@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Tests para AreasTab Component
  *
  * Cobertura:
@@ -29,12 +29,13 @@ vi.mock('@/features/gestion-estrategica/hooks/useAreas', () => ({
   useToggleArea: vi.fn(),
 }));
 
-// Mock de react-hot-toast
-vi.mock('react-hot-toast', () => ({
+// Mock de sonner
+vi.mock('sonner', () => ({
   toast: {
     success: vi.fn(),
     error: vi.fn(),
     loading: vi.fn(),
+    info: vi.fn(),
   },
 }));
 

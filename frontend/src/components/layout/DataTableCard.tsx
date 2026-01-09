@@ -82,7 +82,11 @@ export function DataTableCard({
               {title}
             </h3>
           )}
-          {headerActions && <div className="flex items-center gap-2">{headerActions}</div>}
+          {headerActions && (
+            <div className={cn('flex items-center gap-2', !title && 'ml-auto')}>
+              {headerActions}
+            </div>
+          )}
         </div>
       )}
 

@@ -32,21 +32,12 @@
  */
 
 import { useQuery, useMutation, useQueryClient, type UseQueryOptions } from '@tanstack/react-query';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import { AxiosError } from 'axios';
 import axiosInstance from '@/api/axios-config';
+import type { PaginatedResponse } from '@/types';
 
 // ==================== TYPES ====================
-
-/**
- * Estructura de respuesta paginada de Django REST Framework
- */
-export interface PaginatedResponse<T> {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
-}
 
 /**
  * Errores de validación de DRF
@@ -61,6 +52,9 @@ interface ValidationErrors {
 export interface BaseEntity {
   id: number;
 }
+
+// Re-export para compatibilidad con imports existentes
+export type { PaginatedResponse } from '@/types';
 
 /**
  * Opciones de configuración del hook

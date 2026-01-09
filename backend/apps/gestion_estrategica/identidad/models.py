@@ -18,17 +18,8 @@ from apps.core.base_models import TimestampedModel, AuditModel, SoftDeleteModel,
 
 
 # =============================================================================
-# CHOICES COMPARTIDOS
+# CHOICES TÉCNICOS (estados de workflow - fijos)
 # =============================================================================
-
-ISO_STANDARD_CHOICES = [
-    ('ISO_9001', 'ISO 9001 - Calidad'),
-    ('ISO_14001', 'ISO 14001 - Ambiental'),
-    ('ISO_45001', 'ISO 45001 - SST'),
-    ('ISO_27001', 'ISO 27001 - Seguridad de la Información'),
-    ('PESV', 'PESV - Plan Estratégico de Seguridad Vial'),
-    ('SG_SST', 'SG-SST - Sistema de Gestión SST'),
-]
 
 POLICY_STATUS_CHOICES = [
     ('BORRADOR', 'Borrador'),
@@ -42,9 +33,18 @@ class CorporateIdentity(AuditModel, SoftDeleteModel):
     """
     Identidad Corporativa - Misión, Visión, Política Integral
 
-    Solo puede existir un registro activo a la vez.
+    Solo puede existir un registro activo por empresa (multi-tenant).
     Permite firma digital de la Política Integral.
     """
+
+    # Multi-tenancy
+    empresa = models.OneToOneField(
+        'configuracion.EmpresaConfig',
+        on_delete=models.CASCADE,
+        related_name='identidad_corporativa',
+        verbose_name='Empresa',
+        help_text='Empresa a la que pertenece esta identidad corporativa'
+    )
 
     mission = models.TextField(
         verbose_name='Misión',
@@ -103,9 +103,11 @@ class CorporateIdentity(AuditModel, SoftDeleteModel):
         return f"Identidad Corporativa v{self.version} ({self.effective_date})"
 
     def save(self, *args, **kwargs):
-        # Si se activa esta identidad, desactivar las demás
-        if self.is_active:
-            CorporateIdentity.objects.exclude(pk=self.pk).update(is_active=False)
+        # Si se activa esta identidad, desactivar las demás de la misma empresa
+        if self.is_active and self.empresa_id:
+            CorporateIdentity.objects.filter(
+                empresa_id=self.empresa_id
+            ).exclude(pk=self.pk).update(is_active=False)
         super().save(*args, **kwargs)
 
     def sign_policy(self, user):
@@ -189,10 +191,21 @@ class AlcanceSistema(AuditModel, SoftDeleteModel):
         related_name='alcances',
         verbose_name='Identidad Corporativa'
     )
-    iso_standard = models.CharField(
-        max_length=20,
-        choices=ISO_STANDARD_CHOICES,
+    norma_iso = models.ForeignKey(
+        'configuracion.NormaISO',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='alcances_sistema',
         verbose_name='Norma ISO',
+        db_index=True
+    )
+    # DEPRECATED: Campo legacy para migración
+    iso_standard_legacy = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        verbose_name='[DEPRECATED] Norma ISO (código)',
         db_index=True
     )
     scope = models.TextField(
@@ -261,15 +274,16 @@ class AlcanceSistema(AuditModel, SoftDeleteModel):
         db_table = 'identidad_alcance_sistema'
         verbose_name = 'Alcance del Sistema'
         verbose_name_plural = 'Alcances del Sistema'
-        ordering = ['iso_standard']
-        unique_together = [['identity', 'iso_standard']]
+        ordering = ['norma_iso__orden', 'norma_iso__code']
+        unique_together = [['identity', 'norma_iso']]
         indexes = [
-            models.Index(fields=['iso_standard', 'is_certified'], name='alcance_iso_cert_idx'),
+            models.Index(fields=['is_certified'], name='alcance_cert_idx'),
         ]
 
     def __str__(self):
         cert_status = "✓" if self.is_certified else "○"
-        return f"{cert_status} {self.get_iso_standard_display()}"
+        norma_str = self.norma_iso.short_name if self.norma_iso else 'Sin Norma'
+        return f"{cert_status} {norma_str}"
 
     @property
     def is_certificate_valid(self):
@@ -369,6 +383,12 @@ class PoliticaIntegral(AuditModel, SoftDeleteModel, OrderedModel):
         verbose_name='Motivo del Cambio',
         help_text='Razón del cambio respecto a la versión anterior'
     )
+    review_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='Fecha de Revisión',
+        help_text='Próxima fecha de revisión programada'
+    )
 
     class Meta:
         db_table = 'identidad_politica_integral'
@@ -437,12 +457,22 @@ class PoliticaEspecifica(AuditModel, SoftDeleteModel, OrderedModel):
         related_name='politicas_especificas',
         verbose_name='Identidad Corporativa'
     )
-    iso_standard = models.CharField(
-        max_length=20,
-        choices=ISO_STANDARD_CHOICES,
+    norma_iso = models.ForeignKey(
+        'configuracion.NormaISO',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='politicas_especificas',
         verbose_name='Norma ISO',
         db_index=True,
         help_text='Norma ISO a la que aplica esta política'
+    )
+    # DEPRECATED: Campo legacy para migración
+    iso_standard_legacy = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        verbose_name='[DEPRECATED] Norma ISO (código)'
     )
     code = models.CharField(
         max_length=20,
@@ -535,10 +565,10 @@ class PoliticaEspecifica(AuditModel, SoftDeleteModel, OrderedModel):
         db_table = 'identidad_politica_especifica'
         verbose_name = 'Política Específica'
         verbose_name_plural = 'Políticas Específicas'
-        ordering = ['iso_standard', 'orden', 'code']
+        ordering = ['norma_iso__orden', 'orden', 'code']
         unique_together = [['identity', 'code']]
         indexes = [
-            models.Index(fields=['iso_standard', 'status'], name='pol_esp_iso_status_idx'),
+            models.Index(fields=['status'], name='pol_esp_status_idx'),
             models.Index(fields=['area', 'is_active'], name='pol_esp_area_active_idx'),
         ]
 

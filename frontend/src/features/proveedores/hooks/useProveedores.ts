@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+﻿import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { proveedoresAPI } from '@/api/proveedores.api';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import type {
   ProveedorFilters,
   CreateProveedorDTO,

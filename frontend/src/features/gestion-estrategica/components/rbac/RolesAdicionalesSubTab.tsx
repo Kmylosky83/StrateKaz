@@ -17,8 +17,6 @@ import {
   Shield,
   Award,
   Loader2,
-  ChevronDown,
-  ChevronRight,
   FileText,
   RefreshCw,
 } from 'lucide-react';
@@ -32,24 +30,16 @@ import { StatsGrid, StatsGridSkeleton } from '@/components/layout';
 import type { StatItem } from '@/components/layout';
 import { Textarea } from '@/components/forms/Textarea';
 import {
-  TipoRol,
-  TIPO_ROL_OPTIONS,
-  PLANTILLAS_ROLES,
-  PlantillaRol,
-} from '../organizacion/roles/types';
-import {
   useRolesAdicionales,
   useCreateRolAdicional,
   useUpdateRolAdicional,
   useDeleteRolAdicional,
-  useCreateRolFromPlantilla,
-  usePlantillasRoles,
   useAsignarRolUsuario,
   useToggleRolActivo,
 } from '../../hooks/useRolesPermisos';
 import { useUsers } from '@/features/users/hooks/useUsers';
 
-// Tipo para rol desde API (adaptar a la respuesta real del backend)
+// Tipo para rol desde API
 interface RolAdicionalAPI {
   id: number;
   code: string;
@@ -77,23 +67,18 @@ const TIPO_ROL_MAP: Record<string, { label: string; color: string }> = {
   SISTEMA_GESTION: { label: 'Sistema de Gestión', color: 'green' },
   OPERATIVO: { label: 'Operativo', color: 'blue' },
   CUSTOM: { label: 'Personalizado', color: 'purple' },
-  // Tipos del frontend original
-  LEGAL: { label: 'Legal / Normativo', color: 'red' },
-  ADMINISTRATIVO: { label: 'Administrativo', color: 'purple' },
-  TECNICO: { label: 'Técnico', color: 'orange' },
-  ESTRATEGICO: { label: 'Estratégico', color: 'indigo' },
 };
 
 const getTipoRolConfig = (tipo: string) => {
   const config = TIPO_ROL_MAP[tipo] || { label: tipo, color: 'gray' };
   const colors: Record<string, string> = {
-    blue: 'bg-blue-100 text-blue-700 border-blue-200',
-    purple: 'bg-purple-100 text-purple-700 border-purple-200',
-    red: 'bg-red-100 text-red-700 border-red-200',
-    green: 'bg-green-100 text-green-700 border-green-200',
-    orange: 'bg-orange-100 text-orange-700 border-orange-200',
-    indigo: 'bg-indigo-100 text-indigo-700 border-indigo-200',
-    gray: 'bg-gray-100 text-gray-700 border-gray-200',
+    blue: 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700',
+    purple: 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-700',
+    red: 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700',
+    green: 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700',
+    orange: 'bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700',
+    indigo: 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-700',
+    gray: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600',
   };
   return {
     label: config.label,
@@ -102,48 +87,6 @@ const getTipoRolConfig = (tipo: string) => {
 };
 
 // ==================== COMPONENTES ====================
-
-interface PlantillaRolCardProps {
-  plantilla: PlantillaRol;
-  onUse: (plantilla: PlantillaRol) => void;
-}
-
-const PlantillaRolCard = ({ plantilla, onUse }: PlantillaRolCardProps) => {
-  const tipoConfig = getTipoRolConfig(plantilla.tipo_rol);
-
-  return (
-    <div className="p-4 border rounded-lg hover:border-blue-300 hover:bg-blue-50/50 transition-colors">
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <div
-            className={`h-8 w-8 rounded-lg flex items-center justify-center ${tipoConfig.color}`}
-          >
-            <Shield className="h-4 w-4" />
-          </div>
-          <div>
-            <h4 className="font-medium text-gray-900">{plantilla.name}</h4>
-            <span className={`text-xs px-2 py-0.5 rounded-full ${tipoConfig.color}`}>
-              {tipoConfig.label}
-            </span>
-          </div>
-        </div>
-        <Button variant="ghost" size="sm" onClick={() => onUse(plantilla)}>
-          Usar
-        </Button>
-      </div>
-      <p className="text-sm text-gray-500 mb-2">{plantilla.description}</p>
-      <div className="flex items-center gap-4 text-xs text-gray-500">
-        <span>{plantilla.permission_codes.length} permisos</span>
-        {plantilla.requiere_certificacion && (
-          <span className="flex items-center gap-1 text-amber-600">
-            <Award className="h-3 w-3" />
-            Requiere certificación
-          </span>
-        )}
-      </div>
-    </div>
-  );
-};
 
 // Tipos de rol disponibles en el backend
 const TIPOS_ROL_API = [
@@ -155,7 +98,6 @@ const TIPOS_ROL_API = [
 
 interface RolAdicionalModalProps {
   rol?: RolAdicionalAPI | null;
-  plantilla?: PlantillaRol | null;
   open: boolean;
   onClose: () => void;
   onSave: (data: any) => void;
@@ -164,7 +106,6 @@ interface RolAdicionalModalProps {
 
 const RolAdicionalModal = ({
   rol,
-  plantilla,
   open,
   onClose,
   onSave,
@@ -172,18 +113,18 @@ const RolAdicionalModal = ({
 }: RolAdicionalModalProps) => {
   const isEdit = !!rol;
   const [formData, setFormData] = useState({
-    code: rol?.code || plantilla?.code || '',
-    nombre: rol?.nombre || plantilla?.name || '',
-    descripcion: rol?.descripcion || plantilla?.description || '',
+    code: rol?.code || '',
+    nombre: rol?.nombre || '',
+    descripcion: rol?.descripcion || '',
     tipo: rol?.tipo || 'OPERATIVO',
-    requiere_certificacion: rol?.requiere_certificacion || plantilla?.requiere_certificacion || false,
-    certificacion_requerida: rol?.certificacion_requerida || plantilla?.certificacion_requerida || '',
+    requiere_certificacion: rol?.requiere_certificacion || false,
+    certificacion_requerida: rol?.certificacion_requerida || '',
     is_active: rol?.is_active ?? true,
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    await onSave(formData);
+    onSave(formData);
   };
 
   return (
@@ -235,9 +176,9 @@ const RolAdicionalModal = ({
               onChange={(e) =>
                 setFormData({ ...formData, requiere_certificacion: e.target.checked })
               }
-              className="h-4 w-4 rounded border-gray-300 text-blue-600"
+              className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 dark:bg-gray-700"
             />
-            <span className="text-sm text-gray-700">
+            <span className="text-sm text-gray-700 dark:text-gray-300">
               Requiere certificación para ocupar el rol
             </span>
           </label>
@@ -254,7 +195,7 @@ const RolAdicionalModal = ({
           )}
         </div>
 
-        <div className="flex justify-end gap-3 pt-4 border-t">
+        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
           <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
             Cancelar
           </Button>
@@ -301,11 +242,11 @@ const AsignarUsuarioModal = ({
   const { data: usersData, isLoading: loadingUsers } = useUsers();
   const users = usersData?.results || [];
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUserId) return;
 
-    await onAssign({
+    onAssign({
       user_id: selectedUserId,
       rol_adicional_id: rol.id,
       justificacion: justificacion || undefined,
@@ -324,14 +265,14 @@ const AsignarUsuarioModal = ({
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Info del rol */}
-        <div className="p-3 bg-gray-50 rounded-lg">
+        <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
-            <Shield className="h-4 w-4 text-blue-500" />
-            <span className="font-medium">{rol.nombre}</span>
+            <Shield className="h-4 w-4 text-blue-500 dark:text-blue-400" />
+            <span className="font-medium text-gray-900 dark:text-gray-100">{rol.nombre}</span>
           </div>
-          <p className="text-sm text-gray-500">{rol.descripcion}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{rol.descripcion}</p>
           {rol.requiere_certificacion && (
-            <div className="mt-2 flex items-center gap-2 text-sm text-amber-600">
+            <div className="mt-2 flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
               <Award className="h-4 w-4" />
               Requiere: {rol.certificacion_requerida}
             </div>
@@ -371,8 +312,8 @@ const AsignarUsuarioModal = ({
 
         {/* Certificación */}
         {rol.requiere_certificacion && (
-          <div className="space-y-3 p-4 border border-amber-200 bg-amber-50 rounded-lg">
-            <h4 className="font-medium text-amber-800 flex items-center gap-2">
+          <div className="space-y-3 p-4 border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+            <h4 className="font-medium text-amber-800 dark:text-amber-300 flex items-center gap-2">
               <FileText className="h-4 w-4" />
               Certificación Requerida
             </h4>
@@ -391,7 +332,7 @@ const AsignarUsuarioModal = ({
           </div>
         )}
 
-        <div className="flex justify-end gap-3 pt-4 border-t">
+        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
           <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
             Cancelar
           </Button>
@@ -419,13 +360,11 @@ const AsignarUsuarioModal = ({
 export const RolesAdicionalesSubTab = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [tipoFilter, setTipoFilter] = useState<string>('');
-  const [showPlantillas, setShowPlantillas] = useState(true);
 
   // Modals
   const [isRolModalOpen, setIsRolModalOpen] = useState(false);
   const [isAsignarModalOpen, setIsAsignarModalOpen] = useState(false);
   const [selectedRol, setSelectedRol] = useState<RolAdicionalAPI | null>(null);
-  const [selectedPlantilla, setSelectedPlantilla] = useState<PlantillaRol | null>(null);
 
   // API Queries
   const {
@@ -438,13 +377,10 @@ export const RolesAdicionalesSubTab = () => {
     tipo_rol: tipoFilter as any || undefined,
   });
 
-  const { data: plantillasAPI } = usePlantillasRoles();
-
   // Mutations
   const createRol = useCreateRolAdicional();
   const updateRol = useUpdateRolAdicional();
   const deleteRol = useDeleteRolAdicional();
-  const createFromPlantilla = useCreateRolFromPlantilla();
   const asignarRol = useAsignarRolUsuario();
   const toggleActivo = useToggleRolActivo();
 
@@ -454,9 +390,6 @@ export const RolesAdicionalesSubTab = () => {
     // La API puede devolver { results: [...], count: N } o directamente [...]
     return Array.isArray(rolesData) ? rolesData : (rolesData.results || []);
   }, [rolesData]);
-
-  // Usar plantillas de API o las locales como fallback
-  const plantillas = plantillasAPI || PLANTILLAS_ROLES;
 
   // Filtrar roles localmente (búsqueda adicional si la API no la soporta)
   const filteredRoles = useMemo(() => {
@@ -472,12 +405,11 @@ export const RolesAdicionalesSubTab = () => {
     });
   }, [roles, searchQuery, tipoFilter]);
 
-  // Calcular estadísticas para StatsGrid
+  // Calcular estadísticas para StatsGrid - datos reales de la API
   const roleStats: StatItem[] = useMemo(() => {
     const activos = roles.filter((r) => r.is_active).length;
     const conCertificacion = roles.filter((r) => r.requiere_certificacion).length;
     const totalUsuarios = roles.reduce((sum, r) => sum + (r.usuarios_count || 0), 0);
-    const totalPermisos = roles.reduce((sum, r) => sum + (r.permisos_count || 0), 0);
 
     return [
       { label: 'Total Roles', value: roles.length, icon: Shield, iconColor: 'info' as const },
@@ -487,15 +419,8 @@ export const RolesAdicionalesSubTab = () => {
     ];
   }, [roles]);
 
-  const handleCreateFromPlantilla = (plantilla: PlantillaRol) => {
-    setSelectedPlantilla(plantilla);
-    setSelectedRol(null);
-    setIsRolModalOpen(true);
-  };
-
   const handleEdit = (rol: RolAdicionalAPI) => {
     setSelectedRol(rol);
-    setSelectedPlantilla(null);
     setIsRolModalOpen(true);
   };
 
@@ -525,7 +450,6 @@ export const RolesAdicionalesSubTab = () => {
     }
     setIsRolModalOpen(false);
     setSelectedRol(null);
-    setSelectedPlantilla(null);
   };
 
   const handleAssignUser = async (data: any) => {
@@ -534,17 +458,15 @@ export const RolesAdicionalesSubTab = () => {
     setSelectedRol(null);
   };
 
-  const isMutating = createRol.isPending || updateRol.isPending || asignarRol.isPending;
-
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             Roles Adicionales
           </h3>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             Roles transversales que se asignan además del cargo principal (COPASST,
             Brigadista, Auditor, etc.)
           </p>
@@ -552,7 +474,6 @@ export const RolesAdicionalesSubTab = () => {
         <Button
           onClick={() => {
             setSelectedRol(null);
-            setSelectedPlantilla(null);
             setIsRolModalOpen(true);
           }}
         >
@@ -561,43 +482,12 @@ export const RolesAdicionalesSubTab = () => {
         </Button>
       </div>
 
-      {/* Estadísticas */}
+      {/* Estadísticas - Datos reales de roles adicionales creados */}
       {loadingRoles ? (
-        <StatsGridSkeleton columns={4} />
+        <StatsGridSkeleton count={4} />
       ) : (
         <StatsGrid stats={roleStats} columns={4} moduleColor="purple" />
       )}
-
-      {/* Plantillas sugeridas */}
-      <Card className="overflow-hidden">
-        <div
-          className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-purple-50 cursor-pointer"
-          onClick={() => setShowPlantillas(!showPlantillas)}
-        >
-          <div className="flex items-center gap-2">
-            <Award className="h-5 w-5 text-blue-500" />
-            <h4 className="font-medium text-gray-900">Plantillas Sugeridas</h4>
-            <Badge variant="secondary">{PLANTILLAS_ROLES.length}</Badge>
-          </div>
-          {showPlantillas ? (
-            <ChevronDown className="h-5 w-5 text-gray-400" />
-          ) : (
-            <ChevronRight className="h-5 w-5 text-gray-400" />
-          )}
-        </div>
-
-        {showPlantillas && (
-          <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {PLANTILLAS_ROLES.slice(0, 6).map((plantilla) => (
-              <PlantillaRolCard
-                key={plantilla.code}
-                plantilla={plantilla}
-                onUse={handleCreateFromPlantilla}
-              />
-            ))}
-          </div>
-        )}
-      </Card>
 
       {/* Filtros */}
       <Card className="p-4">
@@ -641,56 +531,56 @@ export const RolesAdicionalesSubTab = () => {
       <Card>
         {loadingRoles ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-            <span className="ml-2 text-gray-500">Cargando roles...</span>
+            <Loader2 className="h-8 w-8 animate-spin text-blue-500 dark:text-blue-400" />
+            <span className="ml-2 text-gray-500 dark:text-gray-400">Cargando roles...</span>
           </div>
         ) : (
           <>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Rol
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Tipo
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Certificación
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Permisos
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Usuarios
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Estado
                     </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Acciones
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredRoles.map((rol) => {
                     const tipoConfig = getTipoRolConfig(rol.tipo);
                     return (
-                      <tr key={rol.id} className="hover:bg-gray-50">
+                      <tr key={rol.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                         <td className="px-4 py-4">
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-medium text-gray-900">
+                              <span className="font-medium text-gray-900 dark:text-gray-100">
                                 {rol.nombre}
                               </span>
                               {rol.is_system && (
-                                <Badge variant="outline" className="text-xs">
+                                <Badge variant="secondary" className="text-xs">
                                   Sistema
                                 </Badge>
                               )}
                             </div>
-                            <div className="text-sm text-gray-500">{rol.code}</div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">{rol.code}</div>
                           </div>
                         </td>
                         <td className="px-4 py-4">
@@ -703,13 +593,13 @@ export const RolesAdicionalesSubTab = () => {
                         <td className="px-4 py-4 text-center">
                           {rol.requiere_certificacion ? (
                             <div className="flex flex-col items-center">
-                              <Award className="h-4 w-4 text-amber-500" />
-                              <span className="text-xs text-gray-500 mt-1">
+                              <Award className="h-4 w-4 text-amber-500 dark:text-amber-400" />
+                              <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                 Requerida
                               </span>
                             </div>
                           ) : (
-                            <span className="text-gray-400">-</span>
+                            <span className="text-gray-400 dark:text-gray-500">-</span>
                           )}
                         </td>
                         <td className="px-4 py-4 text-center">
@@ -718,7 +608,7 @@ export const RolesAdicionalesSubTab = () => {
                           </Badge>
                         </td>
                         <td className="px-4 py-4 text-center">
-                          <div className="flex items-center justify-center gap-1 text-sm text-gray-500">
+                          <div className="flex items-center justify-center gap-1 text-sm text-gray-500 dark:text-gray-400">
                             <Users className="h-4 w-4" />
                             {rol.usuarios_count}
                           </div>
@@ -776,17 +666,16 @@ export const RolesAdicionalesSubTab = () => {
 
             {filteredRoles.length === 0 && !loadingRoles && (
               <div className="text-center py-12">
-                <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                <Users className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
                   No se encontraron roles
                 </h3>
-                <p className="text-gray-500 mb-4">
-                  Crea un nuevo rol o usa una plantilla sugerida.
+                <p className="text-gray-500 dark:text-gray-400 mb-4">
+                  Crea un nuevo rol adicional para empezar.
                 </p>
                 <Button
                   onClick={() => {
                     setSelectedRol(null);
-                    setSelectedPlantilla(null);
                     setIsRolModalOpen(true);
                   }}
                 >
@@ -802,12 +691,10 @@ export const RolesAdicionalesSubTab = () => {
       {/* Modal crear/editar rol */}
       <RolAdicionalModal
         rol={selectedRol}
-        plantilla={selectedPlantilla}
         open={isRolModalOpen}
         onClose={() => {
           setIsRolModalOpen(false);
           setSelectedRol(null);
-          setSelectedPlantilla(null);
         }}
         onSave={handleSaveRol}
         isLoading={createRol.isPending || updateRol.isPending}

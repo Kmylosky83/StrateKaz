@@ -1,110 +1,172 @@
-# StrateKaz - SGI
+# StrateKaz - Sistema de Gestion Integral
 
-Sistema integral de gestión para la recolección y procesamiento de materias primas (huesos, sebo, grasa) y subproductos cárnicos en Colombia.
+> **IMPORTANTE:** El nombre del directorio "Grasas y Huesos del Norte" es TEMPORAL.
+> El software se llama **StrateKaz** y el directorio sera renombrado antes del despliegue.
+
+Sistema integral de gestion empresarial multi-tenant para empresas colombianas con cumplimiento normativo (SG-SST, PESV, ISO 9001/14001/45001).
 
 | Info | Valor |
 |------|-------|
-| **Versión** | 2.1.0 |
-| **Última Actualización** | 01 Enero 2026 (Post GO-LIVE - Design System v2) |
-| **Estado** | ✅ DESARROLLO COMPLETO - Listo para Producción |
-| **Repositorio** | [GitHub](https://github.com/Kmylosky83/Grasas-Huesos-SGI) |
+| **Nombre del Software** | StrateKaz |
+| **Version** | 2.6.0 |
+| **Ultima Actualizacion** | 09 Enero 2026 |
+| **Estado** | MVP - Auditado y listo para produccion |
+| **Propietario** | StrateKaz S.A.S. |
+| **Calificacion Backend** | 8.5/10 |
+| **Calificacion Frontend** | 7.5/10 |
 
 ---
 
-## Principios Fundamentales
+## Stack Tecnologico
 
-### 1. Sistema 100% Dinámico
+| Capa | Tecnologia | Version | Estado |
+|------|------------|---------|--------|
+| **Python** | Python | 3.11+ | ✅ OK |
+| **Backend** | Django + DRF | 5.0.9 | ✅ OK |
+| **Base de Datos** | MySQL | 8.0+ | ✅ OK |
+| **Node.js** | Node.js | 22.14.0 LTS | ✅ Excelente |
+| **Frontend** | React + TypeScript | 18.3 + 5.3 | ✅ OK |
+| **Build Tool** | Vite | 5.4.21 | ✅ OK |
+| **Estilos** | Tailwind CSS | 3.4.x | ✅ OK |
+| **Estado** | Zustand + TanStack Query v5 | 4.5 + 5.90 | ✅ Moderno |
+| **PWA** | Vite PWA Plugin | 1.2.0 | ✅ OK |
+| **Formularios** | React Hook Form + Zod | 7.66 + 3.22 | ✅ OK |
 
-> **Todo configurable desde base de datos. NO hardcoding.**
+### Estadisticas del Proyecto
 
-| Elemento | Desde BD | Ejemplo |
-|----------|----------|---------|
-| Navegación | Módulos, tabs, secciones | `GET /api/core/modulos/` |
-| Cargos/Roles | RBAC completo | Admin crea cargos sin código |
-| Permisos | Granulares por acción | `sst.view_matriz_peligros` |
-| Branding | Logos, 3 colores, nombre | `EmpresaConfig` (Primary, Secondary, Accent) |
-| Colores módulos | 10 colores base + mapeo | API devuelve color, frontend mapea automáticamente |
-
-Ver detalles: [docs/desarrollo/ARQUITECTURA-DINAMICA.md](docs/desarrollo/ARQUITECTURA-DINAMICA.md)
-
-### 2. Código Reutilizable
-
-> **Antes de crear, verificar si existe. Usar abstract models, mixins y hooks.**
-
-```python
-# Backend: Usar modelos base
-from apps.core.base_models import BaseCompanyModel, AuditModel
-```
-
-```typescript
-// Frontend: Usar hooks genéricos
-const { data, create, update } = useGenericCRUD({ endpoint: '/api/areas/' });
-```
-
-Ver detalles: [docs/desarrollo/CODIGO-REUTILIZABLE.md](docs/desarrollo/CODIGO-REUTILIZABLE.md)
+| Metrica | Backend | Frontend |
+|---------|---------|----------|
+| **Archivos** | 818 .py | 542 .ts/.tsx |
+| **Apps/Features** | 103 apps | 20 features |
+| **Modelos** | 240 | - |
+| **Componentes** | - | 30+ reutilizables |
+| **Lineas de codigo** | ~50,000 | ~154,000 |
 
 ---
 
-## Arquitectura (6 Niveles, 14 Módulos)
+## Arquitectura del Sistema
+
+### Estructura de 6 Niveles (14 Modulos, 81 Apps)
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│ NIVEL 1: ESTRATÉGICO          ✅ Completo                   │
-│   └── gestion_estrategica/                                  │
-├─────────────────────────────────────────────────────────────┤
-│ NIVEL 2: CUMPLIMIENTO         ✅ Completo                   │
-│   ├── motor_cumplimiento/  ├── motor_riesgos/              │
-│   └── workflow_engine/                                      │
-├─────────────────────────────────────────────────────────────┤
-│ NIVEL 3: TORRE DE CONTROL     ✅ Completo (100%)            │
-│   └── hseq_management/  (S11-S14 ✅ Full Stack)             │
-├─────────────────────────────────────────────────────────────┤
-│ NIVEL 4: CADENA DE VALOR      ✅ COMPLETO (S15-S18)         │
-│   ├── supply_chain/ ✅ S15-S16 (5 apps completas)           │
-│   ├── production_ops/ ✅ S17 (4 apps: recepcion, proc, mtto, PT) │
-│   ├── logistics_fleet/ ✅ S17 (2 apps: flota, transporte)   │
-│   └── sales_crm/ ✅ S18 (4 apps: clientes, pipeline, pedidos, servicio) │
-├─────────────────────────────────────────────────────────────┤
-│ NIVEL 5: HABILITADORES        ✅ COMPLETO (S19-S22)         │
-│   ├── talent_hub/ ✅  ├── admin_finance/ ✅  └── accounting/ ✅ │
-├─────────────────────────────────────────────────────────────┤
-│ NIVEL 6: INTELIGENCIA         ✅ COMPLETO (S23-S26)         │
-│   ├── analytics/ ✅ (7 apps)  └── audit_system/ ✅ (4 apps)  │
-├─────────────────────────────────────────────────────────────┤
-│ 🚀 GO-LIVE: Optimización + Producción    ✅ COMPLETADA S26  │
-└─────────────────────────────────────────────────────────────┘
-```
+NIVEL 0: CORE BASE
+└── core/ (Usuarios, RBAC, Menu, Configuracion)
 
-Ver detalle de módulos: [docs/arquitectura/CATALOGO-MODULOS.md](docs/arquitectura/CATALOGO-MODULOS.md)
+NIVEL 1: ESTRATEGICO (6 apps)
+└── gestion_estrategica/
+    ├── configuracion/    # EmpresaConfig, SedeEmpresa, NormaISO, UnidadMedida
+    ├── organizacion/     # Areas, Cargos, Organigrama, Control de Acceso
+    ├── identidad/        # Mision, Vision, Valores, Politicas
+    ├── planeacion/       # Objetivos, Estrategias, KPIs
+    ├── gestion_proyectos/# Portafolios, Programas, Proyectos PMI
+    └── revision_direccion/
+
+NIVEL 2: CUMPLIMIENTO (14 apps)
+├── motor_cumplimiento/   # Matriz Legal, Requisitos, Partes Interesadas
+├── motor_riesgos/        # DOFA, IPEVR, ISO 31000, PESV
+└── workflow_engine/      # Motor BPMN
+
+NIVEL 3: TORRE DE CONTROL (11 apps)
+└── hseq_management/      # Documentos, Calidad, SST, Ambiental
+
+NIVEL 4: CADENA DE VALOR (18 apps)
+├── supply_chain/         # Proveedores, Compras, Almacen
+├── production_ops/       # Recepcion, Procesamiento, Mantenimiento
+├── logistics_fleet/      # Flota, Transporte
+└── sales_crm/            # Clientes, Ventas, Facturacion
+
+NIVEL 5: HABILITADORES (19 apps)
+├── talent_hub/           # RRHH completo (11 apps)
+├── admin_finance/        # Tesoreria, Presupuesto, Activos
+└── accounting/           # Contabilidad (opcional)
+
+NIVEL 6: INTELIGENCIA (11 apps)
+├── analytics/            # KPIs, Dashboards, Informes
+└── audit_system/         # Logs, Notificaciones, Alertas
+```
 
 ---
 
-## Stack Tecnológico
+## Inicio Rapido
 
-| Capa | Tecnologías |
-|------|-------------|
-| **Backend** | Django 5.0, DRF, MySQL 8.0, Python 3.11+ |
-| **Frontend** | React 18, TypeScript 5.3, Vite, Tailwind, TanStack Query, Zustand |
-| **Async** | Celery 5.3+, Redis 7 |
-| **DevOps** | Docker, Docker Compose, GitHub Actions |
+### Requisitos
+
+- **Python** 3.11+ (usar venv incluido)
+- **MySQL** 8.0+
+- **Node.js** 20+
+- **npm** 10+
+
+### Backend
+
+```powershell
+cd backend
+
+# Activar entorno virtual (Python 3.11)
+.\venv\Scripts\activate
+
+# Instalar dependencias
+pip install -r requirements.txt
+
+# Configurar base de datos MySQL
+# Crear BD: grasas_huesos_db
+
+# Ejecutar migraciones
+python manage.py migrate
+
+# Crear superusuario
+python manage.py createsuperuser
+
+# Poblar datos iniciales
+python manage.py seed_empresa
+python manage.py seed_organizacion
+python manage.py seed_identidad
+python manage.py init_rbac
+
+# Iniciar servidor
+python manage.py runserver
+```
+
+### Frontend
+
+```powershell
+cd frontend
+
+# Instalar dependencias
+npm install
+
+# Desarrollo (puerto 3010)
+npm run dev
+
+# Build para produccion
+npm run build:cpanel
+```
+
+### Accesos Desarrollo
+
+| Servicio | URL |
+|----------|-----|
+| Frontend | http://localhost:3010 |
+| Backend API | http://localhost:8000/api |
+| Admin Django | http://localhost:8000/admin |
+| API Docs | http://localhost:8000/api/docs/ |
 
 ---
 
-## Inicio Rápido
+## Sistema RBAC (3 Tipos de Roles)
 
-```bash
-# 1. Clonar
-git clone <repository-url>
-cd "StrateKaz"
+El sistema implementa un modelo RBAC hibrido con clara diferenciacion:
 
-# 2. Iniciar
-docker-compose up -d
+| Tipo | Descripcion | Ejemplo |
+|------|-------------|---------|
+| **Cargo** | Posicion en organigrama, permisos base automaticos | Operario, Supervisor, Gerente |
+| **Rol Funcional** | Permisos RBAC adicionales, asignables | Aprobador, Auditor, Analista |
+| **Especialidad Certificada** | Roles legales con certificacion | COPASST, Brigadista, Vigía SST |
 
-# 3. Acceder
-# Frontend: http://localhost:3010
-# Backend:  http://localhost:8000
-# Admin:    http://localhost:8000/admin
-```
+### Asignacion
+
+- **Cargo**: Se asigna al crear/editar usuario
+- **Roles Funcionales**: Multi-seleccion en formulario de usuario
+- **Especialidades**: Se gestionan en modulo Organizacion > Especialidades Certificadas
 
 ---
 
@@ -113,548 +175,182 @@ docker-compose up -d
 ```
 StrateKaz/
 ├── backend/
-│   ├── apps/
-│   │   ├── core/                    # Usuarios, RBAC, base models
-│   │   ├── gestion_estrategica/     # ✅ Nivel 1
-│   │   ├── motor_cumplimiento/      # Nivel 2
-│   │   ├── motor_riesgos/           # Nivel 2
-│   │   ├── workflow_engine/         # Nivel 2
-│   │   ├── hseq_management/         # Nivel 3
-│   │   └── [otros módulos...]       # Niveles 4-6
-│   └── config/                      # Settings Django
+│   ├── apps/                 # 81 aplicaciones Django
+│   │   ├── core/             # Usuarios, RBAC, Menu
+│   │   ├── gestion_estrategica/
+│   │   └── ...
+│   ├── config/               # Settings Django
+│   ├── venv/                 # Entorno virtual Python 3.11
+│   └── requirements.txt
 ├── frontend/
 │   └── src/
-│       ├── components/              # Design System
-│       ├── features/                # Módulos por funcionalidad
-│       ├── hooks/                   # Custom hooks
-│       └── store/                   # Zustand stores
-├── docs/                            # Documentación completa
-├── docker/                          # Configuración Docker
-└── docker-compose.yml
+│       ├── components/       # Design System
+│       ├── features/         # Modulos por funcionalidad
+│       ├── hooks/            # Custom hooks
+│       └── store/            # Zustand stores
+├── docs/                     # Documentacion
+│   ├── 00-EMPEZAR-AQUI.md   # Punto de entrada
+│   ├── desarrollo/          # Guias tecnicas
+│   └── arquitectura/        # Catalogo modulos
+└── scripts/                  # Scripts utilidad
 ```
 
 ---
 
-## Documentación
+## Documentacion
 
 > **Punto de entrada:** [docs/00-EMPEZAR-AQUI.md](docs/00-EMPEZAR-AQUI.md)
 
-### Por Categoría
+### Guias Principales
 
-| Categoría | Documentos Clave |
-|-----------|------------------|
-| **Arquitectura** | [CATALOGO-MODULOS.md](docs/arquitectura/CATALOGO-MODULOS.md), [DATABASE-ARCHITECTURE.md](docs/arquitectura/DATABASE-ARCHITECTURE.md) |
-| **Desarrollo** | [ARQUITECTURA-DINAMICA.md](docs/desarrollo/ARQUITECTURA-DINAMICA.md), [CODIGO-REUTILIZABLE.md](docs/desarrollo/CODIGO-REUTILIZABLE.md), [RBAC-SYSTEM.md](docs/desarrollo/RBAC-SYSTEM.md) |
-| **Frontend** | [DESIGN-SYSTEM.md](docs/desarrollo/DESIGN-SYSTEM.md), [NAVEGACION-DINAMICA.md](docs/desarrollo/NAVEGACION-DINAMICA.md) |
-| **Backend** | [TESTING.md](docs/desarrollo/TESTING.md), [LOGGING.md](docs/desarrollo/LOGGING.md), [AUTENTICACION.md](docs/desarrollo/AUTENTICACION.md) |
-| **DevOps** | [CI-CD.md](docs/devops/CI-CD.md), [DESPLIEGUE.md](docs/devops/DESPLIEGUE.md), [BACKUPS.md](docs/devops/BACKUPS.md) |
-| **Planificación** | [CRONOGRAMA-26-SEMANAS.md](docs/planificacion/CRONOGRAMA-26-SEMANAS.md) |
-| **Guías** | [CLAUDE.md](docs/guias/CLAUDE.md), [GUIA-ACTUALIZACION-DOCS.md](docs/GUIA-ACTUALIZACION-DOCS.md) |
-
-### Para Agentes/IA
-
-> **Importante:** Al actualizar funcionalidades, seguir [GUIA-ACTUALIZACION-DOCS.md](docs/GUIA-ACTUALIZACION-DOCS.md)
+| Documento | Descripcion |
+|-----------|-------------|
+| [ARQUITECTURA-DINAMICA.md](docs/desarrollo/ARQUITECTURA-DINAMICA.md) | Sistema 100% dinamico desde BD |
+| [DESIGN-SYSTEM.md](docs/desarrollo/DESIGN-SYSTEM.md) | Componentes UI y patrones |
+| [SISTEMA-ICONOS-DINAMICOS.md](docs/desarrollo/SISTEMA-ICONOS-DINAMICOS.md) | Iconos dinamicos Lucide |
+| [IDENTIDAD-CORPORATIVA-MODULO.md](docs/desarrollo/IDENTIDAD-CORPORATIVA-MODULO.md) | Identidad, Valores Vividos, Showcase |
+| [GUIA-DESPLIEGUE-CPANEL.md](docs/GUIA-DESPLIEGUE-CPANEL.md) | Deploy en hosting compartido |
 
 ---
 
-## Comandos Útiles
+## Comandos Utiles
 
-```bash
-# Docker
-docker-compose up -d              # Iniciar servicios
-docker-compose logs -f            # Ver logs
-docker-compose restart            # Reiniciar
+### Backend
 
-# Backend
-docker-compose exec backend python manage.py migrate
-docker-compose exec backend python manage.py createsuperuser
-docker-compose exec backend pytest
+```powershell
+# Activar entorno (SIEMPRE usar este)
+.\venv\Scripts\activate
+
+# Migraciones
+python manage.py makemigrations
+python manage.py migrate
+
+# Seeds de datos
+python manage.py seed_empresa
+python manage.py seed_organizacion
+python manage.py seed_identidad
+python manage.py seed_configuracion_sistema
+
+# Actualizar iconos de valores
+python manage.py update_valores_icons
+
+# Tests
+python manage.py test apps.core
+```
+
+### Frontend
+
+```powershell
+# Desarrollo
+npm run dev
+
+# Build produccion cPanel
+npm run build:cpanel
+
+# Type check
+npx tsc --noEmit
+
+# Lint
+npm run lint
+```
+
+---
+
+## Configuracion
+
+### Variables de Entorno (.env)
+
+```env
+# Django
+SECRET_KEY=tu-secret-key
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+
+# Base de datos
+DB_NAME=grasas_huesos_db
+DB_USER=root
+DB_PASSWORD=tu-password
+DB_HOST=localhost
+DB_PORT=3306
+
+# CORS
+CORS_ALLOWED_ORIGINS=http://localhost:3010
 
 # Frontend
-cd frontend && npm run dev        # Desarrollo
-cd frontend && npm test           # Tests
-cd frontend && npm run storybook  # Catálogo componentes
+VITE_API_URL=http://localhost:8000/api
 ```
+
+---
+
+## Changelog Reciente
+
+### v2.6.0 (09 Enero 2026)
+
+- **Auditoria Identidad Corporativa**: Analisis exhaustivo de tipos, modelos y componentes
+- **Refactorizacion PoliticasManager**: Componentes extraidos para mejor mantenibilidad
+- **Consolidacion de tipos**: Eliminacion de duplicados PaginatedResponse y SelectOption
+- **Correcciones backend**: Multi-tenancy, hash idempotente, transacciones atomicas
+- **Limpieza legacy**: Eliminacion de codigo Docker y app proveedores migrada
+
+### v2.5.0 (08 Enero 2026)
+
+- **Valores Vividos (BI)**: Sistema de conexion valor-accion con GenericForeignKey
+  - Vincular valores corporativos a proyectos, acciones correctivas, etc.
+  - Endpoints de metricas para Business Intelligence
+  - Widget reutilizable `ValorVinculadorWidget`
+- **Vista Showcase**: Presentacion fullscreen de identidad corporativa
+  - Slideshow automatico (Mision, Vision, Valores, Politica, Metricas)
+  - Navegacion por teclado y pantalla completa
+  - Graficos de valores vividos conectados con BI
+- **Exportacion de Documentos**: PDF (WeasyPrint) y DOCX (python-docx)
+  - Politicas integrales y especificas
+  - Identidad corporativa completa
+- **Documentacion**: Nueva guia [IDENTIDAD-CORPORATIVA-MODULO.md](docs/desarrollo/IDENTIDAD-CORPORATIVA-MODULO.md)
+
+### v2.4.0 (08 Enero 2026)
+
+- **Limpieza de Organizacion**: Eliminados Consecutivos y Tipos de Documento del modulo Organizacion (se reimplementaran en Gestion Documental)
+- **Consolidacion RBAC**: MatrizPermisos consolidado dentro de RolesPermisosWrapper con 4 subtabs:
+  - Acceso a Secciones (visibilidad de modulos/tabs/secciones)
+  - Permisos de Acciones (68 permisos CRUD)
+  - Roles Adicionales
+  - Catalogo de Permisos
+- **Seed mejorado**: `seed_estructura_final` ahora elimina secciones obsoletas automaticamente
+- **Backend cleanup**: Eliminados modelos, serializers, views y URLs de consecutivos/tipos documento
+- **Frontend cleanup**: Eliminados componentes, hooks, tipos y APIs relacionados
+
+### v2.3.1 (08 Enero 2026)
+
+- **Fix permissions_count**: Corregido conteo de permisos en tabla de cargos
+- **Nivel EXTERNO agregado**: Nuevo nivel jerarquico para contratistas/consultores
+- **Iconos dinamicos en organigrama**: AreaNode usa DynamicIcon desde BD
+- **StatsGrid en Matriz de Permisos**: Estadisticas y exportacion Excel
+
+### v2.3.0 (07 Enero 2026)
+
+- Sistema de iconos dinamicos con Lucide React
+- Normas ISO dinamicas desde base de datos
+- Claridad de roles en UI (Cargo vs Rol RBAC vs Especialidad)
+- PWA support con offline indicator
+- Build optimizado para cPanel
+
+### v2.2.0 (05 Enero 2026)
+
+- Refactorizacion completa de migraciones
+- Eliminacion de dependencias circulares
+- Sistema RBAC hibrido implementado
 
 ---
 
 ## Licencia
 
-Propietario - Uso interno
+Copyright (c) 2024-2026 StrateKaz S.A.S. Todos los derechos reservados.
 
-## Soporte
+## Contacto
 
-Para soporte técnico, contactar al equipo de desarrollo.
-
----
-
-## Progreso Reciente
-
-### Semana 18 - Sales CRM Completo (28 Dic 2025) ✅ 100% COMPLETADA
-
-**NIVEL 4 CADENA DE VALOR: 100% COMPLETADO**
-
-**Backend (4 apps, 37 modelos, ~9,500 líneas):**
-
-| App | Modelos | Descripción |
-|-----|---------|-------------|
-| gestion_clientes | 9 | Clientes, contactos, segmentación, NPS |
-| pipeline_ventas | 9 | Pipeline Kanban, oportunidades, cotizaciones |
-| pedidos_facturacion | 10 | Pedidos, facturación, pagos, descuentos |
-| servicio_cliente | 9 | PQRS, SLA, fidelización, encuestas |
-
-**Frontend (8 páginas, ~5,200 líneas):**
-
-| Página | Características |
-|--------|-----------------|
-| GestionClientesPage | 4 tabs: Clientes, Contactos, Segmentación, NPS |
-| PipelineVentasPage | Kanban, Cotizaciones, Productos |
-| PedidosFacturacionPage | Pedidos, Facturación, Pagos |
-| ServicioClientePage | PQRS, Fidelización, Encuestas |
-
-**Tests (89 tests - 254% del objetivo):**
-
-| App | Tests | Cobertura |
-|-----|-------|-----------|
-| gestion_clientes | 22 | Clientes, contactos, NPS |
-| pipeline_ventas | 23 | Pipeline, cotizaciones, conversiones |
-| pedidos_facturacion | 25 | Pedidos, facturación, pagos |
-| servicio_cliente | 19 | PQRS, SLA, fidelización |
-
-**Características Destacadas:**
-- Pipeline Kanban con drag & drop
-- NPS (Net Promoter Score) automático
-- PQRS con SLA y escalamiento automático
-- Programa de fidelización con puntos
-- Integración completa con clientes y productos
-- Facturación electrónica lista para DIAN
-
-**Endpoints API:**
-- `/api/sales-crm/gestion-clientes/` - 9 ViewSets
-- `/api/sales-crm/pipeline-ventas/` - 9 ViewSets
-- `/api/sales-crm/pedidos-facturacion/` - 10 ViewSets
-- `/api/sales-crm/servicio-cliente/` - 9 ViewSets
+- **Web:** https://stratekaz.com
+- **Email:** soporte@stratekaz.com
 
 ---
 
-### Semana 17 - Production Ops + Logistics Fleet (28 Dic 2025) ✅ COMPLETADA
-
-**Backend production_ops (4 apps, ~40 modelos, ~12,000 líneas):**
-
-| App | Modelos | Líneas | Descripción |
-|-----|---------|--------|-------------|
-| recepcion | 6 | ~2,500 | Recepción MP, pesaje, control calidad |
-| procesamiento | 7 | ~2,800 | Órdenes producción, lotes, consumos |
-| mantenimiento | 8 | ~3,200 | Activos, planes preventivos, calibraciones |
-| producto_terminado | 6 | ~2,500 | Stock PT, liberaciones, certificados |
-
-**Backend logistics_fleet (2 apps, ~15 modelos, ~5,000 líneas):**
-
-| App | Modelos | Líneas | Descripción |
-|-----|---------|--------|-------------|
-| gestion_flota | 8 | ~3,000 | Vehículos, documentos, PESV, costos |
-| gestion_transporte | 8 | ~2,000 | Rutas, programación, despachos, manifiestos |
-
----
-
-### Semana 16 - Supply Chain: Programación + Compras + Almacenamiento (27 Dic 2025) ✅ 100% COMPLETADA
-
-**Backend (3 apps, 35 modelos, ~8,300 líneas):**
-
-| App | Modelos | Líneas | Descripción |
-|-----|---------|--------|-------------|
-| programacion_abastecimiento | 9 | ~2,500 | Programación, ejecución, liquidación |
-| compras | 16 | ~3,300 | Requisiciones, cotizaciones, órdenes, contratos |
-| almacenamiento | 9 | ~2,500 | Inventario, Kardex, alertas de stock |
-
-**Características Especiales:**
-- ✅ Kardex automático con costo promedio ponderado (CPP)
-- ✅ Alertas automáticas de stock bajo/crítico/por vencer
-- ✅ Flujo completo: Requisición → Cotización → Orden → Recepción
-- ✅ Soft delete en programaciones
-- ✅ 100% dinámico (sin hardcoding)
-
-**Frontend (~2,800 líneas):**
-
-| Tipo | Archivos | Descripción |
-|------|----------|-------------|
-| Types | 3 | programacion, compras, almacenamiento (34 interfaces) |
-| API | 3 | 135+ funciones CRUD + acciones custom |
-| Hooks | 3 | 110+ hooks React Query |
-| Components | 3 | ProgramacionTab, ComprasTab, AlmacenamientoTab |
-| Pages | 1 | SupplyChainPage (5 tabs principales) |
-
-**Tests (167 tests, ~3,200 líneas):**
-
-| App | Tests | Cobertura |
-|-----|-------|-----------|
-| programacion_abastecimiento | 53 | Modelos, serializers, views |
-| compras | 64 | Flujo completo de compras |
-| almacenamiento | 50 | Kardex, CPP, alertas |
-
----
-
-### Semana 15 - Supply Chain: Gestión Proveedores + Catálogos (27 Dic 2025) ✅ 100% COMPLETADA
-
-**Backend:** 18 modelos gestion_proveedores + 6 modelos catalogos (~4,000 líneas)
-**Frontend:** Types, API, Hooks, Components completos
-**Tests:** 181 tests comprehensivos
-
----
-
-### Semana 14 - Emergencias + Ambiental + Mejora + Comités (27 Dic 2025) ✅ COMPLETADA
-
-**Backend (4 módulos, 27 modelos - COMPLETADO):**
-
-- ✅ Emergencias (7 modelos): AnalisisVulnerabilidad, PlanEmergencia, PlanoEvacuacion, Brigada, Brigadista, Simulacro, RecursoEmergencia
-- ✅ Gestión Ambiental (11 modelos): AspectosAmbientales, Residuos, Vertimientos, Emisiones, PGA
-- ✅ Comités (5 modelos): TipoComite, Comite, MiembroComite, ActaComite, Votacion
-- ✅ Mejora Continua (4 modelos): ProgramaAuditoria, Auditoria, Hallazgo, EvaluacionCumplimiento
-
-**Frontend (4/4 módulos COMPLETADOS):**
-
-- ✅ **Emergencias:** Types (~900 líneas), API (70+ funciones), Hooks (60+), Page (6 subtabs)
-- ✅ **Gestión Ambiental:** Types (11 modelos), API (10 módulos), Hooks, Page (6 subtabs)
-- ✅ **Mejora Continua:** Types (438 líneas), API (278 líneas), Hooks (615 líneas), Page (4 subtabs)
-- ✅ **Comités:** Types (650 líneas), API (470 líneas), Hooks (38 hooks), Page (5 subtabs)
-
-**Totales Semana 14:**
-
-- 27 modelos backend
-- ~6,500 líneas código frontend
-- 200+ hooks React Query
-- 21 subtabs funcionales
-
----
-
-### Semana 13 - Seguridad Industrial + Accidentalidad (27 Dic 2025) ✅ COMPLETADA
-
-**Backend:**
-- ✅ Seguridad Industrial (9 modelos): PermisoTrabajo, Inspeccion, EPP, ProgramaSeguridad
-- ✅ Accidentalidad (8 modelos): AccidenteTrabajo, EnfermedadLaboral, InvestigacionATEL
-
-**Frontend:**
-- ✅ SeguridadIndustrialPage y AccidentalidadPage completos
-- ✅ 130+ tests
-
----
-
-### Semana 12 - Calidad + Medicina Laboral (26 Dic 2025) ✅ COMPLETADA
-
-**Backend (ya existente):**
-- ✅ Modelos de Calidad (5 modelos): NoConformidad, AccionCorrectiva, SalidaNoConforme, SolicitudCambio, ControlCambio
-- ✅ Modelos de Medicina Laboral (7 modelos): TipoExamen, ExamenMedico, RestriccionMedica, ProgramaVigilancia, CasoVigilancia, DiagnosticoOcupacional, EstadisticaMedica
-
-**Frontend:**
-- ✅ Types TypeScript: calidad.types.ts (26KB), medicina-laboral.types.ts (30KB)
-- ✅ API Clients: calidadApi.ts (18KB), medicinaLaboralApi.ts (22KB)
-- ✅ React Query Hooks: useCalidad.ts (36 hooks), useMedicinaLaboral.ts (49 hooks)
-- ✅ CalidadPage (4 subtabs): No Conformidades, Acciones Correctivas, Salidas NC, Control de Cambios
-- ✅ MedicinaLaboralPage (5 subtabs): Exámenes, Restricciones, Vigilancia Epidemiológica, Diagnósticos CIE-10, Estadísticas
-- ✅ Barrel exports actualizados (types/index.ts, hooks/index.ts, api/index.ts)
-
-**Testing:**
-- ✅ Tests Calidad: 63 tests (5 archivos, 21 fixtures)
-- ✅ Tests Medicina Laboral: 66 tests (5 archivos, 19 fixtures, 7 factories)
-- ✅ Total: 129 tests nuevos
-
-Ver plan: [FASE-4-SEMANAS-11-14.md](docs/planificacion/FASE-4-SEMANAS-11-14.md)
-
----
-
-### Semana 11 - Sistema Documental + Planificación HSEQ (26 Dic 2025) ✅ COMPLETADA
-
-**Backend (ya existente):**
-- ✅ Sistema Documental (7 modelos): TipoDocumento, PlantillaDocumento, Documento, VersionDocumento, CampoFormulario, FirmaDocumento, ControlDocumental
-- ✅ Planificación HSEQ (6 modelos): PlanTrabajoAnual, ActividadPlan, ObjetivoSistema, ProgramaGestion, ActividadPrograma, SeguimientoCronograma
-
-**Frontend:**
-- ✅ Types: sistema-documental.types.ts (713 líneas), planificacion-sistema.types.ts (798 líneas)
-- ✅ API Clients: sistemaDocumentalApi.ts (634 líneas), planificacionApi.ts
-- ✅ React Query Hooks: useSistemaDocumental.ts (921 líneas), usePlanificacionSistema.ts
-- ✅ SistemaDocumentalPage (6 subtabs): Listado Maestro, Tipos/Plantillas, Constructor, Versiones, Firmas, Control
-- ✅ PlanificacionSistemaPage (4 subtabs): Plan de Trabajo, Objetivos BSC, Programas, Cronograma
-
-**Testing:**
-- ✅ 210+ tests comprehensivos para ambos módulos
-
-Ver plan: [FASE-4-SEMANAS-11-14.md](docs/planificacion/FASE-4-SEMANAS-11-14.md)
-
----
-
-### Semana 10 - Motor de Riesgos Completo + Workflow Engine (26 Dic 2025)
-
-**Backend:**
-- ✅ Aspectos Ambientales ISO 14001 (5 modelos, ViewSets, Serializers)
-- ✅ Riesgos Viales PESV Res. 40595/2022 (5 modelos, 5 pilares)
-- ✅ Workflow Engine BPM (17 modelos, 3 sub-apps: disenador_flujos, ejecucion, monitoreo)
-- ✅ StandardViewSetMixin aplicado con MultiTenantMixin
-
-**Frontend:**
-- ✅ AspectosAmbientalesTab (5 subtabs: Categorías, Aspectos, Impactos, Programas, Monitoreos)
-- ✅ RiesgosVialesTab (5 subtabs con MatrizRiesgoVisual 5x5, PilaresPESVNavigator)
-- ✅ ChecklistInspeccionForm (32 items con críticos)
-- ✅ Types: aspectos-ambientales.types.ts (600+ líneas), riesgos-viales.types.ts (800+ líneas)
-- ✅ workflow.types.ts (800+ líneas con React Flow integration)
-- ✅ 100+ hooks React Query
-
-**Testing:**
-- ✅ 423 tests documentados (358 backend + 65 frontend)
-
-Ver plan completo: [SEMANA-10-PLAN-EJECUCION.md](docs/desarrollo/sesiones/SEMANA-10-PLAN-EJECUCION.md)
-
----
-
-### Semana 8 - Partes Interesadas y Reglamentos (25 Dic 2025)
-
-**Backend:**
-- ✅ 9 modelos nuevos (partes_interesadas + reglamentos_internos)
-- ✅ TipoParteInteresada, ParteInteresada, RequisitoParteInteresada, MatrizComunicacion
-- ✅ TipoReglamento, Reglamento, VersionReglamento, PublicacionReglamento, SocializacionReglamento
-- ✅ ViewSets con `StandardViewSetMixin`, Serializers completos
-
-**Frontend:**
-- ✅ PartesInteresadasTab (4 subtabs: Listado, Matriz, Requisitos, Comunicaciones)
-- ✅ ReglamentosInternosTab con control de versiones
-- ✅ MatrizInfluenciaInteres (visualización 3x3)
-- ✅ Hooks: usePartesInteresadas, useReglamentos
-
-**Testing:**
-- ✅ Tests de modelos y views para ambas apps
-- ✅ 2,386 líneas de tests en motor_cumplimiento
-
----
-
-### Semana 9 - Motor de Riesgos (26 Dic 2025) - COMPLETADA
-
-**Backend:**
-- ✅ 15+ modelos (contexto_organizacional + riesgos_procesos + ipevr)
-- ✅ Contexto: AnalisisDOFA, FactorDOFA, EstrategiaTOWS, AnalisisPESTEL, FactorPESTEL, FuerzaPorter
-- ✅ Riesgos: CategoriaRiesgo, RiesgoProceso, TratamientoRiesgo, ControlOperacional, Oportunidad
-- ✅ IPEVR GTC-45: ClasificacionPeligro (7 categorias), PeligroGTC45 (78 peligros), MatrizIPEVR, ControlSST
-- ✅ ViewSets con `StandardViewSetMixin` y acciones especiales (resumen, criticos, mapa_calor, cambiar_estado)
-- ✅ URLs corregidas y tests unitarios (30+ tests para riesgos_procesos)
-
-**Frontend:**
-- ✅ Tipos TypeScript: contexto.types.ts, riesgos.types.ts, ipevr.types.ts (~1,150 líneas)
-- ✅ API clients: contextoApi.ts, riesgosApi.ts, ipevrApi.ts con CRUD completo
-- ✅ Hooks React Query: 84 hooks (useContexto, useRiesgos, useIPEVR)
-- ✅ 9 Componentes UI reutilizables:
-  - Riesgos: MapaCalorRiesgos.tsx, RiesgoCard.tsx
-  - IPEVR: MatrizGTC45Table.tsx, NivelRiesgoIndicator.tsx, ResumenIPEVRCards.tsx
-  - Contexto: MatrizDOFAVisual.tsx, EstrategiasTOWSGrid.tsx, PESTELChart.tsx, PorterDiagram.tsx
-- ✅ 3 Tabs estructurados + 8 páginas de navegación
-
-**Testing:**
-- ✅ Tests para ipevr, contexto_organizacional y riesgos_procesos
-- ✅ 30+ tests unitarios (modelos + views + acciones especiales)
-
-Ver plan completo: [SEMANA-9-PLAN-EJECUCION.md](docs/desarrollo/sesiones/SEMANA-9-PLAN-EJECUCION.md)
-
----
-
----
-
-### Semana 22 - Admin Finance + Accounting COMPLETO ✅
-
-FASE 6: NIVEL 5 - HABILITADORES COMPLETADO (S19-S22)
-
-**Admin Finance (4 apps backend + 5 páginas frontend):**
-
-| App Backend | Modelos | Descripción |
-|-------------|---------|-------------|
-| tesoreria | 6 | Cuentas bancarias, movimientos, flujo caja, conciliaciones |
-| presupuesto | 5 | Presupuesto anual, rubros, ejecución, CDP/CRP |
-| activos_fijos | 6 | Activos, categorías, depreciaciones, mantenimientos |
-| servicios_generales | 3 | Contratos, gastos operativos, consumos |
-
-**Accounting - Módulo Activable (4 apps backend + 5 páginas frontend):**
-
-| App Backend | Modelos | Descripción |
-|-------------|---------|-------------|
-| config_contable | 6 | Plan cuentas PUC, tipos documento, terceros, centros costo |
-| movimientos | 3 | Comprobantes contables, detalles, plantillas |
-| informes_contables | 2 | Definición informes, generaciones |
-| integracion | 3 | Parámetros, logs, cola contabilización |
-
-**Frontend Semana 22:**
-
-| Módulo | Páginas | Características |
-|--------|---------|-----------------|
-| admin-finance | 5 | Dashboard, Tesorería, Presupuesto, Activos Fijos, Servicios |
-| accounting | 5 | Dashboard, Config Contable, Movimientos, Informes, Integración |
-
-**Rutas Implementadas:**
-- `/finanzas/` - Dashboard Admin Finance
-- `/finanzas/tesoreria` - Gestión de tesorería
-- `/finanzas/presupuesto` - Gestión presupuestal
-- `/finanzas/activos-fijos` - Control de activos
-- `/finanzas/servicios-generales` - Servicios generales
-- `/contabilidad/` - Dashboard Contabilidad
-- `/contabilidad/configuracion` - Plan de cuentas PUC
-- `/contabilidad/movimientos` - Comprobantes contables
-- `/contabilidad/informes` - Estados financieros
-- `/contabilidad/integracion` - Integración con módulos
-
----
-
-### Semanas 19-21 - Talent Hub COMPLETO ✅
-
-**Talent Hub - 11 apps, ~65 modelos:**
-
-| Semana | Apps | Descripción |
-|--------|------|-------------|
-| 19 ✅ | 3 | Estructura Cargos, Selección, Colaboradores |
-| 20 ✅ | 3 | Onboarding, Formación LMS, Desempeño 360° |
-| 21 ✅ | 5 | Control Tiempo, Novedades, Disciplinario, Nómina, Off-Boarding |
-
----
-
----
-
-### Semanas 23-25 - NIVEL 6 INTELIGENCIA COMPLETO ✅
-
-**FASE 7: Analytics + Audit System (S23-S25)**
-
-#### Semana 23 - Analytics: Indicadores + Dashboards ✅
-
-| App Backend | Modelos | Descripción |
-|-------------|---------|-------------|
-| config_indicadores | 4 | CatalogoKPI, FichaTecnicaKPI, MetaKPI, ConfiguracionSemaforo |
-| dashboard_gerencial | 3 | VistaDashboard (4 perspectivas BSC), WidgetDashboard, FavoritoDashboard |
-| indicadores_area | 3 | ValorKPI (histórico), AccionPorKPI, AlertaKPI |
-
-**Tests:** 105 tests (67 modelos + 38 views)
-
-#### Semana 24 - Analytics: Análisis + Informes ✅
-
-| App Backend | Modelos | Descripción |
-|-------------|---------|-------------|
-| analisis_tendencias | 3 | AnalisisKPI, TendenciaKPI, AnomaliaDetectada |
-| generador_informes | 4 | PlantillaInforme, InformeDinamico, ProgramacionInforme, HistorialInforme |
-| acciones_indicador | 4 | PlanAccionKPI, ActividadPlanKPI, SeguimientoPlanKPI, IntegracionAccionCorrectiva |
-| exportacion_integracion | 2 | ConfiguracionExportacion, LogExportacion |
-
-**Total Analytics:** 7 apps, 23 modelos
-
-#### Semana 25 - Audit System ✅
-
-| App Backend | Modelos | Tests | Descripción |
-|-------------|---------|-------|-------------|
-| logs_sistema | 4 | 62 | ConfiguracionAuditoria, LogAcceso, LogCambio, LogConsulta |
-| centro_notificaciones | 4 | 42 | TipoNotificacion, Notificacion, PreferenciaNotificacion, NotificacionMasiva |
-| config_alertas | 4 | 39 | TipoAlerta, ConfiguracionAlerta, AlertaGenerada, EscalamientoAlerta |
-| tareas_recordatorios | 4 | 52 | Tarea, Recordatorio, EventoCalendario, ComentarioTarea |
-
-**Total Audit System:** 4 apps, 16 modelos, 195 tests (244% del objetivo)
-
-#### Frontend Nivel 6 (~11,000 líneas):
-
-| Módulo | Páginas | Características |
-|--------|---------|-----------------|
-| analytics | 8 | Dashboard BSC, KPIs, Tendencias, Informes, Acciones, Exportación |
-| audit-system | 5 | Dashboard, Logs, Notificaciones, Alertas, Tareas/Calendario |
-
-**Rutas Implementadas:**
-- `/analytics/` - Dashboard Analytics principal
-- `/analytics/indicadores` - Configuración de KPIs
-- `/analytics/dashboard-gerencial` - Dashboard Balanced Scorecard
-- `/analytics/indicadores-area` - KPIs por área
-- `/analytics/tendencias` - Análisis de tendencias
-- `/analytics/informes` - Generador de informes
-- `/analytics/acciones` - Planes de acción por KPI
-- `/analytics/exportacion` - Exportación e integración
-- `/auditoria/` - Dashboard Audit System
-- `/auditoria/logs` - Logs del sistema
-- `/auditoria/notificaciones` - Centro de notificaciones
-- `/auditoria/alertas` - Configuración de alertas
-- `/auditoria/tareas` - Tareas y calendario
-
----
-
-### Semana 26 - GO-LIVE: Optimización + Producción (30 Dic 2025) ✅ COMPLETADA
-
-**Optimización Backend:**
-- ✅ Queries optimizadas (N+1 eliminados) - 75-80% mejora
-- ✅ 3 índices compuestos en BaseCompanyModel
-- ✅ Caché Redis con decoradores (@cache_queryset, @cache_catalogo)
-- ✅ 7 ViewSet mixins reutilizables
-
-**Optimización Frontend:**
-- ✅ Code splitting con React.lazy() - 54 rutas lazy-loaded
-- ✅ Chunk splitting Vite - 17 chunks modulares
-- ✅ Bundle optimizado: 3.2MB → chunks modulares
-
-**Documentación API:**
-- ✅ drf-spectacular configurado
-- ✅ Swagger UI en `/api/docs/`
-- ✅ ReDoc en `/api/redoc/`
-
-**Seguridad OWASP:**
-- ✅ Rate limiting (django-ratelimit)
-- ✅ Security headers (HSTS, XSS, CSP)
-- ✅ Input sanitization
-- ✅ Middleware de seguridad personalizado
-
-**Configuración Producción:**
-- ✅ docker-compose.prod.yml
-- ✅ Dockerfile.prod multi-stage (backend + frontend)
-- ✅ nginx.prod.conf con SSL
-- ✅ Sistema de backups automatizado
-- ✅ Integración Sentry para monitoreo
-- ✅ DEPLOYMENT.md con guía completa
-
----
-
-## 🎉 PROYECTO COMPLETADO
-
-**26 Semanas de Desarrollo Finalizadas**
-
-| Métrica | Valor |
-|---------|-------|
-| Módulos | 16 |
-| Apps Django | ~92 |
-| Modelos | ~300+ |
-| Tests | 1,500+ |
-| Páginas Frontend | 60+ |
-| Endpoints API | 400+ |
-
-**Sistema listo para GO-LIVE en producción.**
-
----
-
----
-
-### Post GO-LIVE - Design System v2 (01 Enero 2026)
-
-**Sistema de 3 Colores de Branding:**
-
-| Color | Uso | Elementos |
-|-------|-----|-----------|
-| **Primary** | Acciones críticas | Botones Guardar/Crear, Tabs activos, Focus |
-| **Secondary** | Acciones secundarias | Botones Editar, Cancelar, Links internos |
-| **Accent** | Notificaciones | Badge notificaciones, Highlights, Alertas |
-
-**Mejoras implementadas:**
-- ✅ Sistema de branding de 3 colores configurables por tenant
-- ✅ Separación colores branding vs colores semánticos (success, warning, danger, info)
-- ✅ Hook `useModuleColor` para colores dinámicos de módulos
-- ✅ Componente `ModuleCard` con animaciones Framer Motion
-- ✅ StatsGrid con `iconColor` semántico (no usa branding)
-- ✅ Botones Edit en tablas usan `secondary` (distintos de Delete)
-- ✅ Badge notificaciones en Header usa `accent`
-- ✅ Mapeo automático de colores extendidos de Tailwind
-
-**Variantes de Button actualizadas:**
-- `primary` - Acciones principales (configurable)
-- `secondary` - Acciones secundarias (configurable)
-- `accent` - Destacados (configurable)
-- `danger` - Eliminar (fijo: rojo)
-- `ghost` - Enlaces sutiles
-- `outline-secondary` / `outline-accent` - Variantes outline
-
-Ver documentación completa: [DESIGN-SYSTEM.md](docs/desarrollo/DESIGN-SYSTEM.md)
-
----
-
-**Última actualización:** 01 Enero 2026 (Post GO-LIVE - Design System v2) | [Ver historial de cambios](docs/planificacion/CRONOGRAMA-26-SEMANAS.md)
+**Ultima actualizacion:** 08 Enero 2026

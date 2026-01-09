@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Edit, Trash2, UserCheck, UserX } from 'lucide-react';
+import { Edit, Trash2, UserCheck, UserX, Shield } from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
+import { Avatar } from '@/components/common/Avatar';
+import { Badge } from '@/components/common/Badge';
 import { UserStatusBadge } from '@/components/users/UserStatusBadge';
 import { CargoLevelBadge } from '@/components/users/CargoLevelBadge';
 import type { User } from '@/types/users.types';
@@ -110,17 +112,29 @@ export const UsersTable = ({
               >
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
-                    <div className="flex-shrink-0 h-10 w-10">
-                      <div className="h-10 w-10 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
-                        <span className="text-primary-600 dark:text-primary-400 font-medium text-sm">
-                          {user.first_name[0]}
-                          {user.last_name[0]}
-                        </span>
-                      </div>
+                    <div className="flex-shrink-0 relative">
+                      <Avatar
+                        src={user.photo || undefined}
+                        name={user.full_name || user.username}
+                        size="md"
+                      />
+                      {user.is_superuser && (
+                        <div
+                          className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-amber-500 flex items-center justify-center ring-2 ring-white dark:ring-gray-900"
+                          title="Super Administrador"
+                        >
+                          <Shield className="h-2.5 w-2.5 text-white" />
+                        </div>
+                      )}
                     </div>
                     <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {user.full_name}
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {user.full_name || user.username}
+                        </span>
+                        {user.is_superuser && (
+                          <Badge variant="warning" size="sm">Admin</Badge>
+                        )}
                       </div>
                       <div className="text-sm text-gray-500 dark:text-gray-400">
                         @{user.username}

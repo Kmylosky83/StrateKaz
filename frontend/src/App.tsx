@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useThemeStore } from '@/store/themeStore';
 import { useDynamicTheme } from '@/hooks/useDynamicTheme';
 import { AppRoutes } from '@/routes';
+import { OfflineIndicator } from '@/components/common';
 
 function App() {
   const theme = useThemeStore((state) => state.theme);
@@ -18,7 +19,12 @@ function App() {
     }
   }, [theme]);
 
-  return <AppRoutes />;
+  return (
+    <>
+      <AppRoutes />
+      <OfflineIndicator position="bottom" />
+    </>
+  );
 }
 
 export default App;

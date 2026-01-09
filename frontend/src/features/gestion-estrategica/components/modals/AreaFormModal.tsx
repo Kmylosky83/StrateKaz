@@ -2,21 +2,23 @@
  * Modal de Formulario de Área/Departamento
  *
  * CRUD completo para áreas organizacionales.
- * Usa Design System: BaseModal, Input, Select, Textarea, Switch
+ * Usa Design System: BaseModal, Input, Select, Textarea, Switch, IconPicker
  *
  * Features:
  * - Crear/Editar área
  * - Selector de área padre (jerarquía)
  * - Selector de responsable (usuario)
  * - Centro de costo opcional
+ * - Icono y color dinámicos
  * - Validación de código único
  */
 import { useEffect, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { Building2 } from 'lucide-react';
+import { Building2, Palette } from 'lucide-react';
 import { BaseModal } from '@/components/modals/BaseModal';
-import { Button } from '@/components/common/Button';
+import { Button, DynamicIcon } from '@/components/common';
 import { Input, Select, Textarea, Switch } from '@/components/forms';
+import { AreaIconSelector } from './AreaIconSelector';
 import {
   useAreas,
   useCreateArea,
@@ -47,9 +49,26 @@ interface AreaFormData {
   parent: string; // string para el select, se convierte a number
   cost_center: string;
   manager: string; // string para el select, se convierte a number
+  icon: string;
+  color: string;
   is_active: boolean;
-  order: number;
+  orden: number;
 }
+
+// Opciones de colores disponibles
+const COLOR_OPTIONS = [
+  { value: 'purple', label: 'Morado', class: 'bg-purple-500' },
+  { value: 'blue', label: 'Azul', class: 'bg-blue-500' },
+  { value: 'green', label: 'Verde', class: 'bg-green-500' },
+  { value: 'red', label: 'Rojo', class: 'bg-red-500' },
+  { value: 'amber', label: 'Ámbar', class: 'bg-amber-500' },
+  { value: 'orange', label: 'Naranja', class: 'bg-orange-500' },
+  { value: 'teal', label: 'Turquesa', class: 'bg-teal-500' },
+  { value: 'cyan', label: 'Cian', class: 'bg-cyan-500' },
+  { value: 'indigo', label: 'Índigo', class: 'bg-indigo-500' },
+  { value: 'pink', label: 'Rosa', class: 'bg-pink-500' },
+  { value: 'gray', label: 'Gris', class: 'bg-gray-500' },
+];
 
 // ==================== COMPONENT ====================
 
@@ -90,10 +109,16 @@ export const AreaFormModal = ({
       parent: '',
       cost_center: '',
       manager: '',
+      icon: 'Building2',
+      color: 'purple',
       is_active: true,
-      order: 0,
+      orden: 0,
     },
   });
+
+  // Watch para preview del icono
+  const watchedIcon = watch('icon');
+  const watchedColor = watch('color');
 
   // Reset form cuando se abre/cierra o cambia el área
   useEffect(() => {
@@ -106,8 +131,10 @@ export const AreaFormModal = ({
           parent: area.parent?.toString() || '',
           cost_center: area.cost_center || '',
           manager: area.manager?.toString() || '',
+          icon: area.icon || 'Building2',
+          color: area.color || 'purple',
           is_active: area.is_active,
-          order: area.order || 0,
+          orden: area.orden || 0,
         });
       } else {
         reset({
@@ -117,8 +144,10 @@ export const AreaFormModal = ({
           parent: '',
           cost_center: '',
           manager: '',
+          icon: 'Building2',
+          color: 'purple',
           is_active: true,
-          order: 0,
+          orden: 0,
         });
       }
     }
@@ -136,7 +165,7 @@ export const AreaFormModal = ({
       { value: '', label: 'Sin área padre (raíz)' },
       ...filtered.map((a) => ({
         value: a.id.toString(),
-        label: `${a.code} - ${a.name}`,
+        label: a.name,
       })),
     ];
   }, [areasData?.results, area]);
@@ -162,8 +191,10 @@ export const AreaFormModal = ({
       parent: data.parent ? parseInt(data.parent, 10) : undefined,
       cost_center: data.cost_center?.trim() || undefined,
       manager: data.manager ? parseInt(data.manager, 10) : undefined,
+      icon: data.icon || 'Building2',
+      color: data.color || 'purple',
       is_active: data.is_active,
-      order: data.order || 0,
+      orden: data.orden || 0,
     };
 
     try {
@@ -343,8 +374,8 @@ export const AreaFormModal = ({
               label="Orden de visualización"
               placeholder="0"
               helperText="Orden en que aparecerá en las listas"
-              error={errors.order?.message}
-              {...register('order', {
+              error={errors.orden?.message}
+              {...register('orden', {
                 valueAsNumber: true,
                 min: {
                   value: 0,
@@ -354,6 +385,107 @@ export const AreaFormModal = ({
               disabled={isPending}
             />
           </div>
+        </div>
+
+        {/* Sección: Apariencia */}
+        <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300 mb-2">
+            <Palette className="h-4 w-4" />
+            <span className="text-sm font-medium">Apariencia</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Preview del área */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Vista previa
+              </label>
+              <div className="flex items-center gap-3 p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                <div className={`p-2 rounded-lg ${
+                  watchedColor === 'blue' ? 'bg-blue-100 dark:bg-blue-900/30' :
+                  watchedColor === 'green' ? 'bg-green-100 dark:bg-green-900/30' :
+                  watchedColor === 'red' ? 'bg-red-100 dark:bg-red-900/30' :
+                  watchedColor === 'amber' ? 'bg-amber-100 dark:bg-amber-900/30' :
+                  watchedColor === 'orange' ? 'bg-orange-100 dark:bg-orange-900/30' :
+                  watchedColor === 'teal' ? 'bg-teal-100 dark:bg-teal-900/30' :
+                  watchedColor === 'cyan' ? 'bg-cyan-100 dark:bg-cyan-900/30' :
+                  watchedColor === 'indigo' ? 'bg-indigo-100 dark:bg-indigo-900/30' :
+                  watchedColor === 'pink' ? 'bg-pink-100 dark:bg-pink-900/30' :
+                  watchedColor === 'gray' ? 'bg-gray-100 dark:bg-gray-700' :
+                  'bg-purple-100 dark:bg-purple-900/30'
+                }`}>
+                  <DynamicIcon
+                    name={watchedIcon || 'Building2'}
+                    size={24}
+                    className={
+                      watchedColor === 'blue' ? 'text-blue-600 dark:text-blue-400' :
+                      watchedColor === 'green' ? 'text-green-600 dark:text-green-400' :
+                      watchedColor === 'red' ? 'text-red-600 dark:text-red-400' :
+                      watchedColor === 'amber' ? 'text-amber-600 dark:text-amber-400' :
+                      watchedColor === 'orange' ? 'text-orange-600 dark:text-orange-400' :
+                      watchedColor === 'teal' ? 'text-teal-600 dark:text-teal-400' :
+                      watchedColor === 'cyan' ? 'text-cyan-600 dark:text-cyan-400' :
+                      watchedColor === 'indigo' ? 'text-indigo-600 dark:text-indigo-400' :
+                      watchedColor === 'pink' ? 'text-pink-600 dark:text-pink-400' :
+                      watchedColor === 'gray' ? 'text-gray-600 dark:text-gray-400' :
+                      'text-purple-600 dark:text-purple-400'
+                    }
+                  />
+                </div>
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  Así se verá el área
+                </span>
+              </div>
+            </div>
+
+            {/* Selector de Color */}
+            <Controller
+              name="color"
+              control={control}
+              render={({ field }) => (
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Color
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {COLOR_OPTIONS.map((colorOpt) => (
+                      <button
+                        key={colorOpt.value}
+                        type="button"
+                        onClick={() => field.onChange(colorOpt.value)}
+                        title={colorOpt.label}
+                        disabled={isPending}
+                        className={`w-8 h-8 rounded-full ${colorOpt.class} transition-all ${
+                          field.value === colorOpt.value
+                            ? 'ring-2 ring-offset-2 ring-gray-900 dark:ring-white scale-110'
+                            : 'hover:scale-105'
+                        } ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Selecciona el color que identificará esta área
+                  </p>
+                </div>
+              )}
+            />
+          </div>
+
+          {/* Selector de Icono */}
+          <Controller
+            name="icon"
+            control={control}
+            render={({ field }) => (
+              <AreaIconSelector
+                label="Icono del area"
+                value={field.value}
+                onChange={field.onChange}
+                helperText="Selecciona un icono para identificar visualmente esta area"
+                disabled={isPending}
+                columns={8}
+              />
+            )}
+          />
         </div>
 
         {/* Sección: Estado */}

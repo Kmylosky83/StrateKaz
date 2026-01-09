@@ -21,6 +21,9 @@ class AreaAdmin(admin.ModelAdmin):
         ('Jerarquía', {
             'fields': ('parent', 'orden')
         }),
+        ('Apariencia', {
+            'fields': ('icon', 'color')
+        }),
         ('Gestión', {
             'fields': ('cost_center', 'manager', 'is_active')
         }),

@@ -87,7 +87,11 @@
       "Bash(docker compose exec backend python manage.py shell:*)",
       "Bash(docker-compose exec:*)",
       "Bash(dir /B)",
-      "Bash(docker-compose exec frontend sh -c \"ls -la /app/public/\")"
+      "Bash(docker-compose exec frontend sh -c \"ls -la /app/public/\")",
+      "Bash(powershell:*)",
+      "Bash(python analyze_all_dependencies.py:*)",
+      "Bash(./venv/Scripts/python:*)",
+      "Bash(.venv/Scripts/python.exe:*)"
     ],
     "deny": [],
     "ask": []

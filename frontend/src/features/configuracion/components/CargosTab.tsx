@@ -34,7 +34,7 @@ export const CargosTab = () => {
   const [deleteConfirm, setDeleteConfirm] = useState<CargoList | null>(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
 
-  const { data, isLoading, error } = useCargos(filters);
+  const { data, isLoading, error } = useCargos({ ...filters, page_size: 100 });
   const deleteMutation = useDeleteCargo();
   const { data: choicesData } = useCargoChoices();
 
@@ -45,14 +45,14 @@ export const CargosTab = () => {
   const cargoStats: StatItem[] = useMemo(() => {
     const cargos = data?.results || [];
     const totalUsuarios = cargos.reduce((sum, c) => sum + (c.users_count || 0), 0);
-    const totalPermisos = cargos.reduce((sum, c) => sum + (c.permissions_count || 0), 0);
-    const cargosSistema = cargos.filter((c) => c.is_system).length;
+    const cargosConPermisos = cargos.filter((c) => (c.permissions_count || 0) > 0).length;
+    const cargosConUsuarios = cargos.filter((c) => (c.users_count || 0) > 0).length;
 
     return [
-      { label: 'Total Cargos', value: cargos.length, icon: Briefcase, iconColor: 'info' as const },
-      { label: 'Del Sistema', value: cargosSistema, icon: Lock, iconColor: 'gray' as const, description: 'No eliminables' },
-      { label: 'Usuarios Asignados', value: totalUsuarios, icon: Users, iconColor: 'success' as const },
-      { label: 'Total Permisos', value: totalPermisos, icon: Shield, iconColor: 'info' as const },
+      { label: 'Total Cargos', value: data?.count || cargos.length, icon: Briefcase, iconColor: 'info' as const },
+      { label: 'Con Permisos', value: cargosConPermisos, icon: Shield, iconColor: 'success' as const, description: 'Cargos configurados' },
+      { label: 'Usuarios Asignados', value: totalUsuarios, icon: Users, iconColor: 'purple' as const },
+      { label: 'Con Usuarios', value: cargosConUsuarios, icon: CheckCircle, iconColor: 'gray' as const, description: 'Cargos ocupados' },
     ];
   }, [data]);
 
@@ -188,7 +188,7 @@ export const CargosTab = () => {
         isEmpty={isEmpty}
         emptyMessage="No se encontraron cargos"
         headerActions={
-          <Button onClick={handleCreate} variant="primary" leftIcon={<Plus className="h-4 w-4" />}>
+          <Button onClick={handleCreate} variant="primary" size="sm" leftIcon={<Plus className="h-4 w-4" />}>
             Nuevo Cargo
           </Button>
         }
@@ -238,14 +238,9 @@ export const CargosTab = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           {cargo.is_system && <Lock className="h-4 w-4 text-gray-400" />}
-                          <div>
-                            <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                              {cargo.name}
-                            </div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
-                              {cargo.code}
-                            </div>
-                          </div>
+                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {cargo.name}
+                          </span>
                           {cargo.is_system && (
                             <Badge variant="gray" size="sm">
                               Sistema

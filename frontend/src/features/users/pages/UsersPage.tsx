@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import { UserPlus, Users, UserCheck, UserX, Shield } from 'lucide-react';
 import { Button } from '@/components/common/Button';
-import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import {
   PageHeader,
@@ -23,6 +22,7 @@ import {
   useDeleteUser,
   useToggleUserStatus,
 } from '../hooks/useUsers';
+import { useRoles } from '@/features/configuracion/hooks/useRoles';
 import type { User, CreateUserDTO, UpdateUserDTO, UserFilters } from '@/types/users.types';
 import { useModuleColor } from '@/hooks/useModuleColor';
 
@@ -44,6 +44,7 @@ export default function UsersPage() {
 
   const { data: usersData, isLoading: isLoadingUsers } = useUsers(filters);
   const { data: cargos = [] } = useCargos();
+  const { data: rolesData } = useRoles({ is_active: true });
   const createUserMutation = useCreateUser();
   const updateUserMutation = useUpdateUser();
   const deleteUserMutation = useDeleteUser();
@@ -181,7 +182,7 @@ export default function UsersPage() {
 
       {/* ESTADÍSTICAS */}
       {isLoadingUsers ? (
-        <StatsGridSkeleton columns={4} />
+        <StatsGridSkeleton count={4} />
       ) : (
         <StatsGrid stats={userStats} columns={4} moduleColor={moduleColor} />
       )}
@@ -196,7 +197,7 @@ export default function UsersPage() {
         hasActiveFilters={hasActiveFilters}
         onClearFilters={handleClearFilters}
       >
-        <FilterGrid columns={2}>
+        <FilterGrid columns={3}>
           <Select
             label="Cargo"
             options={cargoFilterOptions}
@@ -247,6 +248,7 @@ export default function UsersPage() {
         onSubmit={handleSubmit}
         user={selectedUser}
         cargos={cargos}
+        roles={rolesData?.results || []}
         isLoading={createUserMutation.isPending || updateUserMutation.isPending}
       />
 

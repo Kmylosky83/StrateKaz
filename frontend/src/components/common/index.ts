@@ -157,3 +157,15 @@ export type { ModuleCardProps, ModuleCardColor } from './ModuleCard';
 // Time Elapsed Display (Real-time uptime counter)
 export { TimeElapsedDisplay } from './TimeElapsedDisplay';
 export type { TimeElapsedDisplayProps, TimeElapsedVariant, TimeElapsedSize } from './TimeElapsedDisplay';
+
+// PWA Offline Indicator
+export { OfflineIndicator, useOnlineStatus } from './OfflineIndicator';
+export type { OfflineIndicatorProps } from './OfflineIndicator';
+
+// Dynamic Icons (API-driven icon system)
+export { DynamicIcon, isValidIconName, getAvailableIconNames, getIconComponent } from './DynamicIcon';
+export type { DynamicIconProps } from './DynamicIcon';
+
+// Icon Picker (for selecting icons from DB)
+export { IconPicker } from './IconPicker';
+export type { IconPickerProps } from './IconPicker';

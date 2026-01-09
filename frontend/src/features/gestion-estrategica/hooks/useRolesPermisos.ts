@@ -1,9 +1,9 @@
-/**
+﻿/**
  * Hooks para gestión de Roles y Permisos (RBAC Híbrido)
  * Sistema de Gestión StrateKaz
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import axiosInstance from '@/api/axios-config';
 import type {
   Permiso,
@@ -14,7 +14,6 @@ import type {
   UpdateRolAdicionalDTO,
   PermisosFilters,
   RolesFilters,
-  PlantillaRol,
 } from '../components/organizacion/roles/types';
 
 // Tipo para asignación de rol a usuario
@@ -264,34 +263,6 @@ export function useDeleteRolAdicional() {
 }
 
 /**
- * Hook para crear rol desde plantilla
- */
-export function useCreateRolFromPlantilla() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (plantillaCode: string) => {
-      const response = await api.post<RolAdicional>(
-        `${ENDPOINTS.rolesAdicionales}crear-desde-plantilla/`,
-        { plantilla_code: plantillaCode }
-      );
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['roles-adicionales'] });
-      toast.success('Rol creado desde plantilla correctamente');
-    },
-    onError: (error: any) => {
-      const message =
-        error.response?.data?.message ||
-        error.response?.data?.detail ||
-        'Error al crear rol desde plantilla';
-      toast.error(message);
-    },
-  });
-}
-
-/**
  * Hook para activar/desactivar rol adicional
  */
 export function useToggleRolActivo() {
@@ -322,23 +293,7 @@ export function useToggleRolActivo() {
   });
 }
 
-// ==================== PLANTILLAS Y SUGERIDOS ====================
-
-/**
- * Hook para obtener plantillas de roles sugeridos
- */
-export function usePlantillasRoles() {
-  return useQuery({
-    queryKey: ['plantillas-roles'],
-    queryFn: async () => {
-      const response = await api.get<PlantillaRol[]>(
-        `${ENDPOINTS.rolesAdicionales}sugeridos/`
-      );
-      return response.data;
-    },
-    staleTime: 10 * 60 * 1000, // 10 minutos (las plantillas no cambian)
-  });
-}
+// ==================== TIPOS DE ROL ====================
 
 /**
  * Hook para obtener tipos de roles disponibles
@@ -468,5 +423,48 @@ export function useRolesUsuario(userId: number | null) {
     },
     enabled: !!userId,
     staleTime: 30 * 1000,
+  });
+}
+
+// ==================== CATÁLOGOS DINÁMICOS ====================
+
+/** Tipo para opciones de select dinámico */
+export interface SelectOption {
+  value: string;
+  label: string;
+  icon?: string;
+}
+
+/**
+ * Hook para obtener módulos de permisos dinámicamente desde la API
+ * Reemplaza MODULO_OPTIONS hardcodeado
+ */
+export function usePermisoModulos() {
+  return useQuery({
+    queryKey: ['permiso-modulos'],
+    queryFn: async () => {
+      const response = await api.get<SelectOption[]>(
+        `${ENDPOINTS.permisos}modules/`
+      );
+      return response.data;
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutos - los módulos no cambian frecuentemente
+  });
+}
+
+/**
+ * Hook para obtener acciones de permisos dinámicamente desde la API
+ * Reemplaza ACCION_OPTIONS hardcodeado
+ */
+export function usePermisoAcciones() {
+  return useQuery({
+    queryKey: ['permiso-acciones'],
+    queryFn: async () => {
+      const response = await api.get<SelectOption[]>(
+        `${ENDPOINTS.permisos}actions/`
+      );
+      return response.data;
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutos - las acciones no cambian frecuentemente
   });
 }

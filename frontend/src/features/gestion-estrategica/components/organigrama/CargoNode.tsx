@@ -8,16 +8,23 @@
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import {
-  UserCog,
   Users,
   ChevronDown,
   ChevronRight,
-  Crown,
   AlertCircle,
 } from 'lucide-react';
-import { Badge, Avatar } from '@/components/common';
+import { Badge, Avatar, DynamicIcon } from '@/components/common';
 import type { CargoNodeData, NivelJerarquico, UsuarioAsignado } from '../../types/organigrama.types';
 import { NIVEL_COLORS, NIVEL_LABELS } from '../../types/organigrama.types';
+
+/** Iconos por nivel jerárquico */
+const NIVEL_ICONS: Record<NivelJerarquico, string> = {
+  ESTRATEGICO: 'Crown',
+  TACTICO: 'Target',
+  OPERATIVO: 'Wrench',
+  APOYO: 'HeartHandshake',
+  EXTERNO: 'UserCheck',
+};
 
 /** Componente para mostrar grupo de avatares */
 const AvatarGroup = ({ usuarios, max = 4 }: { usuarios: UsuarioAsignado[]; max?: number }) => {
@@ -99,11 +106,11 @@ const CargoNode = memo(({ data, selected }: CargoNodeProps) => {
       <div className={`px-4 py-3 ${colors.bgLight} ${colors.darkBg}`}>
         <div className="flex items-center gap-3">
           <div className={`p-2 rounded-lg ${colors.bg} text-white shadow-sm`}>
-            {cargo.is_jefatura ? (
-              <Crown className="h-5 w-5" />
-            ) : (
-              <UserCog className="h-5 w-5" />
-            )}
+            <DynamicIcon
+              name={cargo.is_jefatura ? 'Crown' : NIVEL_ICONS[nivel] || 'UserCog'}
+              size={20}
+              className="text-white"
+            />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">
@@ -176,7 +183,7 @@ const CargoNode = memo(({ data, selected }: CargoNodeProps) => {
           {/* Indicador de jefatura */}
           {cargo.is_jefatura && (
             <Badge variant="warning" size="sm">
-              <Crown className="h-3 w-3 mr-1" />
+              <DynamicIcon name="Crown" size={12} className="mr-1" />
               Jefatura
             </Badge>
           )}

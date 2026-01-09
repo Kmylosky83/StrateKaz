@@ -1,2 +1,0 @@
-# This file keeps the backups directory in git
-# Backup files (*.sql.gz) are ignored by .gitignore

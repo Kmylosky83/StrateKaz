@@ -14,13 +14,18 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 
-from .models import EmpresaConfig, SedeEmpresa
+from .models import EmpresaConfig, SedeEmpresa, IconRegistry, NormaISO, ICON_CATEGORY_CHOICES
 from .serializers import (
     EmpresaConfigSerializer,
     EmpresaConfigChoicesSerializer,
     SedeEmpresaSerializer,
     SedeEmpresaListSerializer,
     SedeEmpresaChoicesSerializer,
+    IconRegistrySerializer,
+    IconRegistryListSerializer,
+    IconCategorySerializer,
+    NormaISOSerializer,
+    NormaISOListSerializer,
 )
 
 
@@ -641,3 +646,267 @@ class IntegracionExternaViewSet(viewsets.ModelViewSet):
             'message': 'Errores limpiados exitosamente.',
             'errores_recientes': integracion.errores_recientes
         })
+
+
+# ==============================================================================
+# ICON REGISTRY VIEWSET - SISTEMA DINAMICO DE ICONOS
+# ==============================================================================
+
+import logging
+logger = logging.getLogger(__name__)
+
+
+class IconRegistryViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar el registro de iconos del sistema.
+
+    Endpoints:
+    - GET /icons/ -> Lista todos los iconos activos
+    - GET /icons/{id}/ -> Detalle de un icono
+    - POST /icons/ -> Crear nuevo icono (admin)
+    - PUT/PATCH /icons/{id}/ -> Actualizar icono (admin)
+    - DELETE /icons/{id}/ -> Eliminar icono (admin, solo si no es del sistema)
+    - GET /icons/categories/ -> Lista categorias con conteo
+    - GET /icons/by_category/?category=VALORES -> Filtra por categoria
+    - GET /icons/search/?q=corazon -> Busca iconos
+    - POST /icons/load_system_icons/ -> Carga iconos del sistema (admin)
+    """
+
+    queryset = IconRegistry.objects.filter(
+        is_active=True,
+        deleted_at__isnull=True
+    )
+    serializer_class = IconRegistrySerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['category', 'es_sistema']
+    search_fields = ['name', 'label', 'keywords']
+    ordering_fields = ['orden', 'label', 'category']
+    ordering = ['category', 'orden', 'label']
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return IconRegistryListSerializer
+        return IconRegistrySerializer
+
+    def destroy(self, request, *args, **kwargs):
+        """Solo permite eliminar iconos que no son del sistema"""
+        instance = self.get_object()
+        if instance.es_sistema:
+            return Response(
+                {'detail': 'No se pueden eliminar iconos del sistema.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        # Soft delete
+        instance.deleted_at = timezone.now()
+        instance.is_active = False
+        instance.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=False, methods=['get'])
+    def categories(self, request):
+        """
+        Lista todas las categorias de iconos con su conteo.
+
+        GET /icons/categories/
+        """
+        from django.db.models import Count
+
+        categories_data = []
+        for code, name in ICON_CATEGORY_CHOICES:
+            count = IconRegistry.objects.filter(
+                category=code,
+                is_active=True,
+                deleted_at__isnull=True
+            ).count()
+            categories_data.append({
+                'code': code,
+                'name': name,
+                'icon_count': count
+            })
+
+        serializer = IconCategorySerializer(categories_data, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def by_category(self, request):
+        """
+        Obtiene iconos filtrados por categoria.
+
+        GET /icons/by_category/?category=VALORES
+        """
+        category = request.query_params.get('category', None)
+        if not category:
+            return Response(
+                {'detail': 'El parametro category es requerido.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        icons = IconRegistry.obtener_por_categoria(category)
+        serializer = IconRegistryListSerializer(icons, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def search(self, request):
+        """
+        Busca iconos por nombre, etiqueta o palabras clave.
+
+        GET /icons/search/?q=corazon
+        """
+        query = request.query_params.get('q', None)
+        if not query:
+            return Response(
+                {'detail': 'El parametro q es requerido.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        icons = IconRegistry.buscar(query)
+        serializer = IconRegistryListSerializer(icons, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['post'])
+    def load_system_icons(self, request):
+        """
+        Carga los iconos base del sistema.
+
+        POST /icons/load_system_icons/
+        Solo para administradores.
+        """
+        if not request.user.is_staff:
+            return Response(
+                {'detail': 'Solo administradores pueden cargar iconos del sistema.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        try:
+            count = IconRegistry.cargar_iconos_sistema()
+            logger.info(f"Iconos del sistema cargados por {request.user.username}: {count} nuevos")
+            return Response({
+                'message': f'Iconos del sistema cargados exitosamente.',
+                'icons_created': count,
+                'total_icons': IconRegistry.objects.filter(is_active=True).count()
+            })
+        except Exception as e:
+            logger.error(f"Error cargando iconos del sistema: {str(e)}")
+            return Response(
+                {'detail': f'Error cargando iconos: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+# Import timezone for soft delete
+from django.utils import timezone
+
+
+class NormaISOViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar Normas ISO y Sistemas de Gestión.
+
+    Endpoints:
+    - GET /normas-iso/ -> Lista todas las normas ISO activas
+    - GET /normas-iso/{id}/ -> Detalle de una norma ISO
+    - POST /normas-iso/ -> Crear nueva norma ISO (solo custom)
+    - PUT/PATCH /normas-iso/{id}/ -> Actualizar norma ISO
+    - DELETE /normas-iso/{id}/ -> Eliminar norma ISO (solo custom)
+    - GET /normas-iso/choices/ -> Opciones para dropdowns
+    - GET /normas-iso/by-category/ -> Normas agrupadas por categoría
+    """
+
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['category', 'is_active', 'es_sistema']
+    search_fields = ['code', 'name', 'short_name', 'description']
+    ordering_fields = ['orden', 'name', 'code', 'created_at']
+    ordering = ['orden', 'name']
+
+    def get_queryset(self):
+        """Retorna normas ISO activas (no eliminadas)"""
+        return NormaISO.objects.filter(
+            deleted_at__isnull=True
+        ).order_by('orden', 'name')
+
+    def get_serializer_class(self):
+        """Usa serializer reducido para listados"""
+        if self.action == 'list':
+            return NormaISOListSerializer
+        return NormaISOSerializer
+
+    def destroy(self, request, *args, **kwargs):
+        """Solo permite eliminar normas custom (no del sistema)"""
+        instance = self.get_object()
+        if instance.es_sistema:
+            return Response(
+                {'detail': 'No se pueden eliminar normas del sistema.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        # Soft delete
+        instance.deleted_at = timezone.now()
+        instance.is_active = False
+        instance.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=False, methods=['get'])
+    def choices(self, request):
+        """
+        Retorna opciones para dropdowns de normas ISO.
+
+        GET /normas-iso/choices/
+
+        Returns:
+            - normas: Lista de normas para selects
+            - categorias: Categorías disponibles (dinámico desde BD)
+        """
+        normas = self.get_queryset().filter(is_active=True)
+        # Obtener categorías únicas de la BD
+        categorias_db = normas.exclude(
+            category__isnull=True
+        ).exclude(
+            category=''
+        ).values_list('category', flat=True).distinct()
+
+        return Response({
+            'normas': [
+                {
+                    'value': n.id,
+                    'label': f"{n.code} - {n.short_name or n.name}",
+                    'code': n.code,
+                    'name': n.name,
+                    'short_name': n.short_name,
+                    'icon': n.icon,
+                    'color': n.color,
+                    'category': n.category,
+                }
+                for n in normas
+            ],
+            'categorias': [
+                {'value': cat, 'label': cat.replace('_', ' ').title()}
+                for cat in categorias_db
+            ]
+        })
+
+    @action(detail=False, methods=['get'])
+    def by_category(self, request):
+        """
+        Retorna normas ISO agrupadas por categoría.
+
+        GET /normas-iso/by-category/
+        """
+        normas = self.get_queryset().filter(is_active=True)
+        result = {}
+
+        # Obtener categorías únicas de la BD
+        categorias = normas.exclude(
+            category__isnull=True
+        ).exclude(
+            category=''
+        ).values_list('category', flat=True).distinct()
+
+        for cat_code in categorias:
+            cat_normas = normas.filter(category=cat_code)
+            if cat_normas.exists():
+                result[cat_code] = {
+                    'name': cat_code.replace('_', ' ').title(),
+                    'normas': NormaISOListSerializer(cat_normas, many=True).data
+                }
+
+        return Response(result)

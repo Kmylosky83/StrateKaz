@@ -5,7 +5,17 @@ Sistema de Gestión StrateKaz
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.html import format_html
-from .models import User, Cargo, Permiso, CargoPermiso
+from .models import (
+    User,
+    Cargo,
+    PermisoModulo,
+    PermisoAccion,
+    PermisoAlcance,
+    Permiso,
+    CargoPermiso,
+    GrupoTipo,
+    Group,
+)
 
 
 @admin.register(Cargo)
@@ -228,66 +238,55 @@ class UserAdmin(BaseUserAdmin):
 @admin.register(Permiso)
 class PermisoAdmin(admin.ModelAdmin):
     """Administración de Permisos en Django Admin"""
-    
+
     list_display = [
         'code',
         'name',
-        'module_display',
-        'action_display',
-        'scope_display',
+        'modulo',
+        'accion',
+        'alcance',
+        'recurso',
         'is_active_badge',
         'created_at',
     ]
-    
+
     list_filter = [
-        'module',
-        'action',
-        'scope',
+        'modulo',
+        'accion',
+        'alcance',
         'is_active',
         'created_at',
     ]
-    
+
     search_fields = [
         'code',
         'name',
         'description',
+        'recurso',
     ]
-    
-    ordering = ['module', 'action', 'scope']
-    
-    readonly_fields = ['created_at']
-    
+
+    ordering = ['modulo__orden', 'accion__orden', 'alcance__nivel']
+
+    readonly_fields = ['created_at', 'updated_at']
+
+    autocomplete_fields = ['modulo', 'accion', 'alcance']
+
     fieldsets = (
         ('Información Básica', {
             'fields': ('code', 'name', 'description')
         }),
-        ('Clasificación', {
-            'fields': ('module', 'action', 'scope')
+        ('Clasificación Dinámica', {
+            'fields': ('modulo', 'accion', 'alcance', 'recurso')
         }),
         ('Estado', {
             'fields': ('is_active',)
         }),
         ('Auditoría', {
-            'fields': ('created_at',),
+            'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',)
         }),
     )
-    
-    def module_display(self, obj):
-        """Mostrar módulo"""
-        return obj.get_module_display()
-    module_display.short_description = 'Módulo'
-    
-    def action_display(self, obj):
-        """Mostrar acción"""
-        return obj.get_action_display()
-    action_display.short_description = 'Acción'
-    
-    def scope_display(self, obj):
-        """Mostrar alcance"""
-        return obj.get_scope_display()
-    scope_display.short_description = 'Alcance'
-    
+
     def is_active_badge(self, obj):
         """Badge para estado activo"""
         if obj.is_active:
@@ -333,6 +332,62 @@ class CargoPermisoAdmin(admin.ModelAdmin):
             return obj.granted_by.get_full_name() or obj.granted_by.username
         return '-'
     granted_by_display.short_description = 'Otorgado por'
+
+
+# ==========================================================================
+# ADMINS PARA SISTEMA RBAC DINÁMICO
+# ==========================================================================
+
+
+@admin.register(PermisoModulo)
+class PermisoModuloAdmin(admin.ModelAdmin):
+    """Admin para Módulos de Permisos - 100% dinámico"""
+    list_display = ['code', 'name', 'icon', 'orden', 'is_active']
+    list_filter = ['is_active']
+    search_fields = ['code', 'name', 'description']
+    ordering = ['orden', 'name']
+    list_editable = ['orden', 'is_active']
+
+
+@admin.register(PermisoAccion)
+class PermisoAccionAdmin(admin.ModelAdmin):
+    """Admin para Acciones de Permisos - 100% dinámico"""
+    list_display = ['code', 'name', 'icon', 'orden', 'is_active']
+    list_filter = ['is_active']
+    search_fields = ['code', 'name', 'description']
+    ordering = ['orden', 'name']
+    list_editable = ['orden', 'is_active']
+
+
+@admin.register(PermisoAlcance)
+class PermisoAlcanceAdmin(admin.ModelAdmin):
+    """Admin para Alcances de Permisos - 100% dinámico"""
+    list_display = ['code', 'name', 'nivel', 'is_active']
+    list_filter = ['is_active']
+    search_fields = ['code', 'name', 'description']
+    ordering = ['nivel', 'name']
+    list_editable = ['nivel', 'is_active']
+
+
+@admin.register(GrupoTipo)
+class GrupoTipoAdmin(admin.ModelAdmin):
+    """Admin para Tipos de Grupo - 100% dinámico"""
+    list_display = ['code', 'name', 'icon', 'color', 'orden', 'is_active']
+    list_filter = ['is_active']
+    search_fields = ['code', 'name', 'description']
+    ordering = ['orden', 'name']
+    list_editable = ['orden', 'is_active']
+
+
+@admin.register(Group)
+class GroupAdmin(admin.ModelAdmin):
+    """Admin para Grupos - 100% dinámico"""
+    list_display = ['code', 'name', 'tipo', 'is_active', 'created_at']
+    list_filter = ['tipo', 'is_active', 'created_at']
+    search_fields = ['code', 'name', 'description']
+    ordering = ['name']
+    autocomplete_fields = ['tipo']
+    # Note: roles usa through model, se gestiona via GroupRole admin
 
 
 # Personalizar el sitio admin

@@ -360,12 +360,8 @@ export interface UpdateConfiguracionStockDTO extends Partial<CreateConfiguracion
 
 // ==================== RESPONSE TYPES ====================
 
-export interface PaginatedResponse<T> {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
-}
+// PaginatedResponse: importar desde '@/types'
+import type { PaginatedResponse } from '@/types';
 
 export interface EstadisticasAlmacenamientoResponse {
   total_productos: number;

@@ -24,24 +24,10 @@ import type {
   BrandingConfig,
   CreateBrandingConfigDTO,
   UpdateBrandingConfigDTO,
-  CategoriaDocumento,
-  CreateCategoriaDocumentoDTO,
-  UpdateCategoriaDocumentoDTO,
-  CategoriaDocumentoFilters,
-  TipoDocumento,
-  CreateTipoDocumentoDTO,
-  UpdateTipoDocumentoDTO,
-  TipoDocumentoFilters,
-  ConsecutivoConfig,
-  CreateConsecutivoConfigDTO,
-  UpdateConsecutivoConfigDTO,
-  GenerateConsecutivoDTO,
-  GenerateConsecutivoResponse,
   StrategicStats,
   PaginatedResponse,
   ObjectiveFilters,
   ModuleFilters,
-  ConsecutivoFilters,
   SelectOption,
   SedeEmpresa,
   SedeEmpresaList,
@@ -63,8 +49,61 @@ import type {
 const CORE_URL = '/core';  // Para system-modules, branding, strategic stats
 const IDENTIDAD_URL = '/identidad';
 const PLANEACION_URL = '/planeacion';
-const ORGANIZACION_URL = '/organizacion';
 const CONFIGURACION_URL = '/configuracion';
+
+// ==================== NORMAS ISO (Dinámico) ====================
+
+export interface NormaISO {
+  id: number;
+  code: string;
+  name: string;
+  short_name: string | null;
+  description?: string | null;
+  category: string;
+  category_display?: string;
+  version?: string | null;
+  icon: string | null;
+  color: string | null;
+  orden: number;
+  es_sistema: boolean;
+  is_active: boolean;
+}
+
+export interface NormaISOChoices {
+  normas: Array<{
+    value: number;
+    label: string;
+    code: string;
+    name: string;
+    short_name: string | null;
+    icon: string | null;
+    color: string | null;
+    category: string;
+  }>;
+  categorias: Array<{ value: string; label: string }>;
+}
+
+export const normasISOApi = {
+  getAll: async (): Promise<PaginatedResponse<NormaISO>> => {
+    const response = await axiosInstance.get(`${CONFIGURACION_URL}/normas-iso/`);
+    return response.data;
+  },
+
+  getById: async (id: number): Promise<NormaISO> => {
+    const response = await axiosInstance.get(`${CONFIGURACION_URL}/normas-iso/${id}/`);
+    return response.data;
+  },
+
+  getChoices: async (): Promise<NormaISOChoices> => {
+    const response = await axiosInstance.get(`${CONFIGURACION_URL}/normas-iso/choices/`);
+    return response.data;
+  },
+
+  getByCategory: async (): Promise<Record<string, { name: string; normas: NormaISO[] }>> => {
+    const response = await axiosInstance.get(`${CONFIGURACION_URL}/normas-iso/by-category/`);
+    return response.data;
+  },
+};
 
 // ==================== CORPORATE IDENTITY ====================
 
@@ -109,26 +148,14 @@ export const identityApi = {
     await axiosInstance.delete(`${IDENTIDAD_URL}/identidad/${id}/`);
   },
 
-  signPolicy: async (id: number): Promise<CorporateIdentity> => {
-    const response = await axiosInstance.post(`${IDENTIDAD_URL}/identidad/${id}/sign-policy/`, {
+  signPolicy: async (id: number): Promise<{ detail: string; signed_by: string; signed_at: string; signature_hash: string }> => {
+    const response = await axiosInstance.post(`${IDENTIDAD_URL}/identidad/${id}/sign/`, {
       confirm: true,
     });
-    return response.data.identity;
-  },
-
-  addValue: async (id: number, data: CreateCorporateValueDTO): Promise<CorporateValue> => {
-    const response = await axiosInstance.post(
-      `${IDENTIDAD_URL}/identidad/${id}/add-value/`,
-      data
-    );
     return response.data;
   },
 
-  removeValue: async (identityId: number, valueId: number): Promise<void> => {
-    await axiosInstance.delete(
-      `${IDENTIDAD_URL}/identidad/${identityId}/remove-value/${valueId}/`
-    );
-  },
+  // NOTA: Para agregar/remover valores, usar directamente valuesApi.create() y valuesApi.delete()
 };
 
 // ==================== CORPORATE VALUES ====================
@@ -361,125 +388,6 @@ export const brandingApi = {
   },
 };
 
-// ==================== CATEGORIA DOCUMENTO ====================
-
-export const categoriasDocumentoApi = {
-  getAll: async (filters?: CategoriaDocumentoFilters): Promise<PaginatedResponse<CategoriaDocumento>> => {
-    const response = await axiosInstance.get(`${ORGANIZACION_URL}/categorias-documento/`, { params: filters });
-    return response.data;
-  },
-
-  getById: async (id: number): Promise<CategoriaDocumento> => {
-    const response = await axiosInstance.get(`${ORGANIZACION_URL}/categorias-documento/${id}/`);
-    return response.data;
-  },
-
-  create: async (data: CreateCategoriaDocumentoDTO): Promise<CategoriaDocumento> => {
-    const response = await axiosInstance.post(`${ORGANIZACION_URL}/categorias-documento/`, data);
-    return response.data;
-  },
-
-  update: async (id: number, data: UpdateCategoriaDocumentoDTO): Promise<CategoriaDocumento> => {
-    const response = await axiosInstance.patch(`${ORGANIZACION_URL}/categorias-documento/${id}/`, data);
-    return response.data;
-  },
-
-  delete: async (id: number): Promise<void> => {
-    await axiosInstance.delete(`${ORGANIZACION_URL}/categorias-documento/${id}/`);
-  },
-
-  getChoices: async (): Promise<SelectOption[]> => {
-    const response = await axiosInstance.get(`${ORGANIZACION_URL}/categorias-documento/choices/`);
-    return response.data;
-  },
-};
-
-// ==================== TIPO DOCUMENTO ====================
-
-export const tiposDocumentoApi = {
-  getAll: async (filters?: TipoDocumentoFilters): Promise<PaginatedResponse<TipoDocumento>> => {
-    const response = await axiosInstance.get(`${ORGANIZACION_URL}/tipos-documento/`, { params: filters });
-    return response.data;
-  },
-
-  getById: async (id: number): Promise<TipoDocumento> => {
-    const response = await axiosInstance.get(`${ORGANIZACION_URL}/tipos-documento/${id}/`);
-    return response.data;
-  },
-
-  create: async (data: CreateTipoDocumentoDTO): Promise<TipoDocumento> => {
-    const response = await axiosInstance.post(`${ORGANIZACION_URL}/tipos-documento/`, data);
-    return response.data;
-  },
-
-  update: async (id: number, data: UpdateTipoDocumentoDTO): Promise<TipoDocumento> => {
-    const response = await axiosInstance.patch(`${ORGANIZACION_URL}/tipos-documento/${id}/`, data);
-    return response.data;
-  },
-
-  delete: async (id: number): Promise<void> => {
-    await axiosInstance.delete(`${ORGANIZACION_URL}/tipos-documento/${id}/`);
-  },
-
-  getSistema: async (): Promise<TipoDocumento[]> => {
-    const response = await axiosInstance.get(`${ORGANIZACION_URL}/tipos-documento/sistema/`);
-    return response.data;
-  },
-
-  getCustom: async (): Promise<TipoDocumento[]> => {
-    const response = await axiosInstance.get(`${ORGANIZACION_URL}/tipos-documento/custom/`);
-    return response.data;
-  },
-
-  getChoices: async (): Promise<{
-    categorias: SelectOption[];
-  }> => {
-    const response = await axiosInstance.get(`${ORGANIZACION_URL}/tipos-documento/choices/`);
-    return response.data;
-  },
-};
-
-// ==================== CONSECUTIVO CONFIG ====================
-
-export const consecutivosApi = {
-  getAll: async (filters?: ConsecutivoFilters): Promise<PaginatedResponse<ConsecutivoConfig>> => {
-    const response = await axiosInstance.get(`${ORGANIZACION_URL}/consecutivos/`, { params: filters });
-    return response.data;
-  },
-
-  getById: async (id: number): Promise<ConsecutivoConfig> => {
-    const response = await axiosInstance.get(`${ORGANIZACION_URL}/consecutivos/${id}/`);
-    return response.data;
-  },
-
-  create: async (data: CreateConsecutivoConfigDTO): Promise<ConsecutivoConfig> => {
-    const response = await axiosInstance.post(`${ORGANIZACION_URL}/consecutivos/`, data);
-    return response.data;
-  },
-
-  update: async (id: number, data: UpdateConsecutivoConfigDTO): Promise<ConsecutivoConfig> => {
-    const response = await axiosInstance.patch(`${ORGANIZACION_URL}/consecutivos/${id}/`, data);
-    return response.data;
-  },
-
-  delete: async (id: number): Promise<void> => {
-    await axiosInstance.delete(`${ORGANIZACION_URL}/consecutivos/${id}/`);
-  },
-
-  generate: async (data: GenerateConsecutivoDTO): Promise<GenerateConsecutivoResponse> => {
-    const response = await axiosInstance.post(`${ORGANIZACION_URL}/consecutivos/generate/`, data);
-    return response.data;
-  },
-
-  getChoices: async (): Promise<{
-    tipos_documento: SelectOption[];
-    separators: SelectOption[];
-  }> => {
-    const response = await axiosInstance.get(`${ORGANIZACION_URL}/consecutivos/choices/`);
-    return response.data;
-  },
-};
-
 // ==================== STRATEGIC STATS ====================
 
 export interface ConfigStatItem {
@@ -628,5 +536,203 @@ export const integracionesApi = {
   }> => {
     const response = await axiosInstance.get(`${CONFIGURACION_URL}/integraciones-externas/choices/`);
     return response.data;
+  },
+};
+
+// ==================== ALCANCE DEL SISTEMA ====================
+
+import type {
+  AlcanceSistema,
+  CreateAlcanceSistemaDTO,
+  UpdateAlcanceSistemaDTO,
+  AlcanceSistemaFilters,
+  PoliticaIntegral,
+  CreatePoliticaIntegralDTO,
+  UpdatePoliticaIntegralDTO,
+  PoliticaIntegralFilters,
+  PoliticaEspecifica,
+  CreatePoliticaEspecificaDTO,
+  UpdatePoliticaEspecificaDTO,
+  PoliticaEspecificaFilters,
+} from '../types/strategic.types';
+
+export const alcancesApi = {
+  getAll: async (filters?: AlcanceSistemaFilters): Promise<PaginatedResponse<AlcanceSistema>> => {
+    const response = await axiosInstance.get(`${IDENTIDAD_URL}/alcances/`, { params: filters });
+    return response.data;
+  },
+
+  getById: async (id: number): Promise<AlcanceSistema> => {
+    const response = await axiosInstance.get(`${IDENTIDAD_URL}/alcances/${id}/`);
+    return response.data;
+  },
+
+  create: async (data: CreateAlcanceSistemaDTO): Promise<AlcanceSistema> => {
+    const response = await axiosInstance.post(`${IDENTIDAD_URL}/alcances/`, data);
+    return response.data;
+  },
+
+  update: async (id: number, data: UpdateAlcanceSistemaDTO): Promise<AlcanceSistema> => {
+    const response = await axiosInstance.patch(`${IDENTIDAD_URL}/alcances/${id}/`, data);
+    return response.data;
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await axiosInstance.delete(`${IDENTIDAD_URL}/alcances/${id}/`);
+  },
+
+  getByStandard: async (identityId: number): Promise<Record<string, AlcanceSistema>> => {
+    const response = await axiosInstance.get(`${IDENTIDAD_URL}/alcances/by-standard/`, {
+      params: { identity: identityId },
+    });
+    return response.data;
+  },
+
+  getCertifications: async (identityId: number): Promise<{
+    total: number;
+    certified: number;
+    pending: number;
+    expiring_soon: AlcanceSistema[];
+  }> => {
+    const response = await axiosInstance.get(`${IDENTIDAD_URL}/alcances/certifications/`, {
+      params: { identity: identityId },
+    });
+    return response.data;
+  },
+};
+
+// ==================== POLÍTICAS INTEGRALES ====================
+
+export const politicasIntegralesApi = {
+  getAll: async (filters?: PoliticaIntegralFilters): Promise<PaginatedResponse<PoliticaIntegral>> => {
+    const response = await axiosInstance.get(`${IDENTIDAD_URL}/politicas-integrales/`, {
+      params: filters,
+    });
+    return response.data;
+  },
+
+  getCurrent: async (identityId: number): Promise<PoliticaIntegral | null> => {
+    try {
+      const response = await axiosInstance.get(`${IDENTIDAD_URL}/politicas-integrales/current/`, {
+        params: { identity: identityId },
+      });
+      return response.data;
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number } };
+        if (axiosError.response?.status === 404) {
+          return null;
+        }
+      }
+      throw error;
+    }
+  },
+
+  getById: async (id: number): Promise<PoliticaIntegral> => {
+    const response = await axiosInstance.get(`${IDENTIDAD_URL}/politicas-integrales/${id}/`);
+    return response.data;
+  },
+
+  getVersions: async (identityId: number): Promise<PoliticaIntegral[]> => {
+    const response = await axiosInstance.get(`${IDENTIDAD_URL}/politicas-integrales/versions/`, {
+      params: { identity: identityId },
+    });
+    return response.data;
+  },
+
+  create: async (data: CreatePoliticaIntegralDTO): Promise<PoliticaIntegral> => {
+    const response = await axiosInstance.post(`${IDENTIDAD_URL}/politicas-integrales/`, data);
+    return response.data;
+  },
+
+  update: async (id: number, data: UpdatePoliticaIntegralDTO): Promise<PoliticaIntegral> => {
+    const response = await axiosInstance.patch(`${IDENTIDAD_URL}/politicas-integrales/${id}/`, data);
+    return response.data;
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await axiosInstance.delete(`${IDENTIDAD_URL}/politicas-integrales/${id}/`);
+  },
+
+  sign: async (id: number): Promise<{ detail: string; signed_by: string; signed_at: string; signature_hash: string }> => {
+    const response = await axiosInstance.post(`${IDENTIDAD_URL}/politicas-integrales/${id}/sign/`, {
+      confirm: true,
+    });
+    return response.data;
+  },
+
+  publish: async (id: number): Promise<{ detail: string; status: string; effective_date: string }> => {
+    const response = await axiosInstance.post(`${IDENTIDAD_URL}/politicas-integrales/${id}/publish/`, {
+      confirm: true,
+    });
+    return response.data;
+  },
+
+  reorder: async (newOrder: { id: number; orden: number }[]): Promise<void> => {
+    await axiosInstance.post(`${IDENTIDAD_URL}/politicas-integrales/reorder/`, {
+      items: newOrder,
+    });
+  },
+};
+
+// ==================== POLÍTICAS ESPECÍFICAS ====================
+
+export const politicasEspecificasApi = {
+  getAll: async (filters?: PoliticaEspecificaFilters): Promise<PaginatedResponse<PoliticaEspecifica>> => {
+    const response = await axiosInstance.get(`${IDENTIDAD_URL}/politicas-especificas/`, {
+      params: filters,
+    });
+    return response.data;
+  },
+
+  getByStandard: async (): Promise<Record<string, { label: string; total: number; vigentes: number; borradores: number }>> => {
+    const response = await axiosInstance.get(`${IDENTIDAD_URL}/politicas-especificas/by-standard/`);
+    return response.data;
+  },
+
+  getPendingReview: async (): Promise<{ count: number; policies: PoliticaEspecifica[] }> => {
+    const response = await axiosInstance.get(`${IDENTIDAD_URL}/politicas-especificas/pending-review/`);
+    return response.data;
+  },
+
+  getStats: async (): Promise<{
+    total: number;
+    by_status: Record<string, number>;
+    pending_review: number;
+  }> => {
+    const response = await axiosInstance.get(`${IDENTIDAD_URL}/politicas-especificas/stats/`);
+    return response.data;
+  },
+
+  getById: async (id: number): Promise<PoliticaEspecifica> => {
+    const response = await axiosInstance.get(`${IDENTIDAD_URL}/politicas-especificas/${id}/`);
+    return response.data;
+  },
+
+  create: async (data: CreatePoliticaEspecificaDTO): Promise<PoliticaEspecifica> => {
+    const response = await axiosInstance.post(`${IDENTIDAD_URL}/politicas-especificas/`, data);
+    return response.data;
+  },
+
+  update: async (id: number, data: UpdatePoliticaEspecificaDTO): Promise<PoliticaEspecifica> => {
+    const response = await axiosInstance.patch(`${IDENTIDAD_URL}/politicas-especificas/${id}/`, data);
+    return response.data;
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await axiosInstance.delete(`${IDENTIDAD_URL}/politicas-especificas/${id}/`);
+  },
+
+  approve: async (id: number): Promise<{ detail: string; approved_by: string; approved_at: string; status: string }> => {
+    const response = await axiosInstance.post(`${IDENTIDAD_URL}/politicas-especificas/${id}/approve/`, {
+      confirm: true,
+    });
+    return response.data;
+  },
+
+  reorder: async (newOrder: { id: number; orden: number }[]): Promise<void> => {
+    await axiosInstance.post(`${IDENTIDAD_URL}/politicas-especificas/reorder/`, {
+      items: newOrder,
+    });
   },
 };

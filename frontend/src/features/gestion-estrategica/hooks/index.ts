@@ -13,6 +13,9 @@ export * from './usePortafolios';
 // Revisión por Dirección (ISO 9.3)
 export * from './useRevisionDireccion';
 
+// Valores Vividos (conexión valor-acción para BI)
+export * from './useValoresVividos';
+
 // Areas hooks - exportados explícitamente para evitar colisiones
 export {
   areaKeys,

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Botón para Exportar Acta de Revisión por la Dirección a PDF
  *
  * Características:
@@ -11,7 +11,7 @@
 
 import { useState } from 'react';
 import { FileDown, Loader2, Eye } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import { exportActaToPDF, ExportActaError } from '../../utils/exportActaPDF';
 import type { ActaRevisionExpandida } from '../../types/revision-direccion.types';
 

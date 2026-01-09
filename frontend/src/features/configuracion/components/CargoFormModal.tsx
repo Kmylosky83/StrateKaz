@@ -1,12 +1,14 @@
 /**
  * Modal para crear/editar Cargos con Manual de Funciones completo
  *
- * 5 Tabs:
+ * 4 Tabs:
  * - Tab 1: Identificacion y Ubicacion Organizacional
  * - Tab 2: Manual de Funciones
  * - Tab 3: Requisitos del Cargo
  * - Tab 4: SST (Seguridad y Salud en el Trabajo)
- * - Tab 5: Permisos del Sistema
+ *
+ * NOTA: Los permisos se configuran desde la Matriz de Permisos por Cargo
+ * (Organizacion > Matriz de Permisos)
  *
  * Usa Design System: BaseModal, Tabs, Input, Select, Textarea, Switch
  */
@@ -21,8 +23,6 @@ import { Textarea } from '@/components/forms/Textarea';
 import { Switch } from '@/components/forms/Switch';
 import { useCreateCargo, useUpdateCargo, useCargos, useCargoChoices, useCargo } from '../hooks/useCargos';
 import { useRiesgosOcupacionales } from '../hooks/useRiesgosOcupacionales';
-import { PermissionSelector } from './PermissionSelector';
-import { RoleSelector } from './RoleSelector';
 import { RiesgoSelector } from './RiesgoSelector';
 import type {
   CargoList,
@@ -46,7 +46,6 @@ import {
   FileText,
   GraduationCap,
   ShieldCheck,
-  Key,
   Plus,
   Trash2,
 } from 'lucide-react';
@@ -58,14 +57,13 @@ interface CargoFormModalProps {
   onClose: () => void;
 }
 
-type TabType = 'identificacion' | 'funciones' | 'requisitos' | 'sst' | 'permisos';
+type TabType = 'identificacion' | 'funciones' | 'requisitos' | 'sst';
 
 const TABS: Tab[] = [
   { id: 'identificacion', label: 'Identificacion', icon: <UserCircle size={16} /> },
   { id: 'funciones', label: 'Funciones', icon: <FileText size={16} /> },
   { id: 'requisitos', label: 'Requisitos', icon: <GraduationCap size={16} /> },
   { id: 'sst', label: 'SST', icon: <ShieldCheck size={16} /> },
-  { id: 'permisos', label: 'Permisos', icon: <Key size={16} /> },
 ];
 
 // Componente para editar listas de strings
@@ -177,6 +175,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
     nivel_jerarquico: 'OPERATIVO' as NivelJerarquico,
     cantidad_posiciones: 1,
     is_jefatura: false,
+    is_externo: false,
     requiere_licencia_conduccion: false,
     categoria_licencia: '',
     requiere_licencia_sst: false,
@@ -206,17 +205,12 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
     examenes_medicos: [] as string[],
     restricciones_medicas: '',
     capacitaciones_sst: [] as string[],
-
-    // Tab 5: Permisos
-    rol_sistema: undefined as number | undefined,
   });
 
-  const [selectedPermissionIds, setSelectedPermissionIds] = useState<number[]>([]);
-  const [selectedRoleIds, setSelectedRoleIds] = useState<number[]>([]);
   const [activeTab, setActiveTab] = useState<TabType>('identificacion');
 
   // Queries
-  const { data: cargosData } = useCargos({ include_inactive: false });
+  const { data: cargosData } = useCargos({ include_inactive: false, page_size: 100 });
   const { data: choicesData } = useCargoChoices();
   const { data: riesgosData } = useRiesgosOcupacionales({});
   // Cargar cargo completo para edicion (CargoList no tiene todos los campos)
@@ -238,6 +232,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
         nivel_jerarquico: cargoCompleto.nivel_jerarquico,
         cantidad_posiciones: cargoCompleto.cantidad_posiciones,
         is_jefatura: cargoCompleto.is_jefatura,
+        is_externo: cargoCompleto.is_externo,
         requiere_licencia_conduccion: cargoCompleto.requiere_licencia_conduccion,
         categoria_licencia: cargoCompleto.categoria_licencia || '',
         requiere_licencia_sst: cargoCompleto.requiere_licencia_sst,
@@ -264,11 +259,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
         examenes_medicos: cargoCompleto.examenes_medicos || [],
         restricciones_medicas: cargoCompleto.restricciones_medicas || '',
         capacitaciones_sst: cargoCompleto.capacitaciones_sst || [],
-
-        rol_sistema: cargoCompleto.rol_sistema,
       });
-      setSelectedPermissionIds(cargoCompleto.permisos?.map((p) => p.id) || []);
-      setSelectedRoleIds(cargoCompleto.default_roles?.map((r) => r.id) || []);
     }
     setActiveTab('identificacion');
   }, [cargoCompleto]);
@@ -285,6 +276,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
         nivel_jerarquico: 'OPERATIVO',
         cantidad_posiciones: 1,
         is_jefatura: false,
+        is_externo: false,
         requiere_licencia_conduccion: false,
         categoria_licencia: '',
         requiere_licencia_sst: false,
@@ -308,10 +300,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
         examenes_medicos: [],
         restricciones_medicas: '',
         capacitaciones_sst: [],
-        rol_sistema: undefined,
       });
-      setSelectedPermissionIds([]);
-      setSelectedRoleIds([]);
       setActiveTab('identificacion');
     }
   }, [cargo]);
@@ -328,6 +317,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
         nivel_jerarquico: formData.nivel_jerarquico,
         cantidad_posiciones: formData.cantidad_posiciones,
         is_jefatura: formData.is_jefatura,
+        is_externo: formData.is_externo,
         requiere_licencia_conduccion: formData.requiere_licencia_conduccion,
         categoria_licencia: formData.categoria_licencia || undefined,
         requiere_licencia_sst: formData.requiere_licencia_sst,
@@ -354,10 +344,6 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
         examenes_medicos: formData.examenes_medicos,
         restricciones_medicas: formData.restricciones_medicas || undefined,
         capacitaciones_sst: formData.capacitaciones_sst,
-
-        rol_sistema: formData.rol_sistema || null,
-        permission_ids: selectedPermissionIds,
-        default_role_ids: selectedRoleIds,
       };
       await updateMutation.mutateAsync({ id: cargo.id, data: updateData });
     } else {
@@ -370,6 +356,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
         nivel_jerarquico: formData.nivel_jerarquico,
         cantidad_posiciones: formData.cantidad_posiciones,
         is_jefatura: formData.is_jefatura,
+        is_externo: formData.is_externo,
         requiere_licencia_conduccion: formData.requiere_licencia_conduccion,
         categoria_licencia: formData.categoria_licencia || undefined,
         requiere_licencia_sst: formData.requiere_licencia_sst,
@@ -396,10 +383,6 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
         examenes_medicos: formData.examenes_medicos,
         restricciones_medicas: formData.restricciones_medicas || undefined,
         capacitaciones_sst: formData.capacitaciones_sst,
-
-        rol_sistema: formData.rol_sistema,
-        permission_ids: selectedPermissionIds,
-        default_role_ids: selectedRoleIds,
       };
       await createMutation.mutateAsync(createData);
     }
@@ -532,7 +515,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
                       { value: '', label: 'Sin cargo superior' },
                       ...parentCargos.map((c) => ({
                         value: c.id.toString(),
-                        label: `${c.name} (${c.code})`,
+                        label: c.name,
                       })),
                     ]}
                   />
@@ -560,6 +543,11 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
                       checked={formData.is_jefatura}
                       onCheckedChange={(checked) => setFormData({ ...formData, is_jefatura: checked })}
                       label="Es Jefatura"
+                    />
+                    <Switch
+                      checked={formData.is_externo}
+                      onCheckedChange={(checked) => setFormData({ ...formData, is_externo: checked })}
+                      label="Es Externo (Contratista, Consultor, Auditor)"
                     />
                     <Switch
                       checked={formData.requiere_licencia_conduccion}
@@ -824,41 +812,6 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
                 placeholder="Agregar capacitacion..."
                 suggestions={CAPACITACIONES_SST_SUGERIDAS}
               />
-            </div>
-          )}
-
-          {/* ========== TAB 5: PERMISOS ========== */}
-          {activeTab === 'permisos' && (
-            <div className="space-y-4">
-              <Alert
-                variant="info"
-                message="Configura el rol del sistema y permisos por defecto que se asignaran a usuarios con este cargo."
-              />
-
-              <div className="border-b border-gray-200 dark:border-gray-700 pb-4">
-                <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
-                  Permisos Directos ({selectedPermissionIds.length})
-                </h4>
-                <PermissionSelector
-                  selectedIds={selectedPermissionIds}
-                  onChange={setSelectedPermissionIds}
-                  disabled={cargo?.is_system}
-                />
-              </div>
-
-              <div>
-                <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
-                  Roles por Defecto ({selectedRoleIds.length})
-                </h4>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                  Estos roles se asignaran automaticamente a usuarios con este cargo
-                </p>
-                <RoleSelector
-                  selectedIds={selectedRoleIds}
-                  onChange={setSelectedRoleIds}
-                  disabled={cargo?.is_system}
-                />
-              </div>
             </div>
           )}
         </form>

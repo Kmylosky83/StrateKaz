@@ -3,6 +3,8 @@
  * Sistema de Gestión StrateKaz
  */
 
+import { PaginatedResponse } from '@/types';
+
 // ==================== ENUMS ====================
 
 export type BSCPerspective = 'FINANCIERA' | 'CLIENTES' | 'PROCESOS' | 'APRENDIZAJE';
@@ -20,119 +22,7 @@ export type ObjectiveStatus = 'PENDIENTE' | 'EN_PROGRESO' | 'COMPLETADO' | 'CANC
 
 export type ModuleCategory = 'ESTRATEGICO' | 'MOTOR' | 'INTEGRAL' | 'MISIONAL' | 'APOYO' | 'INTELIGENCIA';
 
-// Tipos de documento para consecutivos
-export type DocumentType =
-  // Operacionales
-  | 'RECOLECCION'
-  | 'RECEPCION'
-  | 'LOTE'
-  | 'DESPACHO'
-  | 'FACTURA'
-  | 'ORDEN_COMPRA'
-  | 'REQUISICION'
-  | 'REMISION'
-  | 'COTIZACION'
-  | 'ORDEN_TRABAJO'
-  | 'ACTA_COMITE'
-  // Sistema de Gestión
-  | 'PROCEDIMIENTO'
-  | 'INSTRUCTIVO'
-  | 'FORMATO'
-  | 'PROTOCOLO'
-  | 'MANUAL'
-  | 'PROGRAMA'
-  | 'PLAN'
-  // Calidad y SST
-  | 'NO_CONFORMIDAD'
-  | 'ACCION_CORRECTIVA'
-  | 'ACCION_PREVENTIVA'
-  | 'ACCION_MEJORA'
-  | 'INCIDENTE'
-  | 'ACCIDENTE'
-  | 'INVESTIGACION'
-  | 'AUDITORIA'
-  | 'CAPACITACION'
-  // Proveedores/Clientes
-  | 'PROVEEDOR_MP'
-  | 'PROVEEDOR_PS'
-  | 'CLIENTE'
-  | 'ECOALIADO'
-  // Pruebas
-  | 'PRUEBA_ACIDEZ'
-  | 'ANALISIS_CALIDAD';
-
-// Separadores disponibles
-export type SeparatorType = '-' | '/' | '_' | '';
-
-// Contextos (áreas/procesos)
-export type ContextCode =
-  | ''
-  // Sistemas de Gestión
-  | 'SST'
-  | 'CAL'
-  | 'AMB'
-  | 'PESV'
-  // Áreas Operativas
-  | 'PROD'
-  | 'LOG'
-  | 'COM'
-  | 'ADM'
-  | 'FIN'
-  | 'TH'
-  | 'MTO'
-  | 'TI';
-
 export type PeriodType = 'ANUAL' | 'BIANUAL' | 'TRIANUAL' | 'QUINQUENAL';
-
-// ==================== CATEGORIA DOCUMENTO ====================
-
-/**
- * Categoría dinámica de documentos
- * Las categorías pueden ser creadas por el usuario o ser del sistema
- */
-export interface CategoriaDocumento {
-  id: number;
-  code: string;
-  name: string;
-  description?: string;
-  color: string;
-  icon?: string;
-  is_system: boolean;
-  is_active: boolean;
-  orden: number;  // Backend usa 'orden' (español)
-  count_tipos?: number;
-  puede_eliminar?: {
-    puede: boolean;
-    motivo?: string | null;
-  };
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface CreateCategoriaDocumentoDTO {
-  code: string;
-  name: string;
-  description?: string;
-  color?: string;
-  icon?: string;
-  orden?: number;  // Backend usa 'orden'
-  is_active?: boolean;
-}
-
-export interface UpdateCategoriaDocumentoDTO {
-  name?: string;
-  description?: string;
-  color?: string;
-  icon?: string;
-  orden?: number;  // Backend usa 'orden'
-  is_active?: boolean;
-}
-
-export interface CategoriaDocumentoFilters {
-  is_system?: boolean;
-  is_active?: boolean;
-  search?: string;
-}
 
 // ==================== CORPORATE VALUE ====================
 
@@ -432,129 +322,6 @@ export interface UpdateBrandingConfigDTO {
   is_active?: boolean;
 }
 
-// ==================== TIPO DOCUMENTO ====================
-
-export interface TipoDocumento {
-  id: number;
-  code: string;
-  name: string;
-  description?: string | null;
-  categoria: number; // FK a CategoriaDocumento
-  categoria_id?: number; // Alias para compatibilidad
-  categoria_code?: string;
-  categoria_name?: string;
-  categoria_color?: string;
-  categoria_icon?: string;
-  category_display?: string; // Deprecated: usar categoria_name
-  is_system: boolean;
-  is_active: boolean;
-  prefijo_sugerido?: string | null;
-  order: number;
-  puede_eliminar: {
-    puede: boolean;
-    motivo?: string | null;
-  };
-  tiene_consecutivo: boolean;
-  created_at: string;
-  created_by?: number | null;
-  created_by_name?: string | null;
-  updated_at: string;
-}
-
-export interface CreateTipoDocumentoDTO {
-  code: string;
-  name: string;
-  description?: string;
-  categoria: number; // ID de la categoría
-  prefijo_sugerido?: string;
-}
-
-export interface UpdateTipoDocumentoDTO {
-  name?: string;
-  description?: string;
-  categoria?: number; // ID de la categoría
-  prefijo_sugerido?: string;
-  is_active?: boolean;
-  order?: number;
-}
-
-// ==================== CONSECUTIVO CONFIG ====================
-
-/**
- * Modelo de ConsecutivoConfig simplificado - SIN áreas
- */
-export interface ConsecutivoConfig {
-  id: number;
-  // Tipo de documento (FK al modelo TipoDocumento)
-  tipo_documento: number;
-  tipo_documento_code?: string;
-  tipo_documento_name?: string;
-  tipo_documento_categoria_id?: number; // ID de la categoría del tipo de documento
-  tipo_documento_categoria_code?: string;
-  tipo_documento_categoria_name?: string;
-  tipo_documento_categoria_color?: string;
-  tipo_documento_categoria_icon?: string;
-  tipo_documento_category?: string; // Deprecated: para compatibilidad
-  // Configuración del consecutivo
-  prefix: string;
-  suffix?: string | null;
-  current_number: number;
-  padding: number;
-  include_year: boolean;
-  include_month: boolean;
-  include_day: boolean;
-  separator: SeparatorType;
-  separator_display?: string;
-  // Reinicio
-  reset_yearly: boolean;
-  reset_monthly: boolean;
-  last_reset_date?: string | null;
-  // Campos calculados
-  ejemplo_formato?: string;
-  ejemplo?: string;
-  // Estado
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CreateConsecutivoConfigDTO {
-  tipo_documento: number;
-  prefix: string;
-  suffix?: string;
-  padding?: number;
-  include_year?: boolean;
-  include_month?: boolean;
-  include_day?: boolean;
-  separator?: SeparatorType;
-  reset_yearly?: boolean;
-  reset_monthly?: boolean;
-}
-
-export interface UpdateConsecutivoConfigDTO {
-  prefix?: string;
-  suffix?: string;
-  current_number?: number;
-  padding?: number;
-  include_year?: boolean;
-  include_month?: boolean;
-  include_day?: boolean;
-  separator?: SeparatorType;
-  reset_yearly?: boolean;
-  reset_monthly?: boolean;
-  is_active?: boolean;
-}
-
-export interface GenerateConsecutivoDTO {
-  tipo_documento_code: string;
-  area_code?: string;
-}
-
-export interface GenerateConsecutivoResponse {
-  consecutivo: string;
-  current_number: number;
-}
-
 // Opciones para selects (value puede ser string o number según el endpoint)
 export interface SelectOption {
   value: string | number;
@@ -600,15 +367,6 @@ export interface StrategicStats {
   total_modules: number;
 }
 
-// ==================== PAGINATION ====================
-
-export interface PaginatedResponse<T> {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
-}
-
 // ==================== FILTERS ====================
 
 export interface ObjectiveFilters {
@@ -624,18 +382,6 @@ export interface ModuleFilters {
   category?: ModuleCategory;
   is_enabled?: boolean;
   is_core?: boolean;
-  search?: string;
-}
-
-export interface ConsecutivoFilters {
-  document_type?: DocumentType;
-  is_active?: boolean;
-}
-
-export interface TipoDocumentoFilters {
-  categoria?: number; // ID de la categoría
-  is_system?: boolean;
-  is_active?: boolean;
   search?: string;
 }
 
@@ -700,16 +446,9 @@ export interface UpdateTenantUISettingsDTO {
 
 // ==================== SEDE EMPRESA ====================
 
-export type TipoSede =
-  | 'SEDE_PRINCIPAL'
-  | 'SEDE'
-  | 'SUCURSAL'
-  | 'PLANTA'
-  | 'CENTRO_ACOPIO'
-  | 'ALMACEN'
-  | 'PUNTO_VENTA'
-  | 'BODEGA'
-  | 'OTRO';
+// TipoSede ahora es ID numérico (ForeignKey a TipoSede model)
+// Se mantiene compatibilidad con strings legacy para migración
+export type TipoSede = number | string;
 
 export interface SedeEmpresa {
   id: number;
@@ -1327,18 +1066,22 @@ export interface GestionCambioFilters {
 export interface AlcanceSistema {
   id: number;
   identity: number;
-  iso_standard: ISOStandard;
-  iso_standard_display?: string;
+  norma_iso: number | null;
+  norma_iso_code?: string | null;
+  norma_iso_name?: string | null;
   scope: string;
   exclusions?: string | null;
-  justification?: string | null;
+  exclusion_justification?: string | null;
   is_certified: boolean;
+  is_certificate_valid?: boolean;
+  certification_date?: string | null;
   certification_body?: string | null;
   certificate_number?: string | null;
-  certification_date?: string | null;
   expiry_date?: string | null;
-  is_certificate_valid?: boolean;
   days_until_expiry?: number | null;
+  last_audit_date?: string | null;
+  next_audit_date?: string | null;
+  certificate_file?: string | null;
   is_active: boolean;
   created_by?: number | null;
   created_by_name?: string | null;
@@ -1348,33 +1091,38 @@ export interface AlcanceSistema {
 
 export interface CreateAlcanceSistemaDTO {
   identity: number;
-  iso_standard: ISOStandard;
+  norma_iso: number;
   scope: string;
   exclusions?: string;
-  justification?: string;
+  exclusion_justification?: string;
   is_certified?: boolean;
+  certification_date?: string;
   certification_body?: string;
   certificate_number?: string;
-  certification_date?: string;
   expiry_date?: string;
+  last_audit_date?: string;
+  next_audit_date?: string;
   is_active?: boolean;
 }
 
 export interface UpdateAlcanceSistemaDTO {
+  norma_iso?: number;
   scope?: string;
   exclusions?: string;
-  justification?: string;
+  exclusion_justification?: string;
   is_certified?: boolean;
+  certification_date?: string;
   certification_body?: string;
   certificate_number?: string;
-  certification_date?: string;
   expiry_date?: string;
+  last_audit_date?: string;
+  next_audit_date?: string;
   is_active?: boolean;
 }
 
 export interface AlcanceSistemaFilters {
   identity?: number;
-  iso_standard?: ISOStandard;
+  norma_iso?: number;
   is_certified?: boolean;
   is_active?: boolean;
 }
@@ -1385,18 +1133,26 @@ export interface PoliticaIntegral {
   id: number;
   identity: number;
   version: string;
+  title: string;  // Título de la política
   content: string;
-  effective_date: string;
   status: PoliticaStatus;
   status_display?: string;
+  effective_date?: string | null;
+  expiry_date?: string | null;
+  review_date?: string | null;
+  // Firma digital
   is_signed: boolean;
   signed_by?: number | null;
   signed_by_name?: string | null;
   signed_at?: string | null;
   signature_hash?: string | null;
+  // Normas aplicables
   applicable_standards: ISOStandard[];
   applicable_standards_display?: string[];
-  review_date?: string | null;
+  // Documento y cambios
+  document_file?: string | null;
+  change_reason?: string | null;
+  orden: number;
   is_active: boolean;
   created_by?: number | null;
   created_by_name?: string | null;
@@ -1407,21 +1163,29 @@ export interface PoliticaIntegral {
 export interface CreatePoliticaIntegralDTO {
   identity: number;
   version: string;
+  title?: string;
   content: string;
-  effective_date: string;
   status?: PoliticaStatus;
-  applicable_standards?: ISOStandard[];
+  effective_date?: string;
+  expiry_date?: string;
   review_date?: string;
+  applicable_standards?: ISOStandard[];
+  change_reason?: string;
+  orden?: number;
   is_active?: boolean;
 }
 
 export interface UpdatePoliticaIntegralDTO {
   version?: string;
+  title?: string;
   content?: string;
-  effective_date?: string;
   status?: PoliticaStatus;
-  applicable_standards?: ISOStandard[];
+  effective_date?: string;
+  expiry_date?: string;
   review_date?: string;
+  applicable_standards?: ISOStandard[];
+  change_reason?: string;
+  orden?: number;
   is_active?: boolean;
 }
 
@@ -1437,22 +1201,33 @@ export interface PoliticaIntegralFilters {
 export interface PoliticaEspecifica {
   id: number;
   identity: number;
-  iso_standard: ISOStandard;
-  iso_standard_display?: string;
-  name: string;
-  version: string;
+  norma_iso: number | null;  // FK a NormaISO (dinámico desde BD)
+  norma_iso_code?: string | null;
+  norma_iso_name?: string | null;
+  code: string;  // Código único (POL-SST-001)
+  title: string;  // Título de la política
   content: string;
-  objectives?: string | null;
-  commitments?: string | null;
-  effective_date: string;
+  version: string;
   status: PoliticaStatus;
   status_display?: string;
-  is_signed: boolean;
-  signed_by?: number | null;
-  signed_by_name?: string | null;
-  signed_at?: string | null;
-  signature_hash?: string | null;
+  effective_date: string;
   review_date?: string | null;
+  needs_review?: boolean;
+  // Responsables
+  area?: number | null;
+  area_name?: string | null;
+  responsible?: number | null;
+  responsible_name?: string | null;
+  responsible_cargo?: number | null;
+  responsible_cargo_name?: string | null;
+  // Aprobación
+  approved_by?: number | null;
+  approved_by_name?: string | null;
+  approved_at?: string | null;
+  // Extras
+  document_file?: string | null;
+  keywords?: string | null;
+  orden: number;
   is_active: boolean;
   created_by?: number | null;
   created_by_name?: string | null;
@@ -1462,33 +1237,42 @@ export interface PoliticaEspecifica {
 
 export interface CreatePoliticaEspecificaDTO {
   identity: number;
-  iso_standard: ISOStandard;
-  name: string;
-  version: string;
+  norma_iso?: number | null;  // FK a NormaISO (dinámico desde BD)
+  code: string;  // Requerido
+  title: string;  // Requerido
   content: string;
-  objectives?: string;
-  commitments?: string;
-  effective_date: string;
+  version: string;
   status?: PoliticaStatus;
+  effective_date?: string;
   review_date?: string;
+  area?: number | null;
+  responsible?: number | null;
+  responsible_cargo?: number | null;
+  keywords?: string;
+  orden?: number;
   is_active?: boolean;
 }
 
 export interface UpdatePoliticaEspecificaDTO {
-  name?: string;
-  version?: string;
+  norma_iso?: number | null;
+  code?: string;
+  title?: string;
   content?: string;
-  objectives?: string;
-  commitments?: string;
-  effective_date?: string;
+  version?: string;
   status?: PoliticaStatus;
+  effective_date?: string;
   review_date?: string;
+  area?: number | null;
+  responsible?: number | null;
+  responsible_cargo?: number | null;
+  keywords?: string;
+  orden?: number;
   is_active?: boolean;
 }
 
 export interface PoliticaEspecificaFilters {
   identity?: number;
-  iso_standard?: ISOStandard;
+  norma_iso?: number;  // FK a NormaISO
   status?: PoliticaStatus;
   is_signed?: boolean;
   is_active?: boolean;

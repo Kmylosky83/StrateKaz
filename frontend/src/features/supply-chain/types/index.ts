@@ -6,19 +6,8 @@
  */
 
 // ==================== RESPONSE TYPES ====================
-
-export interface PaginatedResponse<T> {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
-}
-
-export interface ApiResponse<T> {
-  data: T;
-  message?: string;
-  errors?: Record<string, string[]>;
-}
+import { PaginatedResponse, ApiResponse } from '@/types';
+export type { PaginatedResponse, ApiResponse };
 
 // ==================== CATÁLOGOS DINÁMICOS ====================
 

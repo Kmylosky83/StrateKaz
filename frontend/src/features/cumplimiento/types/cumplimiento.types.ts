@@ -10,20 +10,11 @@
  */
 
 import type { BaseEntity } from '@/hooks/useGenericCRUD';
+import type { PaginatedResponse, SelectOption } from '@/types';
 
 // ==================== COMMON TYPES ====================
-
-export interface PaginatedResponse<T> {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
-}
-
-export interface SelectOption {
-  value: string | number;
-  label: string;
-}
+// Re-export para compatibilidad
+export type { PaginatedResponse, SelectOption };
 
 export interface BaseTimestamped extends BaseEntity {
   created_at: string;

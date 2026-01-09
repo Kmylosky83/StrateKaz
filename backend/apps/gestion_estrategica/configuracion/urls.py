@@ -13,6 +13,8 @@ from .views import (
     EmpresaConfigViewSet,
     SedeEmpresaViewSet,
     IntegracionExternaViewSet,
+    IconRegistryViewSet,
+    NormaISOViewSet,
 )
 from .stats_views import config_stats_view
 
@@ -20,6 +22,8 @@ router = DefaultRouter()
 router.register(r'empresa-config', EmpresaConfigViewSet, basename='empresa-config')
 router.register(r'sedes', SedeEmpresaViewSet, basename='sede')
 router.register(r'integraciones-externas', IntegracionExternaViewSet, basename='integracion-externa')
+router.register(r'icons', IconRegistryViewSet, basename='icon')
+router.register(r'normas-iso', NormaISOViewSet, basename='norma-iso')
 
 urlpatterns = [
     path('', include(router.urls)),

@@ -5,18 +5,8 @@
  */
 
 // ==================== COMMON TYPES ====================
-
-export interface PaginatedResponse<T> {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
-}
-
-export interface SelectOption {
-  value: string | number;
-  label: string;
-}
+import { PaginatedResponse, SelectOption } from '@/types';
+export type { PaginatedResponse, SelectOption };
 
 // ==================== GESTION FLOTA - CATALOGOS ====================
 

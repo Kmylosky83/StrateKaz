@@ -19,6 +19,7 @@ const levelToVariant: Record<NivelJerarquico, 'primary' | 'success' | 'warning' 
   TACTICO: 'info',         // blue -> info
   OPERATIVO: 'success',    // green -> success
   APOYO: 'gray',           // gray -> gray
+  EXTERNO: 'warning',      // orange/yellow -> contratistas, consultores
 };
 
 export const CargoLevelBadge = ({ level, showLabel = true, className }: CargoLevelBadgeProps) => {

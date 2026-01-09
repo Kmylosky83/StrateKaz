@@ -1,4 +1,4 @@
-/**
+﻿/**
  * OrganigramaCanvas - Canvas principal con React Flow
  *
  * Renderiza el organigrama interactivo con nodos personalizados
@@ -20,10 +20,11 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import { useQuery } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import axiosInstance from '@/api/axios-config';
 import { Card, EmptyState, Spinner } from '@/components/common';
 import { Building2, Network } from 'lucide-react';
+import { useEmpresaBasicInfo } from '../../hooks/useEmpresa';
 
 import AreaNode from './AreaNode';
 import CargoNode from './CargoNode';
@@ -71,6 +72,9 @@ const useOrganigramaData = (includeUsuarios = false, soloActivos = true) => {
 const OrganigramaCanvasInner = () => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const { fitView, zoomIn, zoomOut } = useReactFlow();
+
+  // Obtener nombre de la empresa para exportación
+  const { nombreComercial: empresaNombre } = useEmpresaBasicInfo();
 
   // Estado
   const [viewMode, setViewMode] = useState<ViewMode>('cargos');
@@ -189,7 +193,8 @@ const OrganigramaCanvasInner = () => {
           exportElement,
           { ...DEFAULT_EXPORT_OPTIONS, format },
           data?.stats,
-          'Organigrama Organizacional'
+          'Organigrama',
+          empresaNombre || undefined
         );
 
         // Éxito
@@ -221,7 +226,7 @@ const OrganigramaCanvasInner = () => {
         setIsExporting(false);
       }
     },
-    [data?.stats]
+    [data?.stats, empresaNombre]
   );
 
   const handleExpandAll = useCallback(() => {

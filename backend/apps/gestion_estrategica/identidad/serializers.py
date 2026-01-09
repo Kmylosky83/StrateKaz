@@ -116,8 +116,12 @@ class SignPolicySerializer(serializers.Serializer):
 
 class AlcanceSistemaListSerializer(serializers.ModelSerializer):
     """Serializer resumido para listas de alcances"""
-    iso_standard_display = serializers.CharField(
-        source='get_iso_standard_display',
+    norma_iso_code = serializers.CharField(
+        source='norma_iso.code',
+        read_only=True
+    )
+    norma_iso_name = serializers.CharField(
+        source='norma_iso.short_name',
         read_only=True
     )
     is_certificate_valid = serializers.ReadOnlyField()
@@ -126,7 +130,7 @@ class AlcanceSistemaListSerializer(serializers.ModelSerializer):
     class Meta:
         model = AlcanceSistema
         fields = [
-            'id', 'iso_standard', 'iso_standard_display',
+            'id', 'norma_iso', 'norma_iso_code', 'norma_iso_name',
             'is_certified', 'is_certificate_valid', 'days_until_expiry',
             'certification_body', 'expiry_date', 'is_active'
         ]
@@ -134,8 +138,12 @@ class AlcanceSistemaListSerializer(serializers.ModelSerializer):
 
 class AlcanceSistemaSerializer(serializers.ModelSerializer):
     """Serializer completo para Alcance del Sistema"""
-    iso_standard_display = serializers.CharField(
-        source='get_iso_standard_display',
+    norma_iso_code = serializers.CharField(
+        source='norma_iso.code',
+        read_only=True
+    )
+    norma_iso_name = serializers.CharField(
+        source='norma_iso.short_name',
         read_only=True
     )
     is_certificate_valid = serializers.ReadOnlyField()
@@ -148,7 +156,7 @@ class AlcanceSistemaSerializer(serializers.ModelSerializer):
     class Meta:
         model = AlcanceSistema
         fields = [
-            'id', 'identity', 'iso_standard', 'iso_standard_display',
+            'id', 'identity', 'norma_iso', 'norma_iso_code', 'norma_iso_name',
             'scope', 'exclusions', 'exclusion_justification',
             'is_certified', 'is_certificate_valid', 'certification_date',
             'certification_body', 'certificate_number', 'expiry_date',
@@ -168,7 +176,7 @@ class AlcanceSistemaCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = AlcanceSistema
         fields = [
-            'identity', 'iso_standard', 'scope', 'exclusions',
+            'identity', 'norma_iso', 'scope', 'exclusions',
             'exclusion_justification', 'is_certified', 'certification_date',
             'certification_body', 'certificate_number', 'expiry_date',
             'last_audit_date', 'next_audit_date', 'certificate_file', 'is_active'
@@ -200,7 +208,7 @@ class PoliticaIntegralSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'identity', 'version', 'title', 'content',
             'status', 'status_display', 'effective_date', 'expiry_date',
-            'signed_by', 'signed_by_name', 'signed_at', 'signature_hash',
+            'review_date', 'signed_by', 'signed_by_name', 'signed_at', 'signature_hash',
             'is_signed', 'applicable_standards', 'document_file',
             'change_reason', 'orden', 'is_active',
             'created_by', 'created_by_name', 'created_at', 'updated_at'
@@ -219,7 +227,7 @@ class PoliticaIntegralCreateUpdateSerializer(serializers.ModelSerializer):
         fields = [
             'identity', 'version', 'title', 'content', 'status',
             'effective_date', 'expiry_date', 'applicable_standards',
-            'document_file', 'change_reason', 'orden', 'is_active'
+            'document_file', 'change_reason', 'review_date', 'orden', 'is_active'
         ]
 
 
@@ -259,8 +267,12 @@ class PublishPoliticaIntegralSerializer(serializers.Serializer):
 
 class PoliticaEspecificaSerializer(serializers.ModelSerializer):
     """Serializer para Política Específica"""
-    iso_standard_display = serializers.CharField(
-        source='get_iso_standard_display',
+    norma_iso_code = serializers.CharField(
+        source='norma_iso.code',
+        read_only=True
+    )
+    norma_iso_name = serializers.CharField(
+        source='norma_iso.short_name',
         read_only=True
     )
     status_display = serializers.CharField(
@@ -292,7 +304,7 @@ class PoliticaEspecificaSerializer(serializers.ModelSerializer):
     class Meta:
         model = PoliticaEspecifica
         fields = [
-            'id', 'identity', 'iso_standard', 'iso_standard_display',
+            'id', 'identity', 'norma_iso', 'norma_iso_code', 'norma_iso_name',
             'code', 'title', 'content', 'area', 'area_name',
             'responsible', 'responsible_name',
             'responsible_cargo', 'responsible_cargo_name',
@@ -314,7 +326,7 @@ class PoliticaEspecificaCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = PoliticaEspecifica
         fields = [
-            'identity', 'iso_standard', 'code', 'title', 'content',
+            'identity', 'norma_iso', 'code', 'title', 'content',
             'area', 'responsible', 'responsible_cargo', 'version',
             'status', 'effective_date', 'review_date',
             'document_file', 'keywords', 'orden', 'is_active'

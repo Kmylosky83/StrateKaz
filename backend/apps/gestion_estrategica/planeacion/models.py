@@ -179,16 +179,7 @@ class StrategicObjective(AuditModel, SoftDeleteModel):
         ('APRENDIZAJE', 'Aprendizaje y Crecimiento'),
     ]
 
-    ISO_STANDARD_CHOICES = [
-        ('ISO_9001', 'ISO 9001 - Calidad'),
-        ('ISO_14001', 'ISO 14001 - Ambiental'),
-        ('ISO_45001', 'ISO 45001 - SST'),
-        ('ISO_27001', 'ISO 27001 - Seguridad de la Información'),
-        ('PESV', 'PESV - Plan Estratégico de Seguridad Vial'),
-        ('SG_SST', 'SG-SST - Sistema de Gestión SST'),
-        ('NINGUNO', 'Sin vinculación normativa'),
-    ]
-
+    # STATUS_CHOICES - Estados de workflow (fijos)
     STATUS_CHOICES = [
         ('PENDIENTE', 'Pendiente'),
         ('EN_PROGRESO', 'En Progreso'),
@@ -227,10 +218,18 @@ class StrategicObjective(AuditModel, SoftDeleteModel):
         verbose_name='Perspectiva BSC',
         help_text='Perspectiva del Balanced Scorecard'
     )
-    iso_standards = models.JSONField(
-        default=list,
+    normas_iso = models.ManyToManyField(
+        'configuracion.NormaISO',
+        blank=True,
+        related_name='objetivos_estrategicos',
         verbose_name='Normas ISO',
-        help_text='Lista de normas ISO vinculadas'
+        help_text='Normas ISO vinculadas al objetivo'
+    )
+    # DEPRECATED: Campo legacy para migración
+    iso_standards_legacy = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='[DEPRECATED] Normas ISO (JSON)'
     )
     responsible = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -708,15 +707,7 @@ class GestionCambio(AuditModel, SoftDeleteModel):
     estructurales, de procesos o tecnológicos de la organización.
     """
 
-    CHANGE_TYPE_CHOICES = [
-        ('ESTRATEGICO', 'Estratégico'),
-        ('ESTRUCTURAL', 'Estructural'),
-        ('PROCESO', 'Proceso'),
-        ('TECNOLOGICO', 'Tecnológico'),
-        ('NORMATIVO', 'Normativo'),
-        ('CULTURAL', 'Cultural'),
-    ]
-
+    # PRIORITY_CHOICES - Estándar técnico (fijo)
     PRIORITY_CHOICES = [
         ('BAJA', 'Baja'),
         ('MEDIA', 'Media'),
@@ -724,6 +715,7 @@ class GestionCambio(AuditModel, SoftDeleteModel):
         ('CRITICA', 'Crítica'),
     ]
 
+    # STATUS_CHOICES - Estados de workflow (fijo)
     STATUS_CHOICES = [
         ('IDENTIFICADO', 'Identificado'),
         ('ANALISIS', 'En Análisis'),
@@ -748,11 +740,21 @@ class GestionCambio(AuditModel, SoftDeleteModel):
         verbose_name='Descripción',
         help_text='Descripción detallada del cambio'
     )
-    change_type = models.CharField(
-        max_length=20,
-        choices=CHANGE_TYPE_CHOICES,
+    tipo_cambio = models.ForeignKey(
+        'configuracion.TipoCambio',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='gestiones_cambio',
         verbose_name='Tipo de Cambio',
         db_index=True
+    )
+    # DEPRECATED: Campo legacy para migración
+    change_type_legacy = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        verbose_name='[DEPRECATED] Tipo de Cambio (código)'
     )
     priority = models.CharField(
         max_length=20,
@@ -841,11 +843,12 @@ class GestionCambio(AuditModel, SoftDeleteModel):
         ordering = ['-priority', '-created_at']
         indexes = [
             models.Index(fields=['status', 'priority'], name='cambio_status_priority_idx'),
-            models.Index(fields=['change_type', 'is_active'], name='cambio_type_active_idx'),
+            models.Index(fields=['is_active'], name='cambio_active_idx'),
         ]
 
     def __str__(self):
-        return f"{self.code} - {self.title}"
+        tipo_str = self.tipo_cambio.name if self.tipo_cambio else 'Sin Tipo'
+        return f"{self.code} - {self.title} ({tipo_str})"
 
     def transition_status(self, new_status, user=None):
         """Cambia el estado con validaciones"""

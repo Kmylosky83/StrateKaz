@@ -150,13 +150,17 @@ class BaseCompanyModel(AuditModel, SoftDeleteModel):
     - Foreign Key a EmpresaConfig (empresa)
     """
 
+    # FK a EmpresaConfig usando string lazy para evitar dependencias circulares
+    # Se resolverá en tiempo de ejecución cuando se active gestion_estrategica.configuracion
+    # NOTA: El app_label es 'configuracion' (definido en apps.py)
     empresa = models.ForeignKey(
         'configuracion.EmpresaConfig',
         on_delete=models.CASCADE,
         related_name='%(app_label)s_%(class)s_set',
         verbose_name='Empresa',
         help_text='Empresa a la que pertenece este registro',
-        default=1  # Default temporal para migraciones
+        null=True,  # Nullable para permitir migración secuencial de apps
+        blank=True
     )
 
     class Meta:

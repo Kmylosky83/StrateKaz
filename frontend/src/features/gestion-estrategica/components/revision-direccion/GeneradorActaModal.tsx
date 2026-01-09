@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Modal Generador de Actas de Revisión por Dirección (ISO 9.3)
  *
  * Funcionalidades:
@@ -19,7 +19,7 @@ import { Textarea } from '@/components/forms/Textarea';
 import { Select } from '@/components/forms/Select';
 import { Checkbox } from '@/components/forms/Checkbox';
 import { Badge } from '@/components/common/Badge';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import {
   useProgramasRevision,
   useActaByProgramacion,

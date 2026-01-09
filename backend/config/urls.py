@@ -1,6 +1,9 @@
 """
 URL Configuration for StrateKaz
 Sistema Integrado de Gestión para Recolección de ACU
+
+SISTEMA MODULAR: Las URLs se registran condicionalmente según las apps
+que estén activas en INSTALLED_APPS (ver config/settings.py)
 """
 import os
 from django.contrib import admin
@@ -9,8 +12,14 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.http import JsonResponse, FileResponse, Http404
 from django.views.static import serve
+from django.apps import apps
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+
+
+def is_app_installed(app_name):
+    """Helper para verificar si una app está instalada"""
+    return apps.is_installed(app_name)
 
 
 def health_check(request):
@@ -85,6 +94,9 @@ def serve_frontend(request, path=''):
     raise Http404("Frontend not found")
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# URL PATTERNS BASE (siempre activas)
+# ═══════════════════════════════════════════════════════════════════════════
 urlpatterns = [
     # Health check
     path('api/health/', health_check, name='health_check'),
@@ -101,59 +113,90 @@ urlpatterns = [
     path('api/auth/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
-    # API Core
+    # ═══════════════════════════════════════════════════════════════════════════
+    # NIVEL 0: CORE (siempre activo)
+    # ═══════════════════════════════════════════════════════════════════════════
     path('api/core/', include('apps.core.urls')),
-
-    # Apps Legacy Funcionales (pendiente migración a supply_chain)
-    path('api/proveedores/', include('apps.proveedores.urls')),  # LEGACY - pendiente eliminar
-
-    # Supply Chain (Módulo 6 - Nivel Operativo)
-    path('api/supply-chain/', include('apps.supply_chain.gestion_proveedores.urls')),
-
-    # Dirección Estratégica (Módulo 1 - Nivel Estratégico)
-    path('api/organizacion/', include('apps.gestion_estrategica.organizacion.urls')),
-    path('api/configuracion/', include('apps.gestion_estrategica.configuracion.urls')),
-    path('api/identidad/', include('apps.gestion_estrategica.identidad.urls')),
-    path('api/planeacion/', include('apps.gestion_estrategica.planeacion.urls')),
-    path('api/proyectos/', include('apps.gestion_estrategica.gestion_proyectos.urls')),
-    path('api/revision-direccion/', include('apps.gestion_estrategica.revision_direccion.urls')),
-
-    # Motor de Cumplimiento (Módulo 2 - Nivel Cumplimiento)
-    path('api/cumplimiento/', include('apps.motor_cumplimiento.urls')),
-
-    # Motor de Riesgos (Módulo 3 - Nivel Riesgos)
-    path('api/riesgos/', include('apps.motor_riesgos.urls')),
-
-    # Motor de Flujos (Módulo 4 - Automatización)
-    path('api/workflows/', include('apps.workflow_engine.urls')),
-
-    # HSEQ Management - Torre de Control (Módulo 5)
-    path('api/hseq/', include('apps.hseq_management.urls')),
-
-    # Production Ops - Operaciones de Producción (Módulo 7)
-    path('api/production-ops/', include('apps.production_ops.urls')),
-
-    # Logistics Fleet - Logística y Flota (Módulo 8)
-    path('api/logistics-fleet/', include('apps.logistics_fleet.urls')),
-
-    # Sales CRM - Ventas y CRM (Módulo 9)
-    path('api/sales-crm/', include('apps.sales_crm.urls')),
-
-    # Talent Hub - Gestión del Talento Humano (Módulo 10 - Habilitadores)
-    path('api/talent-hub/', include('apps.talent_hub.urls')),
-
-    # Admin Finance - Administración Financiera (Módulo 11 - Habilitadores)
-    path('api/admin-finance/', include('apps.admin_finance.urls')),
-
-    # Accounting - Contabilidad (Módulo 12 - ACTIVABLE)
-    path('api/accounting/', include('apps.accounting.urls')),
-
-    # Analytics - Analítica y Gestión de Indicadores (Módulo 13)
-    path('api/analytics/', include('apps.analytics.urls')),
-
-    # Audit System - Sistema de Auditoría y Notificaciones (Módulo 14)
-    path('api/audit/', include('apps.audit_system.urls')),
 ]
+
+# ═══════════════════════════════════════════════════════════════════════════
+# NIVEL 1: ESTRATÉGICO - Dirección Estratégica (6 apps)
+# ═══════════════════════════════════════════════════════════════════════════
+if is_app_installed('apps.gestion_estrategica.configuracion'):
+    urlpatterns.append(path('api/configuracion/', include('apps.gestion_estrategica.configuracion.urls')))
+
+if is_app_installed('apps.gestion_estrategica.organizacion'):
+    urlpatterns.append(path('api/organizacion/', include('apps.gestion_estrategica.organizacion.urls')))
+
+if is_app_installed('apps.gestion_estrategica.identidad'):
+    urlpatterns.append(path('api/identidad/', include('apps.gestion_estrategica.identidad.urls')))
+
+if is_app_installed('apps.gestion_estrategica.planeacion'):
+    urlpatterns.append(path('api/planeacion/', include('apps.gestion_estrategica.planeacion.urls')))
+
+if is_app_installed('apps.gestion_estrategica.gestion_proyectos'):
+    urlpatterns.append(path('api/proyectos/', include('apps.gestion_estrategica.gestion_proyectos.urls')))
+
+if is_app_installed('apps.gestion_estrategica.revision_direccion'):
+    urlpatterns.append(path('api/revision-direccion/', include('apps.gestion_estrategica.revision_direccion.urls')))
+
+# ═══════════════════════════════════════════════════════════════════════════
+# NIVEL 2: CUMPLIMIENTO - Motor Cumplimiento + Riesgos + Workflows
+# ═══════════════════════════════════════════════════════════════════════════
+if is_app_installed('apps.motor_cumplimiento.matriz_legal'):
+    urlpatterns.append(path('api/cumplimiento/', include('apps.motor_cumplimiento.urls')))
+
+if is_app_installed('apps.motor_riesgos.contexto_organizacional'):
+    urlpatterns.append(path('api/riesgos/', include('apps.motor_riesgos.urls')))
+
+if is_app_installed('apps.workflow_engine.disenador_flujos'):
+    urlpatterns.append(path('api/workflows/', include('apps.workflow_engine.urls')))
+
+# ═══════════════════════════════════════════════════════════════════════════
+# NIVEL 3: TORRE DE CONTROL - HSEQ Management
+# ═══════════════════════════════════════════════════════════════════════════
+if is_app_installed('apps.hseq_management.sistema_documental'):
+    urlpatterns.append(path('api/hseq/', include('apps.hseq_management.urls')))
+
+# ═══════════════════════════════════════════════════════════════════════════
+# NIVEL 4: CADENA DE VALOR - Supply + Production + Logistics + Sales
+# ═══════════════════════════════════════════════════════════════════════════
+# Legacy proveedores (solo si está activa)
+if is_app_installed('apps.proveedores'):
+    urlpatterns.append(path('api/proveedores/', include('apps.proveedores.urls')))
+
+if is_app_installed('apps.supply_chain.gestion_proveedores'):
+    urlpatterns.append(path('api/supply-chain/', include('apps.supply_chain.gestion_proveedores.urls')))
+
+if is_app_installed('apps.production_ops.recepcion'):
+    urlpatterns.append(path('api/production-ops/', include('apps.production_ops.urls')))
+
+if is_app_installed('apps.logistics_fleet.gestion_flota'):
+    urlpatterns.append(path('api/logistics-fleet/', include('apps.logistics_fleet.urls')))
+
+if is_app_installed('apps.sales_crm.gestion_clientes'):
+    urlpatterns.append(path('api/sales-crm/', include('apps.sales_crm.urls')))
+
+# ═══════════════════════════════════════════════════════════════════════════
+# NIVEL 5: HABILITADORES - Talent + Finance + Accounting
+# ═══════════════════════════════════════════════════════════════════════════
+if is_app_installed('apps.talent_hub.estructura_cargos'):
+    urlpatterns.append(path('api/talent-hub/', include('apps.talent_hub.urls')))
+
+if is_app_installed('apps.admin_finance.tesoreria'):
+    urlpatterns.append(path('api/admin-finance/', include('apps.admin_finance.urls')))
+
+if is_app_installed('apps.accounting.config_contable'):
+    urlpatterns.append(path('api/accounting/', include('apps.accounting.urls')))
+
+# ═══════════════════════════════════════════════════════════════════════════
+# NIVEL 6: INTELIGENCIA - Analytics + Audit System
+# ═══════════════════════════════════════════════════════════════════════════
+if is_app_installed('apps.analytics.config_indicadores'):
+    urlpatterns.append(path('api/analytics/', include('apps.analytics.urls')))
+
+if is_app_installed('apps.audit_system.logs_sistema'):
+    urlpatterns.append(path('api/audit/', include('apps.audit_system.urls')))
 
 # Serve media files in development
 if settings.DEBUG:

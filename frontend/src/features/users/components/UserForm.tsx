@@ -322,8 +322,7 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, cargos, isLoading }:
                     Cargo: {selectedCargo.name}
                   </p>
                   <p className="text-blue-600 dark:text-blue-300 mt-1">
-                    Este cargo otorga automaticamente los permisos base definidos en el Manual de
-                    Funciones.
+                    Los permisos de acceso y acciones se configuran en Configuracion &rarr; Cargos.
                     {selectedCargo.level && ` Nivel: ${selectedCargo.level}`}
                   </p>
                 </div>

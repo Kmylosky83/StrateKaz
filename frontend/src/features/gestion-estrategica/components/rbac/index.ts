@@ -1,14 +1,11 @@
 /**
- * Exportaciones del módulo RBAC (Roles y Permisos)
+ * Exportaciones del modulo RBAC (Roles y Permisos) v3.3.0
  *
- * IMPORTANTE: Este archivo resuelve los imports cross-feature.
- * CargosTab proviene de configuracion/ (legacy) pero se re-exporta aquí
+ * Este archivo resuelve los imports cross-feature.
+ * CargosTab proviene de configuracion/ pero se re-exporta aqui
  * para que OrganizacionTab.tsx pueda importarlo sin dependencias cross-feature.
  *
- * RESOLUCIÓN DE DUPLICADOS:
- * - RolesTab → RolesPermisosWrapper: Renombrado para evitar conflicto con
- *   configuracion/RolesTab.tsx (componente legacy de 832 líneas que no se usa)
- * - Se exporta como RolesTab para mantener compatibilidad con OrganizacionTab
+ * RolesPermisosWrapper se exporta como RolesTab para compatibilidad con OrganizacionTab.
  */
 
 // Re-export de CargosTab desde configuracion (legacy)

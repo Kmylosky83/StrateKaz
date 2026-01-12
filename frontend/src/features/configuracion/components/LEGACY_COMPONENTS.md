@@ -1,49 +1,37 @@
-# Componentes Legacy - Módulo Configuración
+# Componentes Legacy - Modulo Configuracion
 
-Este documento lista los componentes que ya NO se usan activamente en la aplicación pero se mantienen por compatibilidad o referencia histórica.
+Este documento lista los componentes que fueron eliminados o deprecados durante la refactorizacion RBAC v3.3.0.
 
-## RolesTab.tsx
+## Componentes Eliminados
 
-**Estado**: LEGACY - NO USADO
+### RolesTab.tsx (ELIMINADO)
 
-**Ubicación**: `frontend/src/features/configuracion/components/RolesTab.tsx`
+**Estado**: ELIMINADO - 2025-01-12
 
-**Tamaño**: 832 líneas
+**Ubicacion anterior**: `frontend/src/features/configuracion/components/RolesTab.tsx`
 
-**Razón**: Este componente fue reemplazado por la nueva arquitectura modular en `gestion-estrategica`:
+**Tamano**: 832 lineas
+
+**Razon de eliminacion**: Componente redundante reemplazado por arquitectura modular:
 - `gestion-estrategica/components/rbac/RolesPermisosWrapper.tsx` (wrapper con subtabs)
-- `gestion-estrategica/components/rbac/RolesAdicionalesSubTab.tsx` (gestión completa)
-
-**Funcionalidad Original**:
-- Plantillas sugeridas de roles predefinidos
-- Tabla de roles adicionales existentes
-- CRUD completo de roles
-- Asignación de roles a usuarios
-
-**Exportaciones**:
-- Se exporta en `configuracion/index.ts`
-- NO se importa en ningún componente activo de la aplicación
-
-**Decisión**:
-- ✅ Se mantiene por referencia histórica
-- ✅ Documentado claramente como LEGACY en el header del archivo
-- ❌ NO eliminar aún (puede servir para referencia o migración)
+- `gestion-estrategica/components/rbac/RolesAdicionalesSubTab.tsx` (gestion completa)
+- `talent-hub/pages/TalentHubPage.tsx` (tab Roles Adicionales)
 
 ---
 
 ## Arquitectura RBAC Actual (v3.3.0)
 
-### Flujo de Configuración Unificado
+### Flujo de Configuracion Unificado
 
-La configuración de RBAC se ha simplificado para ser más intuitiva:
+La configuracion de RBAC se ha simplificado para ser mas intuitiva:
 
 ```
-Configuración > Cargos > Modal de Cargo (6 tabs)
-├── Tab 1: Identificación (datos básicos)
+Configuracion > Cargos > Modal de Cargo (6 tabs)
+├── Tab 1: Identificacion (datos basicos)
 ├── Tab 2: Funciones (manual de funciones)
-├── Tab 3: Requisitos (formación, experiencia)
+├── Tab 3: Requisitos (formacion, experiencia)
 ├── Tab 4: SST (riesgos, EPP)
-├── Tab 5: Acceso UI (módulos/tabs/secciones visibles)
+├── Tab 5: Acceso UI (modulos/tabs/secciones visibles)
 └── Tab 6: Permisos (acciones CRUD autorizadas)
 ```
 
@@ -56,21 +44,21 @@ Talento Humano > Roles Adicionales
 ├── Crear/Editar roles
 ├── Asignar a usuarios
 ├── Gestionar certificaciones
-└── Ver estadísticas
+└── Ver estadisticas
 ```
 
 ### RolesPermisosWrapper (Vista de Referencia)
 
-El componente `RolesPermisosWrapper` en Organización > Roles y Permisos ahora contiene:
+El componente `RolesPermisosWrapper` en Organizacion > Roles y Permisos contiene:
 
 ```
-Organización > Roles y Permisos
+Organizacion > Roles y Permisos
 ├── Matriz de Accesos: Vista global de accesos por cargo
 ├── Matriz de Permisos: Vista global de permisos por cargo
-└── Catálogo de Permisos: Referencia de los 68 permisos del sistema
+└── Catalogo de Permisos: Referencia de los 68 permisos del sistema
 ```
 
-### Componentes Involucrados
+### Componentes Activos
 
 ```
 frontend/src/features/
@@ -84,16 +72,17 @@ frontend/src/features/
 │   ├── RolesPermisosWrapper.tsx (3 subtabs para vista global)
 │   ├── PermisosCargoSubTab.tsx (matriz de permisos)
 │   ├── RolesAdicionalesSubTab.tsx (CRUD de roles adicionales)
-│   └── TodosPermisosSubTab.tsx (catálogo de permisos)
+│   └── TodosPermisosSubTab.tsx (catalogo de permisos)
 └── talent-hub/pages/
     └── TalentHubPage.tsx (incluye tab de Roles Adicionales)
 ```
 
 ## Historial de Cambios
 
-- **2025-01-12**: Reorganización RBAC v3.3.0
+- **2025-01-12**: RBAC v3.3.0
+  - ELIMINADO: `configuracion/components/RolesTab.tsx` (832 lineas)
   - CargoFormModal expandido a 6 tabs (agregados Acceso UI y Permisos)
   - RolesAdicionalesSubTab movido a Talent Hub
   - RolesPermisosWrapper simplificado a 3 subtabs
-- **2024-12-24**: Documentado como LEGACY y resuelto conflicto de nombres
-- **2024-12-XX**: Reemplazado por arquitectura modular en gestion-estrategica
+  - UserForm simplificado (eliminada seccion Roles Funcionales)
+  - ESLint actualizado a v9.39.2

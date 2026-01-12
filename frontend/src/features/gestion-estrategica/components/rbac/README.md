@@ -1,53 +1,49 @@
-# Módulo RBAC - Roles y Permisos
+# Modulo RBAC - Roles y Permisos (v3.3.0)
 
-Este módulo gestiona el sistema de Control de Acceso Basado en Roles (RBAC) híbrido de la aplicación.
+Este modulo gestiona el sistema de Control de Acceso Basado en Roles (RBAC) hibrido de la aplicacion.
 
 ## Arquitectura
 
 ### Componente Principal
-- **RolesPermisosWrapper.tsx**: Wrapper principal que contiene 3 subtabs
-  - Permisos por Cargo
-  - Roles Adicionales
-  - Todos los Permisos
+- **RolesPermisosWrapper.tsx**: Wrapper principal que contiene 3 subtabs de referencia
+  - Matriz de Accesos (vista global de accesos por cargo)
+  - Matriz de Permisos (vista global de permisos por cargo)
+  - Catalogo de Permisos (68 permisos del sistema)
 
 ### Subtabs (Sub-componentes)
-1. **PermisosCargoSubTab.tsx**: Gestión de permisos directos asignados a cargos
-2. **RolesAdicionalesSubTab.tsx**: CRUD completo de roles adicionales + asignación a usuarios
-3. **TodosPermisosSubTab.tsx**: Vista de referencia de todos los permisos del sistema (68 permisos)
+1. **PermisosCargoSubTab.tsx**: Matriz de permisos directos asignados a cargos
+2. **RolesAdicionalesSubTab.tsx**: CRUD completo de roles adicionales
+3. **TodosPermisosSubTab.tsx**: Vista de referencia de todos los permisos del sistema
 
-## Resolución de Duplicados
+## Flujo de Configuracion RBAC
 
-### Problema Original
-Existían dos componentes con el mismo nombre `RolesTab`:
-- `gestion-estrategica/components/rbac/RolesTab.tsx` (58 líneas) - Wrapper activo
-- `configuracion/components/RolesTab.tsx` (832 líneas) - Componente legacy NO usado
+### Configuracion de Permisos por Cargo
+Los permisos se configuran directamente en el modal de cargo:
 
-### Solución Implementada
-1. **Renombrado**: `rbac/RolesTab.tsx` → `rbac/RolesPermisosWrapper.tsx`
-2. **Export alias**: Se exporta como `RolesTab` desde `index.ts` para mantener compatibilidad
-3. **Documentación**: Se agregó documentación clara en ambos archivos indicando el estado
-
-```typescript
-// rbac/index.ts
-export { RolesPermisosWrapper as RolesTab } from './RolesPermisosWrapper';
+```text
+Configuracion > Cargos > Editar Cargo (6 tabs)
+├── Tab 5: Acceso UI (modulos/tabs/secciones visibles)
+└── Tab 6: Permisos (acciones CRUD autorizadas)
 ```
 
-### Componente Legacy
-El archivo `configuracion/components/RolesTab.tsx` se mantiene por:
-- Compatibilidad histórica
-- Referencia de implementación anterior
-- Posible migración futura
+### Roles Adicionales
+Los roles adicionales se gestionan desde Talento Humano:
 
-**IMPORTANTE**: Este componente NO se usa en ninguna parte activa de la aplicación.
+```text
+Talento Humano > Roles Adicionales
+├── CRUD de roles (COPASST, Brigadista, Auditor ISO, etc.)
+└── Asignacion a usuarios
+```
 
 ## Dependencias Cross-Feature
 
 ### CargosTab
-`CargosTab` proviene de `configuracion/components/CargosTab.tsx` pero se re-exporta desde este módulo para evitar dependencias cross-feature directas en `OrganizacionTab.tsx`.
+`CargosTab` proviene de `configuracion/components/CargosTab.tsx` pero se re-exporta desde este modulo para evitar dependencias cross-feature directas en `OrganizacionTab.tsx`.
 
 ```typescript
 // rbac/index.ts
 export { CargosTab } from '@/features/configuracion/components/CargosTab';
+export { RolesPermisosWrapper as RolesTab } from './RolesPermisosWrapper';
 ```
 
 ## Uso en OrganizacionTab
@@ -64,22 +60,29 @@ const SECTION_COMPONENTS = {
 
 ## Estructura de Archivos
 
-```
+```text
 rbac/
 ├── README.md                      # Este archivo
-├── index.ts                       # Exportaciones públicas del módulo
-├── RolesPermisosWrapper.tsx      # Componente principal (wrapper con 3 tabs)
-├── PermisosCargoSubTab.tsx       # Subtab: Permisos por cargo
-├── RolesAdicionalesSubTab.tsx    # Subtab: Roles adicionales (gestión completa)
-└── TodosPermisosSubTab.tsx       # Subtab: Vista de referencia de permisos
+├── index.ts                       # Exportaciones publicas del modulo
+├── RolesPermisosWrapper.tsx       # Componente principal (wrapper con 3 tabs)
+├── PermisosCargoSubTab.tsx        # Subtab: Matriz de permisos por cargo
+├── RolesAdicionalesSubTab.tsx     # Subtab: Roles adicionales (gestion completa)
+└── TodosPermisosSubTab.tsx        # Subtab: Catalogo de permisos
 ```
+
+## Historial de Cambios
+
+- **2025-01-12**: RBAC v3.3.0
+  - ELIMINADO: `configuracion/components/RolesTab.tsx` (componente legacy de 832 lineas)
+  - RolesPermisosWrapper simplificado a 3 subtabs (eliminado tab Roles Adicionales)
+  - Roles Adicionales movido a Talent Hub
+  - Configuracion de permisos unificada en CargoFormModal (tabs 5-6)
 
 ## Notas de Mantenimiento
 
 - El nombre real del componente es `RolesPermisosWrapper` pero se exporta como `RolesTab`
-- No confundir con `configuracion/RolesTab.tsx` (componente legacy)
 - Todos los imports externos deben usar `from './rbac'` para obtener las exportaciones correctas
-- Si se necesita acceder directamente a `RolesPermisosWrapper`, importar específicamente:
+- Si se necesita acceder directamente a `RolesPermisosWrapper`, importar especificamente:
   ```typescript
   import { RolesPermisosWrapper } from '@/features/gestion-estrategica/components/rbac/RolesPermisosWrapper';
   ```

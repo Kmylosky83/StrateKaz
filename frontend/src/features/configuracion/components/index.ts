@@ -4,6 +4,5 @@ export * from './PermissionSelector';
 export * from './RoleSelector';
 export * from './CargosTab';
 export * from './CargoFormModal';
-export * from './RolesTab';
 export * from './RoleFormModal';
 export * from './PermisosTab';

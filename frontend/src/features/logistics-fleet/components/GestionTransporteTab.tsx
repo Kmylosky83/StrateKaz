@@ -152,9 +152,9 @@ export function GestionTransporteTab() {
                       <td className="px-4 py-3">
                         <Badge
                           variant={
-                            EstadoProgramacionColors[prog.estado] === 'green' ? 'green' :
-                            EstadoProgramacionColors[prog.estado] === 'yellow' ? 'yellow' :
-                            EstadoProgramacionColors[prog.estado] === 'red' ? 'red' : 'gray'
+                            EstadoProgramacionColors[prog.estado] === 'green' ? 'success' :
+                            EstadoProgramacionColors[prog.estado] === 'yellow' ? 'warning' :
+                            EstadoProgramacionColors[prog.estado] === 'red' ? 'danger' : 'gray'
                           }
                           size="sm"
                         >
@@ -329,12 +329,12 @@ export function GestionTransporteTab() {
                             {new Date(conductor.fecha_vencimiento_licencia).toLocaleDateString('es-CO')}
                           </span>
                           {conductor.licencia_vigente === false && (
-                            <Badge variant="red" size="sm">Vencida</Badge>
+                            <Badge variant="danger" size="sm">Vencida</Badge>
                           )}
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <Badge variant={conductor.es_empleado ? 'blue' : 'gray'} size="sm">
+                        <Badge variant={conductor.es_empleado ? 'info' : 'gray'} size="sm">
                           {conductor.es_empleado ? 'Empleado' : 'Tercero'}
                         </Badge>
                       </td>

@@ -27,12 +27,12 @@ const ProductoTerminadoTab: React.FC = () => {
     search: searchTerm,
   });
 
-  const getResultadoVariant = (resultado: string): 'yellow' | 'green' | 'blue' | 'red' | 'gray' => {
-    const resultadoMap: Record<string, 'yellow' | 'green' | 'blue' | 'red' | 'gray'> = {
-      PENDIENTE: 'yellow',
-      APROBADO: 'green',
-      APROBADO_CON_OBSERVACIONES: 'blue',
-      RECHAZADO: 'red',
+  const getResultadoVariant = (resultado: string): 'warning' | 'success' | 'info' | 'danger' | 'gray' => {
+    const resultadoMap: Record<string, 'warning' | 'success' | 'info' | 'danger' | 'gray'> = {
+      PENDIENTE: 'warning',
+      APROBADO: 'success',
+      APROBADO_CON_OBSERVACIONES: 'info',
+      RECHAZADO: 'danger',
     };
     return resultadoMap[resultado] || 'gray';
   };

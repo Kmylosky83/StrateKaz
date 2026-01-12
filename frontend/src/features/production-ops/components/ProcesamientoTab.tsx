@@ -20,12 +20,12 @@ const ProcesamientoTab: React.FC = () => {
     search: searchTerm,
   });
 
-  const getPrioridadBadgeVariant = (prioridad: number): 'red' | 'orange' | 'yellow' | 'blue' | 'gray' => {
-    const prioridadMap: Record<number, 'red' | 'orange' | 'yellow' | 'blue' | 'gray'> = {
-      1: 'red',
-      2: 'orange',
-      3: 'yellow',
-      4: 'blue',
+  const getPrioridadBadgeVariant = (prioridad: number): 'danger' | 'warning' | 'accent' | 'info' | 'gray' => {
+    const prioridadMap: Record<number, 'danger' | 'warning' | 'accent' | 'info' | 'gray'> = {
+      1: 'danger',
+      2: 'warning',
+      3: 'accent',
+      4: 'info',
       5: 'gray',
     };
     return prioridadMap[prioridad] || 'gray';

@@ -198,9 +198,9 @@ export function GestionFlotaTab() {
                             <Badge
                               variant={
                                 vehiculo.dias_hasta_vencimiento_soat < 0
-                                  ? 'red'
+                                  ? 'danger'
                                   : vehiculo.dias_hasta_vencimiento_soat <= 30
-                                  ? 'yellow'
+                                  ? 'warning'
                                   : 'gray'
                               }
                               size="sm"
@@ -225,9 +225,9 @@ export function GestionFlotaTab() {
                             <Badge
                               variant={
                                 vehiculo.dias_hasta_vencimiento_tecnomecanica < 0
-                                  ? 'red'
+                                  ? 'danger'
                                   : vehiculo.dias_hasta_vencimiento_tecnomecanica <= 30
-                                  ? 'yellow'
+                                  ? 'warning'
                                   : 'gray'
                               }
                               size="sm"
@@ -244,12 +244,12 @@ export function GestionFlotaTab() {
                     </td>
                     <td className="px-4 py-3">
                       {vehiculo.disponible_para_operar ? (
-                        <Badge variant="green" size="sm">
+                        <Badge variant="success" size="sm">
                           <CheckCircle className="mr-1 h-3 w-3" />
                           Disponible
                         </Badge>
                       ) : (
-                        <Badge variant="red" size="sm">
+                        <Badge variant="danger" size="sm">
                           <AlertTriangle className="mr-1 h-3 w-3" />
                           No Disponible
                         </Badge>

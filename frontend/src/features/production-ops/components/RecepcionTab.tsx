@@ -20,12 +20,12 @@ const RecepcionTab: React.FC = () => {
     search: searchTerm,
   });
 
-  const getEstadoBadgeVariant = (color?: string): 'green' | 'yellow' | 'red' | 'blue' | 'gray' => {
-    const colorMap: Record<string, 'green' | 'yellow' | 'red' | 'blue' | 'gray'> = {
-      '#28A745': 'green',
-      '#FFC107': 'yellow',
-      '#DC3545': 'red',
-      '#17A2B8': 'blue',
+  const getEstadoBadgeVariant = (color?: string): 'success' | 'warning' | 'danger' | 'info' | 'gray' => {
+    const colorMap: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'gray'> = {
+      '#28A745': 'success',
+      '#FFC107': 'warning',
+      '#DC3545': 'danger',
+      '#17A2B8': 'info',
       '#6C757D': 'gray',
     };
     return colorMap[color || '#6C757D'] || 'gray';

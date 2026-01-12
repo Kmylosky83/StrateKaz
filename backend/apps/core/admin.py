@@ -15,6 +15,22 @@ from .models import (
     CargoPermiso,
     GrupoTipo,
     Group,
+    RiesgoOcupacional,
+    Role,
+    RolePermiso,
+    GroupRole,
+    UserRole,
+    UserGroup,
+    MenuItem,
+    CargoRole,
+    SystemModule,
+    ModuleTab,
+    TabSection,
+    BrandingConfig,
+    RolAdicional,
+    RolAdicionalPermiso,
+    UserRolAdicional,
+    CargoSectionAccess,
 )
 
 
@@ -388,6 +404,156 @@ class GroupAdmin(admin.ModelAdmin):
     ordering = ['name']
     autocomplete_fields = ['tipo']
     # Note: roles usa through model, se gestiona via GroupRole admin
+
+
+# ==========================================================================
+# ADMINS ADICIONALES - MODELOS CORE
+# ==========================================================================
+
+
+@admin.register(RiesgoOcupacional)
+class RiesgoOcupacionalAdmin(admin.ModelAdmin):
+    """Admin para Riesgos Ocupacionales"""
+    list_display = ['nombre', 'codigo', 'nivel', 'is_active']
+    list_filter = ['nivel', 'is_active']
+    search_fields = ['nombre', 'codigo', 'descripcion']
+    ordering = ['nivel', 'nombre']
+
+
+@admin.register(Role)
+class RoleAdmin(admin.ModelAdmin):
+    """Admin para Roles"""
+    list_display = ['code', 'name', 'level', 'is_system', 'is_active']
+    list_filter = ['level', 'is_system', 'is_active']
+    search_fields = ['code', 'name', 'description']
+    ordering = ['level', 'name']
+
+
+@admin.register(RolePermiso)
+class RolePermisoAdmin(admin.ModelAdmin):
+    """Admin para Role-Permiso"""
+    list_display = ['role', 'permiso', 'granted_at']
+    list_filter = ['role', 'granted_at']
+    search_fields = ['role__name', 'permiso__name']
+    ordering = ['role', 'permiso']
+
+
+@admin.register(GroupRole)
+class GroupRoleAdmin(admin.ModelAdmin):
+    """Admin para Group-Role"""
+    list_display = ['group', 'role', 'assigned_at']
+    list_filter = ['group', 'role']
+    search_fields = ['group__name', 'role__name']
+    ordering = ['group', 'role']
+
+
+@admin.register(UserRole)
+class UserRoleAdmin(admin.ModelAdmin):
+    """Admin para User-Role"""
+    list_display = ['user', 'role', 'assigned_at', 'expires_at', 'is_active']
+    list_filter = ['role', 'is_active', 'assigned_at']
+    search_fields = ['user__username', 'user__email', 'role__name']
+    ordering = ['-assigned_at']
+
+
+@admin.register(UserGroup)
+class UserGroupAdmin(admin.ModelAdmin):
+    """Admin para User-Group"""
+    list_display = ['user', 'group', 'joined_at', 'is_leader']
+    list_filter = ['group', 'is_leader', 'joined_at']
+    search_fields = ['user__username', 'group__name']
+    ordering = ['group', 'user']
+
+
+@admin.register(MenuItem)
+class MenuItemAdmin(admin.ModelAdmin):
+    """Admin para Items de Menú"""
+    list_display = ['name', 'code', 'parent', 'orden', 'is_active']
+    list_filter = ['is_active', 'parent']
+    search_fields = ['name', 'code', 'path']
+    ordering = ['orden', 'name']
+    list_editable = ['orden', 'is_active']
+
+
+@admin.register(CargoRole)
+class CargoRoleAdmin(admin.ModelAdmin):
+    """Admin para Cargo-Role"""
+    list_display = ['cargo', 'role', 'assigned_at']
+    list_filter = ['cargo', 'role']
+    search_fields = ['cargo__name', 'role__name']
+    ordering = ['cargo', 'role']
+
+
+@admin.register(SystemModule)
+class SystemModuleAdmin(admin.ModelAdmin):
+    """Admin para Módulos del Sistema"""
+    list_display = ['code', 'name', 'icon', 'orden', 'is_active']
+    list_filter = ['is_active']
+    search_fields = ['code', 'name', 'description']
+    ordering = ['orden', 'name']
+    list_editable = ['orden', 'is_active']
+
+
+@admin.register(ModuleTab)
+class ModuleTabAdmin(admin.ModelAdmin):
+    """Admin para Tabs de Módulo"""
+    list_display = ['code', 'name', 'module', 'orden', 'is_active']
+    list_filter = ['module', 'is_active']
+    search_fields = ['code', 'name']
+    ordering = ['module', 'orden']
+    list_editable = ['orden', 'is_active']
+
+
+@admin.register(TabSection)
+class TabSectionAdmin(admin.ModelAdmin):
+    """Admin para Secciones de Tab"""
+    list_display = ['code', 'name', 'tab', 'orden', 'is_active']
+    list_filter = ['tab__module', 'tab', 'is_active']
+    search_fields = ['code', 'name']
+    ordering = ['tab', 'orden']
+    list_editable = ['orden', 'is_active']
+
+
+@admin.register(BrandingConfig)
+class BrandingConfigAdmin(admin.ModelAdmin):
+    """Admin para Configuración de Marca"""
+    list_display = ['empresa_nombre', 'primary_color', 'is_active']
+    list_filter = ['is_active']
+    search_fields = ['empresa_nombre']
+
+
+@admin.register(RolAdicional)
+class RolAdicionalAdmin(admin.ModelAdmin):
+    """Admin para Roles Adicionales"""
+    list_display = ['code', 'name', 'is_active', 'created_at']
+    list_filter = ['is_active', 'created_at']
+    search_fields = ['code', 'name', 'description']
+    ordering = ['name']
+
+
+@admin.register(RolAdicionalPermiso)
+class RolAdicionalPermisoAdmin(admin.ModelAdmin):
+    """Admin para RolAdicional-Permiso"""
+    list_display = ['rol_adicional', 'permiso', 'granted_at']
+    list_filter = ['rol_adicional']
+    search_fields = ['rol_adicional__name', 'permiso__name']
+
+
+@admin.register(UserRolAdicional)
+class UserRolAdicionalAdmin(admin.ModelAdmin):
+    """Admin para User-RolAdicional"""
+    list_display = ['user', 'rol_adicional', 'assigned_at', 'expires_at', 'is_active']
+    list_filter = ['rol_adicional', 'is_active']
+    search_fields = ['user__username', 'rol_adicional__name']
+    ordering = ['-assigned_at']
+
+
+@admin.register(CargoSectionAccess)
+class CargoSectionAccessAdmin(admin.ModelAdmin):
+    """Admin para acceso de Cargo a Secciones"""
+    list_display = ['cargo', 'section', 'can_view', 'can_edit']
+    list_filter = ['cargo', 'section__tab__module', 'can_view', 'can_edit']
+    search_fields = ['cargo__name', 'section__name']
 
 
 # Personalizar el sitio admin

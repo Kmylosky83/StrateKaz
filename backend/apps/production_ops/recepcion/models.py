@@ -420,33 +420,12 @@ class Recepcion(BaseCompanyModel):
 
     @staticmethod
     def generar_codigo(empresa_id):
-        """Genera código único de recepción."""
-        try:
-            from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
-            return ConsecutivoConfig.obtener_siguiente_consecutivo(
-                'RECEPCION_MP',
-                empresa_id=empresa_id
-            )
-        except Exception:
-            # Fallback
-            from datetime import date
-            hoy = date.today()
-            prefijo = f"REC-{hoy.strftime('%Y%m%d')}-"
-
-            ultimo = Recepcion.objects.filter(
-                codigo__startswith=prefijo,
-                empresa_id=empresa_id
-            ).order_by('-codigo').first()
-
-            if ultimo:
-                try:
-                    numero = int(ultimo.codigo.split('-')[-1]) + 1
-                except (ValueError, IndexError):
-                    numero = 1
-            else:
-                numero = 1
-
-            return f"{prefijo}{numero:04d}"
+        """Genera código único de recepción desde gestión documental."""
+        from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
+        return ConsecutivoConfig.obtener_siguiente_consecutivo(
+            'RECEPCION_MP',
+            empresa_id=empresa_id
+        )
 
     @property
     def peso_neto_calculado(self):

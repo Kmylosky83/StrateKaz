@@ -594,28 +594,9 @@ class MovimientoInventario(models.Model):
 
     @staticmethod
     def generar_codigo():
-        """Genera código único para el movimiento"""
+        """Genera código único para el movimiento desde gestión documental."""
         from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
-        from datetime import datetime
-
-        try:
-            return ConsecutivoConfig.obtener_siguiente_consecutivo('MOVIMIENTO_INV')
-        except:
-            hoy = datetime.now()
-            prefijo = f"MOV-{hoy.strftime('%Y%m%d')}-"
-            ultimo = MovimientoInventario.objects.filter(
-                codigo__startswith=prefijo
-            ).order_by('-codigo').first()
-
-            if ultimo and ultimo.codigo:
-                try:
-                    numero = int(ultimo.codigo.split('-')[-1]) + 1
-                except (ValueError, IndexError):
-                    numero = 1
-            else:
-                numero = 1
-
-            return f"{prefijo}{numero:05d}"
+        return ConsecutivoConfig.obtener_siguiente_consecutivo('MOVIMIENTO_INV')
 
     def calcular_costo_total(self):
         """Calcula el costo total del movimiento"""

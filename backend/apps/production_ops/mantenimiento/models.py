@@ -354,26 +354,9 @@ class ActivoProduccion(BaseCompanyModel, OrderedModel):
         super().save(*args, **kwargs)
 
     def generar_codigo(self):
-        """Generar código único para el activo."""
-        from django.utils import timezone
-        fecha = timezone.now()
-
-        # Obtener el último código del año actual
-        ultimo = ActivoProduccion.objects.filter(
-            codigo__startswith=f'ACT-{fecha.year}'
-        ).order_by('-codigo').first()
-
-        if ultimo:
-            # Extraer el número del último código
-            try:
-                ultimo_numero = int(ultimo.codigo.split('-')[-1])
-                nuevo_numero = ultimo_numero + 1
-            except (ValueError, IndexError):
-                nuevo_numero = 1
-        else:
-            nuevo_numero = 1
-
-        return f'ACT-{fecha.year}-{nuevo_numero:05d}'
+        """Generar código único para el activo desde gestión documental."""
+        from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
+        return ConsecutivoConfig.obtener_siguiente_consecutivo('ACTIVO_PRODUCCION')
 
     def calcular_valor_actual(self):
         """
@@ -559,24 +542,9 @@ class EquipoMedicion(BaseCompanyModel):
         super().save(*args, **kwargs)
 
     def generar_codigo(self):
-        """Generar código único para el equipo."""
-        from django.utils import timezone
-        fecha = timezone.now()
-
-        ultimo = EquipoMedicion.objects.filter(
-            codigo__startswith=f'EQM-{fecha.year}'
-        ).order_by('-codigo').first()
-
-        if ultimo:
-            try:
-                ultimo_numero = int(ultimo.codigo.split('-')[-1])
-                nuevo_numero = ultimo_numero + 1
-            except (ValueError, IndexError):
-                nuevo_numero = 1
-        else:
-            nuevo_numero = 1
-
-        return f'EQM-{fecha.year}-{nuevo_numero:05d}'
+        """Generar código único para el equipo desde gestión documental."""
+        from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
+        return ConsecutivoConfig.obtener_siguiente_consecutivo('EQUIPO_MEDICION')
 
     def requiere_calibracion_urgente(self):
         """Verificar si requiere calibración urgente (próximos 30 días)."""
@@ -941,26 +909,9 @@ class OrdenTrabajo(BaseCompanyModel):
                 self.activo.save(update_fields=['estado', 'fecha_ultima_revision'])
 
     def generar_codigo(self):
-        """Generar código único para la orden de trabajo."""
-        from django.utils import timezone
-        fecha = timezone.now()
-        fecha_str = fecha.strftime('%Y%m%d')
-
-        # Obtener el último código del día
-        ultimo = OrdenTrabajo.objects.filter(
-            codigo__startswith=f'OT-{fecha_str}'
-        ).order_by('-codigo').first()
-
-        if ultimo:
-            try:
-                ultimo_numero = int(ultimo.codigo.split('-')[-1])
-                nuevo_numero = ultimo_numero + 1
-            except (ValueError, IndexError):
-                nuevo_numero = 1
-        else:
-            nuevo_numero = 1
-
-        return f'OT-{fecha_str}-{nuevo_numero:04d}'
+        """Generar código único para la orden de trabajo desde gestión documental."""
+        from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
+        return ConsecutivoConfig.obtener_siguiente_consecutivo('ORDEN_TRABAJO')
 
     def clean(self):
         """Validaciones del modelo."""

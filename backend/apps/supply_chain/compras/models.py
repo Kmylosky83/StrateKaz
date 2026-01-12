@@ -543,28 +543,9 @@ class Requisicion(models.Model):
 
     @staticmethod
     def generar_codigo():
-        """Genera código único de requisición."""
+        """Genera código único de requisición desde gestión documental."""
         from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
-        try:
-            return ConsecutivoConfig.obtener_siguiente_consecutivo('REQUISICION_COMPRA')
-        except ConsecutivoConfig.DoesNotExist:
-            from datetime import date
-            hoy = date.today()
-            prefijo = f"REQ-{hoy.strftime('%Y%m%d')}-"
-
-            ultimo = Requisicion.objects.filter(
-                codigo__startswith=prefijo
-            ).order_by('-codigo').first()
-
-            if ultimo:
-                try:
-                    numero = int(ultimo.codigo.split('-')[-1]) + 1
-                except (ValueError, IndexError):
-                    numero = 1
-            else:
-                numero = 1
-
-            return f"{prefijo}{numero:04d}"
+        return ConsecutivoConfig.obtener_siguiente_consecutivo('REQUISICION_COMPRA')
 
     @property
     def is_deleted(self):

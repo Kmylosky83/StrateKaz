@@ -491,28 +491,9 @@ class PQRS(models.Model):
 
     @staticmethod
     def generar_codigo():
-        """Genera código único de PQRS."""
+        """Genera código único de PQRS desde gestión documental."""
         from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
-        try:
-            return ConsecutivoConfig.obtener_siguiente_consecutivo('PQRS')
-        except:
-            from datetime import date
-            hoy = date.today()
-            prefijo = f"PQRS-{hoy.strftime('%Y')}-"
-
-            ultimo = PQRS.objects.filter(
-                codigo__startswith=prefijo
-            ).order_by('-codigo').first()
-
-            if ultimo:
-                try:
-                    numero = int(ultimo.codigo.split('-')[-1]) + 1
-                except (ValueError, IndexError):
-                    numero = 1
-            else:
-                numero = 1
-
-            return f"{prefijo}{numero:04d}"
+        return ConsecutivoConfig.obtener_siguiente_consecutivo('PQRS')
 
     @property
     def is_deleted(self):
@@ -831,28 +812,9 @@ class EncuestaSatisfaccion(models.Model):
 
     @staticmethod
     def generar_codigo():
-        """Genera código único de encuesta."""
+        """Genera código único de encuesta desde gestión documental."""
         from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
-        try:
-            return ConsecutivoConfig.obtener_siguiente_consecutivo('ENCUESTA_SATISFACCION')
-        except:
-            from datetime import date
-            hoy = date.today()
-            prefijo = f"ENC-{hoy.strftime('%Y')}-"
-
-            ultimo = EncuestaSatisfaccion.objects.filter(
-                codigo__startswith=prefijo
-            ).order_by('-codigo').first()
-
-            if ultimo:
-                try:
-                    numero = int(ultimo.codigo.split('-')[-1]) + 1
-                except (ValueError, IndexError):
-                    numero = 1
-            else:
-                numero = 1
-
-            return f"{prefijo}{numero:04d}"
+        return ConsecutivoConfig.obtener_siguiente_consecutivo('ENCUESTA_SATISFACCION')
 
     @property
     def is_deleted(self):

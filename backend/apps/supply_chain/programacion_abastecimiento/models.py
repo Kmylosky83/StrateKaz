@@ -346,29 +346,9 @@ class Programacion(models.Model):
 
     @staticmethod
     def generar_codigo():
-        """Genera código único de programación."""
+        """Genera código único de programación desde gestión documental."""
         from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
-        try:
-            return ConsecutivoConfig.obtener_siguiente_consecutivo('PROGRAMACION_ABASTECIMIENTO')
-        except ConsecutivoConfig.DoesNotExist:
-            # Fallback
-            from datetime import date
-            hoy = date.today()
-            prefijo = f"PROG-{hoy.strftime('%Y%m%d')}-"
-
-            ultimo = Programacion.objects.filter(
-                codigo__startswith=prefijo
-            ).order_by('-codigo').first()
-
-            if ultimo:
-                try:
-                    numero = int(ultimo.codigo.split('-')[-1]) + 1
-                except (ValueError, IndexError):
-                    numero = 1
-            else:
-                numero = 1
-
-            return f"{prefijo}{numero:04d}"
+        return ConsecutivoConfig.obtener_siguiente_consecutivo('PROGRAMACION_ABASTECIMIENTO')
 
     @property
     def is_deleted(self):

@@ -427,7 +427,7 @@ class MovimientoInventarioViewSet(viewsets.ModelViewSet):
         tipo = data['tipo_movimiento']
 
         movimiento = MovimientoInventario.objects.create(
-            empresa_id=1,  # TODO: Obtener de request.user.empresa
+            empresa_id=request.user.empresa_id,
             tipo_movimiento=tipo,
             almacen_origen=data.get('almacen_origen'),
             almacen_destino=data.get('almacen_destino'),

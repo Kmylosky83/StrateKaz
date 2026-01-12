@@ -88,12 +88,13 @@ class ValorVividoViewSet(viewsets.ModelViewSet):
         return ValorVividoDetailSerializer
 
     def get_queryset(self):
-        """Filtrar por empresa del usuario"""
+        """Filtrar por empresa del usuario autenticado"""
         qs = super().get_queryset()
 
-        # TODO: Filtrar por empresa del usuario
-        # if hasattr(self.request.user, 'empresa'):
-        #     qs = qs.filter(valor__identity__empresa=self.request.user.empresa)
+        # Filtrar por empresa del usuario (multi-tenant)
+        if hasattr(self.request, 'user') and self.request.user.is_authenticated:
+            if hasattr(self.request.user, 'empresa') and self.request.user.empresa:
+                qs = qs.filter(valor__identity__empresa=self.request.user.empresa)
 
         return qs
 
@@ -315,8 +316,8 @@ class ValorVividoViewSet(viewsets.ModelViewSet):
         fecha_desde = request.query_params.get('fecha_desde')
         fecha_hasta = request.query_params.get('fecha_hasta')
 
-        # TODO: Obtener empresa_id del usuario
-        empresa_id = None
+        # Obtener empresa_id del usuario autenticado
+        empresa_id = getattr(request.user, 'empresa_id', None)
 
         stats = ValorVivido.objects.estadisticas_por_valor(
             empresa_id=empresa_id,
@@ -343,8 +344,8 @@ class ValorVividoViewSet(viewsets.ModelViewSet):
         """
         meses = int(request.query_params.get('meses', 12))
 
-        # TODO: Obtener empresa_id del usuario
-        empresa_id = None
+        # Obtener empresa_id del usuario autenticado
+        empresa_id = getattr(request.user, 'empresa_id', None)
 
         tendencia = ValorVivido.objects.tendencia_mensual(
             empresa_id=empresa_id,
@@ -371,8 +372,8 @@ class ValorVividoViewSet(viewsets.ModelViewSet):
         """
         valor_id = request.query_params.get('valor_id')
 
-        # TODO: Obtener empresa_id del usuario
-        empresa_id = None
+        # Obtener empresa_id del usuario autenticado
+        empresa_id = getattr(request.user, 'empresa_id', None)
 
         ranking = ValorVivido.objects.ranking_categorias(
             valor_id=valor_id,
@@ -404,9 +405,8 @@ class ValorVividoViewSet(viewsets.ModelViewSet):
         """
         umbral = int(request.query_params.get('umbral', 5))
 
-        # TODO: Obtener empresa_id del usuario
-        # Por ahora usamos un valor temporal
-        empresa_id = 1
+        # Obtener empresa_id del usuario autenticado
+        empresa_id = getattr(request.user, 'empresa_id', None) or 1
 
         subrepresentados = ValorVivido.objects.valores_subrepresentados(
             empresa_id=empresa_id,
@@ -435,8 +435,8 @@ class ValorVividoViewSet(viewsets.ModelViewSet):
             "valores_subrepresentados": [...]
         }
         """
-        # TODO: Obtener empresa_id del usuario
-        empresa_id = None
+        # Obtener empresa_id del usuario autenticado
+        empresa_id = getattr(request.user, 'empresa_id', None)
 
         qs = ValorVivido.objects.activos()
 
@@ -505,7 +505,11 @@ class ConfiguracionMetricaValorViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Filtrar por empresa del usuario"""
         qs = super().get_queryset()
-        # TODO: Filtrar por empresa del usuario
+        # Filtrar por empresa del usuario autenticado
+        if hasattr(self.request, 'user') and self.request.user.is_authenticated:
+            empresa_id = getattr(self.request.user, 'empresa_id', None)
+            if empresa_id:
+                qs = qs.filter(empresa_id=empresa_id)
         return qs
 
     @action(detail=False, methods=['get'])
@@ -514,7 +518,7 @@ class ConfiguracionMetricaValorViewSet(viewsets.ModelViewSet):
         Obtiene la configuración de la empresa del usuario.
         Si no existe, crea una con valores por defecto.
         """
-        # TODO: Obtener empresa del usuario
+        # Obtener empresa del usuario autenticado
         try:
             from apps.gestion_estrategica.configuracion.models import EmpresaConfig
             empresa = EmpresaConfig.objects.first()

@@ -14,6 +14,11 @@ from .core_views import (
     revoke_task,
 )
 
+from .auth_views import (
+    RateLimitedTokenObtainPairView,
+    RateLimitedTokenRefreshView,
+)
+
 __all__ = [
     # Security views
     'ratelimit_error_view',
@@ -27,4 +32,7 @@ __all__ = [
     'test_celery_task',
     'task_status',
     'revoke_task',
+    # Auth views with rate limiting
+    'RateLimitedTokenObtainPairView',
+    'RateLimitedTokenRefreshView',
 ]

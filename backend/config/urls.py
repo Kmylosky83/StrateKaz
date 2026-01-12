@@ -13,7 +13,7 @@ from django.conf.urls.static import static
 from django.http import JsonResponse, FileResponse, Http404
 from django.views.static import serve
 from django.apps import apps
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from apps.core.views import RateLimitedTokenObtainPairView, RateLimitedTokenRefreshView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
 
@@ -112,9 +112,9 @@ urlpatterns = [
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 
-    # JWT Authentication
-    path('api/auth/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    # JWT Authentication (with rate limiting protection)
+    path('api/auth/login/', RateLimitedTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/auth/refresh/', RateLimitedTokenRefreshView.as_view(), name='token_refresh'),
 
     # ═══════════════════════════════════════════════════════════════════════════
     # NIVEL 0: CORE (siempre activo)

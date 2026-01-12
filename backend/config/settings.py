@@ -422,17 +422,38 @@ if not DEBUG:
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 # Content Security Policy (CSP)
-CSP_DEFAULT_SRC = ("'self'",)
-CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", "'unsafe-eval'")  # unsafe-eval para desarrollo
-CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
-CSP_IMG_SRC = ("'self'", "data:", "blob:", "https:")
-CSP_FONT_SRC = ("'self'", "data:")
-CSP_CONNECT_SRC = ("'self'", "http://localhost:5173", "http://localhost:3000", "http://localhost:3010")
-CSP_FRAME_ANCESTORS = ("'none'",)
-CSP_BASE_URI = ("'self'",)
-CSP_FORM_ACTION = ("'self'",)
+# Configuración diferenciada por entorno
+if DEBUG:
+    # Desarrollo: más permisivo para hot-reload y debugging
+    CSP_DEFAULT_SRC = ("'self'",)
+    CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", "'unsafe-eval'")
+    CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
+    CSP_IMG_SRC = ("'self'", "data:", "blob:", "https:")
+    CSP_FONT_SRC = ("'self'", "data:")
+    CSP_CONNECT_SRC = ("'self'", "http://localhost:5173", "http://localhost:3000", "http://localhost:3010", "ws://localhost:5173")
+    CSP_FRAME_ANCESTORS = ("'none'",)
+    CSP_BASE_URI = ("'self'",)
+    CSP_FORM_ACTION = ("'self'",)
+else:
+    # Producción: más restrictivo
+    CSP_DEFAULT_SRC = ("'self'",)
+    CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'")  # Sin unsafe-eval en producción
+    CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
+    CSP_IMG_SRC = ("'self'", "data:", "blob:", "https:")
+    CSP_FONT_SRC = ("'self'", "data:", "https://fonts.gstatic.com")
+    # CSP_CONNECT_SRC se configura dinámicamente desde CORS_ALLOWED_ORIGINS
+    _csp_connect = ["'self'"]
+    if 'CORS_ALLOWED_ORIGINS' in dir():
+        _csp_connect.extend(CORS_ALLOWED_ORIGINS)
+    CSP_CONNECT_SRC = tuple(_csp_connect)
+    CSP_FRAME_ANCESTORS = ("'none'",)
+    CSP_BASE_URI = ("'self'",)
+    CSP_FORM_ACTION = ("'self'",)
+    # Reportar violaciones CSP (opcional, requiere endpoint)
+    # CSP_REPORT_URI = '/api/csp-report/'
 
 # ═══════════════════════════════════════════════════
 # RATE LIMITING

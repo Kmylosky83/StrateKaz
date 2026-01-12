@@ -12,7 +12,7 @@ from django.views.decorators.csrf import csrf_exempt
 @csrf_exempt
 def health_check(request):
     """
-    Endpoint de health check para Docker healthcheck
+    Endpoint de health check básico para monitoreo de uptime.
 
     Verifica:
     - Conectividad a la base de datos
@@ -31,7 +31,7 @@ def health_check(request):
         return JsonResponse({
             'status': 'healthy',
             'database': db_status,
-            'service': 'grasas-huesos-backend',
+            'service': 'stratekaz-backend',
             'version': '1.0.0'
         }, status=200)
 
@@ -39,9 +39,122 @@ def health_check(request):
         return JsonResponse({
             'status': 'unhealthy',
             'database': 'disconnected',
-            'service': 'grasas-huesos-backend',
+            'service': 'stratekaz-backend',
             'error': str(e)
         }, status=503)
+
+
+@require_GET
+@csrf_exempt
+def health_check_deep(request):
+    """
+    Endpoint de health check profundo para diagnóstico detallado.
+
+    Verifica:
+    - Conectividad a la base de datos con query de prueba
+    - Espacio en disco disponible
+    - Estado del cache (si está configurado)
+    - Timestamp de verificación
+
+    Returns:
+        JsonResponse con status 200 si todo está OK
+        JsonResponse con status 503 si hay problemas críticos
+    """
+    import os
+    import shutil
+    from datetime import datetime
+    from django.conf import settings
+    from django.core.cache import cache
+
+    checks = {
+        'timestamp': datetime.now().isoformat(),
+        'service': 'stratekaz-backend',
+        'version': '1.0.0',
+        'environment': getattr(settings, 'SENTRY_ENVIRONMENT', 'unknown'),
+    }
+    all_healthy = True
+
+    # 1. Verificar base de datos
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            # Verificar que podemos hacer una query real
+            cursor.execute("SELECT COUNT(*) FROM django_migrations")
+            migration_count = cursor.fetchone()[0]
+        checks['database'] = {
+            'status': 'connected',
+            'migrations_count': migration_count,
+        }
+    except Exception as e:
+        checks['database'] = {
+            'status': 'error',
+            'error': str(e),
+        }
+        all_healthy = False
+
+    # 2. Verificar espacio en disco
+    try:
+        base_path = settings.BASE_DIR
+        total, used, free = shutil.disk_usage(base_path)
+        free_gb = free // (1024 ** 3)
+        free_percent = (free / total) * 100
+
+        disk_status = 'ok' if free_percent > 10 else 'warning' if free_percent > 5 else 'critical'
+        if disk_status == 'critical':
+            all_healthy = False
+
+        checks['disk'] = {
+            'status': disk_status,
+            'free_gb': free_gb,
+            'free_percent': round(free_percent, 2),
+            'path': str(base_path),
+        }
+    except Exception as e:
+        checks['disk'] = {
+            'status': 'error',
+            'error': str(e),
+        }
+
+    # 3. Verificar cache
+    try:
+        cache_key = '_health_check_test_'
+        cache.set(cache_key, 'ok', 10)
+        cache_value = cache.get(cache_key)
+        cache.delete(cache_key)
+
+        checks['cache'] = {
+            'status': 'connected' if cache_value == 'ok' else 'error',
+            'backend': settings.CACHES.get('default', {}).get('BACKEND', 'unknown').split('.')[-1],
+        }
+    except Exception as e:
+        checks['cache'] = {
+            'status': 'error',
+            'error': str(e),
+        }
+
+    # 4. Verificar directorio de logs
+    try:
+        logs_dir = settings.BASE_DIR / 'logs'
+        if logs_dir.exists():
+            log_files = list(logs_dir.glob('*.log'))
+            total_log_size = sum(f.stat().st_size for f in log_files) / (1024 * 1024)  # MB
+            checks['logs'] = {
+                'status': 'ok' if total_log_size < 100 else 'warning',
+                'total_size_mb': round(total_log_size, 2),
+                'file_count': len(log_files),
+            }
+        else:
+            checks['logs'] = {'status': 'ok', 'message': 'logs directory not found'}
+    except Exception as e:
+        checks['logs'] = {
+            'status': 'error',
+            'error': str(e),
+        }
+
+    # Resultado final
+    checks['overall_status'] = 'healthy' if all_healthy else 'unhealthy'
+
+    return JsonResponse(checks, status=200 if all_healthy else 503)
 
 
 from rest_framework.decorators import api_view, permission_classes

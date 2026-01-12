@@ -23,8 +23,8 @@ def is_app_installed(app_name):
 
 
 def health_check(request):
-    """Health check endpoint for Docker."""
-    return JsonResponse({"status": "healthy", "service": "grasas-huesos-backend"})
+    """Health check endpoint básico para monitoreo de uptime."""
+    return JsonResponse({"status": "healthy", "service": "stratekaz-backend"})
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -97,9 +97,12 @@ def serve_frontend(request, path=''):
 # ═══════════════════════════════════════════════════════════════════════════
 # URL PATTERNS BASE (siempre activas)
 # ═══════════════════════════════════════════════════════════════════════════
+from apps.core.views import health_check_deep
+
 urlpatterns = [
-    # Health check
+    # Health check endpoints
     path('api/health/', health_check, name='health_check'),
+    path('api/health/deep/', health_check_deep, name='health_check_deep'),
 
     # Admin panel
     path('admin/', admin.site.urls),

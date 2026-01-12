@@ -7,6 +7,7 @@ from .security import (
 
 from .core_views import (
     health_check,
+    health_check_deep,
     current_user,
     test_celery_task,
     task_status,
@@ -21,6 +22,7 @@ __all__ = [
     'bad_request_view',
     # Core views
     'health_check',
+    'health_check_deep',
     'current_user',
     'test_celery_task',
     'task_status',

@@ -220,13 +220,49 @@ export default defineConfig({
 
           // ============================================================
           // Feature modules (código de aplicación)
+          // Subdivididos para optimizar carga inicial
           // ============================================================
+
+          // Gestión Estratégica - subdividido por páginas (módulo más grande)
+          if (id.includes('src/features/gestion-estrategica/pages/ConfiguracionPage') ||
+              id.includes('src/features/gestion-estrategica/components/configuracion')) {
+            return 'feature-ge-configuracion';
+          }
+          if (id.includes('src/features/gestion-estrategica/pages/IdentidadPage') ||
+              id.includes('src/features/gestion-estrategica/components/identidad')) {
+            return 'feature-ge-identidad';
+          }
+          if (id.includes('src/features/gestion-estrategica/pages/OrganizacionPage') ||
+              id.includes('src/features/gestion-estrategica/components/organizacion')) {
+            return 'feature-ge-organizacion';
+          }
+          if (id.includes('src/features/gestion-estrategica/pages/PlaneacionPage') ||
+              id.includes('src/features/gestion-estrategica/components/planeacion')) {
+            return 'feature-ge-planeacion';
+          }
+          if (id.includes('src/features/gestion-estrategica/pages/ProyectosPage') ||
+              id.includes('src/features/gestion-estrategica/components/proyectos')) {
+            return 'feature-ge-proyectos';
+          }
+          if (id.includes('src/features/gestion-estrategica/pages/RevisionDireccionPage') ||
+              id.includes('src/features/gestion-estrategica/components/revision')) {
+            return 'feature-ge-revision';
+          }
+          // Shared components y utilities de gestion-estrategica
           if (id.includes('src/features/gestion-estrategica')) {
-            return 'feature-gestion-estrategica';
+            return 'feature-ge-shared';
+          }
+
+          // HSEQ - subdividido
+          if (id.includes('src/features/hseq/pages') ||
+              id.includes('src/features/hseq/components')) {
+            return 'feature-hseq-pages';
           }
           if (id.includes('src/features/hseq')) {
-            return 'feature-hseq';
+            return 'feature-hseq-shared';
           }
+
+          // Otros features (más pequeños, no necesitan subdivisión)
           if (id.includes('src/features/riesgos')) {
             return 'feature-riesgos';
           }
@@ -250,6 +286,11 @@ export default defineConfig({
           }
           if (id.includes('src/features/talent-hub')) {
             return 'feature-talent-hub';
+          }
+
+          // Supply chain (si existe)
+          if (id.includes('src/features/supply-chain')) {
+            return 'feature-supply-chain';
           }
         },
       },

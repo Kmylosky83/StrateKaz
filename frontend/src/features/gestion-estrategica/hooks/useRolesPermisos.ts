@@ -96,8 +96,16 @@ export function useCargoPermisos(cargoId: number | null) {
   return useQuery({
     queryKey: ['cargo-permisos', cargoId],
     queryFn: async () => {
-      const response = await api.get<CargoConPermisos>(`${ENDPOINTS.cargosPermisos}${cargoId}/`);
-      return response.data;
+      // El backend devuelve 'permisos', mapeamos a 'permissions' para consistencia
+      const response = await api.get<CargoConPermisos & { permisos?: Permiso[] }>(
+        `${ENDPOINTS.cargosPermisos}${cargoId}/`
+      );
+      const data = response.data;
+      // Mapear permisos -> permissions si es necesario
+      if (data.permisos && !data.permissions) {
+        data.permissions = data.permisos;
+      }
+      return data;
     },
     enabled: !!cargoId,
     staleTime: 30 * 1000,

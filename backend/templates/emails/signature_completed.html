@@ -1,0 +1,45 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Firma Completada - {{ document_title }}{% endblock %}
+
+{% block content %}
+<h2>Firma Completada</h2>
+
+<p>Hola <strong>{{ user_name }}</strong>,</p>
+
+<p>El documento ha sido firmado exitosamente.</p>
+
+<div class="email-card">
+    <p class="email-card-title">Documento</p>
+    <p class="email-card-content">{{ document_title }}</p>
+</div>
+
+<div class="email-card">
+    <p class="email-card-title">Firmado por</p>
+    <p class="email-card-content">{{ signed_by }}</p>
+</div>
+
+<div class="email-card">
+    <p class="email-card-title">Fecha de firma</p>
+    <p class="email-card-content">{{ signed_at }}</p>
+</div>
+
+{% if signature_hash %}
+<div class="email-card">
+    <p class="email-card-title">Hash de verificación</p>
+    <p class="email-card-content text-muted" style="font-family: monospace; font-size: 12px; word-break: break-all;">
+        {{ signature_hash }}
+    </p>
+</div>
+{% endif %}
+
+<div class="text-center mt-4">
+    <span class="badge badge-success">FIRMADO</span>
+</div>
+
+<div class="text-center mt-4">
+    <a href="{{ action_url }}" class="email-button">
+        Ver Documento
+    </a>
+</div>
+{% endblock %}

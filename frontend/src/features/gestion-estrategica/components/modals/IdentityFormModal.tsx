@@ -1,10 +1,10 @@
 /**
  * Modal para crear/editar Identidad Corporativa
  *
- * Mejoras v2.0:
- * - Editor de texto enriquecido (TipTap) para misión, visión y política
+ * v3.0 - Solo Misión y Visión
+ * - La Política Integral se gestiona desde PoliticasManager (tab Políticas)
+ * - Editor de texto enriquecido (TipTap) para misión y visión
  * - Soporte para formato rico (negrita, cursiva, listas, etc.)
- * - Validación mejorada
  *
  * Usa Design System:
  * - BaseModal para el contenedor
@@ -13,6 +13,7 @@
  * - Button para acciones
  */
 import { useState, useEffect } from 'react';
+import { Compass, Eye } from 'lucide-react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
@@ -32,7 +33,6 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
   const [formData, setFormData] = useState({
     mission: '',
     vision: '',
-    integral_policy: '',
     effective_date: '',
     version: '1.0',
   });
@@ -45,7 +45,6 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
       setFormData({
         mission: identity.mission,
         vision: identity.vision,
-        integral_policy: identity.integral_policy,
         effective_date: identity.effective_date,
         version: identity.version,
       });
@@ -53,7 +52,6 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
       setFormData({
         mission: '',
         vision: '',
-        integral_policy: '',
         effective_date: new Date().toISOString().split('T')[0],
         version: '1.0',
       });
@@ -67,7 +65,6 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
       const updateData: UpdateCorporateIdentityDTO = {
         mission: formData.mission,
         vision: formData.vision,
-        integral_policy: formData.integral_policy,
         effective_date: formData.effective_date,
         version: formData.version,
       };
@@ -76,7 +73,6 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
       const createData: CreateCorporateIdentityDTO = {
         mission: formData.mission,
         vision: formData.vision,
-        integral_policy: formData.integral_policy,
         effective_date: formData.effective_date,
         version: formData.version,
       };
@@ -95,8 +91,7 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
 
   const isValid =
     stripHtml(formData.mission).trim().length > 0 &&
-    stripHtml(formData.vision).trim().length > 0 &&
-    stripHtml(formData.integral_policy).trim().length > 0;
+    stripHtml(formData.vision).trim().length > 0;
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
@@ -122,7 +117,7 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
       isOpen={isOpen}
       onClose={onClose}
       title={isEditing ? 'Editar Identidad Corporativa' : 'Nueva Identidad Corporativa'}
-      subtitle="Define la misión, visión y política integral de la organización"
+      subtitle="Define la misión y visión de la organización"
       size="4xl"
       footer={footer}
     >
@@ -143,29 +138,31 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
           />
         </div>
 
-        <RichTextEditor
-          label="Misión *"
-          value={formData.mission}
-          onChange={(value) => setFormData({ ...formData, mission: value })}
-          placeholder="Describa la misión de la organización: razón de ser, propósito fundamental..."
-          minHeight="120px"
-        />
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+            <Compass className="w-5 h-5 text-purple-600" />
+            <span className="font-medium">Misión *</span>
+          </div>
+          <RichTextEditor
+            value={formData.mission}
+            onChange={(value) => setFormData({ ...formData, mission: value })}
+            placeholder="Describa la misión de la organización: razón de ser, propósito fundamental..."
+            minHeight="150px"
+          />
+        </div>
 
-        <RichTextEditor
-          label="Visión *"
-          value={formData.vision}
-          onChange={(value) => setFormData({ ...formData, vision: value })}
-          placeholder="Describa la visión de la organización: hacia dónde se dirige, aspiración a futuro..."
-          minHeight="120px"
-        />
-
-        <RichTextEditor
-          label="Política Integral *"
-          value={formData.integral_policy}
-          onChange={(value) => setFormData({ ...formData, integral_policy: value })}
-          placeholder="Describa la política integral que abarca: calidad, seguridad y salud en el trabajo, medio ambiente, seguridad vial..."
-          minHeight="180px"
-        />
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+            <Eye className="w-5 h-5 text-indigo-600" />
+            <span className="font-medium">Visión *</span>
+          </div>
+          <RichTextEditor
+            value={formData.vision}
+            onChange={(value) => setFormData({ ...formData, vision: value })}
+            placeholder="Describa la visión de la organización: hacia dónde se dirige, aspiración a futuro..."
+            minHeight="150px"
+          />
+        </div>
       </form>
     </BaseModal>
   );

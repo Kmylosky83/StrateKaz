@@ -22,6 +22,7 @@ import type {
   UpdateCorporateIdentityDTO,
   CreateCorporateValueDTO,
   UpdateCorporateValueDTO,
+  CorporateValue,
   CreateStrategicPlanDTO,
   UpdateStrategicPlanDTO,
   CreateStrategicObjectiveDTO,
@@ -45,6 +46,7 @@ import type {
   CreateAlcanceSistemaDTO,
   UpdateAlcanceSistemaDTO,
   AlcanceSistemaFilters,
+  PaginatedResponse,
 } from '../types/strategic.types';
 
 // ==================== QUERY KEYS ====================
@@ -118,6 +120,8 @@ export const useIdentities = () => {
   return useQuery({
     queryKey: strategicKeys.identities,
     queryFn: identityApi.getAll,
+    staleTime: 5 * 60 * 1000, // 5 minutos - datos relativamente estáticos
+    gcTime: 10 * 60 * 1000, // 10 minutos cache
   });
 };
 
@@ -126,6 +130,8 @@ export const useActiveIdentity = () => {
     queryKey: strategicKeys.activeIdentity,
     queryFn: identityApi.getActive,
     retry: false,
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 15 * 60 * 1000, // 15 minutos - datos principales
   });
 };
 
@@ -134,6 +140,7 @@ export const useIdentity = (id: number) => {
     queryKey: strategicKeys.identity(id),
     queryFn: () => identityApi.getById(id),
     enabled: !!id,
+    staleTime: 3 * 60 * 1000, // 3 minutos
   });
 };
 
@@ -158,10 +165,17 @@ export const useUpdateIdentity = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateCorporateIdentityDTO }) =>
       identityApi.update(id, data),
-    onSuccess: (_, { id }) => {
+    onSuccess: async (updatedIdentity, { id }) => {
+      // Actualizar cache directamente con los datos retornados del servidor
+      queryClient.setQueryData(strategicKeys.activeIdentity, updatedIdentity);
+      queryClient.setQueryData(strategicKeys.identity(id), updatedIdentity);
+
+      // Invalidar queries relacionadas
       queryClient.invalidateQueries({ queryKey: strategicKeys.identities });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.identity(id) });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.activeIdentity });
+
+      // Forzar refetch para garantizar consistencia
+      await queryClient.refetchQueries({ queryKey: strategicKeys.activeIdentity });
+
       toast.success('Identidad corporativa actualizada exitosamente');
     },
     onError: () => {
@@ -186,27 +200,14 @@ export const useDeleteIdentity = () => {
   });
 };
 
-export const useSignPolicy = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => identityApi.signPolicy(id),
-    onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.identity(id) });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.activeIdentity });
-      toast.success('Política integral firmada exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al firmar la política integral');
-    },
-  });
-};
-
 // ==================== CORPORATE VALUES HOOKS ====================
 
 export const useValues = (identityId?: number) => {
   return useQuery({
     queryKey: strategicKeys.values(identityId),
     queryFn: () => valuesApi.getAll(identityId),
+    staleTime: 3 * 60 * 1000, // 3 minutos - valores corporativos
+    gcTime: 10 * 60 * 1000,
   });
 };
 
@@ -214,9 +215,12 @@ export const useCreateValue = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: CreateCorporateValueDTO & { identity: number }) => valuesApi.create(data),
-    onSuccess: (_, { identity }) => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.values(identity) });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.activeIdentity });
+    onSuccess: async (_, { identity }) => {
+      // Forzar refetch inmediato para actualizar UI
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: strategicKeys.values(identity) }),
+        queryClient.refetchQueries({ queryKey: strategicKeys.activeIdentity }),
+      ]);
       toast.success('Valor corporativo creado exitosamente');
     },
     onError: () => {
@@ -230,9 +234,12 @@ export const useUpdateValue = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateCorporateValueDTO }) =>
       valuesApi.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.values() });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.activeIdentity });
+    onSuccess: async () => {
+      // Forzar refetch inmediato para actualizar UI
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: strategicKeys.values() }),
+        queryClient.refetchQueries({ queryKey: strategicKeys.activeIdentity }),
+      ]);
       toast.success('Valor corporativo actualizado exitosamente');
     },
     onError: () => {
@@ -245,9 +252,12 @@ export const useDeleteValue = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => valuesApi.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.values() });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.activeIdentity });
+    onSuccess: async () => {
+      // Forzar refetch inmediato para actualizar UI
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: strategicKeys.values() }),
+        queryClient.refetchQueries({ queryKey: strategicKeys.activeIdentity }),
+      ]);
       toast.success('Valor corporativo eliminado exitosamente');
     },
     onError: () => {
@@ -885,244 +895,9 @@ export const useIntegracionLogs = (id: number, filters?: IntegracionLogsFilters)
   });
 };
 
-// ==================== POLÍTICAS INTEGRALES HOOKS ====================
-
-import {
-  politicasIntegralesApi,
-  politicasEspecificasApi,
-} from '../api/strategicApi';
-import type {
-  CreatePoliticaIntegralDTO,
-  UpdatePoliticaIntegralDTO,
-  PoliticaIntegralFilters,
-  CreatePoliticaEspecificaDTO,
-  UpdatePoliticaEspecificaDTO,
-  PoliticaEspecificaFilters,
-} from '../types/strategic.types';
-
-// Extend strategic keys for políticas
-export const politicasKeys = {
-  // Políticas Integrales
-  integrales: (filters?: PoliticaIntegralFilters) => ['politicas-integrales', filters] as const,
-  integral: (id: number) => ['politica-integral', id] as const,
-  integralCurrent: (identityId: number) => ['politica-integral', 'current', identityId] as const,
-  integralVersions: (identityId: number) => ['politica-integral', 'versions', identityId] as const,
-
-  // Políticas Específicas
-  especificas: (filters?: PoliticaEspecificaFilters) => ['politicas-especificas', filters] as const,
-  especifica: (id: number) => ['politica-especifica', id] as const,
-  especificasByStandard: ['politicas-especificas', 'by-standard'] as const,
-  especificasPendingReview: ['politicas-especificas', 'pending-review'] as const,
-  especificasStats: ['politicas-especificas', 'stats'] as const,
-};
-
-// --- Políticas Integrales ---
-
-export const usePoliticasIntegrales = (filters?: PoliticaIntegralFilters) => {
-  return useQuery({
-    queryKey: politicasKeys.integrales(filters),
-    queryFn: () => politicasIntegralesApi.getAll(filters),
-  });
-};
-
-export const usePoliticaIntegral = (id: number) => {
-  return useQuery({
-    queryKey: politicasKeys.integral(id),
-    queryFn: () => politicasIntegralesApi.getById(id),
-    enabled: !!id,
-  });
-};
-
-export const usePoliticaIntegralCurrent = (identityId: number) => {
-  return useQuery({
-    queryKey: politicasKeys.integralCurrent(identityId),
-    queryFn: () => politicasIntegralesApi.getCurrent(identityId),
-    enabled: !!identityId,
-    retry: false,
-  });
-};
-
-export const usePoliticaIntegralVersions = (identityId: number) => {
-  return useQuery({
-    queryKey: politicasKeys.integralVersions(identityId),
-    queryFn: () => politicasIntegralesApi.getVersions(identityId),
-    enabled: !!identityId,
-  });
-};
-
-export const useCreatePoliticaIntegral = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreatePoliticaIntegralDTO) => politicasIntegralesApi.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['politicas-integrales'] });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.activeIdentity });
-      toast.success('Política integral creada exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al crear la política integral');
-    },
-  });
-};
-
-export const useUpdatePoliticaIntegral = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdatePoliticaIntegralDTO }) =>
-      politicasIntegralesApi.update(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['politicas-integrales'] });
-      queryClient.invalidateQueries({ queryKey: politicasKeys.integral(id) });
-      toast.success('Política integral actualizada exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al actualizar la política integral');
-    },
-  });
-};
-
-export const useDeletePoliticaIntegral = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => politicasIntegralesApi.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['politicas-integrales'] });
-      toast.success('Política integral eliminada exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al eliminar la política integral');
-    },
-  });
-};
-
-export const useSignPoliticaIntegral = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => politicasIntegralesApi.sign(id),
-    onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: ['politicas-integrales'] });
-      queryClient.invalidateQueries({ queryKey: politicasKeys.integral(id) });
-      toast.success('Política integral firmada exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al firmar la política integral');
-    },
-  });
-};
-
-export const usePublishPoliticaIntegral = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => politicasIntegralesApi.publish(id),
-    onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: ['politicas-integrales'] });
-      queryClient.invalidateQueries({ queryKey: politicasKeys.integral(id) });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.activeIdentity });
-      toast.success('Política integral publicada exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al publicar la política integral');
-    },
-  });
-};
-
-// --- Políticas Específicas ---
-
-export const usePoliticasEspecificas = (filters?: PoliticaEspecificaFilters) => {
-  return useQuery({
-    queryKey: politicasKeys.especificas(filters),
-    queryFn: () => politicasEspecificasApi.getAll(filters),
-  });
-};
-
-export const usePoliticaEspecifica = (id: number) => {
-  return useQuery({
-    queryKey: politicasKeys.especifica(id),
-    queryFn: () => politicasEspecificasApi.getById(id),
-    enabled: !!id,
-  });
-};
-
-export const usePoliticasByStandard = () => {
-  return useQuery({
-    queryKey: politicasKeys.especificasByStandard,
-    queryFn: () => politicasEspecificasApi.getByStandard(),
-  });
-};
-
-export const usePoliticasPendingReview = () => {
-  return useQuery({
-    queryKey: politicasKeys.especificasPendingReview,
-    queryFn: () => politicasEspecificasApi.getPendingReview(),
-  });
-};
-
-export const usePoliticasStats = () => {
-  return useQuery({
-    queryKey: politicasKeys.especificasStats,
-    queryFn: () => politicasEspecificasApi.getStats(),
-  });
-};
-
-export const useCreatePoliticaEspecifica = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreatePoliticaEspecificaDTO) => politicasEspecificasApi.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['politicas-especificas'] });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.activeIdentity });
-      toast.success('Política específica creada exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al crear la política específica');
-    },
-  });
-};
-
-export const useUpdatePoliticaEspecifica = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdatePoliticaEspecificaDTO }) =>
-      politicasEspecificasApi.update(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['politicas-especificas'] });
-      queryClient.invalidateQueries({ queryKey: politicasKeys.especifica(id) });
-      toast.success('Política específica actualizada exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al actualizar la política específica');
-    },
-  });
-};
-
-export const useDeletePoliticaEspecifica = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => politicasEspecificasApi.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['politicas-especificas'] });
-      toast.success('Política específica eliminada exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al eliminar la política específica');
-    },
-  });
-};
-
-export const useApprovePoliticaEspecifica = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => politicasEspecificasApi.approve(id),
-    onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: ['politicas-especificas'] });
-      queryClient.invalidateQueries({ queryKey: politicasKeys.especifica(id) });
-      toast.success('Política específica aprobada exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al aprobar la política específica');
-    },
-  });
-};
+// ==================== POLÍTICAS ====================
+// NOTA: Los hooks de políticas fueron migrados a usePoliticas.ts (Sistema Unificado v3.0)
+// Ver: ./usePoliticas.ts para el nuevo sistema de políticas
 
 // --- Reorder Values (for Drag & Drop) ---
 
@@ -1136,14 +911,51 @@ export const useReorderValues = () => {
           valuesApi.update(id, { orden })
         )
       );
+      return newOrder;
+    },
+    onMutate: async (newOrder) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: strategicKeys.values() });
+
+      // Snapshot previous values for all value queries
+      const previousQueries = queryClient.getQueriesData({ queryKey: strategicKeys.values() });
+
+      // Optimistically update all matching queries
+      queryClient.setQueriesData(
+        { queryKey: strategicKeys.values() },
+        (old: PaginatedResponse<CorporateValue> | undefined) => {
+          if (!old?.results) return old;
+          const updatedResults = old.results.map(value => {
+            const newOrderItem = newOrder.find(item => item.id === value.id);
+            if (newOrderItem) {
+              return { ...value, orden: newOrderItem.orden };
+            }
+            return value;
+          });
+          // Sort by new order
+          updatedResults.sort((a, b) => a.orden - b.orden);
+          return { ...old, results: updatedResults };
+        }
+      );
+
+      return { previousQueries };
+    },
+    onError: (_err, _newOrder, context) => {
+      // Rollback on error
+      if (context?.previousQueries) {
+        context.previousQueries.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      toast.error('Error al reordenar los valores');
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.values() });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.activeIdentity });
       toast.success('Orden de valores actualizado');
     },
-    onError: () => {
-      toast.error('Error al reordenar los valores');
+    onSettled: () => {
+      // Refetch to ensure consistency with server
+      queryClient.invalidateQueries({ queryKey: strategicKeys.values() });
+      queryClient.invalidateQueries({ queryKey: strategicKeys.activeIdentity });
     },
   });
 };

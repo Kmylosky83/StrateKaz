@@ -1,0 +1,365 @@
+"""
+ViewSets para Configuración del Sistema (Tab 4)
+Sistema de Gestión StrateKaz
+
+Este módulo contiene SOLO ViewSets que usan modelos de core,
+sin dependencias de otras apps. Esto permite que core funcione
+de forma independiente en el sistema modular.
+
+Incluye:
+- SystemModuleViewSet
+- ModuleTabViewSet
+- TabSectionViewSet
+- BrandingConfigViewSet
+"""
+from rest_framework import viewsets, status, filters
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import Prefetch
+
+# Modelos de core (sin dependencias externas)
+from .models import (
+    SystemModule, ModuleTab, TabSection, BrandingConfig
+)
+
+# Serializers de configuración (sin dependencias externas)
+from .serializers_config import (
+    SystemModuleListSerializer, SystemModuleDetailSerializer,
+    SystemModuleCreateSerializer, SystemModuleUpdateSerializer,
+    SystemModuleTreeSerializer, ToggleModuleSerializer,
+    ModuleTabSerializer, ModuleTabCreateSerializer, ToggleTabSerializer,
+    TabSectionSerializer, TabSectionCreateSerializer, ToggleSectionSerializer,
+    SidebarModuleSerializer,
+    BrandingConfigSerializer, BrandingConfigCreateSerializer, BrandingConfigUpdateSerializer,
+)
+
+
+# =============================================================================
+# TAB 4: CONFIGURACIÓN (SOLO MODELOS DE CORE)
+# =============================================================================
+
+class SystemModuleViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para Módulos del Sistema
+
+    Endpoints:
+    - GET /api/core/system-modules/ - Listar módulos
+    - POST /api/core/system-modules/ - Crear módulo
+    - GET /api/core/system-modules/{id}/ - Detalle de módulo
+    - PATCH /api/core/system-modules/{id}/ - Actualizar módulo
+    - DELETE /api/core/system-modules/{id}/ - Eliminar módulo
+    - PATCH /api/core/system-modules/{id}/toggle/ - Activar/Desactivar
+    - GET /api/core/system-modules/categories/ - Categorías disponibles
+    - GET /api/core/system-modules/enabled/ - Módulos habilitados
+    - GET /api/core/system-modules/tree/ - Árbol completo con tabs y secciones
+    - GET /api/core/system-modules/sidebar/ - Versión compacta para sidebar
+    """
+
+    queryset = SystemModule.objects.all()
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['category', 'is_enabled', 'is_core', 'requires_license']
+    search_fields = ['code', 'name', 'description']
+    ordering = ['category', 'orden', 'name']
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return SystemModuleListSerializer
+        elif self.action == 'create':
+            return SystemModuleCreateSerializer
+        elif self.action in ['update', 'partial_update']:
+            return SystemModuleUpdateSerializer
+        elif self.action == 'toggle':
+            return ToggleModuleSerializer
+        elif self.action == 'tree':
+            return SystemModuleTreeSerializer
+        elif self.action == 'sidebar':
+            return SidebarModuleSerializer
+        return SystemModuleDetailSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.action in ['tree', 'sidebar']:
+            return queryset.prefetch_related('tabs__sections').order_by('orden', 'name')
+        return queryset.prefetch_related('dependencies', 'dependents')
+
+    def perform_destroy(self, instance):
+        """Validar antes de eliminar"""
+        if instance.is_core:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('No se puede eliminar un módulo core')
+
+        can_disable, reason = instance.can_disable()
+        if not can_disable:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError(reason)
+
+        instance.delete()
+
+    @action(detail=True, methods=['patch'])
+    def toggle(self, request, pk=None):
+        """PATCH /api/core/system-modules/{id}/toggle/"""
+        module = self.get_object()
+        is_enabled = request.data.get('is_enabled', not module.is_enabled)
+
+        if not is_enabled:
+            can_disable, reason = module.can_disable()
+            if not can_disable:
+                return Response(
+                    {'error': reason or 'Este módulo no puede desactivarse'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        if is_enabled:
+            module.enable()
+        else:
+            module.is_enabled = False
+            module.save(update_fields=['is_enabled'])
+
+        return Response({
+            'success': True,
+            'message': f'Módulo {"activado" if is_enabled else "desactivado"} correctamente',
+            'is_enabled': module.is_enabled
+        })
+
+    @action(detail=False, methods=['get'])
+    def categories(self, request):
+        """GET /api/core/system-modules/categories/"""
+        categories = [
+            {'value': code, 'label': label}
+            for code, label in SystemModule.CATEGORY_CHOICES
+        ]
+        return Response(categories)
+
+    @action(detail=False, methods=['get'])
+    def enabled(self, request):
+        """GET /api/core/system-modules/enabled/"""
+        modules = SystemModule.objects.filter(is_enabled=True)
+        return Response(SystemModuleListSerializer(modules, many=True).data)
+
+    @action(detail=False, methods=['get'])
+    def tree(self, request):
+        """GET /api/core/system-modules/tree/"""
+        modules = self.get_queryset()
+        total = modules.count()
+        enabled = modules.filter(is_enabled=True).count()
+
+        categories = []
+        for cat_code, cat_name in SystemModule.CATEGORY_CHOICES:
+            count = modules.filter(category=cat_code).count()
+            categories.append({
+                'code': cat_code,
+                'name': cat_name,
+                'modules_count': count
+            })
+
+        serializer = SystemModuleTreeSerializer(modules, many=True)
+        return Response({
+            'modules': serializer.data,
+            'total_modules': total,
+            'enabled_modules': enabled,
+            'categories': categories
+        })
+
+    @action(detail=False, methods=['get'])
+    def sidebar(self, request):
+        """GET /api/core/system-modules/sidebar/"""
+        modules = SystemModule.objects.filter(
+            is_enabled=True
+        ).prefetch_related(
+            Prefetch(
+                'tabs',
+                queryset=ModuleTab.objects.filter(is_enabled=True).order_by('orden')
+            )
+        ).order_by('orden', 'name')
+
+        result = []
+        for module in modules:
+            enabled_tabs = list(module.tabs.all())
+            children = None
+            module_effective_color = module.get_effective_color()
+
+            # Usar campo route del modelo, o generar desde code como fallback
+            # Asegurar que no tenga / al inicio para evitar doble slash
+            module_route_segment = (module.route or module.code.replace('_', '-')).lstrip('/')
+
+            if enabled_tabs:
+                children = []
+                for tab in enabled_tabs:
+                    # Usar campo route del tab, o generar desde code como fallback
+                    tab_route_segment = (tab.route or tab.code.replace('_', '-')).lstrip('/')
+                    children.append({
+                        'code': tab.code,
+                        'name': tab.name,
+                        'icon': tab.icon,
+                        'color': module_effective_color,
+                        'route': f"/{module_route_segment}/{tab_route_segment}",
+                        'is_category': False,
+                        'children': None
+                    })
+
+            module_data = {
+                'code': module.code,
+                'name': module.name,
+                'icon': module.icon,
+                'color': module_effective_color,
+                'route': f"/{module_route_segment}" if not children else None,
+                'is_category': False,
+                'children': children
+            }
+            result.append(module_data)
+
+        return Response(result)
+
+
+class ModuleTabViewSet(viewsets.ModelViewSet):
+    """ViewSet para gestión de tabs de módulos"""
+    queryset = ModuleTab.objects.all()
+    serializer_class = ModuleTabSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['module', 'is_enabled', 'is_core']
+    search_fields = ['code', 'name', 'description']
+    ordering = ['module__orden', 'orden', 'name']
+
+    def get_queryset(self):
+        queryset = ModuleTab.objects.prefetch_related('sections')
+        module_id = self.request.query_params.get('module')
+        if module_id:
+            queryset = queryset.filter(module_id=module_id)
+        return queryset.order_by('orden', 'name')
+
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return ModuleTabCreateSerializer
+        elif self.action == 'toggle':
+            return ToggleTabSerializer
+        return ModuleTabSerializer
+
+    @action(detail=True, methods=['patch'])
+    def toggle(self, request, pk=None):
+        """PATCH /api/core/module-tabs/{id}/toggle/"""
+        tab = self.get_object()
+        is_enabled = request.data.get('is_enabled', not tab.is_enabled)
+
+        if not is_enabled:
+            can_disable, reason = tab.can_disable()
+            if not can_disable:
+                return Response(
+                    {'error': reason or 'Este tab no puede desactivarse'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        if is_enabled:
+            tab.enable()
+        else:
+            tab.is_enabled = False
+            tab.save(update_fields=['is_enabled'])
+
+        return Response({
+            'success': True,
+            'message': f'Tab {"activado" if is_enabled else "desactivado"} correctamente',
+            'is_enabled': tab.is_enabled
+        })
+
+
+class TabSectionViewSet(viewsets.ModelViewSet):
+    """ViewSet para gestión de secciones de tabs"""
+    queryset = TabSection.objects.all()
+    serializer_class = TabSectionSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['tab', 'is_enabled', 'is_core']
+    search_fields = ['code', 'name', 'description']
+    ordering = ['tab__orden', 'orden', 'name']
+
+    def get_queryset(self):
+        queryset = TabSection.objects.all()
+        tab_id = self.request.query_params.get('tab')
+        if tab_id:
+            queryset = queryset.filter(tab_id=tab_id)
+        return queryset.order_by('orden', 'name')
+
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return TabSectionCreateSerializer
+        elif self.action == 'toggle':
+            return ToggleSectionSerializer
+        return TabSectionSerializer
+
+    @action(detail=True, methods=['patch'])
+    def toggle(self, request, pk=None):
+        """PATCH /api/core/tab-sections/{id}/toggle/"""
+        section = self.get_object()
+        is_enabled = request.data.get('is_enabled', not section.is_enabled)
+
+        if not is_enabled:
+            can_disable, reason = section.can_disable()
+            if not can_disable:
+                return Response(
+                    {'error': reason or 'Esta sección no puede desactivarse'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        if is_enabled:
+            section.enable()
+        else:
+            section.is_enabled = False
+            section.save(update_fields=['is_enabled'])
+
+        return Response({
+            'success': True,
+            'message': f'Sección {"activada" if is_enabled else "desactivada"} correctamente',
+            'is_enabled': section.is_enabled
+        })
+
+
+class BrandingConfigViewSet(viewsets.ModelViewSet):
+    """ViewSet para Configuración de Branding"""
+
+    queryset = BrandingConfig.objects.all()
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['is_active']
+    ordering = ['-created_at']
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return BrandingConfigCreateSerializer
+        elif self.action in ['update', 'partial_update']:
+            return BrandingConfigUpdateSerializer
+        return BrandingConfigSerializer
+
+    def partial_update(self, request, *args, **kwargs):
+        """Override para debugging de errores 400"""
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"[BRANDING DEBUG] Request data: {request.data}")
+        logger.info(f"[BRANDING DEBUG] Content-Type: {request.content_type}")
+
+        serializer = self.get_serializer(
+            self.get_object(),
+            data=request.data,
+            partial=True
+        )
+        if not serializer.is_valid():
+            logger.error(f"[BRANDING DEBUG] Validation errors: {serializer.errors}")
+
+        return super().partial_update(request, *args, **kwargs)
+
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
+    def active(self, request):
+        """
+        GET /api/core/branding/active/
+        Retorna la configuración de branding activa (público para login page).
+        """
+        branding = BrandingConfig.objects.filter(is_active=True).first()
+        if not branding:
+            return Response(
+                {'detail': 'No hay configuración de branding activa'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        serializer = BrandingConfigSerializer(branding, context={'request': request})
+        return Response(serializer.data)

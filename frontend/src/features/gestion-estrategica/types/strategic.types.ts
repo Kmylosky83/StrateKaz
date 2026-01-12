@@ -5,6 +5,9 @@
 
 import { PaginatedResponse } from '@/types';
 
+// Re-export para uso en strategicApi.ts
+export type { PaginatedResponse };
+
 // ==================== ENUMS ====================
 
 export type BSCPerspective = 'FINANCIERA' | 'CLIENTES' | 'PROCESOS' | 'APRENDIZAJE';
@@ -57,20 +60,25 @@ export interface UpdateCorporateValueDTO {
 
 // ==================== CORPORATE IDENTITY ====================
 
+/**
+ * Identidad Corporativa - Misión y Visión
+ *
+ * v3.0: Campo integral_policy eliminado (DEPRECATED).
+ * La Política Integral se gestiona desde PoliticaIntegral con workflow completo.
+ */
 export interface CorporateIdentity {
   id: number;
   mission: string;
   vision: string;
-  integral_policy: string;
-  policy_signed_by?: number | null;
-  policy_signed_at?: string | null;
-  policy_signature_hash?: string | null;
-  is_signed: boolean;
-  signed_by_name?: string | null;
   effective_date: string;
   version: string;
   is_active: boolean;
   values?: CorporateValue[];
+  // Contadores
+  values_count?: number;
+  alcances_count?: number;
+  politicas_count?: number;
+  // Auditoría
   created_by?: number | null;
   created_by_name?: string | null;
   created_at: string;
@@ -80,21 +88,17 @@ export interface CorporateIdentity {
 export interface CreateCorporateIdentityDTO {
   mission: string;
   vision: string;
-  integral_policy: string;
   effective_date: string;
   version?: string;
   is_active?: boolean;
-  values?: CreateCorporateValueDTO[];
 }
 
 export interface UpdateCorporateIdentityDTO {
   mission?: string;
   vision?: string;
-  integral_policy?: string;
   effective_date?: string;
   version?: string;
   is_active?: boolean;
-  values?: CreateCorporateValueDTO[];
 }
 
 // ==================== STRATEGIC PLAN ====================
@@ -800,7 +804,7 @@ export type ChangeStatus =
   | 'CANCELADO';
 
 // --- Tipos de Política ---
-export type PoliticaStatus = 'BORRADOR' | 'EN_REVISION' | 'VIGENTE' | 'OBSOLETO';
+export type PoliticaStatus = 'BORRADOR' | 'EN_REVISION' | 'FIRMADO' | 'VIGENTE' | 'OBSOLETO';
 
 // ==================== MAPA ESTRATÉGICO ====================
 
@@ -1128,7 +1132,11 @@ export interface AlcanceSistemaFilters {
 }
 
 // ==================== POLÍTICA INTEGRAL ====================
+// @deprecated - Usar types/policies.types.ts (Sistema Unificado v3.0) en su lugar.
+// Estos tipos legacy serán eliminados en una futura versión.
+// Ver: ./policies.types.ts para el nuevo sistema de políticas unificado.
 
+/** @deprecated Usar Politica de policies.types.ts */
 export interface PoliticaIntegral {
   id: number;
   identity: number;
@@ -1197,7 +1205,10 @@ export interface PoliticaIntegralFilters {
 }
 
 // ==================== POLÍTICA ESPECÍFICA ====================
+// @deprecated - Usar types/policies.types.ts (Sistema Unificado v3.0) en su lugar.
+// Estos tipos legacy serán eliminados en una futura versión.
 
+/** @deprecated Usar Politica de policies.types.ts */
 export interface PoliticaEspecifica {
   id: number;
   identity: number;

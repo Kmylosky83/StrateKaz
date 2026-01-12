@@ -122,6 +122,11 @@ urlpatterns = [
 # ═══════════════════════════════════════════════════════════════════════════
 # NIVEL 1: ESTRATÉGICO - Dirección Estratégica (6 apps)
 # ═══════════════════════════════════════════════════════════════════════════
+# URL canónica del módulo completo (incluye ViewSets estratégicos + sub-apps)
+if is_app_installed('apps.gestion_estrategica.identidad'):
+    urlpatterns.append(path('api/gestion-estrategica/', include('apps.gestion_estrategica.urls')))
+
+# URLs directas a sub-apps (mantener por compatibilidad)
 if is_app_installed('apps.gestion_estrategica.configuracion'):
     urlpatterns.append(path('api/configuracion/', include('apps.gestion_estrategica.configuracion.urls')))
 
@@ -146,7 +151,7 @@ if is_app_installed('apps.gestion_estrategica.revision_direccion'):
 if is_app_installed('apps.motor_cumplimiento.matriz_legal'):
     urlpatterns.append(path('api/cumplimiento/', include('apps.motor_cumplimiento.urls')))
 
-if is_app_installed('apps.motor_riesgos.contexto_organizacional'):
+if is_app_installed('apps.motor_riesgos.riesgos_procesos'):
     urlpatterns.append(path('api/riesgos/', include('apps.motor_riesgos.urls')))
 
 if is_app_installed('apps.workflow_engine.disenador_flujos'):

@@ -1,0 +1,47 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Firma Rechazada - {{ document_title }}{% endblock %}
+
+{% block content %}
+<h2>Firma Rechazada</h2>
+
+<p>Hola <strong>{{ user_name }}</strong>,</p>
+
+<p>La solicitud de firma para el siguiente documento ha sido rechazada.</p>
+
+<div class="email-card">
+    <p class="email-card-title">Documento</p>
+    <p class="email-card-content">{{ document_title }}</p>
+</div>
+
+<div class="email-card">
+    <p class="email-card-title">Rechazado por</p>
+    <p class="email-card-content">{{ rejected_by }}</p>
+</div>
+
+<div class="email-card">
+    <p class="email-card-title">Fecha de rechazo</p>
+    <p class="email-card-content">{{ rejected_at }}</p>
+</div>
+
+{% if rejection_reason %}
+<div class="email-card">
+    <p class="email-card-title">Motivo del rechazo</p>
+    <p class="email-card-content">{{ rejection_reason }}</p>
+</div>
+{% endif %}
+
+<div class="text-center mt-4">
+    <span class="badge badge-danger">RECHAZADO</span>
+</div>
+
+<div class="text-center mt-4">
+    <a href="{{ action_url }}" class="email-button">
+        Ver Detalles
+    </a>
+</div>
+
+<p class="mt-4">
+    Si tiene preguntas sobre este rechazo, por favor contacte al responsable del documento.
+</p>
+{% endblock %}

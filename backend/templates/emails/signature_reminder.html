@@ -1,0 +1,51 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Recordatorio de Firma - {{ document_title }}{% endblock %}
+
+{% block content %}
+<h2>Recordatorio: Firma Pendiente</h2>
+
+<p>Hola <strong>{{ user_name }}</strong>,</p>
+
+<p>Este es un recordatorio de que tiene una firma pendiente que requiere su atención.</p>
+
+<div class="email-card">
+    <p class="email-card-title">Documento</p>
+    <p class="email-card-content">{{ document_title }}</p>
+</div>
+
+{% if days_pending %}
+<div class="email-card">
+    <p class="email-card-title">Días pendiente</p>
+    <p class="email-card-content">
+        <span class="badge {% if days_pending > 7 %}badge-danger{% elif days_pending > 3 %}badge-warning{% else %}badge-info{% endif %}">
+            {{ days_pending }} días
+        </span>
+    </p>
+</div>
+{% endif %}
+
+{% if due_date %}
+<div class="email-card">
+    <p class="email-card-title">Fecha límite</p>
+    <p class="email-card-content">{{ due_date }}</p>
+</div>
+{% endif %}
+
+{% if requested_by %}
+<div class="email-card">
+    <p class="email-card-title">Solicitado por</p>
+    <p class="email-card-content">{{ requested_by }}</p>
+</div>
+{% endif %}
+
+<div class="text-center mt-4">
+    <a href="{{ action_url }}" class="email-button">
+        Revisar y Firmar Ahora
+    </a>
+</div>
+
+<p class="text-muted mt-4">
+    Por favor, revise y firme el documento a la brevedad posible para evitar retrasos en los procesos.
+</p>
+{% endblock %}

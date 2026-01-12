@@ -6,9 +6,20 @@
  */
 import { ReactElement } from 'react';
 import { render, RenderOptions } from '@testing-library/react';
+import { act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import { vi } from 'vitest';
+
+// Suprimir warnings de React Router en tests
+const originalConsoleWarn = console.warn;
+console.warn = (...args: unknown[]) => {
+  const message = args[0];
+  if (typeof message === 'string' && message.includes('React Router Future Flag Warning')) {
+    return;
+  }
+  originalConsoleWarn.apply(console, args);
+};
 
 /**
  * Crea un QueryClient de testing con configuración optimizada
@@ -24,11 +35,6 @@ export function createTestQueryClient() {
       mutations: {
         retry: false,
       },
-    },
-    logger: {
-      log: console.log,
-      warn: console.warn,
-      error: () => {}, // Silenciar errores en tests
     },
   });
 }
@@ -149,6 +155,78 @@ export const createMockEmpresa = (overrides = {}) => ({
   ...overrides,
 });
 
+/**
+ * Mock de CorporateIdentity - v3.0
+ * La política integral ahora se gestiona desde PoliticaIntegral
+ */
+export const createMockIdentity = (overrides = {}) => ({
+  id: 1,
+  mission: '<p>Nuestra misión es ser líderes en gestión estratégica</p>',
+  vision: '<p>Ser la empresa más innovadora del sector</p>',
+  is_active: true,
+  version: '1.0',
+  effective_date: '2024-01-01',
+  values: [],
+  values_count: 0,
+  alcances_count: 0,
+  politicas_count: 0,
+  created_at: '2024-01-01T00:00:00Z',
+  updated_at: '2024-01-15T12:00:00Z',
+  ...overrides,
+});
+
+/**
+ * Mock de PoliticaIntegral - v3.0
+ */
+export const createMockPoliticaIntegral = (overrides = {}) => ({
+  id: 1,
+  identity: 1,
+  title: 'Política Integral del Sistema de Gestión',
+  content: '<p>Política integral de calidad y seguridad</p>',
+  version: '1.0',
+  status: 'VIGENTE',
+  status_display: 'Vigente',
+  effective_date: '2024-01-01',
+  expiry_date: null,
+  review_date: '2025-01-01',
+  is_signed: true,
+  signed_by: 1,
+  signed_by_name: 'Juan Pérez',
+  signed_at: '2024-01-15T10:00:00Z',
+  signature_hash: 'abc123',
+  applicable_standards: ['ISO_9001', 'ISO_45001'],
+  is_active: true,
+  created_at: '2024-01-01T00:00:00Z',
+  updated_at: '2024-01-15T12:00:00Z',
+  ...overrides,
+});
+
+export const createMockValue = (overrides = {}) => ({
+  id: 1,
+  name: 'Integridad',
+  description: 'Actuamos con honestidad y transparencia',
+  icon: 'Shield',
+  order: 1,
+  is_active: true,
+  identity: 1,
+  ...overrides,
+});
+
+export const createMockBranding = (overrides = {}) => ({
+  logo: null,
+  logoDark: null,
+  colorPrimario: null,
+  colorSecundario: null,
+  gradienteMision: null,
+  gradienteVision: null,
+  gradientePolitica: null,
+  gradienteValores: null,
+  slogan: null,
+  isLoading: false,
+  isConfigured: false,
+  ...overrides,
+});
+
 export const createMockArea = (overrides = {}) => ({
   id: 1,
   code: 'PROD',
@@ -194,8 +272,19 @@ export const createMockPaginatedResponse = <T,>(
 });
 
 /**
+ * Helper para envolver acciones asíncronas en act()
+ * Útil para evitar warnings de React sobre actualizaciones de estado
+ */
+export async function actWait(ms = 0) {
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, ms));
+  });
+}
+
+/**
  * Re-exportar utilidades comunes de testing-library
  */
 export * from '@testing-library/react';
 export { default as userEvent } from '@testing-library/user-event';
 export { renderWithProviders as render };
+export { act };

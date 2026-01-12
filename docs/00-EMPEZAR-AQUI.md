@@ -6,9 +6,9 @@ Documentación del **SGI StrateKaz** - Sistema de Gestión Integral para multi I
 
 | Info | Valor |
 |------|-------|
-| **Versión** | 2.0.0 |
-| **Estado** | ✅ DESARROLLO COMPLETO - Listo para Producción |
-| **Última Actualización** | 30 Diciembre 2025 (Fase 7 - Semana 26 - GO-LIVE) |
+| **Version** | 3.1.0 |
+| **Estado** | ✅ DESARROLLO COMPLETO - Workflow de Firmas Digitales |
+| **Última Actualización** | 11 Enero 2026 (Workflow Firmas + Sistema Politicas Unificado) |
 
 > **PRINCIPIO FUNDAMENTAL:** Este sistema es **100% dinámico desde la base de datos**. NO se permite hardcoding.
 
@@ -435,3 +435,38 @@ Backend 27 modelos + Frontend 4 módulos HSEQ completos (Emergencias, Ambiental,
 ---
 
 **Última actualización:** 30 Diciembre 2025 (Semana 26 - DESARROLLO COMPLETO)
+
+---
+
+## Post GO-LIVE: Mejoras Enero 2026
+
+### v3.1.0 (11 Enero 2026) - Workflow de Firmas Digitales
+
+**Flujo de Estados para Politicas:**
+```
+BORRADOR -> EN_REVISION -> FIRMADO -> VIGENTE -> OBSOLETO
+```
+
+| Estado | Acciones Disponibles |
+|--------|---------------------|
+| BORRADOR | Editar, Enviar a Firma, Eliminar |
+| EN_REVISION | Esperando firmas (bloqueado) |
+| FIRMADO | Enviar a Gestor Documental |
+| VIGENTE | Nueva Version |
+| OBSOLETO | Solo lectura (historico) |
+
+**Caracteristicas:**
+- Campo `code` opcional (asignado por Gestor Documental)
+- Bloqueo de edicion para politicas VIGENTE
+- Versionamiento automatico al crear nueva version
+- 7 workflows configurados via seed
+
+### v3.0.0 (11 Enero 2026) - Sistema de Politicas Unificado
+
+- 8 tipos de politica (Integral, SST, Calidad, Ambiental, PESV, Sostenibilidad, Contable, Otras)
+- RichTextEditor (TipTap) para contenido
+- DynamicIcon por tipo de politica
+
+---
+
+**Ultima actualizacion:** 11 Enero 2026 (v3.1.0 - Workflow de Firmas Digitales)

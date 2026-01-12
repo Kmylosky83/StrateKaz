@@ -7,6 +7,8 @@ Endpoints:
 - /alcances/ - Alcance del sistema de gestión
 - /politicas-integrales/ - Políticas integrales con versionamiento
 - /politicas-especificas/ - Políticas específicas por área/módulo
+- /stats/ - Estadísticas de Dirección Estratégica
+- /config/ - Configuración dinámica (estados, tipos, roles)
 - /workflow/ - Sistema de firmas digitales y revisión periódica
 - /export/ - Exportación de documentos PDF/DOCX
 - /bi/ - Valores Vividos y métricas para Business Intelligence
@@ -19,6 +21,14 @@ from .views import (
     AlcanceSistemaViewSet,
     PoliticaIntegralViewSet,
     PoliticaEspecificaViewSet,
+)
+from .views_stats import StrategicStatsViewSet
+from .views_config import (
+    EstadoPoliticaViewSet,
+    TipoPoliticaViewSet,
+    RolFirmanteViewSet,
+    EstadoFirmaViewSet,
+    ConfiguracionIdentidadViewSet,
 )
 from .views_export import (
     export_politica_integral_pdf,
@@ -37,9 +47,20 @@ router.register(r'valores', CorporateValueViewSet, basename='corporate-values')
 router.register(r'alcances', AlcanceSistemaViewSet, basename='alcance-sistema')
 router.register(r'politicas-integrales', PoliticaIntegralViewSet, basename='politica-integral')
 router.register(r'politicas-especificas', PoliticaEspecificaViewSet, basename='politica-especifica')
+router.register(r'stats', StrategicStatsViewSet, basename='strategic-stats')
+
+# Router para configuración dinámica
+config_router = DefaultRouter()
+config_router.register(r'estados-politica', EstadoPoliticaViewSet, basename='estado-politica')
+config_router.register(r'tipos-politica', TipoPoliticaViewSet, basename='tipo-politica')
+config_router.register(r'roles-firmante', RolFirmanteViewSet, basename='rol-firmante')
+config_router.register(r'estados-firma', EstadoFirmaViewSet, basename='estado-firma')
+config_router.register(r'all', ConfiguracionIdentidadViewSet, basename='config-all')
 
 urlpatterns = [
     path('', include(router.urls)),
+    # Configuración dinámica (estados, tipos, roles)
+    path('config/', include(config_router.urls)),
     # Workflow de firmas digitales y revisión periódica
     path('workflow/', include('apps.gestion_estrategica.identidad.urls_workflow')),
     # Valores Vividos y métricas para Business Intelligence

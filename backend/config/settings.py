@@ -96,6 +96,7 @@ INSTALLED_APPS = [
     'apps.gestion_estrategica.organizacion',       # Area, ConsecutivoConfig
     'apps.gestion_estrategica.identidad',          # CorporateIdentity, AlcanceSistema
     'apps.gestion_estrategica.planeacion',         # StrategicPlan, StrategicObjective, GestionCambio
+    'apps.gestion_estrategica.planeacion.contexto', # DOFA, PESTEL, Porter (ISO Clausula 4.1)
     'apps.gestion_estrategica.gestion_proyectos',  # Portafolio, Programa, Proyecto
     'apps.gestion_estrategica.revision_direccion', # ActaRevision, CompromisoRevision
 
@@ -110,7 +111,6 @@ INSTALLED_APPS = [
     'apps.motor_cumplimiento.partes_interesadas',  # ParteInteresada, Comunicacion
     'apps.motor_cumplimiento.reglamentos_internos',# Reglamento, Publicacion
     # --- Motor de Riesgos (7 apps) ---
-    'apps.motor_riesgos.contexto_organizacional',  # DOFA, PESTEL (ISO 31000)
     'apps.motor_riesgos.riesgos_procesos',         # Riesgo, Control, Tratamiento
     'apps.motor_riesgos.ipevr',                    # Peligro, RiesgoSST (GTC-45)
     'apps.motor_riesgos.aspectos_ambientales',     # AspectoAmbiental (ISO 14001)
@@ -465,13 +465,23 @@ PRECIO_COMPRA_ECONORTE = config('PRECIO_COMPRA_ECONORTE', default=3500, cast=int
 PRECIO_REFERENCIA_COMISION = config('PRECIO_REFERENCIA_COMISION', default=3000, cast=int)
 COMISION_FIJA_POR_KILO = config('COMISION_FIJA_POR_KILO', default=100, cast=int)
 
+# ═══════════════════════════════════════════════════
+# EMAIL CONFIGURATION
+# ═══════════════════════════════════════════════════
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
 EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_USE_SSL = config('EMAIL_USE_SSL', default=False, cast=bool)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@grasasyhuesos.com')
+EMAIL_SUBJECT_PREFIX = config('EMAIL_SUBJECT_PREFIX', default='[StrateKaz] ')
+
+# ═══════════════════════════════════════════════════
+# FRONTEND URL (para links en emails de notificacion)
+# ═══════════════════════════════════════════════════
+FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')
 
 # ═══════════════════════════════════════════════════
 # ENVIRONMENT DETECTION (cPanel vs Docker/VPS)

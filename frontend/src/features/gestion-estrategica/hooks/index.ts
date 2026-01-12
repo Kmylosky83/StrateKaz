@@ -1,22 +1,26 @@
 /**
- * Index de hooks del módulo Dirección Estratégica
+ * Index de hooks del modulo Direccion Estrategica
+ *
+ * Organizacion:
+ * 1. Core hooks (Strategic, TenantConfig, Modules, Empresa)
+ * 2. Areas y Organizacion
+ * 3. Roles y Permisos (RBAC)
+ * 4. Gestion de Proyectos (PMI)
+ * 5. Revision por Direccion (ISO 9.3)
+ * 6. Identidad Corporativa (Politicas, Workflow, Valores)
  */
+
+// ============================================================================
+// CORE HOOKS
+// ============================================================================
 export * from './useStrategic';
 export * from './useTenantConfig';
 export * from './useModules';
 export * from './useEmpresa';
 
-// Gestión de Proyectos PMI
-export * from './useProyectos';
-export * from './usePortafolios';
-
-// Revisión por Dirección (ISO 9.3)
-export * from './useRevisionDireccion';
-
-// Valores Vividos (conexión valor-acción para BI)
-export * from './useValoresVividos';
-
-// Areas hooks - exportados explícitamente para evitar colisiones
+// ============================================================================
+// AREAS Y ORGANIZACION
+// ============================================================================
 export {
   areaKeys,
   useAreas,
@@ -30,3 +34,33 @@ export {
   useToggleArea,
 } from './useAreas';
 export type { Area, AreaList, CreateAreaDTO, UpdateAreaDTO, AreaFilters } from './useAreas';
+
+// ============================================================================
+// ROLES Y PERMISOS (RBAC)
+// ============================================================================
+export * from './useRolesPermisos';
+export * from './useCargoSectionAccess';
+export * from './useMatrizPermisos';
+
+// ============================================================================
+// GESTION DE PROYECTOS PMI
+// ============================================================================
+export * from './useProyectos';
+export * from './usePortafolios';
+
+// ============================================================================
+// REVISION POR DIRECCION (ISO 9.3)
+// ============================================================================
+export * from './useRevisionDireccion';
+
+// ============================================================================
+// IDENTIDAD CORPORATIVA
+// ============================================================================
+// Politicas (Sistema Unificado v3.0)
+export * from './usePoliticas';
+
+// Workflow de Firmas Digitales
+export * from './useWorkflowFirmas';
+
+// Valores Vividos (conexion valor-accion para BI)
+export * from './useValoresVividos';

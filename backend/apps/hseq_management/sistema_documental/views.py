@@ -31,7 +31,8 @@ from .serializers import (
     FirmaDocumentoListSerializer,
     FirmaDocumentoDetailSerializer,
     ControlDocumentalListSerializer,
-    ControlDocumentalDetailSerializer
+    ControlDocumentalDetailSerializer,
+    RecibirPoliticaSerializer,
 )
 
 
@@ -385,6 +386,326 @@ class DocumentoViewSet(viewsets.ModelViewSet):
             listado[tipo]['documentos'].append(DocumentoListSerializer(doc).data)
 
         return Response(listado)
+
+    # =========================================================================
+    # INTEGRACIÓN CON MÓDULO DE IDENTIDAD CORPORATIVA
+    # =========================================================================
+
+    @action(detail=False, methods=['post'], url_path='recibir-politica')
+    def recibir_politica(self, request):
+        """
+        Recibe una política firmada desde el módulo de Identidad Corporativa.
+
+        Este endpoint maneja tanto nuevas políticas como actualizaciones de versión:
+
+        Para NUEVAS políticas:
+        1. Crea/obtiene el TipoDocumento "POLITICA" si no existe
+        2. Genera código único dinámico (POL-{NORMA}-{SECUENCIAL})
+        3. Crea el Documento con estado APROBADO (ya viene firmado)
+        4. Registra las firmas que vienen de Identidad
+        5. Crea la versión inicial del documento
+        6. Publica el documento automáticamente
+        7. Actualiza el estado de la política en Identidad a VIGENTE
+
+        Para ACTUALIZACIONES de versión (es_actualizacion=True):
+        1. Usa el código existente (no genera nuevo)
+        2. Crea nueva versión del documento existente
+        3. Marca la versión anterior como no actual
+        4. La política anterior en Identidad pasa a OBSOLETO
+
+        Body: datos_documental del endpoint enviar-a-documental de Identidad
+        """
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+
+        serializer = RecibirPoliticaSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        empresa_id = data['empresa_id']
+        es_actualizacion = data.get('es_actualizacion', False)
+        documento_anterior_id = data.get('documento_anterior_id')
+        codigo_existente = data.get('codigo_existente')
+
+        # 1. Obtener o crear TipoDocumento para POLITICA
+        tipo_documento, created = TipoDocumento.objects.get_or_create(
+            empresa_id=empresa_id,
+            codigo='POL',
+            defaults={
+                'nombre': 'Política',
+                'descripcion': 'Políticas corporativas del sistema de gestión',
+                'nivel_documento': 'ESTRATEGICO',
+                'prefijo_codigo': 'POL-',
+                'requiere_aprobacion': True,
+                'requiere_firma': True,
+                'tiempo_retencion_años': 10,
+                'color_identificacion': '#8B5CF6',
+                'is_active': True,
+                'orden': 1,
+                'created_by': request.user,
+            }
+        )
+
+        # 2. Determinar código del documento
+        norma_code = data.get('norma_iso_code', 'GEN')
+
+        if es_actualizacion and codigo_existente:
+            # Usar código existente para actualizaciones
+            codigo_documento = codigo_existente
+        else:
+            # Generar nuevo código para nuevas políticas
+            codigo_documento = self._generar_codigo_politica(
+                empresa_id=empresa_id,
+                norma_code=norma_code
+            )
+
+        # 3. Obtener usuario solicitante
+        try:
+            elaborado_por = User.objects.get(id=data['solicitado_por'])
+        except User.DoesNotExist:
+            elaborado_por = request.user
+
+        # 4. Manejar documento anterior si es actualización
+        documento_anterior = None
+        if es_actualizacion and documento_anterior_id:
+            documento_anterior = Documento.objects.filter(
+                id=documento_anterior_id,
+                empresa_id=empresa_id
+            ).first()
+
+            if documento_anterior:
+                # Marcar versiones anteriores como no actuales
+                VersionDocumento.objects.filter(
+                    documento=documento_anterior,
+                    is_version_actual=True
+                ).update(is_version_actual=False)
+
+                # Marcar documento anterior como OBSOLETO
+                documento_anterior.estado = 'OBSOLETO'
+                documento_anterior.save(update_fields=['estado', 'updated_at'])
+
+        # 5. Crear el Documento
+        motivo_cambio = data.get('motivo_cambio', '')
+        resumen = f"Política de {norma_code} importada desde Identidad Corporativa"
+        if es_actualizacion:
+            resumen = f"Nueva versión de política {norma_code}. {motivo_cambio}"
+
+        documento = Documento.objects.create(
+            codigo=codigo_documento,
+            titulo=data['titulo'],
+            tipo_documento=tipo_documento,
+            resumen=resumen,
+            contenido=data['contenido'],
+            palabras_clave=data.get('palabras_clave', []),
+            version_actual=data.get('version', '1.0'),
+            numero_revision=0 if not es_actualizacion else (documento_anterior.numero_revision + 1 if documento_anterior else 1),
+            estado='APROBADO',  # Ya viene firmado
+            clasificacion=data.get('clasificacion', 'INTERNO'),
+            fecha_aprobacion=timezone.now().date(),
+            elaborado_por=elaborado_por,
+            aprobado_por=elaborado_por,  # El firmante final
+            areas_aplicacion=data.get('areas_aplicacion', []),
+            observaciones=data.get('observaciones', ''),
+            empresa_id=empresa_id,
+        )
+
+        # 6. Registrar firmas de Identidad como FirmaDocumento
+        firmas_info = data.get('firmas', [])
+        for firma_data in firmas_info:
+            try:
+                firmante = User.objects.get(id=firma_data['usuario_id']) if firma_data.get('usuario_id') else elaborado_por
+            except User.DoesNotExist:
+                firmante = elaborado_por
+
+            # Mapear rol de Identidad a tipo de firma de Documental
+            tipo_firma_map = {
+                'ELABORO': 'ELABORACION',
+                'REVISO_TECNICO': 'REVISION',
+                'REVISO_JURIDICO': 'REVISION',
+                'APROBO_DIRECTOR': 'APROBACION',
+                'APROBO_GERENTE': 'APROBACION',
+                'APROBO_REPRESENTANTE_LEGAL': 'APROBACION',
+            }
+            tipo_firma = tipo_firma_map.get(firma_data.get('rol', ''), 'VALIDACION')
+
+            FirmaDocumento.objects.create(
+                documento=documento,
+                tipo_firma=tipo_firma,
+                firmante=firmante,
+                cargo_firmante=firma_data.get('cargo_nombre', ''),
+                estado='FIRMADO',
+                fecha_firma=timezone.now(),
+                comentarios=f"Firma importada desde Identidad - Proceso #{data.get('proceso_firma_id', 'N/A')}",
+                orden_firma=firma_data.get('orden', 1),
+                checksum_documento=firma_data.get('firma_hash', ''),
+                empresa_id=empresa_id,
+            )
+
+        # 7. Crear versión del documento
+        tipo_cambio = 'CREACION' if not es_actualizacion else 'ACTUALIZACION'
+        descripcion_cambios = 'Política importada desde Identidad Corporativa con firmas completas'
+        if es_actualizacion:
+            version_anterior = data.get('version_anterior', '?')
+            descripcion_cambios = f"Actualización de versión {version_anterior} a {data.get('version', '?')}. {motivo_cambio}"
+
+        VersionDocumento.objects.create(
+            documento=documento,
+            numero_version=data.get('version', '1.0'),
+            tipo_cambio=tipo_cambio,
+            contenido_snapshot=data['contenido'],
+            descripcion_cambios=descripcion_cambios,
+            creado_por=elaborado_por,
+            aprobado_por=elaborado_por,
+            fecha_aprobacion=timezone.now(),
+            is_version_actual=True,
+            empresa_id=empresa_id,
+        )
+
+        # 8. Publicar documento
+        documento.estado = 'PUBLICADO'
+        documento.fecha_publicacion = timezone.now().date()
+        documento.fecha_vigencia = timezone.now().date()
+        documento.save()
+
+        # 9. Crear control de distribución
+        observaciones_control = f"Distribución automática desde Identidad Corporativa. Política ID: {data['politica_id']}"
+        if es_actualizacion:
+            observaciones_control = f"Nueva versión de política. {observaciones_control}"
+
+        ControlDocumental.objects.create(
+            documento=documento,
+            tipo_control='DISTRIBUCION',
+            fecha_distribucion=timezone.now().date(),
+            medio_distribucion='DIGITAL',
+            areas_distribucion=data.get('areas_aplicacion', []),
+            observaciones=observaciones_control,
+            empresa_id=empresa_id,
+            created_by=request.user,
+        )
+
+        # 10. Actualizar estado de política en Identidad (callback)
+        self._actualizar_politica_identidad(
+            politica_id=data['politica_id'],
+            documento_id=documento.id,
+            codigo_documento=codigo_documento,
+            es_actualizacion=es_actualizacion,
+        )
+
+        response_data = {
+            'detail': 'Política recibida y publicada exitosamente',
+            'documento_id': documento.id,
+            'codigo': documento.codigo,
+            'titulo': documento.titulo,
+            'estado': documento.estado,
+            'version': documento.version_actual,
+            'fecha_publicacion': documento.fecha_publicacion,
+            'total_firmas_registradas': len(firmas_info),
+            'url_documento': f"/api/v1/documental/documentos/{documento.id}/",
+            'origen': {
+                'modulo': data['origen'],
+                'tipo': data['tipo_origen'],
+                'politica_id': data['politica_id'],
+            }
+        }
+
+        if es_actualizacion:
+            response_data['es_actualizacion'] = True
+            response_data['version_anterior'] = data.get('version_anterior')
+            if documento_anterior:
+                response_data['documento_anterior'] = {
+                    'id': documento_anterior.id,
+                    'estado': documento_anterior.estado,
+                }
+
+        return Response(response_data, status=status.HTTP_201_CREATED)
+
+    def _generar_codigo_politica(self, empresa_id, norma_code):
+        """
+        Genera código único para políticas: POL-{NORMA}-{SECUENCIAL}
+
+        Ejemplos:
+        - POL-SST-001 (Primera política de SST)
+        - POL-CA-002 (Segunda política de Calidad)
+        - POL-GEN-001 (Política general)
+        """
+        # Obtener el prefijo según la norma
+        prefijo = f"POL-{norma_code}-"
+
+        # Buscar el último documento con este prefijo
+        ultimo_doc = Documento.objects.filter(
+            empresa_id=empresa_id,
+            codigo__startswith=prefijo
+        ).order_by('-codigo').first()
+
+        if ultimo_doc:
+            # Extraer el número secuencial del último código
+            try:
+                ultimo_num = int(ultimo_doc.codigo.split('-')[-1])
+                nuevo_num = ultimo_num + 1
+            except (ValueError, IndexError):
+                nuevo_num = 1
+        else:
+            nuevo_num = 1
+
+        # Formatear con ceros a la izquierda (3 dígitos)
+        codigo = f"{prefijo}{nuevo_num:03d}"
+
+        return codigo
+
+    def _actualizar_politica_identidad(self, politica_id, documento_id, codigo_documento, es_actualizacion=False):
+        """
+        Actualiza el estado de la política en Identidad a VIGENTE.
+
+        Actualiza:
+        - status: VIGENTE
+        - code: Código oficial del documento (POL-SST-001)
+        - documento_id: ID del documento en Gestor Documental
+        - effective_date: Fecha de vigencia
+
+        Si es_actualizacion=True, también marca la versión anterior como OBSOLETO.
+
+        Nota: Esta función actualiza directamente el modelo de Identidad.
+        En un sistema más desacoplado, esto sería un webhook/callback HTTP.
+        """
+        try:
+            from apps.gestion_estrategica.identidad.models import PoliticaEspecifica
+
+            politica = PoliticaEspecifica.objects.filter(id=politica_id).first()
+            if politica:
+                # Si es actualización, marcar versiones anteriores con el mismo código como OBSOLETO
+                if es_actualizacion and codigo_documento:
+                    # Buscar políticas anteriores con el mismo código (excluyendo la actual)
+                    PoliticaEspecifica.objects.filter(
+                        code=codigo_documento,
+                        status='VIGENTE'
+                    ).exclude(id=politica_id).update(
+                        status='OBSOLETO',
+                        updated_at=timezone.now()
+                    )
+
+                # Actualizar estado a VIGENTE
+                politica.status = 'VIGENTE'
+                politica.effective_date = timezone.now().date()
+
+                # Asignar código oficial del Gestor Documental
+                politica.code = codigo_documento
+
+                # Guardar referencia al documento (sin FK para evitar dependencia circular)
+                politica.documento_id = documento_id
+
+                politica.save(update_fields=[
+                    'status',
+                    'effective_date',
+                    'code',
+                    'documento_id',
+                    'updated_at'
+                ])
+
+        except Exception as e:
+            # Log error pero no fallar la operación
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"No se pudo actualizar política {politica_id} en Identidad: {e}")
 
 
 class VersionDocumentoViewSet(viewsets.ModelViewSet):

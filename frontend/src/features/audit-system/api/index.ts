@@ -28,7 +28,7 @@ import type {
   ResumenTareas,
 } from '../types';
 
-const API_BASE = '/api/audit';
+const API_BASE = '/audit';
 
 // ==================== LOGS SISTEMA ====================
 
@@ -107,67 +107,67 @@ export const logsConsultaApi = {
 
 export const tiposNotificacionApi = {
   getAll: () =>
-    apiClient.get<TipoNotificacion[]>(`${API_BASE}/centro-notificaciones/tipos/`),
+    apiClient.get<TipoNotificacion[]>(`${API_BASE}/notificaciones/tipos/`),
 
   getById: (id: number) =>
-    apiClient.get<TipoNotificacion>(`${API_BASE}/centro-notificaciones/tipos/${id}/`),
+    apiClient.get<TipoNotificacion>(`${API_BASE}/notificaciones/tipos/${id}/`),
 
   create: (data: Partial<TipoNotificacion>) =>
-    apiClient.post<TipoNotificacion>(`${API_BASE}/centro-notificaciones/tipos/`, data),
+    apiClient.post<TipoNotificacion>(`${API_BASE}/notificaciones/tipos/`, data),
 
   update: (id: number, data: Partial<TipoNotificacion>) =>
-    apiClient.patch<TipoNotificacion>(`${API_BASE}/centro-notificaciones/tipos/${id}/`, data),
+    apiClient.patch<TipoNotificacion>(`${API_BASE}/notificaciones/tipos/${id}/`, data),
 
   delete: (id: number) =>
-    apiClient.delete(`${API_BASE}/centro-notificaciones/tipos/${id}/`),
+    apiClient.delete(`${API_BASE}/notificaciones/tipos/${id}/`),
 };
 
 export const notificacionesApi = {
   getAll: (params?: Record<string, unknown>) =>
-    apiClient.get<Notificacion[]>(`${API_BASE}/centro-notificaciones/notificaciones/`, { params }),
+    apiClient.get<Notificacion[]>(`${API_BASE}/notificaciones/`, { params }),
 
   getById: (id: number) =>
-    apiClient.get<Notificacion>(`${API_BASE}/centro-notificaciones/notificaciones/${id}/`),
+    apiClient.get<Notificacion>(`${API_BASE}/notificaciones/${id}/`),
 
   marcarLeida: (id: number) =>
-    apiClient.post(`${API_BASE}/centro-notificaciones/notificaciones/${id}/marcar_leida/`),
+    apiClient.post(`${API_BASE}/notificaciones/${id}/marcar_leida/`),
 
   marcarTodasLeidas: () =>
-    apiClient.post(`${API_BASE}/centro-notificaciones/notificaciones/marcar_todas_leidas/`),
+    apiClient.post(`${API_BASE}/notificaciones/marcar_todas_leidas/`),
 
   archivar: (id: number) =>
-    apiClient.post(`${API_BASE}/centro-notificaciones/notificaciones/${id}/archivar/`),
+    apiClient.post(`${API_BASE}/notificaciones/${id}/archivar/`),
 
   noLeidas: () =>
-    apiClient.get<Notificacion[]>(`${API_BASE}/centro-notificaciones/notificaciones/no_leidas/`),
+    apiClient.get<Notificacion[]>(`${API_BASE}/notificaciones/no_leidas/`),
 
   resumen: () =>
-    apiClient.get<ResumenNotificaciones>(`${API_BASE}/centro-notificaciones/notificaciones/resumen/`),
+    apiClient.get<ResumenNotificaciones>(`${API_BASE}/notificaciones/resumen/`),
 };
 
 export const preferenciasNotificacionApi = {
   getAll: () =>
-    apiClient.get<PreferenciaNotificacion[]>(`${API_BASE}/centro-notificaciones/preferencias/`),
+    apiClient.get<PreferenciaNotificacion[]>(`${API_BASE}/notificaciones/preferencias/`),
 
   getById: (id: number) =>
-    apiClient.get<PreferenciaNotificacion>(`${API_BASE}/centro-notificaciones/preferencias/${id}/`),
+    apiClient.get<PreferenciaNotificacion>(`${API_BASE}/notificaciones/preferencias/${id}/`),
 
   update: (id: number, data: Partial<PreferenciaNotificacion>) =>
-    apiClient.patch<PreferenciaNotificacion>(`${API_BASE}/centro-notificaciones/preferencias/${id}/`, data),
+    apiClient.patch<PreferenciaNotificacion>(`${API_BASE}/notificaciones/preferencias/${id}/`, data),
 };
 
 export const notificacionesMasivasApi = {
   getAll: (params?: Record<string, unknown>) =>
-    apiClient.get<NotificacionMasiva[]>(`${API_BASE}/centro-notificaciones/notificaciones-masivas/`, { params }),
+    apiClient.get<NotificacionMasiva[]>(`${API_BASE}/notificaciones/masivas/`, { params }),
 
   getById: (id: number) =>
-    apiClient.get<NotificacionMasiva>(`${API_BASE}/centro-notificaciones/notificaciones-masivas/${id}/`),
+    apiClient.get<NotificacionMasiva>(`${API_BASE}/notificaciones/masivas/${id}/`),
 
   create: (data: Partial<NotificacionMasiva>) =>
-    apiClient.post<NotificacionMasiva>(`${API_BASE}/centro-notificaciones/notificaciones-masivas/`, data),
+    apiClient.post<NotificacionMasiva>(`${API_BASE}/notificaciones/masivas/`, data),
 
   enviar: (id: number) =>
-    apiClient.post(`${API_BASE}/centro-notificaciones/notificaciones-masivas/${id}/enviar/`),
+    apiClient.post(`${API_BASE}/notificaciones/masivas/${id}/enviar/`),
 };
 
 // ==================== CONFIG ALERTAS ====================

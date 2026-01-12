@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { act, renderHook } from '@testing-library/react';
 import { useAuthStore } from '@/store/authStore';
 
 describe('useAuthStore', () => {
@@ -7,7 +7,8 @@ describe('useAuthStore', () => {
     // Reset the store before each test
     useAuthStore.setState({
       user: null,
-      token: null,
+      accessToken: null,
+      refreshToken: null,
       isAuthenticated: false,
     });
   });
@@ -16,7 +17,8 @@ describe('useAuthStore', () => {
     const { result } = renderHook(() => useAuthStore());
 
     expect(result.current.user).toBeNull();
-    expect(result.current.token).toBeNull();
+    expect(result.current.accessToken).toBeNull();
+    expect(result.current.refreshToken).toBeNull();
     expect(result.current.isAuthenticated).toBe(false);
   });
 
@@ -24,17 +26,19 @@ describe('useAuthStore', () => {
     const { result } = renderHook(() => useAuthStore());
 
     const mockUser = {
-      id: '1',
+      id: 1,
       email: 'test@example.com',
-      nombre: 'Test User',
-      rol: 'ADMIN',
-    };
+      first_name: 'Test',
+      last_name: 'User',
+      username: 'testuser',
+    } as any;
 
-    // Assuming there's a setUser action
-    if (result.current.setUser) {
+    act(() => {
       result.current.setUser(mockUser);
-      expect(result.current.user).toEqual(mockUser);
-    }
+    });
+
+    // Verify from the store directly since renderHook might not update immediately
+    expect(useAuthStore.getState().user).toEqual(mockUser);
   });
 
   it('should clear user on logout', () => {
@@ -43,21 +47,27 @@ describe('useAuthStore', () => {
     // First, set a user
     useAuthStore.setState({
       user: {
-        id: '1',
+        id: 1,
         email: 'test@example.com',
-        nombre: 'Test User',
-        rol: 'ADMIN',
-      },
-      token: 'test-token',
+        first_name: 'Test',
+        last_name: 'User',
+        username: 'testuser',
+      } as any,
+      accessToken: 'test-access-token',
+      refreshToken: 'test-refresh-token',
       isAuthenticated: true,
     });
 
     // Then logout
-    if (result.current.logout) {
+    act(() => {
       result.current.logout();
-      expect(result.current.user).toBeNull();
-      expect(result.current.token).toBeNull();
-      expect(result.current.isAuthenticated).toBe(false);
-    }
+    });
+
+    // Verify from the store directly
+    const state = useAuthStore.getState();
+    expect(state.user).toBeNull();
+    expect(state.accessToken).toBeNull();
+    expect(state.refreshToken).toBeNull();
+    expect(state.isAuthenticated).toBe(false);
   });
 });

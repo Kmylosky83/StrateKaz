@@ -8,9 +8,9 @@ Sistema integral de gestion empresarial multi-tenant para empresas colombianas c
 | Info | Valor |
 |------|-------|
 | **Nombre del Software** | StrateKaz |
-| **Version** | 2.6.0 |
-| **Ultima Actualizacion** | 09 Enero 2026 |
-| **Estado** | MVP - Auditado y listo para produccion |
+| **Version** | 3.1.0 |
+| **Ultima Actualizacion** | 11 Enero 2026 |
+| **Estado** | MVP - Workflow de Firmas Digitales v3.1 |
 | **Propietario** | StrateKaz S.A.S. |
 | **Calificacion Backend** | 8.5/10 |
 | **Calificacion Frontend** | 7.5/10 |
@@ -284,6 +284,63 @@ VITE_API_URL=http://localhost:8000/api
 
 ## Changelog Reciente
 
+### v3.1.0 (11 Enero 2026)
+
+- **Workflow de Firmas Digitales Completo**: Flujo de 5 estados para politicas
+  - BORRADOR: Creacion y edicion de politicas
+  - EN_REVISION: Esperando firmas de responsables
+  - FIRMADO: Todas las firmas completadas
+  - VIGENTE: Publicada en Gestor Documental
+  - OBSOLETO: Version historica archivada
+- **UI de Politicas Actualizada**:
+  - Botones de accion contextuales por estado
+  - "Enviar a Firma" desde BORRADOR
+  - "Enviar a Documental" desde FIRMADO
+  - "Nueva Version" desde VIGENTE (bloquea edicion de vigentes)
+  - Indicador "Esperando firmas" en EN_REVISION
+  - Indicador "Version historica" en OBSOLETO
+- **Codigo de Politica Opcional**: Campo `code` ahora nullable
+  - Codigo asignado por Gestor Documental al publicar
+  - Formato: POL-{NORMA}-{SECUENCIAL}
+  - UI muestra "Sin codigo asignado" para borradores
+- **Hooks de Workflow**:
+  - `useEnviarADocumental`: Transicion FIRMADO -> VIGENTE
+  - `useCrearNuevaVersion`: Crea copia en BORRADOR desde VIGENTE
+- **Seed de Workflows**: 7 configuraciones de workflow pobladas
+- **Migracion 0008**: Campo code opcional en PoliticaEspecifica
+
+### v3.0.0 (11 Enero 2026)
+
+- **Sistema de Politicas Unificado v3.0**: Refactorizacion completa del modulo de politicas
+  - Eliminada seccion legacy "Politica Integral" del tab Identidad
+  - Renombrada "Politicas Especificas" a "Politicas"
+  - Modal unificado para crear/editar politicas con RichTextEditor
+  - Selector de tipo de politica con 8 categorias
+- **Tipos de Politica Expandidos**:
+  - Politica Integral (POL-INT)
+  - Politica de SST (POL-SST)
+  - Politica de Calidad (POL-CAL)
+  - Politica Ambiental (POL-AMB)
+  - Politica PESV (POL-PESV)
+  - Politica de Sostenibilidad (POL-SOS)
+  - Politica Contable (POL-CON)
+  - Otras Politicas (POL-OTR)
+- **Mejoras UI/UX**:
+  - RichTextEditor (TipTap) para contenido de politicas
+  - DynamicIcon con colores por tipo de politica
+  - Fallback de tipos cuando backend no disponible
+
+### v2.7.0 (09 Enero 2026)
+
+- **Firma Manuscrita Integrada**: SignatureModal conectado al workflow de firmas
+  - Hash SHA-256 para integridad de firma
+  - Modal reutilizable en PoliticasManager
+- **Showcase Publico**: URL publica para compartir identidad corporativa
+  - Ruta `/showcase` accesible sin autenticacion
+  - Slides de Mision, Vision, Valores, Politica, Metricas
+- **Badge de Notificaciones**: Contador dinamico en header
+- **Migracion empresa_id**: CorporateIdentity vinculado a EmpresaConfig
+
 ### v2.6.0 (09 Enero 2026)
 
 - **Auditoria Identidad Corporativa**: Analisis exhaustivo de tipos, modelos y componentes
@@ -353,4 +410,4 @@ Copyright (c) 2024-2026 StrateKaz S.A.S. Todos los derechos reservados.
 
 ---
 
-**Ultima actualizacion:** 08 Enero 2026
+**Ultima actualizacion:** 11 Enero 2026

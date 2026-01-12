@@ -2259,6 +2259,13 @@ class SystemModule(models.Model):
         verbose_name='Icono',
         help_text='Nombre del icono de Lucide'
     )
+    route = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='Ruta Frontend',
+        help_text='Ruta del frontend para este modulo (ej: /hseq). Si es null, se genera de code.'
+    )
     is_core = models.BooleanField(
         default=False,
         verbose_name='Es módulo core',
@@ -2401,6 +2408,13 @@ class ModuleTab(models.Model):
         null=True,
         verbose_name='Icono',
         help_text='Nombre del icono de Lucide (ej: Building2, Target, BarChart)'
+    )
+    route = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='Ruta Frontend',
+        help_text='Ruta relativa del tab (ej: sistema-documental). Si es null, se genera de code.'
     )
     orden = models.PositiveIntegerField(
         default=0,

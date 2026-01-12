@@ -1,0 +1,55 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Firma Pendiente - {{ document_title }}{% endblock %}
+
+{% block content %}
+<h2>Firma Pendiente</h2>
+
+<p>Hola <strong>{{ user_name }}</strong>,</p>
+
+<p>Tiene una nueva solicitud de firma digital pendiente en el sistema StrateKaz.</p>
+
+<div class="email-card">
+    <p class="email-card-title">Documento</p>
+    <p class="email-card-content">{{ document_title }}</p>
+</div>
+
+{% if document_type %}
+<div class="email-card">
+    <p class="email-card-title">Tipo de Documento</p>
+    <p class="email-card-content">{{ document_type }}</p>
+</div>
+{% endif %}
+
+{% if requested_by %}
+<div class="email-card">
+    <p class="email-card-title">Solicitado por</p>
+    <p class="email-card-content">{{ requested_by }}</p>
+</div>
+{% endif %}
+
+{% if due_date %}
+<div class="email-card">
+    <p class="email-card-title">Fecha límite</p>
+    <p class="email-card-content">{{ due_date }}</p>
+</div>
+{% endif %}
+
+{% if message %}
+<div class="email-card">
+    <p class="email-card-title">Mensaje</p>
+    <p class="email-card-content">{{ message }}</p>
+</div>
+{% endif %}
+
+<div class="text-center mt-4">
+    <a href="{{ action_url }}" class="email-button">
+        Revisar y Firmar
+    </a>
+</div>
+
+<p class="text-muted mt-4">
+    Si no puede hacer clic en el botón, copie y pegue este enlace en su navegador:<br>
+    <a href="{{ action_url }}">{{ action_url }}</a>
+</p>
+{% endblock %}

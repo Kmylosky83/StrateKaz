@@ -36,15 +36,15 @@ class CorporateValueSerializer(serializers.ModelSerializer):
 # =============================================================================
 
 class CorporateIdentitySerializer(serializers.ModelSerializer):
-    """Serializer para Identidad Corporativa"""
+    """
+    Serializer para Identidad Corporativa
+
+    v3.0: Campos legacy de integral_policy eliminados.
+    La Política Integral se gestiona desde PoliticaIntegralSerializer.
+    """
 
     values = CorporateValueSerializer(many=True, read_only=True)
     alcances = serializers.SerializerMethodField()
-    is_signed = serializers.ReadOnlyField()
-    policy_signed_by_name = serializers.CharField(
-        source='policy_signed_by.get_full_name',
-        read_only=True
-    )
     created_by_name = serializers.CharField(
         source='created_by.get_full_name',
         read_only=True
@@ -56,18 +56,14 @@ class CorporateIdentitySerializer(serializers.ModelSerializer):
     class Meta:
         model = CorporateIdentity
         fields = [
-            'id', 'mission', 'vision', 'integral_policy',
-            'policy_signed_by', 'policy_signed_by_name',
-            'policy_signed_at', 'policy_signature_hash',
-            'effective_date', 'version', 'is_active', 'is_signed',
+            'id', 'mission', 'vision',
+            'effective_date', 'version', 'is_active',
             'values', 'alcances', 'values_count', 'alcances_count',
             'politicas_count', 'created_by', 'created_by_name',
             'created_at', 'updated_at'
         ]
         read_only_fields = [
-            'id', 'policy_signed_by', 'policy_signed_at',
-            'policy_signature_hash', 'is_signed',
-            'created_by', 'created_at', 'updated_at'
+            'id', 'created_by', 'created_at', 'updated_at'
         ]
 
     def get_alcances(self, obj):
@@ -85,29 +81,19 @@ class CorporateIdentitySerializer(serializers.ModelSerializer):
 
 
 class CorporateIdentityCreateUpdateSerializer(serializers.ModelSerializer):
-    """Serializer para crear/actualizar Identidad Corporativa"""
+    """
+    Serializer para crear/actualizar Identidad Corporativa
+
+    v3.0: Solo misión, visión y metadatos.
+    La Política Integral se gestiona por separado con workflow.
+    """
 
     class Meta:
         model = CorporateIdentity
         fields = [
-            'mission', 'vision', 'integral_policy',
+            'mission', 'vision',
             'effective_date', 'version', 'is_active'
         ]
-
-
-class SignPolicySerializer(serializers.Serializer):
-    """Serializer para firmar la política integral"""
-    confirm = serializers.BooleanField(
-        required=True,
-        help_text="Confirmar la firma de la política"
-    )
-
-    def validate_confirm(self, value):
-        if not value:
-            raise serializers.ValidationError(
-                "Debe confirmar la firma de la política"
-            )
-        return value
 
 
 # =============================================================================
@@ -266,7 +252,16 @@ class PublishPoliticaIntegralSerializer(serializers.Serializer):
 # =============================================================================
 
 class PoliticaEspecificaSerializer(serializers.ModelSerializer):
-    """Serializer para Política Específica"""
+    """
+    Serializer para Política Específica
+
+    NOTA SOBRE EL CAMPO `code`:
+    El código oficial de la política (ej: POL-SST-001) es ASIGNADO por el
+    Gestor Documental cuando la política firmada se envía para publicación.
+    Este campo es NULL hasta que la política sea publicada.
+
+    Flujo: BORRADOR → EN_REVISION → FIRMADO → Enviar a Documental → VIGENTE (con código)
+    """
     norma_iso_code = serializers.CharField(
         source='norma_iso.code',
         read_only=True
@@ -288,7 +283,7 @@ class PoliticaEspecificaSerializer(serializers.ModelSerializer):
         read_only=True
     )
     responsible_cargo_name = serializers.CharField(
-        source='responsible_cargo.nombre',
+        source='responsible_cargo.name',
         read_only=True
     )
     approved_by_name = serializers.CharField(
@@ -305,7 +300,8 @@ class PoliticaEspecificaSerializer(serializers.ModelSerializer):
         model = PoliticaEspecifica
         fields = [
             'id', 'identity', 'norma_iso', 'norma_iso_code', 'norma_iso_name',
-            'code', 'title', 'content', 'area', 'area_name',
+            'code', 'documento_id',  # code y documento_id son asignados por Gestor Documental
+            'title', 'content', 'area', 'area_name',
             'responsible', 'responsible_name',
             'responsible_cargo', 'responsible_cargo_name',
             'version', 'status', 'status_display',
@@ -315,22 +311,31 @@ class PoliticaEspecificaSerializer(serializers.ModelSerializer):
             'created_by', 'created_by_name', 'created_at', 'updated_at'
         ]
         read_only_fields = [
-            'id', 'approved_by', 'approved_at',
+            'id', 'code', 'documento_id',  # code es read-only (asignado por Gestor Documental)
+            'approved_by', 'approved_at',
             'created_by', 'created_at', 'updated_at', 'needs_review'
         ]
 
 
 class PoliticaEspecificaCreateUpdateSerializer(serializers.ModelSerializer):
-    """Serializer para crear/actualizar Política Específica"""
+    """
+    Serializer para crear/actualizar Política Específica.
+
+    IMPORTANTE: El campo 'code' NO está incluido aquí porque:
+    - El código oficial (POL-SST-001, etc.) es asignado por el Gestor Documental
+    - Solo se asigna cuando la política FIRMADA se envía para publicación
+    - Flujo: BORRADOR → EN_REVISION → FIRMADO → Enviar a Documental → VIGENTE (con código)
+    """
 
     class Meta:
         model = PoliticaEspecifica
         fields = [
-            'identity', 'norma_iso', 'code', 'title', 'content',
+            'identity', 'norma_iso', 'title', 'content',
             'area', 'responsible', 'responsible_cargo', 'version',
             'status', 'effective_date', 'review_date',
             'document_file', 'keywords', 'orden', 'is_active'
         ]
+        # code y documento_id son read-only, asignados por el Gestor Documental
 
 
 class ApprovePoliticaEspecificaSerializer(serializers.Serializer):
@@ -346,3 +351,175 @@ class ApprovePoliticaEspecificaSerializer(serializers.Serializer):
                 "Debe confirmar la aprobación de la política"
             )
         return value
+
+
+# =============================================================================
+# WORKFLOW DE FIRMAS - POLÍTICAS
+# =============================================================================
+
+class FirmanteSeleccionSerializer(serializers.Serializer):
+    """Serializer para un firmante seleccionado manualmente"""
+    rol_firmante = serializers.ChoiceField(
+        choices=['ELABORO', 'REVISO_TECNICO', 'REVISO_JURIDICO', 'APROBO_DIRECTOR', 'APROBO_GERENTE', 'APROBO_REPRESENTANTE_LEGAL'],
+        help_text="Rol del firmante en el proceso"
+    )
+    usuario_id = serializers.IntegerField(
+        help_text="ID del usuario que firmará"
+    )
+
+
+class IniciarFirmaPoliticaSerializer(serializers.Serializer):
+    """
+    Serializer para iniciar el proceso de firma de una política.
+
+    Soporta dos modos:
+    1. Modo automático (flujo_firma_id): Usa un flujo predefinido con cargos fijos
+    2. Modo manual (firmantes): El creador selecciona quién revisa y aprueba
+
+    En modo manual:
+    - ELABORO: Automático (usuario actual)
+    - REVISO_*: Seleccionado por el creador
+    - APROBO_*: Seleccionado por el creador
+    """
+    flujo_firma_id = serializers.IntegerField(
+        required=False,
+        help_text="ID del flujo de firma a utilizar. Si no se proporciona y no hay firmantes manuales, usa el flujo por defecto."
+    )
+    firmantes = FirmanteSeleccionSerializer(
+        many=True,
+        required=False,
+        help_text=(
+            "Lista de firmantes seleccionados manualmente. "
+            "Si se proporciona, ignora flujo_firma_id. "
+            "Formato: [{rol_firmante: 'REVISO_TECNICO', usuario_id: 5}, {rol_firmante: 'APROBO_GERENTE', usuario_id: 1}]"
+        )
+    )
+
+    def validate_firmantes(self, value):
+        """Valida la lista de firmantes"""
+        if not value:
+            return value
+
+        # Verificar que no hay roles duplicados
+        roles = [f['rol_firmante'] for f in value]
+        if len(roles) != len(set(roles)):
+            raise serializers.ValidationError("No puede haber roles duplicados en los firmantes")
+
+        # Verificar que los usuarios existen
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+
+        for firmante in value:
+            if not User.objects.filter(id=firmante['usuario_id'], is_active=True).exists():
+                raise serializers.ValidationError(
+                    f"El usuario con ID {firmante['usuario_id']} no existe o no está activo"
+                )
+
+        return value
+
+
+class FirmarPoliticaSerializer(serializers.Serializer):
+    """Serializer para registrar una firma en una política"""
+    firma_id = serializers.IntegerField(
+        required=True,
+        help_text="ID de la firma (FirmaPolitica) a completar"
+    )
+    firma_imagen = serializers.CharField(
+        required=True,
+        help_text="Imagen de la firma en formato Base64 (data URL)"
+    )
+    comentarios = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text="Comentarios opcionales del firmante"
+    )
+
+
+class RechazarFirmaPoliticaSerializer(serializers.Serializer):
+    """Serializer para rechazar una firma"""
+    firma_id = serializers.IntegerField(
+        required=True,
+        help_text="ID de la firma (FirmaPolitica) a rechazar"
+    )
+    motivo = serializers.CharField(
+        required=True,
+        min_length=10,
+        help_text="Motivo del rechazo (mínimo 10 caracteres)"
+    )
+
+
+class FirmaPoliticaSerializer(serializers.Serializer):
+    """Serializer para mostrar una firma individual"""
+    id = serializers.IntegerField(read_only=True)
+    orden = serializers.IntegerField(read_only=True)
+    rol_firmante = serializers.CharField(read_only=True)
+    rol_firmante_display = serializers.CharField(source='get_rol_firmante_display', read_only=True)
+    cargo_id = serializers.IntegerField(source='cargo.id', read_only=True)
+    cargo_nombre = serializers.CharField(source='cargo.name', read_only=True)
+    usuario_id = serializers.IntegerField(source='usuario.id', read_only=True, allow_null=True)
+    usuario_nombre = serializers.SerializerMethodField()
+    estado = serializers.CharField(read_only=True)
+    estado_display = serializers.CharField(source='get_estado_display', read_only=True)
+    fecha_firma = serializers.DateTimeField(read_only=True)
+    fecha_rechazo = serializers.DateTimeField(read_only=True)
+    motivo_rechazo = serializers.CharField(read_only=True)
+    esta_vencida = serializers.BooleanField(read_only=True)
+    dias_para_vencer = serializers.IntegerField(read_only=True)
+
+    def get_usuario_nombre(self, obj):
+        if obj.usuario:
+            return obj.usuario.get_full_name()
+        return None
+
+
+class ProcesoFirmaPoliticaSerializer(serializers.Serializer):
+    """Serializer para mostrar el proceso de firma completo"""
+    id = serializers.IntegerField(read_only=True)
+    estado = serializers.CharField(read_only=True)
+    estado_display = serializers.CharField(source='get_estado_display', read_only=True)
+    paso_actual = serializers.IntegerField(read_only=True)
+    total_pasos = serializers.IntegerField(source='flujo_firma.total_pasos', read_only=True)
+    firmas_completadas = serializers.IntegerField(read_only=True)
+    firmas_pendientes = serializers.IntegerField(read_only=True)
+    progreso = serializers.IntegerField(source='progreso_porcentaje', read_only=True)
+    fecha_inicio = serializers.DateTimeField(read_only=True)
+    fecha_completado = serializers.DateTimeField(read_only=True)
+    iniciado_por_nombre = serializers.CharField(source='iniciado_por.get_full_name', read_only=True)
+    firmas = FirmaPoliticaSerializer(many=True, read_only=True)
+
+
+class EnviarADocumentalSerializer(serializers.Serializer):
+    """
+    Serializer para enviar una política firmada al Gestor Documental.
+
+    El Gestor Documental se encargará de:
+    - Asignar código oficial (POL-SST-001, etc.)
+    - Crear el documento en el sistema documental
+    - Generar el PDF de visualización
+    - Publicar y distribuir el documento
+    """
+    tipo_documento_id = serializers.IntegerField(
+        required=False,
+        help_text="ID del TipoDocumento en Gestor Documental. Si no se proporciona, se crea tipo POLITICA automáticamente."
+    )
+    clasificacion = serializers.ChoiceField(
+        choices=[
+            ('PUBLICO', 'Público'),
+            ('INTERNO', 'Interno'),
+            ('CONFIDENCIAL', 'Confidencial'),
+            ('RESTRINGIDO', 'Restringido'),
+        ],
+        default='INTERNO',
+        help_text="Clasificación de seguridad del documento"
+    )
+    areas_aplicacion = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False,
+        default=list,
+        help_text="IDs de áreas donde aplica la política"
+    )
+    observaciones = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text="Observaciones adicionales para el Gestor Documental"
+    )

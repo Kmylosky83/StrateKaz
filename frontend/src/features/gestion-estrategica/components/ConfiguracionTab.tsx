@@ -168,38 +168,38 @@ const BrandingSection = () => {
               <div className="flex gap-4">
                 <div className="text-center">
                   <div
-                    className="w-16 h-16 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"
-                    style={{ backgroundColor: branding?.primary_color || '#16A34A' }}
+                    className={`w-16 h-16 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 ${!branding?.primary_color ? 'bg-gray-300 dark:bg-gray-600' : ''}`}
+                    style={branding?.primary_color ? { backgroundColor: branding.primary_color } : undefined}
                   />
                   <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 block">
                     Primario
                   </span>
                   <span className="text-xs font-mono text-gray-400">
-                    {branding?.primary_color || '#16A34A'}
+                    {branding?.primary_color || 'No configurado'}
                   </span>
                 </div>
                 <div className="text-center">
                   <div
-                    className="w-16 h-16 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"
-                    style={{ backgroundColor: branding?.secondary_color || '#059669' }}
+                    className={`w-16 h-16 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 ${!branding?.secondary_color ? 'bg-gray-300 dark:bg-gray-600' : ''}`}
+                    style={branding?.secondary_color ? { backgroundColor: branding.secondary_color } : undefined}
                   />
                   <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 block">
                     Secundario
                   </span>
                   <span className="text-xs font-mono text-gray-400">
-                    {branding?.secondary_color || '#059669'}
+                    {branding?.secondary_color || 'No configurado'}
                   </span>
                 </div>
                 <div className="text-center">
                   <div
-                    className="w-16 h-16 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"
-                    style={{ backgroundColor: branding?.accent_color || '#10B981' }}
+                    className={`w-16 h-16 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 ${!branding?.accent_color ? 'bg-gray-300 dark:bg-gray-600' : ''}`}
+                    style={branding?.accent_color ? { backgroundColor: branding.accent_color } : undefined}
                   />
                   <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 block">
                     Acento
                   </span>
                   <span className="text-xs font-mono text-gray-400">
-                    {branding?.accent_color || '#10B981'}
+                    {branding?.accent_color || 'No configurado'}
                   </span>
                 </div>
               </div>

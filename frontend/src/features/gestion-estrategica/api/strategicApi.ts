@@ -602,6 +602,9 @@ export const alcancesApi = {
 };
 
 // ==================== POLÍTICAS INTEGRALES ====================
+// @deprecated - Usar usePoliticas.ts (Sistema Unificado v3.0) en su lugar.
+// Estos endpoints legacy serán eliminados en una futura versión.
+// Ver: ../hooks/usePoliticas.ts para el nuevo sistema de políticas.
 
 export const politicasIntegralesApi = {
   getAll: async (filters?: PoliticaIntegralFilters): Promise<PaginatedResponse<PoliticaIntegral>> => {
@@ -676,6 +679,9 @@ export const politicasIntegralesApi = {
 };
 
 // ==================== POLÍTICAS ESPECÍFICAS ====================
+// @deprecated - Usar usePoliticas.ts (Sistema Unificado v3.0) en su lugar.
+// Estos endpoints legacy serán eliminados en una futura versión.
+// Ver: ../hooks/usePoliticas.ts para el nuevo sistema de políticas.
 
 export const politicasEspecificasApi = {
   getAll: async (filters?: PoliticaEspecificaFilters): Promise<PaginatedResponse<PoliticaEspecifica>> => {

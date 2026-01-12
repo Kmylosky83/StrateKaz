@@ -16,8 +16,6 @@ from django.urls import path, include
 app_name = 'motor_riesgos'
 
 urlpatterns = [
-    # Contexto Organizacional - DOFA/PESTEL
-    path('contexto/', include('apps.motor_riesgos.contexto_organizacional.urls')),
 
     # Riesgos de Procesos - ISO 31000
     path('riesgos-procesos/', include('apps.motor_riesgos.riesgos_procesos.urls')),

@@ -49,8 +49,9 @@ export type { DateRangePickerProps } from './DateRangePicker';
 export { RichTextEditor } from './RichTextEditor';
 export type { RichTextEditorProps, RichTextEditorRef } from './RichTextEditor';
 
-export { SignatureModal } from './SignatureModal';
-export type { SignatureModalProps, SignatureData } from './SignatureModal';
-
 export { SignaturePad } from './SignaturePad';
 export type { SignaturePadProps, SignaturePadRef } from './SignaturePad';
+
+// Re-export SignatureModal from modals for convenience
+export { SignatureModal } from '../modals/SignatureModal';
+export type { SignatureModalProps, SignatureData } from '../modals/SignatureModal';

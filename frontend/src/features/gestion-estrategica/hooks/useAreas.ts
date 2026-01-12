@@ -17,8 +17,8 @@ import {
   type CreateAreaDTO,
   type UpdateAreaDTO,
   type AreaFilters,
-  type PaginatedResponse,
 } from '../api/organizacionApi';
+import type { PaginatedResponse } from '@/types';
 
 // ==================== ERROR HANDLING ====================
 
@@ -115,6 +115,7 @@ export const useAreas = (filters?: AreaFilters) => {
   return useQuery<PaginatedResponse<AreaList>>({
     queryKey: areaKeys.list(filters),
     queryFn: () => areasApi.getAll(filters),
+    staleTime: 5 * 60 * 1000, // 5 minutos - datos organizacionales cambian poco
   });
 };
 
@@ -126,6 +127,7 @@ export const useArea = (id: number) => {
     queryKey: areaKeys.detail(id),
     queryFn: () => areasApi.getById(id),
     enabled: !!id && id > 0,
+    staleTime: 5 * 60 * 1000, // 5 minutos
   });
 };
 
@@ -136,6 +138,7 @@ export const useAreasTree = () => {
   return useQuery<Area[]>({
     queryKey: areaKeys.tree(),
     queryFn: areasApi.getTree,
+    staleTime: 5 * 60 * 1000, // 5 minutos
   });
 };
 
@@ -146,6 +149,7 @@ export const useAreasRoot = () => {
   return useQuery<Area[]>({
     queryKey: areaKeys.root(),
     queryFn: areasApi.getRoot,
+    staleTime: 5 * 60 * 1000, // 5 minutos
   });
 };
 
@@ -157,6 +161,7 @@ export const useAreaChildren = (parentId: number) => {
     queryKey: areaKeys.children(parentId),
     queryFn: () => areasApi.getChildren(parentId),
     enabled: !!parentId && parentId > 0,
+    staleTime: 5 * 60 * 1000, // 5 minutos
   });
 };
 

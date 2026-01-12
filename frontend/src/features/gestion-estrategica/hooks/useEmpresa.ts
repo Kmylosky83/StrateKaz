@@ -234,3 +234,52 @@ export function useEmpresaRegional() {
     isLoading,
   };
 }
+
+/**
+ * Hook helper para obtener la configuración de branding y colores
+ * Útil para Showcase, presentaciones y theming dinámico
+ *
+ * @returns Configuración de branding de la empresa (sin valores hardcodeados)
+ *
+ * @example
+ * ```tsx
+ * const { colorPrimario, gradienteMision, logo } = useEmpresaBranding();
+ *
+ * <div style={{ background: colorPrimario || undefined }}>
+ *   {logo && <img src={logo} alt="Logo" />}
+ * </div>
+ * ```
+ */
+export function useEmpresaBranding() {
+  const { empresa, isLoading } = useEmpresaConfig();
+
+  return {
+    // Logos
+    logo: empresa?.logo ?? null,
+    logoDark: empresa?.logo_dark ?? null,
+    favicon: empresa?.favicon ?? null,
+
+    // Colores (sin defaults hardcodeados - null si no configurado)
+    colorPrimario: empresa?.color_primario ?? null,
+    colorSecundario: empresa?.color_secundario ?? null,
+    colorFondoShowcase: empresa?.color_fondo_showcase ?? null,
+
+    // Gradientes para Showcase (sin defaults hardcodeados)
+    gradienteMision: empresa?.gradiente_mision ?? null,
+    gradienteVision: empresa?.gradiente_vision ?? null,
+    gradientePolitica: empresa?.gradiente_politica ?? null,
+    gradienteValores: empresa?.gradiente_valores ?? null,
+
+    // Texto
+    slogan: empresa?.slogan ?? null,
+    nombreComercial: empresa?.nombre_comercial ?? empresa?.razon_social ?? null,
+
+    // Estado
+    isLoading,
+    isConfigured: !!(
+      empresa?.color_primario ||
+      empresa?.logo ||
+      empresa?.gradiente_mision
+    ),
+  };
+}

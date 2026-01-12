@@ -17,8 +17,8 @@ import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { LoginPage } from '@/pages/LoginPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { DashboardPage } from '@/pages/DashboardPage';
-import { SmartRedirect } from '@/components/common/SmartRedirect';
 import { PageLoader } from '@/components/common/PageLoader';
+
 
 // Helper para envolver componentes lazy con Suspense
 const withSuspense = (Component: ComponentType) => (
@@ -28,15 +28,23 @@ const withSuspense = (Component: ComponentType) => (
 );
 
 // ==================== NIVEL 1: DIRECCIÓN ESTRATÉGICA ====================
+// Importación directa de páginas para mejor tree-shaking y chunks más pequeños
 const UsersPage = lazy(() => import('@/features/users/pages/UsersPage'));
-const ConfiguracionPage = lazy(() => import('@/features/gestion-estrategica').then(m => ({ default: m.ConfiguracionPage })));
-const OrganizacionPage = lazy(() => import('@/features/gestion-estrategica').then(m => ({ default: m.OrganizacionPage })));
-const IdentidadPage = lazy(() => import('@/features/gestion-estrategica').then(m => ({ default: m.IdentidadPage })));
-const PlaneacionPage = lazy(() => import('@/features/gestion-estrategica').then(m => ({ default: m.PlaneacionPage })));
-const ProyectosPage = lazy(() => import('@/features/gestion-estrategica').then(m => ({ default: m.ProyectosPage })));
-const RevisionDireccionPage = lazy(() => import('@/features/gestion-estrategica').then(m => ({ default: m.RevisionDireccionPage })));
+const ConfiguracionPage = lazy(() => import('@/features/gestion-estrategica/pages/ConfiguracionPage'));
+const OrganizacionPage = lazy(() => import('@/features/gestion-estrategica/pages/OrganizacionPage'));
+const IdentidadPage = lazy(() => import('@/features/gestion-estrategica/pages/IdentidadPage'));
+const PlaneacionPage = lazy(() => import('@/features/gestion-estrategica/pages/PlaneacionPage'));
+const ProyectosPage = lazy(() => import('@/features/gestion-estrategica/pages/ProyectosPage'));
+const RevisionDireccionPage = lazy(() => import('@/features/gestion-estrategica/pages/RevisionDireccionPage'));
 
 // ==================== NIVEL 2: CUMPLIMIENTO ====================
+// Motor de Cumplimiento
+const CumplimientoPage = lazy(() => import('@/features/cumplimiento').then(m => ({ default: m.CumplimientoPage })));
+const MatrizLegalPage = lazy(() => import('@/features/cumplimiento').then(m => ({ default: m.MatrizLegalPage })));
+const RequisitosLegalesPage = lazy(() => import('@/features/cumplimiento').then(m => ({ default: m.RequisitosLegalesPage })));
+const PartesInteresadasPage = lazy(() => import('@/features/cumplimiento').then(m => ({ default: m.PartesInteresadasPage })));
+const ReglamentosInternosPage = lazy(() => import('@/features/cumplimiento').then(m => ({ default: m.ReglamentosInternosPage })));
+
 // Motor de Riesgos
 const RiesgosPage = lazy(() => import('@/features/riesgos').then(m => ({ default: m.RiesgosPage })));
 const ContextoOrganizacionalPage = lazy(() => import('@/features/riesgos').then(m => ({ default: m.ContextoOrganizacionalPage })));
@@ -68,6 +76,12 @@ const GestionAmbientalPage = lazy(() => import('@/features/hseq').then(m => ({ d
 const MejoraContinuaPage = lazy(() => import('@/features/hseq').then(m => ({ default: m.MejoraContinuaPage })));
 
 // ==================== NIVEL 4: CADENA DE VALOR ====================
+// Operaciones de Producción
+const ProductionOpsPage = lazy(() => import('@/features/production-ops/pages/ProductionOpsPage'));
+
+// Logística y Flota
+const LogisticsFleetPage = lazy(() => import('@/features/logistics-fleet/pages/LogisticsFleetPage'));
+
 // Supply Chain (Proveedores legacy → será refactorizado a supply_chain)
 const MateriaPrimaPage = lazy(() => import('@/features/proveedores/pages/MateriaPrimaPage'));
 const ProductosServiciosPage = lazy(() => import('@/features/proveedores/pages/ProductosServiciosPage'));
@@ -158,6 +172,8 @@ export const AppRoutes = () => {
 
           {/* Tab 4: Planeación Estratégica */}
           <Route path="/gestion-estrategica/planeacion" element={withSuspense(PlaneacionPage)} />
+          {/* Contexto Organizacional (DOFA/PESTEL/Porter) - movido desde Riesgos */}
+          <Route path="/gestion-estrategica/planeacion/contexto" element={withSuspense(ContextoOrganizacionalPage)} />
 
           {/* Tab 5: Gestión de Proyectos (PMI) */}
           <Route path="/gestion-estrategica/proyectos" element={withSuspense(ProyectosPage)} />
@@ -172,34 +188,19 @@ export const AppRoutes = () => {
           {/* NIVEL 2: CUMPLIMIENTO */}
           {/* ═══════════════════════════════════════════════════════════════ */}
 
-          {/* Módulo: Motor de Cumplimiento (motor_cumplimiento) - Próximamente */}
-          <Route
-            path="/cumplimiento"
-            element={<div className="p-8 text-center text-gray-500">Motor de Cumplimiento - Próximamente</div>}
-          />
-          <Route
-            path="/cumplimiento/matriz-legal"
-            element={<div className="p-8 text-center text-gray-500">Matriz Legal - Próximamente</div>}
-          />
-          <Route
-            path="/cumplimiento/requisitos-legales"
-            element={<div className="p-8 text-center text-gray-500">Requisitos Legales - Próximamente</div>}
-          />
-          <Route
-            path="/cumplimiento/partes-interesadas"
-            element={<div className="p-8 text-center text-gray-500">Partes Interesadas - Próximamente</div>}
-          />
-          <Route
-            path="/cumplimiento/reglamentos-internos"
-            element={<div className="p-8 text-center text-gray-500">Reglamentos Internos - Próximamente</div>}
-          />
+          {/* Módulo: Motor de Cumplimiento (motor_cumplimiento) */}
+          <Route path="/cumplimiento" element={withSuspense(CumplimientoPage)} />
+          <Route path="/cumplimiento/matriz-legal" element={withSuspense(MatrizLegalPage)} />
+          <Route path="/cumplimiento/requisitos-legales" element={withSuspense(RequisitosLegalesPage)} />
+          <Route path="/cumplimiento/partes-interesadas" element={withSuspense(PartesInteresadasPage)} />
+          <Route path="/cumplimiento/reglamentos-internos" element={withSuspense(ReglamentosInternosPage)} />
 
           {/* Módulo: Motor de Riesgos (motor_riesgos) */}
+          {/* NOTA: contexto_organizacional movido a /gestion-estrategica/planeacion/contexto */}
           <Route
             path="/riesgos"
             element={withSuspense(RiesgosPage)}
           />
-          <Route path="/riesgos/contexto" element={withSuspense(ContextoOrganizacionalPage)} />
           <Route path="/riesgos/procesos" element={withSuspense(RiesgosProcesosPage)} />
           <Route path="/riesgos/ipevr" element={withSuspense(IPEVRPage)} />
           <Route path="/riesgos/ambientales" element={withSuspense(AspectosAmbientalesPage)} />
@@ -215,11 +216,11 @@ export const AppRoutes = () => {
 
           {/* ═══════════════════════════════════════════════════════════════ */}
           {/* NIVEL 3: TORRE DE CONTROL (HSEQ MANAGEMENT) */}
-          {/* Código: hseq_management */}
+          {/* Código: hseq_management - Rutas definidas desde BD via seed */}
           {/* ═══════════════════════════════════════════════════════════════ */}
           <Route
             path="/hseq"
-            element={<Navigate to="/hseq/dashboard" replace />}
+            element={<Navigate to="/hseq/sistema-documental" replace />}
           />
           <Route path="/hseq/dashboard" element={withSuspense(HSEQPage)} />
 
@@ -272,17 +273,11 @@ export const AppRoutes = () => {
           <Route path="/proveedores/productos-servicios" element={withSuspense(ProductosServiciosPage)} />
           <Route path="/proveedores/pruebas-acidez" element={withSuspense(PruebasAcidezPage)} />
 
-          {/* Módulo: Operaciones de Producción (production_ops) - Próximamente */}
-          <Route
-            path="/produccion"
-            element={<div className="p-8 text-center text-gray-500">Base de Operaciones - Próximamente</div>}
-          />
+          {/* Módulo: Operaciones de Producción (production_ops) */}
+          <Route path="/produccion" element={withSuspense(ProductionOpsPage)} />
 
-          {/* Módulo: Logística y Flota (logistics_fleet) - Próximamente */}
-          <Route
-            path="/logistica"
-            element={<div className="p-8 text-center text-gray-500">Logística y Flota - Próximamente</div>}
-          />
+          {/* Módulo: Logística y Flota (logistics_fleet) */}
+          <Route path="/logistica" element={withSuspense(LogisticsFleetPage)} />
 
           {/* Módulo: Ventas y CRM (sales_crm) */}
           <Route

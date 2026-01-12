@@ -114,6 +114,18 @@ class EmpresaConfigSerializer(serializers.ModelSerializer):
             'simbolo_moneda',
             'separador_miles',
             'separador_decimales',
+            # Branding y colores corporativos
+            'logo',
+            'logo_dark',
+            'favicon',
+            'color_primario',
+            'color_secundario',
+            'color_fondo_showcase',
+            'gradiente_mision',
+            'gradiente_vision',
+            'gradiente_politica',
+            'gradiente_valores',
+            'slogan',
             # Auditoría
             'created_at',
             'updated_at',

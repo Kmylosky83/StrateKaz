@@ -130,6 +130,19 @@ export interface EmpresaConfig {
   separador_miles: string;
   separador_decimales: string;
 
+  // Branding y colores corporativos (todos opcionales - configurables)
+  logo: string | null;
+  logo_dark: string | null;
+  favicon: string | null;
+  color_primario: string | null;
+  color_secundario: string | null;
+  color_fondo_showcase: string | null;
+  gradiente_mision: string | null;
+  gradiente_vision: string | null;
+  gradiente_politica: string | null;
+  gradiente_valores: string[] | null;
+  slogan: string | null;
+
   // Auditoría
   created_at: string;
   updated_at: string;
@@ -183,6 +196,19 @@ export interface EmpresaConfigFormData {
   simbolo_moneda?: string;
   separador_miles?: string;
   separador_decimales?: string;
+
+  // Branding y colores corporativos (opcionales)
+  logo?: File | string | null;
+  logo_dark?: File | string | null;
+  favicon?: File | string | null;
+  color_primario?: string | null;
+  color_secundario?: string | null;
+  color_fondo_showcase?: string | null;
+  gradiente_mision?: string | null;
+  gradiente_vision?: string | null;
+  gradiente_politica?: string | null;
+  gradiente_valores?: string[] | null;
+  slogan?: string | null;
 }
 
 /**

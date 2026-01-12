@@ -363,6 +363,87 @@ class EmpresaConfig(TimestampedModel):
     )
 
     # =========================================================================
+    # BRANDING Y COLORES CORPORATIVOS (todos configurables, sin hardcoding)
+    # =========================================================================
+
+    logo = models.ImageField(
+        upload_to='empresa/logos/',
+        blank=True,
+        null=True,
+        verbose_name='Logo Principal',
+        help_text='Logo de la empresa en formato PNG o SVG (recomendado fondo transparente)'
+    )
+    logo_dark = models.ImageField(
+        upload_to='empresa/logos/',
+        blank=True,
+        null=True,
+        verbose_name='Logo para Modo Oscuro',
+        help_text='Versión del logo para fondos oscuros (opcional)'
+    )
+    favicon = models.ImageField(
+        upload_to='empresa/favicons/',
+        blank=True,
+        null=True,
+        verbose_name='Favicon',
+        help_text='Icono pequeño para pestañas del navegador (32x32 o 64x64 px)'
+    )
+    color_primario = models.CharField(
+        max_length=7,
+        blank=True,
+        null=True,
+        verbose_name='Color Primario',
+        help_text='Color principal de la marca en formato HEX (ej: #3B82F6)'
+    )
+    color_secundario = models.CharField(
+        max_length=7,
+        blank=True,
+        null=True,
+        verbose_name='Color Secundario',
+        help_text='Color secundario/acento en formato HEX (ej: #10B981)'
+    )
+    color_fondo_showcase = models.CharField(
+        max_length=7,
+        blank=True,
+        null=True,
+        verbose_name='Color Fondo Showcase',
+        help_text='Color de fondo para presentaciones (ej: #1F2937)'
+    )
+    gradiente_mision = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='Gradiente Misión',
+        help_text='Clases Tailwind para el gradiente de la slide de Misión'
+    )
+    gradiente_vision = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='Gradiente Visión',
+        help_text='Clases Tailwind para el gradiente de la slide de Visión'
+    )
+    gradiente_politica = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='Gradiente Política',
+        help_text='Clases Tailwind para el gradiente de la slide de Política'
+    )
+    gradiente_valores = models.JSONField(
+        blank=True,
+        null=True,
+        verbose_name='Gradientes Valores',
+        help_text='Lista de gradientes Tailwind para carrusel de valores'
+    )
+    slogan = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        verbose_name='Slogan',
+        help_text='Frase corta que identifica a la empresa'
+    )
+
+    # =========================================================================
     # AUDITORÍA (created_at, updated_at heredados de TimestampedModel)
     # =========================================================================
 

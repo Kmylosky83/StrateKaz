@@ -52,6 +52,9 @@ export type { WizardModalProps, WizardStep } from './WizardModal';
 export { AlertModal } from './AlertModal';
 export type { AlertModalProps, AlertVariant } from './AlertModal';
 
+export { SignatureModal } from './SignatureModal';
+export type { SignatureModalProps, SignatureData } from './SignatureModal';
+
 // Hooks
 export { useModal, useModals } from './useModal';
 export { useConfirm, useDeleteConfirm, useStatusChangeConfirm } from './useConfirm';

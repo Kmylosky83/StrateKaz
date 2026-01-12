@@ -1,0 +1,50 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Delegación de Firma - {{ document_title }}{% endblock %}
+
+{% block content %}
+<h2>Delegación de Firma</h2>
+
+<p>Hola <strong>{{ user_name }}</strong>,</p>
+
+<p>Se le ha delegado la autoridad para firmar el siguiente documento:</p>
+
+<div class="email-card">
+    <p class="email-card-title">Documento</p>
+    <p class="email-card-content">{{ document_title }}</p>
+</div>
+
+<div class="email-card">
+    <p class="email-card-title">Delegado por</p>
+    <p class="email-card-content">{{ delegated_by }}</p>
+</div>
+
+{% if delegation_reason %}
+<div class="email-card">
+    <p class="email-card-title">Motivo de la delegación</p>
+    <p class="email-card-content">{{ delegation_reason }}</p>
+</div>
+{% endif %}
+
+{% if expiry_date %}
+<div class="email-card">
+    <p class="email-card-title">Delegación válida hasta</p>
+    <p class="email-card-content">{{ expiry_date }}</p>
+</div>
+{% endif %}
+
+<div class="text-center mt-4">
+    <span class="badge badge-info">DELEGACIÓN ACTIVA</span>
+</div>
+
+<div class="text-center mt-4">
+    <a href="{{ action_url }}" class="email-button">
+        Revisar y Firmar
+    </a>
+</div>
+
+<p class="text-muted mt-4">
+    Esta delegación le otorga autoridad temporal para firmar en nombre de {{ delegated_by }}.
+    Por favor, revise el documento cuidadosamente antes de firmar.
+</p>
+{% endblock %}

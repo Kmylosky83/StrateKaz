@@ -89,3 +89,33 @@ export {
   useProgramasRevision,
   useActasRevision,
 } from './hooks/useRevisionDireccion';
+
+// Hooks - Políticas (Sistema Unificado v3.0)
+export {
+  politicaKeys,
+  useTiposPolitica,
+  useNormasISO,
+  usePoliticas,
+  usePolitica,
+  usePoliticasVigentes,
+  useCreatePolitica,
+  useUpdatePolitica,
+  useDeletePolitica,
+  useIniciarFirmaPolitica,
+  useFirmarPolitica,
+  usePublicarPolitica,
+} from './hooks/usePoliticas';
+
+// Componentes - Políticas
+export { UnifiedPolicyModal, PoliciesList, PolicyDetailModal } from './components/politicas';
+
+// Types - Políticas
+export type {
+  Politica,
+  TipoPolitica,
+  NormaISO,
+  PoliticaFilters,
+  CreatePoliticaDTO,
+  UpdatePoliticaDTO,
+  PoliticaStatus,
+} from './types/policies.types';

@@ -1,17 +1,23 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Menu, Bell, LogOut, Moon, Sun } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useThemeStore } from '@/store/themeStore';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
+import { useNotificacionesNoLeidas } from '@/features/audit-system/hooks/useAuditSystem';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
 }
 
 export const Header = ({ onToggleSidebar }: HeaderProps) => {
+  const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const { theme, toggleTheme } = useThemeStore();
   const { companyName, companySlogan, getLogoForTheme } = useBrandingConfig();
+
+  // Notificaciones no leídas (dinámico desde API)
+  const { data: notificacionesNoLeidas } = useNotificacionesNoLeidas();
+  const unreadCount = notificacionesNoLeidas?.length ?? 0;
 
   // Obtener logo según el tema actual
   const currentLogo = getLogoForTheme(theme);
@@ -47,9 +53,17 @@ export const Header = ({ onToggleSidebar }: HeaderProps) => {
 
         {/* Right Section */}
         <div className="flex items-center space-x-2">
-          <button className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+          <button
+            onClick={() => navigate('/audit-system/notificaciones')}
+            className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            title={unreadCount > 0 ? `${unreadCount} notificaciones sin leer` : 'Notificaciones'}
+          >
             <Bell className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-            <span className="absolute top-1 right-1 h-2 w-2 bg-accent-500 dark:bg-accent-400 rounded-full ring-2 ring-white dark:ring-gray-800" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-danger-500 rounded-full ring-2 ring-white dark:ring-gray-800">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
           </button>
 
           <button

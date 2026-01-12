@@ -64,26 +64,43 @@ router.register(r'tab-sections', TabSectionViewSet, basename='tab-section')
 router.register(r'branding', BrandingConfigViewSet, basename='branding')
 
 # ═══════════════════════════════════════════════════════════════════════════
-# REGISTRO CONDICIONAL: Endpoints que dependen de apps externas
+# REGISTRO CONDICIONAL: Endpoints LEGACY que dependen de apps externas
 # ═══════════════════════════════════════════════════════════════════════════
+# DEPRECADO: Estos endpoints mantienen compatibilidad con URLs legacy.
+# Use las URLs canónicas en las apps correspondientes:
+# - /api/identidad/corporate-identity/
+# - /api/identidad/corporate-values/
+# - /api/planeacion/strategic-plans/
+# - /api/planeacion/strategic-objectives/
+# - /api/identidad/stats/
+
 # Solo registrar si las apps de identidad y planeacion están instaladas
 if apps.is_installed('apps.gestion_estrategica.identidad') and apps.is_installed('apps.gestion_estrategica.planeacion'):
-    from .viewsets_strategic import (
+    # DEPRECADO: Importar proxies desde viewsets_strategic_legacy
+    # Estos proxies redirigen a los ViewSets reales en sus apps correspondientes
+    from .viewsets_strategic_legacy import (
         CorporateIdentityViewSet,
         CorporateValueViewSet,
         StrategicPlanViewSet,
         StrategicObjectiveViewSet,
-        StrategicStatsViewSet,
     )
-    # Endpoints Dirección Estratégica - Tab 1: Identidad
+    # Importar StrategicStatsViewSet desde su nueva ubicación en identidad
+    from apps.gestion_estrategica.identidad.views_stats import StrategicStatsViewSet
+
+    # Endpoints LEGACY Dirección Estratégica - Tab 1: Identidad
+    # DEPRECADO: Use /api/identidad/corporate-identity/
     router.register(r'corporate-identity', CorporateIdentityViewSet, basename='corporate-identity')
+    # DEPRECADO: Use /api/identidad/corporate-values/
     router.register(r'corporate-values', CorporateValueViewSet, basename='corporate-value')
 
-    # Endpoints Dirección Estratégica - Tab 2: Planeación
+    # Endpoints LEGACY Dirección Estratégica - Tab 2: Planeación
+    # DEPRECADO: Use /api/planeacion/strategic-plans/
     router.register(r'strategic-plans', StrategicPlanViewSet, basename='strategic-plan')
+    # DEPRECADO: Use /api/planeacion/strategic-objectives/
     router.register(r'strategic-objectives', StrategicObjectiveViewSet, basename='strategic-objective')
 
-    # Endpoints Estadísticas Dirección Estratégica
+    # Endpoints LEGACY Estadísticas Dirección Estratégica
+    # DEPRECADO: Use /api/identidad/stats/
     router.register(r'strategic', StrategicStatsViewSet, basename='strategic')
 
 urlpatterns = [

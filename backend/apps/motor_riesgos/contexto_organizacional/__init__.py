@@ -1,1 +1,0 @@
-default_app_config = 'apps.motor_riesgos.contexto_organizacional.apps.ContextoOrganizacionalConfig'

@@ -86,6 +86,7 @@ class Command(BaseCommand):
         """Crea modulos de permisos base"""
         modulos = [
             {'code': 'CORE', 'name': 'Core - Usuarios y Configuracion', 'orden': 1, 'icon': 'mdi-cog'},
+            {'code': 'IDENTIDAD', 'name': 'Identidad Corporativa', 'orden': 5, 'icon': 'mdi-certificate'},
             {'code': 'DIRECCION_ESTRATEGICA', 'name': 'Direccion Estrategica', 'orden': 10, 'icon': 'mdi-target'},
             {'code': 'CUMPLIMIENTO', 'name': 'Cumplimiento Normativo', 'orden': 20, 'icon': 'mdi-gavel'},
             {'code': 'RIESGOS', 'name': 'Motor de Riesgos', 'orden': 21, 'icon': 'mdi-alert'},
@@ -142,6 +143,10 @@ class Command(BaseCommand):
             {'code': 'ASSIGN', 'name': 'Asignar', 'orden': 70, 'icon': 'mdi-account-plus'},
             {'code': 'EXECUTE', 'name': 'Ejecutar', 'orden': 80, 'icon': 'mdi-play'},
             {'code': 'AUDIT', 'name': 'Auditar', 'orden': 90, 'icon': 'mdi-clipboard-check'},
+            # Acciones para workflow de firmas digitales
+            {'code': 'SIGN', 'name': 'Firmar', 'orden': 100, 'icon': 'mdi-draw'},
+            {'code': 'DELEGATE', 'name': 'Delegar Firma', 'orden': 101, 'icon': 'mdi-account-arrow-right'},
+            {'code': 'VERIFY', 'name': 'Verificar Firma', 'orden': 102, 'icon': 'mdi-check-decagram'},
         ]
 
         created = 0
@@ -252,7 +257,48 @@ class Command(BaseCommand):
             {'code': 'core.config.manage', 'name': 'Administrar configuracion', 'modulo': modulo_core, 'accion': accion_manage, 'alcance': alcance_all, 'recurso': 'config'},
         ]
 
-        all_permisos = permisos_usuarios + permisos_roles + permisos_cargos + permisos_config
+        # ==================== PERMISOS IDENTIDAD CORPORATIVA ====================
+        # Obtener modulo y acciones adicionales para identidad
+        try:
+            modulo_identidad = PermisoModulo.objects.get(code='IDENTIDAD')
+            accion_sign = PermisoAccion.objects.get(code='SIGN')
+            accion_delegate = PermisoAccion.objects.get(code='DELEGATE')
+            accion_verify = PermisoAccion.objects.get(code='VERIFY')
+            accion_approve = PermisoAccion.objects.get(code='APPROVE')
+            accion_export = PermisoAccion.objects.get(code='EXPORT')
+        except Exception:
+            modulo_identidad = None
+
+        permisos_identidad = []
+        if modulo_identidad:
+            permisos_identidad = [
+                # Identidad corporativa (mision, vision, politica)
+                {'code': 'identidad.identity.view', 'name': 'Ver identidad corporativa', 'modulo': modulo_identidad, 'accion': accion_view, 'alcance': alcance_empresa, 'recurso': 'identity'},
+                {'code': 'identidad.identity.create', 'name': 'Crear identidad corporativa', 'modulo': modulo_identidad, 'accion': accion_create, 'alcance': alcance_empresa, 'recurso': 'identity'},
+                {'code': 'identidad.identity.edit', 'name': 'Editar identidad corporativa', 'modulo': modulo_identidad, 'accion': accion_edit, 'alcance': alcance_empresa, 'recurso': 'identity'},
+                {'code': 'identidad.identity.delete', 'name': 'Eliminar identidad corporativa', 'modulo': modulo_identidad, 'accion': accion_delete, 'alcance': alcance_empresa, 'recurso': 'identity'},
+                {'code': 'identidad.identity.approve', 'name': 'Aprobar identidad corporativa', 'modulo': modulo_identidad, 'accion': accion_approve, 'alcance': alcance_empresa, 'recurso': 'identity'},
+                {'code': 'identidad.identity.export', 'name': 'Exportar identidad corporativa', 'modulo': modulo_identidad, 'accion': accion_export, 'alcance': alcance_empresa, 'recurso': 'identity'},
+
+                # Valores corporativos
+                {'code': 'identidad.values.view', 'name': 'Ver valores corporativos', 'modulo': modulo_identidad, 'accion': accion_view, 'alcance': alcance_empresa, 'recurso': 'values'},
+                {'code': 'identidad.values.create', 'name': 'Crear valores corporativos', 'modulo': modulo_identidad, 'accion': accion_create, 'alcance': alcance_empresa, 'recurso': 'values'},
+                {'code': 'identidad.values.edit', 'name': 'Editar valores corporativos', 'modulo': modulo_identidad, 'accion': accion_edit, 'alcance': alcance_empresa, 'recurso': 'values'},
+                {'code': 'identidad.values.delete', 'name': 'Eliminar valores corporativos', 'modulo': modulo_identidad, 'accion': accion_delete, 'alcance': alcance_empresa, 'recurso': 'values'},
+
+                # Politica integral
+                {'code': 'identidad.policy.view', 'name': 'Ver politica integral', 'modulo': modulo_identidad, 'accion': accion_view, 'alcance': alcance_empresa, 'recurso': 'policy'},
+                {'code': 'identidad.policy.edit', 'name': 'Editar politica integral', 'modulo': modulo_identidad, 'accion': accion_edit, 'alcance': alcance_empresa, 'recurso': 'policy'},
+                {'code': 'identidad.policy.sign', 'name': 'Firmar politica integral', 'modulo': modulo_identidad, 'accion': accion_sign, 'alcance': alcance_empresa, 'recurso': 'policy'},
+                {'code': 'identidad.policy.delegate', 'name': 'Delegar firma de politica', 'modulo': modulo_identidad, 'accion': accion_delegate, 'alcance': alcance_empresa, 'recurso': 'policy'},
+                {'code': 'identidad.policy.verify', 'name': 'Verificar firma de politica', 'modulo': modulo_identidad, 'accion': accion_verify, 'alcance': alcance_empresa, 'recurso': 'policy'},
+
+                # Showcase publico
+                {'code': 'identidad.showcase.view', 'name': 'Ver showcase publico', 'modulo': modulo_identidad, 'accion': accion_view, 'alcance': alcance_empresa, 'recurso': 'showcase'},
+                {'code': 'identidad.showcase.manage', 'name': 'Administrar showcase', 'modulo': modulo_identidad, 'accion': accion_manage, 'alcance': alcance_empresa, 'recurso': 'showcase'},
+            ]
+
+        all_permisos = permisos_usuarios + permisos_roles + permisos_cargos + permisos_config + permisos_identidad
 
         created = 0
         for p in all_permisos:

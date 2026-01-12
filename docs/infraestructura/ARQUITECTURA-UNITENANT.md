@@ -288,7 +288,7 @@ EMAIL_HOST=mail.stratekaz.com
 EMAIL_PORT=587
 EMAIL_USE_TLS=True
 EMAIL_HOST_USER=noreply@grasas.stratekaz.com
-EMAIL_HOST_PASSWORD=EmailPass2024!
+EMAIL_HOST_PASSWORD=<TU_PASSWORD_DE_EMAIL>
 DEFAULT_FROM_EMAIL=StrateKaz SGI <noreply@grasas.stratekaz.com>
 
 # --- JWT ---

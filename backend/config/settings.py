@@ -30,9 +30,8 @@ if SENTRY_DSN and not DEBUG:
         profiles_sample_rate=config('SENTRY_PROFILES_SAMPLE_RATE', default=0.1, cast=float),
         send_default_pii=False,
         attach_stacktrace=True,
-        request_bodies='medium',
+        max_request_body_size='medium',  # Actualizado para sentry-sdk 2.x (antes: request_bodies)
         max_breadcrumbs=50,
-        before_send=lambda event, hint: event if not DEBUG else None,
     )
 
 # ═══════════════════════════════════════════════════════════════════════════

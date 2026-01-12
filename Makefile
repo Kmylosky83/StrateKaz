@@ -146,7 +146,7 @@ health:
 	@curl -sf http://localhost:3010 > /dev/null && echo "✅ Frontend OK" || echo "❌ Frontend no responde"
 	@echo ""
 	@echo "🔍 Database Health Check:"
-	@$(DOCKER_COMPOSE) exec -T db mysqladmin ping -h localhost -u root -pGrasasYHuesos2024!RootSecure#MySQL > /dev/null 2>&1 && echo "✅ Database OK" || echo "❌ Database no responde"
+	@$(DOCKER_COMPOSE) exec -T db mysqladmin ping -h localhost > /dev/null 2>&1 && echo "✅ Database OK" || echo "❌ Database no responde"
 
 # Cleanup operations
 clean:

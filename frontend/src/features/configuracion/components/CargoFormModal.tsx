@@ -1,14 +1,15 @@
 /**
  * Modal para crear/editar Cargos con Manual de Funciones completo
  *
- * 4 Tabs:
+ * 6 Tabs:
  * - Tab 1: Identificacion y Ubicacion Organizacional
  * - Tab 2: Manual de Funciones
  * - Tab 3: Requisitos del Cargo
  * - Tab 4: SST (Seguridad y Salud en el Trabajo)
+ * - Tab 5: Acceso a Secciones (módulos/tabs del sistema que puede ver)
+ * - Tab 6: Permisos de Acciones (acciones CRUD que puede realizar)
  *
- * NOTA: Los permisos se configuran desde la Matriz de Permisos por Cargo
- * (Organizacion > Matriz de Permisos)
+ * Flujo unificado: Crear cargo → Configurar acceso → Asignar permisos
  *
  * Usa Design System: BaseModal, Tabs, Input, Select, Textarea, Switch
  */
@@ -21,7 +22,13 @@ import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
 import { Switch } from '@/components/forms/Switch';
-import { useCreateCargo, useUpdateCargo, useCargos, useCargoChoices, useCargo } from '../hooks/useCargos';
+import {
+  useCreateCargo,
+  useUpdateCargo,
+  useCargos,
+  useCargoChoices,
+  useCargo,
+} from '../hooks/useCargos';
 import { useRiesgosOcupacionales } from '../hooks/useRiesgosOcupacionales';
 import { RiesgoSelector } from './RiesgoSelector';
 import type {
@@ -48,7 +55,10 @@ import {
   ShieldCheck,
   Plus,
   Trash2,
+  Layers,
+  Shield,
 } from 'lucide-react';
+import { TabAccesoSecciones, TabPermisosAcciones } from './CargoFormTabs';
 
 interface CargoFormModalProps {
   /** CargoList del listado (para edicion) o null (para crear) */
@@ -57,13 +67,15 @@ interface CargoFormModalProps {
   onClose: () => void;
 }
 
-type TabType = 'identificacion' | 'funciones' | 'requisitos' | 'sst';
+type TabType = 'identificacion' | 'funciones' | 'requisitos' | 'sst' | 'acceso' | 'permisos';
 
 const TABS: Tab[] = [
   { id: 'identificacion', label: 'Identificacion', icon: <UserCircle size={16} /> },
   { id: 'funciones', label: 'Funciones', icon: <FileText size={16} /> },
   { id: 'requisitos', label: 'Requisitos', icon: <GraduationCap size={16} /> },
   { id: 'sst', label: 'SST', icon: <ShieldCheck size={16} /> },
+  { id: 'acceso', label: 'Acceso UI', icon: <Layers size={16} /> },
+  { id: 'permisos', label: 'Permisos', icon: <Shield size={16} /> },
 ];
 
 // Componente para editar listas de strings
@@ -101,9 +113,7 @@ const ListEditor = ({
 
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-        {label}
-      </label>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>
       <div className="flex gap-2">
         <Input
           value={newItem}
@@ -205,6 +215,10 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
     examenes_medicos: [] as string[],
     restricciones_medicas: '',
     capacitaciones_sst: [] as string[],
+
+    // Tab 5 & 6: Acceso y Permisos (solo aplican en edición)
+    section_ids: [] as number[],
+    permission_ids: [] as number[],
   });
 
   const [activeTab, setActiveTab] = useState<TabType>('identificacion');
@@ -300,6 +314,8 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
         examenes_medicos: [],
         restricciones_medicas: '',
         capacitaciones_sst: [],
+        section_ids: [],
+        permission_ids: [],
       });
       setActiveTab('identificacion');
     }
@@ -417,10 +433,10 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
       isOpen={isOpen}
       onClose={onClose}
       title={isEditing ? `Editar Cargo: ${cargo?.name}` : 'Nuevo Cargo'}
-      size="3xl"
+      size="5xl"
       footer={footer}
     >
-      <div className="space-y-6">
+      <div className="space-y-4">
         <Tabs
           tabs={TABS}
           activeTab={activeTab}
@@ -428,7 +444,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
           variant="pills"
         />
 
-        <form onSubmit={handleSubmit} className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+        <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
           {/* ========== TAB 1: IDENTIFICACION Y UBICACION ========== */}
           {activeTab === 'identificacion' && (
             <div className="space-y-4">
@@ -446,7 +462,9 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
                   placeholder="GERENTE_OPERACIONES"
                   disabled={isEditing}
                   required
-                  helperText={isEditing ? 'El codigo no se puede modificar' : 'Codigo unico del cargo'}
+                  helperText={
+                    isEditing ? 'El codigo no se puede modificar' : 'Codigo unico del cargo'
+                  }
                 />
                 <Input
                   label="Nombre *"
@@ -534,19 +552,26 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
                     min={1}
                     value={formData.cantidad_posiciones}
                     onChange={(e) =>
-                      setFormData({ ...formData, cantidad_posiciones: parseInt(e.target.value) || 1 })
+                      setFormData({
+                        ...formData,
+                        cantidad_posiciones: parseInt(e.target.value) || 1,
+                      })
                     }
                     helperText="Cuantas personas pueden ocupar este cargo"
                   />
                   <div className="flex flex-col gap-3 pt-6">
                     <Switch
                       checked={formData.is_jefatura}
-                      onCheckedChange={(checked) => setFormData({ ...formData, is_jefatura: checked })}
+                      onCheckedChange={(checked) =>
+                        setFormData({ ...formData, is_jefatura: checked })
+                      }
                       label="Es Jefatura"
                     />
                     <Switch
                       checked={formData.is_externo}
-                      onCheckedChange={(checked) => setFormData({ ...formData, is_externo: checked })}
+                      onCheckedChange={(checked) =>
+                        setFormData({ ...formData, is_externo: checked })
+                      }
                       label="Es Externo (Contratista, Consultor, Auditor)"
                     />
                     <Switch
@@ -615,7 +640,9 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
               <ListEditor
                 label="Funciones y Responsabilidades"
                 items={formData.funciones_responsabilidades}
-                onChange={(items) => setFormData({ ...formData, funciones_responsabilidades: items })}
+                onChange={(items) =>
+                  setFormData({ ...formData, funciones_responsabilidades: items })
+                }
                 placeholder="Agregar funcion o responsabilidad..."
               />
 
@@ -631,14 +658,18 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
                 <Textarea
                   label="Relaciones Internas"
                   value={formData.relaciones_internas}
-                  onChange={(e) => setFormData({ ...formData, relaciones_internas: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, relaciones_internas: e.target.value })
+                  }
                   placeholder="Areas o cargos con los que interactua internamente..."
                   rows={2}
                 />
                 <Textarea
                   label="Relaciones Externas"
                   value={formData.relaciones_externas}
-                  onChange={(e) => setFormData({ ...formData, relaciones_externas: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, relaciones_externas: e.target.value })
+                  }
                   placeholder="Proveedores, clientes, entidades externas..."
                   rows={2}
                 />
@@ -698,7 +729,8 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        experiencia_requerida: (e.target.value as ExperienciaRequerida) || undefined,
+                        experiencia_requerida:
+                          (e.target.value as ExperienciaRequerida) || undefined,
                       })
                     }
                     options={[
@@ -748,7 +780,9 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
               <Textarea
                 label="Formacion Complementaria (Deseable)"
                 value={formData.formacion_complementaria}
-                onChange={(e) => setFormData({ ...formData, formacion_complementaria: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, formacion_complementaria: e.target.value })
+                }
                 placeholder="Cursos o capacitaciones adicionales que serian valoradas..."
                 rows={2}
               />
@@ -800,7 +834,9 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
               <Textarea
                 label="Restricciones Medicas"
                 value={formData.restricciones_medicas}
-                onChange={(e) => setFormData({ ...formData, restricciones_medicas: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, restricciones_medicas: e.target.value })
+                }
                 placeholder="Condiciones medicas que impiden ejercer el cargo..."
                 rows={2}
               />
@@ -812,6 +848,34 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
                 placeholder="Agregar capacitacion..."
                 suggestions={CAPACITACIONES_SST_SUGERIDAS}
               />
+            </div>
+          )}
+
+          {/* ========== TAB 5: ACCESO A SECCIONES ========== */}
+          {activeTab === 'acceso' && (
+            <div className="space-y-4">
+              {isEditing && cargo ? (
+                <TabAccesoSecciones cargoId={cargo.id} cargoName={cargo.name} />
+              ) : (
+                <Alert
+                  variant="warning"
+                  message="Los accesos a secciones se configuran después de crear el cargo. Guarda primero y luego configura los accesos."
+                />
+              )}
+            </div>
+          )}
+
+          {/* ========== TAB 6: PERMISOS DE ACCIONES ========== */}
+          {activeTab === 'permisos' && (
+            <div className="space-y-4">
+              {isEditing && cargo ? (
+                <TabPermisosAcciones cargoId={cargo.id} cargoName={cargo.name} />
+              ) : (
+                <Alert
+                  variant="warning"
+                  message="Los permisos de acciones se configuran después de crear el cargo. Guarda primero y luego configura los permisos."
+                />
+              )}
             </div>
           )}
         </form>

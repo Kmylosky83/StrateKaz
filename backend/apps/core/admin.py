@@ -1,6 +1,8 @@
 """
 Django Admin Configuration - Módulo Core
 Sistema de Gestión StrateKaz
+
+Actualizado: 2025-01-12 - Sincronizado con modelos actuales
 """
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
@@ -37,7 +39,7 @@ from .models import (
 @admin.register(Cargo)
 class CargoAdmin(admin.ModelAdmin):
     """Administración de Cargos en Django Admin"""
-    
+
     list_display = [
         'code',
         'name',
@@ -47,23 +49,23 @@ class CargoAdmin(admin.ModelAdmin):
         'subordinados_count',
         'created_at',
     ]
-    
+
     list_filter = [
         'level',
         'is_active',
         'created_at',
     ]
-    
+
     search_fields = [
         'code',
         'name',
         'description',
     ]
-    
+
     ordering = ['level', 'name']
-    
+
     readonly_fields = ['created_at', 'updated_at']
-    
+
     fieldsets = (
         ('Información Básica', {
             'fields': ('code', 'name', 'description')
@@ -79,12 +81,12 @@ class CargoAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
-    
+
     def level_display(self, obj):
         """Mostrar nivel con etiqueta"""
         return obj.get_level_display()
     level_display.short_description = 'Nivel'
-    
+
     def is_active_badge(self, obj):
         """Badge para estado activo"""
         if obj.is_active:
@@ -95,7 +97,7 @@ class CargoAdmin(admin.ModelAdmin):
             '<span style="color: red; font-weight: bold;">&#10005; Inactivo</span>'
         )
     is_active_badge.short_description = 'Estado'
-    
+
     def subordinados_count(self, obj):
         """Cantidad de subordinados"""
         return obj.subordinados.count()
@@ -105,7 +107,7 @@ class CargoAdmin(admin.ModelAdmin):
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
     """Administración de Usuarios en Django Admin"""
-    
+
     list_display = [
         'username',
         'email',
@@ -116,7 +118,7 @@ class UserAdmin(BaseUserAdmin):
         'is_staff',
         'date_joined',
     ]
-    
+
     list_filter = [
         'is_active',
         'is_staff',
@@ -125,7 +127,7 @@ class UserAdmin(BaseUserAdmin):
         'document_type',
         'date_joined',
     ]
-    
+
     search_fields = [
         'username',
         'email',
@@ -133,9 +135,9 @@ class UserAdmin(BaseUserAdmin):
         'last_name',
         'document_number',
     ]
-    
+
     ordering = ['-date_joined']
-    
+
     readonly_fields = [
         'date_joined',
         'last_login',
@@ -143,7 +145,7 @@ class UserAdmin(BaseUserAdmin):
         'updated_at',
         'deleted_at',
     ]
-    
+
     fieldsets = (
         ('Credenciales', {
             'fields': ('username', 'password')
@@ -187,7 +189,7 @@ class UserAdmin(BaseUserAdmin):
             'classes': ('collapse',)
         }),
     )
-    
+
     add_fieldsets = (
         ('Credenciales', {
             'classes': ('wide',),
@@ -218,12 +220,12 @@ class UserAdmin(BaseUserAdmin):
             )
         }),
     )
-    
+
     def full_name_display(self, obj):
         """Mostrar nombre completo"""
         return obj.get_full_name() or '-'
     full_name_display.short_description = 'Nombre Completo'
-    
+
     def cargo_display(self, obj):
         """Mostrar cargo con nivel"""
         if obj.cargo:
@@ -234,7 +236,7 @@ class UserAdmin(BaseUserAdmin):
             )
         return '-'
     cargo_display.short_description = 'Cargo'
-    
+
     def is_active_badge(self, obj):
         """Badge para estado activo"""
         if obj.is_deleted:
@@ -318,30 +320,30 @@ class PermisoAdmin(admin.ModelAdmin):
 @admin.register(CargoPermiso)
 class CargoPermisoAdmin(admin.ModelAdmin):
     """Administración de relación Cargo-Permiso en Django Admin"""
-    
+
     list_display = [
         'cargo',
         'permiso',
         'granted_by_display',
         'granted_at',
     ]
-    
+
     list_filter = [
         'cargo',
         'granted_at',
     ]
-    
+
     search_fields = [
         'cargo__name',
         'cargo__code',
         'permiso__name',
         'permiso__code',
     ]
-    
+
     ordering = ['cargo', 'permiso']
-    
+
     readonly_fields = ['granted_at']
-    
+
     def granted_by_display(self, obj):
         """Mostrar quién otorgó el permiso"""
         if obj.granted_by:
@@ -403,7 +405,6 @@ class GroupAdmin(admin.ModelAdmin):
     search_fields = ['code', 'name', 'description']
     ordering = ['name']
     autocomplete_fields = ['tipo']
-    # Note: roles usa through model, se gestiona via GroupRole admin
 
 
 # ==========================================================================
@@ -414,19 +415,21 @@ class GroupAdmin(admin.ModelAdmin):
 @admin.register(RiesgoOcupacional)
 class RiesgoOcupacionalAdmin(admin.ModelAdmin):
     """Admin para Riesgos Ocupacionales"""
-    list_display = ['nombre', 'codigo', 'nivel', 'is_active']
-    list_filter = ['nivel', 'is_active']
-    search_fields = ['nombre', 'codigo', 'descripcion']
-    ordering = ['nivel', 'nombre']
+    # Campos correctos del modelo: code, name, clasificacion
+    list_display = ['code', 'name', 'clasificacion', 'is_active']
+    list_filter = ['clasificacion', 'is_active']
+    search_fields = ['code', 'name', 'descripcion']
+    ordering = ['clasificacion', 'name']
 
 
 @admin.register(Role)
 class RoleAdmin(admin.ModelAdmin):
     """Admin para Roles"""
-    list_display = ['code', 'name', 'level', 'is_system', 'is_active']
-    list_filter = ['level', 'is_system', 'is_active']
+    # El modelo Role NO tiene campo 'level'
+    list_display = ['code', 'name', 'is_system', 'is_active', 'created_at']
+    list_filter = ['is_system', 'is_active']
     search_fields = ['code', 'name', 'description']
-    ordering = ['level', 'name']
+    ordering = ['name']
 
 
 @admin.register(RolePermiso)
@@ -450,8 +453,9 @@ class GroupRoleAdmin(admin.ModelAdmin):
 @admin.register(UserRole)
 class UserRoleAdmin(admin.ModelAdmin):
     """Admin para User-Role"""
-    list_display = ['user', 'role', 'assigned_at', 'expires_at', 'is_active']
-    list_filter = ['role', 'is_active', 'assigned_at']
+    # UserRole NO tiene campo 'is_active'
+    list_display = ['user', 'role', 'assigned_at', 'expires_at']
+    list_filter = ['role', 'assigned_at']
     search_fields = ['user__username', 'user__email', 'role__name']
     ordering = ['-assigned_at']
 
@@ -459,8 +463,9 @@ class UserRoleAdmin(admin.ModelAdmin):
 @admin.register(UserGroup)
 class UserGroupAdmin(admin.ModelAdmin):
     """Admin para User-Group"""
-    list_display = ['user', 'group', 'joined_at', 'is_leader']
-    list_filter = ['group', 'is_leader', 'joined_at']
+    # UserGroup tiene 'assigned_at' no 'joined_at'
+    list_display = ['user', 'group', 'assigned_at', 'is_leader']
+    list_filter = ['group', 'is_leader', 'assigned_at']
     search_fields = ['user__username', 'group__name']
     ordering = ['group', 'user']
 
@@ -487,48 +492,53 @@ class CargoRoleAdmin(admin.ModelAdmin):
 @admin.register(SystemModule)
 class SystemModuleAdmin(admin.ModelAdmin):
     """Admin para Módulos del Sistema"""
-    list_display = ['code', 'name', 'icon', 'orden', 'is_active']
-    list_filter = ['is_active']
+    # SystemModule tiene 'is_enabled' no 'is_active'
+    list_display = ['code', 'name', 'icon', 'orden', 'is_enabled']
+    list_filter = ['is_enabled', 'category']
     search_fields = ['code', 'name', 'description']
     ordering = ['orden', 'name']
-    list_editable = ['orden', 'is_active']
+    list_editable = ['orden', 'is_enabled']
 
 
 @admin.register(ModuleTab)
 class ModuleTabAdmin(admin.ModelAdmin):
     """Admin para Tabs de Módulo"""
-    list_display = ['code', 'name', 'module', 'orden', 'is_active']
-    list_filter = ['module', 'is_active']
+    # ModuleTab tiene 'is_enabled' no 'is_active'
+    list_display = ['code', 'name', 'module', 'orden', 'is_enabled']
+    list_filter = ['module', 'is_enabled']
     search_fields = ['code', 'name']
     ordering = ['module', 'orden']
-    list_editable = ['orden', 'is_active']
+    list_editable = ['orden', 'is_enabled']
 
 
 @admin.register(TabSection)
 class TabSectionAdmin(admin.ModelAdmin):
     """Admin para Secciones de Tab"""
-    list_display = ['code', 'name', 'tab', 'orden', 'is_active']
-    list_filter = ['tab__module', 'tab', 'is_active']
+    # TabSection tiene 'is_enabled' no 'is_active'
+    list_display = ['code', 'name', 'tab', 'orden', 'is_enabled']
+    list_filter = ['tab__module', 'tab', 'is_enabled']
     search_fields = ['code', 'name']
     ordering = ['tab', 'orden']
-    list_editable = ['orden', 'is_active']
+    list_editable = ['orden', 'is_enabled']
 
 
 @admin.register(BrandingConfig)
 class BrandingConfigAdmin(admin.ModelAdmin):
     """Admin para Configuración de Marca"""
-    list_display = ['empresa_nombre', 'primary_color', 'is_active']
+    # BrandingConfig tiene 'company_name' no 'empresa_nombre'
+    list_display = ['company_name', 'primary_color', 'is_active']
     list_filter = ['is_active']
-    search_fields = ['empresa_nombre']
+    search_fields = ['company_name']
 
 
 @admin.register(RolAdicional)
 class RolAdicionalAdmin(admin.ModelAdmin):
     """Admin para Roles Adicionales"""
-    list_display = ['code', 'name', 'is_active', 'created_at']
-    list_filter = ['is_active', 'created_at']
-    search_fields = ['code', 'name', 'description']
-    ordering = ['name']
+    # RolAdicional tiene 'nombre' no 'name'
+    list_display = ['code', 'nombre', 'tipo', 'is_active', 'created_at']
+    list_filter = ['tipo', 'is_active', 'created_at']
+    search_fields = ['code', 'nombre', 'descripcion']
+    ordering = ['nombre']
 
 
 @admin.register(RolAdicionalPermiso)
@@ -536,7 +546,7 @@ class RolAdicionalPermisoAdmin(admin.ModelAdmin):
     """Admin para RolAdicional-Permiso"""
     list_display = ['rol_adicional', 'permiso', 'granted_at']
     list_filter = ['rol_adicional']
-    search_fields = ['rol_adicional__name', 'permiso__name']
+    search_fields = ['rol_adicional__nombre', 'permiso__name']
 
 
 @admin.register(UserRolAdicional)
@@ -544,16 +554,18 @@ class UserRolAdicionalAdmin(admin.ModelAdmin):
     """Admin para User-RolAdicional"""
     list_display = ['user', 'rol_adicional', 'assigned_at', 'expires_at', 'is_active']
     list_filter = ['rol_adicional', 'is_active']
-    search_fields = ['user__username', 'rol_adicional__name']
+    search_fields = ['user__username', 'rol_adicional__nombre']
     ordering = ['-assigned_at']
 
 
 @admin.register(CargoSectionAccess)
 class CargoSectionAccessAdmin(admin.ModelAdmin):
     """Admin para acceso de Cargo a Secciones"""
-    list_display = ['cargo', 'section', 'can_view', 'can_edit']
-    list_filter = ['cargo', 'section__tab__module', 'can_view', 'can_edit']
+    # CargoSectionAccess solo tiene cargo, section, granted_at, granted_by
+    list_display = ['cargo', 'section', 'granted_at', 'granted_by']
+    list_filter = ['cargo', 'section__tab__module']
     search_fields = ['cargo__name', 'section__name']
+    ordering = ['cargo', 'section']
 
 
 # Personalizar el sitio admin

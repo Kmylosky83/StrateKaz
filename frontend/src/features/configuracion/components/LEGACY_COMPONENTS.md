@@ -29,44 +29,71 @@ Este documento lista los componentes que ya NO se usan activamente en la aplicac
 - ✅ Documentado claramente como LEGACY en el header del archivo
 - ❌ NO eliminar aún (puede servir para referencia o migración)
 
-## Resolución de Conflictos de Nombres
+---
 
-### Problema
-Existían dos archivos con el nombre `RolesTab.tsx`:
-1. `gestion-estrategica/components/rbac/RolesTab.tsx` (58 líneas) - ACTIVO
-2. `configuracion/components/RolesTab.tsx` (832 líneas) - LEGACY
+## Arquitectura RBAC Actual (v3.3.0)
 
-### Solución
-Se renombró el componente activo:
-- `rbac/RolesTab.tsx` → `rbac/RolesPermisosWrapper.tsx`
-- Se exporta como `RolesTab` desde `rbac/index.ts` para mantener compatibilidad
-- El componente legacy conserva su nombre original con documentación clara
+### Flujo de Configuración Unificado
 
-### Mapa de Migración
+La configuración de RBAC se ha simplificado para ser más intuitiva:
 
 ```
-ANTES (Conflicto):
-├── configuracion/components/RolesTab.tsx (832 líneas, NO usado)
-└── gestion-estrategica/components/rbac/RolesTab.tsx (58 líneas, USADO)
-
-DESPUÉS (Resuelto):
-├── configuracion/components/RolesTab.tsx (832 líneas, LEGACY documentado)
-└── gestion-estrategica/components/rbac/
-    ├── RolesPermisosWrapper.tsx (58 líneas, ACTIVO)
-    └── index.ts (exporta como RolesTab para compatibilidad)
+Configuración > Cargos > Modal de Cargo (6 tabs)
+├── Tab 1: Identificación (datos básicos)
+├── Tab 2: Funciones (manual de funciones)
+├── Tab 3: Requisitos (formación, experiencia)
+├── Tab 4: SST (riesgos, EPP)
+├── Tab 5: Acceso UI (módulos/tabs/secciones visibles)
+└── Tab 6: Permisos (acciones CRUD autorizadas)
 ```
 
-## Notas para Desarrolladores
+### Roles Adicionales → Talento Humano
 
-1. **NO usar** `configuracion/components/RolesTab.tsx` en nuevo código
-2. **SÍ usar** `gestion-estrategica/components/rbac` con import desde `./rbac`
-3. Si necesitas la funcionalidad de roles, importa desde:
-   ```typescript
-   import { RolesTab } from '@/features/gestion-estrategica/components/rbac';
-   ```
-4. El componente legacy puede ser eliminado en una versión futura si no se requiere
+Los Roles Adicionales (COPASST, Brigadista, Auditor ISO, etc.) se gestionan desde:
+
+```
+Talento Humano > Roles Adicionales
+├── Crear/Editar roles
+├── Asignar a usuarios
+├── Gestionar certificaciones
+└── Ver estadísticas
+```
+
+### RolesPermisosWrapper (Vista de Referencia)
+
+El componente `RolesPermisosWrapper` en Organización > Roles y Permisos ahora contiene:
+
+```
+Organización > Roles y Permisos
+├── Matriz de Accesos: Vista global de accesos por cargo
+├── Matriz de Permisos: Vista global de permisos por cargo
+└── Catálogo de Permisos: Referencia de los 68 permisos del sistema
+```
+
+### Componentes Involucrados
+
+```
+frontend/src/features/
+├── configuracion/components/
+│   ├── CargoFormModal.tsx (6 tabs, incluye Acceso y Permisos)
+│   └── CargoFormTabs/
+│       ├── TabAccesoSecciones.tsx (selector de secciones UI)
+│       ├── TabPermisosAcciones.tsx (selector de permisos CRUD)
+│       └── index.ts
+├── gestion-estrategica/components/rbac/
+│   ├── RolesPermisosWrapper.tsx (3 subtabs para vista global)
+│   ├── PermisosCargoSubTab.tsx (matriz de permisos)
+│   ├── RolesAdicionalesSubTab.tsx (CRUD de roles adicionales)
+│   └── TodosPermisosSubTab.tsx (catálogo de permisos)
+└── talent-hub/pages/
+    └── TalentHubPage.tsx (incluye tab de Roles Adicionales)
+```
 
 ## Historial de Cambios
 
-- **2025-12-24**: Documentado como LEGACY y resuelto conflicto de nombres
-- **2025-12-XX**: Reemplazado por arquitectura modular en gestion-estrategica
+- **2025-01-12**: Reorganización RBAC v3.3.0
+  - CargoFormModal expandido a 6 tabs (agregados Acceso UI y Permisos)
+  - RolesAdicionalesSubTab movido a Talent Hub
+  - RolesPermisosWrapper simplificado a 3 subtabs
+- **2024-12-24**: Documentado como LEGACY y resuelto conflicto de nombres
+- **2024-12-XX**: Reemplazado por arquitectura modular en gestion-estrategica

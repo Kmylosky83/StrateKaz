@@ -468,6 +468,12 @@ class CargoCreateSerializer(serializers.ModelSerializer):
         required=False,
         help_text='Lista de IDs de riesgos ocupacionales'
     )
+    section_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        write_only=True,
+        required=False,
+        help_text='Lista de IDs de secciones (TabSection) a las que el cargo tiene acceso'
+    )
 
     class Meta:
         model = Cargo
@@ -493,6 +499,8 @@ class CargoCreateSerializer(serializers.ModelSerializer):
             'restricciones_medicas', 'capacitaciones_sst',
             # Permisos
             'rol_sistema', 'permission_ids', 'default_role_ids',
+            # Acceso a secciones UI
+            'section_ids',
             # Control
             'is_active',
         ]
@@ -507,6 +515,7 @@ class CargoCreateSerializer(serializers.ModelSerializer):
         permission_ids = validated_data.pop('permission_ids', [])
         default_role_ids = validated_data.pop('default_role_ids', [])
         riesgo_ids = validated_data.pop('riesgo_ids', [])
+        section_ids = validated_data.pop('section_ids', [])
 
         user = self.context['request'].user if 'request' in self.context else None
         validated_data['created_by'] = user
@@ -532,6 +541,19 @@ class CargoCreateSerializer(serializers.ModelSerializer):
             for role in roles:
                 CargoRole.objects.create(cargo=cargo, role=role)
 
+        # Asignar acceso a secciones de UI (CargoSectionAccess)
+        if section_ids:
+            from .models import TabSection, CargoSectionAccess
+            sections = TabSection.objects.filter(id__in=section_ids, is_active=True)
+            for section in sections:
+                CargoSectionAccess.objects.create(
+                    cargo=cargo,
+                    section=section,
+                    can_view=True,
+                    can_edit=True,
+                    granted_by=user
+                )
+
         return cargo
 
 
@@ -552,6 +574,12 @@ class CargoUpdateSerializer(serializers.ModelSerializer):
         child=serializers.IntegerField(),
         write_only=True,
         required=False,
+    )
+    section_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        write_only=True,
+        required=False,
+        help_text='Lista de IDs de secciones (TabSection) a las que el cargo tiene acceso'
     )
 
     class Meta:
@@ -578,6 +606,8 @@ class CargoUpdateSerializer(serializers.ModelSerializer):
             'restricciones_medicas', 'capacitaciones_sst',
             # Permisos
             'rol_sistema', 'permission_ids', 'default_role_ids',
+            # Acceso a secciones UI
+            'section_ids',
             # Control
             'is_active', 'fecha_aprobacion',
         ]
@@ -599,6 +629,7 @@ class CargoUpdateSerializer(serializers.ModelSerializer):
         permission_ids = validated_data.pop('permission_ids', None)
         default_role_ids = validated_data.pop('default_role_ids', None)
         riesgo_ids = validated_data.pop('riesgo_ids', None)
+        section_ids = validated_data.pop('section_ids', None)
 
         # Verificar si se modificó el manual de funciones para incrementar versión
         manual_fields = ['objetivo_cargo', 'funciones_responsabilidades', 'autoridad_autonomia',
@@ -639,6 +670,20 @@ class CargoUpdateSerializer(serializers.ModelSerializer):
             roles = Role.objects.filter(id__in=default_role_ids, is_active=True)
             for role in roles:
                 CargoRole.objects.create(cargo=instance, role=role)
+
+        # Actualizar acceso a secciones de UI si se proporcionaron
+        if section_ids is not None:
+            from .models import TabSection, CargoSectionAccess
+            CargoSectionAccess.objects.filter(cargo=instance).delete()
+            sections = TabSection.objects.filter(id__in=section_ids, is_active=True)
+            for section in sections:
+                CargoSectionAccess.objects.create(
+                    cargo=instance,
+                    section=section,
+                    can_view=True,
+                    can_edit=True,
+                    granted_by=user
+                )
 
         return instance
 

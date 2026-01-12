@@ -126,25 +126,27 @@ jobs:
         working-directory: ./backend
         run: |
           python manage.py test --verbosity=2 --keepdb
-        continue-on-error: true
 
-      - name: Run pytest (if available)
+      - name: Run pytest
         working-directory: ./backend
         run: |
           pytest -v --disable-warnings
-        continue-on-error: true
 
       - name: Check code formatting with Black
         working-directory: ./backend
         run: |
           black --check --diff .
-        continue-on-error: true
 
       - name: Lint with Ruff
         working-directory: ./backend
         run: |
           ruff check .
-        continue-on-error: true
+
+      - name: Security audit with pip-audit
+        working-directory: ./backend
+        run: |
+          pip install pip-audit
+          pip-audit --strict
 
   # ═══════════════════════════════════════════════════
   # FRONTEND BUILD & TYPE CHECKING
@@ -183,7 +185,10 @@ jobs:
       - name: Run ESLint
         working-directory: ./frontend
         run: npm run lint
-        continue-on-error: true
+
+      - name: Security audit with npm audit
+        working-directory: ./frontend
+        run: npm audit --audit-level=high
 
       - name: Build production bundle
         working-directory: ./frontend

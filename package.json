@@ -1,0 +1,24 @@
+{
+  "name": "stratekaz",
+  "version": "1.0.0",
+  "description": "StrateKaz - Sistema de Gestión Integral",
+  "private": true,
+  "scripts": {
+    "prepare": "husky",
+    "lint:frontend": "cd frontend && npm run lint",
+    "format:frontend": "cd frontend && npm run format"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7"
+  },
+  "lint-staged": {
+    "frontend/**/*.{ts,tsx}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "frontend/**/*.{css,json}": [
+      "prettier --write"
+    ]
+  }
+}

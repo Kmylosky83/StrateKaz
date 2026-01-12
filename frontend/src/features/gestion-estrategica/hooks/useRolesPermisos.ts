@@ -47,10 +47,9 @@ export function usePermisos(filters?: PermisosFilters) {
   return useQuery({
     queryKey: ['permisos', filters],
     queryFn: async () => {
-      const response = await api.get<{ results: Permiso[]; count: number }>(
-        ENDPOINTS.permisos,
-        { params: filters }
-      );
+      const response = await api.get<{ results: Permiso[]; count: number }>(ENDPOINTS.permisos, {
+        params: filters,
+      });
       return response.data;
     },
     staleTime: 5 * 60 * 1000, // 5 minutos (los permisos no cambian frecuentemente)
@@ -97,9 +96,7 @@ export function useCargoPermisos(cargoId: number | null) {
   return useQuery({
     queryKey: ['cargo-permisos', cargoId],
     queryFn: async () => {
-      const response = await api.get<CargoConPermisos>(
-        `${ENDPOINTS.cargosPermisos}${cargoId}/`
-      );
+      const response = await api.get<CargoConPermisos>(`${ENDPOINTS.cargosPermisos}${cargoId}/`);
       return response.data;
     },
     enabled: !!cargoId,
@@ -122,14 +119,18 @@ export function useAsignarPermisosCargo() {
       permissionIds: number[];
     }) => {
       const response = await api.post<CargoConPermisos>(
-        `${ENDPOINTS.cargosPermisos}${cargoId}/asignar-permisos/`,
+        `${ENDPOINTS.cargosPermisos}${cargoId}/assign-permissions/`,
         { permission_ids: permissionIds }
       );
       return response.data;
     },
     onSuccess: (data) => {
+      // Invalidar queries de permisos
       queryClient.invalidateQueries({ queryKey: ['cargos-permisos'] });
       queryClient.invalidateQueries({ queryKey: ['cargo-permisos', data.id] });
+      // Invalidar queries de cargos (para refrescar tablas y modales)
+      queryClient.invalidateQueries({ queryKey: ['cargos-rbac'] });
+      queryClient.invalidateQueries({ queryKey: ['cargo-rbac', data.id] });
       toast.success('Permisos del cargo actualizados correctamente');
     },
     onError: (error: any) => {
@@ -168,9 +169,7 @@ export function useRolAdicional(rolId: number | null) {
   return useQuery({
     queryKey: ['rol-adicional', rolId],
     queryFn: async () => {
-      const response = await api.get<RolAdicional>(
-        `${ENDPOINTS.rolesAdicionales}${rolId}/`
-      );
+      const response = await api.get<RolAdicional>(`${ENDPOINTS.rolesAdicionales}${rolId}/`);
       return response.data;
     },
     enabled: !!rolId,
@@ -210,17 +209,8 @@ export function useUpdateRolAdicional() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      id,
-      data,
-    }: {
-      id: number;
-      data: UpdateRolAdicionalDTO;
-    }) => {
-      const response = await api.patch<RolAdicional>(
-        `${ENDPOINTS.rolesAdicionales}${id}/`,
-        data
-      );
+    mutationFn: async ({ id, data }: { id: number; data: UpdateRolAdicionalDTO }) => {
+      const response = await api.patch<RolAdicional>(`${ENDPOINTS.rolesAdicionales}${id}/`, data);
       return response.data;
     },
     onSuccess: (data) => {
@@ -270,18 +260,15 @@ export function useToggleRolActivo() {
 
   return useMutation({
     mutationFn: async ({ id, is_active }: { id: number; is_active: boolean }) => {
-      const response = await api.patch<RolAdicional>(
-        `${ENDPOINTS.rolesAdicionales}${id}/`,
-        { is_active }
-      );
+      const response = await api.patch<RolAdicional>(`${ENDPOINTS.rolesAdicionales}${id}/`, {
+        is_active,
+      });
       return response.data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['roles-adicionales'] });
       queryClient.invalidateQueries({ queryKey: ['rol-adicional', data.id] });
-      toast.success(
-        `Rol ${data.is_active ? 'activado' : 'desactivado'} correctamente`
-      );
+      toast.success(`Rol ${data.is_active ? 'activado' : 'desactivado'} correctamente`);
     },
     onError: (error: any) => {
       const message =
@@ -320,9 +307,7 @@ export function useUsuariosRol(rolId: number | null) {
   return useQuery({
     queryKey: ['usuarios-rol', rolId],
     queryFn: async () => {
-      const response = await api.get<any[]>(
-        `${ENDPOINTS.rolesAdicionales}${rolId}/usuarios/`
-      );
+      const response = await api.get<any[]>(`${ENDPOINTS.rolesAdicionales}${rolId}/usuarios/`);
       return response.data;
     },
     enabled: !!rolId,
@@ -338,10 +323,7 @@ export function useAsignarRolUsuario() {
 
   return useMutation({
     mutationFn: async (data: AsignarRolUsuarioDTO) => {
-      const response = await api.post(
-        `${ENDPOINTS.rolesAdicionales}asignar/`,
-        data
-      );
+      const response = await api.post(`${ENDPOINTS.rolesAdicionales}asignar/`, data);
       return response.data;
     },
     onSuccess: (_data, variables) => {
@@ -367,11 +349,17 @@ export function useRevocarRolUsuario() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ user_id, rol_adicional_id }: { user_id: number; rol_adicional_id: number }) => {
-      const response = await api.post(
-        `${ENDPOINTS.rolesAdicionales}revocar/`,
-        { user_id, rol_adicional_id }
-      );
+    mutationFn: async ({
+      user_id,
+      rol_adicional_id,
+    }: {
+      user_id: number;
+      rol_adicional_id: number;
+    }) => {
+      const response = await api.post(`${ENDPOINTS.rolesAdicionales}revocar/`, {
+        user_id,
+        rol_adicional_id,
+      });
       return response.data;
     },
     onSuccess: (_data, variables) => {
@@ -399,9 +387,7 @@ export function usePermisosEfectivos(userId: number | null) {
   return useQuery({
     queryKey: ['permisos-efectivos', userId],
     queryFn: async () => {
-      const response = await api.get(
-        `/core/users/${userId}/permisos-efectivos/`
-      );
+      const response = await api.get(`/core/users/${userId}/permisos-efectivos/`);
       return response.data;
     },
     enabled: !!userId,
@@ -416,9 +402,7 @@ export function useRolesUsuario(userId: number | null) {
   return useQuery({
     queryKey: ['roles-usuario', userId],
     queryFn: async () => {
-      const response = await api.get(
-        `/core/users/${userId}/roles-adicionales/`
-      );
+      const response = await api.get(`/core/users/${userId}/roles-adicionales/`);
       return response.data;
     },
     enabled: !!userId,
@@ -443,9 +427,7 @@ export function usePermisoModulos() {
   return useQuery({
     queryKey: ['permiso-modulos'],
     queryFn: async () => {
-      const response = await api.get<SelectOption[]>(
-        `${ENDPOINTS.permisos}modules/`
-      );
+      const response = await api.get<SelectOption[]>(`${ENDPOINTS.permisos}modules/`);
       return response.data;
     },
     staleTime: 10 * 60 * 1000, // 10 minutos - los módulos no cambian frecuentemente
@@ -460,9 +442,7 @@ export function usePermisoAcciones() {
   return useQuery({
     queryKey: ['permiso-acciones'],
     queryFn: async () => {
-      const response = await api.get<SelectOption[]>(
-        `${ENDPOINTS.permisos}actions/`
-      );
+      const response = await api.get<SelectOption[]>(`${ENDPOINTS.permisos}actions/`);
       return response.data;
     },
     staleTime: 10 * 60 * 1000, // 10 minutos - las acciones no cambian frecuentemente

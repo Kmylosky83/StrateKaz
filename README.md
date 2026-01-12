@@ -8,12 +8,10 @@ Sistema integral de gestion empresarial multi-tenant para empresas colombianas c
 | Info | Valor |
 |------|-------|
 | **Nombre del Software** | StrateKaz |
-| **Version** | 3.1.0 |
+| **Version** | 3.2.0 |
 | **Ultima Actualizacion** | 11 Enero 2026 |
-| **Estado** | MVP - Workflow de Firmas Digitales v3.1 |
+| **Estado** | MVP - v3.2.0 Design System Tests + Icon Optimization |
 | **Propietario** | StrateKaz S.A.S. |
-| **Calificacion Backend** | 8.5/10 |
-| **Calificacion Frontend** | 7.5/10 |
 
 ---
 
@@ -283,6 +281,24 @@ VITE_API_URL=http://localhost:8000/api
 ---
 
 ## Changelog Reciente
+
+### v3.2.0 (11 Enero 2026)
+
+- **Testing Frontend Completo**: Suite de tests para Design System
+  - Button.test.tsx (28 tests) - variants, sizes, loading, disabled, icons, events, accessibility
+  - Badge.test.tsx (18 tests) - 8 variants, 3 sizes
+  - Card.test.tsx (16 tests) - variants, padding, composition
+  - Tabs.test.tsx (18 tests) - underline/pills variants, interactions, disabled state
+  - Total: 219 tests pasando
+- **Optimizacion de Iconos**: Eliminacion de `import * as LucideIcons`
+  - Centralizacion via `getIconComponent()` del DynamicIcon
+  - Reduccion significativa del bundle de iconos
+  - Archivos optimizados: Sidebar, DashboardPage, DynamicSections, ConfiguracionTab
+- **Migracion Completa a Design System**: logistics-fleet y production-ops
+  - Migracion de imports `@/components/ui` a `@/components/common`
+  - Correccion de Badge variants: green/yellow/red/blue -> success/warning/danger/info
+  - Componentes migrados: LogisticsFleetPage, GestionFlotaTab, GestionTransporteTab,
+    ProductionOpsPage, RecepcionTab, ProcesamientoTab, MantenimientoTab, ProductoTerminadoTab
 
 ### v3.1.0 (11 Enero 2026)
 

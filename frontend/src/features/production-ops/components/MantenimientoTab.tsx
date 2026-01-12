@@ -1,16 +1,14 @@
 /**
  * Tab de Mantenimiento - Production Ops
+ *
+ * Usa componentes del Design System (@/components/common)
  */
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Plus, Search, Filter, Wrench, AlertTriangle } from 'lucide-react';
+import { Card, Badge, Button, Tabs } from '@/components/common';
+import { Plus, Search, Filter, AlertTriangle } from 'lucide-react';
 import { useActivosProduccion, useOrdenesTrabajo } from '../hooks/useProductionOps';
-import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const MantenimientoTab: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -29,252 +27,253 @@ const MantenimientoTab: React.FC = () => {
     search: searchTerm,
   });
 
-  const getEstadoActivoColor = (estado: string) => {
-    const estadoMap: Record<string, string> = {
-      OPERATIVO: 'bg-green-100 text-green-800',
-      EN_MANTENIMIENTO: 'bg-yellow-100 text-yellow-800',
-      FUERA_SERVICIO: 'bg-red-100 text-red-800',
-      DADO_DE_BAJA: 'bg-gray-100 text-gray-800',
+  const getEstadoActivoVariant = (estado: string): 'green' | 'yellow' | 'red' | 'gray' => {
+    const estadoMap: Record<string, 'green' | 'yellow' | 'red' | 'gray'> = {
+      OPERATIVO: 'green',
+      EN_MANTENIMIENTO: 'yellow',
+      FUERA_SERVICIO: 'red',
+      DADO_DE_BAJA: 'gray',
     };
-    return estadoMap[estado] || 'bg-gray-100 text-gray-800';
+    return estadoMap[estado] || 'gray';
   };
 
-  const getEstadoOrdenColor = (estado: string) => {
-    const estadoMap: Record<string, string> = {
-      ABIERTA: 'bg-blue-100 text-blue-800',
-      EN_PROCESO: 'bg-yellow-100 text-yellow-800',
-      COMPLETADA: 'bg-green-100 text-green-800',
-      CANCELADA: 'bg-gray-100 text-gray-800',
+  const getEstadoOrdenVariant = (estado: string): 'blue' | 'yellow' | 'green' | 'gray' => {
+    const estadoMap: Record<string, 'blue' | 'yellow' | 'green' | 'gray'> = {
+      ABIERTA: 'blue',
+      EN_PROCESO: 'yellow',
+      COMPLETADA: 'green',
+      CANCELADA: 'gray',
     };
-    return estadoMap[estado] || 'bg-gray-100 text-gray-800';
+    return estadoMap[estado] || 'gray';
   };
+
+  const tabs = [
+    { id: 'activos', label: 'Activos de Producción' },
+    { id: 'ordenes', label: 'Órdenes de Trabajo' },
+  ];
 
   return (
     <div className="space-y-4">
       {/* Header */}
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Mantenimiento de Equipos</CardTitle>
-              <CardDescription>
-                Gestión de activos, órdenes de trabajo, calibraciones y paradas
-              </CardDescription>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline">
-                <AlertTriangle className="h-4 w-4 mr-2" />
-                Registrar Parada
-              </Button>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Nueva OT
-              </Button>
-            </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Mantenimiento de Equipos
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Gestión de activos, órdenes de trabajo, calibraciones y paradas
+            </p>
           </div>
-        </CardHeader>
+          <div className="flex gap-2">
+            <Button variant="secondary">
+              <AlertTriangle className="h-4 w-4 mr-2" />
+              Registrar Parada
+            </Button>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Nueva OT
+            </Button>
+          </div>
+        </div>
       </Card>
 
-      <Tabs value={subTab} onValueChange={setSubTab}>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="activos">Activos de Producción</TabsTrigger>
-          <TabsTrigger value="ordenes">Órdenes de Trabajo</TabsTrigger>
-        </TabsList>
+      <Tabs
+        tabs={tabs}
+        activeTab={subTab}
+        onChange={setSubTab}
+        variant="pills"
+      />
 
-        <TabsContent value="activos" className="space-y-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex gap-4 mb-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar activos..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-                <Button variant="outline">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filtros
-                </Button>
+      {/* Tab: Activos */}
+      {subTab === 'activos' && (
+        <Card>
+          <div className="flex gap-4 mb-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar activos..."
+                value={searchTerm}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+            <Button variant="secondary">
+              <Filter className="h-4 w-4 mr-2" />
+              Filtros
+            </Button>
+          </div>
+
+          {loadingActivos ? (
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">Cargando...</div>
+          ) : !activosData?.results?.length ? (
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              No hay activos registrados
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="overflow-x-auto rounded-md border border-gray-200 dark:border-gray-700">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-800">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Código</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tipo</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Estado</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Próximo Mantenimiento</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                    {activosData.results.map((activo) => (
+                      <tr key={activo.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                        <td className="px-4 py-3 text-sm font-mono text-gray-900 dark:text-gray-100">{activo.codigo}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{activo.nombre}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{activo.tipo_activo_nombre}</td>
+                        <td className="px-4 py-3">
+                          <Badge variant={getEstadoActivoVariant(activo.estado)} size="sm">
+                            {activo.estado}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                          {activo.fecha_proximo_mantenimiento
+                            ? format(new Date(activo.fecha_proximo_mantenimiento), 'PPP', { locale: es })
+                            : '-'}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <Button variant="ghost" size="sm">
+                            Ver Detalles
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
 
-              {loadingActivos ? (
-                <div className="text-center py-8">Cargando...</div>
-              ) : !activosData?.results?.length ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  No hay activos registrados
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  Mostrando {activosData.results.length} de {activosData.count} activos
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="rounded-md border">
-                    <table className="w-full">
-                      <thead className="bg-muted/50">
-                        <tr>
-                          <th className="text-left p-4 font-medium">Código</th>
-                          <th className="text-left p-4 font-medium">Nombre</th>
-                          <th className="text-left p-4 font-medium">Tipo</th>
-                          <th className="text-left p-4 font-medium">Estado</th>
-                          <th className="text-left p-4 font-medium">Próximo Mantenimiento</th>
-                          <th className="text-right p-4 font-medium">Acciones</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y">
-                        {activosData.results.map((activo) => (
-                          <tr key={activo.id} className="hover:bg-muted/50 transition-colors">
-                            <td className="p-4 font-mono text-sm">{activo.codigo}</td>
-                            <td className="p-4">{activo.nombre}</td>
-                            <td className="p-4">{activo.tipo_activo_nombre}</td>
-                            <td className="p-4">
-                              <Badge className={getEstadoActivoColor(activo.estado)}>
-                                {activo.estado}
-                              </Badge>
-                            </td>
-                            <td className="p-4">
-                              {activo.fecha_proximo_mantenimiento
-                                ? format(
-                                    new Date(activo.fecha_proximo_mantenimiento),
-                                    'PPP',
-                                    { locale: es }
-                                  )
-                                : '-'}
-                            </td>
-                            <td className="p-4 text-right">
-                              <Button variant="ghost" size="sm">
-                                Ver Detalles
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={!activosData.previous}
+                  >
+                    Anterior
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setPage((p) => p + 1)}
+                    disabled={!activosData.next}
+                  >
+                    Siguiente
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </Card>
+      )}
 
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-muted-foreground">
-                      Mostrando {activosData.results.length} de {activosData.count} activos
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPage((p) => Math.max(1, p - 1))}
-                        disabled={!activosData.previous}
-                      >
-                        Anterior
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPage((p) => p + 1)}
-                        disabled={!activosData.next}
-                      >
-                        Siguiente
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+      {/* Tab: Órdenes de Trabajo */}
+      {subTab === 'ordenes' && (
+        <Card>
+          <div className="flex gap-4 mb-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar órdenes de trabajo..."
+                value={searchTerm}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+            <Button variant="secondary">
+              <Filter className="h-4 w-4 mr-2" />
+              Filtros
+            </Button>
+          </div>
 
-        <TabsContent value="ordenes" className="space-y-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex gap-4 mb-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar órdenes de trabajo..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-                <Button variant="outline">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filtros
-                </Button>
+          {loadingOrdenes ? (
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">Cargando...</div>
+          ) : !ordenesData?.results?.length ? (
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              No hay órdenes de trabajo registradas
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="overflow-x-auto rounded-md border border-gray-200 dark:border-gray-700">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-800">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Código OT</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Activo</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tipo</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Prioridad</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Estado</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Asignado a</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                    {ordenesData.results.map((orden) => (
+                      <tr key={orden.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                        <td className="px-4 py-3 text-sm font-mono text-gray-900 dark:text-gray-100">{orden.codigo}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{orden.activo_codigo}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{orden.tipo_mantenimiento_nombre}</td>
+                        <td className="px-4 py-3">
+                          <Badge variant="gray" size="sm">Prioridad {orden.prioridad}</Badge>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge variant={getEstadoOrdenVariant(orden.estado)} size="sm">
+                            {orden.estado}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{orden.asignado_a_nombre || '-'}</td>
+                        <td className="px-4 py-3 text-right">
+                          <Button variant="ghost" size="sm">
+                            Ver Detalles
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
 
-              {loadingOrdenes ? (
-                <div className="text-center py-8">Cargando...</div>
-              ) : !ordenesData?.results?.length ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  No hay órdenes de trabajo registradas
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  Mostrando {ordenesData.results.length} de {ordenesData.count} órdenes
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="rounded-md border">
-                    <table className="w-full">
-                      <thead className="bg-muted/50">
-                        <tr>
-                          <th className="text-left p-4 font-medium">Código OT</th>
-                          <th className="text-left p-4 font-medium">Activo</th>
-                          <th className="text-left p-4 font-medium">Tipo</th>
-                          <th className="text-left p-4 font-medium">Prioridad</th>
-                          <th className="text-left p-4 font-medium">Estado</th>
-                          <th className="text-left p-4 font-medium">Asignado a</th>
-                          <th className="text-right p-4 font-medium">Acciones</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y">
-                        {ordenesData.results.map((orden) => (
-                          <tr key={orden.id} className="hover:bg-muted/50 transition-colors">
-                            <td className="p-4 font-mono text-sm">{orden.codigo}</td>
-                            <td className="p-4">{orden.activo_codigo}</td>
-                            <td className="p-4">{orden.tipo_mantenimiento_nombre}</td>
-                            <td className="p-4">
-                              <Badge>Prioridad {orden.prioridad}</Badge>
-                            </td>
-                            <td className="p-4">
-                              <Badge className={getEstadoOrdenColor(orden.estado)}>
-                                {orden.estado}
-                              </Badge>
-                            </td>
-                            <td className="p-4">{orden.asignado_a_nombre || '-'}</td>
-                            <td className="p-4 text-right">
-                              <Button variant="ghost" size="sm">
-                                Ver Detalles
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-muted-foreground">
-                      Mostrando {ordenesData.results.length} de {ordenesData.count} órdenes
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPage((p) => Math.max(1, p - 1))}
-                        disabled={!ordenesData.previous}
-                      >
-                        Anterior
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPage((p) => p + 1)}
-                        disabled={!ordenesData.next}
-                      >
-                        Siguiente
-                      </Button>
-                    </div>
-                  </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={!ordenesData.previous}
+                  >
+                    Anterior
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setPage((p) => p + 1)}
+                    disabled={!ordenesData.next}
+                  >
+                    Siguiente
+                  </Button>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              </div>
+            </div>
+          )}
+        </Card>
+      )}
     </div>
   );
 };

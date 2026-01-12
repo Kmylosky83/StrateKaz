@@ -1,16 +1,14 @@
 /**
  * Tab de Producto Terminado - Production Ops
+ *
+ * Usa componentes del Design System (@/components/common)
  */
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Card, Badge, Button, Tabs } from '@/components/common';
 import { Plus, Search, Filter, CheckCircle, Package } from 'lucide-react';
 import { useStocks, useLiberaciones } from '../hooks/useProductionOps';
-import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const ProductoTerminadoTab: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -29,275 +27,261 @@ const ProductoTerminadoTab: React.FC = () => {
     search: searchTerm,
   });
 
-  const getResultadoColor = (resultado: string) => {
-    const resultadoMap: Record<string, string> = {
-      PENDIENTE: 'bg-yellow-100 text-yellow-800',
-      APROBADO: 'bg-green-100 text-green-800',
-      APROBADO_CON_OBSERVACIONES: 'bg-blue-100 text-blue-800',
-      RECHAZADO: 'bg-red-100 text-red-800',
+  const getResultadoVariant = (resultado: string): 'yellow' | 'green' | 'blue' | 'red' | 'gray' => {
+    const resultadoMap: Record<string, 'yellow' | 'green' | 'blue' | 'red' | 'gray'> = {
+      PENDIENTE: 'yellow',
+      APROBADO: 'green',
+      APROBADO_CON_OBSERVACIONES: 'blue',
+      RECHAZADO: 'red',
     };
-    return resultadoMap[resultado] || 'bg-gray-100 text-gray-800';
+    return resultadoMap[resultado] || 'gray';
   };
+
+  const tabs = [
+    { id: 'stock', label: 'Stock de Producto', icon: <Package className="h-4 w-4" /> },
+    { id: 'liberaciones', label: 'Liberaciones de Calidad', icon: <CheckCircle className="h-4 w-4" /> },
+  ];
 
   return (
     <div className="space-y-4">
       {/* Header */}
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Producto Terminado</CardTitle>
-              <CardDescription>
-                Gestión de stock, liberaciones de calidad y certificados
-              </CardDescription>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline">
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Solicitar Liberación
-              </Button>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Nuevo Stock
-              </Button>
-            </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Producto Terminado
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Gestión de stock, liberaciones de calidad y certificados
+            </p>
           </div>
-        </CardHeader>
+          <div className="flex gap-2">
+            <Button variant="secondary">
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Solicitar Liberación
+            </Button>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Nuevo Stock
+            </Button>
+          </div>
+        </div>
       </Card>
 
-      <Tabs value={subTab} onValueChange={setSubTab}>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="stock">
-            <Package className="h-4 w-4 mr-2" />
-            Stock de Producto
-          </TabsTrigger>
-          <TabsTrigger value="liberaciones">
-            <CheckCircle className="h-4 w-4 mr-2" />
-            Liberaciones de Calidad
-          </TabsTrigger>
-        </TabsList>
+      <Tabs
+        tabs={tabs}
+        activeTab={subTab}
+        onChange={setSubTab}
+        variant="pills"
+      />
 
-        <TabsContent value="stock" className="space-y-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex gap-4 mb-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar por lote, producto..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-                <Button variant="outline">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filtros
-                </Button>
+      {/* Tab: Stock */}
+      {subTab === 'stock' && (
+        <Card>
+          <div className="flex gap-4 mb-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar por lote, producto..."
+                value={searchTerm}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+            <Button variant="secondary">
+              <Filter className="h-4 w-4 mr-2" />
+              Filtros
+            </Button>
+          </div>
+
+          {loadingStocks ? (
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">Cargando...</div>
+          ) : !stocksData?.results?.length ? (
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              No hay stock registrado
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="overflow-x-auto rounded-md border border-gray-200 dark:border-gray-700">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-800">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Lote PT</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Producto</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Estado</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Disponible</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fecha Producción</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Vencimiento</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                    {stocksData.results.map((stock) => (
+                      <tr key={stock.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                        <td className="px-4 py-3 text-sm font-mono text-gray-900 dark:text-gray-100">{stock.codigo_lote_pt}</td>
+                        <td className="px-4 py-3">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{stock.producto_nombre}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">{stock.producto_codigo}</div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge variant="gray" size="sm">
+                            {stock.estado_lote_nombre}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3 text-right text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {parseFloat(stock.cantidad_disponible).toFixed(2)} KG
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                          {format(new Date(stock.fecha_produccion), 'PPP', { locale: es })}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          {stock.fecha_vencimiento ? (
+                            <span className={stock.esta_vencido ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-700 dark:text-gray-300'}>
+                              {format(new Date(stock.fecha_vencimiento), 'PPP', { locale: es })}
+                              {stock.esta_vencido && ' (Vencido)'}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <Button variant="ghost" size="sm">
+                            Ver Detalles
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
 
-              {loadingStocks ? (
-                <div className="text-center py-8">Cargando...</div>
-              ) : !stocksData?.results?.length ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  No hay stock registrado
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  Mostrando {stocksData.results.length} de {stocksData.count} lotes
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="rounded-md border">
-                    <table className="w-full">
-                      <thead className="bg-muted/50">
-                        <tr>
-                          <th className="text-left p-4 font-medium">Lote PT</th>
-                          <th className="text-left p-4 font-medium">Producto</th>
-                          <th className="text-left p-4 font-medium">Estado</th>
-                          <th className="text-right p-4 font-medium">Disponible</th>
-                          <th className="text-left p-4 font-medium">Fecha Producción</th>
-                          <th className="text-left p-4 font-medium">Vencimiento</th>
-                          <th className="text-right p-4 font-medium">Acciones</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y">
-                        {stocksData.results.map((stock) => (
-                          <tr key={stock.id} className="hover:bg-muted/50 transition-colors">
-                            <td className="p-4 font-mono text-sm">{stock.codigo_lote_pt}</td>
-                            <td className="p-4">
-                              <div>
-                                <div className="font-medium">{stock.producto_nombre}</div>
-                                <div className="text-sm text-muted-foreground">
-                                  {stock.producto_codigo}
-                                </div>
-                              </div>
-                            </td>
-                            <td className="p-4">
-                              <Badge className={stock.estado_lote_color || ''}>
-                                {stock.estado_lote_nombre}
-                              </Badge>
-                            </td>
-                            <td className="p-4 text-right font-medium">
-                              {parseFloat(stock.cantidad_disponible).toFixed(2)} KG
-                            </td>
-                            <td className="p-4">
-                              {format(new Date(stock.fecha_produccion), 'PPP', { locale: es })}
-                            </td>
-                            <td className="p-4">
-                              {stock.fecha_vencimiento ? (
-                                <div
-                                  className={
-                                    stock.esta_vencido
-                                      ? 'text-red-600 font-medium'
-                                      : 'text-muted-foreground'
-                                  }
-                                >
-                                  {format(new Date(stock.fecha_vencimiento), 'PPP', {
-                                    locale: es,
-                                  })}
-                                  {stock.esta_vencido && ' (Vencido)'}
-                                </div>
-                              ) : (
-                                '-'
-                              )}
-                            </td>
-                            <td className="p-4 text-right">
-                              <Button variant="ghost" size="sm">
-                                Ver Detalles
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={!stocksData.previous}
+                  >
+                    Anterior
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setPage((p) => p + 1)}
+                    disabled={!stocksData.next}
+                  >
+                    Siguiente
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </Card>
+      )}
 
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-muted-foreground">
-                      Mostrando {stocksData.results.length} de {stocksData.count} lotes
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPage((p) => Math.max(1, p - 1))}
-                        disabled={!stocksData.previous}
-                      >
-                        Anterior
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPage((p) => p + 1)}
-                        disabled={!stocksData.next}
-                      >
-                        Siguiente
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+      {/* Tab: Liberaciones */}
+      {subTab === 'liberaciones' && (
+        <Card>
+          <div className="flex gap-4 mb-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar liberaciones..."
+                value={searchTerm}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+            <Button variant="secondary">
+              <Filter className="h-4 w-4 mr-2" />
+              Filtros
+            </Button>
+          </div>
 
-        <TabsContent value="liberaciones" className="space-y-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex gap-4 mb-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar liberaciones..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-                <Button variant="outline">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filtros
-                </Button>
+          {loadingLiberaciones ? (
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">Cargando...</div>
+          ) : !liberacionesData?.results?.length ? (
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              No hay liberaciones registradas
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="overflow-x-auto rounded-md border border-gray-200 dark:border-gray-700">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-800">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Lote</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Producto</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fecha Solicitud</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Solicitado por</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Resultado</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Aprobado por</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                    {liberacionesData.results.map((liberacion) => (
+                      <tr key={liberacion.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                        <td className="px-4 py-3 text-sm font-mono text-gray-900 dark:text-gray-100">
+                          {liberacion.stock_codigo_lote}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{liberacion.stock_producto_nombre}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                          {format(new Date(liberacion.fecha_solicitud), 'PPP', { locale: es })}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{liberacion.solicitado_por_nombre}</td>
+                        <td className="px-4 py-3">
+                          <Badge variant={getResultadoVariant(liberacion.resultado)} size="sm">
+                            {liberacion.resultado}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{liberacion.aprobado_por_nombre || '-'}</td>
+                        <td className="px-4 py-3 text-right">
+                          <Button variant="ghost" size="sm">
+                            Ver Detalles
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
 
-              {loadingLiberaciones ? (
-                <div className="text-center py-8">Cargando...</div>
-              ) : !liberacionesData?.results?.length ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  No hay liberaciones registradas
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  Mostrando {liberacionesData.results.length} de {liberacionesData.count} liberaciones
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="rounded-md border">
-                    <table className="w-full">
-                      <thead className="bg-muted/50">
-                        <tr>
-                          <th className="text-left p-4 font-medium">Lote</th>
-                          <th className="text-left p-4 font-medium">Producto</th>
-                          <th className="text-left p-4 font-medium">Fecha Solicitud</th>
-                          <th className="text-left p-4 font-medium">Solicitado por</th>
-                          <th className="text-left p-4 font-medium">Resultado</th>
-                          <th className="text-left p-4 font-medium">Aprobado por</th>
-                          <th className="text-right p-4 font-medium">Acciones</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y">
-                        {liberacionesData.results.map((liberacion) => (
-                          <tr key={liberacion.id} className="hover:bg-muted/50 transition-colors">
-                            <td className="p-4 font-mono text-sm">
-                              {liberacion.stock_codigo_lote}
-                            </td>
-                            <td className="p-4">{liberacion.stock_producto_nombre}</td>
-                            <td className="p-4">
-                              {format(new Date(liberacion.fecha_solicitud), 'PPP', {
-                                locale: es,
-                              })}
-                            </td>
-                            <td className="p-4">{liberacion.solicitado_por_nombre}</td>
-                            <td className="p-4">
-                              <Badge className={getResultadoColor(liberacion.resultado)}>
-                                {liberacion.resultado}
-                              </Badge>
-                            </td>
-                            <td className="p-4">{liberacion.aprobado_por_nombre || '-'}</td>
-                            <td className="p-4 text-right">
-                              <Button variant="ghost" size="sm">
-                                Ver Detalles
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-muted-foreground">
-                      Mostrando {liberacionesData.results.length} de {liberacionesData.count}{' '}
-                      liberaciones
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPage((p) => Math.max(1, p - 1))}
-                        disabled={!liberacionesData.previous}
-                      >
-                        Anterior
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setPage((p) => p + 1)}
-                        disabled={!liberacionesData.next}
-                      >
-                        Siguiente
-                      </Button>
-                    </div>
-                  </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={!liberacionesData.previous}
+                  >
+                    Anterior
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setPage((p) => p + 1)}
+                    disabled={!liberacionesData.next}
+                  >
+                    Siguiente
+                  </Button>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              </div>
+            </div>
+          )}
+        </Card>
+      )}
     </div>
   );
 };

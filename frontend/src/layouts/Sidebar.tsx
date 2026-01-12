@@ -13,8 +13,8 @@ import { cn } from '@/utils/cn';
 import { useSidebarModules } from '@/features/gestion-estrategica/hooks/useModules';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import type { SidebarModule } from '@/features/gestion-estrategica/types/modules.types';
-import * as LucideIcons from 'lucide-react';
 import { ChevronRight, ChevronDown, Circle, Loader2, LayoutDashboard } from 'lucide-react';
+import { getIconComponent as getDynamicIcon } from '@/components/common/DynamicIcon';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -174,16 +174,13 @@ const moduleColors: Record<ModuleColor, {
 
 /**
  * Obtener el componente de icono de Lucide React por nombre
+ * Usa DynamicIcon del design system para reutilizar la lógica centralizada
  * Si no existe, retorna Circle como fallback
  */
 const getIconComponent = (iconName?: string | null): React.ElementType => {
   if (!iconName) return Circle;
-  const icon = LucideIcons[iconName as keyof typeof LucideIcons];
-  // Los iconos de Lucide React son objetos (ForwardRefExoticComponent), no funciones puras
-  if (icon && typeof icon === 'object' && '$$typeof' in icon) {
-    return icon as unknown as React.ElementType;
-  }
-  return Circle;
+  const icon = getDynamicIcon(iconName);
+  return icon ?? Circle;
 };
 
 /**

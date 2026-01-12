@@ -11,17 +11,18 @@ import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import { useModulesTree } from '@/features/gestion-estrategica/hooks/useModules';
 import { ModuleCard, ModuleCardSkeleton, ModuleGrid } from '@/components/common';
 import type { ModuleCardColor } from '@/components/common';
-import * as LucideIcons from 'lucide-react';
+import { Settings } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { getIconComponent as getDynamicIcon } from '@/components/common/DynamicIcon';
 
 // ============================================================================
 // UTILIDADES
 // ============================================================================
 
 const getIconComponent = (iconName: string | undefined): LucideIcon => {
-  if (!iconName) return LucideIcons.Settings;
-  const icon = (LucideIcons as unknown as Record<string, LucideIcon>)[iconName];
-  return icon || LucideIcons.Settings;
+  if (!iconName) return Settings;
+  const icon = getDynamicIcon(iconName);
+  return (icon ?? Settings) as LucideIcon;
 };
 
 const getModuleRoute = (module: { code: string; route?: string; tabs?: { code: string; is_enabled: boolean }[] }): string => {

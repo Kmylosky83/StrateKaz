@@ -1,10 +1,11 @@
 /**
  * Página Principal - Production Ops
  * Sistema de Gestión StrateKaz
+ *
+ * Usa componentes del Design System (@/components/common)
  */
 import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, Tabs } from '@/components/common';
 import {
   Package,
   Factory,
@@ -12,7 +13,7 @@ import {
   CheckCircle,
 } from 'lucide-react';
 
-// Importar tabs (crear estos archivos según necesidades)
+// Importar tabs
 import RecepcionTab from '../components/RecepcionTab';
 import ProcesamientoTab from '../components/ProcesamientoTab';
 import MantenimientoTab from '../components/MantenimientoTab';
@@ -21,53 +22,41 @@ import ProductoTerminadoTab from '../components/ProductoTerminadoTab';
 const ProductionOpsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('recepcion');
 
+  const tabs = [
+    { id: 'recepcion', label: 'Recepción', icon: <Package className="h-4 w-4" /> },
+    { id: 'procesamiento', label: 'Procesamiento', icon: <Factory className="h-4 w-4" /> },
+    { id: 'mantenimiento', label: 'Mantenimiento', icon: <Wrench className="h-4 w-4" /> },
+    { id: 'producto-terminado', label: 'Producto Terminado', icon: <CheckCircle className="h-4 w-4" /> },
+  ];
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Production Ops</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+            Production Ops
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
             Gestión integral de operaciones productivas
           </p>
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="recepcion" className="flex items-center gap-2">
-            <Package className="h-4 w-4" />
-            <span>Recepción</span>
-          </TabsTrigger>
-          <TabsTrigger value="procesamiento" className="flex items-center gap-2">
-            <Factory className="h-4 w-4" />
-            <span>Procesamiento</span>
-          </TabsTrigger>
-          <TabsTrigger value="mantenimiento" className="flex items-center gap-2">
-            <Wrench className="h-4 w-4" />
-            <span>Mantenimiento</span>
-          </TabsTrigger>
-          <TabsTrigger value="producto-terminado" className="flex items-center gap-2">
-            <CheckCircle className="h-4 w-4" />
-            <span>Producto Terminado</span>
-          </TabsTrigger>
-        </TabsList>
+      <Card>
+        <Tabs
+          tabs={tabs}
+          activeTab={activeTab}
+          onChange={setActiveTab}
+          variant="pills"
+        />
 
-        <TabsContent value="recepcion" className="space-y-4">
-          <RecepcionTab />
-        </TabsContent>
-
-        <TabsContent value="procesamiento" className="space-y-4">
-          <ProcesamientoTab />
-        </TabsContent>
-
-        <TabsContent value="mantenimiento" className="space-y-4">
-          <MantenimientoTab />
-        </TabsContent>
-
-        <TabsContent value="producto-terminado" className="space-y-4">
-          <ProductoTerminadoTab />
-        </TabsContent>
-      </Tabs>
+        <div className="mt-6">
+          {activeTab === 'recepcion' && <RecepcionTab />}
+          {activeTab === 'procesamiento' && <ProcesamientoTab />}
+          {activeTab === 'mantenimiento' && <MantenimientoTab />}
+          {activeTab === 'producto-terminado' && <ProductoTerminadoTab />}
+        </div>
+      </Card>
     </div>
   );
 };

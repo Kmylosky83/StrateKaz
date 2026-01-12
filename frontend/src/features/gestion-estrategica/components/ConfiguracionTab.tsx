@@ -25,7 +25,7 @@ import {
   Lock,
   type LucideIcon,
 } from 'lucide-react';
-import * as LucideIcons from 'lucide-react';
+import { getIconComponent as getDynamicIcon } from '@/components/common/DynamicIcon';
 import {
   Card,
   Badge,
@@ -264,12 +264,13 @@ const BrandingSection = () => {
 
 /**
  * Helper para obtener el componente de icono de Lucide por nombre
+ * Usa DynamicIcon del design system para reutilizar la lógica centralizada
  * Retorna Circle si el icono no existe o no se especifica
  */
 const getIconComponent = (iconName?: string): LucideIcon => {
   if (!iconName) return Circle;
-  const IconComponent = LucideIcons[iconName as keyof typeof LucideIcons];
-  return (IconComponent as LucideIcon) || Circle;
+  const icon = getDynamicIcon(iconName);
+  return (icon as LucideIcon) ?? Circle;
 };
 
 // =============================================================================

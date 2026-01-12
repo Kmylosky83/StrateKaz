@@ -11,10 +11,10 @@
  * - Compatible con Design System (usa variante pills)
  */
 import { useMemo } from 'react';
-import * as LucideIcons from 'lucide-react';
 import { Circle, Loader2 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import type { TabSection } from '@/features/gestion-estrategica/types/modules.types';
+import { getIconComponent as getDynamicIcon } from './DynamicIcon';
 
 export interface DynamicSectionsProps {
   /** Secciones habilitadas del tab */
@@ -35,15 +35,12 @@ export interface DynamicSectionsProps {
 
 /**
  * Obtener componente de icono de Lucide por nombre
+ * Usa DynamicIcon del design system para reutilizar la lógica centralizada
  */
 const getIconComponent = (iconName?: string | null): React.ElementType => {
   if (!iconName) return Circle;
-  const icon = LucideIcons[iconName as keyof typeof LucideIcons];
-  // Los iconos de Lucide React son objetos (ForwardRefExoticComponent), no funciones puras
-  if (icon && typeof icon === 'object' && '$$typeof' in icon) {
-    return icon as React.ElementType;
-  }
-  return Circle;
+  const icon = getDynamicIcon(iconName);
+  return (icon as React.ElementType) ?? Circle;
 };
 
 /**

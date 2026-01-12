@@ -1,13 +1,12 @@
 /**
  * Tab de Recepción de Materia Prima - Production Ops
+ *
+ * Usa componentes del Design System (@/components/common)
  */
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Card, Badge, Button } from '@/components/common';
 import { Plus, Search, Filter } from 'lucide-react';
 import { useRecepciones } from '../hooks/useProductionOps';
-import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -21,133 +20,130 @@ const RecepcionTab: React.FC = () => {
     search: searchTerm,
   });
 
-  const getEstadoColor = (color?: string) => {
-    const colorMap: Record<string, string> = {
-      '#28A745': 'bg-green-100 text-green-800',
-      '#FFC107': 'bg-yellow-100 text-yellow-800',
-      '#DC3545': 'bg-red-100 text-red-800',
-      '#17A2B8': 'bg-blue-100 text-blue-800',
-      '#6C757D': 'bg-gray-100 text-gray-800',
+  const getEstadoBadgeVariant = (color?: string): 'green' | 'yellow' | 'red' | 'blue' | 'gray' => {
+    const colorMap: Record<string, 'green' | 'yellow' | 'red' | 'blue' | 'gray'> = {
+      '#28A745': 'green',
+      '#FFC107': 'yellow',
+      '#DC3545': 'red',
+      '#17A2B8': 'blue',
+      '#6C757D': 'gray',
     };
-    return colorMap[color || '#6C757D'] || 'bg-gray-100 text-gray-800';
+    return colorMap[color || '#6C757D'] || 'gray';
   };
 
   return (
     <div className="space-y-4">
       {/* Header */}
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Recepciones de Materia Prima</CardTitle>
-              <CardDescription>
-                Gestión de recepción de huesos, sebo, grasa y subproductos cárnicos
-              </CardDescription>
-            </div>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Nueva Recepción
-            </Button>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Recepciones de Materia Prima
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Gestión de recepción de huesos, sebo, grasa y subproductos cárnicos
+            </p>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por código, proveedor..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Button variant="outline">
-              <Filter className="h-4 w-4 mr-2" />
-              Filtros
-            </Button>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Nueva Recepción
+          </Button>
+        </div>
+        <div className="flex gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Buscar por código, proveedor..."
+              value={searchTerm}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
           </div>
-        </CardContent>
+          <Button variant="secondary">
+            <Filter className="h-4 w-4 mr-2" />
+            Filtros
+          </Button>
+        </div>
       </Card>
 
       {/* Tabla de Recepciones */}
       <Card>
-        <CardContent className="pt-6">
-          {isLoading ? (
-            <div className="text-center py-8">Cargando...</div>
-          ) : !recepcionesData?.results?.length ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No hay recepciones registradas
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="rounded-md border">
-                <table className="w-full">
-                  <thead className="bg-muted/50">
-                    <tr>
-                      <th className="text-left p-4 font-medium">Código</th>
-                      <th className="text-left p-4 font-medium">Fecha</th>
-                      <th className="text-left p-4 font-medium">Proveedor</th>
-                      <th className="text-left p-4 font-medium">Tipo</th>
-                      <th className="text-left p-4 font-medium">Peso Neto</th>
-                      <th className="text-left p-4 font-medium">Estado</th>
-                      <th className="text-right p-4 font-medium">Acciones</th>
+        {isLoading ? (
+          <div className="text-center py-8 text-gray-500 dark:text-gray-400">Cargando...</div>
+        ) : !recepcionesData?.results?.length ? (
+          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+            No hay recepciones registradas
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="overflow-x-auto rounded-md border border-gray-200 dark:border-gray-700">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-800">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Código</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fecha</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Proveedor</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tipo</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Peso Neto</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Estado</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                  {recepcionesData.results.map((recepcion) => (
+                    <tr key={recepcion.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                      <td className="px-4 py-3 text-sm font-mono text-gray-900 dark:text-gray-100">{recepcion.codigo}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                        {format(new Date(recepcion.fecha), 'PPP', { locale: es })}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{recepcion.proveedor_nombre}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{recepcion.tipo_recepcion_nombre}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                        {recepcion.peso_neto ? `${recepcion.peso_neto} KG` : '-'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge variant={getEstadoBadgeVariant(recepcion.estado_color)} size="sm">
+                          {recepcion.estado_nombre}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <Button variant="ghost" size="sm">
+                          Ver Detalles
+                        </Button>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {recepcionesData.results.map((recepcion) => (
-                      <tr key={recepcion.id} className="hover:bg-muted/50 transition-colors">
-                        <td className="p-4 font-mono text-sm">{recepcion.codigo}</td>
-                        <td className="p-4">
-                          {format(new Date(recepcion.fecha), 'PPP', { locale: es })}
-                        </td>
-                        <td className="p-4">{recepcion.proveedor_nombre}</td>
-                        <td className="p-4">{recepcion.tipo_recepcion_nombre}</td>
-                        <td className="p-4">
-                          {recepcion.peso_neto ? `${recepcion.peso_neto} KG` : '-'}
-                        </td>
-                        <td className="p-4">
-                          <Badge className={getEstadoColor(recepcion.estado_color)}>
-                            {recepcion.estado_nombre}
-                          </Badge>
-                        </td>
-                        <td className="p-4 text-right">
-                          <Button variant="ghost" size="sm">
-                            Ver Detalles
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-              {/* Paginación */}
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">
-                  Mostrando {recepcionesData.results.length} de {recepcionesData.count} recepciones
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={!recepcionesData.previous}
-                  >
-                    Anterior
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage((p) => p + 1)}
-                    disabled={!recepcionesData.next}
-                  >
-                    Siguiente
-                  </Button>
-                </div>
+            {/* Paginación */}
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                Mostrando {recepcionesData.results.length} de {recepcionesData.count} recepciones
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={!recepcionesData.previous}
+                >
+                  Anterior
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setPage((p) => p + 1)}
+                  disabled={!recepcionesData.next}
+                >
+                  Siguiente
+                </Button>
               </div>
             </div>
-          )}
-        </CardContent>
+          </div>
+        )}
       </Card>
     </div>
   );

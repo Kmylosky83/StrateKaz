@@ -320,11 +320,11 @@ echo "=== FIN VALIDACIÓN ==="
 | P0-02 | Security | **SECRET_KEY con default inseguro** | Tokens pueden ser forjados | 1h |
 | P0-03 | Security | **Sin endpoint logout** | Usuario no puede revocar tokens | 4h |
 | P0-04 | Security | **Información sensible en JWT payload** | Datos personales legibles en base64 | 4h |
-| P0-05 | Security | **Endpoints sin validación RBAC** | Analytics, HSEQ, Supply Chain expuestos | 8h |
-| P0-06 | DevOps | **DEBUG=True por defecto** | Exposición de información en prod | 1h |
+| P0-05 | Security | ~~Endpoints sin validación RBAC~~ | ✅ COMPLETADO 2026-01-15 | 8h |
+| P0-06 | DevOps | ~~DEBUG=True por defecto~~ | ✅ COMPLETADO 2026-01-15 | 1h |
 | P0-07 | Backend | **core/models.py con 3,245 líneas** | Mantenibilidad crítica | 16h |
-| P0-08 | Backend | **6 bare except clauses** | Errores ocultos | 2h |
-| P0-09 | Code | **try-except silenciosos (19 bloques)** | Fallos ocultos | 4h |
+| P0-08 | Backend | ~~6 bare except clauses~~ | ✅ COMPLETADO 2026-01-15 | 2h |
+| P0-09 | Code | ~~try-except silenciosos~~ | ✅ COMPLETADO 2026-01-15 (verificado) | 4h |
 | P0-10 | Code | **Sin logging de operaciones críticas** | Auditoría nula | 8h |
 
 **Esfuerzo Total P0: ~50 horas (~6 días)**
@@ -581,7 +581,7 @@ P1-19 (Scripts deployment) ──▶ P1-20 (Templates config)
 - [x] P0-02: SECRET_KEY validado como requerido (settings.py sin default)
 - [x] P0-03: Endpoint logout implementado (/api/auth/logout/)
 - [x] P0-04: Payload JWT reducido (solo user_id + is_superuser)
-- [ ] P0-05: GranularActionPermission en todos los viewsets
+- [x] P0-05: GranularActionPermission en todos los viewsets MVP
 - [x] P0-06: DEBUG=False por defecto
 - [x] P1-10: CSRF_COOKIE_HTTPONLY=True
 - [x] P1-14: Logging de login fallido (auth_views.py)

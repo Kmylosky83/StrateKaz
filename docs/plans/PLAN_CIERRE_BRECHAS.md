@@ -346,12 +346,12 @@ echo "=== FIN VALIDACIÓN ==="
 | P1-07 | Testing | **Factory Boy no implementado** | Tests verbosos | 8h |
 | P1-08 | Testing | **Sin tests E2E** | Flujos críticos sin validar | 24h |
 | P1-09 | Security | **Sin MFA/2FA** | Solo username+password | 16h |
-| P1-10 | Security | **CSRF_COOKIE_HTTPONLY=False** | XSS puede leer CSRF | 1h |
+| P1-10 | Security | ~~CSRF_COOKIE_HTTPONLY=False~~ | ✅ COMPLETADO 2026-01-15 | 1h |
 | P1-11 | Security | **Sin límite sesiones concurrentes** | N tokens activos | 8h |
 | P1-12 | Data | **15+ patrones N+1 detectados** | Performance degradada | 16h |
 | P1-13 | Data | **Índices faltantes en modelos críticos** | Queries lentas | 8h |
-| P1-14 | DevOps | **Sin logging de login fallido** | Sin detección de ataques | 4h |
-| P1-15 | DevOps | **CONN_MAX_AGE no configurado** | Sin connection pooling | 1h |
+| P1-14 | DevOps | ~~Sin logging de login fallido~~ | ✅ COMPLETADO 2026-01-15 | 4h |
+| P1-15 | DevOps | ~~CONN_MAX_AGE no configurado~~ | ✅ COMPLETADO 2026-01-15 | 1h |
 | P1-16 | Code | **147 TODO/FIXME pendientes** | Deuda técnica | 24h |
 | P1-17 | Code | **~1,500 líneas código duplicado** | Mantenibilidad | 16h |
 | P1-18 | Code | **Sin sistema i18n** | Internacionalización bloqueada | 40h |
@@ -577,13 +577,14 @@ P1-19 (Scripts deployment) ──▶ P1-20 (Templates config)
 ## CHECKLIST DE GO-LIVE (Multi-Instancia)
 
 ### Seguridad (OBLIGATORIO)
-- [ ] P0-01: Credenciales removidas de Git
-- [ ] P0-02: SECRET_KEY validado como requerido
-- [ ] P0-03: Endpoint logout implementado
-- [ ] P0-04: Payload JWT reducido
+- [x] P0-01: Credenciales removidas de Git (verificado 2026-01-15)
+- [x] P0-02: SECRET_KEY validado como requerido (settings.py sin default)
+- [x] P0-03: Endpoint logout implementado (/api/auth/logout/)
+- [x] P0-04: Payload JWT reducido (solo user_id + is_superuser)
 - [ ] P0-05: GranularActionPermission en todos los viewsets
-- [ ] P0-06: DEBUG=False por defecto
-- [ ] P1-10: CSRF_COOKIE_HTTPONLY=True
+- [x] P0-06: DEBUG=False por defecto
+- [x] P1-10: CSRF_COOKIE_HTTPONLY=True
+- [x] P1-14: Logging de login fallido (auth_views.py)
 
 ### Código (OBLIGATORIO)
 
@@ -604,7 +605,7 @@ P1-19 (Scripts deployment) ──▶ P1-20 (Templates config)
 
 ### DevOps (OBLIGATORIO)
 
-- [ ] P1-15: CONN_MAX_AGE configurado
+- [x] P1-15: CONN_MAX_AGE configurado
 - [ ] P1-19: Scripts de deployment multi-instancia (create-instance.sh, deploy-all.sh)
 - [ ] P1-20: Templates de configuración (.env, nginx, supervisor)
 - [ ] Verificar .env en producción con valores reales

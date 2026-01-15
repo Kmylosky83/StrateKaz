@@ -260,6 +260,8 @@ DATABASES = {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
             'charset': 'utf8mb4',
         },
+        # P1-15: Connection pooling - mantener conexiones abiertas
+        'CONN_MAX_AGE': config('DB_CONN_MAX_AGE', default=60, cast=int),
     }
 }
 
@@ -466,7 +468,8 @@ RATELIMIT_VIEW = 'apps.core.views.ratelimit_error_view'
 # CSRF PROTECTION
 # ═══════════════════════════════════════════════════
 CSRF_FAILURE_VIEW = 'apps.core.views.csrf_failure_view'
-CSRF_COOKIE_HTTPONLY = False  # Necesario para que el frontend pueda leer el cookie
+# P1-10: CSRF cookie HTTPOnly - El frontend usa JWT, no necesita leer el CSRF cookie
+CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SAMESITE = 'Lax'
 CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='http://localhost:5173,http://localhost:3000,http://localhost:3010').split(',')
 

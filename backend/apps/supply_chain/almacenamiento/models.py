@@ -941,7 +941,7 @@ class ConfiguracionStock(models.Model):
             )['total'] or 0
 
             return inventario_actual <= self.punto_reorden
-        except:
+        except (TypeError, ValueError, AttributeError):
             return False
 
     def clean(self):

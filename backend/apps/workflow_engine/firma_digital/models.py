@@ -1211,7 +1211,7 @@ class HistorialVersion(BaseCompanyModel):
                 patch += 1
 
             return f"{major}.{minor}.{patch}"
-        except:
+        except (ValueError, IndexError, AttributeError):
             return "1.0.0"
 
     @staticmethod

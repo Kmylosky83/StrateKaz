@@ -293,7 +293,7 @@ def crear_reporte_capacidades(sedes_queryset) -> Dict[str, Any]:
             try:
                 total_convertido = unidad.convertir_a(total, unidad_global)
                 total_global += total_convertido
-            except:
+            except (ValueError, TypeError, AttributeError):
                 # Si falla conversión, sumar directamente
                 total_global += total
         else:

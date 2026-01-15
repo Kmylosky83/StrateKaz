@@ -237,7 +237,7 @@ def calculate_sedes_stats():
         # Formatear con separador de miles
         try:
             cap_formateada = f'{capacidad_total:,.2f}'.replace(',', '.')
-        except:
+        except (ValueError, TypeError):
             cap_formateada = str(capacidad_total)
 
         stats.append({

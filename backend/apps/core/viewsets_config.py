@@ -427,10 +427,21 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
 
 
 class ModuleTabViewSet(viewsets.ModelViewSet):
-    """ViewSet para gestión de tabs de módulos"""
+    """
+    ViewSet para gestión de tabs de módulos.
+
+    RBAC v3.3: Protegido con GranularActionPermission (P0-05)
+    Requiere permisos en sección 'modulos' para operaciones CRUD.
+    """
     queryset = ModuleTab.objects.all()
     serializer_class = ModuleTabSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'modulos'
+
+    # P0-05: Mapeo de acciones custom a permisos RBAC
+    granular_action_map = {
+        'toggle': 'can_edit',
+    }
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['module', 'is_enabled', 'is_core']
     search_fields = ['code', 'name', 'description']
@@ -478,10 +489,21 @@ class ModuleTabViewSet(viewsets.ModelViewSet):
 
 
 class TabSectionViewSet(viewsets.ModelViewSet):
-    """ViewSet para gestión de secciones de tabs"""
+    """
+    ViewSet para gestión de secciones de tabs.
+
+    RBAC v3.3: Protegido con GranularActionPermission (P0-05)
+    Requiere permisos en sección 'modulos' para operaciones CRUD.
+    """
     queryset = TabSection.objects.all()
     serializer_class = TabSectionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'modulos'
+
+    # P0-05: Mapeo de acciones custom a permisos RBAC
+    granular_action_map = {
+        'toggle': 'can_edit',
+    }
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['tab', 'is_enabled', 'is_core']
     search_fields = ['code', 'name', 'description']

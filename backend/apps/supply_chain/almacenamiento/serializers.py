@@ -353,7 +353,7 @@ class ConfiguracionStockSerializer(serializers.ModelSerializer):
                 total=Sum('cantidad_disponible')
             )['total']
             return float(total) if total else 0.0
-        except:
+        except (TypeError, ValueError, AttributeError):
             return 0.0
 
     def validate(self, data):

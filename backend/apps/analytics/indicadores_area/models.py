@@ -112,7 +112,7 @@ class ValorKPI(BaseCompanyModel):
         try:
             config = self.kpi.configuracion_semaforo
             return config.obtener_color(self.valor)
-        except:
+        except (AttributeError, TypeError):
             return 'amarillo'  # Default si no hay configuración
 
     def calcular_porcentaje_cumplimiento(self):

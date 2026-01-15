@@ -1,15 +1,14 @@
 /**
  * Modal para crear/editar Cargos con Manual de Funciones completo
  *
- * 6 Tabs:
+ * 5 Tabs:
  * - Tab 1: Identificacion y Ubicacion Organizacional
  * - Tab 2: Manual de Funciones
  * - Tab 3: Requisitos del Cargo
  * - Tab 4: SST (Seguridad y Salud en el Trabajo)
- * - Tab 5: Acceso a Secciones (módulos/tabs del sistema que puede ver)
- * - Tab 6: Permisos de Acciones (acciones CRUD que puede realizar)
+ * - Tab 5: Acceso y Permisos (RBAC Unificado v4.0 - secciones con acciones CRUD integradas)
  *
- * Flujo unificado: Crear cargo → Configurar acceso → Asignar permisos
+ * Flujo unificado: Crear cargo → Configurar acceso y acciones en un solo lugar
  *
  * Usa Design System: BaseModal, Tabs, Input, Select, Textarea, Switch
  */
@@ -56,9 +55,8 @@ import {
   Plus,
   Trash2,
   Layers,
-  Shield,
 } from 'lucide-react';
-import { TabAccesoSecciones, TabPermisosAcciones } from './CargoFormTabs';
+import { TabAccesoSecciones } from './CargoFormTabs';
 
 interface CargoFormModalProps {
   /** CargoList del listado (para edicion) o null (para crear) */
@@ -67,15 +65,14 @@ interface CargoFormModalProps {
   onClose: () => void;
 }
 
-type TabType = 'identificacion' | 'funciones' | 'requisitos' | 'sst' | 'acceso' | 'permisos';
+type TabType = 'identificacion' | 'funciones' | 'requisitos' | 'sst' | 'acceso';
 
 const TABS: Tab[] = [
   { id: 'identificacion', label: 'Identificacion', icon: <UserCircle size={16} /> },
   { id: 'funciones', label: 'Funciones', icon: <FileText size={16} /> },
   { id: 'requisitos', label: 'Requisitos', icon: <GraduationCap size={16} /> },
   { id: 'sst', label: 'SST', icon: <ShieldCheck size={16} /> },
-  { id: 'acceso', label: 'Acceso UI', icon: <Layers size={16} /> },
-  { id: 'permisos', label: 'Permisos', icon: <Shield size={16} /> },
+  { id: 'acceso', label: 'Acceso y Permisos', icon: <Layers size={16} /> },
 ];
 
 // Componente para editar listas de strings
@@ -216,9 +213,6 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
     restricciones_medicas: '',
     capacitaciones_sst: [] as string[],
 
-    // Tab 5 & 6: Acceso y Permisos (solo aplican en edición)
-    section_ids: [] as number[],
-    permission_ids: [] as number[],
   });
 
   const [activeTab, setActiveTab] = useState<TabType>('identificacion');
@@ -314,8 +308,6 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
         examenes_medicos: [],
         restricciones_medicas: '',
         capacitaciones_sst: [],
-        section_ids: [],
-        permission_ids: [],
       });
       setActiveTab('identificacion');
     }
@@ -851,7 +843,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
             </div>
           )}
 
-          {/* ========== TAB 5: ACCESO A SECCIONES ========== */}
+          {/* ========== TAB 5: ACCESO Y PERMISOS (RBAC Unificado v4.0) ========== */}
           {activeTab === 'acceso' && (
             <div className="space-y-4">
               {isEditing && cargo ? (
@@ -859,21 +851,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
               ) : (
                 <Alert
                   variant="warning"
-                  message="Los accesos a secciones se configuran después de crear el cargo. Guarda primero y luego configura los accesos."
-                />
-              )}
-            </div>
-          )}
-
-          {/* ========== TAB 6: PERMISOS DE ACCIONES ========== */}
-          {activeTab === 'permisos' && (
-            <div className="space-y-4">
-              {isEditing && cargo ? (
-                <TabPermisosAcciones cargoId={cargo.id} cargoName={cargo.name} />
-              ) : (
-                <Alert
-                  variant="warning"
-                  message="Los permisos de acciones se configuran después de crear el cargo. Guarda primero y luego configura los permisos."
+                  message="Los accesos y permisos se configuran después de crear el cargo. Guarda primero y luego configura los accesos."
                 />
               )}
             </div>

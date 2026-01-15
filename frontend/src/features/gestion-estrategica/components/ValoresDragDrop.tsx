@@ -74,6 +74,7 @@ interface SortableValueItemProps {
   isLoading?: boolean;
   accentColor: string;
   accentRgb: string;
+  readOnly?: boolean;
 }
 
 const SortableValueItem = ({
@@ -89,6 +90,7 @@ const SortableValueItem = ({
   isLoading,
   accentColor,
   accentRgb,
+  readOnly,
 }: SortableValueItemProps) => {
   const {
     attributes,
@@ -210,14 +212,16 @@ const SortableValueItem = ({
       }}
     >
       {/* Drag Handle */}
-      <button
-        {...attributes}
-        {...listeners}
-        className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing"
-        title="Arrastrar para reordenar"
-      >
-        <GripVertical className="w-5 h-5" />
-      </button>
+      {!readOnly && (
+        <button
+          {...attributes}
+          {...listeners}
+          className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing"
+          title="Arrastrar para reordenar"
+        >
+          <GripVertical className="w-5 h-5" />
+        </button>
+      )}
 
       {/* Icon - Dinamico desde DB con color del branding */}
       <div className="flex-shrink-0">
@@ -244,25 +248,27 @@ const SortableValueItem = ({
       </div>
 
       {/* Actions */}
-      <div className="flex-shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onEdit(value)}
-          title="Editar"
-        >
-          <Edit className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onDelete(value)}
-          title="Eliminar"
-          className="text-danger-600 hover:text-danger-700 hover:bg-danger-50 dark:text-danger-400 dark:hover:bg-danger-900/20"
-        >
-          <Trash2 className="w-4 h-4" />
-        </Button>
-      </div>
+      {!readOnly && (
+        <div className="flex-shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onEdit(value)}
+            title="Editar"
+          >
+            <Edit className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onDelete(value)}
+            title="Eliminar"
+            className="text-danger-600 hover:text-danger-700 hover:bg-danger-50 dark:text-danger-400 dark:hover:bg-danger-900/20"
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
     </motion.div>
   );
 };
@@ -276,6 +282,7 @@ interface SortableValueCardProps {
   onDelete: (value: CorporateValue) => void;
   accentColor: string;
   accentRgb: string;
+  readOnly?: boolean;
 }
 
 const SortableValueCard = ({
@@ -284,6 +291,7 @@ const SortableValueCard = ({
   onDelete,
   accentColor,
   accentRgb,
+  readOnly,
 }: SortableValueCardProps) => {
   const {
     attributes,
@@ -318,13 +326,15 @@ const SortableValueCard = ({
       onMouseLeave={(e) => {
         (e.currentTarget as HTMLElement).style.borderColor = '';
       }}
-      {...attributes}
-      {...listeners}
+      {...(!readOnly ? attributes : {})}
+      {...(!readOnly ? listeners : {})}
     >
       {/* Drag indicator */}
-      <div className="absolute top-2 left-2 p-1 text-gray-300 dark:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity">
-        <GripVertical className="w-4 h-4" />
-      </div>
+      {!readOnly && (
+        <div className="absolute top-2 left-2 p-1 text-gray-300 dark:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity">
+          <GripVertical className="w-4 h-4" />
+        </div>
+      )}
 
       {/* Icon - con color dinamico del branding */}
       <div
@@ -351,31 +361,33 @@ const SortableValueCard = ({
       </p>
 
       {/* Actions (visible on hover) */}
-      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-gray-800 rounded-lg shadow-lg px-2 py-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            onEdit(value);
-          }}
-          title="Editar"
-        >
-          <Edit className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(value);
-          }}
-          title="Eliminar"
-          className="text-danger-600 hover:text-danger-700 hover:bg-danger-50 dark:text-danger-400 dark:hover:bg-danger-900/20"
-        >
-          <Trash2 className="w-4 h-4" />
-        </Button>
-      </div>
+      {!readOnly && (
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-gray-800 rounded-lg shadow-lg px-2 py-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(value);
+            }}
+            title="Editar"
+          >
+            <Edit className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(value);
+            }}
+            title="Eliminar"
+            className="text-danger-600 hover:text-danger-700 hover:bg-danger-50 dark:text-danger-400 dark:hover:bg-danger-900/20"
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
     </motion.div>
   );
 };
@@ -394,6 +406,7 @@ interface ValoresDragDropProps {
   onDelete: (id: number) => Promise<void>;
   isLoading?: boolean;
   defaultViewMode?: ViewMode;
+  readOnly?: boolean;
 }
 
 export const ValoresDragDrop = ({
@@ -405,6 +418,7 @@ export const ValoresDragDrop = ({
   onDelete,
   isLoading,
   defaultViewMode = 'cards',
+  readOnly,
 }: ValoresDragDropProps) => {
   const [viewMode, setViewMode] = useState<ViewMode>(defaultViewMode);
   const [activeId, setActiveId] = useState<number | null>(null);
@@ -556,15 +570,17 @@ export const ValoresDragDrop = ({
               <LayoutGrid className="w-4 h-4" />
             </button>
           </div>
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => setIsCreating(true)}
-            disabled={isCreating}
-          >
-            <Plus className="w-4 h-4 mr-1" />
-            Agregar Valor
-          </Button>
+          {!readOnly && (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setIsCreating(true)}
+              disabled={isCreating}
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Agregar Valor
+            </Button>
+          )}
         </div>
       </div>
 
@@ -701,6 +717,7 @@ export const ValoresDragDrop = ({
                         isLoading={isLoading}
                         accentColor={accentColor}
                         accentRgb={accentRgb}
+                        readOnly={readOnly}
                       />
                     ) : (
                       <SortableValueCard
@@ -710,6 +727,7 @@ export const ValoresDragDrop = ({
                         onDelete={handleDelete}
                         accentColor={accentColor}
                         accentRgb={accentRgb}
+                        readOnly={readOnly}
                       />
                     )
                   ))}
@@ -734,6 +752,7 @@ export const ValoresDragDrop = ({
                       isLoading={isLoading}
                       accentColor={accentColor}
                       accentRgb={accentRgb}
+                      readOnly={readOnly}
                     />
                   ))}
                 </AnimatePresence>

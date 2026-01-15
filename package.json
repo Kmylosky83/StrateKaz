@@ -6,7 +6,14 @@
   "scripts": {
     "prepare": "husky",
     "lint:frontend": "cd frontend && npm run lint",
-    "format:frontend": "cd frontend && npm run format"
+    "format:frontend": "cd frontend && npm run format",
+    "build": "cd frontend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "dev": "cd frontend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && python manage.py runserver 0.0.0.0:8000",
+    "db:migrate": "cd backend && python manage.py migrate",
+    "db:make": "cd backend && python manage.py makemigrations"
   },
   "devDependencies": {
     "husky": "^9.1.7",

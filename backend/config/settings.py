@@ -7,8 +7,8 @@ from sentry_sdk.integrations.celery import CeleryIntegration
 from sentry_sdk.integrations.redis import RedisIntegration
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-me-in-production')
-DEBUG = config('DEBUG', default=True, cast=bool)
+SECRET_KEY = config('SECRET_KEY')  # REQUERIDO - Sin default por seguridad (P0-02)
+DEBUG = config('DEBUG', default=False, cast=bool)  # P0-06: False por defecto en producción
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
 
 # ═══════════════════════════════════════════════════
@@ -458,7 +458,7 @@ else:
 # ═══════════════════════════════════════════════════
 # RATE LIMITING
 # ═══════════════════════════════════════════════════
-RATELIMIT_ENABLE = True
+RATELIMIT_ENABLE = config('RATELIMIT_ENABLE', default=not DEBUG, cast=bool)
 RATELIMIT_USE_CACHE = 'default'
 RATELIMIT_VIEW = 'apps.core.views.ratelimit_error_view'
 
@@ -468,7 +468,7 @@ RATELIMIT_VIEW = 'apps.core.views.ratelimit_error_view'
 CSRF_FAILURE_VIEW = 'apps.core.views.csrf_failure_view'
 CSRF_COOKIE_HTTPONLY = False  # Necesario para que el frontend pueda leer el cookie
 CSRF_COOKIE_SAMESITE = 'Lax'
-CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='http://localhost:5173,http://localhost:3000').split(',')
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='http://localhost:5173,http://localhost:3000,http://localhost:3010').split(',')
 
 # ═══════════════════════════════════════════════════
 # SESSION SECURITY

@@ -31,14 +31,14 @@ import { Switch } from '@/components/forms';
 // TYPES
 // ============================================================================
 
-export type FeatureToggleColor = 'purple' | 'blue' | 'green' | 'orange' | 'gray';
+export type FeatureToggleColor = 'purple' | 'blue' | 'green' | 'orange' | 'gray' | 'teal' | 'red' | 'yellow' | 'pink' | 'indigo';
 export type FeatureToggleLayout = 'card' | 'row';
 
 export interface FeatureToggleCardProps {
   /** Icono de Lucide */
   icon: LucideIcon;
   /** Titulo del feature/modulo */
-  title: string;
+  title: ReactNode;
   /** Descripcion del feature/modulo */
   description?: string;
   /** Estado actual del toggle */
@@ -93,6 +93,31 @@ const colorConfig: Record<FeatureToggleColor, {
     cardEnabled: 'border-gray-300 bg-gray-100 dark:border-gray-600 dark:bg-gray-800/50',
     iconBgEnabled: 'bg-gray-200 dark:bg-gray-700',
     iconEnabled: 'text-gray-600 dark:text-gray-400',
+  },
+  teal: {
+    cardEnabled: 'border-teal-200 bg-teal-50 dark:border-teal-800 dark:bg-teal-900/20',
+    iconBgEnabled: 'bg-teal-100 dark:bg-teal-900/30',
+    iconEnabled: 'text-teal-600 dark:text-teal-400',
+  },
+  red: {
+    cardEnabled: 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20',
+    iconBgEnabled: 'bg-red-100 dark:bg-red-900/30',
+    iconEnabled: 'text-red-600 dark:text-red-400',
+  },
+  yellow: {
+    cardEnabled: 'border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-900/20',
+    iconBgEnabled: 'bg-yellow-100 dark:bg-yellow-900/30',
+    iconEnabled: 'text-yellow-600 dark:text-yellow-400',
+  },
+  pink: {
+    cardEnabled: 'border-pink-200 bg-pink-50 dark:border-pink-800 dark:bg-pink-900/20',
+    iconBgEnabled: 'bg-pink-100 dark:bg-pink-900/30',
+    iconEnabled: 'text-pink-600 dark:text-pink-400',
+  },
+  indigo: {
+    cardEnabled: 'border-indigo-200 bg-indigo-50 dark:border-indigo-800 dark:bg-indigo-900/20',
+    iconBgEnabled: 'bg-indigo-100 dark:bg-indigo-900/30',
+    iconEnabled: 'text-indigo-600 dark:text-indigo-400',
   },
 };
 

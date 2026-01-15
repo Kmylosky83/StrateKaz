@@ -38,6 +38,8 @@ import { useActiveBranding } from '../hooks/useStrategic';
 import { useModulesTree, useToggleModule, useToggleTab, useToggleSection } from '../hooks/useModules';
 import { CATEGORY_LABELS, CATEGORY_COLORS } from '../types/modules.types';
 import type { SystemModuleTree } from '../types/modules.types';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import { BrandingFormModal } from './modals/BrandingFormModal';
 import { EmpresaSection } from './EmpresaSection';
 import { SedesSection } from './SedesSection';
@@ -91,6 +93,36 @@ const CATEGORY_STYLE_CLASSES: Record<ModuleColor, {
     textLight: 'text-gray-600',
     textDark: 'dark:text-gray-400',
   },
+  teal: {
+    bgLight: 'bg-teal-100',
+    bgDark: 'dark:bg-teal-900/30',
+    textLight: 'text-teal-600',
+    textDark: 'dark:text-teal-400',
+  },
+  red: {
+    bgLight: 'bg-red-100',
+    bgDark: 'dark:bg-red-900/30',
+    textLight: 'text-red-600',
+    textDark: 'dark:text-red-400',
+  },
+  yellow: {
+    bgLight: 'bg-yellow-100',
+    bgDark: 'dark:bg-yellow-900/30',
+    textLight: 'text-yellow-600',
+    textDark: 'dark:text-yellow-400',
+  },
+  pink: {
+    bgLight: 'bg-pink-100',
+    bgDark: 'dark:bg-pink-900/30',
+    textLight: 'text-pink-600',
+    textDark: 'dark:text-pink-400',
+  },
+  indigo: {
+    bgLight: 'bg-indigo-100',
+    bgDark: 'dark:bg-indigo-900/30',
+    textLight: 'text-indigo-600',
+    textDark: 'dark:text-indigo-400',
+  },
 };
 
 // =============================================================================
@@ -98,6 +130,7 @@ const CATEGORY_STYLE_CLASSES: Record<ModuleColor, {
 // =============================================================================
 
 const BrandingSection = () => {
+  const { canDo } = usePermissions();
   const { data: branding, isLoading } = useActiveBranding();
   const [showModal, setShowModal] = useState(false);
 
@@ -123,10 +156,12 @@ const BrandingSection = () => {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               Configuracion de Marca
             </h3>
-            <Button variant="secondary" size="sm" onClick={() => setShowModal(true)}>
-              <Edit className="h-4 w-4 mr-2" />
-              Editar
-            </Button>
+            {canDo(Modules.GESTION_ESTRATEGICA, Sections.BRANDING, 'edit') && (
+              <Button variant="secondary" size="sm" onClick={() => setShowModal(true)}>
+                <Edit className="h-4 w-4 mr-2" />
+                Editar
+              </Button>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -317,10 +352,13 @@ const UI_SETTINGS_DEFINITIONS: UISettingDefinition[] = [
 ];
 
 const ModulosAndFeaturesSection = () => {
+  const { canDo } = usePermissions();
   const { data: tree, isLoading } = useModulesTree();
   const toggleModule = useToggleModule();
   const toggleTab = useToggleTab();
   const toggleSection = useToggleSection();
+
+  const canEditModules = canDo(Modules.GESTION_ESTRATEGICA, Sections.MODULOS, 'edit');
 
   // Agrupar módulos por categoría usando useMemo para optimización
   const modulesByCategory = useMemo(() => {
@@ -416,7 +454,7 @@ const ModulosAndFeaturesSection = () => {
                         isEnabled: !module.is_enabled
                       })}
                       color={module.color || categoryColor}
-                      disabled={module.is_core || isPending}
+                      disabled={!canEditModules || module.is_core || isPending}
                     />
                   );
                 })}
@@ -456,7 +494,7 @@ const ModulosAndFeaturesSection = () => {
                                 isEnabled: !tab.is_enabled
                               })}
                               color={module.color || categoryColor}
-                              disabled={tab.is_core || isPending || !module.is_enabled}
+                              disabled={!canEditModules || tab.is_core || isPending || !module.is_enabled}
                             />
 
                             {/* Secciones del tab (si existen) */}
@@ -478,7 +516,7 @@ const ModulosAndFeaturesSection = () => {
                                         isEnabled: !section.is_enabled
                                       })}
                                       color={module.color || categoryColor}
-                                      disabled={section.is_core || isPending || !tab.is_enabled}
+                                      disabled={!canEditModules || section.is_core || isPending || !tab.is_enabled}
                                     />
                                   );
                                 })}

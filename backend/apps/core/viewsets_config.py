@@ -16,12 +16,14 @@ from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from apps.core.permissions import GranularActionPermission
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Prefetch
 
 # Modelos de core (sin dependencias externas)
 from .models import (
-    SystemModule, ModuleTab, TabSection, BrandingConfig
+    SystemModule, ModuleTab, TabSection, BrandingConfig,
+    CargoSectionAccess  # RBAC v3.3: Filtrado por cargo
 )
 
 # Serializers de configuración (sin dependencias externas)
@@ -58,11 +60,31 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
     """
 
     queryset = SystemModule.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'modulos'
+
+    granular_action_map = {
+        'toggle': 'can_edit',
+    }
+
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['category', 'is_enabled', 'is_core', 'requires_license']
     search_fields = ['code', 'name', 'description']
     ordering = ['category', 'orden', 'name']
+
+    def get_permissions(self):
+        """
+        Personalizar permisos por acción
+        
+        'sidebar' y 'tree': 
+        - Deben ser accesibles para cualquier usuario autenticado.
+        - La vista se encarga de filtrar el contenido según los permisos del usuario via CargoSectionAccess.
+        - No deben usar GranularActionPermission porque este valida acceso a la configuración de 'modulos',
+          lo cual bloquearía a los usuarios normales.
+        """
+        if self.action in ['sidebar', 'tree', 'categories', 'enabled']:
+            return [IsAuthenticated()]
+        return super().get_permissions()
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -141,7 +163,49 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def tree(self, request):
-        """GET /api/core/system-modules/tree/"""
+        """
+        GET /api/core/system-modules/tree/
+
+        RBAC v3.3: Retorna árbol de módulos filtrado según permisos del usuario:
+        - Super usuario: todos los módulos/tabs/secciones
+        - Usuario normal: solo módulos/tabs/secciones autorizadas por su cargo
+
+        El filtrado es GRANULAR a nivel de sección.
+        """
+        user = request.user
+
+        # Super usuario ve todo
+        if user.is_superuser:
+            return self._get_full_tree()
+
+        # Usuario normal: filtrar por CargoSectionAccess
+        cargo = getattr(user, 'cargo', None)
+        if not cargo:
+            return Response({
+                'modules': [],
+                'total_modules': 0,
+                'enabled_modules': 0,
+                'categories': []
+            })
+
+        # Obtener section_ids autorizados para este cargo
+        authorized_section_ids = set(
+            CargoSectionAccess.objects.filter(cargo=cargo)
+            .values_list('section_id', flat=True)
+        )
+
+        if not authorized_section_ids:
+            return Response({
+                'modules': [],
+                'total_modules': 0,
+                'enabled_modules': 0,
+                'categories': []
+            })
+
+        return self._get_filtered_tree(authorized_section_ids)
+
+    def _get_full_tree(self):
+        """Retorna árbol completo para super usuarios."""
         modules = self.get_queryset()
         total = modules.count()
         enabled = modules.filter(is_enabled=True).count()
@@ -163,9 +227,141 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
             'categories': categories
         })
 
+    def _get_filtered_tree(self, authorized_section_ids):
+        """Retorna árbol filtrado por secciones autorizadas."""
+        # Obtener tabs que contienen secciones autorizadas
+        authorized_tab_ids = set(
+            TabSection.objects.filter(
+                id__in=authorized_section_ids
+            ).values_list('tab_id', flat=True)
+        )
+
+        # Obtener módulos que contienen tabs autorizados
+        authorized_module_ids = set(
+            ModuleTab.objects.filter(
+                id__in=authorized_tab_ids
+            ).values_list('module_id', flat=True)
+        )
+
+        # Cargar módulos con prefetch filtrado
+        modules = SystemModule.objects.filter(
+            id__in=authorized_module_ids
+        ).prefetch_related(
+            Prefetch(
+                'tabs',
+                queryset=ModuleTab.objects.filter(
+                    id__in=authorized_tab_ids
+                ).prefetch_related(
+                    Prefetch(
+                        'sections',
+                        queryset=TabSection.objects.filter(
+                            id__in=authorized_section_ids
+                        ).order_by('orden')
+                    )
+                ).order_by('orden')
+            )
+        ).order_by('orden', 'name')
+
+        total = modules.count()
+        enabled = modules.filter(is_enabled=True).count()
+
+        categories = []
+        for cat_code, cat_name in SystemModule.CATEGORY_CHOICES:
+            count = modules.filter(category=cat_code).count()
+            if count > 0:
+                categories.append({
+                    'code': cat_code,
+                    'name': cat_name,
+                    'modules_count': count
+                })
+
+        serializer = SystemModuleTreeSerializer(modules, many=True)
+        return Response({
+            'modules': serializer.data,
+            'total_modules': total,
+            'enabled_modules': enabled,
+            'categories': categories
+        })
+
     @action(detail=False, methods=['get'])
     def sidebar(self, request):
-        """GET /api/core/system-modules/sidebar/"""
+        """
+        GET /api/core/system-modules/sidebar/
+
+        RBAC v3.3: Retorna módulos filtrados según permisos del usuario:
+        - Super usuario: todos los módulos habilitados
+        - Usuario normal: solo módulos/tabs/secciones autorizadas por su cargo
+        """
+        user = request.user
+
+        # Super usuario ve todo
+        if user.is_superuser:
+            return self._get_full_sidebar()
+
+        # Usuario normal: filtrar por CargoSectionAccess
+        cargo = getattr(user, 'cargo', None)
+        if not cargo:
+            # Usuario sin cargo no ve nada
+            return Response([])
+
+        # Obtener section_ids autorizados para este cargo
+        authorized_section_ids = set(
+            CargoSectionAccess.objects.filter(cargo=cargo)
+            .values_list('section_id', flat=True)
+        )
+
+        if not authorized_section_ids:
+            # Sin secciones autorizadas = sidebar vacío
+            return Response([])
+
+        # Obtener tabs que contienen secciones autorizadas
+        authorized_tab_ids = set(
+            TabSection.objects.filter(
+                id__in=authorized_section_ids,
+                is_enabled=True
+            ).values_list('tab_id', flat=True)
+        )
+
+        if not authorized_tab_ids:
+            return Response([])
+
+        # Obtener módulos que contienen tabs autorizados
+        authorized_module_ids = set(
+            ModuleTab.objects.filter(
+                id__in=authorized_tab_ids,
+                is_enabled=True
+            ).values_list('module_id', flat=True)
+        )
+
+        if not authorized_module_ids:
+            return Response([])
+
+        # Construir sidebar filtrado con secciones incluidas
+        modules = SystemModule.objects.filter(
+            id__in=authorized_module_ids,
+            is_enabled=True
+        ).prefetch_related(
+            Prefetch(
+                'tabs',
+                queryset=ModuleTab.objects.filter(
+                    id__in=authorized_tab_ids,
+                    is_enabled=True
+                ).prefetch_related(
+                    Prefetch(
+                        'sections',
+                        queryset=TabSection.objects.filter(
+                            id__in=authorized_section_ids,
+                            is_enabled=True
+                        ).order_by('orden')
+                    )
+                ).order_by('orden')
+            )
+        ).order_by('orden', 'name')
+
+        return self._build_sidebar_response(modules, include_sections=True)
+
+    def _get_full_sidebar(self):
+        """Retorna sidebar completo para super usuarios."""
         modules = SystemModule.objects.filter(
             is_enabled=True
         ).prefetch_related(
@@ -174,7 +370,10 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
                 queryset=ModuleTab.objects.filter(is_enabled=True).order_by('orden')
             )
         ).order_by('orden', 'name')
+        return self._build_sidebar_response(modules, include_sections=False)
 
+    def _build_sidebar_response(self, modules, include_sections=False):
+        """Construye la respuesta del sidebar."""
         result = []
         for module in modules:
             enabled_tabs = list(module.tabs.all())
@@ -182,15 +381,13 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
             module_effective_color = module.get_effective_color()
 
             # Usar campo route del modelo, o generar desde code como fallback
-            # Asegurar que no tenga / al inicio para evitar doble slash
             module_route_segment = (module.route or module.code.replace('_', '-')).lstrip('/')
 
             if enabled_tabs:
                 children = []
                 for tab in enabled_tabs:
-                    # Usar campo route del tab, o generar desde code como fallback
                     tab_route_segment = (tab.route or tab.code.replace('_', '-')).lstrip('/')
-                    children.append({
+                    tab_data = {
                         'code': tab.code,
                         'name': tab.name,
                         'icon': tab.icon,
@@ -198,7 +395,22 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
                         'route': f"/{module_route_segment}/{tab_route_segment}",
                         'is_category': False,
                         'children': None
-                    })
+                    }
+
+                    # Incluir secciones si es usuario normal (para filtrado adicional en frontend)
+                    if include_sections and hasattr(tab, 'sections'):
+                        sections = list(tab.sections.all())
+                        if sections:
+                            tab_data['sections'] = [
+                                {
+                                    'id': s.id,
+                                    'code': s.code,
+                                    'name': s.name
+                                }
+                                for s in sections
+                            ]
+
+                    children.append(tab_data)
 
             module_data = {
                 'code': module.code,
@@ -320,7 +532,12 @@ class BrandingConfigViewSet(viewsets.ModelViewSet):
     """ViewSet para Configuración de Branding"""
 
     queryset = BrandingConfig.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'branding'
+
+    granular_action_map = {
+        'active': 'can_view', # Aunque AllowAny sobreescribe esto
+    }
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['is_active']
     ordering = ['-created_at']

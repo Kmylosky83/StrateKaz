@@ -9,7 +9,7 @@ from django.utils import timezone
 from datetime import timedelta
 from apps.gestion_estrategica.identidad.models import (
     CorporateIdentity, CorporateValue, AlcanceSistema,
-    PoliticaIntegral, PoliticaEspecifica
+    PoliticaEspecifica  # v3.1: PoliticaIntegral consolidada en PoliticaEspecifica con is_integral_policy=True
 )
 from apps.gestion_estrategica.configuracion.models import NormaISO
 from apps.core.models import User
@@ -301,20 +301,20 @@ class Command(BaseCommand):
                 self.stdout.write(f'  [+] Alcance "{alcance_data["norma_code"]}" creado')
 
         # =====================================================================
-        # 4. POLÍTICAS INTEGRALES (con versiones)
+        # 4. POLÍTICAS INTEGRALES (v3.1: usando PoliticaEspecifica con is_integral_policy=True)
         # =====================================================================
-        politica_integral, created = PoliticaIntegral.objects.get_or_create(
+        politica_integral, created = PoliticaEspecifica.objects.get_or_create(
             identity=identity,
-            version='1.0',
+            code='POL-INT-001',
             defaults={
                 'title': 'Política Integral de Gestión',
                 'content': identity.integral_policy,
                 'status': 'VIGENTE',
+                'version': '1.0',
                 'effective_date': timezone.now().date(),
                 'expiry_date': (timezone.now() + timedelta(days=365)).date(),
-                'applicable_standards': ['ISO_9001', 'ISO_45001', 'ISO_14001', 'PESV'],
                 'change_reason': 'Versión inicial de la política integral',
-                'orden': 1,
+                'is_integral_policy': True,  # v3.1: Flag para políticas integrales
                 'is_active': True,
                 'created_by': user,
             }
@@ -325,9 +325,9 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS('  [OK] Politica Integral v1.0 creada y firmada'))
 
         # Crear borrador de nueva versión
-        borrador, created = PoliticaIntegral.objects.get_or_create(
+        borrador, created = PoliticaEspecifica.objects.get_or_create(
             identity=identity,
-            version='2.0',
+            code='POL-INT-002',
             defaults={
                 'title': 'Política Integral de Gestión - Actualización',
                 'content': '''<h2>Política Integral de Gestión v2.0</h2>
@@ -340,9 +340,10 @@ class Command(BaseCommand):
 </ul>
 <p><em>Esta versión incorpora los nuevos requisitos de ISO 45001:2018</em></p>''',
                 'status': 'BORRADOR',
+                'version': '2.0',
                 'effective_date': (timezone.now() + timedelta(days=30)).date(),
                 'change_reason': 'Actualización para alineación con ISO 45001:2018',
-                'orden': 2,
+                'is_integral_policy': True,  # v3.1: Flag para políticas integrales
                 'is_active': True,
                 'created_by': user,
             }
@@ -456,14 +457,19 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS('SEED DE IDENTIDAD CORPORATIVA COMPLETADO'))
         self.stdout.write(self.style.SUCCESS('=' * 60))
 
-        # Estadísticas
+        # Estadísticas (v3.1: políticas integrales consolidadas en PoliticaEspecifica)
+        total_politicas = PoliticaEspecifica.objects.filter(identity=identity).count()
+        politicas_integrales = PoliticaEspecifica.objects.filter(identity=identity, is_integral_policy=True).count()
+        politicas_especificas = PoliticaEspecifica.objects.filter(identity=identity, is_integral_policy=False).count()
+
         self.stdout.write(f'''
 Datos creados:
   - 1 Identidad Corporativa
   - {CorporateValue.objects.filter(identity=identity).count()} Valores Corporativos
   - {AlcanceSistema.objects.filter(identity=identity).count()} Alcances del Sistema
-  - {PoliticaIntegral.objects.filter(identity=identity).count()} Politicas Integrales
-  - {PoliticaEspecifica.objects.filter(identity=identity).count()} Politicas Especificas
+  - {total_politicas} Politicas totales:
+    - {politicas_integrales} Politicas Integrales (is_integral_policy=True)
+    - {politicas_especificas} Politicas Especificas (is_integral_policy=False)
 
 Para probar:
   1. Ir a Direccion Estrategica > Identidad Corporativa

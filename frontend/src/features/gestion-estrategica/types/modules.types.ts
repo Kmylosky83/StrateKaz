@@ -34,7 +34,10 @@ export interface TabSection {
   order: number;
   is_enabled: boolean;
   is_core: boolean;
+  supported_actions?: string[];
 }
+
+export type TabSectionTree = TabSection;
 
 // ==================== TABS ====================
 

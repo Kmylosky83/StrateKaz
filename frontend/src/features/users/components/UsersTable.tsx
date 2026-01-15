@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Edit, Trash2, UserCheck, UserX, Shield } from 'lucide-react';
-import { Button } from '@/components/common/Button';
+import { UserCheck, UserX, Shield } from 'lucide-react';
 import { Card } from '@/components/common/Card';
+import { ActionButtons } from '@/components/common/ActionButtons';
+import { Modules, Sections } from '@/constants/permissions';
 import { Avatar } from '@/components/common/Avatar';
 import { Badge } from '@/components/common/Badge';
 import { UserStatusBadge } from '@/components/users/UserStatusBadge';
@@ -16,6 +17,10 @@ interface UsersTableProps {
   onEdit: (user: User) => void;
   onDelete: (user: User) => void;
   onToggleStatus: (user: User) => void;
+  /** Custom RBAC Module (optional, defaults to CORE) */
+  module?: string;
+  /** Custom RBAC Section (optional, defaults to USERS) */
+  section?: string;
 }
 
 export const UsersTable = ({
@@ -24,6 +29,8 @@ export const UsersTable = ({
   onEdit,
   onDelete,
   onToggleStatus,
+  module = Modules.CORE,
+  section = Sections.USERS,
 }: UsersTableProps) => {
   const [sortField, setSortField] = useState<keyof User>('full_name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
@@ -158,36 +165,21 @@ export const UsersTable = ({
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex justify-end gap-2">
-                    <Button
-                      variant="ghost"
+                    <ActionButtons
+                      module={module}
+                      section={section}
+                      onEdit={() => onEdit(user)}
+                      onDelete={() => onDelete(user)}
                       size="sm"
-                      onClick={() => onToggleStatus(user)}
-                      title={user.is_active ? 'Desactivar' : 'Activar'}
-                    >
-                      {user.is_active ? (
-                        <UserX className="h-4 w-4" />
-                      ) : (
-                        <UserCheck className="h-4 w-4" />
-                      )}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onEdit(user)}
-                      title="Editar"
-                      className="text-secondary-600 hover:text-secondary-700 hover:bg-secondary-50 dark:text-secondary-400 dark:hover:text-secondary-300 dark:hover:bg-secondary-900/20"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onDelete(user)}
-                      title="Eliminar"
-                      className="text-danger-600 hover:text-danger-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                      customActions={[
+                        {
+                          key: 'toggle-status',
+                          label: user.is_active ? 'Desactivar' : 'Activar',
+                          icon: user.is_active ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />,
+                          onClick: () => onToggleStatus(user),
+                        }
+                      ]}
+                    />
                   </div>
                 </td>
               </tr>

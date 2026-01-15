@@ -156,8 +156,8 @@ export const createMockEmpresa = (overrides = {}) => ({
 });
 
 /**
- * Mock de CorporateIdentity - v3.0
- * La política integral ahora se gestiona desde PoliticaIntegral
+ * Mock de CorporateIdentity - v4.0
+ * Las políticas integrales se gestionan como categoría INTEGRAL en PoliticaEspecifica
  */
 export const createMockIdentity = (overrides = {}) => ({
   id: 1,
@@ -170,32 +170,6 @@ export const createMockIdentity = (overrides = {}) => ({
   values_count: 0,
   alcances_count: 0,
   politicas_count: 0,
-  created_at: '2024-01-01T00:00:00Z',
-  updated_at: '2024-01-15T12:00:00Z',
-  ...overrides,
-});
-
-/**
- * Mock de PoliticaIntegral - v3.0
- */
-export const createMockPoliticaIntegral = (overrides = {}) => ({
-  id: 1,
-  identity: 1,
-  title: 'Política Integral del Sistema de Gestión',
-  content: '<p>Política integral de calidad y seguridad</p>',
-  version: '1.0',
-  status: 'VIGENTE',
-  status_display: 'Vigente',
-  effective_date: '2024-01-01',
-  expiry_date: null,
-  review_date: '2025-01-01',
-  is_signed: true,
-  signed_by: 1,
-  signed_by_name: 'Juan Pérez',
-  signed_at: '2024-01-15T10:00:00Z',
-  signature_hash: 'abc123',
-  applicable_standards: ['ISO_9001', 'ISO_45001'],
-  is_active: true,
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-15T12:00:00Z',
   ...overrides,

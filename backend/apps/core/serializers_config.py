@@ -307,6 +307,7 @@ class TabSectionSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'tab', 'tab_name', 'module_name',
             'code', 'name', 'description', 'icon', 'orden',
+            'supported_actions',
             'is_enabled', 'is_core', 'can_disable',
             'created_at', 'updated_at'
         ]

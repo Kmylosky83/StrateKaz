@@ -56,7 +56,8 @@ Write-Step "Verificando Node.js..."
 try {
     $nodeVersion = node --version
     Write-Success "Node.js instalado: $nodeVersion"
-} catch {
+}
+catch {
     Write-Error "Node.js no está instalado. Descárgalo desde https://nodejs.org/"
     exit 1
 }
@@ -66,7 +67,8 @@ Write-Step "Verificando npm..."
 try {
     $npmVersion = npm --version
     Write-Success "npm instalado: $npmVersion"
-} catch {
+}
+catch {
     Write-Error "npm no está instalado"
     exit 1
 }
@@ -92,7 +94,8 @@ if (-not (Test-Path "node_modules")) {
         exit 1
     }
     Write-Success "Dependencias instaladas"
-} else {
+}
+else {
     Write-Success "Dependencias ya instaladas"
 }
 
@@ -108,7 +111,8 @@ VITE_ENABLE_MOCK=false
 if (-not (Test-Path ".env.production")) {
     $envContent | Out-File -FilePath ".env.production" -Encoding UTF8
     Write-Success "Archivo .env.production creado (RECUERDA EDITAR LA URL)"
-} else {
+}
+else {
     Write-Success "Usando .env.production existente"
 }
 
@@ -156,7 +160,8 @@ foreach ($file in $criticalFiles) {
     $path = Join-Path -Path "dist" -ChildPath $file
     if (Test-Path $path) {
         Write-Host "  ✓ $file" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "  ✗ $file (NO ENCONTRADO)" -ForegroundColor Red
         $allExist = $false
     }
@@ -312,10 +317,22 @@ try {
     Compress-Archive -Path "dist\*" -DestinationPath "frontend-cpanel.zip" -Force
     $zipSize = (Get-Item "frontend-cpanel.zip").Length / 1MB
     Write-Success "Archivo ZIP creado: frontend-cpanel.zip ($([math]::Round($zipSize, 2)) MB)"
-} catch {
+}
+catch {
     Write-Error "Error al crear ZIP: $_"
     exit 1
 }
+
+# Crear archivo TAR.GZ (Recomendado para cPanel)
+try {
+    $tarName = "frontend-cpanel.tar.gz"
+    tar -czf $tarName -C dist .
+    if (Test-Path $tarName) {
+        $tarSize = (Get-Item $tarName).Length / 1MB
+        Write-Success "Archivo TAR creado: $tarName ($([math]::Round($tarSize, 2)) MB)"
+    }
+}
+catch { Write-Host "  ⚠ No se pudo crear el archivo TAR (tar no disponible)" -ForegroundColor Gray }
 
 # Resumen final
 Write-Host ""
@@ -326,13 +343,14 @@ Write-Host ""
 Write-Host "📦 Archivos generados:" -ForegroundColor Cyan
 Write-Host "  • dist/ - Archivos del build" -ForegroundColor Gray
 Write-Host "  • frontend-cpanel.zip - Archivo comprimido para subir a cPanel" -ForegroundColor Gray
+if (Test-Path "frontend-cpanel.tar.gz") { Write-Host "  • frontend-cpanel.tar.gz - Archivo TAR para subir a cPanel" -ForegroundColor Gray }
 Write-Host ""
 Write-Host "📋 PRÓXIMOS PASOS EN cPanel:" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "1. SUBIR ARCHIVOS:" -ForegroundColor Yellow
 Write-Host "   a) Ve a File Manager en cPanel" -ForegroundColor Gray
 Write-Host "   b) Navega a public_html/ (o el directorio de tu dominio)" -ForegroundColor Gray
-Write-Host "   c) Sube frontend-cpanel.zip" -ForegroundColor Gray
+Write-Host "   c) Sube frontend-cpanel.tar.gz (o .zip)" -ForegroundColor Gray
 Write-Host "   d) Extrae el ZIP en el mismo directorio" -ForegroundColor Gray
 Write-Host "   e) Mueve el contenido de dist/ al directorio raíz" -ForegroundColor Gray
 Write-Host ""

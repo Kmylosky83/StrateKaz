@@ -1,19 +1,30 @@
 /**
  * usePermissions - Hook para verificar permisos RBAC
  *
- * Este hook proporciona funciones para verificar permisos, roles y cargos
- * del usuario actual sin hardcodear valores en los componentes.
+ * RBAC Unificado v4.0:
+ * Los permisos se generan desde CargoSectionAccess, donde cada sección tiene
+ * acciones CRUD (can_view, can_create, can_edit, can_delete) configurables.
+ *
+ * Formato de códigos de permiso: "modulo.seccion.accion"
+ * - modulo: código del módulo en lowercase (ej: gestion_estrategica)
+ * - seccion: código de la sección en lowercase (ej: empresa, politicas)
+ * - accion: view, create, edit, delete
  *
  * @example
- * const { hasPermission, hasCargo, hasRole, canAccess } = usePermissions();
+ * const { hasPermission, canDo, hasCargo, canAccess } = usePermissions();
  *
- * // Verificar permiso
- * if (hasPermission(PermissionCodes.RECOLECCIONES.CREATE)) {
- *   // Mostrar boton crear
+ * // Verificar permiso CRUD directo
+ * if (hasPermission('gestion_estrategica.empresa.edit')) {
+ *   // Mostrar boton editar
+ * }
+ *
+ * // Usar helper canDo
+ * if (canDo('gestion_estrategica', 'politicas', 'create')) {
+ *   // Mostrar boton crear política
  * }
  *
  * // Verificar cargo
- * if (hasCargo(CargoCodes.LIDER_COMERCIAL_ECONORTE)) {
+ * if (hasCargo(CargoCodes.GERENTE_OPERACIONES)) {
  *   // Mostrar seccion especial
  * }
  */
@@ -21,7 +32,7 @@
 import { useCallback, useMemo } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { CargoLevels } from '@/constants/permissions';
-import type { CargoCode, CargoLevel, PermissionCode, RoleCode, GroupCode } from '@/constants/permissions';
+import type { CargoCode, CargoLevel, RoleCode, GroupCode } from '@/constants/permissions';
 
 interface PermissionsContext {
   /** Si el usuario es superadmin */
@@ -33,14 +44,26 @@ interface PermissionsContext {
   /** Nivel del cargo actual (0-3) */
   cargoLevel: number | null;
 
-  /** Verifica si tiene un permiso especifico */
-  hasPermission: (permission: PermissionCode) => boolean;
+  /** IDs de secciones autorizadas (del cargo del usuario) */
+  sectionIds: number[] | null;
+
+  /** Códigos de permisos CRUD autorizados */
+  permissionCodes: string[] | null;
+
+  /** Verifica si tiene acceso a una sección específica por ID */
+  hasSectionAccess: (sectionId: number) => boolean;
+
+  /** Verifica si tiene un permiso CRUD específico (ej: "gestion_estrategica.politica.create") */
+  hasPermission: (permissionCode: string) => boolean;
+
+  /** Verifica permiso CRUD por módulo/sección/acción (RBAC Unificado v4.0) */
+  canDo: (modulo: string, seccion: string, accion: 'view' | 'create' | 'edit' | 'delete') => boolean;
 
   /** Verifica si tiene al menos uno de los permisos */
-  hasAnyPermission: (permissions: PermissionCode[]) => boolean;
+  hasAnyPermission: (permissions: string[]) => boolean;
 
   /** Verifica si tiene todos los permisos */
-  hasAllPermissions: (permissions: PermissionCode[]) => boolean;
+  hasAllPermissions: (permissions: string[]) => boolean;
 
   /** Verifica si tiene un cargo especifico */
   hasCargo: (cargo: CargoCode | CargoCode[]) => boolean;
@@ -54,7 +77,7 @@ interface PermissionsContext {
   /** Verifica si pertenece a un grupo (pendiente: requiere API de grupos) */
   isInGroup: (group: GroupCode) => boolean;
 
-  /** Verifica acceso combinado (OR de permisos O cargo O nivel) */
+  /** Verifica acceso combinado (OR de permisos O cargo O nivel O sección) */
   canAccess: (options: AccessOptions) => boolean;
 
   /** Helper para mostrar/ocultar elementos UI */
@@ -62,8 +85,10 @@ interface PermissionsContext {
 }
 
 interface AccessOptions {
-  /** Permisos requeridos (OR) */
-  permissions?: PermissionCode[];
+  /** Permisos CRUD requeridos (OR) - códigos como "modulo.recurso.accion" */
+  permissions?: string[];
+  /** ID de sección requerida */
+  sectionId?: number;
   /** Cargos permitidos (OR) */
   cargos?: CargoCode[];
   /** Nivel minimo de cargo */
@@ -92,32 +117,77 @@ export function usePermissions(): PermissionsContext {
     return user?.cargo_level ?? null;
   }, [user?.cargo_level]);
 
+  // IDs de secciones autorizadas (del backend)
+  const sectionIds = useMemo(() => {
+    return user?.section_ids ?? null;
+  }, [user?.section_ids]);
+
+  // Códigos de permisos CRUD autorizados (del backend)
+  const permissionCodes = useMemo(() => {
+    return user?.permission_codes ?? null;
+  }, [user?.permission_codes]);
+
   /**
-   * Verifica si tiene un permiso especifico
-   * NOTA: En esta implementacion inicial, verificamos por cargo.
-   * En futuras versiones, esto llamara a una API para verificar permisos reales.
+   * Verifica si tiene acceso a una sección específica por ID
+   */
+  const hasSectionAccess = useCallback(
+    (sectionId: number): boolean => {
+      // Superadmin tiene acceso a todas las secciones
+      if (isSuperAdmin) return true;
+
+      // Si no hay usuario, no tiene acceso
+      if (!user) return false;
+
+      // Si section_ids es null (superuser), tiene acceso total
+      if (sectionIds === null) return true;
+
+      // Verificar si el ID está en la lista de secciones autorizadas
+      return sectionIds.includes(sectionId);
+    },
+    [isSuperAdmin, user, sectionIds]
+  );
+
+  /**
+   * Verifica si tiene un permiso CRUD específico
+   * @param permissionCode Código del permiso (ej: "gestion_estrategica.politica.create")
    */
   const hasPermission = useCallback(
-    (permission: PermissionCode): boolean => {
+    (permissionCode: string): boolean => {
       // Superadmin tiene todos los permisos
       if (isSuperAdmin) return true;
 
       // Si no hay usuario, no tiene permisos
       if (!user) return false;
 
-      // TODO: Implementar verificacion real contra API o cache de permisos
-      // Por ahora, verificamos si el usuario tiene un cargo asignado
-      // La verificacion real se hace en el backend
+      // Si permission_codes es null, no tiene permisos
+      if (!permissionCodes) return false;
 
-      // Placeholder: asumimos que si tiene cargo, tiene permisos basicos de lectura
-      // Esta logica se reemplazara cuando el backend devuelva los permisos del usuario
-      return user.cargo !== null;
+      // Si tiene '*', tiene todos los permisos (superuser)
+      if (permissionCodes.includes('*')) return true;
+
+      // Verificar si el código está en la lista de permisos autorizados
+      return permissionCodes.includes(permissionCode);
     },
-    [isSuperAdmin, user]
+    [isSuperAdmin, user, permissionCodes]
+  );
+
+  /**
+   * Verifica permiso CRUD por módulo/sección/acción
+   * RBAC Unificado v4.0: Acciones son view, create, edit, delete
+   * @param modulo Código del módulo (ej: "gestion_estrategica")
+   * @param seccion Código de la sección (ej: "empresa", "politicas")
+   * @param accion Acción CRUD (view, create, edit, delete)
+   */
+  const canDo = useCallback(
+    (modulo: string, seccion: string, accion: 'view' | 'create' | 'edit' | 'delete' | string): boolean => {
+      const code = `${modulo}.${seccion}.${accion}`;
+      return hasPermission(code);
+    },
+    [hasPermission]
   );
 
   const hasAnyPermission = useCallback(
-    (permissions: PermissionCode[]): boolean => {
+    (permissions: string[]): boolean => {
       if (isSuperAdmin) return true;
       return permissions.some((p) => hasPermission(p));
     },
@@ -125,7 +195,7 @@ export function usePermissions(): PermissionsContext {
   );
 
   const hasAllPermissions = useCallback(
-    (permissions: PermissionCode[]): boolean => {
+    (permissions: string[]): boolean => {
       if (isSuperAdmin) return true;
       return permissions.every((p) => hasPermission(p));
     },
@@ -187,6 +257,11 @@ export function usePermissions(): PermissionsContext {
       // Si no hay usuario, no tiene acceso
       if (!user) return false;
 
+      // Verificar acceso a sección específica
+      if (options.sectionId !== undefined) {
+        if (!hasSectionAccess(options.sectionId)) return false;
+      }
+
       // Verificar nivel minimo de cargo
       if (options.minLevel !== undefined) {
         if (hasCargoLevel(options.minLevel)) return true;
@@ -197,7 +272,7 @@ export function usePermissions(): PermissionsContext {
         if (hasCargo(options.cargos)) return true;
       }
 
-      // Verificar permisos (OR)
+      // Verificar permisos CRUD (OR)
       if (options.permissions && options.permissions.length > 0) {
         if (hasAnyPermission(options.permissions)) return true;
       }
@@ -210,7 +285,7 @@ export function usePermissions(): PermissionsContext {
       // Si no se especifica ninguna condicion, no tiene acceso
       return false;
     },
-    [isSuperAdmin, user, hasCargoLevel, hasCargo, hasAnyPermission, hasRole]
+    [isSuperAdmin, user, hasSectionAccess, hasCargoLevel, hasCargo, hasAnyPermission, hasRole]
   );
 
   // Alias de canAccess para semantica mas clara en UI
@@ -220,7 +295,11 @@ export function usePermissions(): PermissionsContext {
     isSuperAdmin,
     cargoCode,
     cargoLevel,
+    sectionIds,
+    permissionCodes,
+    hasSectionAccess,
     hasPermission,
+    canDo,
     hasAnyPermission,
     hasAllPermissions,
     hasCargo,

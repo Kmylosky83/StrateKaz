@@ -41,6 +41,14 @@ TIPOS_NOTIFICACION = {
     'REVISION_INICIADA': 'Revisión Iniciada',
     'REVISION_COMPLETADA': 'Revisión Completada',
 
+    # Workflow de Políticas
+    'POLITICA_REVISION_PENDIENTE': 'Revisión de Política Pendiente',
+    'POLITICA_APROBACION_PENDIENTE': 'Aprobación de Política Pendiente',
+    'POLITICA_RECHAZADA': 'Política Rechazada',
+    'POLITICA_APROBADA': 'Política Aprobada',
+    'POLITICA_POR_CODIFICAR': 'Política Por Codificar',
+    'POLITICA_PUBLICADA': 'Política Publicada',
+
     # Generales
     'NOTIFICACION_GENERAL': 'Notificación General',
 }
@@ -469,6 +477,223 @@ def notificar_grupo(usuarios, tipo, asunto, mensaje, link=None, prioridad='MEDIA
     }
 
 
+def notificar_cargo(
+    cargo,
+    tipo,
+    asunto,
+    mensaje,
+    link=None,
+    prioridad='MEDIA',
+    empresa=None,
+    datos_adicionales=None,
+    canales=None
+):
+    """
+    Envía notificación a TODOS los usuarios que tienen un cargo específico.
+
+    Esta función es fundamental para el workflow de políticas, donde se notifica
+    a todos los usuarios de un cargo (ej: "Gerente General", "Coordinador SST")
+    cuando hay una política pendiente de revisión o aprobación.
+
+    Args:
+        cargo: Instancia de Cargo o cargo_id (int)
+        tipo: Tipo de notificación (ver TIPOS_NOTIFICACION)
+        asunto: Asunto de la notificación
+        mensaje: Mensaje completo de la notificación
+        link: URL relacionada (opcional)
+        prioridad: BAJA, MEDIA, ALTA, CRITICA
+        empresa: Empresa para filtrar usuarios (multi-tenant)
+        datos_adicionales: Dict con datos extra para la notificación
+        canales: Lista de canales ['EMAIL', 'IN_APP'] (por defecto usa prioridad)
+
+    Returns:
+        dict: Estadísticas de envío con lista de usuarios notificados
+
+    Example:
+        notificar_cargo(
+            cargo=cargo_gerente,
+            tipo='FIRMA_REQUERIDA',
+            asunto='Política requiere su aprobación',
+            mensaje='La Política Integral v2.0 está lista para su aprobación.',
+            link='/gestion-estrategica/identidad/politicas/123',
+            prioridad='ALTA',
+            empresa=empresa
+        )
+    """
+    from apps.core.models import Cargo
+
+    # Resolver cargo si se pasó un ID
+    if isinstance(cargo, int):
+        try:
+            cargo = Cargo.objects.get(id=cargo)
+        except Cargo.DoesNotExist:
+            logger.error(f"Cargo con ID {cargo} no encontrado")
+            return {
+                'cargo': None,
+                'total': 0,
+                'enviadas': 0,
+                'fallidas': 0,
+                'usuarios': [],
+                'error': f'Cargo con ID {cargo} no encontrado'
+            }
+
+    # Obtener usuarios del cargo
+    usuarios_qs = User.objects.filter(cargo=cargo, is_active=True)
+
+    # Filtrar por empresa si se especifica (multi-tenant)
+    if empresa:
+        usuarios_qs = usuarios_qs.filter(empresa=empresa)
+
+    usuarios = list(usuarios_qs)
+
+    if not usuarios:
+        logger.warning(f"No hay usuarios activos con cargo '{cargo.name}'")
+        return {
+            'cargo': cargo.name,
+            'total': 0,
+            'enviadas': 0,
+            'fallidas': 0,
+            'usuarios': [],
+            'warning': f'No hay usuarios activos con cargo {cargo.name}'
+        }
+
+    # Determinar canales
+    if canales is None:
+        canales = determinar_canales_por_prioridad(prioridad)
+
+    enviadas = 0
+    fallidas = 0
+    usuarios_notificados = []
+    usuarios_fallidos = []
+
+    for usuario in usuarios:
+        try:
+            resultado = enviar_notificacion(
+                destinatario=usuario,
+                tipo=tipo,
+                asunto=asunto,
+                mensaje=mensaje,
+                link=link,
+                prioridad=prioridad,
+                canales=canales,
+                datos_adicionales={
+                    **(datos_adicionales or {}),
+                    'cargo_id': cargo.id,
+                    'cargo_nombre': cargo.name,
+                }
+            )
+
+            if resultado.get('error'):
+                fallidas += 1
+                usuarios_fallidos.append({
+                    'id': usuario.id,
+                    'username': usuario.username,
+                    'error': resultado.get('error')
+                })
+            else:
+                enviadas += 1
+                usuarios_notificados.append({
+                    'id': usuario.id,
+                    'username': usuario.username,
+                    'email': usuario.email,
+                    'canales': list(resultado.keys())
+                })
+
+        except Exception as e:
+            logger.error(f"Error notificando a {usuario.username} (cargo {cargo.name}): {str(e)}")
+            fallidas += 1
+            usuarios_fallidos.append({
+                'id': usuario.id,
+                'username': usuario.username,
+                'error': str(e)
+            })
+
+    logger.info(
+        f"Notificación a cargo '{cargo.name}': "
+        f"{enviadas}/{len(usuarios)} enviadas, {fallidas} fallidas"
+    )
+
+    return {
+        'cargo': cargo.name,
+        'cargo_id': cargo.id,
+        'total': len(usuarios),
+        'enviadas': enviadas,
+        'fallidas': fallidas,
+        'usuarios_notificados': usuarios_notificados,
+        'usuarios_fallidos': usuarios_fallidos if usuarios_fallidos else None
+    }
+
+
+def notificar_cargos_multiple(
+    cargos,
+    tipo,
+    asunto,
+    mensaje,
+    link=None,
+    prioridad='MEDIA',
+    empresa=None,
+    datos_adicionales=None
+):
+    """
+    Envía notificación a usuarios de múltiples cargos.
+
+    Útil para notificar a varios cargos a la vez, por ejemplo cuando
+    una política requiere revisión técnica Y aprobación gerencial.
+
+    Args:
+        cargos: Lista de Cargos o cargo_ids
+        tipo: Tipo de notificación
+        asunto: Asunto de la notificación
+        mensaje: Mensaje
+        link: URL opcional
+        prioridad: BAJA, MEDIA, ALTA, CRITICA
+        empresa: Empresa para filtrar (multi-tenant)
+        datos_adicionales: Dict con datos extra
+
+    Returns:
+        dict: Estadísticas consolidadas de envío por cargo
+
+    Example:
+        notificar_cargos_multiple(
+            cargos=[cargo_revisor, cargo_aprobador],
+            tipo='FIRMA_REQUERIDA',
+            asunto='Política pendiente de firma',
+            mensaje='La Política Integral v2.0 requiere su firma.',
+            link='/politicas/123',
+            prioridad='ALTA'
+        )
+    """
+    resultados_por_cargo = []
+    total_enviadas = 0
+    total_fallidas = 0
+    total_usuarios = 0
+
+    for cargo in cargos:
+        resultado = notificar_cargo(
+            cargo=cargo,
+            tipo=tipo,
+            asunto=asunto,
+            mensaje=mensaje,
+            link=link,
+            prioridad=prioridad,
+            empresa=empresa,
+            datos_adicionales=datos_adicionales
+        )
+
+        resultados_por_cargo.append(resultado)
+        total_enviadas += resultado.get('enviadas', 0)
+        total_fallidas += resultado.get('fallidas', 0)
+        total_usuarios += resultado.get('total', 0)
+
+    return {
+        'cargos_notificados': len(cargos),
+        'total_usuarios': total_usuarios,
+        'total_enviadas': total_enviadas,
+        'total_fallidas': total_fallidas,
+        'detalle_por_cargo': resultados_por_cargo
+    }
+
+
 # =============================================================================
 # NOTIFICACIONES ESPECÍFICAS PARA WORKFLOW
 # =============================================================================
@@ -520,3 +745,220 @@ def notificar_revision_programada(config):
                 'dias_restantes': dias_restantes
             }
         )
+
+
+# =============================================================================
+# NOTIFICACIONES PARA WORKFLOW DE POLÍTICAS
+# =============================================================================
+
+def notificar_politica_revision_pendiente(politica, cargo_revisor, usuario_solicitante=None):
+    """
+    Notifica a todos los usuarios del cargo revisor que hay una política
+    pendiente de revisión técnica.
+
+    Args:
+        politica: Instancia de PoliticaEspecifica
+        cargo_revisor: Cargo que debe revisar (instancia o ID)
+        usuario_solicitante: Usuario que envió a revisión (opcional)
+
+    Returns:
+        dict: Resultado de la notificación
+    """
+    tipo_politica = getattr(politica.tipo_politica, 'label', 'Política')
+
+    return notificar_cargo(
+        cargo=cargo_revisor,
+        tipo='POLITICA_REVISION_PENDIENTE',
+        asunto=f'Revisión Pendiente: {politica.title}',
+        mensaje=(
+            f'La {tipo_politica} "{politica.title}" ha sido enviada para revisión técnica. '
+            f'Por favor, revise el documento y emita su concepto.'
+            + (f'\n\nSolicitado por: {usuario_solicitante.get_full_name() or usuario_solicitante.username}'
+               if usuario_solicitante else '')
+        ),
+        link=f'/gestion-estrategica/identidad/politicas/{politica.id}',
+        prioridad='ALTA',
+        empresa=politica.identity.empresa if hasattr(politica, 'identity') else None,
+        datos_adicionales={
+            'politica_id': politica.id,
+            'politica_titulo': politica.title,
+            'tipo_politica': tipo_politica,
+            'accion_requerida': 'REVISAR',
+        }
+    )
+
+
+def notificar_politica_aprobacion_pendiente(politica, cargo_aprobador, usuario_revisor=None):
+    """
+    Notifica a todos los usuarios del cargo aprobador que hay una política
+    pendiente de aprobación final.
+
+    Args:
+        politica: Instancia de PoliticaEspecifica
+        cargo_aprobador: Cargo que debe aprobar (instancia o ID)
+        usuario_revisor: Usuario que aprobó la revisión técnica (opcional)
+
+    Returns:
+        dict: Resultado de la notificación
+    """
+    tipo_politica = getattr(politica.tipo_politica, 'label', 'Política')
+
+    return notificar_cargo(
+        cargo=cargo_aprobador,
+        tipo='POLITICA_APROBACION_PENDIENTE',
+        asunto=f'Aprobación Pendiente: {politica.title}',
+        mensaje=(
+            f'La {tipo_politica} "{politica.title}" ha completado su revisión técnica '
+            f'y está lista para aprobación final.'
+            + (f'\n\nRevisado por: {usuario_revisor.get_full_name() or usuario_revisor.username}'
+               if usuario_revisor else '')
+        ),
+        link=f'/gestion-estrategica/identidad/politicas/{politica.id}',
+        prioridad='ALTA',
+        empresa=politica.identity.empresa if hasattr(politica, 'identity') else None,
+        datos_adicionales={
+            'politica_id': politica.id,
+            'politica_titulo': politica.title,
+            'tipo_politica': tipo_politica,
+            'accion_requerida': 'APROBAR',
+        }
+    )
+
+
+def notificar_politica_rechazada(politica, usuario_que_rechazo, motivo_rechazo, usuario_creador=None):
+    """
+    Notifica al creador de la política que fue rechazada.
+
+    Args:
+        politica: Instancia de PoliticaEspecifica
+        usuario_que_rechazo: Usuario que rechazó la política
+        motivo_rechazo: Motivo del rechazo
+        usuario_creador: Usuario que creó la política (si no se pasa, se usa created_by)
+
+    Returns:
+        dict: Resultado de la notificación
+    """
+    destinatario = usuario_creador or getattr(politica, 'created_by', None)
+
+    if not destinatario:
+        logger.warning(f"No se puede notificar rechazo: política {politica.id} sin creador definido")
+        return {'error': 'No hay destinatario para notificar'}
+
+    tipo_politica = getattr(politica.tipo_politica, 'label', 'Política')
+
+    return enviar_notificacion(
+        destinatario=destinatario,
+        tipo='POLITICA_RECHAZADA',
+        asunto=f'Política Rechazada: {politica.title}',
+        mensaje=(
+            f'La {tipo_politica} "{politica.title}" ha sido rechazada.\n\n'
+            f'Rechazado por: {usuario_que_rechazo.get_full_name() or usuario_que_rechazo.username}\n'
+            f'Motivo: {motivo_rechazo}\n\n'
+            f'Por favor, realice las correcciones necesarias y envíe nuevamente a revisión.'
+        ),
+        link=f'/gestion-estrategica/identidad/politicas/{politica.id}',
+        prioridad='ALTA',
+        datos_adicionales={
+            'politica_id': politica.id,
+            'politica_titulo': politica.title,
+            'rechazado_por_id': usuario_que_rechazo.id,
+            'rechazado_por_nombre': usuario_que_rechazo.get_full_name(),
+            'motivo_rechazo': motivo_rechazo,
+        }
+    )
+
+
+def notificar_politica_aprobada(politica, usuario_aprobador, notificar_creador=True, cargo_codificador=None):
+    """
+    Notifica que una política ha sido aprobada y está lista para codificación.
+
+    Args:
+        politica: Instancia de PoliticaEspecifica
+        usuario_aprobador: Usuario que aprobó la política
+        notificar_creador: Si debe notificar al creador original
+        cargo_codificador: Cargo responsable de codificar en Gestor Documental
+
+    Returns:
+        dict: Resultados de las notificaciones
+    """
+    tipo_politica = getattr(politica.tipo_politica, 'label', 'Política')
+    resultados = {}
+
+    # Notificar al creador
+    if notificar_creador:
+        creador = getattr(politica, 'created_by', None)
+        if creador:
+            resultados['creador'] = enviar_notificacion(
+                destinatario=creador,
+                tipo='POLITICA_APROBADA',
+                asunto=f'Política Aprobada: {politica.title}',
+                mensaje=(
+                    f'La {tipo_politica} "{politica.title}" ha sido aprobada.\n\n'
+                    f'Aprobado por: {usuario_aprobador.get_full_name() or usuario_aprobador.username}\n'
+                    f'La política será enviada al Gestor Documental para codificación y publicación.'
+                ),
+                link=f'/gestion-estrategica/identidad/politicas/{politica.id}',
+                prioridad='MEDIA',
+                datos_adicionales={
+                    'politica_id': politica.id,
+                    'estado': 'POR_CODIFICAR',
+                }
+            )
+
+    # Notificar al cargo codificador (ej: Control Documental)
+    if cargo_codificador:
+        resultados['codificador'] = notificar_cargo(
+            cargo=cargo_codificador,
+            tipo='POLITICA_POR_CODIFICAR',
+            asunto=f'Política Para Codificar: {politica.title}',
+            mensaje=(
+                f'La {tipo_politica} "{politica.title}" ha sido aprobada y está lista '
+                f'para codificación y publicación en el Gestor Documental.'
+            ),
+            link=f'/gestor-documental/pendientes',
+            prioridad='ALTA',
+            empresa=politica.identity.empresa if hasattr(politica, 'identity') else None,
+            datos_adicionales={
+                'politica_id': politica.id,
+                'politica_titulo': politica.title,
+                'accion_requerida': 'CODIFICAR',
+            }
+        )
+
+    return resultados
+
+
+def notificar_politica_publicada(politica, codigo_documento, usuarios_a_notificar=None):
+    """
+    Notifica que una política ha sido publicada en el Gestor Documental.
+
+    Args:
+        politica: Instancia de PoliticaEspecifica
+        codigo_documento: Código asignado en el Gestor Documental
+        usuarios_a_notificar: Lista de usuarios a notificar (opcional, por defecto el creador)
+
+    Returns:
+        dict: Resultados de las notificaciones
+    """
+    tipo_politica = getattr(politica.tipo_politica, 'label', 'Política')
+
+    destinatarios = usuarios_a_notificar or []
+    if not destinatarios:
+        creador = getattr(politica, 'created_by', None)
+        if creador:
+            destinatarios = [creador]
+
+    resultados = notificar_grupo(
+        usuarios=destinatarios,
+        tipo='POLITICA_PUBLICADA',
+        asunto=f'Política Publicada: {codigo_documento}',
+        mensaje=(
+            f'La {tipo_politica} "{politica.title}" ha sido publicada en el Gestor Documental.\n\n'
+            f'Código: {codigo_documento}\n'
+            f'Ya está disponible para consulta en el sistema.'
+        ),
+        link=f'/gestor-documental/documentos/{codigo_documento}',
+        prioridad='MEDIA'
+    )
+
+    return resultados

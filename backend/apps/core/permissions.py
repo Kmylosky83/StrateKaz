@@ -435,6 +435,251 @@ class RequireCargoLevel(permissions.BasePermission):
 
 
 # =============================================================================
+# PERMISOS RBAC BASADOS EN CARGO - Acceso UI y CRUD
+# =============================================================================
+
+class RequireSectionAccess(permissions.BasePermission):
+    """
+    Valida que el usuario tenga acceso a la sección correspondiente
+    basado en CargoSectionAccess.
+
+    Uso en ViewSet:
+        permission_classes = [IsAuthenticated, RequireSectionAccess]
+        section_code = 'identidad_corporativa'  # Código de la sección
+
+        # O usar section_id directamente
+        section_id = 5
+    """
+
+    message = 'No tiene acceso a esta sección del sistema.'
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+
+        # Super usuario tiene acceso total
+        if request.user.is_superuser:
+            return True
+
+        # Obtener código o ID de sección del view
+        section_code = getattr(view, 'section_code', None)
+        section_id = getattr(view, 'section_id', None)
+
+        if not section_code and not section_id:
+            # Sin configuración de sección, permitir (backwards compatibility)
+            return True
+
+        cargo = getattr(request.user, 'cargo', None)
+        if not cargo:
+            return False
+
+        from .models import CargoSectionAccess, TabSection
+
+        if section_id:
+            return CargoSectionAccess.objects.filter(
+                cargo=cargo,
+                section_id=section_id
+            ).exists()
+
+        if section_code:
+            return CargoSectionAccess.objects.filter(
+                cargo=cargo,
+                section__code=section_code
+            ).exists()
+
+        return False
+
+
+class RequireCRUDPermission(permissions.BasePermission):
+    """
+    Valida permisos CRUD dinámicos por acción basado en CargoPermiso.
+
+    Uso en ViewSet:
+        permission_classes = [IsAuthenticated, RequireCRUDPermission]
+        permission_module = 'gestion_estrategica'
+        permission_resource = 'politica'
+
+        # Opcionalmente, mapear acciones personalizadas:
+        permission_action_map = {
+            'approve': 'update',
+            'publish': 'update',
+            'archive': 'delete',
+        }
+    """
+
+    message = 'No tiene permiso para realizar esta acción.'
+
+    # Mapeo estándar de acciones DRF a permisos CRUD
+    DEFAULT_ACTION_MAP = {
+        'list': 'view',
+        'retrieve': 'view',
+        'create': 'create',
+        'update': 'update',
+        'partial_update': 'update',
+        'destroy': 'delete',
+    }
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+
+        if request.user.is_superuser:
+            return True
+
+        # Obtener configuración del view
+        module = getattr(view, 'permission_module', None)
+        resource = getattr(view, 'permission_resource', None)
+
+        if not module or not resource:
+            # Sin configuración, permitir (backwards compatibility)
+            return True
+
+        # Determinar acción
+        action = getattr(view, 'action', None)
+        if not action:
+            # Para APIViews sin action, usar el método HTTP
+            method_map = {
+                'GET': 'view',
+                'POST': 'create',
+                'PUT': 'update',
+                'PATCH': 'update',
+                'DELETE': 'delete',
+            }
+            action = method_map.get(request.method, 'view')
+        else:
+            # Para ViewSets, mapear la acción
+            custom_map = getattr(view, 'permission_action_map', {})
+            action_map = {**self.DEFAULT_ACTION_MAP, **custom_map}
+            action = action_map.get(action, action)
+
+        # Construir código de permiso
+        permission_code = f"{module}.{resource}.{action}"
+
+        # Verificar permiso usando el método del usuario
+        return request.user.has_permission(permission_code)
+
+
+class RequireSectionAndCRUD(permissions.BasePermission):
+    """
+    Combina validación de acceso a sección Y permiso CRUD.
+    El usuario debe tener ambos para acceder.
+
+    Uso en ViewSet:
+        permission_classes = [IsAuthenticated, RequireSectionAndCRUD]
+        section_code = 'politicas'
+        permission_module = 'gestion_estrategica'
+        permission_resource = 'politica'
+    """
+
+    message = 'No tiene acceso o permiso para esta operación.'
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+
+        if request.user.is_superuser:
+            return True
+
+        # Verificar acceso a sección
+        section_check = RequireSectionAccess()
+        if not section_check.has_permission(request, view):
+            self.message = section_check.message
+            return False
+
+        # Verificar permiso CRUD
+        crud_check = RequireCRUDPermission()
+        if not crud_check.has_permission(request, view):
+            self.message = crud_check.message
+            return False
+
+        return True
+
+
+
+class GranularActionPermission(permissions.BasePermission):
+    """
+    Permiso granular basado en CargoSectionAccess (RBAC v4.0).
+    Verifica las banderas booleanas can_view, can_create, can_edit, can_delete.
+    
+    Uso en ViewSet:
+        permission_classes = [GranularActionPermission]
+        section_code = 'identidad_corporativa'
+    """
+    
+    message = 'No tiene permiso granular para realizar esta acción.'
+    
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+            
+        # Superusuario siempre tiene acceso
+        if request.user.is_superuser:
+            return True
+            
+        # Determinar acción requerida
+        required_flag = None
+        
+        # 1. Buscar mapeo específico por acción en la vista
+        granular_action_map = getattr(view, 'granular_action_map', {})
+        if hasattr(view, 'action') and view.action in granular_action_map:
+            required_flag = granular_action_map[view.action]
+            
+        # 2. Fallback al mapeo por método HTTP
+        if not required_flag:
+            method_action_map = {
+                'GET': 'can_view',
+                'OPTIONS': 'can_view',
+                'HEAD': 'can_view',
+                'POST': 'can_create',
+                'PUT': 'can_edit',
+                'PATCH': 'can_edit',
+                'DELETE': 'can_delete'
+            }
+            required_flag = method_action_map.get(request.method)
+        if not required_flag:
+            return False
+            
+        # Identificar sección
+        section_code = getattr(view, 'section_code', None)
+        section_id = getattr(view, 'section_id', None)
+        
+        if not section_code and not section_id:
+            # Si la vista no define sección, este permiso no aplica (o se niega por seguridad)
+            # En este caso asumimos que si se agregó el permiso, ES porque se quiere validar
+            return False
+            
+        cargo = getattr(request.user, 'cargo', None)
+        if not cargo:
+            return False
+            
+        from .models import CargoSectionAccess
+        
+        # Consultar acceso
+        access_query = CargoSectionAccess.objects.filter(cargo=cargo)
+        
+        if section_id:
+            access_query = access_query.filter(section_id=section_id)
+        elif section_code:
+            access_query = access_query.filter(section__code=section_code)
+            
+        access = access_query.first()
+        
+        if not access:
+            # Si no existe registro de acceso, se deniega (default False)
+            return False
+            
+        # Verificar la bandera especifica
+        # 1. Si es una bandera estándar (columna en BD), usar getattr
+        if required_flag in ['can_view', 'can_create', 'can_edit', 'can_delete']:
+            return getattr(access, required_flag, False)
+            
+        # 2. Si es una acción personalizada, buscar en el JSONField custom_actions
+        custom_actions = getattr(access, 'custom_actions', {}) or {}
+        # Convertir a buleano por seguridad
+        return bool(custom_actions.get(required_flag, False))
+
+
+# =============================================================================
 # DECORADORES PARA VISTAS BASADAS EN FUNCIONES
 # =============================================================================
 

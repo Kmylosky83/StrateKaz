@@ -8,6 +8,70 @@
  * estas constantes solo se usan para referenciar los codigos.
  */
 
+// ==================== CODIGOS DE MODULOS Y SECCIONES ====================
+
+export const Modules = {
+  CORE: 'core',
+  GESTION_ESTRATEGICA: 'gestion_estrategica',
+  MOTOR_CUMPLIMIENTO: 'motor_cumplimiento',
+  MOTOR_RIESGOS: 'motor_riesgos',
+  WORKFLOW_ENGINE: 'workflow_engine',
+  HSEQ_MANAGEMENT: 'hseq_management',
+  SUPPLY_CHAIN: 'supply_chain',
+  PRODUCTION_OPS: 'production_ops',
+  LOGISTICS_FLEET: 'logistics_fleet',
+  SALES_CRM: 'sales_crm',
+  TALENT_HUB: 'talent_hub',
+  ADMIN_FINANCE: 'admin_finance',
+  ACCOUNTING: 'accounting',
+  ANALYTICS: 'analytics',
+  AUDIT_SYSTEM: 'audit_system',
+} as const;
+
+export const Sections = {
+  // CORE
+  USERS: 'colaboradores', // Retained for backward compatibility
+  COLABORADORES: 'colaboradores',
+  ROLES: 'roles',
+  CARGOS: 'cargos',
+  GROUPS: 'groups',
+
+  // GESTION ESTRATEGICA
+  EMPRESA: 'empresa',
+  SEDES: 'sedes',
+  NORMA_ISO: 'norma_iso',
+  AREAS: 'areas',
+  POLITICAS: 'politicas',
+  IDENTITY: 'identidad_corporativa', // Mapped to backend 'identidad_corporativa'
+  IDENTIDAD_CORPORATIVA: 'identidad_corporativa',
+  VALORES: 'valores_corporativos',
+  ALCANCE: 'alcance_sig',
+  ESTRATEGIA: 'estrategia',
+  ORGANIGRAMA: 'organigrama',
+
+  PROYECTOS: 'proyectos',
+  INTEGRACIONES: 'integraciones',
+  BRANDING: 'branding',
+  MODULOS: 'modulos',
+
+  // CUMPLIMIENTO
+  MATRIZ_LEGAL: 'matriz_legal',
+  REQUISITOS: 'requisitos',
+  PARTES_INTERESADAS: 'partes_interesadas',
+
+  // RIESGOS
+  RIESGOS_PROCESOS: 'riesgos_procesos',
+  IPEVR: 'ipevr',
+  ASPECTOS_AMBIENTALES: 'aspectos_ambientales',
+
+  // SALES
+  CLIENTES: 'clientes',
+  OPORTUNIDADES: 'oportunidades',
+
+  // SUPPLY
+  PROVEEDORES: 'proveedores',
+} as const;
+
 // ==================== CODIGOS DE PERMISOS ====================
 
 export const PermissionCodes = {

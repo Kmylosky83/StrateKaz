@@ -420,6 +420,7 @@ export interface UpdateGroupDTO {
 // ==================== FILTERS ====================
 
 export interface CargoFilters {
+  [key: string]: unknown;
   search?: string;
   nivel_jerarquico?: NivelJerarquico;
   area?: number;
@@ -432,6 +433,7 @@ export interface CargoFilters {
 }
 
 export interface RoleFilters {
+  [key: string]: unknown;
   search?: string;
   is_system?: boolean;
   is_active?: boolean;
@@ -441,6 +443,7 @@ export interface RoleFilters {
 }
 
 export interface GroupFilters {
+  [key: string]: unknown;
   search?: string;
   is_active?: boolean;
   include_inactive?: boolean;
@@ -449,6 +452,7 @@ export interface GroupFilters {
 }
 
 export interface PermissionFilters {
+  [key: string]: unknown;
   search?: string;
   module?: string;
   action?: string;

@@ -46,6 +46,8 @@ import {
   ZONAS_HORARIAS,
 } from '../types/empresa.types';
 import type { EmpresaConfigFormData } from '../types/empresa.types';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 
 // Lista de departamentos de Colombia (fallback)
 const DEPARTAMENTOS_COLOMBIA = [
@@ -93,7 +95,11 @@ const EmpresaView = ({
 }: {
   empresa: any;
   onEdit: () => void;
+  empresa: any;
+  onEdit: () => void;
 }) => {
+  const { canDo } = usePermissions();
+
   return (
     <DataSection
       title="Datos Fiscales y Legales"
@@ -101,10 +107,12 @@ const EmpresaView = ({
       icon={Building2}
       iconVariant="purple"
       action={
-        <Button variant="secondary" size="sm" onClick={onEdit}>
-          <Edit className="h-4 w-4 mr-2" />
-          Editar
-        </Button>
+        canDo(Modules.GESTION_ESTRATEGICA, Sections.EMPRESA, 'edit') ? (
+          <Button variant="secondary" size="sm" onClick={onEdit}>
+            <Edit className="h-4 w-4 mr-2" />
+            Editar
+          </Button>
+        ) : undefined
       }
     >
       <DataGrid columns={3} gap="md">
@@ -249,46 +257,46 @@ const EmpresaForm = ({
   } = useForm<EmpresaConfigFormData>({
     defaultValues: empresa
       ? {
-          nit: empresa.nit,
-          razon_social: empresa.razon_social,
-          nombre_comercial: empresa.nombre_comercial || '',
-          representante_legal: empresa.representante_legal,
-          cedula_representante: empresa.cedula_representante || '',
-          tipo_sociedad: empresa.tipo_sociedad,
-          actividad_economica: empresa.actividad_economica || '',
-          descripcion_actividad: empresa.descripcion_actividad || '',
-          regimen_tributario: empresa.regimen_tributario,
-          direccion_fiscal: empresa.direccion_fiscal,
-          ciudad: empresa.ciudad,
-          departamento: empresa.departamento,
-          pais: empresa.pais || 'Colombia',
-          codigo_postal: empresa.codigo_postal || '',
-          telefono_principal: empresa.telefono_principal,
-          telefono_secundario: empresa.telefono_secundario || '',
-          email_corporativo: empresa.email_corporativo,
-          sitio_web: empresa.sitio_web || '',
-          matricula_mercantil: empresa.matricula_mercantil || '',
-          camara_comercio: empresa.camara_comercio || '',
-          fecha_constitucion: empresa.fecha_constitucion || '',
-          fecha_inscripcion_registro: empresa.fecha_inscripcion_registro || '',
-          zona_horaria: empresa.zona_horaria,
-          formato_fecha: empresa.formato_fecha,
-          moneda: empresa.moneda,
-          simbolo_moneda: empresa.simbolo_moneda || '$',
-          separador_miles: empresa.separador_miles || '.',
-          separador_decimales: empresa.separador_decimales || ',',
-        }
+        nit: empresa.nit,
+        razon_social: empresa.razon_social,
+        nombre_comercial: empresa.nombre_comercial || '',
+        representante_legal: empresa.representante_legal,
+        cedula_representante: empresa.cedula_representante || '',
+        tipo_sociedad: empresa.tipo_sociedad,
+        actividad_economica: empresa.actividad_economica || '',
+        descripcion_actividad: empresa.descripcion_actividad || '',
+        regimen_tributario: empresa.regimen_tributario,
+        direccion_fiscal: empresa.direccion_fiscal,
+        ciudad: empresa.ciudad,
+        departamento: empresa.departamento,
+        pais: empresa.pais || 'Colombia',
+        codigo_postal: empresa.codigo_postal || '',
+        telefono_principal: empresa.telefono_principal,
+        telefono_secundario: empresa.telefono_secundario || '',
+        email_corporativo: empresa.email_corporativo,
+        sitio_web: empresa.sitio_web || '',
+        matricula_mercantil: empresa.matricula_mercantil || '',
+        camara_comercio: empresa.camara_comercio || '',
+        fecha_constitucion: empresa.fecha_constitucion || '',
+        fecha_inscripcion_registro: empresa.fecha_inscripcion_registro || '',
+        zona_horaria: empresa.zona_horaria,
+        formato_fecha: empresa.formato_fecha,
+        moneda: empresa.moneda,
+        simbolo_moneda: empresa.simbolo_moneda || '$',
+        separador_miles: empresa.separador_miles || '.',
+        separador_decimales: empresa.separador_decimales || ',',
+      }
       : {
-          tipo_sociedad: 'SAS',
-          regimen_tributario: 'COMUN',
-          pais: 'Colombia',
-          zona_horaria: 'America/Bogota',
-          formato_fecha: 'DD/MM/YYYY',
-          moneda: 'COP',
-          simbolo_moneda: '$',
-          separador_miles: '.',
-          separador_decimales: ',',
-        },
+        tipo_sociedad: 'SAS',
+        regimen_tributario: 'COMUN',
+        pais: 'Colombia',
+        zona_horaria: 'America/Bogota',
+        formato_fecha: 'DD/MM/YYYY',
+        moneda: 'COP',
+        simbolo_moneda: '$',
+        separador_miles: '.',
+        separador_decimales: ',',
+      },
   });
 
   const onSubmit = async (data: EmpresaConfigFormData) => {
@@ -606,6 +614,7 @@ const EmpresaForm = ({
 export const EmpresaSection = () => {
   const { empresa, isLoading, isConfigured } = useEmpresaConfig();
   const [isEditing, setIsEditing] = useState(false);
+  const { canDo } = usePermissions();
 
   if (isLoading) {
     return (
@@ -632,10 +641,12 @@ export const EmpresaSection = () => {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               Datos Fiscales y Legales
             </h3>
-            <Button onClick={() => setIsEditing(true)}>
-              <Building2 className="h-4 w-4 mr-2" />
-              Configurar Empresa
-            </Button>
+            {canDo(Modules.GESTION_ESTRATEGICA, Sections.EMPRESA, 'create') && (
+              <Button onClick={() => setIsEditing(true)}>
+                <Building2 className="h-4 w-4 mr-2" />
+                Configurar Empresa
+              </Button>
+            )}
           </div>
 
           <Alert

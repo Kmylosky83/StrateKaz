@@ -57,7 +57,7 @@ from .serializers_rbac import (
     RevocarRolAdicionalSerializer, RolesSugeridosSerializer,
     UserPermisosEfectivosSerializer,
 )
-from .permissions import IsSuperAdmin, RequireCargoLevel
+from .permissions import IsSuperAdmin, RequireCargoLevel, GranularActionPermission
 
 
 # =============================================================================
@@ -334,7 +334,22 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
     """
 
     queryset = Cargo.objects.all()
-    permission_classes = [IsAuthenticated]
+    
+    # Permission config
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'cargos'
+    granular_action_map = {
+        'levels': 'can_view',
+        'areas': 'can_view',
+        'choices': 'can_view',
+        'section_accesses': 'can_view',
+        'assign_permissions': 'can_edit',
+        'assign_roles': 'can_edit',
+        'assign_riesgos': 'can_edit',
+        'assign_section_accesses': 'can_edit',
+        'clear_section_accesses': 'can_edit',
+    }
+
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['nivel_jerarquico', 'area', 'is_active', 'is_system', 'is_jefatura']
     search_fields = ['code', 'name', 'description', 'objetivo_cargo']
@@ -553,30 +568,86 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
         """
         GET /api/core/cargos-rbac/{id}/section-accesses/
 
-        Retorna las secciones a las que el cargo tiene acceso.
-        Usado por la Matriz de Permisos para cargar el estado actual.
+        Retorna las secciones a las que el cargo tiene acceso CON sus acciones CRUD.
+        Sistema RBAC Unificado v4.0 - acciones integradas en acceso a secciones.
 
         Response:
         {
             "cargo_id": 1,
             "cargo_name": "Gerente General",
-            "section_ids": [1, 2, 3, 5, 7],
+            "accesses": [
+                {
+                    "section_id": 1,
+                    "section_code": "empresa",
+                    "section_name": "Datos de Empresa",
+                    "module_code": "gestion_estrategica",
+                    "tab_code": "configuracion",
+                    "can_view": true,
+                    "can_create": false,
+                    "can_edit": true,
+                    "can_delete": false
+                },
+                ...
+            ],
             "total_sections": 5
         }
         """
         cargo = self.get_object()
 
-        # Obtener IDs de secciones asignadas
-        section_ids = list(
-            CargoSectionAccess.objects.filter(cargo=cargo)
-            .values_list('section_id', flat=True)
+        # 1. Obtener TODAS las secciones habilitadas
+        all_sections = TabSection.objects.filter(is_enabled=True).select_related(
+            'tab__module'
+        ).order_by(
+            'tab__module__orden',
+            'tab__orden',
+            'orden'
         )
+
+        # 2. Obtener accesos asignados
+        assigned_accesses = CargoSectionAccess.objects.filter(cargo=cargo).select_related(
+            'section'
+        )
+        access_map = {acc.section_id: acc for acc in assigned_accesses}
+
+        accesses_data = []
+        for section in all_sections:
+            access = access_map.get(section.id)
+
+            # Si tiene acceso, usar sus permisos. Si no, todo False.
+            if access:
+                can_view = access.can_view
+                can_create = access.can_create
+                can_edit = access.can_edit
+                can_delete = access.can_delete
+                custom_actions = access.custom_actions
+            else:
+                can_view = False
+                can_create = False
+                can_edit = False
+                can_delete = False
+                custom_actions = {}
+
+            accesses_data.append({
+                'section_id': section.id,
+                'section_code': section.code,
+                'section_name': section.name,
+                'module_code': section.tab.module.code,
+                'module_name': section.tab.module.name,
+                'tab_code': section.tab.code,
+                'tab_name': section.tab.name,
+                'can_view': can_view,
+                'can_create': can_create,
+                'can_edit': can_edit,
+                'can_delete': can_delete,
+                'custom_actions': custom_actions,
+                'supported_actions': section.supported_actions,
+            })
 
         return Response({
             'cargo_id': cargo.id,
             'cargo_name': cargo.name,
-            'section_ids': section_ids,
-            'total_sections': len(section_ids)
+            'accesses': accesses_data,
+            'total_sections': len(accesses_data)
         })
 
     @action(detail=True, methods=['post'])
@@ -584,13 +655,29 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
         """
         POST /api/core/cargos-rbac/{id}/assign-section-accesses/
 
-        Asigna acceso a secciones para un cargo.
-        Usado por la Matriz de Permisos para guardar cambios.
+        Asigna acceso a secciones para un cargo CON sus acciones CRUD.
+        Sistema RBAC Unificado v4.0 - acciones integradas en acceso a secciones.
 
-        Body:
+        Body (nuevo formato con acciones):
+        {
+            "accesses": [
+                {
+                    "section_id": 1, 
+                    "can_view": true, 
+                    "can_create": false, 
+                    "can_edit": true, 
+                    "can_delete": false,
+                    "custom_actions": {"enviar": true, "aprobar": false}
+                },
+                ...
+            ],
+            "replace": true  // true = reemplaza todos los accesos
+        }
+
+        Body (formato legacy - solo section_ids, asigna can_view=true por defecto):
         {
             "section_ids": [1, 2, 3, 5, 7],
-            "replace": true  // true = reemplaza todas las secciones
+            "replace": true
         }
 
         Response:
@@ -604,59 +691,112 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
         }
         """
         cargo = self.get_object()
-
-        section_ids = request.data.get('section_ids', [])
         replace = request.data.get('replace', True)
 
-        # Validar que section_ids sea una lista
-        if not isinstance(section_ids, list):
-            return Response(
-                {'error': 'section_ids debe ser una lista de IDs'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        # Detectar formato: nuevo (accesses) o legacy (section_ids)
+        accesses_data = request.data.get('accesses', None)
+        section_ids = request.data.get('section_ids', None)
 
-        # Obtener secciones existentes antes del cambio
-        existing_ids = set(
-            CargoSectionAccess.objects.filter(cargo=cargo)
-            .values_list('section_id', flat=True)
-        )
-        new_ids = set(section_ids)
+        if accesses_data is not None:
+            # Nuevo formato con acciones CRUD
+            if not isinstance(accesses_data, list):
+                return Response(
+                    {'error': 'accesses debe ser una lista'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
-        with transaction.atomic():
-            if replace:
-                # Eliminar todas las secciones existentes
-                CargoSectionAccess.objects.filter(cargo=cargo).delete()
-                sections_removed = len(existing_ids)
+            with transaction.atomic():
+                if replace:
+                    CargoSectionAccess.objects.filter(cargo=cargo).delete()
 
-                # Agregar nuevas secciones
+                sections_added = 0
+                sections_updated = 0
+
+                for access_item in accesses_data:
+                    section_id = access_item.get('section_id')
+                    if not section_id:
+                        continue
+
+                    try:
+                        section = TabSection.objects.get(id=section_id, is_enabled=True)
+                    except TabSection.DoesNotExist:
+                        continue
+
+                    # Validar custom_actions
+                    custom_actions = access_item.get('custom_actions', {})
+                    if custom_actions:
+                        if not isinstance(custom_actions, dict):
+                            # Si no es dict, ignorar o lanzar error (aquí ignoramos por robustez)
+                            custom_actions = {}
+                        else:
+                            # Validacion Estricta: Solo permitir acciones soportadas
+                            supported = set(section.supported_actions)
+                            valid_custom_actions = {}
+                            for action_key, action_value in custom_actions.items():
+                                if action_key in supported:
+                                    valid_custom_actions[action_key] = bool(action_value)
+                            custom_actions = valid_custom_actions
+
+                    # Crear o actualizar acceso
+                    access, created = CargoSectionAccess.objects.update_or_create(
+                        cargo=cargo,
+                        section=section,
+                        defaults={
+                            'can_view': access_item.get('can_view', True),
+                            'can_create': access_item.get('can_create', False),
+                            'can_edit': access_item.get('can_edit', False),
+                            'can_delete': access_item.get('can_delete', False),
+                            'custom_actions': custom_actions,
+                            'granted_by': request.user,
+                        }
+                    )
+
+                    if created:
+                        sections_added += 1
+                    else:
+                        sections_updated += 1
+
+        elif section_ids is not None:
+            # Formato legacy - solo IDs, asignar can_view=true por defecto
+            if not isinstance(section_ids, list):
+                return Response(
+                    {'error': 'section_ids debe ser una lista de IDs'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            with transaction.atomic():
+                existing_ids = set(
+                    CargoSectionAccess.objects.filter(cargo=cargo)
+                    .values_list('section_id', flat=True)
+                )
+
+                if replace:
+                    CargoSectionAccess.objects.filter(cargo=cargo).delete()
+
                 sections_to_add = TabSection.objects.filter(
                     id__in=section_ids,
                     is_enabled=True
                 )
                 sections_added = 0
                 for section in sections_to_add:
-                    CargoSectionAccess.objects.create(
+                    CargoSectionAccess.objects.update_or_create(
                         cargo=cargo,
                         section=section,
-                        granted_by=request.user
+                        defaults={
+                            'can_view': True,
+                            'can_create': False,
+                            'can_edit': False,
+                            'can_delete': False,
+                            'granted_by': request.user,
+                        }
                     )
                     sections_added += 1
-            else:
-                # Solo agregar las nuevas (no eliminar existentes)
-                ids_to_add = new_ids - existing_ids
-                sections_to_add = TabSection.objects.filter(
-                    id__in=ids_to_add,
-                    is_enabled=True
-                )
-                sections_added = 0
-                for section in sections_to_add:
-                    CargoSectionAccess.objects.get_or_create(
-                        cargo=cargo,
-                        section=section,
-                        defaults={'granted_by': request.user}
-                    )
-                    sections_added += 1
-                sections_removed = 0
+                sections_updated = 0
+        else:
+            return Response(
+                {'error': 'Debe proporcionar accesses o section_ids'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         # Contar total final
         total_sections = CargoSectionAccess.objects.filter(cargo=cargo).count()
@@ -666,7 +806,7 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
             'cargo_id': cargo.id,
             'cargo_name': cargo.name,
             'sections_added': sections_added,
-            'sections_removed': sections_removed,
+            'sections_updated': sections_updated,
             'total_sections': total_sections
         })
 

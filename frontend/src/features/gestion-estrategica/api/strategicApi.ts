@@ -546,10 +546,6 @@ import type {
   CreateAlcanceSistemaDTO,
   UpdateAlcanceSistemaDTO,
   AlcanceSistemaFilters,
-  PoliticaIntegral,
-  CreatePoliticaIntegralDTO,
-  UpdatePoliticaIntegralDTO,
-  PoliticaIntegralFilters,
   PoliticaEspecifica,
   CreatePoliticaEspecificaDTO,
   UpdatePoliticaEspecificaDTO,
@@ -598,83 +594,6 @@ export const alcancesApi = {
       params: { identity: identityId },
     });
     return response.data;
-  },
-};
-
-// ==================== POLÍTICAS INTEGRALES ====================
-// @deprecated - Usar usePoliticas.ts (Sistema Unificado v3.0) en su lugar.
-// Estos endpoints legacy serán eliminados en una futura versión.
-// Ver: ../hooks/usePoliticas.ts para el nuevo sistema de políticas.
-
-export const politicasIntegralesApi = {
-  getAll: async (filters?: PoliticaIntegralFilters): Promise<PaginatedResponse<PoliticaIntegral>> => {
-    const response = await axiosInstance.get(`${IDENTIDAD_URL}/politicas-integrales/`, {
-      params: filters,
-    });
-    return response.data;
-  },
-
-  getCurrent: async (identityId: number): Promise<PoliticaIntegral | null> => {
-    try {
-      const response = await axiosInstance.get(`${IDENTIDAD_URL}/politicas-integrales/current/`, {
-        params: { identity: identityId },
-      });
-      return response.data;
-    } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { status?: number } };
-        if (axiosError.response?.status === 404) {
-          return null;
-        }
-      }
-      throw error;
-    }
-  },
-
-  getById: async (id: number): Promise<PoliticaIntegral> => {
-    const response = await axiosInstance.get(`${IDENTIDAD_URL}/politicas-integrales/${id}/`);
-    return response.data;
-  },
-
-  getVersions: async (identityId: number): Promise<PoliticaIntegral[]> => {
-    const response = await axiosInstance.get(`${IDENTIDAD_URL}/politicas-integrales/versions/`, {
-      params: { identity: identityId },
-    });
-    return response.data;
-  },
-
-  create: async (data: CreatePoliticaIntegralDTO): Promise<PoliticaIntegral> => {
-    const response = await axiosInstance.post(`${IDENTIDAD_URL}/politicas-integrales/`, data);
-    return response.data;
-  },
-
-  update: async (id: number, data: UpdatePoliticaIntegralDTO): Promise<PoliticaIntegral> => {
-    const response = await axiosInstance.patch(`${IDENTIDAD_URL}/politicas-integrales/${id}/`, data);
-    return response.data;
-  },
-
-  delete: async (id: number): Promise<void> => {
-    await axiosInstance.delete(`${IDENTIDAD_URL}/politicas-integrales/${id}/`);
-  },
-
-  sign: async (id: number): Promise<{ detail: string; signed_by: string; signed_at: string; signature_hash: string }> => {
-    const response = await axiosInstance.post(`${IDENTIDAD_URL}/politicas-integrales/${id}/sign/`, {
-      confirm: true,
-    });
-    return response.data;
-  },
-
-  publish: async (id: number): Promise<{ detail: string; status: string; effective_date: string }> => {
-    const response = await axiosInstance.post(`${IDENTIDAD_URL}/politicas-integrales/${id}/publish/`, {
-      confirm: true,
-    });
-    return response.data;
-  },
-
-  reorder: async (newOrder: { id: number; orden: number }[]): Promise<void> => {
-    await axiosInstance.post(`${IDENTIDAD_URL}/politicas-integrales/reorder/`, {
-      items: newOrder,
-    });
   },
 };
 

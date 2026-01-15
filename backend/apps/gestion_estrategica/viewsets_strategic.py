@@ -25,7 +25,7 @@ from django.db.models import Prefetch
 from apps.core.models import (
     SystemModule, ModuleTab, TabSection,
     BrandingConfig,
-    Role, Cargo
+    Role, Cargo, CargoSectionAccess
 )
 
 # Modelos locales de gestion_estrategica (imports relativos)
@@ -585,15 +585,87 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
         """
         GET /api/core/system-modules/sidebar/
 
-        Retorna modulos habilitados para el sidebar.
-        Estructura directa: Modulo -> Tabs (sin nivel de categoria intermedio)
+        Retorna módulos filtrados según permisos del usuario:
+        - Super usuario: todos los módulos habilitados
+        - Usuario normal: solo módulos/tabs/secciones autorizadas por su cargo
 
-        Cada modulo tiene:
+        Cada módulo tiene:
         - code, name, icon, color
-        - route: ruta base del modulo
-        - is_category: False (los modulos son navegables)
-        - children: tabs habilitados del modulo
+        - route: ruta base del módulo
+        - is_category: False (los módulos son navegables)
+        - children: tabs habilitados del módulo
+        - sections: (opcional) secciones para usuarios normales
         """
+        user = request.user
+
+        # Super usuario ve todo
+        if user.is_superuser:
+            return self._get_full_sidebar()
+
+        # Usuario normal: filtrar por CargoSectionAccess
+        cargo = getattr(user, 'cargo', None)
+        if not cargo:
+            # Usuario sin cargo no ve nada (no debería pasar por validación previa)
+            return Response([])
+
+        # Obtener section_ids autorizados para este cargo
+        authorized_section_ids = set(
+            CargoSectionAccess.objects.filter(cargo=cargo)
+            .values_list('section_id', flat=True)
+        )
+
+        if not authorized_section_ids:
+            # Sin secciones autorizadas = sidebar vacío
+            return Response([])
+
+        # Obtener tabs que contienen secciones autorizadas
+        authorized_tab_ids = set(
+            TabSection.objects.filter(
+                id__in=authorized_section_ids,
+                is_enabled=True
+            ).values_list('tab_id', flat=True)
+        )
+
+        if not authorized_tab_ids:
+            return Response([])
+
+        # Obtener módulos que contienen tabs autorizados
+        authorized_module_ids = set(
+            ModuleTab.objects.filter(
+                id__in=authorized_tab_ids,
+                is_enabled=True
+            ).values_list('module_id', flat=True)
+        )
+
+        if not authorized_module_ids:
+            return Response([])
+
+        # Construir sidebar filtrado con secciones incluidas
+        modules = SystemModule.objects.filter(
+            id__in=authorized_module_ids,
+            is_enabled=True
+        ).prefetch_related(
+            Prefetch(
+                'tabs',
+                queryset=ModuleTab.objects.filter(
+                    id__in=authorized_tab_ids,
+                    is_enabled=True
+                ).prefetch_related(
+                    Prefetch(
+                        'sections',
+                        queryset=TabSection.objects.filter(
+                            id__in=authorized_section_ids,
+                            is_enabled=True
+                        ).order_by('orden')
+                    )
+                ).order_by('orden')
+            )
+        ).order_by('orden', 'name')
+
+        return self._build_sidebar_response(modules, include_sections=True)
+
+    def _get_full_sidebar(self):
+        """Retorna sidebar completo para super usuarios."""
         modules = SystemModule.objects.filter(
             is_enabled=True
         ).prefetch_related(
@@ -602,35 +674,49 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
                 queryset=ModuleTab.objects.filter(is_enabled=True).order_by('orden')
             )
         ).order_by('orden', 'name')
+        return self._build_sidebar_response(modules, include_sections=False)
 
-        # Serializar modulos directamente (sin agrupar por categoria)
+    def _build_sidebar_response(self, modules, include_sections=False):
+        """Construye la respuesta del sidebar."""
         result = []
         for module in modules:
-            # Obtener tabs habilitados
-            enabled_tabs = list(module.tabs.all())  # Ya filtrados por el prefetch
-
-            # Construir hijos (tabs) - heredan color del modulo padre
+            enabled_tabs = list(module.tabs.all())
             children = None
             module_effective_color = module.get_effective_color()
+
             if enabled_tabs:
                 children = []
                 for tab in enabled_tabs:
-                    children.append({
+                    tab_data = {
                         'code': tab.code,
                         'name': tab.name,
                         'icon': tab.icon,
-                        'color': module_effective_color,  # Hereda color efectivo del modulo
+                        'color': module_effective_color,
                         'route': f"/{module.code.replace('_', '-')}/{tab.code.replace('_', '-')}",
                         'is_category': False,
                         'children': None
-                    })
+                    }
 
-            # Construir modulo
+                    # Incluir secciones si es usuario normal (para filtrado adicional en frontend)
+                    if include_sections and hasattr(tab, 'sections'):
+                        sections = list(tab.sections.all())
+                        if sections:
+                            tab_data['sections'] = [
+                                {
+                                    'id': s.id,
+                                    'code': s.code,
+                                    'name': s.name
+                                }
+                                for s in sections
+                            ]
+
+                    children.append(tab_data)
+
             module_data = {
                 'code': module.code,
                 'name': module.name,
                 'icon': module.icon,
-                'color': module_effective_color,  # Color efectivo (asignado o por categoria)
+                'color': module_effective_color,
                 'route': f"/{module.code.replace('_', '-')}" if not children else None,
                 'is_category': False,
                 'children': children

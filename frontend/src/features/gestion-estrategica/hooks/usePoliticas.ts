@@ -26,10 +26,9 @@ import type {
 // API BASE
 // ============================================================================
 
-// Backend tiene endpoints separados para politicas integrales y especificas
-// El frontend v3.0 usa politicas especificas como base para el sistema unificado
+// Sistema unificado v3.0 - usa politicas especificas como base
+// Las "políticas integrales" ahora son simplemente políticas con tipo_politica='INTEGRAL'
 const API_POLITICAS = '/gestion-estrategica/identidad/politicas-especificas';
-const API_POLITICAS_INTEGRALES = '/gestion-estrategica/identidad/politicas-integrales';
 const API_NORMAS = '/gestion-estrategica/configuracion/normas-iso';
 const API_WORKFLOWS = '/gestion-estrategica/identidad/workflow';
 
@@ -70,159 +69,25 @@ export const politicaKeys = {
 };
 
 // ============================================================================
-// TIPOS DE POLÍTICA - DEFAULTS
-// ============================================================================
-
-/**
- * Tipos de política por defecto mientras el backend los implementa
- * Estos deben migrarse a la BD eventualmente
- */
-const DEFAULT_TIPOS_POLITICA: TipoPolitica[] = [
-  {
-    id: 1,
-    code: 'INTEGRAL',
-    name: 'Política Integral',
-    description: 'Política integral del sistema de gestión',
-    prefijo_codigo: 'POL-INT',
-    icon: 'Shield',
-    color: '#8B5CF6',
-    requiere_firma: true,
-    normas_iso_default: [],
-    orden: 1,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: 2,
-    code: 'SST',
-    name: 'Política de SST',
-    description: 'Política de Seguridad y Salud en el Trabajo',
-    prefijo_codigo: 'POL-SST',
-    icon: 'HardHat',
-    color: '#F59E0B',
-    requiere_firma: true,
-    normas_iso_default: [],
-    orden: 2,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: 3,
-    code: 'CALIDAD',
-    name: 'Política de Calidad',
-    description: 'Política de gestión de la calidad ISO 9001',
-    prefijo_codigo: 'POL-CAL',
-    icon: 'Award',
-    color: '#10B981',
-    requiere_firma: true,
-    normas_iso_default: [],
-    orden: 3,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: 4,
-    code: 'AMBIENTAL',
-    name: 'Política Ambiental',
-    description: 'Política de gestión ambiental ISO 14001',
-    prefijo_codigo: 'POL-AMB',
-    icon: 'Leaf',
-    color: '#22C55E',
-    requiere_firma: true,
-    normas_iso_default: [],
-    orden: 4,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: 5,
-    code: 'PESV',
-    name: 'Política PESV',
-    description: 'Política del Plan Estratégico de Seguridad Vial',
-    prefijo_codigo: 'POL-PESV',
-    icon: 'Car',
-    color: '#3B82F6',
-    requiere_firma: true,
-    normas_iso_default: [],
-    orden: 5,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: 6,
-    code: 'SOSTENIBILIDAD',
-    name: 'Política de Sostenibilidad',
-    description: 'Política de sostenibilidad y responsabilidad social empresarial',
-    prefijo_codigo: 'POL-SOS',
-    icon: 'Globe',
-    color: '#06B6D4',
-    requiere_firma: true,
-    normas_iso_default: [],
-    orden: 6,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: 7,
-    code: 'CONTABLE',
-    name: 'Política Contable',
-    description: 'Políticas contables y financieras de la organización',
-    prefijo_codigo: 'POL-CON',
-    icon: 'Calculator',
-    color: '#8B5CF6',
-    requiere_firma: true,
-    normas_iso_default: [],
-    orden: 7,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: 8,
-    code: 'OTRAS',
-    name: 'Otras Políticas',
-    description: 'Otras políticas organizacionales no categorizadas',
-    prefijo_codigo: 'POL-OTR',
-    icon: 'FileText',
-    color: '#64748B',
-    requiere_firma: true,
-    normas_iso_default: [],
-    orden: 8,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-];
-
-// ============================================================================
 // TIPOS DE POLÍTICA HOOKS
 // ============================================================================
 
 /**
  * Lista todos los tipos de politica disponibles desde configuracion dinamica
  * Endpoint: GET /api/identidad/config/tipos-politica/
+ *
+ * Los tipos están configurados en backend via seed_config_identidad:
+ * INTEGRAL, SST, CALIDAD, AMBIENTAL, SEGURIDAD_INFO, VIAL, ANTISOBORNO, CONTABLE, ADMINISTRATIVA, OTRAS
  */
 export const useTiposPolitica = () => {
   return useQuery({
     queryKey: politicaKeys.tipos(),
     queryFn: async () => {
-      try {
-        const { data } = await apiClient.get<{ results: TipoPolitica[] } | TipoPolitica[]>(
-          `${API_CONFIG_TIPOS}/`
-        );
-        // El endpoint puede retornar array directo o paginado
-        const tipos = Array.isArray(data) ? data : data.results;
-        return tipos.length > 0 ? tipos : DEFAULT_TIPOS_POLITICA;
-      } catch {
-        // Fallback a tipos por defecto si el endpoint no existe
-        return DEFAULT_TIPOS_POLITICA;
-      }
+      const { data } = await apiClient.get<{ results: TipoPolitica[] } | TipoPolitica[]>(
+        `${API_CONFIG_TIPOS}/`
+      );
+      // El endpoint puede retornar array directo o paginado
+      return Array.isArray(data) ? data : data.results;
     },
     staleTime: 10 * 60 * 1000, // 10 min - tipos cambian poco
     gcTime: 30 * 60 * 1000,
@@ -327,44 +192,6 @@ export const useEstadosFirma = () => {
       return Array.isArray(data) ? data : [];
     },
     staleTime: 10 * 60 * 1000,
-  });
-};
-
-// ============================================================================
-// POLÍTICAS INTEGRALES HOOKS
-// ============================================================================
-
-/**
- * Obtiene la política integral vigente para una identidad
- */
-export const usePoliticaIntegralVigente = (identityId?: number) => {
-  return useQuery({
-    queryKey: [...politicaKeys.all, 'integral', 'vigente', identityId] as const,
-    queryFn: async () => {
-      const { data } = await apiClient.get<Politica>(`${API_POLITICAS_INTEGRALES}/current/`, {
-        params: { identity: identityId },
-      });
-      return data;
-    },
-    enabled: !!identityId,
-    staleTime: 5 * 60 * 1000,
-  });
-};
-
-/**
- * Lista todas las políticas integrales de una identidad
- */
-export const usePoliticasIntegrales = (identityId?: number) => {
-  return useQuery({
-    queryKey: [...politicaKeys.all, 'integrales', identityId] as const,
-    queryFn: async () => {
-      const { data } = await apiClient.get<PoliticasResponse>(`${API_POLITICAS_INTEGRALES}/`, {
-        params: { identity: identityId },
-      });
-      return data;
-    },
-    enabled: !!identityId,
-    staleTime: 3 * 60 * 1000,
   });
 };
 
@@ -652,7 +479,8 @@ export const useDeletePolitica = () => {
 // ============================================================================
 
 /**
- * Firmante seleccionado manualmente
+ * Firmante seleccionado manualmente (modo legacy con usuario específico)
+ * @deprecated Usar CargoFirmanteSeleccion para seleccionar por cargo
  */
 export interface FirmanteSeleccion {
   rol_firmante: 'ELABORO' | 'REVISO_TECNICO' | 'REVISO_JURIDICO' | 'APROBO_DIRECTOR' | 'APROBO_GERENTE' | 'APROBO_REPRESENTANTE_LEGAL';
@@ -660,16 +488,26 @@ export interface FirmanteSeleccion {
 }
 
 /**
+ * Firmante seleccionado por cargo (modo recomendado)
+ * Al seleccionar un cargo, se notifica a TODOS los usuarios de ese cargo
+ */
+export interface CargoFirmanteSeleccion {
+  rol_firmante: 'REVISO_TECNICO' | 'REVISO_JURIDICO' | 'APROBO_DIRECTOR' | 'APROBO_GERENTE' | 'APROBO_REPRESENTANTE_LEGAL';
+  cargo_id: number;
+  cargo_nombre?: string;
+}
+
+/**
  * Inicia el proceso de firma para una política.
  *
- * Soporta dos modos:
+ * Soporta tres modos:
  * 1. Modo automático (workflowId): Usa un flujo predefinido con cargos fijos
- * 2. Modo manual (firmantes): El creador selecciona quién revisa y aprueba
+ * 2. Modo por cargo (firmantes_cargo): Selecciona CARGOS para revisión/aprobación
+ *    - Notifica a TODOS los usuarios del cargo seleccionado
+ * 3. Modo legacy (firmantes): Selecciona usuarios específicos (deprecated)
  *
- * En modo manual:
+ * En todos los modos:
  * - ELABORO: Automático (usuario actual - se agrega en el backend)
- * - REVISO_*: Seleccionado por el creador
- * - APROBO_*: Seleccionado por el creador
  */
 export const useIniciarFirmaPolitica = () => {
   const queryClient = useQueryClient();
@@ -679,17 +517,33 @@ export const useIniciarFirmaPolitica = () => {
       id,
       workflowId,
       firmantes,
+      firmantesCargo,
     }: {
       id: number;
       workflowId?: number;
+      /** @deprecated Usar firmantesCargo en su lugar */
       firmantes?: FirmanteSeleccion[];
+      /** Modo recomendado: selección por cargo */
+      firmantesCargo?: CargoFirmanteSeleccion[];
     }) => {
-      // Si hay firmantes manuales, usar modo manual
-      // Si hay workflowId, usar modo automático con flujo específico
-      // Si no hay ninguno, usar modo automático con flujo por defecto
-      const dto: IniciarFirmaDTO & { firmantes?: FirmanteSeleccion[] } = {};
+      // Prioridad de modos:
+      // 1. firmantesCargo (nuevo modo por cargo - recomendado)
+      // 2. firmantes (modo legacy por usuario específico)
+      // 3. workflowId (flujo predefinido)
+      // 4. Sin parámetros (flujo por defecto)
 
-      if (firmantes && firmantes.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const dto: IniciarFirmaDTO & { firmantes?: any[] } = {};
+
+      if (firmantesCargo && firmantesCargo.length > 0) {
+        // Modo por cargo: convertir a formato que espera el backend
+        // El backend espera firmantes con cargo_id en lugar de usuario_id
+        dto.firmantes = firmantesCargo.map(f => ({
+          rol_firmante: f.rol_firmante,
+          cargo_id: f.cargo_id,
+        }));
+      } else if (firmantes && firmantes.length > 0) {
+        // Modo legacy: usuarios específicos
         dto.firmantes = firmantes;
       } else if (workflowId) {
         dto.flujo_firma_id = workflowId;

@@ -63,8 +63,11 @@ export interface UpdateCorporateValueDTO {
 /**
  * Identidad Corporativa - Misión y Visión
  *
- * v3.0: Campo integral_policy eliminado (DEPRECATED).
- * La Política Integral se gestiona desde PoliticaIntegral con workflow completo.
+ * v4.0: Las políticas integrales se gestionan como categoría INTEGRAL
+ * dentro del sistema unificado de PoliticaEspecifica.
+ *
+ * v4.1: Campos de alcance del sistema integrado de gestión (SIG).
+ * El toggle declara_alcance controla la visibilidad de la sección.
  */
 export interface CorporateIdentity {
   id: number;
@@ -74,6 +77,12 @@ export interface CorporateIdentity {
   version: string;
   is_active: boolean;
   values?: CorporateValue[];
+  // Campos de alcance del SIG (v4.1)
+  declara_alcance: boolean;
+  alcance_general?: string | null;
+  alcance_geografico?: string | null;
+  alcance_procesos?: string | null;
+  alcance_exclusiones?: string | null;
   // Contadores
   values_count?: number;
   alcances_count?: number;
@@ -91,6 +100,12 @@ export interface CreateCorporateIdentityDTO {
   effective_date: string;
   version?: string;
   is_active?: boolean;
+  // Campos de alcance del SIG (v4.1)
+  declara_alcance?: boolean;
+  alcance_general?: string;
+  alcance_geografico?: string;
+  alcance_procesos?: string;
+  alcance_exclusiones?: string;
 }
 
 export interface UpdateCorporateIdentityDTO {
@@ -99,6 +114,12 @@ export interface UpdateCorporateIdentityDTO {
   effective_date?: string;
   version?: string;
   is_active?: boolean;
+  // Campos de alcance del SIG (v4.1)
+  declara_alcance?: boolean;
+  alcance_general?: string;
+  alcance_geografico?: string;
+  alcance_procesos?: string;
+  alcance_exclusiones?: string;
 }
 
 // ==================== STRATEGIC PLAN ====================
@@ -1128,79 +1149,6 @@ export interface AlcanceSistemaFilters {
   identity?: number;
   norma_iso?: number;
   is_certified?: boolean;
-  is_active?: boolean;
-}
-
-// ==================== POLÍTICA INTEGRAL ====================
-// @deprecated - Usar types/policies.types.ts (Sistema Unificado v3.0) en su lugar.
-// Estos tipos legacy serán eliminados en una futura versión.
-// Ver: ./policies.types.ts para el nuevo sistema de políticas unificado.
-
-/** @deprecated Usar Politica de policies.types.ts */
-export interface PoliticaIntegral {
-  id: number;
-  identity: number;
-  version: string;
-  title: string;  // Título de la política
-  content: string;
-  status: PoliticaStatus;
-  status_display?: string;
-  effective_date?: string | null;
-  expiry_date?: string | null;
-  review_date?: string | null;
-  // Firma digital
-  is_signed: boolean;
-  signed_by?: number | null;
-  signed_by_name?: string | null;
-  signed_at?: string | null;
-  signature_hash?: string | null;
-  // Normas aplicables
-  applicable_standards: ISOStandard[];
-  applicable_standards_display?: string[];
-  // Documento y cambios
-  document_file?: string | null;
-  change_reason?: string | null;
-  orden: number;
-  is_active: boolean;
-  created_by?: number | null;
-  created_by_name?: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CreatePoliticaIntegralDTO {
-  identity: number;
-  version: string;
-  title?: string;
-  content: string;
-  status?: PoliticaStatus;
-  effective_date?: string;
-  expiry_date?: string;
-  review_date?: string;
-  applicable_standards?: ISOStandard[];
-  change_reason?: string;
-  orden?: number;
-  is_active?: boolean;
-}
-
-export interface UpdatePoliticaIntegralDTO {
-  version?: string;
-  title?: string;
-  content?: string;
-  status?: PoliticaStatus;
-  effective_date?: string;
-  expiry_date?: string;
-  review_date?: string;
-  applicable_standards?: ISOStandard[];
-  change_reason?: string;
-  orden?: number;
-  is_active?: boolean;
-}
-
-export interface PoliticaIntegralFilters {
-  identity?: number;
-  status?: PoliticaStatus;
-  is_signed?: boolean;
   is_active?: boolean;
 }
 

@@ -94,7 +94,7 @@ export const rbacAPI = {
     replace = false
   ): Promise<Cargo> => {
     const response = await axiosInstance.post<Cargo>(
-      `/core/cargos-rbac/${id}/assign-permissions/`,
+      `/core/cargos-rbac/${id}/assign_permissions/`,
       { permission_ids, replace }
     );
     return response.data;
@@ -109,7 +109,7 @@ export const rbacAPI = {
     replace = false
   ): Promise<Cargo> => {
     const response = await axiosInstance.post<Cargo>(
-      `/core/cargos-rbac/${id}/assign-roles/`,
+      `/core/cargos-rbac/${id}/assign_roles/`,
       { role_ids, replace }
     );
     return response.data;
@@ -196,7 +196,7 @@ export const rbacAPI = {
     replace = false
   ): Promise<Role> => {
     const response = await axiosInstance.post<Role>(
-      `/core/roles/${id}/assign-permissions/`,
+      `/core/roles/${id}/assign_permissions/`,
       { permission_ids, replace }
     );
     return response.data;
@@ -210,7 +210,7 @@ export const rbacAPI = {
     permission_ids: number[]
   ): Promise<{ message: string; role: Role }> => {
     const response = await axiosInstance.post<{ message: string; role: Role }>(
-      `/core/roles/${id}/remove-permissions/`,
+      `/core/roles/${id}/remove_permissions/`,
       { permission_ids }
     );
     return response.data;
@@ -268,7 +268,7 @@ export const rbacAPI = {
     leader_id?: number
   ): Promise<Group> => {
     const response = await axiosInstance.post<Group>(
-      `/core/groups/${id}/add-users/`,
+      `/core/groups/${id}/add_users/`,
       { user_ids, leader_id }
     );
     return response.data;
@@ -282,7 +282,7 @@ export const rbacAPI = {
     user_ids: number[]
   ): Promise<{ message: string; group: Group }> => {
     const response = await axiosInstance.post<{ message: string; group: Group }>(
-      `/core/groups/${id}/remove-users/`,
+      `/core/groups/${id}/remove_users/`,
       { user_ids }
     );
     return response.data;
@@ -297,7 +297,7 @@ export const rbacAPI = {
     replace = false
   ): Promise<Group> => {
     const response = await axiosInstance.post<Group>(
-      `/core/groups/${id}/assign-roles/`,
+      `/core/groups/${id}/assign_roles/`,
       { role_ids, replace }
     );
     return response.data;
@@ -336,6 +336,90 @@ export const rbacAPI = {
    */
   getPermissionsGrouped: async (): Promise<PermissionGroup[]> => {
     const response = await axiosInstance.get<PermissionGroup[]>('/core/permissions/grouped/');
+    return response.data;
+  },
+
+  // ==================== CARGO SECTION ACCESS ====================
+
+  /**
+   * Obtener accesos a secciones de un cargo (con acciones CRUD - RBAC Unificado v4.0)
+   */
+  getCargoSectionAccess: async (
+    cargoId: number
+  ): Promise<{
+    cargo_id: number;
+    cargo_name: string;
+    accesses: Array<{
+      section_id: number;
+      section_code: string;
+      section_name: string;
+      module_code: string;
+      module_name: string;
+      tab_code: string;
+      tab_name: string;
+      can_view: boolean;
+      can_create: boolean;
+      can_edit: boolean;
+      can_delete: boolean;
+      custom_actions?: Record<string, boolean>;
+      supported_actions: string[];
+    }>;
+    total_sections: number;
+  }> => {
+    const response = await axiosInstance.get(`/core/cargos-rbac/${cargoId}/section_accesses/`);
+    return response.data;
+  },
+
+  /**
+   * Asignar accesos a secciones de un cargo (formato legacy - solo IDs)
+   */
+  assignCargoSectionAccess: async (
+    cargoId: number,
+    section_ids: number[],
+    replace = true
+  ): Promise<{
+    message: string;
+    cargo_id: number;
+    cargo_name: string;
+    sections_added: number;
+    sections_removed: number;
+    total_sections: number;
+  }> => {
+    const response = await axiosInstance.post(`/core/cargos-rbac/${cargoId}/assign_section_accesses/`, {
+      section_ids,
+      replace,
+    });
+    return response.data;
+  },
+
+  /**
+   * Asignar accesos a secciones con acciones CRUD (RBAC Unificado v4.0)
+   * @param cargoId - ID del cargo
+   * @param accesses - Lista de accesos con acciones CRUD por sección
+   * @param replace - Si true, reemplaza todos los accesos existentes
+   */
+  assignCargoSectionAccessWithActions: async (
+    cargoId: number,
+    accesses: Array<{
+      section_id: number;
+      can_view: boolean;
+      can_create: boolean;
+      can_edit: boolean;
+      can_delete: boolean;
+      custom_actions?: Record<string, boolean>;
+    }>,
+    replace = true
+  ): Promise<{
+    message: string;
+    cargo_id: number;
+    cargo_name: string;
+    sections_updated: number;
+    total_sections: number;
+  }> => {
+    const response = await axiosInstance.post(`/core/cargos-rbac/${cargoId}/assign_section_accesses/`, {
+      accesses,
+      replace,
+    });
     return response.data;
   },
 

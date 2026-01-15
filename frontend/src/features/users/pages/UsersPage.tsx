@@ -25,9 +25,12 @@ import {
 import { useRoles } from '@/features/configuracion/hooks/useRoles';
 import type { User, CreateUserDTO, UpdateUserDTO, UserFilters } from '@/types/users.types';
 import { useModuleColor } from '@/hooks/useModuleColor';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 
 export default function UsersPage() {
   const { color: moduleColor } = useModuleColor('USUARIOS');
+  const { canDo } = usePermissions();
 
   const [filters, setFilters] = useState<UserFilters>({
     search: '',
@@ -174,9 +177,11 @@ export default function UsersPage() {
         title="Gestión de Usuarios"
         description="Administración de usuarios del sistema"
         actions={
-          <Button onClick={handleOpenCreateForm} leftIcon={<UserPlus className="h-4 w-4" />}>
-            Nuevo Usuario
-          </Button>
+          canDo(Modules.CORE, Sections.USERS, 'create') ? (
+            <Button onClick={handleOpenCreateForm} leftIcon={<UserPlus className="h-4 w-4" />}>
+              Nuevo Usuario
+            </Button>
+          ) : undefined
         }
       />
 

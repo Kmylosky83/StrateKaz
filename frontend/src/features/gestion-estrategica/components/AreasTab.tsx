@@ -38,12 +38,14 @@ import type { StatItem } from '@/components/layout';
 import { AreaFormModal } from './modals/AreaFormModal';
 import {
   useAreas,
-  useAreasTree,
+  // useAreasTree,
   useDeleteArea,
   useToggleArea,
   type Area,
   type AreaList,
 } from '../hooks/useAreas';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 
 // =============================================================================
 // HELPER: CLASES DE COLOR DINÁMICO
@@ -77,6 +79,8 @@ interface AreaCardProps {
   onEdit: (area: Area | AreaList) => void;
   onDelete: (area: Area | AreaList) => void;
   onToggleActive: (area: Area | AreaList) => void;
+  canEdit: boolean;
+  canDelete: boolean;
 }
 
 const AreaCard = ({
@@ -88,6 +92,8 @@ const AreaCard = ({
   onEdit,
   onDelete,
   onToggleActive,
+  canEdit,
+  canDelete,
 }: AreaCardProps) => {
   // Obtener clases de color dinámicas
   const colorClasses = getColorClasses(area.color || 'purple');
@@ -172,36 +178,42 @@ const AreaCard = ({
 
       {/* Acciones */}
       <div className="flex items-center gap-1 flex-shrink-0 ml-4">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onToggleActive(area)}
-          title={area.is_active ? 'Desactivar área' : 'Activar área'}
-          className={area.is_active ? '' : 'text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20'}
-        >
-          {area.is_active ? (
-            <PowerOff className="h-4 w-4" />
-          ) : (
-            <Power className="h-4 w-4" />
-          )}
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onEdit(area)}
-          title="Editar área"
-        >
-          <Edit className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onDelete(area)}
-          className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-          title="Eliminar área"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        {canEdit && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onToggleActive(area)}
+            title={area.is_active ? 'Desactivar área' : 'Activar área'}
+            className={area.is_active ? '' : 'text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20'}
+          >
+            {area.is_active ? (
+              <PowerOff className="h-4 w-4" />
+            ) : (
+              <Power className="h-4 w-4" />
+            )}
+          </Button>
+        )}
+        {canEdit && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onEdit(area)}
+            title="Editar área"
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+        )}
+        {canDelete && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onDelete(area)}
+            className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+            title="Eliminar área"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -233,11 +245,18 @@ export const AreasTab = () => {
     include_inactive: showInactive || undefined, // true = mostrar todas, undefined = solo activas
   });
 
-  const { data: treeData } = useAreasTree();
+  // const { data: treeData } = useAreasTree();
+  // TODO: Use treeData for tree view if needed
 
   // Mutations
   const deleteMutation = useDeleteArea();
   const toggleMutation = useToggleArea();
+
+  // RBAC Permission Checks
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.GESTION_ESTRATEGICA, Sections.AREAS, 'create');
+  const canEdit = canDo(Modules.GESTION_ESTRATEGICA, Sections.AREAS, 'edit');
+  const canDelete = canDo(Modules.GESTION_ESTRATEGICA, Sections.AREAS, 'delete');
 
   // Lista de áreas
   const areas = areasData?.results || [];
@@ -250,7 +269,7 @@ export const AreasTab = () => {
   // Calcular estadísticas para StatsGrid
   const areaStats: StatItem[] = useMemo(() => {
     const activas = areas.filter((a) => a.is_active).length;
-    const inactivas = areas.filter((a) => !a.is_active).length;
+    // const inactivas = areas.filter((a) => !a.is_active).length;
     // Buscar por manager (ID) en lugar de manager_name ya que el nombre puede estar vacío
     const conManager = areas.filter((a) => a.manager !== null && a.manager !== undefined).length;
     const areasRaiz = areas.filter((a) => !a.parent).length;
@@ -349,6 +368,8 @@ export const AreasTab = () => {
           onEdit={handleEdit}
           onDelete={handleDelete}
           onToggleActive={handleToggleActive}
+          canEdit={canEdit}
+          canDelete={canDelete}
         />
         {hasChildren && isExpanded && (
           <div className="space-y-2">
@@ -409,11 +430,11 @@ export const AreasTab = () => {
               icon={<Building2 className="h-12 w-12" />}
               title="Sin Áreas Configuradas"
               description="No hay áreas o departamentos definidos. Crea la primera área para comenzar a estructurar tu organización."
-              action={{
+              action={canCreate ? {
                 label: 'Crear Primera Área',
                 onClick: handleAdd,
                 icon: <Plus className="h-4 w-4" />,
-              }}
+              } : undefined}
             />
           </div>
         </Card>
@@ -459,10 +480,12 @@ export const AreasTab = () => {
               >
                 <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
               </Button>
-              <Button variant="primary" size="sm" onClick={handleAdd}>
-                <Plus className="h-4 w-4 mr-2" />
-                Nueva Área
-              </Button>
+              {canCreate && (
+                <Button variant="primary" size="sm" onClick={handleAdd}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nueva Área
+                </Button>
+              )}
             </div>
           </div>
 

@@ -3,16 +3,16 @@
  *
  * Secciones (orden desde BD):
  * 1. Areas - Gestion de areas/departamentos
- * 2. Cargos - Gestion de cargos organizacionales
+ * 2. Cargos - Gestion de cargos organizacionales (incluye permisos en Tabs 5-6)
  * 3. Organigrama - Vista del organigrama
  * 4. Colaboradores - Gestión de usuarios/colaboradores
- * 5. Roles - Control de Acceso (permisos, roles adicionales)
  *
  * Las secciones se controlan desde DynamicSections en la pagina padre
+ * NOTA: Control de Acceso fue removido - permisos se configuran en CargoFormModal
  */
 
-// Importar componentes de RBAC (re-exports desde ./rbac/index.ts)
-import { CargosTab, RolesTab } from './rbac';
+// Importar CargosTab desde configuracion
+import { CargosTab } from '@/features/configuracion/components/CargosTab';
 
 // Importar componentes internos
 import { OrganigramaView } from './OrganigramaView';
@@ -38,7 +38,6 @@ const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
   cargos: CargosTab,
   organigrama: OrganigramaView,
   colaboradores: ColaboradoresSection,
-  roles: RolesTab,
 };
 
 export const OrganizacionTab = ({ activeSection }: OrganizacionTabProps) => {

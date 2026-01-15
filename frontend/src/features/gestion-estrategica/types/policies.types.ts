@@ -14,9 +14,20 @@
  * Estados del workflow de una política
  *
  * Flujo completo:
- * BORRADOR → EN_REVISION (firmando) → FIRMADO → Enviar a Documental → VIGENTE → OBSOLETO
+ * BORRADOR → EN_REVISION → EN_APROBACION → POR_CODIFICAR → VIGENTE
+ *                    ↓                ↓
+ *                RECHAZADO ← RECHAZADO
+ *
+ * Cuando VIGENTE se actualiza → OBSOLETO
  */
-export type PoliticaStatus = 'BORRADOR' | 'EN_REVISION' | 'FIRMADO' | 'VIGENTE' | 'OBSOLETO';
+export type PoliticaStatus =
+  | 'BORRADOR'       // Política en edición
+  | 'EN_REVISION'    // En revisión técnica/jurídica
+  | 'EN_APROBACION'  // Revisiones ok, esperando aprobación gerencial
+  | 'POR_CODIFICAR'  // Aprobada, esperando codificación en Gestor Documental
+  | 'RECHAZADO'      // Rechazada por revisor o aprobador
+  | 'VIGENTE'        // Publicada y activa
+  | 'OBSOLETO';      // Versión anterior reemplazada
 
 /** Roles disponibles para firmantes en workflows */
 export type RolFirmante =
@@ -448,7 +459,7 @@ export interface RecibirPoliticaResponse {
 // CONFIGURACIÓN DE UI
 // ============================================================================
 
-/** Configuración visual de estados */
+/** Configuración visual de estados de política */
 export const STATUS_CONFIG: Record<PoliticaStatus, {
   label: string;
   color: string;
@@ -467,11 +478,23 @@ export const STATUS_CONFIG: Record<PoliticaStatus, {
     bgColor: 'bg-yellow-100',
     icon: 'Clock',
   },
-  FIRMADO: {
-    label: 'Firmado',
+  EN_APROBACION: {
+    label: 'En Aprobación',
+    color: 'text-amber-600',
+    bgColor: 'bg-amber-100',
+    icon: 'Clock',
+  },
+  POR_CODIFICAR: {
+    label: 'Por Codificar',
     color: 'text-blue-600',
     bgColor: 'bg-blue-100',
-    icon: 'PenTool',
+    icon: 'FileText',
+  },
+  RECHAZADO: {
+    label: 'Rechazado',
+    color: 'text-red-600',
+    bgColor: 'bg-red-100',
+    icon: 'XCircle',
   },
   VIGENTE: {
     label: 'Vigente',

@@ -28,6 +28,8 @@ import {
   useDeleteValue,
   useReorderValues,
 } from '../hooks/useStrategic';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import { IdentityFormModal } from './modals/IdentityFormModal';
 import { ValoresDragDrop } from './ValoresDragDrop';
 import { PoliciesList } from './politicas';
@@ -46,6 +48,7 @@ interface IdentidadTabProps {
 interface MisionVisionSectionProps {
   identity: CorporateIdentity;
   onEdit: () => void;
+  canEdit: boolean;
 }
 
 /**
@@ -67,7 +70,7 @@ const parseLocalDate = (dateString: string): Date => {
   return new Date(year, month - 1, day);
 };
 
-const MisionVisionSection = ({ identity, onEdit }: MisionVisionSectionProps) => {
+const MisionVisionSection = ({ identity, onEdit, canEdit }: MisionVisionSectionProps) => {
   const { primaryColor, secondaryColor, companyName } = useBrandingConfig();
 
   // Convertir colores hex a RGB para gradientes con transparencia
@@ -94,10 +97,12 @@ const MisionVisionSection = ({ identity, onEdit }: MisionVisionSectionProps) => 
             </span>
           </div>
         </div>
-        <Button variant="secondary" size="sm" onClick={onEdit}>
-          <Edit className="h-4 w-4 mr-2" />
-          Editar
-        </Button>
+        {canEdit && (
+          <Button variant="secondary" size="sm" onClick={onEdit}>
+            <Edit className="h-4 w-4 mr-2" />
+            Editar
+          </Button>
+        )}
       </div>
 
       {/* Grid Misión y Visión - Diseño Glassmorphism */}
@@ -243,14 +248,15 @@ const MisionVisionSection = ({ identity, onEdit }: MisionVisionSectionProps) => 
 // =============================================================================
 interface ValoresSectionProps {
   identity: CorporateIdentity;
+  canEdit: boolean;
 }
 
-const ValoresSection = ({ identity }: ValoresSectionProps) => {
+const ValoresSection = ({ identity, canEdit }: ValoresSectionProps) => {
   const { data: valuesData, isLoading } = useValues(identity.id);
   const createValueMutation = useCreateValue();
   const updateValueMutation = useUpdateValue();
   const deleteValueMutation = useDeleteValue();
-  const reorderMutation = useReorderValues();
+  const reorderMutation = useReorderValues(identity.id);
 
   const values = valuesData?.results || identity.values || [];
 
@@ -288,6 +294,7 @@ const ValoresSection = ({ identity }: ValoresSectionProps) => {
         deleteValueMutation.isPending ||
         reorderMutation.isPending
       }
+      readOnly={!canEdit}
     />
   );
 };
@@ -322,6 +329,11 @@ const SECTION_KEYS = {
 
 export const IdentidadTab = ({ activeSection, triggerNewForm }: IdentidadTabProps) => {
   const { data: identity, isLoading } = useActiveIdentity();
+  const { canDo } = usePermissions();
+
+  const canEditIdentity = canDo(Modules.GESTION_ESTRATEGICA, Sections.IDENTIDAD_CORPORATIVA, 'edit');
+  const canEditValues = canDo(Modules.GESTION_ESTRATEGICA, Sections.VALORES, 'edit');
+  const canCreateIdentity = canDo(Modules.GESTION_ESTRATEGICA, Sections.IDENTIDAD_CORPORATIVA, 'create');
 
   const [showIdentityModal, setShowIdentityModal] = useState(false);
   const [editingIdentity, setEditingIdentity] = useState<CorporateIdentity | null>(null);
@@ -367,11 +379,11 @@ export const IdentidadTab = ({ activeSection, triggerNewForm }: IdentidadTabProp
           icon={<DynamicIcon name="Compass" size={48} />}
           title="Sin Identidad Corporativa"
           description="No hay una identidad corporativa configurada. Crea una para definir la misión, visión y valores de la organización."
-          action={{
+          action={canCreateIdentity ? {
             label: 'Crear Identidad Corporativa',
             onClick: () => setShowIdentityModal(true),
             icon: <Plus className="h-4 w-4" />,
-          }}
+          } : undefined}
         />
         <IdentityFormModal
           identity={null}
@@ -390,11 +402,12 @@ export const IdentidadTab = ({ activeSection, triggerNewForm }: IdentidadTabProp
           <MisionVisionSection
             identity={identity}
             onEdit={handleEditIdentity}
+            canEdit={canEditIdentity}
           />
         );
 
       case SECTION_KEYS.VALORES:
-        return <ValoresSection identity={identity} />;
+        return <ValoresSection identity={identity} canEdit={canEditValues} />;
 
       case SECTION_KEYS.POLITICAS:
         return <PoliticasSection identity={identity} />;
@@ -411,6 +424,7 @@ export const IdentidadTab = ({ activeSection, triggerNewForm }: IdentidadTabProp
           <MisionVisionSection
             identity={identity}
             onEdit={handleEditIdentity}
+            canEdit={canEditIdentity}
           />
         );
     }

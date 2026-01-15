@@ -1,16 +1,14 @@
 # StrateKaz - Sistema de Gestion Integral
 
-> **IMPORTANTE:** El nombre del directorio "Grasas y Huesos del Norte" es TEMPORAL.
-> El software se llama **StrateKaz** y el directorio sera renombrado antes del despliegue.
-
-Sistema integral de gestion empresarial multi-tenant para empresas colombianas con cumplimiento normativo (SG-SST, PESV, ISO 9001/14001/45001).
+Sistema integral de gestion empresarial para empresas colombianas con cumplimiento normativo (SG-SST, PESV, ISO 9001/14001/45001).
 
 | Info | Valor |
 |------|-------|
 | **Nombre del Software** | StrateKaz |
-| **Version** | 3.2.0 |
-| **Ultima Actualizacion** | 11 Enero 2026 |
-| **Estado** | MVP - v3.2.0 Design System Tests + Icon Optimization |
+| **Version** | 3.3.0 |
+| **Ultima Actualizacion** | 15 Enero 2026 |
+| **Estado** | MVP Ready - RBAC v4.0 Unificado |
+| **Modelo Deployment** | Multi-Instancia (1 BD por empresa) |
 | **Propietario** | StrateKaz S.A.S. |
 
 ---
@@ -203,11 +201,9 @@ StrateKaz/
 
 | Documento | Descripcion |
 |-----------|-------------|
-| [ARQUITECTURA-DINAMICA.md](docs/desarrollo/ARQUITECTURA-DINAMICA.md) | Sistema 100% dinamico desde BD |
-| [DESIGN-SYSTEM.md](docs/desarrollo/DESIGN-SYSTEM.md) | Componentes UI y patrones |
-| [SISTEMA-ICONOS-DINAMICOS.md](docs/desarrollo/SISTEMA-ICONOS-DINAMICOS.md) | Iconos dinamicos Lucide |
-| [IDENTIDAD-CORPORATIVA-MODULO.md](docs/desarrollo/IDENTIDAD-CORPORATIVA-MODULO.md) | Identidad, Valores Vividos, Showcase |
 | [GUIA-DESPLIEGUE-CPANEL.md](docs/GUIA-DESPLIEGUE-CPANEL.md) | Deploy en hosting compartido |
+| [RUNBOOK-OPERACIONES.md](docs/operaciones/RUNBOOK-OPERACIONES.md) | Operaciones diarias |
+| [PLAN_CIERRE_BRECHAS.md](docs/plans/PLAN_CIERRE_BRECHAS.md) | Roadmap tecnico y MVP |
 
 ---
 
@@ -282,136 +278,39 @@ VITE_API_URL=http://localhost:8000/api
 
 ## Changelog Reciente
 
+### v3.3.0 (15 Enero 2026)
+
+- **RBAC v4.0 Unificado**: Sistema de permisos simplificado
+  - CargoSectionAccess con acciones CRUD por seccion
+  - Eliminados componentes legacy de matriz de permisos
+  - Tab unico de configuracion de cargos
+- **Auditoria Tecnica Completa**: 7 agentes especializados
+  - Puntuacion global: 7.6/10
+  - Plan de cierre de brechas con roadmap MVP
+- **Limpieza de Codigo Legacy**: Eliminados 18+ componentes obsoletos
+- **Modelo Multi-Instancia**: Documentacion clara de arquitectura
+  - 1 instalacion Django + 1 BD por empresa
+  - Aislamiento de datos garantizado
+
 ### v3.2.0 (11 Enero 2026)
 
-- **Testing Frontend Completo**: Suite de tests para Design System
-  - Button.test.tsx (28 tests) - variants, sizes, loading, disabled, icons, events, accessibility
-  - Badge.test.tsx (18 tests) - 8 variants, 3 sizes
-  - Card.test.tsx (16 tests) - variants, padding, composition
-  - Tabs.test.tsx (18 tests) - underline/pills variants, interactions, disabled state
-  - Total: 219 tests pasando
-- **Optimizacion de Iconos**: Eliminacion de `import * as LucideIcons`
-  - Centralizacion via `getIconComponent()` del DynamicIcon
-  - Reduccion significativa del bundle de iconos
-  - Archivos optimizados: Sidebar, DashboardPage, DynamicSections, ConfiguracionTab
-- **Migracion Completa a Design System**: logistics-fleet y production-ops
-  - Migracion de imports `@/components/ui` a `@/components/common`
-  - Correccion de Badge variants: green/yellow/red/blue -> success/warning/danger/info
-  - Componentes migrados: LogisticsFleetPage, GestionFlotaTab, GestionTransporteTab,
-    ProductionOpsPage, RecepcionTab, ProcesamientoTab, MantenimientoTab, ProductoTerminadoTab
+- **Testing Frontend**: 219 tests para Design System
+- **Optimizacion de Iconos**: Centralizacion via DynamicIcon
+- **Migracion a Design System**: logistics-fleet y production-ops
 
 ### v3.1.0 (11 Enero 2026)
 
-- **Workflow de Firmas Digitales Completo**: Flujo de 5 estados para politicas
-  - BORRADOR: Creacion y edicion de politicas
-  - EN_REVISION: Esperando firmas de responsables
-  - FIRMADO: Todas las firmas completadas
-  - VIGENTE: Publicada en Gestor Documental
-  - OBSOLETO: Version historica archivada
-- **UI de Politicas Actualizada**:
-  - Botones de accion contextuales por estado
-  - "Enviar a Firma" desde BORRADOR
-  - "Enviar a Documental" desde FIRMADO
-  - "Nueva Version" desde VIGENTE (bloquea edicion de vigentes)
-  - Indicador "Esperando firmas" en EN_REVISION
-  - Indicador "Version historica" en OBSOLETO
-- **Codigo de Politica Opcional**: Campo `code` ahora nullable
-  - Codigo asignado por Gestor Documental al publicar
-  - Formato: POL-{NORMA}-{SECUENCIAL}
-  - UI muestra "Sin codigo asignado" para borradores
-- **Hooks de Workflow**:
-  - `useEnviarADocumental`: Transicion FIRMADO -> VIGENTE
-  - `useCrearNuevaVersion`: Crea copia en BORRADOR desde VIGENTE
-- **Seed de Workflows**: 7 configuraciones de workflow pobladas
-- **Migracion 0008**: Campo code opcional en PoliticaEspecifica
+- **Workflow de Firmas Digitales**: Flujo de 5 estados para politicas
+- **UI de Politicas Actualizada**: Botones contextuales por estado
+- **Codigo de Politica Opcional**: Asignado por Gestor Documental
 
 ### v3.0.0 (11 Enero 2026)
 
-- **Sistema de Politicas Unificado v3.0**: Refactorizacion completa del modulo de politicas
-  - Eliminada seccion legacy "Politica Integral" del tab Identidad
-  - Renombrada "Politicas Especificas" a "Politicas"
-  - Modal unificado para crear/editar politicas con RichTextEditor
-  - Selector de tipo de politica con 8 categorias
-- **Tipos de Politica Expandidos**:
-  - Politica Integral (POL-INT)
-  - Politica de SST (POL-SST)
-  - Politica de Calidad (POL-CAL)
-  - Politica Ambiental (POL-AMB)
-  - Politica PESV (POL-PESV)
-  - Politica de Sostenibilidad (POL-SOS)
-  - Politica Contable (POL-CON)
-  - Otras Politicas (POL-OTR)
-- **Mejoras UI/UX**:
-  - RichTextEditor (TipTap) para contenido de politicas
-  - DynamicIcon con colores por tipo de politica
-  - Fallback de tipos cuando backend no disponible
+- **Sistema de Politicas Unificado v3.0**
+- **8 Tipos de Politica**: Integral, SST, Calidad, Ambiental, PESV, etc.
+- **RichTextEditor**: TipTap para contenido de politicas
 
-### v2.7.0 (09 Enero 2026)
-
-- **Firma Manuscrita Integrada**: SignatureModal conectado al workflow de firmas
-  - Hash SHA-256 para integridad de firma
-  - Modal reutilizable en PoliticasManager
-- **Showcase Publico**: URL publica para compartir identidad corporativa
-  - Ruta `/showcase` accesible sin autenticacion
-  - Slides de Mision, Vision, Valores, Politica, Metricas
-- **Badge de Notificaciones**: Contador dinamico en header
-- **Migracion empresa_id**: CorporateIdentity vinculado a EmpresaConfig
-
-### v2.6.0 (09 Enero 2026)
-
-- **Auditoria Identidad Corporativa**: Analisis exhaustivo de tipos, modelos y componentes
-- **Refactorizacion PoliticasManager**: Componentes extraidos para mejor mantenibilidad
-- **Consolidacion de tipos**: Eliminacion de duplicados PaginatedResponse y SelectOption
-- **Correcciones backend**: Multi-tenancy, hash idempotente, transacciones atomicas
-- **Limpieza legacy**: Eliminacion de codigo Docker y app proveedores migrada
-
-### v2.5.0 (08 Enero 2026)
-
-- **Valores Vividos (BI)**: Sistema de conexion valor-accion con GenericForeignKey
-  - Vincular valores corporativos a proyectos, acciones correctivas, etc.
-  - Endpoints de metricas para Business Intelligence
-  - Widget reutilizable `ValorVinculadorWidget`
-- **Vista Showcase**: Presentacion fullscreen de identidad corporativa
-  - Slideshow automatico (Mision, Vision, Valores, Politica, Metricas)
-  - Navegacion por teclado y pantalla completa
-  - Graficos de valores vividos conectados con BI
-- **Exportacion de Documentos**: PDF (WeasyPrint) y DOCX (python-docx)
-  - Politicas integrales y especificas
-  - Identidad corporativa completa
-- **Documentacion**: Nueva guia [IDENTIDAD-CORPORATIVA-MODULO.md](docs/desarrollo/IDENTIDAD-CORPORATIVA-MODULO.md)
-
-### v2.4.0 (08 Enero 2026)
-
-- **Limpieza de Organizacion**: Eliminados Consecutivos y Tipos de Documento del modulo Organizacion (se reimplementaran en Gestion Documental)
-- **Consolidacion RBAC**: MatrizPermisos consolidado dentro de RolesPermisosWrapper con 4 subtabs:
-  - Acceso a Secciones (visibilidad de modulos/tabs/secciones)
-  - Permisos de Acciones (68 permisos CRUD)
-  - Roles Adicionales
-  - Catalogo de Permisos
-- **Seed mejorado**: `seed_estructura_final` ahora elimina secciones obsoletas automaticamente
-- **Backend cleanup**: Eliminados modelos, serializers, views y URLs de consecutivos/tipos documento
-- **Frontend cleanup**: Eliminados componentes, hooks, tipos y APIs relacionados
-
-### v2.3.1 (08 Enero 2026)
-
-- **Fix permissions_count**: Corregido conteo de permisos en tabla de cargos
-- **Nivel EXTERNO agregado**: Nuevo nivel jerarquico para contratistas/consultores
-- **Iconos dinamicos en organigrama**: AreaNode usa DynamicIcon desde BD
-- **StatsGrid en Matriz de Permisos**: Estadisticas y exportacion Excel
-
-### v2.3.0 (07 Enero 2026)
-
-- Sistema de iconos dinamicos con Lucide React
-- Normas ISO dinamicas desde base de datos
-- Claridad de roles en UI (Cargo vs Rol RBAC vs Especialidad)
-- PWA support con offline indicator
-- Build optimizado para cPanel
-
-### v2.2.0 (05 Enero 2026)
-
-- Refactorizacion completa de migraciones
-- Eliminacion de dependencias circulares
-- Sistema RBAC hibrido implementado
+> Ver [CHANGELOG.md](CHANGELOG.md) para historial completo
 
 ---
 
@@ -426,4 +325,4 @@ Copyright (c) 2024-2026 StrateKaz S.A.S. Todos los derechos reservados.
 
 ---
 
-**Ultima actualizacion:** 11 Enero 2026
+**Ultima actualizacion:** 15 Enero 2026

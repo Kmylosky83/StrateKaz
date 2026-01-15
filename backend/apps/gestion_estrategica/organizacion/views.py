@@ -25,6 +25,7 @@ from .serializers import (
     AreaSerializer, AreaTreeSerializer, AreaListSerializer,
 )
 from apps.core.models import Cargo, User
+from apps.core.permissions import GranularActionPermission
 from apps.core.mixins import (
     StandardViewSetMixin,
     OrderingMixin,
@@ -65,7 +66,20 @@ class AreaViewSet(StandardViewSetMixin, OrderingMixin, viewsets.ModelViewSet):
     """
     queryset = Area.objects.all()
     serializer_class = AreaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'areas'
+
+    granular_action_map = {
+        'tree': 'can_view',
+        'root': 'can_view',
+        'children': 'can_view',
+        'reorder': 'can_edit',
+        'toggle_active': 'can_edit',
+        'bulk_activate': 'can_edit',
+        'bulk_deactivate': 'can_edit',
+        'bulk_delete': 'can_delete',
+    }
+
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['is_active', 'parent']
     search_fields = ['code', 'name', 'description', 'cost_center']
@@ -164,7 +178,8 @@ class OrganigramaView(APIView):
     - usuarios: Lista resumida de usuarios (opcional)
     - stats: Estadísticas del organigrama
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'organigrama'
 
     def _get_initials(self, name: str) -> str:
         """Genera iniciales a partir del nombre completo"""

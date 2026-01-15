@@ -300,7 +300,6 @@ class CargoListRBACSerializer(serializers.ModelSerializer):
     nivel_jerarquico_display = serializers.CharField(source='get_nivel_jerarquico_display', read_only=True)
     area_nombre = serializers.CharField(read_only=True)
     area_code = serializers.CharField(source='area.code', read_only=True)
-    permissions_count = serializers.SerializerMethodField()
     users_count = serializers.SerializerMethodField()
     posiciones_disponibles = serializers.IntegerField(read_only=True)
     default_roles_count = serializers.SerializerMethodField()
@@ -313,15 +312,11 @@ class CargoListRBACSerializer(serializers.ModelSerializer):
             'area', 'area_nombre', 'area_code',
             'cantidad_posiciones', 'is_jefatura', 'is_externo',
             'is_system', 'is_active', 'version',
-            'permissions_count', 'users_count', 'posiciones_disponibles',
+            'users_count', 'posiciones_disponibles',
             'default_roles_count',
             'created_at', 'updated_at',
         ]
         read_only_fields = ['created_at', 'updated_at']
-
-    def get_permissions_count(self, obj):
-        # Usa CargoSectionAccess (sistema actual de permisos por secciones)
-        return obj.section_accesses.count()
 
     def get_users_count(self, obj):
         return obj.usuarios.filter(is_active=True, deleted_at__isnull=True).count()
@@ -426,8 +421,8 @@ class CargoDetailRBACSerializer(serializers.ModelSerializer):
         return None
 
     def get_permissions_count(self, obj):
-        # Usa CargoSectionAccess (sistema actual de permisos por secciones)
-        return obj.section_accesses.count()
+        # Cuenta permisos CRUD (CargoPermiso), no secciones UI
+        return obj.permisos.filter(is_active=True).count()
 
     def get_users_count(self, obj):
         return obj.usuarios.filter(is_active=True, deleted_at__isnull=True).count()

@@ -4,10 +4,11 @@
  * Organizacion:
  * 1. Core hooks (Strategic, TenantConfig, Modules, Empresa)
  * 2. Areas y Organizacion
- * 3. Roles y Permisos (RBAC)
- * 4. Gestion de Proyectos (PMI)
- * 5. Revision por Direccion (ISO 9.3)
- * 6. Identidad Corporativa (Politicas, Workflow, Valores)
+ * 3. Gestion de Proyectos (PMI)
+ * 4. Revision por Direccion (ISO 9.3)
+ * 5. Identidad Corporativa (Politicas, Workflow, Valores)
+ *
+ * NOTA: RBAC hooks fueron movidos a configuracion/hooks/useCargos.ts
  */
 
 // ============================================================================
@@ -34,13 +35,6 @@ export {
   useToggleArea,
 } from './useAreas';
 export type { Area, AreaList, CreateAreaDTO, UpdateAreaDTO, AreaFilters } from './useAreas';
-
-// ============================================================================
-// ROLES Y PERMISOS (RBAC)
-// ============================================================================
-export * from './useRolesPermisos';
-export * from './useCargoSectionAccess';
-export * from './useMatrizPermisos';
 
 // ============================================================================
 // GESTION DE PROYECTOS PMI

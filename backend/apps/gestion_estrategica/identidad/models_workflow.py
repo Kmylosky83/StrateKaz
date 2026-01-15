@@ -88,8 +88,8 @@ class FirmaDigital(AuditModel, SoftDeleteModel):
     """
     Firma digital manuscrita reutilizable para cualquier documento.
 
-    Usa GenericForeignKey para asociarse a PoliticaIntegral, PoliticaEspecifica,
-    o cualquier otro documento que requiera firma.
+    Usa GenericForeignKey para asociarse a PoliticaEspecifica (v3.1: las políticas
+    integrales ahora tienen is_integral_policy=True) o cualquier otro documento.
 
     CARACTERÍSTICAS:
     - Firma manuscrita en formato base64 (canvas signature)
@@ -110,7 +110,7 @@ class FirmaDigital(AuditModel, SoftDeleteModel):
         ContentType,
         on_delete=models.CASCADE,
         verbose_name='Tipo de Documento',
-        help_text='Tipo de documento firmado (PoliticaIntegral, PoliticaEspecifica, etc.)'
+        help_text='Tipo de documento firmado (PoliticaEspecifica, etc.)'
     )
     object_id = models.PositiveIntegerField(
         verbose_name='ID del Documento'
@@ -896,7 +896,7 @@ class HistorialVersion(TimestampedModel):
         Crea un nuevo registro en el historial de versiones.
 
         Args:
-            documento: Instancia del documento (PoliticaIntegral, PoliticaEspecifica, etc.)
+            documento: Instancia del documento (PoliticaEspecifica, etc.)
             tipo_cambio: Tipo de cambio (CREACION, MODIFICACION, etc.)
             usuario: Usuario que realiza el cambio
             descripcion: Descripción del cambio
@@ -1156,7 +1156,7 @@ class ConfiguracionWorkflowFirma(AuditModel, SoftDeleteModel):
         Crea las firmas requeridas para un documento según esta configuración.
 
         Args:
-            documento: Instancia del documento (PoliticaIntegral, PoliticaEspecifica, etc.)
+            documento: Instancia del documento (PoliticaEspecifica, etc.)
             creado_por: Usuario que crea el documento
 
         Returns:

@@ -5,8 +5,10 @@ ViewSets para:
 - CorporateIdentity: Identidad corporativa (misión, visión)
 - CorporateValue: Valores corporativos
 - AlcanceSistema: Alcance del sistema de gestión
-- PoliticaIntegral: Política integral con versionamiento
-- PoliticaEspecifica: Políticas específicas por área/módulo
+- PoliticaEspecifica: Políticas (integrales y específicas) - v3.1 unificado
+
+NOTA v3.1: PoliticaIntegral ha sido consolidado en PoliticaEspecifica.
+Las políticas integrales se identifican con is_integral_policy=True.
 """
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -21,9 +23,10 @@ from django.utils import timezone
 from apps.core.mixins import (
     StandardViewSetMixin, OrderingMixin, ValidateBeforeDeleteMixin
 )
+from apps.core.permissions import RequireSectionAndCRUD, GranularActionPermission
 from .models import (
     CorporateIdentity, CorporateValue, AlcanceSistema,
-    PoliticaIntegral, PoliticaEspecifica
+    PoliticaEspecifica
 )
 from .serializers import (
     CorporateIdentitySerializer,
@@ -31,13 +34,11 @@ from .serializers import (
     CorporateValueSerializer,
     AlcanceSistemaSerializer,
     AlcanceSistemaCreateUpdateSerializer,
-    PoliticaIntegralSerializer,
-    PoliticaIntegralCreateUpdateSerializer,
-    SignPoliticaIntegralSerializer,
-    PublishPoliticaIntegralSerializer,
     PoliticaEspecificaSerializer,
     PoliticaEspecificaCreateUpdateSerializer,
     ApprovePoliticaEspecificaSerializer,
+    SignPoliticaSerializer,
+    PublishPoliticaSerializer,
     IniciarFirmaPoliticaSerializer,
     FirmarPoliticaSerializer,
     RechazarFirmaPoliticaSerializer,
@@ -65,19 +66,35 @@ class CorporateIdentityViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     - GET /identidad/active/ - Obtener identidad activa
     - POST /identidad/{id}/sign/ - Firmar política integral
     - POST /identidad/{id}/toggle-active/ - Toggle estado activo
+
+    RBAC v3.3: Requiere acceso a sección 'identidad_corporativa' + permisos CRUD
     """
 
     queryset = CorporateIdentity.objects.select_related(
         'empresa', 'created_by', 'updated_by'
     ).prefetch_related(
-        'values', 'alcances', 'politicas_especificas', 'politicas_integrales'
+        'values', 'alcances', 'politicas_especificas'  # v3.1: politicas_integrales eliminado
     ).all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'identidad_corporativa'
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['is_active', 'version']
     search_fields = ['mission', 'vision']
     ordering_fields = ['effective_date', 'version', 'created_at']
     ordering = ['-effective_date']
+
+    def get_queryset(self):
+        """
+        Filtrado multi-tenant: Solo retorna identidades de la empresa del usuario.
+        Superusuarios pueden ver todas las identidades.
+        """
+        qs = super().get_queryset()
+        user = self.request.user
+        if user.is_superuser:
+            return qs
+        if not hasattr(user, 'empresa') or user.empresa is None:
+            return qs.none()
+        return qs.filter(empresa=user.empresa)
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
@@ -146,10 +163,8 @@ class CorporateIdentityViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         values = identity.values.filter(is_active=True).order_by('orden')
         values_data = CorporateValueSerializer(values, many=True).data
 
-        # Obtener política integral vigente
-        politica_integral = identity.politicas_integrales.filter(
-            is_active=True, status='VIGENTE'
-        ).first()
+        # v3.1: Obtener política integral vigente desde PoliticaEspecifica
+        politica_integral = PoliticaEspecifica.get_integral_vigente(identity)
 
         # Métricas resumidas
         metrics = {
@@ -176,8 +191,8 @@ class CorporateIdentityViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
                 'title': politica_integral.title if politica_integral else 'Política Integral',
                 'content': politica_integral.content if politica_integral else None,
                 'is_signed': politica_integral.is_signed if politica_integral else False,
-                'signed_by_name': politica_integral.signed_by.get_full_name() if politica_integral and politica_integral.signed_by else None,
-                'signed_at': politica_integral.signed_at if politica_integral else None,
+                'signed_by_name': politica_integral.approved_by.get_full_name() if politica_integral and politica_integral.approved_by else None,
+                'signed_at': politica_integral.approved_at if politica_integral else None,
                 'version': politica_integral.version if politica_integral else None,
             } if politica_integral else None,
             'metrics': metrics,
@@ -192,8 +207,8 @@ class CorporateIdentityViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         """
         DEPRECATED: Endpoint legacy para firmar política integral.
 
-        Este endpoint está deprecado. Usar PoliticaIntegralViewSet.sign() en su lugar:
-        POST /api/v1/identidad/politicas-integrales/{id}/sign/
+        Este endpoint está deprecado. Usar PoliticaEspecificaViewSet.sign() en su lugar:
+        POST /api/v1/identidad/politicas-especificas/{id}/sign/
 
         Se mantiene por compatibilidad pero retorna un mensaje de redirección.
         """
@@ -201,7 +216,7 @@ class CorporateIdentityViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             {
                 'detail': 'Este endpoint está deprecado.',
                 'message': 'La firma de políticas integrales ahora se realiza desde el gestor de políticas.',
-                'redirect': '/api/v1/identidad/politicas-integrales/{id}/sign/',
+                'redirect': '/api/v1/identidad/politicas-especificas/{id}/sign/',
                 'deprecated_since': 'v3.0',
             },
             status=status.HTTP_410_GONE
@@ -212,10 +227,16 @@ class CorporateIdentityViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         """Retorna estadísticas de la identidad corporativa"""
         identity = self.get_object()
 
-        # Obtener política integral vigente
-        politica_vigente = identity.politicas_integrales.filter(
-            is_active=True, status='VIGENTE'
-        ).first()
+        # v3.1: Obtener política integral vigente desde PoliticaEspecifica
+        politica_vigente = PoliticaEspecifica.get_integral_vigente(identity)
+
+        # v3.1: Conteos de políticas (todas en politicas_especificas)
+        politicas_integrales = identity.politicas_especificas.filter(
+            is_active=True, is_integral_policy=True
+        )
+        politicas_especificas = identity.politicas_especificas.filter(
+            is_active=True, is_integral_policy=False
+        )
 
         return Response({
             'identity_id': identity.id,
@@ -227,15 +248,11 @@ class CorporateIdentityViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
                 'certified': identity.alcances.filter(is_active=True, is_certified=True).count(),
             },
             'politicas': {
-                'integrales': identity.politicas_integrales.filter(is_active=True).count(),
-                'integrales_vigentes': identity.politicas_integrales.filter(
-                    is_active=True, status='VIGENTE'
-                ).count(),
+                'integrales': politicas_integrales.count(),
+                'integrales_vigentes': politicas_integrales.filter(status='VIGENTE').count(),
                 'integral_is_signed': politica_vigente.is_signed if politica_vigente else False,
-                'especificas': identity.politicas_especificas.filter(is_active=True).count(),
-                'especificas_vigentes': identity.politicas_especificas.filter(
-                    is_active=True, status='VIGENTE'
-                ).count(),
+                'especificas': politicas_especificas.count(),
+                'especificas_vigentes': politicas_especificas.filter(status='VIGENTE').count(),
             }
         })
 
@@ -252,16 +269,32 @@ class CorporateValueViewSet(StandardViewSetMixin, OrderingMixin, viewsets.ModelV
     - DELETE /valores/{id}/ - Eliminar valor
     - POST /valores/reorder/ - Reordenar valores (del OrderingMixin)
     - POST /valores/{id}/toggle-active/ - Toggle estado activo
+
+    RBAC v3.3: Requiere acceso a sección 'valores_corporativos' + permisos CRUD
     """
 
     queryset = CorporateValue.objects.select_related('identity').all()
     serializer_class = CorporateValueSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'valores_corporativos'
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['identity', 'is_active']
     search_fields = ['name', 'description']
     ordering_fields = ['orden', 'name', 'created_at']
     ordering = ['orden', 'name']
+
+    def get_queryset(self):
+        """
+        Filtrado multi-tenant: Solo retorna valores de la empresa del usuario.
+        Superusuarios pueden ver todos los valores.
+        """
+        qs = super().get_queryset()
+        user = self.request.user
+        if user.is_superuser:
+            return qs
+        if not hasattr(user, 'empresa') or user.empresa is None:
+            return qs.none()
+        return qs.filter(identity__empresa=user.empresa)
 
 
 class AlcanceSistemaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
@@ -277,15 +310,31 @@ class AlcanceSistemaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     - GET /alcances/by-standard/ - Alcances por norma ISO
     - GET /alcances/certifications/ - Resumen de certificaciones
     - POST /alcances/{id}/toggle-active/ - Toggle estado activo
+
+    RBAC v3.3: Requiere acceso a sección 'alcance_sig' + permisos CRUD
     """
 
     queryset = AlcanceSistema.objects.select_related('identity', 'created_by').all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'alcance_sig'
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['identity', 'norma_iso', 'is_certified', 'is_active']
     search_fields = ['scope', 'exclusions', 'certification_body', 'certificate_number']
     ordering_fields = ['norma_iso', 'certification_date', 'expiry_date', 'created_at']
     ordering = ['norma_iso']
+
+    def get_queryset(self):
+        """
+        Filtrado multi-tenant: Solo retorna alcances de la empresa del usuario.
+        Superusuarios pueden ver todos los alcances.
+        """
+        qs = super().get_queryset()
+        user = self.request.user
+        if user.is_superuser:
+            return qs
+        if not hasattr(user, 'empresa') or user.empresa is None:
+            return qs.none()
+        return qs.filter(identity__empresa=user.empresa)
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
@@ -340,153 +389,75 @@ class AlcanceSistemaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         })
 
 
-class PoliticaIntegralViewSet(StandardViewSetMixin, OrderingMixin, viewsets.ModelViewSet):
-    """
-    ViewSet para gestionar Políticas Integrales.
-
-    Endpoints:
-    - GET /politicas-integrales/ - Lista de políticas
-    - POST /politicas-integrales/ - Crear nueva política
-    - GET /politicas-integrales/{id}/ - Detalle de política
-    - PUT/PATCH /politicas-integrales/{id}/ - Actualizar política
-    - DELETE /politicas-integrales/{id}/ - Eliminar política
-    - GET /politicas-integrales/current/ - Política vigente actual
-    - POST /politicas-integrales/{id}/sign/ - Firmar política
-    - POST /politicas-integrales/{id}/publish/ - Publicar política
-    - POST /politicas-integrales/{id}/toggle-active/ - Toggle estado activo
-    """
-
-    queryset = PoliticaIntegral.objects.select_related(
-        'identity', 'signed_by', 'created_by'
-    ).all()
-    permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['identity', 'status', 'is_active']
-    search_fields = ['title', 'content', 'version']
-    ordering_fields = ['version', 'effective_date', 'created_at', 'orden']
-    ordering = ['-version']
-
-    def get_serializer_class(self):
-        if self.action in ['create', 'update', 'partial_update']:
-            return PoliticaIntegralCreateUpdateSerializer
-        return PoliticaIntegralSerializer
-
-    @action(detail=False, methods=['get'])
-    def current(self, request):
-        """Obtiene la política integral vigente actual"""
-        identity_id = request.query_params.get('identity')
-        if not identity_id:
-            return Response(
-                {'detail': 'Se requiere el parámetro identity'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            identity = CorporateIdentity.objects.get(pk=identity_id)
-        except CorporateIdentity.DoesNotExist:
-            return Response(
-                {'detail': 'Identidad corporativa no encontrada'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        politica = PoliticaIntegral.get_current(identity)
-        if politica:
-            serializer = PoliticaIntegralSerializer(politica)
-            return Response(serializer.data)
-
-        return Response(
-            {'detail': 'No hay política integral vigente'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-
-    @action(detail=True, methods=['post'])
-    def sign(self, request, pk=None):
-        """Firma digitalmente la política integral"""
-        politica = self.get_object()
-
-        serializer = SignPoliticaIntegralSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        if politica.is_signed:
-            return Response(
-                {'detail': 'La política ya está firmada'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        politica.sign(request.user)
-
-        return Response({
-            'detail': 'Política firmada exitosamente',
-            'signed_by': request.user.get_full_name(),
-            'signed_at': politica.signed_at,
-            'signature_hash': politica.signature_hash
-        })
-
-    @action(detail=True, methods=['post'])
-    def publish(self, request, pk=None):
-        """Publica la política integral (la pone como VIGENTE)"""
-        politica = self.get_object()
-
-        serializer = PublishPoliticaIntegralSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        try:
-            politica.publish(request.user)
-        except ValueError as e:
-            return Response(
-                {'detail': str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        return Response({
-            'detail': 'Política publicada exitosamente',
-            'status': politica.status,
-            'effective_date': politica.effective_date
-        })
-
-    @action(detail=False, methods=['get'])
-    def versions(self, request):
-        """Lista de versiones de una política"""
-        identity_id = request.query_params.get('identity')
-        if not identity_id:
-            return Response(
-                {'detail': 'Se requiere el parámetro identity'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        queryset = self.get_queryset().filter(identity_id=identity_id)
-        serializer = PoliticaIntegralSerializer(queryset, many=True)
-        return Response(serializer.data)
-
-
 class PoliticaEspecificaViewSet(
     StandardViewSetMixin, OrderingMixin, ValidateBeforeDeleteMixin, viewsets.ModelViewSet
 ):
     """
-    ViewSet para gestionar Políticas Específicas.
+    ViewSet unificado para gestionar Políticas (v3.1)
+
+    Soporta tanto políticas específicas como integrales.
+    Las políticas integrales se identifican con is_integral_policy=True.
 
     Endpoints:
-    - GET /politicas-especificas/ - Lista de políticas
+    - GET /politicas-especificas/ - Lista de políticas (ambos tipos)
     - POST /politicas-especificas/ - Crear nueva política
     - GET /politicas-especificas/{id}/ - Detalle de política
     - PUT/PATCH /politicas-especificas/{id}/ - Actualizar política
     - DELETE /politicas-especificas/{id}/ - Eliminar política
-    - POST /politicas-especificas/{id}/approve/ - Aprobar política
+    - POST /politicas-especificas/{id}/approve/ - Aprobar política específica
+    - POST /politicas-especificas/{id}/sign/ - Firmar política (integrales)
+    - POST /politicas-especificas/{id}/publish/ - Publicar política
+    - GET /politicas-especificas/integral-vigente/ - Política integral vigente
     - GET /politicas-especificas/by-standard/ - Por norma ISO
     - GET /politicas-especificas/pending-review/ - Pendientes de revisión
     - POST /politicas-especificas/{id}/toggle-active/ - Toggle estado activo
+
+    Filtros adicionales v3.1:
+    - ?is_integral_policy=true - Solo políticas integrales
+    - ?is_integral_policy=false - Solo políticas específicas
+
+    RBAC v3.3: Requiere acceso a sección 'politicas' + permisos CRUD
     """
 
     queryset = PoliticaEspecifica.objects.select_related(
         'identity', 'area', 'responsible', 'responsible_cargo',
         'approved_by', 'created_by'
     ).all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'politicas'
+
+    granular_action_map = {
+        'approve': 'approve',
+        'sign': 'sign',
+        'publish': 'publish',
+        'iniciar_firma': 'iniciar_firma',
+        'firmar': 'firmar',
+        'rechazar_firma': 'rechazar_firma',
+        'crear_nueva_version': 'can_create',  # Crear nueva versión sigue requiriendo permiso de CREAR
+        'enviar_a_documental': 'enviar_a_documental',
+        'integral_vigente': 'can_view',
+        'by_standard': 'can_view',
+        'pending_review': 'can_view',
+        'stats': 'can_view',
+    }
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['identity', 'norma_iso', 'status', 'area', 'is_active']
+    filterset_fields = ['identity', 'norma_iso', 'status', 'area', 'is_active', 'is_integral_policy']
     search_fields = ['code', 'title', 'content', 'keywords']
     ordering_fields = ['code', 'norma_iso', 'status', 'effective_date', 'orden', 'created_at']
     ordering = ['norma_iso', 'orden', 'code']
+
+    def get_queryset(self):
+        """
+        Filtrado multi-tenant: Solo retorna políticas de la empresa del usuario.
+        Superusuarios pueden ver todas las políticas.
+        """
+        qs = super().get_queryset()
+        user = self.request.user
+        if user.is_superuser:
+            return qs
+        if not hasattr(user, 'empresa') or user.empresa is None:
+            return qs.none()
+        return qs.filter(identity__empresa=user.empresa)
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
@@ -637,6 +608,115 @@ class PoliticaEspecificaViewSet(
             'status': politica.status
         })
 
+    # =========================================================================
+    # ACCIONES v3.1 - Soporte para políticas integrales
+    # =========================================================================
+
+    @action(detail=True, methods=['post'])
+    def sign(self, request, pk=None):
+        """
+        Firma digitalmente la política (v3.1)
+
+        Genera un hash SHA-256 del contenido + usuario + timestamp
+        para garantizar la integridad y no repudio de la firma.
+
+        Usado principalmente para políticas integrales que requieren
+        firma digital con hash de integridad.
+        """
+        politica = self.get_object()
+
+        serializer = SignPoliticaSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        if politica.is_signed:
+            return Response(
+                {'detail': 'La política ya está firmada'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        politica.sign(request.user)
+
+        return Response({
+            'detail': 'Política firmada exitosamente',
+            'signed_by': request.user.get_full_name(),
+            'signed_at': politica.approved_at,
+            'signature_hash': politica.signature_hash,
+            'is_integral_policy': politica.is_integral_policy
+        })
+
+    @action(detail=True, methods=['post'])
+    def publish(self, request, pk=None):
+        """
+        Publica la política (v3.1)
+
+        Cambia el estado a VIGENTE. Para políticas integrales,
+        obsoleta automáticamente las versiones vigentes anteriores.
+        """
+        politica = self.get_object()
+
+        serializer = PublishPoliticaSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            politica.publish(request.user)
+        except ValueError as e:
+            return Response(
+                {'detail': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return Response({
+            'detail': 'Política publicada exitosamente',
+            'status': politica.status,
+            'effective_date': politica.effective_date,
+            'is_integral_policy': politica.is_integral_policy
+        })
+
+    @action(detail=False, methods=['get'], url_path='integral-vigente')
+    def integral_vigente(self, request):
+        """
+        Obtiene la política integral vigente actual (v3.1)
+
+        Query params:
+        - identity: ID de la identidad corporativa (requerido)
+
+        Retorna la política integral vigente o 404 si no existe.
+        """
+        identity_id = request.query_params.get('identity')
+        if not identity_id:
+            return Response(
+                {'detail': 'Se requiere el parámetro identity'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            identity = CorporateIdentity.objects.get(pk=identity_id)
+        except CorporateIdentity.DoesNotExist:
+            return Response(
+                {'detail': 'Identidad corporativa no encontrada'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Verificar acceso multi-tenant
+        user = request.user
+        if not user.is_superuser:
+            if hasattr(user, 'empresa') and user.empresa:
+                if identity.empresa_id != user.empresa_id:
+                    return Response(
+                        {'detail': 'No tiene acceso a esta identidad corporativa'},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+
+        politica = PoliticaEspecifica.get_integral_vigente(identity)
+        if politica:
+            serializer = PoliticaEspecificaSerializer(politica)
+            return Response(serializer.data)
+
+        return Response(
+            {'detail': 'No hay política integral vigente'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
     @action(detail=False, methods=['get'], url_path='by-standard')
     def by_standard(self, request):
         """Retorna políticas agrupadas por norma ISO (dinámico desde BD)"""
@@ -718,7 +798,7 @@ class PoliticaEspecificaViewSet(
 
         # Verificar que no tenga un proceso de firma activo
         proceso_activo = ProcesoFirmaPolitica.objects.filter(
-            politica_especifica=politica,
+            politica=politica,
             estado='EN_PROCESO'
         ).first()
 
@@ -771,7 +851,7 @@ class PoliticaEspecificaViewSet(
             # Crear proceso de firma
             proceso = ProcesoFirmaPolitica.objects.create(
                 tipo_politica='ESPECIFICA',
-                politica_especifica=politica,
+                politica=politica,
                 flujo_firma=flujo_firma,
                 estado='EN_PROCESO',
                 paso_actual=1,
@@ -808,7 +888,7 @@ class PoliticaEspecificaViewSet(
                 ip_address=self._get_client_ip(request)
             )
 
-            # PASOS 2+: Firmantes seleccionados manualmente
+            # PASOS 2+: Firmantes seleccionados (por cargo o por usuario)
             orden_mapping = {
                 'REVISO_TECNICO': 2,
                 'REVISO_JURIDICO': 2,
@@ -818,39 +898,82 @@ class PoliticaEspecificaViewSet(
             }
 
             for firmante_data in firmantes_manuales:
-                usuario = User.objects.get(id=firmante_data['usuario_id'])
                 rol = firmante_data['rol_firmante']
                 orden = orden_mapping.get(rol, 2)
 
-                firma = FirmaPolitica.objects.create(
-                    proceso_firma=proceso,
-                    orden=orden,
-                    rol_firmante=rol,
-                    cargo=usuario.cargo,
-                    usuario=usuario,  # Usuario específico seleccionado
-                    estado='PENDIENTE',
-                    fecha_limite=timezone.now() + timezone.timedelta(days=7),
-                )
-                firmas_creadas.append(firma)
+                # Determinar si es modo por cargo o por usuario
+                if firmante_data.get('cargo_id'):
+                    # =========================================================
+                    # MODO POR CARGO: Notifica a TODOS los usuarios del cargo
+                    # =========================================================
+                    cargo = Cargo.objects.get(id=firmante_data['cargo_id'])
 
-                HistorialFirmaPolitica.objects.create(
-                    firma=firma,
-                    accion='ASIGNADO',
-                    usuario=request.user,
-                    detalles={
-                        'cargo_id': usuario.cargo_id,
-                        'cargo_nombre': usuario.cargo.name if usuario.cargo else 'N/A',
-                        'rol_firmante': rol,
-                        'usuario_asignado_id': usuario.id,
-                        'usuario_asignado_nombre': usuario.get_full_name() or usuario.username,
-                        'modo': 'manual',
-                        'asignado_por': request.user.get_full_name() or request.user.username,
-                    },
-                    ip_address=self._get_client_ip(request)
-                )
+                    firma = FirmaPolitica.objects.create(
+                        proceso_firma=proceso,
+                        orden=orden,
+                        rol_firmante=rol,
+                        cargo=cargo,
+                        usuario=None,  # Sin usuario específico - cualquiera del cargo puede firmar
+                        estado='PENDIENTE',
+                        fecha_limite=timezone.now() + timezone.timedelta(days=7),
+                    )
+                    firmas_creadas.append(firma)
+
+                    # Obtener count de usuarios del cargo para el historial
+                    usuarios_cargo_count = User.objects.filter(cargo=cargo, is_active=True).count()
+
+                    HistorialFirmaPolitica.objects.create(
+                        firma=firma,
+                        accion='ASIGNADO',
+                        usuario=request.user,
+                        detalles={
+                            'cargo_id': cargo.id,
+                            'cargo_nombre': cargo.name,
+                            'rol_firmante': rol,
+                            'modo': 'cargo',
+                            'usuarios_en_cargo': usuarios_cargo_count,
+                            'asignado_por': request.user.get_full_name() or request.user.username,
+                        },
+                        ip_address=self._get_client_ip(request)
+                    )
+                else:
+                    # =========================================================
+                    # MODO LEGACY: Usuario específico
+                    # =========================================================
+                    usuario = User.objects.get(id=firmante_data['usuario_id'])
+
+                    firma = FirmaPolitica.objects.create(
+                        proceso_firma=proceso,
+                        orden=orden,
+                        rol_firmante=rol,
+                        cargo=usuario.cargo,
+                        usuario=usuario,  # Usuario específico seleccionado
+                        estado='PENDIENTE',
+                        fecha_limite=timezone.now() + timezone.timedelta(days=7),
+                    )
+                    firmas_creadas.append(firma)
+
+                    HistorialFirmaPolitica.objects.create(
+                        firma=firma,
+                        accion='ASIGNADO',
+                        usuario=request.user,
+                        detalles={
+                            'cargo_id': usuario.cargo_id,
+                            'cargo_nombre': usuario.cargo.name if usuario.cargo else 'N/A',
+                            'rol_firmante': rol,
+                            'usuario_asignado_id': usuario.id,
+                            'usuario_asignado_nombre': usuario.get_full_name() or usuario.username,
+                            'modo': 'usuario',
+                            'asignado_por': request.user.get_full_name() or request.user.username,
+                        },
+                        ip_address=self._get_client_ip(request)
+                    )
 
             # Reordenar firmas por orden
             firmas_creadas.sort(key=lambda f: f.orden)
+
+            # Determinar si es modo cargo (para notificaciones)
+            modo_cargo = any(f.get('cargo_id') for f in firmantes_manuales)
 
         else:
             # =====================================================================
@@ -891,7 +1014,7 @@ class PoliticaEspecificaViewSet(
             # Crear proceso de firma
             proceso = ProcesoFirmaPolitica.objects.create(
                 tipo_politica='ESPECIFICA',
-                politica_especifica=politica,
+                politica=politica,
                 flujo_firma=flujo_firma,
                 estado='EN_PROCESO',
                 paso_actual=1,
@@ -941,11 +1064,15 @@ class PoliticaEspecificaViewSet(
         # =====================================================================
         # NOTIFICAR A LOS FIRMANTES
         # =====================================================================
-        # Enviar notificación (email + in-app) a cada firmante cuyo turno aplique
-        # Para firmas secuenciales, solo notificar al primer firmante
+        # Para firmas secuenciales, solo notificar al primer firmante (orden 1)
         # Para firmas paralelas, notificar a todos
         # En modo manual, notificar al usuario específico asignado
-        from apps.audit_system.centro_notificaciones.utils import enviar_notificacion
+        # En modo automático, notificar a TODOS los usuarios del cargo
+        from apps.audit_system.centro_notificaciones.utils import (
+            enviar_notificacion,
+            notificar_cargo,
+            notificar_politica_revision_pendiente
+        )
 
         import logging
         logger = logging.getLogger(__name__)
@@ -955,21 +1082,12 @@ class PoliticaEspecificaViewSet(
             if flujo_firma.requiere_firma_secuencial and firma.orden != 1:
                 continue
 
-            # Determinar a quién notificar
+            # Determinar cómo notificar
             if modo_manual and firma.usuario:
                 # MODO MANUAL: Notificar al usuario específico asignado
-                usuarios_a_notificar = [firma.usuario]
-            else:
-                # MODO AUTOMÁTICO: Notificar a todos los usuarios con el cargo
-                usuarios_a_notificar = list(User.objects.filter(
-                    cargo_id=firma.cargo_id,
-                    is_active=True
-                ))
-
-            for usuario in usuarios_a_notificar:
                 try:
                     enviar_notificacion(
-                        destinatario=usuario,
+                        destinatario=firma.usuario,
                         tipo='FIRMA_REQUERIDA',
                         asunto=f'Firma Requerida: {politica.title}',
                         mensaje=(
@@ -986,10 +1104,48 @@ class PoliticaEspecificaViewSet(
                             'rol_firmante': firma.rol_firmante,
                         }
                     )
-                    logger.info(f"Notificación de firma enviada a {usuario.username} para política {politica.id}")
+                    logger.info(f"Notificación de firma enviada a {firma.usuario.username} para política {politica.id}")
                 except Exception as e:
-                    # Loggear error pero no fallar el proceso
-                    logger.warning(f"Error notificando a {usuario.username}: {str(e)}")
+                    logger.warning(f"Error notificando a {firma.usuario.username}: {str(e)}")
+            else:
+                # MODO AUTOMÁTICO: Notificar a TODOS los usuarios del cargo
+                # Usando la nueva función notificar_cargo
+                if firma.cargo:
+                    try:
+                        # Determinar tipo de notificación según el rol
+                        if 'REVISO' in firma.rol_firmante:
+                            resultado = notificar_politica_revision_pendiente(
+                                politica=politica,
+                                cargo_revisor=firma.cargo,
+                                usuario_solicitante=request.user
+                            )
+                        else:
+                            # Para otros roles, usar notificación genérica de cargo
+                            resultado = notificar_cargo(
+                                cargo=firma.cargo,
+                                tipo='FIRMA_REQUERIDA',
+                                asunto=f'Firma Requerida: {politica.title}',
+                                mensaje=(
+                                    f'Se requiere su firma para la política "{politica.title}" '
+                                    f'como {firma.get_rol_firmante_display()}. '
+                                    f'Tiene hasta el {firma.fecha_limite.strftime("%d/%m/%Y")} para firmar.'
+                                ),
+                                link=f'/gestion-estrategica/identidad?politica={politica.id}',
+                                prioridad='ALTA',
+                                empresa=politica.identity.empresa if hasattr(politica, 'identity') else None,
+                                datos_adicionales={
+                                    'firma_id': firma.id,
+                                    'politica_id': politica.id,
+                                    'proceso_id': proceso.id,
+                                    'rol_firmante': firma.rol_firmante,
+                                }
+                            )
+                        logger.info(
+                            f"Notificación de firma enviada a cargo '{firma.cargo.name}': "
+                            f"{resultado.get('enviadas', 0)} enviadas, {resultado.get('fallidas', 0)} fallidas"
+                        )
+                    except Exception as e:
+                        logger.warning(f"Error notificando a cargo {firma.cargo.name}: {str(e)}")
 
         return Response({
             'detail': 'Proceso de firma iniciado exitosamente',
@@ -1024,7 +1180,7 @@ class PoliticaEspecificaViewSet(
                 'proceso_firma', 'cargo'
             ).get(
                 id=firma_id,
-                proceso_firma__politica_especifica=politica
+                proceso_firma__politica=politica
             )
         except FirmaPolitica.DoesNotExist:
             return Response(
@@ -1119,17 +1275,24 @@ class PoliticaEspecificaViewSet(
                 orden=proceso.paso_actual
             ).first()
 
-            if siguiente_firma:
-                # Notificar a usuarios con el cargo del siguiente firmante
-                usuarios_cargo = User.objects.filter(
-                    cargo_id=siguiente_firma.cargo_id,
-                    is_active=True
+            if siguiente_firma and siguiente_firma.cargo:
+                # Usar notificar_cargo para notificar a TODOS los usuarios del cargo
+                from apps.audit_system.centro_notificaciones.utils import (
+                    notificar_cargo,
+                    notificar_politica_aprobacion_pendiente
                 )
 
-                for usuario in usuarios_cargo:
-                    try:
-                        enviar_notificacion(
-                            destinatario=usuario,
+                try:
+                    # Determinar tipo de notificación según el rol
+                    if 'APROBO' in siguiente_firma.rol_firmante:
+                        resultado = notificar_politica_aprobacion_pendiente(
+                            politica=politica,
+                            cargo_aprobador=siguiente_firma.cargo,
+                            usuario_revisor=request.user
+                        )
+                    else:
+                        resultado = notificar_cargo(
+                            cargo=siguiente_firma.cargo,
                             tipo='FIRMA_REQUERIDA',
                             asunto=f'Firma Requerida: {politica.title}',
                             mensaje=(
@@ -1139,6 +1302,7 @@ class PoliticaEspecificaViewSet(
                             ),
                             link=f'/gestion-estrategica/identidad?politica={politica.id}',
                             prioridad='ALTA',
+                            empresa=politica.identity.empresa if hasattr(politica, 'identity') else None,
                             datos_adicionales={
                                 'firma_id': siguiente_firma.id,
                                 'politica_id': politica.id,
@@ -1146,15 +1310,75 @@ class PoliticaEspecificaViewSet(
                                 'rol_firmante': siguiente_firma.rol_firmante,
                             }
                         )
+
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.info(
+                        f"Notificación siguiente firmante (cargo '{siguiente_firma.cargo.name}'): "
+                        f"{resultado.get('enviadas', 0)} enviadas"
+                    )
+                except Exception as e:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.warning(f"Error notificando siguiente firmante: {str(e)}")
+
+        # Si el proceso se completó, actualizar política según el estado de flujo
+        if proceso.estado == 'COMPLETADO':
+            # Determinar el nuevo estado basado en el último rol firmante
+            ultima_firma = FirmaPolitica.objects.filter(
+                proceso_firma=proceso,
+                estado='FIRMADO'
+            ).order_by('-orden').first()
+
+            if ultima_firma:
+                # Si el último firmante fue un aprobador, va a POR_CODIFICAR
+                if 'APROBO' in ultima_firma.rol_firmante:
+                    politica.status = 'POR_CODIFICAR'
+                    # Notificar que está listo para Gestor Documental
+                    from apps.audit_system.centro_notificaciones.utils import (
+                        notificar_politica_aprobada
+                    )
+                    try:
+                        notificar_politica_aprobada(
+                            politica=politica,
+                            usuario_aprobador=request.user,
+                            notificar_creador=True,
+                            cargo_codificador=None  # TODO: Configurar cargo de Control Documental
+                        )
                     except Exception as e:
                         import logging
                         logger = logging.getLogger(__name__)
-                        logger.warning(f"Error notificando siguiente firmante {usuario.username}: {str(e)}")
+                        logger.warning(f"Error notificando aprobación: {str(e)}")
+                # Si el último fue revisor, pasa a EN_APROBACION
+                elif 'REVISO' in ultima_firma.rol_firmante:
+                    politica.status = 'EN_APROBACION'
+                    # Notificar al cargo aprobador
+                    from apps.audit_system.centro_notificaciones.utils import (
+                        notificar_politica_aprobacion_pendiente
+                    )
+                    siguiente_aprobador = FirmaPolitica.objects.filter(
+                        proceso_firma=proceso,
+                        estado='PENDIENTE',
+                        rol_firmante__startswith='APROBO'
+                    ).first()
+                    if siguiente_aprobador and siguiente_aprobador.cargo:
+                        try:
+                            notificar_politica_aprobacion_pendiente(
+                                politica=politica,
+                                cargo_aprobador=siguiente_aprobador.cargo,
+                                usuario_revisor=request.user
+                            )
+                        except Exception as e:
+                            import logging
+                            logger = logging.getLogger(__name__)
+                            logger.warning(f"Error notificando aprobación pendiente: {str(e)}")
+                else:
+                    # Flujo completo sin clasificación, va directo a POR_CODIFICAR
+                    politica.status = 'POR_CODIFICAR'
+            else:
+                # Fallback: si no hay última firma, va a POR_CODIFICAR
+                politica.status = 'POR_CODIFICAR'
 
-        # Si el proceso se completó, actualizar política
-        if proceso.estado == 'COMPLETADO':
-            politica.status = 'FIRMADO'  # Cambiado: FIRMADO en lugar de VIGENTE
-            # VIGENTE se asigna cuando se envía al Gestor Documental
             politica.save(update_fields=['status', 'updated_at'])
 
         return Response({
@@ -1189,7 +1413,7 @@ class PoliticaEspecificaViewSet(
                 'proceso_firma', 'cargo'
             ).get(
                 id=firma_id,
-                proceso_firma__politica_especifica=politica
+                proceso_firma__politica=politica
             )
         except FirmaPolitica.DoesNotExist:
             return Response(
@@ -1224,9 +1448,23 @@ class PoliticaEspecificaViewSet(
             ip_address=self._get_client_ip(request)
         )
 
-        # La política vuelve a BORRADOR
-        politica.status = 'BORRADOR'
+        # La política pasa a estado RECHAZADO
+        politica.status = 'RECHAZADO'
         politica.save(update_fields=['status', 'updated_at'])
+
+        # Notificar al creador sobre el rechazo
+        from apps.audit_system.centro_notificaciones.utils import notificar_politica_rechazada
+        try:
+            notificar_politica_rechazada(
+                politica=politica,
+                usuario_que_rechazo=request.user,
+                motivo_rechazo=motivo,
+                usuario_creador=getattr(politica, 'created_by', None)
+            )
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Error notificando rechazo de política: {str(e)}")
 
         return Response({
             'detail': 'Firma rechazada. El proceso de firma ha sido cancelado.',
@@ -1248,9 +1486,9 @@ class PoliticaEspecificaViewSet(
         """
         politica = self.get_object()
 
-        # Buscar proceso activo o el último
+        # Buscar proceso activo o el último (v3.1: campo renombrado a 'politica')
         proceso = ProcesoFirmaPolitica.objects.filter(
-            politica_especifica=politica
+            politica=politica
         ).order_by('-fecha_inicio').first()
 
         if not proceso:
@@ -1310,14 +1548,14 @@ class PoliticaEspecificaViewSet(
 
         # Verificar que el proceso de firma esté completado
         proceso = ProcesoFirmaPolitica.objects.filter(
-            politica_especifica=politica,
+            politica=politica,
             estado='COMPLETADO'
         ).first()
 
         if not proceso:
             # Verificar si hay proceso activo
             proceso_activo = ProcesoFirmaPolitica.objects.filter(
-                politica_especifica=politica,
+                politica=politica,
                 estado='EN_PROCESO'
             ).first()
 

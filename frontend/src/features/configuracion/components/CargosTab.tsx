@@ -1,6 +1,10 @@
 /**
  * Tab de gestión de Cargos
  *
+ * RBAC Unificado v4.0:
+ * - Verifica permisos CRUD desde CargoSectionAccess
+ * - Códigos: gestion_estrategica.cargos.{view|create|edit|delete}
+ *
  * Usa Design System:
  * - FilterCard para búsqueda y filtros
  * - FilterGrid para layout de filtros
@@ -9,7 +13,7 @@
  * - ConfirmDialog para confirmaciones
  */
 import { useState, useMemo } from 'react';
-import { Plus, Pencil, Trash2, Users, Shield, Lock, Briefcase, Crown, UserCog, HardHat, CheckCircle } from 'lucide-react';
+import { Plus, Pencil, Trash2, Users, Lock, Briefcase, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/common/Badge';
 import { Button } from '@/components/common/Button';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -25,6 +29,9 @@ import { CargoLevelBadge } from './CargoLevelBadge';
 import { CargoFormModal } from './CargoFormModal';
 import type { CargoList, CargoFilters, NivelJerarquico } from '../types/rbac.types';
 import { NIVEL_JERARQUICO_OPTIONS } from '../types/rbac.types';
+import { usePermissions } from '@/hooks/usePermissions';
+import { useModuleColor } from '@/hooks/useModuleColor';
+import { Modules, Sections } from '@/constants/permissions';
 
 export const CargosTab = () => {
   const [filters, setFilters] = useState<CargoFilters>({});
@@ -33,6 +40,15 @@ export const CargosTab = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<CargoList | null>(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
+
+  // RBAC: Verificar permisos del usuario
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.CORE, Sections.CARGOS, 'create');
+  const canEdit = canDo(Modules.CORE, Sections.CARGOS, 'edit');
+  const canDelete = canDo(Modules.CORE, Sections.CARGOS, 'delete');
+
+  // Color del módulo (sin hardcoding)
+  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
 
   const { data, isLoading, error } = useCargos({ ...filters, page_size: 100 });
   const deleteMutation = useDeleteCargo();
@@ -45,14 +61,12 @@ export const CargosTab = () => {
   const cargoStats: StatItem[] = useMemo(() => {
     const cargos = data?.results || [];
     const totalUsuarios = cargos.reduce((sum, c) => sum + (c.users_count || 0), 0);
-    const cargosConPermisos = cargos.filter((c) => (c.permissions_count || 0) > 0).length;
     const cargosConUsuarios = cargos.filter((c) => (c.users_count || 0) > 0).length;
 
     return [
-      { label: 'Total Cargos', value: data?.count || cargos.length, icon: Briefcase, iconColor: 'info' as const },
-      { label: 'Con Permisos', value: cargosConPermisos, icon: Shield, iconColor: 'success' as const, description: 'Cargos configurados' },
-      { label: 'Usuarios Asignados', value: totalUsuarios, icon: Users, iconColor: 'purple' as const },
-      { label: 'Con Usuarios', value: cargosConUsuarios, icon: CheckCircle, iconColor: 'gray' as const, description: 'Cargos ocupados' },
+      { label: 'Total Cargos', value: data?.count || cargos.length, icon: Briefcase, iconColor: 'info' },
+      { label: 'Usuarios Asignados', value: totalUsuarios, icon: Users, iconColor: 'primary' },
+      { label: 'Con Usuarios', value: cargosConUsuarios, icon: CheckCircle, iconColor: 'gray', description: 'Cargos ocupados' },
     ];
   }, [data]);
 
@@ -127,9 +141,9 @@ export const CargosTab = () => {
 
       {/* Estadísticas */}
       {isLoading ? (
-        <StatsGridSkeleton columns={4} />
+        <StatsGridSkeleton count={4} />
       ) : (
-        <StatsGrid stats={cargoStats} columns={4} moduleColor="purple" />
+        <StatsGrid stats={cargoStats} columns={4} moduleColor={moduleColor} />
       )}
 
       {/* Filtros */}
@@ -188,9 +202,11 @@ export const CargosTab = () => {
         isEmpty={isEmpty}
         emptyMessage="No se encontraron cargos"
         headerActions={
-          <Button onClick={handleCreate} variant="primary" size="sm" leftIcon={<Plus className="h-4 w-4" />}>
-            Nuevo Cargo
-          </Button>
+          canCreate ? (
+            <Button onClick={handleCreate} variant="primary" size="sm" leftIcon={<Plus className="h-4 w-4" />}>
+              Nuevo Cargo
+            </Button>
+          ) : null
         }
       >
         {isLoading ? (
@@ -199,12 +215,15 @@ export const CargosTab = () => {
           <EmptyState
             icon={<Briefcase className="h-12 w-12" />}
             title="Sin cargos"
-            description="No hay cargos configurados en el sistema. Crea el primer cargo para comenzar."
-            action={{
+            description={canCreate
+              ? "No hay cargos configurados en el sistema. Crea el primer cargo para comenzar."
+              : "No hay cargos configurados en el sistema."
+            }
+            action={canCreate ? {
               label: 'Crear Cargo',
               onClick: handleCreate,
               icon: <Plus className="h-4 w-4" />,
-            }}
+            } : undefined}
           />
         ) : (
           <>
@@ -224,12 +243,11 @@ export const CargosTab = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Usuarios
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Permisos
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Acciones
-                    </th>
+                    {(canEdit || canDelete) && (
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Acciones
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -260,39 +278,39 @@ export const CargosTab = () => {
                           {cargo.users_count || 0}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
-                          <Shield className="h-4 w-4" />
-                          {cargo.permissions_count || 0}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(cargo)}
-                            title="Editar"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteRequest(cargo)}
-                            disabled={cargo.is_system || (cargo.users_count || 0) > 0}
-                            title={
-                              cargo.is_system
-                                ? 'Cargo del sistema'
-                                : (cargo.users_count || 0) > 0
-                                  ? 'Tiene usuarios asignados'
-                                  : 'Eliminar'
-                            }
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </td>
+                      {(canEdit || canDelete) && (
+                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            {canEdit && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEdit(cargo)}
+                                title="Editar"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {canDelete && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteRequest(cargo)}
+                                disabled={cargo.is_system || (cargo.users_count || 0) > 0}
+                                title={
+                                  cargo.is_system
+                                    ? 'Cargo del sistema'
+                                    : (cargo.users_count || 0) > 0
+                                      ? 'Tiene usuarios asignados'
+                                      : 'Eliminar'
+                                }
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

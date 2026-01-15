@@ -20,7 +20,7 @@ from .serializers import (
     PermisoSerializer,
     CargoPermisoSerializer,
 )
-from .permissions import CanManageUsers
+from .permissions import CanManageUsers, GranularActionPermission
 
 
 class CargoViewSet(viewsets.ReadOnlyModelViewSet):
@@ -67,7 +67,16 @@ class UserViewSet(viewsets.ModelViewSet):
     - POST /api/core/users/{id}/restore/ - Restaurar usuario eliminado
     """
     queryset = User.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'colaboradores'
+
+    granular_action_map = {
+        'change_password': 'can_edit',
+        'restore': 'can_delete', # Restore is logical reverse of delete
+        'comerciales': 'can_view',
+        'stats': 'can_view',
+        'me': 'can_view', # Usually allowany or authenticated, but for now map to view
+    }
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['cargo', 'cargo__code', 'is_active', 'is_staff', 'document_type']
     search_fields = ['username', 'email', 'first_name', 'last_name', 'document_number']
@@ -98,14 +107,9 @@ class UserViewSet(viewsets.ModelViewSet):
         else:
             return UserDetailSerializer
 
-    def get_permissions(self):
-        """Permisos según la acción"""
-        if self.action in ['create', 'destroy', 'restore']:
-            permission_classes = [IsAuthenticated, CanManageUsers]
-        else:
-            permission_classes = [IsAuthenticated]
-        
-        return [permission() for permission in permission_classes]
+        if self.action in ['me']:
+             return [IsAuthenticated()]
+        return [permission() for permission in self.permission_classes]
 
     def perform_destroy(self, instance):
         """Soft delete en lugar de eliminación física"""

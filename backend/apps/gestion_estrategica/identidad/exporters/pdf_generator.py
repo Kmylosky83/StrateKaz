@@ -382,7 +382,7 @@ class IdentidadPDFGenerator:
         Genera PDF de Política Integral con firmas.
 
         Args:
-            politica: Instancia de PoliticaIntegral
+            politica: Instancia de PoliticaEspecifica con is_integral_policy=True (v3.1)
             firmas: QuerySet de FirmaDigital (opcional)
             historial: QuerySet de HistorialVersion (opcional)
 
@@ -461,8 +461,13 @@ class IdentidadPDFGenerator:
             'include_alcances': include_alcances,
             'valores': identity.values.filter(is_active=True).order_by('orden') if include_valores else [],
             'alcances': identity.alcances.filter(is_active=True) if include_alcances else [],
-            'politica_vigente': identity.politicas_integrales.filter(status='VIGENTE', is_active=True).first() if include_politicas else None,
-            'politicas_especificas': identity.politicas_especificas.filter(status='VIGENTE', is_active=True) if include_politicas else [],
+            # v3.1: Usar PoliticaEspecifica con is_integral_policy=True
+            'politica_vigente': identity.politicas_especificas.filter(
+                status='VIGENTE', is_active=True, is_integral_policy=True
+            ).first() if include_politicas else None,
+            'politicas_especificas': identity.politicas_especificas.filter(
+                status='VIGENTE', is_active=True, is_integral_policy=False
+            ) if include_politicas else [],
             'fecha_generacion': datetime.now(),
             'documento_tipo': 'Identidad Corporativa Completa',
         }
@@ -817,7 +822,7 @@ def generar_pdf_politica_integral(politica, empresa=None, firmas=None, historial
     Genera PDF de política integral.
 
     Args:
-        politica: Instancia de PoliticaIntegral
+        politica: Instancia de PoliticaEspecifica con is_integral_policy=True (v3.1)
         empresa: Instancia de EmpresaConfig (opcional)
         firmas: QuerySet de FirmaDigital (opcional)
         historial: QuerySet de HistorialVersion (opcional)

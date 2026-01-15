@@ -14,6 +14,7 @@ from django.http import JsonResponse, FileResponse, Http404
 from django.views.static import serve
 from django.apps import apps
 from apps.core.views import RateLimitedTokenObtainPairView, RateLimitedTokenRefreshView
+from apps.core.views.core_views import logout_view
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
 
@@ -31,7 +32,21 @@ def health_check(request):
 # Vista para servir el frontend SPA (React/Vite) en producción
 # ═══════════════════════════════════════════════════════════════
 import mimetypes
-FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'public')
+
+# Determine path based on environment
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT_DIR = os.path.dirname(BASE_DIR)
+
+# Logic to find the frontend directory
+# 1. Production: ../grasas.stratekaz.com (sibling of backend root)
+# 2. Local: ../frontend/dist
+production_frontend = os.path.join(os.path.dirname(ROOT_DIR), 'grasas.stratekaz.com')
+local_frontend = os.path.join(ROOT_DIR, 'frontend', 'dist')
+
+if os.path.isdir(production_frontend):
+    FRONTEND_DIR = production_frontend
+else:
+    FRONTEND_DIR = local_frontend
 
 # Asegurar tipos MIME correctos para assets modernos
 mimetypes.add_type('application/javascript', '.js')
@@ -115,6 +130,8 @@ urlpatterns = [
     # JWT Authentication (with rate limiting protection)
     path('api/auth/login/', RateLimitedTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/auth/refresh/', RateLimitedTokenRefreshView.as_view(), name='token_refresh'),
+    # P0-03: Logout endpoint para invalidar refresh tokens
+    path('api/auth/logout/', logout_view, name='token_logout'),
 
     # ═══════════════════════════════════════════════════════════════════════════
     # NIVEL 0: CORE (siempre activo)

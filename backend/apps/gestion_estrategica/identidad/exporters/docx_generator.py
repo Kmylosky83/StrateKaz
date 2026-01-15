@@ -405,7 +405,7 @@ class IdentidadDOCXGenerator:
         Genera DOCX de Política Integral con firmas.
 
         Args:
-            politica: Instancia de PoliticaIntegral
+            politica: Instancia de PoliticaEspecifica con is_integral_policy=True (v3.1)
             firmas: QuerySet de FirmaDigital (opcional)
             historial: QuerySet de HistorialVersion (opcional)
 
@@ -650,9 +650,11 @@ class IdentidadDOCXGenerator:
                     para = document.add_paragraph(valor.description, style='CustomNormal')
                     para.paragraph_format.left_indent = Inches(0.3)
 
-        # Política Integral
+        # Política Integral (v3.1: usando PoliticaEspecifica con is_integral_policy=True)
         if include_politicas:
-            politica_vigente = identity.politicas_integrales.filter(status='VIGENTE', is_active=True).first()
+            politica_vigente = identity.politicas_especificas.filter(
+                status='VIGENTE', is_active=True, is_integral_policy=True
+            ).first()
             if politica_vigente:
                 document.add_page_break()
                 document.add_paragraph('Política Integral del Sistema de Gestión', style='CustomHeading1')
@@ -731,7 +733,7 @@ def generar_docx_politica_integral(politica, empresa=None, firmas=None, historia
     Genera DOCX de política integral.
 
     Args:
-        politica: Instancia de PoliticaIntegral
+        politica: Instancia de PoliticaEspecifica con is_integral_policy=True (v3.1)
         empresa: Instancia de EmpresaConfig (opcional)
         firmas: QuerySet de FirmaDigital (opcional)
         historial: QuerySet de HistorialVersion (opcional)

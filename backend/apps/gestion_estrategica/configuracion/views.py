@@ -27,6 +27,7 @@ from .serializers import (
     NormaISOSerializer,
     NormaISOListSerializer,
 )
+from apps.core.permissions import GranularActionPermission
 
 
 class EmpresaConfigViewSet(viewsets.ViewSet):
@@ -45,7 +46,8 @@ class EmpresaConfigViewSet(viewsets.ViewSet):
     - GET /empresa-config/choices/ -> Obtiene opciones para dropdowns
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'empresa'
 
     def list(self, request):
         """
@@ -194,7 +196,8 @@ class SedeEmpresaViewSet(viewsets.ModelViewSet):
     - POST /sedes/{id}/restore/ -> Restaura una sede eliminada
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'sedes'
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['tipo_sede', 'departamento', 'is_active', 'es_sede_principal']
     search_fields = ['codigo', 'nombre', 'ciudad', 'direccion']
@@ -357,39 +360,26 @@ class IntegracionExternaViewSet(viewsets.ModelViewSet):
     - POST /integraciones-externas/{id}/clear_errors/ -> Limpia errores
 
     Permisos:
-    - Ver: IsAuthenticated + nivel Coordinación o superior
-    - Crear/Editar: IsSuperAdmin
-    - Ver credenciales completas: IsSuperAdmin
-    - Probar conexión: Coordinación o SuperAdmin
+    - Controlado por GranularActionPermission (Sección: 'integraciones')
     """
+    
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'integraciones'
+    
+    granular_action_map = {
+        'toggle_status': 'can_edit',
+        'test_connection': 'can_edit',
+        'update_credentials': 'can_edit',
+        'clear_errors': 'can_edit',
+        'restore': 'can_delete',
+        'logs': 'can_view',
+    }
 
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = ['tipo_servicio', 'proveedor', 'is_active', 'ambiente']
     search_fields = ['nombre', 'descripcion']
     ordering_fields = ['nombre', 'created_at', 'ultima_conexion_exitosa']
     ordering = ['-is_active', 'nombre']
-
-    def get_permissions(self):
-        """
-        Permisos específicos por acción.
-        """
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            # Solo SuperAdmin puede crear, editar o eliminar
-            permission_classes = [IsAuthenticated, IsSuperAdmin]
-        elif self.action in ['update_credentials']:
-            # Solo SuperAdmin puede ver/editar credenciales completas
-            permission_classes = [IsAuthenticated, IsSuperAdmin]
-        elif self.action in ['test_connection', 'logs']:
-            # Coordinación o superior puede probar conexión y ver logs
-            permission_classes = [IsAuthenticated, RequireCargoLevel]
-        else:
-            # Resto de acciones requiere nivel Coordinación o superior
-            permission_classes = [IsAuthenticated, RequireCargoLevel]
-
-        return [permission() for permission in permission_classes]
-
-    # Nivel requerido para RequireCargoLevel
-    required_level = 2  # Coordinación
 
     def get_queryset(self):
         """

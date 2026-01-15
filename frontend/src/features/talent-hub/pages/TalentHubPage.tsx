@@ -31,7 +31,6 @@ import {
   Trophy,
   CheckCircle,
   Play,
-  Shield,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
 import { Tabs } from '@/components/common/Tabs';
@@ -46,7 +45,6 @@ import {
   useFormacionEstadisticas,
   useDesempenoEstadisticas,
 } from '../hooks';
-import { RolesAdicionalesSubTab } from '@/features/gestion-estrategica/components/rbac';
 
 // ============================================================================
 // Componente: Tab de Estructura de Cargos
@@ -627,11 +625,6 @@ export default function TalentHubPage() {
       label: 'Desempeño',
       icon: <Target className="w-4 h-4" />,
     },
-    {
-      id: 'roles',
-      label: 'Roles Adicionales',
-      icon: <Shield className="w-4 h-4" />,
-    },
   ];
 
   return (
@@ -650,7 +643,6 @@ export default function TalentHubPage() {
         {activeTab === 'onboarding' && <OnboardingInduccionTab />}
         {activeTab === 'formacion' && <FormacionReinduccionTab />}
         {activeTab === 'desempeno' && <DesempenoTab />}
-        {activeTab === 'roles' && <RolesAdicionalesSubTab />}
       </div>
     </div>
   );

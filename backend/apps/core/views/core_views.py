@@ -175,6 +175,22 @@ def current_user(request):
     """
     user = request.user
 
+    # Obtener permisos efectivos y secciones
+    section_ids = []
+    permission_codes = []
+    
+    # 1. Obtener section_ids del Cargo (si tiene)
+    if user.cargo:
+        from apps.core.models import CargoSectionAccess
+        section_ids = list(CargoSectionAccess.objects.filter(
+            cargo=user.cargo
+        ).values_list('section_id', flat=True))
+
+    # 2. Obtener códigos de permisos efectivos (RBAC Híbrido)
+    # El método get_permisos_efectivos ya maneja superusuario, cargo, roles y grupos
+    if hasattr(user, 'get_permisos_efectivos'):
+        permission_codes = user.get_permisos_efectivos()
+
     return Response({
         'id': user.id,
         'username': user.username,
@@ -200,7 +216,58 @@ def current_user(request):
         'is_deleted': user.is_deleted,
         'date_joined': user.date_joined,
         'last_login': user.last_login,
+        # RBAC Data required by frontend
+        'section_ids': section_ids,
+        'permission_codes': permission_codes,
     })
+
+
+# ═══════════════════════════════════════════════════
+# LOGOUT ENDPOINT (P0-03)
+# ═══════════════════════════════════════════════════
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def logout_view(request):
+    """
+    Endpoint de logout que invalida el refresh token (P0-03)
+
+    POST /api/auth/logout/
+
+    Body:
+        {
+            "refresh": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+        }
+
+    Returns:
+        204 No Content si el logout fue exitoso
+        400 Bad Request si el token es inválido
+    """
+    from apps.core.serializers import LogoutSerializer
+    import logging
+
+    logger = logging.getLogger('security')
+
+    serializer = LogoutSerializer(data=request.data)
+    if serializer.is_valid():
+        try:
+            serializer.save()
+            # Log de seguridad para auditoría
+            logger.info(
+                f"Logout exitoso - User: {request.user.username} (ID: {request.user.id}) "
+                f"- IP: {request.META.get('REMOTE_ADDR', 'unknown')}"
+            )
+            return Response(status=http_status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            logger.warning(
+                f"Error en logout - User: {request.user.username} - Error: {str(e)}"
+            )
+            return Response(
+                {'error': 'Error al invalidar el token'},
+                status=http_status.HTTP_400_BAD_REQUEST
+            )
+
+    return Response(serializer.errors, status=http_status.HTTP_400_BAD_REQUEST)
 
 
 # ═══════════════════════════════════════════════════

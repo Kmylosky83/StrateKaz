@@ -5,9 +5,15 @@
  * NO reemplaza la verificacion del backend, solo mejora la UX.
  *
  * @example
- * // Por permiso
- * <ProtectedAction permission={PermissionCodes.RECOLECCIONES.CREATE}>
- *   <Button>Crear Recoleccion</Button>
+ * // Por permiso CRUD (nuevo formato)
+ * <ProtectedAction permission="gestion_estrategica.politica.create">
+ *   <Button>Nueva Política</Button>
+ * </ProtectedAction>
+ *
+ * @example
+ * // Por acceso a sección
+ * <ProtectedAction sectionId={5}>
+ *   <SectionContent />
  * </ProtectedAction>
  *
  * @example
@@ -23,19 +29,19 @@
  * </ProtectedAction>
  *
  * @example
- * // Combinado (OR)
+ * // Combinado (permiso CRUD + sección)
  * <ProtectedAction
- *   permissions={[PermissionCodes.RECOLECCIONES.APPROVE]}
- *   cargos={[CargoCodes.GERENTE_GENERAL]}
+ *   sectionId={5}
+ *   permission="gestion_estrategica.politica.delete"
  *   fallback={<DisabledButton />}
  * >
- *   <ApproveButton />
+ *   <DeleteButton />
  * </ProtectedAction>
  */
 
 import React, { ReactNode } from 'react';
 import { usePermissions } from '@/hooks/usePermissions';
-import type { CargoCode, CargoLevel, PermissionCode, RoleCode } from '@/constants/permissions';
+import type { CargoCode, CargoLevel, RoleCode } from '@/constants/permissions';
 
 interface ProtectedActionProps {
   /** Contenido a mostrar si tiene acceso */
@@ -44,11 +50,14 @@ interface ProtectedActionProps {
   /** Contenido a mostrar si NO tiene acceso (opcional) */
   fallback?: ReactNode;
 
-  /** Permiso unico requerido */
-  permission?: PermissionCode;
+  /** Permiso CRUD requerido (código: "modulo.recurso.accion") */
+  permission?: string;
 
-  /** Permisos requeridos (OR - cualquiera) */
-  permissions?: PermissionCode[];
+  /** Permisos CRUD requeridos (OR - cualquiera) */
+  permissions?: string[];
+
+  /** ID de sección requerida (de CargoSectionAccess) */
+  sectionId?: number;
 
   /** Cargo(s) permitido(s) */
   cargos?: CargoCode[];
@@ -71,23 +80,42 @@ export function ProtectedAction({
   fallback = null,
   permission,
   permissions,
+  sectionId,
   cargos,
   minLevel,
   roles,
   superAdminOnly = false,
   invert = false,
 }: ProtectedActionProps) {
-  const { canAccess, hasPermission } = usePermissions();
+  const { canAccess, hasPermission, hasSectionAccess, isSuperAdmin } = usePermissions();
 
-  // Si hay permiso unico, verificar directamente
-  let hasAccess = false;
+  // Super admin tiene acceso total
+  if (isSuperAdmin && !invert) {
+    return <>{children}</>;
+  }
 
-  if (permission) {
+  let hasAccess = true;
+
+  // Verificar acceso a sección si se especifica
+  if (sectionId !== undefined) {
+    if (!hasSectionAccess(sectionId)) {
+      hasAccess = false;
+    }
+  }
+
+  // Verificar permiso CRUD único si se especifica
+  if (hasAccess && permission) {
     hasAccess = hasPermission(permission);
-  } else {
-    // Usar canAccess para logica combinada
+  }
+
+  // Verificar permisos múltiples (OR) si se especifica
+  if (hasAccess && permissions && permissions.length > 0) {
+    hasAccess = permissions.some((p) => hasPermission(p));
+  }
+
+  // Verificar otras condiciones usando canAccess
+  if (hasAccess && (cargos || minLevel || roles || superAdminOnly)) {
     hasAccess = canAccess({
-      permissions,
       cargos,
       minLevel,
       roles,
@@ -95,7 +123,7 @@ export function ProtectedAction({
     });
   }
 
-  // Invertir logica si es necesario
+  // Invertir lógica si es necesario
   if (invert) {
     hasAccess = !hasAccess;
   }
@@ -176,6 +204,115 @@ export function withProtection<P extends object>(
       </ProtectedAction>
     );
   };
+}
+
+// ==================== RBAC Unificado v4.0 - Helpers para Secciones ====================
+
+/**
+ * Hook para obtener permisos CRUD de una sección específica
+ *
+ * @param modulo Código del módulo (ej: 'gestion_estrategica')
+ * @param seccion Código de la sección (ej: 'empresa', 'cargos', 'politicas')
+ * @returns Objeto con permisos booleanos y códigos de permiso
+ *
+ * @example
+ * const { canView, canCreate, canEdit, canDelete, codes } = useSectionPermissions('gestion_estrategica', 'cargos');
+ *
+ * // En JSX:
+ * {canCreate && <Button>Nuevo</Button>}
+ * {canEdit && <Button>Editar</Button>}
+ */
+export function useSectionPermissions(modulo: string, seccion: string) {
+  const { hasPermission, isSuperAdmin } = usePermissions();
+
+  const codes = {
+    view: `${modulo}.${seccion}.view`,
+    create: `${modulo}.${seccion}.create`,
+    edit: `${modulo}.${seccion}.edit`,
+    delete: `${modulo}.${seccion}.delete`,
+  };
+
+  // SuperAdmin tiene todos los permisos
+  if (isSuperAdmin) {
+    return {
+      canView: true,
+      canCreate: true,
+      canEdit: true,
+      canDelete: true,
+      codes,
+      isSuperAdmin: true,
+    };
+  }
+
+  return {
+    canView: hasPermission(codes.view),
+    canCreate: hasPermission(codes.create),
+    canEdit: hasPermission(codes.edit),
+    canDelete: hasPermission(codes.delete),
+    codes,
+    isSuperAdmin: false,
+  };
+}
+
+/**
+ * Componentes de acceso rápido para acciones CRUD
+ *
+ * @example
+ * <CanCreate modulo="gestion_estrategica" seccion="cargos">
+ *   <Button>Nuevo Cargo</Button>
+ * </CanCreate>
+ */
+interface CrudActionProps {
+  modulo: string;
+  seccion: string;
+  children: ReactNode;
+  fallback?: ReactNode;
+}
+
+export function CanView({ modulo, seccion, children, fallback = null }: CrudActionProps) {
+  return (
+    <ProtectedAction permission={`${modulo}.${seccion}.view`} fallback={fallback}>
+      {children}
+    </ProtectedAction>
+  );
+}
+
+export function CanCreate({ modulo, seccion, children, fallback = null }: CrudActionProps) {
+  return (
+    <ProtectedAction permission={`${modulo}.${seccion}.create`} fallback={fallback}>
+      {children}
+    </ProtectedAction>
+  );
+}
+
+export function CanEdit({ modulo, seccion, children, fallback = null }: CrudActionProps) {
+  return (
+    <ProtectedAction permission={`${modulo}.${seccion}.edit`} fallback={fallback}>
+      {children}
+    </ProtectedAction>
+  );
+}
+
+export function CanDelete({ modulo, seccion, children, fallback = null }: CrudActionProps) {
+  return (
+    <ProtectedAction permission={`${modulo}.${seccion}.delete`} fallback={fallback}>
+      {children}
+    </ProtectedAction>
+  );
+}
+
+/**
+ * Componente combinado para acciones de edición/eliminación
+ */
+export function CanEditOrDelete({ modulo, seccion, children, fallback = null }: CrudActionProps) {
+  return (
+    <ProtectedAction
+      permissions={[`${modulo}.${seccion}.edit`, `${modulo}.${seccion}.delete`]}
+      fallback={fallback}
+    >
+      {children}
+    </ProtectedAction>
+  );
 }
 
 export default ProtectedAction;

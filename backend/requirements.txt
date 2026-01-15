@@ -1,4 +1,9 @@
 # ═══════════════════════════════════════════════════
+# STRATEKAZ - DEPENDENCIAS DEL PROYECTO
+# ⚠ PRECAUCIÓN: Archivo mantenido manualmente con secciones.
+# No sobrescribir directamente con 'pip freeze' para no perder la estructura.
+# ═══════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════
 # CORE FRAMEWORK
 # ═══════════════════════════════════════════════════
 Django==5.0.9

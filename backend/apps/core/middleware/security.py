@@ -50,19 +50,23 @@ class SecurityMiddleware:
         # Obtener IP del cliente
         ip = self.get_client_ip(request)
 
-        # Verificar throttling por IP
-        if self.is_ip_throttled(ip):
-            logger.warning(
-                f"IP throttled: {ip}",
-                extra={
-                    'ip': ip,
-                    'path': request.path,
-                    'method': request.method,
-                }
-            )
-            return JsonResponse({
-                'error': 'Demasiadas solicitudes. Por favor, intente más tarde.'
-            }, status=429)
+        # Verificar throttling por IP (si está habilitado)
+        if getattr(settings, 'RATELIMIT_ENABLE', True):
+            # Whitelist para desarrollo
+            if settings.DEBUG and ip in ['127.0.0.1', 'localhost', '::1']:
+                pass
+            elif self.is_ip_throttled(ip):
+                logger.warning(
+                    f"IP throttled: {ip}",
+                    extra={
+                        'ip': ip,
+                        'path': request.path,
+                        'method': request.method,
+                    }
+                )
+                return JsonResponse({
+                    'error': 'Demasiadas solicitudes. Por favor, intente más tarde.'
+                }, status=429)
 
         # Detectar SQL injection en parámetros GET
         if self.detect_sql_injection(request.GET):
@@ -167,6 +171,11 @@ class IPBlockMiddleware:
 
     def __call__(self, request):
         ip = self.get_client_ip(request)
+
+        # Whitelist para IPs de desarrollo (localhost)
+        WHITELISTED_IPS = ['127.0.0.1', 'localhost', '::1']
+        if ip in WHITELISTED_IPS or (hasattr(settings, 'DEBUG') and settings.DEBUG):
+            return self.get_response(request)
 
         # Verificar si la IP está bloqueada
         if cache.get(f'blocked_ip_{ip}'):

@@ -45,4 +45,18 @@ export const authAPI = {
     });
     return response.data;
   },
+
+  /**
+   * Cerrar sesión (P0-03: Invalida el refresh token en el servidor)
+   * Esto agrega el token a la blacklist para que no pueda ser usado nuevamente
+   */
+  logout: async (refreshToken: string): Promise<void> => {
+    try {
+      await axios.post('/auth/logout/', { refresh: refreshToken });
+    } catch (error) {
+      // Si falla el logout en servidor (token ya inválido), continuamos
+      // El cliente debe limpiar su estado de todas formas
+      console.warn('Server logout failed (token may be expired):', error);
+    }
+  },
 };

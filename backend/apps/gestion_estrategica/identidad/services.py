@@ -58,7 +58,8 @@ class GestorDocumentalService:
         los módulos de Identidad y Sistema Documental.
 
         Args:
-            politica: Instancia de PoliticaEspecifica o PoliticaIntegral
+            politica: Instancia de PoliticaEspecifica (v3.1: políticas integrales
+                      ahora tienen is_integral_policy=True)
             proceso_firma: ProcesoFirmaPolitica completado
             request_user: Usuario que solicita el envío
             clasificacion: Nivel de clasificación del documento

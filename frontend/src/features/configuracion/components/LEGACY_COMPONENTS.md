@@ -1,6 +1,6 @@
 # Componentes Legacy - Modulo Configuracion
 
-Este documento lista los componentes que fueron eliminados o deprecados durante la refactorizacion RBAC v3.3.0.
+Este documento lista los componentes que fueron eliminados o deprecados durante la refactorizacion RBAC.
 
 ## Componentes Eliminados
 
@@ -12,50 +12,63 @@ Este documento lista los componentes que fueron eliminados o deprecados durante 
 
 **Tamano**: 832 lineas
 
-**Razon de eliminacion**: Componente redundante reemplazado por arquitectura modular:
-- `gestion-estrategica/components/rbac/RolesPermisosWrapper.tsx` (wrapper con subtabs)
-- `gestion-estrategica/components/rbac/RolesAdicionalesSubTab.tsx` (gestion completa)
-- `talent-hub/pages/TalentHubPage.tsx` (tab Roles Adicionales)
+**Razon de eliminacion**: Componente redundante reemplazado por arquitectura modular.
 
 ---
 
-## Arquitectura RBAC Actual (v3.3.0)
+### TabPermisosAcciones.tsx (ELIMINADO)
 
-### Flujo de Configuracion Unificado
+**Estado**: ELIMINADO - 2025-01-13
 
-La configuracion de RBAC se ha simplificado para ser mas intuitiva:
+**Ubicacion anterior**: `frontend/src/features/configuracion/components/CargoFormTabs/TabPermisosAcciones.tsx`
+
+**Razon de eliminacion**: RBAC Unificado v4.0 - Las acciones CRUD ahora estan integradas
+directamente en TabAccesoSecciones.tsx. Cada seccion tiene sus propios checkboxes de
+acciones (Ver, Crear, Editar, Eliminar).
+
+---
+
+## Arquitectura RBAC Actual (v4.0 - Unificado)
+
+### Sistema de Permisos Unificado
+
+El sistema de permisos se ha unificado completamente. Ya no hay separacion entre
+"acceso a secciones" y "permisos de acciones". Ahora todo se configura en un solo lugar:
 
 ```
-Configuracion > Cargos > Modal de Cargo (6 tabs)
+CargoSectionAccess (modelo Django)
+├── cargo_id: FK al cargo
+├── section_id: FK a la seccion del sistema
+├── can_view: Puede ver la seccion
+├── can_create: Puede crear en la seccion
+├── can_edit: Puede editar en la seccion
+└── can_delete: Puede eliminar en la seccion
+```
+
+### Generacion de Codigos de Permiso
+
+Los permisos se generan automaticamente con el formato:
+
+```
+{modulo_code}.{section_code}.{accion}
+
+Ejemplos:
+- gestion_estrategica.empresa.view
+- gestion_estrategica.empresa.edit
+- gestion_estrategica.politicas.create
+- gestion_estrategica.politicas.delete
+```
+
+### Flujo de Configuracion Simplificado
+
+```
+Configuracion > Cargos > Modal de Cargo (5 tabs)
 ├── Tab 1: Identificacion (datos basicos)
 ├── Tab 2: Funciones (manual de funciones)
 ├── Tab 3: Requisitos (formacion, experiencia)
 ├── Tab 4: SST (riesgos, EPP)
-├── Tab 5: Acceso UI (modulos/tabs/secciones visibles)
-└── Tab 6: Permisos (acciones CRUD autorizadas)
-```
-
-### Roles Adicionales → Talento Humano
-
-Los Roles Adicionales (COPASST, Brigadista, Auditor ISO, etc.) se gestionan desde:
-
-```
-Talento Humano > Roles Adicionales
-├── Crear/Editar roles
-├── Asignar a usuarios
-├── Gestionar certificaciones
-└── Ver estadisticas
-```
-
-### RolesPermisosWrapper (Vista de Referencia)
-
-El componente `RolesPermisosWrapper` en Organizacion > Roles y Permisos contiene:
-
-```
-Organizacion > Roles y Permisos
-├── Matriz de Accesos: Vista global de accesos por cargo
-├── Matriz de Permisos: Vista global de permisos por cargo
-└── Catalogo de Permisos: Referencia de los 68 permisos del sistema
+└── Tab 5: Acceso y Permisos (RBAC Unificado v4.0)
+         └── Por cada seccion: checkboxes Ver, Crear, Editar, Eliminar
 ```
 
 ### Componentes Activos
@@ -63,21 +76,43 @@ Organizacion > Roles y Permisos
 ```
 frontend/src/features/
 ├── configuracion/components/
-│   ├── CargoFormModal.tsx (6 tabs, incluye Acceso y Permisos)
+│   ├── CargoFormModal.tsx (5 tabs, Acceso y Permisos unificados)
 │   └── CargoFormTabs/
-│       ├── TabAccesoSecciones.tsx (selector de secciones UI)
-│       ├── TabPermisosAcciones.tsx (selector de permisos CRUD)
+│       ├── TabAccesoSecciones.tsx (RBAC v4.0 - secciones con acciones CRUD)
 │       └── index.ts
-├── gestion-estrategica/components/rbac/
-│   ├── RolesPermisosWrapper.tsx (3 subtabs para vista global)
-│   ├── PermisosCargoSubTab.tsx (matriz de permisos)
-│   ├── RolesAdicionalesSubTab.tsx (CRUD de roles adicionales)
-│   └── TodosPermisosSubTab.tsx (catalogo de permisos)
 └── talent-hub/pages/
-    └── TalentHubPage.tsx (incluye tab de Roles Adicionales)
+    └── TalentHubPage.tsx (6 tabs: Estructura, Seleccion, Colaboradores, Onboarding, Formacion, Desempeno)
+```
+
+### Verificacion de Permisos en Frontend
+
+Usar el hook `usePermissions` para verificar permisos:
+
+```typescript
+import { usePermissions } from '@/hooks/usePermissions';
+
+const { hasPermission, canDo } = usePermissions();
+
+// Verificar permiso directo
+if (hasPermission('gestion_estrategica.empresa.edit')) {
+  // Mostrar boton editar
+}
+
+// Usar helper canDo
+if (canDo('gestion_estrategica', 'politicas', 'create')) {
+  // Mostrar boton crear politica
+}
 ```
 
 ## Historial de Cambios
+
+- **2025-01-13**: RBAC Unificado v4.0
+  - ELIMINADO: `CargoFormTabs/TabPermisosAcciones.tsx`
+  - Tab 5 y Tab 6 unificados en un solo tab "Acceso y Permisos"
+  - TabAccesoSecciones ahora incluye checkboxes de acciones CRUD por seccion
+  - Modelo CargoSectionAccess ampliado con can_view, can_create, can_edit, can_delete
+  - Permisos generados dinamicamente desde CargoSectionAccess
+  - usePermissions actualizado: canDo ahora usa 'edit' en lugar de 'update'
 
 - **2025-01-12**: RBAC v3.3.0
   - ELIMINADO: `configuracion/components/RolesTab.tsx` (832 lineas)
@@ -85,4 +120,3 @@ frontend/src/features/
   - RolesAdicionalesSubTab movido a Talent Hub
   - RolesPermisosWrapper simplificado a 3 subtabs
   - UserForm simplificado (eliminada seccion Roles Funcionales)
-  - ESLint actualizado a v9.39.2

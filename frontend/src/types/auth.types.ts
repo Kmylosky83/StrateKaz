@@ -40,6 +40,11 @@ export interface User {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+  // Campos RBAC para control de acceso
+  /** IDs de secciones autorizadas. null = superuser (acceso total), [] = sin acceso */
+  section_ids: number[] | null;
+  /** Códigos de permisos CRUD. ['*'] = superuser (todos), [] = sin permisos */
+  permission_codes: string[] | null;
 }
 
 export interface LoginCredentials {
@@ -58,6 +63,7 @@ export interface AuthState {
   refreshToken: string | null;
   isAuthenticated: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;  // P0-03: Ahora es async para invalidar token en servidor
+  refreshProfile: () => Promise<void>;
   setUser: (user: User) => void;
 }

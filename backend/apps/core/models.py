@@ -2542,6 +2542,12 @@ class TabSection(models.Model):
         verbose_name='Es sección core',
         help_text='Las secciones core no pueden desactivarse'
     )
+    supported_actions = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Acciones soportadas',
+        help_text='Lista de códigos de acciones extra soportadas (ej: ["enviar", "aprobar"])'
+    )
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name='Fecha de creación'
@@ -3127,15 +3133,16 @@ class UserRolAdicional(models.Model):
 
 class CargoSectionAccess(models.Model):
     """
-    Define qué secciones del sistema puede acceder cada cargo.
+    Define qué secciones del sistema puede acceder cada cargo y qué acciones puede realizar.
 
-    Esta tabla relaciona Cargo con TabSection para controlar
-    el acceso a las diferentes partes del sistema.
+    Sistema RBAC Unificado v4.0:
+    - Controla visibilidad de secciones en sidebar/navegación
+    - Controla acciones CRUD disponibles en cada sección
+    - Un solo lugar de configuración para el administrador
 
-    La matriz de permisos por cargo usa este modelo para:
-    - Definir qué módulos/tabs/secciones puede ver cada cargo
-    - Controlar la navegación dinámica del sidebar
-    - Aplicar restricciones de acceso en el frontend
+    Ejemplo de uso:
+        cargo=Analista, section=Datos Empresa, can_view=True, can_edit=True
+        → El Analista puede ver la sección Y editar los datos
     """
 
     cargo = models.ForeignKey(
@@ -3150,6 +3157,35 @@ class CargoSectionAccess(models.Model):
         related_name='cargo_accesses',
         verbose_name='Sección'
     )
+
+    # Acciones CRUD integradas - si tiene acceso a la sección, qué puede hacer
+    can_view = models.BooleanField(
+        default=True,
+        verbose_name='Puede ver',
+        help_text='Permite ver/acceder a esta sección'
+    )
+    can_create = models.BooleanField(
+        default=False,
+        verbose_name='Puede crear',
+        help_text='Permite crear nuevos registros en esta sección'
+    )
+    can_edit = models.BooleanField(
+        default=False,
+        verbose_name='Puede editar',
+        help_text='Permite modificar registros existentes'
+    )
+    can_delete = models.BooleanField(
+        default=False,
+        verbose_name='Puede eliminar',
+        help_text='Permite eliminar registros'
+    )
+    custom_actions = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Acciones personalizadas',
+        help_text='Estado de acciones extra (ej: {"enviar": true})'
+    )
+
     granted_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name='Fecha de asignación'
@@ -3175,7 +3211,30 @@ class CargoSectionAccess(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.cargo.name} -> {self.section.name}"
+        actions = []
+        if self.can_view:
+            actions.append('V')
+        if self.can_create:
+            actions.append('C')
+        if self.can_edit:
+            actions.append('E')
+        if self.can_delete:
+            actions.append('D')
+        return f"{self.cargo.name} -> {self.section.name} [{'/'.join(actions)}]"
+
+    @property
+    def actions_list(self):
+        """Retorna lista de acciones permitidas"""
+        actions = []
+        if self.can_view:
+            actions.append('view')
+        if self.can_create:
+            actions.append('create')
+        if self.can_edit:
+            actions.append('edit')
+        if self.can_delete:
+            actions.append('delete')
+        return actions
 
 
 # =============================================================================

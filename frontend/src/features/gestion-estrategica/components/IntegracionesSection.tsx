@@ -13,8 +13,6 @@
 import { useState } from 'react';
 import {
   Plus,
-  Pencil,
-  Trash2,
   Wifi,
   Mail,
   FileText,
@@ -28,10 +26,16 @@ import {
   PenTool,
   Cloud,
   Plug,
+  Database,
+  Lock,
+  RefreshCw,
 } from 'lucide-react';
-import { Card, Badge, Button } from '@/components/common';
+import { Card, Badge, Button, BadgeVariant } from '@/components/common';
+import { ActionButtons } from '@/components/common/ActionButtons';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { Alert } from '@/components/common/Alert';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import { Select } from '@/components/forms/Select';
 import { Switch } from '@/components/forms/Switch';
 import {
@@ -82,10 +86,10 @@ const StatusBadge = ({ status, isActive }: { status: StatusIndicator; isActive: 
     );
   }
 
-  const variants: Record<StatusIndicator, 'success' | 'warning' | 'error'> = {
+  const variants: Record<StatusIndicator, BadgeVariant> = {
     success: 'success',
     warning: 'warning',
-    danger: 'error',
+    danger: 'danger',
   };
 
   const labels: Record<StatusIndicator, string> = {
@@ -102,6 +106,7 @@ const StatusBadge = ({ status, isActive }: { status: StatusIndicator; isActive: 
 };
 
 export const IntegracionesSection = () => {
+  const { canDo } = usePermissions();
   // Hooks de datos
   const { data: integracionesData, isLoading, error } = useIntegraciones();
   const deleteMutation = useDeleteIntegracion();
@@ -208,10 +213,12 @@ export const IntegracionesSection = () => {
                 </p>
               </div>
             </div>
-            <Button variant="primary" size="sm" onClick={handleAdd}>
-              <Plus className="h-4 w-4 mr-2" />
-              Agregar Integración
-            </Button>
+            {canDo(Modules.GESTION_ESTRATEGICA, Sections.INTEGRACIONES, 'create') && (
+              <Button variant="primary" size="sm" onClick={handleAdd}>
+                <Plus className="h-4 w-4 mr-2" />
+                Agregar Integración
+              </Button>
+            )}
           </div>
 
           {/* Filtros */}
@@ -324,44 +331,35 @@ export const IntegracionesSection = () => {
                         <td className="py-3 px-4 text-gray-600 dark:text-gray-300">
                           {integracion.ultima_verificacion
                             ? formatDistanceToNow(new Date(integracion.ultima_verificacion), {
-                                addSuffix: true,
-                                locale: es,
-                              })
+                              addSuffix: true,
+                              locale: es,
+                            })
                             : 'Nunca'}
                         </td>
                         <td className="py-3 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1">
+                          <div className="flex items-center justify-end gap-2">
                             <Switch
                               checked={integracion.is_active}
                               onChange={() => handleToggleStatus(integracion.id)}
                               size="sm"
+                              disabled={!canDo(Modules.GESTION_ESTRATEGICA, Sections.INTEGRACIONES, 'edit')}
                             />
-                            <Button
-                              variant="ghost"
+                            <ActionButtons
+                              module={Modules.GESTION_ESTRATEGICA}
+                              section={Sections.INTEGRACIONES}
+                              onEdit={() => handleEdit(integracion)}
+                              onDelete={() => handleDeleteClick(integracion)}
                               size="sm"
-                              onClick={() => handleTestConnection(integracion.id)}
-                              title="Probar conexión"
-                              disabled={!integracion.is_active || testConnectionMutation.isPending}
-                            >
-                              <Wifi className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEdit(integracion)}
-                              title="Editar"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteClick(integracion)}
-                              title="Eliminar"
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                              customActions={[
+                                {
+                                  key: 'test-connection',
+                                  label: 'Probar conexión',
+                                  icon: <Wifi className="h-4 w-4" />,
+                                  onClick: () => handleTestConnection(integracion.id),
+                                  disabled: !integracion.is_active || testConnectionMutation.isPending
+                                }
+                              ]}
+                            />
                           </div>
                         </td>
                       </tr>
@@ -398,10 +396,12 @@ export const IntegracionesSection = () => {
               <p className="text-gray-500 dark:text-gray-400 mb-4">
                 Agregue la primera integración para conectar con servicios externos.
               </p>
-              <Button variant="primary" onClick={handleAdd}>
-                <Plus className="h-4 w-4 mr-2" />
-                Agregar Primera Integración
-              </Button>
+              {canDo(Modules.GESTION_ESTRATEGICA, Sections.INTEGRACIONES, 'create') && (
+                <Button variant="primary" onClick={handleAdd}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Agregar Primera Integración
+                </Button>
+              )}
             </div>
           )}
         </div>
@@ -427,8 +427,7 @@ export const IntegracionesSection = () => {
         onConfirm={handleConfirmDelete}
         title="Eliminar Integración"
         message={`¿Está seguro de eliminar la integración "${integracionToDelete?.nombre}"? Esta acción puede afectar funcionalidades del sistema que dependan de esta integración.`}
-        confirmText="Eliminar"
-        confirmVariant="danger"
+        variant="danger"
         isLoading={deleteMutation.isPending}
       />
     </>

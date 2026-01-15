@@ -13,12 +13,16 @@
 import { useState } from 'react';
 import { Plus, Edit, Trash2, MapPin, Building2, Star, CheckCircle2 } from 'lucide-react';
 import { Card, Badge, Button } from '@/components/common';
+import { ActionButtons } from '@/components/common/ActionButtons';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 import { useSedes, useDeleteSede, useSetSedePrincipal } from '../hooks/useStrategic';
 import { SedeFormModal } from './modals/SedeFormModal';
 import type { SedeEmpresaList } from '../types/strategic.types';
 
 export const SedesSection = () => {
+  const { canDo } = usePermissions();
   const { data: sedesData, isLoading } = useSedes();
   const deleteMutation = useDeleteSede();
   const setPrincipalMutation = useSetSedePrincipal();
@@ -91,10 +95,12 @@ export const SedesSection = () => {
                 </p>
               </div>
             </div>
-            <Button variant="primary" size="sm" onClick={handleAdd}>
-              <Plus className="h-4 w-4 mr-2" />
-              Agregar Sede
-            </Button>
+            {canDo(Modules.GESTION_ESTRATEGICA, Sections.SEDES, 'create') && (
+              <Button variant="primary" size="sm" onClick={handleAdd}>
+                <Plus className="h-4 w-4 mr-2" />
+                Agregar Sede
+              </Button>
+            )}
           </div>
 
           {/* Tabla de sedes */}
@@ -181,35 +187,23 @@ export const SedesSection = () => {
                       </td>
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1">
-                          {!sede.es_sede_principal && sede.is_active && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleSetPrincipal(sede)}
-                              title="Establecer como sede principal"
-                            >
-                              <Star className="h-4 w-4" />
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
+                          <ActionButtons
+                            module={Modules.GESTION_ESTRATEGICA}
+                            section={Sections.SEDES}
+                            onEdit={() => handleEdit(sede)}
+                            onDelete={!sede.es_sede_principal ? () => handleDeleteClick(sede) : undefined}
                             size="sm"
-                            onClick={() => handleEdit(sede)}
-                            title="Editar sede"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          {!sede.es_sede_principal && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteClick(sede)}
-                              title="Eliminar sede"
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
+                            customActions={
+                              !sede.es_sede_principal && sede.is_active ? [
+                                {
+                                  key: 'set-principal',
+                                  label: 'Establecer como principal',
+                                  icon: <Star className="h-4 w-4" />,
+                                  onClick: () => handleSetPrincipal(sede),
+                                }
+                              ] : []
+                            }
+                          />
                         </div>
                       </td>
                     </tr>
@@ -228,10 +222,12 @@ export const SedesSection = () => {
               <p className="text-gray-500 dark:text-gray-400 mb-4">
                 Agregue la primera sede de su empresa para comenzar.
               </p>
-              <Button variant="primary" onClick={handleAdd}>
-                <Plus className="h-4 w-4 mr-2" />
-                Agregar Primera Sede
-              </Button>
+              {canDo(Modules.GESTION_ESTRATEGICA, Sections.SEDES, 'create') && (
+                <Button variant="primary" onClick={handleAdd}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Agregar Primera Sede
+                </Button>
+              )}
             </div>
           )}
         </div>

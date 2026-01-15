@@ -12,8 +12,6 @@ import {
   Plus,
   Search,
   Eye,
-  Edit,
-  Trash2,
   PenTool,
   CheckCircle,
   Clock,
@@ -45,6 +43,9 @@ import {
 // Components
 import { UnifiedPolicyModal } from './UnifiedPolicyModal';
 import { PolicyDetailModal } from './PolicyDetailModal';
+import { ActionButtons } from '@/components/common/ActionButtons';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 
 // Types
 import type { Politica, PoliticaFilters, PoliticaStatus, TipoPolitica } from '../../types/policies.types';
@@ -73,6 +74,7 @@ interface PoliciesListProps {
 
 export function PoliciesList({ identityId }: PoliciesListProps) {
   const { primaryColor } = useBrandingConfig();
+  const { canDo } = usePermissions();
 
   // State
   const [filters, setFilters] = useState<PoliticaFilters>({ identity: identityId });
@@ -249,14 +251,16 @@ export function PoliciesList({ identityId }: PoliciesListProps) {
             ))}
           </select>
         </div>
-        <Button
-          onClick={() => handleCreate()}
-          className="flex items-center gap-2"
-          style={{ backgroundColor: primaryColor }}
-        >
-          <Plus className="w-4 h-4" />
-          Nueva Política
-        </Button>
+        {canDo(Modules.GESTION_ESTRATEGICA, Sections.POLITICAS, 'create') && (
+          <Button
+            onClick={() => handleCreate()}
+            className="flex items-center gap-2"
+            style={{ backgroundColor: primaryColor }}
+          >
+            <Plus className="w-4 h-4" />
+            Nueva Política
+          </Button>
+        )}
       </div>
 
       {/* Empty state */}
@@ -274,13 +278,15 @@ export function PoliciesList({ identityId }: PoliciesListProps) {
           <p className="text-gray-500 mb-6">
             Crea tu primera política para comenzar a gestionar el cumplimiento normativo.
           </p>
-          <Button
-            onClick={() => handleCreate()}
-            style={{ backgroundColor: primaryColor }}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Crear Primera Política
-          </Button>
+          {canDo(Modules.GESTION_ESTRATEGICA, Sections.POLITICAS, 'create') && (
+            <Button
+              onClick={() => handleCreate()}
+              style={{ backgroundColor: primaryColor }}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Crear Primera Política
+            </Button>
+          )}
         </div>
       )}
 
@@ -317,15 +323,17 @@ export function PoliciesList({ identityId }: PoliciesListProps) {
                     </p>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleCreate(tipo.id)}
-                  className="flex items-center gap-1"
-                >
-                  <Plus className="w-4 h-4" />
-                  Agregar
-                </Button>
+                {canDo(Modules.GESTION_ESTRATEGICA, Sections.POLITICAS, 'create') && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleCreate(tipo.id)}
+                    className="flex items-center gap-1"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Agregar
+                  </Button>
+                )}
               </div>
 
               {/* Políticas del tipo */}
@@ -398,30 +406,25 @@ export function PoliciesList({ identityId }: PoliciesListProps) {
                           >
                             {/* BORRADOR: Editar, Enviar a Firma, Eliminar */}
                             {politica.status === 'BORRADOR' && (
-                              <>
-                                <button
-                                  onClick={() => handleEdit(politica)}
-                                  className="p-1.5 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                                  title="Editar"
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => handleIniciarFirma(politica)}
-                                  className="p-1.5 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
-                                  title="Enviar a firma"
-                                  disabled={iniciarFirmaMutation.isPending}
-                                >
-                                  <Send className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => setConfirmDelete(politica)}
-                                  className="p-1.5 rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
-                                  title="Eliminar"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </>
+                              <div className="flex items-center gap-1">
+                                <ActionButtons
+                                  module={Modules.GESTION_ESTRATEGICA}
+                                  section={Sections.POLITICAS}
+                                  onEdit={() => handleEdit(politica)}
+                                  onDelete={() => setConfirmDelete(politica)}
+                                  size="sm"
+                                />
+                                {canDo(Modules.GESTION_ESTRATEGICA, Sections.POLITICAS, 'edit') && (
+                                  <button
+                                    onClick={() => handleIniciarFirma(politica)}
+                                    className="p-2 rounded-full text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+                                    title="Enviar a firma"
+                                    disabled={iniciarFirmaMutation.isPending}
+                                  >
+                                    <Send className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </div>
                             )}
 
                             {/* EN_REVISION: Ver progreso de firmas (indicador visual) */}
@@ -498,10 +501,14 @@ export function PoliciesList({ identityId }: PoliciesListProps) {
           setSelectedPolitica(null);
         }}
         politica={selectedPolitica}
-        onEdit={() => {
-          setIsDetailModalOpen(false);
-          setIsEditModalOpen(true);
-        }}
+        onEdit={
+          canDo(Modules.GESTION_ESTRATEGICA, Sections.POLITICAS, 'edit')
+            ? () => {
+              setIsDetailModalOpen(false);
+              setIsEditModalOpen(true);
+            }
+            : undefined
+        }
       />
 
       {/* Confirm Delete Dialog */}

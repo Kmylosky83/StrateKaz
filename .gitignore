@@ -6,6 +6,8 @@ __pycache__/
 .Python
 env/
 venv/
+venv_*/
+.venv/
 ENV/
 build/
 develop-eggs/
@@ -78,6 +80,21 @@ yarn-debug.log*
 nul
 .temp/
 tmp/
+
+# Build artifacts and backups
+*.tar
+*.tar.gz
+*.zip
+backend-cpanel.tar.gz
+StrateKaz_Frontend.tar
+
+# Agent/Analysis scripts (temporary)
+.agent/
+analyze_*.py
+
+# Requirements específicos de deployment (usar deploy/cpanel/)
+backend/requirements-cpanel.txt
+backend/requirements-prod.txt
 
 # OS specific
 Thumbs.db

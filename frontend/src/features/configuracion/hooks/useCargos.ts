@@ -151,3 +151,145 @@ export function useCargoChoices() {
     staleTime: Infinity, // No cambian frecuentemente
   });
 }
+
+// ============================================================================
+// PERMISOS DE CARGO (para TabPermisosAcciones)
+// ============================================================================
+
+/**
+ * Hook para obtener permisos agrupados por módulo
+ */
+export function usePermisosAgrupados() {
+  return useQuery({
+    queryKey: ['permisos-agrupados'],
+    queryFn: () => rbacAPI.getPermissionsGrouped(),
+    staleTime: 10 * 60 * 1000, // 10 minutos (permisos no cambian frecuentemente)
+  });
+}
+
+/**
+ * Hook para obtener permisos de un cargo específico
+ */
+export function useCargoPermisos(cargoId: number | null) {
+  return useQuery({
+    queryKey: ['cargo-permisos', cargoId],
+    queryFn: async () => {
+      const cargo = await rbacAPI.getCargo(cargoId!);
+      // El backend devuelve 'permisos', normalizamos a 'permissions'
+      return {
+        ...cargo,
+        permissions: cargo.permisos || [],
+        permissions_count: cargo.permisos?.length || cargo.permissions_count || 0,
+      };
+    },
+    enabled: cargoId !== null,
+    staleTime: 30 * 1000, // 30 segundos
+  });
+}
+
+/**
+ * Hook para asignar permisos a un cargo (usado por TabPermisosAcciones)
+ */
+export function useAsignarPermisosCargo() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ cargoId, permissionIds }: { cargoId: number; permissionIds: number[] }) => {
+      return rbacAPI.assignPermissionsToCargo(cargoId, permissionIds, true);
+    },
+    onSuccess: (_, variables) => {
+      // Invalidar y refetch inmediato de todas las queries relacionadas
+      queryClient.invalidateQueries({ queryKey: ['cargos-rbac'] });
+      queryClient.invalidateQueries({ queryKey: ['cargo-rbac', variables.cargoId] });
+      queryClient.invalidateQueries({ queryKey: ['cargo-permisos', variables.cargoId] });
+      // También invalidar el sidebar y tree para que se actualice la navegación
+      queryClient.invalidateQueries({ queryKey: ['modules', 'sidebar'] });
+      queryClient.invalidateQueries({ queryKey: ['modules', 'tree'] });
+    },
+  });
+}
+
+// ============================================================================
+// ACCESO A SECCIONES (para TabAccesoSecciones)
+// Sistema RBAC Unificado v4.0 - acciones integradas en acceso a secciones
+// ============================================================================
+
+/** Tipo para acceso a sección con acciones CRUD */
+export interface SectionAccessData {
+  section_id: number;
+  can_view: boolean;
+  can_create: boolean;
+  can_edit: boolean;
+  can_delete: boolean;
+  custom_actions?: Record<string, boolean>;
+}
+
+/** Respuesta del endpoint de accesos */
+interface CargoSectionAccessResponse {
+  cargo_id: number;
+  cargo_name: string;
+  accesses: Array<{
+    section_id: number;
+    section_code: string;
+    section_name: string;
+    module_code: string;
+    module_name: string;
+    tab_code: string;
+    tab_name: string;
+    can_view: boolean;
+    can_create: boolean;
+    can_edit: boolean;
+    can_delete: boolean;
+    custom_actions?: Record<string, boolean>;
+    supported_actions: string[];
+  }>;
+  total_sections: number;
+}
+
+/**
+ * Hook para obtener accesos a secciones de un cargo (con acciones CRUD)
+ */
+export function useCargoSectionAccess(cargoId: number | null) {
+  return useQuery<CargoSectionAccessResponse>({
+    queryKey: ['cargo-section-access', cargoId],
+    queryFn: () => rbacAPI.getCargoSectionAccess(cargoId!),
+    enabled: cargoId !== null,
+    staleTime: 30 * 1000,
+  });
+}
+
+/**
+ * Hook para guardar accesos a secciones de un cargo (con acciones CRUD)
+ * Sistema RBAC Unificado v4.0
+ */
+export function useSaveCargoSectionAccess() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      cargoId,
+      accesses,
+      sectionIds,
+    }: {
+      cargoId: number;
+      accesses?: SectionAccessData[];
+      sectionIds?: number[];
+    }) => {
+      // Usar nuevo formato con acciones si está disponible
+      if (accesses) {
+        return rbacAPI.assignCargoSectionAccessWithActions(cargoId, accesses, true);
+      }
+      // Fallback al formato legacy (solo IDs)
+      return rbacAPI.assignCargoSectionAccess(cargoId, sectionIds || [], true);
+    },
+    onSuccess: (_, variables) => {
+      // Invalidar y refetch inmediato de todas las queries relacionadas
+      queryClient.invalidateQueries({ queryKey: ['cargos-rbac'] });
+      queryClient.invalidateQueries({ queryKey: ['cargo-rbac', variables.cargoId] });
+      queryClient.invalidateQueries({ queryKey: ['cargo-section-access', variables.cargoId] });
+      // Invalidar sidebar y tree para actualización inmediata de navegación
+      queryClient.invalidateQueries({ queryKey: ['modules', 'sidebar'] });
+      queryClient.invalidateQueries({ queryKey: ['modules', 'tree'] });
+    },
+  });
+}

@@ -89,21 +89,13 @@ class NotificacionViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         summary='Obtener notificaciones no leídas',
-        description='Retorna todas las notificaciones no leídas de un usuario específico',
-        tags=['Audit System'],
-        parameters=[
-            OpenApiParameter(
-                name='usuario_id',
-                type=OpenApiTypes.UUID,
-                location=OpenApiParameter.QUERY,
-                description='ID del usuario',
-                required=True
-            )
-        ]
+        description='Retorna todas las notificaciones no leídas del usuario actual',
+        tags=['Audit System']
     )
     @action(detail=False, methods=['get'])
     def no_leidas(self, request):
-        usuario_id = request.query_params.get('usuario_id')
+        # Usar el usuario actual si no se especifica usuario_id
+        usuario_id = request.query_params.get('usuario_id', request.user.id)
         notifs = self.get_queryset().filter(usuario_id=usuario_id, esta_leida=False)
         serializer = self.get_serializer(notifs, many=True)
         return Response(serializer.data)

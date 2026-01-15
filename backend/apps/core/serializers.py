@@ -6,7 +6,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
-from .models import User, Cargo, Permiso, CargoPermiso
+from .models import User, Cargo, Permiso, CargoPermiso, CargoSectionAccess
 
 
 class CargoSerializer(serializers.ModelSerializer):
@@ -79,6 +79,10 @@ class UserDetailSerializer(serializers.ModelSerializer):
     cargo_level = serializers.IntegerField(read_only=True)
     is_deleted = serializers.BooleanField(read_only=True)
 
+    # Campos RBAC para control de acceso
+    section_ids = serializers.SerializerMethodField()
+    permission_codes = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
@@ -105,6 +109,9 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
             'deleted_at',
+            # Campos RBAC
+            'section_ids',
+            'permission_codes',
         ]
         read_only_fields = [
             'id',
@@ -119,6 +126,65 @@ class UserDetailSerializer(serializers.ModelSerializer):
     def get_full_name(self, obj):
         """Retorna nombre completo del usuario"""
         return obj.get_full_name() or obj.username
+
+    def get_section_ids(self, obj):
+        """
+        Retorna IDs de secciones autorizadas por el cargo del usuario.
+        - Super usuario: None (tiene acceso total, no necesita lista)
+        - Usuario normal: lista de section_ids autorizados (donde can_view=True)
+        """
+        if obj.is_superuser:
+            return None  # Super usuario no necesita filtrado
+
+        cargo = getattr(obj, 'cargo', None)
+        if not cargo:
+            return []
+
+        return list(
+            CargoSectionAccess.objects.filter(cargo=cargo, can_view=True)
+            .values_list('section_id', flat=True)
+        )
+
+    def get_permission_codes(self, obj):
+        """
+        Retorna códigos de permisos CRUD autorizados desde CargoSectionAccess.
+        Sistema RBAC Unificado v4.0 - permisos integrados en acceso a secciones.
+
+        Formato: "modulo.seccion.accion"
+        Ejemplo: "gestion_estrategica.empresa.edit"
+
+        - Super usuario: ['*'] (tiene todos los permisos)
+        - Usuario normal: lista de códigos derivados de CargoSectionAccess
+        """
+        if obj.is_superuser:
+            return ['*']  # Super usuario tiene todos los permisos
+
+        cargo = getattr(obj, 'cargo', None)
+        if not cargo:
+            return []
+
+        # Obtener accesos con sus secciones y módulos
+        accesses = CargoSectionAccess.objects.filter(cargo=cargo).select_related(
+            'section__tab__module'
+        )
+
+        permission_codes = []
+        for access in accesses:
+            section = access.section
+            module_code = section.tab.module.code.lower()
+            section_code = section.code.lower()
+
+            # Generar códigos de permiso basados en las acciones habilitadas
+            if access.can_view:
+                permission_codes.append(f"{module_code}.{section_code}.view")
+            if access.can_create:
+                permission_codes.append(f"{module_code}.{section_code}.create")
+            if access.can_edit:
+                permission_codes.append(f"{module_code}.{section_code}.edit")
+            if access.can_delete:
+                permission_codes.append(f"{module_code}.{section_code}.delete")
+
+        return permission_codes
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
@@ -401,43 +467,32 @@ class CargoPermisoSerializer(serializers.ModelSerializer):
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """
-    Serializer personalizado para JWT que incluye información del usuario en el token
+    Serializer personalizado para JWT con payload mínimo (P0-04)
 
-    Agrega al payload del token:
-    - username
-    - email
-    - cargo_code
-    - cargo_name
-    - full_name
-    - is_superuser
+    SEGURIDAD: El payload del token SOLO contiene datos mínimos:
+    - user_id (standard JWT)
+    - exp (expiration)
+    - iat (issued at)
+    - jti (JWT ID para blacklist)
+    - is_superuser (para verificaciones de admin)
+
+    La información detallada del usuario se devuelve en la respuesta HTTP,
+    NO en el payload del token (evita exposición de datos personales en base64).
     """
 
     @classmethod
     def get_token(cls, user):
+        # P0-04: Payload mínimo - Solo datos esenciales para autenticación
         token = super().get_token(user)
-
-        # Agregar información personalizada al token
-        token['username'] = user.username
-        token['email'] = user.email or ''
-        token['full_name'] = user.get_full_name() or user.username
+        # Solo is_superuser para verificaciones rápidas (no es dato personal sensible)
         token['is_superuser'] = user.is_superuser
-
-        # Agregar información del cargo
-        if user.cargo:
-            token['cargo_code'] = user.cargo.code
-            token['cargo_name'] = user.cargo.name
-            token['cargo_level'] = user.cargo.level
-        else:
-            token['cargo_code'] = None
-            token['cargo_name'] = None
-            token['cargo_level'] = None
-
         return token
 
     def validate(self, attrs):
         data = super().validate(attrs)
 
-        # Agregar información adicional en la respuesta
+        # La información del usuario va en la respuesta HTTP (no en el token)
+        # Esto permite al frontend tener los datos sin exponerlos en el JWT
         data['user'] = {
             'id': self.user.id,
             'username': self.user.username,
@@ -451,3 +506,26 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         }
 
         return data
+
+
+class LogoutSerializer(serializers.Serializer):
+    """
+    Serializer para logout (P0-03) - Invalida el refresh token
+    """
+    refresh = serializers.CharField(
+        help_text="Refresh token a invalidar"
+    )
+
+    def validate_refresh(self, value):
+        """Valida que el token sea un refresh token válido"""
+        from rest_framework_simplejwt.tokens import RefreshToken
+        from rest_framework_simplejwt.exceptions import TokenError
+        try:
+            self.token = RefreshToken(value)
+        except TokenError as e:
+            raise serializers.ValidationError(str(e))
+        return value
+
+    def save(self, **kwargs):
+        """Agrega el token a la blacklist"""
+        self.token.blacklist()

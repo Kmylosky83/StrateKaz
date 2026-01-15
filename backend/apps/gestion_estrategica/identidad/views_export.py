@@ -1,16 +1,18 @@
 """
-Views de Exportación para Identidad Corporativa
-================================================
+Views de Exportación para Identidad Corporativa (v3.1)
+======================================================
 
 Endpoints para exportar documentos en formato PDF y DOCX.
 
 Endpoints:
-- GET /export/politica-integral/{id}/pdf/ - Exportar política integral a PDF
-- GET /export/politica-integral/{id}/docx/ - Exportar política integral a DOCX
-- GET /export/politica-especifica/{id}/pdf/ - Exportar política específica a PDF
-- GET /export/politica-especifica/{id}/docx/ - Exportar política específica a DOCX
+- GET /export/politica-especifica/{id}/pdf/ - Exportar política a PDF
+- GET /export/politica-especifica/{id}/docx/ - Exportar política a DOCX
 - GET /export/identidad/{id}/pdf/ - Exportar identidad corporativa completa a PDF
 - GET /export/identidad/{id}/docx/ - Exportar identidad corporativa completa a DOCX
+
+NOTA v3.1: /export/politica-integral/ ha sido eliminado.
+Las políticas integrales ahora se exportan desde /export/politica-especifica/
+con is_integral_policy=True detectado automáticamente.
 """
 
 from django.http import HttpResponse, Http404
@@ -22,7 +24,6 @@ from rest_framework.response import Response
 
 from .models import (
     CorporateIdentity,
-    PoliticaIntegral,
     PoliticaEspecifica,
 )
 from .models_workflow import FirmaDigital, HistorialVersion
@@ -62,129 +63,7 @@ def _get_empresa_from_identity(identity):
 
 
 # =============================================================================
-# EXPORTACIÓN DE POLÍTICA INTEGRAL
-# =============================================================================
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def export_politica_integral_pdf(request, pk):
-    """
-    Exporta una política integral a PDF.
-
-    Query params:
-    - include_firmas: bool (default: true) - Incluir tabla de firmas
-    - include_historial: bool (default: true) - Incluir historial de cambios
-
-    Response:
-    - Content-Type: application/pdf
-    - Content-Disposition: attachment; filename="politica-integral-v{version}.pdf"
-    """
-    politica = get_object_or_404(PoliticaIntegral, pk=pk, is_active=True)
-
-    # Verificar permisos (puede ver la política)
-    # TODO: Implementar verificación de permisos específicos
-
-    # Obtener parámetros
-    include_firmas = request.query_params.get('include_firmas', 'true').lower() == 'true'
-    include_historial = request.query_params.get('include_historial', 'true').lower() == 'true'
-
-    # Obtener datos relacionados
-    firmas = _get_firmas_documento(politica) if include_firmas else None
-    historial = _get_historial_documento(politica) if include_historial else None
-    empresa = _get_empresa_from_identity(politica.identity)
-
-    try:
-        # Generar PDF
-        generator = IdentidadPDFGenerator(empresa=empresa)
-        pdf_buffer = generator.generate_politica_integral_pdf(
-            politica=politica,
-            firmas=firmas,
-            historial=historial
-        )
-
-        # Preparar respuesta
-        response = HttpResponse(
-            pdf_buffer.getvalue(),
-            content_type='application/pdf'
-        )
-        response['Content-Disposition'] = f'attachment; filename="politica-integral-v{politica.version}.pdf"'
-        response['X-Document-Version'] = politica.version
-        response['X-Document-Status'] = politica.status
-
-        return response
-
-    except ImportError as e:
-        return Response(
-            {"error": "WeasyPrint no está instalado. Ejecute: pip install weasyprint"},
-            status=500
-        )
-    except Exception as e:
-        return Response(
-            {"error": f"Error al generar PDF: {str(e)}"},
-            status=500
-        )
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def export_politica_integral_docx(request, pk):
-    """
-    Exporta una política integral a DOCX (Word).
-
-    Query params:
-    - include_firmas: bool (default: true) - Incluir tabla de firmas
-    - include_historial: bool (default: true) - Incluir historial de cambios
-
-    Response:
-    - Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document
-    - Content-Disposition: attachment; filename="politica-integral-v{version}.docx"
-    """
-    politica = get_object_or_404(PoliticaIntegral, pk=pk, is_active=True)
-
-    # Obtener parámetros
-    include_firmas = request.query_params.get('include_firmas', 'true').lower() == 'true'
-    include_historial = request.query_params.get('include_historial', 'true').lower() == 'true'
-
-    # Obtener datos relacionados
-    firmas = _get_firmas_documento(politica) if include_firmas else None
-    historial = _get_historial_documento(politica) if include_historial else None
-    empresa = _get_empresa_from_identity(politica.identity)
-
-    try:
-        # Generar DOCX
-        generator = IdentidadDOCXGenerator(empresa=empresa)
-        docx_buffer = generator.generate_politica_integral_docx(
-            politica=politica,
-            firmas=firmas,
-            historial=historial
-        )
-
-        # Preparar respuesta
-        content_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        response = HttpResponse(
-            docx_buffer.getvalue(),
-            content_type=content_type
-        )
-        response['Content-Disposition'] = f'attachment; filename="politica-integral-v{politica.version}.docx"'
-        response['X-Document-Version'] = politica.version
-        response['X-Document-Status'] = politica.status
-
-        return response
-
-    except ImportError as e:
-        return Response(
-            {"error": "python-docx no está instalado. Ejecute: pip install python-docx"},
-            status=500
-        )
-    except Exception as e:
-        return Response(
-            {"error": f"Error al generar DOCX: {str(e)}"},
-            status=500
-        )
-
-
-# =============================================================================
-# EXPORTACIÓN DE POLÍTICA ESPECÍFICA
+# EXPORTACIÓN DE POLÍTICA (v3.1 - Unificado)
 # =============================================================================
 
 @api_view(['GET'])

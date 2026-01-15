@@ -739,7 +739,7 @@ class TabSectionSerializer(serializers.ModelSerializer):
         model = TabSection
         fields = [
             'id', 'code', 'name', 'description', 'icon',
-            'orden', 'is_enabled', 'is_core', 'can_disable'
+            'orden', 'supported_actions', 'is_enabled', 'is_core', 'can_disable'
         ]
 
     def get_can_disable(self, obj):

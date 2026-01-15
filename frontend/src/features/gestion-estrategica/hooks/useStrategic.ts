@@ -901,7 +901,7 @@ export const useIntegracionLogs = (id: number, filters?: IntegracionLogsFilters)
 
 // --- Reorder Values (for Drag & Drop) ---
 
-export const useReorderValues = () => {
+export const useReorderValues = (identityId?: number) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (newOrder: { id: number; orden: number }[]) => {
@@ -914,38 +914,33 @@ export const useReorderValues = () => {
       return newOrder;
     },
     onMutate: async (newOrder) => {
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: strategicKeys.values() });
+      // Cancel outgoing refetches - use specific identityId query key
+      const queryKey = strategicKeys.values(identityId);
+      await queryClient.cancelQueries({ queryKey });
 
-      // Snapshot previous values for all value queries
-      const previousQueries = queryClient.getQueriesData({ queryKey: strategicKeys.values() });
+      // Snapshot previous values
+      const previousData = queryClient.getQueryData<PaginatedResponse<CorporateValue>>(queryKey);
 
-      // Optimistically update all matching queries
-      queryClient.setQueriesData(
-        { queryKey: strategicKeys.values() },
-        (old: PaginatedResponse<CorporateValue> | undefined) => {
-          if (!old?.results) return old;
-          const updatedResults = old.results.map(value => {
-            const newOrderItem = newOrder.find(item => item.id === value.id);
-            if (newOrderItem) {
-              return { ...value, orden: newOrderItem.orden };
-            }
-            return value;
-          });
-          // Sort by new order
-          updatedResults.sort((a, b) => a.orden - b.orden);
-          return { ...old, results: updatedResults };
-        }
-      );
+      // Optimistically update the cache
+      if (previousData?.results) {
+        const updatedResults = previousData.results.map(value => {
+          const newOrderItem = newOrder.find(item => item.id === value.id);
+          if (newOrderItem) {
+            return { ...value, orden: newOrderItem.orden };
+          }
+          return value;
+        });
+        // Sort by new order
+        updatedResults.sort((a, b) => a.orden - b.orden);
+        queryClient.setQueryData(queryKey, { ...previousData, results: updatedResults });
+      }
 
-      return { previousQueries };
+      return { previousData, queryKey };
     },
     onError: (_err, _newOrder, context) => {
       // Rollback on error
-      if (context?.previousQueries) {
-        context.previousQueries.forEach(([queryKey, data]) => {
-          queryClient.setQueryData(queryKey, data);
-        });
+      if (context?.previousData && context?.queryKey) {
+        queryClient.setQueryData(context.queryKey, context.previousData);
       }
       toast.error('Error al reordenar los valores');
     },
@@ -954,7 +949,7 @@ export const useReorderValues = () => {
     },
     onSettled: () => {
       // Refetch to ensure consistency with server
-      queryClient.invalidateQueries({ queryKey: strategicKeys.values() });
+      queryClient.invalidateQueries({ queryKey: strategicKeys.values(identityId) });
       queryClient.invalidateQueries({ queryKey: strategicKeys.activeIdentity });
     },
   });

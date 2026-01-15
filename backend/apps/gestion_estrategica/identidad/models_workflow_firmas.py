@@ -173,33 +173,23 @@ class ConfiguracionFlujoFirma(TimestampedModel):
 
 class ProcesoFirmaPolitica(TimestampedModel):
     """
-    Proceso de firma para una política específica.
+    Proceso de firma para una política (v3.1 - unificado).
 
     Gestiona el workflow completo de firmas para una política,
     desde inicio hasta finalización o rechazo.
+
+    NOTA v3.1: Consolidado para usar solo PoliticaEspecifica.
+    Las políticas integrales se identifican con is_integral_policy=True.
     """
 
-    # Relación polimórfica con la política (Integral o Específica)
-    tipo_politica = models.CharField(
-        max_length=20,
-        choices=TIPO_POLITICA_FIRMABLE_CHOICES,
-        verbose_name='Tipo de Política'
-    )
-    politica_integral = models.ForeignKey(
-        'identidad.PoliticaIntegral',
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name='procesos_firma',
-        verbose_name='Política Integral'
-    )
-    politica_especifica = models.ForeignKey(
+    # Política asociada (unificado v3.1)
+    politica = models.ForeignKey(
         'identidad.PoliticaEspecifica',
         on_delete=models.CASCADE,
-        null=True,
-        blank=True,
         related_name='procesos_firma',
-        verbose_name='Política Específica'
+        verbose_name='Política',
+        null=True,
+        blank=True
     )
 
     # Configuración del flujo
@@ -272,49 +262,34 @@ class ProcesoFirmaPolitica(TimestampedModel):
         ordering = ['-fecha_inicio']
         indexes = [
             models.Index(fields=['estado', '-fecha_inicio']),
-            models.Index(fields=['tipo_politica', 'estado']),
         ]
 
     def __str__(self):
-        politica_str = self.get_politica_display()
-        return f'Firma: {politica_str} - {self.get_estado_display()}'
+        return f'Firma: {self.politica} - {self.get_estado_display()}'
 
     def clean(self):
-        """Validación de coherencia"""
-        # Debe tener exactamente una política asociada
-        if self.politica_integral and self.politica_especifica:
-            raise ValidationError('Solo puede asociarse a una política (Integral o Específica)')
-
-        if not self.politica_integral and not self.politica_especifica:
+        """Validación de coherencia (v3.1 - simplificado)"""
+        if not self.politica_id:
             raise ValidationError('Debe asociarse a una política')
 
-        # Tipo de política coherente
-        if self.tipo_politica == 'INTEGRAL' and not self.politica_integral:
-            raise ValidationError('tipo_politica=INTEGRAL requiere politica_integral')
-
-        if self.tipo_politica == 'ESPECIFICA' and not self.politica_especifica:
-            raise ValidationError('tipo_politica=ESPECIFICA requiere politica_especifica')
-
     def get_politica(self):
-        """Retorna la política asociada (polimórfico)"""
-        if self.tipo_politica == 'INTEGRAL':
-            return self.politica_integral
-        else:
-            return self.politica_especifica
+        """Retorna la política asociada (v3.1 - unificado)"""
+        return self.politica
 
     def get_politica_display(self):
         """Retorna string display de la política"""
-        politica = self.get_politica()
-        return str(politica) if politica else 'N/A'
+        return str(self.politica) if self.politica else 'N/A'
+
+    @property
+    def is_integral_policy(self):
+        """Indica si la política es integral (v3.1)"""
+        return self.politica.is_integral_policy if self.politica else False
 
     def calcular_hash_contenido(self):
         """Calcula el hash SHA-256 del contenido de la política"""
-        politica = self.get_politica()
-        if not politica:
+        if not self.politica:
             return None
-
-        contenido = politica.content
-        return hashlib.sha256(contenido.encode('utf-8')).hexdigest()
+        return hashlib.sha256(self.politica.content.encode('utf-8')).hexdigest()
 
     def verificar_integridad(self):
         """Verifica que el contenido no haya cambiado"""

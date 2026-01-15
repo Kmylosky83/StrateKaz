@@ -1,23 +1,45 @@
 /**
- * TabAccesoSecciones - Tab de acceso a secciones del UI para el modal de cargo
+ * TabAccesoSecciones - Tab unificado de acceso a secciones CON acciones CRUD
  *
- * Componente auto-contenido que carga y guarda automáticamente los accesos del cargo.
- * Reutiliza hooks existentes de gestion-estrategica.
+ * Sistema RBAC Unificado v4.0:
+ * - Controla qué secciones puede VER el usuario
+ * - Controla qué acciones CRUD puede realizar en cada sección
+ * - Un solo lugar de configuración
+ *
+ * Estructura visual:
+ * └── Módulo
+ *     └── Tab
+ *         └── Sección
+ *             ☑ Ver  ☐ Crear  ☐ Editar  ☐ Eliminar
  */
-import { useState, useMemo, useCallback } from 'react';
-import { ChevronDown, ChevronRight, Layers, FolderTree, File, Save, RefreshCw } from 'lucide-react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import {
+  ChevronDown,
+  ChevronRight,
+  Layers,
+  FolderTree,
+  File,
+  Save,
+  RefreshCw,
+  Eye,
+  Plus,
+  Pencil,
+  Trash2,
+  Send,
+  CheckCheck,
+  Zap,
+} from 'lucide-react';
 import { Alert } from '@/components/common/Alert';
 import { Button } from '@/components/common/Button';
 import { Spinner } from '@/components/common/Spinner';
 import { cn } from '@/lib/utils';
 import { useModulesTree } from '@/features/gestion-estrategica/hooks/useModules';
-import {
-  useCargoSectionAccess,
-  useSaveCargoSectionAccess,
-} from '@/features/gestion-estrategica/hooks/useCargoSectionAccess';
+import { useCargoSectionAccess, useSaveCargoSectionAccess } from '../../hooks/useCargos';
+import { useAuthStore } from '@/store/authStore';
 import type {
   SystemModuleTree,
   ModuleTab,
+  TabSectionTree,
 } from '@/features/gestion-estrategica/types/modules.types';
 
 interface TabAccesoSeccionesProps {
@@ -27,11 +49,22 @@ interface TabAccesoSeccionesProps {
   cargoName: string;
 }
 
-type SelectionState = 'none' | 'partial' | 'all';
+/** Acceso a una sección con sus acciones CRUD */
+interface SectionAccess {
+  section_id: number;
+  can_view: boolean;
+  can_create: boolean;
+  can_edit: boolean;
+  can_delete: boolean;
+  custom_actions?: Record<string, boolean>;
+}
+
+/** Mapa de accesos por section_id */
+type AccessMap = Map<number, SectionAccess>;
 
 export const TabAccesoSecciones = ({ cargoId, cargoName: _cargoName }: TabAccesoSeccionesProps) => {
-  // Estado local de selección
-  const [localSectionIds, setLocalSectionIds] = useState<number[]>([]);
+  // Estado local de accesos (mapa section_id -> acciones)
+  const [localAccesses, setLocalAccesses] = useState<AccessMap>(new Map());
   const [initialized, setInitialized] = useState(false);
 
   // Estado de expansión
@@ -44,33 +77,62 @@ export const TabAccesoSecciones = ({ cargoId, cargoName: _cargoName }: TabAcceso
   const saveMutation = useSaveCargoSectionAccess();
 
   // Inicializar estado local desde servidor
-  useMemo(() => {
-    if (cargoAccessData?.section_ids && !initialized) {
-      setLocalSectionIds(cargoAccessData.section_ids);
+  useEffect(() => {
+    if (cargoAccessData?.accesses && !initialized) {
+      const newMap = new Map<number, SectionAccess>();
+      for (const access of cargoAccessData.accesses) {
+        newMap.set(access.section_id, {
+          section_id: access.section_id,
+          can_view: access.can_view,
+          can_create: access.can_create,
+          can_edit: access.can_edit,
+          can_delete: access.can_delete,
+          custom_actions: access.custom_actions || {},
+        });
+      }
+      setLocalAccesses(newMap);
       setInitialized(true);
     }
   }, [cargoAccessData, initialized]);
 
-  // Set de IDs para búsqueda rápida
-  const selectedSet = useMemo(() => new Set(localSectionIds), [localSectionIds]);
-
   // Detectar si hay cambios sin guardar
   const hasChanges = useMemo(() => {
-    if (!cargoAccessData?.section_ids) return localSectionIds.length > 0;
-    const serverSet = new Set(cargoAccessData.section_ids);
-    if (serverSet.size !== selectedSet.size) return true;
-    return localSectionIds.some((id) => !serverSet.has(id));
-  }, [localSectionIds, cargoAccessData, selectedSet]);
+    if (!cargoAccessData?.accesses) return localAccesses.size > 0;
+
+    // Crear mapa del servidor
+    const serverMap = new Map<number, SectionAccess>();
+    for (const access of cargoAccessData.accesses) {
+      serverMap.set(access.section_id, access);
+    }
+
+    // Comparar tamaños
+    if (serverMap.size !== localAccesses.size) return true;
+
+    // Comparar cada acceso
+    for (const [sectionId, localAccess] of localAccesses) {
+      const serverAccess = serverMap.get(sectionId);
+      if (!serverAccess) return true;
+      if (
+        localAccess.can_view !== serverAccess.can_view ||
+        localAccess.can_create !== serverAccess.can_create ||
+        localAccess.can_edit !== serverAccess.can_edit ||
+        localAccess.can_edit !== serverAccess.can_edit ||
+        localAccess.can_delete !== serverAccess.can_delete ||
+        JSON.stringify(localAccess.custom_actions || {}) !== JSON.stringify(serverAccess.custom_actions || {})
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  }, [localAccesses, cargoAccessData]);
 
   // Toggle módulo expandido
   const toggleModule = useCallback((moduleId: number) => {
     setExpandedModules((prev) => {
       const next = new Set(prev);
-      if (next.has(moduleId)) {
-        next.delete(moduleId);
-      } else {
-        next.add(moduleId);
-      }
+      if (next.has(moduleId)) next.delete(moduleId);
+      else next.add(moduleId);
       return next;
     });
   }, []);
@@ -79,110 +141,258 @@ export const TabAccesoSecciones = ({ cargoId, cargoName: _cargoName }: TabAcceso
   const toggleTab = useCallback((tabId: number) => {
     setExpandedTabs((prev) => {
       const next = new Set(prev);
-      if (next.has(tabId)) {
-        next.delete(tabId);
-      } else {
-        next.add(tabId);
-      }
+      if (next.has(tabId)) next.delete(tabId);
+      else next.add(tabId);
       return next;
     });
   }, []);
 
-  // Toggle sección individual
-  const toggleSection = useCallback((sectionId: number) => {
-    setLocalSectionIds((prev) =>
-      prev.includes(sectionId) ? prev.filter((id) => id !== sectionId) : [...prev, sectionId]
-    );
+  // Toggle acción personalizada
+  const toggleCustomAction = useCallback((sectionId: number, actionName: string) => {
+    setLocalAccesses((prev) => {
+      const newMap = new Map(prev);
+      const current = newMap.get(sectionId);
+
+      if (current) {
+        const currentCustom = current.custom_actions || {};
+        const newCustom = { ...currentCustom, [actionName]: !currentCustom[actionName] };
+
+        const newAccess = { ...current, custom_actions: newCustom };
+        newMap.set(sectionId, newAccess);
+      } else {
+        // Si no existe, crear con view=true por defecto (comportamiento estándar)
+        const newAccess: SectionAccess = {
+          section_id: sectionId,
+          can_view: true,
+          can_create: false,
+          can_edit: false,
+          can_delete: false,
+          custom_actions: { [actionName]: true },
+        };
+        newMap.set(sectionId, newAccess);
+      }
+      return newMap;
+    });
+  }, []);
+
+  // Toggle acción individual de una sección
+  const toggleAction = useCallback(
+    (sectionId: number, action: 'can_view' | 'can_create' | 'can_edit' | 'can_delete') => {
+      setLocalAccesses((prev) => {
+        const newMap = new Map(prev);
+        const current = newMap.get(sectionId);
+
+        if (current) {
+          // Si ya existe, toggle la acción
+          const newAccess = { ...current, [action]: !current[action] };
+
+          // Si se desmarca can_view, desmarcar todas las demás
+          if (action === 'can_view' && !newAccess.can_view) {
+            newAccess.can_create = false;
+            newAccess.can_edit = false;
+            newAccess.can_delete = false;
+          }
+
+          // Si todas las acciones están desmarcadas, eliminar el acceso
+          if (
+            !newAccess.can_view &&
+            !newAccess.can_create &&
+            !newAccess.can_edit &&
+            !newAccess.can_delete
+          ) {
+            newMap.delete(sectionId);
+          } else {
+            newMap.set(sectionId, newAccess);
+          }
+        } else {
+          // Si no existe, crear con la acción marcada
+          const newAccess: SectionAccess = {
+            section_id: sectionId,
+            can_view: action === 'can_view' ? true : false,
+            can_create: action === 'can_create' ? true : false,
+            can_edit: action === 'can_edit' ? true : false,
+            can_delete: action === 'can_delete' ? true : false,
+            custom_actions: {},
+          };
+          // Si se marca cualquier acción diferente a view, también marcar view
+          if (action !== 'can_view') {
+            newAccess.can_view = true;
+          }
+          newMap.set(sectionId, newAccess);
+        }
+
+        return newMap;
+      });
+    },
+    []
+  );
+
+  // Toggle sección completa (todas las acciones o ninguna)
+  const toggleSection = useCallback((section: TabSectionTree) => {
+    setLocalAccesses((prev) => {
+      const newMap = new Map(prev);
+      const current = newMap.get(section.id);
+
+      if (current && current.can_view) {
+        // Si ya tiene acceso, eliminar
+        newMap.delete(section.id);
+      } else {
+        // Si no tiene acceso, dar solo view por defecto
+        newMap.set(section.id, {
+          section_id: section.id,
+          can_view: true,
+          can_create: false,
+          can_edit: false,
+          can_delete: false,
+          custom_actions: {},
+        });
+      }
+
+      return newMap;
+    });
   }, []);
 
   // Toggle todas las secciones de un tab
-  const toggleAllSectionsInTab = useCallback(
+  const toggleAllInTab = useCallback(
     (tab: ModuleTab) => {
       const sectionIds = tab.sections.filter((s) => s.is_enabled).map((s) => s.id);
-      const allSelected = sectionIds.every((id) => selectedSet.has(id));
+      const allHaveView = sectionIds.every((id) => localAccesses.get(id)?.can_view);
 
-      if (allSelected) {
-        setLocalSectionIds((prev) => prev.filter((id) => !sectionIds.includes(id)));
-      } else {
-        setLocalSectionIds((prev) => [...new Set([...prev, ...sectionIds])]);
-      }
+      setLocalAccesses((prev) => {
+        const newMap = new Map(prev);
+
+        if (allHaveView) {
+          // Desmarcar todos
+          sectionIds.forEach((id) => newMap.delete(id));
+        } else {
+          // Marcar todos con view
+          sectionIds.forEach((id) => {
+            if (!newMap.get(id)?.can_view) {
+              newMap.set(id, {
+                section_id: id,
+                can_view: true,
+                can_create: false,
+                can_edit: false,
+                can_delete: false,
+                custom_actions: {},
+              });
+            }
+          });
+        }
+
+        return newMap;
+      });
     },
-    [selectedSet]
+    [localAccesses]
   );
 
   // Toggle todas las secciones de un módulo
-  const toggleAllSectionsInModule = useCallback(
+  const toggleAllInModule = useCallback(
     (module: SystemModuleTree) => {
       const sectionIds = module.tabs
         .filter((t) => t.is_enabled)
         .flatMap((t) => t.sections.filter((s) => s.is_enabled).map((s) => s.id));
 
-      const allSelected = sectionIds.every((id) => selectedSet.has(id));
+      const allHaveView = sectionIds.every((id) => localAccesses.get(id)?.can_view);
 
-      if (allSelected) {
-        setLocalSectionIds((prev) => prev.filter((id) => !sectionIds.includes(id)));
-      } else {
-        setLocalSectionIds((prev) => [...new Set([...prev, ...sectionIds])]);
-      }
+      setLocalAccesses((prev) => {
+        const newMap = new Map(prev);
+
+        if (allHaveView) {
+          sectionIds.forEach((id) => newMap.delete(id));
+        } else {
+          sectionIds.forEach((id) => {
+            if (!newMap.get(id)?.can_view) {
+              newMap.set(id, {
+                section_id: id,
+                can_view: true,
+                can_create: false,
+                can_edit: false,
+                can_delete: false,
+                custom_actions: {},
+              });
+            }
+          });
+        }
+
+        return newMap;
+      });
     },
-    [selectedSet]
+    [localAccesses]
   );
 
-  // Calcular estado de selección para módulo
-  const getModuleSelectionState = useCallback(
-    (module: SystemModuleTree): SelectionState => {
-      const sectionIds = module.tabs
-        .filter((t) => t.is_enabled)
-        .flatMap((t) => t.sections.filter((s) => s.is_enabled).map((s) => s.id));
-
+  // Calcular estado de selección para módulo/tab
+  const getSelectionState = useCallback(
+    (sectionIds: number[]): 'none' | 'partial' | 'all' => {
       if (sectionIds.length === 0) return 'none';
-      const selectedCount = sectionIds.filter((id) => selectedSet.has(id)).length;
-      if (selectedCount === 0) return 'none';
-      if (selectedCount === sectionIds.length) return 'all';
+      const withView = sectionIds.filter((id) => localAccesses.get(id)?.can_view).length;
+      if (withView === 0) return 'none';
+      if (withView === sectionIds.length) return 'all';
       return 'partial';
     },
-    [selectedSet]
+    [localAccesses]
   );
 
-  // Calcular estado de selección para tab
-  const getTabSelectionState = useCallback(
-    (tab: ModuleTab): SelectionState => {
-      const sectionIds = tab.sections.filter((s) => s.is_enabled).map((s) => s.id);
-      if (sectionIds.length === 0) return 'none';
-      const selectedCount = sectionIds.filter((id) => selectedSet.has(id)).length;
-      if (selectedCount === 0) return 'none';
-      if (selectedCount === sectionIds.length) return 'all';
-      return 'partial';
-    },
-    [selectedSet]
-  );
+  // Usuarios y autenticación
+  const { user, refreshProfile } = useAuthStore();
 
   // Guardar cambios
   const handleSave = async () => {
+    const accesses = Array.from(localAccesses.values());
     await saveMutation.mutateAsync({
       cargoId,
-      sectionIds: localSectionIds,
+      accesses,
     });
+
+    // Si estamos editando el cargo del usuario actual, refrescar su perfil
+    // para que los cambios de permisos se reflejen inmediatamente en la UI
+    if (user?.cargo?.id === cargoId) {
+      await refreshProfile();
+    }
   };
 
   // Revertir cambios
   const handleRevert = () => {
-    if (cargoAccessData?.section_ids) {
-      setLocalSectionIds(cargoAccessData.section_ids);
+    if (cargoAccessData?.accesses) {
+      const newMap = new Map<number, SectionAccess>();
+      for (const access of cargoAccessData.accesses) {
+        newMap.set(access.section_id, {
+          section_id: access.section_id,
+          can_view: access.can_view,
+          can_create: access.can_create,
+          can_edit: access.can_edit,
+          can_delete: access.can_delete,
+          custom_actions: access.custom_actions || {},
+        });
+      }
+      setLocalAccesses(newMap);
     } else {
-      setLocalSectionIds([]);
+      setLocalAccesses(new Map());
     }
   };
 
   // Estadísticas
   const stats = useMemo(() => {
-    if (!modulesTree) return { total: 0, selected: 0 };
+    if (!modulesTree) return { total: 0, selected: 0, actions: 0 };
     const enabledSections = modulesTree.modules
       .filter((m) => m.is_enabled)
       .flatMap((m) => m.tabs.filter((t) => t.is_enabled))
       .flatMap((t) => t.sections.filter((s) => s.is_enabled));
-    return { total: enabledSections.length, selected: localSectionIds.length };
-  }, [modulesTree, localSectionIds]);
+
+    let totalActions = 0;
+    localAccesses.forEach((access) => {
+      if (access.can_view) totalActions++;
+      if (access.can_create) totalActions++;
+      if (access.can_edit) totalActions++;
+      if (access.can_delete) totalActions++;
+    });
+
+    return {
+      total: enabledSections.length,
+      selected: localAccesses.size,
+      actions: totalActions,
+    };
+  }, [modulesTree, localAccesses]);
 
   if (isLoadingModules || isLoadingAccess) {
     return (
@@ -200,7 +410,7 @@ export const TabAccesoSecciones = ({ cargoId, cargoName: _cargoName }: TabAcceso
         <div className="flex items-center gap-3">
           <Layers className="h-4 w-4 text-primary-500" />
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            {stats.selected} de {stats.total} secciones
+            {stats.selected} de {stats.total} secciones ({stats.actions} permisos)
           </span>
           {hasChanges && (
             <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
@@ -230,9 +440,29 @@ export const TabAccesoSecciones = ({ cargoId, cargoName: _cargoName }: TabAcceso
             isLoading={saveMutation.isPending}
           >
             <Save className="h-3.5 w-3.5 mr-1" />
-            Guardar Accesos
+            Guardar
           </Button>
         </div>
+      </div>
+
+      {/* Leyenda de acciones */}
+      <div className="flex items-center gap-4 px-3 py-2 bg-gray-100 dark:bg-gray-800/50 rounded text-xs text-gray-600 dark:text-gray-400">
+        <span className="font-medium">Acciones:</span>
+        <span className="flex items-center gap-1">
+          <Eye className="h-3 w-3" /> Ver
+        </span>
+        <span className="flex items-center gap-1">
+          <Plus className="h-3 w-3" /> Crear
+        </span>
+        <span className="flex items-center gap-1">
+          <Pencil className="h-3 w-3" /> Editar
+        </span>
+        <span className="flex items-center gap-1">
+          <Trash2 className="h-3 w-3" /> Eliminar
+        </span>
+        <span className="ml-2 pl-2 border-l border-gray-300 dark:border-gray-600 flex items-center gap-1 text-gray-500">
+          <Zap className="h-3 w-3" /> Acciones Personalizadas (Dinámicas)
+        </span>
       </div>
 
       {/* Árbol de módulos */}
@@ -241,8 +471,11 @@ export const TabAccesoSecciones = ({ cargoId, cargoName: _cargoName }: TabAcceso
           .filter((m) => m.is_enabled)
           .map((module) => {
             const isExpanded = expandedModules.has(module.id);
-            const selectionState = getModuleSelectionState(module);
-            const hasSections = module.tabs.some((t) => t.sections.some((s) => s.is_enabled));
+            const sectionIds = module.tabs
+              .filter((t) => t.is_enabled)
+              .flatMap((t) => t.sections.filter((s) => s.is_enabled).map((s) => s.id));
+            const selectionState = getSelectionState(sectionIds);
+            const hasSections = sectionIds.length > 0;
 
             return (
               <div key={module.id}>
@@ -268,7 +501,7 @@ export const TabAccesoSecciones = ({ cargoId, cargoName: _cargoName }: TabAcceso
                     }}
                     onChange={(e) => {
                       e.stopPropagation();
-                      toggleAllSectionsInModule(module);
+                      toggleAllInModule(module);
                     }}
                     disabled={!hasSections}
                     className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500 dark:bg-gray-700 flex-shrink-0"
@@ -278,9 +511,6 @@ export const TabAccesoSecciones = ({ cargoId, cargoName: _cargoName }: TabAcceso
                   <span className="font-medium text-gray-900 dark:text-gray-100 truncate">
                     {module.name}
                   </span>
-                  {!hasSections && (
-                    <span className="text-xs text-gray-400 ml-auto">(sin secciones)</span>
-                  )}
                 </div>
 
                 {/* Tabs del módulo */}
@@ -290,8 +520,11 @@ export const TabAccesoSecciones = ({ cargoId, cargoName: _cargoName }: TabAcceso
                       .filter((t) => t.is_enabled)
                       .map((tab) => {
                         const isTabExpanded = expandedTabs.has(tab.id);
-                        const tabSelectionState = getTabSelectionState(tab);
-                        const hasSectionsInTab = tab.sections.some((s) => s.is_enabled);
+                        const tabSectionIds = tab.sections
+                          .filter((s) => s.is_enabled)
+                          .map((s) => s.id);
+                        const tabSelectionState = getSelectionState(tabSectionIds);
+                        const hasSectionsInTab = tabSectionIds.length > 0;
 
                         return (
                           <div key={tab.id}>
@@ -316,7 +549,7 @@ export const TabAccesoSecciones = ({ cargoId, cargoName: _cargoName }: TabAcceso
                                 }}
                                 onChange={(e) => {
                                   e.stopPropagation();
-                                  toggleAllSectionsInTab(tab);
+                                  toggleAllInTab(tab);
                                 }}
                                 disabled={!hasSectionsInTab}
                                 className="h-3.5 w-3.5 rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500 dark:bg-gray-700 flex-shrink-0"
@@ -328,28 +561,147 @@ export const TabAccesoSecciones = ({ cargoId, cargoName: _cargoName }: TabAcceso
                               </span>
                             </div>
 
-                            {/* Secciones */}
+                            {/* Secciones con acciones CRUD */}
                             {isTabExpanded && (
                               <div className="ml-8">
                                 {tab.sections
                                   .filter((s) => s.is_enabled)
-                                  .map((section) => (
-                                    <label
-                                      key={section.id}
-                                      className="flex items-center gap-3 p-2 pl-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
-                                    >
-                                      <input
-                                        type="checkbox"
-                                        checked={selectedSet.has(section.id)}
-                                        onChange={() => toggleSection(section.id)}
-                                        className="h-3.5 w-3.5 rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500 dark:bg-gray-700 flex-shrink-0"
-                                      />
-                                      <File className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
-                                      <span className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                                        {section.name}
-                                      </span>
-                                    </label>
-                                  ))}
+                                  .map((section) => {
+                                    const access = localAccesses.get(section.id);
+                                    const hasAnyAccess = access?.can_view || false;
+
+                                    return (
+                                      <div
+                                        key={section.id}
+                                        className={cn(
+                                          'flex items-center gap-3 p-2 pl-4 hover:bg-gray-50 dark:hover:bg-gray-800/50',
+                                          hasAnyAccess && 'bg-primary-50/50 dark:bg-primary-900/10'
+                                        )}
+                                      >
+                                        {/* Checkbox principal de sección */}
+                                        <input
+                                          type="checkbox"
+                                          checked={hasAnyAccess}
+                                          onChange={() => toggleSection(section)}
+                                          className="h-3.5 w-3.5 rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500 dark:bg-gray-700 flex-shrink-0"
+                                        />
+                                        <File className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+                                        <span className="text-sm text-gray-600 dark:text-gray-400 min-w-[120px] truncate">
+                                          {section.name}
+                                        </span>
+
+                                        {/* Acciones CRUD */}
+                                        <div className="flex items-center gap-2 ml-auto">
+                                          {/* Ver */}
+                                          <label
+                                            className={cn(
+                                              'flex items-center gap-1 px-2 py-0.5 rounded text-xs cursor-pointer transition-colors',
+                                              access?.can_view
+                                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                                                : 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500'
+                                            )}
+                                            title="Puede ver"
+                                          >
+                                            <input
+                                              type="checkbox"
+                                              checked={access?.can_view || false}
+                                              onChange={() => toggleAction(section.id, 'can_view')}
+                                              className="sr-only"
+                                            />
+                                            <Eye className="h-3 w-3" />
+                                          </label>
+
+                                          {/* Crear */}
+                                          <label
+                                            className={cn(
+                                              'flex items-center gap-1 px-2 py-0.5 rounded text-xs cursor-pointer transition-colors',
+                                              access?.can_create
+                                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                                                : 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500'
+                                            )}
+                                            title="Puede crear"
+                                          >
+                                            <input
+                                              type="checkbox"
+                                              checked={access?.can_create || false}
+                                              onChange={() => toggleAction(section.id, 'can_create')}
+                                              className="sr-only"
+                                            />
+                                            <Plus className="h-3 w-3" />
+                                          </label>
+
+                                          {/* Editar */}
+                                          <label
+                                            className={cn(
+                                              'flex items-center gap-1 px-2 py-0.5 rounded text-xs cursor-pointer transition-colors',
+                                              access?.can_edit
+                                                ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                                                : 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500'
+                                            )}
+                                            title="Puede editar"
+                                          >
+                                            <input
+                                              type="checkbox"
+                                              checked={access?.can_edit || false}
+                                              onChange={() => toggleAction(section.id, 'can_edit')}
+                                              className="sr-only"
+                                            />
+                                            <Pencil className="h-3 w-3" />
+                                          </label>
+
+                                          {/* Eliminar */}
+                                          <label
+                                            className={cn(
+                                              'flex items-center gap-1 px-2 py-0.5 rounded text-xs cursor-pointer transition-colors',
+                                              access?.can_delete
+                                                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                                : 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500'
+                                            )}
+                                            title="Puede eliminar"
+                                          >
+                                            <input
+                                              type="checkbox"
+                                              checked={access?.can_delete || false}
+                                              onChange={() => toggleAction(section.id, 'can_delete')}
+                                              className="sr-only"
+                                            />
+                                            <Trash2 className="h-3 w-3" />
+                                          </label>
+
+                                          {/* Acciones Personalizadas Dinámicas */}
+                                          {section.supported_actions?.map((actionName) => {
+                                            const isChecked = access?.custom_actions?.[actionName] || false;
+                                            // Icon selection logic
+                                            let ActionIcon = Zap;
+                                            if (['enviar', 'send', 'notificar'].some(k => actionName.toLowerCase().includes(k))) ActionIcon = Send;
+                                            if (['aprobar', 'approve', 'confirmar'].some(k => actionName.toLowerCase().includes(k))) ActionIcon = CheckCheck;
+
+                                            return (
+                                              <label
+                                                key={actionName}
+                                                className={cn(
+                                                  'flex items-center gap-1 px-2 py-0.5 rounded text-xs cursor-pointer transition-colors border border-dashed',
+                                                  isChecked
+                                                    ? 'bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-700'
+                                                    : 'bg-gray-50 text-gray-400 border-gray-200 dark:bg-gray-800/50 dark:text-gray-500 dark:border-gray-700'
+                                                )}
+                                                title={`Acción personalizada: ${actionName}`}
+                                              >
+                                                <input
+                                                  type="checkbox"
+                                                  checked={isChecked}
+                                                  onChange={() => toggleCustomAction(section.id, actionName)}
+                                                  className="sr-only"
+                                                />
+                                                <ActionIcon className="h-3 w-3" />
+                                                <span className="capitalize">{actionName}</span>
+                                              </label>
+                                            );
+                                          })}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
                               </div>
                             )}
                           </div>
@@ -366,7 +718,7 @@ export const TabAccesoSecciones = ({ cargoId, cargoName: _cargoName }: TabAcceso
         <Alert variant="error" message="Error al guardar los accesos. Intenta de nuevo." />
       )}
       {saveMutation.isSuccess && (
-        <Alert variant="success" message="Accesos guardados correctamente." />
+        <Alert variant="success" message="Accesos y permisos guardados correctamente." />
       )}
     </div>
   );

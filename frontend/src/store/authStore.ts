@@ -43,7 +43,13 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      logout: () => {
+      logout: async () => {
+        // P0-03: Invalidar refresh token en el servidor antes de limpiar cliente
+        const refreshToken = localStorage.getItem('refresh_token');
+        if (refreshToken) {
+          await authAPI.logout(refreshToken);
+        }
+
         // Limpiar localStorage
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
@@ -58,6 +64,17 @@ export const useAuthStore = create<AuthState>()(
           refreshToken: null,
           isAuthenticated: false,
         });
+      },
+
+      refreshProfile: async () => {
+        try {
+          const user = await authAPI.getProfile();
+          set({ user });
+        } catch (error) {
+          console.error('Error refreshing profile:', error);
+          // Opcional: si falla el perfil (ej: token vencido), hacer logout
+          // set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
+        }
       },
 
       setUser: (user: User) => {

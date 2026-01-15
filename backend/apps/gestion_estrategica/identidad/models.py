@@ -1,14 +1,16 @@
 """
-Modelos del módulo Identidad Corporativa - Dirección Estratégica
+Modelos del módulo Identidad Corporativa - Dirección Estratégica v3.1
 
-Secciones: mision_vision, valores, politica, alcances, politicas_especificas
+Secciones: mision_vision, valores, politica, alcances, politicas
 
 Modelos:
-- CorporateIdentity: Identidad corporativa (misión, visión, política integral)
+- CorporateIdentity: Identidad corporativa (misión, visión)
 - CorporateValue: Valores corporativos
 - AlcanceSistema: Alcance del sistema de gestión por norma ISO
-- PoliticaIntegral: Versiones de la política integral con firma digital
-- PoliticaEspecifica: Políticas específicas por área/módulo
+- PoliticaEspecifica: Políticas (integrales con is_integral_policy=True, específicas por área)
+
+NOTA v3.1: PoliticaIntegral ha sido eliminado y consolidado en PoliticaEspecifica.
+Las políticas integrales se identifican con is_integral_policy=True.
 """
 from django.db import models
 from django.conf import settings
@@ -32,38 +34,24 @@ POLICY_STATUS_CHOICES = [
 
 class CorporateIdentity(AuditModel, SoftDeleteModel):
     """
-    Identidad Corporativa - Misión, Visión, Política Integral
+    Identidad Corporativa - Misión, Visión
 
     Solo puede existir un registro activo por empresa (multi-tenant).
-    Permite firma digital de la Política Integral.
 
-    NOTA SOBRE POLÍTICA INTEGRAL:
-    =============================
-    Este modelo contiene campos DEPRECADOS relacionados con la política integral:
-    - integral_policy (TextField)
-    - policy_signed_by, policy_signed_at, policy_signature_hash
+    NOTA v3.1 SOBRE POLÍTICA INTEGRAL:
+    ==================================
+    Los campos de política integral en este modelo están DEPRECADOS.
+    Las políticas integrales ahora se gestionan en PoliticaEspecifica con:
+    - is_integral_policy=True para identificar políticas integrales
+    - Versionamiento, workflow de estados, firma digital
+    - Ver: PoliticaEspecifica.get_integral_vigente(identity)
 
-    ENFOQUE CORRECTO (Enterprise):
-    El modelo `PoliticaIntegral` (relacionado via FK `politicas_integrales`) es el
-    enfoque correcto para gestionar la política integral porque soporta:
-    - Versionamiento de políticas
-    - Workflow de estados (BORRADOR -> EN_REVISION -> VIGENTE -> OBSOLETO)
-    - Historial completo de versiones anteriores
-    - Firma digital independiente por versión
-    - Fechas de vigencia, expiración y revisión
-    - Control de cambios con justificación
-    - Normas ISO aplicables por versión
-    - Archivos PDF adjuntos
-
-    ESTRATEGIA DE MIGRACIÓN:
-    1. Nuevas implementaciones deben usar PoliticaIntegral
-    2. Los campos deprecados se mantienen por compatibilidad con datos existentes
-    3. El método get_current_integral_policy() debe usarse para obtener la política vigente
-    4. Los campos deprecados serán removidos en una versión futura (v3.0)
+    CAMPOS DEPRECADOS (a eliminar en v4.0):
+    - integral_policy, policy_signed_by, policy_signed_at, policy_signature_hash
 
     USO RECOMENDADO:
-    - Para obtener la política vigente: identity.politicas_integrales.filter(status='VIGENTE').first()
-    - O usar: PoliticaIntegral.get_current(identity)
+    - Para obtener la política integral vigente:
+      PoliticaEspecifica.get_integral_vigente(identity)
     """
 
     # Multi-tenancy
@@ -87,14 +75,14 @@ class CorporateIdentity(AuditModel, SoftDeleteModel):
     # =========================================================================
     # CAMPOS DEPRECADOS - Política Integral
     # =========================================================================
-    # DEPRECATED desde v2.0: Usar el modelo PoliticaIntegral en su lugar.
+    # DEPRECATED desde v2.0: Usar PoliticaEspecifica con is_integral_policy=True.
     # Estos campos se mantienen por compatibilidad con datos existentes.
-    # Serán removidos en v3.0.
-    # Ver: identity.politicas_integrales (relación con PoliticaIntegral)
+    # Serán removidos en v4.0.
+    # Ver: PoliticaEspecifica.get_integral_vigente(identity)
     # =========================================================================
     integral_policy = models.TextField(
         verbose_name='[DEPRECATED] Política Integral',
-        help_text='DEPRECATED: Usar modelo PoliticaIntegral. Campo legacy para migración.',
+        help_text='DEPRECATED v3.1: Usar PoliticaEspecifica con is_integral_policy=True.',
         blank=True,
         default=''
     )
@@ -105,20 +93,20 @@ class CorporateIdentity(AuditModel, SoftDeleteModel):
         blank=True,
         related_name='policies_signed',
         verbose_name='[DEPRECATED] Firmada por',
-        help_text='DEPRECATED: Usar PoliticaIntegral.signed_by'
+        help_text='DEPRECATED v3.1: Usar PoliticaEspecifica.approved_by'
     )
     policy_signed_at = models.DateTimeField(
         null=True,
         blank=True,
         verbose_name='[DEPRECATED] Fecha de firma',
-        help_text='DEPRECATED: Usar PoliticaIntegral.signed_at'
+        help_text='DEPRECATED v3.1: Usar PoliticaEspecifica.approved_at'
     )
     policy_signature_hash = models.CharField(
         max_length=255,
         blank=True,
         null=True,
         verbose_name='[DEPRECATED] Hash de firma',
-        help_text='DEPRECATED: Usar PoliticaIntegral.signature_hash'
+        help_text='DEPRECATED v3.1: Usar PoliticaEspecifica.signature_hash'
     )
     # =========================================================================
     # FIN CAMPOS DEPRECADOS
@@ -133,6 +121,47 @@ class CorporateIdentity(AuditModel, SoftDeleteModel):
         verbose_name='Versión',
         help_text='Versión del documento (ej: 1.0, 2.1)'
     )
+
+    # =========================================================================
+    # CAMPOS DE ALCANCE DEL SISTEMA INTEGRADO DE GESTIÓN
+    # =========================================================================
+    # Estos campos permiten definir opcionalmente el alcance general del
+    # sistema integrado de gestión. El toggle declara_alcance controla la
+    # visibilidad de esta sección en el frontend.
+    # =========================================================================
+    declara_alcance = models.BooleanField(
+        default=False,
+        verbose_name='¿Declara Alcance?',
+        help_text='Si es True, muestra la sección de Alcance del Sistema Integrado de Gestión'
+    )
+    alcance_general = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Alcance General del SIG',
+        help_text='Descripción general del alcance del Sistema Integrado de Gestión'
+    )
+    alcance_geografico = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Cobertura Geográfica',
+        help_text='Descripción de la cobertura geográfica del sistema (ej: Colombia, oficinas en Bogotá, Medellín y Cali)'
+    )
+    alcance_procesos = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Procesos Cubiertos',
+        help_text='Descripción de los procesos cubiertos por el sistema de gestión'
+    )
+    alcance_exclusiones = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Exclusiones Generales',
+        help_text='Exclusiones generales del sistema integrado (las exclusiones por norma se gestionan en AlcanceSistema)'
+    )
+    # =========================================================================
+    # FIN CAMPOS DE ALCANCE
+    # =========================================================================
+
     # Campos heredados de AuditModel: created_at, updated_at, created_by, updated_by
     # Campos heredados de SoftDeleteModel: is_active, deleted_at
 
@@ -191,18 +220,14 @@ class CorporateIdentity(AuditModel, SoftDeleteModel):
 
     def get_current_integral_policy(self):
         """
-        Obtiene la política integral vigente desde el modelo PoliticaIntegral.
+        Obtiene la política integral vigente desde PoliticaEspecifica.
 
-        Este es el método RECOMENDADO para obtener la política integral.
-        Retorna la instancia de PoliticaIntegral vigente o None.
+        v3.1: Este método ahora usa PoliticaEspecifica con is_integral_policy=True.
 
         Returns:
-            PoliticaIntegral | None: La política integral vigente actual
+            PoliticaEspecifica | None: La política integral vigente actual
         """
-        return self.politicas_integrales.filter(
-            status='VIGENTE',
-            is_active=True
-        ).first()
+        return PoliticaEspecifica.get_integral_vigente(self)
 
     @classmethod
     def get_active(cls):
@@ -381,146 +406,11 @@ class AlcanceSistema(AuditModel, SoftDeleteModel):
         return delta.days
 
 
-class PoliticaIntegral(AuditModel, SoftDeleteModel, OrderedModel):
-    """
-    Política Integral con versionamiento y firma digital.
-
-    Gestiona las diferentes versiones de la política integral,
-    permitiendo trazabilidad histórica y firma electrónica.
-    """
-
-    identity = models.ForeignKey(
-        CorporateIdentity,
-        on_delete=models.CASCADE,
-        related_name='politicas_integrales',
-        verbose_name='Identidad Corporativa'
-    )
-    version = models.CharField(
-        max_length=20,
-        verbose_name='Versión',
-        help_text='Versión de la política (ej: 1.0, 2.1)'
-    )
-    title = models.CharField(
-        max_length=200,
-        default='Política Integral del Sistema de Gestión',
-        verbose_name='Título'
-    )
-    content = models.TextField(
-        verbose_name='Contenido',
-        help_text='Texto completo de la política integral'
-    )
-    status = models.CharField(
-        max_length=20,
-        choices=POLICY_STATUS_CHOICES,
-        default='BORRADOR',
-        verbose_name='Estado',
-        db_index=True
-    )
-    effective_date = models.DateField(
-        blank=True,
-        null=True,
-        verbose_name='Fecha de Vigencia'
-    )
-    expiry_date = models.DateField(
-        blank=True,
-        null=True,
-        verbose_name='Fecha de Vencimiento'
-    )
-    signed_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='politicas_firmadas',
-        verbose_name='Firmada por'
-    )
-    signed_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        verbose_name='Fecha de Firma'
-    )
-    signature_hash = models.CharField(
-        max_length=255,
-        blank=True,
-        null=True,
-        verbose_name='Hash de Firma',
-        help_text='Hash SHA-256 de la firma digital'
-    )
-    applicable_standards = models.JSONField(
-        default=list,
-        verbose_name='Normas Aplicables',
-        help_text='Lista de normas ISO que cubre esta política'
-    )
-    document_file = models.FileField(
-        upload_to='policies/integral/',
-        blank=True,
-        null=True,
-        verbose_name='Documento PDF'
-    )
-    change_reason = models.TextField(
-        blank=True,
-        null=True,
-        verbose_name='Motivo del Cambio',
-        help_text='Razón del cambio respecto a la versión anterior'
-    )
-    review_date = models.DateField(
-        blank=True,
-        null=True,
-        verbose_name='Fecha de Revisión',
-        help_text='Próxima fecha de revisión programada'
-    )
-
-    class Meta:
-        db_table = 'identidad_politica_integral'
-        verbose_name = 'Política Integral'
-        verbose_name_plural = 'Políticas Integrales'
-        ordering = ['-version']
-        unique_together = [['identity', 'version']]
-        indexes = [
-            models.Index(fields=['status', 'is_active'], name='pol_int_status_idx'),
-        ]
-
-    def __str__(self):
-        return f"Política Integral v{self.version} - {self.get_status_display()}"
-
-    def sign(self, user):
-        """Firma digitalmente la política"""
-        import hashlib
-        content = f"{self.content}|{user.id}|{timezone.now().isoformat()}"
-        self.signature_hash = hashlib.sha256(content.encode()).hexdigest()
-        self.signed_by = user
-        self.signed_at = timezone.now()
-        self.save(update_fields=['signature_hash', 'signed_by', 'signed_at', 'updated_at'])
-
-    def publish(self, user):
-        """Publica la política (cambia a VIGENTE y obsoleta las anteriores)"""
-        if self.status != 'BORRADOR' and self.status != 'EN_REVISION':
-            raise ValueError("Solo se pueden publicar políticas en borrador o en revisión")
-
-        # Obsoleta las políticas vigentes anteriores
-        PoliticaIntegral.objects.filter(
-            identity=self.identity,
-            status='VIGENTE'
-        ).update(status='OBSOLETO')
-
-        self.status = 'VIGENTE'
-        self.effective_date = timezone.now().date()
-        self.updated_by = user
-        self.save()
-
-    @property
-    def is_signed(self):
-        """Verifica si la política está firmada"""
-        return self.signed_by is not None and self.signature_hash is not None
-
-    @classmethod
-    def get_current(cls, identity):
-        """Obtiene la política vigente actual"""
-        return cls.objects.filter(
-            identity=identity,
-            status='VIGENTE',
-            is_active=True
-        ).first()
+# =============================================================================
+# NOTA v3.1: PoliticaIntegral ha sido eliminado y consolidado en PoliticaEspecifica.
+# Las políticas integrales se identifican con is_integral_policy=True.
+# Ver migración 0010_consolidate_politicas.py para detalles de la migración.
+# =============================================================================
 
 
 class PoliticaEspecifica(AuditModel, SoftDeleteModel, OrderedModel):
@@ -654,6 +544,36 @@ class PoliticaEspecifica(AuditModel, SoftDeleteModel, OrderedModel):
         help_text='Lista de tags para búsqueda'
     )
 
+    # =========================================================================
+    # CAMPOS PARA CONSOLIDACIÓN CON PoliticaIntegral
+    # Agregados en v3.1 para unificar el modelo de políticas
+    # =========================================================================
+    signature_hash = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name='Hash de Firma',
+        help_text='Hash SHA-256 de la firma digital'
+    )
+    expiry_date = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name='Fecha de Vencimiento',
+        help_text='Fecha en que la política deja de estar vigente'
+    )
+    change_reason = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Motivo del Cambio',
+        help_text='Razón del cambio respecto a la versión anterior'
+    )
+    is_integral_policy = models.BooleanField(
+        default=False,
+        db_index=True,
+        verbose_name='Es Política Integral',
+        help_text='Indica si es la política integral del sistema de gestión'
+    )
+
     class Meta:
         db_table = 'identidad_politica_especifica'
         verbose_name = 'Política Específica'
@@ -663,13 +583,15 @@ class PoliticaEspecifica(AuditModel, SoftDeleteModel, OrderedModel):
         indexes = [
             models.Index(fields=['status'], name='pol_esp_status_idx'),
             models.Index(fields=['area', 'is_active'], name='pol_esp_area_active_idx'),
+            models.Index(fields=['is_integral_policy', 'status'], name='pol_esp_integral_status_idx'),
         ]
 
     def __str__(self):
-        return f"{self.code} - {self.title}"
+        prefix = "[INTEGRAL] " if self.is_integral_policy else ""
+        return f"{prefix}{self.code or 'Sin código'} - {self.title}"
 
     def approve(self, user):
-        """Aprueba la política"""
+        """Aprueba la política (para políticas específicas)"""
         self.approved_by = user
         self.approved_at = timezone.now()
         self.status = 'VIGENTE'
@@ -677,9 +599,75 @@ class PoliticaEspecifica(AuditModel, SoftDeleteModel, OrderedModel):
         self.updated_by = user
         self.save()
 
+    def sign(self, user):
+        """
+        Firma digitalmente la política (para políticas integrales).
+
+        Genera un hash SHA-256 del contenido + usuario + timestamp
+        para garantizar la integridad y no repudio de la firma.
+        """
+        import hashlib
+        content = f"{self.content}|{user.id}|{timezone.now().isoformat()}"
+        self.signature_hash = hashlib.sha256(content.encode()).hexdigest()
+        self.approved_by = user
+        self.approved_at = timezone.now()
+        self.updated_by = user
+        self.save(update_fields=[
+            'signature_hash', 'approved_by', 'approved_at', 'updated_by', 'updated_at'
+        ])
+
+    def publish(self, user):
+        """
+        Publica la política (cambia a VIGENTE).
+
+        Para políticas integrales: obsoleta las versiones vigentes anteriores.
+        Para políticas específicas: comportamiento estándar.
+        """
+        if self.status not in ['BORRADOR', 'EN_REVISION', 'FIRMADO']:
+            raise ValueError(
+                f"Solo se pueden publicar políticas en BORRADOR, EN_REVISION o FIRMADO. "
+                f"Estado actual: {self.status}"
+            )
+
+        # Si es política integral, obsoleta las anteriores
+        if self.is_integral_policy:
+            PoliticaEspecifica.objects.filter(
+                identity=self.identity,
+                is_integral_policy=True,
+                status='VIGENTE'
+            ).exclude(pk=self.pk).update(status='OBSOLETO')
+
+        self.status = 'VIGENTE'
+        self.effective_date = timezone.now().date()
+        self.updated_by = user
+        self.save()
+
+    @property
+    def is_signed(self):
+        """Verifica si la política está firmada digitalmente"""
+        return self.approved_by is not None and self.signature_hash is not None
+
     @property
     def needs_review(self):
         """Indica si la política necesita revisión"""
         if not self.review_date:
             return False
         return self.review_date <= timezone.now().date()
+
+    @classmethod
+    def get_integral_vigente(cls, identity):
+        """
+        Obtiene la política integral vigente de una identidad corporativa.
+
+        Args:
+            identity: Instancia de CorporateIdentity
+
+        Returns:
+            PoliticaEspecifica | None: La política integral vigente o None
+        """
+        return cls.objects.filter(
+            identity=identity,
+            is_integral_policy=True,
+            status='VIGENTE',
+            is_active=True
+        ).first()

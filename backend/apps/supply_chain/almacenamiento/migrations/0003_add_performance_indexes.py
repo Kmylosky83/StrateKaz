@@ -89,7 +89,7 @@ class Migration(migrations.Migration):
         migrations.AddIndex(
             model_name='alertastock',
             index=models.Index(
-                fields=['empresa', 'tipo_alerta', 'atendida'],
+                fields=['empresa', 'tipo_alerta', 'resuelta'],
                 name='idx_alerta_emp_tipo'
             ),
         ),
@@ -98,7 +98,7 @@ class Migration(migrations.Migration):
         migrations.AddIndex(
             model_name='alertastock',
             index=models.Index(
-                fields=['atendida', '-fecha_alerta'],
+                fields=['resuelta', '-fecha_generacion'],
                 name='idx_alerta_pend_fecha'
             ),
         ),

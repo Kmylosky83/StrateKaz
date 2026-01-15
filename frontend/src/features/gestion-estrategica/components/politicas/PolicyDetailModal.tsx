@@ -32,15 +32,17 @@ import { FirmantesSelectionModal } from './FirmantesSelectionModal';
 // Hooks
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import { useAuthStore } from '@/store/authStore';
-import { useUsers } from '@/features/users/hooks/useUsers';
 import {
   useIniciarFirmaPolitica,
   useFirmarPolitica,
   useProcesoFirmaPolitica,
   useEnviarADocumental,
   useCrearNuevaVersion,
-  FirmanteSeleccion,
+  CargoFirmanteSeleccion,
 } from '../../hooks/usePoliticas';
+
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 
 // Types
 import type { Politica, PoliticaStatus, EstadoFirma } from '../../types/policies.types';
@@ -64,18 +66,32 @@ const statusConfig: Record<PoliticaStatus, {
     description: 'Política en edición, pendiente de enviar a firma',
   },
   EN_REVISION: {
-    label: 'En Firma',
+    label: 'En Revisión',
     color: 'text-yellow-600',
     bgColor: 'bg-yellow-100',
     icon: Clock,
-    description: 'Esperando que los firmantes aprueben la política',
+    description: 'Esperando revisión técnica o jurídica',
   },
-  FIRMADO: {
-    label: 'Firmado',
+  EN_APROBACION: {
+    label: 'En Aprobación',
+    color: 'text-amber-600',
+    bgColor: 'bg-amber-100',
+    icon: Clock,
+    description: 'Revisiones completadas, esperando aprobación gerencial',
+  },
+  POR_CODIFICAR: {
+    label: 'Por Codificar',
     color: 'text-blue-600',
     bgColor: 'bg-blue-100',
-    icon: PenTool,
-    description: 'Todas las firmas completadas, listo para enviar a Gestor Documental',
+    icon: FileText,
+    description: 'Aprobada, pendiente de codificación en Gestor Documental',
+  },
+  RECHAZADO: {
+    label: 'Rechazado',
+    color: 'text-red-600',
+    bgColor: 'bg-red-100',
+    icon: XCircle,
+    description: 'Política rechazada, requiere correcciones',
   },
   VIGENTE: {
     label: 'Vigente',
@@ -147,14 +163,13 @@ export function PolicyDetailModal({
   onEdit,
 }: PolicyDetailModalProps) {
   const { primaryColor } = useBrandingConfig();
+  const { canDo } = usePermissions();
   const user = useAuthStore((state) => state.user);
   const [showSignatureModal, setShowSignatureModal] = useState(false);
   const [selectedFirmaId, setSelectedFirmaId] = useState<number | null>(null);
   const [showFirmantesModal, setShowFirmantesModal] = useState(false);
 
-  // Queries
-  const { data: usersData, isLoading: isLoadingUsers } = useUsers({ is_active: true });
-  const usuarios = usersData?.results || [];
+
 
   // Mutations
   const iniciarFirmaMutation = useIniciarFirmaPolitica();
@@ -163,9 +178,10 @@ export function PolicyDetailModal({
   const crearNuevaVersionMutation = useCrearNuevaVersion();
 
   // Query para obtener proceso de firma activo
+  // Se habilita en EN_REVISION para saber si puede firmar o enviar a documental
   const { data: procesoFirma } = useProcesoFirmaPolitica(
     politica?.id || 0,
-    !!politica && politica.status === 'EN_REVISION'
+    !!politica && (politica.status === 'EN_REVISION' || politica.status === 'EN_APROBACION')
   );
 
   // Handlers
@@ -173,11 +189,11 @@ export function PolicyDetailModal({
     setShowFirmantesModal(true);
   };
 
-  const handleIniciarFirmaConFirmantes = async (firmantes: FirmanteSeleccion[]) => {
+  const handleIniciarFirmaConFirmantes = async (firmantes: CargoFirmanteSeleccion[]) => {
     if (!politica) return;
     await iniciarFirmaMutation.mutateAsync({
       id: politica.id,
-      firmantes,
+      firmantesCargo: firmantes,
     });
     setShowFirmantesModal(false);
   };
@@ -549,21 +565,33 @@ export function PolicyDetailModal({
                       Editar
                     </Button>
                   )}
-                  <Button
-                    onClick={handleOpenFirmantesModal}
-                    style={{ backgroundColor: primaryColor }}
-                    disabled={iniciarFirmaMutation.isPending}
-                  >
-                    <PenTool className="w-4 h-4 mr-2" />
-                    {iniciarFirmaMutation.isPending ? 'Enviando...' : 'Enviar a Firma'}
-                  </Button>
+                  {canDo(Modules.GESTION_ESTRATEGICA, Sections.POLITICAS, 'edit') && (
+                    <Button
+                      onClick={handleOpenFirmantesModal}
+                      style={{ backgroundColor: primaryColor }}
+                      disabled={iniciarFirmaMutation.isPending}
+                    >
+                      <PenTool className="w-4 h-4 mr-2" />
+                      {iniciarFirmaMutation.isPending ? 'Enviando...' : 'Enviar a Firma'}
+                    </Button>
+                  )}
                 </>
               )}
 
-              {/* EN_REVISION: Mostrar botón de firmar si tiene firmas pendientes */}
+              {/* EN_REVISION: Mostrar botón de firmar o enviar a documental */}
               {politica.status === 'EN_REVISION' && (
                 <>
-                  {misFirmasPendientes.length > 0 ? (
+                  {/* Si el proceso de firma está completado, mostrar botón de enviar a documental */}
+                  {procesoFirma?.estado === 'COMPLETADO' ? (
+                    <Button
+                      onClick={handleEnviarADocumental}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                      disabled={enviarADocumentalMutation.isPending}
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      {enviarADocumentalMutation.isPending ? 'Enviando...' : 'Enviar a Gestor Documental'}
+                    </Button>
+                  ) : misFirmasPendientes.length > 0 && canDo(Modules.GESTION_ESTRATEGICA, Sections.POLITICAS, 'edit') ? (
                     <Button
                       onClick={() => handleOpenSignature(misFirmasPendientes[0].id)}
                       style={{ backgroundColor: primaryColor }}
@@ -581,20 +609,18 @@ export function PolicyDetailModal({
                 </>
               )}
 
-              {/* FIRMADO: Enviar a Documental */}
-              {politica.status === 'FIRMADO' && (
-                <Button
-                  onClick={handleEnviarADocumental}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                  disabled={enviarADocumentalMutation.isPending}
-                >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  {enviarADocumentalMutation.isPending ? 'Enviando...' : 'Enviar a Gestor Documental'}
-                </Button>
+              {/* POR_CODIFICAR: Política esperando codificación en Gestor Documental */}
+              {politica.status === 'POR_CODIFICAR' && (
+                <div className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm flex items-center gap-2">
+                  <Clock className="w-4 h-4 animate-pulse" />
+                  Política enviada, esperando codificación...
+                </div>
               )}
 
+
+
               {/* VIGENTE: Nueva Versión */}
-              {politica.status === 'VIGENTE' && (
+              {politica.status === 'VIGENTE' && canDo(Modules.GESTION_ESTRATEGICA, Sections.POLITICAS, 'create') && (
                 <Button
                   variant="outline"
                   onClick={handleCrearNuevaVersion}
@@ -616,34 +642,33 @@ export function PolicyDetailModal({
             </div>
           </div>
         </div>
+
+
+        {/* Modal de Firma Digital */}
+        <SignatureModal
+          isOpen={showSignatureModal}
+          onClose={() => {
+            setShowSignatureModal(false);
+            setSelectedFirmaId(null);
+          }}
+          onSave={handleSaveSignature}
+          title="Firma de Política"
+          description={`Está a punto de firmar la política "${politica.title}". Esta acción no se puede deshacer.`}
+          userName={user?.full_name || user?.first_name || user?.username || 'Usuario'}
+          userEmail={user?.email}
+          userId={user?.id}
+          documentType="POLITICA_ESPECIFICA"
+          documentId={String(politica.id)}
+        />
+
+        {/* Modal de Selección de Firmantes */}
+        <FirmantesSelectionModal
+          isOpen={showFirmantesModal}
+          onClose={() => setShowFirmantesModal(false)}
+          onConfirm={handleIniciarFirmaConFirmantes}
+          isLoading={iniciarFirmaMutation.isPending}
+        />
       </div>
-
-      {/* Modal de Firma Digital */}
-      <SignatureModal
-        isOpen={showSignatureModal}
-        onClose={() => {
-          setShowSignatureModal(false);
-          setSelectedFirmaId(null);
-        }}
-        onSave={handleSaveSignature}
-        title="Firma de Política"
-        description={`Está a punto de firmar la política "${politica.title}". Esta acción no se puede deshacer.`}
-        userName={user?.full_name || user?.first_name || user?.username || 'Usuario'}
-        userEmail={user?.email}
-        userId={user?.id}
-        documentType="POLITICA_ESPECIFICA"
-        documentId={String(politica.id)}
-      />
-
-      {/* Modal de Selección de Firmantes */}
-      <FirmantesSelectionModal
-        isOpen={showFirmantesModal}
-        onClose={() => setShowFirmantesModal(false)}
-        onConfirm={handleIniciarFirmaConFirmantes}
-        isLoading={iniciarFirmaMutation.isPending}
-        usuarios={usuarios}
-        isLoadingUsuarios={isLoadingUsers}
-      />
     </div>
   );
 }

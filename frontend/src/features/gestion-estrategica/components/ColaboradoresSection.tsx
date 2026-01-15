@@ -42,13 +42,15 @@ import {
 } from '@/features/users/hooks/useUsers';
 
 // Hooks de configuración
-import { useRoles } from '@/features/configuracion/hooks/useRoles';
+// import { useRoles } from '@/features/configuracion/hooks/useRoles';
 
 // Types
 import type { User, CreateUserDTO, UpdateUserDTO, UserFilters } from '@/types/users.types';
 
 // Hooks de utilidades
 import { useModuleColor } from '@/hooks/useModuleColor';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Modules, Sections } from '@/constants/permissions';
 
 /**
  * ColaboradoresSection Component
@@ -59,6 +61,10 @@ import { useModuleColor } from '@/hooks/useModuleColor';
 export const ColaboradoresSection = () => {
   // Color del módulo para mantener consistencia visual
   const { color: moduleColor } = useModuleColor('ORGANIZACION');
+
+  // RBAC Permission Checks
+  const { canDo } = usePermissions();
+  const canCreate = canDo(Modules.GESTION_ESTRATEGICA, Sections.COLABORADORES, 'create');
 
   // ============================================================================
   // STATE MANAGEMENT
@@ -83,7 +89,7 @@ export const ColaboradoresSection = () => {
 
   const { data: usersData, isLoading: isLoadingUsers } = useUsers(filters);
   const { data: cargos = [] } = useCargos();
-  const { data: rolesData } = useRoles({ is_active: true });
+  // const { data: rolesData } = useRoles({ is_active: true });
 
   // ============================================================================
   // MUTATIONS
@@ -266,9 +272,11 @@ export const ColaboradoresSection = () => {
         title="Gestión de Colaboradores"
         description="Administración de colaboradores y sus cargos en la organización"
         actions={
-          <Button onClick={handleOpenCreateForm} leftIcon={<UserPlus className="h-4 w-4" />}>
-            Nuevo Colaborador
-          </Button>
+          canCreate ? (
+            <Button onClick={handleOpenCreateForm} leftIcon={<UserPlus className="h-4 w-4" />}>
+              Nuevo Colaborador
+            </Button>
+          ) : undefined
         }
       />
 
@@ -330,6 +338,8 @@ export const ColaboradoresSection = () => {
           onEdit={handleOpenEditForm}
           onDelete={handleOpenDeleteModal}
           onToggleStatus={handleToggleStatus}
+          module={Modules.GESTION_ESTRATEGICA}
+          section={Sections.COLABORADORES}
         />
       </DataTableCard>
 
@@ -340,7 +350,6 @@ export const ColaboradoresSection = () => {
         onSubmit={handleSubmit}
         user={selectedUser}
         cargos={cargos}
-        roles={rolesData?.results || []}
         isLoading={createUserMutation.isPending || updateUserMutation.isPending}
       />
 

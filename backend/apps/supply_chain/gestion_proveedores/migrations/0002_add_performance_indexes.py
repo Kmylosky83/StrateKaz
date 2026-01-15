@@ -88,14 +88,8 @@ class Migration(migrations.Migration):
             ),
         ),
 
-        # Evaluaciones pendientes de revisión
-        migrations.AddIndex(
-            model_name='evaluacionproveedor',
-            index=models.Index(
-                fields=['requiere_seguimiento', 'proxima_evaluacion'],
-                name='idx_eval_seguimiento'
-            ),
-        ),
+        # NOTA: Índice idx_eval_seguimiento removido - campos requiere_seguimiento
+        # y proxima_evaluacion no existen en el modelo EvaluacionProveedor
 
         # =====================================================
         # ÍNDICES PARA PRUEBAS DE ACIDEZ
@@ -123,12 +117,7 @@ class Migration(migrations.Migration):
         # ÍNDICES PARA PRECIOS DE MATERIA PRIMA
         # =====================================================
 
-        # Precios vigentes por tipo de materia
-        migrations.AddIndex(
-            model_name='preciomateriaprima',
-            index=models.Index(
-                fields=['tipo_materia_prima', 'is_vigente', '-fecha_vigencia'],
-                name='idx_precio_tipo_vig'
-            ),
-        ),
+        # NOTA: Índice idx_precio_tipo_vig removido - campos tipo_materia_prima,
+        # is_vigente y fecha_vigencia no existen en el modelo PrecioMateriaPrima
+        # El campo correcto es 'tipo_materia' y no hay campos de vigencia
     ]

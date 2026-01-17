@@ -1,19 +1,21 @@
 """
-Modelos para Workflow de Firma Digital de Políticas
+Modelos para Workflow de Firma Digital de Políticas - DEPRECADO
 Sistema de Gestión StrateKaz
 
-Cumplimiento:
+IMPORTANTE: Este módulo está DEPRECADO desde Fase 0.3.
+Usar apps.workflow_engine.firma_digital.models.FirmaDigital en su lugar.
+
+Los modelos se mantienen temporalmente para:
+1. Compatibilidad con migraciones Django existentes
+2. Referencias históricas a datos legacy
+
+NO crear nuevos registros usando estos modelos.
+Usar FirmaDigital (workflow_engine) para todas las nuevas firmas.
+
+Cumplimiento (histórico):
 - ISO 9001:2015 - Cláusula 5.2 (Política de Calidad)
 - ISO 45001:2018 - Cláusula 5.2 (Política de SST)
 - Decreto 1072/2015 - Política de SST
-
-Features:
-- Firma digital manuscrita (canvas signature)
-- Workflow de firma múltiple (elaboró, revisó, aprobó)
-- Verificación de integridad (hash SHA-256)
-- Historial completo de firmas
-- Almacenamiento seguro
-- Revocación de firmas
 """
 
 from django.db import models

@@ -5,8 +5,8 @@ GestorDocumentalService: Integración con el módulo Sistema Documental
 - Envío automático de políticas firmadas
 - Callback para actualización de estados
 
-Fase 0.3.3: Actualizado para usar FirmaDigital (workflow_engine) en lugar de
-sistemas legacy (FirmaPolitica, FirmaDocumento del sistema_documental).
+Fase 0.3.4: Usa exclusivamente FirmaDigital (workflow_engine).
+Los modelos legacy (FirmaPolitica) están deprecados.
 """
 import logging
 from typing import Optional, Dict, Any, List
@@ -49,7 +49,7 @@ class GestorDocumentalService:
     def enviar_politica_a_documental(
         cls,
         politica,
-        proceso_firma,
+        firmas_digitales: List,
         request_user,
         clasificacion: str = 'INTERNO',
         areas_aplicacion: list = None,
@@ -58,13 +58,11 @@ class GestorDocumentalService:
         """
         Envía una política firmada al Gestor Documental.
 
-        Este método realiza la integración directa (sin HTTP) entre
-        los módulos de Identidad y Sistema Documental.
+        Fase 0.3.4: Usa FirmaDigital directamente.
 
         Args:
-            politica: Instancia de PoliticaEspecifica (v3.1: políticas integrales
-                      ahora tienen is_integral_policy=True)
-            proceso_firma: ProcesoFirmaPolitica completado
+            politica: Instancia de PoliticaEspecifica
+            firmas_digitales: Lista de FirmaDigital completadas
             request_user: Usuario que solicita el envío
             clasificacion: Nivel de clasificación del documento
             areas_aplicacion: Lista de IDs de áreas donde aplica
@@ -84,23 +82,20 @@ class GestorDocumentalService:
             )
 
         # Validar estado de la política
-        if politica.status not in ['FIRMADO', 'EN_REVISION']:
+        if politica.status not in ['FIRMADO', 'EN_REVISION', 'POR_CODIFICAR']:
             raise ValueError(
-                f"La política debe estar en estado FIRMADO o EN_REVISION, "
+                f"La política debe estar en estado FIRMADO, EN_REVISION o POR_CODIFICAR, "
                 f"estado actual: {politica.status}"
             )
 
-        # Validar proceso de firma
-        if proceso_firma.estado != 'COMPLETADO':
-            raise ValueError(
-                f"El proceso de firma debe estar COMPLETADO, "
-                f"estado actual: {proceso_firma.estado}"
-            )
+        # Validar que hay firmas
+        if not firmas_digitales:
+            raise ValueError("Debe haber al menos una firma digital completada")
 
         # Preparar datos para el Gestor Documental
         datos_documental = cls._preparar_datos_documental(
             politica=politica,
-            proceso_firma=proceso_firma,
+            firmas_digitales=firmas_digitales,
             request_user=request_user,
             clasificacion=clasificacion,
             areas_aplicacion=areas_aplicacion or [],
@@ -332,13 +327,17 @@ class GestorDocumentalService:
     @staticmethod
     def _preparar_datos_documental(
         politica,
-        proceso_firma,
+        firmas_digitales: List,
         request_user,
         clasificacion: str,
         areas_aplicacion: list,
         observaciones: str
     ) -> Dict[str, Any]:
-        """Prepara los datos estructurados para el Gestor Documental."""
+        """
+        Prepara los datos estructurados para el Gestor Documental.
+
+        Fase 0.3.4: Usa exclusivamente FirmaDigital.
+        """
         # Determinar tipo de política
         tipo_origen = 'POLITICA_ESPECIFICA'
         if hasattr(politica, 'identity') and not hasattr(politica, 'norma_iso'):
@@ -349,52 +348,24 @@ class GestorDocumentalService:
         if hasattr(politica, 'norma_iso') and politica.norma_iso:
             norma_code = politica.norma_iso.code
 
-        # Preparar información de firmas
-        # Fase 0.3.3: Buscar FirmaDigital vinculadas a la política
+        # Preparar información de firmas desde FirmaDigital
         firmas_info = []
-        firmas_digitales = []
+        firmas_ids = []
 
-        # Primero intentar obtener FirmaDigital (nuevo sistema universal)
-        try:
-            from apps.workflow_engine.firma_digital.models import FirmaDigital
-            content_type = ContentType.objects.get_for_model(politica)
-            firmas_digitales_qs = FirmaDigital.objects.filter(
-                content_type=content_type,
-                object_id=politica.id,
-                estado='FIRMADO'
-            ).order_by('orden')
-
-            for firma in firmas_digitales_qs:
-                firmas_digitales.append(firma.id)
-                firmas_info.append({
-                    'orden': firma.orden,
-                    'rol': firma.rol_firma,
-                    'rol_display': firma.get_rol_firma_display(),
-                    'cargo_id': str(firma.cargo_id) if firma.cargo_id else None,
-                    'cargo_nombre': firma.cargo.name if firma.cargo else '',
-                    'usuario_id': firma.usuario_id,
-                    'usuario_nombre': firma.usuario.get_full_name() if firma.usuario else None,
-                    'fecha_firma': firma.fecha_firma.isoformat() if firma.fecha_firma else None,
-                    'firma_hash': firma.firma_hash,
-                    'firma_digital_id': str(firma.id),
-                })
-        except (LookupError, ImportError):
-            pass
-
-        # Fallback a FirmaPolitica legacy si no hay FirmaDigital
-        if not firmas_info and hasattr(proceso_firma, 'firmas'):
-            for firma in proceso_firma.firmas.filter(estado='FIRMADO').order_by('orden'):
-                firmas_info.append({
-                    'orden': firma.orden,
-                    'rol': firma.rol_firmante,
-                    'rol_display': firma.get_rol_firmante_display(),
-                    'cargo_id': firma.cargo_id,
-                    'cargo_nombre': firma.cargo.name if firma.cargo else '',
-                    'usuario_id': firma.usuario_id,
-                    'usuario_nombre': firma.usuario.get_full_name() if firma.usuario else None,
-                    'fecha_firma': firma.fecha_firma.isoformat() if firma.fecha_firma else None,
-                    'firma_hash': firma.firma_hash,
-                })
+        for firma in firmas_digitales:
+            firmas_ids.append(str(firma.id))
+            firmas_info.append({
+                'orden': firma.orden,
+                'rol': firma.rol_firma,
+                'rol_display': firma.get_rol_firma_display(),
+                'cargo_id': str(firma.cargo_id) if firma.cargo_id else None,
+                'cargo_nombre': firma.cargo.name if firma.cargo else '',
+                'usuario_id': firma.usuario_id,
+                'usuario_nombre': firma.usuario.get_full_name() if firma.usuario else None,
+                'fecha_firma': firma.fecha_firma.isoformat() if firma.fecha_firma else None,
+                'firma_hash': firma.firma_hash,
+                'firma_digital_id': str(firma.id),
+            })
 
         # Detectar si es actualización
         es_actualizacion = bool(getattr(politica, 'change_reason', '')) and politica.version != '1.0'
@@ -425,6 +396,12 @@ class GestorDocumentalService:
         if hasattr(politica, 'identity') and politica.identity:
             empresa_id = politica.identity.empresa_id
 
+        # Obtener fecha de la última firma
+        fecha_ultima_firma = None
+        if firmas_digitales:
+            ultima = max(firmas_digitales, key=lambda f: f.fecha_firma or timezone.now())
+            fecha_ultima_firma = ultima.fecha_firma.isoformat() if ultima.fecha_firma else None
+
         return {
             'origen': 'IDENTIDAD_CORPORATIVA',
             'tipo_origen': tipo_origen,
@@ -441,9 +418,8 @@ class GestorDocumentalService:
             'areas_aplicacion': areas_aplicacion,
             'observaciones': observaciones,
             'firmas': firmas_info,
-            'firmas_digitales': firmas_digitales,  # Fase 0.3.3: IDs de FirmaDigital
-            'proceso_firma_id': proceso_firma.id,
-            'fecha_firma_completada': proceso_firma.fecha_completado.isoformat() if proceso_firma.fecha_completado else None,
+            'firmas_digitales': firmas_ids,  # Fase 0.3.4: IDs de FirmaDigital
+            'fecha_firma_completada': fecha_ultima_firma,
             'solicitado_por': request_user.id,
             'solicitado_por_nombre': request_user.get_full_name(),
             'fecha_solicitud': timezone.now().isoformat(),

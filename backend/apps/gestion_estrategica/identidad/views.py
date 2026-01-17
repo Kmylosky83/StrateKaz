@@ -51,6 +51,8 @@ from .models_workflow_firmas import (
     FirmaPolitica,
     HistorialFirmaPolitica,
 )
+# Fase 0.3.3: Importar FirmaDigital para sistema universal
+from django.contrib.contenttypes.models import ContentType
 
 
 class CorporateIdentityViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
@@ -1216,12 +1218,15 @@ class PoliticaEspecificaViewSet(
                 )
 
         # Registrar la firma
+        ip_address = self._get_client_ip(request)
+        user_agent = request.META.get('HTTP_USER_AGENT', '')
+
         try:
             firma.firmar(
                 usuario=request.user,
                 firma_base64=firma_imagen,
-                ip_address=self._get_client_ip(request),
-                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                ip_address=ip_address,
+                user_agent=user_agent,
                 comentarios=comentarios
             )
         except Exception as e:
@@ -1230,15 +1235,30 @@ class PoliticaEspecificaViewSet(
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # Fase 0.3.3: Crear FirmaDigital en el sistema universal
+        # Esto permite migración gradual y compatibilidad con GenericForeignKey
+        firma_digital = self._crear_firma_digital(
+            politica=politica,
+            firma_legacy=firma,
+            usuario=request.user,
+            firma_imagen=firma_imagen,
+            ip_address=ip_address,
+            user_agent=user_agent
+        )
+
         # Registrar en historial
+        detalles_historial = {
+            'firma_hash': firma.firma_hash,
+        }
+        if firma_digital:
+            detalles_historial['firma_digital_id'] = str(firma_digital.id)
+
         HistorialFirmaPolitica.objects.create(
             firma=firma,
             accion='FIRMADO',
             usuario=request.user,
-            detalles={
-                'firma_hash': firma.firma_hash,
-            },
-            ip_address=self._get_client_ip(request)
+            detalles=detalles_historial,
+            ip_address=ip_address
         )
 
         # Refrescar proceso
@@ -1507,6 +1527,100 @@ class PoliticaEspecificaViewSet(
         else:
             ip = request.META.get('REMOTE_ADDR')
         return ip
+
+    def _crear_firma_digital(self, politica, firma_legacy, usuario, firma_imagen, ip_address, user_agent=''):
+        """
+        Fase 0.3.3: Crea FirmaDigital (sistema universal) vinculada a la política.
+
+        Este método crea registros en el nuevo sistema FirmaDigital del workflow_engine
+        para cada firma legacy (FirmaPolitica). Esto permite:
+        1. Migración gradual al nuevo sistema
+        2. Compatibilidad con GenericForeignKey
+        3. Firmas pueden apuntar a cualquier modelo
+
+        Args:
+            politica: PoliticaEspecifica siendo firmada
+            firma_legacy: FirmaPolitica legacy que se está procesando
+            usuario: Usuario que está firmando
+            firma_imagen: Imagen Base64 de la firma
+            ip_address: IP del cliente
+            user_agent: User agent del navegador
+
+        Returns:
+            FirmaDigital: La firma digital creada, o None si falla
+        """
+        try:
+            from apps.workflow_engine.firma_digital.models import (
+                FirmaDigital, ConfiguracionFlujoFirma as ConfigFlujoUniversal
+            )
+
+            # Mapear rol de FirmaPolitica a rol de FirmaDigital
+            mapeo_rol = {
+                'ELABORO': 'ELABORO',
+                'REVISO_TECNICO': 'REVISO',
+                'REVISO_JURIDICO': 'REVISO',
+                'APROBO_DIRECTOR': 'APROBO',
+                'APROBO_GERENTE': 'APROBO',
+                'APROBO_REPRESENTANTE_LEGAL': 'AUTORIZO',
+            }
+            rol_universal = mapeo_rol.get(firma_legacy.rol_firmante, 'VALIDO')
+
+            # Obtener ContentType de la política
+            content_type = ContentType.objects.get_for_model(politica)
+
+            # Buscar o crear configuración de flujo universal
+            config_flujo, _ = ConfigFlujoUniversal.objects.get_or_create(
+                codigo='FLUJO-POL-STD',
+                defaults={
+                    'nombre': 'Flujo Estándar Políticas',
+                    'descripcion': 'Flujo de firma para políticas corporativas',
+                    'tipo_flujo': 'SECUENCIAL',
+                    'configuracion_nodos': [],
+                    'permite_delegacion': True,
+                    'dias_max_firma': 7,
+                    'requiere_comentario_rechazo': True,
+                    'empresa_id': politica.identity.empresa_id if hasattr(politica, 'identity') else None,
+                }
+            )
+
+            # Calcular hash del contenido de la política
+            import hashlib
+            contenido_hash = hashlib.sha256(
+                (politica.content or '').encode('utf-8')
+            ).hexdigest()
+
+            # Crear FirmaDigital
+            firma_digital = FirmaDigital.objects.create(
+                content_type=content_type,
+                object_id=politica.id,
+                configuracion_flujo=config_flujo,
+                usuario=usuario,
+                cargo=usuario.cargo,
+                rol_firma=rol_universal,
+                firma_imagen=firma_imagen,
+                documento_hash=contenido_hash,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                estado='FIRMADO',
+                orden=firma_legacy.orden,
+                comentarios=f'Migrada desde FirmaPolitica #{firma_legacy.id}',
+                es_delegada=False,
+            )
+
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(
+                f"FirmaDigital #{firma_digital.id} creada para política {politica.id} "
+                f"(rol: {rol_universal}, usuario: {usuario.username})"
+            )
+
+            return firma_digital
+
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Error creando FirmaDigital: {str(e)}")
+            return None
 
     # =========================================================================
     # INTEGRACIÓN CON GESTOR DOCUMENTAL

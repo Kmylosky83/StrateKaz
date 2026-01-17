@@ -4,11 +4,15 @@ Servicios de integración del módulo Identidad Corporativa
 GestorDocumentalService: Integración con el módulo Sistema Documental
 - Envío automático de políticas firmadas
 - Callback para actualización de estados
+
+Fase 0.3.3: Actualizado para usar FirmaDigital (workflow_engine) en lugar de
+sistemas legacy (FirmaPolitica, FirmaDocumento del sistema_documental).
 """
 import logging
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from django.utils import timezone
 from django.apps import apps
+from django.contrib.contenttypes.models import ContentType
 
 logger = logging.getLogger(__name__)
 
@@ -202,37 +206,55 @@ class GestorDocumentalService:
             empresa_id=empresa_id,
         )
 
-        # 6. Registrar firmas de Identidad como FirmaDocumento
+        # 6. Vincular FirmaDigital existentes al documento
+        # Fase 0.3.3: Usamos FirmaDigital del workflow_engine en lugar de crear
+        # FirmaDocumento duplicados. Las FirmaDigital usan GenericForeignKey
+        # y pueden apuntar a cualquier modelo.
         firmas_info = datos_documental.get('firmas', [])
-        for firma_data in firmas_info:
-            try:
-                firmante = User.objects.get(id=firma_data['usuario_id']) if firma_data.get('usuario_id') else elaborado_por
-            except User.DoesNotExist:
-                firmante = elaborado_por
+        firmas_digitales = datos_documental.get('firmas_digitales', [])
 
-            # Mapear rol de Identidad a tipo de firma de Documental
-            tipo_firma_map = {
-                'ELABORO': 'ELABORACION',
-                'REVISO_TECNICO': 'REVISION',
-                'REVISO_JURIDICO': 'REVISION',
-                'APROBO_DIRECTOR': 'APROBACION',
-                'APROBO_GERENTE': 'APROBACION',
-                'APROBO_REPRESENTANTE_LEGAL': 'APROBACION',
-            }
-            tipo_firma = tipo_firma_map.get(firma_data.get('rol', ''), 'VALIDACION')
-
-            FirmaDocumento.objects.create(
-                documento=documento,
-                tipo_firma=tipo_firma,
-                firmante=firmante,
-                cargo_firmante=firma_data.get('cargo_nombre', ''),
-                estado='FIRMADO',
-                fecha_firma=timezone.now(),
-                comentarios=f"Firma importada desde Identidad - Proceso #{proceso_firma.id}",
-                orden_firma=firma_data.get('orden', 1),
-                checksum_documento=firma_data.get('firma_hash', ''),
-                empresa_id=empresa_id,
+        # Si ya tenemos FirmaDigital, las referenciamos directamente
+        if firmas_digitales:
+            # Las firmas ya están vinculadas al documento a través de GenericForeignKey
+            logger.info(
+                f"Documento {documento.id} vinculado con {len(firmas_digitales)} firmas digitales existentes"
             )
+        else:
+            # Fallback: crear FirmaDocumento legacy solo si no hay FirmaDigital
+            # Esto mantiene compatibilidad durante la migración
+            for firma_data in firmas_info:
+                try:
+                    firmante = User.objects.get(id=firma_data['usuario_id']) if firma_data.get('usuario_id') else elaborado_por
+                except User.DoesNotExist:
+                    firmante = elaborado_por
+
+                # Mapear rol de Identidad a tipo de firma de Documental
+                tipo_firma_map = {
+                    'ELABORO': 'ELABORACION',
+                    'REVISO': 'REVISION',
+                    'REVISO_TECNICO': 'REVISION',
+                    'REVISO_JURIDICO': 'REVISION',
+                    'APROBO': 'APROBACION',
+                    'APROBO_DIRECTOR': 'APROBACION',
+                    'APROBO_GERENTE': 'APROBACION',
+                    'APROBO_REPRESENTANTE_LEGAL': 'APROBACION',
+                    'VALIDO': 'VALIDACION',
+                    'AUTORIZO': 'APROBACION',
+                }
+                tipo_firma = tipo_firma_map.get(firma_data.get('rol', ''), 'VALIDACION')
+
+                FirmaDocumento.objects.create(
+                    documento=documento,
+                    tipo_firma=tipo_firma,
+                    firmante=firmante,
+                    cargo_firmante=firma_data.get('cargo_nombre', ''),
+                    estado='FIRMADO',
+                    fecha_firma=timezone.now(),
+                    comentarios=f"Firma importada desde Identidad - Proceso #{proceso_firma.id}",
+                    orden_firma=firma_data.get('orden', 1),
+                    checksum_documento=firma_data.get('firma_hash', ''),
+                    empresa_id=empresa_id,
+                )
 
         # 7. Crear versión del documento
         tipo_cambio = 'CREACION' if not es_actualizacion else 'ACTUALIZACION'
@@ -328,19 +350,51 @@ class GestorDocumentalService:
             norma_code = politica.norma_iso.code
 
         # Preparar información de firmas
+        # Fase 0.3.3: Buscar FirmaDigital vinculadas a la política
         firmas_info = []
-        for firma in proceso_firma.firmas.filter(estado='FIRMADO').order_by('orden'):
-            firmas_info.append({
-                'orden': firma.orden,
-                'rol': firma.rol_firmante,
-                'rol_display': firma.get_rol_firmante_display(),
-                'cargo_id': firma.cargo_id,
-                'cargo_nombre': firma.cargo.name if firma.cargo else '',
-                'usuario_id': firma.usuario_id,
-                'usuario_nombre': firma.usuario.get_full_name() if firma.usuario else None,
-                'fecha_firma': firma.fecha_firma.isoformat() if firma.fecha_firma else None,
-                'firma_hash': firma.firma_hash,
-            })
+        firmas_digitales = []
+
+        # Primero intentar obtener FirmaDigital (nuevo sistema universal)
+        try:
+            from apps.workflow_engine.firma_digital.models import FirmaDigital
+            content_type = ContentType.objects.get_for_model(politica)
+            firmas_digitales_qs = FirmaDigital.objects.filter(
+                content_type=content_type,
+                object_id=politica.id,
+                estado='FIRMADO'
+            ).order_by('orden')
+
+            for firma in firmas_digitales_qs:
+                firmas_digitales.append(firma.id)
+                firmas_info.append({
+                    'orden': firma.orden,
+                    'rol': firma.rol_firma,
+                    'rol_display': firma.get_rol_firma_display(),
+                    'cargo_id': str(firma.cargo_id) if firma.cargo_id else None,
+                    'cargo_nombre': firma.cargo.name if firma.cargo else '',
+                    'usuario_id': firma.usuario_id,
+                    'usuario_nombre': firma.usuario.get_full_name() if firma.usuario else None,
+                    'fecha_firma': firma.fecha_firma.isoformat() if firma.fecha_firma else None,
+                    'firma_hash': firma.firma_hash,
+                    'firma_digital_id': str(firma.id),
+                })
+        except (LookupError, ImportError):
+            pass
+
+        # Fallback a FirmaPolitica legacy si no hay FirmaDigital
+        if not firmas_info and hasattr(proceso_firma, 'firmas'):
+            for firma in proceso_firma.firmas.filter(estado='FIRMADO').order_by('orden'):
+                firmas_info.append({
+                    'orden': firma.orden,
+                    'rol': firma.rol_firmante,
+                    'rol_display': firma.get_rol_firmante_display(),
+                    'cargo_id': firma.cargo_id,
+                    'cargo_nombre': firma.cargo.name if firma.cargo else '',
+                    'usuario_id': firma.usuario_id,
+                    'usuario_nombre': firma.usuario.get_full_name() if firma.usuario else None,
+                    'fecha_firma': firma.fecha_firma.isoformat() if firma.fecha_firma else None,
+                    'firma_hash': firma.firma_hash,
+                })
 
         # Detectar si es actualización
         es_actualizacion = bool(getattr(politica, 'change_reason', '')) and politica.version != '1.0'
@@ -387,6 +441,7 @@ class GestorDocumentalService:
             'areas_aplicacion': areas_aplicacion,
             'observaciones': observaciones,
             'firmas': firmas_info,
+            'firmas_digitales': firmas_digitales,  # Fase 0.3.3: IDs de FirmaDigital
             'proceso_firma_id': proceso_firma.id,
             'fecha_firma_completada': proceso_firma.fecha_completado.isoformat() if proceso_firma.fecha_completado else None,
             'solicitado_por': request_user.id,

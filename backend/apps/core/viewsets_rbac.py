@@ -31,6 +31,11 @@ from django.db import transaction
 from django.db.models import Count, Q
 from collections import defaultdict
 
+from .utils.audit_logging import (
+    log_permissions_assigned, log_section_access_changed, log_role_assigned,
+    log_additional_role_changed, log_group_membership_changed
+)
+
 from .models import (
     Permiso, Role, RolePermiso, Cargo, CargoPermiso,
     Group, GroupRole, UserRole, UserGroup, User, MenuItem, CargoRole,
@@ -268,6 +273,9 @@ class RoleViewSet(viewsets.ModelViewSet):
                     defaults={'granted_by': request.user}
                 )
 
+        # P0-10: Audit logging
+        log_permissions_assigned(request, role, 'role', permission_ids, action='assigned')
+
         # Retornar rol actualizado
         return Response(
             RoleDetailSerializer(role).data,
@@ -304,6 +312,9 @@ class RoleViewSet(viewsets.ModelViewSet):
             role=role,
             permiso_id__in=permission_ids
         ).delete()[0]
+
+        # P0-10: Audit logging
+        log_permissions_assigned(request, role, 'role', permission_ids, action='removed')
 
         return Response({
             'message': f'{deleted_count} permisos removidos exitosamente',
@@ -426,6 +437,9 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
                     defaults={'granted_by': request.user}
                 )
 
+        # P0-10: Audit logging
+        log_permissions_assigned(request, cargo, 'cargo', permission_ids, action='assigned')
+
         return Response(
             CargoDetailRBACSerializer(cargo).data,
             status=status.HTTP_200_OK
@@ -460,6 +474,10 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
             roles = Role.objects.filter(id__in=role_ids, is_active=True)
             for role in roles:
                 CargoRole.objects.get_or_create(cargo=cargo, role=role)
+
+        # P0-10: Audit logging (log each role assigned)
+        for role in roles:
+            log_role_assigned(request, cargo, role, action='assigned')
 
         return Response(
             CargoDetailRBACSerializer(cargo).data,
@@ -801,6 +819,9 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
         # Contar total final
         total_sections = CargoSectionAccess.objects.filter(cargo=cargo).count()
 
+        # P0-10: Audit logging
+        log_section_access_changed(request, cargo, sections_added + sections_updated, action='assigned')
+
         return Response({
             'message': 'Accesos actualizados exitosamente',
             'cargo_id': cargo.id,
@@ -820,6 +841,9 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
         cargo = self.get_object()
 
         deleted_count = CargoSectionAccess.objects.filter(cargo=cargo).delete()[0]
+
+        # P0-10: Audit logging
+        log_section_access_changed(request, cargo, deleted_count, action='cleared')
 
         return Response({
             'message': f'Se eliminaron {deleted_count} accesos del cargo {cargo.name}',
@@ -924,6 +948,9 @@ class GroupViewSet(viewsets.ModelViewSet):
                     }
                 )
 
+        # P0-10: Audit logging
+        log_group_membership_changed(request, group, user_ids, action='added')
+
         return Response(
             GroupDetailSerializer(group).data,
             status=status.HTTP_200_OK
@@ -951,6 +978,9 @@ class GroupViewSet(viewsets.ModelViewSet):
             group=group,
             user_id__in=user_ids
         ).delete()[0]
+
+        # P0-10: Audit logging
+        log_group_membership_changed(request, group, user_ids, action='removed')
 
         return Response({
             'message': f'{deleted_count} usuarios removidos del grupo',
@@ -1318,6 +1348,9 @@ class RolAdicionalViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         asignacion = serializer.save()
 
+        # P0-10: Audit logging
+        log_additional_role_changed(request, asignacion.user, asignacion.rol_adicional, action='assigned')
+
         return Response(
             UserRolAdicionalListSerializer(asignacion).data,
             status=status.HTTP_201_CREATED
@@ -1345,6 +1378,9 @@ class RolAdicionalViewSet(viewsets.ModelViewSet):
         asignacion = serializer.validated_data['asignacion']
         asignacion.is_active = False
         asignacion.save()
+
+        # P0-10: Audit logging
+        log_additional_role_changed(request, asignacion.user, asignacion.rol_adicional, action='revoked')
 
         return Response({'message': 'Rol revocado exitosamente'})
 

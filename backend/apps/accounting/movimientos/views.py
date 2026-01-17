@@ -16,6 +16,7 @@ from .serializers import (
     DetalleComprobanteSerializer, SecuenciaDocumentoSerializer,
     AsientoPlantillaListSerializer, AsientoPlantillaSerializer
 )
+from apps.core.utils.audit_logging import log_financial_operation
 
 
 class ComprobanteContableViewSet(viewsets.ModelViewSet):
@@ -46,6 +47,8 @@ class ComprobanteContableViewSet(viewsets.ModelViewSet):
         comprobante = self.get_object()
         try:
             comprobante.contabilizar(usuario=request.user)
+            # P0-10: Audit logging
+            log_financial_operation(request, comprobante, 'contabilizado')
             return Response({'status': 'contabilizado', 'mensaje': f'Comprobante {comprobante.numero_comprobante} contabilizado.'})
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -58,6 +61,8 @@ class ComprobanteContableViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Debe especificar el motivo de anulación'}, status=status.HTTP_400_BAD_REQUEST)
         try:
             comprobante.anular(motivo=motivo, usuario=request.user)
+            # P0-10: Audit logging
+            log_financial_operation(request, comprobante, 'anulado')
             return Response({'status': 'anulado', 'mensaje': f'Comprobante {comprobante.numero_comprobante} anulado.'})
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -71,6 +76,8 @@ class ComprobanteContableViewSet(viewsets.ModelViewSet):
         comprobante.aprobado_por = request.user
         comprobante.fecha_aprobacion = timezone.now()
         comprobante.save(update_fields=['estado', 'aprobado_por', 'fecha_aprobacion', 'updated_at'])
+        # P0-10: Audit logging
+        log_financial_operation(request, comprobante, 'aprobado')
         return Response({'status': 'aprobado', 'mensaje': f'Comprobante {comprobante.numero_comprobante} aprobado.'})
 
     @action(detail=True, methods=['post'])

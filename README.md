@@ -195,15 +195,28 @@ StrateKaz/
 
 ## Documentacion
 
-> **Punto de entrada:** [docs/00-EMPEZAR-AQUI.md](docs/00-EMPEZAR-AQUI.md)
+> **Indice maestro:** [docs/INDEX-DOCUMENTACION.md](docs/INDEX-DOCUMENTACION.md)
 
-### Guias Principales
+### Guias por Objetivo
 
-| Documento | Descripcion |
-|-----------|-------------|
-| [GUIA-DESPLIEGUE-CPANEL.md](docs/GUIA-DESPLIEGUE-CPANEL.md) | Deploy en hosting compartido |
-| [RUNBOOK-OPERACIONES.md](docs/operaciones/RUNBOOK-OPERACIONES.md) | Operaciones diarias |
-| [PLAN_CIERRE_BRECHAS.md](docs/plans/PLAN_CIERRE_BRECHAS.md) | Roadmap tecnico y MVP |
+| Objetivo | Documento | Descripcion |
+|----------|-----------|-------------|
+| **Desplegar a produccion** | [DESPLIEGUE-PASO-A-PASO.md](docs/DESPLIEGUE-PASO-A-PASO.md) | Guia simplificada paso a paso |
+| **Continuar desarrollo** | [PLAN_INTERVENCION_BRECHAS.md](docs/plans/PLAN_INTERVENCION_BRECHAS.md) | Plan maestro de mejoras |
+| **Entender arquitectura** | [ESTRUCTURA-6-NIVELES-ERP.md](docs/arquitectura/ESTRUCTURA-6-NIVELES-ERP.md) | 6 niveles del sistema |
+| **Referencia tecnica** | [GUIA-DESPLIEGUE-CPANEL.md](docs/devops/GUIA-DESPLIEGUE-CPANEL.md) | Deploy tecnico completo |
+
+### Navegacion Rapida
+
+```
+README.md (este archivo)
+    |
+    +-- Desplegar? --> docs/DESPLIEGUE-PASO-A-PASO.md
+    |
+    +-- Desarrollar? --> docs/INDEX-DOCUMENTACION.md
+    |
+    +-- Que sigue? --> docs/plans/PLAN_INTERVENCION_BRECHAS.md
+```
 
 ---
 
@@ -291,6 +304,11 @@ VITE_API_URL=http://localhost:8000/api
 - **Modelo Multi-Instancia**: Documentacion clara de arquitectura
   - 1 instalacion Django + 1 BD por empresa
   - Aislamiento de datos garantizado
+- **Documentacion Reorganizada**:
+  - Nueva guia paso a paso para despliegue (DESPLIEGUE-PASO-A-PASO.md)
+  - Indice maestro de documentacion (INDEX-DOCUMENTACION.md)
+  - Plan de intervencion de brechas v2.0 actualizado
+- **KPIs confirmados en Analytics (N6)**: No hay redundancia con Planeacion (N1)
 
 ### v3.2.0 (11 Enero 2026)
 

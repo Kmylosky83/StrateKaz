@@ -1,0 +1,78 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# TEMPLATE SUPERVISOR - StrateKaz (Referencia para VPS)
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# NOTA: Este template es para deployments en VPS con Supervisor.
+# En cPanel, Passenger maneja la aplicación automáticamente.
+#
+# INSTRUCCIONES:
+# 1. Copiar a /etc/supervisor/conf.d/{{EMPRESA}}.conf
+# 2. Reemplazar {{VARIABLES}}
+# 3. Recargar: supervisorctl reread && supervisorctl update
+# 4. Iniciar: supervisorctl start {{EMPRESA}}:*
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+
+[group:{{EMPRESA}}]
+programs={{EMPRESA}}_gunicorn,{{EMPRESA}}_celery_worker,{{EMPRESA}}_celery_beat
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# Gunicorn - Django Application Server
+# ─────────────────────────────────────────────────────────────────────────────────
+[program:{{EMPRESA}}_gunicorn]
+command=/home/{{USER}}/{{DOMINIO}}/venv/bin/gunicorn config.wsgi:application --bind unix:/home/{{USER}}/{{DOMINIO}}/backend/gunicorn.sock --workers 3 --timeout 60
+directory=/home/{{USER}}/{{DOMINIO}}/backend
+user={{USER}}
+autostart=true
+autorestart=true
+redirect_stderr=true
+stdout_logfile=/home/{{USER}}/{{DOMINIO}}/logs/gunicorn.log
+stdout_logfile_maxbytes=50MB
+stdout_logfile_backups=5
+environment=
+    DJANGO_SETTINGS_MODULE="config.settings",
+    LANG="en_US.UTF-8",
+    LC_ALL="en_US.UTF-8"
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# Celery Worker - Tareas Asíncronas
+# ─────────────────────────────────────────────────────────────────────────────────
+[program:{{EMPRESA}}_celery_worker]
+command=/home/{{USER}}/{{DOMINIO}}/venv/bin/celery -A config worker --loglevel=info --concurrency=2
+directory=/home/{{USER}}/{{DOMINIO}}/backend
+user={{USER}}
+numprocs=1
+autostart=true
+autorestart=true
+startsecs=10
+stopwaitsecs=600
+stopasgroup=true
+killasgroup=true
+redirect_stderr=true
+stdout_logfile=/home/{{USER}}/{{DOMINIO}}/logs/celery_worker.log
+stdout_logfile_maxbytes=50MB
+stdout_logfile_backups=5
+environment=
+    DJANGO_SETTINGS_MODULE="config.settings",
+    LANG="en_US.UTF-8",
+    LC_ALL="en_US.UTF-8"
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# Celery Beat - Tareas Programadas
+# ─────────────────────────────────────────────────────────────────────────────────
+[program:{{EMPRESA}}_celery_beat]
+command=/home/{{USER}}/{{DOMINIO}}/venv/bin/celery -A config beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+directory=/home/{{USER}}/{{DOMINIO}}/backend
+user={{USER}}
+numprocs=1
+autostart=true
+autorestart=true
+startsecs=10
+redirect_stderr=true
+stdout_logfile=/home/{{USER}}/{{DOMINIO}}/logs/celery_beat.log
+stdout_logfile_maxbytes=50MB
+stdout_logfile_backups=5
+environment=
+    DJANGO_SETTINGS_MODULE="config.settings",
+    LANG="en_US.UTF-8",
+    LC_ALL="en_US.UTF-8"

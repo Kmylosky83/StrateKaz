@@ -56,6 +56,8 @@ mimetypes.add_type('application/json', '.json')
 mimetypes.add_type('image/svg+xml', '.svg')
 mimetypes.add_type('font/woff', '.woff')
 mimetypes.add_type('font/woff2', '.woff2')
+# PWA manifest
+mimetypes.add_type('application/manifest+json', '.webmanifest')
 
 
 def serve_frontend(request, path=''):
@@ -64,9 +66,16 @@ def serve_frontend(request, path=''):
 
     IMPORTANTE: Configurado para servir módulos ES6 con headers correctos
     para evitar problemas de carga de dependencias (React, Recharts, etc.)
+
+    NO debe interferir con rutas de Django (admin, static, api).
     """
-    if path and not path.startswith('api/') and not path.startswith('admin/'):
-        # Intentar servir el archivo estático
+    # Rutas que Django debe manejar - NO servir index.html para estas
+    django_routes = ('admin/', 'static/', 'api/', 'media/', '__debug__/')
+    if path.startswith(django_routes):
+        raise Http404(f"Django should handle: {path}")
+
+    # Intentar servir archivo estático del frontend
+    if path:
         file_path = os.path.join(FRONTEND_DIR, path)
         if os.path.isfile(file_path):
             # Detectar content-type correcto
@@ -96,7 +105,7 @@ def serve_frontend(request, path=''):
 
             return response
 
-    # Para cualquier otra ruta (SPA routing), servir index.html
+    # Para rutas SPA (frontend React), servir index.html
     index_path = os.path.join(FRONTEND_DIR, 'index.html')
     if os.path.isfile(index_path):
         response = FileResponse(open(index_path, 'rb'), content_type='text/html; charset=utf-8')
@@ -223,13 +232,17 @@ if is_app_installed('apps.analytics.config_indicadores'):
 if is_app_installed('apps.audit_system.logs_sistema'):
     urlpatterns.append(path('api/audit/', include('apps.audit_system.urls')))
 
-# Serve media files in development
+# Serve static and media files
 if settings.DEBUG:
     try:
         import debug_toolbar
         urlpatterns += [path('__debug__/', include(debug_toolbar.urls))]
     except ImportError:
         pass
+
+# En cPanel, Django debe servir los archivos estáticos (admin, DRF, etc.)
+# ya que Passenger maneja todo el tráfico
+if os.environ.get('USE_CPANEL', 'False').lower() == 'true' or settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 

@@ -1,0 +1,348 @@
+═══════════════════════════════════════════════════════════════════════════════
+    MAPA DE DEPENDENCIAS TÉCNICAS - STRATEKAZ
+    Formato de Flechas: A → B significa "A depende de B"
+═══════════════════════════════════════════════════════════════════════════════
+
+LEYENDA:
+    →    Dependencia directa (ForeignKey o import necesario)
+    ⇢    Dependencia indirecta (a través de otro módulo)
+    ⚡   Dependencia crítica (ConsecutivoConfig, BaseCompanyModel)
+    ⚠    Dependencia futura planificada pero no implementada
+
+═══════════════════════════════════════════════════════════════════════════════
+NIVEL 0 - FUNDACIONES DEL SISTEMA
+═══════════════════════════════════════════════════════════════════════════════
+
+core
+├── (Ninguna dependencia - BASE ABSOLUTA)
+└── Provee:
+    ├── User (AUTH_USER_MODEL)
+    ├── BaseCompanyModel (multi-tenant)
+    ├── TimestampedModel
+    ├── AuditModel
+    └── SoftDeleteModel
+
+workflow_engine
+└── → core (User, modelos base)
+
+
+═══════════════════════════════════════════════════════════════════════════════
+NIVEL 1 - GESTIÓN ESTRATÉGICA (FUNDACIÓN ORGANIZACIONAL)
+═══════════════════════════════════════════════════════════════════════════════
+
+gestion_estrategica
+├── → core ⚡
+└── → workflow_engine (firma digital de políticas)
+
+gestion_estrategica.configuracion
+└── → core.base_models ⚡
+
+gestion_estrategica.identidad
+├── → core.base_models ⚡
+└── → workflow_engine.firma_digital
+
+gestion_estrategica.organizacion ⚡⚡⚡ (CRÍTICO - MÁS USADO)
+├── → core.base_models
+├── → core.User
+└── Provee:
+    ├── ConsecutivoConfig ← Usado por 8+ módulos
+    ├── Area ← Usado por analytics, admin_finance
+    ├── CentroCosto ← Usado por accounting
+    └── EmpresaConfig ← Usado por todos los BaseCompanyModel
+
+gestion_estrategica.planeacion
+└── → core.base_models ⚡
+
+
+═══════════════════════════════════════════════════════════════════════════════
+NIVEL 2 - MOTORES DE CUMPLIMIENTO Y RIESGOS
+═══════════════════════════════════════════════════════════════════════════════
+
+motor_cumplimiento.matriz_legal
+├── → core.base_models ⚡
+├── → core.User
+└── Provee:
+    ├── TipoNorma (catálogo global)
+    ├── NormaLegal (catálogo compartido)
+    └── EmpresaNorma (por tenant)
+
+motor_cumplimiento.partes_interesadas
+└── → core.base_models ⚡
+
+motor_cumplimiento.reglamentos_internos
+└── → core.base_models ⚡
+
+motor_cumplimiento.requisitos_legales
+└── → core.base_models ⚡
+
+─────────────────────────────────────────────────────────────────────────────
+
+motor_riesgos.riesgos_procesos
+├── → core.base_models ⚡
+├── → core.User
+└── Provee:
+    ├── CategoriaRiesgo (catálogo global)
+    ├── RiesgoProceso
+    ├── TratamientoRiesgo
+    └── ControlOperacional
+
+motor_riesgos.ipevr
+└── → core.base_models ⚡
+
+motor_riesgos.aspectos_ambientales
+└── → core.base_models ⚡
+
+motor_riesgos.riesgos_viales
+└── → core.base_models ⚡
+
+
+═══════════════════════════════════════════════════════════════════════════════
+NIVEL 3 - HSEQ MANAGEMENT (SALUD, SEGURIDAD, MEDIO AMBIENTE)
+═══════════════════════════════════════════════════════════════════════════════
+
+hseq_management.accidentalidad
+├── → core.User
+├── ⚠ motor_riesgos.RiesgoProceso (futuro)
+└── ⚠ motor_cumplimiento.NormaLegal (futuro)
+
+hseq_management.calidad
+├── → core.User
+└── ⚠ motor_cumplimiento (futuro - normas ISO)
+
+hseq_management.emergencias
+└── → core.User
+
+hseq_management.gestion_ambiental
+├── → core.User
+└── ⚠ motor_riesgos.aspectos_ambientales (futuro)
+
+hseq_management.sistema_documental
+├── → core.User
+└── → gestion_estrategica (para metadata de documentos)
+
+
+═══════════════════════════════════════════════════════════════════════════════
+NIVEL 4 - OPERACIONES CORE (SUPPLY CHAIN, PRODUCCIÓN, LOGÍSTICA, VENTAS)
+═══════════════════════════════════════════════════════════════════════════════
+
+supply_chain.catalogos
+└── → core.User
+
+supply_chain.gestion_proveedores
+├── → core.User
+└── → gestion_estrategica.organizacion.ConsecutivoConfig ⚡
+
+supply_chain.compras
+├── → core.User
+├── → supply_chain.catalogos (UnidadMedida)
+├── → supply_chain.gestion_proveedores (Proveedor)
+└── → gestion_estrategica.organizacion.ConsecutivoConfig ⚡
+
+supply_chain.almacenamiento
+├── → core.User
+├── → supply_chain.catalogos (UnidadMedida)
+└── → gestion_estrategica.organizacion.ConsecutivoConfig ⚡
+
+supply_chain.programacion_abastecimiento
+├── → core.User
+├── → supply_chain.catalogos
+└── → gestion_estrategica.organizacion.ConsecutivoConfig ⚡
+
+─────────────────────────────────────────────────────────────────────────────
+
+production_ops.recepcion
+├── → core.User
+├── → supply_chain.catalogos (UnidadMedida)
+└── → gestion_estrategica.organizacion.ConsecutivoConfig ⚡
+
+production_ops.procesamiento
+├── → core.User
+├── → production_ops.recepcion (Lote recibido)
+└── → gestion_estrategica.organizacion.ConsecutivoConfig ⚡
+
+production_ops.producto_terminado
+├── → core.User
+└── → production_ops.procesamiento (Lote procesado)
+
+production_ops.mantenimiento
+├── → core.User
+└── → gestion_estrategica.organizacion.ConsecutivoConfig ⚡
+
+─────────────────────────────────────────────────────────────────────────────
+
+logistics_fleet.gestion_flota
+└── → core.User
+
+logistics_fleet.gestion_transporte
+└── → logistics_fleet.gestion_flota (Vehiculo)
+
+logistics_fleet.despachos
+└── → logistics_fleet.gestion_flota (Vehiculo)
+
+logistics_fleet.pesv_operativo
+└── → logistics_fleet.gestion_flota (Vehiculo, Conductor)
+
+─────────────────────────────────────────────────────────────────────────────
+
+sales_crm.gestion_clientes
+└── → core.User
+
+sales_crm.pipeline_ventas
+└── → sales_crm.gestion_clientes (Cliente)
+
+sales_crm.pedidos_facturacion
+└── → sales_crm.gestion_clientes (Cliente)
+
+sales_crm.servicio_cliente
+├── → core.User
+├── → sales_crm.gestion_clientes (Cliente)
+└── → gestion_estrategica.organizacion.ConsecutivoConfig ⚡
+
+
+═══════════════════════════════════════════════════════════════════════════════
+NIVEL 5 - ADMINISTRACIÓN Y TALENTO HUMANO
+═══════════════════════════════════════════════════════════════════════════════
+
+talent_hub.estructura_cargos
+└── → core.User
+
+talent_hub.colaboradores
+├── → core.User
+└── → talent_hub.estructura_cargos (Cargo)
+
+talent_hub.seleccion_contratacion
+└── → talent_hub.estructura_cargos (Cargo)
+
+talent_hub.onboarding_induccion
+└── → talent_hub.colaboradores (Colaborador)
+
+talent_hub.formacion_reinduccion
+└── → talent_hub.colaboradores (Colaborador)
+
+talent_hub.control_tiempo
+└── → talent_hub.colaboradores (Colaborador)
+
+talent_hub.nomina
+└── → talent_hub.colaboradores (Colaborador)
+
+talent_hub.desempeno
+└── → talent_hub.colaboradores (Colaborador)
+
+─────────────────────────────────────────────────────────────────────────────
+
+admin_finance.presupuesto
+├── → core.User
+└── → gestion_estrategica.organizacion (Area, CentroCosto) ⚡
+
+admin_finance.tesoreria
+└── → core.User
+
+admin_finance.activos_fijos
+├── → core.User
+└── → gestion_estrategica.organizacion (Area) ⚡
+
+admin_finance.servicios_generales
+└── → core.User
+
+─────────────────────────────────────────────────────────────────────────────
+
+accounting.config_contable
+└── → core.User
+
+accounting.movimientos
+└── → accounting.config_contable (CuentaContable, CentroCosto)
+
+accounting.informes_contables
+└── → accounting.config_contable (CuentaContable)
+
+accounting.integracion
+├── → accounting.config_contable
+└── → gestion_estrategica.configuracion (EmpresaConfig) ⚡
+
+
+═══════════════════════════════════════════════════════════════════════════════
+NIVEL 6 - ANÁLISIS Y AUDITORÍA (CAPA TRANSVERSAL)
+═══════════════════════════════════════════════════════════════════════════════
+
+analytics.config_indicadores
+├── → core.User
+└── → gestion_estrategica.organizacion (Area) ⚡
+
+analytics.indicadores_area
+├── → analytics.config_indicadores (CatalogoKPI)
+└── → gestion_estrategica.organizacion (Area) ⚡
+
+analytics.acciones_indicador
+└── → analytics.indicadores_area (Indicador)
+
+analytics.analisis_tendencias
+└── → analytics.indicadores_area (Indicador)
+
+analytics.dashboard_gerencial
+├── → analytics.indicadores_area (Indicador)
+└── → gestion_estrategica (contexto organizacional) ⚡
+
+analytics.generador_informes
+└── → analytics.config_indicadores (CatalogoKPI)
+
+analytics.exportacion_integracion
+└── → analytics.indicadores_area (Indicador)
+
+─────────────────────────────────────────────────────────────────────────────
+
+audit_system.logs_sistema
+└── → core.User
+
+audit_system.centro_notificaciones
+├── → core.User
+└── → gestion_estrategica.organizacion (contexto) ⚡
+
+audit_system.tareas_recordatorios
+├── → core.User
+└── → GenericForeignKey (múltiples módulos)
+
+audit_system.config_alertas
+├── → core.User
+└── → gestion_estrategica (reglas de alertas) ⚡
+
+
+═══════════════════════════════════════════════════════════════════════════════
+RESUMEN DE DEPENDENCIAS CRÍTICAS (⚡)
+═══════════════════════════════════════════════════════════════════════════════
+
+gestion_estrategica.organizacion.ConsecutivoConfig
+    ↑ Usada por:
+    ├── supply_chain (4 sub-módulos)
+    ├── production_ops (3 sub-módulos)
+    ├── sales_crm.servicio_cliente
+    └── admin_finance.activos_fijos
+
+gestion_estrategica.organizacion.Area
+    ↑ Usada por:
+    ├── analytics.config_indicadores
+    ├── analytics.indicadores_area
+    ├── admin_finance.presupuesto
+    └── admin_finance.activos_fijos
+
+core.base_models.BaseCompanyModel
+    ↑ Heredada por:
+    └── Todos los modelos multi-tenant (100% de las apps)
+
+
+═══════════════════════════════════════════════════════════════════════════════
+VALIDACIÓN: NO HAY CICLOS NI DEPENDENCIAS INVERSAS
+═══════════════════════════════════════════════════════════════════════════════
+
+✓ Nivel 0 NO depende de niveles superiores
+✓ Nivel 1 NO depende de niveles 2-6
+✓ Nivel 2 NO depende de niveles 3-6
+✓ Nivel 3 NO depende de niveles 4-6
+✓ Nivel 4 NO depende de niveles 5-6
+✓ Nivel 5 NO depende de nivel 6
+✓ NO existen dependencias circulares (A→B y B→A)
+
+
+═══════════════════════════════════════════════════════════════════════════════
+FIN DEL MAPA DE DEPENDENCIAS
+Fecha: 2026-01-15 | Estado: ✅ VALIDADO
+═══════════════════════════════════════════════════════════════════════════════

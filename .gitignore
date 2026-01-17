@@ -91,6 +91,8 @@ StrateKaz_Frontend.tar
 # Agent/Analysis scripts (temporary)
 .agent/
 analyze_*.py
+*_analysis_report.json
+model_analysis_report.json
 
 # Requirements específicos de deployment (usar deploy/cpanel/)
 backend/requirements-cpanel.txt

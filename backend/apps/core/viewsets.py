@@ -10,6 +10,9 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q, Count
 
 from .models import User, Cargo, Permiso, CargoPermiso
+from .utils.audit_logging import (
+    log_user_created, log_user_deleted, log_user_restored, log_password_changed
+)
 from .serializers import (
     CargoSerializer,
     UserListSerializer,
@@ -111,9 +114,15 @@ class UserViewSet(viewsets.ModelViewSet):
              return [IsAuthenticated()]
         return [permission() for permission in self.permission_classes]
 
+    def perform_create(self, serializer):
+        """Crear usuario con logging de auditoría"""
+        user = serializer.save()
+        log_user_created(self.request, user)
+
     def perform_destroy(self, instance):
         """Soft delete en lugar de eliminación física"""
         instance.soft_delete()
+        log_user_deleted(self.request, instance)
 
     @action(detail=True, methods=['post'])
     def change_password(self, request, pk=None):
@@ -143,11 +152,12 @@ class UserViewSet(viewsets.ModelViewSet):
         
         if serializer.is_valid():
             serializer.save()
+            log_password_changed(self.request, user, self_change=(request.user.id == user.id))
             return Response(
                 {'message': 'Contraseña actualizada exitosamente'},
                 status=status.HTTP_200_OK
             )
-        
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, CanManageUsers])
@@ -166,7 +176,8 @@ class UserViewSet(viewsets.ModelViewSet):
             )
         
         user.restore()
-        
+        log_user_restored(self.request, user)
+
         serializer = UserDetailSerializer(user)
         return Response(
             {

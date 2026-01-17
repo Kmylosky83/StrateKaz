@@ -192,14 +192,16 @@ class TipoPolitica(TimestampedModel, OrderedModel):
         verbose_name='¿Requiere firma?',
         help_text='Si las políticas de este tipo requieren firma digital'
     )
-    flujo_firma_default = models.ForeignKey(
-        'identidad.ConfiguracionFlujoFirma',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='tipos_politica_default',
-        verbose_name='Flujo de firma por defecto'
-    )
+    # Fase 0.3.4: flujo_firma_default eliminado
+    # Cuando workflow_engine.firma_digital tenga migraciones, agregar:
+    # flujo_firma_default = models.ForeignKey(
+    #     'firma_digital.ConfiguracionFlujoFirma',
+    #     on_delete=models.SET_NULL,
+    #     null=True,
+    #     blank=True,
+    #     related_name='tipos_politica_default',
+    #     verbose_name='Flujo de firma por defecto'
+    # )
 
     # Normas ISO asociadas por defecto
     normas_iso_default = models.ManyToManyField(

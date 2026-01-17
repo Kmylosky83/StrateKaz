@@ -5,8 +5,8 @@ GestorDocumentalService: Integración con el módulo Sistema Documental
 - Envío automático de políticas firmadas
 - Callback para actualización de estados
 
-Fase 0.3.4: Usa exclusivamente FirmaDigital (workflow_engine).
-Los modelos legacy (FirmaPolitica) están deprecados.
+Fase 0.3.4: Usa exclusivamente FirmaDigital (workflow_engine.firma_digital).
+Los modelos legacy han sido eliminados completamente.
 """
 import logging
 from typing import Optional, Dict, Any, List

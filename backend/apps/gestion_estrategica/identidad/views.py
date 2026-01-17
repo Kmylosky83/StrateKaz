@@ -39,11 +39,13 @@ from .serializers import (
     ApprovePoliticaEspecificaSerializer,
     SignPoliticaSerializer,
     PublishPoliticaSerializer,
-    IniciarFirmaPoliticaSerializer,
-    FirmarPoliticaSerializer,
-    RechazarFirmaPoliticaSerializer,
+    IniciarFirmaSerializer,
+    FirmarDocumentoSerializer,
+    RechazarFirmaSerializer,
     EnviarADocumentalSerializer,
 )
+# Fase 0.3.4: Serializers de FirmaDigital desde workflow_engine
+from apps.workflow_engine.firma_digital.serializers import FirmaDigitalSerializer
 # Fase 0.3.4: Sistema de firmas consolidado - usar solo FirmaDigital
 from django.contrib.contenttypes.models import ContentType
 from apps.workflow_engine.firma_digital.models import (
@@ -814,7 +816,7 @@ class PoliticaEspecificaViewSet(
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        serializer = IniciarFirmaPoliticaSerializer(data=request.data)
+        serializer = IniciarFirmaSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         firmantes_manuales = serializer.validated_data.get('firmantes', [])
@@ -1058,7 +1060,7 @@ class PoliticaEspecificaViewSet(
         """
         politica = self.get_object()
 
-        serializer = FirmarPoliticaSerializer(data=request.data)
+        serializer = FirmarDocumentoSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         firma_id = serializer.validated_data['firma_id']
@@ -1286,7 +1288,7 @@ class PoliticaEspecificaViewSet(
         """
         politica = self.get_object()
 
-        serializer = RechazarFirmaPoliticaSerializer(data=request.data)
+        serializer = RechazarFirmaSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         firma_id = serializer.validated_data['firma_id']

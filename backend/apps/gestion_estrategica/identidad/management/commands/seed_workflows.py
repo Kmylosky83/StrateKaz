@@ -13,10 +13,18 @@ from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
-from apps.gestion_estrategica.identidad.models_workflow import (
-    ConfiguracionWorkflowFirma,
-    FIRMA_ROL_CHOICES,
+# Fase 0.3.4: Usar el sistema universal de workflow_engine
+from apps.workflow_engine.firma_digital.models import (
+    ConfiguracionFlujoFirma as ConfiguracionWorkflowFirma,
 )
+# Roles de firma disponibles
+FIRMA_ROL_CHOICES = [
+    ('ELABORO', 'Elaboró'),
+    ('REVISO', 'Revisó'),
+    ('APROBO', 'Aprobó'),
+    ('VALIDO', 'Validó'),
+    ('AUTORIZO', 'Autorizó'),
+]
 from apps.core.models import Cargo
 
 User = get_user_model()

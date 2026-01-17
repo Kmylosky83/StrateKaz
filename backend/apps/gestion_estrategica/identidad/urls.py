@@ -8,12 +8,14 @@ Endpoints:
 - /politicas-especificas/ - Políticas (integrales y específicas) - v3.1 unificado
 - /stats/ - Estadísticas de Dirección Estratégica
 - /config/ - Configuración dinámica (estados, tipos, roles)
-- /workflow/ - Sistema de firmas digitales y revisión periódica
 - /export/ - Exportación de documentos PDF/DOCX
 - /bi/ - Valores Vividos y métricas para Business Intelligence
 
 NOTA v3.1: /politicas-integrales/ ha sido eliminado.
 Use /politicas-especificas/?is_integral_policy=true para políticas integrales.
+
+NOTA Fase 0.3.4: /workflow/ ha sido eliminado. Los endpoints de firma digital
+están centralizados en /api/workflow-engine/firma-digital/
 """
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
@@ -59,8 +61,8 @@ urlpatterns = [
     path('', include(router.urls)),
     # Configuración dinámica (estados, tipos, roles)
     path('config/', include(config_router.urls)),
-    # Workflow de firmas digitales y revisión periódica
-    path('workflow/', include('apps.gestion_estrategica.identidad.urls_workflow')),
+    # Fase 0.3.4: Workflow de firmas ahora en workflow_engine (rutas centralizadas)
+    # Los endpoints de firma están en /api/workflow-engine/firma-digital/
     # Valores Vividos y métricas para Business Intelligence
     path('bi/', include('apps.gestion_estrategica.identidad.urls_valores_vividos')),
     # Endpoints de exportación (v3.1: politica-integral eliminado, usar politica-especifica)

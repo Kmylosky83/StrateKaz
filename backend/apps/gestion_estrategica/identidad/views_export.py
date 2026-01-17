@@ -26,7 +26,8 @@ from .models import (
     CorporateIdentity,
     PoliticaEspecifica,
 )
-from .models_workflow import FirmaDigital, HistorialVersion
+# Fase 0.3.4: Usar modelos del sistema universal
+from apps.workflow_engine.firma_digital.models import FirmaDigital, HistorialVersion
 from .exporters import (
     IdentidadPDFGenerator,
     IdentidadDOCXGenerator,

@@ -17,7 +17,8 @@ from apps.gestion_estrategica.identidad.models_config import (
     RolFirmante,
     EstadoFirma,
 )
-from apps.gestion_estrategica.identidad.models_workflow_firmas import ConfiguracionFlujoFirma
+# Fase 0.3.4: Usar ConfiguracionFlujoFirma del sistema universal
+from apps.workflow_engine.firma_digital.models import ConfiguracionFlujoFirma
 
 
 class Command(BaseCommand):

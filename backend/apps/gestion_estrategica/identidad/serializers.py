@@ -395,19 +395,21 @@ class FirmanteSeleccionSerializer(serializers.Serializer):
         return data
 
 
-class IniciarFirmaPoliticaSerializer(serializers.Serializer):
+class IniciarFirmaSerializer(serializers.Serializer):
     """
-    Serializer para iniciar el proceso de firma de una política.
+    Serializer para iniciar el proceso de firma usando FirmaDigital universal.
 
     Soporta tres modos:
     1. Modo automático (flujo_firma_id): Usa un flujo predefinido con cargos fijos
     2. Modo por cargo (firmantes con cargo_id): Selecciona CARGOS para firma
        - Notifica a TODOS los usuarios del cargo
        - Cualquier usuario del cargo puede firmar
-    3. Modo legacy (firmantes con usuario_id): Selecciona usuarios específicos
+    3. Modo por usuario (firmantes con usuario_id): Selecciona usuarios específicos
 
     En todos los modos:
     - ELABORO: Automático (usuario actual)
+
+    NOTA: Fase 0.3.4 - Usa FirmaDigital con GenericForeignKey.
     """
     flujo_firma_id = serializers.IntegerField(
         required=False,
@@ -463,11 +465,11 @@ class IniciarFirmaPoliticaSerializer(serializers.Serializer):
         return value
 
 
-class FirmarPoliticaSerializer(serializers.Serializer):
-    """Serializer para registrar una firma en una política"""
+class FirmarDocumentoSerializer(serializers.Serializer):
+    """Serializer para registrar una firma en cualquier documento usando FirmaDigital."""
     firma_id = serializers.IntegerField(
         required=True,
-        help_text="ID de la firma (FirmaPolitica) a completar"
+        help_text="ID de la FirmaDigital a completar"
     )
     firma_imagen = serializers.CharField(
         required=True,
@@ -480,57 +482,17 @@ class FirmarPoliticaSerializer(serializers.Serializer):
     )
 
 
-class RechazarFirmaPoliticaSerializer(serializers.Serializer):
-    """Serializer para rechazar una firma"""
+class RechazarFirmaSerializer(serializers.Serializer):
+    """Serializer para rechazar una FirmaDigital."""
     firma_id = serializers.IntegerField(
         required=True,
-        help_text="ID de la firma (FirmaPolitica) a rechazar"
+        help_text="ID de la FirmaDigital a rechazar"
     )
     motivo = serializers.CharField(
         required=True,
         min_length=10,
         help_text="Motivo del rechazo (mínimo 10 caracteres)"
     )
-
-
-class FirmaPoliticaSerializer(serializers.Serializer):
-    """Serializer para mostrar una firma individual"""
-    id = serializers.IntegerField(read_only=True)
-    orden = serializers.IntegerField(read_only=True)
-    rol_firmante = serializers.CharField(read_only=True)
-    rol_firmante_display = serializers.CharField(source='get_rol_firmante_display', read_only=True)
-    cargo_id = serializers.IntegerField(source='cargo.id', read_only=True)
-    cargo_nombre = serializers.CharField(source='cargo.name', read_only=True)
-    usuario_id = serializers.IntegerField(source='usuario.id', read_only=True, allow_null=True)
-    usuario_nombre = serializers.SerializerMethodField()
-    estado = serializers.CharField(read_only=True)
-    estado_display = serializers.CharField(source='get_estado_display', read_only=True)
-    fecha_firma = serializers.DateTimeField(read_only=True)
-    fecha_rechazo = serializers.DateTimeField(read_only=True)
-    motivo_rechazo = serializers.CharField(read_only=True)
-    esta_vencida = serializers.BooleanField(read_only=True)
-    dias_para_vencer = serializers.IntegerField(read_only=True)
-
-    def get_usuario_nombre(self, obj):
-        if obj.usuario:
-            return obj.usuario.get_full_name()
-        return None
-
-
-class ProcesoFirmaPoliticaSerializer(serializers.Serializer):
-    """Serializer para mostrar el proceso de firma completo"""
-    id = serializers.IntegerField(read_only=True)
-    estado = serializers.CharField(read_only=True)
-    estado_display = serializers.CharField(source='get_estado_display', read_only=True)
-    paso_actual = serializers.IntegerField(read_only=True)
-    total_pasos = serializers.IntegerField(source='flujo_firma.total_pasos', read_only=True)
-    firmas_completadas = serializers.IntegerField(read_only=True)
-    firmas_pendientes = serializers.IntegerField(read_only=True)
-    progreso = serializers.IntegerField(source='progreso_porcentaje', read_only=True)
-    fecha_inicio = serializers.DateTimeField(read_only=True)
-    fecha_completado = serializers.DateTimeField(read_only=True)
-    iniciado_por_nombre = serializers.CharField(source='iniciado_por.get_full_name', read_only=True)
-    firmas = FirmaPoliticaSerializer(many=True, read_only=True)
 
 
 class EnviarADocumentalSerializer(serializers.Serializer):

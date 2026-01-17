@@ -5,7 +5,10 @@ from .models import (
     NodoFlujo,
     TransicionFlujo,
     CampoFormulario,
-    RolFlujo
+    RolFlujo,
+    FormularioDiligenciado,
+    RespuestaCampo,
+    AsignacionFormulario,
 )
 
 
@@ -451,3 +454,423 @@ class RolFlujoSerializer(serializers.ModelSerializer):
             })
 
         return data
+
+
+# ============================================================================
+# SERIALIZERS PARA FORMBUILDER
+# ============================================================================
+
+class RespuestaCampoSerializer(serializers.ModelSerializer):
+    """Serializer para RespuestaCampo - Respuestas a campos de formulario"""
+    campo_formulario_nombre = serializers.CharField(
+        source='campo_formulario.nombre',
+        read_only=True
+    )
+    campo_formulario_etiqueta = serializers.CharField(
+        source='campo_formulario.etiqueta',
+        read_only=True
+    )
+    campo_formulario_tipo = serializers.CharField(
+        source='campo_formulario.tipo',
+        read_only=True
+    )
+    modificado_por_nombre = serializers.CharField(
+        source='modificado_por.get_full_name',
+        read_only=True
+    )
+    es_firma = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = RespuestaCampo
+        fields = [
+            'id',
+            'formulario_diligenciado',
+            'campo_formulario',
+            'campo_formulario_nombre',
+            'campo_formulario_etiqueta',
+            'campo_formulario_tipo',
+            'valor',
+            'firma_base64',
+            'modificado_por',
+            'modificado_por_nombre',
+            'fecha_modificacion',
+            'es_valido',
+            'mensaje_validacion',
+            'version',
+            'valor_anterior',
+            'es_firma',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = [
+            'modificado_por',
+            'fecha_modificacion',
+            'version',
+            'valor_anterior',
+            'created_at',
+            'updated_at'
+        ]
+
+    def validate(self, data):
+        """Validaciones personalizadas"""
+        # Validar que el campo pertenezca a la plantilla del formulario
+        if 'formulario_diligenciado' in data and 'campo_formulario' in data:
+            plantilla = data['formulario_diligenciado'].plantilla_flujo
+            nodo = data['campo_formulario'].nodo
+            if nodo.plantilla != plantilla:
+                raise serializers.ValidationError({
+                    'campo_formulario': 'El campo debe pertenecer a la plantilla del formulario'
+                })
+
+        # Para campos tipo SIGNATURE, validar que firma_base64 esté presente si es requerido
+        if 'campo_formulario' in data:
+            campo = data['campo_formulario']
+            if campo.tipo == 'SIGNATURE' and campo.requerido:
+                if not data.get('firma_base64'):
+                    raise serializers.ValidationError({
+                        'firma_base64': 'La firma es requerida para este campo'
+                    })
+
+        return data
+
+
+class FormularioDiligenciadoListSerializer(serializers.ModelSerializer):
+    """Serializer para listado de FormularioDiligenciado"""
+    plantilla_flujo_nombre = serializers.CharField(
+        source='plantilla_flujo.nombre',
+        read_only=True
+    )
+    plantilla_flujo_codigo = serializers.CharField(
+        source='plantilla_flujo.codigo',
+        read_only=True
+    )
+    diligenciado_por_nombre = serializers.CharField(
+        source='diligenciado_por.get_full_name',
+        read_only=True
+    )
+    estado_display = serializers.CharField(
+        source='get_estado_display',
+        read_only=True
+    )
+    total_respuestas = serializers.SerializerMethodField()
+    total_firmas = serializers.SerializerMethodField()
+    requiere_firmas = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = FormularioDiligenciado
+        fields = [
+            'id',
+            'empresa_id',
+            'numero_formulario',
+            'titulo',
+            'plantilla_flujo',
+            'plantilla_flujo_nombre',
+            'plantilla_flujo_codigo',
+            'diligenciado_por',
+            'diligenciado_por_nombre',
+            'fecha_diligenciamiento',
+            'fecha_completado',
+            'estado',
+            'estado_display',
+            'total_respuestas',
+            'total_firmas',
+            'requiere_firmas',
+            'created_at',
+            'updated_at',
+        ]
+
+    def get_total_respuestas(self, obj):
+        """Total de respuestas capturadas"""
+        return obj.respuestas.count()
+
+    def get_total_firmas(self, obj):
+        """Total de firmas capturadas"""
+        return obj.respuestas.filter(firma_base64__isnull=False).count()
+
+
+class FormularioDiligenciadoDetailSerializer(serializers.ModelSerializer):
+    """Serializer detallado para FormularioDiligenciado"""
+    plantilla_flujo_nombre = serializers.CharField(
+        source='plantilla_flujo.nombre',
+        read_only=True
+    )
+    plantilla_flujo_codigo = serializers.CharField(
+        source='plantilla_flujo.codigo',
+        read_only=True
+    )
+    diligenciado_por_nombre = serializers.CharField(
+        source='diligenciado_por.get_full_name',
+        read_only=True
+    )
+    created_by_nombre = serializers.CharField(
+        source='created_by.get_full_name',
+        read_only=True
+    )
+    estado_display = serializers.CharField(
+        source='get_estado_display',
+        read_only=True
+    )
+    respuestas = RespuestaCampoSerializer(many=True, read_only=True)
+    campos_pendientes_firma = serializers.SerializerMethodField()
+    requiere_firmas = serializers.BooleanField(read_only=True)
+    esta_completado = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = FormularioDiligenciado
+        fields = [
+            'id',
+            'empresa_id',
+            'numero_formulario',
+            'titulo',
+            'plantilla_flujo',
+            'plantilla_flujo_nombre',
+            'plantilla_flujo_codigo',
+            'diligenciado_por',
+            'diligenciado_por_nombre',
+            'fecha_diligenciamiento',
+            'fecha_completado',
+            'content_type',
+            'object_id',
+            'datos_formulario',
+            'estado',
+            'estado_display',
+            'observaciones',
+            'respuestas',
+            'campos_pendientes_firma',
+            'requiere_firmas',
+            'esta_completado',
+            'created_by',
+            'created_by_nombre',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = [
+            'empresa_id',
+            'numero_formulario',
+            'diligenciado_por',
+            'fecha_diligenciamiento',
+            'created_by',
+            'created_at',
+            'updated_at'
+        ]
+
+    def get_campos_pendientes_firma(self, obj):
+        """Retorna IDs de campos de firma pendientes"""
+        return list(obj.campos_pendientes_firma().values_list('id', flat=True))
+
+
+class FormularioDiligenciadoCreateSerializer(serializers.ModelSerializer):
+    """Serializer para crear FormularioDiligenciado"""
+
+    class Meta:
+        model = FormularioDiligenciado
+        fields = [
+            'plantilla_flujo',
+            'titulo',
+            'content_type',
+            'object_id',
+            'observaciones',
+        ]
+
+    def validate_plantilla_flujo(self, value):
+        """Validar que la plantilla esté activa"""
+        if value.estado != 'ACTIVO':
+            raise serializers.ValidationError(
+                'Solo se pueden diligenciar formularios con plantillas activas'
+            )
+        return value
+
+    def create(self, validated_data):
+        """Crear formulario con datos del contexto"""
+        request = self.context.get('request')
+        if request and hasattr(request.user, 'empresa_id'):
+            validated_data['empresa_id'] = request.user.empresa_id
+            validated_data['diligenciado_por'] = request.user
+            validated_data['created_by'] = request.user
+        return super().create(validated_data)
+
+
+class AsignacionFormularioListSerializer(serializers.ModelSerializer):
+    """Serializer para listado de AsignacionFormulario"""
+    plantilla_flujo_nombre = serializers.CharField(
+        source='plantilla_flujo.nombre',
+        read_only=True
+    )
+    plantilla_flujo_codigo = serializers.CharField(
+        source='plantilla_flujo.codigo',
+        read_only=True
+    )
+    asignado_a_nombre = serializers.CharField(
+        source='asignado_a.get_full_name',
+        read_only=True
+    )
+    asignado_por_nombre = serializers.CharField(
+        source='asignado_por.get_full_name',
+        read_only=True
+    )
+    estado_display = serializers.CharField(
+        source='get_estado_display',
+        read_only=True
+    )
+    prioridad_display = serializers.CharField(
+        source='get_prioridad_display',
+        read_only=True
+    )
+    esta_vencida = serializers.BooleanField(read_only=True)
+    requiere_recordatorio = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = AsignacionFormulario
+        fields = [
+            'id',
+            'empresa_id',
+            'titulo',
+            'plantilla_flujo',
+            'plantilla_flujo_nombre',
+            'plantilla_flujo_codigo',
+            'asignado_a',
+            'asignado_a_nombre',
+            'asignado_por',
+            'asignado_por_nombre',
+            'fecha_asignacion',
+            'fecha_limite',
+            'estado',
+            'estado_display',
+            'prioridad',
+            'prioridad_display',
+            'esta_vencida',
+            'requiere_recordatorio',
+            'formulario_diligenciado',
+            'created_at',
+            'updated_at',
+        ]
+
+
+class AsignacionFormularioDetailSerializer(serializers.ModelSerializer):
+    """Serializer detallado para AsignacionFormulario"""
+    plantilla_flujo_nombre = serializers.CharField(
+        source='plantilla_flujo.nombre',
+        read_only=True
+    )
+    plantilla_flujo_codigo = serializers.CharField(
+        source='plantilla_flujo.codigo',
+        read_only=True
+    )
+    asignado_a_nombre = serializers.CharField(
+        source='asignado_a.get_full_name',
+        read_only=True
+    )
+    asignado_a_email = serializers.EmailField(
+        source='asignado_a.email',
+        read_only=True
+    )
+    asignado_por_nombre = serializers.CharField(
+        source='asignado_por.get_full_name',
+        read_only=True
+    )
+    estado_display = serializers.CharField(
+        source='get_estado_display',
+        read_only=True
+    )
+    prioridad_display = serializers.CharField(
+        source='get_prioridad_display',
+        read_only=True
+    )
+    esta_vencida = serializers.BooleanField(read_only=True)
+    requiere_recordatorio = serializers.BooleanField(read_only=True)
+    formulario_detalle = FormularioDiligenciadoListSerializer(
+        source='formulario_diligenciado',
+        read_only=True
+    )
+
+    class Meta:
+        model = AsignacionFormulario
+        fields = [
+            'id',
+            'empresa_id',
+            'titulo',
+            'descripcion',
+            'plantilla_flujo',
+            'plantilla_flujo_nombre',
+            'plantilla_flujo_codigo',
+            'asignado_a',
+            'asignado_a_nombre',
+            'asignado_a_email',
+            'asignado_por',
+            'asignado_por_nombre',
+            'area_id',
+            'fecha_asignacion',
+            'fecha_limite',
+            'estado',
+            'estado_display',
+            'prioridad',
+            'prioridad_display',
+            'notificacion_enviada',
+            'fecha_notificacion',
+            'dias_recordatorio',
+            'recordatorio_enviado',
+            'esta_vencida',
+            'requiere_recordatorio',
+            'formulario_diligenciado',
+            'formulario_detalle',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = [
+            'empresa_id',
+            'asignado_por',
+            'fecha_asignacion',
+            'notificacion_enviada',
+            'fecha_notificacion',
+            'recordatorio_enviado',
+            'formulario_diligenciado',
+            'created_at',
+            'updated_at'
+        ]
+
+
+class AsignacionFormularioCreateSerializer(serializers.ModelSerializer):
+    """Serializer para crear AsignacionFormulario"""
+
+    class Meta:
+        model = AsignacionFormulario
+        fields = [
+            'plantilla_flujo',
+            'asignado_a',
+            'area_id',
+            'fecha_limite',
+            'prioridad',
+            'titulo',
+            'descripcion',
+            'dias_recordatorio',
+        ]
+
+    def validate_plantilla_flujo(self, value):
+        """Validar que la plantilla esté activa"""
+        if value.estado != 'ACTIVO':
+            raise serializers.ValidationError(
+                'Solo se pueden asignar plantillas activas'
+            )
+        return value
+
+    def validate(self, data):
+        """Validaciones personalizadas"""
+        request = self.context.get('request')
+
+        # Validar que la plantilla pertenezca a la misma empresa
+        if 'plantilla_flujo' in data:
+            if request and hasattr(request.user, 'empresa_id'):
+                if data['plantilla_flujo'].empresa_id != request.user.empresa_id:
+                    raise serializers.ValidationError({
+                        'plantilla_flujo': 'La plantilla debe pertenecer a la misma empresa'
+                    })
+
+        return data
+
+    def create(self, validated_data):
+        """Crear asignación con datos del contexto"""
+        request = self.context.get('request')
+        if request and hasattr(request.user, 'empresa_id'):
+            validated_data['empresa_id'] = request.user.empresa_id
+            validated_data['asignado_por'] = request.user
+        return super().create(validated_data)

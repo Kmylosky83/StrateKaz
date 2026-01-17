@@ -16,6 +16,8 @@ from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 
 
 # ============================================================================
@@ -53,6 +55,33 @@ TIPO_CAMPO_CHOICES = [
     ('CHECKBOX', 'Casilla de verificación'),
     ('RADIO', 'Botones de radio'),
     ('FILE', 'Archivo adjunto'),
+    ('SIGNATURE', 'Firma Digital'),
+]
+
+# Estados para formularios diligenciados
+ESTADO_FORMULARIO_CHOICES = [
+    ('EN_PROGRESO', 'En Progreso'),
+    ('COMPLETADO', 'Completado'),
+    ('APROBADO', 'Aprobado'),
+    ('RECHAZADO', 'Rechazado'),
+    ('ANULADO', 'Anulado'),
+]
+
+# Estados para asignaciones de formulario
+ESTADO_ASIGNACION_CHOICES = [
+    ('PENDIENTE', 'Pendiente'),
+    ('EN_PROGRESO', 'En Progreso'),
+    ('COMPLETADO', 'Completado'),
+    ('VENCIDO', 'Vencido'),
+    ('CANCELADO', 'Cancelado'),
+]
+
+# Prioridades para asignaciones
+PRIORIDAD_ASIGNACION_CHOICES = [
+    ('BAJA', 'Baja'),
+    ('NORMAL', 'Normal'),
+    ('ALTA', 'Alta'),
+    ('URGENTE', 'Urgente'),
 ]
 
 # Operadores para condiciones de transición
@@ -1264,3 +1293,561 @@ class RolFlujo(models.Model):
             return User.objects.none()
 
         return User.objects.none()
+
+
+# ============================================================================
+# MODELO: FormularioDiligenciado
+# ============================================================================
+
+class FormularioDiligenciado(models.Model):
+    """
+    Instancia de un formulario diligenciado.
+
+    Representa un formulario completado por un usuario,
+    con captura de firmas y datos estructurados.
+
+    Tabla: workflow_formulario_diligenciado
+    """
+
+    # Multi-tenancy
+    empresa_id = models.PositiveBigIntegerField(
+        db_index=True,
+        verbose_name='Empresa ID',
+        help_text='ID de la empresa (multi-tenant)'
+    )
+
+    # Plantilla base
+    plantilla_flujo = models.ForeignKey(
+        PlantillaFlujo,
+        on_delete=models.PROTECT,
+        related_name='formularios_diligenciados',
+        verbose_name='Plantilla de Formulario'
+    )
+
+    # Identificación
+    numero_formulario = models.CharField(
+        max_length=50,
+        unique=True,
+        verbose_name='Número de Formulario',
+        help_text='Código único generado automáticamente (ej: FRM-2026-0001)'
+    )
+    titulo = models.CharField(
+        max_length=255,
+        verbose_name='Título',
+        help_text='Título descriptivo del formulario diligenciado'
+    )
+
+    # Contexto de diligenciamiento
+    diligenciado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='formularios_diligenciados',
+        verbose_name='Diligenciado Por'
+    )
+    fecha_diligenciamiento = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de Diligenciamiento',
+        db_index=True
+    )
+    fecha_completado = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Completado'
+    )
+
+    # GenericForeignKey para relacionar con cualquier entidad
+    # Ej: Reunión, Capacitación, Inspección, etc.
+    content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name='Tipo de Entidad Relacionada'
+    )
+    object_id = models.UUIDField(
+        null=True,
+        blank=True,
+        verbose_name='ID de Entidad Relacionada'
+    )
+    entidad_relacionada = GenericForeignKey('content_type', 'object_id')
+
+    # Datos estructurados (JSON)
+    datos_formulario = models.JSONField(
+        default=dict,
+        verbose_name='Datos del Formulario',
+        help_text='Datos capturados en formato JSON estructurado'
+    )
+
+    # Estado
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADO_FORMULARIO_CHOICES,
+        default='EN_PROGRESO',
+        verbose_name='Estado',
+        db_index=True
+    )
+
+    # Observaciones
+    observaciones = models.TextField(
+        blank=True,
+        verbose_name='Observaciones'
+    )
+
+    # Auditoría
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Fecha de actualización'
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='formularios_diligenciados_creados',
+        verbose_name='Creado por'
+    )
+
+    class Meta:
+        db_table = 'workflow_formulario_diligenciado'
+        verbose_name = 'Formulario Diligenciado'
+        verbose_name_plural = 'Formularios Diligenciados'
+        ordering = ['-fecha_diligenciamiento']
+        indexes = [
+            models.Index(fields=['empresa_id', 'estado']),
+            models.Index(fields=['plantilla_flujo', 'estado']),
+            models.Index(fields=['diligenciado_por', '-fecha_diligenciamiento']),
+            models.Index(fields=['content_type', 'object_id']),
+        ]
+
+    def __str__(self):
+        return f"{self.numero_formulario} - {self.titulo}"
+
+    def get_firmas(self):
+        """Obtiene todas las firmas asociadas a este formulario."""
+        from apps.workflow_engine.firma_digital.models import FirmaDigital
+
+        content_type = ContentType.objects.get_for_model(self)
+        return FirmaDigital.objects.filter(
+            content_type=content_type,
+            object_id=self.pk
+        )
+
+    def esta_completado(self):
+        """Verifica si el formulario está completado."""
+        return self.estado == 'COMPLETADO'
+
+    def requiere_firmas(self):
+        """Verifica si el formulario tiene campos de tipo SIGNATURE."""
+        return self.plantilla_flujo.nodos.filter(
+            campos_formulario__tipo='SIGNATURE'
+        ).exists()
+
+    def campos_pendientes_firma(self):
+        """Retorna los campos de firma pendientes."""
+        campos_firma = CampoFormulario.objects.filter(
+            nodo__plantilla=self.plantilla_flujo,
+            tipo='SIGNATURE'
+        )
+        firmados = self.respuestas.filter(
+            campo_formulario__tipo='SIGNATURE',
+            firma_base64__isnull=False
+        ).values_list('campo_formulario_id', flat=True)
+        return campos_firma.exclude(id__in=firmados)
+
+    def generar_numero_formulario(self):
+        """Genera un número de formulario único."""
+        from django.utils import timezone
+        year = timezone.now().year
+        codigo_plantilla = self.plantilla_flujo.codigo[:10].upper()
+
+        # Contar formularios existentes del mismo año y plantilla
+        count = FormularioDiligenciado.objects.filter(
+            empresa_id=self.empresa_id,
+            plantilla_flujo=self.plantilla_flujo,
+            created_at__year=year
+        ).count() + 1
+
+        return f"{codigo_plantilla}-{year}-{count:04d}"
+
+    def save(self, *args, **kwargs):
+        """Override save para generar número automático."""
+        if not self.numero_formulario:
+            self.numero_formulario = self.generar_numero_formulario()
+        super().save(*args, **kwargs)
+
+
+# ============================================================================
+# MODELO: RespuestaCampo
+# ============================================================================
+
+class RespuestaCampo(models.Model):
+    """
+    Respuesta individual a un campo de formulario.
+
+    Proporciona auditoría granular por campo, permitiendo
+    rastrear quién modificó qué y cuándo.
+
+    Tabla: workflow_respuesta_campo
+    """
+
+    formulario_diligenciado = models.ForeignKey(
+        FormularioDiligenciado,
+        on_delete=models.CASCADE,
+        related_name='respuestas',
+        verbose_name='Formulario Diligenciado'
+    )
+
+    campo_formulario = models.ForeignKey(
+        CampoFormulario,
+        on_delete=models.PROTECT,
+        related_name='respuestas',
+        verbose_name='Campo de Formulario'
+    )
+
+    # Valor de la respuesta (almacenado como JSON para flexibilidad)
+    valor = models.JSONField(
+        verbose_name='Valor de la Respuesta',
+        help_text='Valor capturado (texto, número, fecha, archivo, firma, etc.)'
+    )
+
+    # Para campos tipo SIGNATURE
+    firma_base64 = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Firma en Base64',
+        help_text='Imagen de firma capturada desde canvas signature'
+    )
+
+    # Auditoría granular
+    modificado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='respuestas_modificadas',
+        verbose_name='Modificado Por'
+    )
+    fecha_modificacion = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Fecha de Modificación',
+        db_index=True
+    )
+
+    # Validación
+    es_valido = models.BooleanField(
+        default=True,
+        verbose_name='Es Válido'
+    )
+    mensaje_validacion = models.CharField(
+        max_length=500,
+        blank=True,
+        verbose_name='Mensaje de Validación'
+    )
+
+    # Historial de cambios
+    version = models.PositiveIntegerField(
+        default=1,
+        verbose_name='Versión',
+        help_text='Contador de modificaciones'
+    )
+    valor_anterior = models.JSONField(
+        null=True,
+        blank=True,
+        verbose_name='Valor Anterior',
+        help_text='Valor previo antes de la modificación'
+    )
+
+    # Auditoría
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Fecha de actualización'
+    )
+
+    class Meta:
+        db_table = 'workflow_respuesta_campo'
+        verbose_name = 'Respuesta de Campo'
+        verbose_name_plural = 'Respuestas de Campos'
+        ordering = ['campo_formulario__orden']
+        unique_together = [['formulario_diligenciado', 'campo_formulario']]
+        indexes = [
+            models.Index(fields=['formulario_diligenciado', 'campo_formulario']),
+            models.Index(fields=['modificado_por', '-fecha_modificacion']),
+        ]
+
+    def __str__(self):
+        return f"{self.campo_formulario.etiqueta}: {self.valor}"
+
+    def save(self, *args, **kwargs):
+        """Override save para incrementar versión en modificaciones."""
+        if self.pk:  # Si ya existe
+            try:
+                anterior = RespuestaCampo.objects.get(pk=self.pk)
+                if anterior.valor != self.valor:
+                    self.version += 1
+                    self.valor_anterior = anterior.valor
+            except RespuestaCampo.DoesNotExist:
+                pass
+        super().save(*args, **kwargs)
+
+    def es_firma(self):
+        """Verifica si este campo es de tipo firma."""
+        return self.campo_formulario.tipo == 'SIGNATURE'
+
+    def validar_respuesta(self):
+        """Valida la respuesta según las reglas del campo."""
+        campo = self.campo_formulario
+        self.es_valido = True
+        self.mensaje_validacion = ''
+
+        # Validar requerido
+        if campo.requerido and not self.valor:
+            self.es_valido = False
+            self.mensaje_validacion = 'Este campo es requerido'
+            return False
+
+        # Validar firma
+        if campo.tipo == 'SIGNATURE' and campo.requerido and not self.firma_base64:
+            self.es_valido = False
+            self.mensaje_validacion = 'La firma es requerida'
+            return False
+
+        # Validaciones adicionales según tipo
+        validaciones = campo.validaciones or {}
+
+        if campo.tipo == 'NUMBER':
+            try:
+                num_val = float(self.valor) if self.valor else None
+                if num_val is not None:
+                    if 'min' in validaciones and num_val < validaciones['min']:
+                        self.es_valido = False
+                        self.mensaje_validacion = f"El valor mínimo es {validaciones['min']}"
+                    if 'max' in validaciones and num_val > validaciones['max']:
+                        self.es_valido = False
+                        self.mensaje_validacion = f"El valor máximo es {validaciones['max']}"
+            except (ValueError, TypeError):
+                self.es_valido = False
+                self.mensaje_validacion = 'Debe ser un número válido'
+
+        if campo.tipo in ['TEXT', 'TEXTAREA']:
+            str_val = str(self.valor) if self.valor else ''
+            if 'min_length' in validaciones and len(str_val) < validaciones['min_length']:
+                self.es_valido = False
+                self.mensaje_validacion = f"Mínimo {validaciones['min_length']} caracteres"
+            if 'max_length' in validaciones and len(str_val) > validaciones['max_length']:
+                self.es_valido = False
+                self.mensaje_validacion = f"Máximo {validaciones['max_length']} caracteres"
+
+        return self.es_valido
+
+
+# ============================================================================
+# MODELO: AsignacionFormulario
+# ============================================================================
+
+class AsignacionFormulario(models.Model):
+    """
+    Asignación de formularios a usuarios o áreas.
+
+    Permite asignar formularios específicos a usuarios para
+    su diligenciamiento, con fechas límite y notificaciones.
+
+    Tabla: workflow_asignacion_formulario
+    """
+
+    # Multi-tenancy
+    empresa_id = models.PositiveBigIntegerField(
+        db_index=True,
+        verbose_name='Empresa ID',
+        help_text='ID de la empresa (multi-tenant)'
+    )
+
+    # Plantilla a asignar
+    plantilla_flujo = models.ForeignKey(
+        PlantillaFlujo,
+        on_delete=models.CASCADE,
+        related_name='asignaciones',
+        verbose_name='Plantilla de Formulario'
+    )
+
+    # Asignación
+    asignado_a = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='formularios_asignados',
+        verbose_name='Asignado A'
+    )
+    asignado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='asignaciones_formularios_creadas',
+        verbose_name='Asignado Por'
+    )
+
+    # Área (opcional - para asignaciones masivas)
+    area_id = models.PositiveBigIntegerField(
+        null=True,
+        blank=True,
+        db_index=True,
+        verbose_name='ID Área',
+        help_text='ID del área para asignaciones masivas'
+    )
+
+    # Fechas
+    fecha_asignacion = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de Asignación',
+        db_index=True
+    )
+    fecha_limite = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha Límite',
+        db_index=True
+    )
+
+    # Estado
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADO_ASIGNACION_CHOICES,
+        default='PENDIENTE',
+        verbose_name='Estado',
+        db_index=True
+    )
+
+    # Prioridad
+    prioridad = models.CharField(
+        max_length=10,
+        choices=PRIORIDAD_ASIGNACION_CHOICES,
+        default='NORMAL',
+        verbose_name='Prioridad'
+    )
+
+    # Contexto
+    titulo = models.CharField(
+        max_length=255,
+        verbose_name='Título',
+        help_text='Título descriptivo de la asignación'
+    )
+    descripcion = models.TextField(
+        blank=True,
+        verbose_name='Descripción',
+        help_text='Instrucciones o contexto para el usuario'
+    )
+
+    # Notificaciones
+    notificacion_enviada = models.BooleanField(
+        default=False,
+        verbose_name='Notificación Enviada'
+    )
+    fecha_notificacion = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Notificación'
+    )
+
+    # Recordatorios
+    dias_recordatorio = models.PositiveIntegerField(
+        default=3,
+        verbose_name='Días de Recordatorio',
+        help_text='Días antes de la fecha límite para enviar recordatorio'
+    )
+    recordatorio_enviado = models.BooleanField(
+        default=False,
+        verbose_name='Recordatorio Enviado'
+    )
+
+    # Relación con el formulario diligenciado (cuando se crea)
+    formulario_diligenciado = models.OneToOneField(
+        FormularioDiligenciado,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='asignacion_origen',
+        verbose_name='Formulario Diligenciado'
+    )
+
+    # Auditoría
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de creación'
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name='Fecha de actualización'
+    )
+
+    class Meta:
+        db_table = 'workflow_asignacion_formulario'
+        verbose_name = 'Asignación de Formulario'
+        verbose_name_plural = 'Asignaciones de Formularios'
+        ordering = ['-fecha_asignacion']
+        indexes = [
+            models.Index(fields=['empresa_id', 'estado']),
+            models.Index(fields=['asignado_a', 'estado']),
+            models.Index(fields=['fecha_limite']),
+            models.Index(fields=['area_id', 'estado']),
+        ]
+
+    def __str__(self):
+        return f"{self.titulo} → {self.asignado_a.get_full_name()}"
+
+    def esta_vencida(self):
+        """Verifica si la asignación está vencida."""
+        if not self.fecha_limite:
+            return False
+        from django.utils import timezone
+        return self.fecha_limite < timezone.now().date() and self.estado == 'PENDIENTE'
+
+    def requiere_recordatorio(self):
+        """Verifica si se debe enviar recordatorio."""
+        if not self.fecha_limite or self.recordatorio_enviado:
+            return False
+        from django.utils import timezone
+        from datetime import timedelta
+        fecha_recordatorio = self.fecha_limite - timedelta(days=self.dias_recordatorio)
+        return fecha_recordatorio <= timezone.now().date() < self.fecha_limite
+
+    def actualizar_estado_vencimiento(self):
+        """Actualiza el estado a VENCIDO si corresponde."""
+        if self.esta_vencida() and self.estado == 'PENDIENTE':
+            self.estado = 'VENCIDO'
+            self.save(update_fields=['estado', 'updated_at'])
+            return True
+        return False
+
+    def iniciar_diligenciamiento(self, usuario):
+        """
+        Crea un FormularioDiligenciado cuando el usuario inicia el formulario.
+        """
+        if self.formulario_diligenciado:
+            return self.formulario_diligenciado
+
+        formulario = FormularioDiligenciado.objects.create(
+            empresa_id=self.empresa_id,
+            plantilla_flujo=self.plantilla_flujo,
+            titulo=self.titulo,
+            diligenciado_por=usuario,
+            created_by=usuario,
+        )
+
+        self.formulario_diligenciado = formulario
+        self.estado = 'EN_PROGRESO'
+        self.save(update_fields=['formulario_diligenciado', 'estado', 'updated_at'])
+
+        return formulario
+
+    def completar(self):
+        """Marca la asignación como completada."""
+        self.estado = 'COMPLETADO'
+        self.save(update_fields=['estado', 'updated_at'])
+
+    def cancelar(self):
+        """Cancela la asignación."""
+        self.estado = 'CANCELADO'
+        self.save(update_fields=['estado', 'updated_at'])

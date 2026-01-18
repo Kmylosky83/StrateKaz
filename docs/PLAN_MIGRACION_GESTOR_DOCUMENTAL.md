@@ -1,10 +1,38 @@
 # Plan de Migración: Gestor Documental N3 → N1
 
 **Fecha:** 2026-01-17
+**Última Actualización:** 2026-01-17
 **Módulo:** Sistema Documental
 **Origen:** `apps/hseq_management/sistema_documental/` (N3 - HSEQ Management)
 **Destino:** `apps/gestion_estrategica/gestion_documental/` (N1 - Gestión Estratégica)
 **Razón:** El gestor documental es transversal a toda la organización, no específico de HSEQ
+
+---
+
+## Estado de Prerrequisitos
+
+### FASE 0.3 - Consolidar Sistemas de Firma ✅ COMPLETADA
+
+| Commit | Descripción | Estado |
+|--------|-------------|--------|
+| `e3d4bd8` | feat(workflow): Complete firma_digital app setup (Fase 0.3.6) | ✅ |
+| `1e9d050` | refactor(firma): Complete elimination of legacy signature models (Fase 0.3.5) | ✅ |
+| `73a3929` | refactor(firma): Eliminate legacy signature system (Fase 0.3.4) | ✅ |
+
+**Sistema Unificado de Firmas Digitales:**
+- ✅ `FirmaDigital` centralizado en `apps/workflow_engine/firma_digital/`
+- ✅ GenericForeignKey para firmar cualquier modelo
+- ✅ API REST: `/api/workflows/firma-digital/`
+- ✅ Modelos: `FirmaDigital`, `ConfiguracionFlujoFirma`, `DelegacionFirma`, `AlertaRevision`, `HistorialVersion`
+
+**Migración Completada (2026-01-17):**
+
+- ✅ Módulo migrado a `apps/gestion_estrategica/gestion_documental/`
+- ✅ FirmaDocumento eliminado (usa FirmaDigital de workflow_engine)
+- ✅ Migraciones creadas
+- ✅ URLs actualizadas
+- ✅ settings.py actualizado
+- ✅ Módulo antiguo eliminado de HSEQ
 
 ---
 
@@ -618,35 +646,57 @@ const menuItems = [
 - `FirmaDocumento` era específico para documentos
 - Consolidar en un único sistema de firmas digitales
 
-### 8.2 Modelo FirmaDigital de Workflow Engine
+### 8.2 Estado Actual: FirmaDigital en Workflow Engine ✅ COMPLETADO
+
+> **FASE 0.3 COMPLETADA:** El sistema de firmas digitales ya está consolidado en `apps/workflow_engine/firma_digital/`
+
+**Ubicación:** `apps/workflow_engine/firma_digital/models.py`
+
+**API Endpoints disponibles:**
+- `GET/POST /api/workflows/firma-digital/flujos/` - Configuración de flujos
+- `GET/POST /api/workflows/firma-digital/firmas/` - Firmas digitales
+- `GET/POST /api/workflows/firma-digital/delegaciones/` - Delegaciones
+- `GET/POST /api/workflows/firma-digital/alertas/` - Alertas de revisión
+- `GET /api/workflows/firma-digital/versiones/` - Historial de versiones
+- `POST /api/workflows/firma-digital/workflow/` - Acciones de workflow
 
 ```python
-# apps/gestion_estrategica/identidad/models.py (ya existe)
+# apps/workflow_engine/firma_digital/models.py (YA IMPLEMENTADO)
 
-class FirmaDigital(models.Model):
-    """Firmas digitales universales para cualquier entidad"""
+class FirmaDigital(TimestampedModel):
+    """Firmas digitales universales para cualquier entidad via GenericForeignKey"""
 
     # Referencia genérica al objeto firmado
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey('content_type', 'object_id')
+    object_id = models.UUIDField()
+    documento = GenericForeignKey('content_type', 'object_id')
 
-    # Información de la firma
-    firmante = models.ForeignKey(settings.AUTH_USER_MODEL, ...)
-    cargo_firmante = models.CharField(...)
-    tipo_firma = models.CharField(...)  # ELABORACION, REVISION, APROBACION
-    estado = models.CharField(...)      # PENDIENTE, FIRMADO, RECHAZADO
+    # Configuración de flujo
+    configuracion_flujo = models.ForeignKey(ConfiguracionFlujoFirma, ...)
+    nodo_flujo = models.ForeignKey(FlowNode, ...)
 
-    # Firma digital
-    firma_hash = models.CharField(...)
-    certificado = models.TextField(...)
+    # Firmante
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, ...)
+    cargo = models.ForeignKey('core.Cargo', ...)
+    rol_firma = models.CharField(choices=ROL_FIRMA_CHOICES)  # ELABORO, REVISO, APROBO, VALIDO, AUTORIZO
 
-    # Auditoría
-    fecha_firma = models.DateTimeField(...)
-    ip_address = models.GenericIPAddressField(...)
+    # Firma manuscrita (canvas signature)
+    firma_imagen = models.TextField()  # Base64
 
-    # Multi-tenancy
-    empresa_id = models.PositiveBigIntegerField(...)
+    # Integridad y seguridad
+    documento_hash = models.CharField(max_length=64)  # SHA-256
+    firma_hash = models.CharField(max_length=64)
+
+    # Metadatos
+    fecha_firma = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField()
+    user_agent = models.TextField()
+    geolocalizacion = models.JSONField(null=True)
+
+    # Estado y delegación
+    estado = models.CharField(choices=ESTADO_FIRMA_CHOICES)
+    es_delegada = models.BooleanField(default=False)
+    delegante = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, ...)
 ```
 
 ### 8.3 Migrar Firmas Existentes
@@ -1222,9 +1272,9 @@ GET    /api/v1/gestion-estrategica/gestion-documental/controles/distribuciones-a
 
 ---
 
-**Tiempo estimado total:** 4 horas
+**Tiempo estimado total:** 3 horas (reducido por FASE 0.3 completada)
 
-**Riesgo:** Medio (hay integración con Identidad que debe actualizarse)
+**Riesgo:** Bajo (FirmaDigital ya consolidado, solo queda mover archivos)
 
 **Rollback:** Posible mediante backup y revert de migraciones
 
@@ -1232,8 +1282,40 @@ GET    /api/v1/gestion-estrategica/gestion-documental/controles/distribuciones-a
 
 ---
 
-**Próximos pasos después de la migración:**
-1. Actualizar documentación de API
-2. Notificar a usuarios del cambio de rutas
-3. Crear tests de integración adicionales
-4. Documentar uso de FirmaDigital para documentos
+## 13. Registro de Progreso
+
+### Prerrequisitos Completados
+
+| Fase | Descripción | Estado | Commits |
+|------|-------------|--------|---------|
+| 0.3.4 | Eliminar sistema de firma legacy de identidad | ✅ | `73a3929` |
+| 0.3.5 | Completar eliminación de modelos legacy | ✅ | `1e9d050` |
+| 0.3.6 | Configurar app firma_digital en workflow_engine | ✅ | `e3d4bd8` |
+
+### Backend Completado ✅
+
+| # | Tarea | Estado | Fecha |
+|---|-------|--------|-------|
+| 1 | Eliminar modelo `FirmaDocumento` de sistema_documental | ✅ | 2026-01-17 |
+| 2 | Copiar módulo a gestion_estrategica/gestion_documental | ✅ | 2026-01-17 |
+| 3 | Actualizar imports y app_name | ✅ | 2026-01-17 |
+| 4 | Crear migraciones (0001_initial.py) | ✅ | 2026-01-17 |
+| 5 | Actualizar URLs (eliminar de HSEQ, agregar a N1) | ✅ | 2026-01-17 |
+| 6 | Eliminar módulo antiguo de HSEQ | ✅ | 2026-01-17 |
+| 7 | Validar con manage.py check | ✅ | 2026-01-17 |
+
+### Tareas Pendientes (Frontend)
+
+| # | Tarea | Prioridad | Dependencia |
+|---|-------|-----------|-------------|
+| 1 | Actualizar frontend (tipos, hooks, API, páginas) | Media | Backend completado |
+| 2 | Validar UI en ambiente local | Alta | Tarea 1 |
+
+---
+
+**Próximos pasos:**
+
+1. ~~Consolidar FirmaDigital en workflow_engine~~ ✅ COMPLETADO
+2. ~~Migrar módulo a N1~~ ✅ COMPLETADO
+3. Actualizar frontend para usar nuevos endpoints
+4. Validar UI antes de subir a producción

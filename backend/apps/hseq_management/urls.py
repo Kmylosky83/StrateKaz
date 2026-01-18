@@ -1,12 +1,15 @@
 """
 URLs para HSEQ Management - Torre de Control
+
+NOTA: sistema_documental migrado a gestion_estrategica.gestion_documental (N1)
+      Nuevo path: /api/estrategia/gestion-documental/
 """
 from django.urls import path, include
 
 app_name = 'hseq_management'
 
 urlpatterns = [
-    path('documentos/', include('apps.hseq_management.sistema_documental.urls')),
+    # sistema_documental MIGRADO a N1 - ver gestion_estrategica/gestion_documental
     path('planificacion/', include('apps.hseq_management.planificacion_sistema.urls')),
     path('calidad/', include('apps.hseq_management.calidad.urls')),
     path('medicina/', include('apps.hseq_management.medicina_laboral.urls')),

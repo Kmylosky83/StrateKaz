@@ -1,6 +1,10 @@
 """
-Views para Sistema Documental - HSEQ Management
-Sistema de gestión documental integral con control de versiones y firmas digitales
+Views para Gestión Documental - Gestión Estratégica (N1)
+Sistema de gestión documental transversal con control de versiones.
+
+Migrado desde: apps.hseq_management.sistema_documental
+NOTA: FirmaDocumentoViewSet ha sido ELIMINADO.
+Las firmas digitales usan los endpoints de workflow_engine.firma_digital
 """
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -8,13 +12,13 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from django.db.models import Q, Count
+from django.contrib.contenttypes.models import ContentType
 from .models import (
     TipoDocumento,
     PlantillaDocumento,
     Documento,
     VersionDocumento,
     CampoFormulario,
-    FirmaDocumento,
     ControlDocumental
 )
 from .serializers import (
@@ -28,8 +32,6 @@ from .serializers import (
     VersionDocumentoDetailSerializer,
     CampoFormularioListSerializer,
     CampoFormularioDetailSerializer,
-    FirmaDocumentoListSerializer,
-    FirmaDocumentoDetailSerializer,
     ControlDocumentalListSerializer,
     ControlDocumentalDetailSerializer,
     RecibirPoliticaSerializer,
@@ -199,7 +201,12 @@ class CampoFormularioViewSet(viewsets.ModelViewSet):
 
 
 class DocumentoViewSet(viewsets.ModelViewSet):
-    """ViewSet para Documentos"""
+    """
+    ViewSet para Documentos.
+
+    Las firmas digitales se manejan a través del módulo workflow_engine.firma_digital.
+    Use el método get_firmas_digitales() del documento o el endpoint /firmas/ para acceder a ellas.
+    """
     permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
@@ -212,7 +219,7 @@ class DocumentoViewSet(viewsets.ModelViewSet):
         queryset = Documento.objects.select_related(
             'tipo_documento', 'plantilla', 'elaborado_por',
             'revisado_por', 'aprobado_por', 'documento_padre'
-        ).prefetch_related('firmas', 'versiones')
+        ).prefetch_related('versiones')
 
         if empresa_id:
             queryset = queryset.filter(empresa_id=empresa_id)
@@ -244,6 +251,17 @@ class DocumentoViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         empresa_id = self.request.headers.get('X-Empresa-ID')
         serializer.save(empresa_id=empresa_id, elaborado_por=self.request.user)
+
+    @action(detail=True, methods=['get'])
+    def firmas(self, request, pk=None):
+        """
+        Obtiene las firmas digitales del documento.
+        Las firmas están en workflow_engine.firma_digital via GenericForeignKey.
+        """
+        documento = self.get_object()
+        from apps.workflow_engine.firma_digital.serializers import FirmaDigitalListSerializer
+        firmas = documento.get_firmas_digitales()
+        return Response(FirmaDigitalListSerializer(firmas, many=True).data)
 
     @action(detail=True, methods=['post'])
     def aprobar(self, request, pk=None):
@@ -396,26 +414,12 @@ class DocumentoViewSet(viewsets.ModelViewSet):
         """
         Recibe una política firmada desde el módulo de Identidad Corporativa.
 
-        Este endpoint maneja tanto nuevas políticas como actualizaciones de versión:
-
-        Para NUEVAS políticas:
-        1. Crea/obtiene el TipoDocumento "POLITICA" si no existe
-        2. Genera código único dinámico (POL-{NORMA}-{SECUENCIAL})
-        3. Crea el Documento con estado APROBADO (ya viene firmado)
-        4. Registra las firmas que vienen de Identidad
-        5. Crea la versión inicial del documento
-        6. Publica el documento automáticamente
-        7. Actualiza el estado de la política en Identidad a VIGENTE
-
-        Para ACTUALIZACIONES de versión (es_actualizacion=True):
-        1. Usa el código existente (no genera nuevo)
-        2. Crea nueva versión del documento existente
-        3. Marca la versión anterior como no actual
-        4. La política anterior en Identidad pasa a OBSOLETO
-
-        Body: datos_documental del endpoint enviar-a-documental de Identidad
+        Las firmas se registran usando FirmaDigital de workflow_engine.firma_digital
+        via GenericForeignKey al documento creado.
         """
         from django.contrib.auth import get_user_model
+        from apps.workflow_engine.firma_digital.models import FirmaDigital
+
         User = get_user_model()
 
         serializer = RecibirPoliticaSerializer(data=request.data)
@@ -450,10 +454,8 @@ class DocumentoViewSet(viewsets.ModelViewSet):
         norma_code = data.get('norma_iso_code', 'GEN')
 
         if es_actualizacion and codigo_existente:
-            # Usar código existente para actualizaciones
             codigo_documento = codigo_existente
         else:
-            # Generar nuevo código para nuevas políticas
             codigo_documento = self._generar_codigo_politica(
                 empresa_id=empresa_id,
                 norma_code=norma_code
@@ -474,13 +476,11 @@ class DocumentoViewSet(viewsets.ModelViewSet):
             ).first()
 
             if documento_anterior:
-                # Marcar versiones anteriores como no actuales
                 VersionDocumento.objects.filter(
                     documento=documento_anterior,
                     is_version_actual=True
                 ).update(is_version_actual=False)
 
-                # Marcar documento anterior como OBSOLETO
                 documento_anterior.estado = 'OBSOLETO'
                 documento_anterior.save(update_fields=['estado', 'updated_at'])
 
@@ -499,45 +499,49 @@ class DocumentoViewSet(viewsets.ModelViewSet):
             palabras_clave=data.get('palabras_clave', []),
             version_actual=data.get('version', '1.0'),
             numero_revision=0 if not es_actualizacion else (documento_anterior.numero_revision + 1 if documento_anterior else 1),
-            estado='APROBADO',  # Ya viene firmado
+            estado='APROBADO',
             clasificacion=data.get('clasificacion', 'INTERNO'),
             fecha_aprobacion=timezone.now().date(),
             elaborado_por=elaborado_por,
-            aprobado_por=elaborado_por,  # El firmante final
+            aprobado_por=elaborado_por,
             areas_aplicacion=data.get('areas_aplicacion', []),
             observaciones=data.get('observaciones', ''),
             empresa_id=empresa_id,
         )
 
-        # 6. Registrar firmas de Identidad como FirmaDocumento
+        # 6. Registrar firmas usando FirmaDigital de workflow_engine
+        content_type = ContentType.objects.get_for_model(Documento)
         firmas_info = data.get('firmas', [])
+
         for firma_data in firmas_info:
             try:
                 firmante = User.objects.get(id=firma_data['usuario_id']) if firma_data.get('usuario_id') else elaborado_por
             except User.DoesNotExist:
                 firmante = elaborado_por
 
-            # Mapear rol de Identidad a tipo de firma de Documental
-            tipo_firma_map = {
-                'ELABORO': 'ELABORACION',
-                'REVISO_TECNICO': 'REVISION',
-                'REVISO_JURIDICO': 'REVISION',
-                'APROBO_DIRECTOR': 'APROBACION',
-                'APROBO_GERENTE': 'APROBACION',
-                'APROBO_REPRESENTANTE_LEGAL': 'APROBACION',
+            # Mapear rol de Identidad a rol de FirmaDigital
+            rol_map = {
+                'ELABORO': 'ELABORO',
+                'REVISO_TECNICO': 'REVISO',
+                'REVISO_JURIDICO': 'REVISO',
+                'APROBO_DIRECTOR': 'APROBO',
+                'APROBO_GERENTE': 'APROBO',
+                'APROBO_REPRESENTANTE_LEGAL': 'AUTORIZO',
             }
-            tipo_firma = tipo_firma_map.get(firma_data.get('rol', ''), 'VALIDACION')
+            rol_firma = rol_map.get(firma_data.get('rol', ''), 'VALIDO')
 
-            FirmaDocumento.objects.create(
-                documento=documento,
-                tipo_firma=tipo_firma,
-                firmante=firmante,
-                cargo_firmante=firma_data.get('cargo_nombre', ''),
+            FirmaDigital.objects.create(
+                content_type=content_type,
+                object_id=documento.pk,
+                usuario=firmante,
+                rol_firma=rol_firma,
                 estado='FIRMADO',
                 fecha_firma=timezone.now(),
-                comentarios=f"Firma importada desde Identidad - Proceso #{data.get('proceso_firma_id', 'N/A')}",
-                orden_firma=firma_data.get('orden', 1),
-                checksum_documento=firma_data.get('firma_hash', ''),
+                documento_hash=firma_data.get('firma_hash', ''),
+                firma_hash=firma_data.get('firma_hash', ''),
+                ip_address=self._get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                orden=firma_data.get('orden', 1),
                 empresa_id=empresa_id,
             )
 
@@ -600,7 +604,7 @@ class DocumentoViewSet(viewsets.ModelViewSet):
             'version': documento.version_actual,
             'fecha_publicacion': documento.fecha_publicacion,
             'total_firmas_registradas': len(firmas_info),
-            'url_documento': f"/api/v1/documental/documentos/{documento.id}/",
+            'url_documento': f"/api/gestion-estrategica/gestion-documental/documentos/{documento.id}/",
             'origen': {
                 'modulo': data['origen'],
                 'tipo': data['tipo_origen'],
@@ -620,25 +624,15 @@ class DocumentoViewSet(viewsets.ModelViewSet):
         return Response(response_data, status=status.HTTP_201_CREATED)
 
     def _generar_codigo_politica(self, empresa_id, norma_code):
-        """
-        Genera código único para políticas: POL-{NORMA}-{SECUENCIAL}
-
-        Ejemplos:
-        - POL-SST-001 (Primera política de SST)
-        - POL-CA-002 (Segunda política de Calidad)
-        - POL-GEN-001 (Política general)
-        """
-        # Obtener el prefijo según la norma
+        """Genera código único para políticas: POL-{NORMA}-{SECUENCIAL}"""
         prefijo = f"POL-{norma_code}-"
 
-        # Buscar el último documento con este prefijo
         ultimo_doc = Documento.objects.filter(
             empresa_id=empresa_id,
             codigo__startswith=prefijo
         ).order_by('-codigo').first()
 
         if ultimo_doc:
-            # Extraer el número secuencial del último código
             try:
                 ultimo_num = int(ultimo_doc.codigo.split('-')[-1])
                 nuevo_num = ultimo_num + 1
@@ -647,34 +641,17 @@ class DocumentoViewSet(viewsets.ModelViewSet):
         else:
             nuevo_num = 1
 
-        # Formatear con ceros a la izquierda (3 dígitos)
         codigo = f"{prefijo}{nuevo_num:03d}"
-
         return codigo
 
     def _actualizar_politica_identidad(self, politica_id, documento_id, codigo_documento, es_actualizacion=False):
-        """
-        Actualiza el estado de la política en Identidad a VIGENTE.
-
-        Actualiza:
-        - status: VIGENTE
-        - code: Código oficial del documento (POL-SST-001)
-        - documento_id: ID del documento en Gestor Documental
-        - effective_date: Fecha de vigencia
-
-        Si es_actualizacion=True, también marca la versión anterior como OBSOLETO.
-
-        Nota: Esta función actualiza directamente el modelo de Identidad.
-        En un sistema más desacoplado, esto sería un webhook/callback HTTP.
-        """
+        """Actualiza el estado de la política en Identidad a VIGENTE."""
         try:
             from apps.gestion_estrategica.identidad.models import PoliticaEspecifica
 
             politica = PoliticaEspecifica.objects.filter(id=politica_id).first()
             if politica:
-                # Si es actualización, marcar versiones anteriores con el mismo código como OBSOLETO
                 if es_actualizacion and codigo_documento:
-                    # Buscar políticas anteriores con el mismo código (excluyendo la actual)
                     PoliticaEspecifica.objects.filter(
                         code=codigo_documento,
                         status='VIGENTE'
@@ -683,14 +660,9 @@ class DocumentoViewSet(viewsets.ModelViewSet):
                         updated_at=timezone.now()
                     )
 
-                # Actualizar estado a VIGENTE
                 politica.status = 'VIGENTE'
                 politica.effective_date = timezone.now().date()
-
-                # Asignar código oficial del Gestor Documental
                 politica.code = codigo_documento
-
-                # Guardar referencia al documento (sin FK para evitar dependencia circular)
                 politica.documento_id = documento_id
 
                 politica.save(update_fields=[
@@ -702,10 +674,18 @@ class DocumentoViewSet(viewsets.ModelViewSet):
                 ])
 
         except Exception as e:
-            # Log error pero no fallar la operación
             import logging
             logger = logging.getLogger(__name__)
             logger.warning(f"No se pudo actualizar política {politica_id} en Identidad: {e}")
+
+    def _get_client_ip(self, request):
+        """Obtiene IP del cliente"""
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
 
 
 class VersionDocumentoViewSet(viewsets.ModelViewSet):
@@ -726,7 +706,6 @@ class VersionDocumentoViewSet(viewsets.ModelViewSet):
         if empresa_id:
             queryset = queryset.filter(empresa_id=empresa_id)
 
-        # Filtro por documento
         documento = self.request.query_params.get('documento')
         if documento:
             queryset = queryset.filter(documento_id=documento)
@@ -757,7 +736,6 @@ class VersionDocumentoViewSet(viewsets.ModelViewSet):
         """Compara esta versión con la anterior"""
         version_actual = self.get_object()
 
-        # Buscar versión anterior
         version_anterior = VersionDocumento.objects.filter(
             documento=version_actual.documento,
             fecha_version__lt=version_actual.fecha_version
@@ -776,128 +754,11 @@ class VersionDocumentoViewSet(viewsets.ModelViewSet):
         })
 
 
-class FirmaDocumentoViewSet(viewsets.ModelViewSet):
-    """ViewSet para Firmas de Documento"""
-    permission_classes = [IsAuthenticated]
-
-    def get_serializer_class(self):
-        if self.action == 'list':
-            return FirmaDocumentoListSerializer
-        return FirmaDocumentoDetailSerializer
-
-    def get_queryset(self):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
-        queryset = FirmaDocumento.objects.select_related(
-            'documento', 'version_documento', 'firmante'
-        )
-
-        if empresa_id:
-            queryset = queryset.filter(empresa_id=empresa_id)
-
-        # Filtros
-        documento = self.request.query_params.get('documento')
-        if documento:
-            queryset = queryset.filter(documento_id=documento)
-
-        estado = self.request.query_params.get('estado')
-        if estado:
-            queryset = queryset.filter(estado=estado)
-
-        tipo_firma = self.request.query_params.get('tipo_firma')
-        if tipo_firma:
-            queryset = queryset.filter(tipo_firma=tipo_firma)
-
-        # Filtro por firmante
-        firmante = self.request.query_params.get('firmante')
-        if firmante:
-            queryset = queryset.filter(firmante_id=firmante)
-
-        return queryset.order_by('orden_firma', 'fecha_solicitud')
-
-    def perform_create(self, serializer):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
-        serializer.save(empresa_id=empresa_id)
-
-    @action(detail=True, methods=['post'])
-    def firmar(self, request, pk=None):
-        """Firma digitalmente un documento"""
-        firma = self.get_object()
-
-        if firma.estado != 'PENDIENTE':
-            return Response(
-                {'error': 'Esta firma ya fue procesada'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        if firma.firmante != request.user:
-            return Response(
-                {'error': 'No tiene permiso para firmar este documento'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
-        firma.estado = 'FIRMADO'
-        firma.fecha_firma = timezone.now()
-        firma.firma_digital = request.data.get('firma_digital', '')
-        firma.certificado_digital = request.data.get('certificado_digital', '')
-        firma.ip_address = self.get_client_ip(request)
-        firma.user_agent = request.META.get('HTTP_USER_AGENT', '')
-        firma.comentarios = request.data.get('comentarios', '')
-        firma.save()
-
-        return Response(FirmaDocumentoDetailSerializer(firma).data)
-
-    @action(detail=True, methods=['post'])
-    def rechazar(self, request, pk=None):
-        """Rechaza la firma de un documento"""
-        firma = self.get_object()
-
-        if firma.estado != 'PENDIENTE':
-            return Response(
-                {'error': 'Esta firma ya fue procesada'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        if firma.firmante != request.user:
-            return Response(
-                {'error': 'No tiene permiso para rechazar este documento'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
-        firma.estado = 'RECHAZADO'
-        firma.motivo_rechazo = request.data.get('motivo_rechazo', '')
-        firma.save()
-
-        # Actualizar estado del documento
-        documento = firma.documento
-        documento.estado = 'BORRADOR'
-        documento.observaciones = f"Firma rechazada: {firma.motivo_rechazo}"
-        documento.save()
-
-        return Response(FirmaDocumentoDetailSerializer(firma).data)
-
-    @action(detail=False, methods=['get'])
-    def pendientes(self, request):
-        """Firmas pendientes del usuario actual"""
-        queryset = self.get_queryset().filter(
-            firmante=request.user,
-            estado='PENDIENTE'
-        )
-        return Response(FirmaDocumentoListSerializer(queryset, many=True).data)
-
-    @action(detail=False, methods=['get'])
-    def mis_firmas(self, request):
-        """Todas las firmas del usuario actual"""
-        queryset = self.get_queryset().filter(firmante=request.user)
-        return Response(FirmaDocumentoListSerializer(queryset, many=True).data)
-
-    def get_client_ip(self, request):
-        """Obtiene IP del cliente"""
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR')
-        return ip
+# NOTA: FirmaDocumentoViewSet ha sido ELIMINADO
+# Las firmas digitales se manejan a través de:
+# - workflow_engine.firma_digital.views.FirmaDigitalViewSet
+# - Endpoints: /api/workflows/firma-digital/firmas/
+# - Documento.get_firmas_digitales() para obtener firmas de un documento específico
 
 
 class ControlDocumentalViewSet(viewsets.ModelViewSet):
@@ -919,7 +780,6 @@ class ControlDocumentalViewSet(viewsets.ModelViewSet):
         if empresa_id:
             queryset = queryset.filter(empresa_id=empresa_id)
 
-        # Filtros
         documento = self.request.query_params.get('documento')
         if documento:
             queryset = queryset.filter(documento_id=documento)
@@ -943,7 +803,7 @@ class ControlDocumentalViewSet(viewsets.ModelViewSet):
             'usuario_id': request.user.id,
             'usuario_nombre': request.user.get_full_name(),
             'fecha': timezone.now().isoformat(),
-            'ip_address': self.get_client_ip(request)
+            'ip_address': self._get_client_ip(request)
         }
 
         confirmaciones = control.confirmaciones_recepcion or []
@@ -970,7 +830,7 @@ class ControlDocumentalViewSet(viewsets.ModelViewSet):
         )
         return Response(ControlDocumentalListSerializer(queryset, many=True).data)
 
-    def get_client_ip(self, request):
+    def _get_client_ip(self, request):
         """Obtiene IP del cliente"""
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         if x_forwarded_for:

@@ -1,5 +1,9 @@
 """
-Serializers para Sistema Documental - HSEQ Management
+Serializers para Gestión Documental - Gestión Estratégica (N1)
+
+Migrado desde: apps.hseq_management.sistema_documental
+NOTA: FirmaDocumentoSerializer ha sido eliminado.
+Las firmas digitales usan FirmaDigitalSerializer de workflow_engine.firma_digital
 """
 from rest_framework import serializers
 from .models import (
@@ -8,7 +12,6 @@ from .models import (
     Documento,
     VersionDocumento,
     CampoFormulario,
-    FirmaDocumento,
     ControlDocumental
 )
 
@@ -157,10 +160,12 @@ class DocumentoListSerializer(serializers.ModelSerializer):
         ]
 
     def get_total_firmas(self, obj):
-        return obj.firmas.count()
+        """Cuenta firmas usando FirmaDigital de workflow_engine"""
+        return obj.get_firmas_digitales().count()
 
     def get_firmas_pendientes(self, obj):
-        return obj.firmas.filter(estado='PENDIENTE').count()
+        """Cuenta firmas pendientes usando FirmaDigital de workflow_engine"""
+        return obj.get_firmas_digitales().filter(estado='PENDIENTE').count()
 
 
 class DocumentoDetailSerializer(serializers.ModelSerializer):
@@ -173,6 +178,7 @@ class DocumentoDetailSerializer(serializers.ModelSerializer):
     revisado_por_nombre = serializers.CharField(source='revisado_por.get_full_name', read_only=True, allow_null=True)
     aprobado_por_nombre = serializers.CharField(source='aprobado_por.get_full_name', read_only=True, allow_null=True)
     documento_padre_codigo = serializers.CharField(source='documento_padre.codigo', read_only=True, allow_null=True)
+    firmas_digitales = serializers.SerializerMethodField()
 
     class Meta:
         model = Documento
@@ -191,12 +197,19 @@ class DocumentoDetailSerializer(serializers.ModelSerializer):
             'documento_padre', 'documento_padre_codigo',
             'numero_descargas', 'numero_impresiones',
             'observaciones', 'motivo_cambio_version',
-            'empresa_id', 'created_at', 'updated_at'
+            'empresa_id', 'created_at', 'updated_at',
+            'firmas_digitales'
         ]
         read_only_fields = [
             'numero_descargas', 'numero_impresiones',
             'empresa_id', 'created_at', 'updated_at'
         ]
+
+    def get_firmas_digitales(self, obj):
+        """Obtiene firmas usando FirmaDigital de workflow_engine"""
+        from apps.workflow_engine.firma_digital.serializers import FirmaDigitalListSerializer
+        firmas = obj.get_firmas_digitales()
+        return FirmaDigitalListSerializer(firmas, many=True).data
 
 
 # =============================================================================
@@ -240,52 +253,6 @@ class VersionDocumentoDetailSerializer(serializers.ModelSerializer):
             'empresa_id'
         ]
         read_only_fields = ['empresa_id']
-
-
-# =============================================================================
-# Firma Documento Serializers
-# =============================================================================
-class FirmaDocumentoListSerializer(serializers.ModelSerializer):
-    """Serializer para listado de firmas de documentos"""
-    documento_codigo = serializers.CharField(source='documento.codigo', read_only=True)
-    documento_titulo = serializers.CharField(source='documento.titulo', read_only=True)
-    tipo_firma_display = serializers.CharField(source='get_tipo_firma_display', read_only=True)
-    estado_display = serializers.CharField(source='get_estado_display', read_only=True)
-    firmante_nombre = serializers.CharField(source='firmante.get_full_name', read_only=True)
-
-    class Meta:
-        model = FirmaDocumento
-        fields = [
-            'id', 'documento', 'documento_codigo', 'documento_titulo',
-            'tipo_firma', 'tipo_firma_display', 'firmante', 'firmante_nombre',
-            'cargo_firmante', 'estado', 'estado_display',
-            'fecha_solicitud', 'fecha_firma', 'orden_firma'
-        ]
-
-
-class FirmaDocumentoDetailSerializer(serializers.ModelSerializer):
-    """Serializer para detalle de firmas de documentos"""
-    documento_codigo = serializers.CharField(source='documento.codigo', read_only=True)
-    documento_titulo = serializers.CharField(source='documento.titulo', read_only=True)
-    version_documento_numero = serializers.CharField(source='version_documento.numero_version', read_only=True, allow_null=True)
-    tipo_firma_display = serializers.CharField(source='get_tipo_firma_display', read_only=True)
-    estado_display = serializers.CharField(source='get_estado_display', read_only=True)
-    firmante_nombre = serializers.CharField(source='firmante.get_full_name', read_only=True)
-    firmante_email = serializers.EmailField(source='firmante.email', read_only=True)
-
-    class Meta:
-        model = FirmaDocumento
-        fields = [
-            'id', 'documento', 'documento_codigo', 'documento_titulo',
-            'version_documento', 'version_documento_numero',
-            'tipo_firma', 'tipo_firma_display', 'firmante', 'firmante_nombre',
-            'firmante_email', 'cargo_firmante', 'estado', 'estado_display',
-            'fecha_solicitud', 'fecha_firma', 'firma_digital', 'certificado_digital',
-            'ip_address', 'user_agent', 'latitud', 'longitud',
-            'comentarios', 'motivo_rechazo', 'orden_firma', 'checksum_documento',
-            'empresa_id', 'created_at', 'updated_at'
-        ]
-        read_only_fields = ['empresa_id', 'created_at', 'updated_at']
 
 
 # =============================================================================
@@ -368,7 +335,7 @@ class RecibirPoliticaSerializer(serializers.Serializer):
     1. Crear/obtener TipoDocumento "POLITICA"
     2. Generar código único (POL-SST-001, etc.)
     3. Crear el Documento con estado APROBADO (ya viene firmado)
-    4. Registrar las firmas que vienen de Identidad
+    4. Registrar las firmas usando FirmaDigital de workflow_engine
     5. Publicar el documento automáticamente
     """
     # Origen e identificación

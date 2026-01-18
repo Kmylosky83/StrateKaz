@@ -98,6 +98,7 @@ INSTALLED_APPS = [
     'apps.gestion_estrategica.planeacion.contexto', # DOFA, PESTEL, Porter (ISO Clausula 4.1)
     'apps.gestion_estrategica.gestion_proyectos',  # Portafolio, Programa, Proyecto
     'apps.gestion_estrategica.revision_direccion', # ActaRevision, CompromisoRevision
+    'apps.gestion_estrategica.gestion_documental', # Documento, Version (migrado desde N3)
 
     # ═══════════════════════════════════════════════════════════════════════════
     # NIVEL 2: CUMPLIMIENTO - Motor Cumplimiento + Riesgos + Workflows (14 apps)
@@ -123,11 +124,11 @@ INSTALLED_APPS = [
     'apps.workflow_engine.firma_digital',          # FirmaDigital, ConfiguracionFlujoFirma (Fase 0.3.4)
 
     # ═══════════════════════════════════════════════════════════════════════════
-    # NIVEL 3: TORRE DE CONTROL - HSEQ Management (11 apps)
+    # NIVEL 3: TORRE DE CONTROL - HSEQ Management (10 apps)
     # Deploy: Semana 14 a Producción
     # Activado: DÍA 8 de refactorización (2026-01-05)
+    # NOTA: sistema_documental migrado a N1 (gestion_estrategica.gestion_documental)
     # ═══════════════════════════════════════════════════════════════════════════
-    'apps.hseq_management.sistema_documental',     # Documento, VersionDocumento
     'apps.hseq_management.planificacion_sistema',  # PlanAnual, Objetivo, Meta
     'apps.hseq_management.calidad',                # NoConformidad, AccionCorrectiva
     'apps.hseq_management.medicina_laboral',       # ExamenMedico, Restriccion

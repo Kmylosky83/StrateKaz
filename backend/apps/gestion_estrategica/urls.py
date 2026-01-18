@@ -56,4 +56,5 @@ urlpatterns = [
     path('planeacion/contexto/', include('apps.gestion_estrategica.planeacion.contexto.urls')),
     path('proyectos/', include('apps.gestion_estrategica.gestion_proyectos.urls')),
     path('revision-direccion/', include('apps.gestion_estrategica.revision_direccion.urls')),
+    path('gestion-documental/', include('apps.gestion_estrategica.gestion_documental.urls')),
 ]

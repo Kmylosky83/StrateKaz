@@ -1,11 +1,17 @@
 """
-Modelos para Sistema Documental - HSEQ Management
-Sistema de gestión documental integral con control de versiones, firmas digitales y flujos de aprobación
+Modelos para Gestión Documental - Gestión Estratégica (N1)
+Sistema de gestión documental transversal con control de versiones y flujos de aprobación.
+
+Migrado desde: apps.hseq_management.sistema_documental
+Razón: El gestor documental es transversal a toda la organización, no específico de HSEQ.
+
+NOTA: Las firmas digitales se manejan con FirmaDigital de workflow_engine.firma_digital
+usando GenericForeignKey para vincular firmas a cualquier modelo.
 """
 from django.db import models
 from django.conf import settings
+from django.contrib.contenttypes.fields import GenericRelation
 from django.core.validators import MinValueValidator
-from decimal import Decimal
 
 
 class TipoDocumento(models.Model):
@@ -97,7 +103,7 @@ class TipoDocumento(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
-        related_name='hseq_tipos_documento_created',
+        related_name='tipos_documento_created',
         verbose_name='Creado por'
     )
 
@@ -208,7 +214,7 @@ class PlantillaDocumento(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
-        related_name='plantillas_created',
+        related_name='gestion_documental_plantillas_created',
         verbose_name='Creado por'
     )
 
@@ -229,7 +235,10 @@ class PlantillaDocumento(models.Model):
 
 class Documento(models.Model):
     """
-    Documentos del sistema con control de versiones completo
+    Documentos del sistema con control de versiones completo.
+
+    Las firmas digitales se obtienen via GenericRelation a FirmaDigital
+    del módulo workflow_engine.firma_digital.
     """
     ESTADO_CHOICES = [
         ('BORRADOR', 'Borrador'),
@@ -358,7 +367,7 @@ class Documento(models.Model):
     elaborado_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
-        related_name='documentos_elaborados',
+        related_name='gestion_documentos_elaborados',
         verbose_name='Elaborado por'
     )
     revisado_por = models.ForeignKey(
@@ -366,7 +375,7 @@ class Documento(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='documentos_revisados',
+        related_name='gestion_documentos_revisados',
         verbose_name='Revisado por'
     )
     aprobado_por = models.ForeignKey(
@@ -374,7 +383,7 @@ class Documento(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='documentos_aprobados',
+        related_name='gestion_documentos_aprobados',
         verbose_name='Aprobado por'
     )
 
@@ -394,7 +403,7 @@ class Documento(models.Model):
     usuarios_autorizados = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         blank=True,
-        related_name='documentos_autorizados',
+        related_name='gestion_documentos_autorizados',
         verbose_name='Usuarios Autorizados',
         help_text='Usuarios con acceso a documentos confidenciales/restringidos'
     )
@@ -478,6 +487,21 @@ class Documento(models.Model):
     def __str__(self):
         return f"{self.codigo} - {self.titulo} (v{self.version_actual})"
 
+    def get_firmas_digitales(self):
+        """
+        Obtiene las firmas digitales del documento via FirmaDigital de workflow_engine.
+        Usa ContentType para buscar firmas asociadas a este documento.
+        """
+        from django.contrib.contenttypes.models import ContentType
+        from apps.workflow_engine.firma_digital.models import FirmaDigital
+
+        content_type = ContentType.objects.get_for_model(self.__class__)
+        return FirmaDigital.objects.filter(
+            content_type=content_type,
+            object_id=self.pk,
+            empresa_id=self.empresa_id
+        )
+
 
 class VersionDocumento(models.Model):
     """
@@ -539,7 +563,7 @@ class VersionDocumento(models.Model):
     creado_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
-        related_name='versiones_documento_creadas',
+        related_name='gestion_versiones_documento_creadas',
         verbose_name='Creado por'
     )
     aprobado_por = models.ForeignKey(
@@ -547,7 +571,7 @@ class VersionDocumento(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='versiones_documento_aprobadas',
+        related_name='gestion_versiones_documento_aprobadas',
         verbose_name='Aprobado por'
     )
     fecha_aprobacion = models.DateTimeField(
@@ -776,7 +800,7 @@ class CampoFormulario(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
-        related_name='campos_formulario_created',
+        related_name='gestion_campos_formulario_created',
         verbose_name='Creado por'
     )
 
@@ -794,167 +818,10 @@ class CampoFormulario(models.Model):
         return f"{self.etiqueta} ({self.tipo_campo})"
 
 
-class FirmaDocumento(models.Model):
-    """
-    Registro de firmas digitales en documentos
-    """
-    TIPO_FIRMA_CHOICES = [
-        ('ELABORACION', 'Elaboración'),
-        ('REVISION', 'Revisión'),
-        ('APROBACION', 'Aprobación'),
-        ('CONFORMIDAD', 'Conformidad'),
-        ('VALIDACION', 'Validación'),
-    ]
-
-    ESTADO_FIRMA_CHOICES = [
-        ('PENDIENTE', 'Pendiente'),
-        ('FIRMADO', 'Firmado'),
-        ('RECHAZADO', 'Rechazado'),
-        ('REVOCADO', 'Revocado'),
-    ]
-
-    documento = models.ForeignKey(
-        Documento,
-        on_delete=models.CASCADE,
-        related_name='firmas',
-        verbose_name='Documento'
-    )
-    version_documento = models.ForeignKey(
-        VersionDocumento,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name='firmas',
-        verbose_name='Versión del Documento'
-    )
-
-    # Información de la firma
-    tipo_firma = models.CharField(
-        max_length=20,
-        choices=TIPO_FIRMA_CHOICES,
-        verbose_name='Tipo de Firma'
-    )
-    firmante = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.PROTECT,
-        related_name='firmas_realizadas',
-        verbose_name='Firmante'
-    )
-    cargo_firmante = models.CharField(
-        max_length=200,
-        verbose_name='Cargo del Firmante',
-        help_text='Cargo al momento de la firma'
-    )
-
-    # Estado
-    estado = models.CharField(
-        max_length=20,
-        choices=ESTADO_FIRMA_CHOICES,
-        default='PENDIENTE',
-        verbose_name='Estado de la Firma'
-    )
-
-    # Detalles de la firma
-    fecha_solicitud = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Fecha de Solicitud'
-    )
-    fecha_firma = models.DateTimeField(
-        null=True,
-        blank=True,
-        verbose_name='Fecha de Firma'
-    )
-
-    # Firma digital
-    firma_digital = models.TextField(
-        blank=True,
-        verbose_name='Firma Digital',
-        help_text='Imagen o hash de la firma'
-    )
-    certificado_digital = models.TextField(
-        blank=True,
-        verbose_name='Certificado Digital',
-        help_text='Certificado o token de validación'
-    )
-    ip_address = models.GenericIPAddressField(
-        null=True,
-        blank=True,
-        verbose_name='Dirección IP',
-        help_text='IP desde donde se firmó'
-    )
-    user_agent = models.CharField(
-        max_length=500,
-        blank=True,
-        verbose_name='User Agent',
-        help_text='Navegador usado para firmar'
-    )
-
-    # Geolocalización (opcional)
-    latitud = models.DecimalField(
-        max_digits=9,
-        decimal_places=6,
-        null=True,
-        blank=True,
-        verbose_name='Latitud'
-    )
-    longitud = models.DecimalField(
-        max_digits=9,
-        decimal_places=6,
-        null=True,
-        blank=True,
-        verbose_name='Longitud'
-    )
-
-    # Observaciones
-    comentarios = models.TextField(
-        blank=True,
-        verbose_name='Comentarios',
-        help_text='Comentarios del firmante'
-    )
-    motivo_rechazo = models.TextField(
-        blank=True,
-        verbose_name='Motivo de Rechazo',
-        help_text='Si fue rechazado, motivo del rechazo'
-    )
-
-    # Orden de firma
-    orden_firma = models.IntegerField(
-        default=1,
-        verbose_name='Orden de Firma',
-        help_text='Secuencia en el flujo de firmas (1, 2, 3...)'
-    )
-
-    # Validación
-    checksum_documento = models.CharField(
-        max_length=64,
-        blank=True,
-        verbose_name='Checksum del Documento',
-        help_text='Hash del documento al momento de firmar'
-    )
-
-    # Multi-tenancy
-    empresa_id = models.PositiveBigIntegerField(
-        db_index=True,
-        verbose_name='Empresa ID'
-    )
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        db_table = 'documental_firma_documento'
-        verbose_name = 'Firma de Documento'
-        verbose_name_plural = 'Firmas de Documentos'
-        ordering = ['orden_firma', 'fecha_solicitud']
-        indexes = [
-            models.Index(fields=['empresa_id', 'documento']),
-            models.Index(fields=['empresa_id', 'firmante']),
-            models.Index(fields=['empresa_id', 'estado']),
-            models.Index(fields=['fecha_firma']),
-        ]
-
-    def __str__(self):
-        return f"{self.get_tipo_firma_display()} - {self.firmante.get_full_name()} - {self.documento.codigo}"
+# NOTA: FirmaDocumento ha sido ELIMINADO
+# Las firmas digitales se manejan con el modelo FirmaDigital de workflow_engine.firma_digital
+# que usa GenericForeignKey para vincular firmas a cualquier modelo.
+# Ver: apps.workflow_engine.firma_digital.models.FirmaDigital
 
 
 class ControlDocumental(models.Model):
@@ -1018,7 +885,7 @@ class ControlDocumental(models.Model):
     usuarios_distribucion = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         blank=True,
-        related_name='documentos_recibidos',
+        related_name='gestion_documentos_recibidos',
         verbose_name='Usuarios que Recibieron el Documento'
     )
     numero_copias_impresas = models.IntegerField(
@@ -1075,7 +942,7 @@ class ControlDocumental(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='destrucciones_documentos',
+        related_name='gestion_destrucciones_documentos',
         verbose_name='Responsable de Destrucción'
     )
     acta_destruccion = models.FileField(
@@ -1104,7 +971,7 @@ class ControlDocumental(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
-        related_name='controles_documentales_created',
+        related_name='gestion_controles_documentales_created',
         verbose_name='Creado por'
     )
 

@@ -5,10 +5,10 @@
  * Exporta todos los tipos del módulo HSEQ
  */
 
-// Sistema Documental
-export * from './sistema-documental.types';
+// Sistema Documental - MIGRADO a gestion-estrategica/gestion-documental
+// import from '@/features/gestion-estrategica' instead
 
-// Planificación del Sistema
+// Planificacion del Sistema
 export * from './planificacion-sistema.types';
 
 // Planificación General

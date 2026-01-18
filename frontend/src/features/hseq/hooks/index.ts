@@ -5,10 +5,10 @@
  * Exporta todos los hooks del módulo HSEQ
  */
 
-// Sistema Documental
-export * from './useSistemaDocumental';
+// Sistema Documental - MIGRADO a gestion-estrategica/gestion-documental
+// import from '@/features/gestion-estrategica' instead
 
-// Planificación del Sistema
+// Planificacion del Sistema
 export * from './usePlanificacionSistema';
 
 // Planificación General

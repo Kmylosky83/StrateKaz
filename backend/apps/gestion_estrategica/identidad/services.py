@@ -34,13 +34,13 @@ class GestorDocumentalService:
     @staticmethod
     def is_documental_available() -> bool:
         """
-        Verifica si el módulo de Sistema Documental está disponible.
+        Verifica si el módulo de Gestión Documental está disponible.
 
         Returns:
             bool: True si el módulo está instalado y activo
         """
         try:
-            apps.get_model('sistema_documental', 'Documento')
+            apps.get_model('gestion_documental', 'Documento')
             return True
         except LookupError:
             return False
@@ -102,11 +102,12 @@ class GestorDocumentalService:
             observaciones=observaciones
         )
 
-        # Importar el modelo de Documento del Gestor Documental
-        from apps.hseq_management.sistema_documental.models import (
+        # Importar el modelo de Documento del Gestor Documental (migrado a N1)
+        from apps.gestion_estrategica.gestion_documental.models import (
             TipoDocumento, Documento, VersionDocumento,
-            FirmaDocumento, ControlDocumental
+            ControlDocumental
         )
+        # NOTA: FirmaDocumento eliminado - usar FirmaDigital de workflow_engine
         from django.contrib.auth import get_user_model
         User = get_user_model()
 
@@ -440,7 +441,7 @@ class GestorDocumentalService:
         - POL-CA-002 (Segunda política de Calidad)
         - POL-GEN-001 (Política general)
         """
-        from apps.hseq_management.sistema_documental.models import Documento
+        from apps.gestion_estrategica.gestion_documental.models import Documento
 
         prefijo = f"POL-{norma_code}-"
 

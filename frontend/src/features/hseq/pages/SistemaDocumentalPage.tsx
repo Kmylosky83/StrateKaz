@@ -42,22 +42,22 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { Badge } from '@/components/common/Badge';
 import { Spinner } from '@/components/common/Spinner';
 
-// Importar hooks del módulo
+// Importar hooks del módulo (migrado a gestion-estrategica)
 import {
   useDocumentos,
   useTiposDocumento,
   usePlantillasDocumento,
-  useFirmasPendientes,
   useListadoMaestro,
   useVersionesDocumento,
-  useControlDocumental,
-  type Documento,
-  type TipoDocumento,
-  type PlantillaDocumento,
-  type FirmaDocumento,
-  type VersionDocumento,
-  type ControlDocumental,
-} from '../hooks/useSistemaDocumental';
+} from '@/features/gestion-estrategica/hooks/useGestionDocumental';
+import { useMisFirmasPendientes } from '@/features/gestion-estrategica/hooks/useWorkflowFirmas';
+import type {
+  Documento,
+  TipoDocumento,
+  PlantillaDocumento,
+  VersionDocumento,
+  ControlDocumental,
+} from '@/features/gestion-estrategica/types/gestion-documental.types';
 
 // ==================== SECCIÓN: LISTADO MAESTRO ====================
 function ListadoMaestroSection() {
@@ -126,7 +126,8 @@ function ListadoMaestroSection() {
               <p className="text-sm text-gray-600 dark:text-gray-400">Vigentes</p>
               <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                 {listadoMaestro.reduce(
-                  (acc, tipo) => acc + tipo.documentos.filter((d) => d.estado === 'PUBLICADO').length,
+                  (acc, tipo) =>
+                    acc + tipo.documentos.filter((d) => d.estado === 'PUBLICADO').length,
                   0
                 )}
               </p>
@@ -143,7 +144,8 @@ function ListadoMaestroSection() {
               <p className="text-sm text-gray-600 dark:text-gray-400">En Revisión</p>
               <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                 {listadoMaestro.reduce(
-                  (acc, tipo) => acc + tipo.documentos.filter((d) => d.estado === 'EN_REVISION').length,
+                  (acc, tipo) =>
+                    acc + tipo.documentos.filter((d) => d.estado === 'EN_REVISION').length,
                   0
                 )}
               </p>
@@ -235,8 +237,8 @@ function ListadoMaestroSection() {
                             doc.estado === 'PUBLICADO'
                               ? 'success'
                               : doc.estado === 'APROBADO'
-                              ? 'primary'
-                              : 'warning'
+                                ? 'primary'
+                                : 'warning'
                           }
                         >
                           {doc.estado}
@@ -247,7 +249,11 @@ function ListadoMaestroSection() {
                           <Button variant="ghost" size="sm" leftIcon={<Eye className="w-4 h-4" />}>
                             Ver
                           </Button>
-                          <Button variant="ghost" size="sm" leftIcon={<Download className="w-4 h-4" />}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            leftIcon={<Download className="w-4 h-4" />}
+                          >
                             PDF
                           </Button>
                         </div>
@@ -319,9 +325,7 @@ function TiposPlantillasSection() {
                         className="w-3 h-3 rounded-full"
                         style={{ backgroundColor: tipo.color_identificacion }}
                       />
-                      <h4 className="font-medium text-gray-900 dark:text-white">
-                        {tipo.nombre}
-                      </h4>
+                      <h4 className="font-medium text-gray-900 dark:text-white">{tipo.nombre}</h4>
                       <Badge variant="secondary">{tipo.codigo}</Badge>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
@@ -392,9 +396,7 @@ function TiposPlantillasSection() {
                       <h4 className="font-medium text-gray-900 dark:text-white">
                         {plantilla.nombre}
                       </h4>
-                      {plantilla.es_por_defecto && (
-                        <Badge variant="primary">Por defecto</Badge>
-                      )}
+                      {plantilla.es_por_defecto && <Badge variant="primary">Por defecto</Badge>}
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                       {plantilla.descripcion}
@@ -410,8 +412,8 @@ function TiposPlantillasSection() {
                         plantilla.estado === 'ACTIVA'
                           ? 'success'
                           : plantilla.estado === 'BORRADOR'
-                          ? 'warning'
-                          : 'secondary'
+                            ? 'warning'
+                            : 'secondary'
                       }
                     >
                       {plantilla.estado}
@@ -447,9 +449,7 @@ function ConstructorDocumentosSection() {
       {/* Header con acciones */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Mis Documentos
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Mis Documentos</h3>
           <p className="text-sm text-gray-600 dark:text-gray-400">
             Gestiona tus documentos en borrador y en proceso
           </p>
@@ -553,8 +553,8 @@ function ConstructorDocumentosSection() {
                     documento.estado === 'APROBADO'
                       ? 'success'
                       : documento.estado === 'EN_REVISION'
-                      ? 'warning'
-                      : 'secondary'
+                        ? 'warning'
+                        : 'secondary'
                   }
                 >
                   {documento.estado}
@@ -595,9 +595,7 @@ function VersionesSection() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Lista de documentos */}
         <Card className="p-4 lg:col-span-1">
-          <h4 className="font-medium text-gray-900 dark:text-white mb-4">
-            Seleccionar Documento
-          </h4>
+          <h4 className="font-medium text-gray-900 dark:text-white mb-4">Seleccionar Documento</h4>
           {!documentos || documentos.length === 0 ? (
             <p className="text-sm text-gray-600 dark:text-gray-400">
               No hay documentos disponibles
@@ -614,9 +612,7 @@ function VersionesSection() {
                       : 'bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700/50'
                   }`}
                 >
-                  <p className="font-medium text-sm text-gray-900 dark:text-white">
-                    {doc.codigo}
-                  </p>
+                  <p className="font-medium text-sm text-gray-900 dark:text-white">{doc.codigo}</p>
                   <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">
                     {doc.titulo}
                   </p>
@@ -624,9 +620,7 @@ function VersionesSection() {
                     <Badge variant="secondary" size="sm">
                       v{doc.version_actual}
                     </Badge>
-                    <span className="text-xs text-gray-500">
-                      Rev. {doc.numero_revision}
-                    </span>
+                    <span className="text-xs text-gray-500">Rev. {doc.numero_revision}</span>
                   </div>
                 </button>
               ))}
@@ -752,7 +746,8 @@ function VersionTimeline({ documentoId }: { documentoId: number }) {
 
 // ==================== SECCIÓN: FIRMAS DIGITALES ====================
 function FirmasSection() {
-  const { data: firmasPendientes, isLoading } = useFirmasPendientes();
+  // Usar el nuevo hook de workflow de firmas (migrado de sistema_documental)
+  const { firmasPendientes, totalPendientes, miTurno, isLoading } = useMisFirmasPendientes();
 
   if (isLoading) {
     return (
@@ -761,12 +756,6 @@ function FirmasSection() {
       </div>
     );
   }
-
-  const firmasPorEstado = {
-    pendientes: firmasPendientes?.filter((f) => f.estado === 'PENDIENTE') || [],
-    firmadas: firmasPendientes?.filter((f) => f.estado === 'FIRMADO') || [],
-    rechazadas: firmasPendientes?.filter((f) => f.estado === 'RECHAZADO') || [],
-  };
 
   return (
     <div className="space-y-6">
@@ -779,9 +768,19 @@ function FirmasSection() {
             </div>
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Pendientes</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">
-                {firmasPorEstado.pendientes.length}
-              </p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">{totalPendientes}</p>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+              <PenTool className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Mi Turno</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">{miTurno}</p>
             </div>
           </div>
         </Card>
@@ -792,23 +791,9 @@ function FirmasSection() {
               <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Firmadas</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">En Cola</p>
               <p className="text-xl font-bold text-gray-900 dark:text-white">
-                {firmasPorEstado.firmadas.length}
-              </p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
-              <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Rechazadas</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">
-                {firmasPorEstado.rechazadas.length}
+                {totalPendientes - miTurno}
               </p>
             </div>
           </div>
@@ -820,7 +805,7 @@ function FirmasSection() {
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           Firmas Pendientes
         </h3>
-        {firmasPorEstado.pendientes.length === 0 ? (
+        {!firmasPendientes || firmasPendientes.length === 0 ? (
           <EmptyState
             icon={<PenTool className="w-12 h-12" />}
             title="No hay firmas pendientes"
@@ -828,30 +813,43 @@ function FirmasSection() {
           />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {firmasPorEstado.pendientes.map((firma) => (
+            {firmasPendientes.map((firma) => (
               <Card key={firma.id} className="p-4">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <Badge variant="warning">{firma.tipo_firma}</Badge>
+                      <Badge variant={firma.es_mi_turno ? 'warning' : 'secondary'}>
+                        {firma.rol_firma_display}
+                      </Badge>
                       <span className="text-xs text-gray-500 dark:text-gray-400">
-                        Orden: {firma.orden_firma}
+                        Orden: {firma.orden}
                       </span>
+                      {firma.es_mi_turno && (
+                        <Badge variant="primary" size="sm">
+                          Tu turno
+                        </Badge>
+                      )}
                     </div>
                     <h4 className="font-medium text-gray-900 dark:text-white mb-1">
-                      Documento #{firma.documento}
+                      {firma.documento_titulo}
                     </h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Cargo: {firma.cargo_firmante}
+                      {firma.documento_tipo}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-4">
                   <span className="flex items-center gap-1">
-                    <Calendar className="w-3 h-3" />
-                    Solicitado: {new Date(firma.fecha_solicitud).toLocaleDateString('es-CO')}
+                    <Clock className="w-3 h-3" />
+                    {firma.dias_pendiente} día(s) pendiente
                   </span>
+                  {firma.fecha_limite && (
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      Límite: {new Date(firma.fecha_limite).toLocaleDateString('es-CO')}
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -860,6 +858,7 @@ function FirmasSection() {
                     size="sm"
                     className="flex-1"
                     leftIcon={<PenTool className="w-4 h-4" />}
+                    disabled={!firma.es_mi_turno}
                   >
                     Firmar
                   </Button>
@@ -868,6 +867,7 @@ function FirmasSection() {
                     size="sm"
                     className="flex-1"
                     leftIcon={<XCircle className="w-4 h-4" />}
+                    disabled={!firma.es_mi_turno}
                   >
                     Rechazar
                   </Button>
@@ -877,44 +877,6 @@ function FirmasSection() {
           </div>
         )}
       </div>
-
-      {/* Historial de firmas */}
-      {firmasPorEstado.firmadas.length > 0 && (
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Historial de Firmas
-          </h3>
-          <Card className="divide-y divide-gray-200 dark:divide-gray-700">
-            {firmasPorEstado.firmadas.slice(0, 5).map((firma) => (
-              <div key={firma.id} className="p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                    <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">
-                      Documento #{firma.documento}
-                    </p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">
-                      {firma.tipo_firma} - {firma.cargo_firmante}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {firma.fecha_firma
-                      ? new Date(firma.fecha_firma).toLocaleDateString('es-CO')
-                      : '-'}
-                  </p>
-                  <Badge variant="success" size="sm">
-                    Firmado
-                  </Badge>
-                </div>
-              </div>
-            ))}
-          </Card>
-        </div>
-      )}
     </div>
   );
 }
@@ -1059,11 +1021,7 @@ function DistribucionSection() {
                         <Button variant="ghost" size="sm" leftIcon={<Eye className="w-4 h-4" />}>
                           Ver
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          leftIcon={<Share2 className="w-4 h-4" />}
-                        >
+                        <Button variant="ghost" size="sm" leftIcon={<Share2 className="w-4 h-4" />}>
                           Distribuir
                         </Button>
                         <Button

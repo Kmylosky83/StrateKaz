@@ -6,10 +6,20 @@ API clients para el módulo de Gestión HSEQ del Sistema de Gestión StrateKaz.
 
 ```
 api/
-├── sistemaDocumentalApi.ts      # API para Sistema Documental
 ├── planificacionApi.ts          # API para Planificación del Sistema
+├── calidadApi.ts                # API para Gestión de Calidad
+├── medicinaLaboralApi.ts        # API para Medicina Laboral
+├── seguridadIndustrialApi.ts    # API para Seguridad Industrial
+├── accidentalidadApi.ts         # API para Accidentalidad (ATEL)
+├── emergenciasApi.ts            # API para Emergencias
+├── gestionAmbientalApi.ts       # API para Gestión Ambiental
+├── mejoraContinuaApi.ts         # API para Mejora Continua
+├── comitesApi.ts                # API para Gestión de Comités
 └── README.md                    # Esta documentación
 ```
+
+> **NOTA:** Sistema Documental ha sido migrado a `@/features/gestion-estrategica/api/gestionDocumentalApi.ts`
+> Las firmas digitales ahora usan el sistema consolidado en `workflow_engine.firma_digital`
 
 ## Planificación del Sistema
 

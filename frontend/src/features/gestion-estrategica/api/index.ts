@@ -7,5 +7,16 @@ export * from './empresaApi';
 // Gestión de Proyectos PMI
 export * from './proyectosApi';
 
-// Revisión por Dirección (ISO 9.3)
+// Revision por Direccion (ISO 9.3)
 export * from './revisionDireccionApi';
+
+// Gestion Documental (migrado de HSEQ a N1)
+export {
+  tipoDocumentoApi,
+  plantillaDocumentoApi,
+  documentoApi,
+  versionDocumentoApi,
+  campoFormularioApi,
+  controlDocumentalApi,
+  default as gestionDocumentalApi,
+} from './gestionDocumentalApi';

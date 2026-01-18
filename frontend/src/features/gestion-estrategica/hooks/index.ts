@@ -58,3 +58,8 @@ export * from './useWorkflowFirmas';
 
 // Valores Vividos (conexion valor-accion para BI)
 export * from './useValoresVividos';
+
+// ============================================================================
+// GESTION DOCUMENTAL (migrado de HSEQ a N1)
+// ============================================================================
+export * from './useGestionDocumental';

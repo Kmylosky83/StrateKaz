@@ -116,10 +116,11 @@ INSTALLED_APPS = [
     'apps.motor_riesgos.riesgos_viales',           # RiesgoVial (PESV)
     'apps.motor_riesgos.sagrilaft_ptee',           # RiesgoLAFT, Señal
     'apps.motor_riesgos.seguridad_informacion',    # RiesgoTI (ISO 27001)
-    # --- Workflow Engine (3 apps) ---
+    # --- Workflow Engine (4 apps) ---
     'apps.workflow_engine.disenador_flujos',       # PlantillaFlujo, Paso (BPMN)
     'apps.workflow_engine.ejecucion',              # InstanciaFlujo, TareaActiva
     'apps.workflow_engine.monitoreo',              # MetricaFlujo, AlertaFlujo
+    'apps.workflow_engine.firma_digital',          # FirmaDigital, ConfiguracionFlujoFirma (Fase 0.3.4)
 
     # ═══════════════════════════════════════════════════════════════════════════
     # NIVEL 3: TORRE DE CONTROL - HSEQ Management (11 apps)

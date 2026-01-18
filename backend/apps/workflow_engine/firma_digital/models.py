@@ -900,7 +900,7 @@ class AlertaRevision(TimestampedModel):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='alertas_atendidas',
+        related_name='alertas_revision_atendidas',
         verbose_name='Atendida Por'
     )
     fecha_atencion = models.DateTimeField(

@@ -188,8 +188,9 @@ if is_app_installed('apps.workflow_engine.disenador_flujos'):
 
 # ═══════════════════════════════════════════════════════════════════════════
 # NIVEL 3: TORRE DE CONTROL - HSEQ Management
+# NOTA: sistema_documental migrado a N1 (gestion_estrategica.gestion_documental)
 # ═══════════════════════════════════════════════════════════════════════════
-if is_app_installed('apps.hseq_management.sistema_documental'):
+if is_app_installed('apps.hseq_management.planificacion_sistema'):
     urlpatterns.append(path('api/hseq/', include('apps.hseq_management.urls')))
 
 # ═══════════════════════════════════════════════════════════════════════════

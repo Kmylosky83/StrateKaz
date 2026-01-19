@@ -12,7 +12,8 @@ import type {
   ModulesTree,
   SystemModuleTree,
   ToggleResponse,
-  SidebarModule
+  SidebarModule,
+  ModuleDependentsResponse,
 } from '../types/modules.types';
 import { strategicKeys } from './useStrategic';
 
@@ -24,6 +25,7 @@ export const modulesKeys = {
   tree: () => [...modulesKeys.all, 'tree'] as const,
   sidebar: () => [...modulesKeys.all, 'sidebar'] as const,
   detail: (id: number) => [...modulesKeys.all, 'detail', id] as const,
+  dependents: (id: number) => [...modulesKeys.all, 'dependents', id] as const,
   tabs: (moduleId: number) => [...modulesKeys.all, moduleId, 'tabs'] as const,
   sections: (tabId: number) => [...modulesKeys.all, 'tabs', tabId, 'sections'] as const,
 };
@@ -57,8 +59,18 @@ const modulesApi = {
    */
   toggleModule: async (id: number, isEnabled: boolean): Promise<ToggleResponse> => {
     const { data } = await axiosInstance.patch(`/core/system-modules/${id}/toggle/`, {
-      is_enabled: isEnabled
+      is_enabled: isEnabled,
     });
+    return data;
+  },
+
+  /**
+   * MM-003: Obtener dependientes de un módulo
+   * @param id - ID del módulo
+   * @returns Información de dependencias y elementos hijos
+   */
+  getDependents: async (id: number): Promise<ModuleDependentsResponse> => {
+    const { data } = await axiosInstance.get(`/core/system-modules/${id}/dependents/`);
     return data;
   },
 
@@ -69,7 +81,7 @@ const modulesApi = {
    */
   toggleTab: async (id: number, isEnabled: boolean): Promise<ToggleResponse> => {
     const { data } = await axiosInstance.patch(`/core/module-tabs/${id}/toggle/`, {
-      is_enabled: isEnabled
+      is_enabled: isEnabled,
     });
     return data;
   },
@@ -81,7 +93,7 @@ const modulesApi = {
    */
   toggleSection: async (id: number, isEnabled: boolean): Promise<ToggleResponse> => {
     const { data } = await axiosInstance.patch(`/core/tab-sections/${id}/toggle/`, {
-      is_enabled: isEnabled
+      is_enabled: isEnabled,
     });
     return data;
   },
@@ -136,6 +148,32 @@ export function useSidebarModules() {
     queryFn: modulesApi.getSidebar,
     staleTime: 5 * 60 * 1000, // 5 minutos
     retry: 2,
+  });
+}
+
+/**
+ * MM-003: Hook para obtener dependientes de un módulo
+ * Útil para mostrar feedback antes de desactivar
+ *
+ * @param moduleId - ID del módulo
+ * @param enabled - Si la query está habilitada (default: false)
+ * @returns Query con información de dependencias
+ *
+ * @example
+ * ```tsx
+ * const { data: dependents, isLoading } = useModuleDependents(moduleId, showConfirm);
+ *
+ * if (dependents?.warning_message) {
+ *   // Mostrar advertencia antes de desactivar
+ * }
+ * ```
+ */
+export function useModuleDependents(moduleId: number, enabled = false) {
+  return useQuery({
+    queryKey: modulesKeys.dependents(moduleId),
+    queryFn: () => modulesApi.getDependents(moduleId),
+    enabled: enabled && moduleId > 0,
+    staleTime: 30 * 1000, // 30 segundos (datos cambian frecuentemente)
   });
 }
 
@@ -217,7 +255,9 @@ export function useToggleTab() {
       queryClient.invalidateQueries({ queryKey: strategicKeys.configStats('modulos') });
 
       if (response.affected_items && response.affected_items.sections?.length) {
-        toast.success(`${response.message} (${response.affected_items.sections.length} secciones afectadas)`);
+        toast.success(
+          `${response.message} (${response.affected_items.sections.length} secciones afectadas)`
+        );
       } else {
         toast.success(response.message);
       }
@@ -292,7 +332,7 @@ export function useModuleEnabled(moduleCode: string) {
     return { isEnabled: true, isLoading: true, module: undefined };
   }
 
-  const module = tree.modules.find(m => m.code === moduleCode);
+  const module = tree.modules.find((m) => m.code === moduleCode);
 
   return {
     isEnabled: module?.is_enabled ?? false,
@@ -323,8 +363,8 @@ export function useTabEnabled(moduleCode: string, tabCode: string) {
     return { isEnabled: true, isLoading: true, tab: undefined };
   }
 
-  const module = tree.modules.find(m => m.code === moduleCode);
-  const tab = module?.tabs.find(t => t.code === tabCode);
+  const module = tree.modules.find((m) => m.code === moduleCode);
+  const tab = module?.tabs.find((t) => t.code === tabCode);
 
   return {
     isEnabled: (module?.is_enabled && tab?.is_enabled) ?? false,
@@ -356,9 +396,9 @@ export function useSectionEnabled(moduleCode: string, tabCode: string, sectionCo
     return { isEnabled: true, isLoading: true, section: undefined };
   }
 
-  const module = tree.modules.find(m => m.code === moduleCode);
-  const tab = module?.tabs.find(t => t.code === tabCode);
-  const section = tab?.sections.find(s => s.code === sectionCode);
+  const module = tree.modules.find((m) => m.code === moduleCode);
+  const tab = module?.tabs.find((t) => t.code === tabCode);
+  const section = tab?.sections.find((s) => s.code === sectionCode);
 
   return {
     isEnabled: (module?.is_enabled && tab?.is_enabled && section?.is_enabled) ?? false,
@@ -393,13 +433,12 @@ export function useTabSections(moduleCode: string, tabCode: string) {
     };
   }
 
-  const module = tree.modules.find(m => m.code === moduleCode);
-  const tab = module?.tabs.find(t => t.code === tabCode);
+  const module = tree.modules.find((m) => m.code === moduleCode);
+  const tab = module?.tabs.find((t) => t.code === tabCode);
 
   // Solo retornar secciones habilitadas, ordenadas por order
-  const enabledSections = tab?.sections
-    .filter(s => s.is_enabled)
-    .sort((a, b) => a.order - b.order) ?? [];
+  const enabledSections =
+    tab?.sections.filter((s) => s.is_enabled).sort((a, b) => a.order - b.order) ?? [];
 
   return {
     sections: enabledSections,
@@ -432,14 +471,17 @@ export function useModulesByCategory() {
     return { data: undefined, isLoading: true };
   }
 
-  const grouped = tree.modules.reduce((acc, module) => {
-    const category = module.category;
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(module);
-    return acc;
-  }, {} as Record<string, SystemModuleTree[]>);
+  const grouped = tree.modules.reduce(
+    (acc, module) => {
+      const category = module.category;
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(module);
+      return acc;
+    },
+    {} as Record<string, SystemModuleTree[]>
+  );
 
   return { data: grouped, isLoading: false };
 }
@@ -463,21 +505,23 @@ export function useModulesStats() {
   if (isLoading || !tree) {
     return {
       stats: undefined,
-      isLoading: true
+      isLoading: true,
     };
   }
 
   const totalModules = tree.modules.length;
-  const enabledModules = tree.modules.filter(m => m.is_enabled).length;
+  const enabledModules = tree.modules.filter((m) => m.is_enabled).length;
 
   const totalTabs = tree.modules.reduce((sum, m) => sum + m.total_tabs_count, 0);
   const enabledTabs = tree.modules.reduce((sum, m) => sum + m.enabled_tabs_count, 0);
 
-  const totalSections = tree.modules.reduce((sum, m) =>
-    sum + m.tabs.reduce((tabSum, t) => tabSum + t.total_sections_count, 0), 0
+  const totalSections = tree.modules.reduce(
+    (sum, m) => sum + m.tabs.reduce((tabSum, t) => tabSum + t.total_sections_count, 0),
+    0
   );
-  const enabledSections = tree.modules.reduce((sum, m) =>
-    sum + m.tabs.reduce((tabSum, t) => tabSum + t.enabled_sections_count, 0), 0
+  const enabledSections = tree.modules.reduce(
+    (sum, m) => sum + m.tabs.reduce((tabSum, t) => tabSum + t.enabled_sections_count, 0),
+    0
   );
 
   return {

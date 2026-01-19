@@ -495,6 +495,64 @@ class BrandingConfig(models.Model):
         verbose_name='Version de la Aplicacion',
         help_text='Version que se muestra en el login y footer'
     )
+
+    # Campos PWA (Progressive Web App)
+    pwa_name = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        verbose_name='Nombre PWA',
+        help_text='Nombre completo de la app para manifest.json'
+    )
+    pwa_short_name = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        verbose_name='Nombre Corto PWA',
+        help_text='Nombre corto para iconos de app (max 12 caracteres recomendado)'
+    )
+    pwa_description = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Descripcion PWA',
+        help_text='Descripcion de la aplicacion para manifest.json'
+    )
+    pwa_theme_color = models.CharField(
+        max_length=7,
+        blank=True,
+        null=True,
+        verbose_name='Color de Tema PWA',
+        help_text='Color de la barra de titulo del navegador (formato HEX)'
+    )
+    pwa_background_color = models.CharField(
+        max_length=7,
+        blank=True,
+        null=True,
+        verbose_name='Color de Fondo PWA',
+        help_text='Color de fondo del splash screen (formato HEX)'
+    )
+    pwa_icon_192 = models.ImageField(
+        upload_to='branding/pwa/',
+        blank=True,
+        null=True,
+        verbose_name='Icono PWA 192x192',
+        help_text='Icono para manifest.json (192x192 px, PNG)'
+    )
+    pwa_icon_512 = models.ImageField(
+        upload_to='branding/pwa/',
+        blank=True,
+        null=True,
+        verbose_name='Icono PWA 512x512',
+        help_text='Icono para manifest.json (512x512 px, PNG)'
+    )
+    pwa_icon_maskable = models.ImageField(
+        upload_to='branding/pwa/',
+        blank=True,
+        null=True,
+        verbose_name='Icono Maskable PWA',
+        help_text='Icono maskable para Android (512x512 px, PNG con padding)'
+    )
+
     is_active = models.BooleanField(
         default=True,
         verbose_name='Activo'

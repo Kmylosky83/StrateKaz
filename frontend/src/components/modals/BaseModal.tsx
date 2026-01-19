@@ -9,8 +9,9 @@
  * - 9 tamaños configurables
  * - Accesibilidad completa (ARIA)
  * - Portal rendering
+ * - MS-002: Indicadores de scroll (sombras arriba/abajo)
  */
-import { ReactNode, useEffect, useRef, useCallback } from 'react';
+import { ReactNode, useEffect, useRef, useCallback, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
@@ -46,15 +47,16 @@ export interface BaseModalProps {
   id?: string;
 }
 
+// MS-003: Responsive - En mobile todos los modales ocupan ancho completo
 const sizeClasses: Record<ModalSize, string> = {
-  xs: 'max-w-xs',
-  sm: 'max-w-sm',
-  md: 'max-w-md',
-  lg: 'max-w-lg',
-  xl: 'max-w-xl',
-  '2xl': 'max-w-2xl',
-  '3xl': 'max-w-3xl',
-  '4xl': 'max-w-4xl',
+  xs: 'max-w-xs w-full',
+  sm: 'max-w-sm w-full',
+  md: 'max-w-md w-full',
+  lg: 'max-w-lg w-full',
+  xl: 'max-w-xl w-full',
+  '2xl': 'max-w-2xl w-full',
+  '3xl': 'max-w-3xl w-full',
+  '4xl': 'max-w-4xl w-full',
   full: 'max-w-[95vw] w-full',
 };
 
@@ -73,7 +75,27 @@ export const BaseModal = ({
   id,
 }: BaseModalProps) => {
   const modalRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
+
+  // MS-002: Estado para indicadores de scroll
+  const [scrollState, setScrollState] = useState({ canScrollUp: false, canScrollDown: false });
+
+  // MS-002: Actualizar estado de scroll
+  const updateScrollIndicators = useCallback(() => {
+    const el = contentRef.current;
+    if (!el) return;
+
+    const canScrollUp = el.scrollTop > 0;
+    const canScrollDown = el.scrollTop + el.clientHeight < el.scrollHeight - 1;
+
+    setScrollState((prev) => {
+      if (prev.canScrollUp !== canScrollUp || prev.canScrollDown !== canScrollDown) {
+        return { canScrollUp, canScrollDown };
+      }
+      return prev;
+    });
+  }, []);
 
   // Manejar tecla Escape
   const handleKeyDown = useCallback(
@@ -100,6 +122,8 @@ export const BaseModal = ({
       // Focus al modal
       setTimeout(() => {
         modalRef.current?.focus();
+        // MS-002: Verificar scroll inicial después de render
+        updateScrollIndicators();
       }, 100);
 
       return () => {
@@ -113,7 +137,18 @@ export const BaseModal = ({
         previousActiveElement.current?.focus();
       };
     }
-  }, [isOpen, handleKeyDown]);
+  }, [isOpen, handleKeyDown, updateScrollIndicators]);
+
+  // MS-002: Observer para detectar cambios de contenido
+  useEffect(() => {
+    const el = contentRef.current;
+    if (!el || !isOpen) return;
+
+    const resizeObserver = new ResizeObserver(updateScrollIndicators);
+    resizeObserver.observe(el);
+
+    return () => resizeObserver.disconnect();
+  }, [isOpen, updateScrollIndicators]);
 
   // Click en backdrop
   const handleBackdropClick = (event: React.MouseEvent) => {
@@ -131,7 +166,7 @@ export const BaseModal = ({
           animate="animate"
           exit="exit"
           onClick={handleBackdropClick}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/50 backdrop-blur-sm"
           aria-labelledby={id ? `${id}-title` : undefined}
           aria-describedby={id ? `${id}-description` : undefined}
           role="dialog"
@@ -148,14 +183,14 @@ export const BaseModal = ({
             className={`
               w-full ${sizeClasses[size]}
               bg-white dark:bg-gray-800
-              rounded-2xl shadow-xl
-              max-h-[90vh] flex flex-col
+              rounded-xl sm:rounded-2xl shadow-xl
+              max-h-[95vh] sm:max-h-[90vh] flex flex-col
               outline-none
               ${className}
             `}
           >
-            {/* Header */}
-            <div className="flex items-start justify-between p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+            {/* Header - MS-003: Responsive padding */}
+            <div className="flex items-start justify-between p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
               <div>
                 <h2
                   id={id ? `${id}-title` : undefined}
@@ -185,12 +220,40 @@ export const BaseModal = ({
               )}
             </div>
 
-            {/* Body */}
-            <div className="flex-1 overflow-y-auto p-6">{children}</div>
+            {/* Body - MS-002: Con indicadores de scroll (usando Design System: secondary) */}
+            <div className="relative flex-1 min-h-0">
+              {/* Sombra superior (indica más contenido arriba) */}
+              <div
+                className={`
+                  absolute top-0 left-0 right-0 h-4 z-10
+                  bg-gradient-to-b from-secondary-200/80 dark:from-secondary-700/80 to-transparent
+                  pointer-events-none transition-opacity duration-200
+                  ${scrollState.canScrollUp ? 'opacity-100' : 'opacity-0'}
+                `}
+              />
 
-            {/* Footer */}
+              <div
+                ref={contentRef}
+                onScroll={updateScrollIndicators}
+                className="h-full overflow-y-auto p-4 sm:p-6"
+              >
+                {children}
+              </div>
+
+              {/* Sombra inferior (indica más contenido abajo) */}
+              <div
+                className={`
+                  absolute bottom-0 left-0 right-0 h-4 z-10
+                  bg-gradient-to-t from-secondary-200/80 dark:from-secondary-700/80 to-transparent
+                  pointer-events-none transition-opacity duration-200
+                  ${scrollState.canScrollDown ? 'opacity-100' : 'opacity-0'}
+                `}
+              />
+            </div>
+
+            {/* Footer - MS-003: Responsive padding */}
             {footer && (
-              <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
+              <div className="flex items-center justify-end gap-2 sm:gap-3 p-4 sm:p-6 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
                 {footer}
               </div>
             )}

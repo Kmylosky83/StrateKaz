@@ -722,3 +722,315 @@ Las **brechas críticas** que deben resolverse antes de Go-Live son:
 *Plan generado automáticamente a partir de 7 auditorías técnicas - StrateKaz v3.3.0*
 *Modelo de deployment: Multi-Instancia (20 empresas)*
 *Fecha de generación: 15 de enero de 2026*
+
+---
+
+## ANEXO B: FASES TÉCNICAS COMPLETADAS
+
+### FASE 0.3: Consolidación del Sistema de Firmas (2026-01-17)
+
+**Objetivo:** Unificar todos los sistemas de firma digital dispersos en un motor consolidado.
+
+#### Migración Realizada
+
+| Componente | Origen | Destino | Estado |
+|------------|--------|---------|--------|
+| Sistema Documental | `hseq_management.sistema_documental` | `gestion_estrategica.gestion_documental` | ✅ |
+| Firmas de Políticas | `identidad.models_workflow_firmas` | `workflow_engine.firma_digital` | ✅ |
+| Firmas de Documentos | `sistema_documental.FirmaDocumento` | `workflow_engine.firma_digital` | ✅ |
+| Workflow de Firmas | `identidad.models_workflow` | `workflow_engine.disenador_flujos` | ✅ |
+
+#### Archivos Eliminados (Legacy)
+
+```
+backend/apps/gestion_estrategica/identidad/
+├── models_workflow.py (1,267 líneas) - ELIMINADO
+├── models_workflow_firmas.py (703 líneas) - ELIMINADO
+├── serializers_workflow.py (466 líneas) - ELIMINADO
+├── tasks_workflow.py (617 líneas) - ELIMINADO
+├── urls_workflow.py (318 líneas) - ELIMINADO
+├── views_workflow.py (949 líneas) - ELIMINADO
+└── README_WORKFLOW.md (488 líneas) - ELIMINADO
+
+backend/apps/hseq_management/sistema_documental/
+├── admin.py - ELIMINADO
+├── apps.py - ELIMINADO
+└── tests/__init__.py - ELIMINADO
+```
+
+#### Nuevo Sistema Consolidado
+
+```
+backend/apps/workflow_engine/firma_digital/
+├── __init__.py
+├── apps.py
+├── models.py          # FirmaDigital con GenericForeignKey
+├── urls.py            # 15 endpoints consolidados
+└── migrations/
+    └── 0001_initial.py
+
+backend/apps/gestion_estrategica/gestion_documental/
+├── __init__.py
+├── apps.py
+├── admin.py
+├── models.py          # TipoDocumento, Documento, VersionDocumento
+├── serializers.py
+├── urls.py
+└── views.py
+```
+
+#### Frontend Migrado
+
+| Archivo | Cambio |
+|---------|--------|
+| `hseq/hooks/useSistemaDocumental.ts` | ELIMINADO (920 líneas) |
+| `hseq/api/sistemaDocumentalApi.ts` | MOVIDO a `gestion-estrategica/api/gestionDocumentalApi.ts` |
+| `hseq/types/sistema-documental.types.ts` | MOVIDO a `gestion-estrategica/types/gestion-documental.types.ts` |
+| `gestion-estrategica/hooks/useGestionDocumental.ts` | NUEVO (511 líneas) |
+| `gestion-estrategica/hooks/useWorkflowFirmas.ts` | ACTUALIZADO con useMisFirmasPendientes |
+
+#### Commits Relacionados
+
+- `231f21c` - feat(workflow): Add FirmaDigital models and URLs
+- `4a31313` - feat(migration): Complete gestion-documental backend migration
+- `fe6c505` - feat(frontend): Migrate sistema-documental hooks and API
+- `5ed78ed` - fix(migration): Remove legacy workflow files from identidad
+- `30ad1f2` - fix(migration): Update remaining references after gestion-documental migration
+
+#### Beneficios Obtenidos
+
+1. **Reducción de código:** ~4,800 líneas eliminadas (código duplicado)
+2. **Sistema unificado:** Una sola tabla `FirmaDigital` para todos los módulos
+3. **GenericForeignKey:** Firmas reutilizables para cualquier modelo
+4. **Workflows configurables:** Cadenas de aprobación desde el diseñador de flujos
+5. **Frontend simplificado:** Un solo hook `useMisFirmasPendientes` para todas las firmas
+
+#### Endpoints Consolidados
+
+```
+/api/workflow-engine/firmas/
+├── POST   /                              # Crear firma
+├── GET    /                              # Listar firmas
+├── GET    /{id}/                         # Detalle firma
+├── PATCH  /{id}/                         # Actualizar firma
+├── DELETE /{id}/                         # Eliminar firma
+├── GET    /mis-firmas-pendientes/        # Firmas pendientes del usuario
+├── POST   /{id}/firmar/                  # Ejecutar firma
+├── POST   /{id}/rechazar/                # Rechazar firma
+├── GET    /{id}/historial/               # Historial de firma
+└── GET    /estadisticas/                 # Dashboard de firmas
+```
+
+#### Validación Post-Migración
+
+```bash
+# Django check: OK
+python manage.py check
+
+# TypeScript: OK
+npx tsc --noEmit
+
+# Referencias actualizadas
+grep -r "sistema_documental" . # 0 referencias activas
+```
+
+---
+
+### Issues Identificados para Próximas Fases
+
+#### PWA Branding Flash (P1-21) - NUEVO
+
+**Problema:** Al cargar la aplicación PWA, se muestra brevemente el branding por defecto (StrateKaz) antes de cargar el branding configurado por la empresa. Esto genera una mala experiencia de usuario en producción.
+
+**Causa técnica:**
+- El `manifest.json` se genera estáticamente con valores default
+- El branding de empresa se carga desde API después del render inicial
+- Durante el "splash screen" de PWA se muestra el default
+
+**Solución propuesta:**
+1. **Opción A - Server-side manifest:** Generar `manifest.json` dinámicamente desde Django con el branding de la empresa
+2. **Opción B - Service Worker:** Interceptar y modificar el manifest en el service worker
+3. **Opción C - Build por instancia:** Generar builds con manifest personalizado por cliente
+
+**Archivos involucrados:**
+- `frontend/public/manifest.json` - Manifest estático actual
+- `frontend/src/providers/BrandingProvider.tsx` - Provider que carga branding desde API
+- `frontend/index.html` - Link al manifest
+
+**Esfuerzo estimado:** 8h
+
+---
+
+### FASE 0.3.5: Migración Planificación del Sistema (2026-01-17)
+
+**Objetivo:** Migrar el módulo `planificacion_sistema` de N3 (HSEQ) a N1 (Gestión Estratégica) para completar la consolidación del Nivel 1.
+
+#### Migración Realizada
+
+| Componente | Origen | Destino | Estado |
+|------------|--------|---------|--------|
+| Modelos | `hseq_management.planificacion_sistema` | `gestion_estrategica.planificacion_sistema` | ✅ |
+| ViewSets | `hseq_management.planificacion_sistema.views` | `gestion_estrategica.planificacion_sistema.views` | ✅ |
+| Serializers | `hseq_management.planificacion_sistema.serializers` | `gestion_estrategica.planificacion_sistema.serializers` | ✅ |
+| Admin | `hseq_management.planificacion_sistema.admin` | `gestion_estrategica.planificacion_sistema.admin` | ✅ |
+
+#### Modelos Migrados (6 modelos)
+
+| Modelo | Descripción | db_table (preservado) |
+|--------|-------------|----------------------|
+| PlanTrabajoAnual | Plan de trabajo anual del sistema | `hseq_plan_trabajo_anual` |
+| ActividadPlan | Actividades del plan anual | `hseq_actividad_plan` |
+| ObjetivoSistema | Objetivos BSC del sistema | `hseq_objetivo_sistema` |
+| ProgramaGestion | Programas de gestión | `hseq_programa_gestion` |
+| ActividadPrograma | Actividades de programas | `hseq_actividad_programa` |
+| SeguimientoCronograma | Seguimiento de cronograma | `hseq_seguimiento_cronograma` |
+
+**Nota:** Se preservan los nombres de tablas `hseq_*` para compatibilidad multi-instancia (evitar migraciones de datos en 20+ bases de datos).
+
+#### Archivos Backend Creados
+
+```
+backend/apps/gestion_estrategica/planificacion_sistema/
+├── __init__.py
+├── apps.py
+├── models.py          # 6 modelos con GenericRelation
+├── serializers.py     # 12 serializers (List + Detail)
+├── views.py           # 6 ViewSets con acciones custom
+├── urls.py            # Router con 6 ViewSets
+└── admin.py           # Admin classes para 6 modelos
+```
+
+#### Frontend Migrado
+
+| Archivo | Origen | Destino |
+|---------|--------|---------|
+| planificacionSistemaApi.ts | `hseq/api/` | `gestion-estrategica/api/` |
+| planificacion-sistema.types.ts | `hseq/types/` | `gestion-estrategica/types/` |
+| usePlanificacionSistema.ts | `hseq/hooks/` | `gestion-estrategica/hooks/` |
+
+#### Configuración Actualizada
+
+| Archivo | Cambio |
+|---------|--------|
+| `config/settings.py` | Movido de N3 a N1 en INSTALLED_APPS |
+| `gestion_estrategica/urls.py` | Añadido path `planificacion-sistema/` |
+| `hseq/hooks/index.ts` | Marcado como DEPRECATED |
+| `hseq/types/index.ts` | Marcado como DEPRECATED |
+| `hseq/api/index.ts` | Añadido comentario de migración |
+
+#### Nuevo Endpoint Base
+
+```
+/api/gestion-estrategica/planificacion-sistema/
+├── planes-trabajo/                  # PlanTrabajoAnual
+├── actividades-plan/                # ActividadPlan
+├── objetivos-sistema/               # ObjetivoSistema
+├── programas-gestion/               # ProgramaGestion
+├── actividades-programa/            # ActividadPrograma
+└── seguimientos-cronograma/         # SeguimientoCronograma
+```
+
+#### Validación Post-Migración
+
+```bash
+# TypeScript: OK
+npx tsc --noEmit
+
+# Settings actualizado: N1 con 9 apps, N3 con 9 apps
+# (2 apps migradas de N3 a N1: gestion_documental, planificacion_sistema)
+```
+
+#### Beneficios Obtenidos
+
+1. **Nivel 1 completo:** Dirección Estratégica tiene todos los módulos de planificación
+2. **N3 más enfocado:** HSEQ ahora solo contiene módulos operativos
+3. **Consistencia:** APIs de planificación bajo `/api/gestion-estrategica/`
+4. **Multi-instancia:** Compatible con arquitectura de 20 empresas (db_table preservados)
+
+---
+
+### FASE 0.3.6: Actualización Sidebar N1 (2026-01-17)
+
+**Objetivo:** Actualizar el seed del menú para incluir los 2 tabs migrados y establecer el orden definitivo.
+
+#### Cambios en seed_estructura_final.py
+
+| Acción | Tab | Orden | Secciones |
+|--------|-----|-------|-----------|
+| ✅ Existente | `configuracion` | 1 | Empresa, Sedes, Integraciones, Branding, Módulos |
+| ✅ Existente | `organizacion` | 2 | Áreas, Cargos, Organigrama, Colaboradores, Control de Acceso |
+| ✅ Existente | `identidad` | 3 | Misión y Visión, Valores, Políticas |
+| ✅ Existente | `planeacion` | 4 | Plan Estratégico, Objetivos, Contexto, DOFA, PESTEL, Porter |
+| ✅ **NUEVO** | `gestion_documental` | 5 | Tipos, Documentos, Plantillas, Control Documental |
+| ✅ **NUEVO** | `planificacion_sistema` | 6 | Plan de Trabajo Anual, Objetivos, Programas, Seguimiento |
+| ✅ Reordenado | `gestion_proyectos` | 7 | - |
+| ✅ Reordenado | `revision_direccion` | 8 | - |
+
+#### Validación
+
+```bash
+# Seed ejecutado exitosamente
+python manage.py seed_estructura_final
+
+# Resultado:
+# [10] Direccion Estrategica (8 tabs) ✅
+# Total: 14 módulos | 79 tabs | 27 secciones
+```
+
+#### Nota sobre Contexto Organizacional
+
+**planeacion.contexto** NO es un tab independiente. Es una **sub-sección** del tab Planeación Estratégica que incluye:
+- Contexto Organizacional (ISO 9001 Cláusula 4.1)
+- Análisis DOFA
+- Análisis PESTEL
+- 5 Fuerzas de Porter
+
+Estas herramientas de análisis son **inputs** que alimentan la planificación estratégica (objetivos BSC, KPIs).
+
+---
+
+### FASE 0.3.7: Completado Técnico N1 (2026-01-17)
+
+**Objetivo:** Completar todos los aspectos técnicos del Nivel 1 antes de pasar al siguiente nivel.
+
+#### Tareas Completadas
+
+| Tarea | Descripción | Estado |
+|-------|-------------|--------|
+| Splash Screen | Implementar SplashScreen.tsx con logo StrateKaz mientras carga branding | ✅ |
+| JWT 7 días | Extender REFRESH_TOKEN_LIFETIME de 24h a 7 días (10080 min) | ✅ |
+| Limpieza docs | Eliminar 25+ archivos de documentación legacy/temporal | ✅ |
+| Auditoría funcional | Verificar que no haya redundancias entre apps N1 | ✅ |
+| Migraciones | Crear 0001_initial.py para planificacion_sistema | ✅ |
+
+#### Archivos Creados/Modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `frontend/src/components/common/SplashScreen.tsx` | **NUEVO** - Componente con animaciones Framer Motion |
+| `frontend/src/App.tsx` | Integración de SplashScreen mientras carga branding |
+| `backend/config/settings.py` | JWT_REFRESH_TOKEN_LIFETIME = 10080 (7 días) |
+| `backend/apps/.../planificacion_sistema/migrations/0001_initial.py` | **NUEVO** - Migración inicial con 6 modelos |
+
+#### Auditoría Funcional N1 - Conclusiones
+
+**NO HAY REDUNDANCIAS CRÍTICAS** entre las 9 apps del N1:
+
+| Posible Redundancia | Análisis | Veredicto |
+|---------------------|----------|-----------|
+| StrategicObjective vs ObjetivoSistema | Diferentes niveles: estratégico (multi-año) vs operativo (anual/HSEQ) | ✅ NO REDUNDANCIA |
+| Programa vs ProgramaGestion | PMI (portafolio) vs HSEQ (operación continua) | ✅ NO REDUNDANCIA |
+| Actividades (3 modelos) | Contextos diferentes: WBS, Plan anual, Programa | ⚠️ REDUNDANCIA MENOR |
+
+**Recomendación:** Las apps son complementarias. Mantener separadas con referencia cruzada opcional.
+
+---
+
+### Próximas Fases Pendientes
+
+| Fase | Descripción | Estado |
+| ---- | ----------- | ------ |
+| 0.4 | Responsive/Mobile PWA Enterprise | 📋 Pendiente |
+| 0.5 | Consolidación Motor de Riesgos | 📋 Pendiente |
+| 0.6 | Refactorización Frontend HSEQ (P1-01) | 📋 Pendiente |
+| 1.0 | Testing E2E Críticos (P1-08) | 📋 Pendiente |

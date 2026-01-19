@@ -8,6 +8,7 @@ Este módulo agrupa las sub-apps:
 - planeacion: Planeación estratégica (Plan, Objetivos, Mapa BSC)
 - gestion_proyectos: Gestión de Proyectos (PMI/PMBOK)
 - revision_direccion: Revisión por la Dirección (ISO 9001:2015 - 9.3)
+- planificacion_sistema: Planificación del Sistema (Plan Anual, Objetivos BSC, Programas)
 
 Endpoints a nivel de módulo (rutas canónicas):
 - /corporate-identity/ - Identidad corporativa
@@ -57,4 +58,5 @@ urlpatterns = [
     path('proyectos/', include('apps.gestion_estrategica.gestion_proyectos.urls')),
     path('revision-direccion/', include('apps.gestion_estrategica.revision_direccion.urls')),
     path('gestion-documental/', include('apps.gestion_estrategica.gestion_documental.urls')),
+    path('planificacion-sistema/', include('apps.gestion_estrategica.planificacion_sistema.urls')),
 ]

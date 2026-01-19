@@ -20,3 +20,13 @@ export {
   controlDocumentalApi,
   default as gestionDocumentalApi,
 } from './gestionDocumentalApi';
+
+// Planificacion del Sistema (migrado de HSEQ a N1)
+export {
+  planTrabajoApi,
+  actividadPlanApi,
+  objetivoSistemaApi,
+  programaGestionApi,
+  actividadProgramaApi,
+  seguimientoCronogramaApi,
+} from './planificacionSistemaApi';

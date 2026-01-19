@@ -286,7 +286,12 @@ class DepartamentoViewSet(CatalogoBaseViewSet):
 
 
 class CiudadViewSet(CatalogoBaseViewSet):
-    """ViewSet para Ciudades de Colombia (dinámico)."""
+    """
+    ViewSet para Ciudades de Colombia (dinámico).
+
+    Endpoints adicionales:
+    - GET /api/supply-chain/ciudades/autocomplete/?q=&departamento_id=
+    """
 
     queryset = Ciudad.objects.all()
     serializer_class = CiudadSerializer
@@ -297,6 +302,62 @@ class CiudadViewSet(CatalogoBaseViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         return queryset.select_related('departamento')
+
+    @action(detail=False, methods=['get'])
+    def autocomplete(self, request):
+        """
+        ME-002: Endpoint de autocompletado para ciudades.
+
+        GET /api/supply-chain/ciudades/autocomplete/
+
+        Query params:
+        - q: Texto de búsqueda (mínimo 2 caracteres)
+        - departamento_id: Filtrar por departamento (opcional)
+        - limit: Límite de resultados (default 10, max 50)
+
+        Retorna lista de ciudades con departamento para select/combobox.
+        """
+        query = request.query_params.get('q', '').strip()
+        departamento_id = request.query_params.get('departamento_id')
+        limit = min(int(request.query_params.get('limit', 10)), 50)
+
+        # Base queryset: solo activas
+        queryset = Ciudad.objects.filter(is_active=True).select_related('departamento')
+
+        # Filtrar por departamento si se especifica
+        if departamento_id:
+            queryset = queryset.filter(departamento_id=departamento_id)
+
+        # Búsqueda por texto (mínimo 2 caracteres)
+        if len(query) >= 2:
+            queryset = queryset.filter(
+                Q(nombre__icontains=query) |
+                Q(codigo__icontains=query) |
+                Q(codigo_dane__icontains=query)
+            )
+
+        # Ordenar: capitales primero, luego alfabético
+        queryset = queryset.order_by('-es_capital', 'nombre')[:limit]
+
+        # Formato optimizado para autocompletado
+        results = [
+            {
+                'id': ciudad.id,
+                'nombre': ciudad.nombre,
+                'departamento_id': ciudad.departamento_id,
+                'departamento_nombre': ciudad.departamento.nombre,
+                'es_capital': ciudad.es_capital,
+                'label': f"{ciudad.nombre}, {ciudad.departamento.nombre}"
+            }
+            for ciudad in queryset
+        ]
+
+        return Response({
+            'results': results,
+            'count': len(results),
+            'query': query,
+            'departamento_id': departamento_id
+        })
 
 
 # ==============================================================================

@@ -19,7 +19,6 @@ import { NotFoundPage } from '@/pages/NotFoundPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { PageLoader } from '@/components/common/PageLoader';
 
-
 // Helper para envolver componentes lazy con Suspense
 const withSuspense = (Component: ComponentType) => (
   <Suspense fallback={<PageLoader />}>
@@ -30,108 +29,241 @@ const withSuspense = (Component: ComponentType) => (
 // ==================== NIVEL 1: DIRECCIÓN ESTRATÉGICA ====================
 // Importación directa de páginas para mejor tree-shaking y chunks más pequeños
 const UsersPage = lazy(() => import('@/features/users/pages/UsersPage'));
-const ConfiguracionPage = lazy(() => import('@/features/gestion-estrategica/pages/ConfiguracionPage'));
-const OrganizacionPage = lazy(() => import('@/features/gestion-estrategica/pages/OrganizacionPage'));
+const ConfiguracionPage = lazy(
+  () => import('@/features/gestion-estrategica/pages/ConfiguracionPage')
+);
+const OrganizacionPage = lazy(
+  () => import('@/features/gestion-estrategica/pages/OrganizacionPage')
+);
 const IdentidadPage = lazy(() => import('@/features/gestion-estrategica/pages/IdentidadPage'));
 const PlaneacionPage = lazy(() => import('@/features/gestion-estrategica/pages/PlaneacionPage'));
 const ProyectosPage = lazy(() => import('@/features/gestion-estrategica/pages/ProyectosPage'));
-const RevisionDireccionPage = lazy(() => import('@/features/gestion-estrategica/pages/RevisionDireccionPage'));
+const RevisionDireccionPage = lazy(
+  () => import('@/features/gestion-estrategica/pages/RevisionDireccionPage')
+);
 
 // ==================== NIVEL 2: CUMPLIMIENTO ====================
 // Motor de Cumplimiento
-const CumplimientoPage = lazy(() => import('@/features/cumplimiento').then(m => ({ default: m.CumplimientoPage })));
-const MatrizLegalPage = lazy(() => import('@/features/cumplimiento').then(m => ({ default: m.MatrizLegalPage })));
-const RequisitosLegalesPage = lazy(() => import('@/features/cumplimiento').then(m => ({ default: m.RequisitosLegalesPage })));
-const PartesInteresadasPage = lazy(() => import('@/features/cumplimiento').then(m => ({ default: m.PartesInteresadasPage })));
-const ReglamentosInternosPage = lazy(() => import('@/features/cumplimiento').then(m => ({ default: m.ReglamentosInternosPage })));
+const CumplimientoPage = lazy(() =>
+  import('@/features/cumplimiento').then((m) => ({ default: m.CumplimientoPage }))
+);
+const MatrizLegalPage = lazy(() =>
+  import('@/features/cumplimiento').then((m) => ({ default: m.MatrizLegalPage }))
+);
+const RequisitosLegalesPage = lazy(() =>
+  import('@/features/cumplimiento').then((m) => ({ default: m.RequisitosLegalesPage }))
+);
+const PartesInteresadasPage = lazy(() =>
+  import('@/features/cumplimiento').then((m) => ({ default: m.PartesInteresadasPage }))
+);
+const ReglamentosInternosPage = lazy(() =>
+  import('@/features/cumplimiento').then((m) => ({ default: m.ReglamentosInternosPage }))
+);
 
 // Motor de Riesgos
-const RiesgosPage = lazy(() => import('@/features/riesgos').then(m => ({ default: m.RiesgosPage })));
-const ContextoOrganizacionalPage = lazy(() => import('@/features/riesgos').then(m => ({ default: m.ContextoOrganizacionalPage })));
-const RiesgosProcesosPage = lazy(() => import('@/features/riesgos').then(m => ({ default: m.RiesgosProcesosPage })));
-const IPEVRPage = lazy(() => import('@/features/riesgos').then(m => ({ default: m.IPEVRPage })));
-const AspectosAmbientalesPage = lazy(() => import('@/features/riesgos').then(m => ({ default: m.AspectosAmbientalesPage })));
-const RiesgosVialesPage = lazy(() => import('@/features/riesgos').then(m => ({ default: m.RiesgosVialesPage })));
-const SagrilaftPteePage = lazy(() => import('@/features/riesgos').then(m => ({ default: m.SagrilaftPteePage })));
-const SeguridadInformacionPage = lazy(() => import('@/features/riesgos').then(m => ({ default: m.SeguridadInformacionPage })));
+const RiesgosPage = lazy(() =>
+  import('@/features/riesgos').then((m) => ({ default: m.RiesgosPage }))
+);
+const ContextoOrganizacionalPage = lazy(() =>
+  import('@/features/riesgos').then((m) => ({ default: m.ContextoOrganizacionalPage }))
+);
+const RiesgosProcesosPage = lazy(() =>
+  import('@/features/riesgos').then((m) => ({ default: m.RiesgosProcesosPage }))
+);
+const IPEVRPage = lazy(() => import('@/features/riesgos').then((m) => ({ default: m.IPEVRPage })));
+const AspectosAmbientalesPage = lazy(() =>
+  import('@/features/riesgos').then((m) => ({ default: m.AspectosAmbientalesPage }))
+);
+const RiesgosVialesPage = lazy(() =>
+  import('@/features/riesgos').then((m) => ({ default: m.RiesgosVialesPage }))
+);
+const SagrilaftPteePage = lazy(() =>
+  import('@/features/riesgos').then((m) => ({ default: m.SagrilaftPteePage }))
+);
+const SeguridadInformacionPage = lazy(() =>
+  import('@/features/riesgos').then((m) => ({ default: m.SeguridadInformacionPage }))
+);
 
 // Workflows Engine
-const WorkflowsPage = lazy(() => import('@/features/workflows').then(m => ({ default: m.WorkflowsPage })));
-const DisenadorFlujosPage = lazy(() => import('@/features/workflows').then(m => ({ default: m.DisenadorFlujosPage })));
-const EjecucionPage = lazy(() => import('@/features/workflows').then(m => ({ default: m.EjecucionPage })));
-const MonitoreoPage = lazy(() => import('@/features/workflows').then(m => ({ default: m.MonitoreoPage })));
+const WorkflowsPage = lazy(() =>
+  import('@/features/workflows').then((m) => ({ default: m.WorkflowsPage }))
+);
+const DisenadorFlujosPage = lazy(() =>
+  import('@/features/workflows').then((m) => ({ default: m.DisenadorFlujosPage }))
+);
+const EjecucionPage = lazy(() =>
+  import('@/features/workflows').then((m) => ({ default: m.EjecucionPage }))
+);
+const MonitoreoPage = lazy(() =>
+  import('@/features/workflows').then((m) => ({ default: m.MonitoreoPage }))
+);
 
 // ==================== NIVEL 3: TORRE DE CONTROL (HSEQ) ====================
-const HSEQPage = lazy(() => import('@/features/hseq').then(m => ({ default: m.HSEQPage })));
-const SistemaDocumentalPage = lazy(() => import('@/features/hseq').then(m => ({ default: m.SistemaDocumentalPage })));
-const PlanificacionSistemaPage = lazy(() => import('@/features/hseq').then(m => ({ default: m.PlanificacionSistemaPage })));
-const CalidadPage = lazy(() => import('@/features/hseq').then(m => ({ default: m.CalidadPage })));
-const MedicinaLaboralPage = lazy(() => import('@/features/hseq').then(m => ({ default: m.MedicinaLaboralPage })));
-const SeguridadIndustrialPage = lazy(() => import('@/features/hseq').then(m => ({ default: m.SeguridadIndustrialPage })));
-const HigieneIndustrialPage = lazy(() => import('@/features/hseq').then(m => ({ default: m.HigieneIndustrialPage })));
-const GestionComitesPage = lazy(() => import('@/features/hseq').then(m => ({ default: m.GestionComitesPage })));
-const AccidentalidadPage = lazy(() => import('@/features/hseq').then(m => ({ default: m.AccidentalidadPage })));
-const EmergenciasPage = lazy(() => import('@/features/hseq').then(m => ({ default: m.EmergenciasPage })));
-const GestionAmbientalPage = lazy(() => import('@/features/hseq').then(m => ({ default: m.GestionAmbientalPage })));
-const MejoraContinuaPage = lazy(() => import('@/features/hseq').then(m => ({ default: m.MejoraContinuaPage })));
+const HSEQPage = lazy(() => import('@/features/hseq').then((m) => ({ default: m.HSEQPage })));
+const SistemaDocumentalPage = lazy(() =>
+  import('@/features/hseq').then((m) => ({ default: m.SistemaDocumentalPage }))
+);
+const PlanificacionSistemaPage = lazy(() =>
+  import('@/features/hseq').then((m) => ({ default: m.PlanificacionSistemaPage }))
+);
+const CalidadPage = lazy(() => import('@/features/hseq').then((m) => ({ default: m.CalidadPage })));
+const MedicinaLaboralPage = lazy(() =>
+  import('@/features/hseq').then((m) => ({ default: m.MedicinaLaboralPage }))
+);
+const SeguridadIndustrialPage = lazy(() =>
+  import('@/features/hseq').then((m) => ({ default: m.SeguridadIndustrialPage }))
+);
+const HigieneIndustrialPage = lazy(() =>
+  import('@/features/hseq').then((m) => ({ default: m.HigieneIndustrialPage }))
+);
+const GestionComitesPage = lazy(() =>
+  import('@/features/hseq').then((m) => ({ default: m.GestionComitesPage }))
+);
+const AccidentalidadPage = lazy(() =>
+  import('@/features/hseq').then((m) => ({ default: m.AccidentalidadPage }))
+);
+const EmergenciasPage = lazy(() =>
+  import('@/features/hseq').then((m) => ({ default: m.EmergenciasPage }))
+);
+const GestionAmbientalPage = lazy(() =>
+  import('@/features/hseq').then((m) => ({ default: m.GestionAmbientalPage }))
+);
+const MejoraContinuaPage = lazy(() =>
+  import('@/features/hseq').then((m) => ({ default: m.MejoraContinuaPage }))
+);
 
 // ==================== NIVEL 4: CADENA DE VALOR ====================
 // Operaciones de Producción
 const ProductionOpsPage = lazy(() => import('@/features/production-ops/pages/ProductionOpsPage'));
 
 // Logística y Flota
-const LogisticsFleetPage = lazy(() => import('@/features/logistics-fleet/pages/LogisticsFleetPage'));
+const LogisticsFleetPage = lazy(
+  () => import('@/features/logistics-fleet/pages/LogisticsFleetPage')
+);
 
 // Supply Chain (Proveedores legacy → será refactorizado a supply_chain)
 const MateriaPrimaPage = lazy(() => import('@/features/proveedores/pages/MateriaPrimaPage'));
-const ProductosServiciosPage = lazy(() => import('@/features/proveedores/pages/ProductosServiciosPage'));
+const ProductosServiciosPage = lazy(
+  () => import('@/features/proveedores/pages/ProductosServiciosPage')
+);
 const PruebasAcidezPage = lazy(() => import('@/features/proveedores/pages/PruebasAcidezPage'));
 
 // Sales & CRM
-const ClientesPage = lazy(() => import('@/features/sales-crm').then(m => ({ default: m.ClientesPage })));
-const PipelinePage = lazy(() => import('@/features/sales-crm').then(m => ({ default: m.PipelinePage })));
-const CotizacionesPage = lazy(() => import('@/features/sales-crm').then(m => ({ default: m.CotizacionesPage })));
-const PedidosPage = lazy(() => import('@/features/sales-crm').then(m => ({ default: m.PedidosPage })));
-const FacturasPage = lazy(() => import('@/features/sales-crm').then(m => ({ default: m.FacturasPage })));
-const PQRSPage = lazy(() => import('@/features/sales-crm').then(m => ({ default: m.PQRSPage })));
-const EncuestasPage = lazy(() => import('@/features/sales-crm').then(m => ({ default: m.EncuestasPage })));
-const FidelizacionPage = lazy(() => import('@/features/sales-crm').then(m => ({ default: m.FidelizacionPage })));
+const ClientesPage = lazy(() =>
+  import('@/features/sales-crm').then((m) => ({ default: m.ClientesPage }))
+);
+const PipelinePage = lazy(() =>
+  import('@/features/sales-crm').then((m) => ({ default: m.PipelinePage }))
+);
+const CotizacionesPage = lazy(() =>
+  import('@/features/sales-crm').then((m) => ({ default: m.CotizacionesPage }))
+);
+const PedidosPage = lazy(() =>
+  import('@/features/sales-crm').then((m) => ({ default: m.PedidosPage }))
+);
+const FacturasPage = lazy(() =>
+  import('@/features/sales-crm').then((m) => ({ default: m.FacturasPage }))
+);
+const PQRSPage = lazy(() => import('@/features/sales-crm').then((m) => ({ default: m.PQRSPage })));
+const EncuestasPage = lazy(() =>
+  import('@/features/sales-crm').then((m) => ({ default: m.EncuestasPage }))
+);
+const FidelizacionPage = lazy(() =>
+  import('@/features/sales-crm').then((m) => ({ default: m.FidelizacionPage }))
+);
 
 // ==================== NIVEL 5: HABILITADORES ====================
 // Centro de Talento (Talent Hub)
-const TalentHubPage = lazy(() => import('@/features/talent-hub').then(m => ({ default: m.TalentHubPage })));
+const TalentHubPage = lazy(() =>
+  import('@/features/talent-hub').then((m) => ({ default: m.TalentHubPage }))
+);
 
 // Administración y Finanzas
-const AdminFinancePage = lazy(() => import('@/features/admin-finance').then(m => ({ default: m.AdminFinancePage })));
-const TesoreriaPage = lazy(() => import('@/features/admin-finance').then(m => ({ default: m.TesoreriaPage })));
-const PresupuestoPage = lazy(() => import('@/features/admin-finance').then(m => ({ default: m.PresupuestoPage })));
-const ActivosFijosPage = lazy(() => import('@/features/admin-finance').then(m => ({ default: m.ActivosFijosPage })));
-const ServiciosGeneralesPage = lazy(() => import('@/features/admin-finance').then(m => ({ default: m.ServiciosGeneralesPage })));
+const AdminFinancePage = lazy(() =>
+  import('@/features/admin-finance').then((m) => ({ default: m.AdminFinancePage }))
+);
+const TesoreriaPage = lazy(() =>
+  import('@/features/admin-finance').then((m) => ({ default: m.TesoreriaPage }))
+);
+const PresupuestoPage = lazy(() =>
+  import('@/features/admin-finance').then((m) => ({ default: m.PresupuestoPage }))
+);
+const ActivosFijosPage = lazy(() =>
+  import('@/features/admin-finance').then((m) => ({ default: m.ActivosFijosPage }))
+);
+const ServiciosGeneralesPage = lazy(() =>
+  import('@/features/admin-finance').then((m) => ({ default: m.ServiciosGeneralesPage }))
+);
 
 // Contabilidad (Módulo Activable)
-const AccountingPage = lazy(() => import('@/features/accounting').then(m => ({ default: m.AccountingPage })));
-const ConfigContablePage = lazy(() => import('@/features/accounting').then(m => ({ default: m.ConfigContablePage })));
-const MovimientosContablesPage = lazy(() => import('@/features/accounting').then(m => ({ default: m.MovimientosContablesPage })));
-const InformesContablesPage = lazy(() => import('@/features/accounting').then(m => ({ default: m.InformesContablesPage })));
-const IntegracionContablePage = lazy(() => import('@/features/accounting').then(m => ({ default: m.IntegracionContablePage })));
+const AccountingPage = lazy(() =>
+  import('@/features/accounting').then((m) => ({ default: m.AccountingPage }))
+);
+const ConfigContablePage = lazy(() =>
+  import('@/features/accounting').then((m) => ({ default: m.ConfigContablePage }))
+);
+const MovimientosContablesPage = lazy(() =>
+  import('@/features/accounting').then((m) => ({ default: m.MovimientosContablesPage }))
+);
+const InformesContablesPage = lazy(() =>
+  import('@/features/accounting').then((m) => ({ default: m.InformesContablesPage }))
+);
+const IntegracionContablePage = lazy(() =>
+  import('@/features/accounting').then((m) => ({ default: m.IntegracionContablePage }))
+);
 
 // ==================== NIVEL 6: INTELIGENCIA ====================
 // Analítica
-const AnalyticsPage = lazy(() => import('@/features/analytics').then(m => ({ default: m.AnalyticsPage })));
-const ConfigIndicadoresPage = lazy(() => import('@/features/analytics').then(m => ({ default: m.ConfigIndicadoresPage })));
-const DashboardGerencialPage = lazy(() => import('@/features/analytics').then(m => ({ default: m.DashboardGerencialPage })));
-const IndicadoresAreaPage = lazy(() => import('@/features/analytics').then(m => ({ default: m.IndicadoresAreaPage })));
-const AnalisisTendenciasPage = lazy(() => import('@/features/analytics').then(m => ({ default: m.AnalisisTendenciasPage })));
-const GeneradorInformesPage = lazy(() => import('@/features/analytics').then(m => ({ default: m.GeneradorInformesPage })));
-const AccionesIndicadorPage = lazy(() => import('@/features/analytics').then(m => ({ default: m.AccionesIndicadorPage })));
-const ExportacionPage = lazy(() => import('@/features/analytics').then(m => ({ default: m.ExportacionPage })));
+const AnalyticsPage = lazy(() =>
+  import('@/features/analytics').then((m) => ({ default: m.AnalyticsPage }))
+);
+const ConfigIndicadoresPage = lazy(() =>
+  import('@/features/analytics').then((m) => ({ default: m.ConfigIndicadoresPage }))
+);
+const DashboardGerencialPage = lazy(() =>
+  import('@/features/analytics').then((m) => ({ default: m.DashboardGerencialPage }))
+);
+const IndicadoresAreaPage = lazy(() =>
+  import('@/features/analytics').then((m) => ({ default: m.IndicadoresAreaPage }))
+);
+const AnalisisTendenciasPage = lazy(() =>
+  import('@/features/analytics').then((m) => ({ default: m.AnalisisTendenciasPage }))
+);
+const GeneradorInformesPage = lazy(() =>
+  import('@/features/analytics').then((m) => ({ default: m.GeneradorInformesPage }))
+);
+const AccionesIndicadorPage = lazy(() =>
+  import('@/features/analytics').then((m) => ({ default: m.AccionesIndicadorPage }))
+);
+const ExportacionPage = lazy(() =>
+  import('@/features/analytics').then((m) => ({ default: m.ExportacionPage }))
+);
 
 // Sistema de Auditoría
-const AuditSystemPage = lazy(() => import('@/features/audit-system').then(m => ({ default: m.AuditSystemPage })));
-const LogsSistemaPage = lazy(() => import('@/features/audit-system').then(m => ({ default: m.LogsSistemaPage })));
-const NotificacionesPage = lazy(() => import('@/features/audit-system').then(m => ({ default: m.NotificacionesPage })));
-const AlertasPage = lazy(() => import('@/features/audit-system').then(m => ({ default: m.AlertasPage })));
-const TareasPage = lazy(() => import('@/features/audit-system').then(m => ({ default: m.TareasPage })));
+const AuditSystemPage = lazy(() =>
+  import('@/features/audit-system').then((m) => ({ default: m.AuditSystemPage }))
+);
+const LogsSistemaPage = lazy(() =>
+  import('@/features/audit-system').then((m) => ({ default: m.LogsSistemaPage }))
+);
+const NotificacionesPage = lazy(() =>
+  import('@/features/audit-system').then((m) => ({ default: m.NotificacionesPage }))
+);
+const AlertasPage = lazy(() =>
+  import('@/features/audit-system').then((m) => ({ default: m.AlertasPage }))
+);
+const TareasPage = lazy(() =>
+  import('@/features/audit-system').then((m) => ({ default: m.TareasPage }))
+);
+
+// ==================== PERFIL DE USUARIO ====================
+const PerfilPage = lazy(() => import('@/features/perfil').then((m) => ({ default: m.PerfilPage })));
+const SeguridadPage = lazy(() =>
+  import('@/features/perfil').then((m) => ({ default: m.SeguridadPage }))
+);
+const PreferenciasPage = lazy(() =>
+  import('@/features/perfil').then((m) => ({ default: m.PreferenciasPage }))
+);
 
 export const AppRoutes = () => {
   return (
@@ -146,11 +278,17 @@ export const AppRoutes = () => {
       {/* ═══════════════════════════════════════════════════════════════ */}
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
-
           {/* ═══════════════════════════════════════════════════════════════ */}
           {/* DASHBOARD PRINCIPAL - Página de inicio post-login */}
           {/* ═══════════════════════════════════════════════════════════════ */}
           <Route path="/dashboard" element={<DashboardPage />} />
+
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          {/* PERFIL DE USUARIO */}
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          <Route path="/perfil" element={withSuspense(PerfilPage)} />
+          <Route path="/perfil/seguridad" element={withSuspense(SeguridadPage)} />
+          <Route path="/perfil/preferencias" element={withSuspense(PreferenciasPage)} />
 
           {/* ═══════════════════════════════════════════════════════════════ */}
           {/* NIVEL 1: DIRECCIÓN ESTRATÉGICA */}
@@ -162,10 +300,16 @@ export const AppRoutes = () => {
           />
 
           {/* Tab 1: Configuración */}
-          <Route path="/gestion-estrategica/configuracion" element={withSuspense(ConfiguracionPage)} />
+          <Route
+            path="/gestion-estrategica/configuracion"
+            element={withSuspense(ConfiguracionPage)}
+          />
 
           {/* Tab 2: Organización */}
-          <Route path="/gestion-estrategica/organizacion" element={withSuspense(OrganizacionPage)} />
+          <Route
+            path="/gestion-estrategica/organizacion"
+            element={withSuspense(OrganizacionPage)}
+          />
 
           {/* Tab 3: Identidad Corporativa */}
           <Route path="/gestion-estrategica/identidad" element={withSuspense(IdentidadPage)} />
@@ -173,13 +317,31 @@ export const AppRoutes = () => {
           {/* Tab 4: Planeación Estratégica */}
           <Route path="/gestion-estrategica/planeacion" element={withSuspense(PlaneacionPage)} />
           {/* Contexto Organizacional (DOFA/PESTEL/Porter) - movido desde Riesgos */}
-          <Route path="/gestion-estrategica/planeacion/contexto" element={withSuspense(ContextoOrganizacionalPage)} />
+          <Route
+            path="/gestion-estrategica/planeacion/contexto"
+            element={withSuspense(ContextoOrganizacionalPage)}
+          />
 
           {/* Tab 5: Gestión de Proyectos (PMI) */}
           <Route path="/gestion-estrategica/proyectos" element={withSuspense(ProyectosPage)} />
 
           {/* Tab 6: Revisión por Dirección (ISO 9.3) */}
-          <Route path="/gestion-estrategica/revision-direccion" element={withSuspense(RevisionDireccionPage)} />
+          <Route
+            path="/gestion-estrategica/revision-direccion"
+            element={withSuspense(RevisionDireccionPage)}
+          />
+
+          {/* Tab 7: Gestión Documental (migrado desde HSEQ a N1) */}
+          <Route
+            path="/gestion-estrategica/gestion-documental"
+            element={withSuspense(SistemaDocumentalPage)}
+          />
+
+          {/* Tab 8: Planificación del Sistema (migrado desde HSEQ a N1) */}
+          <Route
+            path="/gestion-estrategica/planificacion-sistema"
+            element={withSuspense(PlanificacionSistemaPage)}
+          />
 
           {/* Usuarios - Módulo transversal dentro de Dirección Estratégica */}
           <Route path="/usuarios" element={withSuspense(UsersPage)} />
@@ -191,16 +353,22 @@ export const AppRoutes = () => {
           {/* Módulo: Motor de Cumplimiento (motor_cumplimiento) */}
           <Route path="/cumplimiento" element={withSuspense(CumplimientoPage)} />
           <Route path="/cumplimiento/matriz-legal" element={withSuspense(MatrizLegalPage)} />
-          <Route path="/cumplimiento/requisitos-legales" element={withSuspense(RequisitosLegalesPage)} />
-          <Route path="/cumplimiento/partes-interesadas" element={withSuspense(PartesInteresadasPage)} />
-          <Route path="/cumplimiento/reglamentos-internos" element={withSuspense(ReglamentosInternosPage)} />
+          <Route
+            path="/cumplimiento/requisitos-legales"
+            element={withSuspense(RequisitosLegalesPage)}
+          />
+          <Route
+            path="/cumplimiento/partes-interesadas"
+            element={withSuspense(PartesInteresadasPage)}
+          />
+          <Route
+            path="/cumplimiento/reglamentos-internos"
+            element={withSuspense(ReglamentosInternosPage)}
+          />
 
           {/* Módulo: Motor de Riesgos (motor_riesgos) */}
           {/* NOTA: contexto_organizacional movido a /gestion-estrategica/planeacion/contexto */}
-          <Route
-            path="/riesgos"
-            element={withSuspense(RiesgosPage)}
-          />
+          <Route path="/riesgos" element={withSuspense(RiesgosPage)} />
           <Route path="/riesgos/procesos" element={withSuspense(RiesgosProcesosPage)} />
           <Route path="/riesgos/ipevr" element={withSuspense(IPEVRPage)} />
           <Route path="/riesgos/ambientales" element={withSuspense(AspectosAmbientalesPage)} />
@@ -218,10 +386,7 @@ export const AppRoutes = () => {
           {/* NIVEL 3: TORRE DE CONTROL (HSEQ MANAGEMENT) */}
           {/* Código: hseq_management - Rutas definidas desde BD via seed */}
           {/* ═══════════════════════════════════════════════════════════════ */}
-          <Route
-            path="/hseq"
-            element={<Navigate to="/hseq/sistema-documental" replace />}
-          />
+          <Route path="/hseq" element={<Navigate to="/hseq/sistema-documental" replace />} />
           <Route path="/hseq/dashboard" element={withSuspense(HSEQPage)} />
 
           {/* Tab 1: Sistema Documental */}
@@ -237,7 +402,10 @@ export const AppRoutes = () => {
           <Route path="/hseq/medicina-laboral" element={withSuspense(MedicinaLaboralPage)} />
 
           {/* Tab 5: Seguridad Industrial */}
-          <Route path="/hseq/seguridad-industrial" element={withSuspense(SeguridadIndustrialPage)} />
+          <Route
+            path="/hseq/seguridad-industrial"
+            element={withSuspense(SeguridadIndustrialPage)}
+          />
 
           {/* Tab 6: Higiene Industrial */}
           <Route path="/hseq/higiene-industrial" element={withSuspense(HigieneIndustrialPage)} />
@@ -270,7 +438,10 @@ export const AppRoutes = () => {
             element={<Navigate to="/proveedores/materia-prima" replace />}
           />
           <Route path="/proveedores/materia-prima" element={withSuspense(MateriaPrimaPage)} />
-          <Route path="/proveedores/productos-servicios" element={withSuspense(ProductosServiciosPage)} />
+          <Route
+            path="/proveedores/productos-servicios"
+            element={withSuspense(ProductosServiciosPage)}
+          />
           <Route path="/proveedores/pruebas-acidez" element={withSuspense(PruebasAcidezPage)} />
 
           {/* Módulo: Operaciones de Producción (production_ops) */}
@@ -280,10 +451,7 @@ export const AppRoutes = () => {
           <Route path="/logistica" element={withSuspense(LogisticsFleetPage)} />
 
           {/* Módulo: Ventas y CRM (sales_crm) */}
-          <Route
-            path="/ventas"
-            element={<Navigate to="/ventas/clientes" replace />}
-          />
+          <Route path="/ventas" element={<Navigate to="/ventas/clientes" replace />} />
           {/* Tab 1: Gestión de Clientes */}
           <Route path="/ventas/clientes" element={withSuspense(ClientesPage)} />
           {/* Tab 2: Pipeline de Ventas */}
@@ -317,13 +485,19 @@ export const AppRoutes = () => {
           <Route path="/finanzas/tesoreria" element={withSuspense(TesoreriaPage)} />
           <Route path="/finanzas/presupuesto" element={withSuspense(PresupuestoPage)} />
           <Route path="/finanzas/activos-fijos" element={withSuspense(ActivosFijosPage)} />
-          <Route path="/finanzas/servicios-generales" element={withSuspense(ServiciosGeneralesPage)} />
+          <Route
+            path="/finanzas/servicios-generales"
+            element={withSuspense(ServiciosGeneralesPage)}
+          />
 
           {/* Módulo: Contabilidad (accounting) - MÓDULO ACTIVABLE */}
           <Route path="/contabilidad" element={<Navigate to="/contabilidad/dashboard" replace />} />
           <Route path="/contabilidad/dashboard" element={withSuspense(AccountingPage)} />
           <Route path="/contabilidad/configuracion" element={withSuspense(ConfigContablePage)} />
-          <Route path="/contabilidad/movimientos" element={withSuspense(MovimientosContablesPage)} />
+          <Route
+            path="/contabilidad/movimientos"
+            element={withSuspense(MovimientosContablesPage)}
+          />
           <Route path="/contabilidad/informes" element={withSuspense(InformesContablesPage)} />
           <Route path="/contabilidad/integracion" element={withSuspense(IntegracionContablePage)} />
 
@@ -368,7 +542,6 @@ export const AppRoutes = () => {
           <Route path="/inteligencia/*" element={<Navigate to="/analitica" replace />} />
           <Route path="/sst/*" element={<Navigate to="/hseq" replace />} />
           <Route path="/reportes" element={<Navigate to="/analitica" replace />} />
-
         </Route>
       </Route>
 

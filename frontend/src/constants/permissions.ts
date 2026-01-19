@@ -53,6 +53,8 @@ export const Sections = {
   INTEGRACIONES: 'integraciones',
   BRANDING: 'branding',
   MODULOS: 'modulos',
+  UNIDADES_MEDIDA: 'unidades_medida',
+  CONSECUTIVOS: 'consecutivos',
 
   // CUMPLIMIENTO
   MATRIZ_LEGAL: 'matriz_legal',

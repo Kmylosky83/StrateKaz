@@ -46,7 +46,7 @@ import type {
 } from '../types/strategic.types';
 
 // URLs por módulo según backend Django
-const CORE_URL = '/core';  // Para system-modules, branding, strategic stats
+const CORE_URL = '/core'; // Para system-modules, branding, strategic stats
 const IDENTIDAD_URL = '/identidad';
 const PLANEACION_URL = '/planeacion';
 const CONFIGURACION_URL = '/configuracion';
@@ -148,7 +148,9 @@ export const identityApi = {
     await axiosInstance.delete(`${IDENTIDAD_URL}/identidad/${id}/`);
   },
 
-  signPolicy: async (id: number): Promise<{ detail: string; signed_by: string; signed_at: string; signature_hash: string }> => {
+  signPolicy: async (
+    id: number
+  ): Promise<{ detail: string; signed_by: string; signed_at: string; signature_hash: string }> => {
     const response = await axiosInstance.post(`${IDENTIDAD_URL}/identidad/${id}/sign/`, {
       confirm: true,
     });
@@ -479,8 +481,12 @@ export const sedesApi = {
 // ==================== INTEGRACIONES EXTERNAS ====================
 
 export const integracionesApi = {
-  getAll: async (filters?: IntegracionFilters): Promise<PaginatedResponse<IntegracionExternaList>> => {
-    const response = await axiosInstance.get(`${CONFIGURACION_URL}/integraciones-externas/`, { params: filters });
+  getAll: async (
+    filters?: IntegracionFilters
+  ): Promise<PaginatedResponse<IntegracionExternaList>> => {
+    const response = await axiosInstance.get(`${CONFIGURACION_URL}/integraciones-externas/`, {
+      params: filters,
+    });
     return response.data;
   },
 
@@ -495,7 +501,10 @@ export const integracionesApi = {
   },
 
   update: async (id: number, data: UpdateIntegracionDTO): Promise<IntegracionExterna> => {
-    const response = await axiosInstance.patch(`${CONFIGURACION_URL}/integraciones-externas/${id}/`, data);
+    const response = await axiosInstance.patch(
+      `${CONFIGURACION_URL}/integraciones-externas/${id}/`,
+      data
+    );
     return response.data;
   },
 
@@ -504,23 +513,36 @@ export const integracionesApi = {
   },
 
   testConnection: async (id: number): Promise<TestConnectionResult> => {
-    const response = await axiosInstance.post(`${CONFIGURACION_URL}/integraciones-externas/${id}/test_connection/`);
+    const response = await axiosInstance.post(
+      `${CONFIGURACION_URL}/integraciones-externas/${id}/test_connection/`
+    );
     return response.data;
   },
 
   toggleStatus: async (id: number): Promise<IntegracionExterna> => {
-    const response = await axiosInstance.post(`${CONFIGURACION_URL}/integraciones-externas/${id}/toggle_status/`);
+    const response = await axiosInstance.post(
+      `${CONFIGURACION_URL}/integraciones-externas/${id}/toggle_status/`
+    );
     return response.data.integracion;
   },
 
-  getLogs: async (id: number, filters?: IntegracionLogsFilters): Promise<PaginatedResponse<IntegracionLog>> => {
-    const response = await axiosInstance.get(`${CONFIGURACION_URL}/integraciones-externas/${id}/logs/`, {
-      params: filters,
-    });
+  getLogs: async (
+    id: number,
+    filters?: IntegracionLogsFilters
+  ): Promise<PaginatedResponse<IntegracionLog>> => {
+    const response = await axiosInstance.get(
+      `${CONFIGURACION_URL}/integraciones-externas/${id}/logs/`,
+      {
+        params: filters,
+      }
+    );
     return response.data;
   },
 
-  updateCredentials: async (id: number, data: UpdateCredencialesDTO): Promise<IntegracionExterna> => {
+  updateCredentials: async (
+    id: number,
+    data: UpdateCredencialesDTO
+  ): Promise<IntegracionExterna> => {
     const response = await axiosInstance.patch(
       `${CONFIGURACION_URL}/integraciones-externas/${id}/update_credentials/`,
       data
@@ -534,7 +556,9 @@ export const integracionesApi = {
     ambientes: SelectOption[];
     metodos_autenticacion: SelectOption[];
   }> => {
-    const response = await axiosInstance.get(`${CONFIGURACION_URL}/integraciones-externas/choices/`);
+    const response = await axiosInstance.get(
+      `${CONFIGURACION_URL}/integraciones-externas/choices/`
+    );
     return response.data;
   },
 };
@@ -584,7 +608,9 @@ export const alcancesApi = {
     return response.data;
   },
 
-  getCertifications: async (identityId: number): Promise<{
+  getCertifications: async (
+    identityId: number
+  ): Promise<{
     total: number;
     certified: number;
     pending: number;
@@ -603,20 +629,26 @@ export const alcancesApi = {
 // Ver: ../hooks/usePoliticas.ts para el nuevo sistema de políticas.
 
 export const politicasEspecificasApi = {
-  getAll: async (filters?: PoliticaEspecificaFilters): Promise<PaginatedResponse<PoliticaEspecifica>> => {
+  getAll: async (
+    filters?: PoliticaEspecificaFilters
+  ): Promise<PaginatedResponse<PoliticaEspecifica>> => {
     const response = await axiosInstance.get(`${IDENTIDAD_URL}/politicas-especificas/`, {
       params: filters,
     });
     return response.data;
   },
 
-  getByStandard: async (): Promise<Record<string, { label: string; total: number; vigentes: number; borradores: number }>> => {
+  getByStandard: async (): Promise<
+    Record<string, { label: string; total: number; vigentes: number; borradores: number }>
+  > => {
     const response = await axiosInstance.get(`${IDENTIDAD_URL}/politicas-especificas/by-standard/`);
     return response.data;
   },
 
   getPendingReview: async (): Promise<{ count: number; policies: PoliticaEspecifica[] }> => {
-    const response = await axiosInstance.get(`${IDENTIDAD_URL}/politicas-especificas/pending-review/`);
+    const response = await axiosInstance.get(
+      `${IDENTIDAD_URL}/politicas-especificas/pending-review/`
+    );
     return response.data;
   },
 
@@ -640,7 +672,10 @@ export const politicasEspecificasApi = {
   },
 
   update: async (id: number, data: UpdatePoliticaEspecificaDTO): Promise<PoliticaEspecifica> => {
-    const response = await axiosInstance.patch(`${IDENTIDAD_URL}/politicas-especificas/${id}/`, data);
+    const response = await axiosInstance.patch(
+      `${IDENTIDAD_URL}/politicas-especificas/${id}/`,
+      data
+    );
     return response.data;
   },
 
@@ -648,10 +683,15 @@ export const politicasEspecificasApi = {
     await axiosInstance.delete(`${IDENTIDAD_URL}/politicas-especificas/${id}/`);
   },
 
-  approve: async (id: number): Promise<{ detail: string; approved_by: string; approved_at: string; status: string }> => {
-    const response = await axiosInstance.post(`${IDENTIDAD_URL}/politicas-especificas/${id}/approve/`, {
-      confirm: true,
-    });
+  approve: async (
+    id: number
+  ): Promise<{ detail: string; approved_by: string; approved_at: string; status: string }> => {
+    const response = await axiosInstance.post(
+      `${IDENTIDAD_URL}/politicas-especificas/${id}/approve/`,
+      {
+        confirm: true,
+      }
+    );
     return response.data;
   },
 
@@ -659,5 +699,403 @@ export const politicasEspecificasApi = {
     await axiosInstance.post(`${IDENTIDAD_URL}/politicas-especificas/reorder/`, {
       items: newOrder,
     });
+  },
+};
+
+// ==================== UNIDADES DE MEDIDA (MC-001) ====================
+
+export type CategoriaUnidad =
+  | 'MASA'
+  | 'VOLUMEN'
+  | 'LONGITUD'
+  | 'AREA'
+  | 'CANTIDAD'
+  | 'TIEMPO'
+  | 'CONTENEDOR'
+  | 'OTRO';
+
+export interface UnidadMedida {
+  id: number;
+  codigo: string;
+  nombre: string;
+  nombre_plural: string;
+  simbolo: string;
+  categoria: CategoriaUnidad;
+  categoria_display: string;
+  unidad_base: number | null;
+  unidad_base_nombre: string | null;
+  unidad_base_simbolo: string | null;
+  factor_conversion: string;
+  decimales_display: number;
+  prefiere_notacion_cientifica: boolean;
+  usar_separador_miles: boolean;
+  descripcion: string | null;
+  es_sistema: boolean;
+  orden_display: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UnidadMedidaList {
+  id: number;
+  codigo: string;
+  nombre: string;
+  simbolo: string;
+  categoria: CategoriaUnidad;
+  categoria_display: string;
+  decimales_display: number;
+  es_sistema: boolean;
+  is_active: boolean;
+}
+
+export interface CreateUnidadMedidaDTO {
+  codigo: string;
+  nombre: string;
+  nombre_plural?: string;
+  simbolo: string;
+  categoria: CategoriaUnidad;
+  unidad_base?: number | null;
+  factor_conversion?: string;
+  decimales_display?: number;
+  prefiere_notacion_cientifica?: boolean;
+  usar_separador_miles?: boolean;
+  descripcion?: string;
+  orden_display?: number;
+  is_active?: boolean;
+}
+
+export type UpdateUnidadMedidaDTO = Partial<CreateUnidadMedidaDTO>;
+
+export interface UnidadMedidaFilters {
+  categoria?: CategoriaUnidad;
+  es_sistema?: boolean;
+  is_active?: boolean;
+  search?: string;
+}
+
+export interface UnidadMedidaChoices {
+  unidades: Array<{
+    value: number;
+    label: string;
+    codigo: string;
+    simbolo: string;
+    categoria: CategoriaUnidad;
+    es_sistema: boolean;
+  }>;
+  categorias: Array<{ value: string; label: string }>;
+  unidades_base: Array<{
+    value: number;
+    label: string;
+    codigo: string;
+    categoria: CategoriaUnidad;
+  }>;
+}
+
+export interface ConversionResult {
+  valor_original: number;
+  unidad_origen: { codigo: string; simbolo: string; nombre: string };
+  valor_convertido: number;
+  unidad_destino: { codigo: string; simbolo: string; nombre: string };
+}
+
+export interface FormateoResult {
+  valor_original: number;
+  valor_formateado: string;
+  unidad: { codigo: string; simbolo: string; nombre: string };
+}
+
+export const unidadesMedidaApi = {
+  getAll: async (filters?: UnidadMedidaFilters): Promise<PaginatedResponse<UnidadMedidaList>> => {
+    const response = await axiosInstance.get(`${CONFIGURACION_URL}/unidades-medida/`, {
+      params: filters,
+    });
+    return response.data;
+  },
+
+  getById: async (id: number): Promise<UnidadMedida> => {
+    const response = await axiosInstance.get(`${CONFIGURACION_URL}/unidades-medida/${id}/`);
+    return response.data;
+  },
+
+  create: async (data: CreateUnidadMedidaDTO): Promise<UnidadMedida> => {
+    const response = await axiosInstance.post(`${CONFIGURACION_URL}/unidades-medida/`, data);
+    return response.data;
+  },
+
+  update: async (id: number, data: UpdateUnidadMedidaDTO): Promise<UnidadMedida> => {
+    const response = await axiosInstance.patch(`${CONFIGURACION_URL}/unidades-medida/${id}/`, data);
+    return response.data;
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await axiosInstance.delete(`${CONFIGURACION_URL}/unidades-medida/${id}/`);
+  },
+
+  restore: async (id: number): Promise<UnidadMedida> => {
+    const response = await axiosInstance.post(
+      `${CONFIGURACION_URL}/unidades-medida/${id}/restore/`
+    );
+    return response.data.data;
+  },
+
+  getChoices: async (): Promise<UnidadMedidaChoices> => {
+    const response = await axiosInstance.get(`${CONFIGURACION_URL}/unidades-medida/choices/`);
+    return response.data;
+  },
+
+  getByCategoria: async (): Promise<
+    Record<CategoriaUnidad, { label: string; unidades: UnidadMedidaList[] }>
+  > => {
+    const response = await axiosInstance.get(`${CONFIGURACION_URL}/unidades-medida/by-categoria/`);
+    return response.data;
+  },
+
+  convertir: async (
+    valor: number,
+    unidadOrigen: string,
+    unidadDestino: string
+  ): Promise<ConversionResult> => {
+    const response = await axiosInstance.post(`${CONFIGURACION_URL}/unidades-medida/convertir/`, {
+      valor,
+      unidad_origen: unidadOrigen,
+      unidad_destino: unidadDestino,
+    });
+    return response.data;
+  },
+
+  formatear: async (
+    valor: number,
+    unidad: string,
+    incluirSimbolo = true
+  ): Promise<FormateoResult> => {
+    const response = await axiosInstance.post(`${CONFIGURACION_URL}/unidades-medida/formatear/`, {
+      valor,
+      unidad,
+      incluir_simbolo: incluirSimbolo,
+    });
+    return response.data;
+  },
+
+  cargarSistema: async (): Promise<{
+    message: string;
+    unidades_creadas: number;
+    total_unidades: number;
+  }> => {
+    const response = await axiosInstance.post(
+      `${CONFIGURACION_URL}/unidades-medida/cargar-sistema/`
+    );
+    return response.data;
+  },
+};
+
+// ==============================================================================
+// MC-002: CONSECUTIVOS CONFIG API
+// ==============================================================================
+
+export type CategoriaConsecutivo =
+  | 'DOCUMENTOS'
+  | 'COMPRAS'
+  | 'VENTAS'
+  | 'INVENTARIO'
+  | 'CONTABILIDAD'
+  | 'PRODUCCION'
+  | 'CALIDAD'
+  | 'RRHH'
+  | 'SST'
+  | 'AMBIENTAL'
+  | 'GENERAL';
+
+export type SeparadorConsecutivo = '-' | '/' | '_' | '.' | '';
+
+export interface ConsecutivoConfig {
+  id: number;
+  codigo: string;
+  nombre: string;
+  descripcion: string | null;
+  categoria: CategoriaConsecutivo;
+  categoria_display: string;
+  prefix: string;
+  suffix: string;
+  separator: SeparadorConsecutivo;
+  separator_display: string;
+  current_number: number;
+  padding: number;
+  numero_inicial: number;
+  include_year: boolean;
+  include_month: boolean;
+  include_day: boolean;
+  reset_yearly: boolean;
+  reset_monthly: boolean;
+  last_reset_date: string | null;
+  es_sistema: boolean;
+  is_active: boolean;
+  ejemplo_formato: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ConsecutivoConfigList {
+  id: number;
+  codigo: string;
+  nombre: string;
+  categoria: CategoriaConsecutivo;
+  categoria_display: string;
+  prefix: string;
+  current_number: number;
+  es_sistema: boolean;
+  is_active: boolean;
+  ejemplo_formato: string;
+}
+
+export interface CreateConsecutivoDTO {
+  codigo: string;
+  nombre: string;
+  descripcion?: string;
+  categoria: CategoriaConsecutivo;
+  prefix: string;
+  suffix?: string;
+  separator?: SeparadorConsecutivo;
+  padding?: number;
+  numero_inicial?: number;
+  include_year?: boolean;
+  include_month?: boolean;
+  include_day?: boolean;
+  reset_yearly?: boolean;
+  reset_monthly?: boolean;
+}
+
+export type UpdateConsecutivoDTO = Partial<CreateConsecutivoDTO>;
+
+export interface ConsecutivoFilters {
+  categoria?: CategoriaConsecutivo;
+  es_sistema?: boolean;
+  is_active?: boolean;
+  search?: string;
+}
+
+export interface ConsecutivoChoices {
+  categorias: Array<{ value: string; label: string }>;
+  separadores: Array<{ value: string; label: string }>;
+  consecutivos: Array<{
+    value: number;
+    label: string;
+    codigo: string;
+    categoria: CategoriaConsecutivo;
+    ejemplo: string;
+  }>;
+}
+
+export interface GenerarConsecutivoResult {
+  consecutivo: string;
+  numero: number;
+  codigo: string;
+}
+
+export interface PreviewConsecutivoParams {
+  prefix: string;
+  suffix?: string;
+  separator?: SeparadorConsecutivo;
+  padding?: number;
+  numero?: number;
+  include_year?: boolean;
+  include_month?: boolean;
+  include_day?: boolean;
+}
+
+export const consecutivosApi = {
+  getAll: async (
+    filters?: ConsecutivoFilters
+  ): Promise<PaginatedResponse<ConsecutivoConfigList>> => {
+    const response = await axiosInstance.get(`${CONFIGURACION_URL}/consecutivos/`, {
+      params: filters,
+    });
+    return response.data;
+  },
+
+  getById: async (id: number): Promise<ConsecutivoConfig> => {
+    const response = await axiosInstance.get(`${CONFIGURACION_URL}/consecutivos/${id}/`);
+    return response.data;
+  },
+
+  create: async (data: CreateConsecutivoDTO): Promise<ConsecutivoConfig> => {
+    const response = await axiosInstance.post(`${CONFIGURACION_URL}/consecutivos/`, data);
+    return response.data;
+  },
+
+  update: async (id: number, data: UpdateConsecutivoDTO): Promise<ConsecutivoConfig> => {
+    const response = await axiosInstance.patch(`${CONFIGURACION_URL}/consecutivos/${id}/`, data);
+    return response.data;
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await axiosInstance.delete(`${CONFIGURACION_URL}/consecutivos/${id}/`);
+  },
+
+  restore: async (id: number): Promise<ConsecutivoConfig> => {
+    const response = await axiosInstance.post(`${CONFIGURACION_URL}/consecutivos/${id}/restore/`);
+    return response.data.data;
+  },
+
+  getChoices: async (): Promise<ConsecutivoChoices> => {
+    const response = await axiosInstance.get(`${CONFIGURACION_URL}/consecutivos/choices/`);
+    return response.data;
+  },
+
+  getByCategoria: async (): Promise<
+    Record<
+      CategoriaConsecutivo,
+      Array<{
+        id: number;
+        codigo: string;
+        nombre: string;
+        prefix: string;
+        ejemplo: string;
+        es_sistema: boolean;
+      }>
+    >
+  > => {
+    const response = await axiosInstance.get(`${CONFIGURACION_URL}/consecutivos/by-categoria/`);
+    return response.data;
+  },
+
+  generar: async (codigo: string): Promise<GenerarConsecutivoResult> => {
+    const response = await axiosInstance.post(`${CONFIGURACION_URL}/consecutivos/generar/`, {
+      codigo,
+    });
+    return response.data;
+  },
+
+  generarPorId: async (consecutivoId: number): Promise<GenerarConsecutivoResult> => {
+    const response = await axiosInstance.post(`${CONFIGURACION_URL}/consecutivos/generar/`, {
+      consecutivo_id: consecutivoId,
+    });
+    return response.data;
+  },
+
+  preview: async (params: PreviewConsecutivoParams): Promise<{ formato: string }> => {
+    const response = await axiosInstance.post(`${CONFIGURACION_URL}/consecutivos/preview/`, params);
+    return response.data;
+  },
+
+  reiniciar: async (
+    id: number,
+    confirmar = false
+  ): Promise<{ message: string; data: ConsecutivoConfig }> => {
+    const response = await axiosInstance.post(
+      `${CONFIGURACION_URL}/consecutivos/${id}/reiniciar/`,
+      { confirmar }
+    );
+    return response.data;
+  },
+
+  cargarSistema: async (): Promise<{
+    message: string;
+    creados: number;
+    actualizados: number;
+    total: number;
+  }> => {
+    const response = await axiosInstance.post(`${CONFIGURACION_URL}/consecutivos/cargar-sistema/`);
+    return response.data;
   },
 };

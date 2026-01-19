@@ -34,7 +34,7 @@ class Command(BaseCommand):
             '  SEED ESTRUCTURA FINAL - ERP STRATEKAZ'
         ))
         self.stdout.write(self.style.MIGRATE_HEADING(
-            '  14 Módulos | 81 Tabs | Secciones | 6 Niveles'
+            '  14 Módulos | 83 Tabs | Secciones | 6 Niveles'
         ))
         self.stdout.write('=' * 80)
 
@@ -148,8 +148,34 @@ class Command(BaseCommand):
                             {'code': 'porter', 'name': '5 Fuerzas de Porter', 'icon': 'Layers', 'orden': 6},
                         ]
                     },
-                    {'code': 'gestion_proyectos', 'name': 'Gestión Proyectos (PMI)', 'icon': 'Gantt', 'route': 'proyectos', 'orden': 5},
-                    {'code': 'revision_direccion', 'name': 'Revisión por Dirección', 'icon': 'ClipboardCheck', 'route': 'revision-direccion', 'orden': 6},
+                    {
+                        'code': 'gestion_documental',
+                        'name': 'Gestión Documental',
+                        'icon': 'FileText',
+                        'route': 'gestion-documental',
+                        'orden': 5,
+                        'sections': [
+                            {'code': 'tipos', 'name': 'Tipos de Documento', 'icon': 'FolderOpen', 'orden': 1},
+                            {'code': 'documentos', 'name': 'Documentos', 'icon': 'File', 'orden': 2},
+                            {'code': 'plantillas', 'name': 'Plantillas', 'icon': 'FileCode', 'orden': 3},
+                            {'code': 'control', 'name': 'Control Documental', 'icon': 'CheckSquare', 'orden': 4},
+                        ]
+                    },
+                    {
+                        'code': 'planificacion_sistema',
+                        'name': 'Planificación del Sistema',
+                        'icon': 'CalendarDays',
+                        'route': 'planificacion-sistema',
+                        'orden': 6,
+                        'sections': [
+                            {'code': 'plan_trabajo', 'name': 'Plan de Trabajo Anual', 'icon': 'Calendar', 'orden': 1},
+                            {'code': 'objetivos', 'name': 'Objetivos del Sistema', 'icon': 'Target', 'orden': 2},
+                            {'code': 'programas', 'name': 'Programas de Gestión', 'icon': 'Layers', 'orden': 3},
+                            {'code': 'seguimiento', 'name': 'Seguimiento', 'icon': 'BarChart3', 'orden': 4},
+                        ]
+                    },
+                    {'code': 'gestion_proyectos', 'name': 'Gestión de Proyectos', 'icon': 'Gantt', 'route': 'proyectos', 'orden': 7},
+                    {'code': 'revision_direccion', 'name': 'Revisión por Dirección', 'icon': 'ClipboardCheck', 'route': 'revision-direccion', 'orden': 8},
                 ]
             },
 

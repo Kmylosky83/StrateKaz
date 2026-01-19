@@ -63,3 +63,8 @@ export * from './useValoresVividos';
 // GESTION DOCUMENTAL (migrado de HSEQ a N1)
 // ============================================================================
 export * from './useGestionDocumental';
+
+// ============================================================================
+// PLANIFICACION DEL SISTEMA (migrado de HSEQ a N1)
+// ============================================================================
+export * from './usePlanificacionSistema';

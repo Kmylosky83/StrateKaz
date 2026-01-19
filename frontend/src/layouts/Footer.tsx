@@ -1,37 +1,43 @@
+/**
+ * Footer - Enterprise Level Responsive
+ *
+ * Footer con soporte completo para mobile/tablet/desktop.
+ * Se adapta automáticamente al viewport.
+ */
 import { Link } from 'react-router-dom';
-import { Heart, Rocket } from 'lucide-react';
+import { Rocket } from 'lucide-react';
 
 export const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   return (
     <footer className="mt-auto border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-      <div className="px-6 py-4">
-        <div className="flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0">
-          {/* Copyright */}
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            © {currentYear} | Kmylosky | Todos los derechos reservados.
+      <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
+        <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
+          {/* Copyright - Centrado en mobile */}
+          <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 text-center sm:text-left order-2 sm:order-1">
+            © {currentYear} Kmylosky
           </div>
 
-          {/* Links */}
-          <div className="flex items-center space-x-6 text-sm">
+          {/* Links - Ocultos en mobile pequeño, visibles en sm+ */}
+          <div className="hidden sm:flex items-center justify-center space-x-4 md:space-x-6 text-xs sm:text-sm order-1 sm:order-2">
             <Link
               to="/privacy"
               className="text-gray-600 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400 transition-colors"
             >
-              Política de Privacidad
+              Privacidad
             </Link>
             <Link
               to="/terms"
               className="text-gray-600 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400 transition-colors"
             >
-              Términos de Uso
+              Términos
             </Link>
           </div>
 
-          {/* Powered by */}
-          <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
-            <span>Powered by</span>
+          {/* Powered by - Visible en todos los tamaños */}
+          <div className="flex items-center justify-center sm:justify-end space-x-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400 order-1 sm:order-3">
+            <span className="hidden sm:inline">Powered by</span>
             <a
               href="https://stratekaz.com"
               target="_blank"

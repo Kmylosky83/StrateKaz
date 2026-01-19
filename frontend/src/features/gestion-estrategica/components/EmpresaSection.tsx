@@ -49,6 +49,54 @@ import type { EmpresaConfigFormData } from '../types/empresa.types';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Modules, Sections } from '@/constants/permissions';
 
+/**
+ * ME-001: Validación completa de NIT colombiano
+ * Valida formato y dígito de verificación según algoritmo DIAN
+ */
+const validateNIT = (nit: string): { isValid: boolean; message?: string } => {
+  // Remover guiones y espacios
+  const cleanNIT = nit.replace(/[-\s]/g, '');
+
+  // Validar que solo contenga números
+  if (!/^\d+$/.test(cleanNIT)) {
+    return { isValid: false, message: 'El NIT solo debe contener números' };
+  }
+
+  // El NIT debe tener entre 9 y 10 dígitos (9 base + 1 verificación)
+  if (cleanNIT.length < 9 || cleanNIT.length > 10) {
+    return { isValid: false, message: 'El NIT debe tener 9-10 dígitos' };
+  }
+
+  // Si tiene 9 dígitos, asumimos que no incluye dígito de verificación
+  if (cleanNIT.length === 9) {
+    return { isValid: true }; // Formato básico válido
+  }
+
+  // Si tiene 10 dígitos, validar dígito de verificación
+  const baseNIT = cleanNIT.slice(0, 9);
+  const providedDV = parseInt(cleanNIT.slice(9), 10);
+
+  // Coeficientes según algoritmo DIAN (módulo 11)
+  const coefficients = [3, 7, 13, 17, 19, 23, 29, 37, 41];
+
+  let sum = 0;
+  for (let i = 0; i < 9; i++) {
+    sum += parseInt(baseNIT[8 - i], 10) * coefficients[i];
+  }
+
+  const remainder = sum % 11;
+  const calculatedDV = remainder >= 2 ? 11 - remainder : remainder;
+
+  if (calculatedDV !== providedDV) {
+    return {
+      isValid: false,
+      message: `Dígito de verificación incorrecto. El DV correcto es ${calculatedDV}`,
+    };
+  }
+
+  return { isValid: true };
+};
+
 // Lista de departamentos de Colombia (fallback)
 const DEPARTAMENTOS_COLOMBIA = [
   { value: 'AMAZONAS', label: 'Amazonas' },
@@ -89,15 +137,7 @@ const DEPARTAMENTOS_COLOMBIA = [
  * Componente de vista (solo lectura) de la información de la empresa
  * Usa DataCard, DataField, DataGrid para mejor visualización
  */
-const EmpresaView = ({
-  empresa,
-  onEdit,
-}: {
-  empresa: any;
-  onEdit: () => void;
-  empresa: any;
-  onEdit: () => void;
-}) => {
+const EmpresaView = ({ empresa, onEdit }: { empresa: any; onEdit: () => void }) => {
   const { canDo } = usePermissions();
 
   return (
@@ -126,33 +166,53 @@ const EmpresaView = ({
         >
           <DataField label="NIT" value={empresa.nit} valueVariant="bold" copyable />
           <DataField label="Razón Social" value={empresa.razon_social} valueVariant="bold" />
-          <DataField label="Nombre Comercial" value={empresa.nombre_comercial} emptyText="No registrado" />
+          <DataField
+            label="Nombre Comercial"
+            value={empresa.nombre_comercial}
+            emptyText="No registrado"
+          />
           <DataField label="Tipo de Sociedad" value={empresa.tipo_sociedad_display} />
           <DataField label="Régimen Tributario" value={empresa.regimen_tributario_display} />
         </DataCard>
 
         {/* Representante Legal */}
-        <DataCard
-          title="Representante Legal"
-          icon={User}
-          variant="blue"
-          accentBorder
-        >
-          <DataField label="Nombre Completo" value={empresa.representante_legal} valueVariant="bold" />
+        <DataCard title="Representante Legal" icon={User} variant="blue" accentBorder>
+          <DataField
+            label="Nombre Completo"
+            value={empresa.representante_legal}
+            valueVariant="bold"
+          />
           <DataField label="Cédula" value={empresa.cedula_representante} copyable />
-          <DataField label="Actividad Económica (CIIU)" value={empresa.actividad_economica} emptyText="No especificada" />
+          <DataField
+            label="Actividad Económica (CIIU)"
+            value={empresa.actividad_economica}
+            emptyText="No especificada"
+          />
         </DataCard>
 
         {/* Contacto */}
-        <DataCard
-          title="Información de Contacto"
-          icon={Phone}
-          variant="green"
-          accentBorder
-        >
-          <DataField label="Teléfono Principal" value={empresa.telefono_principal} icon={Phone} inline copyable />
-          <DataField label="Teléfono Secundario" value={empresa.telefono_secundario} icon={Phone} inline />
-          <DataField label="Email Corporativo" value={empresa.email_corporativo} icon={Mail} inline copyable truncate />
+        <DataCard title="Información de Contacto" icon={Phone} variant="green" accentBorder>
+          <DataField
+            label="Teléfono Principal"
+            value={empresa.telefono_principal}
+            icon={Phone}
+            inline
+            copyable
+          />
+          <DataField
+            label="Teléfono Secundario"
+            value={empresa.telefono_secundario}
+            icon={Phone}
+            inline
+          />
+          <DataField
+            label="Email Corporativo"
+            value={empresa.email_corporativo}
+            icon={Mail}
+            inline
+            copyable
+            truncate
+          />
           <DataField
             label="Sitio Web"
             value={
@@ -173,28 +233,22 @@ const EmpresaView = ({
         </DataCard>
 
         {/* Ubicación */}
-        <DataCard
-          title="Ubicación"
-          icon={MapPin}
-          variant="orange"
-          accentBorder
-        >
+        <DataCard title="Ubicación" icon={MapPin} variant="orange" accentBorder>
           <DataField label="Dirección Fiscal" value={empresa.direccion_fiscal} />
           <DataField
             label="Ciudad"
-            value={empresa.ciudad && empresa.departamento_display ? `${empresa.ciudad}, ${empresa.departamento_display}` : empresa.ciudad}
+            value={
+              empresa.ciudad && empresa.departamento_display
+                ? `${empresa.ciudad}, ${empresa.departamento_display}`
+                : empresa.ciudad
+            }
           />
           <DataField label="País" value={empresa.pais} />
           <DataField label="Código Postal" value={empresa.codigo_postal} />
         </DataCard>
 
         {/* Registro Mercantil */}
-        <DataCard
-          title="Registro Mercantil"
-          icon={Calendar}
-          variant="teal"
-          accentBorder
-        >
+        <DataCard title="Registro Mercantil" icon={Calendar} variant="teal" accentBorder>
           <DataField label="Matrícula Mercantil" value={empresa.matricula_mercantil} />
           <DataField label="Cámara de Comercio" value={empresa.camara_comercio} />
           <DataField label="Fecha de Constitución" value={empresa.fecha_constitucion} />
@@ -202,17 +256,16 @@ const EmpresaView = ({
         </DataCard>
 
         {/* Configuración Regional */}
-        <DataCard
-          title="Configuración Regional"
-          icon={Clock}
-          variant="gray"
-          accentBorder
-        >
+        <DataCard title="Configuración Regional" icon={Clock} variant="gray" accentBorder>
           <DataField label="Zona Horaria" value={empresa.zona_horaria_display} />
           <DataField label="Formato de Fecha" value={empresa.formato_fecha_display} />
           <DataField
             label="Moneda"
-            value={empresa.moneda_display ? `${empresa.moneda_display} (${empresa.simbolo_moneda})` : null}
+            value={
+              empresa.moneda_display
+                ? `${empresa.moneda_display} (${empresa.simbolo_moneda})`
+                : null
+            }
             icon={DollarSign}
             inline
           />
@@ -257,46 +310,46 @@ const EmpresaForm = ({
   } = useForm<EmpresaConfigFormData>({
     defaultValues: empresa
       ? {
-        nit: empresa.nit,
-        razon_social: empresa.razon_social,
-        nombre_comercial: empresa.nombre_comercial || '',
-        representante_legal: empresa.representante_legal,
-        cedula_representante: empresa.cedula_representante || '',
-        tipo_sociedad: empresa.tipo_sociedad,
-        actividad_economica: empresa.actividad_economica || '',
-        descripcion_actividad: empresa.descripcion_actividad || '',
-        regimen_tributario: empresa.regimen_tributario,
-        direccion_fiscal: empresa.direccion_fiscal,
-        ciudad: empresa.ciudad,
-        departamento: empresa.departamento,
-        pais: empresa.pais || 'Colombia',
-        codigo_postal: empresa.codigo_postal || '',
-        telefono_principal: empresa.telefono_principal,
-        telefono_secundario: empresa.telefono_secundario || '',
-        email_corporativo: empresa.email_corporativo,
-        sitio_web: empresa.sitio_web || '',
-        matricula_mercantil: empresa.matricula_mercantil || '',
-        camara_comercio: empresa.camara_comercio || '',
-        fecha_constitucion: empresa.fecha_constitucion || '',
-        fecha_inscripcion_registro: empresa.fecha_inscripcion_registro || '',
-        zona_horaria: empresa.zona_horaria,
-        formato_fecha: empresa.formato_fecha,
-        moneda: empresa.moneda,
-        simbolo_moneda: empresa.simbolo_moneda || '$',
-        separador_miles: empresa.separador_miles || '.',
-        separador_decimales: empresa.separador_decimales || ',',
-      }
+          nit: empresa.nit,
+          razon_social: empresa.razon_social,
+          nombre_comercial: empresa.nombre_comercial || '',
+          representante_legal: empresa.representante_legal,
+          cedula_representante: empresa.cedula_representante || '',
+          tipo_sociedad: empresa.tipo_sociedad,
+          actividad_economica: empresa.actividad_economica || '',
+          descripcion_actividad: empresa.descripcion_actividad || '',
+          regimen_tributario: empresa.regimen_tributario,
+          direccion_fiscal: empresa.direccion_fiscal,
+          ciudad: empresa.ciudad,
+          departamento: empresa.departamento,
+          pais: empresa.pais || 'Colombia',
+          codigo_postal: empresa.codigo_postal || '',
+          telefono_principal: empresa.telefono_principal,
+          telefono_secundario: empresa.telefono_secundario || '',
+          email_corporativo: empresa.email_corporativo,
+          sitio_web: empresa.sitio_web || '',
+          matricula_mercantil: empresa.matricula_mercantil || '',
+          camara_comercio: empresa.camara_comercio || '',
+          fecha_constitucion: empresa.fecha_constitucion || '',
+          fecha_inscripcion_registro: empresa.fecha_inscripcion_registro || '',
+          zona_horaria: empresa.zona_horaria,
+          formato_fecha: empresa.formato_fecha,
+          moneda: empresa.moneda,
+          simbolo_moneda: empresa.simbolo_moneda || '$',
+          separador_miles: empresa.separador_miles || '.',
+          separador_decimales: empresa.separador_decimales || ',',
+        }
       : {
-        tipo_sociedad: 'SAS',
-        regimen_tributario: 'COMUN',
-        pais: 'Colombia',
-        zona_horaria: 'America/Bogota',
-        formato_fecha: 'DD/MM/YYYY',
-        moneda: 'COP',
-        simbolo_moneda: '$',
-        separador_miles: '.',
-        separador_decimales: ',',
-      },
+          tipo_sociedad: 'SAS',
+          regimen_tributario: 'COMUN',
+          pais: 'Colombia',
+          zona_horaria: 'America/Bogota',
+          formato_fecha: 'DD/MM/YYYY',
+          moneda: 'COP',
+          simbolo_moneda: '$',
+          separador_miles: '.',
+          separador_decimales: ',',
+        },
   });
 
   const onSubmit = async (data: EmpresaConfigFormData) => {
@@ -357,12 +410,13 @@ const EmpresaForm = ({
               placeholder="900123456-7"
               {...register('nit', {
                 required: 'El NIT es requerido',
-                pattern: {
-                  value: /^\d{9}-?\d$/,
-                  message: 'Formato inválido. Use: 900123456-7',
+                validate: (value) => {
+                  const result = validateNIT(value);
+                  return result.isValid || result.message || 'NIT inválido';
                 },
               })}
               error={errors.nit?.message}
+              helperText="Formato: 900123456-7 (con dígito de verificación)"
             />
             <Input
               label="Razón Social"
@@ -417,7 +471,9 @@ const EmpresaForm = ({
             <Input
               label="Nombre del Representante Legal"
               placeholder="Nombre completo"
-              {...register('representante_legal', { required: 'El representante legal es requerido' })}
+              {...register('representante_legal', {
+                required: 'El representante legal es requerido',
+              })}
               error={errors.representante_legal?.message}
             />
             <Input
@@ -438,7 +494,9 @@ const EmpresaForm = ({
             <Input
               label="Teléfono Principal"
               placeholder="300 123 4567"
-              {...register('telefono_principal', { required: 'El teléfono principal es requerido' })}
+              {...register('telefono_principal', {
+                required: 'El teléfono principal es requerido',
+              })}
               error={errors.telefono_principal?.message}
             />
             <Input
@@ -501,11 +559,7 @@ const EmpresaForm = ({
                 />
               )}
             />
-            <Input
-              label="Código Postal"
-              placeholder="(opcional)"
-              {...register('codigo_postal')}
-            />
+            <Input label="Código Postal" placeholder="(opcional)" {...register('codigo_postal')} />
           </div>
         </Card>
 
@@ -526,11 +580,7 @@ const EmpresaForm = ({
               placeholder="Nombre de la Cámara"
               {...register('camara_comercio')}
             />
-            <Input
-              label="Fecha de Constitución"
-              type="date"
-              {...register('fecha_constitucion')}
-            />
+            <Input label="Fecha de Constitución" type="date" {...register('fecha_constitucion')} />
             <Input
               label="Fecha de Inscripción en Registro"
               type="date"
@@ -583,11 +633,7 @@ const EmpresaForm = ({
               )}
             />
             <div className="grid grid-cols-3 gap-4">
-              <Input
-                label="Símbolo"
-                placeholder="$"
-                {...register('simbolo_moneda')}
-              />
+              <Input label="Símbolo" placeholder="$" {...register('simbolo_moneda')} />
               <Input
                 label="Sep. Miles"
                 placeholder="."

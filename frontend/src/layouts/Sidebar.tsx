@@ -18,10 +18,26 @@ import { getIconComponent as getDynamicIcon } from '@/components/common/DynamicI
 
 interface SidebarProps {
   isCollapsed: boolean;
+  /** Si estamos en viewport mobile */
+  isMobile?: boolean;
+  /** Si el drawer mobile está abierto */
+  isMobileOpen?: boolean;
+  /** Callback para cerrar el drawer mobile */
+  onCloseMobile?: () => void;
 }
 
 // Colores por módulo - Sincronizado con backend CATEGORY_DEFAULT_COLORS
-type ModuleColor = 'purple' | 'blue' | 'green' | 'orange' | 'gray' | 'teal' | 'red' | 'yellow' | 'pink' | 'indigo';
+type ModuleColor =
+  | 'purple'
+  | 'blue'
+  | 'green'
+  | 'orange'
+  | 'gray'
+  | 'teal'
+  | 'red'
+  | 'yellow'
+  | 'pink'
+  | 'indigo';
 
 /**
  * Mapea colores extendidos de Tailwind a los 10 colores soportados
@@ -60,16 +76,19 @@ const getMappedColor = (color: string | undefined | null): ModuleColor | null =>
   return colorMapping[color] || null;
 };
 
-const moduleColors: Record<ModuleColor, {
-  bg: string;
-  bgHover: string;
-  bgActive: string;
-  text: string;
-  textActive: string;
-  icon: string;
-  iconActive: string;
-  border: string;
-}> = {
+const moduleColors: Record<
+  ModuleColor,
+  {
+    bg: string;
+    bgHover: string;
+    bgActive: string;
+    text: string;
+    textActive: string;
+    icon: string;
+    iconActive: string;
+    border: string;
+  }
+> = {
   purple: {
     bg: 'bg-purple-50/50 dark:bg-purple-900/10',
     bgHover: 'hover:bg-purple-50 dark:hover:bg-purple-900/20',
@@ -215,8 +234,7 @@ const NavItemComponent = ({
     // Match exacto o con subruta (evita falsos positivos)
     const matchesRoute = (route: string | undefined | null) => {
       if (!route) return false;
-      return location.pathname === route ||
-             location.pathname.startsWith(route + '/');
+      return location.pathname === route || location.pathname.startsWith(route + '/');
     };
 
     if (item.route && matchesRoute(item.route)) {
@@ -234,9 +252,7 @@ const NavItemComponent = ({
     const isMainLevel = item.code.startsWith('NIVEL_');
 
     return (
-      <div className={cn(
-        isMainLevel ? 'mt-6 first:mt-0' : 'mt-4 first:mt-0'
-      )}>
+      <div className={cn(isMainLevel ? 'mt-6 first:mt-0' : 'mt-4 first:mt-0')}>
         {/* Separador visual para niveles principales */}
         {isMainLevel && depth === 0 && !isCollapsed && (
           <div className="mb-3">
@@ -263,7 +279,9 @@ const NavItemComponent = ({
               isMainLevel ? 'h-4 w-4' : 'h-5 w-5',
               'flex-shrink-0',
               colors
-                ? isActive ? colors.iconActive : colors.icon
+                ? isActive
+                  ? colors.iconActive
+                  : colors.icon
                 : isActive
                   ? 'text-primary-600 dark:text-primary-400'
                   : 'text-gray-500 dark:text-gray-400'
@@ -271,10 +289,14 @@ const NavItemComponent = ({
           />
           {!isCollapsed && (
             <>
-              <span className={cn(
-                'ml-3 flex-1 text-left',
-                isMainLevel ? 'text-xs font-bold' : 'text-sm font-medium'
-              )}>{item.name}</span>
+              <span
+                className={cn(
+                  'ml-3 flex-1 text-left',
+                  isMainLevel ? 'text-xs font-bold' : 'text-sm font-medium'
+                )}
+              >
+                {item.name}
+              </span>
               {isExpanded ? (
                 <ChevronDown className="h-4 w-4" />
               ) : (
@@ -291,11 +313,13 @@ const NavItemComponent = ({
 
         {/* Hijos de la categoría */}
         {isExpanded && !isCollapsed && hasChildren && (
-          <div className={cn(
-            'mt-1 space-y-0.5',
-            isMainLevel ? 'ml-0' : 'ml-3 border-l-2',
-            !isMainLevel && (colors ? colors.border : 'border-l-gray-200 dark:border-l-gray-700')
-          )}>
+          <div
+            className={cn(
+              'mt-1 space-y-0.5',
+              isMainLevel ? 'ml-0' : 'ml-3 border-l-2',
+              !isMainLevel && (colors ? colors.border : 'border-l-gray-200 dark:border-l-gray-700')
+            )}
+          >
             {item.children!.map((child) => (
               <NavItemComponent
                 key={child.code}
@@ -336,7 +360,9 @@ const NavItemComponent = ({
               depth > 0 ? 'h-4 w-4' : 'h-5 w-5',
               'flex-shrink-0',
               colors
-                ? isActive ? colors.iconActive : colors.icon
+                ? isActive
+                  ? colors.iconActive
+                  : colors.icon
                 : isActive
                   ? 'text-primary-600 dark:text-primary-400'
                   : 'text-gray-500 dark:text-gray-400'
@@ -344,10 +370,14 @@ const NavItemComponent = ({
           />
           {!isCollapsed && (
             <>
-              <span className={cn(
-                'ml-3 font-medium flex-1 text-left',
-                depth > 0 ? 'text-sm' : 'text-sm'
-              )}>{item.name}</span>
+              <span
+                className={cn(
+                  'ml-3 font-medium flex-1 text-left',
+                  depth > 0 ? 'text-sm' : 'text-sm'
+                )}
+              >
+                {item.name}
+              </span>
               {isExpanded ? (
                 <ChevronDown className="h-4 w-4" />
               ) : (
@@ -364,10 +394,12 @@ const NavItemComponent = ({
 
         {/* Tabs del módulo */}
         {isExpanded && !isCollapsed && (
-          <div className={cn(
-            'mt-1 ml-3 space-y-0.5 border-l-2',
-            colors ? colors.border : 'border-l-gray-200 dark:border-l-gray-700'
-          )}>
+          <div
+            className={cn(
+              'mt-1 ml-3 space-y-0.5 border-l-2',
+              colors ? colors.border : 'border-l-gray-200 dark:border-l-gray-700'
+            )}
+          >
             {item.children!.map((child) => (
               <NavItemComponent
                 key={child.code}
@@ -386,10 +418,9 @@ const NavItemComponent = ({
   }
 
   // Item simple (hoja) - Link navegable
-  const isItemActive = item.route && (
-    location.pathname === item.route ||
-    location.pathname.startsWith(item.route + '/')
-  );
+  const isItemActive =
+    item.route &&
+    (location.pathname === item.route || location.pathname.startsWith(item.route + '/'));
 
   return (
     <Link
@@ -410,16 +441,16 @@ const NavItemComponent = ({
         className={cn(
           depth > 0 ? 'h-4 w-4 mr-2' : 'h-5 w-5',
           colors
-            ? isItemActive ? colors.iconActive : colors.icon
+            ? isItemActive
+              ? colors.iconActive
+              : colors.icon
             : isItemActive
               ? 'text-primary-600 dark:text-primary-400'
               : 'text-gray-500 dark:text-gray-400'
         )}
       />
       {!isCollapsed && (
-        <span className={cn(
-          depth > 0 ? '' : 'ml-3 font-medium text-sm'
-        )}>{item.name}</span>
+        <span className={cn(depth > 0 ? '' : 'ml-3 font-medium text-sm')}>{item.name}</span>
       )}
       {isCollapsed && (
         <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 dark:bg-gray-700 text-white text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
@@ -430,10 +461,24 @@ const NavItemComponent = ({
   );
 };
 
-export const Sidebar = ({ isCollapsed }: SidebarProps) => {
+export const Sidebar = ({
+  isCollapsed,
+  isMobile = false,
+  isMobileOpen = false,
+  onCloseMobile,
+}: SidebarProps) => {
   const location = useLocation();
   const { data: sidebarModules, isLoading, error } = useSidebarModules();
   const { appVersion } = useBrandingConfig();
+
+  // Cerrar drawer al navegar en mobile
+  useEffect(() => {
+    if (isMobile && isMobileOpen && onCloseMobile) {
+      onCloseMobile();
+    }
+    // Solo ejecutar cuando cambia la ruta, no cuando cambia isMobileOpen
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
 
   // Estado para items expandidos - inicializar dinámicamente
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
@@ -448,10 +493,10 @@ export const Sidebar = ({ isCollapsed }: SidebarProps) => {
           const currentPath = [...parents, item.code];
 
           // Match exacto o con subruta (evita falsos positivos)
-          if (item.route && (
-            location.pathname === item.route ||
-            location.pathname.startsWith(item.route + '/')
-          )) {
+          if (
+            item.route &&
+            (location.pathname === item.route || location.pathname.startsWith(item.route + '/'))
+          ) {
             activeModules.push(...parents);
           }
 
@@ -470,21 +515,27 @@ export const Sidebar = ({ isCollapsed }: SidebarProps) => {
 
   const toggleExpanded = (code: string) => {
     setExpandedItems((prev) =>
-      prev.includes(code)
-        ? prev.filter((c) => c !== code)
-        : [...prev, code]
+      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
     );
   };
+
+  // Clases base del sidebar
+  const sidebarBaseClasses = cn(
+    'fixed top-16 bottom-0 z-40',
+    'bg-white dark:bg-gray-800',
+    'border-r border-gray-200 dark:border-gray-700',
+    'transition-all duration-300 ease-in-out'
+  );
+
+  // Clases para mobile (drawer)
+  const mobileClasses = isMobile
+    ? cn('left-0 w-72', isMobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full')
+    : cn('left-0', isCollapsed ? 'w-16' : 'w-64');
 
   // Loading state
   if (isLoading) {
     return (
-      <aside
-        className={cn(
-          'fixed left-0 top-16 bottom-0 z-30 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300',
-          isCollapsed ? 'w-16' : 'w-64'
-        )}
-      >
+      <aside className={cn(sidebarBaseClasses, mobileClasses)}>
         <div className="flex items-center justify-center h-full">
           <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
         </div>
@@ -495,12 +546,7 @@ export const Sidebar = ({ isCollapsed }: SidebarProps) => {
   // Error state - mostrar sidebar vacío con mensaje
   if (error || !sidebarModules) {
     return (
-      <aside
-        className={cn(
-          'fixed left-0 top-16 bottom-0 z-30 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300',
-          isCollapsed ? 'w-16' : 'w-64'
-        )}
-      >
+      <aside className={cn(sidebarBaseClasses, mobileClasses)}>
         <div className="flex items-center justify-center h-full px-4 text-center">
           <p className="text-sm text-gray-500">Error al cargar menú</p>
         </div>
@@ -508,13 +554,11 @@ export const Sidebar = ({ isCollapsed }: SidebarProps) => {
     );
   }
 
+  // En mobile, el sidebar siempre está expandido (drawer)
+  const effectiveCollapsed = isMobile ? false : isCollapsed;
+
   return (
-    <aside
-      className={cn(
-        'fixed left-0 top-16 bottom-0 z-30 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300',
-        isCollapsed ? 'w-16' : 'w-64'
-      )}
-    >
+    <aside className={cn(sidebarBaseClasses, mobileClasses)}>
       <nav className="h-full flex flex-col py-4">
         {/* Dashboard Link - Siempre visible al inicio */}
         <div className="px-2 mb-2">
@@ -527,15 +571,15 @@ export const Sidebar = ({ isCollapsed }: SidebarProps) => {
                 : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'
             )}
           >
-            <LayoutDashboard className={cn(
-              'h-5 w-5 flex-shrink-0',
-              location.pathname === '/dashboard'
-                ? 'text-primary-600 dark:text-primary-400'
-                : 'text-gray-500 dark:text-gray-400'
-            )} />
-            {!isCollapsed && (
-              <span className="ml-3 font-medium">Dashboard</span>
-            )}
+            <LayoutDashboard
+              className={cn(
+                'h-5 w-5 flex-shrink-0',
+                location.pathname === '/dashboard'
+                  ? 'text-primary-600 dark:text-primary-400'
+                  : 'text-gray-500 dark:text-gray-400'
+              )}
+            />
+            {!effectiveCollapsed && <span className="ml-3 font-medium">Dashboard</span>}
           </Link>
         </div>
 
@@ -545,12 +589,12 @@ export const Sidebar = ({ isCollapsed }: SidebarProps) => {
         </div>
 
         {/* Navigation Items - Dinámico desde API */}
-        <div className="flex-1 px-2 space-y-1 overflow-y-auto scrollbar-thin">
+        <div className="flex-1 px-2 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
           {sidebarModules.map((item) => (
             <NavItemComponent
               key={item.code}
               item={item}
-              isCollapsed={isCollapsed}
+              isCollapsed={effectiveCollapsed}
               expandedItems={expandedItems}
               toggleExpanded={toggleExpanded}
               location={location}
@@ -559,11 +603,9 @@ export const Sidebar = ({ isCollapsed }: SidebarProps) => {
         </div>
 
         {/* Version Info (only when expanded) */}
-        {!isCollapsed && (
+        {!effectiveCollapsed && (
           <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Versión {appVersion}
-            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Versión {appVersion}</p>
           </div>
         )}
       </nav>

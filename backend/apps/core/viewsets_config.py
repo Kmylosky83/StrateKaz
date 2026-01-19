@@ -65,6 +65,7 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
 
     granular_action_map = {
         'toggle': 'can_edit',
+        'dependents': 'can_view',  # MM-003: Ver dependencias antes de desactivar
     }
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -145,6 +146,73 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
             'message': f'Módulo {"activado" if is_enabled else "desactivado"} correctamente',
             'is_enabled': module.is_enabled
         })
+
+    @action(detail=True, methods=['get'])
+    def dependents(self, request, pk=None):
+        """
+        GET /api/core/system-modules/{id}/dependents/
+
+        MM-003: Retorna los módulos que dependen de este módulo.
+        Útil para mostrar feedback antes de desactivar.
+        """
+        module = self.get_object()
+
+        # Obtener módulos que dependen de este (y están habilitados)
+        enabled_dependents = module.dependents.filter(is_enabled=True)
+        all_dependents = module.dependents.all()
+
+        # También incluir tabs y secciones que pertenecen a este módulo
+        tabs_count = module.tabs.count()
+        enabled_tabs_count = module.tabs.filter(is_enabled=True).count()
+        sections_count = sum(tab.sections.count() for tab in module.tabs.all())
+        enabled_sections_count = sum(
+            tab.sections.filter(is_enabled=True).count()
+            for tab in module.tabs.all()
+        )
+
+        return Response({
+            'module_id': module.id,
+            'module_name': module.name,
+            'module_code': module.code,
+            'is_core': module.is_core,
+            'can_disable': not module.is_core and not enabled_dependents.exists(),
+            'dependents': {
+                'enabled': [
+                    {'id': d.id, 'name': d.name, 'code': d.code}
+                    for d in enabled_dependents
+                ],
+                'all': [
+                    {'id': d.id, 'name': d.name, 'code': d.code, 'is_enabled': d.is_enabled}
+                    for d in all_dependents
+                ],
+            },
+            'children': {
+                'tabs': {
+                    'total': tabs_count,
+                    'enabled': enabled_tabs_count,
+                },
+                'sections': {
+                    'total': sections_count,
+                    'enabled': enabled_sections_count,
+                },
+            },
+            'warning_message': self._get_disable_warning(module, enabled_dependents),
+        })
+
+    def _get_disable_warning(self, module, enabled_dependents):
+        """Genera mensaje de advertencia para desactivar módulo"""
+        if module.is_core:
+            return "Este es un módulo core del sistema y no puede desactivarse."
+
+        if enabled_dependents.exists():
+            names = ", ".join(enabled_dependents.values_list('name', flat=True))
+            return f"Los siguientes módulos dependen de este y serán afectados: {names}"
+
+        tabs_count = module.tabs.filter(is_enabled=True).count()
+        if tabs_count > 0:
+            return f"Al desactivar este módulo, {tabs_count} tab(s) y sus secciones también serán desactivados."
+
+        return None
 
     @action(detail=False, methods=['get'])
     def categories(self, request):
@@ -602,3 +670,80 @@ class BrandingConfigViewSet(viewsets.ModelViewSet):
             )
         serializer = BrandingConfigSerializer(branding, context={'request': request})
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
+    def manifest(self, request):
+        """
+        GET /api/core/branding/manifest/
+
+        MB-001: Retorna manifest.json dinámico para PWA.
+        Este endpoint genera un manifest.json basado en la configuración
+        de branding activa, permitiendo personalización por tenant.
+        """
+        branding = BrandingConfig.objects.filter(is_active=True).first()
+
+        # Valores por defecto si no hay branding
+        if not branding:
+            manifest = {
+                "name": "StrateKaz",
+                "short_name": "StrateKaz",
+                "description": "Sistema de Gestión Empresarial",
+                "start_url": "/",
+                "display": "standalone",
+                "background_color": "#ffffff",
+                "theme_color": "#16A34A",
+                "icons": []
+            }
+        else:
+            # Construir URLs absolutas para los iconos
+            icons = []
+
+            if branding.pwa_icon_192:
+                icons.append({
+                    "src": request.build_absolute_uri(branding.pwa_icon_192.url),
+                    "sizes": "192x192",
+                    "type": "image/png",
+                    "purpose": "any"
+                })
+
+            if branding.pwa_icon_512:
+                icons.append({
+                    "src": request.build_absolute_uri(branding.pwa_icon_512.url),
+                    "sizes": "512x512",
+                    "type": "image/png",
+                    "purpose": "any"
+                })
+
+            if branding.pwa_icon_maskable:
+                icons.append({
+                    "src": request.build_absolute_uri(branding.pwa_icon_maskable.url),
+                    "sizes": "512x512",
+                    "type": "image/png",
+                    "purpose": "maskable"
+                })
+
+            # Si no hay iconos PWA específicos pero hay favicon, usar favicon
+            if not icons and branding.favicon:
+                icons.append({
+                    "src": request.build_absolute_uri(branding.favicon.url),
+                    "sizes": "any",
+                    "type": "image/png",
+                    "purpose": "any"
+                })
+
+            manifest = {
+                "name": branding.pwa_name or branding.company_name or "StrateKaz",
+                "short_name": branding.pwa_short_name or branding.company_short_name or "StrateKaz",
+                "description": branding.pwa_description or branding.company_slogan or "Sistema de Gestión Empresarial",
+                "start_url": "/",
+                "scope": "/",
+                "display": "standalone",
+                "orientation": "portrait-primary",
+                "background_color": branding.pwa_background_color or "#ffffff",
+                "theme_color": branding.pwa_theme_color or branding.primary_color or "#16A34A",
+                "icons": icons,
+                "categories": ["business", "productivity"],
+                "lang": "es-CO"
+            }
+
+        return Response(manifest, content_type='application/manifest+json')

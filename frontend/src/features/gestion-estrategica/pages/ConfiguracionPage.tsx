@@ -1,15 +1,14 @@
 /**
- * Página de Configuración - Tab 1 de Dirección Estratégica
+ * Pagina de Configuracion - Tab 1 de Direccion Estrategica
  *
- * Layout:
- * 1. PageHeader
- * 2. DynamicSections (sub-navigation desde API)
- * 3. StatsGrid dinámico según sección activa
- * 4. Contenido de la sección activa
- *
- * Sin hardcoding - secciones y stats cargadas desde API
+ * Layout estandar:
+ * - PageHeader con titulo y descripcion de la seccion activa
+ * - Tabs de secciones en el Header global (via usePageHeader)
+ * - Buscador contextual en el Header
+ * - StatsGrid dinamico por seccion
+ * - Contenido de la seccion activa
  */
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import {
   MapPin,
   Building2,
@@ -31,17 +30,15 @@ import {
 } from 'lucide-react';
 import { PageHeader, StatsGrid, StatsGridSkeleton } from '@/components/layout';
 import type { StatItem } from '@/components/layout';
-import { DynamicSections } from '@/components/common';
 import { useConfiguracionStats } from '../hooks/useStrategic';
-import { useTabSections } from '../hooks/useModules';
 import { ConfiguracionTab } from '../components/ConfiguracionTab';
-import { useModuleColor } from '@/hooks/useModuleColor';
+import { usePageHeader } from '@/hooks/usePageHeader';
 
-// Códigos del módulo y tab en la BD (lowercase para coincidir con BD)
+// Codigos del modulo y tab en la BD
 const MODULE_CODE = 'gestion_estrategica';
 const TAB_CODE = 'configuracion';
 
-// Mapeo de nombres de iconos (string) a componentes de lucide-react
+// Mapeo de nombres de iconos a componentes
 const ICON_MAP: Record<string, LucideIcon> = {
   MapPin,
   Building2,
@@ -62,25 +59,28 @@ const ICON_MAP: Record<string, LucideIcon> = {
 };
 
 export const ConfiguracionPage = () => {
-  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
-  const { sections, isLoading: sectionsLoading } = useTabSections(MODULE_CODE, TAB_CODE);
+  // Hook que configura el Header automaticamente
+  const {
+    activeSection,
+    activeSectionName,
+    activeSectionDescription,
+    searchQuery,
+    isLoading: sectionsLoading,
+  } = usePageHeader({
+    moduleCode: MODULE_CODE,
+    tabCode: TAB_CODE,
+    moduleColor: 'purple',
+    searchEnabled: true,
+    searchPlaceholder: 'Buscar en configuracion...',
+  });
 
-  // Sección activa - inicializar con la primera sección habilitada
-  const [activeSection, setActiveSection] = useState<string>('');
-
-  // Establecer sección inicial cuando se cargan
-  useEffect(() => {
-    if (sections.length > 0 && !activeSection) {
-      setActiveSection(sections[0].code);
-    }
-  }, [sections, activeSection]);
-
-  // Hook para stats dinámicos según sección activa
+  // Stats dinamicos segun seccion activa
   const { data: sectionStats, isLoading: statsLoading } = useConfiguracionStats(activeSection);
 
-  // Mapear respuesta del backend a StatItem[]
+  // Mapear stats del backend a StatItem[]
   const statsItems: StatItem[] = useMemo(() => {
-    if (!sectionStats?.stats || activeSection === 'branding') {
+    // No mostrar stats en branding ni si no hay seccion activa
+    if (!sectionStats?.stats || activeSection === 'branding' || !activeSection) {
       return [];
     }
 
@@ -93,7 +93,7 @@ export const ConfiguracionPage = () => {
     }));
   }, [sectionStats, activeSection]);
 
-  // Determinar número de columnas basado en cantidad de stats
+  // Columnas del grid segun cantidad de stats
   const statsColumns = useMemo(() => {
     const count = statsItems.length;
     if (count <= 2) return 2;
@@ -101,34 +101,35 @@ export const ConfiguracionPage = () => {
     return 4;
   }, [statsItems.length]);
 
+  // Si no hay seccion activa aun (cargando), mostrar skeleton
+  if (!activeSection && sectionsLoading) {
+    return (
+      <div className="space-y-4">
+        <StatsGridSkeleton count={4} />
+        <div className="h-96 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Configuración"
-        description="Gestiona el branding, módulos del sistema y configuración de consecutivos"
-      />
-
-      {/* Sub-navigation dinámica desde API */}
-      <DynamicSections
-        sections={sections}
-        activeSection={activeSection}
-        onChange={setActiveSection}
-        isLoading={sectionsLoading}
-        moduleColor={moduleColor}
-        variant="pills"
-      />
-
-      {/* StatsGrid dinámico - solo mostrar si no es branding y hay stats */}
-      {activeSection !== 'branding' && (
-        statsLoading ? (
-          <StatsGridSkeleton count={4} />
-        ) : statsItems.length > 0 ? (
-          <StatsGrid stats={statsItems} columns={statsColumns} moduleColor={moduleColor} />
-        ) : null
+    <div className="space-y-4">
+      {/* Titulo y descripcion de la seccion activa */}
+      {activeSectionName && (
+        <PageHeader title={activeSectionName} description={activeSectionDescription} />
       )}
 
-      {/* Contenido de la sección activa */}
-      <ConfiguracionTab activeSection={activeSection} />
+      {/* StatsGrid - solo si hay stats y no es branding */}
+      {activeSection !== 'branding' &&
+        (statsLoading ? (
+          <StatsGridSkeleton count={4} />
+        ) : statsItems.length > 0 ? (
+          <StatsGrid stats={statsItems} columns={statsColumns} moduleColor="purple" />
+        ) : null)}
+
+      {/* Contenido de la seccion activa */}
+      {activeSection && (
+        <ConfiguracionTab activeSection={activeSection} searchQuery={searchQuery} />
+      )}
     </div>
   );
 };

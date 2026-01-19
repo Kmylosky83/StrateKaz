@@ -18,6 +18,9 @@ from apps.core.base_models import TimestampedModel, AuditModel, SoftDeleteModel
 # Importar modelo de unidades de medida
 from .models_unidades import UnidadMedida
 
+# Importar modelo de configuración de consecutivos
+from .models_consecutivos import ConsecutivoConfig, CATEGORIA_CONSECUTIVO_CHOICES, CONSECUTIVOS_SISTEMA
+
 
 # ==============================================================================
 # CONSTANTES

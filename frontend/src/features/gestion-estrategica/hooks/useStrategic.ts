@@ -106,7 +106,8 @@ export const strategicKeys = {
   alcances: (filters?: AlcanceSistemaFilters) => ['alcances', filters] as const,
   alcance: (id: number) => ['alcance', id] as const,
   alcancesByStandard: (identityId: number) => ['alcances', 'by-standard', identityId] as const,
-  alcancesCertifications: (identityId: number) => ['alcances', 'certifications', identityId] as const,
+  alcancesCertifications: (identityId: number) =>
+    ['alcances', 'certifications', identityId] as const,
 
   // Normas ISO (Dinámico)
   normasISO: ['normas-iso'] as const,
@@ -544,7 +545,8 @@ export const useDeleteModule = () => {
 export const useToggleModule = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: ToggleModuleDTO }) => modulesApi.toggle(id, data),
+    mutationFn: ({ id, data }: { id: number; data: ToggleModuleDTO }) =>
+      modulesApi.toggle(id, data),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: strategicKeys.modules() });
       queryClient.invalidateQueries({ queryKey: strategicKeys.module(id) });
@@ -906,11 +908,7 @@ export const useReorderValues = (identityId?: number) => {
   return useMutation({
     mutationFn: async (newOrder: { id: number; orden: number }[]) => {
       // Update each value's order
-      await Promise.all(
-        newOrder.map(({ id, orden }) =>
-          valuesApi.update(id, { orden })
-        )
-      );
+      await Promise.all(newOrder.map(({ id, orden }) => valuesApi.update(id, { orden })));
       return newOrder;
     },
     onMutate: async (newOrder) => {
@@ -923,8 +921,8 @@ export const useReorderValues = (identityId?: number) => {
 
       // Optimistically update the cache
       if (previousData?.results) {
-        const updatedResults = previousData.results.map(value => {
-          const newOrderItem = newOrder.find(item => item.id === value.id);
+        const updatedResults = previousData.results.map((value) => {
+          const newOrderItem = newOrder.find((item) => item.id === value.id);
           if (newOrderItem) {
             return { ...value, orden: newOrderItem.orden };
           }
@@ -1059,5 +1057,327 @@ export const useNormasISOByCategory = () => {
     queryKey: strategicKeys.normasISOByCategory,
     queryFn: normasISOApi.getByCategory,
     staleTime: 10 * 60 * 1000, // 10 minutos
+  });
+};
+
+// ==================== UNIDADES DE MEDIDA HOOKS (MC-001) ====================
+
+import {
+  unidadesMedidaApi,
+  type UnidadMedidaFilters,
+  type CreateUnidadMedidaDTO,
+  type UpdateUnidadMedidaDTO,
+} from '../api/strategicApi';
+
+// Query Keys para Unidades de Medida
+export const unidadesMedidaKeys = {
+  all: ['unidades-medida'] as const,
+  lists: () => [...unidadesMedidaKeys.all, 'list'] as const,
+  list: (filters?: UnidadMedidaFilters) => [...unidadesMedidaKeys.lists(), filters] as const,
+  details: () => [...unidadesMedidaKeys.all, 'detail'] as const,
+  detail: (id: number) => [...unidadesMedidaKeys.details(), id] as const,
+  choices: () => [...unidadesMedidaKeys.all, 'choices'] as const,
+  byCategoria: () => [...unidadesMedidaKeys.all, 'by-categoria'] as const,
+};
+
+export const useUnidadesMedida = (filters?: UnidadMedidaFilters) => {
+  return useQuery({
+    queryKey: unidadesMedidaKeys.list(filters),
+    queryFn: () => unidadesMedidaApi.getAll(filters),
+    staleTime: 5 * 60 * 1000, // 5 minutos - catálogo relativamente estático
+  });
+};
+
+export const useUnidadMedida = (id: number) => {
+  return useQuery({
+    queryKey: unidadesMedidaKeys.detail(id),
+    queryFn: () => unidadesMedidaApi.getById(id),
+    enabled: !!id,
+  });
+};
+
+export const useUnidadesMedidaChoices = () => {
+  return useQuery({
+    queryKey: unidadesMedidaKeys.choices(),
+    queryFn: unidadesMedidaApi.getChoices,
+    staleTime: 10 * 60 * 1000, // 10 minutos
+  });
+};
+
+export const useUnidadesMedidaByCategoria = () => {
+  return useQuery({
+    queryKey: unidadesMedidaKeys.byCategoria(),
+    queryFn: unidadesMedidaApi.getByCategoria,
+    staleTime: 5 * 60 * 1000, // 5 minutos
+  });
+};
+
+export const useCreateUnidadMedida = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateUnidadMedidaDTO) => unidadesMedidaApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: unidadesMedidaKeys.all });
+      toast.success('Unidad de medida creada exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al crear la unidad de medida');
+    },
+  });
+};
+
+export const useUpdateUnidadMedida = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UpdateUnidadMedidaDTO }) =>
+      unidadesMedidaApi.update(id, data),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: unidadesMedidaKeys.all });
+      queryClient.invalidateQueries({ queryKey: unidadesMedidaKeys.detail(id) });
+      toast.success('Unidad de medida actualizada exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al actualizar la unidad de medida');
+    },
+  });
+};
+
+export const useDeleteUnidadMedida = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => unidadesMedidaApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: unidadesMedidaKeys.all });
+      toast.success('Unidad de medida eliminada exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al eliminar la unidad de medida');
+    },
+  });
+};
+
+export const useRestoreUnidadMedida = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => unidadesMedidaApi.restore(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: unidadesMedidaKeys.all });
+      toast.success('Unidad de medida restaurada exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al restaurar la unidad de medida');
+    },
+  });
+};
+
+export const useCargarUnidadesSistema = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => unidadesMedidaApi.cargarSistema(),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: unidadesMedidaKeys.all });
+      toast.success(`${result.message} (${result.unidades_creadas} nuevas)`);
+    },
+    onError: () => {
+      toast.error('Error al cargar las unidades del sistema');
+    },
+  });
+};
+
+export const useConvertirUnidad = () => {
+  return useMutation({
+    mutationFn: ({
+      valor,
+      unidadOrigen,
+      unidadDestino,
+    }: {
+      valor: number;
+      unidadOrigen: string;
+      unidadDestino: string;
+    }) => unidadesMedidaApi.convertir(valor, unidadOrigen, unidadDestino),
+    onError: () => {
+      toast.error('Error al convertir la unidad');
+    },
+  });
+};
+
+export const useFormatearUnidad = () => {
+  return useMutation({
+    mutationFn: ({
+      valor,
+      unidad,
+      incluirSimbolo = true,
+    }: {
+      valor: number;
+      unidad: string;
+      incluirSimbolo?: boolean;
+    }) => unidadesMedidaApi.formatear(valor, unidad, incluirSimbolo),
+    onError: () => {
+      toast.error('Error al formatear el valor');
+    },
+  });
+};
+
+// ==============================================================================
+// MC-002: CONSECUTIVOS CONFIG HOOKS
+// ==============================================================================
+
+import {
+  consecutivosApi,
+  type ConsecutivoFilters,
+  type CreateConsecutivoDTO,
+  type UpdateConsecutivoDTO,
+  type PreviewConsecutivoParams,
+} from '../api/strategicApi';
+
+export const consecutivosKeys = {
+  all: ['consecutivos'] as const,
+  lists: () => [...consecutivosKeys.all, 'list'] as const,
+  list: (filters?: ConsecutivoFilters) => [...consecutivosKeys.lists(), filters] as const,
+  details: () => [...consecutivosKeys.all, 'detail'] as const,
+  detail: (id: number) => [...consecutivosKeys.details(), id] as const,
+  choices: () => [...consecutivosKeys.all, 'choices'] as const,
+  byCategoria: () => [...consecutivosKeys.all, 'by-categoria'] as const,
+};
+
+export const useConsecutivos = (filters?: ConsecutivoFilters) => {
+  return useQuery({
+    queryKey: consecutivosKeys.list(filters),
+    queryFn: () => consecutivosApi.getAll(filters),
+    staleTime: 5 * 60 * 1000, // 5 minutos
+  });
+};
+
+export const useConsecutivo = (id: number) => {
+  return useQuery({
+    queryKey: consecutivosKeys.detail(id),
+    queryFn: () => consecutivosApi.getById(id),
+    enabled: id > 0,
+  });
+};
+
+export const useConsecutivosChoices = () => {
+  return useQuery({
+    queryKey: consecutivosKeys.choices(),
+    queryFn: () => consecutivosApi.getChoices(),
+    staleTime: 10 * 60 * 1000, // 10 minutos
+  });
+};
+
+export const useConsecutivosByCategoria = () => {
+  return useQuery({
+    queryKey: consecutivosKeys.byCategoria(),
+    queryFn: () => consecutivosApi.getByCategoria(),
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useCreateConsecutivo = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateConsecutivoDTO) => consecutivosApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: consecutivosKeys.all });
+      toast.success('Consecutivo creado exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al crear el consecutivo');
+    },
+  });
+};
+
+export const useUpdateConsecutivo = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UpdateConsecutivoDTO }) =>
+      consecutivosApi.update(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: consecutivosKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: consecutivosKeys.detail(variables.id) });
+      toast.success('Consecutivo actualizado exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al actualizar el consecutivo');
+    },
+  });
+};
+
+export const useDeleteConsecutivo = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => consecutivosApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: consecutivosKeys.lists() });
+      toast.success('Consecutivo eliminado exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al eliminar el consecutivo');
+    },
+  });
+};
+
+export const useRestoreConsecutivo = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => consecutivosApi.restore(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: consecutivosKeys.all });
+      toast.success('Consecutivo restaurado exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al restaurar el consecutivo');
+    },
+  });
+};
+
+export const useGenerarConsecutivo = () => {
+  return useMutation({
+    mutationFn: (codigo: string) => consecutivosApi.generar(codigo),
+    onError: () => {
+      toast.error('Error al generar el consecutivo');
+    },
+  });
+};
+
+export const usePreviewConsecutivo = () => {
+  return useMutation({
+    mutationFn: (params: PreviewConsecutivoParams) => consecutivosApi.preview(params),
+  });
+};
+
+export const useReiniciarConsecutivo = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, confirmar }: { id: number; confirmar: boolean }) =>
+      consecutivosApi.reiniciar(id, confirmar),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: consecutivosKeys.all });
+      toast.success(result.message);
+    },
+    onError: () => {
+      toast.error('Error al reiniciar el consecutivo');
+    },
+  });
+};
+
+export const useCargarConsecutivosSistema = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => consecutivosApi.cargarSistema(),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: consecutivosKeys.all });
+      toast.success(
+        `${result.message} (${result.creados} nuevos, ${result.actualizados} actualizados)`
+      );
+    },
+    onError: () => {
+      toast.error('Error al cargar los consecutivos del sistema');
+    },
   });
 };

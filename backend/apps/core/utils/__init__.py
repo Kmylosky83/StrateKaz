@@ -9,6 +9,7 @@ from .sanitization import (
     validate_phone,
     sanitize_url,
 )
+from .image_processing import ImageProcessor, image_processor
 
 __all__ = [
     'sanitize_html',
@@ -20,4 +21,7 @@ __all__ = [
     'validate_email',
     'validate_phone',
     'sanitize_url',
+    # Image processing
+    'ImageProcessor',
+    'image_processor',
 ]

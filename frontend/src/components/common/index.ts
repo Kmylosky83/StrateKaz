@@ -156,17 +156,47 @@ export type { ModuleCardProps, ModuleCardColor } from './ModuleCard';
 
 // Time Elapsed Display (Real-time uptime counter)
 export { TimeElapsedDisplay } from './TimeElapsedDisplay';
-export type { TimeElapsedDisplayProps, TimeElapsedVariant, TimeElapsedSize } from './TimeElapsedDisplay';
+export type {
+  TimeElapsedDisplayProps,
+  TimeElapsedVariant,
+  TimeElapsedSize,
+} from './TimeElapsedDisplay';
 
 // PWA Offline Indicator
 export { OfflineIndicator, useOnlineStatus } from './OfflineIndicator';
 export type { OfflineIndicatorProps } from './OfflineIndicator';
 
+// PWA Splash Screen (branding loader)
+export { SplashScreen } from './SplashScreen';
+export type { SplashScreenProps } from './SplashScreen';
+
 // Dynamic Icons (API-driven icon system)
-export { DynamicIcon, isValidIconName, getAvailableIconNames, getIconComponent } from './DynamicIcon';
+export {
+  DynamicIcon,
+  isValidIconName,
+  getAvailableIconNames,
+  getIconComponent,
+} from './DynamicIcon';
 export type { DynamicIconProps } from './DynamicIcon';
 
 // Icon Picker (for selecting icons from DB)
 export { IconPicker } from './IconPicker';
 export type { IconPickerProps } from './IconPicker';
 
+// Header Components (contextual navigation)
+export { SearchModal, useSearchModal } from './SearchModal';
+export type { SearchModalProps } from './SearchModal';
+
+export { UserMenu } from './UserMenu';
+export type { UserMenuProps } from './UserMenu';
+
+export { HeaderTabs } from './HeaderTabs';
+export type { HeaderTabsProps } from './HeaderTabs';
+
+// Section Header (title + contextual actions)
+export { SectionHeader } from './SectionHeader';
+export type { SectionHeaderProps } from './SectionHeader';
+
+// Generic Section Fallback (MM-002: for unimplemented sections)
+export { GenericSectionFallback } from './GenericSectionFallback';
+export type { GenericSectionFallbackProps } from './GenericSectionFallback';

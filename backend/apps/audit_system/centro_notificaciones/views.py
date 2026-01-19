@@ -2,17 +2,37 @@
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from .models import TipoNotificacion, Notificacion, PreferenciaNotificacion, NotificacionMasiva
 from .serializers import TipoNotificacionSerializer, NotificacionSerializer, PreferenciaNotificacionSerializer, NotificacionMasivaSerializer
+from apps.core.permissions import GranularActionPermission
+
 
 class TipoNotificacionViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestión de tipos de notificación
+
+    RBAC: Requiere acceso a sección 'centro_notificaciones'
+    """
     queryset = TipoNotificacion.objects.all()
     serializer_class = TipoNotificacionSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['categoria', 'is_active']
+
+    # RBAC Configuration
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'centro_notificaciones'
+    granular_action_map = {
+        'list': 'can_view',
+        'retrieve': 'can_view',
+        'create': 'can_create',
+        'update': 'can_edit',
+        'partial_update': 'can_edit',
+        'destroy': 'can_delete',
+    }
 
 @extend_schema_view(
     list=extend_schema(
@@ -50,11 +70,28 @@ class NotificacionViewSet(viewsets.ModelViewSet):
     - Marcado de lectura individual y masivo
     - Filtrado por estado y prioridad
     - Consulta de notificaciones no leídas
+
+    RBAC: Requiere acceso a sección 'centro_notificaciones'
     """
     queryset = Notificacion.objects.select_related('tipo', 'usuario')
     serializer_class = NotificacionSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['usuario', 'esta_leida', 'prioridad']
+
+    # RBAC Configuration
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'centro_notificaciones'
+    granular_action_map = {
+        'list': 'can_view',
+        'retrieve': 'can_view',
+        'create': 'can_create',
+        'update': 'can_edit',
+        'partial_update': 'can_edit',
+        'destroy': 'can_delete',
+        'marcar_leida': 'can_edit',
+        'marcar_todas_leidas': 'can_edit',
+        'no_leidas': 'can_view',
+    }
 
     @extend_schema(
         summary='Marcar notificación como leída',
@@ -101,9 +138,44 @@ class NotificacionViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 class PreferenciaNotificacionViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestión de preferencias de notificación
+
+    RBAC: Requiere acceso a sección 'centro_notificaciones'
+    """
     queryset = PreferenciaNotificacion.objects.all()
     serializer_class = PreferenciaNotificacionSerializer
 
+    # RBAC Configuration
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'centro_notificaciones'
+    granular_action_map = {
+        'list': 'can_view',
+        'retrieve': 'can_view',
+        'create': 'can_create',
+        'update': 'can_edit',
+        'partial_update': 'can_edit',
+        'destroy': 'can_delete',
+    }
+
+
 class NotificacionMasivaViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestión de notificaciones masivas
+
+    RBAC: Requiere acceso a sección 'centro_notificaciones'
+    """
     queryset = NotificacionMasiva.objects.all()
     serializer_class = NotificacionMasivaSerializer
+
+    # RBAC Configuration
+    permission_classes = [IsAuthenticated, GranularActionPermission]
+    section_code = 'centro_notificaciones'
+    granular_action_map = {
+        'list': 'can_view',
+        'retrieve': 'can_view',
+        'create': 'can_create',
+        'update': 'can_edit',
+        'partial_update': 'can_edit',
+        'destroy': 'can_delete',
+    }

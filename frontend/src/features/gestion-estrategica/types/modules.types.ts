@@ -17,7 +17,17 @@ export type { ModuleCategory };
  * Colores disponibles para módulos
  * Sincronizado con MODULE_COLORS del backend (apps/core/models.py)
  */
-export type ModuleColor = 'purple' | 'blue' | 'green' | 'orange' | 'gray' | 'teal' | 'red' | 'yellow' | 'pink' | 'indigo';
+export type ModuleColor =
+  | 'purple'
+  | 'blue'
+  | 'green'
+  | 'orange'
+  | 'gray'
+  | 'teal'
+  | 'red'
+  | 'yellow'
+  | 'pink'
+  | 'indigo';
 
 // ==================== SECCIONES ====================
 
@@ -134,6 +144,45 @@ export interface ToggleResponse {
     tabs?: string[];
     sections?: string[];
   };
+}
+
+// ==================== DEPENDENCIAS (MM-003) ====================
+
+/**
+ * Información de dependencia de un módulo
+ */
+export interface ModuleDependencyInfo {
+  id: number;
+  name: string;
+  code: string;
+  is_enabled?: boolean;
+}
+
+/**
+ * Respuesta del endpoint /dependents/
+ * MM-003: Información de dependencias para feedback antes de desactivar
+ */
+export interface ModuleDependentsResponse {
+  module_id: number;
+  module_name: string;
+  module_code: string;
+  is_core: boolean;
+  can_disable: boolean;
+  dependents: {
+    enabled: ModuleDependencyInfo[];
+    all: ModuleDependencyInfo[];
+  };
+  children: {
+    tabs: {
+      total: number;
+      enabled: number;
+    };
+    sections: {
+      total: number;
+      enabled: number;
+    };
+  };
+  warning_message: string | null;
 }
 
 // ==================== SIDEBAR DINÁMICO ====================

@@ -29,7 +29,11 @@ import { Textarea } from '@/components/forms/Textarea';
 import { Switch } from '@/components/forms/Switch';
 import { useCreateSede, useUpdateSede, useSede, useSedeChoices } from '../../hooks/useStrategic';
 import { useUsers } from '@/features/users/hooks/useUsers';
-import type { SedeEmpresaList, CreateSedeEmpresaDTO, UpdateSedeEmpresaDTO } from '../../types/strategic.types';
+import type {
+  SedeEmpresaList,
+  CreateSedeEmpresaDTO,
+  UpdateSedeEmpresaDTO,
+} from '../../types/strategic.types';
 
 interface SedeFormModalProps {
   sede: SedeEmpresaList | null;
@@ -101,7 +105,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           latitud: position.coords.latitude.toFixed(8),
           longitud: position.coords.longitude.toFixed(8),
@@ -194,9 +198,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
       capacidad_almacenamiento: formData.capacidad_almacenamiento
         ? parseFloat(formData.capacidad_almacenamiento)
         : undefined,
-      unidad_capacidad: formData.unidad_capacidad
-        ? parseInt(formData.unidad_capacidad)
-        : undefined,
+      unidad_capacidad: formData.unidad_capacidad ? parseInt(formData.unidad_capacidad) : undefined,
       is_active: formData.is_active,
     };
 
@@ -215,25 +217,27 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
   // Opciones para selects - tipos de sede vienen como IDs numéricos del backend
-  const tipoSedeOptions = choices?.tipos_sede?.map((t: { value: number; label: string }) => ({
-    value: t.value.toString(),
-    label: t.label,
-  })) || [];
+  const tipoSedeOptions =
+    choices?.tipos_sede?.map((t: { value: number; label: string }) => ({
+      value: t.value.toString(),
+      label: t.label,
+    })) || [];
 
   const departamentoOptions = choices?.departamentos || [];
 
   // Unidades de capacidad dinámicas (multi-industria)
-  const unidadesCapacidadOptions = choices?.unidades_capacidad?.map((u: { value: number; label: string }) => ({
-    value: u.value.toString(),
-    label: u.label,
-  })) || [];
+  const unidadesCapacidadOptions =
+    choices?.unidades_capacidad?.map((u: { value: number; label: string }) => ({
+      value: u.value.toString(),
+      label: u.label,
+    })) || [];
 
-  const userOptions = usersData?.results?.map((user) => ({
-    value: user.id.toString(),
-    label: user.first_name && user.last_name
-      ? `${user.first_name} ${user.last_name}`
-      : user.username,
-  })) || [];
+  const userOptions =
+    usersData?.results?.map((user) => ({
+      value: user.id.toString(),
+      label:
+        user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : user.username,
+    })) || [];
 
   const footer = (
     <>
@@ -258,7 +262,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
       onClose={onClose}
       title={isEditing ? 'Editar Sede' : 'Nueva Sede'}
       subtitle="Configure los datos de la sede o ubicación"
-      size="xl"
+      size="3xl"
       footer={footer}
     >
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -457,7 +461,9 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
               type="number"
               step="0.01"
               value={formData.capacidad_almacenamiento}
-              onChange={(e) => setFormData({ ...formData, capacidad_almacenamiento: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, capacidad_almacenamiento: e.target.value })
+              }
               placeholder="10000.00"
               helperText="Cantidad numérica"
             />
@@ -465,19 +471,14 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
               label="Unidad de Medida"
               value={formData.unidad_capacidad}
               onChange={(e) => setFormData({ ...formData, unidad_capacidad: e.target.value })}
-              options={[
-                { value: '', label: 'Seleccione unidad...' },
-                ...unidadesCapacidadOptions
-              ]}
+              options={[{ value: '', label: 'Seleccione unidad...' }, ...unidadesCapacidadOptions]}
               helperText="Unidad para la capacidad"
             />
           </div>
 
           <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
             <div>
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Sede Principal
-              </p>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Sede Principal</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 Solo puede haber una sede principal
               </p>
@@ -491,9 +492,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
           {isEditing && (
             <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
               <div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Sede Activa
-                </p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Sede Activa</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   Desactive para deshabilitar esta sede
                 </p>

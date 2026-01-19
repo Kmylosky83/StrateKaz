@@ -7,6 +7,8 @@ export interface TooltipProps {
   children: ReactNode;
   className?: string;
   delay?: number;
+  /** Desactiva el tooltip (solo renderiza children) */
+  disabled?: boolean;
 }
 
 export const Tooltip = ({
@@ -15,6 +17,7 @@ export const Tooltip = ({
   children,
   className,
   delay = 200,
+  disabled = false,
 }: TooltipProps) => {
   const [isVisible, setIsVisible] = useState(false);
   const [coords, setCoords] = useState({ x: 0, y: 0 });
@@ -90,10 +93,17 @@ export const Tooltip = ({
 
   const arrowClasses = {
     top: 'bottom-[-4px] left-1/2 -translate-x-1/2 border-l-transparent border-r-transparent border-b-transparent',
-    bottom: 'top-[-4px] left-1/2 -translate-x-1/2 border-l-transparent border-r-transparent border-t-transparent',
+    bottom:
+      'top-[-4px] left-1/2 -translate-x-1/2 border-l-transparent border-r-transparent border-t-transparent',
     left: 'right-[-4px] top-1/2 -translate-y-1/2 border-t-transparent border-b-transparent border-r-transparent',
-    right: 'left-[-4px] top-1/2 -translate-y-1/2 border-t-transparent border-b-transparent border-l-transparent',
+    right:
+      'left-[-4px] top-1/2 -translate-y-1/2 border-t-transparent border-b-transparent border-l-transparent',
   };
+
+  // Si está deshabilitado, solo renderiza children
+  if (disabled) {
+    return <>{children}</>;
+  }
 
   return (
     <>

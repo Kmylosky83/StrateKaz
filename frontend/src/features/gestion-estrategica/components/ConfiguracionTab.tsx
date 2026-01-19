@@ -33,9 +33,17 @@ import {
   Alert,
   FeatureToggleCard,
   FeatureToggleGrid,
+  GenericSectionFallback,
+  ConfirmDialog,
 } from '@/components/common';
 import { useActiveBranding } from '../hooks/useStrategic';
-import { useModulesTree, useToggleModule, useToggleTab, useToggleSection } from '../hooks/useModules';
+import {
+  useModulesTree,
+  useToggleModule,
+  useToggleTab,
+  useToggleSection,
+  useModuleDependents,
+} from '../hooks/useModules';
 import { CATEGORY_LABELS, CATEGORY_COLORS } from '../types/modules.types';
 import type { SystemModuleTree } from '../types/modules.types';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -44,6 +52,8 @@ import { BrandingFormModal } from './modals/BrandingFormModal';
 import { EmpresaSection } from './EmpresaSection';
 import { SedesSection } from './SedesSection';
 import { IntegracionesSection } from './IntegracionesSection';
+import { UnidadesMedidaSection } from './UnidadesMedidaSection';
+import { ConsecutivosSection } from './ConsecutivosSection';
 import type { TenantUISettings } from '../types/strategic.types';
 import type { ModuleColor } from '../types/modules.types';
 
@@ -57,12 +67,15 @@ import type { ModuleColor } from '../types/modules.types';
  * porque las clases dinámicas son purgadas en producción.
  * Usar este mapeo estático en su lugar.
  */
-const CATEGORY_STYLE_CLASSES: Record<ModuleColor, {
-  bgLight: string;
-  bgDark: string;
-  textLight: string;
-  textDark: string;
-}> = {
+const CATEGORY_STYLE_CLASSES: Record<
+  ModuleColor,
+  {
+    bgLight: string;
+    bgDark: string;
+    textLight: string;
+    textDark: string;
+  }
+> = {
   purple: {
     bgLight: 'bg-purple-100',
     bgDark: 'dark:bg-purple-900/30',
@@ -134,6 +147,22 @@ const BrandingSection = () => {
   const { data: branding, isLoading } = useActiveBranding();
   const [showModal, setShowModal] = useState(false);
 
+  // MB-002: Validación de permiso view
+  const canView = canDo(Modules.GESTION_ESTRATEGICA, Sections.BRANDING, 'view');
+
+  if (!canView) {
+    return (
+      <Card>
+        <div className="p-6">
+          <Alert
+            variant="warning"
+            message="No tienes permisos para ver la configuración de marca."
+          />
+        </div>
+      </Card>
+    );
+  }
+
   if (isLoading) {
     return (
       <Card>
@@ -204,7 +233,11 @@ const BrandingSection = () => {
                 <div className="text-center">
                   <div
                     className={`w-16 h-16 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 ${!branding?.primary_color ? 'bg-gray-300 dark:bg-gray-600' : ''}`}
-                    style={branding?.primary_color ? { backgroundColor: branding.primary_color } : undefined}
+                    style={
+                      branding?.primary_color
+                        ? { backgroundColor: branding.primary_color }
+                        : undefined
+                    }
                   />
                   <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 block">
                     Primario
@@ -216,7 +249,11 @@ const BrandingSection = () => {
                 <div className="text-center">
                   <div
                     className={`w-16 h-16 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 ${!branding?.secondary_color ? 'bg-gray-300 dark:bg-gray-600' : ''}`}
-                    style={branding?.secondary_color ? { backgroundColor: branding.secondary_color } : undefined}
+                    style={
+                      branding?.secondary_color
+                        ? { backgroundColor: branding.secondary_color }
+                        : undefined
+                    }
                   />
                   <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 block">
                     Secundario
@@ -228,7 +265,11 @@ const BrandingSection = () => {
                 <div className="text-center">
                   <div
                     className={`w-16 h-16 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 ${!branding?.accent_color ? 'bg-gray-300 dark:bg-gray-600' : ''}`}
-                    style={branding?.accent_color ? { backgroundColor: branding.accent_color } : undefined}
+                    style={
+                      branding?.accent_color
+                        ? { backgroundColor: branding.accent_color }
+                        : undefined
+                    }
                   />
                   <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 block">
                     Acento
@@ -260,7 +301,11 @@ const BrandingSection = () => {
                   {branding.logo_white && (
                     <div className="text-center">
                       <div className="p-4 bg-gray-800 rounded-lg">
-                        <img src={branding.logo_white} alt="Logo Blanco" className="h-16 object-contain" />
+                        <img
+                          src={branding.logo_white}
+                          alt="Logo Blanco"
+                          className="h-16 object-contain"
+                        />
                       </div>
                       <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 block">
                         Logo Blanco
@@ -270,7 +315,11 @@ const BrandingSection = () => {
                   {branding.favicon && (
                     <div className="text-center">
                       <div className="p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center">
-                        <img src={branding.favicon} alt="Favicon" className="h-8 w-8 object-contain" />
+                        <img
+                          src={branding.favicon}
+                          alt="Favicon"
+                          className="h-8 w-8 object-contain"
+                        />
                       </div>
                       <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 block">
                         Favicon
@@ -358,17 +407,46 @@ const ModulosAndFeaturesSection = () => {
   const toggleTab = useToggleTab();
   const toggleSection = useToggleSection();
 
+  // MM-003: Estado para confirmación de desactivación
+  const [moduleToDisable, setModuleToDisable] = useState<SystemModuleTree | null>(null);
+  const { data: dependentsInfo, isLoading: loadingDependents } = useModuleDependents(
+    moduleToDisable?.id ?? 0,
+    !!moduleToDisable
+  );
+
   const canEditModules = canDo(Modules.GESTION_ESTRATEGICA, Sections.MODULOS, 'edit');
+
+  // MM-003: Handler para toggle de módulo con confirmación
+  const handleModuleToggle = (module: SystemModuleTree) => {
+    if (module.is_enabled) {
+      // Si está habilitado y se quiere desactivar, mostrar confirmación
+      setModuleToDisable(module);
+    } else {
+      // Si está deshabilitado, activar directamente
+      toggleModule.mutate({ id: module.id, isEnabled: true });
+    }
+  };
+
+  // MM-003: Confirmar desactivación
+  const confirmDisable = () => {
+    if (moduleToDisable) {
+      toggleModule.mutate({ id: moduleToDisable.id, isEnabled: false });
+      setModuleToDisable(null);
+    }
+  };
 
   // Agrupar módulos por categoría usando useMemo para optimización
   const modulesByCategory = useMemo(() => {
     if (!tree) return {};
-    return tree.modules.reduce((acc, module) => {
-      const cat = module.category;
-      if (!acc[cat]) acc[cat] = [];
-      acc[cat].push(module);
-      return acc;
-    }, {} as Record<string, SystemModuleTree[]>);
+    return tree.modules.reduce(
+      (acc, module) => {
+        const cat = module.category;
+        if (!acc[cat]) acc[cat] = [];
+        acc[cat].push(module);
+        return acc;
+      },
+      {} as Record<string, SystemModuleTree[]>
+    );
   }, [tree]);
 
   if (isLoading) {
@@ -411,14 +489,17 @@ const ModulosAndFeaturesSection = () => {
               {/* Header de categoría */}
               <div className="flex items-center gap-3 mb-6">
                 <div className={`p-2 rounded-lg ${styleClasses.bgLight} ${styleClasses.bgDark}`}>
-                  <Package className={`h-5 w-5 ${styleClasses.textLight} ${styleClasses.textDark}`} />
+                  <Package
+                    className={`h-5 w-5 ${styleClasses.textLight} ${styleClasses.textDark}`}
+                  />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                     {CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS] || category}
                   </h3>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {modules.length} módulo{modules.length !== 1 ? 's' : ''} disponible{modules.length !== 1 ? 's' : ''}
+                    {modules.length} módulo{modules.length !== 1 ? 's' : ''} disponible
+                    {modules.length !== 1 ? 's' : ''}
                   </p>
                 </div>
               </div>
@@ -436,7 +517,11 @@ const ModulosAndFeaturesSection = () => {
                         <span className="flex items-center gap-2">
                           {module.name}
                           {module.is_core && (
-                            <Badge variant="gray" size="sm" className="inline-flex items-center gap-1">
+                            <Badge
+                              variant="gray"
+                              size="sm"
+                              className="inline-flex items-center gap-1"
+                            >
                               <Lock className="h-3 w-3" />
                               Core
                             </Badge>
@@ -446,13 +531,10 @@ const ModulosAndFeaturesSection = () => {
                       description={
                         module.is_core
                           ? 'Módulo core del sistema - No puede ser desactivado'
-                          : (module.description || `Módulo ${module.name}`)
+                          : module.description || `Módulo ${module.name}`
                       }
                       checked={module.is_enabled}
-                      onChange={() => toggleModule.mutate({
-                        id: module.id,
-                        isEnabled: !module.is_enabled
-                      })}
+                      onChange={() => handleModuleToggle(module)}
                       color={module.color || categoryColor}
                       disabled={!canEditModules || module.is_core || isPending}
                     />
@@ -465,7 +547,10 @@ const ModulosAndFeaturesSection = () => {
                 if (module.tabs.length === 0) return null;
 
                 return (
-                  <div key={`tabs-${module.id}`} className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                  <div
+                    key={`tabs-${module.id}`}
+                    className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700"
+                  >
                     <div className="flex items-center gap-2 mb-4">
                       <Settings2 className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                       <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -489,12 +574,16 @@ const ModulosAndFeaturesSection = () => {
                               title={tab.name}
                               description={tab.description}
                               checked={tab.is_enabled}
-                              onChange={() => toggleTab.mutate({
-                                id: tab.id,
-                                isEnabled: !tab.is_enabled
-                              })}
+                              onChange={() =>
+                                toggleTab.mutate({
+                                  id: tab.id,
+                                  isEnabled: !tab.is_enabled,
+                                })
+                              }
                               color={module.color || categoryColor}
-                              disabled={!canEditModules || tab.is_core || isPending || !module.is_enabled}
+                              disabled={
+                                !canEditModules || tab.is_core || isPending || !module.is_enabled
+                              }
                             />
 
                             {/* Secciones del tab (si existen) */}
@@ -511,12 +600,19 @@ const ModulosAndFeaturesSection = () => {
                                       title={section.name}
                                       description={section.description}
                                       checked={section.is_enabled}
-                                      onChange={() => toggleSection.mutate({
-                                        id: section.id,
-                                        isEnabled: !section.is_enabled
-                                      })}
+                                      onChange={() =>
+                                        toggleSection.mutate({
+                                          id: section.id,
+                                          isEnabled: !section.is_enabled,
+                                        })
+                                      }
                                       color={module.color || categoryColor}
-                                      disabled={!canEditModules || section.is_core || isPending || !tab.is_enabled}
+                                      disabled={
+                                        !canEditModules ||
+                                        section.is_core ||
+                                        isPending ||
+                                        !tab.is_enabled
+                                      }
                                     />
                                   );
                                 })}
@@ -536,6 +632,56 @@ const ModulosAndFeaturesSection = () => {
 
       {/* Configuración de Interfaz - UI Settings */}
       <UISettingsCard />
+
+      {/* MM-003: Diálogo de confirmación para desactivar módulo */}
+      <ConfirmDialog
+        isOpen={!!moduleToDisable}
+        onClose={() => setModuleToDisable(null)}
+        onConfirm={confirmDisable}
+        title={`Desactivar ${moduleToDisable?.name || 'módulo'}`}
+        message={
+          loadingDependents ? (
+            <div className="flex items-center gap-2 text-gray-500">
+              <span className="animate-spin">⏳</span>
+              Verificando dependencias...
+            </div>
+          ) : dependentsInfo?.warning_message ? (
+            <div className="space-y-3">
+              <p className="text-amber-600 dark:text-amber-400 font-medium">
+                {dependentsInfo.warning_message}
+              </p>
+              {dependentsInfo.children.tabs.enabled > 0 && (
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  • {dependentsInfo.children.tabs.enabled} tab(s) activo(s) serán desactivados
+                </p>
+              )}
+              {dependentsInfo.children.sections.enabled > 0 && (
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  • {dependentsInfo.children.sections.enabled} sección(es) activa(s) serán
+                  desactivadas
+                </p>
+              )}
+              {dependentsInfo.dependents.enabled.length > 0 && (
+                <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 rounded">
+                  <p className="text-sm font-medium text-red-700 dark:text-red-400">
+                    Módulos dependientes que serán afectados:
+                  </p>
+                  <ul className="mt-1 text-sm text-red-600 dark:text-red-300 list-disc list-inside">
+                    {dependentsInfo.dependents.enabled.map((dep) => (
+                      <li key={dep.id}>{dep.name}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p>¿Estás seguro de que deseas desactivar el módulo "{moduleToDisable?.name}"?</p>
+          )
+        }
+        confirmText="Desactivar"
+        confirmVariant="destructive"
+        isLoading={toggleModule.isPending}
+      />
     </div>
   );
 };
@@ -601,11 +747,13 @@ const UISettingsCard = () => {
 
 /**
  * Props del ConfiguracionTab
- * activeSection viene desde DynamicSections en la página padre
+ * activeSection viene desde usePageHeader en la pagina padre
  */
 interface ConfiguracionTabProps {
-  /** Código de la sección activa (desde API) */
+  /** Codigo de la seccion activa (desde API) */
   activeSection?: string;
+  /** Query de busqueda desde el Header */
+  searchQuery?: string;
 }
 
 /**
@@ -620,23 +768,30 @@ const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
   integraciones: IntegracionesSection,
   branding: BrandingSection,
   modulos: ModulosAndFeaturesSection,
+  unidades_medida: UnidadesMedidaSection,
+  consecutivos: ConsecutivosSection,
 };
 
-export const ConfiguracionTab = ({ activeSection }: ConfiguracionTabProps) => {
-  // Renderizar el componente de la sección activa
+export const ConfiguracionTab = ({ activeSection, searchQuery }: ConfiguracionTabProps) => {
+  // Renderizar el componente de la seccion activa
   const ActiveComponent = activeSection ? SECTION_COMPONENTS[activeSection] : null;
 
-  // Si no hay sección activa o no existe el componente, mostrar empresa por defecto
+  // MM-002: Si hay sección activa pero no existe componente, mostrar fallback genérico
+  if (activeSection && !ActiveComponent) {
+    return (
+      <div className="space-y-6">
+        <GenericSectionFallback sectionCode={activeSection} parentName="Configuración" />
+      </div>
+    );
+  }
+
+  // Si no hay sección activa, mostrar empresa por defecto
   if (!ActiveComponent) {
-    if (activeSection) {
-      console.warn(
-        `[ConfiguracionTab] Sección "${activeSection}" no encontrada en SECTION_COMPONENTS. ` +
-        `Secciones disponibles: ${Object.keys(SECTION_COMPONENTS).join(', ')}`
-      );
-    }
     return <EmpresaSection />;
   }
 
+  // TODO: Propagar searchQuery a los componentes que lo soporten
+  // Por ahora se pasa como contexto futuro
   return (
     <div className="space-y-6">
       <ActiveComponent />

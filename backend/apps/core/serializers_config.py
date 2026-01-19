@@ -163,6 +163,9 @@ class BrandingConfigSerializer(serializers.ModelSerializer):
     logo_white = serializers.SerializerMethodField()
     favicon = serializers.SerializerMethodField()
     login_background = serializers.SerializerMethodField()
+    pwa_icon_192 = serializers.SerializerMethodField()
+    pwa_icon_512 = serializers.SerializerMethodField()
+    pwa_icon_maskable = serializers.SerializerMethodField()
 
     class Meta:
         model = BrandingConfig
@@ -170,7 +173,12 @@ class BrandingConfigSerializer(serializers.ModelSerializer):
             'id', 'company_name', 'company_short_name', 'company_slogan',
             'logo', 'logo_white', 'favicon', 'login_background',
             'primary_color', 'secondary_color', 'accent_color',
-            'app_version', 'is_active', 'created_at', 'updated_at'
+            'app_version',
+            # Campos PWA
+            'pwa_name', 'pwa_short_name', 'pwa_description',
+            'pwa_theme_color', 'pwa_background_color',
+            'pwa_icon_192', 'pwa_icon_512', 'pwa_icon_maskable',
+            'is_active', 'created_at', 'updated_at'
         ]
         read_only_fields = ['created_at', 'updated_at']
 
@@ -195,6 +203,15 @@ class BrandingConfigSerializer(serializers.ModelSerializer):
     def get_login_background(self, obj):
         return self._build_absolute_url(obj.login_background)
 
+    def get_pwa_icon_192(self, obj):
+        return self._build_absolute_url(obj.pwa_icon_192)
+
+    def get_pwa_icon_512(self, obj):
+        return self._build_absolute_url(obj.pwa_icon_512)
+
+    def get_pwa_icon_maskable(self, obj):
+        return self._build_absolute_url(obj.pwa_icon_maskable)
+
 
 class BrandingConfigCreateSerializer(serializers.ModelSerializer):
     """Serializer para crear Configuración de Branding"""
@@ -205,23 +222,34 @@ class BrandingConfigCreateSerializer(serializers.ModelSerializer):
             'company_name', 'company_short_name', 'company_slogan',
             'logo', 'logo_white', 'favicon', 'login_background',
             'primary_color', 'secondary_color', 'accent_color',
-            'app_version', 'is_active'
+            'app_version',
+            # Campos PWA
+            'pwa_name', 'pwa_short_name', 'pwa_description',
+            'pwa_theme_color', 'pwa_background_color',
+            'pwa_icon_192', 'pwa_icon_512', 'pwa_icon_maskable',
+            'is_active'
         ]
 
-    def validate_primary_color(self, value):
+    def _validate_hex_color(self, value, field_name):
+        """Valida formato HEX de color"""
         if value and not value.startswith('#'):
-            raise serializers.ValidationError('El color debe estar en formato HEX (#RRGGBB)')
+            raise serializers.ValidationError(f'{field_name} debe estar en formato HEX (#RRGGBB)')
         return value
+
+    def validate_primary_color(self, value):
+        return self._validate_hex_color(value, 'El color primario')
 
     def validate_secondary_color(self, value):
-        if value and not value.startswith('#'):
-            raise serializers.ValidationError('El color debe estar en formato HEX (#RRGGBB)')
-        return value
+        return self._validate_hex_color(value, 'El color secundario')
 
     def validate_accent_color(self, value):
-        if value and not value.startswith('#'):
-            raise serializers.ValidationError('El color debe estar en formato HEX (#RRGGBB)')
-        return value
+        return self._validate_hex_color(value, 'El color de acento')
+
+    def validate_pwa_theme_color(self, value):
+        return self._validate_hex_color(value, 'El color de tema PWA')
+
+    def validate_pwa_background_color(self, value):
+        return self._validate_hex_color(value, 'El color de fondo PWA')
 
 
 class BrandingConfigUpdateSerializer(serializers.ModelSerializer):
@@ -231,6 +259,9 @@ class BrandingConfigUpdateSerializer(serializers.ModelSerializer):
     logo_white_clear = serializers.BooleanField(write_only=True, required=False, default=False)
     favicon_clear = serializers.BooleanField(write_only=True, required=False, default=False)
     login_background_clear = serializers.BooleanField(write_only=True, required=False, default=False)
+    pwa_icon_192_clear = serializers.BooleanField(write_only=True, required=False, default=False)
+    pwa_icon_512_clear = serializers.BooleanField(write_only=True, required=False, default=False)
+    pwa_icon_maskable_clear = serializers.BooleanField(write_only=True, required=False, default=False)
 
     class Meta:
         model = BrandingConfig
@@ -239,51 +270,67 @@ class BrandingConfigUpdateSerializer(serializers.ModelSerializer):
             'logo', 'logo_white', 'favicon', 'login_background',
             'logo_clear', 'logo_white_clear', 'favicon_clear', 'login_background_clear',
             'primary_color', 'secondary_color', 'accent_color',
-            'app_version', 'is_active'
+            'app_version',
+            # Campos PWA
+            'pwa_name', 'pwa_short_name', 'pwa_description',
+            'pwa_theme_color', 'pwa_background_color',
+            'pwa_icon_192', 'pwa_icon_512', 'pwa_icon_maskable',
+            'pwa_icon_192_clear', 'pwa_icon_512_clear', 'pwa_icon_maskable_clear',
+            'is_active'
         ]
         extra_kwargs = {
             'logo': {'required': False},
             'logo_white': {'required': False},
             'favicon': {'required': False},
             'login_background': {'required': False},
+            'pwa_icon_192': {'required': False},
+            'pwa_icon_512': {'required': False},
+            'pwa_icon_maskable': {'required': False},
         }
 
-    def validate_primary_color(self, value):
+    def _validate_hex_color(self, value, field_name):
+        """Valida formato HEX de color"""
         if value and not value.startswith('#'):
-            raise serializers.ValidationError('El color debe estar en formato HEX (#RRGGBB)')
+            raise serializers.ValidationError(f'{field_name} debe estar en formato HEX (#RRGGBB)')
         return value
+
+    def validate_primary_color(self, value):
+        return self._validate_hex_color(value, 'El color primario')
 
     def validate_secondary_color(self, value):
-        if value and not value.startswith('#'):
-            raise serializers.ValidationError('El color debe estar en formato HEX (#RRGGBB)')
-        return value
+        return self._validate_hex_color(value, 'El color secundario')
 
     def validate_accent_color(self, value):
-        if value and not value.startswith('#'):
-            raise serializers.ValidationError('El color debe estar en formato HEX (#RRGGBB)')
-        return value
+        return self._validate_hex_color(value, 'El color de acento')
+
+    def validate_pwa_theme_color(self, value):
+        return self._validate_hex_color(value, 'El color de tema PWA')
+
+    def validate_pwa_background_color(self, value):
+        return self._validate_hex_color(value, 'El color de fondo PWA')
+
+    def _clear_image_field(self, instance, field_name):
+        """Limpia un campo de imagen si existe"""
+        field = getattr(instance, field_name, None)
+        if field:
+            field.delete(save=False)
+            setattr(instance, field_name, None)
 
     def update(self, instance, validated_data):
-        logo_clear = validated_data.pop('logo_clear', False)
-        logo_white_clear = validated_data.pop('logo_white_clear', False)
-        favicon_clear = validated_data.pop('favicon_clear', False)
-        login_background_clear = validated_data.pop('login_background_clear', False)
+        # Campos a limpiar (imagen)
+        clear_fields = [
+            ('logo_clear', 'logo'),
+            ('logo_white_clear', 'logo_white'),
+            ('favicon_clear', 'favicon'),
+            ('login_background_clear', 'login_background'),
+            ('pwa_icon_192_clear', 'pwa_icon_192'),
+            ('pwa_icon_512_clear', 'pwa_icon_512'),
+            ('pwa_icon_maskable_clear', 'pwa_icon_maskable'),
+        ]
 
-        if logo_clear and instance.logo:
-            instance.logo.delete(save=False)
-            instance.logo = None
-
-        if logo_white_clear and instance.logo_white:
-            instance.logo_white.delete(save=False)
-            instance.logo_white = None
-
-        if favicon_clear and instance.favicon:
-            instance.favicon.delete(save=False)
-            instance.favicon = None
-
-        if login_background_clear and instance.login_background:
-            instance.login_background.delete(save=False)
-            instance.login_background = None
+        for clear_flag, field_name in clear_fields:
+            if validated_data.pop(clear_flag, False):
+                self._clear_image_field(instance, field_name)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)

@@ -5,9 +5,9 @@ Sistema integral de gestion empresarial para empresas colombianas con cumplimien
 | Info | Valor |
 |------|-------|
 | **Nombre del Software** | StrateKaz |
-| **Version** | 3.3.0 |
-| **Ultima Actualizacion** | 15 Enero 2026 |
-| **Estado** | MVP Ready - RBAC v4.0 Unificado |
+| **Version** | 3.4.0 |
+| **Ultima Actualizacion** | 17 Enero 2026 |
+| **Estado** | MVP Ready - Responsive PWA Enterprise |
 | **Modelo Deployment** | Multi-Instancia (1 BD por empresa) |
 | **Propietario** | StrateKaz S.A.S. |
 
@@ -17,16 +17,17 @@ Sistema integral de gestion empresarial para empresas colombianas con cumplimien
 
 | Capa | Tecnologia | Version | Estado |
 |------|------------|---------|--------|
-| **Python** | Python | 3.11+ | ✅ OK |
-| **Backend** | Django + DRF | 5.0.9 | ✅ OK |
-| **Base de Datos** | MySQL | 8.0+ | ✅ OK |
-| **Node.js** | Node.js | 22.14.0 LTS | ✅ Excelente |
-| **Frontend** | React + TypeScript | 18.3 + 5.3 | ✅ OK |
-| **Build Tool** | Vite | 5.4.21 | ✅ OK |
-| **Estilos** | Tailwind CSS | 3.4.x | ✅ OK |
-| **Estado** | Zustand + TanStack Query v5 | 4.5 + 5.90 | ✅ Moderno |
-| **PWA** | Vite PWA Plugin | 1.2.0 | ✅ OK |
-| **Formularios** | React Hook Form + Zod | 7.66 + 3.22 | ✅ OK |
+| **Python** | Python | 3.11+ | OK |
+| **Backend** | Django + DRF | 5.0.9 | OK |
+| **Base de Datos** | MySQL | 8.0+ | OK |
+| **Node.js** | Node.js | 22.14.0 LTS | OK |
+| **Frontend** | React + TypeScript | 18.3 + 5.3 | OK |
+| **Build Tool** | Vite | 5.4.21 | OK |
+| **Estilos** | Tailwind CSS | 3.4.x | OK |
+| **Estado** | Zustand + TanStack Query v5 | 4.5 + 5.90 | OK |
+| **PWA** | Vite PWA Plugin | 1.2.0 | OK |
+| **Formularios** | React Hook Form + Zod | 7.66 + 3.22 | OK |
+| **Animaciones** | Framer Motion | 11.x | OK |
 
 ### Estadisticas del Proyecto
 
@@ -42,28 +43,31 @@ Sistema integral de gestion empresarial para empresas colombianas con cumplimien
 
 ## Arquitectura del Sistema
 
-### Estructura de 6 Niveles (14 Modulos, 81 Apps)
+### Estructura de 6 Niveles (14 Modulos, 81+ Apps)
 
 ```
 NIVEL 0: CORE BASE
 └── core/ (Usuarios, RBAC, Menu, Configuracion)
 
-NIVEL 1: ESTRATEGICO (6 apps)
+NIVEL 1: ESTRATEGICO (9 apps) - CONSOLIDADO
 └── gestion_estrategica/
-    ├── configuracion/    # EmpresaConfig, SedeEmpresa, NormaISO, UnidadMedida
-    ├── organizacion/     # Areas, Cargos, Organigrama, Control de Acceso
-    ├── identidad/        # Mision, Vision, Valores, Politicas
-    ├── planeacion/       # Objetivos, Estrategias, KPIs
-    ├── gestion_proyectos/# Portafolios, Programas, Proyectos PMI
-    └── revision_direccion/
+    ├── configuracion/        # EmpresaConfig, SedeEmpresa, NormaISO, UnidadMedida
+    ├── organizacion/         # Areas, Cargos, Organigrama, Control de Acceso
+    ├── identidad/            # Mision, Vision, Valores, Politicas
+    ├── planeacion/           # Objetivos BSC, Estrategias, KPIs
+    │   └── contexto/         # DOFA, PESTEL, Porter (inputs estrategicos)
+    ├── gestion_documental/   # Sistema documental ISO (migrado desde HSEQ)
+    ├── planificacion_sistema/# Planes anuales, programas (migrado desde HSEQ)
+    ├── gestion_proyectos/    # Portafolios, Programas, Proyectos PMI
+    └── revision_direccion/   # Revision gerencial ISO 9.3
 
 NIVEL 2: CUMPLIMIENTO (14 apps)
 ├── motor_cumplimiento/   # Matriz Legal, Requisitos, Partes Interesadas
-├── motor_riesgos/        # DOFA, IPEVR, ISO 31000, PESV
+├── motor_riesgos/        # IPEVR, ISO 31000, Aspectos Ambientales, PESV
 └── workflow_engine/      # Motor BPMN
 
-NIVEL 3: TORRE DE CONTROL (11 apps)
-└── hseq_management/      # Documentos, Calidad, SST, Ambiental
+NIVEL 3: TORRE DE CONTROL (9 apps)
+└── hseq_management/      # Calidad, SST, Ambiental, Comites, Emergencias
 
 NIVEL 4: CADENA DE VALOR (18 apps)
 ├── supply_chain/         # Proveedores, Compras, Almacen
@@ -156,7 +160,7 @@ El sistema implementa un modelo RBAC hibrido con clara diferenciacion:
 |------|-------------|---------|
 | **Cargo** | Posicion en organigrama, permisos base automaticos | Operario, Supervisor, Gerente |
 | **Rol Funcional** | Permisos RBAC adicionales, asignables | Aprobador, Auditor, Analista |
-| **Especialidad Certificada** | Roles legales con certificacion | COPASST, Brigadista, Vigía SST |
+| **Especialidad Certificada** | Roles legales con certificacion | COPASST, Brigadista, Vigia SST |
 
 ### Asignacion
 
@@ -182,13 +186,14 @@ StrateKaz/
 │   └── src/
 │       ├── components/       # Design System
 │       ├── features/         # Modulos por funcionalidad
-│       ├── hooks/            # Custom hooks
+│       ├── hooks/            # Custom hooks (useMediaQuery, useBrandingConfig...)
+│       ├── layouts/          # DashboardLayout responsive
 │       └── store/            # Zustand stores
 ├── docs/                     # Documentacion
-│   ├── 00-EMPEZAR-AQUI.md   # Punto de entrada
+│   ├── INDEX-DOCUMENTACION.md
 │   ├── desarrollo/          # Guias tecnicas
-│   └── arquitectura/        # Catalogo modulos
-└── scripts/                  # Scripts utilidad
+│   └── plans/               # Planes de trabajo
+└── deploy/                   # Scripts de despliegue cPanel
 ```
 
 ---
@@ -202,21 +207,9 @@ StrateKaz/
 | Objetivo | Documento | Descripcion |
 |----------|-----------|-------------|
 | **Desplegar a produccion** | [DESPLIEGUE-PASO-A-PASO.md](docs/DESPLIEGUE-PASO-A-PASO.md) | Guia simplificada paso a paso |
-| **Continuar desarrollo** | [PLAN_INTERVENCION_BRECHAS.md](docs/plans/PLAN_INTERVENCION_BRECHAS.md) | Plan maestro de mejoras |
+| **Continuar desarrollo** | [PLAN_CIERRE_BRECHAS.md](docs/plans/PLAN_CIERRE_BRECHAS.md) | Plan maestro de mejoras |
 | **Entender arquitectura** | [ESTRUCTURA-6-NIVELES-ERP.md](docs/arquitectura/ESTRUCTURA-6-NIVELES-ERP.md) | 6 niveles del sistema |
 | **Referencia tecnica** | [GUIA-DESPLIEGUE-CPANEL.md](docs/devops/GUIA-DESPLIEGUE-CPANEL.md) | Deploy tecnico completo |
-
-### Navegacion Rapida
-
-```
-README.md (este archivo)
-    |
-    +-- Desplegar? --> docs/DESPLIEGUE-PASO-A-PASO.md
-    |
-    +-- Desarrollar? --> docs/INDEX-DOCUMENTACION.md
-    |
-    +-- Que sigue? --> docs/plans/PLAN_INTERVENCION_BRECHAS.md
-```
 
 ---
 
@@ -237,9 +230,6 @@ python manage.py seed_empresa
 python manage.py seed_organizacion
 python manage.py seed_identidad
 python manage.py seed_configuracion_sistema
-
-# Actualizar iconos de valores
-python manage.py update_valores_icons
 
 # Tests
 python manage.py test apps.core
@@ -280,6 +270,9 @@ DB_PASSWORD=tu-password
 DB_HOST=localhost
 DB_PORT=3306
 
+# JWT (7 dias refresh token)
+JWT_REFRESH_TOKEN_LIFETIME=10080
+
 # CORS
 CORS_ALLOWED_ORIGINS=http://localhost:3010
 
@@ -291,44 +284,42 @@ VITE_API_URL=http://localhost:8000/api
 
 ## Changelog Reciente
 
+### v3.4.0 (17 Enero 2026)
+
+- **Responsive PWA Enterprise**: Layout mobile-first completo
+  - useMediaQuery hook para breakpoints
+  - Sidebar drawer en mobile con overlay
+  - Header con animacion hamburger/X
+  - Footer responsive
+- **Splash Screen**: Logo StrateKaz mientras carga branding
+- **JWT 7 dias**: Sesion extendida para mejor UX
+- **Consolidacion N1**:
+  - Gestion Documental migrado de HSEQ a N1
+  - Planificacion Sistema migrado de HSEQ a N1
+  - Rutas frontend actualizadas
+- **Limpieza docs**: 25+ archivos legacy eliminados
+- **Auditoria funcional N1**: Sin redundancias criticas
+
 ### v3.3.0 (15 Enero 2026)
 
 - **RBAC v4.0 Unificado**: Sistema de permisos simplificado
   - CargoSectionAccess con acciones CRUD por seccion
   - Eliminados componentes legacy de matriz de permisos
-  - Tab unico de configuracion de cargos
 - **Auditoria Tecnica Completa**: 7 agentes especializados
   - Puntuacion global: 7.6/10
-  - Plan de cierre de brechas con roadmap MVP
-- **Limpieza de Codigo Legacy**: Eliminados 18+ componentes obsoletos
-- **Modelo Multi-Instancia**: Documentacion clara de arquitectura
-  - 1 instalacion Django + 1 BD por empresa
-  - Aislamiento de datos garantizado
-- **Documentacion Reorganizada**:
-  - Nueva guia paso a paso para despliegue (DESPLIEGUE-PASO-A-PASO.md)
-  - Indice maestro de documentacion (INDEX-DOCUMENTACION.md)
-  - Plan de intervencion de brechas v2.0 actualizado
-- **KPIs confirmados en Analytics (N6)**: No hay redundancia con Planeacion (N1)
+- **Modelo Multi-Instancia**: 1 instalacion Django + 1 BD por empresa
 
 ### v3.2.0 (11 Enero 2026)
 
 - **Testing Frontend**: 219 tests para Design System
 - **Optimizacion de Iconos**: Centralizacion via DynamicIcon
-- **Migracion a Design System**: logistics-fleet y production-ops
 
 ### v3.1.0 (11 Enero 2026)
 
 - **Workflow de Firmas Digitales**: Flujo de 5 estados para politicas
 - **UI de Politicas Actualizada**: Botones contextuales por estado
-- **Codigo de Politica Opcional**: Asignado por Gestor Documental
 
-### v3.0.0 (11 Enero 2026)
-
-- **Sistema de Politicas Unificado v3.0**
-- **8 Tipos de Politica**: Integral, SST, Calidad, Ambiental, PESV, etc.
-- **RichTextEditor**: TipTap para contenido de politicas
-
-> Ver [CHANGELOG.md](CHANGELOG.md) para historial completo
+> Ver historial completo en docs/plans/PLAN_CIERRE_BRECHAS.md
 
 ---
 
@@ -343,4 +334,4 @@ Copyright (c) 2024-2026 StrateKaz S.A.S. Todos los derechos reservados.
 
 ---
 
-**Ultima actualizacion:** 15 Enero 2026
+**Ultima actualizacion:** 17 Enero 2026

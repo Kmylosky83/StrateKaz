@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { render } from '../setup/test-utils';
+import { renderWithProviders as render } from '../utils/test-utils';
 import { mockProveedor, mockApiResponse } from '../setup/mocks';
 
 // This is a placeholder - replace with actual component import when testing
@@ -16,11 +16,7 @@ const MockProviderForm = ({ onSubmit }: { onSubmit: (data: any) => void }) => (
       });
     }}
   >
-    <input
-      name="nombre_empresa"
-      placeholder="Nombre de la empresa"
-      defaultValue=""
-    />
+    <input name="nombre_empresa" placeholder="Nombre de la empresa" defaultValue="" />
     <input name="nit" placeholder="NIT" defaultValue="" />
     <select name="tipo_proveedor" defaultValue="">
       <option value="">Seleccionar tipo</option>
@@ -81,9 +77,7 @@ describe('Provider Form Integration Tests', () => {
   });
 
   it('should handle API success response', async () => {
-    const mockSubmit = vi.fn().mockImplementation(() =>
-      mockApiResponse(mockProveedor)
-    );
+    const mockSubmit = vi.fn().mockImplementation(() => mockApiResponse(mockProveedor));
 
     render(<MockProviderForm onSubmit={mockSubmit} />);
 

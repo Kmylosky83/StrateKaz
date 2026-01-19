@@ -8,8 +8,8 @@
 # ═══════════════════════════════════════════════════
 # CORE FRAMEWORK
 # ═══════════════════════════════════════════════════
-Django==5.0.9
-djangorestframework==3.14.0
+Django==6.0.1
+djangorestframework==3.16.1
 
 # ═══════════════════════════════════════════════════
 # BASE DE DATOS - MySQL/MariaDB
@@ -22,19 +22,19 @@ mysqlclient==2.2.6
 # ═══════════════════════════════════════════════════
 # AUTENTICACIÓN Y SEGURIDAD
 # ═══════════════════════════════════════════════════
-djangorestframework-simplejwt==5.3.0
+djangorestframework-simplejwt==5.5.1
 django-cors-headers==4.3.1
 cryptography==45.0.0
 django-ratelimit==4.1.0
-django-csp==3.8
+django-csp==4.0
 bleach==6.1.0
 
 # ═══════════════════════════════════════════════════
 # CONFIGURACIÓN Y UTILIDADES
 # ═══════════════════════════════════════════════════
 python-decouple==3.8
-django-filter==23.5
-django-auditlog==2.3.0
+django-filter==25.2
+django-auditlog==3.4.1
 drf-spectacular==0.27.0
 
 # ═══════════════════════════════════════════════════
@@ -43,8 +43,8 @@ drf-spectacular==0.27.0
 # En cPanel, Celery se ejecuta en modo EAGER (tareas síncronas)
 # NO se necesita Redis ni workers externos
 celery==5.3.6
-django-celery-beat==2.6.0
-django-celery-results==2.5.1
+django-celery-beat==2.8.1
+django-celery-results==2.6.0
 
 # NOTA: NO incluir redis ni django-redis en cPanel
 # El cache se maneja con Django Database Cache

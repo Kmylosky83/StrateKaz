@@ -423,21 +423,42 @@ class UserPreferencesViewSet(viewsets.GenericViewSet):
         Si no existen, las crea con valores por defecto.
         """
         preferences = self.get_object()
-        serializer = self.get_serializer_class()(preferences)
+        serializer = self.get_serializer(preferences)
         return Response(serializer.data)
+
+    def create(self, request, *args, **kwargs):
+        """
+        POST /api/core/user-preferences/
+
+        Crea o actualiza las preferencias del usuario actual.
+        En la práctica siempre actualiza porque las preferencias se crean automáticamente.
+        """
+        preferences = self.get_object()
+        serializer = self.get_serializer(
+            preferences,
+            data=request.data,
+            partial=False
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        # Logging de auditoría
+        from .utils.audit_logging import log_preferences_updated
+        log_preferences_updated(request.user, serializer.validated_data)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def update(self, request, *args, **kwargs):
         """
         PUT /api/core/user-preferences/
 
-        Actualiza todas las preferencias del usuario actual.
+        Actualiza completamente las preferencias del usuario actual.
         """
-        partial = kwargs.pop('partial', False)
         preferences = self.get_object()
-        serializer = self.get_serializer_class()(
+        serializer = self.get_serializer(
             preferences,
             data=request.data,
-            partial=partial
+            partial=False
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -454,5 +475,17 @@ class UserPreferencesViewSet(viewsets.GenericViewSet):
 
         Actualiza parcialmente las preferencias del usuario actual.
         """
-        kwargs['partial'] = True
-        return self.update(request, *args, **kwargs)
+        preferences = self.get_object()
+        serializer = self.get_serializer(
+            preferences,
+            data=request.data,
+            partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        # Logging de auditoría
+        from .utils.audit_logging import log_preferences_updated
+        log_preferences_updated(request.user, serializer.validated_data)
+
+        return Response(serializer.data)

@@ -36,8 +36,8 @@ from .viewsets_config import (
 )
 # ViewSet de Sesiones de Usuario (MS-002-A)
 from .viewsets_session import UserSessionViewSet
-# ViewSet de Preferencias de Usuario (MS-003)
-from .viewsets import UserPreferencesViewSet
+# View de Preferencias de Usuario (MS-003) - Singleton pattern
+from .views import UserPreferencesView
 # Views de Two Factor Authentication (2FA)
 from .views.two_factor_views import (
     TwoFactorStatusView,
@@ -78,9 +78,6 @@ router.register(r'branding', BrandingConfigViewSet, basename='branding')
 
 # Endpoints Sesiones de Usuario (MS-002-A)
 router.register(r'sessions', UserSessionViewSet, basename='session')
-
-# Endpoints Preferencias de Usuario (MS-003)
-router.register(r'user-preferences', UserPreferencesViewSet, basename='user-preferences')
 
 # ═══════════════════════════════════════════════════════════════════════════
 # REGISTRO CONDICIONAL: Endpoints LEGACY que dependen de apps externas
@@ -139,6 +136,9 @@ urlpatterns = [
     path('2fa/disable/', TwoFactorDisableView.as_view(), name='2fa-disable'),
     path('2fa/verify/', TwoFactorVerifyView.as_view(), name='2fa-verify'),
     path('2fa/regenerate-backup-codes/', TwoFactorRegenerateBackupCodesView.as_view(), name='2fa-regenerate-backup-codes'),
+
+    # Endpoints User Preferences (MS-003) - Singleton pattern
+    path('user-preferences/', UserPreferencesView.as_view(), name='user-preferences'),
 
     # Incluir rutas del router
     path('', include(router.urls)),

@@ -28,6 +28,10 @@ from .two_factor_views import (
     TwoFactorRegenerateBackupCodesView,
 )
 
+from .user_preferences_views import (
+    UserPreferencesView,
+)
+
 __all__ = [
     # Security views
     'ratelimit_error_view',
@@ -51,4 +55,6 @@ __all__ = [
     'TwoFactorDisableView',
     'TwoFactorVerifyView',
     'TwoFactorRegenerateBackupCodesView',
+    # User Preferences view (MS-003)
+    'UserPreferencesView',
 ]

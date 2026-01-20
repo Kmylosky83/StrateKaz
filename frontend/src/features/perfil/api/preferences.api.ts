@@ -7,7 +7,7 @@
 import apiClient from '@/api/axios-config';
 import type { UserPreferences, UpdatePreferencesDTO } from '../types/preferences.types';
 
-const PREFERENCES_BASE_URL = '/core/user-preferences';
+const PREFERENCES_BASE_URL = '/core/user-preferences/';
 
 /**
  * Get current user preferences

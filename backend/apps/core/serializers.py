@@ -642,8 +642,8 @@ class UserPreferencesSerializer(serializers.ModelSerializer):
     """
 
     # Read-only fields para mostrar valores legibles
-    language_display = serializers.CharField(source='language_display', read_only=True)
-    date_format_display = serializers.CharField(source='date_format_display', read_only=True)
+    language_display = serializers.CharField(read_only=True)
+    date_format_display = serializers.CharField(read_only=True)
 
     class Meta:
         from apps.core.models import UserPreferences

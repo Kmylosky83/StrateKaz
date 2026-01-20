@@ -5,7 +5,7 @@ Sistema integral de gestion empresarial para empresas colombianas con cumplimien
 | Info | Valor |
 |------|-------|
 | **Nombre del Software** | StrateKaz |
-| **Version** | 3.7.0 |
+| **Version** | 3.7.1 |
 | **Ultima Actualizacion** | 20 Enero 2026 |
 | **Estado** | MVP Ready - PWA Enterprise + 2FA + Módulo Perfil 100% |
 | **Modelo Deployment** | Multi-Instancia (1 BD por empresa) |

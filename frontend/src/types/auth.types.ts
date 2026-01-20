@@ -54,6 +54,8 @@ export interface User {
   section_ids: number[] | null;
   /** Códigos de permisos CRUD. ['*'] = superuser (todos), [] = sin permisos */
   permission_codes: string[] | null;
+  /** URL de la foto de perfil del usuario */
+  photo_url?: string | null;
 }
 
 export interface LoginCredentials {

@@ -86,6 +86,13 @@ from apps.core.models.models_two_factor import (
 )
 
 # =============================================================================
+# USER PREFERENCES (MS-003)
+# =============================================================================
+from apps.core.models.models_user_preferences import (
+    UserPreferences,
+)
+
+# =============================================================================
 # ADD DYNAMIC RELATIONS (after all models are loaded)
 # =============================================================================
 
@@ -151,4 +158,6 @@ __all__ = [
     'UserSession',
     # Two Factor Authentication (2FA)
     'TwoFactorAuth',
+    # User Preferences (MS-003)
+    'UserPreferences',
 ]

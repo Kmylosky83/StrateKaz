@@ -59,4 +59,23 @@ export const authAPI = {
       console.warn('Server logout failed (token may be expired):', error);
     }
   },
+
+  /**
+   * Subir foto de perfil
+   */
+  uploadPhoto: async (file: File): Promise<{ photo_url: string }> => {
+    const formData = new FormData();
+    formData.append('photo', file);
+
+    const response = await axios.post<{ message: string; photo_url: string }>(
+      '/core/users/upload_photo/',
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    return response.data;
+  },
 };

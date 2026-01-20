@@ -36,6 +36,8 @@ from .viewsets_config import (
 )
 # ViewSet de Sesiones de Usuario (MS-002-A)
 from .viewsets_session import UserSessionViewSet
+# ViewSet de Preferencias de Usuario (MS-003)
+from .viewsets import UserPreferencesViewSet
 # Views de Two Factor Authentication (2FA)
 from .views.two_factor_views import (
     TwoFactorStatusView,
@@ -76,6 +78,9 @@ router.register(r'branding', BrandingConfigViewSet, basename='branding')
 
 # Endpoints Sesiones de Usuario (MS-002-A)
 router.register(r'sessions', UserSessionViewSet, basename='session')
+
+# Endpoints Preferencias de Usuario (MS-003)
+router.register(r'user-preferences', UserPreferencesViewSet, basename='user-preferences')
 
 # ═══════════════════════════════════════════════════════════════════════════
 # REGISTRO CONDICIONAL: Endpoints LEGACY que dependen de apps externas

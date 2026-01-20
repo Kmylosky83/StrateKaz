@@ -5,9 +5,9 @@ Sistema integral de gestion empresarial para empresas colombianas con cumplimien
 | Info | Valor |
 |------|-------|
 | **Nombre del Software** | StrateKaz |
-| **Version** | 3.6.0 |
+| **Version** | 3.7.0 |
 | **Ultima Actualizacion** | 20 Enero 2026 |
-| **Estado** | MVP Ready - PWA Enterprise + 2FA + Centro de Notificaciones |
+| **Estado** | MVP Ready - PWA Enterprise + 2FA + Módulo Perfil 100% |
 | **Modelo Deployment** | Multi-Instancia (1 BD por empresa) |
 | **Propietario** | StrateKaz S.A.S. |
 
@@ -285,6 +285,50 @@ VITE_API_URL=http://localhost:8000/api
 ---
 
 ## Changelog Reciente
+
+### v3.7.0 (20 Enero 2026) - Módulo de Perfil 100%
+
+- **Avatar Upload Completo (MS-004)**:
+  - Endpoint `POST /api/core/users/upload_photo/` para subir foto de perfil
+  - Validación: JPG, PNG, WebP hasta 2MB
+  - Serializer `UserPhotoUploadSerializer` con validación de formato y tamaño
+  - Campo `photo_url` en User (URL absoluta de la foto)
+  - Logging de auditoría: `log_user_photo_updated()`
+  - Componente `AvatarUploadModal` con drag & drop
+  - Preview de imagen antes de subir
+  - Hook `useUploadPhoto` con actualización automática de authStore
+  - Integración en PerfilPage y UserMenu
+  - Limpieza automática de URLs de objeto (sin memory leaks)
+
+- **Preferencias de Usuario Completa (MS-003)**:
+  - Modelo `UserPreferences` con campos: language, timezone, date_format
+  - Endpoint `/api/core/user-preferences/` (GET, PUT, PATCH)
+  - Creación automática de preferencias por usuario
+  - Serializer con validación de choices y timezones (pytz)
+  - Tipos TypeScript completos: `Language`, `DateFormat`
+  - Hook `usePreferences` con React Query
+  - Constantes: 70+ zonas horarias organizadas por región
+  - UI funcional: selector de idioma (es/en), timezone, formato de fecha
+  - Botones "Guardar cambios" y "Restaurar valores"
+  - Persistencia completa en backend
+  - Logging de auditoría: `log_preferences_updated()`
+
+- **Estado del Módulo de Perfil**:
+  - ✅ **PerfilPage** (100%): Avatar real, edición completa, info laboral
+  - ✅ **SeguridadPage** (100%): Cambio contraseña, sesiones, 2FA
+  - ✅ **PreferenciasPage** (100%): Idioma, timezone, formato con persistencia
+  - ✅ **Avatar real**: Upload funcional con drag & drop
+  - ✅ **Todas las vistas siguen el catálogo** (Vista 4, Vista 6)
+  - Estado general: **100% funcional**
+
+- **Migraciones Backend**:
+  - `0017_userpreferences.py` - Tabla de preferencias de usuario
+  - `0015_add_twofactorauth.py` - Ya aplicada (2FA)
+  - `0016_add_normas_iso_section.py` - Ya aplicada (Normas)
+
+- **Documentación**:
+  - `IMPLEMENTACION_PREFERENCIAS_USUARIO.md` - Guía completa MS-003
+  - README actualizado con módulo de perfil al 100%
 
 ### v3.6.0 (20 Enero 2026)
 

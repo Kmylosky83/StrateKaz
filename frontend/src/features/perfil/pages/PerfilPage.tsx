@@ -7,18 +7,29 @@
  * Vista 1: Cards de Información con edición via modal.
  */
 import { useEffect, useState } from 'react';
-import { User, Building2, Briefcase, Mail, Phone, IdCard, Calendar, Pencil } from 'lucide-react';
+import {
+  User,
+  Building2,
+  Briefcase,
+  Mail,
+  Phone,
+  IdCard,
+  Calendar,
+  Pencil,
+  Camera,
+} from 'lucide-react';
 import { Card, Button } from '@/components/common';
 import { PageHeader } from '@/components/layout';
 import { useAuthStore } from '@/store/authStore';
 import { useHeaderContext } from '@/contexts/HeaderContext';
 import { USER_MENU_LABELS } from '@/constants';
-import { EditProfileModal } from '../components/EditProfileModal';
+import { EditProfileModal, AvatarUploadModal } from '../components';
 
 export const PerfilPage = () => {
   const { user } = useAuthStore();
   const { resetHeader } = useHeaderContext();
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
 
   // Limpiar header al montar (no tiene tabs)
   useEffect(() => {
@@ -64,9 +75,29 @@ export const PerfilPage = () => {
       <Card className="p-6 md:p-8">
         {/* Header del perfil con avatar */}
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="h-24 w-24 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg flex-shrink-0">
-            {initials}
+          {/* Avatar con botón para cambiar foto */}
+          <div className="relative group flex-shrink-0">
+            {user?.photo_url ? (
+              <img
+                src={user.photo_url}
+                alt={displayName}
+                className="h-24 w-24 rounded-full object-cover shadow-lg"
+              />
+            ) : (
+              <div className="h-24 w-24 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
+                {initials}
+              </div>
+            )}
+            {/* Botón flotante para cambiar foto */}
+            <button
+              onClick={() => setShowAvatarModal(true)}
+              className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              aria-label="Cambiar foto de perfil"
+            >
+              <Camera className="h-8 w-8 text-white" />
+            </button>
           </div>
+
           <div className="text-center sm:text-left">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{displayName}</h2>
             <p className="text-gray-600 dark:text-gray-400 mt-1">{cargoName}</p>
@@ -116,13 +147,16 @@ export const PerfilPage = () => {
         </div>
       </Card>
 
-      {/* Modal de edición de perfil */}
+      {/* Modales */}
       {user && (
-        <EditProfileModal
-          isOpen={showEditModal}
-          onClose={() => setShowEditModal(false)}
-          user={user}
-        />
+        <>
+          <EditProfileModal
+            isOpen={showEditModal}
+            onClose={() => setShowEditModal(false)}
+            user={user}
+          />
+          <AvatarUploadModal isOpen={showAvatarModal} onClose={() => setShowAvatarModal(false)} />
+        </>
       )}
     </div>
   );

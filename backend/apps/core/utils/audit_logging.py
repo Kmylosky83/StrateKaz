@@ -44,6 +44,11 @@ def log_password_changed(request, user, self_change=False):
     security_logger.warning(f"PASSWORD_CHANGED: {user.username} (ID:{user.id}) - {by} - IP: {get_client_ip(request)}")
 
 
+def log_user_photo_updated(request, user):
+    """Log cuando un usuario actualiza su foto de perfil"""
+    security_logger.info(f"USER_PHOTO_UPDATED: {user.username} (ID:{user.id}) - IP: {get_client_ip(request)}")
+
+
 # RBAC OPERATIONS
 def log_permissions_assigned(request, target, target_type, perm_ids, action='assigned'):
     v = "ASSIGNED" if action == 'assigned' else "REMOVED"
@@ -118,3 +123,16 @@ def log_backup_codes_generated(request, user):
 def log_backup_code_used(request, user):
     """Log cuando se usa un código de respaldo"""
     security_logger.warning(f"2FA_BACKUP_CODE_USED: user '{user.username}' (ID:{user.id}) - IP: {get_client_ip(request)}")
+
+
+# USER PREFERENCES OPERATIONS (MS-003)
+def log_preferences_updated(user, updated_fields):
+    """
+    Log cuando un usuario actualiza sus preferencias.
+
+    Args:
+        user: Usuario que actualiza preferencias
+        updated_fields: Diccionario con los campos actualizados
+    """
+    fields = ', '.join([f"{k}={v}" for k, v in updated_fields.items()])
+    audit_logger.info(f"PREFERENCES_UPDATED: user '{user.username}' (ID:{user.id}) - Fields: {fields}")

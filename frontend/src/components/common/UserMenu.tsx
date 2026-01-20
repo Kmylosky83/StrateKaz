@@ -94,17 +94,25 @@ export const UserMenu = ({ compact = false, className }: UserMenuProps) => {
         )}
       >
         {/* Avatar */}
-        <div
-          className={cn(
-            'flex items-center justify-center rounded-full',
-            'bg-gradient-to-br from-primary-500 to-primary-600',
-            'text-white font-semibold',
-            'shadow-sm',
-            compact ? 'h-8 w-8 text-sm' : 'h-10 w-10 text-base'
-          )}
-        >
-          {initials}
-        </div>
+        {user?.photo_url ? (
+          <img
+            src={user.photo_url}
+            alt={displayName}
+            className={cn('rounded-full object-cover shadow-sm', compact ? 'h-8 w-8' : 'h-10 w-10')}
+          />
+        ) : (
+          <div
+            className={cn(
+              'flex items-center justify-center rounded-full',
+              'bg-gradient-to-br from-primary-500 to-primary-600',
+              'text-white font-semibold',
+              'shadow-sm',
+              compact ? 'h-8 w-8 text-sm' : 'h-10 w-10 text-base'
+            )}
+          >
+            {initials}
+          </div>
+        )}
 
         {/* Info (solo en modo expandido) */}
         {!compact && (
@@ -140,16 +148,24 @@ export const UserMenu = ({ compact = false, className }: UserMenuProps) => {
           {/* Header con info del usuario */}
           <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-3">
-              <div
-                className={cn(
-                  'h-12 w-12 rounded-full',
-                  'bg-gradient-to-br from-primary-500 to-primary-600',
-                  'flex items-center justify-center',
-                  'text-white font-bold text-lg'
-                )}
-              >
-                {initials}
-              </div>
+              {user?.photo_url ? (
+                <img
+                  src={user.photo_url}
+                  alt={displayName}
+                  className="h-12 w-12 rounded-full object-cover"
+                />
+              ) : (
+                <div
+                  className={cn(
+                    'h-12 w-12 rounded-full',
+                    'bg-gradient-to-br from-primary-500 to-primary-600',
+                    'flex items-center justify-center',
+                    'text-white font-bold text-lg'
+                  )}
+                >
+                  {initials}
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
                   {displayName}

@@ -92,6 +92,9 @@ class UserDetailSerializer(serializers.ModelSerializer):
     empresa_nombre = serializers.SerializerMethodField()
     area_nombre = serializers.CharField(source='cargo.area.name', read_only=True)
 
+    # URL de foto de perfil
+    photo_url = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
@@ -124,6 +127,8 @@ class UserDetailSerializer(serializers.ModelSerializer):
             # Campos de contexto laboral
             'empresa_nombre',
             'area_nombre',
+            # Foto de perfil
+            'photo_url',
         ]
         read_only_fields = [
             'id',
@@ -147,6 +152,17 @@ class UserDetailSerializer(serializers.ModelSerializer):
         from .models import BrandingConfig
         config = BrandingConfig.objects.first()
         return config.company_name if config else None
+
+    def get_photo_url(self, obj):
+        """
+        Retorna la URL completa de la foto de perfil
+        """
+        if obj.photo:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.photo.url)
+            return obj.photo.url
+        return None
 
     def get_section_ids(self, obj):
         """
@@ -529,6 +545,46 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return data
 
 
+class UserPhotoUploadSerializer(serializers.Serializer):
+    """Serializer para carga de foto de perfil"""
+
+    photo = serializers.ImageField(
+        required=True,
+        help_text='Foto de perfil del usuario (JPG, PNG, WebP - Máx. 2MB)'
+    )
+
+    def validate_photo(self, value):
+        """Validar formato y tamaño de imagen"""
+        # Validar tamaño máximo (2MB)
+        if value.size > 2 * 1024 * 1024:  # 2MB en bytes
+            raise serializers.ValidationError(
+                'El tamaño de la imagen no debe superar 2MB'
+            )
+
+        # Validar formato
+        allowed_formats = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+        if value.content_type not in allowed_formats:
+            raise serializers.ValidationError(
+                'Formato de imagen no válido. Use JPG, PNG o WebP'
+            )
+
+        return value
+
+    def save(self, user):
+        """Guardar foto de perfil del usuario"""
+        # Eliminar foto anterior si existe
+        if user.photo:
+            try:
+                user.photo.delete(save=False)
+            except Exception:
+                pass  # Ignorar errores al eliminar foto anterior
+
+        # Guardar nueva foto
+        user.photo = self.validated_data['photo']
+        user.save(update_fields=['photo'])
+        return user
+
+
 class LogoutSerializer(serializers.Serializer):
     """
     Serializer para logout (P0-03) - Invalida el refresh token
@@ -569,3 +625,67 @@ class LogoutSerializer(serializers.Serializer):
 
         # Agregar token a blacklist
         self.token.blacklist()
+
+
+# =============================================================================
+# USER PREFERENCES SERIALIZER (MS-003)
+# =============================================================================
+
+class UserPreferencesSerializer(serializers.ModelSerializer):
+    """
+    Serializer para preferencias de usuario.
+
+    Maneja la configuración personal del usuario:
+    - Idioma de interfaz
+    - Zona horaria
+    - Formato de fecha
+    """
+
+    # Read-only fields para mostrar valores legibles
+    language_display = serializers.CharField(source='language_display', read_only=True)
+    date_format_display = serializers.CharField(source='date_format_display', read_only=True)
+
+    class Meta:
+        from apps.core.models import UserPreferences
+        model = UserPreferences
+        fields = [
+            'language',
+            'language_display',
+            'timezone',
+            'date_format',
+            'date_format_display',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['created_at', 'updated_at']
+
+    def validate_language(self, value):
+        """Valida que el idioma esté en las opciones permitidas."""
+        from apps.core.models import UserPreferences
+        valid_languages = [choice[0] for choice in UserPreferences.LANGUAGE_CHOICES]
+        if value not in valid_languages:
+            raise serializers.ValidationError(
+                f"Idioma inválido. Opciones válidas: {', '.join(valid_languages)}"
+            )
+        return value
+
+    def validate_date_format(self, value):
+        """Valida que el formato de fecha esté en las opciones permitidas."""
+        from apps.core.models import UserPreferences
+        valid_formats = [choice[0] for choice in UserPreferences.DATE_FORMAT_CHOICES]
+        if value not in valid_formats:
+            raise serializers.ValidationError(
+                f"Formato de fecha inválido. Opciones válidas: {', '.join(valid_formats)}"
+            )
+        return value
+
+    def validate_timezone(self, value):
+        """Valida que la zona horaria sea válida."""
+        import pytz
+        try:
+            pytz.timezone(value)
+        except pytz.exceptions.UnknownTimeZoneError:
+            raise serializers.ValidationError(
+                f"Zona horaria inválida: {value}"
+            )
+        return value

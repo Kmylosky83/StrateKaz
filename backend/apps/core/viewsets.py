@@ -11,7 +11,8 @@ from django.db.models import Q, Count
 
 from .models import User, Cargo, Permiso, CargoPermiso
 from .utils.audit_logging import (
-    log_user_created, log_user_deleted, log_user_restored, log_password_changed
+    log_user_created, log_user_deleted, log_user_restored, log_password_changed,
+    log_user_photo_updated
 )
 from .serializers import (
     CargoSerializer,
@@ -20,6 +21,7 @@ from .serializers import (
     UserCreateSerializer,
     UserUpdateSerializer,
     ChangePasswordSerializer,
+    UserPhotoUploadSerializer,
     PermisoSerializer,
     CargoPermisoSerializer,
 )
@@ -80,6 +82,7 @@ class UserViewSet(viewsets.ModelViewSet):
         'stats': 'can_view',
         'me': 'can_view', # Usually allowany or authenticated, but for now map to view
         'update_profile': 'can_view', # Self-service action, user updates own profile
+        'upload_photo': 'can_view', # Self-service action, user uploads own photo
     }
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['cargo', 'cargo__code', 'is_active', 'is_staff', 'document_type']
@@ -263,18 +266,53 @@ class UserViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=False, methods=['post'])
+    def upload_photo(self, request):
+        """
+        Subir foto de perfil del usuario autenticado
+
+        POST /api/core/users/upload_photo/
+        Content-Type: multipart/form-data
+
+        Body:
+        - photo: archivo de imagen (JPG, PNG, WebP - Máx. 2MB)
+
+        Returns:
+        - photo_url: URL de la foto subida
+        """
+        user = request.user
+
+        serializer = UserPhotoUploadSerializer(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save(user)
+            log_user_photo_updated(request, user)
+
+            # Generar URL completa de la foto
+            photo_url = request.build_absolute_uri(user.photo.url) if user.photo else None
+
+            return Response(
+                {
+                    'message': 'Foto de perfil actualizada exitosamente',
+                    'photo_url': photo_url
+                },
+                status=status.HTTP_200_OK
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     @action(detail=False, methods=['get'])
     def stats(self, request):
         """
         Obtener estadísticas de usuarios
-        
+
         GET /api/core/users/stats/
         """
         total_users = User.objects.filter(deleted_at__isnull=True).count()
         active_users = User.objects.filter(is_active=True, deleted_at__isnull=True).count()
         inactive_users = User.objects.filter(is_active=False, deleted_at__isnull=True).count()
         deleted_users = User.objects.filter(deleted_at__isnull=False).count()
-        
+
         # Usuarios por cargo
         by_cargo = User.objects.filter(
             deleted_at__isnull=True
@@ -283,7 +321,7 @@ class UserViewSet(viewsets.ModelViewSet):
         ).annotate(
             count=Count('id')
         ).order_by('-count')
-        
+
         return Response({
             'total': total_users,
             'active': active_users,
@@ -334,5 +372,87 @@ class PermisoViewSet(viewsets.ReadOnlyModelViewSet):
         
         for permiso in permisos:
             result[permiso.module].append(PermisoSerializer(permiso).data)
-        
+
         return Response(dict(result))
+
+
+# =============================================================================
+# USER PREFERENCES VIEWSET (MS-003)
+# =============================================================================
+
+class UserPreferencesViewSet(viewsets.GenericViewSet):
+    """
+    ViewSet para preferencias de usuario.
+
+    Solo maneja las preferencias del usuario autenticado actual.
+
+    Endpoints:
+    - GET /api/core/user-preferences/ - Obtener preferencias del usuario actual
+    - PUT /api/core/user-preferences/ - Actualizar preferencias (actualización completa)
+    - PATCH /api/core/user-preferences/ - Actualizar preferencias (actualización parcial)
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get_serializer_class(self):
+        """Retorna el serializer apropiado."""
+        from .serializers import UserPreferencesSerializer
+        return UserPreferencesSerializer
+
+    def get_object(self):
+        """
+        Obtiene o crea las preferencias del usuario actual.
+        Siempre retorna las preferencias, creándolas si no existen.
+        """
+        from apps.core.models import UserPreferences
+        preferences, created = UserPreferences.get_or_create_for_user(self.request.user)
+
+        if created:
+            import logging
+            logger = logging.getLogger('audit')
+            logger.info(
+                f"MS-003: Preferencias creadas automáticamente para usuario {self.request.user.username}"
+            )
+
+        return preferences
+
+    def list(self, request):
+        """
+        GET /api/core/user-preferences/
+
+        Obtiene las preferencias del usuario actual.
+        Si no existen, las crea con valores por defecto.
+        """
+        preferences = self.get_object()
+        serializer = self.get_serializer_class()(preferences)
+        return Response(serializer.data)
+
+    def update(self, request, *args, **kwargs):
+        """
+        PUT /api/core/user-preferences/
+
+        Actualiza todas las preferencias del usuario actual.
+        """
+        partial = kwargs.pop('partial', False)
+        preferences = self.get_object()
+        serializer = self.get_serializer_class()(
+            preferences,
+            data=request.data,
+            partial=partial
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        # Logging de auditoría
+        from .utils.audit_logging import log_preferences_updated
+        log_preferences_updated(request.user, serializer.validated_data)
+
+        return Response(serializer.data)
+
+    def partial_update(self, request, *args, **kwargs):
+        """
+        PATCH /api/core/user-preferences/
+
+        Actualiza parcialmente las preferencias del usuario actual.
+        """
+        kwargs['partial'] = True
+        return self.update(request, *args, **kwargs)

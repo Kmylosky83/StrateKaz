@@ -6,7 +6,9 @@ Define:
 - EmpresaConfig: Datos fiscales y legales de la empresa (Singleton)
 - SedeEmpresa: Sedes y ubicaciones
 - IntegracionExterna: Integraciones con servicios externos
-- UnidadMedida: Catálogo de unidades de medida (importado)
+
+NOTA: UnidadMedida y ConsecutivoConfig fueron migrados a organizacion.
+Ver: apps.gestion_estrategica.organizacion.models
 """
 from django.db import models
 from django.core.exceptions import ValidationError
@@ -15,11 +17,11 @@ import re
 
 from apps.core.base_models import TimestampedModel, AuditModel, SoftDeleteModel
 
-# Importar modelo de unidades de medida
-from .models_unidades import UnidadMedida
-
-# Importar modelo de configuración de consecutivos
-from .models_consecutivos import ConsecutivoConfig, CATEGORIA_CONSECUTIVO_CHOICES, CONSECUTIVOS_SISTEMA
+# Modelos migrados a organizacion - importar desde allí para backward compatibility
+from apps.gestion_estrategica.organizacion.models_unidades import UnidadMedida
+from apps.gestion_estrategica.organizacion.models_consecutivos import (
+    ConsecutivoConfig, CATEGORIA_CONSECUTIVO_CHOICES, CONSECUTIVOS_SISTEMA
+)
 
 
 # ==============================================================================
@@ -356,7 +358,7 @@ class EmpresaConfig(TimestampedModel):
     # =========================================================================
 
     unidad_capacidad_default = models.ForeignKey(
-        'UnidadMedida',
+        'organizacion.UnidadMedida',
         on_delete=models.PROTECT,
         null=True,
         blank=True,
@@ -1046,7 +1048,7 @@ class SedeEmpresa(AuditModel, SoftDeleteModel):
         help_text='Capacidad máxima de almacenamiento (cantidad numérica)'
     )
     unidad_capacidad = models.ForeignKey(
-        'UnidadMedida',
+        'organizacion.UnidadMedida',
         on_delete=models.PROTECT,
         null=True,
         blank=True,

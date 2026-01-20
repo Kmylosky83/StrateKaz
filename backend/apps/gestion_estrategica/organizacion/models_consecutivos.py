@@ -10,6 +10,8 @@ Características:
 - Reinicio automático anual/mensual
 - Thread-safe con select_for_update
 - Soporte multi-tenant
+
+Ubicación: organizacion (catálogo transversal de la organización)
 """
 from datetime import date
 from decimal import Decimal
@@ -185,7 +187,7 @@ class ConsecutivoConfig(AuditModel, SoftDeleteModel):
     )
 
     class Meta:
-        db_table = 'configuracion_consecutivo'
+        db_table = 'configuracion_consecutivo'  # Mantener tabla original
         verbose_name = 'Configuración de Consecutivo'
         verbose_name_plural = 'Configuraciones de Consecutivos'
         ordering = ['categoria', 'codigo']

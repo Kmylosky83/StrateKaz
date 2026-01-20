@@ -6,6 +6,8 @@
  * 2. Cargos - Gestion de cargos organizacionales (incluye permisos en Tabs 5-6)
  * 3. Organigrama - Vista del organigrama
  * 4. Colaboradores - Gestión de usuarios/colaboradores
+ * 5. Consecutivos - Configuración de consecutivos automáticos (migrado desde Configuración)
+ * 6. Unidades de Medida - Catálogo de unidades de medida (migrado desde Configuración)
  *
  * Las secciones se controlan desde DynamicSections en la pagina padre
  * NOTA: Control de Acceso fue removido - permisos se configuran en CargoFormModal
@@ -18,6 +20,10 @@ import { CargosTab } from '@/features/configuracion/components/CargosTab';
 import { OrganigramaView } from './OrganigramaView';
 import { AreasTab } from './AreasTab';
 import { ColaboradoresSection } from './ColaboradoresSection';
+
+// Consecutivos y Unidades de Medida migrados desde Configuración
+import { ConsecutivosSection } from './ConsecutivosSection';
+import { UnidadesMedidaSection } from './UnidadesMedidaSection';
 
 /**
  * Props del OrganizacionTab
@@ -38,6 +44,9 @@ const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
   cargos: CargosTab,
   organigrama: OrganigramaView,
   colaboradores: ColaboradoresSection,
+  // Migrados desde Configuración
+  consecutivos: ConsecutivosSection,
+  unidades_medida: UnidadesMedidaSection,
 };
 
 export const OrganizacionTab = ({ activeSection }: OrganizacionTabProps) => {
@@ -49,7 +58,7 @@ export const OrganizacionTab = ({ activeSection }: OrganizacionTabProps) => {
     if (activeSection) {
       console.warn(
         `[OrganizacionTab] Sección "${activeSection}" no encontrada en SECTION_COMPONENTS. ` +
-        `Secciones disponibles: ${Object.keys(SECTION_COMPONENTS).join(', ')}`
+          `Secciones disponibles: ${Object.keys(SECTION_COMPONENTS).join(', ')}`
       );
     }
     return <AreasTab />;

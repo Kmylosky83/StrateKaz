@@ -22,7 +22,8 @@ from apps.gestion_estrategica.configuracion.models import (
     TipoServicioIntegracion,
     ProveedorIntegracion,
 )
-from apps.gestion_estrategica.configuracion.models_unidades import UnidadMedida
+# Modelo migrado a organizacion
+from apps.gestion_estrategica.organizacion.models_unidades import UnidadMedida
 
 
 class Command(BaseCommand):

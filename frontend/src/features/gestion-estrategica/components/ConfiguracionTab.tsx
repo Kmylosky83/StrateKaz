@@ -52,8 +52,7 @@ import { BrandingFormModal } from './modals/BrandingFormModal';
 import { EmpresaSection } from './EmpresaSection';
 import { SedesSection } from './SedesSection';
 import { IntegracionesSection } from './IntegracionesSection';
-import { UnidadesMedidaSection } from './UnidadesMedidaSection';
-import { ConsecutivosSection } from './ConsecutivosSection';
+// NOTA: UnidadesMedidaSection y ConsecutivosSection fueron migrados a OrganizacionTab
 import type { TenantUISettings } from '../types/strategic.types';
 import type { ModuleColor } from '../types/modules.types';
 
@@ -760,7 +759,7 @@ interface ConfiguracionTabProps {
  * Mapeo de códigos de sección a componentes
  * Los códigos deben coincidir con los de la BD (TabSection.code)
  * NOTA: Los códigos en BD están en minúsculas
- * NOTA: consecutivos fue movido a Organización > Consecutivos
+ * NOTA: consecutivos y unidades_medida fueron migrados a OrganizacionTab
  */
 const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
   empresa: EmpresaSection,
@@ -768,8 +767,6 @@ const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
   integraciones: IntegracionesSection,
   branding: BrandingSection,
   modulos: ModulosAndFeaturesSection,
-  unidades_medida: UnidadesMedidaSection,
-  consecutivos: ConsecutivosSection,
 };
 
 export const ConfiguracionTab = ({ activeSection, searchQuery }: ConfiguracionTabProps) => {

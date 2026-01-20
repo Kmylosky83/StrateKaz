@@ -1,12 +1,14 @@
 """
 Admin para el módulo de Configuración Empresarial
+
+NOTA: UnidadMedida y ConsecutivoConfig fueron migrados a organizacion.
+Ver: apps.gestion_estrategica.organizacion.admin
 """
 from django.contrib import admin
 from .models import (
     EmpresaConfig, SedeEmpresa, IntegracionExterna,
     TipoSede, TipoServicioIntegracion, ProveedorIntegracion, NormaISO, TipoCambio
 )
-from .models_unidades import UnidadMedida
 
 
 @admin.register(EmpresaConfig)
@@ -119,40 +121,10 @@ class IntegracionExternaAdmin(admin.ModelAdmin):
     )
 
 
-@admin.register(UnidadMedida)
-class UnidadMedidaAdmin(admin.ModelAdmin):
-    """Admin para unidades de medida"""
-    list_display = ['codigo', 'nombre', 'simbolo', 'categoria', 'unidad_base', 'es_sistema', 'is_active', 'orden_display']
-    list_filter = ['categoria', 'es_sistema', 'is_active']
-    search_fields = ['codigo', 'nombre', 'simbolo']
-    ordering = ['categoria', 'orden_display', 'nombre']
-    list_editable = ['is_active', 'orden_display']
-    readonly_fields = ['created_at', 'updated_at', 'deleted_at']
-    raw_id_fields = ['unidad_base']
-
-    fieldsets = (
-        ('Identificación', {
-            'fields': ('codigo', 'nombre', 'nombre_plural', 'simbolo', 'categoria', 'descripcion')
-        }),
-        ('Conversión', {
-            'fields': ('unidad_base', 'factor_conversion')
-        }),
-        ('Presentación', {
-            'fields': ('decimales_display', 'usar_separador_miles', 'prefiere_notacion_cientifica')
-        }),
-        ('Configuración', {
-            'fields': ('orden_display', 'es_sistema', 'is_active')
-        }),
-        ('Auditoría', {
-            'fields': ('created_at', 'updated_at', 'deleted_at'),
-            'classes': ('collapse',)
-        }),
-    )
-
-
 # ==============================================================================
 # ADMINS PARA MODELOS DINÁMICOS DE CONFIGURACIÓN
 # ==============================================================================
+# NOTA: UnidadMedidaAdmin fue movido a organizacion/admin.py
 
 @admin.register(NormaISO)
 class NormaISOAdmin(admin.ModelAdmin):

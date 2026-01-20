@@ -2,14 +2,12 @@
 Serializers para Unidades de Medida
 Sistema de Gestión StrateKaz
 
-NOTA: Este archivo se mantiene para backward compatibility.
-Los modelos fueron migrados a organizacion.
+Ubicación: organizacion (catálogo transversal de la organización)
 """
 from rest_framework import serializers
 from decimal import Decimal
 
-# Modelo migrado a organizacion
-from apps.gestion_estrategica.organizacion.models_unidades import UnidadMedida
+from .models_unidades import UnidadMedida
 
 
 class UnidadMedidaSerializer(serializers.ModelSerializer):

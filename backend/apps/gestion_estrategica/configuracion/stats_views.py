@@ -15,8 +15,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Secciones validas (consecutivos fue movido a organizacion/)
-VALID_SECTIONS = ['empresa', 'sedes', 'integraciones', 'modulos']
+# Secciones validas para estadisticas
+VALID_SECTIONS = ['empresa', 'sedes', 'integraciones', 'modulos', 'consecutivos', 'unidades_medida']
 
 
 @api_view(['GET'])
@@ -32,8 +32,8 @@ def config_stats_view(request):
     - sedes: Estadisticas de sedes
     - integraciones: Estadisticas de integraciones externas
     - modulos: Estadisticas de modulos del sistema
-
-    NOTA: consecutivos fue movido a /organizacion/consecutivos/
+    - consecutivos: Estadisticas de consecutivos configurados
+    - unidades_medida: Estadisticas de unidades de medida
     """
     section = request.query_params.get('section', '').lower()
 
@@ -56,6 +56,8 @@ def config_stats_view(request):
             'sedes': calculate_sedes_stats,
             'integraciones': calculate_integraciones_stats,
             'modulos': calculate_modulos_stats,
+            'consecutivos': calculate_consecutivos_stats,
+            'unidades_medida': calculate_unidades_medida_stats,
         }
 
         stats = calculators[section]()
@@ -361,6 +363,112 @@ def calculate_modulos_stats():
         'value': f'{cobertura}%',
         'icon': 'TrendingUp',
         'iconColor': 'success' if cobertura >= 80 else 'warning' if cobertura >= 50 else 'danger',
+    })
+
+    return stats
+
+
+def calculate_consecutivos_stats():
+    """Calcula estadisticas de la seccion Consecutivos"""
+    # Modelo migrado a organizacion
+    from apps.gestion_estrategica.organizacion.models_consecutivos import ConsecutivoConfig
+
+    stats = []
+    consecutivos = ConsecutivoConfig.objects.filter(deleted_at__isnull=True)
+
+    # Total de consecutivos
+    total = consecutivos.count()
+    stats.append({
+        'key': 'total',
+        'label': 'Total',
+        'value': str(total),
+        'icon': 'Hash',
+        'iconColor': 'primary',
+    })
+
+    # Activos
+    activos = consecutivos.filter(is_active=True).count()
+    stats.append({
+        'key': 'activos',
+        'label': 'Activos',
+        'value': str(activos),
+        'icon': 'Activity',
+        'iconColor': 'success' if activos > 0 else 'warning',
+    })
+
+    # Del sistema vs custom
+    sistema = consecutivos.filter(es_sistema=True).count()
+    custom = consecutivos.filter(es_sistema=False).count()
+    stats.append({
+        'key': 'sistema',
+        'label': 'Sistema',
+        'value': str(sistema),
+        'icon': 'Settings',
+        'iconColor': 'info',
+        'description': f'{custom} personalizados'
+    })
+
+    # Categorias en uso
+    categorias_en_uso = consecutivos.values('categoria').distinct().count()
+    stats.append({
+        'key': 'categorias',
+        'label': 'Categorias',
+        'value': str(categorias_en_uso),
+        'icon': 'Layers',
+        'iconColor': 'primary',
+    })
+
+    return stats
+
+
+def calculate_unidades_medida_stats():
+    """Calcula estadisticas de la seccion Unidades de Medida"""
+    # Modelo migrado a organizacion
+    from apps.gestion_estrategica.organizacion.models_unidades import UnidadMedida
+
+    stats = []
+    unidades = UnidadMedida.objects.filter(deleted_at__isnull=True)
+
+    # Total de unidades
+    total = unidades.count()
+    stats.append({
+        'key': 'total',
+        'label': 'Total',
+        'value': str(total),
+        'icon': 'Ruler',
+        'iconColor': 'primary',
+    })
+
+    # Activas
+    activas = unidades.filter(is_active=True).count()
+    stats.append({
+        'key': 'activas',
+        'label': 'Activas',
+        'value': str(activas),
+        'icon': 'Activity',
+        'iconColor': 'success' if activas > 0 else 'warning',
+    })
+
+    # Del sistema vs custom
+    sistema = unidades.filter(es_sistema=True).count()
+    custom = unidades.filter(es_sistema=False).count()
+    stats.append({
+        'key': 'sistema',
+        'label': 'Sistema',
+        'value': str(sistema),
+        'icon': 'Settings',
+        'iconColor': 'info',
+        'description': f'{custom} personalizadas'
+    })
+
+    # Categorias en uso
+    categorias_en_uso = unidades.values('categoria').distinct().count()
+    stats.append({
+        'key': 'categorias',
+        'label': 'Categorias',
+        'value': str(categorias_en_uso),
+        'icon': 'Layers',
+        'iconColor': 'primary',
     })
 
     return stats

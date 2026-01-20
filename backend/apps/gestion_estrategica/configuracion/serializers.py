@@ -25,7 +25,8 @@ from .models import (
     TIMEZONE_CHOICES,
     ICON_CATEGORY_CHOICES,
 )
-from .models_unidades import UnidadMedida
+# Modelo migrado a organizacion
+from apps.gestion_estrategica.organizacion.models_unidades import UnidadMedida
 
 
 class EmpresaConfigSerializer(serializers.ModelSerializer):

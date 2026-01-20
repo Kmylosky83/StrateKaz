@@ -2,13 +2,11 @@
 MC-002: Serializers para Configuración de Consecutivos
 Sistema de Gestión StrateKaz
 
-NOTA: Este archivo se mantiene para backward compatibility.
-Los modelos fueron migrados a organizacion.
+Ubicación: organizacion (catálogo transversal de la organización)
 """
 from rest_framework import serializers
 
-# Modelo migrado a organizacion
-from apps.gestion_estrategica.organizacion.models_consecutivos import (
+from .models_consecutivos import (
     ConsecutivoConfig,
     CATEGORIA_CONSECUTIVO_CHOICES,
     SEPARADOR_CHOICES,

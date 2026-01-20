@@ -100,11 +100,11 @@ class Command(BaseCommand):
                         'route': 'configuracion',
                         'orden': 1,
                         'sections': [
-                            {'code': 'empresa', 'name': 'Datos de Empresa', 'icon': 'Building2', 'orden': 1},
-                            {'code': 'sedes', 'name': 'Sedes', 'icon': 'MapPin', 'orden': 2},
-                            {'code': 'integraciones', 'name': 'Integraciones', 'icon': 'Plug', 'orden': 3},
-                            {'code': 'branding', 'name': 'Branding', 'icon': 'Palette', 'orden': 4},
-                            {'code': 'modulos', 'name': 'Módulos y Funciones', 'icon': 'LayoutGrid', 'orden': 5},
+                            {'code': 'empresa', 'name': 'Empresa', 'icon': 'Building2', 'orden': 1, 'description': 'Datos generales de la empresa'},
+                            {'code': 'sedes', 'name': 'Sedes', 'icon': 'MapPin', 'orden': 2, 'description': 'Ubicaciones físicas de la empresa'},
+                            {'code': 'integraciones', 'name': 'Integraciones', 'icon': 'Plug', 'orden': 3, 'description': 'Conexiones con sistemas externos'},
+                            {'code': 'branding', 'name': 'Branding', 'icon': 'Palette', 'orden': 4, 'description': 'Identidad visual y colores'},
+                            {'code': 'modulos', 'name': 'Módulos', 'icon': 'LayoutGrid', 'orden': 5, 'description': 'Activar o desactivar funcionalidades'},
                         ]
                     },
                     {
@@ -118,7 +118,9 @@ class Command(BaseCommand):
                             {'code': 'cargos', 'name': 'Cargos', 'icon': 'Briefcase', 'orden': 2},
                             {'code': 'organigrama', 'name': 'Organigrama', 'icon': 'Network', 'orden': 3},
                             {'code': 'colaboradores', 'name': 'Colaboradores', 'icon': 'Users', 'orden': 4},
-                            {'code': 'roles', 'name': 'Control de Acceso', 'icon': 'ShieldCheck', 'orden': 5},
+                            {'code': 'consecutivos', 'name': 'Consecutivos', 'icon': 'Hash', 'orden': 5, 'description': 'Numeración automática de documentos'},
+                            {'code': 'unidades_medida', 'name': 'Unidades', 'icon': 'Ruler', 'orden': 6, 'description': 'Unidades de medida para inventarios'},
+                            {'code': 'roles', 'name': 'Control de Acceso', 'icon': 'ShieldCheck', 'orden': 7},
                         ]
                     },
                     {

@@ -12,7 +12,8 @@ Uso:
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from apps.gestion_estrategica.configuracion.models import SedeEmpresa
-from apps.gestion_estrategica.configuracion.models_unidades import UnidadMedida
+# Modelo migrado a organizacion
+from apps.gestion_estrategica.organizacion.models_unidades import UnidadMedida
 
 
 class Command(BaseCommand):

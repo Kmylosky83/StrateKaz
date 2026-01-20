@@ -9,7 +9,8 @@ Uso:
     python manage.py cargar_unidades_sistema --force
 """
 from django.core.management.base import BaseCommand
-from apps.gestion_estrategica.configuracion.models_unidades import UnidadMedida
+# Modelo migrado a organizacion
+from apps.gestion_estrategica.organizacion.models_unidades import UnidadMedida
 
 
 class Command(BaseCommand):

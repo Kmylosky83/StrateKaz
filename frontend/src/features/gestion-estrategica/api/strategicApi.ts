@@ -50,6 +50,7 @@ const CORE_URL = '/core'; // Para system-modules, branding, strategic stats
 const IDENTIDAD_URL = '/identidad';
 const PLANEACION_URL = '/planeacion';
 const CONFIGURACION_URL = '/configuracion';
+const ORGANIZACION_URL = '/organizacion'; // Consecutivos y Unidades de Medida migrados aquí
 
 // ==================== NORMAS ISO (Dinámico) ====================
 
@@ -807,47 +808,45 @@ export interface FormateoResult {
 
 export const unidadesMedidaApi = {
   getAll: async (filters?: UnidadMedidaFilters): Promise<PaginatedResponse<UnidadMedidaList>> => {
-    const response = await axiosInstance.get(`${CONFIGURACION_URL}/unidades-medida/`, {
+    const response = await axiosInstance.get(`${ORGANIZACION_URL}/unidades-medida/`, {
       params: filters,
     });
     return response.data;
   },
 
   getById: async (id: number): Promise<UnidadMedida> => {
-    const response = await axiosInstance.get(`${CONFIGURACION_URL}/unidades-medida/${id}/`);
+    const response = await axiosInstance.get(`${ORGANIZACION_URL}/unidades-medida/${id}/`);
     return response.data;
   },
 
   create: async (data: CreateUnidadMedidaDTO): Promise<UnidadMedida> => {
-    const response = await axiosInstance.post(`${CONFIGURACION_URL}/unidades-medida/`, data);
+    const response = await axiosInstance.post(`${ORGANIZACION_URL}/unidades-medida/`, data);
     return response.data;
   },
 
   update: async (id: number, data: UpdateUnidadMedidaDTO): Promise<UnidadMedida> => {
-    const response = await axiosInstance.patch(`${CONFIGURACION_URL}/unidades-medida/${id}/`, data);
+    const response = await axiosInstance.patch(`${ORGANIZACION_URL}/unidades-medida/${id}/`, data);
     return response.data;
   },
 
   delete: async (id: number): Promise<void> => {
-    await axiosInstance.delete(`${CONFIGURACION_URL}/unidades-medida/${id}/`);
+    await axiosInstance.delete(`${ORGANIZACION_URL}/unidades-medida/${id}/`);
   },
 
   restore: async (id: number): Promise<UnidadMedida> => {
-    const response = await axiosInstance.post(
-      `${CONFIGURACION_URL}/unidades-medida/${id}/restore/`
-    );
+    const response = await axiosInstance.post(`${ORGANIZACION_URL}/unidades-medida/${id}/restore/`);
     return response.data.data;
   },
 
   getChoices: async (): Promise<UnidadMedidaChoices> => {
-    const response = await axiosInstance.get(`${CONFIGURACION_URL}/unidades-medida/choices/`);
+    const response = await axiosInstance.get(`${ORGANIZACION_URL}/unidades-medida/choices/`);
     return response.data;
   },
 
   getByCategoria: async (): Promise<
     Record<CategoriaUnidad, { label: string; unidades: UnidadMedidaList[] }>
   > => {
-    const response = await axiosInstance.get(`${CONFIGURACION_URL}/unidades-medida/by-categoria/`);
+    const response = await axiosInstance.get(`${ORGANIZACION_URL}/unidades-medida/by-categoria/`);
     return response.data;
   },
 
@@ -856,7 +855,7 @@ export const unidadesMedidaApi = {
     unidadOrigen: string,
     unidadDestino: string
   ): Promise<ConversionResult> => {
-    const response = await axiosInstance.post(`${CONFIGURACION_URL}/unidades-medida/convertir/`, {
+    const response = await axiosInstance.post(`${ORGANIZACION_URL}/unidades-medida/convertir/`, {
       valor,
       unidad_origen: unidadOrigen,
       unidad_destino: unidadDestino,
@@ -869,7 +868,7 @@ export const unidadesMedidaApi = {
     unidad: string,
     incluirSimbolo = true
   ): Promise<FormateoResult> => {
-    const response = await axiosInstance.post(`${CONFIGURACION_URL}/unidades-medida/formatear/`, {
+    const response = await axiosInstance.post(`${ORGANIZACION_URL}/unidades-medida/formatear/`, {
       valor,
       unidad,
       incluir_simbolo: incluirSimbolo,
@@ -883,7 +882,7 @@ export const unidadesMedidaApi = {
     total_unidades: number;
   }> => {
     const response = await axiosInstance.post(
-      `${CONFIGURACION_URL}/unidades-medida/cargar-sistema/`
+      `${ORGANIZACION_URL}/unidades-medida/cargar-sistema/`
     );
     return response.data;
   },
@@ -1007,38 +1006,38 @@ export const consecutivosApi = {
   getAll: async (
     filters?: ConsecutivoFilters
   ): Promise<PaginatedResponse<ConsecutivoConfigList>> => {
-    const response = await axiosInstance.get(`${CONFIGURACION_URL}/consecutivos/`, {
+    const response = await axiosInstance.get(`${ORGANIZACION_URL}/consecutivos/`, {
       params: filters,
     });
     return response.data;
   },
 
   getById: async (id: number): Promise<ConsecutivoConfig> => {
-    const response = await axiosInstance.get(`${CONFIGURACION_URL}/consecutivos/${id}/`);
+    const response = await axiosInstance.get(`${ORGANIZACION_URL}/consecutivos/${id}/`);
     return response.data;
   },
 
   create: async (data: CreateConsecutivoDTO): Promise<ConsecutivoConfig> => {
-    const response = await axiosInstance.post(`${CONFIGURACION_URL}/consecutivos/`, data);
+    const response = await axiosInstance.post(`${ORGANIZACION_URL}/consecutivos/`, data);
     return response.data;
   },
 
   update: async (id: number, data: UpdateConsecutivoDTO): Promise<ConsecutivoConfig> => {
-    const response = await axiosInstance.patch(`${CONFIGURACION_URL}/consecutivos/${id}/`, data);
+    const response = await axiosInstance.patch(`${ORGANIZACION_URL}/consecutivos/${id}/`, data);
     return response.data;
   },
 
   delete: async (id: number): Promise<void> => {
-    await axiosInstance.delete(`${CONFIGURACION_URL}/consecutivos/${id}/`);
+    await axiosInstance.delete(`${ORGANIZACION_URL}/consecutivos/${id}/`);
   },
 
   restore: async (id: number): Promise<ConsecutivoConfig> => {
-    const response = await axiosInstance.post(`${CONFIGURACION_URL}/consecutivos/${id}/restore/`);
+    const response = await axiosInstance.post(`${ORGANIZACION_URL}/consecutivos/${id}/restore/`);
     return response.data.data;
   },
 
   getChoices: async (): Promise<ConsecutivoChoices> => {
-    const response = await axiosInstance.get(`${CONFIGURACION_URL}/consecutivos/choices/`);
+    const response = await axiosInstance.get(`${ORGANIZACION_URL}/consecutivos/choices/`);
     return response.data;
   },
 
@@ -1055,26 +1054,26 @@ export const consecutivosApi = {
       }>
     >
   > => {
-    const response = await axiosInstance.get(`${CONFIGURACION_URL}/consecutivos/by-categoria/`);
+    const response = await axiosInstance.get(`${ORGANIZACION_URL}/consecutivos/by-categoria/`);
     return response.data;
   },
 
   generar: async (codigo: string): Promise<GenerarConsecutivoResult> => {
-    const response = await axiosInstance.post(`${CONFIGURACION_URL}/consecutivos/generar/`, {
+    const response = await axiosInstance.post(`${ORGANIZACION_URL}/consecutivos/generar/`, {
       codigo,
     });
     return response.data;
   },
 
   generarPorId: async (consecutivoId: number): Promise<GenerarConsecutivoResult> => {
-    const response = await axiosInstance.post(`${CONFIGURACION_URL}/consecutivos/generar/`, {
+    const response = await axiosInstance.post(`${ORGANIZACION_URL}/consecutivos/generar/`, {
       consecutivo_id: consecutivoId,
     });
     return response.data;
   },
 
   preview: async (params: PreviewConsecutivoParams): Promise<{ formato: string }> => {
-    const response = await axiosInstance.post(`${CONFIGURACION_URL}/consecutivos/preview/`, params);
+    const response = await axiosInstance.post(`${ORGANIZACION_URL}/consecutivos/preview/`, params);
     return response.data;
   },
 
@@ -1082,10 +1081,9 @@ export const consecutivosApi = {
     id: number,
     confirmar = false
   ): Promise<{ message: string; data: ConsecutivoConfig }> => {
-    const response = await axiosInstance.post(
-      `${CONFIGURACION_URL}/consecutivos/${id}/reiniciar/`,
-      { confirmar }
-    );
+    const response = await axiosInstance.post(`${ORGANIZACION_URL}/consecutivos/${id}/reiniciar/`, {
+      confirmar,
+    });
     return response.data;
   },
 
@@ -1095,7 +1093,7 @@ export const consecutivosApi = {
     actualizados: number;
     total: number;
   }> => {
-    const response = await axiosInstance.post(`${CONFIGURACION_URL}/consecutivos/cargar-sistema/`);
+    const response = await axiosInstance.post(`${ORGANIZACION_URL}/consecutivos/cargar-sistema/`);
     return response.data;
   },
 };

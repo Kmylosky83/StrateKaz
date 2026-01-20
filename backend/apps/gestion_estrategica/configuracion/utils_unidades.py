@@ -39,7 +39,8 @@ def formatear_capacidad(
         >>> formatear_capacidad(1200, 'M3', locale_config={'separador_miles': '.'})
         '1.200 m³'
     """
-    from .models_unidades import UnidadMedida
+    # Modelo migrado a organizacion
+    from apps.gestion_estrategica.organizacion.models_unidades import UnidadMedida
 
     if valor is None:
         return ''
@@ -83,7 +84,8 @@ def formatear_capacidad_auto(
         >>> formatear_capacidad_auto(500, 'GR')
         '0.5 kg'
     """
-    from .models_unidades import UnidadMedida
+    # Modelo migrado a organizacion
+    from apps.gestion_estrategica.organizacion.models_unidades import UnidadMedida
 
     if valor is None:
         return ''
@@ -167,7 +169,8 @@ def convertir_capacidad(
         >>> convertir_capacidad(1000, 'GR', 'KG')
         Decimal('1')
     """
-    from .models_unidades import UnidadMedida
+    # Modelo migrado a organizacion
+    from apps.gestion_estrategica.organizacion.models_unidades import UnidadMedida
 
     unidad_origen = UnidadMedida.obtener_por_codigo(unidad_origen_codigo)
     unidad_destino = UnidadMedida.obtener_por_codigo(unidad_destino_codigo)
@@ -218,7 +221,8 @@ def obtener_unidad_capacidad_default():
         return empresa.unidad_capacidad_default
 
     # Fallback: intentar obtener KG
-    from .models_unidades import UnidadMedida
+    # Modelo migrado a organizacion
+    from apps.gestion_estrategica.organizacion.models_unidades import UnidadMedida
     return UnidadMedida.obtener_por_codigo('KG')
 
 
@@ -265,7 +269,8 @@ def crear_reporte_capacidades(sedes_queryset) -> Dict[str, Any]:
                 ]
             }
     """
-    from .models_unidades import UnidadMedida
+    # Modelo migrado a organizacion
+    from apps.gestion_estrategica.organizacion.models_unidades import UnidadMedida
     from decimal import Decimal
     from collections import defaultdict
 

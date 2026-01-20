@@ -8,6 +8,8 @@ Permite configurar unidades de medida por industria:
 - Logística: m³, pallets, contenedores
 - Servicios: horas, proyectos
 - Retail: cajas, paquetes
+
+Ubicación: organizacion (catálogo transversal de la organización)
 """
 from django.db import models
 from django.core.exceptions import ValidationError
@@ -153,7 +155,7 @@ class UnidadMedida(AuditModel, SoftDeleteModel):
     )
 
     class Meta:
-        db_table = 'configuracion_unidad_medida'
+        db_table = 'configuracion_unidad_medida'  # Mantener tabla original
         verbose_name = 'Unidad de Medida'
         verbose_name_plural = 'Unidades de Medida'
         ordering = ['categoria', 'orden_display', 'nombre']

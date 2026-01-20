@@ -1,7 +1,7 @@
 """
 Modelos de Organización - Tab de Dirección Estratégica
 
-Secciones: organigrama, areas
+Secciones: organigrama, areas, consecutivos, unidades_medida
 """
 from django.db import models
 from django.conf import settings
@@ -11,6 +11,18 @@ from apps.core.base_models import (
     SoftDeleteModel,
     OrderedModel
 )
+
+# Re-exportar modelos migrados para backward compatibility
+from .models_consecutivos import ConsecutivoConfig, CONSECUTIVOS_SISTEMA
+from .models_unidades import UnidadMedida, CATEGORIA_UNIDAD_CHOICES
+
+__all__ = [
+    'Area',
+    'ConsecutivoConfig',
+    'CONSECUTIVOS_SISTEMA',
+    'UnidadMedida',
+    'CATEGORIA_UNIDAD_CHOICES',
+]
 
 
 class Area(AuditModel, SoftDeleteModel, OrderedModel):

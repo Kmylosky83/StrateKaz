@@ -178,7 +178,7 @@ def current_user(request):
     # Obtener permisos efectivos y secciones
     section_ids = []
     permission_codes = []
-    
+
     # 1. Obtener section_ids del Cargo (si tiene)
     if user.cargo:
         from apps.core.models import CargoSectionAccess
@@ -190,6 +190,23 @@ def current_user(request):
     # El método get_permisos_efectivos ya maneja superusuario, cargo, roles y grupos
     if hasattr(user, 'get_permisos_efectivos'):
         permission_codes = user.get_permisos_efectivos()
+
+    # 3. Obtener empresa_nombre desde BrandingConfig
+    empresa_nombre = None
+    from apps.core.models import BrandingConfig
+    config = BrandingConfig.objects.filter(is_active=True).first()
+    if config:
+        empresa_nombre = config.company_name
+
+    # 4. Obtener area_nombre desde cargo.area
+    area_nombre = None
+    if user.cargo and hasattr(user.cargo, 'area') and user.cargo.area:
+        area_nombre = user.cargo.area.name
+
+    # 5. Obtener photo_url (URL completa de la foto de perfil)
+    photo_url = None
+    if user.photo:
+        photo_url = request.build_absolute_uri(user.photo.url)
 
     return Response({
         'id': user.id,
@@ -219,6 +236,11 @@ def current_user(request):
         # RBAC Data required by frontend
         'section_ids': section_ids,
         'permission_codes': permission_codes,
+        # Datos de contexto laboral (agregados para perfil)
+        'empresa_nombre': empresa_nombre,
+        'area_nombre': area_nombre,
+        # Foto de perfil
+        'photo_url': photo_url,
     })
 
 

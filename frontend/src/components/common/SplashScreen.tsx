@@ -1,8 +1,9 @@
 /**
  * SplashScreen Component - Enterprise Level
  *
- * Pantalla de carga inicial que muestra el logo StrateKaz mientras
- * se carga la configuración de branding de la empresa cliente.
+ * Pantalla de carga inicial con logo FIJO de StrateKaz.
+ * El logo de la marca StrateKaz es identidad del software,
+ * NO es dinámico desde la BD del cliente.
  *
  * Características:
  * - Animaciones suaves y profesionales con Framer Motion
@@ -11,9 +12,12 @@
  * - Transición fade-out elegante
  * - Respeta preferencias de reducción de movimiento
  * - Soporte completo para dark mode
+ * - Logo y slogan FIJOS de StrateKaz (identidad de marca)
+ * - Versión desde package.json (Single Source of Truth)
  */
 import { motion, AnimatePresence } from 'framer-motion';
 import { DURATION, EASING, shouldReduceMotion } from '@/lib/animations';
+import { BRAND, APP_VERSION } from '@/constants/brand';
 
 export interface SplashScreenProps {
   /** Si el splash está visible */
@@ -205,15 +209,15 @@ export const SplashScreen = ({
               aria-hidden="true"
             />
 
-            {/* Logo con efecto pulse */}
+            {/* Logo con efecto pulse - FIJO StrateKaz */}
             <motion.div
               variants={reduceMotion ? {} : pulseVariants}
               animate="animate"
               className="relative"
             >
               <img
-                src="/logo-dark.png"
-                alt="StrateKaz Logo"
+                src={BRAND.logos.light}
+                alt={BRAND.name}
                 className="
                   h-24 w-auto
                   sm:h-28 md:h-32
@@ -222,8 +226,8 @@ export const SplashScreen = ({
                 "
               />
               <img
-                src="/logo-light.png"
-                alt="StrateKaz Logo"
+                src={BRAND.logos.dark}
+                alt={BRAND.name}
                 className="
                   h-24 w-auto
                   sm:h-28 md:h-32
@@ -234,7 +238,7 @@ export const SplashScreen = ({
             </motion.div>
           </motion.div>
 
-          {/* Tagline */}
+          {/* Tagline - FIJO StrateKaz */}
           <motion.p
             variants={reduceMotion ? {} : textVariants}
             initial="initial"
@@ -246,7 +250,7 @@ export const SplashScreen = ({
               tracking-wide
             "
           >
-            Consultoría 4.0
+            {BRAND.slogan}
           </motion.p>
 
           {/* Progress Bar */}
@@ -286,7 +290,7 @@ export const SplashScreen = ({
             </div>
           )}
 
-          {/* Version Badge */}
+          {/* Version Badge - desde package.json */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1, transition: { delay: 0.5 } }}
@@ -296,7 +300,7 @@ export const SplashScreen = ({
               text-xs text-gray-400 dark:text-gray-500
             "
           >
-            v2.0.0
+            v{APP_VERSION}
           </motion.div>
         </motion.div>
       )}

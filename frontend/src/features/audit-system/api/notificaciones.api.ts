@@ -2,6 +2,9 @@
  * API Client para Centro de Notificaciones
  *
  * MN-001: Conectar notificaciones con backend
+ *
+ * NOTA: DRF tiene paginación global habilitada (PageNumberPagination, PAGE_SIZE=20)
+ * Las respuestas de list() vienen con estructura { count, next, previous, results }
  */
 import axiosInstance from '@/api/axios-config';
 import type {
@@ -10,15 +13,27 @@ import type {
   PreferenciaNotificacion,
   NotificacionMasiva,
   NotificacionFilters,
+  PaginatedResponse,
 } from '../types/notificaciones.types';
 
 const BASE_URL = '/audit/notificaciones';
+
+/**
+ * Helper para extraer results de respuesta paginada o devolver array directo
+ */
+function extractResults<T>(data: T[] | PaginatedResponse<T>): T[] {
+  if (Array.isArray(data)) {
+    return data;
+  }
+  return data.results || [];
+}
 
 export const notificacionesAPI = {
   // ==================== NOTIFICACIONES ====================
 
   /**
    * Obtener lista de notificaciones con filtros
+   * NOTA: Maneja respuesta paginada de DRF
    */
   getNotificaciones: async (filters?: NotificacionFilters): Promise<Notificacion[]> => {
     const params = new URLSearchParams();
@@ -30,8 +45,8 @@ export const notificacionesAPI = {
     const queryString = params.toString();
     const url = queryString ? `${BASE_URL}/?${queryString}` : `${BASE_URL}/`;
 
-    const response = await axiosInstance.get<Notificacion[]>(url);
-    return response.data;
+    const response = await axiosInstance.get<Notificacion[] | PaginatedResponse<Notificacion>>(url);
+    return extractResults(response.data);
   },
 
   /**
@@ -72,7 +87,7 @@ export const notificacionesAPI = {
    */
   archivarNotificacion: async (id: number): Promise<Notificacion> => {
     const response = await axiosInstance.patch<Notificacion>(`${BASE_URL}/${id}/`, {
-      archivada: true,
+      esta_archivada: true,
     });
     return response.data;
   },
@@ -81,6 +96,7 @@ export const notificacionesAPI = {
 
   /**
    * Obtener tipos de notificación
+   * NOTA: Maneja respuesta paginada de DRF
    */
   getTipos: async (filters?: {
     categoria?: string;
@@ -93,8 +109,10 @@ export const notificacionesAPI = {
     const queryString = params.toString();
     const url = queryString ? `${BASE_URL}/tipos/?${queryString}` : `${BASE_URL}/tipos/`;
 
-    const response = await axiosInstance.get<TipoNotificacion[]>(url);
-    return response.data;
+    const response = await axiosInstance.get<
+      TipoNotificacion[] | PaginatedResponse<TipoNotificacion>
+    >(url);
+    return extractResults(response.data);
   },
 
   /**
@@ -124,13 +142,14 @@ export const notificacionesAPI = {
 
   /**
    * Obtener preferencias del usuario
+   * NOTA: Maneja respuesta paginada de DRF
    */
   getPreferencias: async (usuarioId?: number): Promise<PreferenciaNotificacion[]> => {
     const params = usuarioId ? `?usuario=${usuarioId}` : '';
-    const response = await axiosInstance.get<PreferenciaNotificacion[]>(
-      `${BASE_URL}/preferencias/${params}`
-    );
-    return response.data;
+    const response = await axiosInstance.get<
+      PreferenciaNotificacion[] | PaginatedResponse<PreferenciaNotificacion>
+    >(`${BASE_URL}/preferencias/${params}`);
+    return extractResults(response.data);
   },
 
   /**
@@ -164,10 +183,13 @@ export const notificacionesAPI = {
 
   /**
    * Obtener envíos masivos
+   * NOTA: Maneja respuesta paginada de DRF
    */
   getMasivas: async (): Promise<NotificacionMasiva[]> => {
-    const response = await axiosInstance.get<NotificacionMasiva[]>(`${BASE_URL}/masivas/`);
-    return response.data;
+    const response = await axiosInstance.get<
+      NotificacionMasiva[] | PaginatedResponse<NotificacionMasiva>
+    >(`${BASE_URL}/masivas/`);
+    return extractResults(response.data);
   },
 
   /**

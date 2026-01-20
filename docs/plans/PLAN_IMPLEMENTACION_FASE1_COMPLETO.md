@@ -221,23 +221,44 @@
 
 ---
 
-### SPRINT 4: Catálogos y Polish (Semana 7-8)
+### SPRINT 4: Catálogos y Polish ✅ COMPLETADO
+
+**Objetivo**: UIs de catálogos y sesiones de usuario
+**Estado**: ✅ COMPLETADO - Verificación doble realizada 2026-01-19
 
 #### Día 1-5: Catálogos Base
 ```
-[ ] MC-001: UI Unidades de Medida → 12-16h
+[x] MC-001: UI Unidades de Medida ✅ 2026-01-19
+    - Componente UnidadesMedidaSection.tsx
+    - CRUD completo con modal de formulario
+    - Integración con strategicApi.ts
+[x] MC-002: UI Consecutivos ✅ 2026-01-19
+    - Componente ConsecutivosSection.tsx
+    - Prefijos y formatos configurables
+    - Vista previa de consecutivo generado
 ```
 
-#### Día 6-10: Catálogos + Sesiones
+#### Día 6-10: Sesiones + PWA Dinámico
+
 ```
-[ ] MC-002: UI Consecutivos → 16-20h
-[ ] MS-002-A: Sesiones activas reales → 8-12h
+[x] MS-002-A: Sesiones activas reales ✅ 2026-01-19
+    - Modelo UserSession con tracking de dispositivos
+    - ViewSet con endpoints CRUD
+    - Integración en login (crear sesión) y logout (invalidar)
+    - Frontend: hooks, API, componente ActiveSessionsCard
+[x] MB-001: Manifest PWA dinámico desde BD ✅ 2026-01-19
+    - vite.config.ts: manifest: false
+    - index.html: manifest dinámico desde /api/core/branding/manifest/
+    - useDynamicTheme: actualiza meta tags dinámicamente
+    - SplashScreen: logo/slogan desde branding BD
+    - Footer: companyShortName desde branding BD
 ```
 
-**Entregables Sprint 4:**
+**Entregables Sprint 4:** ✅ TODOS COMPLETADOS
 - ✅ UI para Unidades de Medida
 - ✅ UI para Consecutivos
 - ✅ Sesiones activas funcionales
+- ✅ PWA dinámico (manifest, meta tags, splash desde BD)
 
 ---
 

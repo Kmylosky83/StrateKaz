@@ -11,10 +11,11 @@ import { useState, useMemo, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/utils/cn';
 import { useSidebarModules } from '@/features/gestion-estrategica/hooks/useModules';
-import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import type { SidebarModule } from '@/features/gestion-estrategica/types/modules.types';
 import { ChevronRight, ChevronDown, Circle, Loader2, LayoutDashboard } from 'lucide-react';
+
 import { getIconComponent as getDynamicIcon } from '@/components/common/DynamicIcon';
+import { APP_VERSION } from '@/constants/brand';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -469,7 +470,6 @@ export const Sidebar = ({
 }: SidebarProps) => {
   const location = useLocation();
   const { data: sidebarModules, isLoading, error } = useSidebarModules();
-  const { appVersion } = useBrandingConfig();
 
   // Cerrar drawer al navegar en mobile
   useEffect(() => {
@@ -602,10 +602,10 @@ export const Sidebar = ({
           ))}
         </div>
 
-        {/* Version Info (only when expanded) */}
+        {/* Version Info (only when expanded) - FIJO StrateKaz */}
         {!effectiveCollapsed && (
           <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700">
-            <p className="text-xs text-gray-500 dark:text-gray-400">Versión {appVersion}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Versión {APP_VERSION}</p>
           </div>
         )}
       </nav>

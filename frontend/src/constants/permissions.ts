@@ -39,7 +39,7 @@ export const Sections = {
   // GESTION ESTRATEGICA
   EMPRESA: 'empresa',
   SEDES: 'sedes',
-  NORMA_ISO: 'norma_iso',
+  NORMAS_ISO: 'normas-iso',
   AREAS: 'areas',
   POLITICAS: 'politicas',
   IDENTITY: 'identidad_corporativa', // Mapped to backend 'identidad_corporativa'

@@ -26,7 +26,9 @@ function hexToRgb(hex: string): string {
  * @param hex - Color base en formato HEX
  * @returns Objeto con variantes del color o null si el color no es válido
  */
-function generateColorVariants(hex: string): Record<number, { r: number; g: number; b: number }> | null {
+function generateColorVariants(
+  hex: string
+): Record<number, { r: number; g: number; b: number }> | null {
   // Validar que hex sea un string válido
   if (!hex || typeof hex !== 'string') {
     console.warn('[useDynamicTheme] Color inválido recibido:', hex);
@@ -90,12 +92,11 @@ export function useDynamicTheme() {
     companyName,
     isLoading,
     isError,
-    branding
+    branding,
   } = useBrandingConfig();
 
-  // Efecto para aplicar favicon y título
-  // IMPORTANTE: Usa favicon y companyName del hook (ya tienen fallbacks)
-  // No usar branding?.favicon porque si branding es null, no aplica nada
+  // Efecto para aplicar favicon, título y meta tags PWA dinámicos
+  // MB-001: Todo se carga desde BD para multi-instancia
   useEffect(() => {
     if (isLoading) return;
 
@@ -118,13 +119,62 @@ export function useDynamicTheme() {
           faviconLink.type = 'image/x-icon';
         }
       }
+
+      // Actualizar apple-touch-icon
+      const appleTouchIcon = document.getElementById('apple-touch-icon') as HTMLLinkElement;
+      if (appleTouchIcon) {
+        appleTouchIcon.href = favicon;
+      }
     }
 
     // Aplicar título - usa 'companyName' del hook que ya incluye fallback
     if (companyName && companyName.trim() !== '') {
       document.title = companyName;
+
+      // Actualizar meta tag de apple-mobile-web-app-title
+      const appTitleMeta = document.getElementById('meta-app-title') as HTMLMetaElement;
+      if (appTitleMeta) {
+        appTitleMeta.content = companyName;
+      }
+
+      // Actualizar Open Graph title
+      const ogTitle = document.getElementById('og-title') as HTMLMetaElement;
+      if (ogTitle) {
+        ogTitle.content = companyName;
+      }
     }
-  }, [favicon, companyName, isLoading]);
+
+    // Actualizar theme-color con el color primario
+    if (primaryColor && primaryColor.trim() !== '') {
+      const themeColorMeta = document.getElementById('meta-theme-color') as HTMLMetaElement;
+      if (themeColorMeta) {
+        themeColorMeta.content = primaryColor;
+      }
+    }
+
+    // Actualizar description y OG description si hay slogan
+    if (branding?.company_slogan) {
+      const description = `${branding.company_slogan} - Sistema Integrado de Gestión`;
+
+      const descMeta = document.getElementById('meta-description') as HTMLMetaElement;
+      if (descMeta) {
+        descMeta.content = description;
+      }
+
+      const ogDesc = document.getElementById('og-description') as HTMLMetaElement;
+      if (ogDesc) {
+        ogDesc.content = description;
+      }
+    }
+
+    // Actualizar OG image si hay logo
+    if (branding?.logo) {
+      const ogImage = document.getElementById('og-image') as HTMLMetaElement;
+      if (ogImage) {
+        ogImage.content = branding.logo;
+      }
+    }
+  }, [favicon, companyName, primaryColor, branding, isLoading]);
 
   // Efecto para aplicar colores
   useEffect(() => {
@@ -169,7 +219,6 @@ export function useDynamicTheme() {
       });
       root.style.setProperty('--color-accent', hexToRgb(accentColor));
     }
-
   }, [primaryColor, secondaryColor, accentColor, isLoading, isError, branding]);
 }
 

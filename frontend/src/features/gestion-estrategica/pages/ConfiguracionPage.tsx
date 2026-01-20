@@ -2,13 +2,11 @@
  * Pagina de Configuracion - Tab 1 de Direccion Estrategica
  *
  * Layout estandar:
- * - PageHeader con titulo y descripcion de la seccion activa
- * - Tabs de secciones en el Header global (via usePageHeader)
- * - Buscador contextual en el Header
+ * - PageHeader con titulo y tabs de secciones inline
  * - StatsGrid dinamico por seccion
  * - Contenido de la seccion activa
  */
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   MapPin,
   Building2,
@@ -26,13 +24,14 @@ import {
   Calendar,
   Warehouse,
   CheckCircle2,
+  Search,
   type LucideIcon,
 } from 'lucide-react';
 import { PageHeader, StatsGrid, StatsGridSkeleton } from '@/components/layout';
 import type { StatItem } from '@/components/layout';
 import { useConfiguracionStats } from '../hooks/useStrategic';
 import { ConfiguracionTab } from '../components/ConfiguracionTab';
-import { usePageHeader } from '@/hooks/usePageHeader';
+import { usePageSections } from '@/hooks/usePageSections';
 
 // Codigos del modulo y tab en la BD
 const MODULE_CODE = 'gestion_estrategica';
@@ -59,20 +58,20 @@ const ICON_MAP: Record<string, LucideIcon> = {
 };
 
 export const ConfiguracionPage = () => {
-  // Hook que configura el Header automaticamente
+  // Hook que maneja secciones localmente (sin HeaderContext)
   const {
+    sections,
     activeSection,
-    activeSectionName,
-    activeSectionDescription,
-    searchQuery,
+    setActiveSection,
+    activeSectionData,
     isLoading: sectionsLoading,
-  } = usePageHeader({
+  } = usePageSections({
     moduleCode: MODULE_CODE,
     tabCode: TAB_CODE,
-    moduleColor: 'purple',
-    searchEnabled: true,
-    searchPlaceholder: 'Buscar en configuracion...',
   });
+
+  // Buscador local
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Stats dinamicos segun seccion activa
   const { data: sectionStats, isLoading: statsLoading } = useConfiguracionStats(activeSection);
@@ -113,10 +112,15 @@ export const ConfiguracionPage = () => {
 
   return (
     <div className="space-y-4">
-      {/* Titulo y descripcion de la seccion activa */}
-      {activeSectionName && (
-        <PageHeader title={activeSectionName} description={activeSectionDescription} />
-      )}
+      {/* PageHeader con titulo y tabs inline */}
+      <PageHeader
+        title="Configuracion"
+        description={activeSectionData.description}
+        sections={sections}
+        activeSection={activeSection}
+        onSectionChange={setActiveSection}
+        moduleColor="purple"
+      />
 
       {/* StatsGrid - solo si hay stats y no es branding */}
       {activeSection !== 'branding' &&

@@ -2,64 +2,26 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
+import pkg from './package.json'
 
 // https://vitejs.dev/config/
 export default defineConfig({
   base: './',
+  // Inyectar versión desde package.json en build time
+  define: {
+    'import.meta.env.VITE_APP_VERSION': JSON.stringify(pkg.version),
+  },
   plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'logo-dark.png', 'logo-light.png', 'pwa-icon.svg'],
-      manifest: {
-        name: 'StrateKaz - Sistema de Gestión Integral',
-        short_name: 'StrateKaz',
-        description: 'ERP de Consultoría 4.0 - SST, PESV, ISO, Calidad',
-        theme_color: '#ec268f',
-        background_color: '#ffffff',
-        display: 'standalone',
-        orientation: 'portrait',
-        scope: '/',
-        start_url: '/',
-        categories: ['business', 'productivity'],
-        icons: [
-          {
-            src: 'pwa-icon.svg',
-            sizes: 'any',
-            type: 'image/svg+xml',
-            purpose: 'any'
-          },
-          {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'maskable'
-          }
-        ],
-        shortcuts: [
-          {
-            name: 'Dashboard',
-            short_name: 'Dashboard',
-            url: '/dashboard',
-            icons: [{ src: 'pwa-icon.svg', sizes: 'any' }]
-          },
-          {
-            name: 'HSEQ',
-            short_name: 'HSEQ',
-            url: '/hseq',
-            icons: [{ src: 'pwa-icon.svg', sizes: 'any' }]
-          }
-        ]
+      // MB-001: Manifest dinámico desde BD
+      // El manifest.json se genera dinámicamente desde /api/core/branding/manifest/
+      // Solo definimos valores mínimos de fallback aquí
+      manifest: false, // Deshabilitamos manifest estático - se carga dinámicamente
+      injectManifest: {
+        injectionPoint: undefined // No inyectar manifest
       },
       workbox: {
         // Cache de archivos estáticos

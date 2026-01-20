@@ -10,7 +10,9 @@
  * - favicon: Icono del navegador
  * - login_background: Imagen de fondo para la página de login
  * - primary_color, secondary_color, accent_color: Paleta de colores
- * - app_version: Versión de la aplicación
+ * - PWA: pwa_name, pwa_short_name, pwa_description, colores e iconos
+ *
+ * NOTA: app_version se gestiona desde settings centralizados (no editable aquí)
  *
  * Usa Design System:
  * - BaseModal para el contenedor
@@ -19,13 +21,18 @@
  * - Button para acciones
  */
 import { useState, useEffect, useRef } from 'react';
-import { Upload, X, Image as ImageIcon, Settings } from 'lucide-react';
+import { Upload, X, Image as ImageIcon, Smartphone, Droplet } from 'lucide-react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
+import { Textarea } from '@/components/forms/Textarea';
 import { Switch } from '@/components/forms/Switch';
 import { useCreateBranding, useUpdateBranding } from '../../hooks/useStrategic';
-import type { BrandingConfig, CreateBrandingConfigDTO, UpdateBrandingConfigDTO } from '../../types/strategic.types';
+import type {
+  BrandingConfig,
+  CreateBrandingConfigDTO,
+  UpdateBrandingConfigDTO,
+} from '../../types/strategic.types';
 
 interface BrandingFormModalProps {
   branding: BrandingConfig | null;
@@ -41,8 +48,8 @@ interface ImageUploadProps {
   accept?: string;
   darkPreview?: boolean;
   hint?: string;
-  onClear?: () => void; // Callback para marcar como "a eliminar" del servidor
-  isCleared?: boolean;  // Indica si el archivo del servidor está marcado para eliminar
+  onClear?: () => void;
+  isCleared?: boolean;
 }
 
 const ImageUpload = ({
@@ -60,7 +67,6 @@ const ImageUpload = ({
   const [preview, setPreview] = useState<string | null>(null);
   const [localCleared, setLocalCleared] = useState(false);
 
-  // Resetear localCleared cuando isCleared cambie externamente (ej. al abrir modal de nuevo)
   useEffect(() => {
     setLocalCleared(isCleared);
   }, [isCleared]);
@@ -71,7 +77,6 @@ const ImageUpload = ({
       setPreview(url);
       return () => URL.revokeObjectURL(url);
     } else if (previewUrl && !localCleared) {
-      // Solo mostrar previewUrl si no está marcado para eliminar
       setPreview(previewUrl);
     } else {
       setPreview(null);
@@ -85,7 +90,6 @@ const ImageUpload = ({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     onChange(file);
-    // Si se selecciona un nuevo archivo, resetear el estado de cleared
     if (file) {
       setLocalCleared(false);
     }
@@ -96,10 +100,8 @@ const ImageUpload = ({
     if (inputRef.current) {
       inputRef.current.value = '';
     }
-    // Limpiar preview inmediatamente
     setPreview(null);
     setLocalCleared(true);
-    // Si hay un archivo en el servidor, marcarlo para eliminar
     if (previewUrl && onClear) {
       onClear();
     }
@@ -107,9 +109,7 @@ const ImageUpload = ({
 
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-        {label}
-      </label>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>
       <input
         ref={inputRef}
         type="file"
@@ -121,16 +121,13 @@ const ImageUpload = ({
       {preview ? (
         <div className="relative inline-block">
           <div
-            className={`p-4 rounded-lg border-2 border-dashed ${darkPreview
-              ? 'bg-gray-800 border-gray-600'
-              : 'bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600'
-              }`}
+            className={`p-4 rounded-lg border-2 border-dashed ${
+              darkPreview
+                ? 'bg-gray-800 border-gray-600'
+                : 'bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600'
+            }`}
           >
-            <img
-              src={preview}
-              alt={label}
-              className="h-16 max-w-[200px] object-contain"
-            />
+            <img src={preview} alt={label} className="h-16 max-w-[200px] object-contain" />
           </div>
           <button
             type="button"
@@ -147,23 +144,19 @@ const ImageUpload = ({
           className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary-500 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
         >
           <Upload className="h-6 w-6 text-gray-400 mb-1" />
-          <span className="text-sm text-gray-500 dark:text-gray-400">
-            Click para subir
-          </span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">Click para subir</span>
         </button>
       )}
 
-      {hint && (
-        <p className="text-xs text-gray-500 dark:text-gray-400">{hint}</p>
-      )}
+      {hint && <p className="text-xs text-gray-500 dark:text-gray-400">{hint}</p>}
     </div>
   );
 };
 
 export const BrandingFormModal = ({ branding, isOpen, onClose }: BrandingFormModalProps) => {
-  // Solo es edición si branding existe Y tiene un id válido
   const isEditing = branding !== null && branding.id !== undefined;
 
+  // Estado del formulario
   const [formData, setFormData] = useState({
     company_name: '',
     company_short_name: '',
@@ -171,24 +164,39 @@ export const BrandingFormModal = ({ branding, isOpen, onClose }: BrandingFormMod
     primary_color: '#16A34A',
     secondary_color: '#059669',
     accent_color: '#10B981',
-    app_version: '2.0.0',
+    // Campos PWA
+    pwa_name: '',
+    pwa_short_name: '',
+    pwa_description: '',
+    pwa_theme_color: '#16A34A',
+    pwa_background_color: '#FFFFFF',
     is_active: true,
   });
 
+  // Estados para archivos de logos
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoWhiteFile, setLogoWhiteFile] = useState<File | null>(null);
   const [faviconFile, setFaviconFile] = useState<File | null>(null);
   const [loginBackgroundFile, setLoginBackgroundFile] = useState<File | null>(null);
 
-  // Estados para rastrear qué archivos del servidor deben eliminarse
+  // Estados para archivos PWA
+  const [pwaIcon192File, setPwaIcon192File] = useState<File | null>(null);
+  const [pwaIcon512File, setPwaIcon512File] = useState<File | null>(null);
+  const [pwaIconMaskableFile, setPwaIconMaskableFile] = useState<File | null>(null);
+
+  // Estados para rastrear eliminaciones
   const [clearLogo, setClearLogo] = useState(false);
   const [clearLogoWhite, setClearLogoWhite] = useState(false);
   const [clearFavicon, setClearFavicon] = useState(false);
   const [clearLoginBackground, setClearLoginBackground] = useState(false);
+  const [clearPwaIcon192, setClearPwaIcon192] = useState(false);
+  const [clearPwaIcon512, setClearPwaIcon512] = useState(false);
+  const [clearPwaIconMaskable, setClearPwaIconMaskable] = useState(false);
 
   const createMutation = useCreateBranding();
   const updateMutation = useUpdateBranding();
 
+  // Cargar datos cuando se abre el modal
   useEffect(() => {
     if (branding) {
       setFormData({
@@ -198,20 +206,31 @@ export const BrandingFormModal = ({ branding, isOpen, onClose }: BrandingFormMod
         primary_color: branding.primary_color,
         secondary_color: branding.secondary_color || '#059669',
         accent_color: branding.accent_color || '#10B981',
-        app_version: branding.app_version || '2.0.0',
+        pwa_name: branding.pwa_name || '',
+        pwa_short_name: branding.pwa_short_name || '',
+        pwa_description: branding.pwa_description || '',
+        pwa_theme_color: branding.pwa_theme_color || branding.primary_color || '#16A34A',
+        pwa_background_color: branding.pwa_background_color || '#FFFFFF',
         is_active: branding.is_active,
       });
-      // Reset file states when editing
+      // Reset file states
       setLogoFile(null);
       setLogoWhiteFile(null);
       setFaviconFile(null);
       setLoginBackgroundFile(null);
+      setPwaIcon192File(null);
+      setPwaIcon512File(null);
+      setPwaIconMaskableFile(null);
       // Reset clear states
       setClearLogo(false);
       setClearLogoWhite(false);
       setClearFavicon(false);
       setClearLoginBackground(false);
+      setClearPwaIcon192(false);
+      setClearPwaIcon512(false);
+      setClearPwaIconMaskable(false);
     } else {
+      // Reset para nuevo branding
       setFormData({
         company_name: '',
         company_short_name: '',
@@ -219,28 +238,51 @@ export const BrandingFormModal = ({ branding, isOpen, onClose }: BrandingFormMod
         primary_color: '#16A34A',
         secondary_color: '#059669',
         accent_color: '#10B981',
-        app_version: '2.0.0',
+        pwa_name: '',
+        pwa_short_name: '',
+        pwa_description: '',
+        pwa_theme_color: '#16A34A',
+        pwa_background_color: '#FFFFFF',
         is_active: true,
       });
       setLogoFile(null);
       setLogoWhiteFile(null);
       setFaviconFile(null);
       setLoginBackgroundFile(null);
+      setPwaIcon192File(null);
+      setPwaIcon512File(null);
+      setPwaIconMaskableFile(null);
       setClearLogo(false);
       setClearLogoWhite(false);
       setClearFavicon(false);
       setClearLoginBackground(false);
+      setClearPwaIcon192(false);
+      setClearPwaIcon512(false);
+      setClearPwaIconMaskable(false);
     }
   }, [branding]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Determinar si hay archivos nuevos o campos a limpiar
-    const hasFileChanges = logoFile || logoWhiteFile || faviconFile || loginBackgroundFile ||
-                           clearLogo || clearLogoWhite || clearFavicon || clearLoginBackground;
+    // Verificar si hay cambios de archivos
+    const hasFileChanges =
+      logoFile ||
+      logoWhiteFile ||
+      faviconFile ||
+      loginBackgroundFile ||
+      pwaIcon192File ||
+      pwaIcon512File ||
+      pwaIconMaskableFile ||
+      clearLogo ||
+      clearLogoWhite ||
+      clearFavicon ||
+      clearLoginBackground ||
+      clearPwaIcon192 ||
+      clearPwaIcon512 ||
+      clearPwaIconMaskable;
 
-    // Para subir archivos o limpiarlos, necesitamos usar FormData
+    // Construir FormData
     const formDataToSend = new FormData();
     formDataToSend.append('company_name', formData.company_name);
     formDataToSend.append('company_short_name', formData.company_short_name);
@@ -252,39 +294,50 @@ export const BrandingFormModal = ({ branding, isOpen, onClose }: BrandingFormMod
     formDataToSend.append('primary_color', formData.primary_color);
     formDataToSend.append('secondary_color', formData.secondary_color);
     formDataToSend.append('accent_color', formData.accent_color);
-    formDataToSend.append('app_version', formData.app_version);
     formDataToSend.append('is_active', String(formData.is_active));
 
-    // Archivos nuevos
-    if (logoFile) {
-      formDataToSend.append('logo', logoFile);
+    // Campos PWA (texto)
+    if (formData.pwa_name) {
+      formDataToSend.append('pwa_name', formData.pwa_name);
     }
-    if (logoWhiteFile) {
-      formDataToSend.append('logo_white', logoWhiteFile);
+    if (formData.pwa_short_name) {
+      formDataToSend.append('pwa_short_name', formData.pwa_short_name);
     }
-    if (faviconFile) {
-      formDataToSend.append('favicon', faviconFile);
+    if (formData.pwa_description) {
+      formDataToSend.append('pwa_description', formData.pwa_description);
     }
-    if (loginBackgroundFile) {
-      formDataToSend.append('login_background', loginBackgroundFile);
+    if (formData.pwa_theme_color) {
+      formDataToSend.append('pwa_theme_color', formData.pwa_theme_color);
+    }
+    if (formData.pwa_background_color) {
+      formDataToSend.append('pwa_background_color', formData.pwa_background_color);
     }
 
-    // Campos a limpiar (eliminar archivo del servidor)
-    if (clearLogo && !logoFile) {
-      formDataToSend.append('logo_clear', 'true');
-    }
-    if (clearLogoWhite && !logoWhiteFile) {
-      formDataToSend.append('logo_white_clear', 'true');
-    }
-    if (clearFavicon && !faviconFile) {
-      formDataToSend.append('favicon_clear', 'true');
-    }
-    if (clearLoginBackground && !loginBackgroundFile) {
+    // Archivos nuevos (logos)
+    if (logoFile) formDataToSend.append('logo', logoFile);
+    if (logoWhiteFile) formDataToSend.append('logo_white', logoWhiteFile);
+    if (faviconFile) formDataToSend.append('favicon', faviconFile);
+    if (loginBackgroundFile) formDataToSend.append('login_background', loginBackgroundFile);
+
+    // Archivos nuevos (PWA)
+    if (pwaIcon192File) formDataToSend.append('pwa_icon_192', pwaIcon192File);
+    if (pwaIcon512File) formDataToSend.append('pwa_icon_512', pwaIcon512File);
+    if (pwaIconMaskableFile) formDataToSend.append('pwa_icon_maskable', pwaIconMaskableFile);
+
+    // Campos a limpiar (logos)
+    if (clearLogo && !logoFile) formDataToSend.append('logo_clear', 'true');
+    if (clearLogoWhite && !logoWhiteFile) formDataToSend.append('logo_white_clear', 'true');
+    if (clearFavicon && !faviconFile) formDataToSend.append('favicon_clear', 'true');
+    if (clearLoginBackground && !loginBackgroundFile)
       formDataToSend.append('login_background_clear', 'true');
-    }
+
+    // Campos a limpiar (PWA)
+    if (clearPwaIcon192 && !pwaIcon192File) formDataToSend.append('pwa_icon_192_clear', 'true');
+    if (clearPwaIcon512 && !pwaIcon512File) formDataToSend.append('pwa_icon_512_clear', 'true');
+    if (clearPwaIconMaskable && !pwaIconMaskableFile)
+      formDataToSend.append('pwa_icon_maskable_clear', 'true');
 
     if (isEditing && branding && branding.id) {
-      // Para update sin cambios de archivos, usar JSON
       if (!hasFileChanges) {
         const updateData: UpdateBrandingConfigDTO = {
           company_name: formData.company_name,
@@ -293,12 +346,15 @@ export const BrandingFormModal = ({ branding, isOpen, onClose }: BrandingFormMod
           primary_color: formData.primary_color,
           secondary_color: formData.secondary_color,
           accent_color: formData.accent_color,
-          app_version: formData.app_version,
+          pwa_name: formData.pwa_name || undefined,
+          pwa_short_name: formData.pwa_short_name || undefined,
+          pwa_description: formData.pwa_description || undefined,
+          pwa_theme_color: formData.pwa_theme_color || undefined,
+          pwa_background_color: formData.pwa_background_color || undefined,
           is_active: formData.is_active,
         };
         await updateMutation.mutateAsync({ id: branding.id, data: updateData });
       } else {
-        // Con archivos o clear, usar FormData
         await updateMutation.mutateAsync({ id: branding.id, data: formDataToSend });
       }
     } else {
@@ -310,7 +366,11 @@ export const BrandingFormModal = ({ branding, isOpen, onClose }: BrandingFormMod
           primary_color: formData.primary_color,
           secondary_color: formData.secondary_color,
           accent_color: formData.accent_color,
-          app_version: formData.app_version,
+          pwa_name: formData.pwa_name || undefined,
+          pwa_short_name: formData.pwa_short_name || undefined,
+          pwa_description: formData.pwa_description || undefined,
+          pwa_theme_color: formData.pwa_theme_color || undefined,
+          pwa_background_color: formData.pwa_background_color || undefined,
         };
         await createMutation.mutateAsync(createData);
       } else {
@@ -346,13 +406,13 @@ export const BrandingFormModal = ({ branding, isOpen, onClose }: BrandingFormMod
       onClose={onClose}
       title={isEditing ? 'Editar Marca' : 'Nueva Configuración de Marca'}
       subtitle="Personaliza la identidad visual del sistema"
-      size="xl"
+      size="2xl"
       footer={footer}
     >
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Información de la empresa */}
+        {/* ==================== INFORMACIÓN DE LA EMPRESA ==================== */}
         <div className="space-y-4">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+          <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2 uppercase tracking-wide">
             <ImageIcon className="h-4 w-4" />
             Información de la Empresa
           </h4>
@@ -371,7 +431,7 @@ export const BrandingFormModal = ({ branding, isOpen, onClose }: BrandingFormMod
               value={formData.company_short_name}
               onChange={(e) => setFormData({ ...formData, company_short_name: e.target.value })}
               placeholder="StrateKaz"
-              helperText="Se usa para diferentes documentos del SGI"
+              helperText="Se usa en documentos del SGI y sidebar"
               required
             />
           </div>
@@ -384,9 +444,9 @@ export const BrandingFormModal = ({ branding, isOpen, onClose }: BrandingFormMod
           />
         </div>
 
-        {/* Logos e Imágenes */}
-        <div className="space-y-4">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+        {/* ==================== LOGOS E IMÁGENES ==================== */}
+        <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-6">
+          <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2 uppercase tracking-wide">
             <Upload className="h-4 w-4" />
             Logos e Imágenes
           </h4>
@@ -421,30 +481,28 @@ export const BrandingFormModal = ({ branding, isOpen, onClose }: BrandingFormMod
               onChange={setFaviconFile}
               previewUrl={branding?.favicon}
               accept="image/png,image/x-icon,image/ico"
-              hint="Icono del navegador (32x32 o 64x64)"
+              hint="Icono del navegador (32x32)"
               onClear={() => setClearFavicon(true)}
               isCleared={clearFavicon}
             />
           </div>
 
-          {/* Imagen de fondo del Login */}
-          <div className="pt-2">
-            <ImageUpload
-              label="Fondo de Login"
-              value={loginBackgroundFile}
-              onChange={setLoginBackgroundFile}
-              previewUrl={branding?.login_background}
-              accept="image/png,image/jpeg,image/webp"
-              hint="Imagen de fondo para la página de login (recomendado: 1920x1080)"
-              onClear={() => setClearLoginBackground(true)}
-              isCleared={clearLoginBackground}
-            />
-          </div>
+          <ImageUpload
+            label="Fondo de Login"
+            value={loginBackgroundFile}
+            onChange={setLoginBackgroundFile}
+            previewUrl={branding?.login_background}
+            accept="image/png,image/jpeg,image/webp"
+            hint="Imagen de fondo para login (1920x1080 recomendado)"
+            onClear={() => setClearLoginBackground(true)}
+            isCleared={clearLoginBackground}
+          />
         </div>
 
-        {/* Paleta de Colores */}
-        <div className="space-y-4">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+        {/* ==================== PALETA DE COLORES ==================== */}
+        <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-6">
+          <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2 uppercase tracking-wide">
+            <Droplet className="h-4 w-4" />
             Paleta de Colores
           </h4>
 
@@ -512,21 +570,27 @@ export const BrandingFormModal = ({ branding, isOpen, onClose }: BrandingFormMod
 
           {/* Preview de colores */}
           <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Vista Previa</p>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Vista Previa
+            </p>
             <div className="flex gap-2">
               <div className="flex-1 text-center">
                 <div
                   className="h-12 rounded-lg shadow-sm"
                   style={{ backgroundColor: formData.primary_color }}
                 />
-                <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 block">Primario</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 block">
+                  Primario
+                </span>
               </div>
               <div className="flex-1 text-center">
                 <div
                   className="h-12 rounded-lg shadow-sm"
                   style={{ backgroundColor: formData.secondary_color }}
                 />
-                <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 block">Secundario</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 block">
+                  Secundario
+                </span>
               </div>
               <div className="flex-1 text-center">
                 <div
@@ -539,27 +603,132 @@ export const BrandingFormModal = ({ branding, isOpen, onClose }: BrandingFormMod
           </div>
         </div>
 
-        {/* Configuración del Sistema */}
-        <div className="space-y-4">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Configuración del Sistema
+        {/* ==================== CONFIGURACIÓN PWA ==================== */}
+        <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-6">
+          <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2 uppercase tracking-wide">
+            <Smartphone className="h-4 w-4" />
+            Configuración PWA (App Móvil)
           </h4>
+
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Configura cómo se muestra la aplicación cuando se instala en dispositivos móviles.
+          </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
-              label="Versión de la Aplicación"
-              value={formData.app_version}
-              onChange={(e) => setFormData({ ...formData, app_version: e.target.value })}
-              placeholder="2.0.0"
-              helperText="Se muestra en el login y footer del sistema"
+              label="Nombre de la App"
+              value={formData.pwa_name}
+              onChange={(e) => setFormData({ ...formData, pwa_name: e.target.value })}
+              placeholder="StrateKaz SGI"
+              helperText="Nombre completo en el manifest.json"
+            />
+
+            <Input
+              label="Nombre Corto (max 12 caracteres)"
+              value={formData.pwa_short_name}
+              onChange={(e) => setFormData({ ...formData, pwa_short_name: e.target.value })}
+              placeholder="StrateKaz"
+              helperText="Se muestra bajo el icono de la app"
+              maxLength={12}
+            />
+          </div>
+
+          <Textarea
+            label="Descripción"
+            value={formData.pwa_description}
+            onChange={(e) => setFormData({ ...formData, pwa_description: e.target.value })}
+            placeholder="Sistema de Gestión Integral para empresas..."
+            helperText="Descripción de la aplicación para tiendas de apps"
+            rows={2}
+          />
+
+          {/* Colores PWA */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Color de Tema (barra de título)
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={formData.pwa_theme_color}
+                  onChange={(e) => setFormData({ ...formData, pwa_theme_color: e.target.value })}
+                  className="w-10 h-10 rounded border border-gray-300 dark:border-gray-600 cursor-pointer"
+                />
+                <Input
+                  value={formData.pwa_theme_color}
+                  onChange={(e) => setFormData({ ...formData, pwa_theme_color: e.target.value })}
+                  placeholder="#16A34A"
+                  className="flex-1"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Color de Fondo (splash screen)
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={formData.pwa_background_color}
+                  onChange={(e) =>
+                    setFormData({ ...formData, pwa_background_color: e.target.value })
+                  }
+                  className="w-10 h-10 rounded border border-gray-300 dark:border-gray-600 cursor-pointer"
+                />
+                <Input
+                  value={formData.pwa_background_color}
+                  onChange={(e) =>
+                    setFormData({ ...formData, pwa_background_color: e.target.value })
+                  }
+                  placeholder="#FFFFFF"
+                  className="flex-1"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Iconos PWA */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <ImageUpload
+              label="Icono 192x192"
+              value={pwaIcon192File}
+              onChange={setPwaIcon192File}
+              previewUrl={branding?.pwa_icon_192}
+              accept="image/png"
+              hint="PNG 192x192 px"
+              onClear={() => setClearPwaIcon192(true)}
+              isCleared={clearPwaIcon192}
+            />
+
+            <ImageUpload
+              label="Icono 512x512"
+              value={pwaIcon512File}
+              onChange={setPwaIcon512File}
+              previewUrl={branding?.pwa_icon_512}
+              accept="image/png"
+              hint="PNG 512x512 px"
+              onClear={() => setClearPwaIcon512(true)}
+              isCleared={clearPwaIcon512}
+            />
+
+            <ImageUpload
+              label="Icono Maskable"
+              value={pwaIconMaskableFile}
+              onChange={setPwaIconMaskableFile}
+              previewUrl={branding?.pwa_icon_maskable}
+              accept="image/png"
+              hint="PNG 512x512 con padding"
+              onClear={() => setClearPwaIconMaskable(true)}
+              isCleared={clearPwaIconMaskable}
             />
           </div>
         </div>
 
-        {/* Estado activo (solo en edición) */}
+        {/* ==================== ESTADO ACTIVO ==================== */}
         {isEditing && (
-          <div className="space-y-1">
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
             <div className="flex items-center gap-3">
               <Switch
                 label="Configuración Activa"
@@ -567,7 +736,7 @@ export const BrandingFormModal = ({ branding, isOpen, onClose }: BrandingFormMod
                 onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
               />
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 ml-14">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-14">
               Solo puede haber una configuración de marca activa
             </p>
           </div>

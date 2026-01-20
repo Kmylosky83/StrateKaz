@@ -262,7 +262,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
       onClose={onClose}
       title={isEditing ? 'Editar Sede' : 'Nueva Sede'}
       subtitle="Configure los datos de la sede o ubicación"
-      size="3xl"
+      size="4xl"
       footer={footer}
     >
       <form onSubmit={handleSubmit} className="space-y-6">

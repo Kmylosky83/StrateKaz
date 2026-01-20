@@ -1,24 +1,21 @@
 /**
- * Header - Enterprise Level con UX Profesional
+ * Header - Enterprise Level Simplificado
  *
  * Diseno optimizado:
- * - ZONA A: Menu toggle + Logo/Marca (fijo)
- * - ZONA B: Tabs contextuales en contenedor ordenado (flex)
- * - ZONA C: Busqueda (icono) + Notificaciones + Tema + Usuario (fijo)
+ * - ZONA A: Menu toggle + Logo/Marca (sin limite de ancho)
+ * - Espacio flexible
+ * - ZONA B: Busqueda + Notificaciones + Tema + Usuario (fijo)
  *
- * Mejoras UX:
- * - Buscador como modal flotante (no ocupa espacio)
- * - Tabs en contenedor visual con scroll si necesario
- * - Usuario con dropdown completo
- * - Todo responsive y ordenado
+ * NOTA: Los tabs de secciones ahora van en el PageHeader de cada pagina,
+ * no en el Header principal. Esto da mas espacio y mejor UX.
  */
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Menu, X, Bell, Moon, Sun, Search } from 'lucide-react';
 import { useThemeStore } from '@/store/themeStore';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
-import { useNotificacionesNoLeidas } from '@/features/audit-system/hooks/useAuditSystem';
-import { useHeaderContext } from '@/contexts/HeaderContext';
-import { HeaderTabs, SearchModal, useSearchModal, UserMenu, Tooltip } from '@/components/common';
+import { useNotificacionesNoLeidas } from '@/features/audit-system/hooks/useNotificaciones';
+import { UserMenu, SearchModal, useSearchModal } from '@/components/common';
 import { cn } from '@/utils/cn';
 import { HEADER_LABELS, ROUTES } from '@/constants';
 
@@ -32,21 +29,9 @@ export const Header = ({ onToggleSidebar, isMobileMenuOpen = false }: HeaderProp
   const { theme, toggleTheme } = useThemeStore();
   const { companyName, companySlogan, getLogoForTheme } = useBrandingConfig();
 
-  // Header Context - tabs dinamicos
-  const {
-    sections,
-    activeSection,
-    onSectionChange,
-    sectionsLoading,
-    moduleColor,
-    searchEnabled,
-    searchPlaceholder,
-    searchQuery,
-    onSearchChange,
-  } = useHeaderContext();
-
-  // Search modal
+  // Estado de busqueda global
   const searchModal = useSearchModal();
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Notificaciones no leidas
   const { data: notificacionesNoLeidas } = useNotificacionesNoLeidas();
@@ -58,11 +43,11 @@ export const Header = ({ onToggleSidebar, isMobileMenuOpen = false }: HeaderProp
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 h-16">
-        <div className="h-full px-2 sm:px-4 flex items-center gap-3">
+        <div className="h-full px-2 sm:px-4 flex items-center justify-between">
           {/* ═══════════════════════════════════════════════════════════════ */}
-          {/* ZONA A: Menu + Logo/Marca */}
+          {/* ZONA A: Menu + Logo/Marca (sin limite de ancho) */}
           {/* ═══════════════════════════════════════════════════════════════ */}
-          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* Menu Toggle */}
             <button
               onClick={onToggleSidebar}
@@ -90,21 +75,19 @@ export const Header = ({ onToggleSidebar, isMobileMenuOpen = false }: HeaderProp
               </div>
             </button>
 
-            {/* Logo + Nombre */}
+            {/* Logo + Nombre (sin limite de ancho) */}
             <Link to={ROUTES.DASHBOARD} className="flex items-center gap-2">
               <img
                 src={currentLogo}
                 alt={companyName}
                 className="h-9 w-auto object-contain flex-shrink-0"
               />
-              <div className="hidden lg:flex flex-col justify-center max-w-[200px] xl:max-w-[280px]">
-                <Tooltip content={companyName} disabled={companyName.length <= 35}>
-                  <h1 className="text-sm font-bold text-gray-900 dark:text-white leading-tight truncate">
-                    {companyName}
-                  </h1>
-                </Tooltip>
+              <div className="hidden lg:flex flex-col justify-center">
+                <h1 className="text-sm font-bold text-gray-900 dark:text-white leading-tight">
+                  {companyName}
+                </h1>
                 {companySlogan && (
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate hidden xl:block">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 hidden xl:block">
                     {companySlogan}
                   </p>
                 )}
@@ -113,37 +96,21 @@ export const Header = ({ onToggleSidebar, isMobileMenuOpen = false }: HeaderProp
           </div>
 
           {/* ═══════════════════════════════════════════════════════════════ */}
-          {/* ZONA B: Tabs Contextuales */}
-          {/* ═══════════════════════════════════════════════════════════════ */}
-          <div className="flex-1 flex items-center justify-center min-w-0 px-2">
-            <HeaderTabs
-              sections={sections}
-              activeSection={activeSection}
-              onSectionChange={onSectionChange}
-              moduleColor={moduleColor}
-              isLoading={sectionsLoading}
-              className="max-w-full"
-            />
-          </div>
-
-          {/* ═══════════════════════════════════════════════════════════════ */}
-          {/* ZONA C: Acciones */}
+          {/* ZONA B: Busqueda + Notificaciones + Tema + Usuario */}
           {/* ═══════════════════════════════════════════════════════════════ */}
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-            {/* Busqueda (icono que abre modal) */}
-            {searchEnabled && (
-              <button
-                onClick={searchModal.open}
-                className={cn(
-                  'p-2 rounded-lg transition-colors',
-                  'hover:bg-gray-100 dark:hover:bg-gray-700',
-                  'focus:outline-none focus:ring-2 focus:ring-primary-500'
-                )}
-                title={HEADER_LABELS.SEARCH_SHORTCUT}
-              >
-                <Search className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-              </button>
-            )}
+            {/* Busqueda Global */}
+            <button
+              onClick={searchModal.open}
+              className={cn(
+                'p-2 rounded-lg transition-colors',
+                'hover:bg-gray-100 dark:hover:bg-gray-700',
+                'focus:outline-none focus:ring-2 focus:ring-primary-500'
+              )}
+              title={HEADER_LABELS.SEARCH_SHORTCUT}
+            >
+              <Search className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+            </button>
 
             {/* Notificaciones */}
             <button
@@ -202,16 +169,14 @@ export const Header = ({ onToggleSidebar, isMobileMenuOpen = false }: HeaderProp
         </div>
       </header>
 
-      {/* Search Modal (flotante) */}
-      {searchEnabled && (
-        <SearchModal
-          isOpen={searchModal.isOpen}
-          onClose={searchModal.close}
-          placeholder={searchPlaceholder}
-          value={searchQuery}
-          onChange={onSearchChange}
-        />
-      )}
+      {/* Modal de Busqueda Global */}
+      <SearchModal
+        isOpen={searchModal.isOpen}
+        onClose={searchModal.close}
+        value={searchQuery}
+        onChange={setSearchQuery}
+        placeholder="Buscar en todo el sistema..."
+      />
     </>
   );
 };

@@ -161,14 +161,14 @@ export const UnidadesMedidaSection = () => {
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary-100 dark:bg-primary-900/30">
-                <Ruler className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+              <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
+                <Ruler className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-secondary-900 dark:text-secondary-100">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                   Unidades de Medida
                 </h3>
-                <p className="text-sm text-secondary-500 dark:text-secondary-400">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   {unidades.length} unidad{unidades.length !== 1 ? 'es' : ''} configurada
                   {unidades.length !== 1 ? 's' : ''}
                 </p>
@@ -177,7 +177,7 @@ export const UnidadesMedidaSection = () => {
             <div className="flex items-center gap-2">
               {isAdmin && (
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   size="sm"
                   onClick={handleCargarSistema}
                   disabled={cargarSistemaMutation.isPending}
@@ -235,22 +235,22 @@ export const UnidadesMedidaSection = () => {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-secondary-200 dark:border-secondary-700">
-                    <th className="text-left py-3 px-4 text-sm font-medium text-secondary-500 dark:text-secondary-400">
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
                       Código
                     </th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-secondary-500 dark:text-secondary-400">
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
                       Nombre
                     </th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-secondary-500 dark:text-secondary-400">
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
                       Símbolo
                     </th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-secondary-500 dark:text-secondary-400">
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
                       Categoría
                     </th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-secondary-500 dark:text-secondary-400">
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
                       Tipo
                     </th>
-                    <th className="text-right py-3 px-4 text-sm font-medium text-secondary-500 dark:text-secondary-400">
+                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
                       Acciones
                     </th>
                   </tr>
@@ -267,9 +267,9 @@ export const UnidadesMedidaSection = () => {
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-3">
                             <div className="p-1.5 rounded bg-secondary-100 dark:bg-secondary-800">
-                              <CatIcon className="h-4 w-4 text-secondary-600 dark:text-secondary-400" />
+                              <CatIcon className="h-4 w-4 text-secondary-600 dark:text-gray-400" />
                             </div>
-                            <span className="font-mono font-medium text-secondary-900 dark:text-secondary-100">
+                            <span className="font-mono font-medium text-gray-900 dark:text-gray-100">
                               {unidad.codigo}
                             </span>
                           </div>
@@ -282,7 +282,7 @@ export const UnidadesMedidaSection = () => {
                             {unidad.simbolo}
                           </Badge>
                         </td>
-                        <td className="py-3 px-4 text-secondary-600 dark:text-secondary-400">
+                        <td className="py-3 px-4 text-secondary-600 dark:text-gray-400">
                           {unidad.categoria_display || CATEGORIA_LABELS[unidad.categoria]}
                         </td>
                         <td className="py-3 px-4">
@@ -318,7 +318,7 @@ export const UnidadesMedidaSection = () => {
             </div>
           ) : unidades.length > 0 ? (
             <div className="text-center py-12">
-              <p className="text-secondary-500 dark:text-secondary-400">
+              <p className="text-gray-500 dark:text-gray-400">
                 No se encontraron unidades con los filtros aplicados.
               </p>
               <Button
@@ -336,12 +336,12 @@ export const UnidadesMedidaSection = () => {
           ) : (
             <div className="text-center py-12">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-secondary-100 dark:bg-secondary-800 mb-4">
-                <Ruler className="h-8 w-8 text-secondary-400" />
+                <Ruler className="h-8 w-8 text-gray-400" />
               </div>
-              <h3 className="text-lg font-medium text-secondary-900 dark:text-secondary-100 mb-2">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
                 No hay unidades de medida
               </h3>
-              <p className="text-secondary-500 dark:text-secondary-400 mb-4">
+              <p className="text-gray-500 dark:text-gray-400 mb-4">
                 Cargue las unidades del sistema o agregue una nueva unidad personalizada.
               </p>
               <div className="flex justify-center gap-2">

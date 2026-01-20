@@ -12,6 +12,10 @@ export interface Cargo {
   parent_cargo: number | null;
   is_active: boolean;
   subordinados_count: number;
+  /** ID del área a la que pertenece el cargo */
+  area_id?: number;
+  /** Nombre del área a la que pertenece el cargo */
+  area_nombre?: string;
   created_at: string;
   updated_at: string;
 }
@@ -40,6 +44,11 @@ export interface User {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+  // Campos de contexto organizacional
+  /** Nombre de la empresa (desde BrandingConfig) */
+  empresa_nombre?: string;
+  /** Nombre del área del usuario (desde cargo.area) */
+  area_nombre?: string;
   // Campos RBAC para control de acceso
   /** IDs de secciones autorizadas. null = superuser (acceso total), [] = sin acceso */
   section_ids: number[] | null;
@@ -63,7 +72,7 @@ export interface AuthState {
   refreshToken: string | null;
   isAuthenticated: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
-  logout: () => Promise<void>;  // P0-03: Ahora es async para invalidar token en servidor
+  logout: () => Promise<void>; // P0-03: Ahora es async para invalidar token en servidor
   refreshProfile: () => Promise<void>;
   setUser: (user: User) => void;
 }

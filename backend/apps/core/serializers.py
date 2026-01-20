@@ -14,6 +14,9 @@ class CargoSerializer(serializers.ModelSerializer):
 
     level_display = serializers.CharField(source='get_level_display', read_only=True)
     subordinados_count = serializers.SerializerMethodField()
+    # Area info para mostrar en perfil/dropdown
+    area_id = serializers.IntegerField(source='area.id', read_only=True)
+    area_nombre = serializers.CharField(source='area.name', read_only=True)
 
     class Meta:
         model = Cargo
@@ -27,6 +30,8 @@ class CargoSerializer(serializers.ModelSerializer):
             'parent_cargo',
             'is_active',
             'subordinados_count',
+            'area_id',
+            'area_nombre',
             'created_at',
             'updated_at',
         ]
@@ -83,6 +88,10 @@ class UserDetailSerializer(serializers.ModelSerializer):
     section_ids = serializers.SerializerMethodField()
     permission_codes = serializers.SerializerMethodField()
 
+    # Campos de contexto laboral para perfil/dropdown
+    empresa_nombre = serializers.SerializerMethodField()
+    area_nombre = serializers.CharField(source='cargo.area.name', read_only=True)
+
     class Meta:
         model = User
         fields = [
@@ -112,6 +121,9 @@ class UserDetailSerializer(serializers.ModelSerializer):
             # Campos RBAC
             'section_ids',
             'permission_codes',
+            # Campos de contexto laboral
+            'empresa_nombre',
+            'area_nombre',
         ]
         read_only_fields = [
             'id',
@@ -126,6 +138,15 @@ class UserDetailSerializer(serializers.ModelSerializer):
     def get_full_name(self, obj):
         """Retorna nombre completo del usuario"""
         return obj.get_full_name() or obj.username
+
+    def get_empresa_nombre(self, obj):
+        """
+        Retorna el nombre de la empresa desde BrandingConfig (singleton).
+        En modelo multi-instancia, cada BD tiene su propia configuración.
+        """
+        from .models import BrandingConfig
+        config = BrandingConfig.objects.first()
+        return config.company_name if config else None
 
     def get_section_ids(self, obj):
         """
@@ -511,6 +532,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 class LogoutSerializer(serializers.Serializer):
     """
     Serializer para logout (P0-03) - Invalida el refresh token
+    MS-002-A: También invalida la sesión de usuario asociada
     """
     refresh = serializers.CharField(
         help_text="Refresh token a invalidar"
@@ -522,10 +544,28 @@ class LogoutSerializer(serializers.Serializer):
         from rest_framework_simplejwt.exceptions import TokenError
         try:
             self.token = RefreshToken(value)
+            # Guardar el valor original para invalidar la sesión
+            self._refresh_token_value = value
         except TokenError as e:
             raise serializers.ValidationError(str(e))
         return value
 
     def save(self, **kwargs):
-        """Agrega el token a la blacklist"""
+        """Agrega el token a la blacklist y cierra la sesión de usuario"""
+        import logging
+        from apps.core.models import UserSession
+
+        logger = logging.getLogger('security')
+
+        # MS-002-A: Invalidar la sesión de usuario
+        try:
+            if hasattr(self, '_refresh_token_value'):
+                invalidated = UserSession.invalidate_by_token(self._refresh_token_value)
+                if invalidated:
+                    logger.info("MS-002-A: Sesión de usuario invalidada en logout")
+        except Exception as e:
+            # No fallar el logout si hay error en la sesión
+            logger.warning(f"MS-002-A: Error invalidando sesión en logout: {e}")
+
+        # Agregar token a blacklist
         self.token.blacklist()

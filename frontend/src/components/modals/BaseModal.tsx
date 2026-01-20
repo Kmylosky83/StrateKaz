@@ -220,31 +220,30 @@ export const BaseModal = ({
               )}
             </div>
 
-            {/* Body - MS-002: Con indicadores de scroll (usando Design System: secondary) */}
-            <div className="relative flex-1 min-h-0">
+            {/* Body - Con scroll */}
+            <div
+              ref={contentRef}
+              onScroll={updateScrollIndicators}
+              className="flex-1 overflow-y-auto p-4 sm:p-6 relative"
+              style={{ minHeight: 0 }}
+            >
               {/* Sombra superior (indica más contenido arriba) */}
               <div
                 className={`
-                  absolute top-0 left-0 right-0 h-4 z-10
-                  bg-gradient-to-b from-secondary-200/80 dark:from-secondary-700/80 to-transparent
+                  sticky top-0 left-0 right-0 h-4 -mt-4 -mx-4 sm:-mx-6 z-10
+                  bg-gradient-to-b from-white/90 dark:from-gray-800/90 to-transparent
                   pointer-events-none transition-opacity duration-200
                   ${scrollState.canScrollUp ? 'opacity-100' : 'opacity-0'}
                 `}
               />
 
-              <div
-                ref={contentRef}
-                onScroll={updateScrollIndicators}
-                className="h-full overflow-y-auto p-4 sm:p-6"
-              >
-                {children}
-              </div>
+              {children}
 
               {/* Sombra inferior (indica más contenido abajo) */}
               <div
                 className={`
-                  absolute bottom-0 left-0 right-0 h-4 z-10
-                  bg-gradient-to-t from-secondary-200/80 dark:from-secondary-700/80 to-transparent
+                  sticky bottom-0 left-0 right-0 h-4 -mb-4 -mx-4 sm:-mx-6 z-10
+                  bg-gradient-to-t from-white/90 dark:from-gray-800/90 to-transparent
                   pointer-events-none transition-opacity duration-200
                   ${scrollState.canScrollDown ? 'opacity-100' : 'opacity-0'}
                 `}

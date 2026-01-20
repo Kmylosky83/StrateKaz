@@ -200,3 +200,7 @@ export type { SectionHeaderProps } from './SectionHeader';
 // Generic Section Fallback (MM-002: for unimplemented sections)
 export { GenericSectionFallback } from './GenericSectionFallback';
 export type { GenericSectionFallbackProps } from './GenericSectionFallback';
+
+// Action Buttons (RBAC-aware action buttons)
+export { ActionButtons } from './ActionButtons';
+export type { ActionButtonsProps } from './ActionButtons';

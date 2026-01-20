@@ -83,10 +83,22 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
+      version: 2, // Incrementar al cambiar estructura de User
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
+      // Migración: limpia datos antiguos para forzar re-login
+      migrate: (persistedState, version) => {
+        if (version < 2) {
+          // Versiones anteriores: forzar re-login para obtener nuevos campos
+          return {
+            user: null,
+            isAuthenticated: false,
+          };
+        }
+        return persistedState as { user: null; isAuthenticated: boolean };
+      },
     }
   )
 );

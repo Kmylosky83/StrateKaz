@@ -6,9 +6,12 @@ from .views import TipoNotificacionViewSet, NotificacionViewSet, PreferenciaNoti
 app_name = 'centro_notificaciones'
 
 router = DefaultRouter()
+# IMPORTANTE: Registrar rutas específicas ANTES de la ruta vacía
+# para evitar que '' capture todas las peticiones
 router.register(r'tipos', TipoNotificacionViewSet, basename='tipos')
-router.register(r'', NotificacionViewSet, basename='notificaciones')
 router.register(r'preferencias', PreferenciaNotificacionViewSet, basename='preferencias')
 router.register(r'masivas', NotificacionMasivaViewSet, basename='masivas')
+# Ruta vacía al final - captura /api/audit/notificaciones/
+router.register(r'', NotificacionViewSet, basename='notificaciones')
 
 urlpatterns = [path('', include(router.urls))]

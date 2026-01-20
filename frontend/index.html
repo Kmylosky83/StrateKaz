@@ -5,24 +5,28 @@
     <link rel="icon" id="dynamic-favicon" type="image/png" href="/logo-dark.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
-    <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#ec268f" />
+    <!-- MB-001: PWA Manifest dinámico desde BD -->
+    <!-- El manifest se carga desde el backend para reflejar el branding de cada empresa -->
+    <link rel="manifest" id="dynamic-manifest" href="/api/core/branding/manifest/" crossorigin="use-credentials" />
+
+    <!-- PWA Meta Tags - Valores iniciales, se actualizan dinámicamente via useDynamicTheme -->
+    <meta name="theme-color" id="meta-theme-color" content="#16A34A" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="StrateKaz" />
-    <link rel="apple-touch-icon" href="/pwa-192x192.png" />
+    <meta name="apple-mobile-web-app-title" id="meta-app-title" content="Sistema de Gestión" />
+    <link rel="apple-touch-icon" id="apple-touch-icon" href="/pwa-192x192.png" />
 
-    <!-- SEO -->
-    <title>StrateKaz | Consultoría 4.0</title>
-    <meta name="description" content="Sistema Integrado de Gestión Empresarial - SST, PESV, ISO, Calidad, HSEQ" />
+    <!-- SEO - Valores iniciales, se actualizan dinámicamente -->
+    <title id="dynamic-title">Sistema de Gestión Integral</title>
+    <meta name="description" id="meta-description" content="Sistema Integrado de Gestión Empresarial - SST, PESV, ISO, Calidad, HSEQ" />
     <meta name="keywords" content="ERP, SST, PESV, ISO, Consultoría, Gestión, Colombia" />
 
-    <!-- Open Graph -->
-    <meta property="og:title" content="StrateKaz - Sistema de Gestión Integral" />
-    <meta property="og:description" content="ERP de Consultoría 4.0 para empresas colombianas" />
+    <!-- Open Graph - Se actualizan dinámicamente -->
+    <meta property="og:title" id="og-title" content="Sistema de Gestión Integral" />
+    <meta property="og:description" id="og-description" content="ERP de Consultoría 4.0 para empresas colombianas" />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="/pwa-512x512.png" />
+    <meta property="og:image" id="og-image" content="/pwa-512x512.png" />
   </head>
   <body>
     <div id="root"></div>

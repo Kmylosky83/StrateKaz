@@ -79,6 +79,7 @@ class UserViewSet(viewsets.ModelViewSet):
         'comerciales': 'can_view',
         'stats': 'can_view',
         'me': 'can_view', # Usually allowany or authenticated, but for now map to view
+        'update_profile': 'can_view', # Self-service action, user updates own profile
     }
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['cargo', 'cargo__code', 'is_active', 'is_staff', 'document_type']
@@ -216,11 +217,51 @@ class UserViewSet(viewsets.ModelViewSet):
     def me(self, request):
         """
         Obtener información del usuario actual
-        
+
         GET /api/core/users/me/
         """
         serializer = UserDetailSerializer(request.user)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['put', 'patch'])
+    def update_profile(self, request):
+        """
+        Actualizar perfil del usuario autenticado
+
+        PUT/PATCH /api/core/users/update_profile/
+        {
+            "first_name": "Juan",
+            "last_name": "Pérez",
+            "email": "juan.perez@empresa.com",
+            "phone": "+57 300 123 4567"
+        }
+
+        Campos editables: first_name, last_name, email, phone
+        Solo el usuario puede editar su propio perfil.
+        """
+        user = request.user
+
+        # Solo permitir actualizar campos específicos de perfil
+        allowed_fields = ['first_name', 'last_name', 'email', 'phone']
+        data = {k: v for k, v in request.data.items() if k in allowed_fields}
+
+        # Usar serializer de actualización
+        serializer = UserUpdateSerializer(user, data=data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+
+            # Log de auditoría
+            from apps.core.utils.audit_logging import log_user_updated
+            log_user_updated(request, user, self_update=True)
+
+            # Retornar perfil actualizado completo
+            return Response(
+                UserDetailSerializer(user).data,
+                status=status.HTTP_200_OK
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['get'])
     def stats(self, request):

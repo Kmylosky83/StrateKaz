@@ -76,8 +76,10 @@ export const UserMenu = ({ compact = false, className }: UserMenuProps) => {
   // Solo el primer nombre para el saludo compacto
   const firstName = user?.first_name || user?.username || USER_MENU_LABELS.DEFAULT_USER;
 
-  // Cargo
+  // Cargo y contexto organizacional
   const cargoName = user?.cargo?.name || USER_MENU_LABELS.DEFAULT_CARGO;
+  const areaName = user?.area_nombre || user?.cargo?.area_nombre;
+  const empresaName = user?.empresa_nombre;
 
   return (
     <div ref={menuRef} className={cn('relative', className)}>
@@ -158,6 +160,23 @@ export const UserMenu = ({ compact = false, className }: UserMenuProps) => {
                 )}
               </div>
             </div>
+            {/* Info organizacional */}
+            {(empresaName || areaName) && (
+              <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 space-y-1">
+                {empresaName && (
+                  <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                    <span className="font-medium text-gray-600 dark:text-gray-300">Empresa:</span>
+                    <span className="truncate">{empresaName}</span>
+                  </div>
+                )}
+                {areaName && (
+                  <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                    <span className="font-medium text-gray-600 dark:text-gray-300">Área:</span>
+                    <span className="truncate">{areaName}</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Menu Items */}

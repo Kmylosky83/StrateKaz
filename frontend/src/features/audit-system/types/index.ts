@@ -5,7 +5,12 @@
 
 // ==================== LOGS SISTEMA ====================
 
-export type TipoEventoAcceso = 'login' | 'logout' | 'login_fallido' | 'sesion_expirada' | 'cambio_password';
+export type TipoEventoAcceso =
+  | 'login'
+  | 'logout'
+  | 'login_fallido'
+  | 'sesion_expirada'
+  | 'cambio_password';
 export type AccionCambio = 'crear' | 'modificar' | 'eliminar';
 
 export interface ConfiguracionAuditoria {
@@ -68,82 +73,9 @@ export interface LogConsulta {
 }
 
 // ==================== CENTRO NOTIFICACIONES ====================
-
-export type CategoriaNotificacion = 'sistema' | 'tarea' | 'alerta' | 'recordatorio' | 'aprobacion';
-export type PrioridadNotificacion = 'baja' | 'normal' | 'alta' | 'urgente';
-
-export interface TipoNotificacion {
-  id: number;
-  empresa: number;
-  codigo: string;
-  nombre: string;
-  categoria: CategoriaNotificacion;
-  plantilla_titulo: string;
-  plantilla_cuerpo: string;
-  variables_disponibles: string[];
-  enviar_email: boolean;
-  enviar_push: boolean;
-  enviar_sms: boolean;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Notificacion {
-  id: number;
-  usuario: number;
-  usuario_nombre?: string;
-  tipo_notificacion: number;
-  tipo_notificacion_nombre?: string;
-  categoria: CategoriaNotificacion;
-  titulo: string;
-  cuerpo: string;
-  prioridad: PrioridadNotificacion;
-  url_accion?: string;
-  metadata?: Record<string, unknown>;
-  leida: boolean;
-  fecha_lectura?: string;
-  archivada: boolean;
-  enviada_email: boolean;
-  enviada_push: boolean;
-  enviada_sms: boolean;
-  created_at: string;
-}
-
-export interface PreferenciaNotificacion {
-  id: number;
-  usuario: number;
-  categoria: CategoriaNotificacion;
-  recibir_email: boolean;
-  recibir_push: boolean;
-  recibir_sms: boolean;
-  no_molestar_inicio?: string;
-  no_molestar_fin?: string;
-  frecuencia_resumen: 'tiempo_real' | 'diario' | 'semanal' | 'nunca';
-  created_at: string;
-  updated_at: string;
-}
-
-export interface NotificacionMasiva {
-  id: number;
-  empresa: number;
-  titulo: string;
-  mensaje: string;
-  prioridad: PrioridadNotificacion;
-  destinatarios: 'todos' | 'por_rol' | 'por_area' | 'especificos';
-  roles_destinatarios?: string[];
-  areas_destinatarias?: number[];
-  usuarios_destinatarios?: number[];
-  enviar_email: boolean;
-  enviar_push: boolean;
-  enviada: boolean;
-  fecha_envio?: string;
-  total_destinatarios?: number;
-  total_enviadas?: number;
-  creado_por: number;
-  creado_por_nombre?: string;
-  created_at: string;
-}
+// Los tipos de notificaciones están definidos en ./notificaciones.types.ts
+// Importar desde ahí: import { ... } from './notificaciones.types';
+export * from './notificaciones.types';
 
 // ==================== CONFIG ALERTAS ====================
 

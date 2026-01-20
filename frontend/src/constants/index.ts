@@ -4,3 +4,4 @@
 
 export * from './permissions';
 export * from './ui-labels';
+export * from './brand';

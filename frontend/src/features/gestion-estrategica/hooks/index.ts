@@ -68,3 +68,8 @@ export * from './useGestionDocumental';
 // PLANIFICACION DEL SISTEMA (migrado de HSEQ a N1)
 // ============================================================================
 export * from './usePlanificacionSistema';
+
+// ============================================================================
+// NORMAS ISO
+// ============================================================================
+export * from './useNormasISO';

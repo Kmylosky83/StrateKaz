@@ -34,6 +34,11 @@ def log_user_restored(request, user):
     security_logger.info(f"USER_RESTORED: {user.username} (ID:{user.id}) by {_user_str(request.user)} - IP: {get_client_ip(request)}")
 
 
+def log_user_updated(request, user, self_update=False):
+    by = "self" if self_update else f"by {_user_str(request.user)}"
+    security_logger.info(f"USER_UPDATED: {user.username} (ID:{user.id}) - {by} - IP: {get_client_ip(request)}")
+
+
 def log_password_changed(request, user, self_change=False):
     by = "self" if self_change else f"by {_user_str(request.user)}"
     security_logger.warning(f"PASSWORD_CHANGED: {user.username} (ID:{user.id}) - {by} - IP: {get_client_ip(request)}")
@@ -82,3 +87,34 @@ def log_document_approved(request, doc, doc_type):
 def log_signature_revoked(request, sig, reason=None):
     r = f" - Reason: {reason}" if reason else ""
     security_logger.warning(f"SIGNATURE_REVOKED: ID:{sig.id} by {_user_str(request.user)} - IP: {get_client_ip(request)}{r}")
+
+
+# TWO FACTOR AUTHENTICATION OPERATIONS
+def log_2fa_enabled(request, user):
+    """Log cuando un usuario habilita 2FA"""
+    security_logger.warning(f"2FA_ENABLED: user '{user.username}' (ID:{user.id}) - IP: {get_client_ip(request)}")
+
+
+def log_2fa_disabled(request, user):
+    """Log cuando un usuario deshabilita 2FA"""
+    security_logger.warning(f"2FA_DISABLED: user '{user.username}' (ID:{user.id}) - IP: {get_client_ip(request)}")
+
+
+def log_2fa_verified(request, user, method='totp'):
+    """Log de verificación exitosa de 2FA durante login"""
+    security_logger.info(f"2FA_VERIFIED: user '{user.username}' (ID:{user.id}) via {method.upper()} - IP: {get_client_ip(request)}")
+
+
+def log_2fa_failed(request, username, reason='invalid_code'):
+    """Log de intento fallido de 2FA"""
+    security_logger.warning(f"2FA_FAILED: user '{username}' - Reason: {reason} - IP: {get_client_ip(request)}")
+
+
+def log_backup_codes_generated(request, user):
+    """Log cuando se generan nuevos códigos de respaldo"""
+    security_logger.info(f"2FA_BACKUP_CODES_GENERATED: user '{user.username}' (ID:{user.id}) - IP: {get_client_ip(request)}")
+
+
+def log_backup_code_used(request, user):
+    """Log cuando se usa un código de respaldo"""
+    security_logger.warning(f"2FA_BACKUP_CODE_USED: user '{user.username}' (ID:{user.id}) - IP: {get_client_ip(request)}")

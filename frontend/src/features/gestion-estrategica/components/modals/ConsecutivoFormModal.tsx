@@ -268,7 +268,7 @@ export const ConsecutivoFormModal = ({
           {previewFormato && (
             <div className="p-4 bg-secondary-50 dark:bg-secondary-800/50 rounded-lg border border-secondary-200 dark:border-secondary-700">
               <div className="flex items-center gap-2 mb-2">
-                <Eye className="h-4 w-4 text-secondary-500" />
+                <Eye className="h-4 w-4 text-gray-500" />
                 <span className="text-sm font-medium text-secondary-700 dark:text-secondary-300">
                   Vista Previa
                 </span>

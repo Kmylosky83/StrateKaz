@@ -34,6 +34,17 @@ from .viewsets_config import (
     TabSectionViewSet,
     BrandingConfigViewSet,
 )
+# ViewSet de Sesiones de Usuario (MS-002-A)
+from .viewsets_session import UserSessionViewSet
+# Views de Two Factor Authentication (2FA)
+from .views.two_factor_views import (
+    TwoFactorStatusView,
+    TwoFactorSetupView,
+    TwoFactorEnableView,
+    TwoFactorDisableView,
+    TwoFactorVerifyView,
+    TwoFactorRegenerateBackupCodesView,
+)
 
 app_name = 'core'
 
@@ -62,6 +73,9 @@ router.register(r'system-modules', SystemModuleViewSet, basename='system-module'
 router.register(r'module-tabs', ModuleTabViewSet, basename='module-tab')
 router.register(r'tab-sections', TabSectionViewSet, basename='tab-section')
 router.register(r'branding', BrandingConfigViewSet, basename='branding')
+
+# Endpoints Sesiones de Usuario (MS-002-A)
+router.register(r'sessions', UserSessionViewSet, basename='session')
 
 # ═══════════════════════════════════════════════════════════════════════════
 # REGISTRO CONDICIONAL: Endpoints LEGACY que dependen de apps externas
@@ -112,6 +126,14 @@ urlpatterns = [
     path('test-celery/', test_celery_task, name='test_celery_task'),
     path('task-status/<str:task_id>/', task_status, name='task_status'),
     path('revoke-task/<str:task_id>/', revoke_task, name='revoke_task'),
+
+    # Endpoints Two Factor Authentication (2FA)
+    path('2fa/status/', TwoFactorStatusView.as_view(), name='2fa-status'),
+    path('2fa/setup/', TwoFactorSetupView.as_view(), name='2fa-setup'),
+    path('2fa/enable/', TwoFactorEnableView.as_view(), name='2fa-enable'),
+    path('2fa/disable/', TwoFactorDisableView.as_view(), name='2fa-disable'),
+    path('2fa/verify/', TwoFactorVerifyView.as_view(), name='2fa-verify'),
+    path('2fa/regenerate-backup-codes/', TwoFactorRegenerateBackupCodesView.as_view(), name='2fa-regenerate-backup-codes'),
 
     # Incluir rutas del router
     path('', include(router.urls)),

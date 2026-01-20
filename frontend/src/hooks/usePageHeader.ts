@@ -17,7 +17,7 @@
  * });
  * ```
  */
-import { useEffect, useCallback, useMemo } from 'react';
+import { useEffect, useCallback, useMemo, useRef } from 'react';
 import { useHeaderContext } from '@/contexts/HeaderContext';
 import { useTabSections } from '@/features/gestion-estrategica/hooks/useModules';
 import type { ReactNode } from 'react';
@@ -98,18 +98,49 @@ export const usePageHeader = (options: UsePageHeaderOptions = {}): UsePageHeader
   // Cargar secciones desde API si se proporcionan moduleCode y tabCode
   const { sections, isLoading } = useTabSections(moduleCode || '', tabCode || '');
 
+  // Ref para rastrear si ya se inicializó la sección activa
+  const initializedRef = useRef(false);
+  // Ref para rastrear el último moduleCode+tabCode para resetear cuando cambian
+  const lastModuleTabRef = useRef<string>('');
+  // Ref para rastrear el último isLoading para evitar llamadas innecesarias
+  const lastLoadingRef = useRef<boolean | null>(null);
+  // Ref para rastrear las secciones por valor (evitar actualizaciones si son iguales)
+  const lastSectionsKeyRef = useRef<string>('');
+
   // Configurar secciones cuando se cargan
   useEffect(() => {
     if (moduleCode && tabCode) {
-      setSectionsLoading(isLoading);
+      const currentKey = `${moduleCode}:${tabCode}`;
+
+      // Si cambió el módulo/tab, resetear el flag de inicialización
+      if (lastModuleTabRef.current !== currentKey) {
+        initializedRef.current = false;
+        lastModuleTabRef.current = currentKey;
+        lastLoadingRef.current = null;
+        lastSectionsKeyRef.current = '';
+      }
+
+      // Solo actualizar loading si cambió
+      if (lastLoadingRef.current !== isLoading) {
+        lastLoadingRef.current = isLoading;
+        setSectionsLoading(isLoading);
+      }
 
       if (!isLoading && sections.length > 0) {
-        setSections(sections);
+        // Crear una key basada en los códigos de sección para comparar por valor
+        const sectionsKey = sections.map((s) => s.code).join(',');
 
-        // Establecer seccion inicial si no hay una activa
-        if (!activeSection || !sections.find((s) => s.code === activeSection)) {
+        // Solo actualizar secciones si realmente cambiaron
+        if (lastSectionsKeyRef.current !== sectionsKey) {
+          lastSectionsKeyRef.current = sectionsKey;
+          setSections(sections);
+        }
+
+        // Establecer sección inicial SOLO si no se ha inicializado aún
+        if (!initializedRef.current) {
           const initial = initialSection || sections[0]?.code || '';
           setActiveSection(initial);
+          initializedRef.current = true;
         }
       }
     }
@@ -119,7 +150,6 @@ export const usePageHeader = (options: UsePageHeaderOptions = {}): UsePageHeader
     sections,
     isLoading,
     initialSection,
-    activeSection,
     setSections,
     setSectionsLoading,
     setActiveSection,

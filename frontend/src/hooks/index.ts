@@ -46,3 +46,17 @@ export {
   type UsePageHeaderOptions,
   type UsePageHeaderReturn,
 } from './usePageHeader';
+export {
+  usePageSections,
+  type UsePageSectionsOptions,
+  type UsePageSectionsReturn,
+} from './usePageSections';
+
+// Permissions (RBAC)
+export {
+  usePermissions,
+  useIsSuperAdmin,
+  useCurrentCargo,
+  useIsCoordinationOrAbove,
+  useIsDirection,
+} from './usePermissions';

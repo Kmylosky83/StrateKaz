@@ -319,7 +319,7 @@ export const UnidadMedidaFormModal = ({ unidad, isOpen, onClose }: UnidadMedidaF
               </div>
 
               {watch('unidad_base') && (
-                <p className="text-sm text-secondary-500 dark:text-secondary-400">
+                <p className="text-sm text-gray-500 dark:text-secondary-400">
                   1 {watch('codigo') || 'unidad'} = {watch('factor_conversion') || '1'}{' '}
                   {unidadesBaseDisponibles.find((u) => u.value === watch('unidad_base'))?.codigo ||
                     'base'}

@@ -19,6 +19,15 @@ from .auth_views import (
     RateLimitedTokenRefreshView,
 )
 
+from .two_factor_views import (
+    TwoFactorStatusView,
+    TwoFactorSetupView,
+    TwoFactorEnableView,
+    TwoFactorDisableView,
+    TwoFactorVerifyView,
+    TwoFactorRegenerateBackupCodesView,
+)
+
 __all__ = [
     # Security views
     'ratelimit_error_view',
@@ -35,4 +44,11 @@ __all__ = [
     # Auth views with rate limiting
     'RateLimitedTokenObtainPairView',
     'RateLimitedTokenRefreshView',
+    # Two Factor Authentication views
+    'TwoFactorStatusView',
+    'TwoFactorSetupView',
+    'TwoFactorEnableView',
+    'TwoFactorDisableView',
+    'TwoFactorVerifyView',
+    'TwoFactorRegenerateBackupCodesView',
 ]

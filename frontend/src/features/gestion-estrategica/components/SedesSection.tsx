@@ -2,13 +2,15 @@
  * Sección de Sedes y Ubicaciones
  *
  * Gestión de sedes, plantas, sucursales y ubicaciones de la empresa.
- * Sigue el patrón de BrandingSection del Design System.
  *
- * Usa Design System:
- * - Card para contenedor
- * - Button para acciones
- * - Badge para estados
- * - Table para listado
+ * Vista 2: Lista CRUD (Table View)
+ * - Section Header por fuera del Card (icono + título + contador + botón crear)
+ * - Data Table en Card con acciones por fila
+ * - Empty State con CTA
+ * - Modal de formulario para crear/editar
+ * - ConfirmDialog para eliminar
+ *
+ * @see docs/desarrollo/CATALOGO_VISTAS_UI.md
  */
 import { useState } from 'react';
 import { Plus, Edit, Trash2, MapPin, Building2, Star, CheckCircle2 } from 'lucide-react';
@@ -78,33 +80,34 @@ export const SedesSection = () => {
 
   return (
     <>
-      <Card>
-        <div className="p-6">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
-                <MapPin className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  Sedes y Ubicaciones
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {sedes.length} sede{sedes.length !== 1 ? 's' : ''} configurada{sedes.length !== 1 ? 's' : ''}
-                </p>
-              </div>
+      <div className="space-y-6">
+        {/* Section Header - Por fuera del Card */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
+              <MapPin className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             </div>
-            {canDo(Modules.GESTION_ESTRATEGICA, Sections.SEDES, 'create') && (
-              <Button variant="primary" size="sm" onClick={handleAdd}>
-                <Plus className="h-4 w-4 mr-2" />
-                Agregar Sede
-              </Button>
-            )}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                Sedes y Ubicaciones
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {sedes.length} sede{sedes.length !== 1 ? 's' : ''} configurada
+                {sedes.length !== 1 ? 's' : ''}
+              </p>
+            </div>
           </div>
+          {canDo(Modules.GESTION_ESTRATEGICA, Sections.SEDES, 'create') && (
+            <Button variant="primary" size="sm" onClick={handleAdd}>
+              <Plus className="h-4 w-4 mr-2" />
+              Agregar Sede
+            </Button>
+          )}
+        </div>
 
-          {/* Tabla de sedes */}
-          {sedes.length > 0 ? (
+        {/* Data Table Card */}
+        {sedes.length > 0 ? (
+          <Card>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -191,17 +194,21 @@ export const SedesSection = () => {
                             module={Modules.GESTION_ESTRATEGICA}
                             section={Sections.SEDES}
                             onEdit={() => handleEdit(sede)}
-                            onDelete={!sede.es_sede_principal ? () => handleDeleteClick(sede) : undefined}
+                            onDelete={
+                              !sede.es_sede_principal ? () => handleDeleteClick(sede) : undefined
+                            }
                             size="sm"
                             customActions={
-                              !sede.es_sede_principal && sede.is_active ? [
-                                {
-                                  key: 'set-principal',
-                                  label: 'Establecer como principal',
-                                  icon: <Star className="h-4 w-4" />,
-                                  onClick: () => handleSetPrincipal(sede),
-                                }
-                              ] : []
+                              !sede.es_sede_principal && sede.is_active
+                                ? [
+                                    {
+                                      key: 'set-principal',
+                                      label: 'Establecer como principal',
+                                      icon: <Star className="h-4 w-4" />,
+                                      onClick: () => handleSetPrincipal(sede),
+                                    },
+                                  ]
+                                : []
                             }
                           />
                         </div>
@@ -211,7 +218,10 @@ export const SedesSection = () => {
                 </tbody>
               </table>
             </div>
-          ) : (
+          </Card>
+        ) : (
+          /* Empty State */
+          <Card>
             <div className="text-center py-12">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
                 <Building2 className="h-8 w-8 text-gray-400" />
@@ -229,9 +239,9 @@ export const SedesSection = () => {
                 </Button>
               )}
             </div>
-          )}
-        </div>
-      </Card>
+          </Card>
+        )}
+      </div>
 
       {/* Modal de formulario */}
       <SedeFormModal

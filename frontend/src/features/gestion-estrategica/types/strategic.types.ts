@@ -12,6 +12,19 @@ export type { PaginatedResponse };
 
 export type BSCPerspective = 'FINANCIERA' | 'CLIENTES' | 'PROCESOS' | 'APRENDIZAJE';
 
+/**
+ * Normas y Sistemas de Gestión aplicables
+ *
+ * Incluye normas ISO internacionales, sistemas colombianos
+ * y otras normativas aplicables a la organización:
+ *
+ * - ISO 9001:2015 (Sistema de Gestión de Calidad)
+ * - ISO 14001:2015 (Sistema de Gestión Ambiental)
+ * - ISO 45001:2018 (Sistema de Gestión de SST)
+ * - ISO 27001:2013 (Seguridad de la Información)
+ * - PESV (Plan Estratégico de Seguridad Vial - Resolución 40595/2022)
+ * - SG-SST (Sistema de Gestión de Seguridad y Salud en el Trabajo - Decreto 1072/2015)
+ */
 export type ISOStandard =
   | 'ISO_9001'
   | 'ISO_14001'
@@ -21,9 +34,20 @@ export type ISOStandard =
   | 'SG_SST'
   | 'NINGUNO';
 
-export type ObjectiveStatus = 'PENDIENTE' | 'EN_PROGRESO' | 'COMPLETADO' | 'CANCELADO' | 'RETRASADO';
+export type ObjectiveStatus =
+  | 'PENDIENTE'
+  | 'EN_PROGRESO'
+  | 'COMPLETADO'
+  | 'CANCELADO'
+  | 'RETRASADO';
 
-export type ModuleCategory = 'ESTRATEGICO' | 'MOTOR' | 'INTEGRAL' | 'MISIONAL' | 'APOYO' | 'INTELIGENCIA';
+export type ModuleCategory =
+  | 'ESTRATEGICO'
+  | 'MOTOR'
+  | 'INTEGRAL'
+  | 'MISIONAL'
+  | 'APOYO'
+  | 'INTELIGENCIA';
 
 export type PeriodType = 'ANUAL' | 'BIANUAL' | 'TRIANUAL' | 'QUINQUENAL';
 
@@ -35,7 +59,7 @@ export interface CorporateValue {
   name: string;
   description: string;
   icon?: string | null;
-  orden: number;  // Backend identidad/serializers.py usa 'orden'
+  orden: number; // Backend identidad/serializers.py usa 'orden'
   is_active: boolean;
   created_at: string;
   updated_at?: string;
@@ -317,6 +341,15 @@ export interface BrandingConfig {
   secondary_color: string;
   accent_color: string;
   app_version: string;
+  // Campos PWA
+  pwa_name?: string | null;
+  pwa_short_name?: string | null;
+  pwa_description?: string | null;
+  pwa_theme_color?: string | null;
+  pwa_background_color?: string | null;
+  pwa_icon_192?: string | null;
+  pwa_icon_512?: string | null;
+  pwa_icon_maskable?: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -330,8 +363,16 @@ export interface CreateBrandingConfigDTO {
   primary_color?: string;
   secondary_color?: string;
   accent_color?: string;
-  app_version?: string;
-  is_active?: boolean;
+  // Campos PWA
+  pwa_name?: string;
+  pwa_short_name?: string;
+  pwa_description?: string;
+  pwa_theme_color?: string;
+  pwa_background_color?: string;
+  pwa_icon_192?: File;
+  pwa_icon_512?: File;
+  pwa_icon_maskable?: File;
+  // NOTA: app_version se gestiona desde settings centralizados
 }
 
 export interface UpdateBrandingConfigDTO {
@@ -343,7 +384,18 @@ export interface UpdateBrandingConfigDTO {
   primary_color?: string;
   secondary_color?: string;
   accent_color?: string;
-  app_version?: string;
+  // Campos PWA
+  pwa_name?: string;
+  pwa_short_name?: string;
+  pwa_description?: string;
+  pwa_theme_color?: string;
+  pwa_background_color?: string;
+  pwa_icon_192?: File;
+  pwa_icon_512?: File;
+  pwa_icon_maskable?: File;
+  pwa_icon_192_clear?: boolean;
+  pwa_icon_512_clear?: boolean;
+  pwa_icon_maskable_clear?: boolean;
   is_active?: boolean;
 }
 
@@ -657,7 +709,12 @@ export type Proveedor =
   | 'RUNT'
   | 'MINTRANSPORTE';
 
-export type MetodoAutenticacion = 'API_KEY' | 'OAUTH2' | 'BASIC_AUTH' | 'SERVICE_ACCOUNT' | 'CERTIFICATE';
+export type MetodoAutenticacion =
+  | 'API_KEY'
+  | 'OAUTH2'
+  | 'BASIC_AUTH'
+  | 'SERVICE_ACCOUNT'
+  | 'CERTIFICATE';
 
 export type Ambiente = 'PRODUCCION' | 'SANDBOX';
 
@@ -1088,6 +1145,12 @@ export interface GestionCambioFilters {
 
 // ==================== ALCANCE DEL SISTEMA ====================
 
+/**
+ * Alcance de Sistemas de Gestión
+ *
+ * Define el alcance de aplicación de normas y sistemas de gestión
+ * (ISO, PESV, SG-SST, etc.) en la organización.
+ */
 export interface AlcanceSistema {
   id: number;
   identity: number;
@@ -1156,15 +1219,20 @@ export interface AlcanceSistemaFilters {
 // @deprecated - Usar types/policies.types.ts (Sistema Unificado v3.0) en su lugar.
 // Estos tipos legacy serán eliminados en una futura versión.
 
-/** @deprecated Usar Politica de policies.types.ts */
+/**
+ * @deprecated Usar Politica de policies.types.ts
+ *
+ * Políticas específicas asociadas a normas y sistemas de gestión
+ * (ISO, PESV, SG-SST, etc.)
+ */
 export interface PoliticaEspecifica {
   id: number;
   identity: number;
-  norma_iso: number | null;  // FK a NormaISO (dinámico desde BD)
+  norma_iso: number | null; // FK a NormaISO (dinámico desde BD - incluye ISO, PESV, SG-SST, etc.)
   norma_iso_code?: string | null;
   norma_iso_name?: string | null;
-  code: string;  // Código único (POL-SST-001)
-  title: string;  // Título de la política
+  code: string; // Código único (POL-SST-001)
+  title: string; // Título de la política
   content: string;
   version: string;
   status: PoliticaStatus;
@@ -1196,9 +1264,9 @@ export interface PoliticaEspecifica {
 
 export interface CreatePoliticaEspecificaDTO {
   identity: number;
-  norma_iso?: number | null;  // FK a NormaISO (dinámico desde BD)
-  code: string;  // Requerido
-  title: string;  // Requerido
+  norma_iso?: number | null; // FK a NormaISO (dinámico desde BD - incluye ISO, PESV, SG-SST, etc.)
+  code: string; // Requerido
+  title: string; // Requerido
   content: string;
   version: string;
   status?: PoliticaStatus;
@@ -1231,12 +1299,11 @@ export interface UpdatePoliticaEspecificaDTO {
 
 export interface PoliticaEspecificaFilters {
   identity?: number;
-  norma_iso?: number;  // FK a NormaISO
+  norma_iso?: number; // FK a NormaISO (incluye ISO, PESV, SG-SST, etc.)
   status?: PoliticaStatus;
   is_signed?: boolean;
   is_active?: boolean;
 }
-
 
 // ==================== REVISIÓN POR LA DIRECCIÓN ====================
 

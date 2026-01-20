@@ -1,14 +1,15 @@
 /**
  * IntegracionesSection - Sección principal de Integraciones Externas
  *
- * Características:
- * - Tabla de integraciones con estado de salud
- * - Filtros por tipo de servicio y estado
- * - Acciones: probar, editar, toggle, eliminar
- * - Empty state cuando no hay integraciones
- * - Iconos específicos por tipo de servicio
+ * Vista 2: Lista CRUD (Table View)
+ * - Section Header por fuera del Card (icono + título + contador + botón crear)
+ * - Filtros colapsables
+ * - Data Table en Card con acciones por fila
+ * - Empty State con CTA
+ * - Modal de formulario para crear/editar
+ * - ConfirmDialog para eliminar
  *
- * Usa hooks internos siguiendo el patrón de SedesSection
+ * @see docs/desarrollo/CATALOGO_VISTAS_UI.md
  */
 import { useState } from 'react';
 import {
@@ -45,7 +46,11 @@ import {
   useToggleIntegracionStatus,
 } from '../hooks/useStrategic';
 import { IntegracionFormModal } from './modals/IntegracionFormModal';
-import type { IntegracionExternaList, TipoServicio, StatusIndicator } from '../types/strategic.types';
+import type {
+  IntegracionExternaList,
+  TipoServicio,
+  StatusIndicator,
+} from '../types/strategic.types';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -115,11 +120,17 @@ export const IntegracionesSection = () => {
 
   // Estado local
   const [showModal, setShowModal] = useState(false);
-  const [selectedIntegracion, setSelectedIntegracion] = useState<IntegracionExternaList | null>(null);
+  const [selectedIntegracion, setSelectedIntegracion] = useState<IntegracionExternaList | null>(
+    null
+  );
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [integracionToDelete, setIntegracionToDelete] = useState<IntegracionExternaList | null>(null);
+  const [integracionToDelete, setIntegracionToDelete] = useState<IntegracionExternaList | null>(
+    null
+  );
   const [filterTipoServicio, setFilterTipoServicio] = useState<TipoServicio | ''>('');
-  const [filterEstado, setFilterEstado] = useState<'all' | 'active' | 'inactive' | 'healthy' | 'unhealthy'>('all');
+  const [filterEstado, setFilterEstado] = useState<
+    'all' | 'active' | 'inactive' | 'healthy' | 'unhealthy'
+  >('all');
 
   const integraciones = integracionesData?.results || [];
 
@@ -196,71 +207,72 @@ export const IntegracionesSection = () => {
 
   return (
     <>
-      <Card>
-        <div className="p-6">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
-                <Plug className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  Integraciones Externas
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {integraciones.length} integración{integraciones.length !== 1 ? 'es' : ''} configurada{integraciones.length !== 1 ? 's' : ''}
-                </p>
-              </div>
+      <div className="space-y-6">
+        {/* Section Header - Por fuera del Card */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
+              <Plug className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             </div>
-            {canDo(Modules.GESTION_ESTRATEGICA, Sections.INTEGRACIONES, 'create') && (
-              <Button variant="primary" size="sm" onClick={handleAdd}>
-                <Plus className="h-4 w-4 mr-2" />
-                Agregar Integración
-              </Button>
-            )}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                Integraciones Externas
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {integraciones.length} integración{integraciones.length !== 1 ? 'es' : ''}{' '}
+                configurada{integraciones.length !== 1 ? 's' : ''}
+              </p>
+            </div>
           </div>
-
-          {/* Filtros */}
-          {integraciones.length > 0 && (
-            <div className="flex gap-4 mb-6">
-              <Select
-                label=""
-                value={filterTipoServicio}
-                onChange={(e) => setFilterTipoServicio(e.target.value as TipoServicio | '')}
-                options={[
-                  { value: '', label: 'Todos los tipos' },
-                  { value: 'EMAIL', label: 'Email' },
-                  { value: 'FACTURACION', label: 'Facturación' },
-                  { value: 'SMS', label: 'SMS' },
-                  { value: 'WHATSAPP', label: 'WhatsApp' },
-                  { value: 'MAPAS', label: 'Mapas' },
-                  { value: 'ALMACENAMIENTO', label: 'Almacenamiento' },
-                  { value: 'BI', label: 'BI' },
-                  { value: 'PAGOS', label: 'Pagos' },
-                  { value: 'ERP', label: 'ERP' },
-                  { value: 'FIRMA_DIGITAL', label: 'Firma Digital' },
-                ]}
-                className="w-48"
-              />
-              <Select
-                label=""
-                value={filterEstado}
-                onChange={(e) => setFilterEstado(e.target.value as typeof filterEstado)}
-                options={[
-                  { value: 'all', label: 'Todos los estados' },
-                  { value: 'active', label: 'Activos' },
-                  { value: 'inactive', label: 'Inactivos' },
-                  { value: 'healthy', label: 'Saludables' },
-                  { value: 'unhealthy', label: 'Con problemas' },
-                ]}
-                className="w-48"
-              />
-            </div>
+          {canDo(Modules.GESTION_ESTRATEGICA, Sections.INTEGRACIONES, 'create') && (
+            <Button variant="primary" size="sm" onClick={handleAdd}>
+              <Plus className="h-4 w-4 mr-2" />
+              Agregar Integración
+            </Button>
           )}
+        </div>
 
-          {/* Tabla de integraciones */}
-          {filteredIntegraciones.length > 0 ? (
+        {/* Filtros - Por fuera del Card de tabla */}
+        {integraciones.length > 0 && (
+          <div className="flex gap-4">
+            <Select
+              label=""
+              value={filterTipoServicio}
+              onChange={(e) => setFilterTipoServicio(e.target.value as TipoServicio | '')}
+              options={[
+                { value: '', label: 'Todos los tipos' },
+                { value: 'EMAIL', label: 'Email' },
+                { value: 'FACTURACION', label: 'Facturación' },
+                { value: 'SMS', label: 'SMS' },
+                { value: 'WHATSAPP', label: 'WhatsApp' },
+                { value: 'MAPAS', label: 'Mapas' },
+                { value: 'ALMACENAMIENTO', label: 'Almacenamiento' },
+                { value: 'BI', label: 'BI' },
+                { value: 'PAGOS', label: 'Pagos' },
+                { value: 'ERP', label: 'ERP' },
+                { value: 'FIRMA_DIGITAL', label: 'Firma Digital' },
+              ]}
+              className="w-48"
+            />
+            <Select
+              label=""
+              value={filterEstado}
+              onChange={(e) => setFilterEstado(e.target.value as typeof filterEstado)}
+              options={[
+                { value: 'all', label: 'Todos los estados' },
+                { value: 'active', label: 'Activos' },
+                { value: 'inactive', label: 'Inactivos' },
+                { value: 'healthy', label: 'Saludables' },
+                { value: 'unhealthy', label: 'Con problemas' },
+              ]}
+              className="w-48"
+            />
+          </div>
+        )}
+
+        {/* Data Table Card */}
+        {filteredIntegraciones.length > 0 ? (
+          <Card>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -311,7 +323,8 @@ export const IntegracionesSection = () => {
                         </td>
                         <td className="py-3 px-4">
                           <Badge variant="gray" size="sm">
-                            {integracion.tipo_servicio_display || TIPO_SERVICIO_LABELS[integracion.tipo_servicio]}
+                            {integracion.tipo_servicio_display ||
+                              TIPO_SERVICIO_LABELS[integracion.tipo_servicio]}
                           </Badge>
                         </td>
                         <td className="py-3 px-4">
@@ -331,9 +344,9 @@ export const IntegracionesSection = () => {
                         <td className="py-3 px-4 text-gray-600 dark:text-gray-300">
                           {integracion.ultima_verificacion
                             ? formatDistanceToNow(new Date(integracion.ultima_verificacion), {
-                              addSuffix: true,
-                              locale: es,
-                            })
+                                addSuffix: true,
+                                locale: es,
+                              })
                             : 'Nunca'}
                         </td>
                         <td className="py-3 px-4 text-right">
@@ -342,7 +355,9 @@ export const IntegracionesSection = () => {
                               checked={integracion.is_active}
                               onChange={() => handleToggleStatus(integracion.id)}
                               size="sm"
-                              disabled={!canDo(Modules.GESTION_ESTRATEGICA, Sections.INTEGRACIONES, 'edit')}
+                              disabled={
+                                !canDo(Modules.GESTION_ESTRATEGICA, Sections.INTEGRACIONES, 'edit')
+                              }
                             />
                             <ActionButtons
                               module={Modules.GESTION_ESTRATEGICA}
@@ -356,8 +371,9 @@ export const IntegracionesSection = () => {
                                   label: 'Probar conexión',
                                   icon: <Wifi className="h-4 w-4" />,
                                   onClick: () => handleTestConnection(integracion.id),
-                                  disabled: !integracion.is_active || testConnectionMutation.isPending
-                                }
+                                  disabled:
+                                    !integracion.is_active || testConnectionMutation.isPending,
+                                },
                               ]}
                             />
                           </div>
@@ -368,7 +384,10 @@ export const IntegracionesSection = () => {
                 </tbody>
               </table>
             </div>
-          ) : integraciones.length > 0 ? (
+          </Card>
+        ) : integraciones.length > 0 ? (
+          /* Estado: Filtros sin resultados */
+          <Card>
             <div className="text-center py-12">
               <p className="text-gray-500 dark:text-gray-400">
                 No se encontraron integraciones con los filtros aplicados.
@@ -385,7 +404,10 @@ export const IntegracionesSection = () => {
                 Limpiar filtros
               </Button>
             </div>
-          ) : (
+          </Card>
+        ) : (
+          /* Empty State */
+          <Card>
             <div className="text-center py-12">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
                 <Cloud className="h-8 w-8 text-gray-400" />
@@ -403,9 +425,9 @@ export const IntegracionesSection = () => {
                 </Button>
               )}
             </div>
-          )}
-        </div>
-      </Card>
+          </Card>
+        )}
+      </div>
 
       {/* Modal de formulario */}
       <IntegracionFormModal

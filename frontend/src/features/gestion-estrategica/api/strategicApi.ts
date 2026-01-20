@@ -84,6 +84,30 @@ export interface NormaISOChoices {
   categorias: Array<{ value: string; label: string }>;
 }
 
+export interface CreateNormaISODTO {
+  code: string;
+  name: string;
+  short_name?: string;
+  description?: string;
+  category: string;
+  icon?: string;
+  color?: string;
+  orden?: number;
+  is_active?: boolean;
+}
+
+export interface UpdateNormaISODTO {
+  code?: string;
+  name?: string;
+  short_name?: string;
+  description?: string;
+  category?: string;
+  icon?: string;
+  color?: string;
+  orden?: number;
+  is_active?: boolean;
+}
+
 export const normasISOApi = {
   getAll: async (): Promise<PaginatedResponse<NormaISO>> => {
     const response = await axiosInstance.get(`${CONFIGURACION_URL}/normas-iso/`);
@@ -103,6 +127,20 @@ export const normasISOApi = {
   getByCategory: async (): Promise<Record<string, { name: string; normas: NormaISO[] }>> => {
     const response = await axiosInstance.get(`${CONFIGURACION_URL}/normas-iso/by-category/`);
     return response.data;
+  },
+
+  create: async (data: CreateNormaISODTO): Promise<NormaISO> => {
+    const response = await axiosInstance.post(`${CONFIGURACION_URL}/normas-iso/`, data);
+    return response.data;
+  },
+
+  update: async (id: number, data: UpdateNormaISODTO): Promise<NormaISO> => {
+    const response = await axiosInstance.patch(`${CONFIGURACION_URL}/normas-iso/${id}/`, data);
+    return response.data;
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await axiosInstance.delete(`${CONFIGURACION_URL}/normas-iso/${id}/`);
   },
 };
 

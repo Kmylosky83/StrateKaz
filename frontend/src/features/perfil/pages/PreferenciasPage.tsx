@@ -1,18 +1,20 @@
 /**
- * PreferenciasPage - Preferencias del usuario
+ * PreferenciasPage - Vista 6: Panel de Configuración con Acciones
  *
  * Permite al usuario personalizar:
  * - Idioma (futuro)
  * - Formato de fecha/hora
  *
- * NOTA: Mejoras aplicadas:
- * - MPR-003: Añadido SectionHeader para consistencia visual.
- * - MPR-001: ELIMINADO el toggle de tema (redundante con Header.tsx)
- * - MN-003: ELIMINADA la sección de notificaciones (redundante con NotificacionesPage)
+ * Estructura:
+ * - PageHeader con título y descripción
+ * - Action Cards independientes con icono + título + descripción + contenido
+ *
+ * @see docs/desarrollo/CATALOGO_VISTAS_UI.md - Vista 6
  */
 import { useEffect } from 'react';
-import { Settings, Globe, Calendar } from 'lucide-react';
-import { Card, SectionHeader } from '@/components/common';
+import { Globe, Calendar } from 'lucide-react';
+import { Card } from '@/components/common';
+import { PageHeader } from '@/components/layout';
 import { useHeaderContext } from '@/contexts/HeaderContext';
 
 export const PreferenciasPage = () => {
@@ -24,19 +26,14 @@ export const PreferenciasPage = () => {
   }, [resetHeader]);
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
-      {/* MPR-003: SectionHeader para consistencia */}
-      <SectionHeader
-        title="Preferencias"
-        description="Personaliza tu experiencia en la aplicación"
-        icon={<Settings className="h-6 w-6" />}
-        variant="large"
-      />
+    <div className="space-y-6">
+      {/* Page Header - Vista 6 */}
+      <PageHeader title="Preferencias" description="Personaliza tu experiencia en la aplicación" />
 
-      {/* Idioma (futuro) */}
+      {/* Action Card: Idioma */}
       <Card className="p-6">
         <div className="flex items-start gap-4">
-          <div className="p-3 rounded-lg bg-green-100 dark:bg-green-900/30">
+          <div className="p-3 rounded-lg bg-green-100 dark:bg-green-900/30 flex-shrink-0">
             <Globe className="h-6 w-6 text-green-600 dark:text-green-400" />
           </div>
           <div className="flex-1">
@@ -49,17 +46,17 @@ export const PreferenciasPage = () => {
                 Español (Colombia)
               </span>
               <span className="text-xs text-gray-500 dark:text-gray-400">
-                Proximamente más idiomas
+                Próximamente más idiomas
               </span>
             </div>
           </div>
         </div>
       </Card>
 
-      {/* Formato de fecha */}
+      {/* Action Card: Formato de Fecha */}
       <Card className="p-6">
         <div className="flex items-start gap-4">
-          <div className="p-3 rounded-lg bg-purple-100 dark:bg-purple-900/30">
+          <div className="p-3 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex-shrink-0">
             <Calendar className="h-6 w-6 text-purple-600 dark:text-purple-400" />
           </div>
           <div className="flex-1">
@@ -84,10 +81,10 @@ export const PreferenciasPage = () => {
       </Card>
 
       {/* Nota informativa */}
-      <div className="text-sm text-gray-500 dark:text-gray-400 text-center">
-        <p>El tema de la interfaz se puede cambiar desde el icono en la barra superior.</p>
-        <p>Las preferencias de notificaciones están disponibles en el Centro de Notificaciones.</p>
-      </div>
+      <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+        El tema de la interfaz se puede cambiar desde el icono en la barra superior. Las
+        preferencias de notificaciones están disponibles en el Centro de Notificaciones.
+      </p>
     </div>
   );
 };

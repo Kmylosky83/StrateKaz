@@ -7,23 +7,76 @@ Este documento describe los componentes de layout reutilizables para estructurar
 ```
 frontend/src/components/layout/
 ├── index.ts           # Exportaciones
-├── PageHeader.tsx     # Header de página
-├── PageTabs.tsx       # Tabs de navegación
+├── PageHeader.tsx     # Header de página con secciones inline
+├── PageTabs.tsx       # Tabs de navegación (legacy)
 ├── FilterCard.tsx     # Card de filtros
 ├── StatsGrid.tsx      # Grid de estadísticas
 └── DataTableCard.tsx  # Wrapper de tabla con paginación
+
+frontend/src/hooks/
+├── usePageSections.ts # Hook para gestión local de secciones
+
+frontend/src/utils/
+├── moduleColors.ts    # Design System centralizado de colores
 ```
 
-## Estructura Estándar de Página
+## Arquitectura de Layout (v2.4.0)
+
+### Separación Header Principal vs PageHeader
+
+La arquitectura de layout se divide en dos niveles:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ Header Principal (layouts/Header.tsx) - h-16 fixed             │
+│ ┌───────────────────────────────────────────────────────────┐  │
+│ │ [≡] [Logo] Empresa         [🔍] [🔔] [🌙] │ [Avatar ▼]   │  │
+│ └───────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+                               ↓
+┌─────────────────────────────────────────────────────────────────┐
+│ Contenido de Página                                             │
+│ ┌─────────────────────────────────────────────────────────────┐ │
+│ │ PageHeader - Secciones alineadas a la derecha              │ │
+│ │ ┌─────────────────────────┬───────────────────────────────┐│ │
+│ │ │ Título                  │ ┌─────────────────────────┐   ││ │
+│ │ │ Descripción dinámica    │ │ [Sec1] [Sec2] [Sec3]   │   ││ │
+│ │ │                         │ └─────────────────────────┘   ││ │
+│ │ └─────────────────────────┴───────────────────────────────┘│ │
+│ └─────────────────────────────────────────────────────────────┘ │
+│                                                                  │
+│ ┌─────────────────────────────────────────────────────────────┐ │
+│ │ Contenido de la sección activa                              │ │
+│ └─────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Principios de Diseño
+
+1. **Header Principal Simplificado**: Solo marca + acciones globales
+   - ZONA A: Menu toggle + Logo + Nombre empresa (sin límite de ancho)
+   - ZONA B: Búsqueda global + Notificaciones + Tema + Usuario
+
+2. **PageHeader con Secciones Inline**: Cada página gestiona sus tabs
+   - Título y descripción a la izquierda
+   - Secciones en contenedor profesional a la derecha
+   - Colores desde Design System centralizado (moduleColors.ts)
+
+3. **Gestión de Estado Local**: Cada página maneja sus secciones
+   - Hook `usePageSections` para estado local
+   - Sin dependencia de HeaderContext para tabs
+   - Navegación sin recarga de página
+
+## Estructura Estándar de Página (Nueva)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ PageHeader                                                      │
 │ ┌─────────────────────────────────────────────────────────────┐ │
-│ │ Título [Badge] [Badge]               [Controls] [Actions]  │ │
-│ │ Descripción                                                 │ │
-│ ├─────────────────────────────────────────────────────────────┤ │
-│ │ [Tab 1] [Tab 2] [Tab 3] (PageTabs)                         │ │
+│ │ Título                                                      │ │
+│ │ Descripción (dinámica)      ┌─────────────────────────────┐│ │
+│ │                             │ [📊 Sec1] [⚙️ Sec2] [📁 Sec3] ││ │
+│ │                             └─────────────────────────────┘│ │
 │ └─────────────────────────────────────────────────────────────┘ │
 ├─────────────────────────────────────────────────────────────────┤
 │ StatsGrid (opcional)                                            │
@@ -51,23 +104,28 @@ frontend/src/components/layout/
 
 ## Componentes
 
-### 1. PageHeader
+### 1. PageHeader (v2.4.0 - Con Secciones Inline)
 
-Header principal de la página con título, descripción, badges y acciones.
+Header de página con secciones/tabs inline alineadas a la derecha.
 
 ```tsx
-import { PageHeader, PageTabs } from '@/components/layout';
+import { PageHeader } from '@/components/layout';
+import { usePageSections } from '@/hooks/usePageSections';
+
+// Hook para gestionar secciones localmente
+const { sections, activeSection, setActiveSection, activeSectionData, isLoading } = usePageSections({
+  moduleCode: 'gestion_estrategica',
+  tabCode: 'configuracion',
+});
 
 <PageHeader
-  title="Proveedores de Materia Prima"
-  description="Gestión de proveedores de sebo, hueso, cabezas y ACU"
-  badges={[
-    { label: '15 externos', variant: 'primary' },
-    { label: '5 internos', variant: 'info' },
-  ]}
+  title="Configuración"
+  description={activeSectionData?.description || 'Gestión de configuración'}
+  sections={sections}
+  activeSection={activeSection}
+  onSectionChange={setActiveSection}
+  moduleColor="purple"  // Del Design System
   actions={<Button onClick={...}>Nueva Acción</Button>}
-  controls={<ViewToggle ... />}  // Opcional: toggles de vista
-  tabs={<PageTabs tabs={...} activeTab={...} onTabChange={...} />}
 />
 ```
 
@@ -75,23 +133,64 @@ import { PageHeader, PageTabs } from '@/components/layout';
 | Prop | Tipo | Descripción |
 |------|------|-------------|
 | `title` | `string` | Título principal (requerido) |
-| `description` | `string` | Subtítulo/descripción |
-| `badges` | `PageHeaderBadge[]` | Badges informativos |
+| `description` | `string` | Subtítulo/descripción (puede ser dinámico) |
+| `sections` | `TabSection[]` | Secciones desde API |
+| `activeSection` | `string` | Código de sección activa |
+| `onSectionChange` | `(code: string) => void` | Callback de cambio |
+| `moduleColor` | `ModuleColor` | Color del módulo (Design System) |
 | `actions` | `ReactNode` | Botones de acción |
-| `controls` | `ReactNode` | Controles adicionales (toggles) |
-| `tabs` | `ReactNode` | Tabs de navegación |
+| `controls` | `ReactNode` | Controles adicionales |
+| `tabs` | `ReactNode` | Legacy: tabs como ReactNode |
+| `className` | `string` | Clases adicionales |
 
-**Variantes de Badge:**
-- `primary` (azul)
-- `secondary` (gris)
-- `success` (verde)
-- `warning` (amarillo)
-- `danger` (rojo)
-- `info` (azul claro)
+**Colores de Módulo (moduleColor):**
+- `purple` - Gestión Estratégica
+- `teal` - Motor de Operaciones
+- `orange` - Gestión Integral
+- `blue` - Gestión Misional
+- `green` - Procesos de Apoyo
+- `indigo`, `red`, `yellow`, `pink`, `gray`
 
 ---
 
-### 2. PageTabs
+### 2. usePageSections (Hook)
+
+Hook para gestión local de secciones sin depender de HeaderContext.
+
+```tsx
+import { usePageSections } from '@/hooks/usePageSections';
+
+const {
+  sections,          // TabSection[] - secciones habilitadas
+  activeSection,     // string - código de sección activa
+  setActiveSection,  // (code: string) => void - cambiar sección
+  activeSectionData, // TabSection | null - datos de sección activa
+  isLoading,         // boolean - estado de carga
+} = usePageSections({
+  moduleCode: 'gestion_estrategica',  // Código del módulo
+  tabCode: 'configuracion',           // Código del tab
+  initialSection: 'empresa',          // Opcional: sección inicial
+});
+```
+
+**Opciones:**
+| Opción | Tipo | Descripción |
+|--------|------|-------------|
+| `moduleCode` | `string` | Código del módulo padre |
+| `tabCode` | `string` | Código del tab |
+| `initialSection` | `string` | Sección inicial (opcional) |
+
+**Ventajas:**
+- Estado local: no afecta otros componentes
+- Navegación sin recarga de página
+- Descripción dinámica según sección activa
+- Soporte para módulos dinámicos desde API
+
+---
+
+### 3. PageTabs (Legacy)
+
+> **Nota:** Este componente está deprecated. Usar `sections` prop de PageHeader.
 
 Componente de tabs para navegación dentro de una página.
 
@@ -695,3 +794,151 @@ Para mantener consistencia visual en las métricas, seguir este patrón semánti
     { label: 'Activos', value: 85, icon: CheckCircle, iconColor: 'success' },
   ]}
 />
+```
+
+---
+
+## Design System - Colores de Módulos
+
+El archivo `frontend/src/utils/moduleColors.ts` centraliza todos los colores de módulos para evitar hardcoding.
+
+### Uso
+
+```tsx
+import { getModuleColorClasses, type ModuleColor } from '@/utils/moduleColors';
+
+const colors = getModuleColorClasses('purple');
+
+// Usar en componentes
+<nav className={cn('rounded-lg border', colors.container)}>
+  <button className={isActive ? colors.active : colors.inactive}>
+    Tab 1
+  </button>
+</nav>
+```
+
+### Clases Disponibles
+
+| Propiedad | Uso | Ejemplo |
+|-----------|-----|---------|
+| `container` | Contenedor de tabs (fondo + borde) | `bg-purple-50/50 border-purple-200/50` |
+| `active` | Tab/botón activo | `bg-purple-100 text-purple-700` |
+| `inactive` | Tab/botón inactivo con hover | `text-gray-600 hover:bg-purple-50` |
+| `border` | Borde inferior (variante underline) | `border-purple-500 text-purple-600` |
+| `badge` | Badge/indicador | `bg-purple-100 text-purple-700` |
+| `text` | Texto del color del módulo | `text-purple-600` |
+| `icon` | Icono del color del módulo | `text-purple-500` |
+
+### Mapeo Categoría → Color
+
+| Categoría | Color | Código |
+|-----------|-------|--------|
+| Dirección Estratégica | Purple | `ESTRATEGICO` |
+| Motor de Operaciones | Teal | `MOTOR` |
+| Gestión Integral | Orange | `INTEGRAL` |
+| Gestión Misional | Blue | `MISIONAL` |
+| Procesos de Apoyo | Green | `APOYO` |
+| Inteligencia de Negocios | Purple | `INTELIGENCIA` |
+
+---
+
+## Ejemplo Completo de Página (v2.4.0)
+
+```tsx
+import { useState } from 'react';
+import { Settings, Building, MapPin, FileText } from 'lucide-react';
+import { Button } from '@/components/common/Button';
+import { PageHeader, StatsGrid, FilterCard, DataTableCard } from '@/components/layout';
+import { usePageSections } from '@/hooks/usePageSections';
+
+const MODULE_CODE = 'gestion_estrategica';
+const TAB_CODE = 'configuracion';
+
+export default function ConfiguracionPage() {
+  // Gestión local de secciones
+  const {
+    sections,
+    activeSection,
+    setActiveSection,
+    activeSectionData,
+    isLoading: sectionsLoading,
+  } = usePageSections({
+    moduleCode: MODULE_CODE,
+    tabCode: TAB_CODE,
+  });
+
+  // Renderizar contenido según sección activa
+  const renderSectionContent = () => {
+    switch (activeSection) {
+      case 'empresa':
+        return <EmpresaSection />;
+      case 'sedes':
+        return <SedesSection />;
+      case 'documentos':
+        return <DocumentosSection />;
+      default:
+        return <div>Seleccione una sección</div>;
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header con secciones inline */}
+      <PageHeader
+        title="Configuración"
+        description={activeSectionData?.description || 'Configuración del sistema'}
+        sections={sections}
+        activeSection={activeSection}
+        onSectionChange={setActiveSection}
+        moduleColor="purple"
+      />
+
+      {/* Contenido dinámico según sección */}
+      {sectionsLoading ? (
+        <div className="animate-pulse h-64 bg-gray-100 rounded-lg" />
+      ) : (
+        renderSectionContent()
+      )}
+    </div>
+  );
+}
+```
+
+---
+
+## Migración de Páginas Existentes (v2.4.0)
+
+Para migrar una página al nuevo sistema con secciones inline:
+
+1. **Importar hook usePageSections**
+   ```tsx
+   import { usePageSections } from '@/hooks/usePageSections';
+   ```
+
+2. **Reemplazar gestión de tabs por hook**
+   ```tsx
+   const { sections, activeSection, setActiveSection, activeSectionData } = usePageSections({
+     moduleCode: 'mi_modulo',
+     tabCode: 'mi_tab',
+   });
+   ```
+
+3. **Actualizar PageHeader**
+   ```tsx
+   <PageHeader
+     title="Mi Página"
+     description={activeSectionData?.description}
+     sections={sections}
+     activeSection={activeSection}
+     onSectionChange={setActiveSection}
+     moduleColor="purple"  // Según categoría del módulo
+   />
+   ```
+
+4. **Eliminar uso de HeaderContext para tabs** (si aplica)
+
+5. **Usar moduleColors para colores consistentes**
+   ```tsx
+   import { getModuleColorClasses } from '@/utils/moduleColors';
+   const colors = getModuleColorClasses('purple');
+   ```

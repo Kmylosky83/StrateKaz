@@ -11,7 +11,7 @@ function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
 
-  // Aplicar colores dinámicos del branding
+  // Aplicar colores dinámicos del branding (colores sí son dinámicos)
   useDynamicTheme();
 
   // Aplicar tema al cargar
@@ -41,7 +41,7 @@ function App() {
 
   return (
     <>
-      {/* Splash Screen - se muestra mientras carga el branding */}
+      {/* Splash Screen - Logo FIJO de StrateKaz (identidad de marca) */}
       <SplashScreen
         isVisible={showSplash}
         statusMessage="Iniciando sistema..."

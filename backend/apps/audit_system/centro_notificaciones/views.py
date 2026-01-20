@@ -141,10 +141,14 @@ class PreferenciaNotificacionViewSet(viewsets.ModelViewSet):
     """
     ViewSet para gestión de preferencias de notificación
 
+    Permite a los usuarios configurar sus preferencias de notificación por categoría.
+
     RBAC: Requiere acceso a sección 'centro_notificaciones'
     """
-    queryset = PreferenciaNotificacion.objects.all()
+    queryset = PreferenciaNotificacion.objects.select_related('usuario', 'tipo_notificacion')
     serializer_class = PreferenciaNotificacionSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['usuario', 'tipo_notificacion']
 
     # RBAC Configuration
     permission_classes = [IsAuthenticated, GranularActionPermission]

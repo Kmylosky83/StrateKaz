@@ -1026,11 +1026,69 @@ Estas herramientas de análisis son **inputs** que alimentan la planificación e
 
 ---
 
-### Próximas Fases Pendientes
+### FASE 0.4: PWA Enterprise + Sesiones de Usuario (2026-01-19) ✅ COMPLETADO
 
-| Fase | Descripción | Estado |
-| ---- | ----------- | ------ |
-| 0.4 | Responsive/Mobile PWA Enterprise | 📋 Pendiente |
-| 0.5 | Consolidación Motor de Riesgos | 📋 Pendiente |
-| 0.6 | Refactorización Frontend HSEQ (P1-01) | 📋 Pendiente |
-| 1.0 | Testing E2E Críticos (P1-08) | 📋 Pendiente |
+**Objetivo:** Completar Sprint 4 del plan de implementación con branding dinámico y sesiones de usuario.
+
+#### Branding Dinámico PWA (MB-001)
+
+| Componente | Cambio | Estado |
+|------------|--------|--------|
+| `vite.config.ts` | `manifest: false` - Deshabilitado manifest estático | ✅ |
+| `index.html` | Manifest dinámico desde `/api/core/branding/manifest/` | ✅ |
+| `useDynamicTheme.ts` | Actualiza theme-color, og:title, og:image, apple-title | ✅ |
+| `SplashScreen.tsx` | Props dinámicos: logo, logoWhite, companySlogan, appVersion | ✅ |
+| `App.tsx` | Pasa branding config a SplashScreen | ✅ |
+| `Footer.tsx` | companyShortName desde useBrandingConfig | ✅ |
+
+**Beneficio:** El branding de cada empresa cliente se carga desde BD, evitando "flash" del logo default.
+
+#### Sesiones de Usuario (MS-002-A)
+
+| Componente | Archivo | Estado |
+|------------|---------|--------|
+| **Backend** | | |
+| Modelo | `models_session.py` - UserSession con device tracking | ✅ |
+| Migración | `0014_add_usersession.py` | ✅ |
+| Serializers | `serializers_session.py` - Con campos calculados | ✅ |
+| ViewSet | `viewsets_session.py` - CRUD + acciones custom | ✅ |
+| URLs | `urls.py` - `/api/core/sessions/` | ✅ |
+| Login | `auth_views.py` - Crear sesión automáticamente | ✅ |
+| Logout | `serializers.py` - Invalidar sesión | ✅ |
+| **Frontend** | | |
+| Types | `sessions.types.ts` | ✅ |
+| API | `sessions.api.ts` | ✅ |
+| Hooks | `useSessions.ts` - React Query | ✅ |
+| UI | `ActiveSessionsCard.tsx` - Lista de sesiones | ✅ |
+| Página | `SeguridadPage.tsx` - Integración | ✅ |
+
+**Endpoints disponibles:**
+
+```
+GET    /api/core/sessions/           # Lista sesiones activas
+GET    /api/core/sessions/current/   # Sesión actual
+DELETE /api/core/sessions/{id}/      # Cerrar sesión específica
+DELETE /api/core/sessions/close-others/ # Cerrar otras sesiones
+PATCH  /api/core/sessions/{id}/rename/  # Renombrar dispositivo
+```
+
+**Funcionalidades:**
+- Creación automática de sesión al hacer login
+- Invalidación de sesión al hacer logout
+- Visualización de todos los dispositivos conectados
+- Información de SO, navegador, IP y ubicación
+- Cierre remoto de sesiones (individual o masivo)
+- Renombrado de dispositivos personalizado
+
+---
+
+### Próximas Fases
+
+| Fase | Descripción | Prerequisito | Estado |
+| ---- | ----------- | ------------ | ------ |
+| 0.5 | Auditoría Funcional Completa N1 | - | 📋 Pendiente |
+| 0.6 | Consolidación Motor de Riesgos | Auditoría N1 | 📋 Pendiente |
+| 0.7 | Refactorización Frontend HSEQ (P1-01) | - | 📋 Pendiente |
+| 1.0 | Testing E2E Críticos (P1-08) | Refactor HSEQ | 📋 Pendiente |
+
+**IMPORTANTE:** El Plan de Cierre de Brechas se aplicará DESPUÉS de completar las auditorías funcionales de las aplicaciones del Nivel 1 (Gestión Estratégica).

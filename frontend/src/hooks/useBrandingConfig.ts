@@ -28,7 +28,7 @@ const DEFAULT_BRANDING: Partial<BrandingConfig> = {
   primary_color: '#ec268f',
   secondary_color: '#000000',
   accent_color: '#f4ec25',
-  app_version: '2.0.0',
+  app_version: '2.4.0',
 };
 
 export interface UseBrandingConfigReturn {
@@ -69,20 +69,22 @@ export const useBrandingConfig = (): UseBrandingConfigReturn => {
   const companySlogan = branding?.company_slogan || DEFAULT_BRANDING.company_slogan!;
 
   // Logos con fallback - verificar que no sean null/undefined/empty string
-  const logo = (branding?.logo && branding.logo.trim() !== '')
-    ? branding.logo
-    : DEFAULT_BRANDING.logo!;
-  const logoWhite = (branding?.logo_white && branding.logo_white.trim() !== '')
-    ? branding.logo_white
-    : DEFAULT_BRANDING.logo_white!;
-  const favicon = (branding?.favicon && branding.favicon.trim() !== '')
-    ? branding.favicon
-    : DEFAULT_BRANDING.favicon!;
+  const logo =
+    branding?.logo && branding.logo.trim() !== '' ? branding.logo : DEFAULT_BRANDING.logo!;
+  const logoWhite =
+    branding?.logo_white && branding.logo_white.trim() !== ''
+      ? branding.logo_white
+      : DEFAULT_BRANDING.logo_white!;
+  const favicon =
+    branding?.favicon && branding.favicon.trim() !== ''
+      ? branding.favicon
+      : DEFAULT_BRANDING.favicon!;
 
   // Imagen de fondo del login (puede ser null)
-  const loginBackground = (branding?.login_background && branding.login_background.trim() !== '')
-    ? branding.login_background
-    : null;
+  const loginBackground =
+    branding?.login_background && branding.login_background.trim() !== ''
+      ? branding.login_background
+      : null;
 
   // Colores
   const primaryColor = branding?.primary_color || DEFAULT_BRANDING.primary_color!;

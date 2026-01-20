@@ -79,6 +79,13 @@ from apps.core.models.models_session import (
 )
 
 # =============================================================================
+# TWO FACTOR AUTHENTICATION (2FA)
+# =============================================================================
+from apps.core.models.models_two_factor import (
+    TwoFactorAuth,
+)
+
+# =============================================================================
 # ADD DYNAMIC RELATIONS (after all models are loaded)
 # =============================================================================
 
@@ -140,4 +147,8 @@ __all__ = [
     'BrandingConfig',
     # Menu
     'MenuItem',
+    # User Sessions (MS-002-A)
+    'UserSession',
+    # Two Factor Authentication (2FA)
+    'TwoFactorAuth',
 ]

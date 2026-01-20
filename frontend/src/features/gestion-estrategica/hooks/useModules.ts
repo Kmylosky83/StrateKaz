@@ -5,6 +5,7 @@
  * Hooks especializados para la gestión de módulos, tabs y secciones
  * con funcionalidad de toggle y navegación dinámica
  */
+import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import axiosInstance from '@/api/axios-config';
@@ -425,28 +426,34 @@ export function useSectionEnabled(moduleCode: string, tabCode: string, sectionCo
 export function useTabSections(moduleCode: string, tabCode: string) {
   const { data: tree, isLoading } = useModulesTree();
 
-  if (isLoading || !tree) {
+  // Memoizar el resultado para evitar crear nuevas referencias en cada render
+  // Esto previene loops infinitos en usePageHeader
+  return useMemo(() => {
+    if (isLoading || !tree) {
+      return {
+        sections: [] as const,
+        isLoading: true,
+        tab: undefined,
+        moduleEnabled: false,
+        tabEnabled: false,
+      };
+    }
+
+    const module = tree.modules.find((m) => m.code === moduleCode);
+    const tab = module?.tabs.find((t) => t.code === tabCode);
+
+    // Solo retornar secciones habilitadas, ordenadas por order
+    const enabledSections =
+      tab?.sections.filter((s) => s.is_enabled).sort((a, b) => a.order - b.order) ?? [];
+
     return {
-      sections: [],
-      isLoading: true,
-      tab: undefined,
+      sections: enabledSections,
+      isLoading: false,
+      tab,
+      moduleEnabled: module?.is_enabled ?? false,
+      tabEnabled: tab?.is_enabled ?? false,
     };
-  }
-
-  const module = tree.modules.find((m) => m.code === moduleCode);
-  const tab = module?.tabs.find((t) => t.code === tabCode);
-
-  // Solo retornar secciones habilitadas, ordenadas por order
-  const enabledSections =
-    tab?.sections.filter((s) => s.is_enabled).sort((a, b) => a.order - b.order) ?? [];
-
-  return {
-    sections: enabledSections,
-    isLoading: false,
-    tab,
-    moduleEnabled: module?.is_enabled ?? false,
-    tabEnabled: tab?.is_enabled ?? false,
-  };
+  }, [tree, isLoading, moduleCode, tabCode]);
 }
 
 /**

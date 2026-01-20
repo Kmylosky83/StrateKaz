@@ -9,7 +9,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '0014_add_usersession'),
+        ('core', '0016_add_normas_iso_section'),
     ]
 
     operations = [

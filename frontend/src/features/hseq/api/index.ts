@@ -5,15 +5,6 @@
  * Exporta todos los API clients del módulo HSEQ
  */
 
-// Sistema Documental - MIGRADO a gestion-estrategica/gestion-documental
-// import from '@/features/gestion-estrategica' instead
-
-// Planificacion del Sistema - MIGRADO a gestion-estrategica/planificacion-sistema
-// import from '@/features/gestion-estrategica' instead
-
-// Planificacion (General HSEQ - no migrado)
-export * from './planificacionApi';
-
 // Calidad
 export * from './calidadApi';
 

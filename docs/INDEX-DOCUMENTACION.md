@@ -1,6 +1,6 @@
 # Indice Maestro de Documentacion
 
-**StrateKaz v3.3.0** | **Actualizado:** 15 Enero 2026
+**StrateKaz v3.7.2** | **Actualizado:** 22 Enero 2026
 
 ---
 
@@ -29,18 +29,18 @@
 
 | Documento | Descripcion | Nivel |
 |-----------|-------------|-------|
-| **[DESPLIEGUE-PASO-A-PASO.md](DESPLIEGUE-PASO-A-PASO.md)** | Guia simplificada para no-tecnicos | Principiante |
-| [GUIA-DESPLIEGUE-CPANEL.md](devops/GUIA-DESPLIEGUE-CPANEL.md) | Guia tecnica completa cPanel | Intermedio |
-| [CPANEL_EXECUTIVE_SUMMARY.md](devops/CPANEL_EXECUTIVE_SUMMARY.md) | Resumen arquitectura despliegue | Referencia |
-| [GUIA-MULTI-INSTANCIA.md](devops/GUIA-MULTI-INSTANCIA.md) | Multiples empresas en un hosting | Avanzado |
+| **[DEPLOY-VPS.md](../deploy/vps/DEPLOY-VPS.md)** | Guia completa VPS Hostinger | Recomendado |
+| [GUIA-MULTI-INSTANCIA.md](devops/GUIA-MULTI-INSTANCIA.md) | Multiples empresas en un VPS | Avanzado |
+
+> **Nota:** Las guias de cPanel estan deprecadas. El sistema ahora usa VPS con Nginx + Gunicorn.
 
 ### Flujo de Despliegue
 
-```
-1. DESPLIEGUE-PASO-A-PASO.md    (seguir paso a paso)
+```text
+1. DEPLOY-VPS.md              (seguir paso a paso)
           |
           v
-2. Verificar que todo funciona
+2. Verificar que todo funciona (https://erp.stratekaz.com)
           |
           v
 3. PLAN_INTERVENCION_BRECHAS.md (ver que sigue despues)
@@ -217,9 +217,9 @@ docs/
 │   └── ...
 │
 ├── devops/                         <- Despliegue
-│   ├── GUIA-DESPLIEGUE-CPANEL.md
 │   ├── GUIA-MULTI-INSTANCIA.md
 │   └── ...
+├── ../deploy/vps/                  <- Guia VPS (principal)
 │
 ├── plans/                          <- Planes y auditorias
 │   ├── PLAN_INTERVENCION_BRECHAS.md  <- PLAN ACTIVO
@@ -282,5 +282,5 @@ Actualizar PLAN_INTERVENCION_BRECHAS.md
 
 ---
 
-**Ultima actualizacion:** 15 Enero 2026
+**Ultima actualizacion:** 22 Enero 2026
 **Mantenido por:** Equipo StrateKaz

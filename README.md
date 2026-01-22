@@ -5,10 +5,11 @@ Sistema integral de gestion empresarial para empresas colombianas con cumplimien
 | Info | Valor |
 |------|-------|
 | **Nombre del Software** | StrateKaz |
-| **Version** | 3.7.1 |
-| **Ultima Actualizacion** | 20 Enero 2026 |
-| **Estado** | MVP Ready - PWA Enterprise + 2FA + Módulo Perfil 100% |
-| **Modelo Deployment** | Multi-Instancia (1 BD por empresa) |
+| **Version** | 3.7.2 |
+| **Ultima Actualizacion** | 22 Enero 2026 |
+| **Estado** | Produccion - VPS Hostinger + SSL |
+| **URL Produccion** | https://erp.stratekaz.com |
+| **Modelo Deployment** | VPS Multi-Instancia (1 BD por empresa) |
 | **Propietario** | StrateKaz S.A.S. |
 
 ---
@@ -28,6 +29,11 @@ Sistema integral de gestion empresarial para empresas colombianas con cumplimien
 | **PWA** | Vite PWA Plugin | 1.2.0 | OK |
 | **Formularios** | React Hook Form + Zod | 7.66 + 3.22 | OK |
 | **Animaciones** | Framer Motion | 11.x | OK |
+| **Servidor WSGI** | Gunicorn | 21.2.0 | OK |
+| **Web Server** | Nginx | 1.18+ | OK |
+| **Cache/Broker** | Redis | 7.0+ | OK |
+| **Tareas Async** | Celery | 5.3.6 | OK |
+| **Process Manager** | Supervisor | 4.2+ | OK |
 
 ### Estadisticas del Proyecto
 
@@ -138,7 +144,7 @@ npm install
 npm run dev
 
 # Build para produccion
-npm run build:cpanel
+npm run build
 ```
 
 ### Accesos Desarrollo
@@ -193,7 +199,8 @@ StrateKaz/
 │   ├── INDEX-DOCUMENTACION.md
 │   ├── desarrollo/          # Guias tecnicas
 │   └── plans/               # Planes de trabajo
-└── deploy/                   # Scripts de despliegue cPanel
+└── deploy/
+    └── vps/                  # Scripts de despliegue VPS
 ```
 
 ---
@@ -208,7 +215,7 @@ StrateKaz/
 |----------|-----------|-------------|
 | **Continuar desarrollo** | [PLAN_CIERRE_BRECHAS.md](docs/plans/PLAN_CIERRE_BRECHAS.md) | Plan maestro de mejoras (aplicar despues de auditorias N1) |
 | **Entender arquitectura** | [ESTRUCTURA-6-NIVELES-ERP.md](docs/arquitectura/ESTRUCTURA-6-NIVELES-ERP.md) | 6 niveles del sistema |
-| **Referencia tecnica** | [GUIA-DESPLIEGUE-CPANEL.md](docs/devops/GUIA-DESPLIEGUE-CPANEL.md) | Deploy tecnico completo |
+| **Referencia tecnica** | [DEPLOY-VPS.md](deploy/vps/DEPLOY-VPS.md) | Deploy VPS Hostinger |
 | **Sistema de modulos** | [INDEX_MODULOS_FEATURES.md](docs/INDEX_MODULOS_FEATURES.md) | Como agregar modulos dinamicos |
 | **Gestionar versiones** | [GUIA-VERSIONAMIENTO.md](docs/desarrollo/GUIA-VERSIONAMIENTO.md) | Como cambiar version del software |
 | **Patrones UI** | [CATALOGO_VISTAS_UI.md](docs/desarrollo/CATALOGO_VISTAS_UI.md) | 6 patrones estandarizados de vistas |
@@ -243,8 +250,8 @@ python manage.py test apps.core
 # Desarrollo
 npm run dev
 
-# Build produccion cPanel
-npm run build:cpanel
+# Build produccion
+npm run build
 
 # Type check
 npx tsc --noEmit
@@ -284,7 +291,75 @@ VITE_API_URL=http://localhost:8000/api
 
 ---
 
+## Despliegue en Produccion (VPS)
+
+El sistema esta desplegado en VPS Hostinger con la siguiente arquitectura:
+
+```
+Internet → Nginx (SSL/HTTPS) → Gunicorn (Django) → MySQL
+                             → React SPA (static files)
+                             → Celery Workers → Redis
+```
+
+### Infraestructura de Produccion
+
+| Componente | Tecnologia | Funcion |
+|------------|------------|---------|
+| Web Server | Nginx 1.18+ | Proxy reverso, SSL, archivos estaticos |
+| WSGI Server | Gunicorn | Sirve Django (4 workers) |
+| Base de Datos | MySQL 8.0 | Persistencia multi-tenant |
+| Cache/Broker | Redis 7.0 | Celery broker, cache Django |
+| Task Queue | Celery 5.3 | Tareas asincronas (emails, reportes) |
+| Process Manager | Supervisor | Gestion de procesos |
+| SSL | Let's Encrypt | Certificados automaticos |
+
+### Comandos de Despliegue
+
+```bash
+# En el VPS (ssh root@IP)
+cd /var/www/stratekaz/repo
+git pull origin main
+
+# Backend
+source /var/www/stratekaz/venv/bin/activate
+cd backend
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py collectstatic --noinput
+
+# Frontend
+cd ../frontend
+npm install
+npm run build
+
+# Reiniciar servicios
+sudo supervisorctl restart all
+```
+
+> **Guia completa:** [deploy/vps/DEPLOY-VPS.md](deploy/vps/DEPLOY-VPS.md)
+
+---
+
 ## Changelog Reciente
+
+### v3.7.2 (22 Enero 2026) - Migracion a VPS Produccion
+
+- **Infraestructura VPS Hostinger**:
+  - Despliegue completo en VPS con Ubuntu 22.04
+  - Nginx como proxy reverso con SSL Let's Encrypt
+  - Gunicorn con 4 workers para Django
+  - Supervisor para gestion de procesos
+  - Redis para Celery y cache
+  - Dominio: erp.stratekaz.com
+
+- **Documentacion Actualizada**:
+  - README actualizado con stack de produccion
+  - Guia VPS completa en deploy/vps/DEPLOY-VPS.md
+  - Archivos cPanel movidos a legacy/deprecated
+
+- **Frontend Generalizado**:
+  - Descripcion de MateriaPrimaPage generalizada
+  - Eliminadas referencias especificas de industria
 
 ### v3.7.0 (20 Enero 2026) - Módulo de Perfil 100%
 
@@ -600,4 +675,4 @@ Copyright (c) 2024-2026 StrateKaz S.A.S. Todos los derechos reservados.
 
 ---
 
-**Ultima actualizacion:** 20 Enero 2026
+**Ultima actualizacion:** 22 Enero 2026

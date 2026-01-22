@@ -104,7 +104,8 @@ class Command(BaseCommand):
                             {'code': 'sedes', 'name': 'Sedes', 'icon': 'MapPin', 'orden': 2, 'description': 'Ubicaciones físicas de la empresa'},
                             {'code': 'integraciones', 'name': 'Integraciones', 'icon': 'Plug', 'orden': 3, 'description': 'Conexiones con sistemas externos'},
                             {'code': 'branding', 'name': 'Branding', 'icon': 'Palette', 'orden': 4, 'description': 'Identidad visual y colores'},
-                            {'code': 'modulos', 'name': 'Módulos', 'icon': 'LayoutGrid', 'orden': 5, 'description': 'Activar o desactivar funcionalidades'},
+                            {'code': 'normas-iso', 'name': 'Normas', 'icon': 'Award', 'orden': 5, 'description': 'Normas ISO y sistemas de gestión'},
+                            {'code': 'modulos', 'name': 'Módulos', 'icon': 'LayoutGrid', 'orden': 6, 'description': 'Activar o desactivar funcionalidades'},
                         ]
                     },
                     {

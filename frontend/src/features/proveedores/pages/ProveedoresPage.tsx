@@ -3,12 +3,7 @@ import { UserPlus } from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
-import {
-  PageHeader,
-  FilterCard,
-  FilterGrid,
-  DataTableCard,
-} from '@/components/layout';
+import { PageHeader, FilterCard, FilterGrid, DataTableCard } from '@/components/layout';
 import { ProveedoresTable } from '../components/ProveedoresTable';
 import { ProveedorForm } from '../components/ProveedorForm';
 import { CambiarPrecioModal } from '../components/CambiarPrecioModal';
@@ -72,7 +67,14 @@ export default function ProveedoresPage() {
   const canCreateProveedor = useMemo(() => {
     if (!user?.cargo) return false;
     const cargo = user.cargo.code;
-    return ['lider_comercial', CargoCodes.LIDER_COMERCIAL_ECONORTE, CargoCodes.LIDER_LOGISTICA_ECONORTE, 'admin', 'gerente', 'superadmin'].includes(cargo);
+    return [
+      'lider_comercial',
+      CargoCodes.LIDER_COMERCIAL_ECONORTE,
+      CargoCodes.LIDER_LOGISTICA_ECONORTE,
+      'admin',
+      'gerente',
+      'superadmin',
+    ].includes(cargo);
   }, [user]);
 
   const handleOpenCreateForm = () => {
@@ -219,6 +221,7 @@ export default function ProveedoresPage() {
     { value: '', label: 'Todos' },
     { value: 'SEBO', label: 'Sebo' },
     { value: 'HUESO', label: 'Hueso' },
+    { value: 'CABEZAS', label: 'Cabezas' },
     { value: 'ACU', label: 'ACU' },
   ];
 

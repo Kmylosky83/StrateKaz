@@ -60,8 +60,14 @@ export default function MateriaPrimaPage() {
   const { data: proveedoresData, isLoading: isLoadingProveedores } = useProveedores(filters);
 
   // Queries para conteos en header
-  const { data: externosCount } = useProveedores({ tipo_proveedor: 'MATERIA_PRIMA_EXTERNO', page_size: 1 });
-  const { data: internosCount } = useProveedores({ tipo_proveedor: 'UNIDAD_NEGOCIO', page_size: 1 });
+  const { data: externosCount } = useProveedores({
+    tipo_proveedor: 'MATERIA_PRIMA_EXTERNO',
+    page_size: 1,
+  });
+  const { data: internosCount } = useProveedores({
+    tipo_proveedor: 'UNIDAD_NEGOCIO',
+    page_size: 1,
+  });
   const createProveedorMutation = useCreateProveedor();
   const updateProveedorMutation = useUpdateProveedor();
   const deleteProveedorMutation = useDeleteProveedor();
@@ -90,7 +96,14 @@ export default function MateriaPrimaPage() {
   const canCreateProveedor = useMemo(() => {
     if (!user?.cargo) return false;
     const cargo = user.cargo.code;
-    return ['lider_comercial', CargoCodes.LIDER_COMERCIAL_ECONORTE, CargoCodes.LIDER_LOGISTICA_ECONORTE, 'admin', 'gerente', 'superadmin'].includes(cargo);
+    return [
+      'lider_comercial',
+      CargoCodes.LIDER_COMERCIAL_ECONORTE,
+      CargoCodes.LIDER_LOGISTICA_ECONORTE,
+      'admin',
+      'gerente',
+      'superadmin',
+    ].includes(cargo);
   }, [user]);
 
   const handleOpenCreateForm = () => {
@@ -265,13 +278,10 @@ export default function MateriaPrimaPage() {
       {/* HEADER con PageHeader */}
       <PageHeader
         title="Proveedores de Materia Prima"
-        description="Gestión de proveedores de sebo, hueso, cabezas y ACU"
+        description="Gestión de proveedores de materia prima y subproductos"
         actions={
           canCreateProveedor ? (
-            <Button
-              onClick={handleOpenCreateForm}
-              leftIcon={<UserPlus className="h-4 w-4" />}
-            >
+            <Button onClick={handleOpenCreateForm} leftIcon={<UserPlus className="h-4 w-4" />}>
               {activeTab === 'externos' ? 'Nuevo Proveedor Externo' : 'Nueva Unidad Interna'}
             </Button>
           ) : undefined

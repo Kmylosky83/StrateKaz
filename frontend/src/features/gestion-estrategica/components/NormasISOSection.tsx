@@ -112,9 +112,6 @@ export const NormasISOSection = () => {
                       Norma
                     </th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
-                      Código
-                    </th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
                       Categoría
                     </th>
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -174,11 +171,6 @@ export const NormasISOSection = () => {
                             )}
                           </div>
                         </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="font-mono text-sm text-gray-600 dark:text-gray-300">
-                          {norma.code}
-                        </span>
                       </td>
                       <td className="py-3 px-4">
                         <Badge variant="gray" size="sm">

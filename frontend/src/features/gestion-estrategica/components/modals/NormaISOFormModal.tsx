@@ -53,6 +53,7 @@ interface FormData {
   short_name: string;
   description: string;
   category: string;
+  customCategory: string;
   icon: string;
   color: string;
   orden: string;
@@ -65,11 +66,15 @@ const defaultFormData: FormData = {
   short_name: '',
   description: '',
   category: '',
+  customCategory: '',
   icon: 'FileCheck',
   color: '#3b82f6', // Blue-500 por defecto
   orden: '0',
   is_active: true,
 };
+
+// Valor especial para "Otra categoría"
+const OTHER_CATEGORY_VALUE = '__OTHER__';
 
 // Iconos disponibles (Lucide React)
 const ICON_OPTIONS = [
@@ -113,12 +118,16 @@ export const NormaISOFormModal = ({ norma, isOpen, onClose }: NormaISOFormModalP
   // Cargar datos al editar
   useEffect(() => {
     if (isEditing && normaDetail) {
+      // Verificar si la categoría existe en las opciones
+      const categoryExists = choices?.categorias?.some((c) => c.value === normaDetail.category);
+
       setFormData({
         code: normaDetail.code,
         name: normaDetail.name,
         short_name: normaDetail.short_name || '',
         description: normaDetail.description || '',
-        category: normaDetail.category,
+        category: categoryExists ? normaDetail.category : OTHER_CATEGORY_VALUE,
+        customCategory: categoryExists ? '' : normaDetail.category || '',
         icon: normaDetail.icon || 'FileCheck',
         color: normaDetail.color || '#3b82f6',
         orden: normaDetail.orden?.toString() || '0',
@@ -127,17 +136,27 @@ export const NormaISOFormModal = ({ norma, isOpen, onClose }: NormaISOFormModalP
     } else if (!isEditing) {
       setFormData(defaultFormData);
     }
-  }, [normaDetail, isEditing]);
+  }, [normaDetail, isEditing, choices]);
+
+  // Determinar la categoría final (del select o personalizada)
+  const getFinalCategory = () => {
+    if (formData.category === OTHER_CATEGORY_VALUE) {
+      return formData.customCategory.trim();
+    }
+    return formData.category;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const finalCategory = getFinalCategory();
 
     const baseData: CreateNormaISODTO = {
       code: formData.code.toUpperCase(),
       name: formData.name,
       short_name: formData.short_name || undefined,
       description: formData.description || undefined,
-      category: formData.category,
+      category: finalCategory,
       icon: formData.icon,
       color: formData.color,
       orden: parseInt(formData.orden) || 0,
@@ -158,12 +177,19 @@ export const NormaISOFormModal = ({ norma, isOpen, onClose }: NormaISOFormModalP
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
-  // Opciones para categorías desde backend
-  const categoryOptions =
-    choices?.categorias?.map((c) => ({
+  // Opciones para categorías desde backend + opción "Otra..."
+  const categoryOptions = [
+    ...(choices?.categorias?.map((c) => ({
       value: c.value,
       label: c.label,
-    })) || [];
+    })) || []),
+    { value: OTHER_CATEGORY_VALUE, label: 'Otra categoría...' },
+  ];
+
+  // Validar si la categoría es válida
+  const isCategoryValid =
+    formData.category !== '' &&
+    (formData.category !== OTHER_CATEGORY_VALUE || formData.customCategory.trim() !== '');
 
   const footer = (
     <>
@@ -174,7 +200,7 @@ export const NormaISOFormModal = ({ norma, isOpen, onClose }: NormaISOFormModalP
         type="submit"
         variant="primary"
         onClick={handleSubmit}
-        disabled={isLoading || !formData.code || !formData.name || !formData.category}
+        disabled={isLoading || !formData.code || !formData.name || !isCategoryValid}
         isLoading={isLoading}
       >
         {isEditing ? 'Guardar Cambios' : 'Agregar Norma'}
@@ -219,12 +245,31 @@ export const NormaISOFormModal = ({ norma, isOpen, onClose }: NormaISOFormModalP
             <Select
               label="Categoría de la Norma *"
               value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  category: e.target.value,
+                  customCategory:
+                    e.target.value !== OTHER_CATEGORY_VALUE ? '' : formData.customCategory,
+                })
+              }
               options={[{ value: '', label: 'Seleccione...' }, ...categoryOptions]}
               required
               disabled={isEditing && norma?.es_sistema}
             />
           </div>
+
+          {/* Input para categoría personalizada */}
+          {formData.category === OTHER_CATEGORY_VALUE && (
+            <Input
+              label="Nueva Categoría *"
+              value={formData.customCategory}
+              onChange={(e) => setFormData({ ...formData, customCategory: e.target.value })}
+              placeholder="Ej: Seguridad Alimentaria, BPM, HACCP"
+              required
+              helperText="Escriba el nombre de la nueva categoría"
+            />
+          )}
 
           <Input
             label="Nombre Completo *"

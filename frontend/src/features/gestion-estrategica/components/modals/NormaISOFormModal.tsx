@@ -33,6 +33,7 @@ import { Alert } from '@/components/common/Alert';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
+import { Switch } from '@/components/forms/Switch';
 import {
   useCreateNormaISO,
   useUpdateNormaISO,
@@ -389,6 +390,20 @@ export const NormaISOFormModal = ({ norma, isOpen, onClose }: NormaISOFormModalP
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Sección: Estado */}
+        <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+          <div>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Norma Activa</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Desactive para ocultar esta norma en el sistema
+            </p>
+          </div>
+          <Switch
+            checked={formData.is_active}
+            onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+          />
         </div>
 
         <Alert

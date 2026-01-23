@@ -224,8 +224,17 @@ class SedeEmpresaSerializer(serializers.ModelSerializer):
     """
     Serializer para SedeEmpresa
 
-    Incluye campos computados y display names para el frontend
+    Incluye campos computados y display names para el frontend.
+    Soporta creación de nuevo tipo de sede inline via 'tipo_sede_nuevo'.
     """
+
+    # Campo para crear nuevo tipo de sede sobre la marcha
+    tipo_sede_nuevo = serializers.CharField(
+        write_only=True,
+        required=False,
+        allow_blank=True,
+        help_text='Nombre del nuevo tipo de sede a crear (si no existe en la lista)'
+    )
 
     # Campos computados de solo lectura
     direccion_completa = serializers.CharField(read_only=True)
@@ -255,6 +264,7 @@ class SedeEmpresaSerializer(serializers.ModelSerializer):
             'codigo',
             'nombre',
             'tipo_sede',
+            'tipo_sede_nuevo',  # Para crear nuevo tipo inline
             'tipo_sede_display',
             'descripcion',
             # Ubicación
@@ -389,11 +399,57 @@ class SedeEmpresaSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        """Override para registrar el usuario que crea"""
+        """
+        Override para:
+        1. Registrar el usuario que crea
+        2. Crear nuevo TipoSede si se envía tipo_sede_nuevo
+        """
+        # Extraer tipo_sede_nuevo antes de crear
+        tipo_sede_nuevo = validated_data.pop('tipo_sede_nuevo', None)
+
+        # Si se envía un nuevo tipo de sede, crearlo o buscarlo
+        if tipo_sede_nuevo and tipo_sede_nuevo.strip():
+            tipo_nombre = tipo_sede_nuevo.strip()
+            # Generar código a partir del nombre
+            tipo_code = tipo_nombre.upper().replace(' ', '_')[:30]
+
+            # Buscar o crear el tipo de sede
+            tipo_sede, created = TipoSede.objects.get_or_create(
+                code=tipo_code,
+                defaults={
+                    'name': tipo_nombre,
+                    'is_active': True
+                }
+            )
+            validated_data['tipo_sede'] = tipo_sede
+
         request = self.context.get('request')
         if request and hasattr(request, 'user'):
             validated_data['created_by'] = request.user
         return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        """
+        Override para manejar tipo_sede_nuevo en actualizaciones
+        """
+        # Extraer tipo_sede_nuevo antes de actualizar
+        tipo_sede_nuevo = validated_data.pop('tipo_sede_nuevo', None)
+
+        # Si se envía un nuevo tipo de sede, crearlo o buscarlo
+        if tipo_sede_nuevo and tipo_sede_nuevo.strip():
+            tipo_nombre = tipo_sede_nuevo.strip()
+            tipo_code = tipo_nombre.upper().replace(' ', '_')[:30]
+
+            tipo_sede, created = TipoSede.objects.get_or_create(
+                code=tipo_code,
+                defaults={
+                    'name': tipo_nombre,
+                    'is_active': True
+                }
+            )
+            validated_data['tipo_sede'] = tipo_sede
+
+        return super().update(instance, validated_data)
 
 
 class SedeEmpresaListSerializer(serializers.ModelSerializer):

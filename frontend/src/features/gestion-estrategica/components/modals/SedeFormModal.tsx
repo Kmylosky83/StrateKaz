@@ -41,10 +41,14 @@ interface SedeFormModalProps {
   onClose: () => void;
 }
 
+// Constante para identificar la opción "Otro tipo..."
+const OTHER_TIPO_SEDE_VALUE = '__OTHER__';
+
 interface FormData {
   codigo: string;
   nombre: string;
   tipo_sede: string; // ID numérico como string para el select
+  customTipoSede: string; // Para nuevo tipo personalizado
   descripcion: string;
   direccion: string;
   ciudad: string;
@@ -68,6 +72,7 @@ const defaultFormData: FormData = {
   codigo: '',
   nombre: '',
   tipo_sede: '', // Se selecciona del dropdown
+  customTipoSede: '', // Para nuevo tipo personalizado
   descripcion: '',
   direccion: '',
   ciudad: '',
@@ -150,6 +155,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
         codigo: sedeDetail.codigo,
         nombre: sedeDetail.nombre,
         tipo_sede: sedeDetail.tipo_sede?.toString() || '',
+        customTipoSede: '', // Al editar, siempre vacío (el tipo ya existe)
         descripcion: sedeDetail.descripcion || '',
         direccion: sedeDetail.direccion,
         ciudad: sedeDetail.ciudad,
@@ -169,18 +175,30 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
       });
     } else if (!isEditing) {
       // Para nuevo registro, usar unidad por defecto de la empresa si existe
-      const defaultUnit = choices?.unidad_capacidad_default?.value?.toString() || '';
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const defaultUnit = (choices as any)?.unidad_capacidad_default?.value?.toString() || '';
       setFormData({ ...defaultFormData, unidad_capacidad: defaultUnit });
     }
-  }, [sedeDetail, isEditing, choices?.unidad_capacidad_default]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  }, [sedeDetail, isEditing, (choices as any)?.unidad_capacidad_default]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Determinar si se usa tipo existente o nuevo
+    const isCustomTipo = formData.tipo_sede === OTHER_TIPO_SEDE_VALUE;
+
     const baseData = {
       codigo: formData.codigo,
       nombre: formData.nombre,
-      tipo_sede: formData.tipo_sede ? parseInt(formData.tipo_sede) : undefined,
+      // Si es tipo personalizado, no enviar tipo_sede (ID)
+      tipo_sede: isCustomTipo
+        ? undefined
+        : formData.tipo_sede
+          ? parseInt(formData.tipo_sede)
+          : undefined,
+      // Si es tipo personalizado, enviar el nombre del nuevo tipo
+      tipo_sede_nuevo: isCustomTipo ? formData.customTipoSede.trim() : undefined,
       descripcion: formData.descripcion || undefined,
       direccion: formData.direccion,
       ciudad: formData.ciudad,
@@ -217,17 +235,26 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
   // Opciones para selects - tipos de sede vienen como IDs numéricos del backend
-  const tipoSedeOptions =
-    choices?.tipos_sede?.map((t: { value: number; label: string }) => ({
+  // Incluye opción "Otro tipo..." para crear nuevos tipos
+   
+  const tipoSedeOptions = [
+    ...(choices?.tipos_sede?.map((t: any) => ({
       value: t.value.toString(),
       label: t.label,
-    })) || [];
+    })) || []),
+    { value: OTHER_TIPO_SEDE_VALUE, label: 'Otro tipo...' },
+  ];
+
+  // Validar si el tipo de sede es válido
+  const isTipoSedeValid =
+    formData.tipo_sede !== OTHER_TIPO_SEDE_VALUE || formData.customTipoSede.trim().length > 0;
 
   const departamentoOptions = choices?.departamentos || [];
 
   // Unidades de capacidad dinámicas (multi-industria)
+   
   const unidadesCapacidadOptions =
-    choices?.unidades_capacidad?.map((u: { value: number; label: string }) => ({
+    (choices as any)?.unidades_capacidad?.map((u: any) => ({
       value: u.value.toString(),
       label: u.label,
     })) || [];
@@ -248,7 +275,13 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
         type="submit"
         variant="primary"
         onClick={handleSubmit}
-        disabled={isLoading || !formData.codigo || !formData.nombre || !formData.direccion}
+        disabled={
+          isLoading ||
+          !formData.codigo ||
+          !formData.nombre ||
+          !formData.direccion ||
+          !isTipoSedeValid
+        }
         isLoading={isLoading}
       >
         {isEditing ? 'Guardar Cambios' : 'Crear Sede'}
@@ -284,11 +317,25 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
             <Select
               label="Tipo de Sede *"
               value={formData.tipo_sede}
-              onChange={(e) => setFormData({ ...formData, tipo_sede: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, tipo_sede: e.target.value, customTipoSede: '' })
+              }
               options={[{ value: '', label: 'Seleccione...' }, ...tipoSedeOptions]}
               required
             />
           </div>
+
+          {/* Input condicional para nuevo tipo de sede */}
+          {formData.tipo_sede === OTHER_TIPO_SEDE_VALUE && (
+            <Input
+              label="Nuevo Tipo de Sede *"
+              value={formData.customTipoSede}
+              onChange={(e) => setFormData({ ...formData, customTipoSede: e.target.value })}
+              placeholder="Ej: Centro de Distribución, Punto de Venta, Bodega"
+              required
+              helperText="Ingrese el nombre del nuevo tipo de sede"
+            />
+          )}
 
           <Input
             label="Nombre *"
@@ -373,11 +420,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
             </Button>
           </div>
 
-          {gpsError && (
-            <Alert variant="warning" className="mb-3">
-              {gpsError}
-            </Alert>
-          )}
+          {gpsError && <Alert variant="warning" message={gpsError} className="mb-3" />}
 
           <div className="grid grid-cols-2 gap-4">
             <Input

@@ -1,5 +1,8 @@
 // Types para gestión de usuarios
-import { PaginatedResponse } from './api.types';
+import type { PaginatedResponse } from './api.types';
+
+// Re-export for backwards compatibility
+export type { PaginatedResponse };
 
 export interface Cargo {
   id: number;

@@ -200,7 +200,7 @@ export function useIconsByCategory(category: string) {
  * Hook para buscar iconos
  * Usa debounce internamente para evitar muchas requests
  */
-export function useIconSearch(query: string, debounceMs: number = 300) {
+export function useIconSearch(query: string, _debounceMs: number = 300) {
   const {
     data: results = [],
     isLoading,

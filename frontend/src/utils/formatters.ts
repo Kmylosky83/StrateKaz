@@ -43,7 +43,7 @@ export const formatDate = (date: string | Date): string => {
       dateObj = date;
     }
     return format(dateObj, 'dd/MM/yyyy', { locale: es });
-  } catch (error) {
+  } catch {
     return '';
   }
 };
@@ -55,7 +55,7 @@ export const formatDateTime = (date: string | Date): string => {
   try {
     const dateObj = typeof date === 'string' ? parseISO(date) : date;
     return format(dateObj, 'dd/MM/yyyy HH:mm', { locale: es });
-  } catch (error) {
+  } catch {
     return '';
   }
 };
@@ -70,7 +70,7 @@ export const formatTime = (time: string): string => {
       return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
     }
     return time;
-  } catch (error) {
+  } catch {
     return '';
   }
 };

@@ -289,7 +289,7 @@ export const EstrategiasTowsSection = ({
     if (triggerNewForm && triggerNewForm > 0) {
       handleCreate();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [triggerNewForm]);
 
   // Renderizar badge de tipo de estrategia

@@ -124,8 +124,6 @@ const MILLISECONDS_PER_SECOND = 1000;
 const SECONDS_PER_MINUTE = 60;
 const MINUTES_PER_HOUR = 60;
 const HOURS_PER_DAY = 24;
-const DAYS_PER_MONTH = 30.44; // Promedio aproximado
-const MONTHS_PER_YEAR = 12;
 
 const DEFAULT_UPDATE_INTERVAL = 60000; // 1 minuto
 const DEFAULT_GRANULARITIES: TimeUnit[] = ['years', 'months', 'days'];

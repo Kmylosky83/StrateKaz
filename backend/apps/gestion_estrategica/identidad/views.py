@@ -90,6 +90,29 @@ class CorporateIdentityViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             return CorporateIdentityCreateUpdateSerializer
         return CorporateIdentitySerializer
 
+    def perform_create(self, serializer):
+        """
+        Asigna automáticamente la empresa del usuario al crear una identidad.
+
+        El campo empresa es OneToOneField obligatorio, por lo que debe
+        asignarse desde el usuario autenticado (multi-tenant).
+        """
+        user = self.request.user
+        if not hasattr(user, 'empresa') or user.empresa is None:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError({
+                'empresa': 'El usuario no tiene una empresa asignada. '
+                           'Contacte al administrador para asignarle una empresa.'
+            })
+        # Verificar que no exista ya una identidad para esta empresa
+        if CorporateIdentity.objects.filter(empresa=user.empresa).exists():
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError({
+                'empresa': 'Ya existe una identidad corporativa para esta empresa. '
+                           'Solo puede existir una identidad por empresa.'
+            })
+        serializer.save(empresa=user.empresa, created_by=user)
+
     def update(self, request, *args, **kwargs):
         """
         Sobrescribir update para retornar el objeto completo con el serializer de lectura.

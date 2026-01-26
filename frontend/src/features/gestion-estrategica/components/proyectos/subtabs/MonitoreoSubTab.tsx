@@ -36,7 +36,7 @@ export const MonitoreoSubTab = () => {
       <div className="space-y-4">
         {[...Array(3)].map((_, i) => (
           <Card key={i}>
-            <div className="p-6 animate-pulse">
+            <div className="p-6 animate-pulse-subtle">
               <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-4" />
               <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3" />
             </div>

@@ -29,6 +29,15 @@ const DEFAULT_BRANDING: Partial<BrandingConfig> = {
   secondary_color: '#000000',
   accent_color: '#f4ec25',
   app_version: '2.4.0',
+  // PWA defaults - se usan favicon como fallback para iconos PWA
+  pwa_name: 'StrateKaz',
+  pwa_short_name: 'StrateKaz',
+  pwa_description: 'Sistema Integrado de Gestión',
+  pwa_theme_color: '#ec268f',
+  pwa_background_color: '#ffffff',
+  pwa_icon_192: null,
+  pwa_icon_512: null,
+  pwa_icon_maskable: null,
 };
 
 export interface UseBrandingConfigReturn {
@@ -55,6 +64,16 @@ export interface UseBrandingConfigReturn {
 
   // Versión de la app
   appVersion: string;
+
+  // PWA (Progressive Web App)
+  pwaName: string;
+  pwaShortName: string;
+  pwaDescription: string;
+  pwaThemeColor: string;
+  pwaBackgroundColor: string;
+  pwaIcon192: string | null;
+  pwaIcon512: string | null;
+  pwaIconMaskable: string | null;
 
   // Función para obtener logo según tema
   getLogoForTheme: (theme: 'light' | 'dark') => string;
@@ -94,6 +113,24 @@ export const useBrandingConfig = (): UseBrandingConfigReturn => {
   // Versión de la app
   const appVersion = branding?.app_version || DEFAULT_BRANDING.app_version!;
 
+  // PWA (Progressive Web App) - con fallback a defaults o favicon
+  const pwaName = branding?.pwa_name || branding?.company_name || DEFAULT_BRANDING.pwa_name!;
+  const pwaShortName = branding?.pwa_short_name || branding?.company_short_name || DEFAULT_BRANDING.pwa_short_name!;
+  const pwaDescription = branding?.pwa_description || branding?.company_slogan || DEFAULT_BRANDING.pwa_description!;
+  const pwaThemeColor = branding?.pwa_theme_color || branding?.primary_color || DEFAULT_BRANDING.pwa_theme_color!;
+  const pwaBackgroundColor = branding?.pwa_background_color || DEFAULT_BRANDING.pwa_background_color!;
+
+  // Iconos PWA con fallback a favicon
+  const pwaIcon192 = branding?.pwa_icon_192 && branding.pwa_icon_192.trim() !== ''
+    ? branding.pwa_icon_192
+    : (branding?.favicon && branding.favicon.trim() !== '' ? branding.favicon : null);
+  const pwaIcon512 = branding?.pwa_icon_512 && branding.pwa_icon_512.trim() !== ''
+    ? branding.pwa_icon_512
+    : (branding?.favicon && branding.favicon.trim() !== '' ? branding.favicon : null);
+  const pwaIconMaskable = branding?.pwa_icon_maskable && branding.pwa_icon_maskable.trim() !== ''
+    ? branding.pwa_icon_maskable
+    : null;
+
   // Función para obtener el logo correcto según el tema
   const getLogoForTheme = (theme: 'light' | 'dark'): string => {
     // En tema oscuro, usamos logo_white (logo claro para fondo oscuro)
@@ -116,6 +153,15 @@ export const useBrandingConfig = (): UseBrandingConfigReturn => {
     secondaryColor,
     accentColor,
     appVersion,
+    // PWA
+    pwaName,
+    pwaShortName,
+    pwaDescription,
+    pwaThemeColor,
+    pwaBackgroundColor,
+    pwaIcon192,
+    pwaIcon512,
+    pwaIconMaskable,
     getLogoForTheme,
   };
 };

@@ -1,8 +1,10 @@
 /**
  * ColaboradoresSection - Sección de Colaboradores para el módulo Organización
  *
- * Este componente gestiona los usuarios/colaboradores del sistema desde el contexto
- * del módulo de Gestión Estratégica > Organización.
+ * Vista 2B: Lista CRUD con Filtros en Línea
+ * - SectionHeader con búsqueda y filtros en línea
+ * - DataTableCard para la tabla
+ * - Colores dinámicos usando getModuleColorClasses()
  *
  * REFACTORIZACIÓN:
  * - NO importa UsersPage directamente (evita acoplamiento entre features)
@@ -11,20 +13,21 @@
  */
 
 import { useState, useMemo } from 'react';
-import { UserPlus, Users, UserCheck, UserX, Shield } from 'lucide-react';
+import { UserPlus, Users, UserCheck, UserX, Shield, Search } from 'lucide-react';
 
 // Componentes comunes de layout
 import { Button } from '@/components/common/Button';
+import { SectionHeader } from '@/components/common/SectionHeader';
 import { Select } from '@/components/forms/Select';
+import { Input } from '@/components/forms/Input';
 import {
-  PageHeader,
-  FilterCard,
-  FilterGrid,
   DataTableCard,
   StatsGrid,
   StatsGridSkeleton,
 } from '@/components/layout';
 import type { StatItem } from '@/components/layout';
+import { getModuleColorClasses } from '@/utils/moduleColors';
+import type { ModuleColor } from '@/utils/moduleColors';
 
 // Componentes reutilizables del feature users
 import { UsersTable } from '@/features/users/components/UsersTable';
@@ -59,8 +62,9 @@ import { Modules, Sections } from '@/constants/permissions';
  * en el contexto del módulo de Organización.
  */
 export const ColaboradoresSection = () => {
-  // Color del módulo para mantener consistencia visual
+  // Color del módulo para mantener consistencia visual (sin hardcoding)
   const { color: moduleColor } = useModuleColor('ORGANIZACION');
+  const colorClasses = getModuleColorClasses(moduleColor as ModuleColor);
 
   // RBAC Permission Checks
   const { canDo } = usePermissions();
@@ -185,30 +189,9 @@ export const ColaboradoresSection = () => {
     setFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
   };
 
-  const handleSearchChange = (value: string) => {
-    setFilters((prev) => ({ ...prev, search: value, page: 1 }));
-  };
-
-  const handleClearFilters = () => {
-    setFilters({
-      search: '',
-      cargo: '',
-      is_active: undefined,
-      page: 1,
-      page_size: 10,
-    });
-  };
-
   // ============================================================================
   // COMPUTED VALUES
   // ============================================================================
-
-  const activeFiltersCount = [
-    filters.cargo,
-    filters.is_active !== undefined ? 'active' : '',
-  ].filter(Boolean).length;
-
-  const hasActiveFilters = activeFiltersCount > 0;
 
   const cargoFilterOptions = [
     { value: '', label: 'Todos los cargos' },
@@ -267,19 +250,6 @@ export const ColaboradoresSection = () => {
 
   return (
     <div className="space-y-6">
-      {/* HEADER */}
-      <PageHeader
-        title="Gestión de Colaboradores"
-        description="Administración de colaboradores y sus cargos en la organización"
-        actions={
-          canCreate ? (
-            <Button onClick={handleOpenCreateForm} leftIcon={<UserPlus className="h-4 w-4" />}>
-              Nuevo Colaborador
-            </Button>
-          ) : undefined
-        }
-      />
-
       {/* ESTADÍSTICAS */}
       {isLoadingUsers ? (
         <StatsGridSkeleton count={4} />
@@ -287,36 +257,51 @@ export const ColaboradoresSection = () => {
         <StatsGrid stats={userStats} columns={4} moduleColor={moduleColor} />
       )}
 
-      {/* FILTROS */}
-      <FilterCard
-        collapsible
-        searchPlaceholder="Buscar por nombre o username..."
-        searchValue={filters.search}
-        onSearchChange={handleSearchChange}
-        activeFiltersCount={activeFiltersCount}
-        hasActiveFilters={hasActiveFilters}
-        onClearFilters={handleClearFilters}
-      >
-        <FilterGrid columns={3}>
-          <Select
-            label="Cargo"
-            options={cargoFilterOptions}
-            value={filters.cargo}
-            onChange={(e) => handleFilterChange('cargo', e.target.value)}
-          />
-          <Select
-            label="Estado"
-            options={statusFilterOptions}
-            value={String(filters.is_active || '')}
-            onChange={(e) =>
-              handleFilterChange(
-                'is_active',
-                e.target.value === '' ? undefined : e.target.value === 'true'
-              )
-            }
-          />
-        </FilterGrid>
-      </FilterCard>
+      {/* SECTION HEADER - Vista 2B: Filtros en línea */}
+      <SectionHeader
+        icon={
+          <div className={`p-2 rounded-lg ${colorClasses.badge}`}>
+            <Users className={`h-5 w-5 ${colorClasses.icon}`} />
+          </div>
+        }
+        title="Colaboradores"
+        description="Gestión del equipo de trabajo y asignación de cargos"
+        variant="compact"
+        actions={
+          <div className="flex items-center gap-3 flex-nowrap">
+            <Input
+              placeholder="Buscar..."
+              value={filters.search || ''}
+              onChange={(e) => handleFilterChange('search', e.target.value)}
+              leftIcon={<Search className="h-4 w-4" />}
+              className="w-48"
+            />
+            <Select
+              value={filters.cargo || ''}
+              onChange={(e) => handleFilterChange('cargo', e.target.value)}
+              options={cargoFilterOptions}
+              className="w-44"
+            />
+            <Select
+              value={String(filters.is_active ?? '')}
+              onChange={(e) =>
+                handleFilterChange(
+                  'is_active',
+                  e.target.value === '' ? undefined : e.target.value === 'true'
+                )
+              }
+              options={statusFilterOptions}
+              className="w-36"
+            />
+            {canCreate && (
+              <Button onClick={handleOpenCreateForm} variant="primary" size="sm">
+                <UserPlus className="h-4 w-4 mr-2" />
+                Nuevo Colaborador
+              </Button>
+            )}
+          </div>
+        }
+      />
 
       {/* TABLA */}
       <DataTableCard

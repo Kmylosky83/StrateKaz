@@ -894,6 +894,168 @@ Usar `DataTableCard` con prop `pagination`:
 - [ ] Loading skeleton
 - [ ] Espaciado `space-y-6` entre secciones
 
+---
+
+## Vista 2B: Lista CRUD con Filtros en Línea
+
+### Propósito
+
+Extensión de Vista 2 para entidades que requieren **filtrado por múltiples criterios**. Todos los filtros (búsqueda y selects) se integran en una sola línea dentro del SectionHeader, evitando redundancia y optimizando el espacio.
+
+### Cuándo Usar
+
+- Entidades con múltiples atributos filtrables (nivel, área, estado, etc.)
+- Catálogos grandes que requieren refinamiento
+- Cuando Vista 2 básica no es suficiente para la navegación
+- Cuando los filtros son pocos (2-3 máximo) y caben en una línea
+
+### Ejemplos en el Sistema
+
+- `OrganizacionPage > Cargos` - Filtros por nivel jerárquico y área
+- `ColaboradoresPage` - Filtros por cargo, área, estado
+
+---
+
+### Estructura Visual
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 1. STATS GRID (Opcional)                                                     │
+│ ┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐              │
+│ │ Total            │ │ Con Usuarios     │ │ Sin Asignar      │              │
+│ │ 15 cargos   [X]  │ │ 12         [V]   │ │ 3           [O]  │              │
+│ └──────────────────┘ └──────────────────┘ └──────────────────┘              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 2. SECTION HEADER con FILTROS EN LÍNEA (fuera de contenedores)               │
+│                                                                              │
+│ [X] Cargos        [Buscar...] [Nivel v] [Área v]     [+ Nuevo Cargo]        │
+│     15 cargos                                                                │
+│                                                                              │
+│ (Izquierda: Icono + Título)  (Derecha: Búsqueda + Filtros + Botón)          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 3. DATA TABLE                                                                │
+│ ┌───────────────────────────────────────────────────────────────────────┐   │
+│ │ Cargo         │ Nivel      │ Área         │ Usuarios  │ Acciones     │   │
+│ ├───────────────┼────────────┼──────────────┼───────────┼──────────────┤   │
+│ │ [X] Nombre    │ [Ejecutivo]│ Gerencia     │ 5         │ [E] [D]      │   │
+│ └───────────────┴────────────┴──────────────┴───────────┴──────────────┘   │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Componentes Utilizados
+
+| # | Zona | Componente | Ubicación | Props Principales |
+|---|------|------------|-----------|-------------------|
+| 1 | Stats Grid | `StatsGrid` | `@/components/layout` | `stats`, `columns`, `moduleColor` |
+| 2 | Section Header | `SectionHeader` | `@/components/common` | `icon`, `title`, `description`, `actions` |
+| 3 | Búsqueda | `Input` | `@/components/forms` | `leftIcon={Search}`, `placeholder`, `className="w-48"` |
+| 4 | Filtros | `Select` | `@/components/forms` | Sin `label`, `className="w-44"` |
+| 5 | Data Table | `DataTableCard` | `@/components/layout` | Sin `headerActions` |
+
+---
+
+### Anatomía Detallada
+
+#### SectionHeader con Filtros en Línea
+
+```tsx
+<SectionHeader
+  icon={
+    <div className={`p-2 rounded-lg ${colorClasses.badge}`}>
+      <Briefcase className={`h-5 w-5 ${colorClasses.icon}`} />
+    </div>
+  }
+  title="Cargos"
+  description={`${count} cargo${count !== 1 ? 's' : ''} configurado${count !== 1 ? 's' : ''}`}
+  variant="compact"
+  actions={
+    <div className="flex items-center gap-3 flex-nowrap">
+      {/* Búsqueda */}
+      <Input
+        placeholder="Buscar..."
+        value={filters.search || ''}
+        onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+        leftIcon={<Search className="h-4 w-4" />}
+        className="w-48"
+      />
+      {/* Filtro: Nivel */}
+      <Select
+        value={filters.nivel_jerarquico || ''}
+        onChange={(e) =>
+          setFilters({
+            ...filters,
+            nivel_jerarquico: e.target.value || undefined,
+          })
+        }
+        options={[
+          { value: '', label: 'Todos los niveles' },
+          ...NIVEL_JERARQUICO_OPTIONS.map((opt) => ({
+            value: opt.value.toString(),
+            label: opt.label,
+          })),
+        ]}
+        className="w-44"
+      />
+      {/* Filtro: Área */}
+      <Select
+        value={filters.area?.toString() || ''}
+        onChange={(e) =>
+          setFilters({
+            ...filters,
+            area: e.target.value ? parseInt(e.target.value) : undefined,
+          })
+        }
+        options={[
+          { value: '', label: 'Todas las áreas' },
+          ...areaOptions.map((opt) => ({
+            value: opt.value.toString(),
+            label: opt.label,
+          })),
+        ]}
+        className="w-44"
+      />
+      {/* Botón crear */}
+      {canCreate && (
+        <Button variant="primary" size="sm" onClick={handleCreate}>
+          <Plus className="h-4 w-4 mr-2" />
+          Nuevo Cargo
+        </Button>
+      )}
+    </div>
+  }
+/>
+```
+
+---
+
+### Diferencias con Vista 2 y Vista 2 con FilterCard
+
+| Aspecto | Vista 2 | Vista 2B (Filtros en línea) | Vista 2 + FilterCard |
+|---------|---------|----------------------------|----------------------|
+| Búsqueda | No incluida | En SectionHeader | En SectionHeader |
+| Filtros | No tiene | En SectionHeader (misma línea) | En FilterCard separado |
+| Complejidad visual | Baja | Media (compacta) | Alta (más elementos) |
+| Espacio vertical | Mínimo | Mínimo | Mayor (FilterCard ocupa espacio) |
+| Casos de uso | Catálogos simples | 2-3 filtros | Muchos filtros (4+) |
+
+---
+
+### Checklist de Implementación
+
+- [ ] Stats Grid (opcional)
+- [ ] SectionHeader con `icon`, `title`, `description`, `actions`
+- [ ] Input de búsqueda en `actions` (sin label, `className="w-48"`)
+- [ ] Select de filtros en `actions` (sin label, `className="w-44"`)
+- [ ] Botón de crear en `actions` (verificando permisos)
+- [ ] DataTableCard sin `headerActions`
+- [ ] Empty state con icono, mensaje y CTA
+- [ ] Colores dinámicos usando `getModuleColorClasses()`
+- [ ] Sin hardcoding de colores
+
+---
+
 ## Vista 3: Panel de Activación (Toggle Grid)
 
 ### Propósito
@@ -2907,6 +3069,563 @@ import { Modules, Sections } from '@/constants/permissions';
 
 ---
 
+## Vista 7: Tree Cards (Árbol Jerárquico con Tarjetas)
+
+### Propósito
+
+Mostrar una **estructura jerárquica de entidades** con tarjetas expandibles que representan nodos padre e hijos. Ideal para áreas/departamentos, categorías anidadas, o cualquier estructura tipo árbol con niveles de profundidad variable.
+
+### Cuándo Usar
+
+- Estructura organizacional (áreas y departamentos)
+- Categorías con subcategorías
+- Menús de navegación con jerarquía
+- Cualquier entidad con relación padre-hijo
+
+### Ejemplos en el Sistema
+
+- `OrganizacionPage > Áreas` - Estructura de áreas/departamentos de la empresa
+
+---
+
+### Estructura Visual
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 1. PAGE HEADER + DYNAMIC SECTIONS (en contenedor a la derecha)              │
+│                                                                             │
+│ Organización                            [Áreas] [Cargos] [Organigrama] ...  │
+│ Administra la estructura organizacional                                      │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 2. STATS GRID (Métricas de la sección)                                       │
+│ ┌───────────────┐ ┌───────────────┐ ┌───────────────┐ ┌───────────────┐     │
+│ │ 📊 Total      │ │ ✅ Activas    │ │ 👥 Personal   │ │ 🌳 Niveles    │     │
+│ │ 12 áreas      │ │ 10 áreas      │ │ 85 usuarios   │ │ 4 niveles     │     │
+│ └───────────────┘ └───────────────┘ └───────────────┘ └───────────────┘     │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 3. SECTION HEADER (Título + Filtros + Acción)                               │
+│                                                                             │
+│ [📁] Áreas y Departamentos                      🔍 [___________] [+ Nueva]  │
+│      12 áreas configuradas                      ☐ Incluir inactivas         │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 4. TREE CARDS (Árbol jerárquico expandible)                                 │
+│                                                                             │
+│ ┌─────────────────────────────────────────────────────────────────────────┐ │
+│ │ [▼] [🏢] Gerencia General                                  [✏️] [🗑️]   │ │
+│ │         Área principal de la empresa • 3 sub-áreas • 12 usuarios        │ │
+│ └─────────────────────────────────────────────────────────────────────────┘ │
+│                                                                             │
+│     ┌─────────────────────────────────────────────────────────────────────┐ │
+│     │ [▶] [📋] Dirección Administrativa               [✅] [✏️] [🗑️]     │ │
+│     │         Sub-área de Gerencia • 2 sub-áreas • 8 usuarios             │ │
+│     └─────────────────────────────────────────────────────────────────────┘ │
+│                                                                             │
+│     ┌─────────────────────────────────────────────────────────────────────┐ │
+│     │ [▼] [💰] Dirección Financiera                   [✅] [✏️] [🗑️]     │ │
+│     │         Sub-área de Gerencia • 1 sub-área • 5 usuarios              │ │
+│     └─────────────────────────────────────────────────────────────────────┘ │
+│                                                                             │
+│         ┌─────────────────────────────────────────────────────────────────┐ │
+│         │     [📊] Contabilidad                       [✅] [✏️] [🗑️]     │ │
+│         │         Sub-área de Financiera • 0 sub-áreas • 3 usuarios       │ │
+│         └─────────────────────────────────────────────────────────────────┘ │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Componentes Utilizados
+
+| # | Zona | Componente | Ubicación | Props Principales |
+|---|------|------------|-----------|-------------------|
+| 1 | Page Header | `PageHeader` | `@/components/layout` | `title`, `description` |
+| 2 | Sub-navigation | `DynamicSections` | `@/components/common` | `sections`, `activeSection`, `variant="pills"` |
+| 3 | Stats Grid | `StatsGrid` | `@/components/layout` | `stats`, `columns`, `moduleColor` |
+| 4 | Section Header | `SectionHeader` | `@/components/common` | `icon`, `title`, `subtitle`, `action` |
+| 5 | Search | `Input` | `@/components/forms` | `icon={Search}`, `placeholder` |
+| 6 | Tree Card | `Card` | `@/components/common` | Con padding e indentación por nivel |
+| 7 | Icon | `DynamicIcon` | `@/components/common` | `name` (icono dinámico desde BD) |
+| 8 | Badge | `Badge` | `@/components/common` | Para estado activo/inactivo |
+| 9 | Action Buttons | `ActionButtons` | `@/components/common` | `onEdit`, `onDelete` |
+
+---
+
+### Anatomía Detallada
+
+#### 1. Tree Card con Expansión
+
+```tsx
+const AreaCard = ({ area, level, isExpanded, hasChildren, onToggleExpand, onEdit, onDelete }) => {
+  const colorClasses = getColorClasses(area.color || 'purple');
+
+  return (
+    <Card
+      className={cn(
+        'p-4 transition-all duration-200 hover:shadow-md cursor-pointer',
+        colorClasses.border,
+        !area.is_active && 'opacity-60'
+      )}
+      style={{ marginLeft: `${level * 24}px` }} // Indentación por nivel
+    >
+      <div className="flex items-center gap-3">
+        {/* Chevron de expansión */}
+        {hasChildren && (
+          <button onClick={onToggleExpand} className="p-1 hover:bg-gray-100 rounded">
+            {isExpanded ? (
+              <ChevronDown className="h-4 w-4 text-gray-500" />
+            ) : (
+              <ChevronRight className="h-4 w-4 text-gray-500" />
+            )}
+          </button>
+        )}
+
+        {/* Icono dinámico con color */}
+        <div className={cn('p-2 rounded-lg', colorClasses.bg, colorClasses.bgDark)}>
+          <DynamicIcon name={area.icon} className={cn('h-5 w-5', colorClasses.text)} />
+        </div>
+
+        {/* Información del área */}
+        <div className="flex-1 min-w-0">
+          <h3 className="font-medium text-gray-900 dark:text-gray-100 truncate">
+            {area.name}
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {area.parent_name && `Sub-área de ${area.parent_name} • `}
+            {area.children_count} sub-áreas • {area.users_count} usuarios
+          </p>
+        </div>
+
+        {/* Estado y acciones */}
+        <div className="flex items-center gap-2">
+          {area.is_active ? (
+            <Badge variant="success" size="sm">Activa</Badge>
+          ) : (
+            <Badge variant="gray" size="sm">Inactiva</Badge>
+          )}
+
+          <ActionButtons
+            onEdit={() => onEdit(area)}
+            onDelete={() => onDelete(area)}
+            size="sm"
+          />
+        </div>
+      </div>
+    </Card>
+  );
+};
+```
+
+**Reglas de Indentación:**
+- Nivel 0 (raíz): `marginLeft: 0`
+- Nivel 1: `marginLeft: 24px`
+- Nivel 2: `marginLeft: 48px`
+- Cada nivel adicional suma 24px
+
+**Reglas de Colores Dinámicos:**
+- Cada área puede tener un color asignado desde BD
+- El icono y borde usan ese color
+- Si no hay color, usar `purple` por defecto
+
+---
+
+#### 2. Árbol Completo con Estado de Expansión
+
+```tsx
+const AreasTree = ({ areas, onEdit, onDelete }) => {
+  const [expanded, setExpanded] = useState<Set<number>>(new Set());
+
+  const toggleExpand = (areaId: number) => {
+    setExpanded(prev => {
+      const next = new Set(prev);
+      if (next.has(areaId)) next.delete(areaId);
+      else next.add(areaId);
+      return next;
+    });
+  };
+
+  // Renderizar árbol recursivamente
+  const renderTree = (parentId: number | null = null, level: number = 0) => {
+    const children = areas.filter(a => a.parent_id === parentId);
+
+    return children.map(area => {
+      const hasChildren = areas.some(a => a.parent_id === area.id);
+      const isExpanded = expanded.has(area.id);
+
+      return (
+        <Fragment key={area.id}>
+          <AreaCard
+            area={area}
+            level={level}
+            isExpanded={isExpanded}
+            hasChildren={hasChildren}
+            onToggleExpand={() => toggleExpand(area.id)}
+            onEdit={onEdit}
+            onDelete={onDelete}
+          />
+
+          {/* Renderizar hijos si está expandido */}
+          {isExpanded && hasChildren && renderTree(area.id, level + 1)}
+        </Fragment>
+      );
+    });
+  };
+
+  return <div className="space-y-3">{renderTree()}</div>;
+};
+```
+
+---
+
+### Checklist de Implementación
+
+- [ ] PageHeader con título de la página
+- [ ] DynamicSections para sub-navegación (alineado a la derecha)
+- [ ] StatsGrid con métricas de la sección
+- [ ] SectionHeader con título, subtítulo y acción de crear
+- [ ] Búsqueda y filtros (incluir inactivas)
+- [ ] Cards con indentación por nivel
+- [ ] Chevron para expandir/colapsar nodos con hijos
+- [ ] Iconos dinámicos con colores por área
+- [ ] Badge de estado (activo/inactivo)
+- [ ] ActionButtons con permisos verificados
+- [ ] EmptyState cuando no hay áreas
+- [ ] Loading skeleton con BrandedSkeleton
+
+---
+
+## Vista 8: Organigrama Interactivo (Interactive Org Chart)
+
+### Propósito
+
+Mostrar una **visualización gráfica interactiva** de la estructura organizacional usando nodos conectados. Permite ver la jerarquía de áreas, cargos o ambos con capacidad de zoom, pan, y múltiples modos de visualización.
+
+### Cuándo Usar
+
+- Visualización de organigrama empresarial
+- Estructura jerárquica de cargos
+- Relaciones entre entidades
+- Cuando se necesita vista gráfica además de lista
+
+### Ejemplos en el Sistema
+
+- `OrganizacionPage > Organigrama` - Organigrama de la empresa
+
+---
+
+### Estructura Visual
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 1. PAGE HEADER + DYNAMIC SECTIONS (en contenedor a la derecha)              │
+│                                                                             │
+│ Organización                            [Áreas] [Cargos] [Organigrama] ...  │
+│ Administra la estructura organizacional                                      │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 2. TOOLBAR (Controles del organigrama)                                       │
+│                                                                             │
+│ Vista: [Por Áreas ▼]   Layout: [🔽 Vertical] [▶️ Horizontal]                │
+│                                                                             │
+│ 🔍 [Buscar área o cargo...]                                                 │
+│                                                                             │
+│ Zoom: [-] [═══════○══] [+] [⟲ Reset]   Exportar: [📷 PNG] [📄 PDF]         │
+│                                                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 3. CANVAS (React Flow con nodos y conexiones)                               │
+│                                                                             │
+│                           ┌─────────────────┐                               │
+│                           │ 🏢 Gerencia     │                               │
+│                           │    General      │                               │
+│                           │    12 usuarios  │                               │
+│                           └────────┬────────┘                               │
+│                                    │                                        │
+│              ┌─────────────────────┼─────────────────────┐                  │
+│              │                     │                     │                  │
+│     ┌────────▼────────┐   ┌────────▼────────┐   ┌────────▼────────┐        │
+│     │ 📋 Dirección    │   │ 💰 Dirección    │   │ 🏭 Dirección    │        │
+│     │ Administrativa  │   │    Financiera   │   │   Operaciones   │        │
+│     │    8 usuarios   │   │    5 usuarios   │   │   25 usuarios   │        │
+│     └────────┬────────┘   └────────┬────────┘   └────────┬────────┘        │
+│              │                     │                     │                  │
+│      ┌───────┴───────┐     ┌───────┴───────┐     ┌───────┴───────┐          │
+│      ▼               ▼     ▼               ▼     ▼               ▼          │
+│   ┌──────┐        ┌──────┐              ┌──────┐              ┌──────┐      │
+│   │ RRHH │        │ TI   │              │Conta │              │Produc│      │
+│   └──────┘        └──────┘              └──────┘              └──────┘      │
+│                                                                             │
+│                         [🔍 Mini-mapa en esquina]                           │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Componentes Utilizados
+
+| # | Zona | Componente | Ubicación | Props Principales |
+|---|------|------------|-----------|-------------------|
+| 1 | Page Header | `PageHeader` | `@/components/layout` | `title`, `description` |
+| 2 | Sub-navigation | `DynamicSections` | `@/components/common` | `sections`, `activeSection`, `variant="pills"` |
+| 3 | Toolbar | `OrganigramaToolbar` | Local | `view`, `layout`, `onExport` |
+| 4 | Canvas | `ReactFlow` | `@xyflow/react` | `nodes`, `edges`, `fitView` |
+| 5 | Nodos | `AreaNode`, `CargoNode` | Local | Nodos personalizados |
+| 6 | Layout | `dagre` | `@dagrejs/dagre` | Layout automático |
+
+---
+
+### Anatomía Detallada
+
+#### 1. Toolbar del Organigrama
+
+```tsx
+<Card className="p-4">
+  <div className="flex flex-wrap items-center gap-4">
+    {/* Selector de vista */}
+    <div className="flex items-center gap-2">
+      <span className="text-sm text-gray-600">Vista:</span>
+      <select
+        value={view}
+        onChange={(e) => setView(e.target.value)}
+        className="border rounded-lg px-3 py-1.5 text-sm"
+      >
+        <option value="areas">Por Áreas</option>
+        <option value="cargos">Por Cargos</option>
+        <option value="compact">Compacto</option>
+      </select>
+    </div>
+
+    {/* Selector de layout */}
+    <div className="flex items-center gap-1">
+      <span className="text-sm text-gray-600">Layout:</span>
+      <Button
+        variant={layout === 'vertical' ? 'primary' : 'outline'}
+        size="sm"
+        onClick={() => setLayout('vertical')}
+      >
+        <ArrowDown className="h-4 w-4" />
+      </Button>
+      <Button
+        variant={layout === 'horizontal' ? 'primary' : 'outline'}
+        size="sm"
+        onClick={() => setLayout('horizontal')}
+      >
+        <ArrowRight className="h-4 w-4" />
+      </Button>
+    </div>
+
+    {/* Búsqueda */}
+    <div className="flex-1">
+      <Input
+        icon={Search}
+        placeholder="Buscar área o cargo..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+    </div>
+
+    {/* Controles de zoom */}
+    <div className="flex items-center gap-2">
+      <Button variant="outline" size="sm" onClick={zoomOut}>
+        <Minus className="h-4 w-4" />
+      </Button>
+      <span className="text-sm text-gray-600 w-12 text-center">
+        {Math.round(zoom * 100)}%
+      </span>
+      <Button variant="outline" size="sm" onClick={zoomIn}>
+        <Plus className="h-4 w-4" />
+      </Button>
+      <Button variant="outline" size="sm" onClick={fitView}>
+        <Maximize className="h-4 w-4" />
+      </Button>
+    </div>
+
+    {/* Exportación */}
+    <div className="flex items-center gap-2">
+      <Button variant="outline" size="sm" onClick={exportPNG}>
+        <Camera className="h-4 w-4 mr-1" />
+        PNG
+      </Button>
+      <Button variant="outline" size="sm" onClick={exportPDF}>
+        <FileText className="h-4 w-4 mr-1" />
+        PDF
+      </Button>
+    </div>
+  </div>
+</Card>
+```
+
+---
+
+#### 2. Nodo de Área Personalizado
+
+```tsx
+const AreaNode = ({ data }) => {
+  const colorClasses = getColorClasses(data.color || 'purple');
+
+  return (
+    <div className={cn(
+      'px-4 py-3 rounded-lg border-2 shadow-md bg-white dark:bg-gray-800',
+      'min-w-[160px] text-center transition-all duration-200',
+      colorClasses.border
+    )}>
+      {/* Icono */}
+      <div className={cn(
+        'mx-auto mb-2 p-2 rounded-lg w-fit',
+        colorClasses.bg,
+        colorClasses.bgDark
+      )}>
+        <DynamicIcon name={data.icon} className={cn('h-5 w-5', colorClasses.text)} />
+      </div>
+
+      {/* Nombre */}
+      <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
+        {data.name}
+      </h3>
+
+      {/* Info adicional */}
+      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+        {data.users_count} usuarios
+      </p>
+
+      {/* Handle para conexiones */}
+      <Handle type="target" position={Position.Top} />
+      <Handle type="source" position={Position.Bottom} />
+    </div>
+  );
+};
+```
+
+---
+
+#### 3. Layout Automático con Dagre
+
+```tsx
+import dagre from '@dagrejs/dagre';
+
+const getLayoutedElements = (nodes, edges, direction = 'TB') => {
+  const dagreGraph = new dagre.graphlib.Graph();
+  dagreGraph.setDefaultEdgeLabel(() => ({}));
+
+  // TB = top-bottom (vertical), LR = left-right (horizontal)
+  dagreGraph.setGraph({
+    rankdir: direction,
+    nodesep: 50,    // Separación horizontal
+    ranksep: 80,    // Separación vertical
+    marginx: 20,
+    marginy: 20
+  });
+
+  // Agregar nodos
+  nodes.forEach((node) => {
+    dagreGraph.setNode(node.id, {
+      width: 180,
+      height: 100
+    });
+  });
+
+  // Agregar edges
+  edges.forEach((edge) => {
+    dagreGraph.setEdge(edge.source, edge.target);
+  });
+
+  // Calcular layout
+  dagre.layout(dagreGraph);
+
+  // Aplicar posiciones
+  const layoutedNodes = nodes.map((node) => {
+    const nodeWithPosition = dagreGraph.node(node.id);
+    return {
+      ...node,
+      position: {
+        x: nodeWithPosition.x - 90,  // Centrar
+        y: nodeWithPosition.y - 50
+      }
+    };
+  });
+
+  return { nodes: layoutedNodes, edges };
+};
+```
+
+---
+
+#### 4. Canvas Principal con React Flow
+
+```tsx
+import { ReactFlow, MiniMap, Controls, Background } from '@xyflow/react';
+
+const OrganigramaCanvas = ({ areas, layout }) => {
+  const { nodes, edges } = useMemo(() => {
+    // Convertir áreas a nodos
+    const nodesList = areas.map(area => ({
+      id: `area-${area.id}`,
+      type: 'areaNode',
+      data: area,
+      position: { x: 0, y: 0 }
+    }));
+
+    // Crear edges de relaciones padre-hijo
+    const edgesList = areas
+      .filter(a => a.parent_id)
+      .map(area => ({
+        id: `edge-${area.parent_id}-${area.id}`,
+        source: `area-${area.parent_id}`,
+        target: `area-${area.id}`,
+        type: 'smoothstep'
+      }));
+
+    // Aplicar layout
+    return getLayoutedElements(nodesList, edgesList, layout === 'vertical' ? 'TB' : 'LR');
+  }, [areas, layout]);
+
+  return (
+    <div className="h-[600px] border rounded-lg overflow-hidden">
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        nodeTypes={{ areaNode: AreaNode }}
+        fitView
+        fitViewOptions={{ padding: 0.2 }}
+        proOptions={{ hideAttribution: true }}
+      >
+        <Background />
+        <Controls />
+        <MiniMap
+          nodeColor={(node) => {
+            const color = node.data?.color || 'purple';
+            return colorMap[color];
+          }}
+        />
+      </ReactFlow>
+    </div>
+  );
+};
+```
+
+---
+
+### Checklist de Implementación
+
+- [ ] PageHeader con título de la página
+- [ ] DynamicSections para sub-navegación (alineado a la derecha)
+- [ ] Toolbar con controles de vista, layout, búsqueda y zoom
+- [ ] Canvas de React Flow con nodos y edges
+- [ ] Nodos personalizados con iconos dinámicos y colores
+- [ ] Layout automático con Dagre (vertical/horizontal)
+- [ ] MiniMap para navegación rápida
+- [ ] Controls para zoom y pan
+- [ ] Exportación a PNG y PDF
+- [ ] Modos de vista: Por Áreas, Por Cargos, Compacto
+- [ ] Búsqueda con highlight de nodos
+- [ ] Verificación de permisos para ver organigrama
+- [ ] Loading skeleton con BrandedSkeleton
+
+---
+
 ## Historial de Cambios
 
 | Fecha | Versión | Cambios |
@@ -2919,3 +3638,5 @@ import { Modules, Sections } from '@/constants/permissions';
 | 2026-01-20 | 1.5 | Documentación Vista 4: Perfil de Usuario (Profile View) |
 | 2026-01-20 | 1.6 | Documentación Vista 5: Formulario de Acción (Action Form View) |
 | 2026-01-20 | 1.7 | Documentación Vista 6: Panel de Configuración con Acciones (Settings Panel) |
+| 2026-01-22 | 1.8 | Documentación Vista 7: Tree Cards (Árbol Jerárquico con Tarjetas) |
+| 2026-01-22 | 1.9 | Documentación Vista 8: Organigrama Interactivo (Interactive Org Chart) |

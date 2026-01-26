@@ -41,12 +41,20 @@ const ProyectosPage = lazy(() => import('@/features/gestion-estrategica/pages/Pr
 const RevisionDireccionPage = lazy(
   () => import('@/features/gestion-estrategica/pages/RevisionDireccionPage')
 );
+const ContextoPage = lazy(
+  () => import('@/features/gestion-estrategica/pages/ContextoPage')
+);
+
+// Soporte Estratégico (nuevo módulo)
+const GestionDocumentalPage = lazy(
+  () => import('@/features/soporte-estrategico/pages/GestionDocumentalPage')
+);
+const PlanificacionSistemaPageNueva = lazy(
+  () => import('@/features/soporte-estrategico/pages/PlanificacionSistemaPage')
+);
 
 // ==================== NIVEL 2: CUMPLIMIENTO ====================
 // Motor de Cumplimiento
-const CumplimientoPage = lazy(() =>
-  import('@/features/cumplimiento').then((m) => ({ default: m.CumplimientoPage }))
-);
 const MatrizLegalPage = lazy(() =>
   import('@/features/cumplimiento').then((m) => ({ default: m.MatrizLegalPage }))
 );
@@ -61,12 +69,6 @@ const ReglamentosInternosPage = lazy(() =>
 );
 
 // Motor de Riesgos
-const RiesgosPage = lazy(() =>
-  import('@/features/riesgos').then((m) => ({ default: m.RiesgosPage }))
-);
-const ContextoOrganizacionalPage = lazy(() =>
-  import('@/features/riesgos').then((m) => ({ default: m.ContextoOrganizacionalPage }))
-);
 const RiesgosProcesosPage = lazy(() =>
   import('@/features/riesgos').then((m) => ({ default: m.RiesgosProcesosPage }))
 );
@@ -85,9 +87,6 @@ const SeguridadInformacionPage = lazy(() =>
 );
 
 // Workflows Engine
-const WorkflowsPage = lazy(() =>
-  import('@/features/workflows').then((m) => ({ default: m.WorkflowsPage }))
-);
 const DisenadorFlujosPage = lazy(() =>
   import('@/features/workflows').then((m) => ({ default: m.DisenadorFlujosPage }))
 );
@@ -179,9 +178,6 @@ const TalentHubPage = lazy(() =>
 );
 
 // Administración y Finanzas
-const AdminFinancePage = lazy(() =>
-  import('@/features/admin-finance').then((m) => ({ default: m.AdminFinancePage }))
-);
 const TesoreriaPage = lazy(() =>
   import('@/features/admin-finance').then((m) => ({ default: m.TesoreriaPage }))
 );
@@ -196,9 +192,6 @@ const ServiciosGeneralesPage = lazy(() =>
 );
 
 // Contabilidad (Módulo Activable)
-const AccountingPage = lazy(() =>
-  import('@/features/accounting').then((m) => ({ default: m.AccountingPage }))
-);
 const ConfigContablePage = lazy(() =>
   import('@/features/accounting').then((m) => ({ default: m.ConfigContablePage }))
 );
@@ -214,9 +207,6 @@ const IntegracionContablePage = lazy(() =>
 
 // ==================== NIVEL 6: INTELIGENCIA ====================
 // Analítica
-const AnalyticsPage = lazy(() =>
-  import('@/features/analytics').then((m) => ({ default: m.AnalyticsPage }))
-);
 const ConfigIndicadoresPage = lazy(() =>
   import('@/features/analytics').then((m) => ({ default: m.ConfigIndicadoresPage }))
 );
@@ -238,11 +228,11 @@ const AccionesIndicadorPage = lazy(() =>
 const ExportacionPage = lazy(() =>
   import('@/features/analytics').then((m) => ({ default: m.ExportacionPage }))
 );
+const AnalyticsDemoPage = lazy(() =>
+  import('@/features/analytics').then((m) => ({ default: m.AnalyticsDemoPage }))
+);
 
 // Sistema de Auditoría
-const AuditSystemPage = lazy(() =>
-  import('@/features/audit-system').then((m) => ({ default: m.AuditSystemPage }))
-);
 const LogsSistemaPage = lazy(() =>
   import('@/features/audit-system').then((m) => ({ default: m.LogsSistemaPage }))
 );
@@ -316,10 +306,10 @@ export const AppRoutes = () => {
 
           {/* Tab 4: Planeación Estratégica */}
           <Route path="/gestion-estrategica/planeacion" element={withSuspense(PlaneacionPage)} />
-          {/* Contexto Organizacional (DOFA/PESTEL/Porter) - movido desde Riesgos */}
+          {/* Tab 4b: Contexto Organizacional (DOFA/PESTEL/Porter/TOWS) */}
           <Route
-            path="/gestion-estrategica/planeacion/contexto"
-            element={withSuspense(ContextoOrganizacionalPage)}
+            path="/gestion-estrategica/contexto"
+            element={withSuspense(ContextoPage)}
           />
 
           {/* Tab 5: Gestión de Proyectos (PMI) */}
@@ -331,16 +321,21 @@ export const AppRoutes = () => {
             element={withSuspense(RevisionDireccionPage)}
           />
 
-          {/* Tab 7: Gestión Documental (migrado desde HSEQ a N1) */}
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          {/* MÓDULO: SOPORTE ESTRATÉGICO (soporte_estrategico) */}
+          {/* Gestión Documental y Planificación del Sistema */}
+          {/* ═══════════════════════════════════════════════════════════════ */}
           <Route
-            path="/gestion-estrategica/gestion-documental"
-            element={withSuspense(SistemaDocumentalPage)}
+            path="/soporte-estrategico"
+            element={<Navigate to="/soporte-estrategico/gestion-documental" replace />}
           />
-
-          {/* Tab 8: Planificación del Sistema (migrado desde HSEQ a N1) */}
           <Route
-            path="/gestion-estrategica/planificacion-sistema"
-            element={withSuspense(PlanificacionSistemaPage)}
+            path="/soporte-estrategico/gestion-documental"
+            element={withSuspense(GestionDocumentalPage)}
+          />
+          <Route
+            path="/soporte-estrategico/planificacion-sistema"
+            element={withSuspense(PlanificacionSistemaPageNueva)}
           />
 
           {/* Usuarios - Módulo transversal dentro de Dirección Estratégica */}
@@ -351,7 +346,7 @@ export const AppRoutes = () => {
           {/* ═══════════════════════════════════════════════════════════════ */}
 
           {/* Módulo: Motor de Cumplimiento (motor_cumplimiento) */}
-          <Route path="/cumplimiento" element={withSuspense(CumplimientoPage)} />
+          <Route path="/cumplimiento" element={<Navigate to="/cumplimiento/matriz-legal" replace />} />
           <Route path="/cumplimiento/matriz-legal" element={withSuspense(MatrizLegalPage)} />
           <Route
             path="/cumplimiento/requisitos-legales"
@@ -367,8 +362,8 @@ export const AppRoutes = () => {
           />
 
           {/* Módulo: Motor de Riesgos (motor_riesgos) */}
-          {/* NOTA: contexto_organizacional movido a /gestion-estrategica/planeacion/contexto */}
-          <Route path="/riesgos" element={withSuspense(RiesgosPage)} />
+          {/* NOTA: contexto_organizacional en /gestion-estrategica/contexto */}
+          <Route path="/riesgos" element={<Navigate to="/riesgos/procesos" replace />} />
           <Route path="/riesgos/procesos" element={withSuspense(RiesgosProcesosPage)} />
           <Route path="/riesgos/ipevr" element={withSuspense(IPEVRPage)} />
           <Route path="/riesgos/ambientales" element={withSuspense(AspectosAmbientalesPage)} />
@@ -377,7 +372,7 @@ export const AppRoutes = () => {
           <Route path="/riesgos/seguridad-info" element={withSuspense(SeguridadInformacionPage)} />
 
           {/* Módulo: Flujos de Trabajo (workflow_engine) */}
-          <Route path="/workflows" element={withSuspense(WorkflowsPage)} />
+          <Route path="/workflows" element={<Navigate to="/workflows/disenador" replace />} />
           <Route path="/workflows/disenador" element={withSuspense(DisenadorFlujosPage)} />
           <Route path="/workflows/ejecucion" element={withSuspense(EjecucionPage)} />
           <Route path="/workflows/monitoreo" element={withSuspense(MonitoreoPage)} />
@@ -442,13 +437,24 @@ export const AppRoutes = () => {
             path="/proveedores/productos-servicios"
             element={withSuspense(ProductosServiciosPage)}
           />
+          <Route path="/proveedores/programacion" element={withSuspense(MateriaPrimaPage)} />
+          <Route path="/proveedores/compras" element={withSuspense(MateriaPrimaPage)} />
+          <Route path="/proveedores/almacenamiento" element={withSuspense(MateriaPrimaPage)} />
           <Route path="/proveedores/pruebas-acidez" element={withSuspense(PruebasAcidezPage)} />
 
           {/* Módulo: Operaciones de Producción (production_ops) */}
-          <Route path="/produccion" element={withSuspense(ProductionOpsPage)} />
+          <Route path="/produccion" element={<Navigate to="/produccion/recepcion" replace />} />
+          <Route path="/produccion/recepcion" element={withSuspense(ProductionOpsPage)} />
+          <Route path="/produccion/procesamiento" element={withSuspense(ProductionOpsPage)} />
+          <Route path="/produccion/mantenimiento" element={withSuspense(ProductionOpsPage)} />
+          <Route path="/produccion/producto-terminado" element={withSuspense(ProductionOpsPage)} />
 
           {/* Módulo: Logística y Flota (logistics_fleet) */}
-          <Route path="/logistica" element={withSuspense(LogisticsFleetPage)} />
+          <Route path="/logistica" element={<Navigate to="/logistica/transporte" replace />} />
+          <Route path="/logistica/transporte" element={withSuspense(LogisticsFleetPage)} />
+          <Route path="/logistica/despachos" element={withSuspense(LogisticsFleetPage)} />
+          <Route path="/logistica/flota" element={withSuspense(LogisticsFleetPage)} />
+          <Route path="/logistica/pesv" element={withSuspense(LogisticsFleetPage)} />
 
           {/* Módulo: Ventas y CRM (sales_crm) */}
           <Route path="/ventas" element={<Navigate to="/ventas/clientes" replace />} />
@@ -474,14 +480,21 @@ export const AppRoutes = () => {
           {/* ═══════════════════════════════════════════════════════════════ */}
 
           {/* Módulo: Talent Hub - Gestión del Talento Humano */}
-          <Route path="/talento" element={withSuspense(TalentHubPage)} />
+          <Route path="/talento" element={<Navigate to="/talento/estructura" replace />} />
           <Route path="/talento/estructura" element={withSuspense(TalentHubPage)} />
           <Route path="/talento/seleccion" element={withSuspense(TalentHubPage)} />
           <Route path="/talento/colaboradores" element={withSuspense(TalentHubPage)} />
+          <Route path="/talento/onboarding" element={withSuspense(TalentHubPage)} />
+          <Route path="/talento/formacion" element={withSuspense(TalentHubPage)} />
+          <Route path="/talento/desempeno" element={withSuspense(TalentHubPage)} />
+          <Route path="/talento/control-tiempo" element={withSuspense(TalentHubPage)} />
+          <Route path="/talento/novedades" element={withSuspense(TalentHubPage)} />
+          <Route path="/talento/disciplinario" element={withSuspense(TalentHubPage)} />
+          <Route path="/talento/nomina" element={withSuspense(TalentHubPage)} />
+          <Route path="/talento/off-boarding" element={withSuspense(TalentHubPage)} />
 
           {/* Módulo: Administración y Finanzas (admin_finance) */}
-          <Route path="/finanzas" element={<Navigate to="/finanzas/dashboard" replace />} />
-          <Route path="/finanzas/dashboard" element={withSuspense(AdminFinancePage)} />
+          <Route path="/finanzas" element={<Navigate to="/finanzas/tesoreria" replace />} />
           <Route path="/finanzas/tesoreria" element={withSuspense(TesoreriaPage)} />
           <Route path="/finanzas/presupuesto" element={withSuspense(PresupuestoPage)} />
           <Route path="/finanzas/activos-fijos" element={withSuspense(ActivosFijosPage)} />
@@ -491,8 +504,7 @@ export const AppRoutes = () => {
           />
 
           {/* Módulo: Contabilidad (accounting) - MÓDULO ACTIVABLE */}
-          <Route path="/contabilidad" element={<Navigate to="/contabilidad/dashboard" replace />} />
-          <Route path="/contabilidad/dashboard" element={withSuspense(AccountingPage)} />
+          <Route path="/contabilidad" element={<Navigate to="/contabilidad/configuracion" replace />} />
           <Route path="/contabilidad/configuracion" element={withSuspense(ConfigContablePage)} />
           <Route
             path="/contabilidad/movimientos"
@@ -506,10 +518,9 @@ export const AppRoutes = () => {
           {/* ═══════════════════════════════════════════════════════════════ */}
 
           {/* Módulo: Analítica (analytics) */}
-          <Route path="/analytics" element={<Navigate to="/analytics/dashboard" replace />} />
+          <Route path="/analytics" element={<Navigate to="/analytics/configuracion" replace />} />
 
           {/* Semana 23 - Configuración e Indicadores */}
-          <Route path="/analytics/dashboard" element={withSuspense(AnalyticsPage)} />
           <Route path="/analytics/configuracion" element={withSuspense(ConfigIndicadoresPage)} />
           <Route path="/analytics/dashboards" element={withSuspense(DashboardGerencialPage)} />
           <Route path="/analytics/indicadores" element={withSuspense(IndicadoresAreaPage)} />
@@ -520,11 +531,13 @@ export const AppRoutes = () => {
           <Route path="/analytics/acciones" element={withSuspense(AccionesIndicadorPage)} />
           <Route path="/analytics/exportacion" element={withSuspense(ExportacionPage)} />
 
+          {/* Demo: Componentes Enterprise de Analytics */}
+          <Route path="/analytics/demo" element={withSuspense(AnalyticsDemoPage)} />
+
           {/* Módulo: Sistema de Auditoría (audit_system) */}
-          <Route path="/auditoria" element={<Navigate to="/auditoria/dashboard" replace />} />
+          <Route path="/auditoria" element={<Navigate to="/auditoria/logs" replace />} />
 
           {/* Semana 25 - Sistema de Auditoría */}
-          <Route path="/auditoria/dashboard" element={withSuspense(AuditSystemPage)} />
           <Route path="/auditoria/logs" element={withSuspense(LogsSistemaPage)} />
           <Route path="/auditoria/notificaciones" element={withSuspense(NotificacionesPage)} />
           <Route path="/auditoria/alertas" element={withSuspense(AlertasPage)} />

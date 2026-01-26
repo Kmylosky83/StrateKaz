@@ -60,3 +60,12 @@ export {
   useIsCoordinationOrAbove,
   useIsDirection,
 } from './usePermissions';
+
+// Responsive View (table/cards toggle)
+export {
+  useResponsiveView,
+  useAutoTableView,
+  type ViewMode,
+  type UseResponsiveViewOptions,
+  type UseResponsiveViewReturn,
+} from './useResponsiveView';

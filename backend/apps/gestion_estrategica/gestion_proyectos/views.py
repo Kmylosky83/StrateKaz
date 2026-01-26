@@ -227,6 +227,99 @@ class ProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             'estado': proyecto.estado
         })
 
+    @action(detail=False, methods=['post'])
+    def crear_desde_cambio(self, request):
+        """
+        Crea un proyecto a partir de un registro de Gestión de Cambios.
+        Mapea automáticamente los campos del cambio al proyecto.
+        """
+        from apps.gestion_estrategica.planeacion.models import GestionCambio
+
+        cambio_id = request.data.get('cambio_id')
+        if not cambio_id:
+            return Response(
+                {'detail': 'Se requiere cambio_id'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            cambio = GestionCambio.objects.get(
+                id=cambio_id,
+                empresa=request.user.empresa
+            )
+        except GestionCambio.DoesNotExist:
+            return Response(
+                {'detail': 'Cambio no encontrado'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Verificar si ya existe un proyecto generado desde este cambio
+        if Proyecto.objects.filter(origen_cambio=cambio).exists():
+            return Response(
+                {'detail': 'Ya existe un proyecto generado desde este cambio'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Mapear prioridad del cambio a prioridad del proyecto
+        prioridad_map = {
+            'CRITICA': 'alta',
+            'ALTA': 'alta',
+            'MEDIA': 'media',
+            'BAJA': 'baja',
+        }
+
+        # Mapear tipo de cambio a tipo de proyecto
+        tipo_map = {
+            'ESTRATEGICO': 'mejora',
+            'ORGANIZACIONAL': 'mejora',
+            'PROCESO': 'mejora',
+            'TECNOLOGICO': 'desarrollo',
+            'CULTURAL': 'mejora',
+            'NORMATIVO': 'normativo',
+            'OTRO': 'otro',
+        }
+
+        # Generar código del proyecto
+        empresa_id = request.user.empresa.id
+        count = Proyecto.objects.filter(empresa_id=empresa_id).count() + 1
+        codigo = f"PRY-{count:04d}"
+
+        # Crear el proyecto
+        proyecto = Proyecto.objects.create(
+            empresa=request.user.empresa,
+            codigo=codigo,
+            nombre=f"Proyecto: {cambio.titulo}",
+            descripcion=cambio.descripcion or '',
+            justificacion=cambio.justificacion or '',
+            tipo=tipo_map.get(cambio.tipo_cambio_interno, 'mejora'),
+            prioridad=prioridad_map.get(cambio.prioridad, 'media'),
+            tipo_origen=Proyecto.OrigenProyecto.CAMBIO,
+            origen_cambio=cambio,
+            gerente_proyecto=cambio.responsible,
+            created_by=request.user,
+        )
+
+        # Vincular objetivos estratégicos si existen
+        if cambio.related_objectives.exists():
+            primer_objetivo = cambio.related_objectives.first()
+            proyecto.origen_objetivo = primer_objetivo
+            proyecto.save(update_fields=['origen_objetivo'])
+
+        return Response({
+            'detail': f'Proyecto {codigo} creado exitosamente desde cambio',
+            'proyecto': ProyectoSerializer(proyecto).data
+        }, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['get'])
+    def origenes_choices(self, request):
+        """Retorna las opciones de origen de proyectos"""
+        return Response({
+            'tipo_origen': [
+                {'value': choice[0], 'label': choice[1]}
+                for choice in Proyecto.OrigenProyecto.choices
+            ]
+        })
+
 
 class ProjectCharterViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """ViewSet para Project Charters (Actas de Constitución)"""

@@ -168,6 +168,9 @@ if is_app_installed('apps.gestion_estrategica.identidad'):
 if is_app_installed('apps.gestion_estrategica.planeacion'):
     urlpatterns.append(path('api/planeacion/', include('apps.gestion_estrategica.planeacion.urls')))
 
+if is_app_installed('apps.gestion_estrategica.encuestas'):
+    urlpatterns.append(path('api/encuestas-dofa/', include('apps.gestion_estrategica.encuestas.urls')))
+
 if is_app_installed('apps.gestion_estrategica.gestion_proyectos'):
     urlpatterns.append(path('api/proyectos/', include('apps.gestion_estrategica.gestion_proyectos.urls')))
 

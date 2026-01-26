@@ -78,13 +78,13 @@ export const useCreateNormaISO = () => {
     onSuccess: () => {
       // Invalidar todas las queries relacionadas
       queryClient.invalidateQueries({ queryKey: normasISOKeys.all });
-      toast.success('Norma ISO creada exitosamente');
+      toast.success('Norma creada exitosamente');
     },
     onError: (error: any) => {
       const message =
         error?.response?.data?.message ||
         error?.response?.data?.code?.[0] ||
-        'Error al crear la norma ISO';
+        'Error al crear la norma';
       toast.error(message);
     },
   });
@@ -99,18 +99,16 @@ export const useUpdateNormaISO = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateNormaISODTO }) =>
       normasISOApi.update(id, data),
-    onSuccess: (_, { id }) => {
-      // Invalidar queries específicas
-      queryClient.invalidateQueries({ queryKey: normasISOKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: normasISOKeys.detail(id) });
-      queryClient.invalidateQueries({ queryKey: normasISOKeys.byCategory() });
-      toast.success('Norma ISO actualizada exitosamente');
+    onSuccess: () => {
+      // Invalidar todas las queries relacionadas para asegurar actualización inmediata
+      queryClient.invalidateQueries({ queryKey: normasISOKeys.all });
+      toast.success('Norma actualizada exitosamente');
     },
     onError: (error: any) => {
       const message =
         error?.response?.data?.message ||
         error?.response?.data?.code?.[0] ||
-        'Error al actualizar la norma ISO';
+        'Error al actualizar la norma';
       toast.error(message);
     },
   });
@@ -128,13 +126,13 @@ export const useDeleteNormaISO = () => {
     onSuccess: () => {
       // Invalidar todas las queries relacionadas
       queryClient.invalidateQueries({ queryKey: normasISOKeys.all });
-      toast.success('Norma ISO eliminada exitosamente');
+      toast.success('Norma eliminada exitosamente');
     },
     onError: (error: any) => {
       const message =
         error?.response?.data?.detail ||
         error?.response?.data?.message ||
-        'Error al eliminar la norma ISO. Puede estar en uso.';
+        'Error al eliminar la norma. Puede estar en uso.';
       toast.error(message);
     },
   });

@@ -2,7 +2,7 @@
  * API Cliente para Normas Legales
  * Conecta con backend/apps/motor_cumplimiento/matriz_legal/
  */
-import apiClient from '@/services/api/apiClient';
+import apiClient from '@/api/axios-config';
 import type {
   NormaLegal,
   NormaLegalList,

@@ -200,7 +200,12 @@ function PillsVariant({
     <div className={cn(centered && 'flex justify-center', className)}>
       <nav
         className={cn(
-          'inline-flex',
+          // Mobile: scroll horizontal con snap
+          'flex md:inline-flex',
+          'overflow-x-auto md:overflow-visible',
+          'scrollbar-none', // Ocultar scrollbar en móvil
+          'snap-x snap-mandatory md:snap-none',
+          '-mx-3 px-3 md:mx-0 md:px-0', // Padding negativo para edge-to-edge en móvil
           sizes.container,
           'bg-gradient-to-br from-gray-50 to-gray-100/80',
           'dark:from-gray-800 dark:to-gray-900/80',
@@ -225,6 +230,8 @@ function PillsVariant({
                 'relative inline-flex items-center rounded-lg',
                 'font-medium transition-all duration-200',
                 'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2',
+                'snap-start', // Snap point para scroll móvil
+                'flex-shrink-0', // No comprimir en móvil
                 sizes.tab,
                 tab.disabled && 'opacity-50 cursor-not-allowed',
                 isActive
@@ -289,7 +296,7 @@ function UnderlineVariant({
   tabs,
   activeTab,
   onTabChange,
-  moduleColor = 'blue',
+  moduleColor: _moduleColor = 'blue',
   size = 'md',
   centered = false,
   className,
@@ -300,6 +307,10 @@ function UnderlineVariant({
     <nav
       className={cn(
         '-mb-px flex border-b border-gray-200 dark:border-gray-700',
+        // Mobile: scroll horizontal
+        'overflow-x-auto scrollbar-none',
+        'snap-x snap-mandatory md:snap-none',
+        '-mx-3 px-3 md:mx-0 md:px-0',
         centered && 'justify-center',
         className
       )}
@@ -318,6 +329,7 @@ function UnderlineVariant({
             aria-selected={isActive}
             className={cn(
               'relative flex items-center border-b-2 font-medium transition-all whitespace-nowrap',
+              'snap-start flex-shrink-0', // Mobile scroll support
               sizes.tab,
               'py-4',
               tab.disabled && 'opacity-50 cursor-not-allowed',
@@ -368,7 +380,12 @@ function SegmentedVariant({
     <div className={cn(centered && 'flex justify-center', className)}>
       <div
         className={cn(
-          'inline-flex rounded-xl bg-gray-100 dark:bg-gray-800 p-1 shadow-inner'
+          // Mobile: scroll horizontal
+          'flex md:inline-flex',
+          'overflow-x-auto md:overflow-visible scrollbar-none',
+          'snap-x snap-mandatory md:snap-none',
+          '-mx-3 px-3 md:mx-0 md:px-0',
+          'rounded-xl bg-gray-100 dark:bg-gray-800 p-1 shadow-inner'
         )}
         role="tablist"
       >
@@ -388,6 +405,7 @@ function SegmentedVariant({
               className={cn(
                 'relative inline-flex items-center font-medium transition-colors duration-200',
                 'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2',
+                'snap-start flex-shrink-0', // Mobile scroll support
                 sizes.tab,
                 isFirst && 'rounded-l-lg',
                 isLast && 'rounded-r-lg',
@@ -524,7 +542,7 @@ export function PageTabsSkeleton({
         {Array.from({ length: count }).map((_, i) => (
           <div
             key={i}
-            className="h-5 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
+            className="h-5 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse-subtle"
           />
         ))}
       </div>
@@ -543,7 +561,7 @@ export function PageTabsSkeleton({
         <div
           key={i}
           className={cn(
-            'h-9 w-28 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse',
+            'h-9 w-28 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse-subtle',
             i === 0 && 'bg-white dark:bg-gray-600'
           )}
         />

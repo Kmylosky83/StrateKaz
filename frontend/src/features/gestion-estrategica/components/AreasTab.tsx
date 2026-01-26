@@ -31,10 +31,13 @@ import {
   CheckCircle,
   GitBranch,
 } from 'lucide-react';
-import { Card, Badge, Button, EmptyState, ConfirmDialog, DynamicIcon } from '@/components/common';
+import { Card, Badge, Button, EmptyState, ConfirmDialog, DynamicIcon, BrandedSkeleton, SectionHeader } from '@/components/common';
 import { Input, Switch } from '@/components/forms';
 import { StatsGrid, StatsGridSkeleton } from '@/components/layout';
 import type { StatItem } from '@/components/layout';
+import { getModuleColorClasses } from '@/utils/moduleColors';
+import type { ModuleColor } from '@/utils/moduleColors';
+import { useModuleColor } from '@/hooks/useModuleColor';
 import { AreaFormModal } from './modals/AreaFormModal';
 import {
   useAreas,
@@ -223,6 +226,10 @@ const AreaCard = ({
 // COMPONENTE PRINCIPAL
 // =============================================================================
 export const AreasTab = () => {
+  // Color del módulo (sin hardcoding)
+  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
+  const moduleColorClasses = getModuleColorClasses(moduleColor as ModuleColor);
+
   // Estado local
   const [showFormModal, setShowFormModal] = useState(false);
   const [selectedArea, setSelectedArea] = useState<Area | AreaList | null>(null);
@@ -380,22 +387,9 @@ export const AreasTab = () => {
     );
   };
 
-  // Loading state
+  // Loading state - muestra logo del branding
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <StatsGridSkeleton count={4} />
-        <Card>
-          <div className="p-6">
-            <div className="animate-pulse space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-20 bg-gray-200 dark:bg-gray-700 rounded-lg" />
-              ))}
-            </div>
-          </div>
-        </Card>
-      </div>
-    );
+    return <BrandedSkeleton height="h-96" logoSize="xl" showText />;
   }
 
   // Error state
@@ -449,68 +443,57 @@ export const AreasTab = () => {
 
   return (
     <div className="space-y-6">
-      {/* StatsGrid de Áreas */}
-      <StatsGrid stats={areaStats} columns={4} moduleColor="purple" />
+      {/* 1. StatsGrid de Áreas */}
+      <StatsGrid stats={areaStats} columns={4} moduleColor={moduleColor} />
 
-      <Card>
-        <div className="p-6">
-          {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
-                <Building2 className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  Áreas y Departamentos
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Estructura organizacional de la empresa
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => refetch()}
-                disabled={isFetching}
-                title="Actualizar lista"
-              >
-                <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+      {/* 2. Section Header - FUERA de cualquier contenedor (Vista 7) */}
+      <SectionHeader
+        icon={
+          <div className={`p-2 rounded-lg ${moduleColorClasses.badge}`}>
+            <Building2 className={`h-5 w-5 ${moduleColorClasses.icon}`} />
+          </div>
+        }
+        title="Áreas y Departamentos"
+        description="Estructura organizacional jerárquica"
+        variant="compact"
+        actions={
+          <div className="flex items-center gap-3 flex-nowrap">
+            <Input
+              placeholder="Buscar..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              leftIcon={<Search className="h-4 w-4" />}
+              className="w-48"
+            />
+            <Switch
+              label="Incluir inactivas"
+              checked={showInactive}
+              onCheckedChange={setShowInactive}
+              size="sm"
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => refetch()}
+              disabled={isFetching}
+              title="Actualizar lista"
+            >
+              <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+            </Button>
+            {canCreate && (
+              <Button variant="primary" size="sm" onClick={handleAdd}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nueva Área
               </Button>
-              {canCreate && (
-                <Button variant="primary" size="sm" onClick={handleAdd}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nueva Área
-                </Button>
-              )}
-            </div>
+            )}
           </div>
+        }
+      />
 
-          {/* Filtros */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="flex-1">
-              <Input
-                placeholder="Buscar por código o nombre..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                leftIcon={<Search className="h-4 w-4" />}
-              />
-            </div>
-            <div className="flex items-center gap-4">
-              <Switch
-                label="Incluir inactivas"
-                checked={showInactive}
-                onCheckedChange={setShowInactive}
-                size="sm"
-              />
-            </div>
-          </div>
-
-          {/* Lista jerárquica de áreas */}
-          {areas.length === 0 ? (
+      {/* 3. Tree Cards - Lista jerárquica de áreas (Vista 7) */}
+      {areas.length === 0 ? (
+        <Card>
+          <div className="p-6">
             <EmptyState
               icon={<Search className="h-12 w-12" />}
               title="Sin resultados"
@@ -529,13 +512,13 @@ export const AreasTab = () => {
                     : { label: 'Crear Área', onClick: handleAdd, icon: <Plus className="h-4 w-4" /> }
               }
             />
-          ) : (
-            <div className="space-y-2">
-              {rootAreas.map((area) => renderAreaWithChildren(area))}
-            </div>
-          )}
+          </div>
+        </Card>
+      ) : (
+        <div className="space-y-2">
+          {rootAreas.map((area) => renderAreaWithChildren(area))}
         </div>
-      </Card>
+      )}
 
       {/* Modal de formulario */}
       <AreaFormModal

@@ -95,7 +95,8 @@ INSTALLED_APPS = [
     'apps.gestion_estrategica.organizacion',       # Area, ConsecutivoConfig
     'apps.gestion_estrategica.identidad',          # CorporateIdentity, AlcanceSistema
     'apps.gestion_estrategica.planeacion',         # StrategicPlan, StrategicObjective, GestionCambio
-    'apps.gestion_estrategica.planeacion.contexto', # DOFA, PESTEL, Porter (ISO Clausula 4.1)
+    'apps.gestion_estrategica.contexto',           # DOFA, PESTEL, Porter, Partes Interesadas (ISO 4.1, 4.2)
+    'apps.gestion_estrategica.encuestas',          # Encuestas Colaborativas DOFA
     'apps.gestion_estrategica.gestion_proyectos',  # Portafolio, Programa, Proyecto
     'apps.gestion_estrategica.revision_direccion', # ActaRevision, CompromisoRevision
     'apps.gestion_estrategica.gestion_documental', # Documento, Version (migrado desde N3)

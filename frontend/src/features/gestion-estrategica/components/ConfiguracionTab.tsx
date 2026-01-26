@@ -38,6 +38,7 @@ import {
   GenericSectionFallback,
   ConfirmDialog,
   SectionHeader,
+  BrandedSkeleton,
 } from '@/components/common';
 import { useActiveBranding } from '../hooks/useStrategic';
 import {
@@ -210,18 +211,7 @@ const BrandingSection = () => {
   }
 
   if (isLoading) {
-    return (
-      <Card>
-        <div className="p-6 animate-pulse">
-          <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-4" />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="h-40 bg-gray-200 dark:bg-gray-700 rounded" />
-            <div className="h-40 bg-gray-200 dark:bg-gray-700 rounded" />
-            <div className="h-40 bg-gray-200 dark:bg-gray-700 rounded" />
-          </div>
-        </div>
-      </Card>
-    );
+    return <BrandedSkeleton height="h-80" logoSize="xl" showText />;
   }
 
   const hasLogos = branding?.logo || branding?.logo_white || branding?.favicon;
@@ -474,22 +464,7 @@ const ModulosAndFeaturesSection = () => {
   }, [tree]);
 
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        {[1, 2, 3].map((i) => (
-          <Card key={i}>
-            <div className="p-6 animate-pulse">
-              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-4" />
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[1, 2, 3].map((j) => (
-                  <div key={j} className="h-24 bg-gray-200 dark:bg-gray-700 rounded" />
-                ))}
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
-    );
+    return <BrandedSkeleton height="h-96" logoSize="xl" showText />;
   }
 
   const isPending = toggleModule.isPending || toggleTab.isPending || toggleSection.isPending;

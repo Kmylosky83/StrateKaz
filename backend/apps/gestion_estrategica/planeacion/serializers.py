@@ -17,6 +17,16 @@ from .models import (
 )
 
 
+class NormaISOMinimalSerializer(serializers.Serializer):
+    """Serializer mínimo para Normas ISO en objetivos"""
+    id = serializers.IntegerField()
+    code = serializers.CharField()
+    short_name = serializers.CharField()
+    name = serializers.CharField()
+    icon = serializers.CharField(allow_null=True)
+    color = serializers.CharField(allow_null=True)
+
+
 class StrategicObjectiveSerializer(serializers.ModelSerializer):
     """Serializer para Objetivos Estratégicos"""
 
@@ -40,13 +50,27 @@ class StrategicObjectiveSerializer(serializers.ModelSerializer):
         source='get_status_display',
         read_only=True
     )
+    # Normas ISO vinculadas (ManyToMany) - lectura con detalles
+    normas_iso_detail = NormaISOMinimalSerializer(
+        source='normas_iso',
+        many=True,
+        read_only=True
+    )
+    # IDs para escritura
+    normas_iso_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        write_only=True,
+        required=False,
+        default=list
+    )
 
     class Meta:
         model = StrategicObjective
         fields = [
             'id', 'plan', 'code', 'name', 'description',
             'bsc_perspective', 'bsc_perspective_display',
-            'iso_standards', 'responsible', 'responsible_name',
+            'normas_iso', 'normas_iso_detail', 'normas_iso_ids',
+            'responsible', 'responsible_name',
             'responsible_cargo', 'responsible_cargo_name',
             'target_value', 'current_value', 'unit', 'progress',
             'status', 'status_display', 'start_date', 'due_date',
@@ -57,19 +81,84 @@ class StrategicObjectiveSerializer(serializers.ModelSerializer):
             'id', 'created_by', 'created_at', 'updated_at', 'completed_at'
         ]
 
+    def validate_normas_iso_ids(self, value):
+        """Valida que los IDs de normas ISO existan"""
+        if not value:
+            return value
+        from apps.gestion_estrategica.configuracion.models import NormaISO
+        valid_ids = set(NormaISO.objects.filter(
+            id__in=value,
+            is_active=True,
+            deleted_at__isnull=True
+        ).values_list('id', flat=True))
+        invalid_ids = set(value) - valid_ids
+        if invalid_ids:
+            raise serializers.ValidationError(
+                f"Normas ISO no encontradas o inactivas: {invalid_ids}"
+            )
+        return value
+
+    def update(self, instance, validated_data):
+        normas_iso_ids = validated_data.pop('normas_iso_ids', None)
+        instance = super().update(instance, validated_data)
+        if normas_iso_ids is not None:
+            from apps.gestion_estrategica.configuracion.models import NormaISO
+            instance.normas_iso.set(NormaISO.objects.filter(id__in=normas_iso_ids))
+        return instance
+
 
 class StrategicObjectiveCreateUpdateSerializer(serializers.ModelSerializer):
     """Serializer para crear/actualizar Objetivos Estratégicos"""
+
+    # IDs de normas ISO para vincular (ManyToMany)
+    normas_iso_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False,
+        default=list
+    )
 
     class Meta:
         model = StrategicObjective
         fields = [
             'plan', 'code', 'name', 'description',
-            'bsc_perspective', 'iso_standards',
+            'bsc_perspective', 'normas_iso_ids',
             'responsible', 'responsible_cargo',
             'target_value', 'current_value', 'unit',
             'start_date', 'due_date', 'orden', 'is_active'
         ]
+
+    def validate_normas_iso_ids(self, value):
+        """Valida que los IDs de normas ISO existan"""
+        if not value:
+            return value
+        from apps.gestion_estrategica.configuracion.models import NormaISO
+        valid_ids = set(NormaISO.objects.filter(
+            id__in=value,
+            is_active=True,
+            deleted_at__isnull=True
+        ).values_list('id', flat=True))
+        invalid_ids = set(value) - valid_ids
+        if invalid_ids:
+            raise serializers.ValidationError(
+                f"Normas ISO no encontradas o inactivas: {invalid_ids}"
+            )
+        return value
+
+    def create(self, validated_data):
+        normas_iso_ids = validated_data.pop('normas_iso_ids', [])
+        instance = super().create(validated_data)
+        if normas_iso_ids:
+            from apps.gestion_estrategica.configuracion.models import NormaISO
+            instance.normas_iso.set(NormaISO.objects.filter(id__in=normas_iso_ids))
+        return instance
+
+    def update(self, instance, validated_data):
+        normas_iso_ids = validated_data.pop('normas_iso_ids', None)
+        instance = super().update(instance, validated_data)
+        if normas_iso_ids is not None:
+            from apps.gestion_estrategica.configuracion.models import NormaISO
+            instance.normas_iso.set(NormaISO.objects.filter(id__in=normas_iso_ids))
+        return instance
 
 
 class StrategicPlanSerializer(serializers.ModelSerializer):

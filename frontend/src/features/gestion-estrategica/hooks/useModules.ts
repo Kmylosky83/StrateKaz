@@ -442,9 +442,9 @@ export function useTabSections(moduleCode: string, tabCode: string) {
     const module = tree.modules.find((m) => m.code === moduleCode);
     const tab = module?.tabs.find((t) => t.code === tabCode);
 
-    // Solo retornar secciones habilitadas, ordenadas por order
+    // Solo retornar secciones habilitadas, ordenadas por orden
     const enabledSections =
-      tab?.sections.filter((s) => s.is_enabled).sort((a, b) => a.order - b.order) ?? [];
+      tab?.sections.filter((s) => s.is_enabled).sort((a, b) => a.orden - b.orden) ?? [];
 
     return {
       sections: enabledSections,

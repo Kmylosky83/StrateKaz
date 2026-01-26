@@ -305,6 +305,43 @@ class Proyecto(BaseCompanyModel):
         help_text='Beneficios esperados del proyecto'
     )
 
+    # =========================================================================
+    # ORIGEN DEL PROYECTO (Trazabilidad PMI/ISO)
+    # =========================================================================
+    class OrigenProyecto(models.TextChoices):
+        MANUAL = 'manual', 'Creación Manual'
+        CAMBIO = 'cambio', 'Desde Gestión de Cambios'
+        OBJETIVO = 'objetivo', 'Desde Objetivo Estratégico'
+        AUDITORIA = 'auditoria', 'Desde Hallazgo de Auditoría'
+        RIESGO = 'riesgo', 'Desde Tratamiento de Riesgo'
+        MEJORA = 'mejora', 'Desde Acción de Mejora'
+
+    tipo_origen = models.CharField(
+        max_length=20,
+        choices=OrigenProyecto.choices,
+        default=OrigenProyecto.MANUAL,
+        verbose_name='Tipo de Origen',
+        help_text='Indica cómo se originó el proyecto'
+    )
+    origen_cambio = models.ForeignKey(
+        'planeacion.GestionCambio',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='proyectos_generados',
+        verbose_name='Cambio de Origen',
+        help_text='Cambio organizacional que originó este proyecto'
+    )
+    origen_objetivo = models.ForeignKey(
+        'planeacion.StrategicObjective',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='proyectos_vinculados',
+        verbose_name='Objetivo Estratégico',
+        help_text='Objetivo estratégico al que contribuye este proyecto'
+    )
+
     class Meta:
         verbose_name = 'Proyecto'
         verbose_name_plural = 'Proyectos'

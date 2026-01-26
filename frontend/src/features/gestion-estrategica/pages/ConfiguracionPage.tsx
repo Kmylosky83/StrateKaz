@@ -76,10 +76,13 @@ export const ConfiguracionPage = () => {
   // Stats dinamicos segun seccion activa
   const { data: sectionStats, isLoading: statsLoading } = useConfiguracionStats(activeSection);
 
+  // Secciones que no tienen StatsGrid
+  const SECTIONS_WITHOUT_STATS = ['branding', 'normas-iso', 'modulos'];
+
   // Mapear stats del backend a StatItem[]
   const statsItems: StatItem[] = useMemo(() => {
-    // No mostrar stats en branding ni si no hay seccion activa
-    if (!sectionStats?.stats || activeSection === 'branding' || !activeSection) {
+    // No mostrar stats en secciones que no lo necesitan
+    if (!sectionStats?.stats || !activeSection || SECTIONS_WITHOUT_STATS.includes(activeSection)) {
       return [];
     }
 
@@ -105,7 +108,7 @@ export const ConfiguracionPage = () => {
     return (
       <div className="space-y-4">
         <StatsGridSkeleton count={4} />
-        <div className="h-96 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
+        <div className="h-96 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse-subtle" />
       </div>
     );
   }
@@ -122,8 +125,8 @@ export const ConfiguracionPage = () => {
         moduleColor="purple"
       />
 
-      {/* StatsGrid - solo si hay stats y no es branding */}
-      {activeSection !== 'branding' &&
+      {/* StatsGrid - solo si hay stats y la sección lo soporta */}
+      {activeSection && !SECTIONS_WITHOUT_STATS.includes(activeSection) &&
         (statsLoading ? (
           <StatsGridSkeleton count={4} />
         ) : statsItems.length > 0 ? (

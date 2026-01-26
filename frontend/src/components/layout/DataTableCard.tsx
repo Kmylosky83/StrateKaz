@@ -18,9 +18,17 @@ export interface PaginationInfo {
   onPageChange: (page: number) => void;
 }
 
-export interface DataTableCardProps {
-  /** Contenido de la tabla (componente de tabla específico) */
-  children: ReactNode;
+/** Definición de columna para tabla integrada */
+export interface TableColumn<T = Record<string, unknown>> {
+  key: string;
+  header: string;
+  render?: (item: T) => ReactNode;
+  align?: 'left' | 'center' | 'right';
+  className?: string;
+}
+
+/** Props base para DataTableCard */
+interface DataTableCardBaseProps {
   /** Información de paginación */
   pagination?: PaginationInfo;
   /** Título opcional para la sección */
@@ -37,6 +45,26 @@ export interface DataTableCardProps {
   className?: string;
 }
 
+/** Props cuando se usa con children */
+interface DataTableCardWithChildren extends DataTableCardBaseProps {
+  children: ReactNode;
+  columns?: never;
+  data?: never;
+}
+
+/** Props cuando se usa con columns y data */
+interface DataTableCardWithColumns<T = Record<string, unknown>> extends DataTableCardBaseProps {
+  children?: never;
+  /** Definición de columnas */
+  columns: TableColumn<T>[];
+  /** Datos a mostrar */
+  data: T[];
+}
+
+export type DataTableCardProps<T = Record<string, unknown>> =
+  | DataTableCardWithChildren
+  | DataTableCardWithColumns<T>;
+
 /**
  * DataTableCard - Wrapper para tablas de datos con paginación integrada
  *
@@ -50,9 +78,15 @@ export interface DataTableCardProps {
  * ├─────────────────────────────────────────────────────────────┤
  * │ Mostrando 1 - 10 de 100            [Anterior] [Siguiente]  │
  * └─────────────────────────────────────────────────────────────┘
+ *
+ * Soporta dos modos:
+ * 1. Con children: Renderiza el contenido directamente
+ * 2. Con columns y data: Renderiza una tabla automáticamente
  */
-export function DataTableCard({
+export function DataTableCard<T extends Record<string, unknown>>({
   children,
+  columns,
+  data,
   pagination,
   title,
   headerActions,
@@ -60,7 +94,7 @@ export function DataTableCard({
   emptyMessage = 'No hay datos para mostrar',
   isEmpty,
   className,
-}: DataTableCardProps) {
+}: DataTableCardProps<T>) {
   const showPagination =
     pagination && pagination.totalItems > pagination.pageSize;
 
@@ -71,6 +105,62 @@ export function DataTableCard({
   const endItem = pagination
     ? Math.min(pagination.currentPage * pagination.pageSize, pagination.totalItems)
     : 0;
+
+  // Determinar si está vacío
+  const isDataEmpty = isEmpty || (columns && data && data.length === 0);
+
+  // Renderizar tabla cuando se usan columns y data
+  const renderTable = () => {
+    if (!columns || !data) return null;
+
+    return (
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead className="bg-gray-50 dark:bg-gray-800">
+            <tr>
+              {columns.map((col) => (
+                <th
+                  key={col.key}
+                  className={cn(
+                    'px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider',
+                    col.align === 'center' && 'text-center',
+                    col.align === 'right' && 'text-right',
+                    col.className
+                  )}
+                >
+                  {col.header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+            {data.map((item, rowIndex) => (
+              <tr
+                key={(item as { id?: number | string }).id ?? rowIndex}
+                className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+              >
+                {columns.map((col) => (
+                  <td
+                    key={`${rowIndex}-${col.key}`}
+                    className={cn(
+                      'px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100',
+                      col.align === 'center' && 'text-center',
+                      col.align === 'right' && 'text-right',
+                      col.className
+                    )}
+                  >
+                    {col.render
+                      ? col.render(item)
+                      : (item[col.key] as ReactNode)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
 
   return (
     <Card className={className}>
@@ -92,10 +182,12 @@ export function DataTableCard({
 
       {/* Contenido de la tabla */}
       <div className="p-6">
-        {isEmpty && !isLoading ? (
+        {isDataEmpty && !isLoading ? (
           <div className="text-center py-12">
             <p className="text-gray-500 dark:text-gray-400">{emptyMessage}</p>
           </div>
+        ) : columns && data ? (
+          renderTable()
         ) : (
           children
         )}
@@ -136,7 +228,7 @@ export function DataTableCard({
  */
 export function TableSkeleton({ rows = 5, columns = 4 }: { rows?: number; columns?: number }) {
   return (
-    <div className="animate-pulse">
+    <div className="animate-pulse-subtle">
       {/* Header */}
       <div className="grid gap-4 mb-4" style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
         {Array.from({ length: columns }).map((_, i) => (

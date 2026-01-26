@@ -68,7 +68,7 @@ export { StatsGrid, StatCardSkeleton, StatsGridSkeleton } from './StatsGrid';
 export type { StatsGridProps, StatItem } from './StatsGrid';
 
 export { DataTableCard, TableSkeleton } from './DataTableCard';
-export type { DataTableCardProps, PaginationInfo } from './DataTableCard';
+export type { DataTableCardProps, PaginationInfo, TableColumn } from './DataTableCard';
 
 export { PageTabs, PageTabsSkeleton } from './PageTabs';
 export type { PageTabsProps, TabItem, PageTabsVariant, PageTabsSize } from './PageTabs';

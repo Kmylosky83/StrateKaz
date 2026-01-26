@@ -1,4 +1,4 @@
-import { forwardRef } from 'react';
+import { forwardRef, useId } from 'react';
 import { cn } from '@/utils/cn';
 
 export interface RadioOption {
@@ -34,7 +34,7 @@ export const RadioGroup = forwardRef<HTMLDivElement, RadioGroupProps>(
     },
     ref
   ) => {
-    const groupId = `radio-group-${Math.random().toString(36).substr(2, 9)}`;
+    const groupId = useId();
 
     const handleChange = (optionValue: string | number) => {
       if (onChange && !disabled) {

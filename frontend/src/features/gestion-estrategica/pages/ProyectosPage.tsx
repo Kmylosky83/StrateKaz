@@ -1,42 +1,38 @@
 /**
- * Página de Gestión de Proyectos PMI - Tab 5 de Dirección Estratégica
+ * Página de Gestión de Proyectos PMI - Tab 6 de Dirección Estratégica
  *
- * Layout:
- * 1. PageHeader
- * 2. DynamicSections (sub-navigation desde API, si existen)
- * 3. StatsGrid
- * 4. Contenido de la sección activa (GestionProyectosTab)
+ * Layout según Catálogo de Vistas UI:
+ * - PageHeader con título y secciones inline (alineadas a la derecha)
+ * - StatsGrid con KPIs del portafolio
+ * - Contenido de la sección activa (GestionProyectosTab)
  *
  * Sin hardcoding - secciones cargadas desde API
  */
-import { useState, useEffect } from 'react';
 import { FolderKanban, TrendingUp, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { PageHeader, StatsGrid, StatsGridSkeleton } from '@/components/layout';
 import type { StatItem } from '@/components/layout';
-import { DynamicSections } from '@/components/common';
-import { useTabSections } from '../hooks/useModules';
+import { usePageSections } from '@/hooks/usePageSections';
 import { GestionProyectosTab } from '../components/proyectos';
 import { useProyectosDashboard } from '../hooks/useProyectos';
-import { useModuleColor } from '@/hooks/useModuleColor';
 
 // Códigos del módulo y tab en la BD (lowercase para coincidir con BD)
 const MODULE_CODE = 'gestion_estrategica';
 const TAB_CODE = 'gestion_proyectos';
 
 export const ProyectosPage = () => {
-  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
   const { data: dashboard, isLoading: dashboardLoading } = useProyectosDashboard();
-  const { sections, isLoading: sectionsLoading } = useTabSections(MODULE_CODE, TAB_CODE);
 
-  // Sección activa - inicializar con la primera sección habilitada
-  const [activeSection, setActiveSection] = useState<string>('');
-
-  // Establecer sección inicial cuando se cargan
-  useEffect(() => {
-    if (sections.length > 0 && !activeSection) {
-      setActiveSection(sections[0].code);
-    }
-  }, [sections, activeSection]);
+  // Hook que maneja secciones localmente (igual que PlaneacionPage)
+  const {
+    sections,
+    activeSection,
+    setActiveSection,
+    activeSectionData,
+    isLoading: sectionsLoading,
+  } = usePageSections({
+    moduleCode: MODULE_CODE,
+    tabCode: TAB_CODE,
+  });
 
   // Calcular proyectos activos (en ejecución + monitoreo)
   const proyectosActivos = (dashboard?.en_ejecucion ?? 0) + (dashboard?.en_monitoreo ?? 0);
@@ -73,31 +69,37 @@ export const ProyectosPage = () => {
     },
   ];
 
+  // Si no hay sección activa aún (cargando), mostrar skeleton básico
+  if (!activeSection && sectionsLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-20 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse-subtle" />
+        <div className="h-96 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse-subtle" />
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* PageHeader con título y secciones inline (alineadas a la derecha) */}
       <PageHeader
         title="Gestión de Proyectos"
-        description="Administra el portafolio de proyectos con metodología PMI/PMBOK 7"
-      />
-
-      {/* Sub-navigation dinámica desde API (si existen secciones) */}
-      <DynamicSections
+        description={activeSectionData.description}
         sections={sections}
         activeSection={activeSection}
-        onChange={setActiveSection}
-        isLoading={sectionsLoading}
-        moduleColor={moduleColor}
-        variant="pills"
+        onSectionChange={setActiveSection}
+        moduleColor="purple"
       />
 
+      {/* StatsGrid con KPIs del portafolio */}
       {dashboardLoading ? (
         <StatsGridSkeleton count={4} />
       ) : (
-        <StatsGrid stats={statsItems} columns={4} moduleColor={moduleColor} />
+        <StatsGrid stats={statsItems} columns={4} moduleColor="purple" />
       )}
 
-      {/* Contenido */}
-      <GestionProyectosTab activeSection={activeSection} />
+      {/* Contenido de la sección activa */}
+      {activeSection && <GestionProyectosTab activeSection={activeSection} />}
     </div>
   );
 };

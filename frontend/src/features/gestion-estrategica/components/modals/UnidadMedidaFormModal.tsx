@@ -211,10 +211,10 @@ export const UnidadMedidaFormModal = ({ unidad, isOpen, onClose }: UnidadMedidaF
       size="lg"
     >
       {isLoading ? (
-        <div className="p-6 animate-pulse space-y-4">
-          <div className="h-10 bg-secondary-200 dark:bg-secondary-700 rounded" />
-          <div className="h-10 bg-secondary-200 dark:bg-secondary-700 rounded" />
-          <div className="h-10 bg-secondary-200 dark:bg-secondary-700 rounded" />
+        <div className="p-6 animate-pulse-subtle space-y-4">
+          <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded" />
+          <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded" />
+          <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded" />
         </div>
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -228,7 +228,7 @@ export const UnidadMedidaFormModal = ({ unidad, isOpen, onClose }: UnidadMedidaF
 
           {/* Sección: Identificación */}
           <div className="space-y-4">
-            <h4 className="text-sm font-medium text-secondary-700 dark:text-secondary-300 border-b border-secondary-200 dark:border-secondary-700 pb-2">
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700 pb-2">
               Identificación
             </h4>
 
@@ -288,7 +288,7 @@ export const UnidadMedidaFormModal = ({ unidad, isOpen, onClose }: UnidadMedidaF
           {/* Sección: Conversión */}
           {!esUnidadSistema && (
             <div className="space-y-4">
-              <h4 className="text-sm font-medium text-secondary-700 dark:text-secondary-300 border-b border-secondary-200 dark:border-secondary-700 pb-2">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700 pb-2">
                 Conversión
               </h4>
 
@@ -319,7 +319,7 @@ export const UnidadMedidaFormModal = ({ unidad, isOpen, onClose }: UnidadMedidaF
               </div>
 
               {watch('unidad_base') && (
-                <p className="text-sm text-gray-500 dark:text-secondary-400">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   1 {watch('codigo') || 'unidad'} = {watch('factor_conversion') || '1'}{' '}
                   {unidadesBaseDisponibles.find((u) => u.value === watch('unidad_base'))?.codigo ||
                     'base'}
@@ -330,7 +330,7 @@ export const UnidadMedidaFormModal = ({ unidad, isOpen, onClose }: UnidadMedidaF
 
           {/* Sección: Presentación */}
           <div className="space-y-4">
-            <h4 className="text-sm font-medium text-secondary-700 dark:text-secondary-300 border-b border-secondary-200 dark:border-secondary-700 pb-2">
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700 pb-2">
               Presentación
             </h4>
 
@@ -360,7 +360,7 @@ export const UnidadMedidaFormModal = ({ unidad, isOpen, onClose }: UnidadMedidaF
                     onChange={(checked) => setValue('usar_separador_miles', checked)}
                     size="sm"
                   />
-                  <span className="text-sm text-secondary-700 dark:text-secondary-300">
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
                     Usar separador de miles
                   </span>
                 </div>
@@ -370,7 +370,7 @@ export const UnidadMedidaFormModal = ({ unidad, isOpen, onClose }: UnidadMedidaF
                     onChange={(checked) => setValue('prefiere_notacion_cientifica', checked)}
                     size="sm"
                   />
-                  <span className="text-sm text-secondary-700 dark:text-secondary-300">
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
                     Notación científica
                   </span>
                 </div>
@@ -380,7 +380,7 @@ export const UnidadMedidaFormModal = ({ unidad, isOpen, onClose }: UnidadMedidaF
 
           {/* Sección: Adicional */}
           <div className="space-y-4">
-            <h4 className="text-sm font-medium text-secondary-700 dark:text-secondary-300 border-b border-secondary-200 dark:border-secondary-700 pb-2">
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700 pb-2">
               Adicional
             </h4>
 
@@ -398,18 +398,18 @@ export const UnidadMedidaFormModal = ({ unidad, isOpen, onClose }: UnidadMedidaF
                 onChange={(checked) => setValue('is_active', checked)}
                 size="sm"
               />
-              <span className="text-sm text-secondary-700 dark:text-secondary-300">
+              <span className="text-sm text-gray-700 dark:text-gray-300">
                 Unidad activa
               </span>
             </div>
           </div>
 
           {/* Footer */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-secondary-200 dark:border-secondary-700">
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-secondary-700 dark:text-secondary-300 bg-secondary-100 dark:bg-secondary-800 rounded-lg hover:bg-secondary-200 dark:hover:bg-secondary-700 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
             >
               Cancelar
             </button>

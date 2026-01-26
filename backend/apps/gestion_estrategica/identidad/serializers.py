@@ -15,6 +15,7 @@ from .models import (
     CorporateIdentity, CorporateValue, AlcanceSistema,
     PoliticaEspecifica
 )
+from apps.gestion_estrategica.organizacion.models import Area
 
 
 # =============================================================================
@@ -37,12 +38,24 @@ class CorporateValueSerializer(serializers.ModelSerializer):
 # IDENTIDAD CORPORATIVA
 # =============================================================================
 
+class ProcesoAreaSerializer(serializers.ModelSerializer):
+    """Serializer resumido para áreas/procesos cubiertos"""
+    full_path = serializers.ReadOnlyField()
+    level = serializers.ReadOnlyField()
+
+    class Meta:
+        model = Area
+        fields = ['id', 'code', 'name', 'full_path', 'level', 'icon', 'color']
+
+
 class CorporateIdentitySerializer(serializers.ModelSerializer):
     """
     Serializer para Identidad Corporativa
 
     v3.1: Campos legacy de integral_policy eliminados.
     La Política Integral se gestiona desde PoliticaEspecifica con is_integral_policy=True.
+
+    v4.2: Nuevo campo procesos_cubiertos (ManyToMany con Area).
     """
 
     values = CorporateValueSerializer(many=True, read_only=True)
@@ -55,6 +68,9 @@ class CorporateIdentitySerializer(serializers.ModelSerializer):
     alcances_count = serializers.SerializerMethodField()
     politicas_count = serializers.SerializerMethodField()
 
+    # Nuevo: procesos_cubiertos (ManyToMany)
+    procesos_cubiertos = ProcesoAreaSerializer(many=True, read_only=True)
+
     class Meta:
         model = CorporateIdentity
         fields = [
@@ -63,6 +79,7 @@ class CorporateIdentitySerializer(serializers.ModelSerializer):
             # Campos de alcance del SIG
             'declara_alcance', 'alcance_general', 'alcance_geografico',
             'alcance_procesos', 'alcance_exclusiones',
+            'procesos_cubiertos',  # Nuevo: lista de áreas
             # Relaciones
             'values', 'alcances', 'values_count', 'alcances_count',
             'politicas_count', 'created_by', 'created_by_name',
@@ -95,7 +112,19 @@ class CorporateIdentityCreateUpdateSerializer(serializers.ModelSerializer):
 
     v4.0: Incluye campos de alcance del sistema integrado de gestión.
     El campo declara_alcance controla si se muestra la sección de alcance.
+
+    v4.2: Nuevo campo procesos_cubiertos_ids para selección múltiple de áreas.
     """
+
+    # Campo de escritura para IDs de procesos/áreas
+    procesos_cubiertos_ids = serializers.PrimaryKeyRelatedField(
+        queryset=Area.objects.filter(is_active=True),
+        many=True,
+        write_only=True,
+        source='procesos_cubiertos',
+        required=False,
+        help_text='IDs de las áreas/procesos cubiertos por el SIG'
+    )
 
     class Meta:
         model = CorporateIdentity
@@ -104,7 +133,8 @@ class CorporateIdentityCreateUpdateSerializer(serializers.ModelSerializer):
             'effective_date', 'version', 'is_active',
             # Campos de alcance del SIG
             'declara_alcance', 'alcance_general', 'alcance_geografico',
-            'alcance_procesos', 'alcance_exclusiones'
+            'alcance_procesos', 'alcance_exclusiones',
+            'procesos_cubiertos_ids'  # Nuevo: escribir IDs de áreas
         ]
 
     def validate(self, data):
@@ -120,6 +150,22 @@ class CorporateIdentityCreateUpdateSerializer(serializers.ModelSerializer):
             })
 
         return data
+
+    def create(self, validated_data):
+        """Crear identidad con procesos cubiertos"""
+        procesos = validated_data.pop('procesos_cubiertos', [])
+        instance = super().create(validated_data)
+        if procesos:
+            instance.procesos_cubiertos.set(procesos)
+        return instance
+
+    def update(self, instance, validated_data):
+        """Actualizar identidad con procesos cubiertos"""
+        procesos = validated_data.pop('procesos_cubiertos', None)
+        instance = super().update(instance, validated_data)
+        if procesos is not None:
+            instance.procesos_cubiertos.set(procesos)
+        return instance
 
 
 # =============================================================================
@@ -282,6 +328,10 @@ class PoliticaEspecificaCreateUpdateSerializer(serializers.ModelSerializer):
     - El código oficial (POL-SST-001, etc.) es asignado por el Gestor Documental
     - Solo se asigna cuando la política FIRMADA se envía para publicación
     - Flujo: BORRADOR → EN_REVISION → FIRMADO → Enviar a Documental → VIGENTE (con código)
+
+    VALIDACIÓN DE TRANSICIONES:
+    Las transiciones de estado están controladas por EstadoPolitica.transiciones_permitidas.
+    Solo se permiten transiciones definidas en la configuración dinámica.
     """
 
     class Meta:
@@ -293,6 +343,47 @@ class PoliticaEspecificaCreateUpdateSerializer(serializers.ModelSerializer):
             'change_reason', 'is_integral_policy',
             'document_file', 'keywords', 'orden', 'is_active'
         ]
+
+    def validate_status(self, value):
+        """
+        Valida que la transición de estado sea permitida.
+
+        Usa EstadoPolitica.transiciones_permitidas para verificar
+        que el nuevo estado esté en la lista de transiciones válidas
+        desde el estado actual.
+        """
+        # Solo validar en actualizaciones (instance existe)
+        if not self.instance:
+            return value
+
+        # Si el estado no cambia, no hay nada que validar
+        current_status = self.instance.status
+        if current_status == value:
+            return value
+
+        # Importar modelo de configuración
+        from apps.gestion_estrategica.identidad.models_config import EstadoPolitica
+
+        # Obtener configuración del estado actual
+        estado_actual = EstadoPolitica.objects.filter(
+            code=current_status,
+            is_active=True
+        ).first()
+
+        if not estado_actual:
+            # Si no hay configuración, permitir (fallback para compatibilidad)
+            return value
+
+        # Verificar si la transición está permitida
+        transiciones_permitidas = estado_actual.transiciones_permitidas or []
+
+        if value not in transiciones_permitidas:
+            raise serializers.ValidationError(
+                f"No se permite la transición de '{current_status}' a '{value}'. "
+                f"Transiciones permitidas: {', '.join(transiciones_permitidas) or 'ninguna'}"
+            )
+
+        return value
 
 
 class ApprovePoliticaEspecificaSerializer(serializers.Serializer):
@@ -351,182 +442,11 @@ class PublishPoliticaSerializer(serializers.Serializer):
 
 
 # =============================================================================
-# WORKFLOW DE FIRMAS - POLÍTICAS
+# NOTA: El workflow de firmas se maneja en Gestor Documental
 # =============================================================================
-
-class FirmanteSeleccionSerializer(serializers.Serializer):
-    """
-    Serializer para un firmante seleccionado.
-
-    Soporta dos modos:
-    1. Por cargo (cargo_id): Notifica a TODOS los usuarios del cargo (recomendado)
-    2. Por usuario (usuario_id): Notifica a un usuario específico (legacy)
-    """
-    rol_firmante = serializers.ChoiceField(
-        choices=['ELABORO', 'REVISO_TECNICO', 'REVISO_JURIDICO', 'APROBO_DIRECTOR', 'APROBO_GERENTE', 'APROBO_REPRESENTANTE_LEGAL'],
-        help_text="Rol del firmante en el proceso"
-    )
-    usuario_id = serializers.IntegerField(
-        required=False,
-        allow_null=True,
-        help_text="ID del usuario que firmará (modo legacy)"
-    )
-    cargo_id = serializers.IntegerField(
-        required=False,
-        allow_null=True,
-        help_text="ID del cargo que firmará. Notifica a TODOS los usuarios del cargo (modo recomendado)"
-    )
-
-    def validate(self, data):
-        """Valida que se proporcione usuario_id o cargo_id, pero no ambos"""
-        usuario_id = data.get('usuario_id')
-        cargo_id = data.get('cargo_id')
-
-        if not usuario_id and not cargo_id:
-            raise serializers.ValidationError(
-                "Debe proporcionar usuario_id o cargo_id"
-            )
-
-        if usuario_id and cargo_id:
-            raise serializers.ValidationError(
-                "No puede proporcionar usuario_id y cargo_id al mismo tiempo"
-            )
-
-        return data
-
-
-class IniciarFirmaSerializer(serializers.Serializer):
-    """
-    Serializer para iniciar el proceso de firma usando FirmaDigital universal.
-
-    Soporta tres modos:
-    1. Modo automático (flujo_firma_id): Usa un flujo predefinido con cargos fijos
-    2. Modo por cargo (firmantes con cargo_id): Selecciona CARGOS para firma
-       - Notifica a TODOS los usuarios del cargo
-       - Cualquier usuario del cargo puede firmar
-    3. Modo por usuario (firmantes con usuario_id): Selecciona usuarios específicos
-
-    En todos los modos:
-    - ELABORO: Automático (usuario actual)
-
-    NOTA: Fase 0.3.4 - Usa FirmaDigital con GenericForeignKey.
-    """
-    flujo_firma_id = serializers.IntegerField(
-        required=False,
-        help_text="ID del flujo de firma a utilizar. Si no se proporciona y no hay firmantes, usa el flujo por defecto."
-    )
-    firmantes = FirmanteSeleccionSerializer(
-        many=True,
-        required=False,
-        help_text=(
-            "Lista de firmantes seleccionados. "
-            "Cada firmante puede tener cargo_id (recomendado) o usuario_id (legacy). "
-            "Formato: [{rol_firmante: 'REVISO_TECNICO', cargo_id: 3}, {rol_firmante: 'APROBO_GERENTE', cargo_id: 1}]"
-        )
-    )
-
-    def validate_firmantes(self, value):
-        """Valida la lista de firmantes"""
-        if not value:
-            return value
-
-        # Verificar que no hay roles duplicados
-        roles = [f['rol_firmante'] for f in value]
-        if len(roles) != len(set(roles)):
-            raise serializers.ValidationError("No puede haber roles duplicados en los firmantes")
-
-        from django.contrib.auth import get_user_model
-        from apps.core.models import Cargo
-        User = get_user_model()
-
-        for firmante in value:
-            # Validar usuario si se proporcionó
-            if firmante.get('usuario_id'):
-                if not User.objects.filter(id=firmante['usuario_id'], is_active=True).exists():
-                    raise serializers.ValidationError(
-                        f"El usuario con ID {firmante['usuario_id']} no existe o no está activo"
-                    )
-
-            # Validar cargo si se proporcionó
-            if firmante.get('cargo_id'):
-                try:
-                    cargo = Cargo.objects.get(id=firmante['cargo_id'], is_active=True)
-                    # Verificar que el cargo tiene al menos un usuario
-                    usuarios_count = User.objects.filter(cargo=cargo, is_active=True).count()
-                    if usuarios_count == 0:
-                        raise serializers.ValidationError(
-                            f"El cargo '{cargo.name}' no tiene usuarios activos asignados"
-                        )
-                except Cargo.DoesNotExist:
-                    raise serializers.ValidationError(
-                        f"El cargo con ID {firmante['cargo_id']} no existe o no está activo"
-                    )
-
-        return value
-
-
-class FirmarDocumentoSerializer(serializers.Serializer):
-    """Serializer para registrar una firma en cualquier documento usando FirmaDigital."""
-    firma_id = serializers.IntegerField(
-        required=True,
-        help_text="ID de la FirmaDigital a completar"
-    )
-    firma_imagen = serializers.CharField(
-        required=True,
-        help_text="Imagen de la firma en formato Base64 (data URL)"
-    )
-    comentarios = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        help_text="Comentarios opcionales del firmante"
-    )
-
-
-class RechazarFirmaSerializer(serializers.Serializer):
-    """Serializer para rechazar una FirmaDigital."""
-    firma_id = serializers.IntegerField(
-        required=True,
-        help_text="ID de la FirmaDigital a rechazar"
-    )
-    motivo = serializers.CharField(
-        required=True,
-        min_length=10,
-        help_text="Motivo del rechazo (mínimo 10 caracteres)"
-    )
-
-
-class EnviarADocumentalSerializer(serializers.Serializer):
-    """
-    Serializer para enviar una política firmada al Gestor Documental.
-
-    El Gestor Documental se encargará de:
-    - Asignar código oficial (POL-SST-001, etc.)
-    - Crear el documento en el sistema documental
-    - Generar el PDF de visualización
-    - Publicar y distribuir el documento
-    """
-    tipo_documento_id = serializers.IntegerField(
-        required=False,
-        help_text="ID del TipoDocumento en Gestor Documental. Si no se proporciona, se crea tipo POLITICA automáticamente."
-    )
-    clasificacion = serializers.ChoiceField(
-        choices=[
-            ('PUBLICO', 'Público'),
-            ('INTERNO', 'Interno'),
-            ('CONFIDENCIAL', 'Confidencial'),
-            ('RESTRINGIDO', 'Restringido'),
-        ],
-        default='INTERNO',
-        help_text="Clasificación de seguridad del documento"
-    )
-    areas_aplicacion = serializers.ListField(
-        child=serializers.IntegerField(),
-        required=False,
-        default=list,
-        help_text="IDs de áreas donde aplica la política"
-    )
-    observaciones = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        help_text="Observaciones adicionales para el Gestor Documental"
-    )
+# Los serializers de firma (IniciarFirmaSerializer, FirmarDocumentoSerializer,
+# RechazarFirmaSerializer, EnviarADocumentalSerializer) fueron eliminados.
+#
+# Identidad solo crea políticas en BORRADOR y las envía a Gestor Documental
+# usando el endpoint enviar-a-gestion/.
+# =============================================================================

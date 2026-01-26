@@ -55,6 +55,8 @@ export const Sections = {
   MODULOS: 'modulos',
   UNIDADES_MEDIDA: 'unidades_medida',
   CONSECUTIVOS: 'consecutivos',
+  CONTEXTO: 'contexto',
+  ENCUESTAS_DOFA: 'encuestas_dofa',
 
   // CUMPLIMIENTO
   MATRIZ_LEGAL: 'matriz_legal',

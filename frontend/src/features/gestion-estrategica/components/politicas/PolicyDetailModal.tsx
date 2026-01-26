@@ -1,10 +1,10 @@
 /**
- * Modal de Detalle de Política
- * Sistema de Gestión StrateKaz v3.0
+ * Modal de Detalle de Política (v4.0 simplificado)
+ * Sistema de Gestión StrateKaz
  *
- * Muestra el detalle completo de una política con su workflow de firmas.
+ * Muestra el detalle completo de una política.
+ * El flujo de firmas se maneja en Gestor Documental.
  */
-import { useState } from 'react';
 import {
   X,
   Edit,
@@ -19,36 +19,29 @@ import {
   AlertTriangle,
   Download,
   Printer,
-  ExternalLink,
+  Send,
 } from 'lucide-react';
 
 // Design System
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { DynamicIcon } from '@/components/common/DynamicIcon';
-import { SignatureModal, SignatureData } from '@/components/modals/SignatureModal';
-import { FirmantesSelectionModal } from './FirmantesSelectionModal';
 
 // Hooks
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
-import { useAuthStore } from '@/store/authStore';
 import {
-  useIniciarFirmaPolitica,
-  useFirmarPolitica,
-  useProcesoFirmaPolitica,
-  useEnviarADocumental,
+  useEnviarAGestion,
   useCrearNuevaVersion,
-  CargoFirmanteSeleccion,
 } from '../../hooks/usePoliticas';
 
 import { usePermissions } from '@/hooks/usePermissions';
 import { Modules, Sections } from '@/constants/permissions';
 
 // Types
-import type { Politica, PoliticaStatus, EstadoFirma } from '../../types/policies.types';
+import type { Politica, PoliticaStatus } from '../../types/policies.types';
 
 // ============================================================================
-// STATUS CONFIG
+// STATUS CONFIG (v4.0 simplificado)
 // ============================================================================
 
 const statusConfig: Record<PoliticaStatus, {
@@ -58,40 +51,20 @@ const statusConfig: Record<PoliticaStatus, {
   icon: typeof FileText;
   description: string;
 }> = {
+  // Estados principales v4.0
   BORRADOR: {
     label: 'Borrador',
     color: 'text-gray-600',
     bgColor: 'bg-gray-100',
     icon: FileText,
-    description: 'Política en edición, pendiente de enviar a firma',
+    description: 'Política en edición, lista para enviar a gestión',
   },
-  EN_REVISION: {
-    label: 'En Revisión',
-    color: 'text-yellow-600',
-    bgColor: 'bg-yellow-100',
-    icon: Clock,
-    description: 'Esperando revisión técnica o jurídica',
-  },
-  EN_APROBACION: {
-    label: 'En Aprobación',
-    color: 'text-amber-600',
-    bgColor: 'bg-amber-100',
-    icon: Clock,
-    description: 'Revisiones completadas, esperando aprobación gerencial',
-  },
-  POR_CODIFICAR: {
-    label: 'Por Codificar',
+  EN_GESTION: {
+    label: 'En Gestión',
     color: 'text-blue-600',
     bgColor: 'bg-blue-100',
-    icon: FileText,
-    description: 'Aprobada, pendiente de codificación en Gestor Documental',
-  },
-  RECHAZADO: {
-    label: 'Rechazado',
-    color: 'text-red-600',
-    bgColor: 'bg-red-100',
-    icon: XCircle,
-    description: 'Política rechazada, requiere correcciones',
+    icon: Send,
+    description: 'Enviada a Gestor Documental para firma y codificación',
   },
   VIGENTE: {
     label: 'Vigente',
@@ -107,37 +80,41 @@ const statusConfig: Record<PoliticaStatus, {
     icon: XCircle,
     description: 'Versión anterior, reemplazada por una nueva versión',
   },
-};
-
-const firmaStatusConfig: Record<EstadoFirma, {
-  label: string;
-  color: string;
-  bgColor: string;
-  icon: typeof CheckCircle;
-}> = {
-  PENDIENTE: {
-    label: 'Pendiente',
-    color: 'text-gray-600',
-    bgColor: 'bg-gray-100',
+  // Estados legacy para retrocompatibilidad
+  EN_REVISION: {
+    label: 'En Revisión',
+    color: 'text-yellow-600',
+    bgColor: 'bg-yellow-100',
     icon: Clock,
+    description: 'Esperando revisión (estado legacy)',
   },
-  FIRMADO: {
-    label: 'Firmado',
-    color: 'text-green-600',
-    bgColor: 'bg-green-100',
-    icon: CheckCircle,
+  EN_APROBACION: {
+    label: 'En Aprobación',
+    color: 'text-amber-600',
+    bgColor: 'bg-amber-100',
+    icon: Clock,
+    description: 'Esperando aprobación (estado legacy)',
+  },
+  POR_CODIFICAR: {
+    label: 'Por Codificar',
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-100',
+    icon: FileText,
+    description: 'Pendiente de codificación (estado legacy)',
   },
   RECHAZADO: {
     label: 'Rechazado',
     color: 'text-red-600',
     bgColor: 'bg-red-100',
     icon: XCircle,
+    description: 'Política rechazada (estado legacy)',
   },
-  REVOCADO: {
-    label: 'Revocado',
-    color: 'text-orange-600',
-    bgColor: 'bg-orange-100',
-    icon: AlertTriangle,
+  FIRMADO: {
+    label: 'Firmado',
+    color: 'text-emerald-600',
+    bgColor: 'bg-emerald-100',
+    icon: CheckCircle,
+    description: 'Firmado (estado legacy)',
   },
 };
 
@@ -164,43 +141,15 @@ export function PolicyDetailModal({
 }: PolicyDetailModalProps) {
   const { primaryColor } = useBrandingConfig();
   const { canDo } = usePermissions();
-  const user = useAuthStore((state) => state.user);
-  const [showSignatureModal, setShowSignatureModal] = useState(false);
-  const [selectedFirmaId, setSelectedFirmaId] = useState<number | null>(null);
-  const [showFirmantesModal, setShowFirmantesModal] = useState(false);
 
-
-
-  // Mutations
-  const iniciarFirmaMutation = useIniciarFirmaPolitica();
-  const firmarMutation = useFirmarPolitica();
-  const enviarADocumentalMutation = useEnviarADocumental();
+  // Mutations (simplificado v4.0)
+  const enviarAGestionMutation = useEnviarAGestion();
   const crearNuevaVersionMutation = useCrearNuevaVersion();
 
-  // Query para obtener proceso de firma activo
-  // Se habilita en EN_REVISION para saber si puede firmar o enviar a documental
-  const { data: procesoFirma } = useProcesoFirmaPolitica(
-    politica?.id || 0,
-    !!politica && (politica.status === 'EN_REVISION' || politica.status === 'EN_APROBACION')
-  );
-
   // Handlers
-  const handleOpenFirmantesModal = () => {
-    setShowFirmantesModal(true);
-  };
-
-  const handleIniciarFirmaConFirmantes = async (firmantes: CargoFirmanteSeleccion[]) => {
+  const handleEnviarAGestion = async () => {
     if (!politica) return;
-    await iniciarFirmaMutation.mutateAsync({
-      id: politica.id,
-      firmantesCargo: firmantes,
-    });
-    setShowFirmantesModal(false);
-  };
-
-  const handleEnviarADocumental = async () => {
-    if (!politica) return;
-    await enviarADocumentalMutation.mutateAsync({ politicaId: politica.id });
+    await enviarAGestionMutation.mutateAsync(politica.id);
   };
 
   const handleCrearNuevaVersion = async () => {
@@ -209,42 +158,12 @@ export function PolicyDetailModal({
       politicaId: politica.id,
       dto: { change_reason: 'Nueva versión de la política' },
     });
-    onClose(); // Cerrar modal después de crear nueva versión
+    onClose();
   };
-
-  // Handler para abrir el modal de firma
-  const handleOpenSignature = (firmaId: number) => {
-    setSelectedFirmaId(firmaId);
-    setShowSignatureModal(true);
-  };
-
-  // Handler para guardar la firma
-  const handleSaveSignature = async (signatureData: SignatureData) => {
-    if (!politica || !selectedFirmaId) return;
-
-    await firmarMutation.mutateAsync({
-      politicaId: politica.id,
-      dto: {
-        firma_id: selectedFirmaId,
-        signature_image: signatureData.signatureDataUrl,
-        confirmar: true,
-      },
-    });
-
-    setShowSignatureModal(false);
-    setSelectedFirmaId(null);
-  };
-
-  // Encontrar si el usuario tiene una firma pendiente
-  const misFirmasPendientes = procesoFirma?.firmas?.filter(
-    (f: { estado: string; cargo_id?: number }) =>
-      f.estado === 'PENDIENTE' &&
-      (user?.is_superuser || user?.is_staff || f.cargo_id === user?.cargo?.id)
-  ) || [];
 
   if (!isOpen || !politica) return null;
 
-  const status = statusConfig[politica.status];
+  const status = statusConfig[politica.status] || statusConfig.BORRADOR;
   const StatusIcon = status.icon;
 
   const formatDate = (dateString?: string) => {
@@ -454,59 +373,6 @@ export function PolicyDetailModal({
               </div>
             </div>
 
-            {/* Workflow de Firmas */}
-            {politica.proceso_firma && (
-              <div>
-                <h4 className="font-medium text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                  <PenTool className="w-4 h-4" />
-                  Proceso de Firmas
-                  <Badge className="ml-2">
-                    {politica.proceso_firma.progreso}% completado
-                  </Badge>
-                </h4>
-                <div className="space-y-3">
-                  {politica.proceso_firma.firmas.map((firma) => {
-                    const firmaStatus = firmaStatusConfig[firma.estado];
-                    const FirmaIcon = firmaStatus.icon;
-
-                    return (
-                      <div
-                        key={firma.id}
-                        className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-lg ${firmaStatus.bgColor}`}>
-                            <FirmaIcon className={`w-4 h-4 ${firmaStatus.color}`} />
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-900 dark:text-white">
-                              {firma.rol_firmante_display || firma.rol_firmante}
-                            </p>
-                            {firma.firmado_por_name && (
-                              <p className="text-sm text-gray-500">
-                                {firma.firmado_por_name}
-                                {firma.firmado_por_cargo && ` - ${firma.firmado_por_cargo}`}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className={`${firmaStatus.bgColor} ${firmaStatus.color} px-2 py-1 rounded-lg text-xs font-medium`}>
-                            {firmaStatus.label}
-                          </div>
-                          {firma.fecha_firma && (
-                            <p className="text-xs text-gray-500 mt-1">
-                              {formatDate(firma.fecha_firma)}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
             {/* Auditoría */}
             <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between text-sm text-gray-500">
@@ -553,7 +419,7 @@ export function PolicyDetailModal({
                 Cerrar
               </Button>
 
-              {/* BORRADOR: Editar + Enviar a Firma */}
+              {/* BORRADOR: Editar + Enviar a Gestión */}
               {politica.status === 'BORRADOR' && (
                 <>
                   {onEdit && (
@@ -567,57 +433,24 @@ export function PolicyDetailModal({
                   )}
                   {canDo(Modules.GESTION_ESTRATEGICA, Sections.POLITICAS, 'edit') && (
                     <Button
-                      onClick={handleOpenFirmantesModal}
-                      style={{ backgroundColor: primaryColor }}
-                      disabled={iniciarFirmaMutation.isPending}
-                    >
-                      <PenTool className="w-4 h-4 mr-2" />
-                      {iniciarFirmaMutation.isPending ? 'Enviando...' : 'Enviar a Firma'}
-                    </Button>
-                  )}
-                </>
-              )}
-
-              {/* EN_REVISION: Mostrar botón de firmar o enviar a documental */}
-              {politica.status === 'EN_REVISION' && (
-                <>
-                  {/* Si el proceso de firma está completado, mostrar botón de enviar a documental */}
-                  {procesoFirma?.estado === 'COMPLETADO' ? (
-                    <Button
-                      onClick={handleEnviarADocumental}
+                      onClick={handleEnviarAGestion}
                       className="bg-blue-600 hover:bg-blue-700 text-white"
-                      disabled={enviarADocumentalMutation.isPending}
+                      disabled={enviarAGestionMutation.isPending}
                     >
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      {enviarADocumentalMutation.isPending ? 'Enviando...' : 'Enviar a Gestor Documental'}
+                      <Send className="w-4 h-4 mr-2" />
+                      {enviarAGestionMutation.isPending ? 'Enviando...' : 'Enviar a Gestión'}
                     </Button>
-                  ) : misFirmasPendientes.length > 0 && canDo(Modules.GESTION_ESTRATEGICA, Sections.POLITICAS, 'edit') ? (
-                    <Button
-                      onClick={() => handleOpenSignature(misFirmasPendientes[0].id)}
-                      style={{ backgroundColor: primaryColor }}
-                      disabled={firmarMutation.isPending}
-                    >
-                      <PenTool className="w-4 h-4 mr-2" />
-                      {firmarMutation.isPending ? 'Firmando...' : `Firmar como ${misFirmasPendientes[0].rol_firmante_display || misFirmasPendientes[0].rol_firmante}`}
-                    </Button>
-                  ) : (
-                    <div className="px-4 py-2 bg-yellow-50 text-yellow-700 rounded-lg text-sm flex items-center gap-2">
-                      <Clock className="w-4 h-4 animate-pulse" />
-                      Esperando firmas de otros usuarios...
-                    </div>
                   )}
                 </>
               )}
 
-              {/* POR_CODIFICAR: Política esperando codificación en Gestor Documental */}
-              {politica.status === 'POR_CODIFICAR' && (
+              {/* EN_GESTION: Indicador de estado */}
+              {politica.status === 'EN_GESTION' && (
                 <div className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm flex items-center gap-2">
                   <Clock className="w-4 h-4 animate-pulse" />
-                  Política enviada, esperando codificación...
+                  En proceso en Gestor Documental...
                 </div>
               )}
-
-
 
               {/* VIGENTE: Nueva Versión */}
               {politica.status === 'VIGENTE' && canDo(Modules.GESTION_ESTRATEGICA, Sections.POLITICAS, 'create') && (
@@ -642,32 +475,6 @@ export function PolicyDetailModal({
             </div>
           </div>
         </div>
-
-
-        {/* Modal de Firma Digital */}
-        <SignatureModal
-          isOpen={showSignatureModal}
-          onClose={() => {
-            setShowSignatureModal(false);
-            setSelectedFirmaId(null);
-          }}
-          onSave={handleSaveSignature}
-          title="Firma de Política"
-          description={`Está a punto de firmar la política "${politica.title}". Esta acción no se puede deshacer.`}
-          userName={user?.full_name || user?.first_name || user?.username || 'Usuario'}
-          userEmail={user?.email}
-          userId={user?.id}
-          documentType="POLITICA_ESPECIFICA"
-          documentId={String(politica.id)}
-        />
-
-        {/* Modal de Selección de Firmantes */}
-        <FirmantesSelectionModal
-          isOpen={showFirmantesModal}
-          onClose={() => setShowFirmantesModal(false)}
-          onConfirm={handleIniciarFirmaConFirmantes}
-          isLoading={iniciarFirmaMutation.isPending}
-        />
       </div>
     </div>
   );

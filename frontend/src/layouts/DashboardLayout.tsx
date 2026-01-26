@@ -4,7 +4,7 @@
  * Layout principal con soporte completo para:
  * - Desktop: Sidebar fijo expandible/colapsado
  * - Tablet: Sidebar colapsado por defecto
- * - Mobile: Drawer overlay con animaciones
+ * - Mobile: Drawer overlay con animaciones + BottomNavigation
  * - Header contextual con tabs dinamicos
  *
  * PWA-ready con gestos tactiles y transiciones suaves.
@@ -18,6 +18,7 @@ import { HeaderProvider } from '@/contexts/HeaderContext';
 import { cn } from '@/utils/cn';
 import { useRouteTracker } from '@/hooks/useLastRoute';
 import { useIsMobile, useIsTablet } from '@/hooks/useMediaQuery';
+import { BottomNavigation } from '@/components/mobile';
 
 export const DashboardLayout = () => {
   const isMobile = useIsMobile();
@@ -115,15 +116,22 @@ export const DashboardLayout = () => {
             className={cn(
               'flex-1',
               // Padding responsive: menor en mobile
-              'p-3 sm:p-4 md:p-6'
+              'p-3 sm:p-4 md:p-6',
+              // Padding inferior extra en mobile para BottomNavigation (h-16 + safe-area)
+              isMobile && 'pb-20'
             )}
           >
             <Outlet />
           </div>
 
-          {/* Footer */}
-          <Footer />
+          {/* Footer - Oculto en mobile (BottomNav lo reemplaza) */}
+          {!isMobile && <Footer />}
         </main>
+
+        {/* Bottom Navigation - Solo visible en mobile */}
+        <BottomNavigation
+          onOpenMenu={() => setIsMobileMenuOpen(true)}
+        />
       </div>
     </HeaderProvider>
   );

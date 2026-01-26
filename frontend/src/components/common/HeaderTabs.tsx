@@ -195,7 +195,7 @@ export const HeaderTabs = ({
     return (
       <div className={cn('flex items-center justify-center gap-1', className)}>
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-8 w-20 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
+          <div key={i} className="h-8 w-20 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse-subtle" />
         ))}
       </div>
     );
@@ -234,15 +234,20 @@ export const HeaderTabs = ({
 
   return (
     <div ref={containerRef} className={cn('flex items-center justify-center', className)}>
-      {/* Contenedor de tabs centrado */}
+      {/* Contenedor de tabs centrado - con scroll horizontal en móvil */}
       <div
         className={cn(
-          'inline-flex items-center gap-1',
+          'flex md:inline-flex items-center gap-1',
           'px-1.5 py-1.5',
           'bg-gray-100/80 dark:bg-gray-800/80',
           'backdrop-blur-sm',
           'rounded-xl',
-          'border border-gray-200/50 dark:border-gray-700/50'
+          'border border-gray-200/50 dark:border-gray-700/50',
+          // Mobile: scroll horizontal oculto
+          'overflow-x-auto md:overflow-visible',
+          'scrollbar-none',
+          'snap-x snap-mandatory md:snap-none',
+          'max-w-full'
         )}
       >
         {/* Tabs visibles */}
@@ -260,6 +265,7 @@ export const HeaderTabs = ({
                 'rounded-lg transition-all duration-200',
                 'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1',
                 'border border-transparent',
+                'snap-start flex-shrink-0', // Mobile scroll support
                 isActive ? colors.active : colors.inactive
               )}
               title={section.name}

@@ -2,6 +2,11 @@
  * MC-001: Sección de Unidades de Medida
  * Sistema de Gestión StrateKaz
  *
+ * Vista 2B: Lista CRUD con Filtros en Línea
+ * - DataSection con filtros en línea (sin hardcoding)
+ * - DataTableCard para la tabla
+ * - Colores dinámicos usando getModuleColorClasses()
+ *
  * Características:
  * - Lista de unidades agrupadas por categoría
  * - Filtros por categoría y tipo (sistema/custom)
@@ -30,12 +35,16 @@ import {
   Package,
   HelpCircle,
 } from 'lucide-react';
-import { Card, Badge, Button, Alert } from '@/components/common';
+import { Badge, Button, Alert, BrandedSkeleton } from '@/components/common';
 import { ActionButtons } from '@/components/common/ActionButtons';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { Select } from '@/components/forms/Select';
-import { usePermissions } from '@/hooks/usePermissions';
+import { DataTableCard } from '@/components/layout';
+import { DataSection } from '@/components/data-display';
+import { usePermissions, useModuleColor } from '@/hooks';
 import { Modules, Sections } from '@/constants/permissions';
+import { getModuleColorClasses } from '@/utils/moduleColors';
+import type { ModuleColor } from '@/utils/moduleColors';
 import {
   useUnidadesMedida,
   useDeleteUnidadMedida,
@@ -68,13 +77,12 @@ const CATEGORIA_LABELS: Record<CategoriaUnidad, string> = {
 };
 
 export const UnidadesMedidaSection = () => {
+  // Color del módulo (sin hardcoding)
+  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
+  const colorClasses = getModuleColorClasses(moduleColor as ModuleColor);
+
   const { canDo } = usePermissions();
   const isAdmin = canDo(Modules.GESTION_ESTRATEGICA, Sections.UNIDADES_MEDIDA, 'delete'); // Admin = delete permission
-
-  // Hooks de datos
-  const { data: unidadesData, isLoading, error } = useUnidadesMedida();
-  const deleteMutation = useDeleteUnidadMedida();
-  const cargarSistemaMutation = useCargarUnidadesSistema();
 
   // Estado local
   const [showModal, setShowModal] = useState(false);
@@ -84,15 +92,19 @@ export const UnidadesMedidaSection = () => {
   const [filterCategoria, setFilterCategoria] = useState<CategoriaUnidad | ''>('');
   const [filterTipo, setFilterTipo] = useState<'all' | 'sistema' | 'custom'>('all');
 
-  const unidades = unidadesData?.results || [];
+  // Construir filtros para API (servidor-side filtering)
+  const filters = {
+    ...(filterCategoria && { categoria: filterCategoria }),
+    ...(filterTipo === 'sistema' && { es_sistema: true }),
+    ...(filterTipo === 'custom' && { es_sistema: false }),
+  };
 
-  // Filtrar unidades
-  const filteredUnidades = unidades.filter((unidad) => {
-    if (filterCategoria && unidad.categoria !== filterCategoria) return false;
-    if (filterTipo === 'sistema' && !unidad.es_sistema) return false;
-    if (filterTipo === 'custom' && unidad.es_sistema) return false;
-    return true;
-  });
+  // Hooks de datos con filtros aplicados en servidor
+  const { data: unidadesData, isLoading, error } = useUnidadesMedida(filters);
+  const deleteMutation = useDeleteUnidadMedida();
+  const cargarSistemaMutation = useCargarUnidadesSistema();
+
+  const filteredUnidades = unidadesData?.results || [];
 
   // Handlers
   const handleAdd = () => {
@@ -127,20 +139,9 @@ export const UnidadesMedidaSection = () => {
   const canEdit = canDo(Modules.GESTION_ESTRATEGICA, Sections.UNIDADES_MEDIDA, 'edit');
   const canDelete = canDo(Modules.GESTION_ESTRATEGICA, Sections.UNIDADES_MEDIDA, 'delete');
 
-  // Loading state
+  // Loading state - muestra logo del branding
   if (isLoading) {
-    return (
-      <Card>
-        <div className="p-6 animate-pulse">
-          <div className="h-6 bg-secondary-200 dark:bg-secondary-700 rounded w-1/4 mb-4" />
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-12 bg-secondary-200 dark:bg-secondary-700 rounded" />
-            ))}
-          </div>
-        </div>
-      </Card>
-    );
+    return <BrandedSkeleton height="h-80" logoSize="xl" showText />;
   }
 
   // Error state
@@ -155,86 +156,74 @@ export const UnidadesMedidaSection = () => {
   }
 
   return (
-    <>
-      <Card>
-        <div className="p-6">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
-                <Ruler className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  Unidades de Medida
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {unidades.length} unidad{unidades.length !== 1 ? 'es' : ''} configurada
-                  {unidades.length !== 1 ? 's' : ''}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {isAdmin && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleCargarSistema}
-                  disabled={cargarSistemaMutation.isPending}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Cargar Sistema
-                </Button>
-              )}
-              {canCreate && (
-                <Button variant="primary" size="sm" onClick={handleAdd}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Agregar Unidad
-                </Button>
-              )}
-            </div>
+    <div className="space-y-6">
+      {/* DataSection - Vista 2B: Filtros en línea (sin hardcoding) */}
+      <DataSection
+        icon={Ruler}
+        iconBgClass={colorClasses.badge}
+        iconClass={colorClasses.icon}
+        title="Unidades de Medida"
+        description="Catálogo de unidades para documentos y registros"
+        action={
+          <div className="flex items-center gap-3 flex-nowrap">
+            <Select
+              value={filterCategoria}
+              onChange={(e) => setFilterCategoria(e.target.value as CategoriaUnidad | '')}
+              options={[
+                { value: '', label: 'Todas las categorías' },
+                ...Object.entries(CATEGORIA_LABELS).map(([value, label]) => ({
+                  value,
+                  label,
+                })),
+              ]}
+              className="w-44"
+            />
+            <Select
+              value={filterTipo}
+              onChange={(e) => setFilterTipo(e.target.value as typeof filterTipo)}
+              options={[
+                { value: 'all', label: 'Todos los tipos' },
+                { value: 'sistema', label: 'Del sistema' },
+                { value: 'custom', label: 'Personalizadas' },
+              ]}
+              className="w-40"
+            />
+            {isAdmin && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleCargarSistema}
+                disabled={cargarSistemaMutation.isPending}
+              >
+                <Download className={`h-4 w-4 mr-2 ${cargarSistemaMutation.isPending ? 'animate-spin' : ''}`} />
+                Cargar Sistema
+              </Button>
+            )}
+            {canCreate && (
+              <Button variant="primary" size="sm" onClick={handleAdd}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nueva Unidad
+              </Button>
+            )}
           </div>
+        }
+      />
 
-          {/* Filtros */}
-          {unidades.length > 0 && (
-            <div className="flex gap-4 mb-6">
-              <Select
-                label=""
-                value={filterCategoria}
-                onChange={(e) => setFilterCategoria(e.target.value as CategoriaUnidad | '')}
-                options={[
-                  { value: '', label: 'Todas las categorías' },
-                  { value: 'MASA', label: 'Masa / Peso' },
-                  { value: 'VOLUMEN', label: 'Volumen' },
-                  { value: 'LONGITUD', label: 'Longitud' },
-                  { value: 'AREA', label: 'Área' },
-                  { value: 'CANTIDAD', label: 'Cantidad / Unidades' },
-                  { value: 'TIEMPO', label: 'Tiempo' },
-                  { value: 'CONTENEDOR', label: 'Contenedores' },
-                  { value: 'OTRO', label: 'Otro' },
-                ]}
-                className="w-48"
-              />
-              <Select
-                label=""
-                value={filterTipo}
-                onChange={(e) => setFilterTipo(e.target.value as typeof filterTipo)}
-                options={[
-                  { value: 'all', label: 'Todas' },
-                  { value: 'sistema', label: 'Del sistema' },
-                  { value: 'custom', label: 'Personalizadas' },
-                ]}
-                className="w-40"
-              />
-            </div>
-          )}
-
-          {/* Tabla de unidades */}
-          {filteredUnidades.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full">
+      {/* Tabla de unidades */}
+      <DataTableCard
+        isEmpty={filteredUnidades.length === 0}
+        isLoading={false}
+        emptyMessage={
+          filterCategoria || filterTipo !== 'all'
+            ? 'No se encontraron unidades con los filtros aplicados.'
+            : 'Cargue las unidades del sistema o agregue una nueva unidad personalizada.'
+        }
+      >
+        {filteredUnidades.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full">
                 <thead>
-                  <tr className="border-b border-secondary-200 dark:border-secondary-700">
+                  <tr className="border-b border-gray-200 dark:border-gray-700">
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
                       Código
                     </th>
@@ -262,19 +251,19 @@ export const UnidadesMedidaSection = () => {
                     return (
                       <tr
                         key={unidad.id}
-                        className="border-b border-secondary-100 dark:border-secondary-800 hover:bg-secondary-50 dark:hover:bg-secondary-800/50"
+                        className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                       >
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-3">
-                            <div className="p-1.5 rounded bg-secondary-100 dark:bg-secondary-800">
-                              <CatIcon className="h-4 w-4 text-secondary-600 dark:text-gray-400" />
+                            <div className="p-1.5 rounded bg-gray-100 dark:bg-gray-800">
+                              <CatIcon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                             </div>
                             <span className="font-mono font-medium text-gray-900 dark:text-gray-100">
                               {unidad.codigo}
                             </span>
                           </div>
                         </td>
-                        <td className="py-3 px-4 text-secondary-700 dark:text-secondary-300">
+                        <td className="py-3 px-4 text-gray-700 dark:text-gray-300">
                           {unidad.nombre}
                         </td>
                         <td className="py-3 px-4">
@@ -282,7 +271,7 @@ export const UnidadesMedidaSection = () => {
                             {unidad.simbolo}
                           </Badge>
                         </td>
-                        <td className="py-3 px-4 text-secondary-600 dark:text-gray-400">
+                        <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
                           {unidad.categoria_display || CATEGORIA_LABELS[unidad.categoria]}
                         </td>
                         <td className="py-3 px-4">
@@ -298,17 +287,19 @@ export const UnidadesMedidaSection = () => {
                           )}
                         </td>
                         <td className="py-3 px-4 text-right">
-                          <ActionButtons
-                            module={Modules.GESTION_ESTRATEGICA}
-                            section={Sections.UNIDADES_MEDIDA}
-                            onEdit={canEdit ? () => handleEdit(unidad) : undefined}
-                            onDelete={
-                              canDelete && !unidad.es_sistema
-                                ? () => handleDeleteClick(unidad)
-                                : undefined
-                            }
-                            size="sm"
-                          />
+                          <div className="flex items-center justify-end gap-1">
+                            <ActionButtons
+                              module={Modules.GESTION_ESTRATEGICA}
+                              section={Sections.UNIDADES_MEDIDA}
+                              onEdit={canEdit ? () => handleEdit(unidad) : undefined}
+                              onDelete={
+                                canDelete && !unidad.es_sistema
+                                  ? () => handleDeleteClick(unidad)
+                                  : undefined
+                              }
+                              size="sm"
+                            />
+                          </div>
                         </td>
                       </tr>
                     );
@@ -316,56 +307,8 @@ export const UnidadesMedidaSection = () => {
                 </tbody>
               </table>
             </div>
-          ) : unidades.length > 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500 dark:text-gray-400">
-                No se encontraron unidades con los filtros aplicados.
-              </p>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setFilterCategoria('');
-                  setFilterTipo('all');
-                }}
-                className="mt-2"
-              >
-                Limpiar filtros
-              </Button>
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-secondary-100 dark:bg-secondary-800 mb-4">
-                <Ruler className="h-8 w-8 text-gray-400" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-                No hay unidades de medida
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400 mb-4">
-                Cargue las unidades del sistema o agregue una nueva unidad personalizada.
-              </p>
-              <div className="flex justify-center gap-2">
-                {isAdmin && (
-                  <Button
-                    variant="outline"
-                    onClick={handleCargarSistema}
-                    disabled={cargarSistemaMutation.isPending}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Cargar Sistema
-                  </Button>
-                )}
-                {canCreate && (
-                  <Button variant="primary" onClick={handleAdd}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Agregar Unidad
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      </Card>
+        ) : null}
+      </DataTableCard>
 
       {/* Modal de formulario */}
       <UnidadMedidaFormModal
@@ -390,6 +333,6 @@ export const UnidadesMedidaSection = () => {
         variant="danger"
         isLoading={deleteMutation.isPending}
       />
-    </>
+    </div>
   );
 };

@@ -52,12 +52,15 @@ export const ParteFormModal = ({ parte, isOpen, onClose }: ParteFormModalProps) 
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Hooks
-  const tiposQuery = useTiposParteInteresada();
-  const { data: tiposData } = tiposQuery;
-  const tipos = tiposData?.results || [];
+  // Hooks - useGenericCRUD returns data as array directly (handles pagination internally)
+  const { data: tipos } = useTiposParteInteresada();
 
+  // Reset form when modal opens/closes or parte changes
+  // Note: We don't include `tipos` in deps to avoid infinite loop
+  // The first tipo will be selected on initial render when tipos loads
   useEffect(() => {
+    if (!isOpen) return; // Only run when modal opens
+
     if (parte) {
       setFormData({
         empresa_id: parte.empresa_id,
@@ -80,7 +83,7 @@ export const ParteFormModal = ({ parte, isOpen, onClose }: ParteFormModalProps) 
       // Reset para nueva parte
       setFormData({
         empresa_id: 0, // TODO: Obtener del auth store
-        tipo: tipos[0]?.id || 0,
+        tipo: 0, // Will be selected by user
         nombre: '',
         descripcion: '',
         representante: '',
@@ -97,7 +100,7 @@ export const ParteFormModal = ({ parte, isOpen, onClose }: ParteFormModalProps) 
       });
     }
     setErrors({});
-  }, [parte, tipos, isOpen]);
+  }, [parte, isOpen]);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};

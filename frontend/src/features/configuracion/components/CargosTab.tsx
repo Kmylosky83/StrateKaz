@@ -1,26 +1,26 @@
 /**
  * Tab de gestión de Cargos
  *
- * RBAC Unificado v4.0:
- * - Verifica permisos CRUD desde CargoSectionAccess
- * - Códigos: gestion_estrategica.cargos.{view|create|edit|delete}
- *
- * Usa Design System:
- * - FilterCard para búsqueda y filtros
- * - FilterGrid para layout de filtros
+ * Vista 2B: Lista CRUD con Filtros Avanzados
+ * - SectionHeader con búsqueda y filtros en línea (sin FilterCard separado)
  * - DataTableCard para la tabla
  * - EmptyState para estado vacío
  * - ConfirmDialog para confirmaciones
+ *
+ * RBAC Unificado v4.0:
+ * - Verifica permisos CRUD desde CargoSectionAccess
+ * - Códigos: gestion_estrategica.cargos.{view|create|edit|delete}
  */
 import { useState, useMemo } from 'react';
-import { Plus, Pencil, Trash2, Users, Lock, Briefcase, CheckCircle } from 'lucide-react';
+import { Plus, Pencil, Trash2, Users, Lock, Briefcase, CheckCircle, Search } from 'lucide-react';
 import { Badge } from '@/components/common/Badge';
 import { Button } from '@/components/common/Button';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { Alert } from '@/components/common/Alert';
+import { SectionHeader } from '@/components/common/SectionHeader';
 import { Select } from '@/components/forms/Select';
-import { FilterCard, FilterGrid } from '@/components/layout/FilterCard';
+import { Input } from '@/components/forms/Input';
 import { DataTableCard, TableSkeleton } from '@/components/layout/DataTableCard';
 import { StatsGrid, StatsGridSkeleton } from '@/components/layout';
 import type { StatItem } from '@/components/layout';
@@ -32,6 +32,8 @@ import { NIVEL_JERARQUICO_OPTIONS } from '../types/rbac.types';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { Modules, Sections } from '@/constants/permissions';
+import { getModuleColorClasses } from '@/utils/moduleColors';
+import type { ModuleColor } from '@/utils/moduleColors';
 
 export const CargosTab = () => {
   const [filters, setFilters] = useState<CargoFilters>({});
@@ -49,6 +51,7 @@ export const CargosTab = () => {
 
   // Color del módulo (sin hardcoding)
   const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
+  const colorClasses = getModuleColorClasses(moduleColor as ModuleColor);
 
   const { data, isLoading, error } = useCargos({ ...filters, page_size: 100 });
   const deleteMutation = useDeleteCargo();
@@ -69,12 +72,6 @@ export const CargosTab = () => {
       { label: 'Con Usuarios', value: cargosConUsuarios, icon: CheckCircle, iconColor: 'gray', description: 'Cargos ocupados' },
     ];
   }, [data]);
-
-  // Contar filtros activos
-  const activeFiltersCount = [
-    filters.nivel_jerarquico !== undefined,
-    filters.area !== undefined,
-  ].filter(Boolean).length;
 
   const handleCreate = () => {
     setSelectedCargo(null);
@@ -115,10 +112,6 @@ export const CargosTab = () => {
     setIsCreating(false);
   };
 
-  const handleClearFilters = () => {
-    setFilters({});
-  };
-
   if (error) {
     return (
       <Alert variant="error" title="Error" message="Error al cargar los cargos. Intente de nuevo." />
@@ -146,68 +139,76 @@ export const CargosTab = () => {
         <StatsGrid stats={cargoStats} columns={4} moduleColor={moduleColor} />
       )}
 
-      {/* Filtros */}
-      <FilterCard
-        searchPlaceholder="Buscar por nombre o código..."
-        searchValue={filters.search || ''}
-        onSearchChange={(value) => setFilters({ ...filters, search: value })}
-        collapsible
-        activeFiltersCount={activeFiltersCount}
-        hasActiveFilters={activeFiltersCount > 0 || !!filters.search}
-        onClearFilters={handleClearFilters}
-      >
-        <FilterGrid columns={3}>
-          <Select
-            label="Nivel Jerárquico"
-            value={filters.nivel_jerarquico || ''}
-            onChange={(e) =>
-              setFilters({
-                ...filters,
-                nivel_jerarquico: e.target.value
-                  ? (e.target.value as NivelJerarquico)
-                  : undefined,
-              })
-            }
-            options={[
-              { value: '', label: 'Todos los niveles' },
-              ...NIVEL_JERARQUICO_OPTIONS.map((opt) => ({
-                value: opt.value.toString(),
-                label: opt.label,
-              })),
-            ]}
-          />
-          <Select
-            label="Área"
-            value={filters.area?.toString() || ''}
-            onChange={(e) =>
-              setFilters({
-                ...filters,
-                area: e.target.value ? parseInt(e.target.value) : undefined,
-              })
-            }
-            options={[
-              { value: '', label: 'Todas las áreas' },
-              ...areaOptions.map((opt) => ({
-                value: opt.value.toString(),
-                label: opt.label,
-              })),
-            ]}
-          />
-        </FilterGrid>
-      </FilterCard>
+      {/* Section Header - Vista 2B: Filtros en línea */}
+      <SectionHeader
+        icon={
+          <div className={`p-2 rounded-lg ${colorClasses.badge}`}>
+            <Briefcase className={`h-5 w-5 ${colorClasses.icon}`} />
+          </div>
+        }
+        title="Cargos"
+        description="Estructura de puestos y niveles jerárquicos"
+        variant="compact"
+        actions={
+          <div className="flex items-center gap-3 flex-nowrap">
+            <Input
+              placeholder="Buscar..."
+              value={filters.search || ''}
+              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+              leftIcon={<Search className="h-4 w-4" />}
+              className="w-48"
+            />
+            <Select
+              value={filters.nivel_jerarquico || ''}
+              onChange={(e) =>
+                setFilters({
+                  ...filters,
+                  nivel_jerarquico: e.target.value
+                    ? (e.target.value as NivelJerarquico)
+                    : undefined,
+                })
+              }
+              options={[
+                { value: '', label: 'Todos los niveles' },
+                ...NIVEL_JERARQUICO_OPTIONS.map((opt) => ({
+                  value: opt.value.toString(),
+                  label: opt.label,
+                })),
+              ]}
+              className="w-44"
+            />
+            <Select
+              value={filters.area?.toString() || ''}
+              onChange={(e) =>
+                setFilters({
+                  ...filters,
+                  area: e.target.value ? parseInt(e.target.value) : undefined,
+                })
+              }
+              options={[
+                { value: '', label: 'Todas las áreas' },
+                ...areaOptions.map((opt) => ({
+                  value: opt.value.toString(),
+                  label: opt.label,
+                })),
+              ]}
+              className="w-44"
+            />
+            {canCreate && (
+              <Button onClick={handleCreate} variant="primary" size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Nuevo Cargo
+              </Button>
+            )}
+          </div>
+        }
+      />
 
-      {/* Tabla */}
+      {/* Tabla - Vista 2 */}
       <DataTableCard
         isLoading={isLoading}
         isEmpty={isEmpty}
         emptyMessage="No se encontraron cargos"
-        headerActions={
-          canCreate ? (
-            <Button onClick={handleCreate} variant="primary" size="sm" leftIcon={<Plus className="h-4 w-4" />}>
-              Nuevo Cargo
-            </Button>
-          ) : null
-        }
       >
         {isLoading ? (
           <TableSkeleton rows={5} columns={6} />

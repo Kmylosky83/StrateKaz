@@ -219,21 +219,28 @@ export const ConsecutivoFormModal = ({
   const onSubmit = async (data: ConsecutivoFormData) => {
     try {
       // Si es del sistema, solo enviar campos permitidos
+      const descripcionValue = data.descripcion ?? undefined;
       if (esSistema && isEditing) {
         await updateMutation.mutateAsync({
           id: consecutivo!.id,
           data: {
-            descripcion: data.descripcion,
+            descripcion: descripcionValue,
             is_active: data.is_active,
           },
         });
       } else if (isEditing) {
         await updateMutation.mutateAsync({
           id: consecutivo!.id,
-          data,
+          data: {
+            ...data,
+            descripcion: descripcionValue,
+          },
         });
       } else {
-        await createMutation.mutateAsync(data);
+        await createMutation.mutateAsync({
+          ...data,
+          descripcion: descripcionValue,
+        });
       }
       onClose();
     } catch {
@@ -249,10 +256,10 @@ export const ConsecutivoFormModal = ({
       size="lg"
     >
       {isLoading ? (
-        <div className="p-6 animate-pulse space-y-4">
-          <div className="h-10 bg-secondary-200 dark:bg-secondary-700 rounded" />
-          <div className="h-10 bg-secondary-200 dark:bg-secondary-700 rounded" />
-          <div className="h-10 bg-secondary-200 dark:bg-secondary-700 rounded" />
+        <div className="p-6 animate-pulse-subtle space-y-4">
+          <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded" />
+          <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded" />
+          <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded" />
         </div>
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -266,10 +273,10 @@ export const ConsecutivoFormModal = ({
 
           {/* Preview del formato */}
           {previewFormato && (
-            <div className="p-4 bg-secondary-50 dark:bg-secondary-800/50 rounded-lg border border-secondary-200 dark:border-secondary-700">
+            <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-2 mb-2">
                 <Eye className="h-4 w-4 text-gray-500" />
-                <span className="text-sm font-medium text-secondary-700 dark:text-secondary-300">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Vista Previa
                 </span>
               </div>
@@ -281,7 +288,7 @@ export const ConsecutivoFormModal = ({
 
           {/* Sección: Identificación */}
           <div className="space-y-4">
-            <h4 className="text-sm font-medium text-secondary-700 dark:text-secondary-300 border-b border-secondary-200 dark:border-secondary-700 pb-2">
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700 pb-2">
               Identificación
             </h4>
 
@@ -324,7 +331,7 @@ export const ConsecutivoFormModal = ({
           {/* Sección: Formato */}
           {!esSistema && (
             <div className="space-y-4">
-              <h4 className="text-sm font-medium text-secondary-700 dark:text-secondary-300 border-b border-secondary-200 dark:border-secondary-700 pb-2">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700 pb-2">
                 Formato
               </h4>
 
@@ -382,37 +389,37 @@ export const ConsecutivoFormModal = ({
 
               {/* Componentes de fecha */}
               <div className="space-y-3">
-                <span className="text-sm font-medium text-secondary-700 dark:text-secondary-300">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Incluir en formato
                 </span>
                 <div className="flex flex-wrap gap-6">
                   <div className="flex items-center gap-2">
                     <Switch
                       checked={watch('include_year')}
-                      onChange={(checked) => setValue('include_year', checked)}
+                      onCheckedChange={(checked) => setValue('include_year', checked)}
                       size="sm"
                     />
-                    <span className="text-sm text-secondary-700 dark:text-secondary-300">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
                       Año (YYYY)
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Switch
                       checked={watch('include_month')}
-                      onChange={(checked) => setValue('include_month', checked)}
+                      onCheckedChange={(checked) => setValue('include_month', checked)}
                       size="sm"
                     />
-                    <span className="text-sm text-secondary-700 dark:text-secondary-300">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
                       Mes (MM)
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Switch
                       checked={watch('include_day')}
-                      onChange={(checked) => setValue('include_day', checked)}
+                      onCheckedChange={(checked) => setValue('include_day', checked)}
                       size="sm"
                     />
-                    <span className="text-sm text-secondary-700 dark:text-secondary-300">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
                       Día (DD)
                     </span>
                   </div>
@@ -421,33 +428,33 @@ export const ConsecutivoFormModal = ({
 
               {/* Reinicio automático */}
               <div className="space-y-3">
-                <span className="text-sm font-medium text-secondary-700 dark:text-secondary-300">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Reinicio automático
                 </span>
                 <div className="flex flex-wrap gap-6">
                   <div className="flex items-center gap-2">
                     <Switch
                       checked={watch('reset_yearly')}
-                      onChange={(checked) => {
+                      onCheckedChange={(checked) => {
                         setValue('reset_yearly', checked);
                         if (checked) setValue('reset_monthly', false);
                       }}
                       size="sm"
                     />
-                    <span className="text-sm text-secondary-700 dark:text-secondary-300">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
                       Reiniciar cada año
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Switch
                       checked={watch('reset_monthly')}
-                      onChange={(checked) => {
+                      onCheckedChange={(checked) => {
                         setValue('reset_monthly', checked);
                         if (checked) setValue('reset_yearly', false);
                       }}
                       size="sm"
                     />
-                    <span className="text-sm text-secondary-700 dark:text-secondary-300">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
                       Reiniciar cada mes
                     </span>
                   </div>
@@ -458,7 +465,7 @@ export const ConsecutivoFormModal = ({
 
           {/* Sección: Adicional */}
           <div className="space-y-4">
-            <h4 className="text-sm font-medium text-secondary-700 dark:text-secondary-300 border-b border-secondary-200 dark:border-secondary-700 pb-2">
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700 pb-2">
               Adicional
             </h4>
 
@@ -473,21 +480,21 @@ export const ConsecutivoFormModal = ({
             <div className="flex items-center gap-2">
               <Switch
                 checked={watch('is_active')}
-                onChange={(checked) => setValue('is_active', checked)}
+                onCheckedChange={(checked) => setValue('is_active', checked)}
                 size="sm"
               />
-              <span className="text-sm text-secondary-700 dark:text-secondary-300">
+              <span className="text-sm text-gray-700 dark:text-gray-300">
                 Consecutivo activo
               </span>
             </div>
           </div>
 
           {/* Footer */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-secondary-200 dark:border-secondary-700">
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-secondary-700 dark:text-secondary-300 bg-secondary-100 dark:bg-secondary-800 rounded-lg hover:bg-secondary-200 dark:hover:bg-secondary-700 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
             >
               Cancelar
             </button>

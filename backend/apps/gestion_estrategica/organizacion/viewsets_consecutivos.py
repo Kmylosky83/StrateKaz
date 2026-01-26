@@ -9,13 +9,14 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.filters import OrderingFilter
 from django.utils import timezone
 import logging
 
 from apps.core.permissions import GranularActionPermission
 
 from .models_consecutivos import ConsecutivoConfig, CONSECUTIVOS_SISTEMA
+from .filters_consecutivos import ConsecutivoConfigFilter
 from .serializers_consecutivos import (
     ConsecutivoConfigSerializer,
     ConsecutivoConfigListSerializer,
@@ -53,10 +54,14 @@ class ConsecutivoConfigViewSet(viewsets.ModelViewSet):
 
     permission_classes = [IsAuthenticated, GranularActionPermission]
     section_code = 'consecutivos'
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['categoria', 'es_sistema', 'is_active']
-    search_fields = ['codigo', 'nombre', 'descripcion', 'prefix']
-    ordering_fields = ['categoria', 'codigo', 'nombre', 'current_number']
+
+    # Filtros: FilterSet explícito para manejo robusto de booleanos
+    # y escalabilidad para consumo por otras áreas del sistema
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_class = ConsecutivoConfigFilter  # Reemplaza filterset_fields
+
+    # Ordenamiento
+    ordering_fields = ['categoria', 'codigo', 'nombre', 'current_number', 'es_sistema']
     ordering = ['categoria', 'codigo']
 
     def get_queryset(self):
@@ -276,17 +281,25 @@ class ConsecutivoConfigViewSet(viewsets.ModelViewSet):
         updated_count = 0
 
         for config_data in CONSECUTIVOS_SISTEMA:
+            # Verificar si ya existe para preservar created_by
+            existing = ConsecutivoConfig.objects.filter(
+                codigo=config_data['codigo'],
+                empresa_id=empresa_id
+            ).first()
+
+            defaults = {
+                **config_data,
+                'empresa_id': empresa_id,
+            }
+
+            # Solo asignar created_by si es nuevo registro
+            if not existing:
+                defaults['created_by'] = request.user
+
             config, created = ConsecutivoConfig.objects.update_or_create(
                 codigo=config_data['codigo'],
                 empresa_id=empresa_id,
-                defaults={
-                    **config_data,
-                    'empresa_id': empresa_id,
-                    'created_by': request.user if created else ConsecutivoConfig.objects.filter(
-                        codigo=config_data['codigo'],
-                        empresa_id=empresa_id
-                    ).first().created_by,
-                }
+                defaults=defaults
             )
 
             if created:

@@ -68,7 +68,8 @@ export const SectionHeader = ({
   return (
     <div
       className={cn(
-        'flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4',
+        // En móvil: stack vertical, en desktop: horizontal
+        'flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4',
         styles.container,
         bordered && 'border-b border-gray-200 dark:border-gray-700 pb-4',
         className
@@ -78,19 +79,23 @@ export const SectionHeader = ({
       <div className="flex items-center gap-3 min-w-0">
         {icon && <div className="flex-shrink-0 text-gray-500 dark:text-gray-400">{icon}</div>}
         <div className="min-w-0">
-          <h2 className={cn('text-gray-900 dark:text-white leading-tight', styles.title)}>
+          <h2 className={cn('text-gray-900 dark:text-white leading-tight truncate', styles.title)}>
             {title}
           </h2>
           {description && (
-            <p className={cn('text-gray-500 dark:text-gray-400 mt-0.5', styles.description)}>
+            <p className={cn('text-gray-500 dark:text-gray-400 mt-0.5 truncate', styles.description)}>
               {description}
             </p>
           )}
         </div>
       </div>
 
-      {/* Acciones */}
-      {actions && <div className="flex items-center gap-2 flex-shrink-0">{actions}</div>}
+      {/* Acciones - scroll horizontal en móvil si hay muchas */}
+      {actions && (
+        <div className="flex items-center gap-2 flex-shrink-0 overflow-x-auto scrollbar-none">
+          {actions}
+        </div>
+      )}
     </div>
   );
 };

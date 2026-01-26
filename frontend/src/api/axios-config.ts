@@ -44,8 +44,15 @@ axiosInstance.interceptors.response.use(
           refresh: refreshToken,
         });
 
-        const { access } = response.data;
+        const { access, refresh: newRefreshToken } = response.data;
         localStorage.setItem('access_token', access);
+
+        // Guardar nuevo refresh token (sliding expiration)
+        // Con ROTATE_REFRESH_TOKENS=True, el servidor envía un nuevo refresh token
+        // que extiende la sesión otros 7 días desde este momento
+        if (newRefreshToken) {
+          localStorage.setItem('refresh_token', newRefreshToken);
+        }
 
         // Reintentar la petición original con el nuevo token
         if (originalRequest.headers) {

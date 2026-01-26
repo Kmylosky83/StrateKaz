@@ -1,12 +1,9 @@
 /**
- * Página de Matriz Legal
+ * Página de Matriz Legal - Tab 1 de Cumplimiento Normativo
  *
- * Gestión de decretos, leyes, resoluciones y demás normativa aplicable:
- * - Registro de normatividad nacional e internacional
- * - Clasificación por tipo (Decreto, Ley, Resolución, Acuerdo, etc.)
- * - Área de aplicación (SST, Ambiental, Comercial, Laboral, etc.)
- * - Estado de cumplimiento y evidencias
- * - Alertas de actualizaciones normativas
+ * Layout estándar con secciones:
+ * - PageHeader con título y tabs de secciones inline
+ * - Contenido de la sección activa (Normas, Evaluación)
  */
 import { useState } from 'react';
 import {
@@ -18,23 +15,35 @@ import {
   Upload,
   AlertCircle,
   CheckCircle2,
-  FileText,
-  Calendar,
   Tag,
+  BookOpen,
+  ClipboardCheck,
+  type LucideIcon,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
+import { usePageSections } from '@/hooks/usePageSections';
 
-export default function MatrizLegalPage() {
+// Códigos del módulo y tab en la BD
+const MODULE_CODE = 'motor_cumplimiento';
+const TAB_CODE = 'matriz_legal';
+
+// Mapeo de nombres de iconos a componentes
+const ICON_MAP: Record<string, LucideIcon> = {
+  BookOpen,
+  ClipboardCheck,
+  Scale,
+  AlertCircle,
+  CheckCircle2,
+};
+
+// ============================================================================
+// SECCIÓN: NORMAS
+// ============================================================================
+const NormasSection = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   return (
-    <div className="space-y-6">
-      {/* HEADER */}
-      <PageHeader
-        title="Matriz Legal"
-        description="Gestión de decretos, leyes, resoluciones y normativa aplicable"
-      />
-
+    <>
       {/* ESTADÍSTICAS RÁPIDAS */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
@@ -317,6 +326,86 @@ export default function MatrizLegalPage() {
           ))}
         </div>
       </div>
+    </>
+  );
+};
+
+// ============================================================================
+// SECCIÓN: EVALUACIÓN
+// ============================================================================
+const EvaluacionSection = () => {
+  return (
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+      <div className="text-center py-12">
+        <ClipboardCheck className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+          Evaluación de Cumplimiento
+        </h3>
+        <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+          Aquí podrás evaluar el cumplimiento de cada artículo de las normas registradas,
+          documentar evidencias y generar reportes de estado.
+        </p>
+        <button className="mt-6 inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">
+          <Plus className="w-4 h-4 mr-2" />
+          Nueva Evaluación
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// PÁGINA PRINCIPAL
+// ============================================================================
+export default function MatrizLegalPage() {
+  // Hook que maneja secciones localmente
+  const {
+    sections,
+    activeSection,
+    setActiveSection,
+    activeSectionData,
+    isLoading: sectionsLoading,
+  } = usePageSections({
+    moduleCode: MODULE_CODE,
+    tabCode: TAB_CODE,
+  });
+
+  // Si está cargando, mostrar skeleton
+  if (sectionsLoading && !activeSection) {
+    return (
+      <div className="space-y-4">
+        <div className="h-12 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
+        <div className="h-96 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
+      </div>
+    );
+  }
+
+  // Renderizar contenido según sección activa
+  const renderSectionContent = () => {
+    switch (activeSection) {
+      case 'normas':
+        return <NormasSection />;
+      case 'evaluacion':
+        return <EvaluacionSection />;
+      default:
+        return <NormasSection />;
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* PageHeader con título y tabs de secciones inline */}
+      <PageHeader
+        title="Matriz Legal"
+        description={activeSectionData.description || 'Gestión de decretos, leyes, resoluciones y normativa aplicable'}
+        sections={sections}
+        activeSection={activeSection}
+        onSectionChange={setActiveSection}
+        moduleColor="blue"
+      />
+
+      {/* Contenido de la sección activa */}
+      {renderSectionContent()}
     </div>
   );
 }

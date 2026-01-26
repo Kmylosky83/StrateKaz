@@ -11,7 +11,7 @@ por diferentes módulos del sistema.
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from apps.audit_system.centro_notificaciones.models import TipoNotificacion
-from apps.core.models import EmpresaConfig
+from apps.gestion_estrategica.configuracion.models import EmpresaConfig
 
 
 class Command(BaseCommand):
@@ -28,11 +28,11 @@ class Command(BaseCommand):
         company_id = options.get('company_id')
 
         if not company_id:
-            # Usar la primera empresa activa
-            empresa = EmpresaConfig.objects.filter(is_active=True).first()
+            # Usar la primera empresa (EmpresaConfig es singleton)
+            empresa = EmpresaConfig.objects.first()
             if not empresa:
                 self.stdout.write(
-                    self.style.ERROR('No hay empresas activas. Crea una empresa primero.')
+                    self.style.ERROR('No hay empresa configurada. Configura EmpresaConfig primero.')
                 )
                 return
             company_id = empresa.id
@@ -44,17 +44,17 @@ class Command(BaseCommand):
 
         with transaction.atomic():
             for tipo_data in TIPOS_NOTIFICACION:
-                tipo_data['company_id'] = company_id
+                tipo_data['empresa_id'] = company_id
 
                 # Verificar si ya existe
                 exists = TipoNotificacion.objects.filter(
                     codigo=tipo_data['codigo'],
-                    company_id=company_id
+                    empresa_id=company_id
                 ).exists()
 
                 if exists:
                     self.stdout.write(
-                        self.style.WARNING(f"  ⏭  Ya existe: {tipo_data['codigo']}")
+                        self.style.WARNING(f"  [SKIP] Ya existe: {tipo_data['codigo']}")
                     )
                     tipos_existentes += 1
                     continue
@@ -62,7 +62,7 @@ class Command(BaseCommand):
                 # Crear tipo
                 TipoNotificacion.objects.create(**tipo_data)
                 self.stdout.write(
-                    self.style.SUCCESS(f"  ✓  Creado: {tipo_data['codigo']} - {tipo_data['nombre']}")
+                    self.style.SUCCESS(f"  [OK] Creado: {tipo_data['codigo']} - {tipo_data['nombre']}")
                 )
                 tipos_creados += 1
 
@@ -397,6 +397,49 @@ TIPOS_NOTIFICACION = [
         'plantilla_titulo': 'Mantenimiento programado: {equipo}',
         'plantilla_mensaje': 'Mantenimiento preventivo del {equipo} programado para el {fecha}',
         'url_template': '/produccion/mantenimientos/{mantenimiento_id}',
+        'es_email': True,
+        'es_push': False,
+    },
+
+    # =========================================================================
+    # ENCUESTAS COLABORATIVAS DOFA
+    # =========================================================================
+    {
+        'codigo': 'ENCUESTA_DOFA',
+        'nombre': 'Invitación a Encuesta DOFA',
+        'descripcion': 'Invita a colaboradores a participar en encuesta de análisis DOFA',
+        'categoria': 'tarea',
+        'color': '#8B5CF6',  # Purple
+        'icono': 'clipboard-list',
+        'plantilla_titulo': 'Nueva encuesta: {encuesta_titulo}',
+        'plantilla_mensaje': 'Se te ha invitado a participar en la encuesta DOFA "{encuesta_titulo}". Tu opinión es importante para identificar fortalezas y debilidades organizacionales. Fecha límite: {fecha_cierre}',
+        'url_template': '/gestion-estrategica/encuestas/{encuesta_id}/responder',
+        'es_email': True,
+        'es_push': True,
+    },
+    {
+        'codigo': 'ENCUESTA_DOFA_RECORDATORIO',
+        'nombre': 'Recordatorio de Encuesta DOFA',
+        'descripcion': 'Recuerda a colaboradores completar la encuesta DOFA',
+        'categoria': 'recordatorio',
+        'color': '#F59E0B',  # Amber
+        'icono': 'clock',
+        'plantilla_titulo': 'Recordatorio: {encuesta_titulo}',
+        'plantilla_mensaje': 'Te recordamos que aún no has completado la encuesta DOFA "{encuesta_titulo}". La fecha límite es {fecha_cierre}.',
+        'url_template': '/gestion-estrategica/encuestas/{encuesta_id}/responder',
+        'es_email': True,
+        'es_push': True,
+    },
+    {
+        'codigo': 'ENCUESTA_DOFA_CERRADA',
+        'nombre': 'Encuesta DOFA Cerrada',
+        'descripcion': 'Notifica al responsable cuando la encuesta se cierra',
+        'categoria': 'sistema',
+        'color': '#10B981',  # Green
+        'icono': 'check-circle',
+        'plantilla_titulo': 'Encuesta cerrada: {encuesta_titulo}',
+        'plantilla_mensaje': 'La encuesta "{encuesta_titulo}" ha sido cerrada. Total participantes: {total_respondidos}. Porcentaje de participación: {porcentaje}%',
+        'url_template': '/gestion-estrategica/encuestas/{encuesta_id}/resultados',
         'es_email': True,
         'es_push': False,
     },

@@ -30,10 +30,12 @@ import { FileCheck, Palette } from 'lucide-react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Alert } from '@/components/common/Alert';
+import { DynamicIcon } from '@/components/common/DynamicIcon';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
 import { Switch } from '@/components/forms/Switch';
+import { NormaIconSelector } from './NormaIconSelector';
 import {
   useCreateNormaISO,
   useUpdateNormaISO,
@@ -77,20 +79,6 @@ const defaultFormData: FormData = {
 // Valor especial para "Otra categoría"
 const OTHER_CATEGORY_VALUE = '__OTHER__';
 
-// Iconos disponibles (Lucide React)
-const ICON_OPTIONS = [
-  { value: 'FileCheck', label: 'FileCheck - Documento verificado' },
-  { value: 'Shield', label: 'Shield - Escudo (Seguridad)' },
-  { value: 'Award', label: 'Award - Premio (Calidad)' },
-  { value: 'Leaf', label: 'Leaf - Hoja (Ambiental)' },
-  { value: 'Users', label: 'Users - Personas (Recursos Humanos)' },
-  { value: 'Lock', label: 'Lock - Candado (Seguridad Info)' },
-  { value: 'Heart', label: 'Heart - Corazón (Salud)' },
-  { value: 'TrendingUp', label: 'TrendingUp - Tendencia (Mejora)' },
-  { value: 'BarChart3', label: 'BarChart3 - Gráfico (Gestión)' },
-  { value: 'Target', label: 'Target - Objetivo (Metas)' },
-];
-
 // Colores predefinidos
 const COLOR_PRESETS = [
   { value: '#3b82f6', label: 'Azul' },
@@ -109,6 +97,7 @@ export const NormaISOFormModal = ({ norma, isOpen, onClose }: NormaISOFormModalP
   const isEditing = norma !== null;
 
   const [formData, setFormData] = useState<FormData>(defaultFormData);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Queries y mutations
   const { data: normaDetail } = useNormaISO(norma?.id || 0);
@@ -116,8 +105,17 @@ export const NormaISOFormModal = ({ norma, isOpen, onClose }: NormaISOFormModalP
   const createMutation = useCreateNormaISO();
   const updateMutation = useUpdateNormaISO();
 
-  // Cargar datos al editar
+  // Resetear inicialización cuando cambia la norma o se cierra el modal
   useEffect(() => {
+    if (!isOpen) {
+      setIsInitialized(false);
+    }
+  }, [isOpen, norma?.id]);
+
+  // Cargar datos al editar (solo una vez cuando se abre)
+  useEffect(() => {
+    if (!isOpen || isInitialized) return;
+
     if (isEditing && normaDetail) {
       // Verificar si la categoría existe en las opciones
       const categoryExists = choices?.categorias?.some((c) => c.value === normaDetail.category);
@@ -132,12 +130,14 @@ export const NormaISOFormModal = ({ norma, isOpen, onClose }: NormaISOFormModalP
         icon: normaDetail.icon || 'FileCheck',
         color: normaDetail.color || '#3b82f6',
         orden: normaDetail.orden?.toString() || '0',
-        is_active: normaDetail.is_active,
+        is_active: normaDetail.is_active ?? true,
       });
-    } else if (!isEditing) {
+      setIsInitialized(true);
+    } else if (!isEditing && isOpen) {
       setFormData(defaultFormData);
+      setIsInitialized(true);
     }
-  }, [normaDetail, isEditing, choices]);
+  }, [normaDetail, isEditing, choices, isOpen, isInitialized]);
 
   // Determinar la categoría final (del select o personalizada)
   const getFinalCategory = () => {
@@ -179,11 +179,15 @@ export const NormaISOFormModal = ({ norma, isOpen, onClose }: NormaISOFormModalP
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
   // Opciones para categorías desde backend + opción "Otra..."
+  // Filtrar duplicados usando Map para evitar keys duplicadas en el Select
+  const uniqueCategories = choices?.categorias
+    ? Array.from(new Map(choices.categorias.map((c) => [c.value, c])).values())
+    : [];
   const categoryOptions = [
-    ...(choices?.categorias?.map((c) => ({
+    ...uniqueCategories.map((c) => ({
       value: c.value,
       label: c.label,
-    })) || []),
+    })),
     { value: OTHER_CATEGORY_VALUE, label: 'Otra categoría...' },
   ];
 
@@ -214,7 +218,7 @@ export const NormaISOFormModal = ({ norma, isOpen, onClose }: NormaISOFormModalP
       isOpen={isOpen}
       onClose={onClose}
       title={isEditing ? 'Editar Norma o Sistema de Gestión' : 'Agregar Norma o Sistema de Gestión'}
-      subtitle="Configure normas ISO, PESV, SG-SST u otras normativas aplicables"
+      subtitle="Configure normas y sistemas de gestión aplicables a su organización"
       size="3xl"
       footer={footer}
     >
@@ -305,14 +309,6 @@ export const NormaISOFormModal = ({ norma, isOpen, onClose }: NormaISOFormModalP
           </h4>
 
           <div className="grid grid-cols-2 gap-4">
-            <Select
-              label="Icono"
-              value={formData.icon}
-              onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-              options={ICON_OPTIONS}
-              helperText="Icono visual para identificar la norma"
-            />
-
             <Input
               label="Orden de Visualización"
               type="number"
@@ -322,6 +318,15 @@ export const NormaISOFormModal = ({ norma, isOpen, onClose }: NormaISOFormModalP
               helperText="Orden en listas (menor = primero)"
             />
           </div>
+
+          {/* Selector de Icono para Normas */}
+          <NormaIconSelector
+            label="Icono"
+            value={formData.icon}
+            onChange={(iconName) => setFormData({ ...formData, icon: iconName })}
+            helperText="Seleccione un icono para identificar la norma"
+            columns={8}
+          />
 
           {/* Color Picker */}
           <div className="space-y-2">
@@ -378,7 +383,12 @@ export const NormaISOFormModal = ({ norma, isOpen, onClose }: NormaISOFormModalP
                   backgroundColor: `${formData.color}20`,
                 }}
               >
-                <FileCheck className="h-6 w-6" style={{ color: formData.color }} />
+                <DynamicIcon
+                  name={formData.icon}
+                  size={24}
+                  color={formData.color}
+                  fallback={<FileCheck className="h-6 w-6" style={{ color: formData.color }} />}
+                />
               </div>
               <div>
                 <p className="font-semibold text-gray-900 dark:text-gray-100">
@@ -408,7 +418,7 @@ export const NormaISOFormModal = ({ norma, isOpen, onClose }: NormaISOFormModalP
 
         <Alert
           variant="info"
-          message="Las normas y sistemas de gestión se utilizan en todo el sistema para categorizar políticas, alcances, objetivos y procesos."
+          message="Las normas y sistemas de gestión (ISO, PESV, SG-SST, entre otras) se utilizan en todo el sistema para categorizar políticas, alcances, objetivos y procesos."
         />
       </form>
     </BaseModal>

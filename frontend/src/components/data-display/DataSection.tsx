@@ -35,8 +35,12 @@ export interface DataSectionProps extends HTMLAttributes<HTMLDivElement> {
   description?: string;
   /** Icono del título */
   icon?: LucideIcon;
-  /** Color del icono */
+  /** Color del icono (preset) */
   iconVariant?: DataCardVariant;
+  /** Clases CSS personalizadas para el contenedor del icono (override iconVariant) */
+  iconBgClass?: string;
+  /** Clases CSS personalizadas para el icono (override iconVariant) */
+  iconClass?: string;
   /** Botón de acción (ej: Editar) */
   action?: ReactNode;
   /** Contenido (DataGrid o custom) */
@@ -72,6 +76,8 @@ export const DataSection = ({
   description,
   icon: Icon,
   iconVariant = 'purple',
+  iconBgClass,
+  iconClass,
   action,
   children,
   divider = false,
@@ -79,6 +85,10 @@ export const DataSection = ({
   ...props
 }: DataSectionProps) => {
   const iconStyles = iconVariantStyles[iconVariant];
+
+  // Usar clases personalizadas si se proporcionan, sino usar el preset
+  const bgClass = iconBgClass || iconStyles.bg;
+  const textClass = iconClass || iconStyles.text;
 
   return (
     <div
@@ -95,16 +105,16 @@ export const DataSection = ({
           {title && (
             <div className="flex items-center gap-3">
               {Icon && (
-                <div className={cn('p-2 rounded-lg', iconStyles.bg)}>
-                  <Icon className={cn('h-5 w-5', iconStyles.text)} />
+                <div className={cn('p-2 rounded-lg', bgClass)}>
+                  <Icon className={cn('h-5 w-5', textClass)} />
                 </div>
               )}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
                   {title}
                 </h3>
                 {description && (
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                     {description}
                   </p>
                 )}

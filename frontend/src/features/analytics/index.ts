@@ -23,3 +23,9 @@ export { default as AnalisisTendenciasPage } from './pages/AnalisisTendenciasPag
 export { default as GeneradorInformesPage } from './pages/GeneradorInformesPage';
 export { default as AccionesIndicadorPage } from './pages/AccionesIndicadorPage';
 export { default as ExportacionPage } from './pages/ExportacionPage';
+
+// Pages - Analytics Enterprise Demo
+export { default as AnalyticsDemoPage } from './pages/AnalyticsDemoPage';
+
+// Components - Analytics Charts Enterprise
+export * from './components';

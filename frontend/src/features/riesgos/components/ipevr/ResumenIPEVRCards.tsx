@@ -40,7 +40,7 @@ function StatCard({ title, value, icon, color, description }: StatCardProps) {
 
 function LoadingSkeleton() {
   return (
-    <div className="bg-card rounded-lg border p-4 animate-pulse">
+    <div className="bg-card rounded-lg border p-4 animate-pulse-subtle">
       <div className="flex items-start justify-between">
         <div className="space-y-2">
           <div className="h-4 w-20 bg-gray-200 rounded" />

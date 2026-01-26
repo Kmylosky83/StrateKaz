@@ -294,7 +294,7 @@ export const ProyectosKanban = ({ onProjectClick }: ProyectosKanbanProps) => {
         {KANBAN_COLUMNS.map((column) => (
           <div key={column.id} className="flex-shrink-0 w-80">
             <Card>
-              <div className="p-4 animate-pulse">
+              <div className="p-4 animate-pulse-subtle">
                 <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-4" />
                 <div className="space-y-3">
                   {[...Array(3)].map((_, i) => (

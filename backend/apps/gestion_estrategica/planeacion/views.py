@@ -157,6 +157,22 @@ class StrategicPlanViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         ]
         return Response(choices)
 
+    @action(detail=False, methods=['get'], url_path='bsc-perspectives')
+    def bsc_perspectives(self, request):
+        """
+        Retorna las perspectivas BSC disponibles para objetivos estratégicos.
+
+        GET /planes/bsc-perspectives/
+
+        Returns:
+            Lista de perspectivas con value y label
+        """
+        choices = [
+            {'value': code, 'label': label}
+            for code, label in StrategicObjective.BSC_PERSPECTIVE_CHOICES
+        ]
+        return Response(choices)
+
 
 class StrategicObjectiveViewSet(StandardViewSetMixin, OrderingMixin, viewsets.ModelViewSet):
     """
@@ -188,6 +204,39 @@ class StrategicObjectiveViewSet(StandardViewSetMixin, OrderingMixin, viewsets.Mo
         if self.action in ['create', 'update', 'partial_update']:
             return StrategicObjectiveCreateUpdateSerializer
         return StrategicObjectiveSerializer
+
+    @action(detail=False, methods=['get'], url_path='normas-iso-choices')
+    def normas_iso_choices(self, request):
+        """
+        Retorna las normas ISO activas para vincular a objetivos.
+
+        GET /objetivos/normas-iso-choices/
+
+        Returns:
+            Lista de normas ISO activas con sus datos para el selector
+        """
+        from apps.gestion_estrategica.configuracion.models import NormaISO
+
+        normas = NormaISO.objects.filter(
+            is_active=True,
+            deleted_at__isnull=True
+        ).order_by('orden', 'name')
+
+        return Response([
+            {
+                'id': n.id,
+                'code': n.code,
+                'name': n.name,
+                'short_name': n.short_name,
+                'icon': n.icon,
+                'color': n.color,
+                'category': n.category,
+                # Para compatibilidad con el formato anterior
+                'value': n.id,
+                'label': f"{n.code} - {n.short_name or n.name}",
+            }
+            for n in normas
+        ])
 
     @action(detail=True, methods=['post'])
     def update_progress(self, request, pk=None):
@@ -234,6 +283,22 @@ class StrategicObjectiveViewSet(StandardViewSetMixin, OrderingMixin, viewsets.Mo
         kpis = objective.kpis.filter(is_active=True)
         serializer = KPIObjetivoSerializer(kpis, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def statuses(self, request):
+        """
+        Retorna los estados disponibles para objetivos estratégicos.
+
+        GET /objetivos/statuses/
+
+        Returns:
+            Lista de estados con value y label
+        """
+        choices = [
+            {'value': code, 'label': label}
+            for code, label in StrategicObjective.STATUS_CHOICES
+        ]
+        return Response(choices)
 
 
 # =============================================================================
@@ -322,6 +387,129 @@ class MapaEstrategicoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             }
 
         return Response(result)
+
+    @action(detail=False, methods=['get'])
+    def visualizacion(self, request):
+        """
+        Endpoint para el canvas interactivo del Mapa Estratégico.
+
+        GET /mapas/visualizacion/?plan={plan_id}
+
+        Retorna todos los datos necesarios para React Flow:
+        - mapa: Datos del mapa (o null si no existe)
+        - objetivos: Lista de objetivos con datos completos para los nodos
+        - relaciones: Lista de relaciones causa-efecto para las conexiones
+        - stats: Estadísticas del mapa
+
+        Si no existe mapa para el plan, se crea uno automáticamente.
+        """
+        plan_id = request.query_params.get('plan')
+        if not plan_id:
+            return Response(
+                {'detail': 'Se requiere el parámetro plan'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            plan = StrategicPlan.objects.get(pk=plan_id)
+        except StrategicPlan.DoesNotExist:
+            return Response(
+                {'detail': 'Plan no encontrado'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Obtener o crear el mapa para el plan
+        mapa, created = MapaEstrategico.objects.get_or_create(
+            plan=plan,
+            defaults={
+                'name': f'Mapa Estratégico - {plan.name}',
+                'description': f'Mapa estratégico del plan {plan.name}',
+                'created_by': request.user,
+                'canvas_data': {'nodes': {}, 'viewport': {'x': 0, 'y': 0, 'zoom': 1}},
+            }
+        )
+
+        # Obtener objetivos con normas ISO
+        objectives = StrategicObjective.objects.filter(
+            plan=plan,
+            is_active=True
+        ).select_related(
+            'responsible', 'responsible_cargo'
+        ).prefetch_related('normas_iso').order_by('bsc_perspective', 'orden', 'code')
+
+        # Construir lista de objetivos para el canvas
+        objetivos_data = []
+        for obj in objectives:
+            normas_detail = [
+                {
+                    'id': n.id,
+                    'code': n.code,
+                    'short_name': n.short_name or n.name,
+                    'icon': n.icon,
+                    'color': n.color,
+                }
+                for n in obj.normas_iso.filter(is_active=True)
+            ]
+
+            objetivos_data.append({
+                'id': obj.id,
+                'code': obj.code,
+                'name': obj.name,
+                'description': obj.description,
+                'bsc_perspective': obj.bsc_perspective,
+                'progress': obj.progress,
+                'status': obj.status,
+                'target_value': float(obj.target_value) if obj.target_value else None,
+                'current_value': float(obj.current_value) if obj.current_value else None,
+                'unit': obj.unit,
+                'normas_iso_detail': normas_detail,
+                'responsible_name': obj.responsible.get_full_name() if obj.responsible else None,
+                'due_date': obj.due_date.isoformat() if obj.due_date else None,
+            })
+
+        # Obtener relaciones causa-efecto
+        relaciones = CausaEfecto.objects.filter(mapa=mapa).select_related(
+            'source_objective', 'target_objective'
+        )
+
+        relaciones_data = [
+            {
+                'id': r.id,
+                'mapa': r.mapa_id,
+                'source_objective': r.source_objective_id,
+                'source_objective_code': r.source_objective.code,
+                'source_objective_name': r.source_objective.name,
+                'target_objective': r.target_objective_id,
+                'target_objective_code': r.target_objective.code,
+                'target_objective_name': r.target_objective.name,
+                'description': r.description,
+                'weight': r.weight,
+            }
+            for r in relaciones
+        ]
+
+        # Calcular estadísticas
+        objectives_by_perspective = {}
+        for perspective, _ in StrategicObjective.BSC_PERSPECTIVE_CHOICES:
+            count = sum(1 for o in objetivos_data if o['bsc_perspective'] == perspective)
+            objectives_by_perspective[perspective] = count
+
+        avg_progress = sum(o['progress'] for o in objetivos_data) / len(objetivos_data) if objetivos_data else 0
+
+        # Serializar mapa
+        mapa_data = MapaEstrategicoSerializer(mapa).data
+
+        return Response({
+            'mapa': mapa_data,
+            'objetivos': objetivos_data,
+            'relaciones': relaciones_data,
+            'stats': {
+                'total_objetivos': len(objetivos_data),
+                'objetivos_por_perspectiva': objectives_by_perspective,
+                'total_relaciones': len(relaciones_data),
+                'progreso_promedio': round(avg_progress, 1),
+            }
+        })
 
 
 class CausaEfectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):

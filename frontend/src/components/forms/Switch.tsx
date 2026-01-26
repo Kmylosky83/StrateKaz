@@ -1,4 +1,4 @@
-import { InputHTMLAttributes, forwardRef, ChangeEvent } from 'react';
+import { InputHTMLAttributes, forwardRef, ChangeEvent, useId } from 'react';
 import { cn } from '@/utils/cn';
 
 export interface SwitchProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'size' | 'onChange'> {
@@ -26,7 +26,8 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
     },
     ref
   ) => {
-    const switchId = id || `switch-${Math.random().toString(36).substr(2, 9)}`;
+    const generatedId = useId();
+    const switchId = id || generatedId;
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
       onChange?.(event);
@@ -52,8 +53,8 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
     };
 
     return (
-      <div className="flex items-start">
-        <div className="relative inline-flex items-center">
+      <div className="flex items-center flex-shrink-0">
+        <div className="relative inline-flex items-center flex-shrink-0">
           <input
             ref={ref}
             type="checkbox"
@@ -82,11 +83,11 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
         </div>
 
         {(label || description) && (
-          <div className="ml-3">
+          <div className="ml-3 flex-shrink-0">
             {label && (
               <span
                 className={cn(
-                  'text-sm font-medium text-gray-700 dark:text-gray-300',
+                  'text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap',
                   props.disabled && 'cursor-not-allowed opacity-50'
                 )}
               >

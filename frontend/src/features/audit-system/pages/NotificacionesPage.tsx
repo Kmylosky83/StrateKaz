@@ -112,7 +112,7 @@ function BandejaTab() {
     return (
       <div className="space-y-6">
         {/* Section Header skeleton */}
-        <div className="flex items-center justify-between animate-pulse">
+        <div className="flex items-center justify-between animate-pulse-subtle">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 w-10 h-10" />
             <div>
@@ -125,7 +125,7 @@ function BandejaTab() {
         <Card>
           <div className="p-6 space-y-4">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              <div key={i} className="h-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse-subtle" />
             ))}
           </div>
         </Card>
@@ -390,7 +390,7 @@ function TiposTab() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between animate-pulse">
+        <div className="flex items-center justify-between animate-pulse-subtle">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 w-10 h-10" />
             <div>
@@ -402,7 +402,7 @@ function TiposTab() {
         <Card>
           <div className="p-6 space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              <div key={i} className="h-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse-subtle" />
             ))}
           </div>
         </Card>
@@ -726,7 +726,7 @@ function PreferenciasTab() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center gap-3 animate-pulse">
+        <div className="flex items-center gap-3 animate-pulse-subtle">
           <div className="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 w-10 h-10" />
           <div>
             <div className="h-5 w-48 bg-gray-200 dark:bg-gray-700 rounded" />
@@ -736,7 +736,7 @@ function PreferenciasTab() {
         <Card>
           <div className="p-6 space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              <div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse-subtle" />
             ))}
           </div>
         </Card>

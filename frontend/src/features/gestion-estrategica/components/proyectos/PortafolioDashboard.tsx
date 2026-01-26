@@ -4,7 +4,6 @@
  */
 import {
   Briefcase,
-  FolderKanban,
   TrendingUp,
   AlertCircle,
   DollarSign,
@@ -16,45 +15,6 @@ import { Card, Badge } from '@/components/common';
 import { useProyectosDashboard } from '../../hooks/useProyectos';
 import { usePortafolios } from '../../hooks/usePortafolios';
 import { useProgramas } from '../../hooks/usePortafolios';
-
-interface KPICardProps {
-  title: string;
-  value: string | number;
-  description?: string;
-  icon: React.ReactNode;
-  trend?: {
-    value: number;
-    isPositive: boolean;
-  };
-  color?: string;
-}
-
-const KPICard = ({ title, value, description, icon, trend, color = 'purple' }: KPICardProps) => {
-  return (
-    <Card>
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className={`p-3 rounded-lg bg-${color}-100 dark:bg-${color}-900/30`}>
-            <div className={`text-${color}-600 dark:text-${color}-400`}>{icon}</div>
-          </div>
-          {trend && (
-            <div
-              className={`text-sm font-medium ${
-                trend.isPositive ? 'text-green-600' : 'text-red-600'
-              }`}
-            >
-              {trend.isPositive ? '+' : ''}
-              {trend.value}%
-            </div>
-          )}
-        </div>
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-1">{value}</h3>
-        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{title}</p>
-        {description && <p className="text-xs text-gray-500 dark:text-gray-400">{description}</p>}
-      </div>
-    </Card>
-  );
-};
 
 export const PortafolioDashboard = () => {
   const { data: dashboardData, isLoading: dashboardLoading } = useProyectosDashboard();
@@ -70,7 +30,7 @@ export const PortafolioDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[...Array(8)].map((_, i) => (
           <Card key={i}>
-            <div className="p-6 animate-pulse">
+            <div className="p-6 animate-pulse-subtle">
               <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded mb-4" />
               <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-2" />
               <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
@@ -87,38 +47,6 @@ export const PortafolioDashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Resumen de Portafolios y Programas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KPICard
-          title="Portafolios Activos"
-          value={stats?.portafolios_activos || 0}
-          description={`${stats?.total_portafolios || 0} total`}
-          icon={<Briefcase className="h-6 w-6" />}
-          color="purple"
-        />
-        <KPICard
-          title="Programas Activos"
-          value={stats?.programas_activos || 0}
-          description={`${stats?.total_programas || 0} total`}
-          icon={<FolderKanban className="h-6 w-6" />}
-          color="blue"
-        />
-        <KPICard
-          title="Total Proyectos"
-          value={stats?.total_proyectos || 0}
-          description="Proyectos en cartera"
-          icon={<Target className="h-6 w-6" />}
-          color="indigo"
-        />
-        <KPICard
-          title="Progreso Promedio"
-          value={`${stats?.progreso_promedio || 0}%`}
-          description="Completitud general"
-          icon={<TrendingUp className="h-6 w-6" />}
-          color="green"
-        />
-      </div>
-
       {/* Estado de los Proyectos */}
       <div>
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">

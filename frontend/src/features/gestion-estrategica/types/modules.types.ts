@@ -41,7 +41,8 @@ export interface TabSection {
   name: string;
   description?: string;
   icon?: string;
-  order: number;
+  route?: string;
+  orden: number;
   is_enabled: boolean;
   is_core: boolean;
   supported_actions?: string[];
@@ -61,7 +62,8 @@ export interface ModuleTab {
   name: string;
   description?: string;
   icon?: string;
-  order: number;
+  route?: string;
+  orden: number;
   is_enabled: boolean;
   is_core: boolean;
   sections: TabSection[];
@@ -84,7 +86,7 @@ export interface SystemModuleTree {
   color?: ModuleColor;
   category: ModuleCategory;
   route?: string;
-  order: number;
+  orden: number;
   is_enabled: boolean;
   is_core: boolean;
   requires_license: boolean;

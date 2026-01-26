@@ -17,9 +17,6 @@ import type {
   NormaISO,
   PoliticasResponse,
   ConfiguracionFlujoFirma,
-  IniciarFirmaDTO,
-  FirmarPoliticaDTO,
-  RechazarFirmaDTO,
 } from '../types/policies.types';
 
 // ============================================================================
@@ -475,310 +472,42 @@ export const useDeletePolitica = () => {
 };
 
 // ============================================================================
-// WORKFLOW DE FIRMAS - MUTATIONS
+// INTEGRACIÓN CON GESTOR DOCUMENTAL (Flujo simplificado v4.0)
 // ============================================================================
 
 /**
- * Firmante seleccionado manualmente (modo legacy con usuario específico)
- * @deprecated Usar CargoFirmanteSeleccion para seleccionar por cargo
- */
-export interface FirmanteSeleccion {
-  rol_firmante: 'ELABORO' | 'REVISO_TECNICO' | 'REVISO_JURIDICO' | 'APROBO_DIRECTOR' | 'APROBO_GERENTE' | 'APROBO_REPRESENTANTE_LEGAL';
-  usuario_id: number;
-}
-
-/**
- * Firmante seleccionado por cargo (modo recomendado)
- * Al seleccionar un cargo, se notifica a TODOS los usuarios de ese cargo
- */
-export interface CargoFirmanteSeleccion {
-  rol_firmante: 'REVISO_TECNICO' | 'REVISO_JURIDICO' | 'APROBO_DIRECTOR' | 'APROBO_GERENTE' | 'APROBO_REPRESENTANTE_LEGAL';
-  cargo_id: number;
-  cargo_nombre?: string;
-}
-
-/**
- * Inicia el proceso de firma para una política.
+ * Envía una política en BORRADOR al Gestor Documental.
  *
- * Soporta tres modos:
- * 1. Modo automático (workflowId): Usa un flujo predefinido con cargos fijos
- * 2. Modo por cargo (firmantes_cargo): Selecciona CARGOS para revisión/aprobación
- *    - Notifica a TODOS los usuarios del cargo seleccionado
- * 3. Modo legacy (firmantes): Selecciona usuarios específicos (deprecated)
+ * Flujo simplificado v4.0:
+ * 1. IDENTIDAD: Política creada en BORRADOR
+ * 2. Usuario hace clic en "Enviar a Gestión"
+ * 3. Estado cambia a EN_GESTION (ya no editable desde Identidad)
+ * 4. GESTOR DOCUMENTAL: Maneja firma, codificación, publicación
+ * 5. Callback desde Gestor Documental actualiza estado a VIGENTE
  *
- * En todos los modos:
- * - ELABORO: Automático (usuario actual - se agrega en el backend)
+ * NOTA: Todo el workflow de firmas se maneja en Gestor Documental.
+ * Identidad solo crea y envía políticas.
  */
-export const useIniciarFirmaPolitica = () => {
+export const useEnviarAGestion = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      id,
-      workflowId,
-      firmantes,
-      firmantesCargo,
-    }: {
-      id: number;
-      workflowId?: number;
-      /** @deprecated Usar firmantesCargo en su lugar */
-      firmantes?: FirmanteSeleccion[];
-      /** Modo recomendado: selección por cargo */
-      firmantesCargo?: CargoFirmanteSeleccion[];
-    }) => {
-      // Prioridad de modos:
-      // 1. firmantesCargo (nuevo modo por cargo - recomendado)
-      // 2. firmantes (modo legacy por usuario específico)
-      // 3. workflowId (flujo predefinido)
-      // 4. Sin parámetros (flujo por defecto)
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const dto: IniciarFirmaDTO & { firmantes?: any[] } = {};
-
-      if (firmantesCargo && firmantesCargo.length > 0) {
-        // Modo por cargo: convertir a formato que espera el backend
-        // El backend espera firmantes con cargo_id en lugar de usuario_id
-        dto.firmantes = firmantesCargo.map(f => ({
-          rol_firmante: f.rol_firmante,
-          cargo_id: f.cargo_id,
-        }));
-      } else if (firmantes && firmantes.length > 0) {
-        // Modo legacy: usuarios específicos
-        dto.firmantes = firmantes;
-      } else if (workflowId) {
-        dto.flujo_firma_id = workflowId;
-      }
-
-      const { data } = await apiClient.post(`${API_POLITICAS}/${id}/iniciar-firma/`, dto);
-      return data;
-    },
-    onSuccess: async (_, { id }) => {
-      await Promise.all([
-        queryClient.refetchQueries({ queryKey: politicaKeys.lists() }),
-        queryClient.refetchQueries({ queryKey: politicaKeys.detail(id) }),
-      ]);
-      toast.success('Proceso de firma iniciado');
-    },
-    onError: (error: unknown) => {
-      const axiosError = error as { response?: { data?: { detail?: string } } };
-      const message = axiosError?.response?.data?.detail || 'Error al iniciar el proceso de firma';
-      toast.error(message);
-    },
-  });
-};
-
-/**
- * Firma una política (ejecuta una firma pendiente)
- */
-export const useFirmarPolitica = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ politicaId, dto }: { politicaId: number; dto: FirmarPoliticaDTO }) => {
-      // El backend espera firma_imagen en lugar de signature_image
-      const backendDto = {
-        firma_id: dto.firma_id,
-        firma_imagen: dto.signature_image,
-        comentarios: '',
-      };
-      const { data } = await apiClient.post(`${API_POLITICAS}/${politicaId}/firmar/`, backendDto);
-      return data;
-    },
-    onSuccess: async (_, { politicaId }) => {
-      await Promise.all([
-        queryClient.refetchQueries({ queryKey: politicaKeys.lists() }),
-        queryClient.refetchQueries({ queryKey: politicaKeys.detail(politicaId) }),
-      ]);
-      toast.success('Firma registrada exitosamente');
-    },
-    onError: (error: unknown) => {
-      const axiosError = error as { response?: { data?: { detail?: string } } };
-      const message = axiosError?.response?.data?.detail || 'Error al registrar la firma';
-      toast.error(message);
-    },
-  });
-};
-
-/**
- * Rechaza una firma pendiente
- */
-export const useRechazarFirmaPolitica = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ politicaId, dto }: { politicaId: number; dto: RechazarFirmaDTO }) => {
-      // El backend espera motivo en lugar de reason
-      const backendDto = {
-        firma_id: dto.firma_id,
-        motivo: dto.motivo,
-      };
-      const { data } = await apiClient.post(`${API_POLITICAS}/${politicaId}/rechazar-firma/`, backendDto);
-      return data;
-    },
-    onSuccess: async (_, { politicaId }) => {
-      await Promise.all([
-        queryClient.refetchQueries({ queryKey: politicaKeys.lists() }),
-        queryClient.refetchQueries({ queryKey: politicaKeys.detail(politicaId) }),
-      ]);
-      toast.warning('Firma rechazada');
-    },
-    onError: (error: unknown) => {
-      const axiosError = error as { response?: { data?: { detail?: string } } };
-      const message = axiosError?.response?.data?.detail || 'Error al rechazar la firma';
-      toast.error(message);
-    },
-  });
-};
-
-/**
- * Obtiene el proceso de firma de una política
- */
-export const useProcesoFirmaPolitica = (politicaId: number, enabled = true) => {
-  return useQuery({
-    queryKey: [...politicaKeys.detail(politicaId), 'proceso-firma'] as const,
-    queryFn: async () => {
-      const { data } = await apiClient.get(`${API_POLITICAS}/${politicaId}/proceso-firma/`);
-      return data;
-    },
-    enabled: enabled && !!politicaId,
-    staleTime: 60 * 1000, // 1 minuto - los procesos de firma cambian con frecuencia
-  });
-};
-
-/**
- * Publica una política (la pone en estado VIGENTE)
- */
-export const usePublicarPolitica = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (id: number) => {
-      const { data } = await apiClient.post<Politica>(`${API_POLITICAS}/${id}/publicar/`);
-      return data;
-    },
-    onSuccess: async () => {
-      await queryClient.refetchQueries({ queryKey: politicaKeys.lists() });
-      toast.success('Política publicada exitosamente');
-    },
-    onError: (error: unknown) => {
-      const message = (error as { response?: { data?: { error?: string } } })?.response?.data?.error
-        || 'Error al publicar la política';
-      toast.error(message);
-    },
-  });
-};
-
-/**
- * Marca una política como obsoleta
- */
-export const useObsoletarPolitica = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ id, motivo }: { id: number; motivo?: string }) => {
-      const { data } = await apiClient.post<Politica>(`${API_POLITICAS}/${id}/obsoleto/`, { motivo });
-      return data;
-    },
-    onSuccess: async () => {
-      await queryClient.refetchQueries({ queryKey: politicaKeys.lists() });
-      toast.success('Política marcada como obsoleta');
-    },
-    onError: () => {
-      toast.error('Error al marcar la política como obsoleta');
-    },
-  });
-};
-
-// ============================================================================
-// INTEGRACIÓN CON GESTOR DOCUMENTAL
-// ============================================================================
-
-/**
- * DTO para enviar política al Gestor Documental
- */
-interface EnviarADocumentalDTO {
-  tipo_documento_id?: number;
-  clasificacion?: 'PUBLICO' | 'INTERNO' | 'CONFIDENCIAL' | 'RESTRINGIDO';
-  areas_aplicacion?: number[];
-  observaciones?: string;
-}
-
-/**
- * Envía una política FIRMADA al Gestor Documental para codificación y publicación.
- *
- * Flujo completo:
- * 1. IDENTIDAD: Política creada → Firmas completadas → status = 'FIRMADO'
- * 2. Este endpoint: Prepara datos y los envía al Gestor Documental
- * 3. GESTOR DOCUMENTAL: Recibe → Asigna código (POL-SST-001) → Publica
- * 4. Callback: Actualiza política en Identidad a VIGENTE con referencia al documento
- *
- * Requisitos:
- * - La política debe estar en estado 'FIRMADO' (todas las firmas completadas)
- */
-export const useEnviarADocumental = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      politicaId,
-      dto = {},
-    }: {
-      politicaId: number;
-      dto?: EnviarADocumentalDTO;
-    }) => {
-      // El backend hace la integracion directa con Gestor Documental
+    mutationFn: async (politicaId: number) => {
       const { data } = await apiClient.post(
-        `${API_POLITICAS}/${politicaId}/enviar-a-documental/`,
-        dto
+        `${API_POLITICAS}/${politicaId}/enviar-a-gestion/`
       );
       return data;
     },
-    onSuccess: async (data, { politicaId }) => {
+    onSuccess: async (data, politicaId) => {
       await Promise.all([
         queryClient.refetchQueries({ queryKey: politicaKeys.lists() }),
         queryClient.refetchQueries({ queryKey: politicaKeys.detail(politicaId) }),
       ]);
-      toast.success(`Politica publicada con codigo: ${data.documento?.codigo || "OK"}`);
+      toast.success(data.mensaje || 'Política enviada a gestión documental');
     },
     onError: (error: unknown) => {
       const axiosError = error as { response?: { data?: { detail?: string } } };
-      const message = axiosError?.response?.data?.detail || 'Error al enviar la política al Gestor Documental';
-      toast.error(message);
-    },
-  });
-};
-
-/**
- * Hook simplificado para enviar solo a Identidad (sin llamar a Documental)
- * Útil si se quiere un flujo de 2 pasos separados
- */
-export const usePrepararParaDocumental = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      politicaId,
-      dto = {},
-    }: {
-      politicaId: number;
-      dto?: EnviarADocumentalDTO;
-    }) => {
-      const { data } = await apiClient.post(
-        `${API_POLITICAS}/${politicaId}/enviar-a-documental/`,
-        dto
-      );
-      return data;
-    },
-    onSuccess: async (_, { politicaId }) => {
-      await Promise.all([
-        queryClient.refetchQueries({ queryKey: politicaKeys.lists() }),
-        queryClient.refetchQueries({ queryKey: politicaKeys.detail(politicaId) }),
-      ]);
-      toast.success('Política lista para enviar al Gestor Documental');
-    },
-    onError: (error: unknown) => {
-      const axiosError = error as { response?: { data?: { detail?: string } } };
-      const message = axiosError?.response?.data?.detail || 'Error al preparar la política';
+      const message = axiosError?.response?.data?.detail || 'Error al enviar la política a gestión';
       toast.error(message);
     },
   });
@@ -866,22 +595,24 @@ export const useCrearNuevaVersion = () => {
 /**
  * Verifica si una política puede ser editada directamente.
  *
- * Reglas de edición:
- * - BORRADOR: Editable directamente
- * - EN_REVISION: NO editable (en proceso de firma)
- * - FIRMADO: NO editable (pendiente de publicación)
+ * Estados v4.0 (simplificado):
+ * - BORRADOR: Editable directamente (único estado editable)
+ * - EN_GESTION: NO editable (enviada al Gestor Documental)
  * - VIGENTE: NO editable (usar crear-nueva-version)
  * - OBSOLETO: NO editable (versión histórica)
+ *
+ * NOTA: El flujo de firmas se maneja completamente en Gestor Documental.
+ * Identidad solo crea políticas en BORRADOR y las envía.
  */
 export const usePuedeEditarPolitica = (status: string) => {
   const puedeEditar = status === 'BORRADOR';
   const necesitaNuevaVersion = status === 'VIGENTE';
-  const enProcesoFirma = status === 'EN_REVISION' || status === 'FIRMADO';
+  const enGestion = status === 'EN_GESTION';
   const esHistorico = status === 'OBSOLETO';
 
   let mensaje = '';
-  if (enProcesoFirma) {
-    mensaje = 'La política está en proceso de firma. Espere a que se complete o sea rechazada.';
+  if (enGestion) {
+    mensaje = 'La política está en gestión documental. El flujo de firmas se maneja desde allí.';
   } else if (necesitaNuevaVersion) {
     mensaje = 'Para modificar esta política, debe crear una nueva versión.';
   } else if (esHistorico) {
@@ -891,7 +622,7 @@ export const usePuedeEditarPolitica = (status: string) => {
   return {
     puedeEditar,
     necesitaNuevaVersion,
-    enProcesoFirma,
+    enGestion,
     esHistorico,
     mensaje,
   };
@@ -903,14 +634,22 @@ export const usePuedeEditarPolitica = (status: string) => {
 
 /**
  * Hook para obtener el color del status de una política
+ *
+ * Estados v4.0:
+ * - BORRADOR: Gris (en edición)
+ * - EN_GESTION: Azul (en Gestor Documental)
+ * - VIGENTE: Verde (publicada)
+ * - OBSOLETO: Rojo (versión anterior)
  */
 export const usePoliticaStatusColor = (status: string) => {
   const colors: Record<string, { bg: string; text: string; border: string }> = {
     BORRADOR: { bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-300' },
-    EN_REVISION: { bg: 'bg-yellow-100', text: 'text-yellow-700', border: 'border-yellow-300' },
-    FIRMADO: { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-300' },
+    EN_GESTION: { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-300' },
     VIGENTE: { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-300' },
     OBSOLETO: { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-300' },
+    // Estados legacy para retrocompatibilidad
+    EN_REVISION: { bg: 'bg-yellow-100', text: 'text-yellow-700', border: 'border-yellow-300' },
+    FIRMADO: { bg: 'bg-emerald-100', text: 'text-emerald-700', border: 'border-emerald-300' },
   };
   return colors[status] || colors.BORRADOR;
 };

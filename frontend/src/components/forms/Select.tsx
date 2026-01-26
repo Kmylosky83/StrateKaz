@@ -1,4 +1,4 @@
-import { SelectHTMLAttributes, forwardRef } from 'react';
+import { SelectHTMLAttributes, forwardRef, useId } from 'react';
 import { cn } from '@/utils/cn';
 
 interface SelectOption {
@@ -28,7 +28,8 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     },
     ref
   ) => {
-    const selectId = id || 'select-' + Math.random().toString(36).substr(2, 9);
+    const generatedId = useId();
+    const selectId = id || generatedId;
 
     return (
       <div className="w-full">

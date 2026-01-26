@@ -5,15 +5,20 @@
  * - BaseModal para el contenedor
  * - Tabs para navegación
  * - Input, Textarea, Select para formulario
- * - Checkbox para estándares ISO
+ * - Checkbox para estándares ISO (dinámico desde BD)
+ * - DynamicIcon para iconos de normas
  * - Alert para información
  * - Button para acciones
+ *
+ * Sin hardcoding - Normas ISO cargadas desde API
  */
 import { useState, useEffect } from 'react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Tabs } from '@/components/common/Tabs';
 import { Alert } from '@/components/common/Alert';
+import { DynamicIcon } from '@/components/common/DynamicIcon';
+import { Spinner } from '@/components/common/Spinner';
 import { Input } from '@/components/forms/Input';
 import { Textarea } from '@/components/forms/Textarea';
 import { Select } from '@/components/forms/Select';
@@ -30,9 +35,9 @@ import type {
   CreateStrategicObjectiveDTO,
   UpdateStrategicObjectiveDTO,
   BSCPerspective,
-  ISOStandard,
   ObjectiveStatus,
 } from '../../types/strategic.types';
+import type { NormaISOChoice } from '../../api/strategicApi';
 import type { Tab } from '@/components/common';
 
 interface ObjectiveFormModalProps {
@@ -66,7 +71,8 @@ export const ObjectiveFormModal = ({ objective, planId, isOpen, onClose }: Objec
     name: '',
     description: '',
     bsc_perspective: 'PROCESOS' as BSCPerspective,
-    iso_standards: [] as ISOStandard[],
+    // Ahora usamos IDs de normas ISO (ManyToMany)
+    normas_iso_ids: [] as number[],
     responsible_cargo: undefined as number | undefined,
     target_value: 100,
     current_value: 0,
@@ -79,17 +85,22 @@ export const ObjectiveFormModal = ({ objective, planId, isOpen, onClose }: Objec
   const createMutation = useCreateObjective();
   const updateMutation = useUpdateObjective();
   const { data: perspectives } = useBSCPerspectives();
-  const { data: isoStandards } = useISOStandards();
+  const { data: normasISO, isLoading: normasLoading } = useISOStandards();
   const { data: statuses } = useObjectiveStatuses();
 
   useEffect(() => {
     if (objective) {
+      // Extraer IDs de normas_iso (ManyToMany viene como array de objetos o IDs)
+      const normaIds = objective.normas_iso?.map((n: number | { id: number }) =>
+        typeof n === 'number' ? n : n.id
+      ) || [];
+
       setFormData({
         code: objective.code,
         name: objective.name,
         description: objective.description || '',
         bsc_perspective: objective.bsc_perspective,
-        iso_standards: objective.iso_standards,
+        normas_iso_ids: normaIds,
         responsible_cargo: objective.responsible_cargo || undefined,
         target_value: objective.target_value ?? 100,
         current_value: objective.current_value ?? 0,
@@ -104,7 +115,7 @@ export const ObjectiveFormModal = ({ objective, planId, isOpen, onClose }: Objec
         name: '',
         description: '',
         bsc_perspective: 'PROCESOS',
-        iso_standards: [],
+        normas_iso_ids: [],
         responsible_cargo: undefined,
         target_value: 100,
         current_value: 0,
@@ -117,12 +128,13 @@ export const ObjectiveFormModal = ({ objective, planId, isOpen, onClose }: Objec
     setActiveTab('general');
   }, [objective]);
 
-  const handleISOToggle = (standard: ISOStandard) => {
+  // Toggle de norma ISO por ID
+  const handleNormaISOToggle = (normaId: number) => {
     setFormData((prev) => ({
       ...prev,
-      iso_standards: prev.iso_standards.includes(standard)
-        ? prev.iso_standards.filter((s) => s !== standard)
-        : [...prev.iso_standards, standard],
+      normas_iso_ids: prev.normas_iso_ids.includes(normaId)
+        ? prev.normas_iso_ids.filter((id) => id !== normaId)
+        : [...prev.normas_iso_ids, normaId],
     }));
   };
 
@@ -134,7 +146,7 @@ export const ObjectiveFormModal = ({ objective, planId, isOpen, onClose }: Objec
         name: formData.name,
         description: formData.description || undefined,
         bsc_perspective: formData.bsc_perspective,
-        iso_standards: formData.iso_standards,
+        normas_iso_ids: formData.normas_iso_ids,
         responsible_cargo: formData.responsible_cargo,
         target_value: formData.target_value,
         current_value: formData.current_value,
@@ -151,7 +163,7 @@ export const ObjectiveFormModal = ({ objective, planId, isOpen, onClose }: Objec
         name: formData.name,
         description: formData.description || undefined,
         bsc_perspective: formData.bsc_perspective,
-        iso_standards: formData.iso_standards,
+        normas_iso_ids: formData.normas_iso_ids,
         responsible_cargo: formData.responsible_cargo,
         target_value: formData.target_value,
         unit: formData.unit,
@@ -181,14 +193,8 @@ export const ObjectiveFormModal = ({ objective, planId, isOpen, onClose }: Objec
     { value: 'RETRASADO', label: 'Retrasado' },
   ];
 
-  const isoOptions = isoStandards || [
-    { value: 'ISO_9001', label: 'ISO 9001 - Calidad' },
-    { value: 'ISO_14001', label: 'ISO 14001 - Ambiental' },
-    { value: 'ISO_45001', label: 'ISO 45001 - SST' },
-    { value: 'ISO_27001', label: 'ISO 27001 - Seguridad' },
-    { value: 'PESV', label: 'PESV - Seguridad Vial' },
-    { value: 'SG_SST', label: 'SG-SST' },
-  ];
+  // Normas ISO dinámicas desde la API (sin fallback hardcodeado)
+  const normasISOOptions: NormaISOChoice[] = normasISO || [];
 
   const footer = (
     <>
@@ -276,29 +282,96 @@ export const ObjectiveFormModal = ({ objective, planId, isOpen, onClose }: Objec
             <>
               <Alert
                 variant="info"
-                message="Selecciona los sistemas de gestión a los que contribuye este objetivo"
+                message="Selecciona las normas ISO a las que aporta este objetivo estratégico"
               />
 
-              <div className={`p-3 rounded-lg border-l-4 ${BSC_COLORS[formData.bsc_perspective]} bg-gray-50`}>
+              <div className={`p-3 rounded-lg border-l-4 ${BSC_COLORS[formData.bsc_perspective]} bg-gray-50 dark:bg-gray-800`}>
                 <p className="text-sm font-medium">
                   Perspectiva BSC: {perspectiveOptions.find((p) => p.value === formData.bsc_perspective)?.label}
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Estándares ISO / Sistemas de Gestión
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Normas ISO
                 </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {isoOptions.map((iso) => (
-                    <Checkbox
-                      key={iso.value}
-                      label={iso.label}
-                      checked={formData.iso_standards.includes(iso.value as ISOStandard)}
-                      onChange={() => handleISOToggle(iso.value as ISOStandard)}
-                    />
-                  ))}
-                </div>
+
+                {normasLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Spinner size="md" />
+                    <span className="ml-2 text-sm text-gray-500">Cargando normas...</span>
+                  </div>
+                ) : normasISOOptions.length === 0 ? (
+                  <Alert
+                    variant="warning"
+                    message="No hay normas ISO activas. Actívalas en Configuración → Normas ISO."
+                  />
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {normasISOOptions.map((norma) => (
+                      <div
+                        key={norma.id}
+                        className={`
+                          flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer
+                          transition-all duration-200
+                          ${formData.normas_iso_ids.includes(norma.id)
+                            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                            : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                          }
+                        `}
+                        onClick={() => handleNormaISOToggle(norma.id)}
+                      >
+                        {/* Icono de la norma */}
+                        <div
+                          className={`
+                            p-2 rounded-lg
+                            ${formData.normas_iso_ids.includes(norma.id)
+                              ? 'bg-primary-100 dark:bg-primary-800'
+                              : 'bg-gray-100 dark:bg-gray-800'
+                            }
+                          `}
+                        >
+                          <DynamicIcon
+                            name={norma.icon || 'FileCheck'}
+                            className={`w-5 h-5 ${
+                              formData.normas_iso_ids.includes(norma.id)
+                                ? 'text-primary-600 dark:text-primary-400'
+                                : 'text-gray-500 dark:text-gray-400'
+                            }`}
+                          />
+                        </div>
+
+                        {/* Info de la norma */}
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-medium truncate ${
+                            formData.normas_iso_ids.includes(norma.id)
+                              ? 'text-primary-700 dark:text-primary-300'
+                              : 'text-gray-900 dark:text-gray-100'
+                          }`}>
+                            {norma.code}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                            {norma.short_name || norma.name}
+                          </p>
+                        </div>
+
+                        {/* Checkbox visual */}
+                        <Checkbox
+                          checked={formData.normas_iso_ids.includes(norma.id)}
+                          onChange={() => handleNormaISOToggle(norma.id)}
+                          className="pointer-events-none"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Contador de seleccionados */}
+                {formData.normas_iso_ids.length > 0 && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    {formData.normas_iso_ids.length} norma{formData.normas_iso_ids.length !== 1 ? 's' : ''} seleccionada{formData.normas_iso_ids.length !== 1 ? 's' : ''}
+                  </p>
+                )}
               </div>
             </>
           )}

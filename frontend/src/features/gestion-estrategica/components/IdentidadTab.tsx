@@ -17,9 +17,21 @@ import {
   Edit,
   Calendar,
   Shield,
+  Compass,
+  Target,
+  MapPin,
+  Workflow,
+  AlertTriangle,
+  Heart,
+  LayoutGrid,
+  LayoutList,
 } from 'lucide-react';
 import { Card, Badge, Button, EmptyState, DynamicIcon } from '@/components/common';
+import { DataSection } from '@/components/data-display';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
+import { useModuleColor } from '@/hooks/useModuleColor';
+import { getModuleColorClasses } from '@/utils/moduleColors';
+import type { ModuleColor } from '@/utils/moduleColors';
 import {
   useActiveIdentity,
   useValues,
@@ -31,8 +43,9 @@ import {
 import { usePermissions } from '@/hooks/usePermissions';
 import { Modules, Sections } from '@/constants/permissions';
 import { IdentityFormModal } from './modals/IdentityFormModal';
-import { ValoresDragDrop } from './ValoresDragDrop';
+import { ValoresDragDrop, type ViewMode } from './ValoresDragDrop';
 import { PoliciesList } from './politicas';
+import { useNormasISOActivas, usePoliticas } from '../hooks/usePoliticas';
 import type { CorporateIdentity } from '../types/strategic.types';
 import { cn } from '@/lib/utils';
 
@@ -72,6 +85,8 @@ const parseLocalDate = (dateString: string): Date => {
 
 const MisionVisionSection = ({ identity, onEdit, canEdit }: MisionVisionSectionProps) => {
   const { primaryColor, secondaryColor, companyName } = useBrandingConfig();
+  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
+  const colorClasses = getModuleColorClasses(moduleColor as ModuleColor);
 
   // Convertir colores hex a RGB para gradientes con transparencia
   const primaryRgb = useMemo(() => hexToRgb(primaryColor), [primaryColor]);
@@ -79,31 +94,26 @@ const MisionVisionSection = ({ identity, onEdit, canEdit }: MisionVisionSectionP
 
   return (
     <div className="space-y-6">
-      {/* Header con metadata */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Badge variant="primary" size="lg" className="font-semibold">
-            <Shield className="h-4 w-4 mr-1.5" />
-            v{identity.version}
-          </Badge>
-          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-            <Calendar className="h-4 w-4" />
-            <span>
-              Vigente desde {parseLocalDate(identity.effective_date).toLocaleDateString('es-CO', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </span>
-          </div>
-        </div>
-        {canEdit && (
-          <Button variant="secondary" size="sm" onClick={onEdit}>
-            <Edit className="h-4 w-4 mr-2" />
-            Editar
-          </Button>
-        )}
-      </div>
+      {/* DataSection Header - Consistencia con otras secciones */}
+      <DataSection
+        icon={Compass}
+        iconBgClass={colorClasses.badge}
+        iconClass={colorClasses.icon}
+        title="Misión y Visión"
+        description={`Versión ${identity.version} • Vigente desde ${parseLocalDate(identity.effective_date).toLocaleDateString('es-CO', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        })}`}
+        action={
+          canEdit && (
+            <Button variant="secondary" size="sm" onClick={onEdit}>
+              <Edit className="h-4 w-4 mr-2" />
+              Editar
+            </Button>
+          )
+        }
+      />
 
       {/* Grid Misión y Visión - Diseño Glassmorphism */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -239,12 +249,133 @@ const MisionVisionSection = ({ identity, onEdit, canEdit }: MisionVisionSectionP
           />
         </div>
       </div>
+
+      {/* Card de Alcance del SIG - Solo si declara_alcance es true */}
+      {identity.declara_alcance && identity.alcance_general && (
+        <div
+          className={cn(
+            'relative overflow-hidden rounded-2xl',
+            'backdrop-blur-xl border border-white/20',
+            'shadow-xl hover:shadow-2xl transition-all duration-300',
+            'group'
+          )}
+          style={{
+            background: `linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0.04) 100%)`,
+          }}
+        >
+          {/* Decorative gradient orb */}
+          <div
+            className="absolute -top-20 -right-20 w-40 h-40 rounded-full blur-3xl opacity-30 group-hover:opacity-50 transition-opacity"
+            style={{ backgroundColor: '#10b981' }}
+          />
+
+          <div className="relative p-8">
+            {/* Header */}
+            <div className="flex items-center gap-4 mb-6">
+              <div
+                className="p-4 rounded-2xl shadow-lg"
+                style={{
+                  background: `linear-gradient(135deg, #10b981 0%, rgba(16, 185, 129, 0.7) 100%)`,
+                }}
+              >
+                <Target size={28} className="text-white" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  Alcance del Sistema Integrado de Gestión
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Cobertura y aplicabilidad del SIG
+                </p>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div
+              className="h-1 w-16 rounded-full mb-6"
+              style={{ backgroundColor: '#10b981' }}
+            />
+
+            {/* Alcance General */}
+            <div className="mb-6">
+              <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300 mb-2">
+                <Target className="w-4 h-4 text-emerald-600" />
+                <span className="font-semibold">Alcance General</span>
+              </div>
+              <p className="text-gray-700 dark:text-gray-200 leading-relaxed">
+                {identity.alcance_general}
+              </p>
+            </div>
+
+            {/* Grid de campos opcionales */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Cobertura Geográfica */}
+              {identity.alcance_geografico && (
+                <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4">
+                  <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300 mb-2">
+                    <MapPin className="w-4 h-4 text-blue-600" />
+                    <span className="font-medium text-sm">Cobertura Geográfica</span>
+                  </div>
+                  <p className="text-gray-600 dark:text-gray-300 text-sm">
+                    {identity.alcance_geografico}
+                  </p>
+                </div>
+              )}
+
+              {/* Procesos Cubiertos - Badges dinámicos desde ManyToMany */}
+              {(identity.procesos_cubiertos && identity.procesos_cubiertos.length > 0) && (
+                <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4 md:col-span-2 lg:col-span-1">
+                  <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300 mb-3">
+                    <Workflow className="w-4 h-4 text-purple-600" />
+                    <span className="font-medium text-sm">Procesos Cubiertos</span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">
+                      ({identity.procesos_cubiertos.length})
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {identity.procesos_cubiertos.map((proceso) => (
+                      <Badge
+                        key={proceso.id}
+                        variant="secondary"
+                        className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-700"
+                      >
+                        {proceso.name}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Exclusiones */}
+              {identity.alcance_exclusiones && (
+                <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4">
+                  <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300 mb-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-600" />
+                    <span className="font-medium text-sm">Exclusiones Generales</span>
+                  </div>
+                  <p className="text-gray-600 dark:text-gray-300 text-sm">
+                    {identity.alcance_exclusiones}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Bottom accent line */}
+          <div
+            className="h-1 w-full"
+            style={{
+              background: `linear-gradient(90deg, #10b981 0%, transparent 100%)`,
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 };
 
 // =============================================================================
-// SECCIÓN: VALORES (con Drag & Drop)
+// SECCIÓN: VALORES (con Drag & Drop) - Vista 2B Especial
 // =============================================================================
 interface ValoresSectionProps {
   identity: CorporateIdentity;
@@ -252,6 +383,14 @@ interface ValoresSectionProps {
 }
 
 const ValoresSection = ({ identity, canEdit }: ValoresSectionProps) => {
+  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
+  const colorClasses = getModuleColorClasses(moduleColor as ModuleColor);
+  const { primaryColor } = useBrandingConfig();
+
+  // Estado controlado para vista y creación
+  const [viewMode, setViewMode] = useState<ViewMode>('cards');
+  const [isCreating, setIsCreating] = useState(false);
+
   const { data: valuesData, isLoading } = useValues(identity.id);
   const createValueMutation = useCreateValue();
   const updateValueMutation = useUpdateValue();
@@ -262,52 +401,196 @@ const ValoresSection = ({ identity, canEdit }: ValoresSectionProps) => {
 
   if (isLoading) {
     return (
-      <Card className="p-6">
-        <div className="animate-pulse space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-20 bg-gray-200 dark:bg-gray-700 rounded-lg" />
-          ))}
-        </div>
-      </Card>
+      <div className="space-y-6">
+        <DataSection
+          icon={Heart}
+          iconBgClass={colorClasses.badge}
+          iconClass={colorClasses.icon}
+          title="Valores Corporativos"
+          description="Cargando valores..."
+        />
+        <Card className="p-6">
+          <div className="animate-pulse-subtle space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-20 bg-gray-200 dark:bg-gray-700 rounded-lg" />
+            ))}
+          </div>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <ValoresDragDrop
-      values={values}
-      identityId={identity.id}
-      onReorder={async (newOrder) => {
-        await reorderMutation.mutateAsync(newOrder);
-      }}
-      onCreate={async (data) => {
-        await createValueMutation.mutateAsync(data);
-      }}
-      onUpdate={async (id, data) => {
-        await updateValueMutation.mutateAsync({ id, data });
-      }}
-      onDelete={async (id) => {
-        await deleteValueMutation.mutateAsync(id);
-      }}
-      isLoading={
-        createValueMutation.isPending ||
-        updateValueMutation.isPending ||
-        deleteValueMutation.isPending ||
-        reorderMutation.isPending
-      }
-      readOnly={!canEdit}
-    />
+    <div className="space-y-6">
+      {/* DataSection Header - Vista 2B Especial */}
+      <DataSection
+        icon={Heart}
+        iconBgClass={colorClasses.badge}
+        iconClass={colorClasses.icon}
+        title="Valores Corporativos"
+        description={`${values.length} valor${values.length !== 1 ? 'es' : ''} definido${values.length !== 1 ? 's' : ''} • Arrastra para reordenar`}
+        action={
+          <div className="flex items-center gap-3">
+            {/* View Mode Toggle */}
+            <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-lg p-0.5">
+              <button
+                onClick={() => setViewMode('list')}
+                className={cn(
+                  'p-1.5 rounded-md transition-colors',
+                  viewMode === 'list'
+                    ? 'bg-white dark:bg-gray-600 shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                )}
+                style={viewMode === 'list' ? { color: primaryColor } : undefined}
+                title="Vista de lista"
+              >
+                <LayoutList className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('cards')}
+                className={cn(
+                  'p-1.5 rounded-md transition-colors',
+                  viewMode === 'cards'
+                    ? 'bg-white dark:bg-gray-600 shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                )}
+                style={viewMode === 'cards' ? { color: primaryColor } : undefined}
+                title="Vista de tarjetas"
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Botón Agregar */}
+            {canEdit && (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setIsCreating(true)}
+                disabled={isCreating}
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Agregar Valor
+              </Button>
+            )}
+          </div>
+        }
+      />
+
+      {/* Card con contenido Drag & Drop */}
+      <ValoresDragDrop
+        values={values}
+        identityId={identity.id}
+        onReorder={async (newOrder) => {
+          await reorderMutation.mutateAsync(newOrder);
+        }}
+        onCreate={async (data) => {
+          await createValueMutation.mutateAsync(data);
+        }}
+        onUpdate={async (id, data) => {
+          await updateValueMutation.mutateAsync({ id, data });
+        }}
+        onDelete={async (id) => {
+          await deleteValueMutation.mutateAsync(id);
+        }}
+        isLoading={
+          createValueMutation.isPending ||
+          updateValueMutation.isPending ||
+          deleteValueMutation.isPending ||
+          reorderMutation.isPending
+        }
+        readOnly={!canEdit}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        isCreating={isCreating}
+        onCreateToggle={setIsCreating}
+      />
+    </div>
   );
 };
 
 // =============================================================================
-// SECCIÓN: POLÍTICAS (Sistema Unificado v3.0)
+// SECCIÓN: POLÍTICAS (Sistema Unificado v3.0) - Vista 2B con Agrupación
 // =============================================================================
 interface PoliticasSectionProps {
   identity: CorporateIdentity;
+  canEdit: boolean;
 }
 
-const PoliticasSection = ({ identity }: PoliticasSectionProps) => {
-  return <PoliciesList identityId={identity.id} />;
+const PoliticasSection = ({ identity, canEdit }: PoliticasSectionProps) => {
+  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
+  const colorClasses = getModuleColorClasses(moduleColor as ModuleColor);
+
+  // Estado controlado para búsqueda, filtros y creación
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterNormaId, setFilterNormaId] = useState<number | undefined>();
+  const [triggerCreate, setTriggerCreate] = useState(0);
+
+  // Obtener normas/sistemas para el select (dinámico desde configuración)
+  const { data: normasISO = [] } = useNormasISOActivas();
+  const { data: politicasData } = usePoliticas({ identity: identity.id });
+  const politicasCount = politicasData?.results?.length || 0;
+
+  return (
+    <div className="space-y-6">
+      {/* DataSection Header - Vista 2B con Agrupación */}
+      <DataSection
+        icon={Shield}
+        iconBgClass={colorClasses.badge}
+        iconClass={colorClasses.icon}
+        title="Políticas"
+        description={`${politicasCount} política${politicasCount !== 1 ? 's' : ''} definida${politicasCount !== 1 ? 's' : ''}`}
+        action={
+          <div className="flex items-center gap-3">
+            {/* Búsqueda */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Buscar..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-40 pl-3 pr-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-opacity-50"
+              />
+            </div>
+
+            {/* Filtro por norma/sistema */}
+            <select
+              value={filterNormaId || ''}
+              onChange={(e) => setFilterNormaId(e.target.value ? Number(e.target.value) : undefined)}
+              className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-opacity-50"
+            >
+              <option value="">Todas las normas</option>
+              {normasISO.map((n: { id: number; short_name?: string; name: string }) => (
+                <option key={n.id} value={n.id}>{n.short_name || n.name}</option>
+              ))}
+            </select>
+
+            {/* Botón Nueva Política */}
+            {canEdit && (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setTriggerCreate(prev => prev + 1)}
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Nueva Política
+              </Button>
+            )}
+          </div>
+        }
+      />
+
+      {/* Lista de políticas agrupadas por norma/sistema */}
+      <PoliciesList
+        identityId={identity.id}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        filterNormaId={filterNormaId}
+        onFilterNormaChange={setFilterNormaId}
+        triggerCreate={triggerCreate}
+      />
+    </div>
+  );
 };
 
 // =============================================================================
@@ -357,7 +640,7 @@ export const IdentidadTab = ({ activeSection, triggerNewForm }: IdentidadTabProp
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {[1, 2, 3, 4].map((i) => (
           <Card key={i}>
-            <div className="p-6 animate-pulse">
+            <div className="p-6 animate-pulse-subtle">
               <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-4" />
               <div className="space-y-2">
                 <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full" />
@@ -410,7 +693,8 @@ export const IdentidadTab = ({ activeSection, triggerNewForm }: IdentidadTabProp
         return <ValoresSection identity={identity} canEdit={canEditValues} />;
 
       case SECTION_KEYS.POLITICAS:
-        return <PoliticasSection identity={identity} />;
+        const canEditPoliticas = canDo(Modules.GESTION_ESTRATEGICA, Sections.POLITICAS, 'create');
+        return <PoliticasSection identity={identity} canEdit={canEditPoliticas} />;
 
       default:
         // Si no hay sección activa, mostrar Misión y Visión por defecto

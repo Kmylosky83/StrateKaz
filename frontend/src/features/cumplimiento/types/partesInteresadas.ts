@@ -42,6 +42,25 @@ export type MedioComunicacion =
   | 'redes'
   | 'otro';
 
+/** Canal principal de comunicación para automatización */
+export type CanalComunicacion =
+  | 'email'
+  | 'telefono'
+  | 'reunion'
+  | 'videoconferencia'
+  | 'whatsapp'
+  | 'portal_web'
+  | 'redes_sociales'
+  | 'correspondencia'
+  | 'otro';
+
+/** Cuadrante en la matriz poder-interés */
+export type CuadranteMatriz =
+  | 'gestionar_cerca'
+  | 'mantener_satisfecho'
+  | 'mantener_informado'
+  | 'monitorear';
+
 // ============================================================================
 // TIPOS BASE
 // ============================================================================
@@ -93,21 +112,38 @@ export interface ParteInteresada extends BaseTimestamped, BaseSoftDelete {
   empresa_id: number;
   tipo: number;
   tipo_nombre: string; // read-only
+  tipo_categoria?: CategoriaPI; // read-only
   nombre: string;
   descripcion?: string;
+  // Información de contacto
   representante?: string;
   cargo_representante?: string;
   telefono?: string;
   email?: string;
   direccion?: string;
+  sitio_web?: string;
+  // Matriz poder-interés
   nivel_influencia: NivelInfluencia;
   nivel_influencia_display: string; // read-only
   nivel_interes: NivelInteres;
   nivel_interes_display: string; // read-only
+  cuadrante_matriz?: CuadranteMatriz; // read-only (computed)
+  // Comunicación (para automatización de matriz de comunicaciones)
+  canal_principal?: CanalComunicacion;
+  canal_principal_display?: string; // read-only
+  frecuencia_comunicacion?: FrecuenciaComunicacion;
+  frecuencia_comunicacion_display?: string; // read-only
+  // ISO 9001:2015 Cláusula 4.2 - Necesidades, Expectativas y Requisitos
+  necesidades?: string;
+  expectativas?: string;
+  requisitos_pertinentes?: string;
+  es_requisito_legal?: boolean;
+  // Sistemas de gestión relacionados
   relacionado_sst: boolean;
   relacionado_ambiental: boolean;
   relacionado_calidad: boolean;
   relacionado_pesv: boolean;
+  // Auditoría
   created_by?: number | null;
   updated_by?: number | null;
 }
@@ -117,13 +153,25 @@ export interface ParteInteresadaCreate {
   tipo: number;
   nombre: string;
   descripcion?: string;
+  // Información de contacto
   representante?: string;
   cargo_representante?: string;
   telefono?: string;
   email?: string;
   direccion?: string;
+  sitio_web?: string;
+  // Matriz poder-interés
   nivel_influencia?: NivelInfluencia;
   nivel_interes?: NivelInteres;
+  // Comunicación
+  canal_principal?: CanalComunicacion;
+  frecuencia_comunicacion?: FrecuenciaComunicacion;
+  // ISO 9001:2015 Cláusula 4.2
+  necesidades?: string;
+  expectativas?: string;
+  requisitos_pertinentes?: string;
+  es_requisito_legal?: boolean;
+  // Sistemas de gestión relacionados
   relacionado_sst?: boolean;
   relacionado_ambiental?: boolean;
   relacionado_calidad?: boolean;
@@ -310,13 +358,25 @@ export interface CreateParteInteresadaDTO {
   tipo: number;
   nombre: string;
   descripcion?: string;
+  // Información de contacto
   representante?: string;
   cargo_representante?: string;
   telefono?: string;
   email?: string;
   direccion?: string;
+  sitio_web?: string;
+  // Matriz poder-interés
   nivel_influencia?: NivelInfluencia;
   nivel_interes?: NivelInteres;
+  // Comunicación
+  canal_principal?: CanalComunicacion;
+  frecuencia_comunicacion?: FrecuenciaComunicacion;
+  // ISO 9001:2015 Cláusula 4.2
+  necesidades?: string;
+  expectativas?: string;
+  requisitos_pertinentes?: string;
+  es_requisito_legal?: boolean;
+  // Sistemas de gestión relacionados
   relacionado_sst?: boolean;
   relacionado_ambiental?: boolean;
   relacionado_calidad?: boolean;
@@ -327,13 +387,25 @@ export interface UpdateParteInteresadaDTO {
   tipo?: number;
   nombre?: string;
   descripcion?: string;
+  // Información de contacto
   representante?: string;
   cargo_representante?: string;
   telefono?: string;
   email?: string;
   direccion?: string;
+  sitio_web?: string;
+  // Matriz poder-interés
   nivel_influencia?: NivelInfluencia;
   nivel_interes?: NivelInteres;
+  // Comunicación
+  canal_principal?: CanalComunicacion;
+  frecuencia_comunicacion?: FrecuenciaComunicacion;
+  // ISO 9001:2015 Cláusula 4.2
+  necesidades?: string;
+  expectativas?: string;
+  requisitos_pertinentes?: string;
+  es_requisito_legal?: boolean;
+  // Sistemas de gestión relacionados
   relacionado_sst?: boolean;
   relacionado_ambiental?: boolean;
   relacionado_calidad?: boolean;
@@ -341,3 +413,62 @@ export interface UpdateParteInteresadaDTO {
 }
 
 // PaginatedResponse: importar desde '@/types'
+
+// ============================================================================
+// CONFIGURACIÓN UI - CANALES DE COMUNICACIÓN
+// ============================================================================
+
+export const CANALES_COMUNICACION: Array<{ value: CanalComunicacion; label: string }> = [
+  { value: 'email', label: 'Correo Electrónico' },
+  { value: 'telefono', label: 'Teléfono' },
+  { value: 'reunion', label: 'Reunión Presencial' },
+  { value: 'videoconferencia', label: 'Videoconferencia' },
+  { value: 'whatsapp', label: 'WhatsApp' },
+  { value: 'portal_web', label: 'Portal Web' },
+  { value: 'redes_sociales', label: 'Redes Sociales' },
+  { value: 'correspondencia', label: 'Correspondencia Física' },
+  { value: 'otro', label: 'Otro' },
+];
+
+// ============================================================================
+// CONFIGURACIÓN UI - CUADRANTES MATRIZ PODER-INTERÉS
+// ============================================================================
+
+export const CUADRANTE_MATRIZ_CONFIG = {
+  gestionar_cerca: {
+    label: 'Gestionar de Cerca',
+    shortLabel: 'Gestionar',
+    description: 'Alta influencia y alto interés. Requieren máxima atención.',
+    color: 'danger' as const,
+    bgClass: 'bg-red-100 dark:bg-red-900/30',
+    textClass: 'text-red-700 dark:text-red-400',
+    borderClass: 'border-red-500',
+  },
+  mantener_satisfecho: {
+    label: 'Mantener Satisfecho',
+    shortLabel: 'Satisfecho',
+    description: 'Alta influencia pero bajo interés. Mantener informados.',
+    color: 'warning' as const,
+    bgClass: 'bg-amber-100 dark:bg-amber-900/30',
+    textClass: 'text-amber-700 dark:text-amber-400',
+    borderClass: 'border-amber-500',
+  },
+  mantener_informado: {
+    label: 'Mantener Informado',
+    shortLabel: 'Informado',
+    description: 'Baja influencia pero alto interés. Comunicación regular.',
+    color: 'info' as const,
+    bgClass: 'bg-blue-100 dark:bg-blue-900/30',
+    textClass: 'text-blue-700 dark:text-blue-400',
+    borderClass: 'border-blue-500',
+  },
+  monitorear: {
+    label: 'Monitorear',
+    shortLabel: 'Monitorear',
+    description: 'Baja influencia y bajo interés. Monitoreo básico.',
+    color: 'gray' as const,
+    bgClass: 'bg-gray-100 dark:bg-gray-800/30',
+    textClass: 'text-gray-700 dark:text-gray-400',
+    borderClass: 'border-gray-400',
+  },
+} as const;

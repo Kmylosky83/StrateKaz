@@ -15,12 +15,13 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.filters import OrderingFilter
 from django.utils import timezone
 import logging
 
 from apps.core.permissions import GranularActionPermission
 from .models_unidades import UnidadMedida, CATEGORIA_UNIDAD_CHOICES
+from .filters_unidades import UnidadMedidaFilter
 from .serializers_unidades import (
     UnidadMedidaSerializer,
     UnidadMedidaListSerializer,
@@ -56,10 +57,14 @@ class UnidadMedidaViewSet(viewsets.ModelViewSet):
 
     permission_classes = [IsAuthenticated, GranularActionPermission]
     section_code = 'unidades_medida'
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['categoria', 'es_sistema', 'is_active']
-    search_fields = ['codigo', 'nombre', 'simbolo', 'descripcion']
-    ordering_fields = ['categoria', 'orden_display', 'nombre', 'codigo']
+
+    # Filtros: FilterSet explícito para manejo robusto de booleanos
+    # y escalabilidad para consumo por otras áreas del sistema
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_class = UnidadMedidaFilter  # Reemplaza filterset_fields
+
+    # Ordenamiento
+    ordering_fields = ['categoria', 'orden_display', 'nombre', 'codigo', 'es_sistema']
     ordering = ['categoria', 'orden_display', 'nombre']
 
     def get_queryset(self):

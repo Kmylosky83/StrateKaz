@@ -157,7 +157,7 @@ describe('AreasTab', () => {
       render(<AreasTab />);
 
       // Verificar skeleton
-      const skeletons = document.querySelectorAll('.animate-pulse');
+      const skeletons = document.querySelectorAll('.animate-pulse-subtle');
       expect(skeletons.length).toBeGreaterThan(0);
     });
   });

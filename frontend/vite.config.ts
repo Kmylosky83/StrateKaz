@@ -26,8 +26,8 @@ export default defineConfig({
       workbox: {
         // Cache de archivos estáticos
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
-        // Aumentar límite para vendor chunk grande (3MB)
-        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+        // Aumentar límite para vendor chunk grande (15MB)
+        maximumFileSizeToCacheInBytes: 15 * 1024 * 1024,
 
         // Estrategias de cache para API
         runtimeCaching: [

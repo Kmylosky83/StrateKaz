@@ -17,7 +17,7 @@
  * - Button para acciones
  */
 import { useState, useEffect } from 'react';
-import { Compass, Eye, Target, MapPin, Workflow, AlertTriangle } from 'lucide-react';
+import { Compass, Eye, Target, MapPin, Workflow, AlertTriangle, Check } from 'lucide-react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
@@ -25,6 +25,7 @@ import { Textarea } from '@/components/forms/Textarea';
 import { RichTextEditor } from '@/components/forms/RichTextEditor';
 import { Switch } from '@/components/forms/Switch';
 import { useCreateIdentity, useUpdateIdentity } from '../../hooks/useStrategic';
+import { useAreas } from '../../hooks/useAreas';
 import type { CorporateIdentity, CreateCorporateIdentityDTO, UpdateCorporateIdentityDTO } from '../../types/strategic.types';
 import { cn } from '@/lib/utils';
 
@@ -48,7 +49,13 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
     alcance_geografico: '',
     alcance_procesos: '',
     alcance_exclusiones: '',
+    // Procesos cubiertos - IDs de áreas (v4.2)
+    procesos_cubiertos_ids: [] as number[],
   });
+
+  // Query para obtener áreas disponibles
+  const { data: areasData } = useAreas({ is_active: true });
+  const areas = areasData?.results || [];
 
   const createMutation = useCreateIdentity();
   const updateMutation = useUpdateIdentity();
@@ -66,6 +73,8 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
         alcance_geografico: identity.alcance_geografico ?? '',
         alcance_procesos: identity.alcance_procesos ?? '',
         alcance_exclusiones: identity.alcance_exclusiones ?? '',
+        // Procesos cubiertos - extraer IDs de las áreas (v4.2)
+        procesos_cubiertos_ids: identity.procesos_cubiertos?.map(p => p.id) || [],
       });
     } else {
       setFormData({
@@ -79,6 +88,8 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
         alcance_geografico: '',
         alcance_procesos: '',
         alcance_exclusiones: '',
+        // Procesos cubiertos (v4.2)
+        procesos_cubiertos_ids: [],
       });
     }
   }, [identity, isOpen]);
@@ -97,6 +108,8 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
       alcance_geografico: formData.declara_alcance ? formData.alcance_geografico : undefined,
       alcance_procesos: formData.declara_alcance ? formData.alcance_procesos : undefined,
       alcance_exclusiones: formData.declara_alcance ? formData.alcance_exclusiones : undefined,
+      // Procesos cubiertos - IDs de áreas (v4.2)
+      procesos_cubiertos_ids: formData.declara_alcance ? formData.procesos_cubiertos_ids : [],
     };
 
     if (isEditing && identity) {
@@ -108,6 +121,15 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
     }
 
     onClose();
+  };
+
+  // Handler para toggle de área en el selector
+  const handleAreaToggle = (areaId: number) => {
+    const current = formData.procesos_cubiertos_ids;
+    const updated = current.includes(areaId)
+      ? current.filter(id => id !== areaId)
+      : [...current, areaId];
+    setFormData({ ...formData, procesos_cubiertos_ids: updated });
   };
 
   // Validar contenido de editores (quitar tags HTML vacíos)
@@ -240,35 +262,81 @@ export const IdentityFormModal = ({ identity, isOpen, onClose }: IdentityFormMod
               />
             </div>
 
-            {/* Grid de campos opcionales */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Cobertura Geográfica */}
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                  <MapPin className="w-4 h-4 text-blue-600" />
-                  <span className="font-medium">Cobertura Geográfica</span>
-                </div>
-                <Textarea
-                  value={formData.alcance_geografico}
-                  onChange={(e) => setFormData({ ...formData, alcance_geografico: e.target.value })}
-                  placeholder="Ej: Colombia - Oficinas en Bogotá, Medellín y Cali"
-                  rows={2}
-                />
+            {/* Cobertura Geográfica */}
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                <MapPin className="w-4 h-4 text-blue-600" />
+                <span className="font-medium">Cobertura Geográfica</span>
               </div>
+              <Textarea
+                value={formData.alcance_geografico}
+                onChange={(e) => setFormData({ ...formData, alcance_geografico: e.target.value })}
+                placeholder="Ej: Colombia - Oficinas en Bogotá, Medellín y Cali"
+                rows={2}
+              />
+            </div>
 
-              {/* Procesos Cubiertos */}
-              <div className="space-y-1">
+            {/* Procesos Cubiertos - Selector Dinámico de Áreas (v4.2) */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                   <Workflow className="w-4 h-4 text-purple-600" />
                   <span className="font-medium">Procesos Cubiertos</span>
                 </div>
-                <Textarea
-                  value={formData.alcance_procesos}
-                  onChange={(e) => setFormData({ ...formData, alcance_procesos: e.target.value })}
-                  placeholder="Ej: Gestión Estratégica, Gestión Comercial, Gestión de Operaciones, Gestión del Talento Humano"
-                  rows={2}
-                />
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {formData.procesos_cubiertos_ids.length} seleccionado{formData.procesos_cubiertos_ids.length !== 1 ? 's' : ''}
+                </span>
               </div>
+
+              {areas.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                  {areas.map((area) => (
+                    <label
+                      key={area.id}
+                      className={cn(
+                        'flex items-center gap-2 cursor-pointer p-2 rounded-lg transition-colors',
+                        formData.procesos_cubiertos_ids.includes(area.id)
+                          ? 'bg-purple-100 dark:bg-purple-900/30 border border-purple-300 dark:border-purple-700'
+                          : 'hover:bg-gray-100 dark:hover:bg-gray-700/50 border border-transparent'
+                      )}
+                    >
+                      <div className={cn(
+                        'w-5 h-5 rounded border-2 flex items-center justify-center transition-colors',
+                        formData.procesos_cubiertos_ids.includes(area.id)
+                          ? 'bg-purple-600 border-purple-600'
+                          : 'border-gray-300 dark:border-gray-600'
+                      )}>
+                        {formData.procesos_cubiertos_ids.includes(area.id) && (
+                          <Check className="w-3 h-3 text-white" />
+                        )}
+                      </div>
+                      <input
+                        type="checkbox"
+                        className="sr-only"
+                        checked={formData.procesos_cubiertos_ids.includes(area.id)}
+                        onChange={() => handleAreaToggle(area.id)}
+                      />
+                      <span className="text-sm text-gray-900 dark:text-white truncate" title={area.name}>
+                        {area.name}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-center">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    No hay áreas configuradas.
+                  </p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                    Configure las áreas en Organización → Áreas
+                  </p>
+                </div>
+              )}
+
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Seleccione las áreas/procesos cubiertos por el Sistema Integrado de Gestión.
+                Las áreas se administran en Dirección Estratégica → Organización → Áreas.
+              </p>
             </div>
 
             {/* Exclusiones Generales */}

@@ -291,12 +291,29 @@ class Command(BaseCommand):
             self.stdout.write(f'  [OK] TipoPolitica {code} {action}')
 
     def _seed_roles_firmante(self, force: bool):
-        """Pobla roles de firmante."""
+        """
+        Pobla roles de firmante genéricos.
+
+        NOTA: Se usan 3 roles genéricos porque el CARGO específico
+        (Director, Gerente, Coordinador SST, etc.) se selecciona
+        dinámicamente desde el modal consumiendo los Cargos de Organización.
+
+        El rol indica la FUNCIÓN en el flujo, no el cargo específico.
+        """
+        # Eliminar roles legacy específicos primero
+        roles_legacy = [
+            'REVISO_TECNICO', 'REVISO_JURIDICO',
+            'APROBO_DIRECTOR', 'APROBO_GERENTE', 'APROBO_REPRESENTANTE_LEGAL'
+        ]
+        deleted = RolFirmante.objects.filter(code__in=roles_legacy).delete()
+        if deleted[0] > 0:
+            self.stdout.write(f'  [CLEANUP] {deleted[0]} roles legacy eliminados')
+
         roles = [
             {
                 'code': 'ELABORO',
                 'label': 'Elaboró',
-                'description': 'Persona que elabora el documento',
+                'description': 'Usuario que elabora/crea el documento (automático)',
                 'tipo_firma_documental': 'ELABORACION',
                 'es_obligatorio': True,
                 'puede_delegar': False,
@@ -305,59 +322,26 @@ class Command(BaseCommand):
                 'orden': 1,
             },
             {
-                'code': 'REVISO_TECNICO',
-                'label': 'Revisó (Técnico)',
-                'description': 'Revisión técnica del contenido',
+                'code': 'REVISO',
+                'label': 'Revisó',
+                'description': 'Cargo seleccionado para revisión (técnica o jurídica)',
                 'tipo_firma_documental': 'REVISION',
-                'es_obligatorio': False,
+                'es_obligatorio': True,
                 'puede_delegar': True,
                 'icon': 'Search',
                 'color': 'blue',
                 'orden': 2,
             },
             {
-                'code': 'REVISO_JURIDICO',
-                'label': 'Revisó (Jurídico)',
-                'description': 'Revisión jurídica del contenido',
-                'tipo_firma_documental': 'REVISION',
-                'es_obligatorio': False,
-                'puede_delegar': True,
-                'icon': 'Scale',
-                'color': 'purple',
-                'orden': 3,
-            },
-            {
-                'code': 'APROBO_DIRECTOR',
-                'label': 'Aprobó (Director)',
-                'description': 'Aprobación del director del área',
-                'tipo_firma_documental': 'APROBACION',
-                'es_obligatorio': False,
-                'puede_delegar': True,
-                'icon': 'UserCheck',
-                'color': 'green',
-                'orden': 4,
-            },
-            {
-                'code': 'APROBO_GERENTE',
-                'label': 'Aprobó (Gerente)',
-                'description': 'Aprobación del gerente',
-                'tipo_firma_documental': 'APROBACION',
-                'es_obligatorio': False,
-                'puede_delegar': True,
-                'icon': 'UserCheck',
-                'color': 'green',
-                'orden': 5,
-            },
-            {
-                'code': 'APROBO_REPRESENTANTE_LEGAL',
-                'label': 'Aprobó (Rep. Legal)',
-                'description': 'Aprobación del representante legal',
+                'code': 'APROBO',
+                'label': 'Aprobó',
+                'description': 'Cargo seleccionado para aprobación final',
                 'tipo_firma_documental': 'APROBACION',
                 'es_obligatorio': True,
                 'puede_delegar': False,
-                'icon': 'Shield',
-                'color': 'red',
-                'orden': 6,
+                'icon': 'CheckCircle',
+                'color': 'green',
+                'orden': 3,
             },
         ]
 
@@ -469,100 +453,78 @@ class Command(BaseCommand):
             self.stdout.write(f'  [OK] EstadoFirma {code} {action}')
 
     def _seed_flujos_firma(self, force: bool):
-        """Pobla flujos de firma por defecto."""
-        self.stdout.write('Creando flujos de firma...')
+        """
+        Pobla flujo de firma genérico para políticas.
 
-        flujos = [
+        NOTA: Solo se crea 1 flujo genérico porque los firmantes específicos
+        (revisor, aprobador) se seleccionan dinámicamente desde el modal de UI
+        consumiendo los Cargos creados en Organización.
+
+        El flujo genérico define la estructura base:
+        - Elaboró (automático: usuario actual)
+        - Revisó (seleccionable desde modal)
+        - Aprobó (seleccionable desde modal)
+        """
+        self.stdout.write('Creando flujo de firma genérico para políticas...')
+
+        codigo = 'FLUJO-POL-GEN'
+        nombre = 'Flujo Genérico - Políticas'
+
+        # Configuración de nodos según el modelo ConfiguracionFlujoFirma
+        configuracion_nodos = [
             {
-                'nombre': 'Flujo Estandar - Politicas Especificas',
-                'descripcion': 'Flujo de firma para politicas especificas: Elaboro -> Reviso -> Aprobo',
-                'tipo_politica': 'ESPECIFICA',
-                'pasos_firma': [
-                    {
-                        'orden': 1,
-                        'rol_firmante': 'ELABORO',
-                        'es_obligatorio': True,
-                        'puede_delegar': False,
-                        'dias_limite': 5,
-                    },
-                    {
-                        'orden': 2,
-                        'rol_firmante': 'REVISO_TECNICO',
-                        'es_obligatorio': True,
-                        'puede_delegar': True,
-                        'dias_limite': 3,
-                    },
-                    {
-                        'orden': 3,
-                        'rol_firmante': 'APROBO_GERENTE',
-                        'es_obligatorio': True,
-                        'puede_delegar': False,
-                        'dias_limite': 3,
-                    },
-                ],
-                'es_activo': True,
-                'requiere_firma_secuencial': True,
+                'orden': 1,
+                'rol': 'ELABORO',
+                'cargo_id': None,  # Se asigna dinámicamente (usuario actual)
+                'requerido': True,
+                'descripcion': 'Usuario que crea/edita la política (automático)',
             },
             {
-                'nombre': 'Flujo Estandar - Politica Integral',
-                'descripcion': 'Flujo de firma para politica integral: Elaboro -> Reviso Juridico -> Gerente -> Rep Legal',
-                'tipo_politica': 'INTEGRAL',
-                'pasos_firma': [
-                    {
-                        'orden': 1,
-                        'rol_firmante': 'ELABORO',
-                        'es_obligatorio': True,
-                        'puede_delegar': False,
-                        'dias_limite': 5,
-                    },
-                    {
-                        'orden': 2,
-                        'rol_firmante': 'REVISO_JURIDICO',
-                        'es_obligatorio': True,
-                        'puede_delegar': True,
-                        'dias_limite': 5,
-                    },
-                    {
-                        'orden': 3,
-                        'rol_firmante': 'APROBO_GERENTE',
-                        'es_obligatorio': True,
-                        'puede_delegar': False,
-                        'dias_limite': 3,
-                    },
-                    {
-                        'orden': 4,
-                        'rol_firmante': 'APROBO_REPRESENTANTE_LEGAL',
-                        'es_obligatorio': True,
-                        'puede_delegar': False,
-                        'dias_limite': 3,
-                    },
-                ],
-                'es_activo': True,
-                'requiere_firma_secuencial': True,
+                'orden': 2,
+                'rol': 'REVISO',
+                'cargo_id': None,  # Se selecciona desde modal
+                'requerido': True,
+                'descripcion': 'Cargo seleccionado para revisión técnica/jurídica',
+            },
+            {
+                'orden': 3,
+                'rol': 'APROBO',
+                'cargo_id': None,  # Se selecciona desde modal
+                'requerido': True,
+                'descripcion': 'Cargo seleccionado para aprobación final',
             },
         ]
 
-        for flujo_data in flujos:
-            nombre = flujo_data['nombre']
-            tipo = flujo_data['tipo_politica']
-            exists = ConfiguracionFlujoFirma.objects.filter(
-                nombre=nombre,
-                tipo_politica=tipo
-            ).exists()
+        exists = ConfiguracionFlujoFirma.objects.filter(codigo=codigo).exists()
 
-            if exists and not force:
-                self.stdout.write(f'  - Flujo "{nombre}" ya existe, omitiendo')
-                continue
+        if exists and not force:
+            self.stdout.write(f'  - Flujo "{nombre}" ya existe, omitiendo')
+            return
 
-            ConfiguracionFlujoFirma.objects.update_or_create(
-                nombre=nombre,
-                tipo_politica=tipo,
-                defaults={
-                    'descripcion': flujo_data['descripcion'],
-                    'pasos_firma': flujo_data['pasos_firma'],
-                    'es_activo': flujo_data['es_activo'],
-                    'requiere_firma_secuencial': flujo_data['requiere_firma_secuencial'],
-                }
-            )
-            action = 'actualizado' if exists else 'creado'
-            self.stdout.write(f'  [OK] Flujo "{nombre}" {action}')
+        ConfiguracionFlujoFirma.objects.update_or_create(
+            codigo=codigo,
+            defaults={
+                'nombre': nombre,
+                'descripcion': (
+                    'Flujo genérico para todas las políticas. '
+                    'Los cargos de Revisión y Aprobación se seleccionan '
+                    'dinámicamente desde el modal al iniciar el proceso de firma.'
+                ),
+                'tipo_flujo': 'SECUENCIAL',
+                'configuracion_nodos': configuracion_nodos,
+                'permite_delegacion': True,
+                'dias_max_firma': 5,
+                'requiere_comentario_rechazo': True,
+            }
+        )
+        action = 'actualizado' if exists else 'creado'
+        self.stdout.write(f'  [OK] Flujo "{nombre}" ({codigo}) {action}')
+
+        # Eliminar flujos legacy si existen
+        flujos_legacy = ConfiguracionFlujoFirma.objects.filter(
+            codigo__in=['FLUJO-POL-ESP', 'FLUJO-POL-INT']
+        )
+        if flujos_legacy.exists():
+            count = flujos_legacy.count()
+            flujos_legacy.delete()
+            self.stdout.write(f'  [CLEANUP] {count} flujos legacy eliminados')

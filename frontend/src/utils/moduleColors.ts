@@ -77,6 +77,7 @@ const moduleColorClasses: Record<ModuleColor, ModuleColorClasses> = {
     badge: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
     text: 'text-orange-600 dark:text-orange-400',
     icon: 'text-orange-500 dark:text-orange-400',
+    progress: 'bg-orange-600 dark:bg-orange-500',
   },
   gray: {
     container: 'bg-gray-100/50 dark:bg-gray-800/50 border-gray-200/50 dark:border-gray-700/50',
@@ -86,6 +87,7 @@ const moduleColorClasses: Record<ModuleColor, ModuleColorClasses> = {
     badge: 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
     text: 'text-gray-600 dark:text-gray-400',
     icon: 'text-gray-500 dark:text-gray-400',
+    progress: 'bg-gray-600 dark:bg-gray-500',
   },
   teal: {
     container: 'bg-teal-50/50 dark:bg-teal-900/20 border-teal-200/50 dark:border-teal-800/50',
@@ -95,6 +97,7 @@ const moduleColorClasses: Record<ModuleColor, ModuleColorClasses> = {
     badge: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300',
     text: 'text-teal-600 dark:text-teal-400',
     icon: 'text-teal-500 dark:text-teal-400',
+    progress: 'bg-teal-600 dark:bg-teal-500',
   },
   red: {
     container: 'bg-red-50/50 dark:bg-red-900/20 border-red-200/50 dark:border-red-800/50',
@@ -104,6 +107,7 @@ const moduleColorClasses: Record<ModuleColor, ModuleColorClasses> = {
     badge: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
     text: 'text-red-600 dark:text-red-400',
     icon: 'text-red-500 dark:text-red-400',
+    progress: 'bg-red-600 dark:bg-red-500',
   },
   yellow: {
     container: 'bg-amber-50/50 dark:bg-amber-900/20 border-amber-200/50 dark:border-amber-800/50',
@@ -113,6 +117,7 @@ const moduleColorClasses: Record<ModuleColor, ModuleColorClasses> = {
     badge: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
     text: 'text-amber-600 dark:text-amber-400',
     icon: 'text-amber-500 dark:text-amber-400',
+    progress: 'bg-amber-600 dark:bg-amber-500',
   },
   pink: {
     container: 'bg-pink-50/50 dark:bg-pink-900/20 border-pink-200/50 dark:border-pink-800/50',
@@ -122,6 +127,7 @@ const moduleColorClasses: Record<ModuleColor, ModuleColorClasses> = {
     badge: 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300',
     text: 'text-pink-600 dark:text-pink-400',
     icon: 'text-pink-500 dark:text-pink-400',
+    progress: 'bg-pink-600 dark:bg-pink-500',
   },
   indigo: {
     container:

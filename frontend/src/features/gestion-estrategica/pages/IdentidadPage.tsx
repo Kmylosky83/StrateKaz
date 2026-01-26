@@ -1,59 +1,67 @@
 /**
  * Página de Identidad - Tab 3 de Dirección Estratégica
  *
- * Layout:
- * 1. PageHeader
- * 2. DynamicSections (sub-navigation desde API, si existen)
- * 3. Contenido de la sección activa
+ * Vista 1B: Cards de Información con secciones en PageHeader
+ * - PageHeader con título y secciones inline (alineadas a la derecha)
+ * - Contenido de la sección activa
  *
  * Sin hardcoding - secciones cargadas desde API
  *
- * v3.0: Showcase eliminado (se moverá a módulo de Reportes en el futuro)
+ * Secciones:
+ * - mision_vision: Vista 1B Glassmorphism + DataSection
+ * - valores: Vista 2B Especial - DataSection + Card con Drag & Drop
+ * - politicas: Vista 2B - DataSection + Lista
+ *
+ * v3.1: Migrado a Vista 1B con secciones en PageHeader
+ * v3.2: Valores refactorizado a Vista 2B Especial con DataSection externo
  */
-import { useState, useEffect } from 'react';
 import { PageHeader } from '@/components/layout';
-import { DynamicSections } from '@/components/common';
-import { useTabSections } from '../hooks/useModules';
 import { IdentidadTab } from '../components/IdentidadTab';
-import { useModuleColor } from '@/hooks/useModuleColor';
+import { usePageSections } from '@/hooks/usePageSections';
 
 // Códigos del módulo y tab en la BD (lowercase para coincidir con BD)
 const MODULE_CODE = 'gestion_estrategica';
 const TAB_CODE = 'identidad';
 
 export const IdentidadPage = () => {
-  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
-  const { sections, isLoading: sectionsLoading } = useTabSections(MODULE_CODE, TAB_CODE);
+  // Hook que maneja secciones localmente (igual que OrganizacionPage y ConfiguracionPage)
+  const {
+    sections,
+    activeSection,
+    setActiveSection,
+    activeSectionData,
+    isLoading: sectionsLoading,
+  } = usePageSections({
+    moduleCode: MODULE_CODE,
+    tabCode: TAB_CODE,
+  });
 
-  // Sección activa - inicializar con la primera sección habilitada
-  const [activeSection, setActiveSection] = useState<string>('');
-
-  // Establecer sección inicial cuando se cargan
-  useEffect(() => {
-    if (sections.length > 0 && !activeSection) {
-      setActiveSection(sections[0].code);
-    }
-  }, [sections, activeSection]);
+  // Si no hay sección activa aún (cargando), mostrar skeleton básico
+  if (!activeSection && sectionsLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-20 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse-subtle" />
+        <div className="h-96 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse-subtle" />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* PageHeader con título y secciones inline (alineadas a la derecha) */}
       <PageHeader
         title="Identidad Corporativa"
-        description="Gestiona la misión, visión, valores y políticas de la organización"
-      />
-
-      {/* Sub-navigation dinámica desde API (si existen secciones) */}
-      <DynamicSections
+        description={activeSectionData.description}
         sections={sections}
         activeSection={activeSection}
-        onChange={setActiveSection}
-        isLoading={sectionsLoading}
-        moduleColor={moduleColor}
-        variant="pills"
+        onSectionChange={setActiveSection}
+        moduleColor="purple"
       />
 
-      {/* Contenido - IdentidadTab maneja sus propios tabs internos */}
-      <IdentidadTab activeSection={activeSection} />
+      {/* Contenido de la sección activa */}
+      {activeSection && (
+        <IdentidadTab activeSection={activeSection} />
+      )}
     </div>
   );
 };

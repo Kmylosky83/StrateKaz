@@ -95,7 +95,7 @@ function ResumenSection({ className }: ResumenSectionProps) {
           {isLoadingCriticos ? (
             <div className="space-y-3">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-16 bg-muted/30 rounded animate-pulse" />
+                <div key={i} className="h-16 bg-muted/30 rounded animate-pulse-subtle" />
               ))}
             </div>
           ) : criticos && criticos.length > 0 ? (
@@ -136,7 +136,7 @@ function ResumenSection({ className }: ResumenSectionProps) {
           {isLoadingPeligro ? (
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-12 bg-muted/30 rounded animate-pulse" />
+                <div key={i} className="h-12 bg-muted/30 rounded animate-pulse-subtle" />
               ))}
             </div>
           ) : porPeligro && porPeligro.length > 0 ? (
@@ -184,7 +184,7 @@ function ResumenSection({ className }: ResumenSectionProps) {
           {isLoadingArea ? (
             <div className="space-y-2">
               {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-10 bg-muted/30 rounded animate-pulse" />
+                <div key={i} className="h-10 bg-muted/30 rounded animate-pulse-subtle" />
               ))}
             </div>
           ) : porArea && porArea.length > 0 ? (
@@ -212,7 +212,7 @@ function ResumenSection({ className }: ResumenSectionProps) {
           {isLoadingCargo ? (
             <div className="space-y-2">
               {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-10 bg-muted/30 rounded animate-pulse" />
+                <div key={i} className="h-10 bg-muted/30 rounded animate-pulse-subtle" />
               ))}
             </div>
           ) : porCargo && porCargo.length > 0 ? (
@@ -345,7 +345,7 @@ function PeligrosSection({ className }: PeligrosSectionProps) {
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-32 bg-muted/30 rounded-lg animate-pulse" />
+            <div key={i} className="h-32 bg-muted/30 rounded-lg animate-pulse-subtle" />
           ))}
         </div>
       ) : (
@@ -544,7 +544,7 @@ function ControlesSection({ className }: ControlesSectionProps) {
         {isLoadingControles ? (
           <div className="space-y-3">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-32 bg-muted/30 rounded-lg animate-pulse" />
+              <div key={i} className="h-32 bg-muted/30 rounded-lg animate-pulse-subtle" />
             ))}
           </div>
         ) : (

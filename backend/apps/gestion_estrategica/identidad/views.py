@@ -5,10 +5,10 @@ ViewSets para:
 - CorporateIdentity: Identidad corporativa (misión, visión)
 - CorporateValue: Valores corporativos
 - AlcanceSistema: Alcance del sistema de gestión
-- PoliticaEspecifica: Políticas (integrales y específicas) - v3.1 unificado
+- PoliticaEspecifica: Políticas (integrales y específicas)
 
-NOTA v3.1: PoliticaIntegral ha sido consolidado en PoliticaEspecifica.
-Las políticas integrales se identifican con is_integral_policy=True.
+NOTA v4.0: El flujo de firmas se maneja en Gestor Documental.
+Identidad solo crea políticas en BORRADOR y las envía a gestión.
 """
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -39,18 +39,6 @@ from .serializers import (
     ApprovePoliticaEspecificaSerializer,
     SignPoliticaSerializer,
     PublishPoliticaSerializer,
-    IniciarFirmaSerializer,
-    FirmarDocumentoSerializer,
-    RechazarFirmaSerializer,
-    EnviarADocumentalSerializer,
-)
-# Fase 0.3.4: Serializers de FirmaDigital desde workflow_engine
-from apps.workflow_engine.firma_digital.serializers import FirmaDigitalSerializer
-# Fase 0.3.4: Sistema de firmas consolidado - usar solo FirmaDigital
-from django.contrib.contenttypes.models import ContentType
-from apps.workflow_engine.firma_digital.models import (
-    FirmaDigital,
-    ConfiguracionFlujoFirma as ConfigFlujoUniversal,
 )
 
 
@@ -431,11 +419,9 @@ class PoliticaEspecificaViewSet(
         'approve': 'approve',
         'sign': 'sign',
         'publish': 'publish',
-        'iniciar_firma': 'iniciar_firma',
-        'firmar': 'firmar',
-        'rechazar_firma': 'rechazar_firma',
-        'crear_nueva_version': 'can_create',  # Crear nueva versión sigue requiriendo permiso de CREAR
-        'enviar_a_documental': 'enviar_a_documental',
+        'crear_nueva_version': 'can_create',
+        'enviar_a_gestion': 'can_update',  # Enviar a Gestor Documental
+        'actualizar_estado': 'can_update',  # Callback desde Gestor Documental
         'integral_vigente': 'can_view',
         'by_standard': 'can_view',
         'pending_review': 'can_view',
@@ -467,34 +453,23 @@ class PoliticaEspecificaViewSet(
 
     def update(self, request, *args, **kwargs):
         """
-        Bloquea la edición de políticas VIGENTES.
+        Bloquea la edición de políticas que no están en BORRADOR.
 
-        Las políticas VIGENTES ya fueron firmadas y publicadas en el Gestor Documental.
-        Para modificar una política vigente, se debe crear una nueva versión usando
-        el endpoint crear-nueva-version/.
+        Solo las políticas en BORRADOR son editables desde Identidad.
+        Una vez enviadas a Gestor Documental (EN_GESTION), ya no se pueden editar.
 
         Estados editables: BORRADOR
-        Estados NO editables: EN_REVISION, FIRMADO, VIGENTE, OBSOLETO
+        Estados NO editables: EN_GESTION, VIGENTE, OBSOLETO
         """
         instance = self.get_object()
 
-        if instance.status in ['VIGENTE', 'FIRMADO', 'OBSOLETO']:
+        if instance.status != 'BORRADOR':
             return Response(
                 {
                     'detail': f'No se puede editar una política en estado {instance.get_status_display()}',
                     'status': instance.status,
-                    'mensaje': 'Para modificar esta política, debe crear una nueva versión usando el endpoint crear-nueva-version/',
+                    'mensaje': 'Solo las políticas en Borrador son editables. Para modificar una política vigente, cree una nueva versión.',
                     'endpoint_sugerido': f'/api/v1/identidad/politicas-especificas/{instance.id}/crear-nueva-version/'
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        if instance.status == 'EN_REVISION':
-            return Response(
-                {
-                    'detail': 'No se puede editar una política mientras está en proceso de firma',
-                    'status': instance.status,
-                    'mensaje': 'Espere a que el proceso de firma se complete o sea rechazado'
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
@@ -771,754 +746,40 @@ class PoliticaEspecificaViewSet(
         })
 
     # =========================================================================
-    # WORKFLOW DE FIRMAS
-    # =========================================================================
-
-    @action(detail=True, methods=['post'], url_path='iniciar-firma')
-    def iniciar_firma(self, request, pk=None):
-        """
-        Inicia el proceso de firma para una política específica.
-
-        Fase 0.3.4: Usa FirmaDigital (workflow_engine) directamente.
-
-        El proceso de firma:
-        1. Obtiene o crea ConfiguracionFlujoFirma universal
-        2. Crea FirmaDigital para cada firmante requerido
-        3. Cambia el estado de la política a EN_REVISION
-        4. Notifica a los firmantes
-
-        Body:
-        - firmantes: Lista de {rol_firmante, cargo_id} o {rol_firmante, usuario_id}
-        """
-        politica = self.get_object()
-
-        # Validar estado actual
-        if politica.status not in ['BORRADOR', 'EN_REVISION']:
-            return Response(
-                {'detail': 'Solo se pueden enviar a firma políticas en borrador o en revisión'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Verificar que no tenga firmas pendientes activas
-        content_type = ContentType.objects.get_for_model(politica)
-        firmas_pendientes = FirmaDigital.objects.filter(
-            content_type=content_type,
-            object_id=politica.id,
-            estado='PENDIENTE'
-        ).count()
-
-        if firmas_pendientes > 0:
-            return Response(
-                {
-                    'detail': 'La política ya tiene firmas pendientes',
-                    'firmas_pendientes': firmas_pendientes
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        serializer = IniciarFirmaSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        firmantes_manuales = serializer.validated_data.get('firmantes', [])
-
-        from apps.core.models import Cargo
-        from django.contrib.auth import get_user_model
-        User = get_user_model()
-
-        # Obtener empresa_id de la política
-        empresa_id = politica.identity.empresa_id if hasattr(politica, 'identity') else None
-
-        # Obtener o crear configuración de flujo universal
-        config_flujo, _ = ConfigFlujoUniversal.objects.get_or_create(
-            codigo='FLUJO-POL-STD',
-            defaults={
-                'nombre': 'Flujo Estándar Políticas',
-                'descripcion': 'Flujo de firma para políticas corporativas',
-                'tipo_flujo': 'SECUENCIAL',
-                'configuracion_nodos': [],
-                'permite_delegacion': True,
-                'dias_max_firma': 7,
-                'requiere_comentario_rechazo': True,
-                'empresa_id': empresa_id,
-            }
-        )
-
-        # Calcular hash del contenido de la política
-        import hashlib
-        contenido_hash = hashlib.sha256(
-            (politica.content or '').encode('utf-8')
-        ).hexdigest()
-
-        firmas_creadas = []
-        ip_address = self._get_client_ip(request)
-        user_agent = request.META.get('HTTP_USER_AGENT', '')
-
-        # Mapeo de roles legacy a roles universales
-        mapeo_rol = {
-            'ELABORO': 'ELABORO',
-            'REVISO_TECNICO': 'REVISO',
-            'REVISO_JURIDICO': 'REVISO',
-            'APROBO_DIRECTOR': 'APROBO',
-            'APROBO_GERENTE': 'APROBO',
-            'APROBO_REPRESENTANTE_LEGAL': 'AUTORIZO',
-        }
-
-        # Mapeo de orden por rol
-        orden_mapping = {
-            'ELABORO': 1,
-            'REVISO_TECNICO': 2,
-            'REVISO_JURIDICO': 2,
-            'APROBO_DIRECTOR': 3,
-            'APROBO_GERENTE': 3,
-            'APROBO_REPRESENTANTE_LEGAL': 4,
-        }
-
-        # PASO 1: ELABORO es el usuario actual
-        firma_elaboro = FirmaDigital.objects.create(
-            content_type=content_type,
-            object_id=politica.id,
-            configuracion_flujo=config_flujo,
-            usuario=None,  # Pendiente - el usuario actual firmará
-            cargo=request.user.cargo,
-            rol_firma='ELABORO',
-            orden=1,
-            estado='PENDIENTE',
-            documento_hash=contenido_hash,
-            ip_address=ip_address,
-            user_agent=user_agent,
-            comentarios=f'Elaboración de política {politica.title}',
-        )
-        firmas_creadas.append({
-            'firma': firma_elaboro,
-            'usuario_asignado': request.user,
-            'es_cargo': False,
-        })
-
-        # PASOS 2+: Firmantes seleccionados
-        for firmante_data in firmantes_manuales:
-            rol_legacy = firmante_data['rol_firmante']
-            rol_universal = mapeo_rol.get(rol_legacy, 'VALIDO')
-            orden = orden_mapping.get(rol_legacy, 2)
-
-            if firmante_data.get('cargo_id'):
-                # MODO POR CARGO
-                cargo = Cargo.objects.get(id=firmante_data['cargo_id'])
-                firma = FirmaDigital.objects.create(
-                    content_type=content_type,
-                    object_id=politica.id,
-                    configuracion_flujo=config_flujo,
-                    usuario=None,  # Cualquier usuario del cargo puede firmar
-                    cargo=cargo,
-                    rol_firma=rol_universal,
-                    orden=orden,
-                    estado='PENDIENTE',
-                    documento_hash=contenido_hash,
-                    ip_address=ip_address,
-                    user_agent=user_agent,
-                    comentarios=f'{rol_legacy} por cargo {cargo.name}',
-                )
-                firmas_creadas.append({
-                    'firma': firma,
-                    'cargo': cargo,
-                    'es_cargo': True,
-                })
-            elif firmante_data.get('usuario_id'):
-                # MODO POR USUARIO
-                usuario = User.objects.get(id=firmante_data['usuario_id'])
-                firma = FirmaDigital.objects.create(
-                    content_type=content_type,
-                    object_id=politica.id,
-                    configuracion_flujo=config_flujo,
-                    usuario=None,  # Pendiente - el usuario asignado firmará
-                    cargo=usuario.cargo,
-                    rol_firma=rol_universal,
-                    orden=orden,
-                    estado='PENDIENTE',
-                    documento_hash=contenido_hash,
-                    ip_address=ip_address,
-                    user_agent=user_agent,
-                    comentarios=f'{rol_legacy} asignado a {usuario.get_full_name()}',
-                )
-                firmas_creadas.append({
-                    'firma': firma,
-                    'usuario_asignado': usuario,
-                    'es_cargo': False,
-                })
-
-        # Actualizar estado de la política
-        politica.status = 'EN_REVISION'
-        politica.save(update_fields=['status', 'updated_at'])
-
-        # NOTIFICAR A LOS FIRMANTES
-        from apps.audit_system.centro_notificaciones.utils import (
-            enviar_notificacion,
-            notificar_cargo,
-            notificar_politica_revision_pendiente
-        )
-
-        import logging
-        logger = logging.getLogger(__name__)
-
-        # Fecha límite por defecto
-        fecha_limite = timezone.now() + timezone.timedelta(days=7)
-
-        for firma_info in firmas_creadas:
-            firma = firma_info['firma']
-
-            # Si es secuencial, solo notificar si es el primer paso (orden 1)
-            if config_flujo.tipo_flujo == 'SECUENCIAL' and firma.orden != 1:
-                continue
-
-            if firma_info['es_cargo']:
-                # Notificar a todo el cargo
-                cargo = firma_info['cargo']
-                try:
-                    if firma.rol_firma == 'REVISO':
-                        resultado = notificar_politica_revision_pendiente(
-                            politica=politica,
-                            cargo_revisor=cargo,
-                            usuario_solicitante=request.user
-                        )
-                    else:
-                        resultado = notificar_cargo(
-                            cargo=cargo,
-                            tipo='FIRMA_REQUERIDA',
-                            asunto=f'Firma Requerida: {politica.title}',
-                            mensaje=(
-                                f'Se requiere su firma para la política "{politica.title}" '
-                                f'como {firma.get_rol_firma_display()}. '
-                                f'Tiene hasta el {fecha_limite.strftime("%d/%m/%Y")} para firmar.'
-                            ),
-                            link=f'/gestion-estrategica/identidad?politica={politica.id}',
-                            prioridad='ALTA',
-                            empresa=politica.identity.empresa if hasattr(politica, 'identity') else None,
-                            datos_adicionales={
-                                'firma_id': str(firma.id),
-                                'politica_id': politica.id,
-                                'rol_firma': firma.rol_firma,
-                            }
-                        )
-                    logger.info(f"Notificación enviada a cargo '{cargo.name}'")
-                except Exception as e:
-                    logger.warning(f"Error notificando a cargo {cargo.name}: {str(e)}")
-            else:
-                # Notificar a usuario específico
-                usuario = firma_info.get('usuario_asignado')
-                if usuario:
-                    try:
-                        enviar_notificacion(
-                            destinatario=usuario,
-                            tipo='FIRMA_REQUERIDA',
-                            asunto=f'Firma Requerida: {politica.title}',
-                            mensaje=(
-                                f'Se requiere su firma para la política "{politica.title}" '
-                                f'como {firma.get_rol_firma_display()}. '
-                                f'Tiene hasta el {fecha_limite.strftime("%d/%m/%Y")} para firmar.'
-                            ),
-                            link=f'/gestion-estrategica/identidad?politica={politica.id}',
-                            prioridad='ALTA',
-                            datos_adicionales={
-                                'firma_id': str(firma.id),
-                                'politica_id': politica.id,
-                                'rol_firma': firma.rol_firma,
-                            }
-                        )
-                        logger.info(f"Notificación enviada a {usuario.username}")
-                    except Exception as e:
-                        logger.warning(f"Error notificando a {usuario.username}: {str(e)}")
-
-        # Preparar respuesta con información de firmas
-        firmas_response = []
-        for firma_info in firmas_creadas:
-            firma = firma_info['firma']
-            firmas_response.append({
-                'id': str(firma.id),
-                'rol': firma.rol_firma,
-                'orden': firma.orden,
-                'estado': firma.estado,
-                'cargo': firma.cargo.name if firma.cargo else None,
-            })
-
-        return Response({
-            'detail': 'Proceso de firma iniciado exitosamente',
-            'total_firmas': len(firmas_creadas),
-            'politica_status': politica.status,
-            'firmas': firmas_response,
-        }, status=status.HTTP_201_CREATED)
-
-    @action(detail=True, methods=['post'])
-    def firmar(self, request, pk=None):
-        """
-        Registra una firma en el proceso de firma de la política.
-
-        Fase 0.3.4: Usa FirmaDigital directamente.
-
-        Body:
-        - firma_id: ID de la FirmaDigital a completar
-        - firma_imagen: Imagen de la firma en Base64
-        - comentarios (opcional): Comentarios del firmante
-        """
-        politica = self.get_object()
-
-        serializer = FirmarDocumentoSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        firma_id = serializer.validated_data['firma_id']
-        firma_imagen = serializer.validated_data['firma_imagen']
-        comentarios = serializer.validated_data.get('comentarios', '')
-
-        # Obtener la firma digital
-        content_type = ContentType.objects.get_for_model(politica)
-        try:
-            firma = FirmaDigital.objects.select_related(
-                'configuracion_flujo', 'cargo'
-            ).get(
-                id=firma_id,
-                content_type=content_type,
-                object_id=politica.id
-            )
-        except FirmaDigital.DoesNotExist:
-            return Response(
-                {'detail': 'Firma no encontrada para esta política'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        # Validar que la firma esté pendiente
-        if firma.estado != 'PENDIENTE':
-            return Response(
-                {'detail': f'La firma ya está en estado {firma.estado}'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Validar que el usuario puede firmar
-        puede_firmar = (
-            request.user.cargo_id == firma.cargo_id or
-            request.user.is_superuser or
-            request.user.is_staff
-        )
-        if not puede_firmar:
-            return Response(
-                {'detail': f'No tiene permisos para firmar como {firma.cargo.name}'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
-        # Verificar firma secuencial si aplica
-        config_flujo = firma.configuracion_flujo
-        if config_flujo and config_flujo.tipo_flujo == 'SECUENCIAL':
-            # Verificar que todas las firmas anteriores estén completadas
-            firmas_anteriores_pendientes = FirmaDigital.objects.filter(
-                content_type=content_type,
-                object_id=politica.id,
-                orden__lt=firma.orden,
-                estado='PENDIENTE'
-            ).exists()
-
-            if firmas_anteriores_pendientes:
-                return Response(
-                    {
-                        'detail': 'Debe esperar a que se completen las firmas anteriores',
-                        'su_orden': firma.orden
-                    },
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-        # Registrar la firma
-        ip_address = self._get_client_ip(request)
-        user_agent = request.META.get('HTTP_USER_AGENT', '')
-
-        import hashlib
-        import json
-
-        # Calcular hash de la firma
-        firma_data = {
-            'firma_id': str(firma.id),
-            'usuario_id': request.user.id,
-            'fecha_firma': timezone.now().isoformat(),
-            'firma_imagen': firma_imagen[:100],  # Primeros 100 chars
-        }
-        firma_hash = hashlib.sha256(
-            json.dumps(firma_data, sort_keys=True).encode('utf-8')
-        ).hexdigest()
-
-        # Actualizar la firma
-        firma.usuario = request.user
-        firma.firma_imagen = firma_imagen
-        firma.firma_hash = firma_hash
-        firma.estado = 'FIRMADO'
-        firma.fecha_firma = timezone.now()
-        firma.ip_address = ip_address
-        firma.user_agent = user_agent
-        if comentarios:
-            firma.comentarios = comentarios
-        firma.save()
-
-        # GESTIÓN DE NOTIFICACIONES POST-FIRMA
-        from apps.audit_system.centro_notificaciones.models import Notificacion
-        from apps.audit_system.centro_notificaciones.utils import (
-            enviar_notificacion,
-            notificar_cargo,
-            notificar_politica_aprobacion_pendiente,
-            notificar_politica_aprobada
-        )
-
-        import logging
-        logger = logging.getLogger(__name__)
-
-        # 1. Archivar notificación de firma pendiente del usuario actual
-        try:
-            Notificacion.objects.filter(
-                usuario=request.user,
-                datos_extra__firma_id=str(firma.id),
-                esta_archivada=False
-            ).update(
-                esta_leida=True,
-                esta_archivada=True,
-                fecha_lectura=timezone.now()
-            )
-        except Exception:
-            pass
-
-        # Verificar estado general del proceso de firmas
-        firmas_pendientes = FirmaDigital.objects.filter(
-            content_type=content_type,
-            object_id=politica.id,
-            estado='PENDIENTE'
-        ).order_by('orden')
-
-        firmas_completadas = FirmaDigital.objects.filter(
-            content_type=content_type,
-            object_id=politica.id,
-            estado='FIRMADO'
-        ).count()
-
-        total_firmas = FirmaDigital.objects.filter(
-            content_type=content_type,
-            object_id=politica.id
-        ).count()
-
-        proceso_completado = not firmas_pendientes.exists()
-
-        # 2. Notificar al siguiente firmante si es secuencial y hay más pasos
-        if not proceso_completado and config_flujo.tipo_flujo == 'SECUENCIAL':
-            siguiente_firma = firmas_pendientes.first()
-            if siguiente_firma and siguiente_firma.cargo:
-                fecha_limite = timezone.now() + timezone.timedelta(days=7)
-                try:
-                    if siguiente_firma.rol_firma == 'APROBO':
-                        notificar_politica_aprobacion_pendiente(
-                            politica=politica,
-                            cargo_aprobador=siguiente_firma.cargo,
-                            usuario_revisor=request.user
-                        )
-                    else:
-                        notificar_cargo(
-                            cargo=siguiente_firma.cargo,
-                            tipo='FIRMA_REQUERIDA',
-                            asunto=f'Firma Requerida: {politica.title}',
-                            mensaje=(
-                                f'Es su turno para firmar la política "{politica.title}" '
-                                f'como {siguiente_firma.get_rol_firma_display()}. '
-                                f'Tiene hasta el {fecha_limite.strftime("%d/%m/%Y")} para firmar.'
-                            ),
-                            link=f'/gestion-estrategica/identidad?politica={politica.id}',
-                            prioridad='ALTA',
-                            empresa=politica.identity.empresa if hasattr(politica, 'identity') else None,
-                            datos_adicionales={
-                                'firma_id': str(siguiente_firma.id),
-                                'politica_id': politica.id,
-                                'rol_firma': siguiente_firma.rol_firma,
-                            }
-                        )
-                    logger.info(f"Notificación siguiente firmante (cargo '{siguiente_firma.cargo.name}')")
-                except Exception as e:
-                    logger.warning(f"Error notificando siguiente firmante: {str(e)}")
-
-        # Si el proceso se completó, actualizar política
-        if proceso_completado:
-            # Determinar el nuevo estado basado en el último rol firmante
-            ultima_firma = FirmaDigital.objects.filter(
-                content_type=content_type,
-                object_id=politica.id,
-                estado='FIRMADO'
-            ).order_by('-orden').first()
-
-            if ultima_firma:
-                if ultima_firma.rol_firma in ['APROBO', 'AUTORIZO']:
-                    politica.status = 'POR_CODIFICAR'
-                    try:
-                        notificar_politica_aprobada(
-                            politica=politica,
-                            usuario_aprobador=request.user,
-                            notificar_creador=True,
-                            cargo_codificador=None
-                        )
-                    except Exception as e:
-                        logger.warning(f"Error notificando aprobación: {str(e)}")
-                elif ultima_firma.rol_firma == 'REVISO':
-                    politica.status = 'EN_APROBACION'
-                else:
-                    politica.status = 'POR_CODIFICAR'
-            else:
-                politica.status = 'POR_CODIFICAR'
-
-            politica.save(update_fields=['status', 'updated_at'])
-
-        # Calcular progreso
-        progreso = int((firmas_completadas / total_firmas) * 100) if total_firmas > 0 else 0
-
-        return Response({
-            'detail': 'Firma registrada exitosamente',
-            'firma_id': str(firma.id),
-            'firma_estado': firma.estado,
-            'proceso_completado': proceso_completado,
-            'progreso': progreso,
-            'politica_status': politica.status
-        })
-
-    @action(detail=True, methods=['post'], url_path='rechazar-firma')
-    def rechazar_firma(self, request, pk=None):
-        """
-        Rechaza una firma y cancela el proceso de firma.
-
-        Fase 0.3.4: Usa FirmaDigital directamente.
-
-        Body:
-        - firma_id: ID de la FirmaDigital a rechazar
-        - motivo: Motivo del rechazo (mínimo 10 caracteres)
-        """
-        politica = self.get_object()
-
-        serializer = RechazarFirmaSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        firma_id = serializer.validated_data['firma_id']
-        motivo = serializer.validated_data['motivo']
-
-        # Obtener la firma digital
-        content_type = ContentType.objects.get_for_model(politica)
-        try:
-            firma = FirmaDigital.objects.select_related('cargo').get(
-                id=firma_id,
-                content_type=content_type,
-                object_id=politica.id
-            )
-        except FirmaDigital.DoesNotExist:
-            return Response(
-                {'detail': 'Firma no encontrada para esta política'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        # Validar que la firma esté pendiente
-        if firma.estado != 'PENDIENTE':
-            return Response(
-                {'detail': f'La firma ya está en estado {firma.estado}'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Validar que el usuario puede rechazar
-        puede_rechazar = (
-            request.user.cargo_id == firma.cargo_id or
-            request.user.is_superuser or
-            request.user.is_staff
-        )
-        if not puede_rechazar:
-            return Response(
-                {'detail': f'No tiene permisos para rechazar como {firma.cargo.name}'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
-        # Rechazar la firma
-        firma.estado = 'RECHAZADO'
-        firma.usuario = request.user
-        firma.comentarios = f'RECHAZADO: {motivo}'
-        firma.save()
-
-        # Marcar todas las demás firmas como expiradas
-        FirmaDigital.objects.filter(
-            content_type=content_type,
-            object_id=politica.id,
-            estado='PENDIENTE'
-        ).update(estado='EXPIRADO')
-
-        # La política pasa a estado RECHAZADO
-        politica.status = 'RECHAZADO'
-        politica.save(update_fields=['status', 'updated_at'])
-
-        # Notificar al creador sobre el rechazo
-        from apps.audit_system.centro_notificaciones.utils import notificar_politica_rechazada
-        import logging
-        logger = logging.getLogger(__name__)
-
-        try:
-            notificar_politica_rechazada(
-                politica=politica,
-                usuario_que_rechazo=request.user,
-                motivo_rechazo=motivo,
-                usuario_creador=getattr(politica, 'created_by', None)
-            )
-        except Exception as e:
-            logger.warning(f"Error notificando rechazo de política: {str(e)}")
-
-        return Response({
-            'detail': 'Firma rechazada. El proceso de firma ha sido cancelado.',
-            'firma_id': str(firma.id),
-            'firma_estado': firma.estado,
-            'motivo': motivo,
-            'politica_status': politica.status
-        })
-
-    @action(detail=True, methods=['get'], url_path='proceso-firma')
-    def proceso_firma(self, request, pk=None):
-        """
-        Obtiene el estado actual del proceso de firma de una política.
-
-        Fase 0.3.4: Usa FirmaDigital directamente.
-
-        Retorna:
-        - Lista de firmas con su estado
-        - Progreso del proceso
-        """
-        politica = self.get_object()
-
-        content_type = ContentType.objects.get_for_model(politica)
-        firmas = FirmaDigital.objects.filter(
-            content_type=content_type,
-            object_id=politica.id
-        ).select_related('cargo', 'usuario').order_by('orden')
-
-        if not firmas.exists():
-            return Response(
-                {'detail': 'No hay proceso de firma para esta política'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        # Calcular estadísticas
-        total = firmas.count()
-        firmadas = firmas.filter(estado='FIRMADO').count()
-        pendientes = firmas.filter(estado='PENDIENTE').count()
-        rechazadas = firmas.filter(estado='RECHAZADO').count()
-
-        progreso = int((firmadas / total) * 100) if total > 0 else 0
-
-        # Determinar estado del proceso
-        if rechazadas > 0:
-            estado_proceso = 'RECHAZADO'
-        elif pendientes == 0:
-            estado_proceso = 'COMPLETADO'
-        else:
-            estado_proceso = 'EN_PROCESO'
-
-        # Preparar lista de firmas
-        firmas_data = []
-        for firma in firmas:
-            firmas_data.append({
-                'id': str(firma.id),
-                'orden': firma.orden,
-                'rol_firma': firma.rol_firma,
-                'rol_display': firma.get_rol_firma_display(),
-                'cargo': firma.cargo.name if firma.cargo else None,
-                'usuario': firma.usuario.get_full_name() if firma.usuario else None,
-                'estado': firma.estado,
-                'fecha_firma': firma.fecha_firma.isoformat() if firma.fecha_firma else None,
-                'comentarios': firma.comentarios,
-            })
-
-        return Response({
-            'politica_id': politica.id,
-            'politica_title': politica.title,
-            'politica_status': politica.status,
-            'estado': estado_proceso,
-            'progreso': progreso,
-            'total_firmas': total,
-            'firmas_completadas': firmadas,
-            'firmas_pendientes': pendientes,
-            'firmas_rechazadas': rechazadas,
-            'firmas': firmas_data,
-        })
-
-    def _get_client_ip(self, request):
-        """Obtiene la IP del cliente"""
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR')
-        return ip
-
-    # =========================================================================
     # INTEGRACIÓN CON GESTOR DOCUMENTAL
     # =========================================================================
+    # El flujo de firmas se maneja completamente en Gestor Documental.
+    # Identidad solo crea políticas en BORRADOR y las envía a Gestión.
+    # =========================================================================
 
-    @action(detail=True, methods=['post'], url_path='enviar-a-documental')
-    def enviar_a_documental(self, request, pk=None):
+    @action(detail=True, methods=['post'], url_path='enviar-a-gestion')
+    def enviar_a_gestion(self, request, pk=None):
         """
-        Envía una política firmada al Gestor Documental para codificación y publicación.
+        Envía una política al Gestor Documental para firma, codificación y publicación.
 
-        Fase 0.3.4: Verifica firmas usando FirmaDigital.
+        Flujo simplificado:
+        1. IDENTIDAD: Crear política en BORRADOR
+        2. Este endpoint: Envía a Gestor Documental → Estado: EN_GESTION
+        3. GESTOR DOCUMENTAL: Maneja firmas, asigna código, publica
+        4. CALLBACK: Actualiza estado a VIGENTE con código oficial
 
-        Flujo AUTOMÁTICO completo:
-        1. IDENTIDAD: Crear política → Enviar a firma → Completar firmas
-        2. Este endpoint: Valida → Envía automáticamente al Gestor Documental
-        3. GESTOR DOCUMENTAL: Asigna código → Crea documento → Publica
-        4. CALLBACK: Actualiza la política a VIGENTE con código oficial
-
-        Requisitos:
-        - La política debe estar en estado EN_REVISION o POR_CODIFICAR
-        - Todas las firmas deben estar completadas
+        La política pasa a EN_GESTION y ya no es editable desde Identidad.
 
         Body (opcional):
         - clasificacion: 'PUBLICO' | 'INTERNO' | 'CONFIDENCIAL' | 'RESTRINGIDO'
-        - areas_aplicacion: [lista de IDs de áreas]
         - observaciones: texto libre
         """
         from .services import GestorDocumentalService
 
         politica = self.get_object()
 
-        # Validar estado actual
-        if politica.status not in ['EN_REVISION', 'POR_CODIFICAR']:
+        # Solo se pueden enviar políticas en BORRADOR
+        if politica.status != 'BORRADOR':
             return Response(
                 {
-                    'detail': 'Solo se pueden enviar políticas que están en revisión o por codificar',
-                    'status_actual': politica.status
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Fase 0.3.4: Verificar firmas con FirmaDigital
-        content_type = ContentType.objects.get_for_model(politica)
-        firmas = FirmaDigital.objects.filter(
-            content_type=content_type,
-            object_id=politica.id
-        )
-
-        if not firmas.exists():
-            return Response(
-                {'detail': 'No se encontraron firmas para esta política'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        firmas_pendientes = firmas.filter(estado='PENDIENTE').count()
-        firmas_rechazadas = firmas.filter(estado='RECHAZADO').count()
-
-        if firmas_rechazadas > 0:
-            return Response(
-                {
-                    'detail': 'El proceso de firma fue rechazado',
-                    'firmas_rechazadas': firmas_rechazadas
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        if firmas_pendientes > 0:
-            total = firmas.count()
-            firmadas = firmas.filter(estado='FIRMADO').count()
-            progreso = int((firmadas / total) * 100) if total > 0 else 0
-            return Response(
-                {
-                    'detail': 'El proceso de firma aún no está completado',
-                    'progreso': progreso,
-                    'firmas_pendientes': firmas_pendientes
+                    'detail': 'Solo se pueden enviar políticas en estado Borrador',
+                    'status_actual': politica.status,
+                    'estados_permitidos': ['BORRADOR']
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
@@ -1533,58 +794,33 @@ class PoliticaEspecificaViewSet(
                 status=status.HTTP_503_SERVICE_UNAVAILABLE
             )
 
-        serializer = EnviarADocumentalSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        # Actualizar estado de la política a FIRMADO (antes de enviar)
-        politica.status = 'FIRMADO'
+        # Cambiar estado a EN_GESTION (ya no editable desde Identidad)
+        politica.status = 'EN_GESTION'
         politica.save(update_fields=['status', 'updated_at'])
 
         try:
-            # Fase 0.3.4: Enviar al Gestor Documental usando FirmaDigital
+            # Enviar al Gestor Documental (sin firmas locales)
             resultado = GestorDocumentalService.enviar_politica_a_documental(
                 politica=politica,
-                firmas_digitales=list(firmas.filter(estado='FIRMADO')),
                 request_user=request.user,
-                clasificacion=serializer.validated_data.get('clasificacion', 'INTERNO'),
-                areas_aplicacion=serializer.validated_data.get('areas_aplicacion', []),
-                observaciones=serializer.validated_data.get('observaciones', '')
+                clasificacion=request.data.get('clasificacion', 'INTERNO'),
+                observaciones=request.data.get('observaciones', '')
             )
-
-            # Refrescar la política para obtener los datos actualizados
-            politica.refresh_from_db()
 
             return Response({
-                'detail': 'Política enviada, codificada y publicada exitosamente',
+                'detail': 'Política enviada al Gestor Documental exitosamente',
                 'politica': {
                     'id': politica.id,
+                    'title': politica.title,
                     'status': politica.status,
-                    'code': politica.code,
-                    'effective_date': politica.effective_date,
                 },
-                'documento': {
-                    'id': resultado['documento_id'],
-                    'codigo': resultado['codigo'],
-                    'estado': resultado['estado'],
-                    'version': resultado['version'],
-                    'fecha_publicacion': resultado['fecha_publicacion'],
-                    'url': resultado['url_documento'],
-                },
-                'es_actualizacion': resultado['es_actualizacion'],
-                'total_firmas_registradas': resultado['total_firmas_registradas'],
+                'gestor_documental': resultado,
+                'mensaje': 'El proceso de firma y codificación continuará en Gestor Documental'
             }, status=status.HTTP_201_CREATED)
 
-        except ValueError as e:
-            # Revertir estado si falla la validación
-            politica.status = 'EN_REVISION'
-            politica.save(update_fields=['status', 'updated_at'])
-            return Response(
-                {'detail': str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
         except Exception as e:
             # Revertir estado si falla el envío
-            politica.status = 'EN_REVISION'
+            politica.status = 'BORRADOR'
             politica.save(update_fields=['status', 'updated_at'])
             return Response(
                 {
@@ -1593,3 +829,61 @@ class PoliticaEspecificaViewSet(
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+    @action(detail=True, methods=['post'], url_path='actualizar-estado')
+    def actualizar_estado(self, request, pk=None):
+        """
+        Callback para que Gestor Documental actualice el estado de la política.
+
+        Este endpoint es llamado por Gestor Documental cuando:
+        - La política es aprobada y publicada → VIGENTE
+        - La política es rechazada → BORRADOR
+        - Se asigna código oficial
+
+        Body:
+        - status: 'VIGENTE' | 'BORRADOR' | 'OBSOLETO'
+        - code: Código oficial asignado (opcional)
+        - documento_id: ID del documento en Gestor Documental (opcional)
+        - effective_date: Fecha de vigencia (opcional)
+        """
+        politica = self.get_object()
+
+        nuevo_status = request.data.get('status')
+        if nuevo_status not in ['VIGENTE', 'BORRADOR', 'OBSOLETO']:
+            return Response(
+                {'detail': 'Estado inválido'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Actualizar campos
+        politica.status = nuevo_status
+
+        if request.data.get('code'):
+            politica.code = request.data['code']
+
+        if request.data.get('documento_id'):
+            politica.documento_id = request.data['documento_id']
+
+        if request.data.get('effective_date'):
+            politica.effective_date = request.data['effective_date']
+
+        # Si pasa a VIGENTE, obsoleta versiones anteriores
+        if nuevo_status == 'VIGENTE' and politica.code:
+            from .models import PoliticaEspecifica
+            PoliticaEspecifica.objects.filter(
+                identity=politica.identity,
+                code=politica.code,
+                status='VIGENTE'
+            ).exclude(pk=politica.pk).update(status='OBSOLETO')
+
+        politica.save()
+
+        return Response({
+            'detail': 'Estado actualizado exitosamente',
+            'politica': {
+                'id': politica.id,
+                'code': politica.code,
+                'status': politica.status,
+                'effective_date': politica.effective_date,
+            }
+        })

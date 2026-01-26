@@ -1,87 +1,59 @@
 /**
  * Página de Planeación - Tab 4 de Dirección Estratégica
  *
- * Layout:
- * 1. PageHeader
- * 2. DynamicSections (sub-navigation desde API, si existen)
- * 3. StatsGrid
- * 4. Contenido de la sección activa
+ * Layout según Catálogo de Vistas UI:
+ * - PageHeader con título y secciones inline (alineadas a la derecha)
+ * - Contenido de la sección activa (cada sección maneja su propio StatsGrid)
  *
  * Sin hardcoding - secciones cargadas desde API
  */
-import { useState, useEffect } from 'react';
-import { Target, TrendingUp } from 'lucide-react';
-import { PageHeader, StatsGrid, StatsGridSkeleton } from '@/components/layout';
-import type { StatItem } from '@/components/layout';
-import { DynamicSections } from '@/components/common';
-import { useStrategicStats } from '../hooks/useStrategic';
-import { useTabSections } from '../hooks/useModules';
+import { PageHeader } from '@/components/layout';
 import { PlaneacionTab } from '../components/PlaneacionTab';
-import { useModuleColor } from '@/hooks/useModuleColor';
+import { usePageSections } from '@/hooks/usePageSections';
 
 // Códigos del módulo y tab en la BD (lowercase para coincidir con BD)
 const MODULE_CODE = 'gestion_estrategica';
 const TAB_CODE = 'planeacion';
 
 export const PlaneacionPage = () => {
-  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
-  const { data: stats, isLoading: statsLoading } = useStrategicStats();
-  const { sections, isLoading: sectionsLoading } = useTabSections(MODULE_CODE, TAB_CODE);
+  // Hook que maneja secciones localmente (igual que OrganizacionPage)
+  const {
+    sections,
+    activeSection,
+    setActiveSection,
+    activeSectionData,
+    isLoading: sectionsLoading,
+  } = usePageSections({
+    moduleCode: MODULE_CODE,
+    tabCode: TAB_CODE,
+  });
 
-  // Sección activa - inicializar con la primera sección habilitada
-  const [activeSection, setActiveSection] = useState<string>('');
-
-  // Establecer sección inicial cuando se cargan
-  useEffect(() => {
-    if (sections.length > 0 && !activeSection) {
-      setActiveSection(sections[0].code);
-    }
-  }, [sections, activeSection]);
-
-  const avgProgress = stats?.avg_progress ?? 0;
-
-  const statsItems: StatItem[] = [
-    {
-      label: 'Objetivos Estratégicos',
-      value: stats?.total_objectives ?? 0,
-      icon: Target,
-      iconColor: 'info',
-      description: `${stats?.completed_objectives ?? 0} completados`,
-    },
-    {
-      label: 'Progreso Promedio',
-      value: `${avgProgress}%`,
-      icon: TrendingUp,
-      iconColor: avgProgress >= 50 ? 'success' : 'warning',
-      description: stats?.active_plan_name ?? 'Sin plan activo',
-    },
-  ];
+  // Si no hay sección activa aún (cargando), mostrar skeleton básico
+  if (!activeSection && sectionsLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-20 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse-subtle" />
+        <div className="h-96 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse-subtle" />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* PageHeader con título y secciones inline (alineadas a la derecha) */}
       <PageHeader
         title="Planeación Estratégica"
-        description="Gestiona el plan estratégico, objetivos BSC y mapa estratégico de la organización"
-      />
-
-      {/* Sub-navigation dinámica desde API (si existen secciones) */}
-      <DynamicSections
+        description={activeSectionData.description}
         sections={sections}
         activeSection={activeSection}
-        onChange={setActiveSection}
-        isLoading={sectionsLoading}
-        moduleColor={moduleColor}
-        variant="pills"
+        onSectionChange={setActiveSection}
+        moduleColor="purple"
       />
 
-      {statsLoading ? (
-        <StatsGridSkeleton count={2} />
-      ) : (
-        <StatsGrid stats={statsItems} columns={4} moduleColor={moduleColor} />
+      {/* Contenido de la sección activa - cada sección maneja su propio StatsGrid */}
+      {activeSection && (
+        <PlaneacionTab activeSection={activeSection} />
       )}
-
-      {/* Contenido */}
-      <PlaneacionTab activeSection={activeSection} />
     </div>
   );
 };

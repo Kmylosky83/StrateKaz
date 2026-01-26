@@ -90,7 +90,7 @@ export {
   useActasRevision,
 } from './hooks/useRevisionDireccion';
 
-// Hooks - Políticas (Sistema Unificado v3.0)
+// Hooks - Políticas (Sistema Unificado v4.0 - simplificado)
 export {
   politicaKeys,
   useTiposPolitica,
@@ -101,9 +101,9 @@ export {
   useCreatePolitica,
   useUpdatePolitica,
   useDeletePolitica,
-  useIniciarFirmaPolitica,
-  useFirmarPolitica,
-  usePublicarPolitica,
+  useEnviarAGestion,
+  useCrearNuevaVersion,
+  usePuedeEditarPolitica,
 } from './hooks/usePoliticas';
 
 // Componentes - Políticas

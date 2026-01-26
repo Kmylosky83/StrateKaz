@@ -14,7 +14,7 @@ import type {
   PaginatedResponse,
 } from '../types';
 
-const BASE_URL = '/motor_cumplimiento/partes-interesadas';
+const BASE_URL = '/cumplimiento/partes-interesadas';
 
 // ==================== TIPOS DE PARTE INTERESADA ====================
 

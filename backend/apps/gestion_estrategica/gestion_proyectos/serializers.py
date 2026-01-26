@@ -58,6 +58,7 @@ class ProyectoListSerializer(serializers.ModelSerializer):
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
     prioridad_display = serializers.CharField(source='get_prioridad_display', read_only=True)
+    tipo_origen_display = serializers.CharField(source='get_tipo_origen_display', read_only=True)
 
     class Meta:
         model = Proyecto
@@ -66,7 +67,8 @@ class ProyectoListSerializer(serializers.ModelSerializer):
             'estado', 'estado_display', 'prioridad', 'prioridad_display',
             'programa', 'programa_nombre', 'gerente_proyecto', 'gerente_nombre',
             'fecha_inicio_plan', 'fecha_fin_plan', 'porcentaje_avance',
-            'presupuesto_aprobado', 'costo_real', 'is_active'
+            'presupuesto_aprobado', 'costo_real', 'is_active',
+            'tipo_origen', 'tipo_origen_display', 'origen_cambio', 'origen_objetivo'
         ]
 
 
@@ -194,6 +196,11 @@ class ProyectoSerializer(serializers.ModelSerializer):
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
     prioridad_display = serializers.CharField(source='get_prioridad_display', read_only=True)
+
+    # Origen del proyecto (trazabilidad PMI/ISO)
+    tipo_origen_display = serializers.CharField(source='get_tipo_origen_display', read_only=True)
+    origen_cambio_titulo = serializers.CharField(source='origen_cambio.titulo', read_only=True)
+    origen_objetivo_nombre = serializers.CharField(source='origen_objetivo.name', read_only=True)
 
     # Relaciones anidadas
     charter = ProjectCharterSerializer(read_only=True)

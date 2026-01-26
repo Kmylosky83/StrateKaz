@@ -572,7 +572,7 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
                 for code, label in Cargo.EXPERIENCIA_CHOICES
             ],
             'areas': [
-                {'value': area['id'], 'label': f"{area['code']} - {area['name']}"}
+                {'value': area['id'], 'label': area['name']}
                 for area in areas
             ],
         })

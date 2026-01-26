@@ -204,3 +204,24 @@ export type { GenericSectionFallbackProps } from './GenericSectionFallback';
 // Action Buttons (RBAC-aware action buttons)
 export { ActionButtons } from './ActionButtons';
 export type { ActionButtonsProps } from './ActionButtons';
+
+// Branded Skeleton (loading with company logo)
+export { BrandedSkeleton } from './BrandedSkeleton';
+export type { BrandedSkeletonProps } from './BrandedSkeleton';
+
+// Analytics & Metrics Components (KPI Dashboard)
+export { MetricCard } from './MetricCard';
+export type { MetricCardProps } from './MetricCard';
+
+export { GaugeProgress } from './GaugeProgress';
+export type { GaugeProgressProps } from './GaugeProgress';
+
+export { ColorLegend } from './ColorLegend';
+export type { ColorLegendProps, LegendItem } from './ColorLegend';
+
+export { Progress } from './Progress';
+export type { ProgressProps } from './Progress';
+
+// View Toggle (Dashboard/Kanban, List/Grid switcher)
+export { ViewToggle } from './ViewToggle';
+export type { ViewToggleProps, ViewToggleOption } from './ViewToggle';

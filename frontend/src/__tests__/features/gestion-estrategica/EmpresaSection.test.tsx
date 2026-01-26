@@ -103,7 +103,7 @@ describe('EmpresaSection', () => {
       render(<EmpresaSection />);
 
       // Verificar que hay elementos con animación de carga
-      const skeletons = document.querySelectorAll('.animate-pulse');
+      const skeletons = document.querySelectorAll('.animate-pulse-subtle');
       expect(skeletons.length).toBeGreaterThan(0);
     });
   });

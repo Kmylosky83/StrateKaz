@@ -1,57 +1,59 @@
 /**
  * Página de Organización - Tab 2 de Dirección Estratégica
  *
- * Layout:
- * 1. PageHeader
- * 2. DynamicSections (sub-navigation desde API)
- * 3. Contenido de la sección activa (cada sección tiene su propio StatsGrid)
+ * Layout según Catálogo de Vistas UI:
+ * - PageHeader con título y secciones inline (alineadas a la derecha)
+ * - Contenido de la sección activa (cada sección maneja su propio StatsGrid)
  *
  * Sin hardcoding - secciones cargadas desde API
  */
-import { useState, useEffect } from 'react';
 import { PageHeader } from '@/components/layout';
-import { DynamicSections } from '@/components/common';
-import { useTabSections } from '../hooks/useModules';
 import { OrganizacionTab } from '../components/OrganizacionTab';
-import { useModuleColor } from '@/hooks/useModuleColor';
+import { usePageSections } from '@/hooks/usePageSections';
 
 // Códigos del módulo y tab en la BD (lowercase para coincidir con BD)
 const MODULE_CODE = 'gestion_estrategica';
 const TAB_CODE = 'organizacion';
 
 export const OrganizacionPage = () => {
-  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
-  const { sections, isLoading: sectionsLoading } = useTabSections(MODULE_CODE, TAB_CODE);
+  // Hook que maneja secciones localmente (igual que ConfiguracionPage)
+  const {
+    sections,
+    activeSection,
+    setActiveSection,
+    activeSectionData,
+    isLoading: sectionsLoading,
+  } = usePageSections({
+    moduleCode: MODULE_CODE,
+    tabCode: TAB_CODE,
+  });
 
-  // Sección activa - inicializar con la primera sección habilitada
-  const [activeSection, setActiveSection] = useState<string>('');
-
-  // Establecer sección inicial cuando se cargan
-  useEffect(() => {
-    if (sections.length > 0 && !activeSection) {
-      setActiveSection(sections[0].code);
-    }
-  }, [sections, activeSection]);
+  // Si no hay sección activa aún (cargando), mostrar skeleton básico
+  if (!activeSection && sectionsLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-20 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse-subtle" />
+        <div className="h-96 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse-subtle" />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* PageHeader con título y secciones inline (alineadas a la derecha) */}
       <PageHeader
         title="Organización"
-        description="Administra la estructura organizacional, cargos, roles y permisos del sistema"
-      />
-
-      {/* Sub-navigation dinámica desde API */}
-      <DynamicSections
+        description={activeSectionData.description}
         sections={sections}
         activeSection={activeSection}
-        onChange={setActiveSection}
-        isLoading={sectionsLoading}
-        moduleColor={moduleColor}
-        variant="pills"
+        onSectionChange={setActiveSection}
+        moduleColor="purple"
       />
 
-      {/* Contenido de la sección activa - cada sección tiene su propio StatsGrid */}
-      <OrganizacionTab activeSection={activeSection} />
+      {/* Contenido de la sección activa - cada sección maneja su propio StatsGrid */}
+      {activeSection && (
+        <OrganizacionTab activeSection={activeSection} />
+      )}
     </div>
   );
 };

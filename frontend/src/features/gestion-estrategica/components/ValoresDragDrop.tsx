@@ -2,6 +2,10 @@
  * ValoresDragDrop - Gestion de Valores Corporativos con Drag & Drop
  * Sistema de Gestion StrateKaz
  *
+ * Vista 2B Especial: DataSection (externo) + Card con contenido interactivo
+ * - El header (DataSection) se maneja desde el componente padre (ValoresSection)
+ * - Este componente solo renderiza el contenido del grid/lista con Drag & Drop
+ *
  * Caracteristicas:
  * - Reordenamiento visual con arrastrar y soltar
  * - Seleccion de iconos dinamica desde la API (IconPicker del Design System)
@@ -39,11 +43,9 @@ import {
   Trash2,
   Save,
   X,
-  LayoutGrid,
-  LayoutList,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Card, Button, Badge, DynamicIcon, IconPicker } from '@/components/common';
+import { Card, Button, DynamicIcon, IconPicker } from '@/components/common';
 import { Input, Textarea } from '@/components/forms';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import type { CorporateValue, CreateCorporateValueDTO, UpdateCorporateValueDTO } from '../types/strategic.types';
@@ -395,7 +397,7 @@ const SortableValueCard = ({
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
-type ViewMode = 'list' | 'cards';
+export type ViewMode = 'list' | 'cards';
 
 interface ValoresDragDropProps {
   values: CorporateValue[];
@@ -405,8 +407,12 @@ interface ValoresDragDropProps {
   onUpdate: (id: number, data: UpdateCorporateValueDTO) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
   isLoading?: boolean;
-  defaultViewMode?: ViewMode;
   readOnly?: boolean;
+  // Props controladas desde el padre (DataSection)
+  viewMode: ViewMode;
+  onViewModeChange: (mode: ViewMode) => void;
+  isCreating: boolean;
+  onCreateToggle: (creating: boolean) => void;
 }
 
 export const ValoresDragDrop = ({
@@ -417,14 +423,16 @@ export const ValoresDragDrop = ({
   onUpdate,
   onDelete,
   isLoading,
-  defaultViewMode = 'cards',
   readOnly,
+  // Props controladas desde el padre
+  viewMode,
+  onViewModeChange,
+  isCreating,
+  onCreateToggle,
 }: ValoresDragDropProps) => {
-  const [viewMode, setViewMode] = useState<ViewMode>(defaultViewMode);
   const [activeId, setActiveId] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editData, setEditData] = useState<Partial<CorporateValue>>({});
-  const [isCreating, setIsCreating] = useState(false);
   const [newValue, setNewValue] = useState<Partial<CorporateValue>>({
     name: '',
     description: '',
@@ -512,7 +520,7 @@ export const ValoresDragDrop = ({
       orden: sortedValues.length + 1,
     });
 
-    setIsCreating(false);
+    onCreateToggle(false);
     setNewValue({ name: '', description: '', icon: 'Heart' });
   };
 
@@ -528,61 +536,6 @@ export const ValoresDragDrop = ({
 
   return (
     <Card className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Valores Corporativos
-          </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Arrastra para reordenar los valores. El orden se guarda automaticamente.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="gray" size="sm">
-            {sortedValues.length} valores
-          </Badge>
-          {/* View Mode Toggle */}
-          <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-lg p-0.5">
-            <button
-              onClick={() => setViewMode('list')}
-              className={cn(
-                'p-1.5 rounded-md transition-colors',
-                viewMode === 'list'
-                  ? 'bg-white dark:bg-gray-600 shadow-sm'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-              )}
-              style={viewMode === 'list' ? { color: accentColor } : undefined}
-              title="Vista de lista"
-            >
-              <LayoutList className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setViewMode('cards')}
-              className={cn(
-                'p-1.5 rounded-md transition-colors',
-                viewMode === 'cards'
-                  ? 'bg-white dark:bg-gray-600 shadow-sm'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-              )}
-              style={viewMode === 'cards' ? { color: accentColor } : undefined}
-              title="Vista de tarjetas"
-            >
-              <LayoutGrid className="w-4 h-4" />
-            </button>
-          </div>
-          {!readOnly && (
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => setIsCreating(true)}
-              disabled={isCreating}
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              Agregar Valor
-            </Button>
-          )}
-        </div>
-      </div>
 
       {/* Create New Value Form */}
       <AnimatePresence>
@@ -654,7 +607,7 @@ export const ValoresDragDrop = ({
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      setIsCreating(false);
+                      onCreateToggle(false);
                       setNewValue({ name: '', description: '', icon: 'Heart' });
                     }}
                     disabled={isLoading}

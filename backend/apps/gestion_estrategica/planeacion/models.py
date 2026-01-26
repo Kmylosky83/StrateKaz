@@ -298,6 +298,14 @@ class StrategicObjective(AuditModel, SoftDeleteModel):
         null=True,
         verbose_name='Fecha de completado'
     )
+    # Áreas responsables de ejecutar el objetivo
+    areas_responsables = models.ManyToManyField(
+        'organizacion.Area',
+        blank=True,
+        related_name='objetivos_estrategicos',
+        verbose_name='Áreas Responsables',
+        help_text='Áreas/departamentos que contribuyen a este objetivo'
+    )
     orden = models.IntegerField(
         default=0,
         db_index=True,

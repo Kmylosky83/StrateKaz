@@ -82,6 +82,22 @@ export interface UpdateCorporateValueDTO {
   is_active?: boolean;
 }
 
+// ==================== PROCESO/AREA PARA ALCANCE ====================
+
+/**
+ * Área/Proceso para el selector de Procesos Cubiertos
+ * Usado en CorporateIdentity.procesos_cubiertos
+ */
+export interface ProcesoArea {
+  id: number;
+  code: string;
+  name: string;
+  full_path: string;  // "Gerencia > Operaciones > Logística"
+  level: number;      // Nivel de profundidad en jerarquía
+  icon?: string;
+  color?: string;
+}
+
 // ==================== CORPORATE IDENTITY ====================
 
 /**
@@ -92,6 +108,8 @@ export interface UpdateCorporateValueDTO {
  *
  * v4.1: Campos de alcance del sistema integrado de gestión (SIG).
  * El toggle declara_alcance controla la visibilidad de la sección.
+ *
+ * v4.2: Campo procesos_cubiertos (ManyToMany con Area) para selección dinámica.
  */
 export interface CorporateIdentity {
   id: number;
@@ -105,8 +123,10 @@ export interface CorporateIdentity {
   declara_alcance: boolean;
   alcance_general?: string | null;
   alcance_geografico?: string | null;
-  alcance_procesos?: string | null;
+  alcance_procesos?: string | null;  // LEGACY: texto libre
   alcance_exclusiones?: string | null;
+  // Procesos cubiertos - ManyToMany con Area (v4.2)
+  procesos_cubiertos?: ProcesoArea[];
   // Contadores
   values_count?: number;
   alcances_count?: number;
@@ -128,8 +148,10 @@ export interface CreateCorporateIdentityDTO {
   declara_alcance?: boolean;
   alcance_general?: string;
   alcance_geografico?: string;
-  alcance_procesos?: string;
+  alcance_procesos?: string;  // LEGACY: texto libre
   alcance_exclusiones?: string;
+  // Procesos cubiertos - IDs de áreas (v4.2)
+  procesos_cubiertos_ids?: number[];
 }
 
 export interface UpdateCorporateIdentityDTO {
@@ -142,8 +164,10 @@ export interface UpdateCorporateIdentityDTO {
   declara_alcance?: boolean;
   alcance_general?: string;
   alcance_geografico?: string;
-  alcance_procesos?: string;
+  alcance_procesos?: string;  // LEGACY: texto libre
   alcance_exclusiones?: string;
+  // Procesos cubiertos - IDs de áreas (v4.2)
+  procesos_cubiertos_ids?: number[];
 }
 
 // ==================== STRATEGIC PLAN ====================
@@ -200,6 +224,16 @@ export interface UpdateStrategicPlanDTO {
 
 // ==================== STRATEGIC OBJECTIVE ====================
 
+/** Norma ISO vinculada a un objetivo (detalle) */
+export interface NormaISODetail {
+  id: number;
+  code: string;
+  short_name: string | null;
+  name: string;
+  icon: string | null;
+  color: string | null;
+}
+
 export interface StrategicObjective {
   id: number;
   plan: number;
@@ -208,8 +242,13 @@ export interface StrategicObjective {
   description?: string | null;
   bsc_perspective: BSCPerspective;
   bsc_perspective_display?: string;
-  iso_standards: ISOStandard[];
+  /** @deprecated Use normas_iso instead */
+  iso_standards?: ISOStandard[];
   iso_standards_display?: string[];
+  /** IDs de normas ISO vinculadas (ManyToMany) */
+  normas_iso?: number[];
+  /** Detalles de normas ISO vinculadas */
+  normas_iso_detail?: NormaISODetail[];
   responsible?: number | null;
   responsible_name?: string | null;
   responsible_cargo?: number | null;
@@ -237,7 +276,10 @@ export interface CreateStrategicObjectiveDTO {
   name: string;
   description?: string;
   bsc_perspective: BSCPerspective;
+  /** @deprecated Use normas_iso_ids instead */
   iso_standards?: ISOStandard[];
+  /** IDs de normas ISO a vincular (ManyToMany) */
+  normas_iso_ids?: number[];
   responsible?: number;
   responsible_cargo?: number;
   target_value?: number;
@@ -253,7 +295,10 @@ export interface UpdateStrategicObjectiveDTO {
   name?: string;
   description?: string;
   bsc_perspective?: BSCPerspective;
+  /** @deprecated Use normas_iso_ids instead */
   iso_standards?: ISOStandard[];
+  /** IDs de normas ISO a vincular (ManyToMany) */
+  normas_iso_ids?: number[];
   responsible?: number;
   responsible_cargo?: number;
   target_value?: number;

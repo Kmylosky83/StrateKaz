@@ -78,7 +78,16 @@ export interface UseIconsReturn {
 const fetchIcons = async (category?: string): Promise<IconRegistryItem[]> => {
   const params = category ? { category } : {};
   const response = await axiosInstance.get('/configuracion/icons/', { params });
-  return response.data;
+  // Manejar respuesta paginada o array directo
+  const data = response.data;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  // Si es respuesta paginada, extraer results
+  if (data && Array.isArray(data.results)) {
+    return data.results;
+  }
+  return [];
 };
 
 const fetchCategories = async (): Promise<IconCategory[]> => {

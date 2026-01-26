@@ -45,6 +45,7 @@ class Command(BaseCommand):
         total_tabs = 0
         total_sections = 0
         deleted_sections = 0
+        deleted_tabs = 0
 
         # Construir mapa de secciones válidas por tab
         valid_sections_map = {}  # {(module_code, tab_code): [section_codes]}
@@ -54,6 +55,9 @@ class Command(BaseCommand):
             tabs = module_data.pop('tabs', [])
             module = self.create_or_update_module(module_data)
             total_modules += 1
+
+            # Guardar códigos de tabs válidos para este módulo
+            valid_tab_codes = [t['code'] for t in tabs]
 
             for tab_data in tabs:
                 tab_code = tab_data['code']
@@ -73,7 +77,11 @@ class Command(BaseCommand):
                 deleted_count = self.cleanup_obsolete_sections(tab, [s['code'] for s in sections])
                 deleted_sections += deleted_count
 
-        self.print_summary(total_modules, total_tabs, total_sections, deleted_sections)
+            # Eliminar tabs que ya no están en la configuración del módulo
+            deleted_tabs_count = self.cleanup_obsolete_tabs(module, valid_tab_codes)
+            deleted_tabs += deleted_tabs_count
+
+        self.print_summary(total_modules, total_tabs, total_sections, deleted_sections, deleted_tabs)
 
     def get_modules_config(self):
         """Retorna la configuración completa de los 14 módulos"""
@@ -115,13 +123,13 @@ class Command(BaseCommand):
                         'route': 'organizacion',
                         'orden': 2,
                         'sections': [
-                            {'code': 'areas', 'name': 'Áreas', 'icon': 'FolderTree', 'orden': 1},
-                            {'code': 'cargos', 'name': 'Cargos', 'icon': 'Briefcase', 'orden': 2},
-                            {'code': 'organigrama', 'name': 'Organigrama', 'icon': 'Network', 'orden': 3},
-                            {'code': 'colaboradores', 'name': 'Colaboradores', 'icon': 'Users', 'orden': 4},
+                            {'code': 'areas', 'name': 'Áreas', 'icon': 'FolderTree', 'orden': 1, 'description': 'Estructura organizacional jerárquica'},
+                            {'code': 'cargos', 'name': 'Cargos', 'icon': 'Briefcase', 'orden': 2, 'description': 'Puestos y niveles jerárquicos'},
+                            {'code': 'organigrama', 'name': 'Organigrama', 'icon': 'Network', 'orden': 3, 'description': 'Vista gráfica de la estructura'},
+                            {'code': 'colaboradores', 'name': 'Colaboradores', 'icon': 'Users', 'orden': 4, 'description': 'Gestión del equipo de trabajo'},
                             {'code': 'consecutivos', 'name': 'Consecutivos', 'icon': 'Hash', 'orden': 5, 'description': 'Numeración automática de documentos'},
-                            {'code': 'unidades_medida', 'name': 'Unidades', 'icon': 'Ruler', 'orden': 6, 'description': 'Unidades de medida para inventarios'},
-                            {'code': 'roles', 'name': 'Control de Acceso', 'icon': 'ShieldCheck', 'orden': 7},
+                            {'code': 'unidades_medida', 'name': 'Unidades', 'icon': 'Ruler', 'orden': 6, 'description': 'Catálogo de unidades de medida'},
+                            # NOTA: 'roles' (Control de Acceso) removido - los permisos se configuran en CargoFormModal
                         ]
                     },
                     {
@@ -131,9 +139,26 @@ class Command(BaseCommand):
                         'route': 'identidad',
                         'orden': 3,
                         'sections': [
-                            {'code': 'mision_vision', 'name': 'Misión y Visión', 'icon': 'Eye', 'orden': 1},
-                            {'code': 'valores', 'name': 'Valores Corporativos', 'icon': 'Heart', 'orden': 2},
-                            {'code': 'politicas', 'name': 'Políticas', 'icon': 'FileCheck', 'orden': 3},
+                            {'code': 'mision_vision', 'name': 'Direccionamiento', 'icon': 'Eye', 'orden': 1, 'description': 'Misión, visión y propósito organizacional'},
+                            {'code': 'valores', 'name': 'Valores', 'icon': 'Heart', 'orden': 2, 'description': 'Principios y valores corporativos'},
+                            {'code': 'politicas', 'name': 'Políticas', 'icon': 'FileCheck', 'orden': 3, 'description': 'Políticas organizacionales'},
+                        ]
+                    },
+                    {
+                        'code': 'contexto',
+                        'name': 'Contexto Organizacional',
+                        'icon': 'Compass',
+                        'route': 'contexto',
+                        'orden': 4,
+                        'sections': [
+                            # Análisis del contexto interno y externo (ISO 9001:2015 Cláusula 4.1)
+                            # Orden lógico: Stakeholders → DOFA → Encuestas (requiere DOFA) → PESTEL → Porter → TOWS (requiere DOFA)
+                            {'code': 'stakeholders', 'name': 'Stakeholders', 'icon': 'Users', 'orden': 1, 'description': 'Identificación y análisis de partes interesadas'},
+                            {'code': 'analisis_dofa', 'name': 'DOFA', 'icon': 'Grid3X3', 'orden': 2, 'description': 'Identifica Fortalezas, Oportunidades, Debilidades y Amenazas'},
+                            {'code': 'encuestas_dofa', 'name': 'Encuestas', 'icon': 'ClipboardList', 'orden': 3, 'description': 'Recopila opiniones de colaboradores sobre fortalezas y debilidades'},
+                            {'code': 'analisis_pestel', 'name': 'PESTEL', 'icon': 'Globe', 'orden': 4, 'description': 'Analiza factores Políticos, Económicos, Sociales, Tecnológicos, Ecológicos y Legales'},
+                            {'code': 'fuerzas_porter', 'name': 'Porter', 'icon': 'Layers', 'orden': 5, 'description': 'Evalúa las 5 fuerzas competitivas que determinan la intensidad de la competencia'},
+                            {'code': 'estrategias_tows', 'name': 'TOWS', 'icon': 'Lightbulb', 'orden': 6, 'description': 'Define estrategias cruzando Fortalezas, Oportunidades, Debilidades y Amenazas'},
                         ]
                     },
                     {
@@ -141,44 +166,46 @@ class Command(BaseCommand):
                         'name': 'Planeación Estratégica',
                         'icon': 'Target',
                         'route': 'planeacion',
-                        'orden': 4,
-                        'sections': [
-                            {'code': 'plan_estrategico', 'name': 'Plan Estratégico', 'icon': 'Target', 'orden': 1},
-                            {'code': 'objetivos', 'name': 'Objetivos Estratégicos', 'icon': 'Flag', 'orden': 2},
-                            {'code': 'contexto', 'name': 'Contexto Organizacional', 'icon': 'Building2', 'orden': 3},
-                            {'code': 'dofa', 'name': 'Análisis DOFA', 'icon': 'Grid3X3', 'orden': 4},
-                            {'code': 'pestel', 'name': 'Análisis PESTEL', 'icon': 'Globe', 'orden': 5},
-                            {'code': 'porter', 'name': '5 Fuerzas de Porter', 'icon': 'Layers', 'orden': 6},
-                        ]
-                    },
-                    {
-                        'code': 'gestion_documental',
-                        'name': 'Gestión Documental',
-                        'icon': 'FileText',
-                        'route': 'gestion-documental',
                         'orden': 5,
                         'sections': [
-                            {'code': 'tipos', 'name': 'Tipos de Documento', 'icon': 'FolderOpen', 'orden': 1},
-                            {'code': 'documentos', 'name': 'Documentos', 'icon': 'File', 'orden': 2},
-                            {'code': 'plantillas', 'name': 'Plantillas', 'icon': 'FileCode', 'orden': 3},
-                            {'code': 'control', 'name': 'Control Documental', 'icon': 'CheckSquare', 'orden': 4},
+                            # Formulación y seguimiento estratégico
+                            {'code': 'objetivos_bsc', 'name': 'Objetivos', 'icon': 'Target', 'orden': 1, 'description': 'Objetivos por perspectiva BSC vinculados al plan estratégico'},
+                            {'code': 'mapa_estrategico', 'name': 'Mapa', 'icon': 'Map', 'orden': 2, 'description': 'Visualización interactiva de objetivos y relaciones causa-efecto'},
+                            {'code': 'kpis', 'name': 'KPIs', 'icon': 'BarChart3', 'orden': 3, 'description': 'Indicadores de desempeño con metas y semáforos de seguimiento'},
+                            {'code': 'gestion_cambio', 'name': 'Cambios', 'icon': 'RefreshCw', 'orden': 4, 'description': 'Registre y dé seguimiento a cambios estratégicos, organizacionales, de procesos o tecnológicos'},
+                        ]
+                    },
+                    # Orden: Contexto (4) → Planeación (5) → Riesgos (6) → Proyectos (7) → Revisión (8)
+                    {
+                        'code': 'riesgos_oportunidades',
+                        'name': 'Riesgos y Oportunidades',
+                        'icon': 'ShieldAlert',
+                        'route': 'riesgos-oportunidades',
+                        'orden': 6,
+                        'sections': [
+                            {'code': 'resumen', 'name': 'Resumen', 'icon': 'PieChart', 'orden': 1, 'description': 'Vista general de indicadores de riesgos y oportunidades'},
+                            {'code': 'mapa_calor', 'name': 'Mapa de Calor', 'icon': 'Grid3X3', 'orden': 2, 'description': 'Visualización matricial de probabilidad vs impacto'},
+                            {'code': 'riesgos', 'name': 'Riesgos', 'icon': 'AlertTriangle', 'orden': 3, 'description': 'Identificación y gestión de riesgos organizacionales'},
+                            {'code': 'oportunidades', 'name': 'Oportunidades', 'icon': 'TrendingUp', 'orden': 4, 'description': 'Identificación y aprovechamiento de oportunidades'},
+                            {'code': 'tratamientos', 'name': 'Tratamientos', 'icon': 'ClipboardCheck', 'orden': 5, 'description': 'Planes de tratamiento y controles'},
                         ]
                     },
                     {
-                        'code': 'planificacion_sistema',
-                        'name': 'Planificación del Sistema',
-                        'icon': 'CalendarDays',
-                        'route': 'planificacion-sistema',
-                        'orden': 6,
+                        'code': 'gestion_proyectos',
+                        'name': 'Gestión de Proyectos',
+                        'icon': 'Gantt',
+                        'route': 'proyectos',
+                        'orden': 7,
                         'sections': [
-                            {'code': 'plan_trabajo', 'name': 'Plan de Trabajo Anual', 'icon': 'Calendar', 'orden': 1},
-                            {'code': 'objetivos', 'name': 'Objetivos del Sistema', 'icon': 'Target', 'orden': 2},
-                            {'code': 'programas', 'name': 'Programas de Gestión', 'icon': 'Layers', 'orden': 3},
-                            {'code': 'seguimiento', 'name': 'Seguimiento', 'icon': 'BarChart3', 'orden': 4},
+                            {'code': 'portafolio', 'name': 'Portafolio', 'icon': 'Briefcase', 'orden': 1, 'description': 'Vista general del portafolio, programas y estado de proyectos'},
+                            {'code': 'iniciacion', 'name': 'Iniciación', 'icon': 'FileSignature', 'orden': 2, 'description': 'Charter del proyecto, objetivos SMART y registro de stakeholders'},
+                            {'code': 'planificacion', 'name': 'Planificación', 'icon': 'CalendarRange', 'orden': 3, 'description': 'Alcance, cronograma, recursos, costos y plan de riesgos'},
+                            {'code': 'ejecucion-monitoreo', 'name': 'Ejecución y Monitoreo', 'icon': 'Activity', 'orden': 4, 'description': 'Seguimiento de avance, indicadores EVM y control de cambios'},
+                            {'code': 'cierre', 'name': 'Cierre', 'icon': 'CheckCircle2', 'orden': 5, 'description': 'Lecciones aprendidas, acta de cierre y liberación de recursos'},
                         ]
                     },
-                    {'code': 'gestion_proyectos', 'name': 'Gestión de Proyectos', 'icon': 'Gantt', 'route': 'proyectos', 'orden': 7},
                     {'code': 'revision_direccion', 'name': 'Revisión por Dirección', 'icon': 'ClipboardCheck', 'route': 'revision-direccion', 'orden': 8},
+                    # NOTA: gestion_documental y planificacion_sistema fueron migrados a hseq_management (Gestión Integral)
                 ]
             },
 
@@ -197,7 +224,17 @@ class Command(BaseCommand):
                 'is_enabled': True,
                 'orden': 20,
                 'tabs': [
-                    {'code': 'matriz_legal', 'name': 'Matriz Legal', 'icon': 'BookOpen', 'route': 'matriz-legal', 'orden': 1},
+                    {
+                        'code': 'matriz_legal',
+                        'name': 'Matriz Legal',
+                        'icon': 'BookOpen',
+                        'route': 'matriz-legal',
+                        'orden': 1,
+                        'sections': [
+                            {'code': 'normas', 'name': 'Normas', 'icon': 'BookOpen', 'orden': 1, 'description': 'Registro de decretos, leyes y resoluciones'},
+                            {'code': 'evaluacion', 'name': 'Evaluación', 'icon': 'ClipboardCheck', 'orden': 2, 'description': 'Evaluación de cumplimiento por norma'},
+                        ]
+                    },
                     {'code': 'requisitos_legales', 'name': 'Requisitos Legales', 'icon': 'FileCheck', 'route': 'requisitos-legales', 'orden': 2},
                     {'code': 'partes_interesadas', 'name': 'Partes Interesadas', 'icon': 'Users2', 'route': 'partes-interesadas', 'orden': 3},
                     {'code': 'reglamentos_internos', 'name': 'Reglamentos Internos', 'icon': 'Gavel', 'route': 'reglamentos-internos', 'orden': 4},
@@ -215,13 +252,12 @@ class Command(BaseCommand):
                 'is_enabled': True,
                 'orden': 21,
                 'tabs': [
-                    # contexto_organizacional MOVIDO a gestion_estrategica.planeacion
-                    {'code': 'riesgos_procesos', 'name': 'Riesgos y Oportunidades', 'icon': 'GitBranch', 'route': 'procesos', 'orden': 1},
-                    {'code': 'ipevr', 'name': 'IPEVR (GTC-45)', 'icon': 'ShieldAlert', 'route': 'ipevr', 'orden': 2},
-                    {'code': 'aspectos_ambientales', 'name': 'Aspectos Ambientales', 'icon': 'Leaf', 'route': 'ambientales', 'orden': 3},
-                    {'code': 'riesgos_viales', 'name': 'Riesgos Viales', 'icon': 'Car', 'route': 'viales', 'orden': 4},
-                    {'code': 'sagrilaft_ptee', 'name': 'SAGRILAFT/PTEE', 'icon': 'ShieldCheck', 'route': 'sagrilaft', 'orden': 5},
-                    {'code': 'seguridad_informacion', 'name': 'Seguridad Información', 'icon': 'Lock', 'route': 'seguridad-info', 'orden': 6},
+                    # riesgos_oportunidades MOVIDO a gestion_estrategica (Tab 6)
+                    {'code': 'ipevr', 'name': 'IPEVR (GTC-45)', 'icon': 'ShieldAlert', 'route': 'ipevr', 'orden': 1},
+                    {'code': 'aspectos_ambientales', 'name': 'Aspectos Ambientales', 'icon': 'Leaf', 'route': 'ambientales', 'orden': 2},
+                    {'code': 'riesgos_viales', 'name': 'Riesgos Viales', 'icon': 'Car', 'route': 'viales', 'orden': 3},
+                    {'code': 'sagrilaft_ptee', 'name': 'SAGRILAFT/PTEE', 'icon': 'ShieldCheck', 'route': 'sagrilaft', 'orden': 4},
+                    {'code': 'seguridad_informacion', 'name': 'Seguridad Información', 'icon': 'Lock', 'route': 'seguridad-info', 'orden': 5},
                 ]
             },
             {
@@ -519,6 +555,7 @@ class Command(BaseCommand):
             defaults={
                 'name': data['name'],
                 'icon': data.get('icon', ''),
+                'description': data.get('description', ''),
                 'orden': data['orden'],
                 'is_enabled': True,
                 'is_core': data.get('is_core', False),
@@ -528,6 +565,7 @@ class Command(BaseCommand):
         if not created:
             section.name = data['name']
             section.icon = data.get('icon', '')
+            section.description = data.get('description', '')
             section.orden = data['orden']
             section.is_enabled = True
             section.save()
@@ -550,7 +588,22 @@ class Command(BaseCommand):
 
         return deleted_count
 
-    def print_summary(self, total_modules, total_tabs, total_sections=0, deleted_sections=0):
+    def cleanup_obsolete_tabs(self, module, valid_tab_codes):
+        """Eliminar tabs que ya no están en la configuración del módulo"""
+        existing_tabs = ModuleTab.objects.filter(module=module)
+        deleted_count = 0
+
+        for tab in existing_tabs:
+            if tab.code not in valid_tab_codes:
+                self.stdout.write(
+                    self.style.ERROR(f'    [DEL] Eliminando tab obsoleto: {tab.name} ({tab.code})')
+                )
+                tab.delete()
+                deleted_count += 1
+
+        return deleted_count
+
+    def print_summary(self, total_modules, total_tabs, total_sections=0, deleted_sections=0, deleted_tabs=0):
         """Imprimir resumen final"""
         self.stdout.write('\n' + '=' * 80)
         self.stdout.write(self.style.SUCCESS('  ESTRUCTURA FINAL CONFIGURADA'))
@@ -570,6 +623,8 @@ class Command(BaseCommand):
 
         self.stdout.write('\n  ' + '-' * 50)
         self.stdout.write(f'  TOTAL: {total_modules} módulos | {total_tabs} tabs | {total_sections} secciones')
+        if deleted_tabs > 0:
+            self.stdout.write(self.style.WARNING(f'  ELIMINADOS: {deleted_tabs} tabs obsoletos'))
         if deleted_sections > 0:
             self.stdout.write(self.style.WARNING(f'  ELIMINADAS: {deleted_sections} secciones obsoletas'))
         self.stdout.write('=' * 80)

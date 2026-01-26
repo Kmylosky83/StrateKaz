@@ -20,15 +20,17 @@ from apps.core.base_models import TimestampedModel, AuditModel, SoftDeleteModel,
 
 
 # =============================================================================
-# CHOICES TÉCNICOS (estados de workflow - fijos)
+# CHOICES TÉCNICOS (estados de workflow simplificado)
+# =============================================================================
+# El flujo de firmas y codificación se maneja en Gestor Documental.
+# Identidad solo crea políticas y recibe callbacks de estado.
 # =============================================================================
 
 POLICY_STATUS_CHOICES = [
-    ('BORRADOR', 'Borrador'),
-    ('EN_REVISION', 'En Revisión'),
-    ('FIRMADO', 'Firmado'),  # Nuevo: Listo para enviar a Gestor Documental
-    ('VIGENTE', 'Vigente'),
-    ('OBSOLETO', 'Obsoleto'),
+    ('BORRADOR', 'Borrador'),           # Editable en Identidad
+    ('EN_GESTION', 'En Gestión'),       # Enviado a Gestor Documental (no editable)
+    ('VIGENTE', 'Vigente'),             # Publicado (callback desde Gestor Documental)
+    ('OBSOLETO', 'Obsoleto'),           # Versión anterior reemplazada
 ]
 
 
@@ -38,20 +40,11 @@ class CorporateIdentity(AuditModel, SoftDeleteModel):
 
     Solo puede existir un registro activo por empresa (multi-tenant).
 
-    NOTA v3.1 SOBRE POLÍTICA INTEGRAL:
-    ==================================
-    Los campos de política integral en este modelo están DEPRECADOS.
-    Las políticas integrales ahora se gestionan en PoliticaEspecifica con:
-    - is_integral_policy=True para identificar políticas integrales
-    - Versionamiento, workflow de estados, firma digital
-    - Ver: PoliticaEspecifica.get_integral_vigente(identity)
+    v4.0: Campos legacy de política integral eliminados.
+    Las políticas integrales se gestionan en PoliticaEspecifica con is_integral_policy=True.
 
-    CAMPOS DEPRECADOS (a eliminar en v4.0):
-    - integral_policy, policy_signed_by, policy_signed_at, policy_signature_hash
-
-    USO RECOMENDADO:
-    - Para obtener la política integral vigente:
-      PoliticaEspecifica.get_integral_vigente(identity)
+    Para obtener la política integral vigente:
+        PoliticaEspecifica.get_integral_vigente(identity)
     """
 
     # Multi-tenancy
@@ -72,45 +65,6 @@ class CorporateIdentity(AuditModel, SoftDeleteModel):
         help_text='Declaración de visión de la organización'
     )
 
-    # =========================================================================
-    # CAMPOS DEPRECADOS - Política Integral
-    # =========================================================================
-    # DEPRECATED desde v2.0: Usar PoliticaEspecifica con is_integral_policy=True.
-    # Estos campos se mantienen por compatibilidad con datos existentes.
-    # Serán removidos en v4.0.
-    # Ver: PoliticaEspecifica.get_integral_vigente(identity)
-    # =========================================================================
-    integral_policy = models.TextField(
-        verbose_name='[DEPRECATED] Política Integral',
-        help_text='DEPRECATED v3.1: Usar PoliticaEspecifica con is_integral_policy=True.',
-        blank=True,
-        default=''
-    )
-    policy_signed_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='policies_signed',
-        verbose_name='[DEPRECATED] Firmada por',
-        help_text='DEPRECATED v3.1: Usar PoliticaEspecifica.approved_by'
-    )
-    policy_signed_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        verbose_name='[DEPRECATED] Fecha de firma',
-        help_text='DEPRECATED v3.1: Usar PoliticaEspecifica.approved_at'
-    )
-    policy_signature_hash = models.CharField(
-        max_length=255,
-        blank=True,
-        null=True,
-        verbose_name='[DEPRECATED] Hash de firma',
-        help_text='DEPRECATED v3.1: Usar PoliticaEspecifica.signature_hash'
-    )
-    # =========================================================================
-    # FIN CAMPOS DEPRECADOS
-    # =========================================================================
     effective_date = models.DateField(
         verbose_name='Fecha de vigencia',
         help_text='Fecha desde la cual esta identidad está vigente'
@@ -149,8 +103,15 @@ class CorporateIdentity(AuditModel, SoftDeleteModel):
     alcance_procesos = models.TextField(
         blank=True,
         null=True,
+        verbose_name='[LEGACY] Procesos Cubiertos (texto)',
+        help_text='DEPRECATED: Usar procesos_cubiertos ManyToMany. Campo legacy para retrocompatibilidad.'
+    )
+    procesos_cubiertos = models.ManyToManyField(
+        'organizacion.Area',
+        blank=True,
+        related_name='identidades_alcance',
         verbose_name='Procesos Cubiertos',
-        help_text='Descripción de los procesos cubiertos por el sistema de gestión'
+        help_text='Áreas/procesos cubiertos por el Sistema Integrado de Gestión'
     )
     alcance_exclusiones = models.TextField(
         blank=True,
@@ -181,42 +142,6 @@ class CorporateIdentity(AuditModel, SoftDeleteModel):
                 empresa_id=self.empresa_id
             ).exclude(pk=self.pk).update(is_active=False)
         super().save(*args, **kwargs)
-
-    def sign_policy(self, user):
-        """
-        DEPRECATED: Firma digitalmente la política integral.
-
-        Este método está DEPRECADO. Usar PoliticaIntegral.sign() en su lugar.
-        Se mantiene por compatibilidad con implementaciones existentes.
-
-        Uso recomendado:
-            politica = PoliticaIntegral.get_current(identity)
-            politica.sign(user)
-        """
-        import warnings
-        warnings.warn(
-            "CorporateIdentity.sign_policy() está deprecado. "
-            "Usar PoliticaIntegral.sign() en su lugar.",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        import hashlib
-        content = f"{self.integral_policy}|{user.id}|{timezone.now().isoformat()}"
-        self.policy_signature_hash = hashlib.sha256(content.encode()).hexdigest()
-        self.policy_signed_by = user
-        self.policy_signed_at = timezone.now()
-        self.save(update_fields=['policy_signature_hash', 'policy_signed_by', 'policy_signed_at'])
-
-    @property
-    def is_signed(self):
-        """
-        DEPRECATED: Verifica si la política está firmada (campo legacy).
-
-        Para verificar firma de la política vigente, usar:
-            politica = PoliticaIntegral.get_current(identity)
-            politica.is_signed if politica else False
-        """
-        return self.policy_signed_by is not None and self.policy_signature_hash is not None
 
     def get_current_integral_policy(self):
         """
@@ -671,3 +596,12 @@ class PoliticaEspecifica(AuditModel, SoftDeleteModel, OrderedModel):
             status='VIGENTE',
             is_active=True
         ).first()
+
+
+# =============================================================================
+# NOTA: El flujo de firmas se maneja en Gestor Documental
+# =============================================================================
+# El modelo FirmaPolitica fue eliminado. Las políticas se crean aquí en estado
+# BORRADOR y se envían al Gestor Documental para el proceso de firma,
+# codificación y publicación. El estado se sincroniza via callback.
+# =============================================================================

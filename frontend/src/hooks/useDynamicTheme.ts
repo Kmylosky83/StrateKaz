@@ -79,6 +79,7 @@ function generateColorVariants(
  * Hook que aplica la configuración dinámica del branding:
  * - Colores como CSS variables
  * - Favicon dinámico
+ * - Iconos PWA dinámicos
  * - Título de la página
  *
  * Debe usarse en el componente raíz de la aplicación
@@ -93,6 +94,10 @@ export function useDynamicTheme() {
     isLoading,
     isError,
     branding,
+    // PWA
+    pwaIcon192,
+    pwaIcon512,
+    pwaThemeColor,
   } = useBrandingConfig();
 
   // Efecto para aplicar favicon, título y meta tags PWA dinámicos
@@ -120,11 +125,26 @@ export function useDynamicTheme() {
         }
       }
 
-      // Actualizar apple-touch-icon
+      // Actualizar apple-touch-icon con icono PWA 192 o favicon como fallback
       const appleTouchIcon = document.getElementById('apple-touch-icon') as HTMLLinkElement;
       if (appleTouchIcon) {
-        appleTouchIcon.href = favicon;
+        // Usar icono PWA 192 si existe, sino favicon
+        const touchIconSrc = pwaIcon192 || favicon;
+        appleTouchIcon.href = touchIconSrc;
       }
+    }
+
+    // Actualizar iconos PWA dinámicos si existen
+    // El icono PWA 192 para pantalla de inicio
+    const pwaIcon192Link = document.getElementById('pwa-icon-192') as HTMLLinkElement;
+    if (pwaIcon192Link && pwaIcon192) {
+      pwaIcon192Link.href = pwaIcon192;
+    }
+
+    // El icono PWA 512 para splash screen
+    const pwaIcon512Link = document.getElementById('pwa-icon-512') as HTMLLinkElement;
+    if (pwaIcon512Link && pwaIcon512) {
+      pwaIcon512Link.href = pwaIcon512;
     }
 
     // Aplicar título - usa 'companyName' del hook que ya incluye fallback
@@ -144,11 +164,12 @@ export function useDynamicTheme() {
       }
     }
 
-    // Actualizar theme-color con el color primario
-    if (primaryColor && primaryColor.trim() !== '') {
+    // Actualizar theme-color con el color PWA o primario
+    const themeColor = pwaThemeColor || primaryColor;
+    if (themeColor && themeColor.trim() !== '') {
       const themeColorMeta = document.getElementById('meta-theme-color') as HTMLMetaElement;
       if (themeColorMeta) {
-        themeColorMeta.content = primaryColor;
+        themeColorMeta.content = themeColor;
       }
     }
 
@@ -167,14 +188,15 @@ export function useDynamicTheme() {
       }
     }
 
-    // Actualizar OG image si hay logo
-    if (branding?.logo) {
+    // Actualizar OG image si hay logo o icono PWA 512
+    const ogImageSrc = pwaIcon512 || branding?.logo;
+    if (ogImageSrc) {
       const ogImage = document.getElementById('og-image') as HTMLMetaElement;
       if (ogImage) {
-        ogImage.content = branding.logo;
+        ogImage.content = ogImageSrc;
       }
     }
-  }, [favicon, companyName, primaryColor, branding, isLoading]);
+  }, [favicon, companyName, primaryColor, pwaThemeColor, pwaIcon192, pwaIcon512, branding, isLoading]);
 
   // Efecto para aplicar colores
   useEffect(() => {

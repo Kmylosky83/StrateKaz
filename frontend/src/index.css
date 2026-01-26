@@ -15,8 +15,26 @@
 @tailwind utilities;
 
 @layer base {
+  /* Safe area insets para dispositivos con notch (iPhone X+, Android con cutout) */
+  :root {
+    --safe-area-inset-top: env(safe-area-inset-top, 0px);
+    --safe-area-inset-right: env(safe-area-inset-right, 0px);
+    --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-area-inset-left: env(safe-area-inset-left, 0px);
+  }
+
+  /* Viewport que respeta safe areas */
+  html {
+    /* Permite que el contenido se extienda a los bordes pero con padding seguro */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
   body {
     @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-body;
+    /* Prevenir overscroll bounce en iOS */
+    overscroll-behavior: none;
+    /* Mejorar scroll en móvil */
+    -webkit-overflow-scrolling: touch;
   }
 
   /* Headings - Montserrat */
@@ -108,5 +126,15 @@
 
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     @apply bg-gray-400 dark:bg-gray-500;
+  }
+
+  /* Ocultar scrollbar completamente (para tabs móviles) */
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
   }
 }

@@ -30,3 +30,14 @@ export {
   actividadProgramaApi,
   seguimientoCronogramaApi,
 } from './planificacionSistemaApi';
+
+// Contexto Organizacional (DOFA, PESTEL, Porter, TOWS)
+export * from './contextoApi';
+export * from './encuestasApi';
+export * from './mapaEstrategicoApi';
+
+// KPIs y Seguimiento
+export * from './kpisApi';
+
+// Gestión del Cambio
+export * from './gestionCambioApi';

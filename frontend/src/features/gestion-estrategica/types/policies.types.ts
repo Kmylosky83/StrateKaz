@@ -11,32 +11,41 @@
 // ============================================================================
 
 /**
- * Estados del workflow de una política
+ * Estados del workflow de una política (simplificado v4.0)
  *
- * Flujo completo:
- * BORRADOR → EN_REVISION → EN_APROBACION → POR_CODIFICAR → VIGENTE
- *                    ↓                ↓
- *                RECHAZADO ← RECHAZADO
+ * Flujo:
+ * BORRADOR → EN_GESTION → VIGENTE
+ *                ↓
+ *            BORRADOR (si rechazada)
  *
  * Cuando VIGENTE se actualiza → OBSOLETO
+ *
+ * NOTA: El flujo de firmas se maneja en Gestor Documental.
+ * Identidad solo crea políticas y las envía a gestión.
  */
 export type PoliticaStatus =
-  | 'BORRADOR'       // Política en edición
-  | 'EN_REVISION'    // En revisión técnica/jurídica
-  | 'EN_APROBACION'  // Revisiones ok, esperando aprobación gerencial
-  | 'POR_CODIFICAR'  // Aprobada, esperando codificación en Gestor Documental
-  | 'RECHAZADO'      // Rechazada por revisor o aprobador
+  | 'BORRADOR'       // Política en edición (editable)
+  | 'EN_GESTION'     // Enviada a Gestor Documental (no editable)
   | 'VIGENTE'        // Publicada y activa
-  | 'OBSOLETO';      // Versión anterior reemplazada
+  | 'OBSOLETO'       // Versión anterior reemplazada
+  // Estados legacy para retrocompatibilidad
+  | 'EN_REVISION'
+  | 'EN_APROBACION'
+  | 'POR_CODIFICAR'
+  | 'FIRMADO'
+  | 'RECHAZADO';
 
-/** Roles disponibles para firmantes en workflows */
+/**
+ * Roles genéricos para firmantes en workflows.
+ *
+ * NOTA: El CARGO específico (Director, Gerente, Coordinador SST, etc.)
+ * se selecciona dinámicamente desde el modal consumiendo los Cargos
+ * creados en Organización. El rol indica la FUNCIÓN en el flujo.
+ */
 export type RolFirmante =
-  | 'ELABORO'
-  | 'REVISO_TECNICO'
-  | 'REVISO_JURIDICO'
-  | 'APROBO_DIRECTOR'
-  | 'APROBO_GERENTE'
-  | 'APROBO_REPRESENTANTE_LEGAL';
+  | 'ELABORO'  // Usuario que crea el documento (automático)
+  | 'REVISO'   // Cargo seleccionado para revisión
+  | 'APROBO';  // Cargo seleccionado para aprobación
 
 /** Estados de una firma individual */
 export type EstadoFirma = 'PENDIENTE' | 'FIRMADO' | 'RECHAZADO' | 'REVOCADO';
@@ -253,23 +262,27 @@ export interface Politica {
 /** DTO para crear política */
 export interface CreatePoliticaDTO {
   identity: number;
-  tipo_id: number;
+  /** ID de la Norma/Sistema de Gestión (obligatorio) */
+  norma_iso: number;
   title: string;
   content: string;
   code?: string;
   version?: string;
   effective_date?: string;
   review_date?: string;
-  normas_aplicables_ids?: number[];
   area_id?: number;
   responsible_id?: number;
   responsible_cargo_id?: number;
   keywords?: string[];
   orden?: number;
+  /** Indica si es la política integral del sistema */
+  is_integral_policy?: boolean;
 }
 
 /** DTO para actualizar política */
 export interface UpdatePoliticaDTO {
+  /** ID de la Norma/Sistema de Gestión */
+  norma_iso?: number;
   title?: string;
   content?: string;
   code?: string;
@@ -277,7 +290,6 @@ export interface UpdatePoliticaDTO {
   status?: PoliticaStatus;
   effective_date?: string;
   review_date?: string;
-  normas_aplicables_ids?: number[];
   area_id?: number | null;
   responsible_id?: number | null;
   responsible_cargo_id?: number | null;
@@ -285,13 +297,13 @@ export interface UpdatePoliticaDTO {
   change_reason?: string;
   orden?: number;
   is_active?: boolean;
+  is_integral_policy?: boolean;
 }
 
 /** Filtros para búsqueda de políticas */
 export interface PoliticaFilters {
   identity?: number;
-  tipo_id?: number;
-  tipo_code?: string;
+  /** Filtrar por norma/sistema de gestión */
   norma_iso_id?: number;
   status?: PoliticaStatus;
   area_id?: number;
@@ -299,6 +311,7 @@ export interface PoliticaFilters {
   needs_review?: boolean;
   is_signed?: boolean;
   is_active?: boolean;
+  is_integral_policy?: boolean;
   search?: string;
   ordering?: string;
 }
@@ -459,19 +472,39 @@ export interface RecibirPoliticaResponse {
 // CONFIGURACIÓN DE UI
 // ============================================================================
 
-/** Configuración visual de estados de política */
+/** Configuración visual de estados de política (v4.0 simplificado) */
 export const STATUS_CONFIG: Record<PoliticaStatus, {
   label: string;
   color: string;
   bgColor: string;
   icon: string;
 }> = {
+  // Estados principales (v4.0)
   BORRADOR: {
     label: 'Borrador',
     color: 'text-gray-600',
     bgColor: 'bg-gray-100',
     icon: 'FileEdit',
   },
+  EN_GESTION: {
+    label: 'En Gestión',
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-100',
+    icon: 'Send',
+  },
+  VIGENTE: {
+    label: 'Vigente',
+    color: 'text-green-600',
+    bgColor: 'bg-green-100',
+    icon: 'CheckCircle',
+  },
+  OBSOLETO: {
+    label: 'Obsoleto',
+    color: 'text-red-600',
+    bgColor: 'bg-red-100',
+    icon: 'XCircle',
+  },
+  // Estados legacy para retrocompatibilidad
   EN_REVISION: {
     label: 'En Revisión',
     color: 'text-yellow-600',
@@ -490,20 +523,14 @@ export const STATUS_CONFIG: Record<PoliticaStatus, {
     bgColor: 'bg-blue-100',
     icon: 'FileText',
   },
+  FIRMADO: {
+    label: 'Firmado',
+    color: 'text-emerald-600',
+    bgColor: 'bg-emerald-100',
+    icon: 'FileCheck',
+  },
   RECHAZADO: {
     label: 'Rechazado',
-    color: 'text-red-600',
-    bgColor: 'bg-red-100',
-    icon: 'XCircle',
-  },
-  VIGENTE: {
-    label: 'Vigente',
-    color: 'text-green-600',
-    bgColor: 'bg-green-100',
-    icon: 'CheckCircle',
-  },
-  OBSOLETO: {
-    label: 'Obsoleto',
     color: 'text-red-600',
     bgColor: 'bg-red-100',
     icon: 'XCircle',

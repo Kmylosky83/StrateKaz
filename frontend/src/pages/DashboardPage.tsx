@@ -25,15 +25,111 @@ const getIconComponent = (iconName: string | undefined): LucideIcon => {
   return (icon ?? Settings) as LucideIcon;
 };
 
-const getModuleRoute = (module: { code: string; route?: string; tabs?: { code: string; is_enabled: boolean }[] }): string => {
+/**
+ * Mapeo hardcodeado de módulos a sus rutas base
+ * Sincronizado con routes/index.tsx y seed_estructura_final.py
+ */
+const MODULE_ROUTES: Record<string, string> = {
+  // Nivel 1: Dirección Estratégica
+  'gestion_estrategica': '/gestion-estrategica',
+  'soporte_estrategico': '/soporte-estrategico',
+  // Nivel 2: Cumplimiento
+  'motor_cumplimiento': '/cumplimiento',
+  'motor_riesgos': '/riesgos',
+  'workflow_engine': '/workflows',
+  // Nivel 3: Torre de Control
+  'hseq_management': '/hseq',
+  // Nivel 4: Cadena de Valor
+  'supply_chain': '/proveedores',
+  'production_ops': '/produccion',
+  'logistics_fleet': '/logistica',
+  'sales_crm': '/ventas',
+  // Nivel 5: Habilitadores
+  'talent_hub': '/talento',
+  'admin_finance': '/finanzas',
+  'accounting': '/contabilidad',
+  // Nivel 6: Inteligencia
+  'analytics': '/analytics',
+  'audit_system': '/auditoria',
+};
+
+/**
+ * Mapeo hardcodeado de tabs a sus rutas (slug)
+ * Solo para tabs que tienen ruta diferente al código
+ */
+const TAB_ROUTES: Record<string, string> = {
+  // Cumplimiento
+  'matriz_legal': 'matriz-legal',
+  'requisitos_legales': 'requisitos-legales',
+  'partes_interesadas': 'partes-interesadas',
+  'reglamentos_internos': 'reglamentos-internos',
+  // Riesgos
+  'riesgos_procesos': 'procesos',
+  'aspectos_ambientales': 'ambientales',
+  'riesgos_viales': 'viales',
+  'sagrilaft_ptee': 'sagrilaft',
+  'seguridad_informacion': 'seguridad-info',
+  // Workflows
+  'disenador_flujos': 'disenador',
+  // HSEQ
+  'sistema_documental': 'sistema-documental',
+  'planificacion_hseq': 'planificacion',
+  'medicina_laboral': 'medicina-laboral',
+  'seguridad_industrial': 'seguridad-industrial',
+  'higiene_industrial': 'higiene-industrial',
+  'gestion_comites': 'comites',
+  'gestion_ambiental': 'gestion-ambiental',
+  'mejora_continua': 'mejora-continua',
+  // Dirección Estratégica
+  'gestion_documental': 'gestion-documental',
+  'planificacion_sistema': 'planificacion-sistema',
+  'gestion_proyectos': 'proyectos',
+  'revision_direccion': 'revision-direccion',
+  // Supply Chain
+  'materia_prima': 'materia-prima',
+  'productos_servicios': 'productos-servicios',
+  'pruebas_acidez': 'pruebas-acidez',
+  // Producción
+  'producto_terminado': 'producto-terminado',
+  // Logística
+  'control_tiempo': 'control-tiempo',
+  // Talento
+  'off_boarding': 'off-boarding',
+  // Finanzas
+  'activos_fijos': 'activos-fijos',
+  'servicios_generales': 'servicios-generales',
+  // Analytics
+  'config_indicadores': 'configuracion',
+  'dashboard_gerencial': 'dashboards',
+  'indicadores_area': 'indicadores',
+  'analisis_tendencias': 'analisis',
+  'generador_informes': 'informes',
+  'acciones_indicador': 'acciones',
+  // Auditoría
+  'logs_sistema': 'logs',
+};
+
+const getModuleRoute = (module: {
+  code: string;
+  route?: string;
+  tabs?: {
+    code: string;
+    route?: string;
+    is_enabled: boolean;
+  }[]
+}): string => {
+  // Usar mapeo hardcodeado para la ruta base del módulo
+  const baseRoute = MODULE_ROUTES[module.code] || module.route || `/${module.code.toLowerCase().replace(/_/g, '-')}`;
+
+  // Si el módulo tiene tabs, navegar al primer tab habilitado
   if (module.tabs && module.tabs.length > 0) {
     const firstTab = module.tabs.find(t => t.is_enabled) || module.tabs[0];
-    const moduleSlug = module.code.toLowerCase().replace(/_/g, '-');
-    const tabSlug = firstTab.code.toLowerCase().replace(/_/g, '-');
-    return `/${moduleSlug}/${tabSlug}`;
+    // Usar mapeo hardcodeado para el tab, luego el route del API, luego convertir código
+    const tabSlug = TAB_ROUTES[firstTab.code] || firstTab.route || firstTab.code.toLowerCase().replace(/_/g, '-');
+    return `${baseRoute}/${tabSlug}`;
   }
-  if (module.route) return module.route;
-  return `/${module.code.toLowerCase().replace(/_/g, '-')}`;
+
+  return baseRoute;
 };
 
 // ============================================================================

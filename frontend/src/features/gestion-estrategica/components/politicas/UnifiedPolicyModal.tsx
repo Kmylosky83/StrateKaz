@@ -1,15 +1,21 @@
 /**
  * Modal Unificado de Políticas
- * Sistema de Gestión StrateKaz v3.0
+ * Sistema de Gestión StrateKaz v4.0
  *
- * Un solo modal para crear/editar cualquier tipo de política.
- * El tipo de política determina los campos y comportamiento.
+ * Un solo modal para crear/editar cualquier política.
+ * Las políticas se agrupan por Norma/Sistema de Gestión.
+ *
+ * Campos principales:
+ * - norma_iso: Norma o Sistema de Gestión (obligatorio)
+ * - title: Título de la política
+ * - content: Contenido en HTML (RichText)
+ * - is_integral_policy: Si es política integral del sistema
  */
 import { useEffect, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { X, Shield, PenTool, Calendar, Tag } from 'lucide-react';
+import { X, Shield, Calendar, Tag, AlertCircle } from 'lucide-react';
 
 // Design System
 import { Button } from '@/components/common/Button';
@@ -20,7 +26,6 @@ import { RichTextEditor } from '@/components/forms/RichTextEditor';
 // Hooks
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import {
-  useTiposPolitica,
   useNormasISOActivas,
   useCreatePolitica,
   useUpdatePolitica,
@@ -28,22 +33,21 @@ import {
 import { useAreas } from '../../hooks/useAreas';
 
 // Types
-import type { Politica, CreatePoliticaDTO } from '../../types/policies.types';
+import type { Politica, CreatePoliticaDTO, NormaISO } from '../../types/policies.types';
 
 // ============================================================================
 // VALIDATION SCHEMA
 // ============================================================================
 
 const politicaSchema = z.object({
-  tipo_id: z.number({ required_error: 'Seleccione un tipo de política' }),
+  norma_iso: z.number({ required_error: 'Seleccione una norma o sistema de gestión' }),
   title: z.string().min(3, 'El título debe tener al menos 3 caracteres'),
   content: z.string().min(10, 'El contenido es requerido'),
-  // version: manejada automáticamente por el backend (1.0 inicial, incrementa al crear nueva versión)
   effective_date: z.string().optional(),
   review_date: z.string().optional(),
-  normas_aplicables_ids: z.array(z.number()).default([]),
   area_id: z.number().optional().nullable(),
   responsible_cargo_id: z.number().optional().nullable(),
+  is_integral_policy: z.boolean().default(false),
 });
 
 type FormData = z.infer<typeof politicaSchema>;
@@ -57,7 +61,8 @@ interface UnifiedPolicyModalProps {
   onClose: () => void;
   identityId: number;
   politica?: Politica | null;
-  defaultTipoId?: number;
+  /** ID de la norma preseleccionada (cuando se crea desde el grupo) */
+  defaultNormaId?: number;
 }
 
 // ============================================================================
@@ -69,13 +74,12 @@ export function UnifiedPolicyModal({
   onClose,
   identityId,
   politica,
-  defaultTipoId,
+  defaultNormaId,
 }: UnifiedPolicyModalProps) {
   const { primaryColor } = useBrandingConfig();
   const isEditing = !!politica;
 
   // Data queries
-  const { data: tiposPolitica = [], isLoading: loadingTipos } = useTiposPolitica();
   const { data: normasISO = [], isLoading: loadingNormas } = useNormasISOActivas();
   const { data: areasData } = useAreas();
 
@@ -89,64 +93,56 @@ export function UnifiedPolicyModal({
     handleSubmit,
     watch,
     reset,
-    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(politicaSchema),
     defaultValues: {
-      tipo_id: defaultTipoId || politica?.tipo_id,
+      norma_iso: defaultNormaId || politica?.norma_iso || undefined,
       title: politica?.title || '',
       content: politica?.content || '',
       effective_date: politica?.effective_date || '',
       review_date: politica?.review_date || '',
-      normas_aplicables_ids: politica?.normas_aplicables?.map(n => n.id) || [],
       area_id: politica?.area_id || null,
       responsible_cargo_id: politica?.responsible_cargo_id || null,
+      is_integral_policy: politica?.is_integral_policy || false,
     },
   });
 
-  const selectedTipoId = watch('tipo_id');
+  const selectedNormaId = watch('norma_iso');
+  const isIntegral = watch('is_integral_policy');
 
-  const selectedTipo = useMemo(
-    () => tiposPolitica.find(t => t.id === selectedTipoId),
-    [tiposPolitica, selectedTipoId]
+  const selectedNorma = useMemo(
+    () => normasISO.find(n => n.id === selectedNormaId),
+    [normasISO, selectedNormaId]
   );
-
-  // Auto-set default normas when tipo changes
-  useEffect(() => {
-    if (selectedTipo?.normas_iso_default && !isEditing && selectedTipo.normas_iso_default.length > 0) {
-      setValue('normas_aplicables_ids', selectedTipo.normas_iso_default);
-    }
-  }, [selectedTipo, setValue, isEditing]);
 
   // Reset form when modal opens/closes
   useEffect(() => {
     if (isOpen) {
       reset({
-        tipo_id: defaultTipoId || politica?.tipo_id,
+        norma_iso: defaultNormaId || politica?.norma_iso || undefined,
         title: politica?.title || '',
         content: politica?.content || '',
         effective_date: politica?.effective_date || '',
         review_date: politica?.review_date || '',
-        normas_aplicables_ids: politica?.normas_aplicables?.map(n => n.id) || [],
         area_id: politica?.area_id || null,
         responsible_cargo_id: politica?.responsible_cargo_id || null,
+        is_integral_policy: politica?.is_integral_policy || false,
       });
     }
-  }, [isOpen, politica, defaultTipoId, reset]);
+  }, [isOpen, politica, defaultNormaId, reset]);
 
   const onSubmit = async (data: FormData) => {
     const dto: CreatePoliticaDTO = {
       identity: identityId,
-      tipo_id: data.tipo_id,
+      norma_iso: data.norma_iso,
       title: data.title,
       content: data.content,
-      // version: manejada automáticamente por el backend
       effective_date: data.effective_date || undefined,
       review_date: data.review_date || undefined,
-      normas_aplicables_ids: data.normas_aplicables_ids,
       area_id: data.area_id || undefined,
       responsible_cargo_id: data.responsible_cargo_id || undefined,
+      is_integral_policy: data.is_integral_policy,
     };
 
     if (isEditing && politica) {
@@ -162,9 +158,6 @@ export function UnifiedPolicyModal({
       onClose();
     }
   };
-
-  // Determine if we need to show responsable fields
-  const showResponsableFields = selectedTipo && !selectedTipo.code.includes('INTEGRAL');
 
   if (!isOpen) return null;
 
@@ -184,28 +177,28 @@ export function UnifiedPolicyModal({
             <div className="flex items-center gap-3">
               <div
                 className="p-2.5 rounded-xl"
-                style={{ backgroundColor: `${selectedTipo?.color || primaryColor}20` }}
+                style={{ backgroundColor: `${selectedNorma?.color || primaryColor}20` }}
               >
                 <DynamicIcon
-                  name={selectedTipo?.icon || 'FileText'}
+                  name={selectedNorma?.icon || 'FileText'}
                   className="w-6 h-6"
-                  color={selectedTipo?.color || primaryColor}
+                  color={selectedNorma?.color || primaryColor}
                 />
               </div>
               <div>
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                   {isEditing ? 'Editar Política' : 'Nueva Política'}
                 </h2>
-                {selectedTipo && (
+                {selectedNorma && (
                   <Badge
                     className="mt-1"
                     style={{
-                      backgroundColor: `${selectedTipo.color}20`,
-                      color: selectedTipo.color,
-                      borderColor: selectedTipo.color,
+                      backgroundColor: `${selectedNorma.color || primaryColor}20`,
+                      color: selectedNorma.color || primaryColor,
+                      borderColor: selectedNorma.color || primaryColor,
                     }}
                   >
-                    {selectedTipo.name}
+                    {selectedNorma.short_name || selectedNorma.name}
                   </Badge>
                 )}
               </div>
@@ -221,76 +214,109 @@ export function UnifiedPolicyModal({
           {/* Body */}
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="p-6 space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto">
-              {/* Tipo de Política */}
+              {/* Norma / Sistema de Gestión */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Tipo de Política <span className="text-red-500">*</span>
+                  Norma / Sistema de Gestión <span className="text-red-500">*</span>
                 </label>
                 <Controller
-                  name="tipo_id"
+                  name="norma_iso"
                   control={control}
                   render={({ field }) => (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                      {loadingTipos ? (
+                      {loadingNormas ? (
                         <div className="col-span-full text-center py-4 text-gray-500">
-                          Cargando tipos...
+                          Cargando normas...
+                        </div>
+                      ) : normasISO.length === 0 ? (
+                        <div className="col-span-full p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl flex items-center gap-3">
+                          <AlertCircle className="w-5 h-5 text-amber-500" />
+                          <div>
+                            <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                              No hay normas configuradas
+                            </p>
+                            <p className="text-xs text-amber-600 dark:text-amber-500">
+                              Configure las normas en Gestión Estratégica → Configuración → Normas ISO
+                            </p>
+                          </div>
                         </div>
                       ) : (
-                        tiposPolitica.map((tipo) => (
+                        normasISO.map((norma: NormaISO) => (
                           <button
-                            key={tipo.id}
+                            key={norma.id}
                             type="button"
-                            onClick={() => field.onChange(tipo.id)}
+                            onClick={() => field.onChange(norma.id)}
                             className={`
                               p-4 rounded-xl border-2 transition-all text-left
-                              ${field.value === tipo.id
+                              ${field.value === norma.id
                                 ? 'border-current shadow-lg scale-[1.02]'
                                 : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
                               }
                             `}
-                            style={field.value === tipo.id ? {
-                              borderColor: tipo.color,
-                              backgroundColor: `${tipo.color}10`,
-                            } : undefined}
+                            style={field.value === norma.id ? { borderColor: norma.color || primaryColor } : {}}
                           >
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 mb-2">
                               <div
-                                className="p-2 rounded-lg"
-                                style={{ backgroundColor: `${tipo.color}20` }}
+                                className="p-1.5 rounded-lg"
+                                style={{ backgroundColor: `${norma.color || primaryColor}20` }}
                               >
                                 <DynamicIcon
-                                  name={tipo.icon}
-                                  className="w-5 h-5"
-                                  color={tipo.color}
+                                  name={norma.icon || 'FileText'}
+                                  className="w-4 h-4"
+                                  color={norma.color || primaryColor}
                                 />
                               </div>
-                              <div>
-                                <p className="font-medium text-gray-900 dark:text-white text-sm">
-                                  {tipo.name}
-                                </p>
-                                {tipo.requiere_firma && (
-                                  <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
-                                    <PenTool className="w-3 h-3" />
-                                    Requiere firma
-                                  </div>
-                                )}
-                              </div>
+                              <span
+                                className="text-sm font-semibold"
+                                style={field.value === norma.id ? { color: norma.color || primaryColor } : {}}
+                              >
+                                {norma.short_name || norma.code}
+                              </span>
                             </div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
+                              {norma.name}
+                            </p>
                           </button>
                         ))
                       )}
                     </div>
                   )}
                 />
-                {errors.tipo_id && (
-                  <p className="mt-1 text-sm text-red-500">{errors.tipo_id.message}</p>
+                {errors.norma_iso && (
+                  <p className="mt-1 text-sm text-red-500">{errors.norma_iso.message}</p>
                 )}
+              </div>
+
+              {/* Es Política Integral */}
+              <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                <Controller
+                  name="is_integral_policy"
+                  control={control}
+                  render={({ field }) => (
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={field.value}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                        className="w-5 h-5 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                      />
+                      <div>
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          Política Integral del Sistema
+                        </span>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Marcar si esta es la política integral que engloba todos los sistemas de gestión
+                        </p>
+                      </div>
+                    </label>
+                  )}
+                />
               </div>
 
               {/* Título */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Título de la Política <span className="text-red-500">*</span>
+                  Título <span className="text-red-500">*</span>
                 </label>
                 <Controller
                   name="title"
@@ -299,16 +325,8 @@ export function UnifiedPolicyModal({
                     <input
                       {...field}
                       type="text"
-                      placeholder="Ej: Política de Seguridad y Salud en el Trabajo"
-                      className={`
-                        w-full px-4 py-3 rounded-xl border transition-colors
-                        bg-white dark:bg-gray-800
-                        ${errors.title
-                          ? 'border-red-500 focus:ring-red-500'
-                          : 'border-gray-300 dark:border-gray-600 focus:border-primary-500'
-                        }
-                        focus:outline-none focus:ring-2 focus:ring-opacity-50
-                      `}
+                      placeholder={`Ej: Política de ${selectedNorma?.short_name || 'Gestión'}`}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                   )}
                 />
@@ -317,73 +335,34 @@ export function UnifiedPolicyModal({
                 )}
               </div>
 
-              {/* Normas ISO Aplicables */}
+              {/* Contenido */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  <div className="flex items-center gap-2">
-                    <Tag className="w-4 h-4" />
-                    Normas Aplicables
-                  </div>
+                  Contenido <span className="text-red-500">*</span>
                 </label>
                 <Controller
-                  name="normas_aplicables_ids"
+                  name="content"
                   control={control}
                   render={({ field }) => (
-                    <div className="flex flex-wrap gap-2">
-                      {loadingNormas ? (
-                        <span className="text-gray-500">Cargando normas...</span>
-                      ) : (
-                        normasISO.map((norma) => {
-                          const isSelected = field.value.includes(norma.id);
-                          return (
-                            <button
-                              key={norma.id}
-                              type="button"
-                              onClick={() => {
-                                if (isSelected) {
-                                  field.onChange(field.value.filter(id => id !== norma.id));
-                                } else {
-                                  field.onChange([...field.value, norma.id]);
-                                }
-                              }}
-                              className={`
-                                px-3 py-2 rounded-lg border-2 transition-all flex items-center gap-2
-                                ${isSelected
-                                  ? 'border-current shadow-sm'
-                                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
-                                }
-                              `}
-                              style={isSelected ? {
-                                borderColor: norma.color || primaryColor,
-                                backgroundColor: `${norma.color || primaryColor}10`,
-                                color: norma.color || primaryColor,
-                              } : undefined}
-                            >
-                              <DynamicIcon
-                                name={norma.icon || 'Award'}
-                                className="w-4 h-4"
-                                color={isSelected ? (norma.color || primaryColor) : undefined}
-                              />
-                              <span className={`text-sm font-medium ${isSelected ? '' : 'text-gray-700 dark:text-gray-300'}`}>
-                                {norma.code}
-                              </span>
-                            </button>
-                          );
-                        })
-                      )}
-                    </div>
+                    <RichTextEditor
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Escriba el contenido de la política..."
+                      minHeight={200}
+                    />
                   )}
                 />
+                {errors.content && (
+                  <p className="mt-1 text-sm text-red-500">{errors.content.message}</p>
+                )}
               </div>
 
-              {/* Fechas - Versión es automática (1.0 inicial, incrementa en nuevas versiones) */}
+              {/* Fechas */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      Fecha de Vigencia
-                    </div>
+                    <Calendar className="w-4 h-4 inline mr-1" />
+                    Fecha de Vigencia
                   </label>
                   <Controller
                     name="effective_date"
@@ -392,17 +371,15 @@ export function UnifiedPolicyModal({
                       <input
                         {...field}
                         type="date"
-                        className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-opacity-50"
+                        className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
                       />
                     )}
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      Próxima Revisión
-                    </div>
+                    <Calendar className="w-4 h-4 inline mr-1" />
+                    Próxima Revisión
                   </label>
                   <Controller
                     name="review_date"
@@ -411,87 +388,35 @@ export function UnifiedPolicyModal({
                       <input
                         {...field}
                         type="date"
-                        className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-opacity-50"
+                        className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
                       />
                     )}
                   />
                 </div>
               </div>
 
-              {/* Responsables (solo para específicas) */}
-              {showResponsableFields && (
-                <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl space-y-4">
-                  <h4 className="font-medium text-gray-900 dark:text-white flex items-center gap-2">
-                    <Shield className="w-4 h-4" />
-                    Responsables
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Área Responsable
-                      </label>
-                      <Controller
-                        name="area_id"
-                        control={control}
-                        render={({ field }) => (
-                          <select
-                            value={field.value || ''}
-                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
-                            className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-opacity-50"
-                          >
-                            <option value="">Seleccionar área...</option>
-                            {areasData?.results?.map((area) => (
-                              <option key={area.id} value={area.id}>
-                                {area.name}
-                              </option>
-                            ))}
-                          </select>
-                        )}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Contenido - RichTextEditor reutilizable */}
-              <Controller
-                name="content"
-                control={control}
-                render={({ field }) => (
-                  <RichTextEditor
-                    label="Contenido de la Política"
-                    value={field.value}
-                    onChange={field.onChange}
-                    placeholder="Escriba el contenido completo de la política..."
-                    error={errors.content?.message}
-                    minHeight="250px"
+              {/* Área (opcional) */}
+              {!isIntegral && areasData?.results && areasData.results.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Área Responsable
+                  </label>
+                  <Controller
+                    name="area_id"
+                    control={control}
+                    render={({ field }) => (
+                      <select
+                        value={field.value || ''}
+                        onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                        className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      >
+                        <option value="">Seleccionar área (opcional)</option>
+                        {areasData.results.map((area: { id: number; name: string }) => (
+                          <option key={area.id} value={area.id}>{area.name}</option>
+                        ))}
+                      </select>
+                    )}
                   />
-                )}
-              />
-
-              {/* Indicador de Workflow */}
-              {selectedTipo?.requiere_firma && (
-                <div
-                  className="p-4 rounded-xl border-l-4 flex items-start gap-3"
-                  style={{
-                    borderColor: primaryColor,
-                    backgroundColor: `${primaryColor}10`,
-                  }}
-                >
-                  <PenTool className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: primaryColor }} />
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white">
-                      Workflow de Firmas Requerido
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      Esta política requerirá aprobación mediante firma digital antes de publicarse.
-                      {selectedTipo.flujo_firma_default && (
-                        <span className="block mt-1 font-medium">
-                          Flujo: {selectedTipo.flujo_firma_default.nombre}
-                        </span>
-                      )}
-                    </p>
-                  </div>
                 </div>
               )}
             </div>
@@ -508,21 +433,10 @@ export function UnifiedPolicyModal({
               </Button>
               <Button
                 type="submit"
-                disabled={isSubmitting}
-                className="min-w-[140px]"
+                disabled={isSubmitting || loadingNormas}
                 style={{ backgroundColor: primaryColor }}
               >
-                {isSubmitting ? (
-                  <span className="flex items-center gap-2">
-                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Guardando...
-                  </span>
-                ) : (
-                  isEditing ? 'Guardar Cambios' : 'Crear Política'
-                )}
+                {isSubmitting ? 'Guardando...' : isEditing ? 'Guardar Cambios' : 'Crear Política'}
               </Button>
             </div>
           </form>

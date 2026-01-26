@@ -84,6 +84,23 @@ export interface NormaISOChoices {
   categorias: Array<{ value: string; label: string }>;
 }
 
+/**
+ * Norma ISO para selector en objetivos estratégicos
+ * Viene del endpoint GET /planeacion/objetivos/normas-iso-choices/
+ */
+export interface NormaISOChoice {
+  id: number;
+  code: string;
+  name: string;
+  short_name: string | null;
+  icon: string | null;
+  color: string | null;
+  category: string | null;
+  // Campos de compatibilidad para SelectOption
+  value: number;
+  label: string;
+}
+
 export interface CreateNormaISODTO {
   code: string;
   name: string;
@@ -282,8 +299,12 @@ export const plansApi = {
     return response.data;
   },
 
+  /**
+   * @deprecated Use objectivesApi.getNormasISOChoices() instead
+   */
   getISOStandards: async (): Promise<SelectOption[]> => {
-    const response = await axiosInstance.get(`${PLANEACION_URL}/planes/iso-standards/`);
+    // Redirigir al nuevo endpoint dinámico
+    const response = await axiosInstance.get(`${PLANEACION_URL}/objetivos/normas-iso-choices/`);
     return response.data;
   },
 
@@ -332,6 +353,15 @@ export const objectivesApi = {
 
   getStatuses: async (): Promise<SelectOption[]> => {
     const response = await axiosInstance.get(`${PLANEACION_URL}/objetivos/statuses/`);
+    return response.data;
+  },
+
+  /**
+   * Obtiene las normas ISO activas para vincular a objetivos
+   * Endpoint: GET /planeacion/objetivos/normas-iso-choices/
+   */
+  getNormasISOChoices: async (): Promise<NormaISOChoice[]> => {
+    const response = await axiosInstance.get(`${PLANEACION_URL}/objetivos/normas-iso-choices/`);
     return response.data;
   },
 };

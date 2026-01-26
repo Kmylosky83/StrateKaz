@@ -326,7 +326,7 @@ export const ReglamentosTable = ({
   if (isLoading) {
     return (
       <Card>
-        <div className="p-6 animate-pulse space-y-3">
+        <div className="p-6 animate-pulse-subtle space-y-3">
           {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="h-12 bg-gray-200 dark:bg-gray-700 rounded" />
           ))}

@@ -15,8 +15,8 @@
  * @see docs/desarrollo/CATALOGO_VISTAS_UI.md
  */
 import { useState } from 'react';
-import { Plus, Edit, Trash2, FileCheck, Lock, Palette } from 'lucide-react';
-import { Card, Badge, Button } from '@/components/common';
+import { Plus, FileCheck, Lock } from 'lucide-react';
+import { Card, Badge, Button, BrandedSkeleton, DynamicIcon } from '@/components/common';
 import { ActionButtons } from '@/components/common/ActionButtons';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -61,18 +61,7 @@ export const NormasISOSection = () => {
   };
 
   if (isLoading) {
-    return (
-      <Card>
-        <div className="p-6 animate-pulse">
-          <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-4" />
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded" />
-            ))}
-          </div>
-        </div>
-      </Card>
-    );
+    return <BrandedSkeleton height="h-80" logoSize="xl" showText />;
   }
 
   return (
@@ -133,21 +122,21 @@ export const NormasISOSection = () => {
                     >
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
-                          {norma.icon && (
-                            <div
-                              className="p-2 rounded-lg"
-                              style={{
-                                backgroundColor: norma.color
-                                  ? `${norma.color}20`
-                                  : 'rgba(59, 130, 246, 0.1)',
-                              }}
-                            >
-                              <FileCheck
-                                className="h-4 w-4"
-                                style={{ color: norma.color || '#3b82f6' }}
-                              />
-                            </div>
-                          )}
+                          <div
+                            className="p-2 rounded-lg"
+                            style={{
+                              backgroundColor: norma.color
+                                ? `${norma.color}20`
+                                : 'rgba(59, 130, 246, 0.1)',
+                            }}
+                          >
+                            <DynamicIcon
+                              name={norma.icon || 'FileCheck'}
+                              size={16}
+                              color={norma.color || '#3b82f6'}
+                              fallback={<FileCheck className="h-4 w-4" style={{ color: norma.color || '#3b82f6' }} />}
+                            />
+                          </div>
                           <div>
                             <div className="flex items-center gap-2">
                               <span className="font-medium text-gray-900 dark:text-gray-100">
@@ -200,7 +189,7 @@ export const NormasISOSection = () => {
                           <ActionButtons
                             module={Modules.GESTION_ESTRATEGICA}
                             section={Sections.NORMAS_ISO}
-                            onEdit={!norma.es_sistema ? () => handleEdit(norma) : undefined}
+                            onEdit={() => handleEdit(norma)}
                             onDelete={
                               !norma.es_sistema ? () => handleDeleteClick(norma) : undefined
                             }

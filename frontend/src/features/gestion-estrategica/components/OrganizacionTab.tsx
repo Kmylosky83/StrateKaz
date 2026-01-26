@@ -2,15 +2,18 @@
  * Tab de Organizacion - Modulo Direccion Estrategica
  *
  * Secciones (orden desde BD):
- * 1. Areas - Gestion de areas/departamentos
- * 2. Cargos - Gestion de cargos organizacionales (incluye permisos en Tabs 5-6)
- * 3. Organigrama - Vista del organigrama
- * 4. Colaboradores - Gestión de usuarios/colaboradores
- * 5. Consecutivos - Configuración de consecutivos automáticos (migrado desde Configuración)
- * 6. Unidades de Medida - Catálogo de unidades de medida (migrado desde Configuración)
+ * 1. Áreas - Gestión de áreas/departamentos (Vista 7: Tree Cards)
+ * 2. Cargos - Gestión de cargos organizacionales (Vista 2: Lista CRUD)
+ * 3. Organigrama - Vista interactiva del organigrama (Vista 8: Organigrama)
+ * 4. Colaboradores - Gestión de usuarios/colaboradores (Vista 2: Lista CRUD)
+ * 5. Consecutivos - Configuración de consecutivos automáticos (Vista 2: Lista CRUD)
+ * 6. Unidades - Catálogo de unidades de medida (Vista 2: Lista CRUD)
  *
- * Las secciones se controlan desde DynamicSections en la pagina padre
- * NOTA: Control de Acceso fue removido - permisos se configuran en CargoFormModal
+ * Las secciones se controlan desde DynamicSections en la página padre.
+ *
+ * NOTA: La sección "Control de Acceso" fue removida del sistema.
+ * Los permisos RBAC se configuran dentro del modal de edición de Cargos
+ * (CargoFormModal > TabAccesoSecciones).
  */
 
 // Importar CargosTab desde configuracion

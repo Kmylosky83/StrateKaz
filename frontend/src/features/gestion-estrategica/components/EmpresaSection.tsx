@@ -29,7 +29,7 @@ import {
   Loader2,
   User,
 } from 'lucide-react';
-import { Card, Button, Alert } from '@/components/common';
+import { Card, Button, Alert, BrandedSkeleton } from '@/components/common';
 import { DataCard, DataField, DataGrid, DataSection } from '@/components/data-display';
 import { Input, Select } from '@/components/forms';
 import {
@@ -663,18 +663,7 @@ export const EmpresaSection = () => {
   const { canDo } = usePermissions();
 
   if (isLoading) {
-    return (
-      <Card>
-        <div className="p-6 animate-pulse">
-          <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-4" />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="h-40 bg-gray-200 dark:bg-gray-700 rounded" />
-            ))}
-          </div>
-        </div>
-      </Card>
-    );
+    return <BrandedSkeleton height="h-96" logoSize="xl" showText />;
   }
 
   // Si no está configurada, mostrar mensaje con header estándar y botón de acción

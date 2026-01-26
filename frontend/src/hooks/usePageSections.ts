@@ -80,7 +80,7 @@ export const usePageSections = (options: UsePageSectionsOptions): UsePageSection
   }, [sections, activeSection]);
 
   return {
-    sections,
+    sections: sections as TabSection[],
     activeSection,
     setActiveSection,
     activeSectionData,

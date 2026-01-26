@@ -289,7 +289,7 @@ export const LoginPage = () => {
           <motion.div className="text-center mb-6 sm:mb-8" variants={logoVariants}>
             {/* Logo con loading state */}
             {brandingLoading ? (
-              <div className="mx-auto h-16 sm:h-20 w-16 sm:w-20 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse mb-4" />
+              <div className="mx-auto h-16 sm:h-20 w-16 sm:w-20 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse-subtle mb-4" />
             ) : (
               <>
                 <img
@@ -307,7 +307,7 @@ export const LoginPage = () => {
 
             <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white font-heading leading-tight break-words">
               {brandingLoading ? (
-                <span className="inline-block h-8 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                <span className="inline-block h-8 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse-subtle" />
               ) : (
                 companyName
               )}
@@ -315,7 +315,7 @@ export const LoginPage = () => {
 
             <p className="mt-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
               {brandingLoading ? (
-                <span className="inline-block h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                <span className="inline-block h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse-subtle" />
               ) : (
                 companySlogan
               )}

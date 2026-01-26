@@ -151,6 +151,17 @@ export default {
         'xl': '0.75rem',
         '2xl': '1rem',
       },
+      // Animaciones del Design System
+      animation: {
+        // Pulse sutil para skeletons - más lento y suave que el default
+        'pulse-subtle': 'pulse-subtle 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+      },
+      keyframes: {
+        'pulse-subtle': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.6' },
+        },
+      },
     },
   },
   plugins: [

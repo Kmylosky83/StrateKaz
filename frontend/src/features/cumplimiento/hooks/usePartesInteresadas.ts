@@ -1,4 +1,4 @@
-﻿/**
+/**
  * React Query Hooks para Partes Interesadas
  * Sistema de Gestión StrateKaz
  *
@@ -32,8 +32,8 @@ export const partesInteresadasKeys = {
 
 export const useTiposParteInteresada = () => {
   return useGenericCRUD<TipoParteInteresada>({
-    queryKey: partesInteresadasKeys.tipos,
-    endpoint: '/motor_cumplimiento/partes-interesadas/tipos/',
+    queryKey: [...partesInteresadasKeys.tipos],
+    endpoint: '/cumplimiento/partes-interesadas/tipos/',
     entityName: 'Tipo de Parte Interesada',
     isFeminine: true,
     isPaginated: true,
@@ -59,9 +59,18 @@ export const useReorderTiposParteInteresada = () => {
 // ==================== PARTES INTERESADAS HOOKS ====================
 
 export const usePartesInteresadas = (filters?: ParteInteresadaFilters) => {
+  // Build query params properly
+  const queryParams = filters
+    ? '?' + new URLSearchParams(
+        Object.entries(filters)
+          .filter(([, v]) => v !== undefined && v !== null && v !== '')
+          .map(([k, v]) => [k, String(v)])
+      ).toString()
+    : '';
+
   return useGenericCRUD<ParteInteresada>({
-    queryKey: partesInteresadasKeys.partes(filters),
-    endpoint: `/motor_cumplimiento/partes-interesadas/partes/${filters ? '?' + new URLSearchParams(filters as Record<string, string>).toString() : ''}`,
+    queryKey: [...partesInteresadasKeys.partes(filters)],
+    endpoint: `/cumplimiento/partes-interesadas/partes/${queryParams}`,
     entityName: 'Parte Interesada',
     isFeminine: true,
     isPaginated: true,

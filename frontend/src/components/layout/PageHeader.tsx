@@ -78,13 +78,19 @@ export function PageHeader({
 
         {/* Lado derecho: Tabs en contenedor profesional + acciones */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-shrink-0">
-          {/* Contenedor de secciones */}
+          {/* Contenedor de secciones - scroll horizontal en móvil */}
           {hasSections && (
             <nav
               className={cn(
-                'inline-flex items-center gap-1 p-1',
+                'flex md:inline-flex items-center gap-1 p-1',
                 'rounded-lg border',
-                'overflow-x-auto scrollbar-thin',
+                // Mobile: scroll horizontal con snap, sin scrollbar visible
+                'overflow-x-auto md:overflow-visible',
+                'scrollbar-none',
+                'snap-x snap-mandatory md:snap-none',
+                // En móvil ocupar todo el ancho disponible
+                'w-full md:w-auto',
+                '-mx-1 px-1 md:mx-0',
                 colors.container
               )}
             >
@@ -100,11 +106,13 @@ export function PageHeader({
                       'flex items-center gap-1.5 px-3 py-1.5',
                       'text-sm font-medium whitespace-nowrap',
                       'rounded-md transition-all duration-200',
+                      // Mobile: snap y no comprimir
+                      'snap-start flex-shrink-0',
                       isActive ? colors.active : colors.inactive
                     )}
                   >
                     <Icon className="h-4 w-4 flex-shrink-0" />
-                    <span>{section.name}</span>
+                    <span className="hidden sm:inline">{section.name}</span>
                   </button>
                 );
               })}

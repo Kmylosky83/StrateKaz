@@ -220,16 +220,17 @@ function StatCard({ stat, variant, colorKey }: StatCardProps) {
 
 /**
  * StatCardSkeleton - Skeleton para carga de estadísticas
+ * Usa animate-pulse-subtle del design system para una animación más suave
  */
 export function StatCardSkeleton() {
   return (
-    <Card className="p-5 shadow-sm border-gray-200/60 dark:border-gray-700/60">
-      <div className="flex items-start justify-between animate-pulse">
+    <Card className="p-5 shadow-sm border-gray-200/40 dark:border-gray-700/40">
+      <div className="flex items-start justify-between">
         <div className="flex-1">
-          <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded" />
-          <div className="mt-3 h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded" />
+          <div className="h-4 w-24 bg-gray-100 dark:bg-gray-800 rounded animate-pulse-subtle" />
+          <div className="mt-3 h-8 w-16 bg-gray-100 dark:bg-gray-800 rounded animate-pulse-subtle" />
         </div>
-        <div className="h-12 w-12 bg-gray-200 dark:bg-gray-700 rounded-xl" />
+        <div className="h-12 w-12 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse-subtle" />
       </div>
     </Card>
   );

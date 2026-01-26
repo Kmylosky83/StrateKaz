@@ -14,7 +14,7 @@
  */
 import { useState } from 'react';
 import { Plus, Edit, Trash2, MapPin, Building2, Star, CheckCircle2 } from 'lucide-react';
-import { Card, Badge, Button } from '@/components/common';
+import { Card, Badge, Button, BrandedSkeleton } from '@/components/common';
 import { ActionButtons } from '@/components/common/ActionButtons';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -64,18 +64,7 @@ export const SedesSection = () => {
   };
 
   if (isLoading) {
-    return (
-      <Card>
-        <div className="p-6 animate-pulse">
-          <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-4" />
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded" />
-            ))}
-          </div>
-        </div>
-      </Card>
-    );
+    return <BrandedSkeleton height="h-80" logoSize="xl" showText />;
   }
 
   return (

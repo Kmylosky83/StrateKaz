@@ -1,4 +1,4 @@
-import { forwardRef } from 'react';
+import { forwardRef, useId } from 'react';
 import { cn } from '@/utils/cn';
 import { Calendar } from 'lucide-react';
 
@@ -39,7 +39,7 @@ export const DateRangePicker = forwardRef<HTMLDivElement, DateRangePickerProps>(
     },
     ref
   ) => {
-    const groupId = `daterange-${Math.random().toString(36).substr(2, 9)}`;
+    const groupId = useId();
 
     const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const newStartDate = e.target.value;

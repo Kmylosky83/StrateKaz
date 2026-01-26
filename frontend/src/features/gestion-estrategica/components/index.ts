@@ -5,6 +5,7 @@
 // Tabs principales
 export { IdentidadTab } from './IdentidadTab';
 export { PlaneacionTab } from './PlaneacionTab';
+export { ContextoTab } from './ContextoTab';
 export { OrganizacionTab } from './OrganizacionTab';
 export { ConfiguracionTab } from './ConfiguracionTab';
 
@@ -33,6 +34,35 @@ export { CredencialesEditor } from './CredencialesEditor';
 // Normas ISO
 export { NormasISOSection } from './NormasISOSection';
 export { NormaISOFormModal } from './modals/NormaISOFormModal';
+
+// Contexto Organizacional (DOFA, PESTEL, Porter, TOWS)
+export {
+  EncuestasDofaSection,
+  AnalisisDofaSection,
+  AnalisisPestelSection,
+  FuerzasPorterSection,
+  EstrategiasTowsSection,
+} from './contexto';
+
+// Mapa Estratégico BSC (React Flow)
+export {
+  MapaEstrategicoTab,
+  MapaEstrategicoCanvas,
+  MapaToolbar,
+  ObjetivoNode,
+} from './mapa-estrategico';
+
+// KPIs y Seguimiento (Sprint 4)
+export {
+  KPIDashboard,
+  KPITable,
+  KPIProgressChart,
+  KPIsTab,
+} from './kpis';
+
+// Gestión del Cambio
+export { GestionCambioTab } from './GestionCambioTab';
+export { CambioFormModal } from './modals/CambioFormModal';
 
 // Types
 export type {

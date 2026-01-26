@@ -4,6 +4,7 @@
  * Semana 5: Gestión de Proyectos
  */
 import axiosInstance from '@/api/axios-config';
+import type { PaginatedResponse } from '@/types/api.types';
 import type {
   Portafolio,
   CreatePortafolioDTO,
@@ -17,6 +18,7 @@ import type {
   CreateProyectoDTO,
   UpdateProyectoDTO,
   ProyectoFilters,
+  CreateProyectoDesdeCambioDTO,
   EquipoProyecto,
   CreateEquipoProyectoDTO,
   UpdateEquipoProyectoDTO,
@@ -26,7 +28,6 @@ import type {
   UpdateHitoProyectoDTO,
   HitoProyectoFilters,
   ProyectosDashboard,
-  PaginatedResponse,
   ProyectosChoices,
 } from '../types/proyectos';
 
@@ -147,6 +148,20 @@ export const proyectosApi = {
     data: { health_status: string; health_notes?: string }
   ): Promise<Proyecto> => {
     const response = await axiosInstance.post(`${BASE_URL}/proyectos/${id}/actualizar_salud/`, data);
+    return response.data;
+  },
+
+  // Crear proyecto desde Gestión de Cambios
+  crearDesdeCambio: async (
+    data: CreateProyectoDesdeCambioDTO
+  ): Promise<{ detail: string; proyecto: Proyecto }> => {
+    const response = await axiosInstance.post(`${BASE_URL}/proyectos/crear_desde_cambio/`, data);
+    return response.data;
+  },
+
+  // Obtener opciones de origen de proyectos
+  getOrigenesChoices: async (): Promise<{ tipo_origen: Array<{ value: string; label: string }> }> => {
+    const response = await axiosInstance.get(`${BASE_URL}/proyectos/origenes_choices/`);
     return response.data;
   },
 };

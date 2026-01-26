@@ -394,7 +394,7 @@ class ModuleTabSerializer(serializers.ModelSerializer):
         model = ModuleTab
         fields = [
             'id', 'module', 'module_name',
-            'code', 'name', 'description', 'icon', 'orden',
+            'code', 'name', 'description', 'icon', 'route', 'orden',
             'is_enabled', 'is_core', 'can_disable',
             'sections', 'section_count', 'enabled_section_count',
             'created_at', 'updated_at'
@@ -441,7 +441,7 @@ class SystemModuleTreeSerializer(serializers.ModelSerializer):
     class Meta:
         model = SystemModule
         fields = [
-            'id', 'code', 'name', 'description', 'icon', 'color',
+            'id', 'code', 'name', 'description', 'icon', 'color', 'route',
             'category', 'category_display', 'orden',
             'is_enabled', 'is_core', 'requires_license', 'license_expires_at',
             'can_disable',

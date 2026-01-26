@@ -971,9 +971,14 @@ class NormaISOListSerializer(serializers.ModelSerializer):
     """
     Serializer reducido para listados y selects de normas ISO
     """
+    category_display = serializers.CharField(
+        source='get_category_display',
+        read_only=True
+    )
+
     class Meta:
         model = NormaISO
-        fields = ['id', 'code', 'name', 'short_name', 'icon', 'color', 'category']
+        fields = ['id', 'code', 'name', 'short_name', 'icon', 'color', 'category', 'category_display', 'es_sistema', 'is_active']
 
 
 class NormaISOChoicesSerializer(serializers.Serializer):

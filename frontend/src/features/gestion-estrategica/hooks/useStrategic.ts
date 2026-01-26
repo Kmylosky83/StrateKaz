@@ -364,11 +364,16 @@ export const useBSCPerspectives = () => {
   });
 };
 
+/**
+ * Hook para obtener normas ISO activas para vincular a objetivos
+ * Consulta el endpoint dinámico que lee de configuracion.NormaISO
+ */
 export const useISOStandards = () => {
   return useQuery({
     queryKey: strategicKeys.isoStandards,
-    queryFn: plansApi.getISOStandards,
-    staleTime: Infinity,
+    queryFn: objectivesApi.getNormasISOChoices,
+    staleTime: 5 * 60 * 1000, // 5 minutos - datos semi-estáticos
+    gcTime: 10 * 60 * 1000, // 10 minutos cache
   });
 };
 
@@ -650,11 +655,14 @@ export const useStrategicStats = () => {
   });
 };
 
+// Secciones de configuración que no tienen StatsGrid
+const SECTIONS_WITHOUT_STATS = ['branding', 'normas-iso', 'modulos'];
+
 export const useConfiguracionStats = (section: string) => {
   return useQuery({
     queryKey: strategicKeys.configStats(section),
     queryFn: () => statsApi.getConfigStats(section),
-    enabled: !!section && section !== 'branding', // branding no tiene stats
+    enabled: !!section && !SECTIONS_WITHOUT_STATS.includes(section),
   });
 };
 

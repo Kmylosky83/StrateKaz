@@ -92,26 +92,39 @@ class CorporateIdentityViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """
-        Asigna automáticamente la empresa del usuario al crear una identidad.
+        Asigna automáticamente la empresa al crear una identidad.
 
-        El campo empresa es OneToOneField obligatorio, por lo que debe
-        asignarse desde el usuario autenticado (multi-tenant).
+        Para superusuarios o usuarios sin empresa asignada, se usa la primera
+        EmpresaConfig disponible (single-tenant). Para multi-tenant futuro,
+        el usuario debería tener empresa asignada vía sede_asignada.
         """
+        from apps.gestion_estrategica.configuracion.models import EmpresaConfig
+        from rest_framework.exceptions import ValidationError
+
         user = self.request.user
-        if not hasattr(user, 'empresa') or user.empresa is None:
-            from rest_framework.exceptions import ValidationError
+        empresa = None
+
+        # Intentar obtener empresa del usuario (vía sede_asignada)
+        if hasattr(user, 'sede_asignada') and user.sede_asignada:
+            empresa = getattr(user.sede_asignada, 'empresa', None)
+
+        # Si no tiene empresa y es superusuario, usar la primera EmpresaConfig
+        if empresa is None and user.is_superuser:
+            empresa = EmpresaConfig.objects.first()
+
+        if empresa is None:
             raise ValidationError({
-                'empresa': 'El usuario no tiene una empresa asignada. '
-                           'Contacte al administrador para asignarle una empresa.'
+                'empresa': 'No se pudo determinar la empresa. '
+                           'Asegúrese de tener una sede asignada o que exista una EmpresaConfig.'
             })
+
         # Verificar que no exista ya una identidad para esta empresa
-        if CorporateIdentity.objects.filter(empresa=user.empresa).exists():
-            from rest_framework.exceptions import ValidationError
+        if CorporateIdentity.objects.filter(empresa=empresa).exists():
             raise ValidationError({
                 'empresa': 'Ya existe una identidad corporativa para esta empresa. '
                            'Solo puede existir una identidad por empresa.'
             })
-        serializer.save(empresa=user.empresa, created_by=user)
+        serializer.save(empresa=empresa, created_by=user)
 
     def update(self, request, *args, **kwargs):
         """

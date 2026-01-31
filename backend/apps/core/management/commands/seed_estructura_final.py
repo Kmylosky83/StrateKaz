@@ -205,7 +205,75 @@ class Command(BaseCommand):
                         ]
                     },
                     {'code': 'revision_direccion', 'name': 'Revisión por Dirección', 'icon': 'ClipboardCheck', 'route': 'revision-direccion', 'orden': 8},
-                    # NOTA: gestion_documental y planificacion_sistema fueron migrados a hseq_management (Gestión Integral)
+                ]
+            },
+
+            # =====================================================================
+            # NIVEL 1.5: SISTEMA DE GESTIÓN (15) - Control Documental y Planificación ISO
+            # =====================================================================
+            {
+                'code': 'sistema_gestion',
+                'name': 'Sistema de Gestión',
+                'description': 'Control documental ISO y planificación del sistema de gestión',
+                'category': 'ESTRATEGICO',
+                'color': 'indigo',
+                'icon': 'FolderCog',
+                'route': '/sistema-gestion',
+                'is_core': False,
+                'is_enabled': True,
+                'orden': 15,
+                'tabs': [
+                    {
+                        'code': 'gestion_documental',
+                        'name': 'Gestión Documental',
+                        'icon': 'FileText',
+                        'route': 'documentos',
+                        'orden': 1,
+                        'sections': [
+                            {'code': 'tipos_documento', 'name': 'Tipos de Documento', 'icon': 'FileType', 'orden': 1, 'description': 'Clasificación de documentos del sistema'},
+                            {'code': 'documentos', 'name': 'Documentos', 'icon': 'Files', 'orden': 2, 'description': 'Procedimientos, instructivos, formatos y registros'},
+                            {'code': 'control_cambios', 'name': 'Control de Cambios', 'icon': 'History', 'orden': 3, 'description': 'Historial de versiones y cambios'},
+                            {'code': 'distribucion', 'name': 'Distribución', 'icon': 'Share2', 'orden': 4, 'description': 'Control de copias y distribución'},
+                        ]
+                    },
+                    {
+                        'code': 'planificacion_sistema',
+                        'name': 'Planificación del Sistema',
+                        'icon': 'Calendar',
+                        'route': 'planificacion',
+                        'orden': 2,
+                        'sections': [
+                            {'code': 'programas', 'name': 'Programas', 'icon': 'ListChecks', 'orden': 1, 'description': 'Programas de gestión (SST, Ambiental, Calidad)'},
+                            {'code': 'plan_auditorias', 'name': 'Plan de Auditorías', 'icon': 'ClipboardList', 'orden': 2, 'description': 'Programación de auditorías internas'},
+                            {'code': 'objetivos_metas', 'name': 'Objetivos y Metas', 'icon': 'Target', 'orden': 3, 'description': 'Objetivos del sistema de gestión'},
+                            {'code': 'indicadores_gestion', 'name': 'Indicadores', 'icon': 'BarChart3', 'orden': 4, 'description': 'Indicadores de desempeño del sistema'},
+                        ]
+                    },
+                    {
+                        'code': 'auditorias_internas',
+                        'name': 'Auditorías Internas',
+                        'icon': 'Search',
+                        'route': 'auditorias',
+                        'orden': 3,
+                        'sections': [
+                            {'code': 'programacion', 'name': 'Programación', 'icon': 'CalendarDays', 'orden': 1, 'description': 'Calendario y asignación de auditores'},
+                            {'code': 'ejecucion_auditoria', 'name': 'Ejecución', 'icon': 'Play', 'orden': 2, 'description': 'Listas de verificación y hallazgos'},
+                            {'code': 'informes', 'name': 'Informes', 'icon': 'FileText', 'orden': 3, 'description': 'Informes de auditoría y conclusiones'},
+                        ]
+                    },
+                    {
+                        'code': 'acciones_mejora',
+                        'name': 'Acciones de Mejora',
+                        'icon': 'TrendingUp',
+                        'route': 'acciones',
+                        'orden': 4,
+                        'sections': [
+                            {'code': 'no_conformidades', 'name': 'No Conformidades', 'icon': 'AlertCircle', 'orden': 1, 'description': 'Registro y tratamiento de NC'},
+                            {'code': 'acciones_correctivas', 'name': 'Acciones Correctivas', 'icon': 'CheckCircle', 'orden': 2, 'description': 'Plan de acciones correctivas'},
+                            {'code': 'acciones_preventivas', 'name': 'Acciones Preventivas', 'icon': 'Shield', 'orden': 3, 'description': 'Acciones para prevenir NC'},
+                            {'code': 'oportunidades_mejora', 'name': 'Oportunidades de Mejora', 'icon': 'Lightbulb', 'orden': 4, 'description': 'Ideas y proyectos de mejora'},
+                        ]
+                    },
                 ]
             },
 
@@ -293,17 +361,16 @@ class Command(BaseCommand):
                 'is_enabled': True,
                 'orden': 30,
                 'tabs': [
-                    {'code': 'sistema_documental', 'name': 'Sistema Documental', 'icon': 'FileText', 'route': 'sistema-documental', 'orden': 1},
-                    {'code': 'planificacion_sistema', 'name': 'Planificación Sistema', 'icon': 'Calendar', 'route': 'planificacion', 'orden': 2},
-                    {'code': 'calidad', 'name': 'Calidad', 'icon': 'CheckCircle', 'route': 'calidad', 'orden': 3},
-                    {'code': 'medicina_laboral', 'name': 'Medicina Laboral', 'icon': 'Heart', 'route': 'medicina-laboral', 'orden': 4},
-                    {'code': 'seguridad_industrial', 'name': 'Seguridad Industrial', 'icon': 'HardHat', 'route': 'seguridad-industrial', 'orden': 5},
-                    {'code': 'higiene_industrial', 'name': 'Higiene Industrial', 'icon': 'Thermometer', 'route': 'higiene-industrial', 'orden': 6},
-                    {'code': 'gestion_comites', 'name': 'Gestión de Comités', 'icon': 'Users', 'route': 'comites', 'orden': 7},
-                    {'code': 'accidentalidad', 'name': 'Accidentalidad (ATEL)', 'icon': 'AlertCircle', 'route': 'accidentalidad', 'orden': 8},
-                    {'code': 'emergencias', 'name': 'Emergencias', 'icon': 'Siren', 'route': 'emergencias', 'orden': 9},
-                    {'code': 'gestion_ambiental', 'name': 'Gestión Ambiental', 'icon': 'Leaf', 'route': 'gestion-ambiental', 'orden': 10},
-                    {'code': 'mejora_continua', 'name': 'Mejora Continua', 'icon': 'TrendingUp', 'route': 'mejora-continua', 'orden': 11},
+                    # NOTA: sistema_documental y planificacion_sistema movidos a sistema_gestion [15]
+                    {'code': 'calidad', 'name': 'Calidad', 'icon': 'CheckCircle', 'route': 'calidad', 'orden': 1},
+                    {'code': 'medicina_laboral', 'name': 'Medicina Laboral', 'icon': 'Heart', 'route': 'medicina-laboral', 'orden': 2},
+                    {'code': 'seguridad_industrial', 'name': 'Seguridad Industrial', 'icon': 'HardHat', 'route': 'seguridad-industrial', 'orden': 3},
+                    {'code': 'higiene_industrial', 'name': 'Higiene Industrial', 'icon': 'Thermometer', 'route': 'higiene-industrial', 'orden': 4},
+                    {'code': 'gestion_comites', 'name': 'Gestión de Comités', 'icon': 'Users', 'route': 'comites', 'orden': 5},
+                    {'code': 'accidentalidad', 'name': 'Accidentalidad (ATEL)', 'icon': 'AlertCircle', 'route': 'accidentalidad', 'orden': 6},
+                    {'code': 'emergencias', 'name': 'Emergencias', 'icon': 'Siren', 'route': 'emergencias', 'orden': 7},
+                    {'code': 'gestion_ambiental', 'name': 'Gestión Ambiental', 'icon': 'Leaf', 'route': 'gestion-ambiental', 'orden': 8},
+                    {'code': 'mejora_continua', 'name': 'Mejora Continua', 'icon': 'TrendingUp', 'route': 'mejora-continua', 'orden': 9},
                 ]
             },
 

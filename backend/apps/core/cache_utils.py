@@ -30,7 +30,7 @@ def generate_cache_key(prefix: str, *args, **kwargs) -> str:
 
     Ejemplo:
         >>> generate_cache_key('cliente', empresa_id=1, is_active=True)
-        'grasas_huesos:cliente:empresa_1:active_true'
+        'stratekaz:cliente:empresa_1:active_true'
     """
     key_parts = [settings.CACHES['default']['KEY_PREFIX'], prefix]
 
@@ -152,13 +152,13 @@ def invalidate_cache_pattern(pattern: str) -> int:
     solo invalida el caché completo.
 
     Args:
-        pattern: Patrón para buscar claves (ej: 'grasas_huesos:cliente:*')
+        pattern: Patrón para buscar claves (ej: 'stratekaz:cliente:*')
 
     Returns:
         Número de claves eliminadas
 
     Ejemplo:
-        >>> invalidate_cache_pattern('grasas_huesos:cliente:empresa_1:*')
+        >>> invalidate_cache_pattern('stratekaz:cliente:empresa_1:*')
         5
     """
     try:
@@ -266,9 +266,9 @@ def invalidate_empresa_cache(empresa_id: int, data_type: Optional[str] = None):
         >>> invalidate_empresa_cache(1, 'clientes')  # Solo invalida clientes
     """
     if data_type:
-        pattern = f"grasas_huesos:empresa_{empresa_id}:{data_type}:*"
+        pattern = f"stratekaz:empresa_{empresa_id}:{data_type}:*"
     else:
-        pattern = f"grasas_huesos:empresa_{empresa_id}:*"
+        pattern = f"stratekaz:empresa_{empresa_id}:*"
 
     return invalidate_cache_pattern(pattern)
 

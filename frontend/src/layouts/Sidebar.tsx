@@ -12,10 +12,11 @@ import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/utils/cn';
 import { useSidebarModules } from '@/features/gestion-estrategica/hooks/useModules';
 import type { SidebarModule } from '@/features/gestion-estrategica/types/modules.types';
-import { ChevronRight, ChevronDown, Circle, Loader2, LayoutDashboard } from 'lucide-react';
+import { ChevronRight, ChevronDown, Circle, Loader2, LayoutDashboard, Shield } from 'lucide-react';
 
 import { getIconComponent as getDynamicIcon } from '@/components/common/DynamicIcon';
 import { APP_VERSION } from '@/constants/brand';
+import { useAuthStore } from '@/store/authStore';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -470,6 +471,14 @@ export const Sidebar = ({
 }: SidebarProps) => {
   const location = useLocation();
   const { data: sidebarModules, isLoading, error } = useSidebarModules();
+  const user = useAuthStore((state) => state.user);
+  const currentTenantId = useAuthStore((state) => state.currentTenantId);
+  const isSuperuser = user?.is_superuser ?? false;
+
+  // Admin Global solo visible si es superusuario Y NO está en contexto de empresa
+  // O si está en la ruta de admin-global (para poder navegar de vuelta)
+  const showAdminGlobal =
+    isSuperuser && (!currentTenantId || location.pathname.startsWith('/admin-global'));
 
   // Cerrar drawer al navegar en mobile
   useEffect(() => {
@@ -582,6 +591,38 @@ export const Sidebar = ({
             {!effectiveCollapsed && <span className="ml-3 font-medium">Dashboard</span>}
           </Link>
         </div>
+
+        {/* Admin Global - Solo visible para superusuarios cuando NO están en contexto de empresa */}
+        {showAdminGlobal && (
+          <div className="px-2 mb-2">
+            <Link
+              to="/admin-global"
+              className={cn(
+                'flex items-center rounded-lg transition-colors px-3 py-2.5 group relative',
+                location.pathname === '/admin-global' || location.pathname.startsWith('/admin-global/')
+                  ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20'
+              )}
+            >
+              <Shield
+                className={cn(
+                  'h-5 w-5 flex-shrink-0',
+                  location.pathname === '/admin-global' || location.pathname.startsWith('/admin-global/')
+                    ? 'text-purple-600 dark:text-purple-400'
+                    : 'text-purple-500 dark:text-purple-400'
+                )}
+              />
+              {!effectiveCollapsed && (
+                <span className="ml-3 font-medium">Admin Global</span>
+              )}
+              {effectiveCollapsed && (
+                <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 dark:bg-gray-700 text-white text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
+                  Admin Global
+                </div>
+              )}
+            </Link>
+          </div>
+        )}
 
         {/* Separador */}
         <div className="px-4 mb-2">

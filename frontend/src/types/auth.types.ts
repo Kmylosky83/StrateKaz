@@ -73,8 +73,14 @@ export interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
+  /** ID del tenant actual (null = modo Admin Global o sin tenant) */
+  currentTenantId: number | null;
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>; // P0-03: Ahora es async para invalidar token en servidor
   refreshProfile: () => Promise<void>;
   setUser: (user: User) => void;
+  /** Establece el tenant actual y lo guarda en localStorage */
+  setCurrentTenantId: (tenantId: number | null) => void;
+  /** Limpia el contexto del tenant (para Admin Global) */
+  clearTenantContext: () => void;
 }

@@ -11,7 +11,7 @@ from decouple import config
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
 # Crear la aplicación Celery
-app = Celery('grasas_huesos')
+app = Celery('stratekaz')
 
 # Configuración de Celery usando settings de Django
 app.config_from_object('django.conf:settings', namespace='CELERY')

@@ -9,13 +9,20 @@ const axiosInstance = axios.create({
   timeout: 30000,
 });
 
-// Interceptor para agregar token JWT a todas las peticiones
+// Interceptor para agregar token JWT y tenant ID a todas las peticiones
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('access_token');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // En desarrollo, agregar X-Tenant-ID si hay un tenant seleccionado
+    const tenantId = localStorage.getItem('current_tenant_id');
+    if (tenantId && config.headers) {
+      config.headers['X-Tenant-ID'] = tenantId;
+    }
+
     return config;
   },
   (error) => {

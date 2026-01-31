@@ -15,6 +15,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { LoginPage } from '@/pages/LoginPage';
+import { AuthCallbackPage } from '@/pages/AuthCallbackPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { PageLoader } from '@/components/common/PageLoader';
@@ -24,6 +25,11 @@ const withSuspense = (Component: ComponentType) => (
   <Suspense fallback={<PageLoader />}>
     <Component />
   </Suspense>
+);
+
+// ==================== ADMIN GLOBAL (Solo Superusuarios) ====================
+const AdminGlobalPage = lazy(() =>
+  import('@/features/admin-global').then((m) => ({ default: m.AdminGlobalPage }))
 );
 
 // ==================== NIVEL 1: DIRECCIÓN ESTRATÉGICA ====================
@@ -262,6 +268,7 @@ export const AppRoutes = () => {
       {/* RUTAS PÚBLICAS */}
       {/* ═══════════════════════════════════════════════════════════════ */}
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
       {/* ═══════════════════════════════════════════════════════════════ */}
       {/* RUTAS PROTEGIDAS */}
@@ -272,6 +279,12 @@ export const AppRoutes = () => {
           {/* DASHBOARD PRINCIPAL - Página de inicio post-login */}
           {/* ═══════════════════════════════════════════════════════════════ */}
           <Route path="/dashboard" element={<DashboardPage />} />
+
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          {/* ADMIN GLOBAL - Solo Superusuarios (is_superuser=true) */}
+          {/* Gestión de: Tenants, Planes, Usuarios Globales, Módulos */}
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          <Route path="/admin-global" element={withSuspense(AdminGlobalPage)} />
 
           {/* ═══════════════════════════════════════════════════════════════ */}
           {/* PERFIL DE USUARIO */}

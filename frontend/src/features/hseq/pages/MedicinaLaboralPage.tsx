@@ -37,7 +37,7 @@ import { Button } from '@/components/common/Button';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Badge } from '@/components/common/Badge';
 import { Spinner } from '@/components/common/Spinner';
-import { Input } from '@/components/common/Input';
+import { Input } from '@/components/forms/Input';
 import { cn } from '@/utils/cn';
 import {
   useExamenesMedicos,

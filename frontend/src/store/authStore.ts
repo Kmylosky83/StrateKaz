@@ -4,6 +4,13 @@ import { authAPI } from '@/api/auth.api';
 import { clearLastRoute } from '@/hooks/useLastRoute';
 import type { AuthState, LoginCredentials, User } from '@/types/auth.types';
 
+// Inicializar currentTenantId desde localStorage
+const getInitialTenantId = (): number | null => {
+  if (typeof window === 'undefined') return null;
+  const stored = localStorage.getItem('current_tenant_id');
+  return stored ? Number(stored) : null;
+};
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
@@ -11,6 +18,7 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
+      currentTenantId: getInitialTenantId(),
 
       login: async (credentials: LoginCredentials) => {
         try {
@@ -53,6 +61,7 @@ export const useAuthStore = create<AuthState>()(
         // Limpiar localStorage
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
+        localStorage.removeItem('current_tenant_id');
 
         // Limpiar última ruta para que el próximo login use landing por rol
         clearLastRoute();
@@ -63,6 +72,7 @@ export const useAuthStore = create<AuthState>()(
           accessToken: null,
           refreshToken: null,
           isAuthenticated: false,
+          currentTenantId: null,
         });
       },
 
@@ -80,24 +90,40 @@ export const useAuthStore = create<AuthState>()(
       setUser: (user: User) => {
         set({ user });
       },
+
+      setCurrentTenantId: (tenantId: number | null) => {
+        if (tenantId) {
+          localStorage.setItem('current_tenant_id', String(tenantId));
+        } else {
+          localStorage.removeItem('current_tenant_id');
+        }
+        set({ currentTenantId: tenantId });
+      },
+
+      clearTenantContext: () => {
+        localStorage.removeItem('current_tenant_id');
+        set({ currentTenantId: null });
+      },
     }),
     {
       name: 'auth-storage',
-      version: 2, // Incrementar al cambiar estructura de User
+      version: 3, // Incrementar al cambiar estructura de User
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
+        currentTenantId: state.currentTenantId,
       }),
       // Migración: limpia datos antiguos para forzar re-login
       migrate: (persistedState, version) => {
-        if (version < 2) {
+        if (version < 3) {
           // Versiones anteriores: forzar re-login para obtener nuevos campos
           return {
             user: null,
             isAuthenticated: false,
+            currentTenantId: null,
           };
         }
-        return persistedState as { user: null; isAuthenticated: boolean };
+        return persistedState as { user: null; isAuthenticated: boolean; currentTenantId: number | null };
       },
     }
   )

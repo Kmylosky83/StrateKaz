@@ -146,6 +146,8 @@ urlpatterns = [
     # NIVEL 0: CORE (siempre activo)
     # ═══════════════════════════════════════════════════════════════════════════
     path('api/core/', include('apps.core.urls')),
+    # Multi-Tenant System
+    path('api/tenant/', include('apps.tenant.urls')),
 ]
 
 # ═══════════════════════════════════════════════════════════════════════════

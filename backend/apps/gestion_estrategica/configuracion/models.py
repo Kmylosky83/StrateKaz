@@ -368,7 +368,13 @@ class EmpresaConfig(TimestampedModel):
     )
 
     # =========================================================================
-    # BRANDING Y COLORES CORPORATIVOS (todos configurables, sin hardcoding)
+    # BRANDING Y COLORES CORPORATIVOS
+    # =========================================================================
+    # ⚠️ DEPRECATED: Estos campos están deprecados desde v3.9.0
+    # La fuente única de verdad para branding es ahora BrandingConfig
+    # (apps.core.models.models_system_modules.BrandingConfig)
+    # Estos campos se mantienen por compatibilidad con datos existentes.
+    # Para nuevas implementaciones, usar BrandingConfig.
     # =========================================================================
 
     logo = models.ImageField(
@@ -446,6 +452,130 @@ class EmpresaConfig(TimestampedModel):
         null=True,
         verbose_name='Slogan',
         help_text='Frase corta que identifica a la empresa'
+    )
+
+    # =========================================================================
+    # BRANDING ADICIONAL
+    # =========================================================================
+    # ⚠️ DEPRECATED: Estos campos están deprecados desde v3.9.0
+    # La fuente única de verdad para branding es ahora BrandingConfig
+    # (apps.core.models.models_system_modules.BrandingConfig)
+    # =========================================================================
+
+    logo_white = models.ImageField(
+        upload_to='empresa/logos/',
+        blank=True,
+        null=True,
+        verbose_name='Logo Blanco',
+        help_text='Versión del logo en blanco para fondos oscuros'
+    )
+    login_background = models.ImageField(
+        upload_to='empresa/backgrounds/',
+        blank=True,
+        null=True,
+        verbose_name='Fondo de Login',
+        help_text='Imagen de fondo para la página de login'
+    )
+    color_acento = models.CharField(
+        max_length=7,
+        blank=True,
+        null=True,
+        verbose_name='Color de Acento',
+        help_text='Color de acento para botones y destacados (ej: #10B981)'
+    )
+    color_sidebar = models.CharField(
+        max_length=7,
+        blank=True,
+        null=True,
+        default='#1E293B',
+        verbose_name='Color del Sidebar',
+        help_text='Color de fondo del menú lateral'
+    )
+    color_fondo = models.CharField(
+        max_length=7,
+        blank=True,
+        null=True,
+        default='#F5F5F5',
+        verbose_name='Color de Fondo',
+        help_text='Color de fondo general de la aplicación'
+    )
+
+    # =========================================================================
+    # PWA (Progressive Web App)
+    # =========================================================================
+
+    pwa_name = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        verbose_name='PWA - Nombre',
+        help_text='Nombre completo de la app (ej: "Constructora ABC - ERP")'
+    )
+    pwa_short_name = models.CharField(
+        max_length=12,
+        blank=True,
+        null=True,
+        verbose_name='PWA - Nombre Corto',
+        help_text='Nombre corto para el ícono del dispositivo (máx 12 caracteres)'
+    )
+    pwa_description = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='PWA - Descripción',
+        help_text='Descripción de la aplicación para tiendas de apps'
+    )
+    pwa_theme_color = models.CharField(
+        max_length=7,
+        blank=True,
+        null=True,
+        verbose_name='PWA - Color del Tema',
+        help_text='Color de la barra de estado del navegador (HEX)'
+    )
+    pwa_background_color = models.CharField(
+        max_length=7,
+        blank=True,
+        null=True,
+        default='#FFFFFF',
+        verbose_name='PWA - Color de Fondo',
+        help_text='Color de fondo durante la carga de la app'
+    )
+    pwa_icon_192 = models.ImageField(
+        upload_to='empresa/pwa/',
+        blank=True,
+        null=True,
+        verbose_name='PWA - Ícono 192x192',
+        help_text='Ícono de 192x192 píxeles para PWA (PNG)'
+    )
+    pwa_icon_512 = models.ImageField(
+        upload_to='empresa/pwa/',
+        blank=True,
+        null=True,
+        verbose_name='PWA - Ícono 512x512',
+        help_text='Ícono de 512x512 píxeles para PWA (PNG)'
+    )
+    pwa_icon_maskable = models.ImageField(
+        upload_to='empresa/pwa/',
+        blank=True,
+        null=True,
+        verbose_name='PWA - Ícono Maskable',
+        help_text='Ícono adaptativo para Android (PNG con área segura)'
+    )
+
+    # =========================================================================
+    # PERSONALIZACIÓN ADICIONAL
+    # =========================================================================
+
+    mostrar_powered_by = models.BooleanField(
+        default=True,
+        verbose_name='Mostrar "Powered by StrateKaz"',
+        help_text='Muestra el crédito de StrateKaz en el footer'
+    )
+    texto_footer = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        verbose_name='Texto del Footer',
+        help_text='Texto personalizado para el pie de página'
     )
 
     # =========================================================================

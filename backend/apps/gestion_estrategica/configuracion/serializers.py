@@ -33,7 +33,13 @@ class EmpresaConfigSerializer(serializers.ModelSerializer):
     """
     Serializer para EmpresaConfig
 
-    Incluye campos computados y choices para el frontend
+    Incluye campos computados y choices para el frontend.
+
+    ⚠️ NOTA: Los campos de branding (logo, logo_dark, favicon, color_primario,
+    color_secundario, color_fondo_showcase, gradiente_*, slogan) están DEPRECADOS.
+    La fuente única de verdad para branding es BrandingConfig
+    (apps.core.models.models_system_modules.BrandingConfig).
+    Estos campos se mantienen por compatibilidad con datos existentes.
     """
 
     # Campos de solo lectura computados

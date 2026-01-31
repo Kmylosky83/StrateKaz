@@ -225,3 +225,25 @@ export type { ProgressProps } from './Progress';
 // View Toggle (Dashboard/Kanban, List/Grid switcher)
 export { ViewToggle } from './ViewToggle';
 export type { ViewToggleProps, ViewToggleOption } from './ViewToggle';
+
+// Table (TanStack Table wrapper)
+export { Table } from './Table';
+export type { TableProps } from './Table';
+
+// Pagination
+export { Pagination } from './Pagination';
+export type { PaginationProps } from './Pagination';
+
+// Toast (Sonner wrapper)
+export { toast, Toaster } from './Toast';
+export type { ToastOptions, PromiseOptions } from './Toast';
+
+// Breadcrumbs
+export { Breadcrumbs } from './Breadcrumbs';
+export type { BreadcrumbsProps, BreadcrumbItem } from './Breadcrumbs';
+
+// Multi-Tenant
+export { TenantSelector } from './TenantSelector';
+
+// Error Handling
+export { ErrorBoundary } from './ErrorBoundary';

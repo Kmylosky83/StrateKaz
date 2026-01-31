@@ -761,6 +761,7 @@ interface ConfiguracionTabProps {
  * Los códigos deben coincidir con los de la BD (TabSection.code)
  * NOTA: Los códigos en BD están en minúsculas
  * NOTA: consecutivos y unidades_medida fueron migrados a OrganizacionTab
+ * NOTA: modulos fue migrado a Admin Global (/admin-global) - solo superusuarios
  */
 const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
   empresa: EmpresaSection,
@@ -768,7 +769,7 @@ const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
   integraciones: IntegracionesSection,
   'normas-iso': NormasISOSection,
   branding: BrandingSection,
-  modulos: ModulosAndFeaturesSection,
+  // MIGRADO: modulos ahora está en /admin-global (solo superusuarios)
 };
 
 export const ConfiguracionTab = ({ activeSection, searchQuery }: ConfiguracionTabProps) => {

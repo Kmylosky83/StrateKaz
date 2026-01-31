@@ -21,14 +21,32 @@ const DEFAULT_BRANDING: Partial<BrandingConfig> = {
   company_name: 'StrateKaz | Consultoría 4.0',
   company_short_name: 'StrateKaz',
   company_slogan: 'Sistema Integrado de Gestión',
+
+  // Logos
   logo: '/logo-dark.png',
   logo_white: '/logo-light.png',
+  logo_dark: null,
   favicon: '/logo-dark.png',
   login_background: null,
+
+  // Colores principales
   primary_color: '#ec268f',
   secondary_color: '#000000',
   accent_color: '#f4ec25',
+
+  // Colores de interfaz (consolidados)
+  sidebar_color: '#1E293B',
+  background_color: '#F5F5F5',
+  showcase_background: '#1F2937',
+
+  // Gradientes para presentaciones
+  gradient_mission: 'from-blue-500 to-purple-600',
+  gradient_vision: 'from-green-500 to-teal-600',
+  gradient_policy: 'from-amber-500 to-orange-600',
+  gradient_values: [],
+
   app_version: '2.4.0',
+
   // PWA defaults - se usan favicon como fallback para iconos PWA
   pwa_name: 'StrateKaz',
   pwa_short_name: 'StrateKaz',
@@ -54,13 +72,25 @@ export interface UseBrandingConfigReturn {
   // Logos con fallback a defaults
   logo: string;
   logoWhite: string;
+  logoDark: string | null;
   favicon: string;
   loginBackground: string | null;
 
-  // Colores
+  // Colores principales
   primaryColor: string;
   secondaryColor: string;
   accentColor: string;
+
+  // Colores de interfaz (consolidados)
+  sidebarColor: string;
+  backgroundColor: string;
+  showcaseBackground: string;
+
+  // Gradientes para presentaciones
+  gradientMission: string;
+  gradientVision: string;
+  gradientPolicy: string;
+  gradientValues: string[];
 
   // Versión de la app
   appVersion: string;
@@ -94,6 +124,8 @@ export const useBrandingConfig = (): UseBrandingConfigReturn => {
     branding?.logo_white && branding.logo_white.trim() !== ''
       ? branding.logo_white
       : DEFAULT_BRANDING.logo_white!;
+  const logoDark =
+    branding?.logo_dark && branding.logo_dark.trim() !== '' ? branding.logo_dark : null;
   const favicon =
     branding?.favicon && branding.favicon.trim() !== ''
       ? branding.favicon
@@ -105,10 +137,21 @@ export const useBrandingConfig = (): UseBrandingConfigReturn => {
       ? branding.login_background
       : null;
 
-  // Colores
+  // Colores principales
   const primaryColor = branding?.primary_color || DEFAULT_BRANDING.primary_color!;
   const secondaryColor = branding?.secondary_color || DEFAULT_BRANDING.secondary_color!;
   const accentColor = branding?.accent_color || DEFAULT_BRANDING.accent_color!;
+
+  // Colores de interfaz (consolidados)
+  const sidebarColor = branding?.sidebar_color || DEFAULT_BRANDING.sidebar_color!;
+  const backgroundColor = branding?.background_color || DEFAULT_BRANDING.background_color!;
+  const showcaseBackground = branding?.showcase_background || DEFAULT_BRANDING.showcase_background!;
+
+  // Gradientes para presentaciones
+  const gradientMission = branding?.gradient_mission || DEFAULT_BRANDING.gradient_mission!;
+  const gradientVision = branding?.gradient_vision || DEFAULT_BRANDING.gradient_vision!;
+  const gradientPolicy = branding?.gradient_policy || DEFAULT_BRANDING.gradient_policy!;
+  const gradientValues = branding?.gradient_values || DEFAULT_BRANDING.gradient_values!;
 
   // Versión de la app
   const appVersion = branding?.app_version || DEFAULT_BRANDING.app_version!;
@@ -145,13 +188,26 @@ export const useBrandingConfig = (): UseBrandingConfigReturn => {
     companyName,
     companyShortName,
     companySlogan,
+    // Logos
     logo,
     logoWhite,
+    logoDark,
     favicon,
     loginBackground,
+    // Colores principales
     primaryColor,
     secondaryColor,
     accentColor,
+    // Colores de interfaz (consolidados)
+    sidebarColor,
+    backgroundColor,
+    showcaseBackground,
+    // Gradientes
+    gradientMission,
+    gradientVision,
+    gradientPolicy,
+    gradientValues,
+    // Versión
     appVersion,
     // PWA
     pwaName,

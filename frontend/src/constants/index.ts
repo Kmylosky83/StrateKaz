@@ -1,8 +1,4 @@
 /**
- * Constants - Exportaciones centralizadas
+ * Exportaciones centralizadas de constantes.
  */
-
-export * from './permissions';
-export * from './ui-labels';
-export * from './brand';
-export * from './timezones';
+export * from './performance';

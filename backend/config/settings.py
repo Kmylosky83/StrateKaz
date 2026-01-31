@@ -86,6 +86,7 @@ INSTALLED_APPS = [
     # NIVEL 0: CORE BASE (Usuarios, RBAC, Menú, Configuración Sistema)
     # ═══════════════════════════════════════════════════════════════════════════
     'apps.core',
+    'apps.tenant',  # Multi-Tenant System (BD Master)
 
     # ═══════════════════════════════════════════════════════════════════════════
     # NIVEL 1: ESTRATÉGICO - Dirección Estratégica (6 apps)
@@ -228,6 +229,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'auditlog.middleware.AuditlogMiddleware',
+    # Multi-Tenant Middleware (detecta tenant por subdominio)
+    'apps.tenant.middleware.TenantMiddleware',
     # Custom Security Middleware
     'apps.core.middleware.IPBlockMiddleware',
     'apps.core.middleware.SecurityMiddleware',
@@ -254,7 +257,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': config('DB_NAME', default='grasas_huesos_db'),
+        'NAME': config('DB_NAME', default='stratekaz_master'),
         'USER': config('DB_USER', default='root'),
         'PASSWORD': config('DB_PASSWORD', default=''),
         'HOST': config('DB_HOST', default='localhost'),
@@ -267,6 +270,11 @@ DATABASES = {
         'CONN_MAX_AGE': config('DB_CONN_MAX_AGE', default=60, cast=int),
     }
 }
+
+# =============================================================================
+# MULTI-TENANT DATABASE ROUTER
+# =============================================================================
+DATABASE_ROUTERS = ['apps.tenant.db_router.TenantDatabaseRouter']
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -359,8 +367,8 @@ SPECTACULAR_SETTINGS = {
     },
     'CONTACT': {
         'name': 'StrateKaz',
-        'url': 'https://grasasyhuesos.com',
-        'email': 'soporte@grasasyhuesos.com',
+        'url': 'https://stratekaz.com',
+        'email': 'soporte@stratekaz.com',
     },
     'LICENSE': {
         'name': 'Propietario - Uso Interno',
@@ -399,6 +407,7 @@ CORS_ALLOW_HEADERS = [
     'user-agent',
     'x-csrftoken',
     'x-requested-with',
+    'x-tenant-id',  # Multi-tenant header
 ]
 CORS_ALLOW_METHODS = [
     'DELETE',
@@ -433,10 +442,10 @@ SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 # Content Security Policy (CSP)
 # Configuración diferenciada por entorno
 if DEBUG:
-    # Desarrollo: más permisivo para hot-reload y debugging
+    # Desarrollo: más permisivo para hot-reload, debugging y Swagger UI
     CSP_DEFAULT_SRC = ("'self'",)
-    CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", "'unsafe-eval'")
-    CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
+    CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net")
+    CSP_STYLE_SRC = ("'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net")
     CSP_IMG_SRC = ("'self'", "data:", "blob:", "https:")
     CSP_FONT_SRC = ("'self'", "data:")
     CSP_CONNECT_SRC = ("'self'", "http://localhost:5173", "http://localhost:3000", "http://localhost:3010", "ws://localhost:5173")
@@ -502,7 +511,7 @@ EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
 EMAIL_USE_SSL = config('EMAIL_USE_SSL', default=False, cast=bool)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@grasasyhuesos.com')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@stratekaz.com')
 EMAIL_SUBJECT_PREFIX = config('EMAIL_SUBJECT_PREFIX', default='[StrateKaz] ')
 
 # ═══════════════════════════════════════════════════
@@ -582,7 +591,16 @@ CELERY_WORKER_HIJACK_ROOT_LOGGER = False
 # ═══════════════════════════════════════════════════
 # CACHE CONFIGURATION
 # ═══════════════════════════════════════════════════
-if USE_CPANEL:
+REDIS_URL = config('REDIS_URL', default='')
+
+if DEBUG and not REDIS_URL:
+    # Desarrollo local sin Redis: usar DummyCache
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+        }
+    }
+elif USE_CPANEL:
     # cPanel: Usar cache basado en base de datos
     # Requiere ejecutar: python manage.py createcachetable
     CACHES = {
@@ -601,13 +619,13 @@ else:
     CACHES = {
         'default': {
             'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-            'LOCATION': config('REDIS_URL', default='redis://redis:6379/2'),
-            'KEY_PREFIX': 'grasas_huesos',
+            'LOCATION': REDIS_URL or 'redis://redis:6379/2',
+            'KEY_PREFIX': 'stratekaz',
             'TIMEOUT': 300,  # 5 minutos por defecto
         },
         'sessions': {
             'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-            'LOCATION': config('REDIS_URL', default='redis://redis:6379/3'),
+            'LOCATION': REDIS_URL or 'redis://redis:6379/3',
             'KEY_PREFIX': 'session',
             'TIMEOUT': 86400,  # 24 horas
         }

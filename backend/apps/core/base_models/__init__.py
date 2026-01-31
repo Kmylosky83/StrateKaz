@@ -37,6 +37,14 @@ from .base import (
     OrderedModel,
 )
 
+# Importar managers personalizados
+from .managers import (
+    ActiveManager,
+    AllObjectsManager,
+    SoftDeleteManager,
+    SoftDeleteQuerySet,
+)
+
 __all__ = [
     # Abstract Models
     'TimestampedModel',
@@ -45,4 +53,9 @@ __all__ = [
     'BaseCompanyModel',
     'HierarchicalModel',
     'OrderedModel',
+    # Managers
+    'ActiveManager',
+    'AllObjectsManager',
+    'SoftDeleteManager',
+    'SoftDeleteQuerySet',
 ]

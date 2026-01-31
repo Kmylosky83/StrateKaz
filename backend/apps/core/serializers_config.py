@@ -157,10 +157,16 @@ class ToggleModuleSerializer(serializers.Serializer):
 # =============================================================================
 
 class BrandingConfigSerializer(serializers.ModelSerializer):
-    """Serializer para Configuración de Branding"""
+    """
+    Serializer para Configuración de Branding - FUENTE ÚNICA DE VERDAD
+
+    Consolidado desde EmpresaConfig para eliminar redundancias.
+    Incluye: logos, colores, PWA, gradientes para presentaciones.
+    """
 
     logo = serializers.SerializerMethodField()
     logo_white = serializers.SerializerMethodField()
+    logo_dark = serializers.SerializerMethodField()
     favicon = serializers.SerializerMethodField()
     login_background = serializers.SerializerMethodField()
     pwa_icon_192 = serializers.SerializerMethodField()
@@ -171,8 +177,15 @@ class BrandingConfigSerializer(serializers.ModelSerializer):
         model = BrandingConfig
         fields = [
             'id', 'company_name', 'company_short_name', 'company_slogan',
-            'logo', 'logo_white', 'favicon', 'login_background',
+            # Logos
+            'logo', 'logo_white', 'logo_dark', 'favicon', 'login_background',
+            # Colores principales
             'primary_color', 'secondary_color', 'accent_color',
+            # Colores de interfaz (consolidados)
+            'sidebar_color', 'background_color', 'showcase_background',
+            # Gradientes para presentaciones (consolidados)
+            'gradient_mission', 'gradient_vision', 'gradient_policy', 'gradient_values',
+            # Versión app
             'app_version',
             # Campos PWA
             'pwa_name', 'pwa_short_name', 'pwa_description',
@@ -197,6 +210,9 @@ class BrandingConfigSerializer(serializers.ModelSerializer):
     def get_logo_white(self, obj):
         return self._build_absolute_url(obj.logo_white)
 
+    def get_logo_dark(self, obj):
+        return self._build_absolute_url(obj.logo_dark)
+
     def get_favicon(self, obj):
         return self._build_absolute_url(obj.favicon)
 
@@ -214,14 +230,21 @@ class BrandingConfigSerializer(serializers.ModelSerializer):
 
 
 class BrandingConfigCreateSerializer(serializers.ModelSerializer):
-    """Serializer para crear Configuración de Branding"""
+    """Serializer para crear Configuración de Branding (consolidado)"""
 
     class Meta:
         model = BrandingConfig
         fields = [
             'company_name', 'company_short_name', 'company_slogan',
-            'logo', 'logo_white', 'favicon', 'login_background',
+            # Logos
+            'logo', 'logo_white', 'logo_dark', 'favicon', 'login_background',
+            # Colores principales
             'primary_color', 'secondary_color', 'accent_color',
+            # Colores de interfaz
+            'sidebar_color', 'background_color', 'showcase_background',
+            # Gradientes
+            'gradient_mission', 'gradient_vision', 'gradient_policy', 'gradient_values',
+            # Versión
             'app_version',
             # Campos PWA
             'pwa_name', 'pwa_short_name', 'pwa_description',
@@ -245,6 +268,15 @@ class BrandingConfigCreateSerializer(serializers.ModelSerializer):
     def validate_accent_color(self, value):
         return self._validate_hex_color(value, 'El color de acento')
 
+    def validate_sidebar_color(self, value):
+        return self._validate_hex_color(value, 'El color del sidebar')
+
+    def validate_background_color(self, value):
+        return self._validate_hex_color(value, 'El color de fondo')
+
+    def validate_showcase_background(self, value):
+        return self._validate_hex_color(value, 'El color de fondo showcase')
+
     def validate_pwa_theme_color(self, value):
         return self._validate_hex_color(value, 'El color de tema PWA')
 
@@ -253,10 +285,12 @@ class BrandingConfigCreateSerializer(serializers.ModelSerializer):
 
 
 class BrandingConfigUpdateSerializer(serializers.ModelSerializer):
-    """Serializer para actualizar Configuración de Branding"""
+    """Serializer para actualizar Configuración de Branding (consolidado)"""
 
+    # Flags para limpiar campos de imagen
     logo_clear = serializers.BooleanField(write_only=True, required=False, default=False)
     logo_white_clear = serializers.BooleanField(write_only=True, required=False, default=False)
+    logo_dark_clear = serializers.BooleanField(write_only=True, required=False, default=False)
     favicon_clear = serializers.BooleanField(write_only=True, required=False, default=False)
     login_background_clear = serializers.BooleanField(write_only=True, required=False, default=False)
     pwa_icon_192_clear = serializers.BooleanField(write_only=True, required=False, default=False)
@@ -267,9 +301,16 @@ class BrandingConfigUpdateSerializer(serializers.ModelSerializer):
         model = BrandingConfig
         fields = [
             'company_name', 'company_short_name', 'company_slogan',
-            'logo', 'logo_white', 'favicon', 'login_background',
-            'logo_clear', 'logo_white_clear', 'favicon_clear', 'login_background_clear',
+            # Logos
+            'logo', 'logo_white', 'logo_dark', 'favicon', 'login_background',
+            'logo_clear', 'logo_white_clear', 'logo_dark_clear', 'favicon_clear', 'login_background_clear',
+            # Colores principales
             'primary_color', 'secondary_color', 'accent_color',
+            # Colores de interfaz (consolidados)
+            'sidebar_color', 'background_color', 'showcase_background',
+            # Gradientes
+            'gradient_mission', 'gradient_vision', 'gradient_policy', 'gradient_values',
+            # Versión
             'app_version',
             # Campos PWA
             'pwa_name', 'pwa_short_name', 'pwa_description',
@@ -281,6 +322,7 @@ class BrandingConfigUpdateSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'logo': {'required': False},
             'logo_white': {'required': False},
+            'logo_dark': {'required': False},
             'favicon': {'required': False},
             'login_background': {'required': False},
             'pwa_icon_192': {'required': False},
@@ -303,6 +345,15 @@ class BrandingConfigUpdateSerializer(serializers.ModelSerializer):
     def validate_accent_color(self, value):
         return self._validate_hex_color(value, 'El color de acento')
 
+    def validate_sidebar_color(self, value):
+        return self._validate_hex_color(value, 'El color del sidebar')
+
+    def validate_background_color(self, value):
+        return self._validate_hex_color(value, 'El color de fondo')
+
+    def validate_showcase_background(self, value):
+        return self._validate_hex_color(value, 'El color de fondo showcase')
+
     def validate_pwa_theme_color(self, value):
         return self._validate_hex_color(value, 'El color de tema PWA')
 
@@ -321,6 +372,7 @@ class BrandingConfigUpdateSerializer(serializers.ModelSerializer):
         clear_fields = [
             ('logo_clear', 'logo'),
             ('logo_white_clear', 'logo_white'),
+            ('logo_dark_clear', 'logo_dark'),
             ('favicon_clear', 'favicon'),
             ('login_background_clear', 'login_background'),
             ('pwa_icon_192_clear', 'pwa_icon_192'),

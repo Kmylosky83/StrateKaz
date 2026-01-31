@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -7,9 +7,11 @@ import { toast } from 'sonner';
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/common/Button';
+import { TenantSelector } from '@/components/common/TenantSelector';
 import { Input } from '@/components/forms/Input';
 import { User, Lock, Key, ShieldCheck } from 'lucide-react';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
+import { useTenants } from '@/hooks/useTenants';
 import { APP_VERSION } from '@/constants/brand';
 import { authAPI } from '@/api/auth.api';
 import { verifyTwoFactor } from '@/features/perfil/api/twoFactor.api';
@@ -30,14 +32,30 @@ const twoFactorSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 type TwoFactorFormData = z.infer<typeof twoFactorSchema>;
 
+// Tipos de paso del login
+type LoginStep = 'credentials' | '2fa' | 'tenant-select';
+
 export const LoginPage = () => {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
+  const user = useAuthStore((state) => state.user);
+  const clearTenantContext = useAuthStore((state) => state.clearTenantContext);
   const [isLoading, setIsLoading] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [requires2FA, setRequires2FA] = useState(false);
+  const [loginStep, setLoginStep] = useState<LoginStep>('credentials');
   const [username, setUsername] = useState('');
   const [useBackupCode, setUseBackupCode] = useState(false);
+
+  // Multi-tenant state
+  const {
+    tenants,
+    lastTenantId,
+    isLoading: tenantsLoading,
+    fetchTenants,
+    selectTenant,
+    reset: resetTenants,
+  } = useTenants();
+
   const {
     companyName,
     companySlogan,
@@ -92,6 +110,60 @@ export const LoginPage = () => {
     resolver: zodResolver(twoFactorSchema),
   });
 
+  /**
+   * Verifica si el usuario tiene múltiples tenants y procesa el flujo
+   */
+  const handlePostLoginFlow = async () => {
+    try {
+      // Obtener usuario actualizado del store
+      const currentUser = useAuthStore.getState().user;
+      const tenantsResponse = await fetchTenants();
+
+      if (!tenantsResponse || tenantsResponse.tenants.length === 0) {
+        // Usuario sin tenants
+        if (currentUser?.is_superuser) {
+          // Superusuario sin tenants → Admin Global (limpiar contexto de tenant)
+          clearTenantContext();
+          toast.success('Bienvenido al Panel de Administración!');
+          navigate('/admin-global');
+        } else {
+          // Usuario normal sin tenants → Dashboard (caso raro)
+          toast.success('Bienvenido!');
+          navigate('/dashboard');
+        }
+        return;
+      }
+
+      // Superusuario con tenants → mostrar selector con opción Admin Global
+      if (currentUser?.is_superuser) {
+        setLoginStep('tenant-select');
+        return;
+      }
+
+      if (tenantsResponse.tenants.length === 1) {
+        // Solo un tenant - seleccionar automáticamente
+        const tenant = tenantsResponse.tenants[0].tenant;
+        toast.success(`Bienvenido a ${tenant.name}!`);
+        await handleTenantSelect(tenant.id);
+        return;
+      }
+
+      // Múltiples tenants - mostrar selector
+      setLoginStep('tenant-select');
+    } catch {
+      // Si falla la obtención de tenants
+      const currentUser = useAuthStore.getState().user;
+      if (currentUser?.is_superuser) {
+        clearTenantContext();
+        toast.success('Bienvenido al Panel de Administración!');
+        navigate('/admin-global');
+      } else {
+        toast.success('Bienvenido!');
+        navigate('/dashboard');
+      }
+    }
+  };
+
   // Handler: Login inicial
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
@@ -101,14 +173,13 @@ export const LoginPage = () => {
 
       // Verificar si requiere 2FA
       if ('requires_2fa' in response && response.requires_2fa) {
-        setRequires2FA(true);
+        setLoginStep('2fa');
         setUsername(data.username);
         toast.info('Ingresa el código de autenticación de dos factores');
       } else {
-        // Login exitoso sin 2FA
+        // Login exitoso sin 2FA - verificar tenants
         await login(data);
-        toast.success('Bienvenido!');
-        navigate('/dashboard');
+        await handlePostLoginFlow();
       }
     } catch (error: any) {
       toast.error(error.response?.data?.detail || 'Error al iniciar sesión');
@@ -132,17 +203,15 @@ export const LoginPage = () => {
       localStorage.setItem('refresh_token', response.refresh);
 
       // Obtener perfil
-      const user = await authAPI.getProfile();
+      const userProfile = await authAPI.getProfile();
 
       // Actualizar store
       useAuthStore.setState({
-        user,
+        user: userProfile,
         accessToken: response.access,
         refreshToken: response.refresh,
         isAuthenticated: true,
       });
-
-      toast.success('Bienvenido!');
 
       // Informar si usó código de backup
       if (useBackupCode && response.backup_codes_remaining !== undefined) {
@@ -151,7 +220,8 @@ export const LoginPage = () => {
         );
       }
 
-      navigate('/dashboard');
+      // Verificar tenants después de 2FA exitoso
+      await handlePostLoginFlow();
     } catch (error: any) {
       toast.error(error.response?.data?.error || 'Código inválido');
     } finally {
@@ -161,10 +231,24 @@ export const LoginPage = () => {
 
   // Handler: Volver al login
   const handleBackToLogin = () => {
-    setRequires2FA(false);
+    setLoginStep('credentials');
     setUsername('');
     setUseBackupCode(false);
     reset2FA();
+    resetTenants();
+  };
+
+  // Handler: Seleccionar tenant
+  const handleTenantSelect = async (tenantId: number) => {
+    const redirectUrl = await selectTenant(tenantId);
+
+    if (redirectUrl) {
+      // Redirigir al subdominio del tenant
+      window.location.href = redirectUrl;
+    } else {
+      // Si falla, ir al dashboard
+      toast.error('Error al seleccionar empresa. Intenta de nuevo.');
+    }
   };
 
   // Animaciones con tipos correctos
@@ -285,50 +369,53 @@ export const LoginPage = () => {
                      border border-white/20 dark:border-gray-700/50 p-6 sm:p-8 md:p-10 lg:p-12"
           variants={itemVariants}
         >
-          {/* Logo y título */}
-          <motion.div className="text-center mb-6 sm:mb-8" variants={logoVariants}>
-            {/* Logo con loading state */}
-            {brandingLoading ? (
-              <div className="mx-auto h-16 sm:h-20 w-16 sm:w-20 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse-subtle mb-4" />
-            ) : (
-              <>
-                <img
-                  src={logo}
-                  alt={companyName}
-                  className="mx-auto h-16 sm:h-20 w-auto object-contain mb-4 dark:hidden drop-shadow-md"
-                />
-                <img
-                  src={logoWhite}
-                  alt={companyName}
-                  className="mx-auto h-16 sm:h-20 w-auto object-contain mb-4 hidden dark:block drop-shadow-md"
-                />
-              </>
-            )}
-
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white font-heading leading-tight break-words">
+          {/* Logo y título - Solo mostrar en credentials y 2fa, no en tenant-select */}
+          {loginStep !== 'tenant-select' && (
+            <motion.div className="text-center mb-6 sm:mb-8" variants={logoVariants}>
+              {/* Logo con loading state */}
               {brandingLoading ? (
-                <span className="inline-block h-8 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse-subtle" />
+                <div className="mx-auto h-16 sm:h-20 w-16 sm:w-20 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse-subtle mb-4" />
               ) : (
-                companyName
+                <>
+                  <img
+                    src={logo}
+                    alt={companyName}
+                    className="mx-auto h-16 sm:h-20 w-auto object-contain mb-4 dark:hidden drop-shadow-md"
+                  />
+                  <img
+                    src={logoWhite}
+                    alt={companyName}
+                    className="mx-auto h-16 sm:h-20 w-auto object-contain mb-4 hidden dark:block drop-shadow-md"
+                  />
+                </>
               )}
-            </h1>
 
-            <p className="mt-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-              {brandingLoading ? (
-                <span className="inline-block h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse-subtle" />
-              ) : (
-                companySlogan
-              )}
-            </p>
-          </motion.div>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white font-heading leading-tight break-words">
+                {brandingLoading ? (
+                  <span className="inline-block h-8 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse-subtle" />
+                ) : (
+                  companyName
+                )}
+              </h1>
 
-          {/* Formulario */}
-          {!requires2FA ? (
+              <p className="mt-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                {brandingLoading ? (
+                  <span className="inline-block h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse-subtle" />
+                ) : (
+                  companySlogan
+                )}
+              </p>
+            </motion.div>
+          )}
+
+          {/* Formulario - Step-based rendering */}
+          {loginStep === 'credentials' && (
             /* Formulario de Login */
             <motion.form
               className="space-y-5"
               onSubmit={handleSubmit(onSubmit)}
               variants={itemVariants}
+              key="login-form"
             >
               <div className="space-y-4">
                 <Input
@@ -360,7 +447,9 @@ export const LoginPage = () => {
                 {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
               </Button>
             </motion.form>
-          ) : (
+          )}
+
+          {loginStep === '2fa' && (
             /* Formulario de 2FA */
             <motion.form
               className="space-y-5"
@@ -425,6 +514,23 @@ export const LoginPage = () => {
                 </Button>
               </div>
             </motion.form>
+          )}
+
+          {loginStep === 'tenant-select' && (
+            /* Selector de Tenant */
+            <motion.div
+              variants={itemVariants}
+              key="tenant-select"
+            >
+              <TenantSelector
+                tenants={tenants}
+                lastTenantId={lastTenantId}
+                onSelect={handleTenantSelect}
+                onBack={handleBackToLogin}
+                isLoading={tenantsLoading}
+                isSuperuser={user?.is_superuser ?? false}
+              />
+            </motion.div>
           )}
         </motion.div>
 

@@ -553,6 +553,70 @@ class BrandingConfig(models.Model):
         help_text='Icono maskable para Android (512x512 px, PNG con padding)'
     )
 
+    # =========================================================================
+    # COLORES ADICIONALES DE INTERFAZ (consolidados desde EmpresaConfig)
+    # =========================================================================
+    sidebar_color = models.CharField(
+        max_length=7,
+        default='#1E293B',
+        verbose_name='Color del Sidebar',
+        help_text='Color de fondo del sidebar en formato HEX'
+    )
+    background_color = models.CharField(
+        max_length=7,
+        default='#F5F5F5',
+        verbose_name='Color de Fondo',
+        help_text='Color de fondo general de la aplicacion'
+    )
+    showcase_background = models.CharField(
+        max_length=7,
+        default='#1F2937',
+        verbose_name='Color Fondo Presentaciones',
+        help_text='Color de fondo para secciones showcase/presentaciones'
+    )
+
+    # =========================================================================
+    # GRADIENTES PARA PRESENTACIONES (consolidados desde EmpresaConfig)
+    # =========================================================================
+    gradient_mission = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='Gradiente Mision',
+        help_text='Clases Tailwind para gradiente de mision (ej: from-blue-500 to-purple-600)'
+    )
+    gradient_vision = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='Gradiente Vision',
+        help_text='Clases Tailwind para gradiente de vision'
+    )
+    gradient_policy = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name='Gradiente Politica',
+        help_text='Clases Tailwind para gradiente de politica'
+    )
+    gradient_values = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='Gradientes Valores',
+        help_text='Lista de gradientes Tailwind para carrusel de valores corporativos'
+    )
+
+    # =========================================================================
+    # LOGO ADICIONAL (consolidado desde EmpresaConfig)
+    # =========================================================================
+    logo_dark = models.ImageField(
+        upload_to='branding/logos/',
+        blank=True,
+        null=True,
+        verbose_name='Logo para Modo Oscuro',
+        help_text='Version del logo optimizada para fondos claros (si difiere del principal)'
+    )
+
     is_active = models.BooleanField(
         default=True,
         verbose_name='Activo'

@@ -373,19 +373,44 @@ export interface ToggleModuleDTO {
 
 // ==================== BRANDING CONFIG ====================
 
+/**
+ * Configuración de Branding - FUENTE ÚNICA DE VERDAD
+ *
+ * Consolidado desde EmpresaConfig para eliminar redundancias.
+ * Incluye: logos, colores, PWA, gradientes para presentaciones.
+ */
 export interface BrandingConfig {
   id: number;
   company_name: string;
   company_short_name: string;
   company_slogan?: string | null;
+
+  // Logos (3 variantes para diferentes contextos)
   logo?: string | null;
   logo_white?: string | null;
+  logo_dark?: string | null;
   favicon?: string | null;
   login_background?: string | null;
+
+  // Colores principales
   primary_color: string;
   secondary_color: string;
   accent_color: string;
+
+  // Colores de interfaz (consolidados desde EmpresaConfig)
+  sidebar_color?: string | null;
+  background_color?: string | null;
+  showcase_background?: string | null;
+
+  // Gradientes para presentaciones (consolidados desde EmpresaConfig)
+  gradient_mission?: string | null;
+  gradient_vision?: string | null;
+  gradient_policy?: string | null;
+  gradient_values?: string[] | null;
+
+  // Versión app
   app_version: string;
+
   // Campos PWA
   pwa_name?: string | null;
   pwa_short_name?: string | null;
@@ -395,6 +420,7 @@ export interface BrandingConfig {
   pwa_icon_192?: string | null;
   pwa_icon_512?: string | null;
   pwa_icon_maskable?: string | null;
+
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -404,10 +430,30 @@ export interface CreateBrandingConfigDTO {
   company_name: string;
   company_short_name: string;
   company_slogan?: string;
+
+  // Logos
+  logo?: File;
+  logo_white?: File;
+  logo_dark?: File;
+  favicon?: File;
   login_background?: File;
+
+  // Colores principales
   primary_color?: string;
   secondary_color?: string;
   accent_color?: string;
+
+  // Colores de interfaz
+  sidebar_color?: string;
+  background_color?: string;
+  showcase_background?: string;
+
+  // Gradientes
+  gradient_mission?: string;
+  gradient_vision?: string;
+  gradient_policy?: string;
+  gradient_values?: string[];
+
   // Campos PWA
   pwa_name?: string;
   pwa_short_name?: string;
@@ -417,18 +463,43 @@ export interface CreateBrandingConfigDTO {
   pwa_icon_192?: File;
   pwa_icon_512?: File;
   pwa_icon_maskable?: File;
-  // NOTA: app_version se gestiona desde settings centralizados
 }
 
 export interface UpdateBrandingConfigDTO {
   company_name?: string;
   company_short_name?: string;
   company_slogan?: string;
+
+  // Logos
+  logo?: File;
+  logo_white?: File;
+  logo_dark?: File;
+  favicon?: File;
   login_background?: File;
+
+  // Clear flags para logos
+  logo_clear?: boolean;
+  logo_white_clear?: boolean;
+  logo_dark_clear?: boolean;
+  favicon_clear?: boolean;
   login_background_clear?: boolean;
+
+  // Colores principales
   primary_color?: string;
   secondary_color?: string;
   accent_color?: string;
+
+  // Colores de interfaz
+  sidebar_color?: string;
+  background_color?: string;
+  showcase_background?: string;
+
+  // Gradientes
+  gradient_mission?: string;
+  gradient_vision?: string;
+  gradient_policy?: string;
+  gradient_values?: string[];
+
   // Campos PWA
   pwa_name?: string;
   pwa_short_name?: string;
@@ -441,6 +512,7 @@ export interface UpdateBrandingConfigDTO {
   pwa_icon_192_clear?: boolean;
   pwa_icon_512_clear?: boolean;
   pwa_icon_maskable_clear?: boolean;
+
   is_active?: boolean;
 }
 

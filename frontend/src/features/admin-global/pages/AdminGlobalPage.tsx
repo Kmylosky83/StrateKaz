@@ -2,10 +2,12 @@
  * Admin Global Page - Panel de Superusuarios
  *
  * Dashboard principal para gestión de:
- * - Empresas (Tenants)
+ * - Empresas (Tenants) - Incluye configuración de módulos por empresa
  * - Planes de Suscripción
  * - Usuarios Globales
- * - Módulos del Sistema
+ *
+ * NOTA: La gestión de módulos se hace DENTRO de cada empresa (TenantsSection)
+ * ya que los módulos son configurables por tenant, no globalmente.
  *
  * Solo visible para superusuarios (is_superuser=true)
  */
@@ -15,22 +17,17 @@ import {
   Building2,
   Users,
   CreditCard,
-  Blocks,
-  TrendingUp,
   AlertTriangle,
-  CheckCircle,
-  Clock,
   Shield,
   Globe,
   type LucideIcon,
 } from 'lucide-react';
-import { PageHeader, StatsGrid, StatsGridSkeleton } from '@/components/layout';
-import { Card, Badge, Button, BrandedSkeleton } from '@/components/common';
+import { StatsGrid, StatsGridSkeleton } from '@/components/layout';
+import { Card, Badge } from '@/components/common';
 import { useTenantsStats, useTenantUsersStats, usePlansStats } from '../hooks/useAdminGlobal';
 import { TenantsSection } from '../components/TenantsSection';
 import { PlansSection } from '../components/PlansSection';
 import { UsersGlobalSection } from '../components/UsersGlobalSection';
-import { ModulesSection } from '../components/ModulesSection';
 import type { StatItem } from '@/components/layout';
 
 // Secciones del Admin Global
@@ -45,7 +42,7 @@ const ADMIN_SECTIONS: AdminSection[] = [
   {
     code: 'empresas',
     name: 'Empresas',
-    description: 'Gestión de tenants, subdominios y configuración de empresas',
+    description: 'Gestión de tenants, módulos, subdominios y configuración',
     icon: Building2,
   },
   {
@@ -60,12 +57,8 @@ const ADMIN_SECTIONS: AdminSection[] = [
     description: 'Usuarios con acceso multi-tenant y superadministradores',
     icon: Users,
   },
-  {
-    code: 'modulos',
-    name: 'Módulos',
-    description: 'Activación de módulos y features del sistema',
-    icon: Blocks,
-  },
+  // NOTA: Tab "Módulos" eliminado - la configuración de módulos
+  // ahora se hace dentro del detalle de cada Empresa
 ];
 
 // Mapeo de secciones a componentes
@@ -73,7 +66,6 @@ const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
   empresas: TenantsSection,
   planes: PlansSection,
   usuarios: UsersGlobalSection,
-  modulos: ModulesSection,
 };
 
 export const AdminGlobalPage = () => {

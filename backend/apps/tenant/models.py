@@ -610,3 +610,41 @@ class TenantDomain(models.Model):
 
     def __str__(self):
         return f"{self.domain} → {self.tenant.name}"
+
+
+class TenantModuleSettings(models.Model):
+    """
+    Configuración de módulos habilitados por tenant.
+    Permite que cada empresa tenga su propia configuración de módulos
+    independiente de los módulos globales del sistema.
+    """
+    tenant = models.ForeignKey(
+        'Tenant',
+        on_delete=models.CASCADE,
+        related_name='module_settings'
+    )
+    module_code = models.CharField(
+        max_length=50,
+        help_text="Código del módulo (ej: 'sst', 'pesv', 'iso')"
+    )
+    is_enabled = models.BooleanField(
+        default=True,
+        help_text="Si el módulo está habilitado para este tenant"
+    )
+    custom_config = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="Configuración personalizada del módulo"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'tenant_module_settings'
+        unique_together = [['tenant', 'module_code']]
+        verbose_name = 'Configuración de Módulo'
+        verbose_name_plural = 'Configuraciones de Módulos'
+
+    def __str__(self):
+        status = "✓" if self.is_enabled else "✗"
+        return f"{self.tenant.code} - {self.module_code} [{status}]"

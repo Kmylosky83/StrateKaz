@@ -662,44 +662,32 @@ class BrandingConfigViewSet(viewsets.ModelViewSet):
         GET /api/core/branding/active/
         Retorna la configuración de branding activa (público para login page).
 
-        En modo multi-tenant, lee de EmpresaConfig de la BD del tenant.
-        Si no hay tenant (login genérico), usa BrandingConfig de BD master.
+        Fuentes de branding:
+        1. Multi-tenant: BrandingConfig de la BD del tenant + datos básicos del Tenant
+        2. Fallback: BrandingConfig de BD master
         """
+        import logging
+        logger = logging.getLogger(__name__)
+
         # Verificar si hay tenant activo (multi-tenant mode)
         tenant = getattr(request, 'tenant', None)
 
         if tenant:
-            # Modo multi-tenant: leer branding de EmpresaConfig del tenant
+            # Modo multi-tenant: usar BrandingConfig de la BD del tenant
             try:
-                from apps.gestion_estrategica.configuracion.models import EmpresaConfig
-                empresa_config = EmpresaConfig.objects.first()
+                branding = BrandingConfig.objects.filter(is_active=True).first()
 
-                if empresa_config:
-                    # Mapear EmpresaConfig a formato de BrandingConfig
-                    branding_data = {
-                        'id': empresa_config.pk,
-                        'company_name': empresa_config.nombre_comercial or empresa_config.razon_social,
-                        'company_short_name': (empresa_config.nombre_comercial or empresa_config.razon_social)[:12] if empresa_config.nombre_comercial or empresa_config.razon_social else 'ERP',
-                        'company_slogan': empresa_config.slogan,
-                        'logo': request.build_absolute_uri(empresa_config.logo.url) if empresa_config.logo else None,
-                        'logo_white': request.build_absolute_uri(empresa_config.logo_white.url) if empresa_config.logo_white else None,
-                        'favicon': request.build_absolute_uri(empresa_config.favicon.url) if empresa_config.favicon else None,
-                        'login_background': request.build_absolute_uri(empresa_config.login_background.url) if empresa_config.login_background else None,
-                        'primary_color': empresa_config.color_primario or '#1E40AF',
-                        'secondary_color': empresa_config.color_secundario or '#3B82F6',
-                        'accent_color': empresa_config.color_acento or '#10B981',
-                        'app_version': '3.8.1',
-                        'pwa_name': empresa_config.pwa_name,
-                        'pwa_short_name': empresa_config.pwa_short_name,
-                        'pwa_description': empresa_config.pwa_description,
-                        'pwa_theme_color': empresa_config.pwa_theme_color or empresa_config.color_primario,
-                        'pwa_background_color': empresa_config.pwa_background_color or '#ffffff',
-                        'pwa_icon_192': request.build_absolute_uri(empresa_config.pwa_icon_192.url) if empresa_config.pwa_icon_192 else None,
-                        'pwa_icon_512': request.build_absolute_uri(empresa_config.pwa_icon_512.url) if empresa_config.pwa_icon_512 else None,
-                        'pwa_icon_maskable': request.build_absolute_uri(empresa_config.pwa_icon_maskable.url) if empresa_config.pwa_icon_maskable else None,
-                        'is_active': True,
-                    }
-                    return Response(branding_data)
+                if branding:
+                    serializer = BrandingConfigSerializer(branding, context={'request': request})
+                    data = serializer.data
+                    # Sobrescribir con datos del Tenant si existen
+                    if tenant.primary_color:
+                        data['primary_color'] = tenant.primary_color
+                    if tenant.logo_url:
+                        data['logo'] = tenant.logo_url
+                    if tenant.name:
+                        data['company_name'] = tenant.name
+                    return Response(data)
             except Exception as e:
                 logger.warning(f"Error obteniendo branding de tenant: {e}")
 
@@ -719,138 +707,85 @@ class BrandingConfigViewSet(viewsets.ModelViewSet):
         GET /api/core/branding/manifest/
 
         MB-001: Retorna manifest.json dinámico para PWA.
-        Este endpoint genera un manifest.json basado en la configuración
-        de branding activa, permitiendo personalización por tenant.
-
-        En modo multi-tenant, lee de EmpresaConfig de la BD del tenant.
+        Fuente única: BrandingConfig + override de Tenant.primary_color si aplica.
         """
-        manifest = None
+        import logging
+        logger = logging.getLogger(__name__)
+
         tenant = getattr(request, 'tenant', None)
+        branding = BrandingConfig.objects.filter(is_active=True).first()
 
-        # Intentar obtener branding del tenant primero
-        if tenant:
-            try:
-                from apps.gestion_estrategica.configuracion.models import EmpresaConfig
-                empresa_config = EmpresaConfig.objects.first()
+        if not branding:
+            # Fallback mínimo sin branding configurado
+            manifest = {
+                "name": "StrateKaz",
+                "short_name": "StrateKaz",
+                "description": "Sistema de Gestión Empresarial",
+                "start_url": "/",
+                "display": "standalone",
+                "background_color": "#ffffff",
+                "theme_color": "#16A34A",
+                "icons": []
+            }
+        else:
+            # Construir iconos desde BrandingConfig
+            icons = []
 
-                if empresa_config:
-                    icons = []
+            if branding.pwa_icon_192:
+                icons.append({
+                    "src": request.build_absolute_uri(branding.pwa_icon_192.url),
+                    "sizes": "192x192",
+                    "type": "image/png",
+                    "purpose": "any"
+                })
 
-                    if empresa_config.pwa_icon_192:
-                        icons.append({
-                            "src": request.build_absolute_uri(empresa_config.pwa_icon_192.url),
-                            "sizes": "192x192",
-                            "type": "image/png",
-                            "purpose": "any"
-                        })
+            if branding.pwa_icon_512:
+                icons.append({
+                    "src": request.build_absolute_uri(branding.pwa_icon_512.url),
+                    "sizes": "512x512",
+                    "type": "image/png",
+                    "purpose": "any"
+                })
 
-                    if empresa_config.pwa_icon_512:
-                        icons.append({
-                            "src": request.build_absolute_uri(empresa_config.pwa_icon_512.url),
-                            "sizes": "512x512",
-                            "type": "image/png",
-                            "purpose": "any"
-                        })
+            if branding.pwa_icon_maskable:
+                icons.append({
+                    "src": request.build_absolute_uri(branding.pwa_icon_maskable.url),
+                    "sizes": "512x512",
+                    "type": "image/png",
+                    "purpose": "maskable"
+                })
 
-                    if empresa_config.pwa_icon_maskable:
-                        icons.append({
-                            "src": request.build_absolute_uri(empresa_config.pwa_icon_maskable.url),
-                            "sizes": "512x512",
-                            "type": "image/png",
-                            "purpose": "maskable"
-                        })
+            if not icons and branding.favicon:
+                icons.append({
+                    "src": request.build_absolute_uri(branding.favicon.url),
+                    "sizes": "any",
+                    "type": "image/png",
+                    "purpose": "any"
+                })
 
-                    # Fallback a favicon si no hay iconos PWA
-                    if not icons and empresa_config.favicon:
-                        icons.append({
-                            "src": request.build_absolute_uri(empresa_config.favicon.url),
-                            "sizes": "any",
-                            "type": "image/png",
-                            "purpose": "any"
-                        })
+            # Determinar theme_color: prioridad Tenant > BrandingConfig
+            theme_color = branding.pwa_theme_color or branding.primary_color or "#16A34A"
+            if tenant and tenant.primary_color:
+                theme_color = tenant.primary_color
 
-                    company_name = empresa_config.nombre_comercial or empresa_config.razon_social or "ERP"
+            # Determinar nombre: prioridad Tenant > BrandingConfig
+            company_name = branding.company_name or "StrateKaz"
+            if tenant and tenant.name:
+                company_name = tenant.name
 
-                    manifest = {
-                        "name": empresa_config.pwa_name or f"{company_name} - ERP",
-                        "short_name": empresa_config.pwa_short_name or company_name[:12],
-                        "description": empresa_config.pwa_description or empresa_config.slogan or "Sistema de Gestión Empresarial",
-                        "start_url": "/",
-                        "scope": "/",
-                        "display": "standalone",
-                        "orientation": "portrait-primary",
-                        "background_color": empresa_config.pwa_background_color or "#ffffff",
-                        "theme_color": empresa_config.pwa_theme_color or empresa_config.color_primario or "#1E40AF",
-                        "icons": icons,
-                        "categories": ["business", "productivity"],
-                        "lang": "es-CO"
-                    }
-            except Exception as e:
-                logger.warning(f"Error obteniendo manifest de tenant: {e}")
-
-        # Fallback a BrandingConfig de BD master
-        if not manifest:
-            branding = BrandingConfig.objects.filter(is_active=True).first()
-
-            if not branding:
-                manifest = {
-                    "name": "StrateKaz",
-                    "short_name": "StrateKaz",
-                    "description": "Sistema de Gestión Empresarial",
-                    "start_url": "/",
-                    "display": "standalone",
-                    "background_color": "#ffffff",
-                    "theme_color": "#16A34A",
-                    "icons": []
-                }
-            else:
-                icons = []
-
-                if branding.pwa_icon_192:
-                    icons.append({
-                        "src": request.build_absolute_uri(branding.pwa_icon_192.url),
-                        "sizes": "192x192",
-                        "type": "image/png",
-                        "purpose": "any"
-                    })
-
-                if branding.pwa_icon_512:
-                    icons.append({
-                        "src": request.build_absolute_uri(branding.pwa_icon_512.url),
-                        "sizes": "512x512",
-                        "type": "image/png",
-                        "purpose": "any"
-                    })
-
-                if branding.pwa_icon_maskable:
-                    icons.append({
-                        "src": request.build_absolute_uri(branding.pwa_icon_maskable.url),
-                        "sizes": "512x512",
-                        "type": "image/png",
-                        "purpose": "maskable"
-                    })
-
-                if not icons and branding.favicon:
-                    icons.append({
-                        "src": request.build_absolute_uri(branding.favicon.url),
-                        "sizes": "any",
-                        "type": "image/png",
-                        "purpose": "any"
-                    })
-
-                manifest = {
-                    "name": branding.pwa_name or branding.company_name or "StrateKaz",
-                    "short_name": branding.pwa_short_name or branding.company_short_name or "StrateKaz",
-                    "description": branding.pwa_description or branding.company_slogan or "Sistema de Gestión Empresarial",
-                    "start_url": "/",
-                    "scope": "/",
-                    "display": "standalone",
-                    "orientation": "portrait-primary",
-                    "background_color": branding.pwa_background_color or "#ffffff",
-                    "theme_color": branding.pwa_theme_color or branding.primary_color or "#16A34A",
-                    "icons": icons,
-                    "categories": ["business", "productivity"],
-                    "lang": "es-CO"
-                }
+            manifest = {
+                "name": branding.pwa_name or f"{company_name} - ERP",
+                "short_name": branding.pwa_short_name or company_name[:12],
+                "description": branding.pwa_description or branding.company_slogan or "Sistema de Gestión Empresarial",
+                "start_url": "/",
+                "scope": "/",
+                "display": "standalone",
+                "orientation": "portrait-primary",
+                "background_color": branding.pwa_background_color or "#ffffff",
+                "theme_color": theme_color,
+                "icons": icons,
+                "categories": ["business", "productivity"],
+                "lang": "es-CO"
+            }
 
         return Response(manifest, content_type='application/manifest+json')

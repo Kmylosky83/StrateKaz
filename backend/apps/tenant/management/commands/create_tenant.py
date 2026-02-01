@@ -287,7 +287,8 @@ class Command(BaseCommand):
         if EmpresaConfig.objects.using(db_alias).exists():
             return
 
-        # Crear configuración mínima
+        # Crear configuración mínima de datos fiscales
+        # NOTA: El branding se configura en BrandingConfig (core), no aquí
         EmpresaConfig.objects.using(db_alias).create(
             nit=nit or '000000000-0',
             razon_social=name,
@@ -298,10 +299,4 @@ class Command(BaseCommand):
             departamento='BOGOTA_DC',
             telefono_principal='0000000',
             email_corporativo=f'info@{name.lower().replace(" ", "")}.com',
-            # Branding por defecto
-            color_primario='#1E40AF',
-            color_secundario='#3B82F6',
-            color_acento='#10B981',
-            pwa_theme_color='#1E40AF',
-            pwa_background_color='#FFFFFF',
         )

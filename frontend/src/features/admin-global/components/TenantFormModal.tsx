@@ -6,7 +6,8 @@
 import { useState, useEffect } from 'react';
 import { X, Building2, Globe, Database, Calendar, Palette } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Button, Card } from '@/components/common';
+import { Button } from '@/components/common';
+import { TENANT_DEFAULTS } from '@/constants/brand';
 import { useCreateTenant, useUpdateTenant, usePlans } from '../hooks/useAdminGlobal';
 import type { Tenant, CreateTenantDTO, TenantTier } from '../types';
 
@@ -24,14 +25,6 @@ const TIER_OPTIONS: { value: TenantTier; label: string }[] = [
   { value: 'enterprise', label: 'Enterprise' },
 ];
 
-const DEFAULT_MODULES = [
-  'gestion_estrategica',
-  'sst',
-  'pesv',
-  'ambiental',
-  'calidad',
-];
-
 export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProps) => {
   const isEditing = !!tenant;
   const createTenant = useCreateTenant();
@@ -45,14 +38,14 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
     subdomain: '',
     plan: undefined,
     tier: 'starter',
-    max_users: 5,
-    max_storage_gb: 5,
-    enabled_modules: DEFAULT_MODULES,
+    max_users: TENANT_DEFAULTS.maxUsers,
+    max_storage_gb: TENANT_DEFAULTS.maxStorageGb,
+    enabled_modules: [...TENANT_DEFAULTS.enabledModules],
     is_active: true,
     is_trial: true,
     trial_ends_at: '',
     subscription_ends_at: '',
-    primary_color: '#6366F1',
+    primary_color: TENANT_DEFAULTS.primaryColor,
     notes: '',
   });
 
@@ -87,14 +80,14 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
         subdomain: '',
         plan: undefined,
         tier: 'starter',
-        max_users: 5,
-        max_storage_gb: 5,
-        enabled_modules: DEFAULT_MODULES,
+        max_users: TENANT_DEFAULTS.maxUsers,
+        max_storage_gb: TENANT_DEFAULTS.maxStorageGb,
+        enabled_modules: [...TENANT_DEFAULTS.enabledModules],
         is_active: true,
         is_trial: true,
         trial_ends_at: getDefaultTrialDate(),
         subscription_ends_at: '',
-        primary_color: '#6366F1',
+        primary_color: TENANT_DEFAULTS.primaryColor,
         notes: '',
       });
     }
@@ -103,7 +96,7 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
 
   const getDefaultTrialDate = () => {
     const date = new Date();
-    date.setDate(date.getDate() + 14); // 14 días de trial
+    date.setDate(date.getDate() + TENANT_DEFAULTS.trialDays);
     return date.toISOString().split('T')[0];
   };
 
@@ -519,7 +512,7 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
                       onChange={(e) => setFormData((prev) => ({ ...prev, primary_color: e.target.value }))}
                       className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
                         bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500"
-                      placeholder="#6366F1"
+                      placeholder={TENANT_DEFAULTS.primaryColor}
                     />
                   </div>
                 </div>

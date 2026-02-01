@@ -80,6 +80,29 @@ export const BRAND = {
 } as const;
 
 /**
+ * Valores por defecto para nuevos Tenants
+ * Usado en Admin Global al crear empresas
+ */
+export const TENANT_DEFAULTS = {
+  /** Color primario por defecto para nuevos tenants (indigo-500) */
+  primaryColor: '#6366F1',
+  /** Días de trial por defecto */
+  trialDays: 14,
+  /** Usuarios máximos por defecto */
+  maxUsers: 5,
+  /** Storage máximo por defecto (GB) */
+  maxStorageGb: 5,
+  /** Módulos habilitados por defecto */
+  enabledModules: [
+    'gestion_estrategica',
+    'sst',
+    'pesv',
+    'ambiental',
+    'calidad',
+  ],
+} as const;
+
+/**
  * Configuración PWA
  * Valores por defecto para el manifest cuando no hay branding dinámico
  */

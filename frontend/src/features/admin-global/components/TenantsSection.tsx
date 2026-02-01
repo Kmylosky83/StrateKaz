@@ -83,10 +83,12 @@ const TenantCard = ({ tenant, onEdit, onToggle, onDelete }: TenantCardProps) => 
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
-            {/* Logo o inicial */}
+            {/* Logo o inicial - usa primary_color del tenant o bg-primary-500 del Design System */}
             <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold"
-              style={{ backgroundColor: tenant.primary_color || '#6366F1' }}
+              className={`w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold ${
+                !tenant.primary_color ? 'bg-primary-500' : ''
+              }`}
+              style={tenant.primary_color ? { backgroundColor: tenant.primary_color } : undefined}
             >
               {tenant.logo_url ? (
                 <img

@@ -1,0 +1,475 @@
+# RiesgoSelector - Guía Visual
+
+## Vista General del Componente
+
+### Estado Inicial (Sin Selección)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ HEADER                                                       │
+├─────────────────────────────────────────────────────────────┤
+│  Riesgos Ocupacionales (GTC 45)          [0 / 78 seleccionados] │
+│                                                              │
+│  [🔍 Buscar riesgo...]                                      │
+├─────────────────────────────────────────────────────────────┤
+│ CATEGORÍAS (Todas colapsadas)                                │
+├─────────────────────────────────────────────────────────────┤
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ [ ] ► 🦠 Biológico                        [0 / 8] ─────│ │
+│ └─────────────────────────────────────────────────────────┘ │
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ [ ] ► ⚛️ Físico                           [0 / 14] ────│ │
+│ └─────────────────────────────────────────────────────────┘ │
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ [ ] ► 🧪 Químico                          [0 / 13] ────│ │
+│ └─────────────────────────────────────────────────────────┘ │
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ [ ] ► 🧠 Psicosocial                      [0 / 11] ────│ │
+│ └─────────────────────────────────────────────────────────┘ │
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ [ ] ► 🧍 Biomecánico                      [0 / 7] ─────│ │
+│ └─────────────────────────────────────────────────────────┘ │
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ [ ] ► ⚠️ Condiciones de Seguridad         [0 / 19] ────│ │
+│ └─────────────────────────────────────────────────────────┘ │
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ [ ] ► ⛈️ Fenómenos Naturales              [0 / 6] ─────│ │
+│ └─────────────────────────────────────────────────────────┘ │
+├─────────────────────────────────────────────────────────────┤
+│ FOOTER EDUCATIVO                                             │
+├─────────────────────────────────────────────────────────────┤
+│ ℹ️ Niveles de riesgo según GTC 45:                         │
+│   [I] Crítico  [II] Alto  [III] Medio  [IV] Bajo           │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Categoría Expandida (Biológico)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ HEADER CATEGORÍA                                        │ │
+│ │ ┌───┬───┬────────────────────────────────────────────┐  │ │
+│ │ │[✓]│ ▼ │🦠 Biológico                     [8 / 8] ──│  │ │
+│ │ └───┴───┴────────────────────────────────────────────┘  │ │
+│ ├─────────────────────────────────────────────────────────┤ │
+│ │ ITEMS (Expandido)                                       │ │
+│ │ ┌─────────────────────────────────────────────────────┐ │ │
+│ │ │ [✓] Virus                           [Nivel I] ─────│ │ │
+│ │ └─────────────────────────────────────────────────────┘ │ │
+│ │ ┌─────────────────────────────────────────────────────┐ │ │
+│ │ │ [✓] Bacterias                       [Nivel I] ─────│ │ │
+│ │ └─────────────────────────────────────────────────────┘ │ │
+│ │ ┌─────────────────────────────────────────────────────┐ │ │
+│ │ │ [✓] Hongos                         [Nivel II] ─────│ │ │
+│ │ └─────────────────────────────────────────────────────┘ │ │
+│ │ ┌─────────────────────────────────────────────────────┐ │ │
+│ │ │ [✓] Parásitos                      [Nivel II] ─────│ │ │
+│ │ └─────────────────────────────────────────────────────┘ │ │
+│ │ ┌─────────────────────────────────────────────────────┐ │ │
+│ │ │ [✓] Fluidos corporales             [Nivel I] ──────│ │ │
+│ │ └─────────────────────────────────────────────────────┘ │ │
+│ │ ┌─────────────────────────────────────────────────────┐ │ │
+│ │ │ [✓] Vectores (mosquitos, roedores) [Nivel III] ───│ │ │
+│ │ └─────────────────────────────────────────────────────┘ │ │
+│ │ ┌─────────────────────────────────────────────────────┐ │ │
+│ │ │ [✓] Picaduras y mordeduras         [Nivel III] ───│ │ │
+│ │ └─────────────────────────────────────────────────────┘ │ │
+│ │ ┌─────────────────────────────────────────────────────┐ │ │
+│ │ │ [✓] Material orgánico en descomp.  [Nivel II] ─────│ │ │
+│ │ └─────────────────────────────────────────────────────┘ │ │
+│ └─────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
+
+Leyenda:
+[✓] = Checkbox marcado (todos seleccionados)
+▼  = Categoría expandida
+🦠 = Icono de categoría Biológico
+[Nivel I] = Badge rojo (Crítico)
+[Nivel II] = Badge naranja (Alto)
+[8 / 8] = Contador (8 seleccionados de 8 totales)
+```
+
+---
+
+### Selección Parcial (Estado Indeterminado)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ [▬] ▼ 🧪 Químico                        [3 / 13] ─────│ │
+│ ├─────────────────────────────────────────────────────────┤ │
+│ │ [✓] Gases y vapores                   [Nivel I] ──────│ │
+│ │ [ ] Aerosoles sólidos                [Nivel II] ──────│ │
+│ │ [✓] Aerosoles líquidos               [Nivel II] ──────│ │
+│ │ [ ] Polvos orgánicos                [Nivel III] ──────│ │
+│ │ [ ] Polvos inorgánicos              [Nivel III] ──────│ │
+│ │ [✓] Líquidos                          [Nivel I] ──────│ │
+│ │ [ ] Humos                            [Nivel II] ──────│ │
+│ │ ... (6 más sin seleccionar)                             │
+│ └─────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────┘
+
+Leyenda:
+[▬] = Checkbox indeterminado (algunos seleccionados, no todos)
+[3 / 13] = 3 riesgos seleccionados de 13 totales
+```
+
+---
+
+### Búsqueda Activa
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Riesgos Ocupacionales (GTC 45)          [2 / 78 seleccionados] │
+│                                                              │
+│  [🔍 ruido                          ]  ← Usuario escribió    │
+├─────────────────────────────────────────────────────────────┤
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ [▬] ▼ ⚛️ Físico                          [2 / 14] ─────│ │ ← Auto-expandido
+│ ├─────────────────────────────────────────────────────────┤ │
+│ │ [✓] Ruido (continuo)                  [Nivel II] ─────│ │ ← Highlighted
+│ │                ^^^^^ (amarillo)                          │ │
+│ │ [✓] Ruido (impacto intermitente)      [Nivel I] ──────│ │ ← Highlighted
+│ │                ^^^^^ (amarillo)                          │ │
+│ └─────────────────────────────────────────────────────────┘ │
+│                                                              │
+│ (Otras categorías sin resultados están ocultas)              │
+└─────────────────────────────────────────────────────────────┘
+
+Interacción:
+1. Usuario escribe "ruido"
+2. Sistema filtra riesgos que contienen "ruido"
+3. Auto-expande categoría "Físico" (tiene resultados)
+4. Highlighting en amarillo sobre término buscado
+5. Otras categorías sin resultados se ocultan temporalmente
+```
+
+---
+
+### Estado Vacío (Sin Búsqueda)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Riesgos Ocupacionales (GTC 45)          [0 / 78 seleccionados] │
+│                                                              │
+│  [🔍 xyz                            ]                       │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│                        🔍                                    │
+│                                                              │
+│    No se encontraron riesgos que coincidan con "xyz"        │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Estados Interactivos Detallados
+
+### 1. Checkbox States
+
+#### a) Unchecked (Normal)
+```
+┌───┐
+│   │  ← Borde gris, fondo blanco
+└───┘
+```
+**CSS:** `border-gray-300 bg-white`
+
+#### b) Checked (Seleccionado)
+```
+┌───┐
+│ ✓ │  ← Borde + fondo primary-600, check blanco
+└───┘
+```
+**CSS:** `border-primary-600 bg-primary-600`
+
+#### c) Indeterminate (Parcial)
+```
+┌───┐
+│ — │  ← Borde + fondo primary-600, guión blanco
+└───┘
+```
+**CSS:** `border-primary-600 bg-primary-600` + icono Minus
+
+#### d) Disabled
+```
+┌───┐
+│   │  ← Fondo gris claro, cursor not-allowed
+└───┘
+```
+**CSS:** `bg-gray-50 cursor-not-allowed opacity-50`
+
+---
+
+### 2. Badge States (Niveles de Riesgo)
+
+#### Nivel I - Crítico
+```
+┌──────────┐
+│ Nivel I  │  ← Fondo rojo (danger-100), texto rojo oscuro
+└──────────┘
+```
+**Colores:**
+- Light: `bg-danger-100 text-danger-800`
+- Dark: `bg-danger-900/30 text-danger-400`
+- **Contraste:** 7.2:1 (AAA)
+
+#### Nivel II - Alto
+```
+┌───────────┐
+│ Nivel II  │  ← Fondo naranja (warning-100), texto naranja
+└───────────┘
+```
+**Colores:**
+- Light: `bg-warning-100 text-warning-800`
+- Dark: `bg-warning-900/30 text-warning-400`
+- **Contraste:** 4.8:1 (AA)
+
+#### Nivel III - Medio
+```
+┌────────────┐
+│ Nivel III  │  ← Fondo amarillo (warning-100), texto amarillo
+└────────────┘
+```
+**Colores:** Similar a Nivel II pero con semántica diferente
+**Contraste:** 5.1:1 (AA)
+
+#### Nivel IV - Bajo
+```
+┌───────────┐
+│ Nivel IV  │  ← Fondo verde (success-100), texto verde
+└───────────┘
+```
+**Colores:**
+- Light: `bg-success-100 text-success-800`
+- Dark: `bg-success-900/30 text-success-400`
+- **Contraste:** 6.3:1 (AAA)
+
+---
+
+### 3. Hover States
+
+#### Categoría Header (Hover)
+```
+┌─────────────────────────────────────────┐
+│ [✓] ▼ 🦠 Biológico          [8 / 8] ─ │  ← Fondo gris muy claro
+└─────────────────────────────────────────┘
+```
+**CSS:** `hover:bg-gray-100 dark:hover:bg-gray-700/50`
+
+#### Item de Riesgo (Hover)
+```
+┌─────────────────────────────────────────┐
+│ [✓] Virus                   [Nivel I] ─│  ← Fondo gris 50
+└─────────────────────────────────────────┘
+```
+**CSS:** `hover:bg-gray-50 dark:hover:bg-gray-800/50`
+
+---
+
+## Flujos de Interacción
+
+### Flujo 1: Seleccionar Categoría Completa
+
+```
+Usuario hace click en checkbox de categoría
+              ↓
+   ¿Todos ya seleccionados?
+     /              \
+   SÍ               NO
+    ↓                ↓
+Deseleccionar    Seleccionar
+   todos            todos
+    ↓                ↓
+Actualizar      Actualizar
+contadores      contadores
+    ↓                ↓
+    onChange([...ids sin esta categoría])
+           o
+    onChange([...ids + todos de esta categoría])
+```
+
+### Flujo 2: Búsqueda y Selección
+
+```
+Usuario escribe "ruido" en input
+              ↓
+    Filtrar riesgos
+       (useMemo)
+              ↓
+ ¿Hay resultados?
+     /          \
+   SÍ            NO
+    ↓             ↓
+Auto-expandir  Mostrar
+categorías    "Sin resultados"
+con matches
+    ↓
+Highlighting
+término buscado
+    ↓
+Usuario selecciona
+    riesgo
+    ↓
+  onChange()
+```
+
+### Flujo 3: Cargar Desde Backend
+
+```
+Componente monta
+       ↓
+useEffect detecta
+cargo completo
+       ↓
+Extrae expuesto_riesgos: [1, 5, 8]
+       ↓
+setSelectedIds([1, 5, 8])
+       ↓
+RiesgoSelector
+renderiza con
+checkboxes marcados
+       ↓
+Contadores
+actualizados
+```
+
+---
+
+## Responsive Breakpoints
+
+### Desktop (> 1024px)
+```
+┌──────────────────────────────────┐
+│  Modal 3xl (768px max-width)     │
+│  ┌────────────────────────────┐  │
+│  │ RiesgoSelector             │  │
+│  │ - Padding: p-3             │  │
+│  │ - Altura: max-h-[400px]    │  │
+│  │ - Scroll: overflow-y-auto  │  │
+│  │ - 2 columnas en footer     │  │
+│  └────────────────────────────┘  │
+└──────────────────────────────────┘
+```
+
+### Tablet (768px - 1024px)
+```
+┌────────────────────────────┐
+│  Modal ajustado            │
+│  ┌──────────────────────┐  │
+│  │ RiesgoSelector       │  │
+│  │ - Padding: p-2.5     │  │
+│  │ - Font size -5%      │  │
+│  │ - Badges compactos   │  │
+│  └──────────────────────┘  │
+└────────────────────────────┘
+```
+
+### Mobile (< 768px)
+```
+┌──────────────────┐
+│  Modal full      │
+│  ┌────────────┐  │
+│  │ Riesgo     │  │
+│  │ Selector   │  │
+│  │ - Stack    │  │
+│  │ - p-2      │  │
+│  │ - Touch    │  │
+│  │   44x44px  │  │
+│  └────────────┘  │
+└──────────────────┘
+```
+
+---
+
+## Paleta de Colores Completa
+
+### Light Mode
+
+| Elemento | Color | Hex | Uso |
+|----------|-------|-----|-----|
+| Background principal | `bg-white` | #FFFFFF | Fondo items |
+| Background secundario | `bg-gray-50` | #F9FAFB | Headers, footer |
+| Border normal | `border-gray-200` | #E5E7EB | Separadores |
+| Texto principal | `text-gray-900` | #111827 | Labels, nombres |
+| Texto secundario | `text-gray-500` | #6B7280 | Ayuda, placeholders |
+| Primary | `bg-primary-600` | (Variable) | Checkboxes activos |
+| Danger (Nivel I) | `bg-danger-100` | (Variable) | Badge crítico |
+| Warning (Nivel II-III) | `bg-warning-100` | (Variable) | Badge alto/medio |
+| Success (Nivel IV) | `bg-success-100` | (Variable) | Badge bajo |
+
+### Dark Mode
+
+| Elemento | Color | Uso |
+|----------|-------|-----|
+| Background principal | `dark:bg-gray-800` | Fondo items |
+| Background secundario | `dark:bg-gray-800/50` | Headers, footer |
+| Border normal | `dark:border-gray-700` | Separadores |
+| Texto principal | `dark:text-white` | Labels, nombres |
+| Texto secundario | `dark:text-gray-400` | Ayuda |
+
+---
+
+## Animaciones y Transiciones
+
+### Expand/Collapse (Chevron)
+```css
+transition: transform 200ms ease-in-out
+
+Collapsed: transform: rotate(0deg)     →
+Expanded:  transform: rotate(90deg)    ▼
+```
+
+### Checkbox State Change
+```css
+transition: all 150ms ease-in-out
+
+Unchecked → Checked:
+  - Background: white → primary-600
+  - Border: gray-300 → primary-600
+  - Check opacity: 0 → 1
+```
+
+### Hover Effects
+```css
+transition: background-color 200ms ease
+
+Normal: bg-white
+Hover:  bg-gray-50
+```
+
+### Badge Color Transitions
+```css
+/* Badges no tienen transición para mantener claridad */
+/* Cambio instantáneo según nivel de riesgo */
+```
+
+---
+
+## Iconografía Completa
+
+| Categoría | Icono | Componente Lucide | Significado |
+|-----------|-------|-------------------|-------------|
+| Biológico | 🦠 | `Biohazard` | Peligro biológico universal |
+| Físico | ⚛️ | `Radio` | Ondas, energía física |
+| Químico | 🧪 | `Flask` | Laboratorio, sustancias |
+| Psicosocial | 🧠 | `Brain` | Salud mental |
+| Biomecánico | 🧍 | `PersonStanding` | Ergonomía, postura |
+| Cond. Seguridad | ⚠️ | `AlertTriangle` | Advertencia general |
+| Fenómenos Naturales | ⛈️ | `CloudRain` | Clima, desastres |
+| Búsqueda | 🔍 | `Search` | Input de búsqueda |
+| Expandir | ▶️ | `ChevronRight` | Categoría colapsada |
+| Colapsar | ▼ | `ChevronDown` | Categoría expandida |
+| Check | ✓ | `Check` | Seleccionado |
+| Indeterminado | — | `Minus` | Selección parcial |
+
+---
+
+**Diseñado por:** UX/UI Design System
+**Fecha:** 2025-12-15
+**Versión:** 1.0
+**Herramientas:** Figma (conceptual) → React + Tailwind (implementación)

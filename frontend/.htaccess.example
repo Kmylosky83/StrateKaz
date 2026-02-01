@@ -1,0 +1,303 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# .htaccess para React SPA en cPanel
+# Sistema de Gestión Integral - StrateKaz
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# Este archivo configura Apache para servir correctamente una Single Page
+# Application (SPA) de React en cPanel.
+#
+# INSTRUCCIONES:
+# 1. Copia este archivo al directorio public_html/ (o el directorio raíz de tu dominio)
+# 2. Renómbralo a .htaccess (sin la extensión .example)
+# 3. Ajusta las rutas si tu aplicación no está en el directorio raíz
+#
+# FUNCIONALIDADES:
+# - Redirección HTTP a HTTPS
+# - React Router (SPA routing)
+# - Compresión GZIP
+# - Cache de navegador optimizado
+# - Headers de seguridad
+# - MIME types correctos
+#
+# ═══════════════════════════════════════════════════════════════════════════
+
+# ═══════════════════════════════════════════════════════════════════════════
+# REACT ROUTER - SPA ROUTING
+# ═══════════════════════════════════════════════════════════════════════════
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # ───────────────────────────────────────────────────────────────────────
+  # REDIRECCIÓN HTTP A HTTPS (IMPORTANTE EN PRODUCCIÓN)
+  # ───────────────────────────────────────────────────────────────────────
+  # Descomenta las siguientes líneas para forzar HTTPS
+  RewriteCond %{HTTPS} off
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+  # ───────────────────────────────────────────────────────────────────────
+  # NO REESCRIBIR ARCHIVOS QUE EXISTEN
+  # ───────────────────────────────────────────────────────────────────────
+  # Si el archivo existe físicamente, servirlo directamente
+  RewriteCond %{REQUEST_FILENAME} !-f
+  # Si el directorio existe físicamente, servirlo directamente
+  RewriteCond %{REQUEST_FILENAME} !-d
+  # Si el enlace simbólico existe, servirlo directamente
+  RewriteCond %{REQUEST_FILENAME} !-l
+
+  # ───────────────────────────────────────────────────────────────────────
+  # REDIRIGIR TODO A index.html (React Router)
+  # ───────────────────────────────────────────────────────────────────────
+  # Todas las rutas que no son archivos físicos van a index.html
+  # React Router manejará la navegación desde ahí
+  RewriteRule . /index.html [L]
+
+  # ───────────────────────────────────────────────────────────────────────
+  # PROXY AL BACKEND (OPCIONAL)
+  # ───────────────────────────────────────────────────────────────────────
+  # Si tu backend Django está en un subdominio o puerto diferente,
+  # puedes hacer proxy de las peticiones /api/ al backend
+  #
+  # Ejemplo: Backend en https://api.tudominio.com
+  # RewriteCond %{REQUEST_URI} ^/api/
+  # RewriteRule ^api/(.*)$ https://api.tudominio.com/api/$1 [P,L]
+  #
+  # Ejemplo: Backend en la misma instancia de cPanel (Setup Python App)
+  # No necesitas proxy, Django manejará /api/ directamente
+</IfModule>
+
+# ═══════════════════════════════════════════════════════════════════════════
+# COMPRESIÓN GZIP - Reduce el tamaño de archivos transferidos
+# ═══════════════════════════════════════════════════════════════════════════
+<IfModule mod_deflate.c>
+  # Comprimir tipos de archivos de texto
+  AddOutputFilterByType DEFLATE application/javascript
+  AddOutputFilterByType DEFLATE application/json
+  AddOutputFilterByType DEFLATE application/rss+xml
+  AddOutputFilterByType DEFLATE application/vnd.ms-fontobject
+  AddOutputFilterByType DEFLATE application/x-font
+  AddOutputFilterByType DEFLATE application/x-font-opentype
+  AddOutputFilterByType DEFLATE application/x-font-otf
+  AddOutputFilterByType DEFLATE application/x-font-truetype
+  AddOutputFilterByType DEFLATE application/x-font-ttf
+  AddOutputFilterByType DEFLATE application/x-javascript
+  AddOutputFilterByType DEFLATE application/xhtml+xml
+  AddOutputFilterByType DEFLATE application/xml
+  AddOutputFilterByType DEFLATE font/opentype
+  AddOutputFilterByType DEFLATE font/otf
+  AddOutputFilterByType DEFLATE font/ttf
+  AddOutputFilterByType DEFLATE image/svg+xml
+  AddOutputFilterByType DEFLATE image/x-icon
+  AddOutputFilterByType DEFLATE text/css
+  AddOutputFilterByType DEFLATE text/html
+  AddOutputFilterByType DEFLATE text/javascript
+  AddOutputFilterByType DEFLATE text/plain
+  AddOutputFilterByType DEFLATE text/xml
+
+  # Desactivar compresión para navegadores antiguos
+  BrowserMatch ^Mozilla/4 gzip-only-text/html
+  BrowserMatch ^Mozilla/4\.0[678] no-gzip
+  BrowserMatch \bMSIE !no-gzip !gzip-only-text/html
+  Header append Vary User-Agent
+</IfModule>
+
+# ═══════════════════════════════════════════════════════════════════════════
+# CACHE DE NAVEGADOR - Optimiza la velocidad de carga
+# ═══════════════════════════════════════════════════════════════════════════
+<IfModule mod_expires.c>
+  ExpiresActive On
+
+  # ───────────────────────────────────────────────────────────────────────
+  # IMÁGENES - Cache largo (1 año)
+  # ───────────────────────────────────────────────────────────────────────
+  ExpiresByType image/jpeg "access plus 1 year"
+  ExpiresByType image/gif "access plus 1 year"
+  ExpiresByType image/png "access plus 1 year"
+  ExpiresByType image/webp "access plus 1 year"
+  ExpiresByType image/svg+xml "access plus 1 year"
+  ExpiresByType image/x-icon "access plus 1 year"
+
+  # ───────────────────────────────────────────────────────────────────────
+  # CSS Y JAVASCRIPT CON HASH - Cache muy largo (1 año)
+  # ───────────────────────────────────────────────────────────────────────
+  # Vite genera archivos con hash en el nombre (ej: main-abc123.js)
+  # Estos archivos nunca cambian, así que podemos cachearlos indefinidamente
+  <FilesMatch "\.(css|js)$">
+    ExpiresDefault "access plus 1 year"
+  </FilesMatch>
+
+  # ───────────────────────────────────────────────────────────────────────
+  # FUENTES - Cache largo (1 año)
+  # ───────────────────────────────────────────────────────────────────────
+  ExpiresByType font/ttf "access plus 1 year"
+  ExpiresByType font/otf "access plus 1 year"
+  ExpiresByType font/woff "access plus 1 year"
+  ExpiresByType font/woff2 "access plus 1 year"
+  ExpiresByType application/font-woff "access plus 1 year"
+
+  # ───────────────────────────────────────────────────────────────────────
+  # HTML - SIN CACHE (para que siempre cargue la última versión)
+  # ───────────────────────────────────────────────────────────────────────
+  ExpiresByType text/html "access plus 0 seconds"
+
+  # ───────────────────────────────────────────────────────────────────────
+  # JSON Y XML - Cache corto (1 hora)
+  # ───────────────────────────────────────────────────────────────────────
+  ExpiresByType application/json "access plus 1 hour"
+  ExpiresByType application/xml "access plus 1 hour"
+  ExpiresByType text/xml "access plus 1 hour"
+</IfModule>
+
+# Headers de cache adicionales
+<IfModule mod_headers.c>
+  # Cache-Control para archivos con hash (inmutable)
+  <FilesMatch "\.(js|css|woff2|woff|ttf|eot)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+
+  # No cachear index.html
+  <FilesMatch "index\.html$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+</IfModule>
+
+# ═══════════════════════════════════════════════════════════════════════════
+# SEGURIDAD
+# ═══════════════════════════════════════════════════════════════════════════
+
+# ───────────────────────────────────────────────────────────────────────
+# PREVENIR ACCESO A ARCHIVOS OCULTOS Y SENSIBLES
+# ───────────────────────────────────────────────────────────────────────
+# Bloquear acceso a archivos que empiezan con punto (., .env, .git, etc.)
+<FilesMatch "^\.">
+  Order allow,deny
+  Deny from all
+</FilesMatch>
+
+# Bloquear acceso a archivos de configuración
+<FilesMatch "(^#.*#|\.(bak|conf|dist|fla|in[ci]|log|psd|sh|sql|sw[op])|~)$">
+  Order allow,deny
+  Deny from all
+</FilesMatch>
+
+# ───────────────────────────────────────────────────────────────────────
+# HEADERS DE SEGURIDAD
+# ───────────────────────────────────────────────────────────────────────
+<IfModule mod_headers.c>
+  # Prevenir clickjacking
+  Header always set X-Frame-Options "SAMEORIGIN"
+
+  # Prevenir MIME type sniffing
+  Header always set X-Content-Type-Options "nosniff"
+
+  # XSS Protection (legacy, pero aún útil para navegadores antiguos)
+  Header always set X-XSS-Protection "1; mode=block"
+
+  # Referrer Policy
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+  # Permissions Policy (antes Feature Policy)
+  # Controla qué APIs del navegador puede usar la aplicación
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+
+  # NOTA: Content-Security-Policy se maneja desde el backend Django
+  # para tener control más granular y dinámico
+
+  # CORS Headers (si necesitas permitir acceso desde otros dominios)
+  # Descomenta y ajusta según necesites
+  # Header always set Access-Control-Allow-Origin "https://tudominio.com"
+  # Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+  # Header always set Access-Control-Allow-Headers "Content-Type, Authorization"
+</IfModule>
+
+# ═══════════════════════════════════════════════════════════════════════════
+# MIME TYPES - Asegurar que los archivos se sirvan con el tipo correcto
+# ═══════════════════════════════════════════════════════════════════════════
+<IfModule mod_mime.c>
+  # JavaScript
+  AddType application/javascript js mjs
+  AddType application/javascript jsx
+
+  # JSON
+  AddType application/json json
+  AddType application/manifest+json webmanifest
+
+  # Fuentes web
+  AddType font/woff woff
+  AddType font/woff2 woff2
+  AddType application/vnd.ms-fontobject eot
+  AddType font/ttf ttf
+  AddType font/otf otf
+
+  # Imágenes
+  AddType image/svg+xml svg svgz
+  AddType image/webp webp
+  AddType image/x-icon ico
+
+  # Video
+  AddType video/mp4 mp4
+  AddType video/webm webm
+
+  # Audio
+  AddType audio/mpeg mp3
+  AddType audio/ogg ogg
+
+  # Otros
+  AddType application/pdf pdf
+  AddType text/plain txt
+  AddType text/xml xml
+</IfModule>
+
+# ═══════════════════════════════════════════════════════════════════════════
+# OPTIMIZACIONES ADICIONALES
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Deshabilitar ETags (no necesarios con Cache-Control)
+<IfModule mod_headers.c>
+  Header unset ETag
+</IfModule>
+FileETag None
+
+# Permitir seguir enlaces simbólicos
+Options +FollowSymLinks
+
+# Deshabilitar listado de directorios
+Options -Indexes
+
+# Deshabilitar firma del servidor (seguridad)
+ServerSignature Off
+
+# ═══════════════════════════════════════════════════════════════════════════
+# NOTAS DE CONFIGURACIÓN
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# 1. HTTPS FORZADO:
+#    Las líneas de redirección HTTP a HTTPS están activas.
+#    Si tu sitio NO tiene certificado SSL instalado todavía, comenta esas líneas.
+#
+# 2. SUBDIRECTORIOS:
+#    Si tu aplicación React está en un subdirectorio (ej: /app/),
+#    cambia RewriteBase / por RewriteBase /app/
+#
+# 3. BACKEND DJANGO:
+#    Si tu backend está en el mismo servidor:
+#    - No necesitas configuración adicional aquí
+#    - Django manejará las rutas /api/ automáticamente
+#    - Asegúrate de que tu app Python está configurada en cPanel
+#
+# 4. TESTING:
+#    Después de activar este archivo:
+#    - Verifica que las rutas de React funcionen (ej: /dashboard)
+#    - Prueba recargar la página en una ruta profunda
+#    - Verifica en DevTools (F12) que los archivos se comprimen (gzip)
+#    - Verifica los headers de seguridad en DevTools > Network
+#
+# 5. TROUBLESHOOTING:
+#    Si algo no funciona:
+#    - Revisa Error Log en cPanel
+#    - Comenta secciones una por una para identificar el problema
+#    - Verifica que mod_rewrite esté habilitado (normalmente sí en cPanel)
+#
+# ═══════════════════════════════════════════════════════════════════════════

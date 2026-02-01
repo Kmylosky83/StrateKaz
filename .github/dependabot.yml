@@ -1,0 +1,147 @@
+# Dependabot configuration for automated dependency updates
+# https://docs.github.com/en/code-security/dependabot/dependabot-version-updates
+
+version: 2
+
+updates:
+  # ═══════════════════════════════════════════════════
+  # BACKEND - Python Dependencies
+  # ═══════════════════════════════════════════════════
+  - package-ecosystem: "pip"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Mexico_City"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "devops-team"
+    assignees:
+      - "backend-team"
+    labels:
+      - "dependencies"
+      - "backend"
+      - "python"
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+      include: "scope"
+    versioning-strategy: increase
+    # Group Django-related updates
+    groups:
+      django:
+        patterns:
+          - "Django*"
+          - "django-*"
+      security:
+        patterns:
+          - "cryptography"
+          - "django-cors-headers"
+
+  # ═══════════════════════════════════════════════════
+  # FRONTEND - NPM Dependencies
+  # ═══════════════════════════════════════════════════
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Mexico_City"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "devops-team"
+    assignees:
+      - "frontend-team"
+    labels:
+      - "dependencies"
+      - "frontend"
+      - "javascript"
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+      include: "scope"
+    versioning-strategy: increase
+    # Group React-related updates
+    groups:
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "react-*"
+          - "@types/react*"
+      build-tools:
+        patterns:
+          - "vite"
+          - "@vitejs/*"
+          - "typescript"
+          - "eslint"
+          - "prettier"
+      tanstack:
+        patterns:
+          - "@tanstack/*"
+
+  # ═══════════════════════════════════════════════════
+  # DOCKER - Docker Base Images
+  # ═══════════════════════════════════════════════════
+  - package-ecosystem: "docker"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "06:00"
+      timezone: "America/Mexico_City"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "devops-team"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "backend"
+    commit-message:
+      prefix: "chore(docker)"
+      include: "scope"
+
+  - package-ecosystem: "docker"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "06:00"
+      timezone: "America/Mexico_City"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "devops-team"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "frontend"
+    commit-message:
+      prefix: "chore(docker)"
+      include: "scope"
+
+  # ═══════════════════════════════════════════════════
+  # GITHUB ACTIONS
+  # ═══════════════════════════════════════════════════
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "06:00"
+      timezone: "America/Mexico_City"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "devops-team"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "ci-cd"
+    commit-message:
+      prefix: "chore(ci)"
+      include: "scope"
+    groups:
+      github-actions:
+        patterns:
+          - "*"

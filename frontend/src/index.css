@@ -1,0 +1,140 @@
+/* Inter - Body font */
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/inter/700.css';
+
+/* Montserrat - Heading font */
+@import '@fontsource/montserrat/500.css';
+@import '@fontsource/montserrat/600.css';
+@import '@fontsource/montserrat/700.css';
+@import '@fontsource/montserrat/800.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Safe area insets para dispositivos con notch (iPhone X+, Android con cutout) */
+  :root {
+    --safe-area-inset-top: env(safe-area-inset-top, 0px);
+    --safe-area-inset-right: env(safe-area-inset-right, 0px);
+    --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-area-inset-left: env(safe-area-inset-left, 0px);
+  }
+
+  /* Viewport que respeta safe areas */
+  html {
+    /* Permite que el contenido se extienda a los bordes pero con padding seguro */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  body {
+    @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-body;
+    /* Prevenir overscroll bounce en iOS */
+    overscroll-behavior: none;
+    /* Mejorar scroll en móvil */
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Headings - Montserrat */
+  h1 {
+    @apply font-heading text-4xl font-bold text-gray-900 dark:text-gray-100 tracking-tight;
+  }
+
+  h2 {
+    @apply font-heading text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight;
+  }
+
+  h3 {
+    @apply font-heading text-2xl font-semibold text-gray-900 dark:text-gray-100;
+  }
+
+  h4 {
+    @apply font-heading text-xl font-semibold text-gray-900 dark:text-gray-100;
+  }
+
+  h5 {
+    @apply font-heading text-lg font-semibold text-gray-900 dark:text-gray-100;
+  }
+
+  h6 {
+    @apply font-heading text-base font-semibold text-gray-900 dark:text-gray-100;
+  }
+
+  /* Body - Inter */
+  p {
+    @apply font-body text-base text-gray-700 dark:text-gray-300;
+  }
+
+  /* Labels - Inter */
+  label {
+    @apply font-body text-sm font-medium text-gray-700 dark:text-gray-300;
+  }
+
+  /* Small text - Inter */
+  small {
+    @apply font-body text-sm text-gray-600 dark:text-gray-400;
+  }
+}
+
+@layer components {
+  /* Utility classes */
+  .btn-primary {
+    @apply bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600;
+  }
+
+  .btn-danger {
+    @apply bg-danger-600 hover:bg-danger-700 text-white font-medium py-2 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-danger-500 focus:ring-offset-2;
+  }
+
+  .btn-ghost {
+    @apply text-gray-700 hover:bg-gray-100 font-medium py-2 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 dark:text-gray-300 dark:hover:bg-gray-800;
+  }
+
+  .card {
+    @apply bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6;
+  }
+
+  .input-base {
+    @apply block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500 dark:focus:border-primary-400 dark:focus:ring-primary-400;
+  }
+}
+
+/* Scrollbar personalizado */
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-gray-100 dark:bg-gray-800;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400 dark:bg-gray-500;
+  }
+
+  /* Ocultar scrollbar completamente (para tabs móviles) */
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}

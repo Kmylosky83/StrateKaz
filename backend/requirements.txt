@@ -6,8 +6,8 @@
 # ═══════════════════════════════════════════════════
 # CORE FRAMEWORK
 # ═══════════════════════════════════════════════════
-Django==5.0.9
-djangorestframework==3.14.0
+Django==6.0.1
+djangorestframework==3.16.1
 
 # ═══════════════════════════════════════════════════
 # BASE DE DATOS
@@ -17,21 +17,21 @@ mysqlclient==2.2.6
 # ═══════════════════════════════════════════════════
 # AUTENTICACIÓN Y SEGURIDAD
 # ═══════════════════════════════════════════════════
-djangorestframework-simplejwt==5.3.0
+djangorestframework-simplejwt==5.5.1
 django-cors-headers==4.3.1
 cryptography==45.0.0
 django-ratelimit==4.1.0
-django-csp==3.8
+django-csp==4.0
 bleach==6.1.0
-django-otp==1.2.4
+django-otp==1.7.0
 pyotp==2.9.0
 
 # ═══════════════════════════════════════════════════
 # CONFIGURACIÓN Y UTILIDADES
 # ═══════════════════════════════════════════════════
 python-decouple==3.8
-django-filter==23.5
-django-auditlog==2.3.0
+django-filter==25.2
+django-auditlog==3.4.1
 drf-spectacular==0.27.0
 
 # ═══════════════════════════════════════════════════
@@ -39,9 +39,9 @@ drf-spectacular==0.27.0
 # ═══════════════════════════════════════════════════
 celery==5.3.6
 redis==5.0.1
-django-redis==5.4.0
-django-celery-beat==2.6.0
-django-celery-results==2.5.1
+django-redis==6.0.0
+django-celery-beat==2.8.1
+django-celery-results==2.6.0
 flower==2.0.1
 
 # ═══════════════════════════════════════════════════
@@ -67,7 +67,7 @@ sentry-sdk==2.20.0
 # ═══════════════════════════════════════════════════
 # DESARROLLO Y TESTING
 # ═══════════════════════════════════════════════════
-django-debug-toolbar==4.2.0
+django-debug-toolbar==6.2.0
 pytest-django==4.7.0
 factory-boy==3.3.0
 black==23.12.0

@@ -26,7 +26,7 @@
  *   queryKey: ['areas'],
  *   endpoint: '/api/areas/',
  *   entityName: 'Área',
- *   onSuccess: (data) => console.log('Success:', data)
+ *   onSuccess: (data) => handleSuccess(data)
  * });
  * ```
  */
@@ -67,10 +67,7 @@ export interface CRUDOptions<T extends BaseEntity> {
   onSuccess?: (data: T) => void;
   onError?: (error: unknown) => void;
   isPaginated?: boolean;
-  queryOptions?: Omit<
-    UseQueryOptions<T[] | PaginatedResponse<T>, Error>,
-    'queryKey' | 'queryFn'
-  >;
+  queryOptions?: Omit<UseQueryOptions<T[] | PaginatedResponse<T>, Error>, 'queryKey' | 'queryFn'>;
   enabled?: boolean;
 }
 
@@ -167,7 +164,7 @@ export function useGenericCRUD<T extends BaseEntity>({
 
   const data: T[] = isPaginated
     ? ((query.data as PaginatedResponse<T>)?.results ?? [])
-    : (query.data as T[]) ?? [];
+    : ((query.data as T[]) ?? []);
 
   const pagination = isPaginated
     ? {
@@ -301,10 +298,13 @@ export function useGenericCRUD<T extends BaseEntity>({
 
     toggleActive: (id: number, isActive?: boolean) => {
       return new Promise<T>((resolve, reject) => {
-        toggleActiveMutation.mutate({ id, isActive }, {
-          onSuccess: resolve,
-          onError: reject,
-        });
+        toggleActiveMutation.mutate(
+          { id, isActive },
+          {
+            onSuccess: resolve,
+            onError: reject,
+          }
+        );
       });
     },
 

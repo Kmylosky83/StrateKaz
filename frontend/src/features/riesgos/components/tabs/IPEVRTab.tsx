@@ -11,15 +11,7 @@
 
 import { useState } from 'react';
 import { Tabs } from '@/components/common';
-import {
-  LayoutDashboard,
-  Table2,
-  AlertTriangle,
-  Shield,
-  Plus,
-  Download,
-  Filter
-} from 'lucide-react';
+import { LayoutDashboard, Table2, AlertTriangle, Shield, Plus, Download } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
 // Hooks
@@ -52,11 +44,7 @@ import type {
   PeligroGTC45,
   ControlSST,
 } from '../../types';
-import {
-  CATEGORIA_GTC45_LABELS,
-  CATEGORIA_COLORS,
-  TIPO_CONTROL_SST_LABELS,
-} from '../../types';
+import { CATEGORIA_GTC45_LABELS, CATEGORIA_COLORS, TIPO_CONTROL_SST_LABELS } from '../../types';
 
 // ==================== RESUMEN SECTION ====================
 
@@ -71,7 +59,8 @@ function ResumenSection({ className }: ResumenSectionProps) {
   const { data: porCargo, isLoading: isLoadingCargo } = useMatricesPorCargo();
   const { data: porPeligro, isLoading: isLoadingPeligro } = useMatricesPorPeligro();
 
-  const isLoading = isLoadingResumen || isLoadingCriticos || isLoadingArea || isLoadingCargo || isLoadingPeligro;
+  const _isLoading =
+    isLoadingResumen || isLoadingCriticos || isLoadingArea || isLoadingCargo || isLoadingPeligro;
 
   return (
     <div className={cn('space-y-6', className)}>
@@ -107,7 +96,9 @@ function ResumenSection({ className }: ResumenSectionProps) {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
-                      <p className="font-medium text-sm">{matriz.area} - {matriz.cargo}</p>
+                      <p className="font-medium text-sm">
+                        {matriz.area} - {matriz.cargo}
+                      </p>
                       <p className="text-xs text-muted-foreground mt-1">{matriz.peligro_nombre}</p>
                     </div>
                     <NivelRiesgoIndicator
@@ -159,7 +150,7 @@ function ResumenSection({ className }: ResumenSectionProps) {
                         className="h-2 rounded-full transition-all"
                         style={{
                           width: `${porcentaje}%`,
-                          backgroundColor: CATEGORIA_COLORS[categoria] || '#6B7280'
+                          backgroundColor: CATEGORIA_COLORS[categoria] || '#6B7280',
                         }}
                       />
                     </div>
@@ -190,7 +181,10 @@ function ResumenSection({ className }: ResumenSectionProps) {
           ) : porArea && porArea.length > 0 ? (
             <div className="space-y-2">
               {porArea.slice(0, 10).map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between py-2 border-b last:border-0">
+                <div
+                  key={idx}
+                  className="flex items-center justify-between py-2 border-b last:border-0"
+                >
                   <span className="text-sm font-medium">{item.area}</span>
                   <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
                     {item.total}
@@ -199,9 +193,7 @@ function ResumenSection({ className }: ResumenSectionProps) {
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              No hay datos por área
-            </div>
+            <div className="text-center py-8 text-muted-foreground">No hay datos por área</div>
           )}
         </div>
 
@@ -218,7 +210,10 @@ function ResumenSection({ className }: ResumenSectionProps) {
           ) : porCargo && porCargo.length > 0 ? (
             <div className="space-y-2">
               {porCargo.slice(0, 10).map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between py-2 border-b last:border-0">
+                <div
+                  key={idx}
+                  className="flex items-center justify-between py-2 border-b last:border-0"
+                >
                   <span className="text-sm font-medium">{item.cargo}</span>
                   <span className="text-sm bg-purple-100 text-purple-800 px-2 py-1 rounded">
                     {item.total}
@@ -227,9 +222,7 @@ function ResumenSection({ className }: ResumenSectionProps) {
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              No hay datos por cargo
-            </div>
+            <div className="text-center py-8 text-muted-foreground">No hay datos por cargo</div>
           )}
         </div>
       </div>
@@ -244,7 +237,7 @@ interface MatrizSectionProps {
 }
 
 function MatrizSection({ className }: MatrizSectionProps) {
-  const [filters, setFilters] = useState<{
+  const [filters, _setFilters] = useState<{
     area?: string;
     cargo?: string;
     estado?: string;
@@ -254,17 +247,15 @@ function MatrizSection({ className }: MatrizSectionProps) {
   const { data: matricesData, isLoading } = useMatricesIPEVR(filters);
   const matrices = matricesData?.results || [];
 
-  const [selectedMatriz, setSelectedMatriz] = useState<MatrizIPEVR | null>(null);
+  const [_selectedMatriz, setSelectedMatriz] = useState<MatrizIPEVR | null>(null);
 
   const handleRowClick = (matriz: MatrizIPEVR) => {
     setSelectedMatriz(matriz);
     // TODO: Abrir modal de detalles
-    console.log('Matriz seleccionada:', matriz);
   };
 
   const handleExport = () => {
     // TODO: Implementar exportación a Excel
-    console.log('Exportar matrices a Excel');
   };
 
   return (
@@ -285,9 +276,7 @@ function MatrizSection({ className }: MatrizSectionProps) {
             <Download className="w-4 h-4" />
             Exportar Excel
           </button>
-          <button
-            className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
-          >
+          <button className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2">
             <Plus className="w-4 h-4" />
             Nueva Valoración
           </button>
@@ -295,11 +284,7 @@ function MatrizSection({ className }: MatrizSectionProps) {
       </div>
 
       {/* Tabla de Matriz */}
-      <MatrizGTC45Table
-        matrices={matrices}
-        onRowClick={handleRowClick}
-        isLoading={isLoading}
-      />
+      <MatrizGTC45Table matrices={matrices} onRowClick={handleRowClick} isLoading={isLoading} />
 
       {/* Información de paginación */}
       {matricesData && (
@@ -308,9 +293,7 @@ function MatrizSection({ className }: MatrizSectionProps) {
             Mostrando {matrices.length} de {matricesData.count} registros
           </span>
           {matricesData.next && (
-            <button className="text-primary hover:underline">
-              Cargar más
-            </button>
+            <button className="text-primary hover:underline">Cargar más</button>
           )}
         </div>
       )}
@@ -330,7 +313,7 @@ function PeligrosSection({ className }: PeligrosSectionProps) {
   const { data: peligrosData } = usePeligrosPorClasificacion(selectedClasificacion);
 
   const categorias = clasificacionesPorCategoria
-    ? Object.keys(clasificacionesPorCategoria) as CategoriaGTC45[]
+    ? (Object.keys(clasificacionesPorCategoria) as CategoriaGTC45[])
     : [];
 
   return (
@@ -361,16 +344,14 @@ function PeligrosSection({ className }: PeligrosSectionProps) {
                   className="flex items-center gap-3 p-3 rounded-lg border"
                   style={{
                     backgroundColor: `${CATEGORIA_COLORS[categoria]}15`,
-                    borderColor: CATEGORIA_COLORS[categoria]
+                    borderColor: CATEGORIA_COLORS[categoria],
                   }}
                 >
                   <div
                     className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: CATEGORIA_COLORS[categoria] }}
                   />
-                  <h4 className="font-semibold text-lg">
-                    {CATEGORIA_GTC45_LABELS[categoria]}
-                  </h4>
+                  <h4 className="font-semibold text-lg">{CATEGORIA_GTC45_LABELS[categoria]}</h4>
                   <span className="ml-auto text-sm text-muted-foreground">
                     {categoriaData.items?.length || 0} clasificaciones
                   </span>
@@ -426,15 +407,13 @@ function PeligrosSection({ className }: PeligrosSectionProps) {
             </div>
 
             <div className="space-y-3">
-              {Object.values(peligrosData).map((grupo: any) => (
+              {Object.values(peligrosData).map((grupo: any) =>
                 grupo.peligros?.map((peligro: PeligroGTC45) => (
                   <div key={peligro.id} className="p-4 border rounded-lg">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
                         <p className="font-medium">{peligro.nombre}</p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {peligro.codigo}
-                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">{peligro.codigo}</p>
                         {peligro.descripcion && (
                           <p className="text-sm mt-2">{peligro.descripcion}</p>
                         )}
@@ -450,7 +429,7 @@ function PeligrosSection({ className }: PeligrosSectionProps) {
                     </div>
                   </div>
                 ))
-              ))}
+              )}
             </div>
           </div>
         </div>
@@ -472,21 +451,24 @@ function ControlesSection({ className }: ControlesSectionProps) {
   const controles = controlesData?.results || [];
 
   // Agrupar controles por tipo
-  const controlesPorTipoMap = controles.reduce((acc, control) => {
-    const tipo = control.tipo_control;
-    if (!acc[tipo]) {
-      acc[tipo] = [];
-    }
-    acc[tipo].push(control);
-    return acc;
-  }, {} as Record<TipoControlSST, ControlSST[]>);
+  const controlesPorTipoMap = controles.reduce(
+    (acc, control) => {
+      const tipo = control.tipo_control;
+      if (!acc[tipo]) {
+        acc[tipo] = [];
+      }
+      acc[tipo].push(control);
+      return acc;
+    },
+    {} as Record<TipoControlSST, ControlSST[]>
+  );
 
   const tiposOrdenados: TipoControlSST[] = [
     'eliminacion',
     'sustitucion',
     'ingenieria',
     'administrativo',
-    'epp'
+    'epp',
   ];
 
   return (
@@ -498,9 +480,7 @@ function ControlesSection({ className }: ControlesSectionProps) {
             Controles implementados según la jerarquía de control de riesgos
           </p>
         </div>
-        <button
-          className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
-        >
+        <button className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2">
           <Plus className="w-4 h-4" />
           Nuevo Control
         </button>
@@ -511,9 +491,8 @@ function ControlesSection({ className }: ControlesSectionProps) {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           {controlesPorTipo.map((item, idx) => {
             const tipoKey = item.tipo_control as TipoControlSST;
-            const porcentajeImplementado = item.total > 0
-              ? (item.implementados / item.total) * 100
-              : 0;
+            const porcentajeImplementado =
+              item.total > 0 ? (item.implementados / item.total) * 100 : 0;
 
             return (
               <div key={idx} className="bg-card rounded-lg border p-4">
@@ -521,18 +500,14 @@ function ControlesSection({ className }: ControlesSectionProps) {
                   <Shield className="w-5 h-5 text-blue-600" />
                   <span className="text-2xl font-bold">{item.total}</span>
                 </div>
-                <p className="text-sm font-medium mb-2">
-                  {TIPO_CONTROL_SST_LABELS[tipoKey]}
-                </p>
+                <p className="text-sm font-medium mb-2">{TIPO_CONTROL_SST_LABELS[tipoKey]}</p>
                 <div className="w-full bg-gray-200 rounded-full h-2 mb-1">
                   <div
                     className="bg-green-500 h-2 rounded-full transition-all"
                     style={{ width: `${porcentajeImplementado}%` }}
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {item.implementados} implementados
-                </p>
+                <p className="text-xs text-muted-foreground">{item.implementados} implementados</p>
               </div>
             );
           })}
@@ -617,7 +592,9 @@ function ControlesSection({ className }: ControlesSectionProps) {
           <div className="text-center py-12 text-muted-foreground">
             <Shield className="w-12 h-12 mx-auto mb-4 opacity-50" />
             <p>No hay controles SST registrados</p>
-            <p className="text-sm mt-1">Comienza agregando controles a tus valoraciones de riesgo</p>
+            <p className="text-sm mt-1">
+              Comienza agregando controles a tus valoraciones de riesgo
+            </p>
           </div>
         )}
       </div>
@@ -632,7 +609,9 @@ interface IPEVRTabProps {
 }
 
 export const IPEVRTab = ({ activeSection }: IPEVRTabProps) => {
-  const [activeTab, setActiveTab] = useState<'resumen' | 'matriz' | 'peligros' | 'controles'>('resumen');
+  const [activeTab, setActiveTab] = useState<'resumen' | 'matriz' | 'peligros' | 'controles'>(
+    'resumen'
+  );
 
   // Si se usa activeSection desde DynamicSections
   const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
@@ -649,7 +628,7 @@ export const IPEVRTab = ({ activeSection }: IPEVRTabProps) => {
     if (!ActiveComponent) {
       console.warn(
         `[IPEVRTab] Sección "${activeSection}" no encontrada. ` +
-        `Secciones disponibles: ${Object.keys(SECTION_COMPONENTS).join(', ')}`
+          `Secciones disponibles: ${Object.keys(SECTION_COMPONENTS).join(', ')}`
       );
       return <ResumenSection />;
     }
@@ -720,9 +699,7 @@ export const IPEVRTab = ({ activeSection }: IPEVRTabProps) => {
         onChange={(tabId) => setActiveTab(tabId as typeof activeTab)}
       />
 
-      <div className="mt-6">
-        {renderContent()}
-      </div>
+      <div className="mt-6">{renderContent()}</div>
     </div>
   );
 };

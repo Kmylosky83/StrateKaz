@@ -5,19 +5,47 @@
  * Deleted ALL stub/placeholder content
  */
 import { useState } from 'react';
-import { Wind, FlaskConical, Shield, Stethoscope, Plus, Edit, Trash2, CheckCircle, XCircle, Clock, TrendingUp, AlertTriangle } from 'lucide-react';
+import {
+  Wind,
+  FlaskConical,
+  Shield,
+  Stethoscope,
+  Plus,
+  Edit,
+  Trash2,
+  CheckCircle,
+  XCircle,
+  Clock,
+  TrendingUp,
+  AlertTriangle,
+} from 'lucide-react';
 import { PageHeader } from '@/components/layout';
-import { Tabs, Card, Button, EmptyState, Spinner, KpiCard, KpiCardGrid, SectionToolbar, StatusBadge, Badge, ConfirmDialog } from '@/components/common';
+import {
+  Tabs,
+  Card,
+  Button,
+  EmptyState,
+  Spinner,
+  KpiCard,
+  KpiCardGrid,
+  SectionToolbar,
+  StatusBadge,
+  Badge,
+  ConfirmDialog,
+} from '@/components/common';
 import { formatStatusLabel } from '@/components/common/StatusBadge';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { cn } from '@/utils/cn';
 
 import {
-  useTiposAgente, useDeleteTipoAgente,
-  useMedicionesAmbientales, useDeleteMedicionAmbiental,
-  useControlesExposicion, useDeleteControlExposicion,
-  useMonitoreoBiologico, useDeleteMonitoreoBiologico,
+  useTiposAgente,
+  useDeleteTipoAgente,
+  useMedicionesAmbientales,
+  useDeleteMedicionAmbiental,
+  useControlesExposicion,
+  useDeleteControlExposicion,
+  useMonitoreoBiologico,
+  useDeleteMonitoreoBiologico,
 } from '../hooks/useHigieneIndustrial';
 
 import TipoAgenteFormModal from '../components/TipoAgenteFormModal';
@@ -26,7 +54,10 @@ import ControlExposicionFormModal from '../components/ControlExposicionFormModal
 import MonitoreoBiologicoFormModal from '../components/MonitoreoBiologicoFormModal';
 
 import type {
-  TipoAgenteList, MedicionAmbientalList, ControlExposicionList, MonitoreoBiologicoList
+  TipoAgenteList,
+  MedicionAmbientalList,
+  ControlExposicionList,
+  MonitoreoBiologicoList,
 } from '../types/higiene-industrial.types';
 
 // ==================== TIPOS/AGENTES DE RIESGO SECTION ====================
@@ -72,7 +103,9 @@ const TiposAgenteSection = ({ onOpenModal }: TiposAgenteProps) => {
     biologicos: tipos.filter((t) => t.categoria === 'BIOLOGICO').length,
   };
 
-  const getCategoriaColor = (categoria: string): 'default' | 'primary' | 'success' | 'warning' | 'danger' => {
+  const getCategoriaColor = (
+    categoria: string
+  ): 'default' | 'primary' | 'success' | 'warning' | 'danger' => {
     if (categoria === 'FISICO') return 'primary';
     if (categoria === 'QUIMICO') return 'warning';
     if (categoria === 'BIOLOGICO') return 'danger';
@@ -113,7 +146,6 @@ const TiposAgenteSection = ({ onOpenModal }: TiposAgenteProps) => {
       {/* Actions */}
       <SectionToolbar
         title="Tipos de Agentes de Riesgo"
-        onFilter={() => console.log('Filtros')}
         primaryAction={{ label: 'Nuevo Tipo', onClick: () => onOpenModal() }}
       />
 
@@ -282,7 +314,6 @@ const MedicionesAmbientalesSection = ({ onOpenModal }: MedicionesAmbientalesProp
       {/* Actions */}
       <SectionToolbar
         title="Mediciones Ambientales"
-        onFilter={() => console.log('Filtros')}
         primaryAction={{ label: 'Nueva Medición', onClick: () => onOpenModal() }}
       />
 
@@ -336,11 +367,16 @@ const MedicionesAmbientalesSection = ({ onOpenModal }: MedicionesAmbientalesProp
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     {medicion.valor_medido} {medicion.unidad_medida}
                     {medicion.porcentaje_limite && (
-                      <span className="ml-2 text-xs text-gray-500">({medicion.porcentaje_limite}%)</span>
+                      <span className="ml-2 text-xs text-gray-500">
+                        ({medicion.porcentaje_limite}%)
+                      </span>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <StatusBadge status={medicion.cumplimiento} variant={getCumplimientoColor(medicion.cumplimiento)} />
+                    <StatusBadge
+                      status={medicion.cumplimiento}
+                      variant={getCumplimientoColor(medicion.cumplimiento)}
+                    />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <StatusBadge status={medicion.estado} />
@@ -463,7 +499,6 @@ const ControlesExposicionSection = ({ onOpenModal }: ControlesExposicionProps) =
       {/* Actions */}
       <SectionToolbar
         title="Controles de Exposición"
-        onFilter={() => console.log('Filtros')}
         primaryAction={{ label: 'Nuevo Control', onClick: () => onOpenModal() }}
       />
 
@@ -505,10 +540,13 @@ const ControlesExposicionSection = ({ onOpenModal }: ControlesExposicionProps) =
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                     {control.codigo}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{control.nombre}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                    {control.nombre}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Badge variant={getJerarquiaColor(control.jerarquia_control)}>
-                      {control.jerarquia_control_display ?? formatStatusLabel(control.jerarquia_control)}
+                      {control.jerarquia_control_display ??
+                        formatStatusLabel(control.jerarquia_control)}
                     </Badge>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -643,7 +681,6 @@ const MonitoreoBiologicoSection = ({ onOpenModal }: MonitoreoBiologicoProps) => 
       {/* Actions */}
       <SectionToolbar
         title="Monitoreo Biológico"
-        onFilter={() => console.log('Filtros')}
         primaryAction={{ label: 'Nuevo Examen', onClick: () => onOpenModal() }}
       />
 
@@ -701,7 +738,10 @@ const MonitoreoBiologicoSection = ({ onOpenModal }: MonitoreoBiologicoProps) => 
                     {format(new Date(examen.fecha_examen), 'dd/MM/yyyy', { locale: es })}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <StatusBadge status={examen.resultado} variant={getResultadoColor(examen.resultado)} />
+                    <StatusBadge
+                      status={examen.resultado}
+                      variant={getResultadoColor(examen.resultado)}
+                    />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {examen.requiere_seguimiento ? (
@@ -815,10 +855,18 @@ export default function HigieneIndustrialPage() {
       <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} variant="pills" />
 
       <div className="mt-6">
-        {activeTab === 'tipos-agente' && <TiposAgenteSection onOpenModal={handleOpenTipoAgenteModal} />}
-        {activeTab === 'mediciones' && <MedicionesAmbientalesSection onOpenModal={handleOpenMedicionModal} />}
-        {activeTab === 'controles' && <ControlesExposicionSection onOpenModal={handleOpenControlModal} />}
-        {activeTab === 'monitoreo' && <MonitoreoBiologicoSection onOpenModal={handleOpenMonitoreoModal} />}
+        {activeTab === 'tipos-agente' && (
+          <TiposAgenteSection onOpenModal={handleOpenTipoAgenteModal} />
+        )}
+        {activeTab === 'mediciones' && (
+          <MedicionesAmbientalesSection onOpenModal={handleOpenMedicionModal} />
+        )}
+        {activeTab === 'controles' && (
+          <ControlesExposicionSection onOpenModal={handleOpenControlModal} />
+        )}
+        {activeTab === 'monitoreo' && (
+          <MonitoreoBiologicoSection onOpenModal={handleOpenMonitoreoModal} />
+        )}
       </div>
 
       {/* All 4 modals */}

@@ -13,7 +13,7 @@ import {
   Star,
   Users,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -40,26 +40,26 @@ const NIVELES: NivelFidelizacion[] = [
     color: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
     puntosMinimos: 0,
     puntosMaximos: 999,
-    icon: Award
+    icon: Award,
   },
   {
     nombre: 'Plata',
     color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
     puntosMinimos: 1000,
     puntosMaximos: 4999,
-    icon: Award
+    icon: Award,
   },
   {
     nombre: 'Oro',
     color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
     puntosMinimos: 5000,
     puntosMaximos: Infinity,
-    icon: Award
-  }
+    icon: Award,
+  },
 ];
 
 function getNivel(puntos: number): NivelFidelizacion {
-  return NIVELES.find(n => puntos >= n.puntosMinimos && puntos <= n.puntosMaximos) || NIVELES[0];
+  return NIVELES.find((n) => puntos >= n.puntosMinimos && puntos <= n.puntosMaximos) || NIVELES[0];
 }
 
 interface ClienteFidelizacionCardProps {
@@ -69,12 +69,19 @@ interface ClienteFidelizacionCardProps {
   onCanjear: (id: number) => void;
 }
 
-function ClienteFidelizacionCard({ puntos, onView, onAcumular, onCanjear }: ClienteFidelizacionCardProps) {
+function ClienteFidelizacionCard({
+  puntos,
+  onView,
+  onAcumular,
+  onCanjear,
+}: ClienteFidelizacionCardProps) {
   const nivel = getNivel(puntos.puntos_disponibles);
   const NivelIcon = nivel.icon;
-  const siguienteNivel = NIVELES.find(n => n.puntosMinimos > puntos.puntos_disponibles);
+  const siguienteNivel = NIVELES.find((n) => n.puntosMinimos > puntos.puntos_disponibles);
   const progresoSiguienteNivel = siguienteNivel
-    ? ((puntos.puntos_disponibles - nivel.puntosMinimos) / (siguienteNivel.puntosMinimos - nivel.puntosMinimos)) * 100
+    ? ((puntos.puntos_disponibles - nivel.puntosMinimos) /
+        (siguienteNivel.puntosMinimos - nivel.puntosMinimos)) *
+      100
     : 100;
 
   return (
@@ -82,25 +89,19 @@ function ClienteFidelizacionCard({ puntos, onView, onAcumular, onCanjear }: Clie
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
-            <h3 className="font-semibold text-gray-900 dark:text-white">
-              {puntos.cliente_nombre}
-            </h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white">{puntos.cliente_nombre}</h3>
             <Badge variant="default" size="sm" className={nivel.color}>
               <NivelIcon className="w-3 h-3 mr-1" />
               {nivel.nombre}
             </Badge>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            {puntos.programa_nombre}
-          </p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">{puntos.programa_nombre}</p>
         </div>
         <div className="text-right">
           <div className="text-3xl font-bold text-primary-600 dark:text-primary-400">
             {puntos.puntos_disponibles.toLocaleString()}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            puntos disponibles
-          </div>
+          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">puntos disponibles</div>
         </div>
       </div>
 
@@ -118,7 +119,8 @@ function ClienteFidelizacionCard({ puntos, onView, onAcumular, onCanjear }: Clie
             />
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Faltan {(siguienteNivel.puntosMinimos - puntos.puntos_disponibles).toLocaleString()} puntos
+            Faltan {(siguienteNivel.puntosMinimos - puntos.puntos_disponibles).toLocaleString()}{' '}
+            puntos
           </div>
         </div>
       )}
@@ -148,16 +150,13 @@ function ClienteFidelizacionCard({ puntos, onView, onAcumular, onCanjear }: Clie
 
       {puntos.fecha_ultimo_movimiento && (
         <div className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-          Último movimiento: {format(new Date(puntos.fecha_ultimo_movimiento), 'PP', { locale: es })}
+          Último movimiento:{' '}
+          {format(new Date(puntos.fecha_ultimo_movimiento), 'PP', { locale: es })}
         </div>
       )}
 
       <div className="flex items-center gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onView(puntos.id)}
-        >
+        <Button variant="outline" size="sm" onClick={() => onView(puntos.id)}>
           Ver Historial
         </Button>
 
@@ -185,7 +184,7 @@ function ClienteFidelizacionCard({ puntos, onView, onAcumular, onCanjear }: Clie
 }
 
 export default function FidelizacionPage() {
-  const [filters, setFilters] = useState<any>({});
+  const [filters, _setFilters] = useState<any>({});
 
   const { data: puntosData, isLoading } = usePuntosFidelizacion(filters);
 
@@ -202,21 +201,23 @@ export default function FidelizacionPage() {
   // Calcular estadísticas
   const stats = {
     totalClientes: puntosList.length,
-    clientesBronce: puntosList.filter(p => getNivel(p.puntos_disponibles).nombre === 'Bronce').length,
-    clientesPlata: puntosList.filter(p => getNivel(p.puntos_disponibles).nombre === 'Plata').length,
-    clientesOro: puntosList.filter(p => getNivel(p.puntos_disponibles).nombre === 'Oro').length,
+    clientesBronce: puntosList.filter((p) => getNivel(p.puntos_disponibles).nombre === 'Bronce')
+      .length,
+    clientesPlata: puntosList.filter((p) => getNivel(p.puntos_disponibles).nombre === 'Plata')
+      .length,
+    clientesOro: puntosList.filter((p) => getNivel(p.puntos_disponibles).nombre === 'Oro').length,
     puntosDisponiblesTotal: puntosList.reduce((sum, p) => sum + p.puntos_disponibles, 0),
     puntosAcumuladosTotal: puntosList.reduce((sum, p) => sum + p.puntos_acumulados_total, 0),
     puntosCanjeadosTotal: puntosList.reduce((sum, p) => sum + p.puntos_canjeados_total, 0),
     puntosExpiradosTotal: puntosList.reduce((sum, p) => sum + p.puntos_expirados, 0),
   };
 
-  const handleAcumular = (id: number) => {
-    console.log('Acumular puntos', id);
+  const handleAcumular = (_id: number) => {
+    // TODO: Implementar acumulación de puntos
   };
 
-  const handleCanjear = (id: number) => {
-    console.log('Canjear puntos', id);
+  const handleCanjear = (_id: number) => {
+    // TODO: Implementar canje de puntos
   };
 
   return (
@@ -229,9 +230,12 @@ export default function FidelizacionPage() {
       {/* Estadísticas por Nivel */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {NIVELES.map((nivel) => {
-          const clientesNivel = nivel.nombre === 'Bronce' ? stats.clientesBronce :
-                               nivel.nombre === 'Plata' ? stats.clientesPlata :
-                               stats.clientesOro;
+          const clientesNivel =
+            nivel.nombre === 'Bronce'
+              ? stats.clientesBronce
+              : nivel.nombre === 'Plata'
+                ? stats.clientesPlata
+                : stats.clientesOro;
           const NivelIcon = nivel.icon;
 
           return (
@@ -245,18 +249,16 @@ export default function FidelizacionPage() {
                     </h3>
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {nivel.puntosMinimos === 0 ? '0' : nivel.puntosMinimos.toLocaleString()} - {
-                      nivel.puntosMaximos === Infinity ? '∞' : nivel.puntosMaximos.toLocaleString()
-                    } puntos
+                    {nivel.puntosMinimos === 0 ? '0' : nivel.puntosMinimos.toLocaleString()} -{' '}
+                    {nivel.puntosMaximos === Infinity ? '∞' : nivel.puntosMaximos.toLocaleString()}{' '}
+                    puntos
                   </p>
                 </div>
                 <div className="text-right">
                   <div className="text-3xl font-bold text-gray-900 dark:text-white">
                     {clientesNivel}
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                    clientes
-                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">clientes</div>
                 </div>
               </div>
             </Card>
@@ -384,7 +386,7 @@ export default function FidelizacionPage() {
             <ClienteFidelizacionCard
               key={puntos.id}
               puntos={puntos}
-              onView={(id) => console.log('Ver historial', id)}
+              onView={() => {}}
               onAcumular={handleAcumular}
               onCanjear={handleCanjear}
             />

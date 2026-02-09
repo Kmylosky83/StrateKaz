@@ -93,7 +93,7 @@ export interface UseModuleColorReturn {
  * ```tsx
  * // Con color raw para debugging
  * const { color, rawColor } = useModuleColor('HSEQ');
- * console.log(`Raw: ${rawColor}, Mapped: ${color}`); // Raw: violet, Mapped: purple
+ * // rawColor: 'violet', color: 'purple'
  * ```
  */
 export const useModuleColor = (moduleCode: string): UseModuleColorReturn => {
@@ -112,7 +112,7 @@ export const useModuleColor = (moduleCode: string): UseModuleColorReturn => {
     }
 
     // Buscar el módulo por código
-    const foundModule = tree.modules.find(m => m.code === moduleCode);
+    const foundModule = tree.modules.find((m) => m.code === moduleCode);
 
     // Si no existe el módulo, retornar fallback
     if (!foundModule) {

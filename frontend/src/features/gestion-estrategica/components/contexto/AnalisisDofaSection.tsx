@@ -19,7 +19,6 @@ import {
   AlertTriangle,
   TrendingUp,
   Search,
-  Eye,
   CheckCircle,
   Clock,
   List,
@@ -86,10 +85,14 @@ interface AnalisisDofaSectionProps {
   triggerNewForm?: number;
 }
 
-export const AnalisisDofaSection = ({ triggerNewForm }: AnalisisDofaSectionProps) => {
+export const AnalisisDofaSection = ({
+  triggerNewForm: _triggerNewForm,
+}: AnalisisDofaSectionProps) => {
   // Estados de vista
   const [viewMode, setViewMode] = useState<ViewMode>('lista');
-  const [selectedAnalisisForMatrix, setSelectedAnalisisForMatrix] = useState<AnalisisDOFA | null>(null);
+  const [selectedAnalisisForMatrix, setSelectedAnalisisForMatrix] = useState<AnalisisDOFA | null>(
+    null
+  );
 
   // Estados de filtros y formulario
   const [filters, setFilters] = useState<AnalisisDOFAFilters>({});
@@ -131,10 +134,7 @@ export const AnalisisDofaSection = ({ triggerNewForm }: AnalisisDofaSectionProps
     const analisisList = data?.results || [];
     const vigentes = analisisList.filter((a) => a.estado === 'vigente').length;
     const enRevision = analisisList.filter((a) => a.estado === 'en_revision').length;
-    const totalFactores = analisisList.reduce(
-      (sum, a) => sum + (a.total_factores || 0),
-      0
-    );
+    const totalFactores = analisisList.reduce((sum, a) => sum + (a.total_factores || 0), 0);
 
     return [
       {
@@ -238,9 +238,8 @@ export const AnalisisDofaSection = ({ triggerNewForm }: AnalisisDofaSectionProps
     setIsCreating(false);
   };
 
-  const handleEditFactor = (factor: FactorDOFA) => {
+  const handleEditFactor = (_factor: FactorDOFA) => {
     // TODO: Abrir modal de edicion de factor
-    console.log('Editar factor:', factor);
   };
 
   const handleBackToList = () => {
@@ -524,11 +523,7 @@ export const AnalisisDofaSection = ({ triggerNewForm }: AnalisisDofaSectionProps
                 <div className="flex items-center justify-end gap-1">
                   {/* Ver matriz */}
                   <Tooltip content="Ver matriz DOFA">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleView(analisis)}
-                    >
+                    <Button variant="ghost" size="sm" onClick={() => handleView(analisis)}>
                       <LayoutGrid className="h-4 w-4" />
                     </Button>
                   </Tooltip>
@@ -536,11 +531,7 @@ export const AnalisisDofaSection = ({ triggerNewForm }: AnalisisDofaSectionProps
                   {/* Aprobar (solo si esta en revision) */}
                   {analisis.estado === 'en_revision' && canEdit && (
                     <Tooltip content="Aprobar">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleAprobar(analisis)}
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => handleAprobar(analisis)}>
                         <CheckCircle className="h-4 w-4 text-emerald-600" />
                       </Button>
                     </Tooltip>
@@ -550,11 +541,7 @@ export const AnalisisDofaSection = ({ triggerNewForm }: AnalisisDofaSectionProps
                   {(analisis.estado === 'borrador' || analisis.estado === 'en_revision') &&
                     canEdit && (
                       <Tooltip content="Editar">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(analisis)}
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => handleEdit(analisis)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
                       </Tooltip>

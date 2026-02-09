@@ -3,13 +3,20 @@
  * Sistema de gestión de auditorías, hallazgos y evaluación de cumplimiento
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import mejoraContinuaApi from '../api/mejoraContinuaApi';
+
+/** Extrae el mensaje de error de un AxiosError o Error genérico */
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof AxiosError) {
+    const detail = (error.response?.data as Record<string, unknown> | undefined)?.detail;
+    if (typeof detail === 'string') return detail;
+  }
+  if (error instanceof Error) return error.message;
+  return fallback;
+}
 import type {
-  ProgramaAuditoria,
-  Auditoria,
-  Hallazgo,
-  EvaluacionCumplimiento,
   CreateProgramaAuditoriaDTO,
   UpdateProgramaAuditoriaDTO,
   CreateAuditoriaDTO,
@@ -28,30 +35,36 @@ export const mejoraContinuaKeys = {
   // Programas de Auditoría
   programas: () => [...mejoraContinuaKeys.all, 'programas-auditoria'] as const,
   programaById: (id: number) => [...mejoraContinuaKeys.programas(), id] as const,
-  programasFiltered: (filters: Record<string, any>) => [...mejoraContinuaKeys.programas(), 'filtered', filters] as const,
+  programasFiltered: (filters: Record<string, unknown>) =>
+    [...mejoraContinuaKeys.programas(), 'filtered', filters] as const,
 
   // Auditorías
   auditorias: () => [...mejoraContinuaKeys.all, 'auditorias'] as const,
   auditoriaById: (id: number) => [...mejoraContinuaKeys.auditorias(), id] as const,
-  auditoriasFiltered: (filters: Record<string, any>) => [...mejoraContinuaKeys.auditorias(), 'filtered', filters] as const,
+  auditoriasFiltered: (filters: Record<string, unknown>) =>
+    [...mejoraContinuaKeys.auditorias(), 'filtered', filters] as const,
 
   // Hallazgos
   hallazgos: () => [...mejoraContinuaKeys.all, 'hallazgos'] as const,
   hallazgoById: (id: number) => [...mejoraContinuaKeys.hallazgos(), id] as const,
-  hallazgosFiltered: (filters: Record<string, any>) => [...mejoraContinuaKeys.hallazgos(), 'filtered', filters] as const,
+  hallazgosFiltered: (filters: Record<string, unknown>) =>
+    [...mejoraContinuaKeys.hallazgos(), 'filtered', filters] as const,
 
   // Evaluaciones de Cumplimiento
   evaluaciones: () => [...mejoraContinuaKeys.all, 'evaluaciones-cumplimiento'] as const,
   evaluacionById: (id: number) => [...mejoraContinuaKeys.evaluaciones(), id] as const,
-  evaluacionesFiltered: (filters: Record<string, any>) => [...mejoraContinuaKeys.evaluaciones(), 'filtered', filters] as const,
+  evaluacionesFiltered: (filters: Record<string, unknown>) =>
+    [...mejoraContinuaKeys.evaluaciones(), 'filtered', filters] as const,
   evaluacionesPorVencer: () => [...mejoraContinuaKeys.evaluaciones(), 'por-vencer'] as const,
 };
 
 // ==================== PROGRAMA DE AUDITORÍA ====================
 
-export function useProgramasAuditoria(params?: any) {
+export function useProgramasAuditoria(params?: Record<string, unknown>) {
   return useQuery({
-    queryKey: params ? mejoraContinuaKeys.programasFiltered(params) : mejoraContinuaKeys.programas(),
+    queryKey: params
+      ? mejoraContinuaKeys.programasFiltered(params)
+      : mejoraContinuaKeys.programas(),
     queryFn: async () => {
       const data = await mejoraContinuaApi.programaAuditoria.getAll(params);
       return data;
@@ -82,8 +95,8 @@ export function useCreateProgramaAuditoria() {
       queryClient.invalidateQueries({ queryKey: mejoraContinuaKeys.programas() });
       toast.success('Programa de auditoría creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear programa de auditoría');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear programa de auditoría'));
     },
   });
 }
@@ -101,8 +114,8 @@ export function useUpdateProgramaAuditoria() {
       queryClient.invalidateQueries({ queryKey: mejoraContinuaKeys.programaById(id) });
       toast.success('Programa de auditoría actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar programa de auditoría');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar programa de auditoría'));
     },
   });
 }
@@ -118,8 +131,8 @@ export function useDeleteProgramaAuditoria() {
       queryClient.invalidateQueries({ queryKey: mejoraContinuaKeys.programas() });
       toast.success('Programa de auditoría eliminado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar programa de auditoría');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar programa de auditoría'));
     },
   });
 }
@@ -137,8 +150,8 @@ export function useAprobarProgramaAuditoria() {
       queryClient.invalidateQueries({ queryKey: mejoraContinuaKeys.programaById(id) });
       toast.success('Programa de auditoría aprobado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al aprobar programa de auditoría');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al aprobar programa de auditoría'));
     },
   });
 }
@@ -156,8 +169,8 @@ export function useIniciarProgramaAuditoria() {
       queryClient.invalidateQueries({ queryKey: mejoraContinuaKeys.programaById(id) });
       toast.success('Programa de auditoría iniciado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al iniciar programa de auditoría');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al iniciar programa de auditoría'));
     },
   });
 }
@@ -175,17 +188,19 @@ export function useCompletarProgramaAuditoria() {
       queryClient.invalidateQueries({ queryKey: mejoraContinuaKeys.programaById(id) });
       toast.success('Programa de auditoría completado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al completar programa de auditoría');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al completar programa de auditoría'));
     },
   });
 }
 
 // ==================== AUDITORÍA ====================
 
-export function useAuditorias(params?: any) {
+export function useAuditorias(params?: Record<string, unknown>) {
   return useQuery({
-    queryKey: params ? mejoraContinuaKeys.auditoriasFiltered(params) : mejoraContinuaKeys.auditorias(),
+    queryKey: params
+      ? mejoraContinuaKeys.auditoriasFiltered(params)
+      : mejoraContinuaKeys.auditorias(),
     queryFn: async () => {
       const data = await mejoraContinuaApi.auditoria.getAll(params);
       return data;
@@ -217,8 +232,8 @@ export function useCreateAuditoria() {
       queryClient.invalidateQueries({ queryKey: mejoraContinuaKeys.programas() });
       toast.success('Auditoría creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear auditoría');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear auditoría'));
     },
   });
 }
@@ -236,8 +251,8 @@ export function useUpdateAuditoria() {
       queryClient.invalidateQueries({ queryKey: mejoraContinuaKeys.auditoriaById(id) });
       toast.success('Auditoría actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar auditoría');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar auditoría'));
     },
   });
 }
@@ -253,8 +268,8 @@ export function useDeleteAuditoria() {
       queryClient.invalidateQueries({ queryKey: mejoraContinuaKeys.auditorias() });
       toast.success('Auditoría eliminada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar auditoría');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar auditoría'));
     },
   });
 }
@@ -272,8 +287,8 @@ export function useIniciarAuditoria() {
       queryClient.invalidateQueries({ queryKey: mejoraContinuaKeys.auditoriaById(id) });
       toast.success('Auditoría iniciada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al iniciar auditoría');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al iniciar auditoría'));
     },
   });
 }
@@ -291,8 +306,8 @@ export function useCerrarAuditoria() {
       queryClient.invalidateQueries({ queryKey: mejoraContinuaKeys.auditoriaById(id) });
       toast.success('Auditoría cerrada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al cerrar auditoría');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al cerrar auditoría'));
     },
   });
 }
@@ -310,8 +325,8 @@ export function useUploadPlanAuditoria() {
       queryClient.invalidateQueries({ queryKey: mejoraContinuaKeys.auditoriaById(id) });
       toast.success('Plan de auditoría cargado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al cargar plan de auditoría');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al cargar plan de auditoría'));
     },
   });
 }
@@ -329,17 +344,19 @@ export function useUploadInformeAuditoria() {
       queryClient.invalidateQueries({ queryKey: mejoraContinuaKeys.auditoriaById(id) });
       toast.success('Informe de auditoría cargado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al cargar informe de auditoría');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al cargar informe de auditoría'));
     },
   });
 }
 
 // ==================== HALLAZGO ====================
 
-export function useHallazgos(params?: any) {
+export function useHallazgos(params?: Record<string, unknown>) {
   return useQuery({
-    queryKey: params ? mejoraContinuaKeys.hallazgosFiltered(params) : mejoraContinuaKeys.hallazgos(),
+    queryKey: params
+      ? mejoraContinuaKeys.hallazgosFiltered(params)
+      : mejoraContinuaKeys.hallazgos(),
     queryFn: async () => {
       const data = await mejoraContinuaApi.hallazgo.getAll(params);
       return data;
@@ -371,8 +388,8 @@ export function useCreateHallazgo() {
       queryClient.invalidateQueries({ queryKey: mejoraContinuaKeys.auditorias() });
       toast.success('Hallazgo creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear hallazgo');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear hallazgo'));
     },
   });
 }
@@ -390,8 +407,8 @@ export function useUpdateHallazgo() {
       queryClient.invalidateQueries({ queryKey: mejoraContinuaKeys.hallazgoById(id) });
       toast.success('Hallazgo actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar hallazgo');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar hallazgo'));
     },
   });
 }
@@ -407,8 +424,8 @@ export function useDeleteHallazgo() {
       queryClient.invalidateQueries({ queryKey: mejoraContinuaKeys.hallazgos() });
       toast.success('Hallazgo eliminado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar hallazgo');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar hallazgo'));
     },
   });
 }
@@ -426,8 +443,8 @@ export function useComunicarHallazgo() {
       queryClient.invalidateQueries({ queryKey: mejoraContinuaKeys.hallazgoById(id) });
       toast.success('Hallazgo comunicado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al comunicar hallazgo');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al comunicar hallazgo'));
     },
   });
 }
@@ -445,8 +462,8 @@ export function useIniciarTratamientoHallazgo() {
       queryClient.invalidateQueries({ queryKey: mejoraContinuaKeys.hallazgoById(id) });
       toast.success('Tratamiento de hallazgo iniciado');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al iniciar tratamiento');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al iniciar tratamiento'));
     },
   });
 }
@@ -455,7 +472,13 @@ export function useVerificarHallazgo() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, datos }: { id: number; datos: { es_eficaz: boolean; observaciones?: string } }) => {
+    mutationFn: async ({
+      id,
+      datos,
+    }: {
+      id: number;
+      datos: { es_eficaz: boolean; observaciones?: string };
+    }) => {
       const data = await mejoraContinuaApi.hallazgo.verificar(id, datos);
       return data;
     },
@@ -464,8 +487,8 @@ export function useVerificarHallazgo() {
       queryClient.invalidateQueries({ queryKey: mejoraContinuaKeys.hallazgoById(id) });
       toast.success('Hallazgo verificado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al verificar hallazgo');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al verificar hallazgo'));
     },
   });
 }
@@ -483,8 +506,8 @@ export function useCerrarHallazgo() {
       queryClient.invalidateQueries({ queryKey: mejoraContinuaKeys.hallazgoById(id) });
       toast.success('Hallazgo cerrado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al cerrar hallazgo');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al cerrar hallazgo'));
     },
   });
 }
@@ -502,17 +525,19 @@ export function useUploadEvidenciaHallazgo() {
       queryClient.invalidateQueries({ queryKey: mejoraContinuaKeys.hallazgoById(id) });
       toast.success('Evidencia cargada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al cargar evidencia');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al cargar evidencia'));
     },
   });
 }
 
 // ==================== EVALUACIÓN DE CUMPLIMIENTO ====================
 
-export function useEvaluacionesCumplimiento(params?: any) {
+export function useEvaluacionesCumplimiento(params?: Record<string, unknown>) {
   return useQuery({
-    queryKey: params ? mejoraContinuaKeys.evaluacionesFiltered(params) : mejoraContinuaKeys.evaluaciones(),
+    queryKey: params
+      ? mejoraContinuaKeys.evaluacionesFiltered(params)
+      : mejoraContinuaKeys.evaluaciones(),
     queryFn: async () => {
       const data = await mejoraContinuaApi.evaluacionCumplimiento.getAll(params);
       return data;
@@ -543,8 +568,8 @@ export function useCreateEvaluacionCumplimiento() {
       queryClient.invalidateQueries({ queryKey: mejoraContinuaKeys.evaluaciones() });
       toast.success('Evaluación de cumplimiento creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear evaluación de cumplimiento');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear evaluación de cumplimiento'));
     },
   });
 }
@@ -562,8 +587,8 @@ export function useUpdateEvaluacionCumplimiento() {
       queryClient.invalidateQueries({ queryKey: mejoraContinuaKeys.evaluacionById(id) });
       toast.success('Evaluación de cumplimiento actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar evaluación de cumplimiento');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar evaluación de cumplimiento'));
     },
   });
 }
@@ -579,8 +604,8 @@ export function useDeleteEvaluacionCumplimiento() {
       queryClient.invalidateQueries({ queryKey: mejoraContinuaKeys.evaluaciones() });
       toast.success('Evaluación de cumplimiento eliminada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar evaluación de cumplimiento');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar evaluación de cumplimiento'));
     },
   });
 }
@@ -598,8 +623,8 @@ export function useCalcularProximaEvaluacion() {
       queryClient.invalidateQueries({ queryKey: mejoraContinuaKeys.evaluacionById(id) });
       toast.success('Próxima evaluación calculada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al calcular próxima evaluación');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al calcular próxima evaluación'));
     },
   });
 }

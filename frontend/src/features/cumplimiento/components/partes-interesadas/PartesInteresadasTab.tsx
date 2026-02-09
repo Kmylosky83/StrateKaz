@@ -11,14 +11,7 @@
  * Conecta con backend/apps/motor_cumplimiento/partes_interesadas/
  */
 import { useState } from 'react';
-import {
-  Users,
-  Plus,
-  Download,
-  Grid3x3,
-  FileText,
-  MessageSquare,
-} from 'lucide-react';
+import { Users, Plus, Download, Grid3x3, FileText, MessageSquare } from 'lucide-react';
 import { Tabs } from '@/components/common/Tabs';
 import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
@@ -51,7 +44,9 @@ const SUBTABS = [
 // COMPONENTE PRINCIPAL
 // =============================================================================
 
-export const PartesInteresadasTab = ({ activeSection }: PartesInteresadasTabProps) => {
+export const PartesInteresadasTab = ({
+  activeSection: _activeSection,
+}: PartesInteresadasTabProps) => {
   const [activeSubtab, setActiveSubtab] = useState('listado');
   const [filters, setFilters] = useState<ParteInteresadaFilters>({
     page: 1,
@@ -87,23 +82,21 @@ export const PartesInteresadasTab = ({ activeSection }: PartesInteresadasTabProp
 
     try {
       // TODO: Implementar deleteMutation cuando se agregue al hook
-      console.log('Eliminar parte interesada:', parteToDelete.id);
       setParteToDelete(null);
-    } catch (error) {
-      console.error('Error al eliminar parte interesada:', error);
+    } catch {
+      // Error al eliminar parte interesada
     }
   };
 
   const handleExport = async () => {
     try {
       // TODO: Implementar exportMutation
-      console.log('Exportar partes interesadas');
-    } catch (error) {
-      console.error('Error al exportar:', error);
+    } catch {
+      // Error al exportar
     }
   };
 
-  const handleFiltersChange = (newFilters: ParteInteresadaFilters) => {
+  const _handleFiltersChange = (newFilters: ParteInteresadaFilters) => {
     setFilters({ ...newFilters, page: 1 }); // Reset a página 1 al cambiar filtros
   };
 
@@ -131,9 +124,7 @@ export const PartesInteresadasTab = ({ activeSection }: PartesInteresadasTabProp
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Total Partes</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                  {totalCount}
-                </p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{totalCount}</p>
               </div>
               <Users className="h-8 w-8 text-blue-500" />
             </div>
@@ -247,7 +238,8 @@ export const PartesInteresadasTab = ({ activeSection }: PartesInteresadasTabProp
                 Matriz de Influencia e Interés
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Análisis visual de partes interesadas según su nivel de influencia e interés en la organización
+                Análisis visual de partes interesadas según su nivel de influencia e interés en la
+                organización
               </p>
             </div>
           </div>
@@ -335,12 +327,7 @@ export const PartesInteresadasTab = ({ activeSection }: PartesInteresadasTabProp
     <>
       <div className="space-y-6">
         {/* Subtabs */}
-        <Tabs
-          tabs={SUBTABS}
-          activeTab={activeSubtab}
-          onChange={setActiveSubtab}
-          variant="pills"
-        />
+        <Tabs tabs={SUBTABS} activeTab={activeSubtab} onChange={setActiveSubtab} variant="pills" />
 
         {/* Content */}
         {activeSubtab === 'listado' && renderListadoSection()}

@@ -34,7 +34,8 @@ export const adminGlobalKeys = {
   tenantsDetail: (id: number) => [...adminGlobalKeys.tenants, 'detail', id] as const,
   tenantsStats: () => [...adminGlobalKeys.tenants, 'stats'] as const,
   tenantsUsers: (id: number) => [...adminGlobalKeys.tenants, 'users', id] as const,
-  tenantsCreationStatus: (id: number) => [...adminGlobalKeys.tenants, 'creation-status', id] as const,
+  tenantsCreationStatus: (id: number) =>
+    [...adminGlobalKeys.tenants, 'creation-status', id] as const,
 
   // Tenant Users
   tenantUsers: ['admin-global', 'tenant-users'] as const,
@@ -173,11 +174,10 @@ export const useCreateTenant = () => {
 
   return useMutation({
     mutationFn: (data: CreateTenantDTO) => tenantsApi.create(data),
-    onSuccess: (response) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminGlobalKeys.tenants });
       // NO mostramos toast de éxito aquí porque la creación es asíncrona
       // El toast se mostrará cuando el schema esté listo
-      console.log('[useCreateTenant] Tenant creado, task_id:', response.task_id);
     },
     onError: (error: { response?: { data?: { detail?: string } }; message?: string }) => {
       toast.error(error.response?.data?.detail || error.message || 'Error al crear la empresa');
@@ -228,7 +228,9 @@ export const useRetryTenantCreation = () => {
       toast.info('Reintentando creación del tenant...');
     },
     onError: (error: { response?: { data?: { detail?: string } }; message?: string }) => {
-      toast.error(error.response?.data?.detail || error.message || 'Error al reintentar la creación');
+      toast.error(
+        error.response?.data?.detail || error.message || 'Error al reintentar la creación'
+      );
     },
   });
 };
@@ -237,13 +239,16 @@ export const useUpdateTenant = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateTenantDTO | FormData }) => tenantsApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: UpdateTenantDTO | FormData }) =>
+      tenantsApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminGlobalKeys.tenants });
       toast.success('Empresa actualizada correctamente');
     },
     onError: (error: { response?: { data?: { detail?: string } }; message?: string }) => {
-      toast.error(error.response?.data?.detail || error.message || 'Error al actualizar la empresa');
+      toast.error(
+        error.response?.data?.detail || error.message || 'Error al actualizar la empresa'
+      );
     },
   });
 };
@@ -273,7 +278,9 @@ export const useToggleTenantActive = () => {
       toast.success(data.message);
     },
     onError: (error: { response?: { data?: { detail?: string } }; message?: string }) => {
-      toast.error(error.response?.data?.detail || error.message || 'Error al cambiar estado de la empresa');
+      toast.error(
+        error.response?.data?.detail || error.message || 'Error al cambiar estado de la empresa'
+      );
     },
   });
 };
@@ -337,7 +344,9 @@ export const useUpdateTenantUser = () => {
       toast.success('Usuario actualizado correctamente');
     },
     onError: (error: { response?: { data?: { detail?: string } }; message?: string }) => {
-      toast.error(error.response?.data?.detail || error.message || 'Error al actualizar el usuario');
+      toast.error(
+        error.response?.data?.detail || error.message || 'Error al actualizar el usuario'
+      );
     },
   });
 };
@@ -368,7 +377,9 @@ export const useAssignTenantToUser = () => {
       toast.success(data.message);
     },
     onError: (error: { response?: { data?: { detail?: string } }; message?: string }) => {
-      toast.error(error.response?.data?.detail || error.message || 'Error al asignar empresa al usuario');
+      toast.error(
+        error.response?.data?.detail || error.message || 'Error al asignar empresa al usuario'
+      );
     },
   });
 };

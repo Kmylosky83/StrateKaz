@@ -11,7 +11,7 @@
  *
  * Conecta con backend/apps/motor_cumplimiento/requisitos_legales/
  */
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   FileText,
   Plus,
@@ -49,7 +49,9 @@ interface FilterState {
 // COMPONENTE PRINCIPAL
 // =============================================================================
 
-export const RequisitosLegalesTab = ({ activeSection }: RequisitosLegalesTabProps) => {
+export const RequisitosLegalesTab = ({
+  activeSection: _activeSection,
+}: RequisitosLegalesTabProps) => {
   const user = useAuthStore((state) => state.user);
   const empresaId = user?.empresa_id || 0;
 
@@ -97,20 +99,18 @@ export const RequisitosLegalesTab = ({ activeSection }: RequisitosLegalesTabProp
     if (!requisitoToDelete) return;
 
     try {
-      // Implementar delete mutation cuando esté disponible
-      console.log('Delete requisito:', requisitoToDelete.id);
+      // TODO: Implementar delete mutation cuando esté disponible
       setRequisitoToDelete(null);
-    } catch (error) {
-      console.error('Error al eliminar requisito:', error);
+    } catch {
+      // Error al eliminar requisito
     }
   };
 
   const handleExport = async () => {
     try {
-      // Implementar exportación cuando esté disponible
-      console.log('Exportar requisitos');
-    } catch (error) {
-      console.error('Error al exportar:', error);
+      // TODO: Implementar exportación cuando esté disponible
+    } catch {
+      // Error al exportar
     }
   };
 

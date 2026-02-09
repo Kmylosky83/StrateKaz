@@ -13,7 +13,7 @@ import {
   AlertCircle,
   CheckCircle,
   Clock,
-  ArrowUp
+  ArrowUp,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -26,7 +26,10 @@ import { Spinner } from '@/components/common/Spinner';
 import { usePQRS, usePQRSDashboard } from '../hooks';
 import type { PQRSList, TipoPQRS, EstadoPQRS, PrioridadPQRS } from '../types';
 
-const TIPO_CONFIG: Record<TipoPQRS, { variant: 'default' | 'primary' | 'success' | 'warning' | 'danger'; label: string; icon: any }> = {
+const TIPO_CONFIG: Record<
+  TipoPQRS,
+  { variant: 'default' | 'primary' | 'success' | 'warning' | 'danger'; label: string; icon: any }
+> = {
   PETICION: { variant: 'primary', label: 'Petición', icon: MessageSquare },
   QUEJA: { variant: 'warning', label: 'Queja', icon: AlertCircle },
   RECLAMO: { variant: 'danger', label: 'Reclamo', icon: AlertCircle },
@@ -34,7 +37,10 @@ const TIPO_CONFIG: Record<TipoPQRS, { variant: 'default' | 'primary' | 'success'
   FELICITACION: { variant: 'success', label: 'Felicitación', icon: CheckCircle },
 };
 
-const ESTADO_CONFIG: Record<EstadoPQRS, { variant: 'default' | 'primary' | 'success' | 'warning' | 'danger'; label: string }> = {
+const ESTADO_CONFIG: Record<
+  EstadoPQRS,
+  { variant: 'default' | 'primary' | 'success' | 'warning' | 'danger'; label: string }
+> = {
   ABIERTA: { variant: 'primary', label: 'Abierta' },
   EN_PROCESO: { variant: 'warning', label: 'En Proceso' },
   ESCALADA: { variant: 'danger', label: 'Escalada' },
@@ -43,7 +49,10 @@ const ESTADO_CONFIG: Record<EstadoPQRS, { variant: 'default' | 'primary' | 'succ
   CANCELADA: { variant: 'danger', label: 'Cancelada' },
 };
 
-const PRIORIDAD_CONFIG: Record<PrioridadPQRS, { variant: 'default' | 'primary' | 'success' | 'warning' | 'danger'; label: string }> = {
+const PRIORIDAD_CONFIG: Record<
+  PrioridadPQRS,
+  { variant: 'default' | 'primary' | 'success' | 'warning' | 'danger'; label: string }
+> = {
   BAJA: { variant: 'default', label: 'Baja' },
   MEDIA: { variant: 'primary', label: 'Media' },
   ALTA: { variant: 'warning', label: 'Alta' },
@@ -72,9 +81,7 @@ function PQRSCard({ pqrs, onView, onAsignar, onEscalar, onResolver, onCerrar }: 
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
-            <h3 className="font-semibold text-gray-900 dark:text-white">
-              {pqrs.numero_ticket}
-            </h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white">{pqrs.numero_ticket}</h3>
             <Badge variant={tipoConfig.variant} size="sm">
               <TipoIcon className="w-3 h-3 mr-1" />
               {tipoConfig.label}
@@ -86,12 +93,8 @@ function PQRSCard({ pqrs, onView, onAsignar, onEscalar, onResolver, onCerrar }: 
               {PRIORIDAD_CONFIG[pqrs.prioridad].label}
             </Badge>
           </div>
-          <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-1">
-            {pqrs.asunto}
-          </h4>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            {pqrs.cliente_nombre}
-          </p>
+          <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-1">{pqrs.asunto}</h4>
+          <p className="text-sm text-gray-600 dark:text-gray-400">{pqrs.cliente_nombre}</p>
         </div>
       </div>
 
@@ -104,7 +107,9 @@ function PQRSCard({ pqrs, onView, onAsignar, onEscalar, onResolver, onCerrar }: 
         </div>
         <div>
           <span className="text-gray-500 dark:text-gray-400">Días Abierta:</span>
-          <p className={`font-medium ${pqrs.dias_abierta > 7 ? 'text-danger-600' : pqrs.dias_abierta > 3 ? 'text-warning-600' : 'text-gray-900 dark:text-white'}`}>
+          <p
+            className={`font-medium ${pqrs.dias_abierta > 7 ? 'text-danger-600' : pqrs.dias_abierta > 3 ? 'text-warning-600' : 'text-gray-900 dark:text-white'}`}
+          >
             {pqrs.dias_abierta} días
           </p>
         </div>
@@ -125,11 +130,7 @@ function PQRSCard({ pqrs, onView, onAsignar, onEscalar, onResolver, onCerrar }: 
       </div>
 
       <div className="flex items-center gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onView(pqrs.id)}
-        >
+        <Button variant="outline" size="sm" onClick={() => onView(pqrs.id)}>
           Ver Timeline
         </Button>
 
@@ -167,11 +168,7 @@ function PQRSCard({ pqrs, onView, onAsignar, onEscalar, onResolver, onCerrar }: 
         )}
 
         {puedeCerrar && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onCerrar(pqrs.id)}
-          >
+          <Button variant="outline" size="sm" onClick={() => onCerrar(pqrs.id)}>
             Cerrar
           </Button>
         )}
@@ -181,7 +178,7 @@ function PQRSCard({ pqrs, onView, onAsignar, onEscalar, onResolver, onCerrar }: 
 }
 
 export default function PQRSPage() {
-  const [filters, setFilters] = useState<any>({});
+  const [filters, _setFilters] = useState<any>({});
 
   const { data: pqrsData, isLoading: isLoadingPQRS } = usePQRS(filters);
   const { data: dashboard, isLoading: isLoadingDashboard } = usePQRSDashboard();
@@ -204,20 +201,20 @@ export default function PQRSPage() {
     tasa_resolucion_sla: 0,
   };
 
-  const handleAsignar = (id: number) => {
-    console.log('Asignar PQRS', id);
+  const handleAsignar = (_id: number) => {
+    // TODO: Implementar asignación
   };
 
-  const handleEscalar = (id: number) => {
-    console.log('Escalar PQRS', id);
+  const handleEscalar = (_id: number) => {
+    // TODO: Implementar escalamiento
   };
 
-  const handleResolver = (id: number) => {
-    console.log('Resolver PQRS', id);
+  const handleResolver = (_id: number) => {
+    // TODO: Implementar resolución
   };
 
-  const handleCerrar = (id: number) => {
-    console.log('Cerrar PQRS', id);
+  const handleCerrar = (_id: number) => {
+    // TODO: Implementar cierre
   };
 
   return (
@@ -289,13 +286,17 @@ export default function PQRSPage() {
       {/* Métricas de rendimiento */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card variant="bordered" padding="md">
-          <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Tiempo Promedio de Resolución</div>
+          <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+            Tiempo Promedio de Resolución
+          </div>
           <div className="text-3xl font-bold text-gray-900 dark:text-white">
             {stats.tiempo_promedio_resolucion_horas.toFixed(1)}h
           </div>
         </Card>
         <Card variant="bordered" padding="md">
-          <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Tasa de Resolución en SLA</div>
+          <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+            Tasa de Resolución en SLA
+          </div>
           <div className="text-3xl font-bold text-success-600 dark:text-success-400">
             {stats.tasa_resolucion_sla.toFixed(1)}%
           </div>
@@ -328,7 +329,7 @@ export default function PQRSPage() {
           description="Comience registrando peticiones, quejas, reclamos o sugerencias"
           action={{
             label: 'Nuevo Ticket',
-            onClick: () => console.log('Nuevo Ticket'),
+            onClick: () => {},
             icon: <Plus className="w-4 h-4" />,
           }}
         />
@@ -338,7 +339,7 @@ export default function PQRSPage() {
             <PQRSCard
               key={pqrs.id}
               pqrs={pqrs}
-              onView={(id) => console.log('Ver', id)}
+              onView={() => {}}
               onAsignar={handleAsignar}
               onEscalar={handleEscalar}
               onResolver={handleResolver}

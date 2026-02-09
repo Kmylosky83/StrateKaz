@@ -12,9 +12,9 @@ import {
   XCircle,
   AlertTriangle,
   CheckCircle,
-  Clock
+  Clock,
 } from 'lucide-react';
-import { format, differenceInDays } from 'date-fns';
+import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { PageHeader } from '@/components/layout';
 import { Card } from '@/components/common/Card';
@@ -25,7 +25,10 @@ import { Spinner } from '@/components/common/Spinner';
 import { useFacturas } from '../hooks';
 import type { FacturaList, EstadoFactura } from '../types';
 
-const ESTADO_CONFIG: Record<EstadoFactura, { variant: 'default' | 'primary' | 'success' | 'warning' | 'danger'; label: string }> = {
+const ESTADO_CONFIG: Record<
+  EstadoFactura,
+  { variant: 'default' | 'primary' | 'success' | 'warning' | 'danger'; label: string }
+> = {
   BORRADOR: { variant: 'default', label: 'Borrador' },
   EMITIDA: { variant: 'primary', label: 'Emitida' },
   PAGADA_PARCIAL: { variant: 'warning', label: 'Pago Parcial' },
@@ -43,7 +46,8 @@ interface FacturaCardProps {
 
 function FacturaCard({ factura, onView, onRegistrarPago, onAnular }: FacturaCardProps) {
   const isVencida = factura.dias_vencimiento < 0 && factura.saldo_pendiente > 0;
-  const isPorVencer = factura.dias_vencimiento >= 0 && factura.dias_vencimiento <= 7 && factura.saldo_pendiente > 0;
+  const isPorVencer =
+    factura.dias_vencimiento >= 0 && factura.dias_vencimiento <= 7 && factura.saldo_pendiente > 0;
   const puedeRegistrarPago = factura.saldo_pendiente > 0 && factura.estado !== 'ANULADA';
   const porcentajePagado = ((factura.total - factura.saldo_pendiente) / factura.total) * 100;
 
@@ -71,9 +75,7 @@ function FacturaCard({ factura, onView, onRegistrarPago, onAnular }: FacturaCard
               </Badge>
             )}
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            {factura.cliente_nombre}
-          </p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">{factura.cliente_nombre}</p>
         </div>
         <div className="text-right">
           <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">
@@ -114,26 +116,30 @@ function FacturaCard({ factura, onView, onRegistrarPago, onAnular }: FacturaCard
         </div>
         <div>
           <span className="text-gray-500 dark:text-gray-400">Vencimiento:</span>
-          <p className={`font-medium ${isVencida ? 'text-danger-600' : isPorVencer ? 'text-warning-600' : 'text-gray-900 dark:text-white'}`}>
+          <p
+            className={`font-medium ${isVencida ? 'text-danger-600' : isPorVencer ? 'text-warning-600' : 'text-gray-900 dark:text-white'}`}
+          >
             {format(new Date(factura.fecha_vencimiento), 'PP', { locale: es })}
           </p>
         </div>
         <div className="col-span-2">
           <span className="text-gray-500 dark:text-gray-400">Días de vencimiento:</span>
-          <p className={`font-medium ${isVencida ? 'text-danger-600' : isPorVencer ? 'text-warning-600' : 'text-gray-900 dark:text-white'}`}>
-            {isVencida ? `Vencida hace ${Math.abs(factura.dias_vencimiento)} días` :
-             isPorVencer ? `Vence en ${factura.dias_vencimiento} días` :
-             factura.estado === 'PAGADA' ? 'Pagada completamente' : `${factura.dias_vencimiento} días`}
+          <p
+            className={`font-medium ${isVencida ? 'text-danger-600' : isPorVencer ? 'text-warning-600' : 'text-gray-900 dark:text-white'}`}
+          >
+            {isVencida
+              ? `Vencida hace ${Math.abs(factura.dias_vencimiento)} días`
+              : isPorVencer
+                ? `Vence en ${factura.dias_vencimiento} días`
+                : factura.estado === 'PAGADA'
+                  ? 'Pagada completamente'
+                  : `${factura.dias_vencimiento} días`}
           </p>
         </div>
       </div>
 
       <div className="flex items-center gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onView(factura.id)}
-        >
+        <Button variant="outline" size="sm" onClick={() => onView(factura.id)}>
           Ver Detalle
         </Button>
 
@@ -164,7 +170,7 @@ function FacturaCard({ factura, onView, onRegistrarPago, onAnular }: FacturaCard
 }
 
 export default function FacturasPage() {
-  const [filters, setFilters] = useState<any>({});
+  const [filters, _setFilters] = useState<any>({});
 
   const { data: facturasData, isLoading } = useFacturas(filters);
 
@@ -181,28 +187,25 @@ export default function FacturasPage() {
   // Calcular estadísticas
   const stats = {
     total: facturas.length,
-    emitidas: facturas.filter(f => f.estado === 'EMITIDA').length,
-    vencidas: facturas.filter(f => f.dias_vencimiento < 0 && f.saldo_pendiente > 0).length,
-    pagadas: facturas.filter(f => f.estado === 'PAGADA').length,
+    emitidas: facturas.filter((f) => f.estado === 'EMITIDA').length,
+    vencidas: facturas.filter((f) => f.dias_vencimiento < 0 && f.saldo_pendiente > 0).length,
+    pagadas: facturas.filter((f) => f.estado === 'PAGADA').length,
     valorTotal: facturas.reduce((sum, f) => sum + f.total, 0),
     saldoPendiente: facturas.reduce((sum, f) => sum + f.saldo_pendiente, 0),
     valorPagado: facturas.reduce((sum, f) => sum + (f.total - f.saldo_pendiente), 0),
   };
 
-  const handleRegistrarPago = (id: number) => {
-    console.log('Registrar pago para factura', id);
+  const handleRegistrarPago = (_id: number) => {
+    // TODO: Implementar registro de pago
   };
 
-  const handleAnular = (id: number) => {
-    console.log('Anular factura', id);
+  const handleAnular = (_id: number) => {
+    // TODO: Implementar anulación
   };
 
   return (
     <div className="space-y-8">
-      <PageHeader
-        title="Facturas"
-        description="Gestión de facturas, control de pagos y cartera"
-      />
+      <PageHeader title="Facturas" description="Gestión de facturas, control de pagos y cartera" />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -210,9 +213,7 @@ export default function FacturasPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Total Facturas</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                {stats.total}
-              </p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stats.total}</p>
             </div>
             <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
               <FileText className="w-6 h-6 text-primary-600 dark:text-primary-400" />
@@ -311,7 +312,7 @@ export default function FacturasPage() {
           description="Las facturas se generan automáticamente desde los pedidos"
           action={{
             label: 'Nueva Factura',
-            onClick: () => console.log('Nueva Factura'),
+            onClick: () => {},
             icon: <Plus className="w-4 h-4" />,
           }}
         />
@@ -321,7 +322,7 @@ export default function FacturasPage() {
             <FacturaCard
               key={factura.id}
               factura={factura}
-              onView={(id) => console.log('Ver', id)}
+              onView={() => {}}
               onRegistrarPago={handleRegistrarPago}
               onAnular={handleAnular}
             />

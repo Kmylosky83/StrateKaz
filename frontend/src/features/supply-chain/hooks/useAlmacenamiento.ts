@@ -3,28 +3,28 @@
  * Sistema de gestión de inventarios, movimientos, kardex, alertas y configuración de stock
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import almacenamientoApi from '../api/almacenamientoApi';
 import type {
-  Inventario,
-  InventarioList,
-  MovimientoInventario,
-  MovimientoInventarioList,
-  Kardex,
-  KardexResponse,
   ConsultaKardexParams,
-  AlertaStock,
-  AlertaStockList,
-  ConfiguracionStock,
-  ConfiguracionStockList,
   CreateInventarioDTO,
   UpdateInventarioDTO,
   CreateMovimientoInventarioDTO,
   UpdateMovimientoInventarioDTO,
-  CreateAlertaStockDTO,
   CreateConfiguracionStockDTO,
   UpdateConfiguracionStockDTO,
 } from '../types';
+
+// ==================== HELPERS ====================
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof AxiosError) {
+    const detail = error.response?.data?.detail;
+    if (typeof detail === 'string') return detail;
+  }
+  return fallback;
+}
 
 // ==================== QUERY KEYS ====================
 
@@ -39,7 +39,8 @@ export const almacenamientoKeys = {
 
   // Inventarios
   inventarios: () => [...almacenamientoKeys.all, 'inventarios'] as const,
-  inventariosFiltered: (filters: Record<string, any>) => [...almacenamientoKeys.inventarios(), 'filtered', filters] as const,
+  inventariosFiltered: (filters: Record<string, unknown>) =>
+    [...almacenamientoKeys.inventarios(), 'filtered', filters] as const,
   inventario: (id: number) => [...almacenamientoKeys.all, 'inventario', id] as const,
   stockBajo: () => [...almacenamientoKeys.all, 'stock-bajo'] as const,
   stockCritico: () => [...almacenamientoKeys.all, 'stock-critico'] as const,
@@ -47,23 +48,26 @@ export const almacenamientoKeys = {
 
   // Movimientos
   movimientos: () => [...almacenamientoKeys.all, 'movimientos'] as const,
-  movimientosFiltered: (filters: Record<string, any>) => [...almacenamientoKeys.movimientos(), 'filtered', filters] as const,
+  movimientosFiltered: (filters: Record<string, unknown>) =>
+    [...almacenamientoKeys.movimientos(), 'filtered', filters] as const,
   movimiento: (id: number) => [...almacenamientoKeys.all, 'movimiento', id] as const,
 
   // Kardex
   kardex: (params: ConsultaKardexParams) => [...almacenamientoKeys.all, 'kardex', params] as const,
-  kardexPorProducto: (inventarioId: number, params?: Record<string, any>) =>
+  kardexPorProducto: (inventarioId: number, params?: Record<string, unknown>) =>
     [...almacenamientoKeys.all, 'kardex-producto', inventarioId, params] as const,
 
   // Alertas
   alertas: () => [...almacenamientoKeys.all, 'alertas'] as const,
-  alertasFiltered: (filters: Record<string, any>) => [...almacenamientoKeys.alertas(), 'filtered', filters] as const,
+  alertasFiltered: (filters: Record<string, unknown>) =>
+    [...almacenamientoKeys.alertas(), 'filtered', filters] as const,
   alerta: (id: number) => [...almacenamientoKeys.all, 'alerta', id] as const,
   alertasNoLeidas: () => [...almacenamientoKeys.all, 'alertas-no-leidas'] as const,
 
   // Configuraciones
   configuraciones: () => [...almacenamientoKeys.all, 'configuraciones'] as const,
-  configuracionesFiltered: (filters: Record<string, any>) => [...almacenamientoKeys.configuraciones(), 'filtered', filters] as const,
+  configuracionesFiltered: (filters: Record<string, unknown>) =>
+    [...almacenamientoKeys.configuraciones(), 'filtered', filters] as const,
   configuracion: (id: number) => [...almacenamientoKeys.all, 'configuracion', id] as const,
 
   // Estadísticas
@@ -114,9 +118,11 @@ export function useUnidadesMedidaAlmacenamiento() {
 
 // ==================== INVENTARIOS ====================
 
-export function useInventarios(params?: Record<string, any>) {
+export function useInventarios(params?: Record<string, unknown>) {
   return useQuery({
-    queryKey: params ? almacenamientoKeys.inventariosFiltered(params) : almacenamientoKeys.inventarios(),
+    queryKey: params
+      ? almacenamientoKeys.inventariosFiltered(params)
+      : almacenamientoKeys.inventarios(),
     queryFn: async () => {
       const response = await almacenamientoApi.inventario.getAll(params);
       return response.data;
@@ -147,8 +153,8 @@ export function useCreateInventario() {
       queryClient.invalidateQueries({ queryKey: almacenamientoKeys.estadisticas() });
       toast.success('Inventario creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear inventario');
+    onError: (error: Error) => {
+      toast.error(getErrorMessage(error, 'Error al crear inventario'));
     },
   });
 }
@@ -165,8 +171,8 @@ export function useUpdateInventario() {
       queryClient.invalidateQueries({ queryKey: almacenamientoKeys.inventario(id) });
       toast.success('Inventario actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar inventario');
+    onError: (error: Error) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar inventario'));
     },
   });
 }
@@ -181,8 +187,8 @@ export function useDeleteInventario() {
       queryClient.invalidateQueries({ queryKey: almacenamientoKeys.inventarios() });
       toast.success('Inventario eliminado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar inventario');
+    onError: (error: Error) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar inventario'));
     },
   });
 }
@@ -222,9 +228,11 @@ export function useStockPorVencer(dias: number = 30) {
 
 // ==================== MOVIMIENTOS DE INVENTARIO ====================
 
-export function useMovimientosInventario(params?: Record<string, any>) {
+export function useMovimientosInventario(params?: Record<string, unknown>) {
   return useQuery({
-    queryKey: params ? almacenamientoKeys.movimientosFiltered(params) : almacenamientoKeys.movimientos(),
+    queryKey: params
+      ? almacenamientoKeys.movimientosFiltered(params)
+      : almacenamientoKeys.movimientos(),
     queryFn: async () => {
       const response = await almacenamientoApi.movimiento.getAll(params);
       return response.data;
@@ -256,8 +264,8 @@ export function useCreateMovimientoInventario() {
       queryClient.invalidateQueries({ queryKey: almacenamientoKeys.estadisticas() });
       toast.success('Movimiento de inventario registrado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al registrar movimiento');
+    onError: (error: Error) => {
+      toast.error(getErrorMessage(error, 'Error al registrar movimiento'));
     },
   });
 }
@@ -265,7 +273,7 @@ export function useCreateMovimientoInventario() {
 export function useUpdateMovimientoInventario() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: UpdateMovimientoInventarioDTO }) => {
+    mutationFn: async ({ _id, _data }: { _id: number; _data: UpdateMovimientoInventarioDTO }) => {
       // The API doesn't have an update endpoint for movimientos
       throw new Error('Endpoint not implemented');
     },
@@ -274,8 +282,8 @@ export function useUpdateMovimientoInventario() {
       queryClient.invalidateQueries({ queryKey: almacenamientoKeys.movimiento(id) });
       toast.success('Movimiento actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar movimiento');
+    onError: (error: Error) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar movimiento'));
     },
   });
 }
@@ -283,7 +291,7 @@ export function useUpdateMovimientoInventario() {
 export function useDeleteMovimientoInventario() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async (_id: number) => {
       // The API doesn't have a delete endpoint for movimientos
       throw new Error('Endpoint not implemented');
     },
@@ -291,8 +299,8 @@ export function useDeleteMovimientoInventario() {
       queryClient.invalidateQueries({ queryKey: almacenamientoKeys.movimientos() });
       toast.success('Movimiento eliminado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar movimiento');
+    onError: (error: Error) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar movimiento'));
     },
   });
 }
@@ -310,7 +318,7 @@ export function useKardex(params: ConsultaKardexParams) {
   });
 }
 
-export function useKardexPorProducto(inventarioId: number, params?: Record<string, any>) {
+export function useKardexPorProducto(inventarioId: number, params?: Record<string, unknown>) {
   return useQuery({
     queryKey: almacenamientoKeys.kardexPorProducto(inventarioId, params),
     queryFn: async () => {
@@ -323,7 +331,7 @@ export function useKardexPorProducto(inventarioId: number, params?: Record<strin
 
 // ==================== ALERTAS DE STOCK ====================
 
-export function useAlertasStock(params?: Record<string, any>) {
+export function useAlertasStock(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: params ? almacenamientoKeys.alertasFiltered(params) : almacenamientoKeys.alertas(),
     queryFn: async () => {
@@ -357,8 +365,8 @@ export function useMarcarAlertaLeida() {
       queryClient.invalidateQueries({ queryKey: almacenamientoKeys.alertasNoLeidas() });
       toast.success('Alerta marcada como leída');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al marcar alerta como leída');
+    onError: (error: Error) => {
+      toast.error(getErrorMessage(error, 'Error al marcar alerta como leída'));
     },
   });
 }
@@ -376,8 +384,8 @@ export function useResolverAlerta() {
       queryClient.invalidateQueries({ queryKey: almacenamientoKeys.alertasNoLeidas() });
       toast.success('Alerta resuelta exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al resolver alerta');
+    onError: (error: Error) => {
+      toast.error(getErrorMessage(error, 'Error al resolver alerta'));
     },
   });
 }
@@ -394,8 +402,8 @@ export function useGenerarAlertas() {
       queryClient.invalidateQueries({ queryKey: almacenamientoKeys.alertasNoLeidas() });
       toast.success(`${data.alertas_generadas} alertas generadas`);
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al generar alertas');
+    onError: (error: Error) => {
+      toast.error(getErrorMessage(error, 'Error al generar alertas'));
     },
   });
 }
@@ -414,9 +422,11 @@ export function useAlertasNoLeidas() {
 
 // ==================== CONFIGURACIONES DE STOCK ====================
 
-export function useConfiguracionesStock(params?: Record<string, any>) {
+export function useConfiguracionesStock(params?: Record<string, unknown>) {
   return useQuery({
-    queryKey: params ? almacenamientoKeys.configuracionesFiltered(params) : almacenamientoKeys.configuraciones(),
+    queryKey: params
+      ? almacenamientoKeys.configuracionesFiltered(params)
+      : almacenamientoKeys.configuraciones(),
     queryFn: async () => {
       const response = await almacenamientoApi.configuracion.getAll(params);
       return response.data;
@@ -446,8 +456,8 @@ export function useCreateConfiguracionStock() {
       queryClient.invalidateQueries({ queryKey: almacenamientoKeys.configuraciones() });
       toast.success('Configuración de stock creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear configuración');
+    onError: (error: Error) => {
+      toast.error(getErrorMessage(error, 'Error al crear configuración'));
     },
   });
 }
@@ -464,8 +474,8 @@ export function useUpdateConfiguracionStock() {
       queryClient.invalidateQueries({ queryKey: almacenamientoKeys.configuracion(id) });
       toast.success('Configuración de stock actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar configuración');
+    onError: (error: Error) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar configuración'));
     },
   });
 }
@@ -480,8 +490,8 @@ export function useDeleteConfiguracionStock() {
       queryClient.invalidateQueries({ queryKey: almacenamientoKeys.configuraciones() });
       toast.success('Configuración de stock eliminada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar configuración');
+    onError: (error: Error) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar configuración'));
     },
   });
 }

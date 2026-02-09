@@ -106,7 +106,7 @@ const PermisosTrabajoSection = () => {
         description="Comience emitiendo permisos de trabajo para actividades de alto riesgo"
         action={{
           label: 'Nuevo Permiso',
-          onClick: () => console.log('Nuevo Permiso'),
+          onClick: () => {},
           icon: <Plus className="w-4 h-4" />,
         }}
       />
@@ -157,11 +157,11 @@ const PermisosTrabajoSection = () => {
       {/* Actions */}
       <SectionToolbar
         title="Permisos de Trabajo"
-        onFilter={() => console.log('Filtros')}
-        onExport={() => console.log('Exportar')}
+        onFilter={() => {}}
+        onExport={() => {}}
         primaryAction={{
           label: 'Nuevo Permiso',
-          onClick: () => console.log('Nuevo Permiso'),
+          onClick: () => {},
         }}
       />
 
@@ -174,7 +174,9 @@ const PermisosTrabajoSection = () => {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <h4 className="font-semibold text-gray-900 dark:text-white">{permiso.numero_permiso}</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">
+                      {permiso.numero_permiso}
+                    </h4>
                     <StatusBadge status={permiso.estado} preset="proceso" />
                     <StatusBadge
                       status={permiso.tipo_permiso.nombre}
@@ -182,7 +184,9 @@ const PermisosTrabajoSection = () => {
                       label={permiso.tipo_permiso.nombre}
                     />
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">{permiso.descripcion_trabajo}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    {permiso.descripcion_trabajo}
+                  </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                     {permiso.ubicacion}
                   </p>
@@ -206,13 +210,13 @@ const PermisosTrabajoSection = () => {
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Fecha Inicio</p>
                   <p className="text-sm font-medium text-gray-900 dark:text-white mt-1">
-                    {format(new Date(permiso.fecha_inicio), "dd/MM/yyyy HH:mm", { locale: es })}
+                    {format(new Date(permiso.fecha_inicio), 'dd/MM/yyyy HH:mm', { locale: es })}
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Fecha Fin</p>
                   <p className="text-sm font-medium text-gray-900 dark:text-white mt-1">
-                    {format(new Date(permiso.fecha_fin), "dd/MM/yyyy HH:mm", { locale: es })}
+                    {format(new Date(permiso.fecha_fin), 'dd/MM/yyyy HH:mm', { locale: es })}
                   </p>
                 </div>
               </div>
@@ -279,7 +283,7 @@ const InspeccionesSection = () => {
         description="Comience programando inspecciones de seguridad en las diferentes areas"
         action={{
           label: 'Nueva Inspeccion',
-          onClick: () => console.log('Nueva Inspeccion'),
+          onClick: () => {},
           icon: <Plus className="w-4 h-4" />,
         }}
       />
@@ -330,11 +334,11 @@ const InspeccionesSection = () => {
       {/* Actions */}
       <SectionToolbar
         title="Inspecciones de Seguridad"
-        onFilter={() => console.log('Filtros')}
-        onExport={() => console.log('Exportar')}
+        onFilter={() => {}}
+        onExport={() => {}}
         primaryAction={{
           label: 'Nueva Inspeccion',
-          onClick: () => console.log('Nueva Inspeccion'),
+          onClick: () => {},
         }}
       />
 
@@ -469,7 +473,7 @@ const EntregasEPPSection = () => {
         description="Comience registrando las entregas de equipos de proteccion personal"
         action={{
           label: 'Nueva Entrega',
-          onClick: () => console.log('Nueva Entrega'),
+          onClick: () => {},
           icon: <Plus className="w-4 h-4" />,
         }}
       />
@@ -481,7 +485,8 @@ const EntregasEPPSection = () => {
     enUso: entregas.filter((e) => e.estado === 'EN_USO').length,
     porVencer: entregas.filter((e) => {
       const diasRestantes = Math.floor(
-        (new Date(e.fecha_reposicion_programada).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+        (new Date(e.fecha_reposicion_programada).getTime() - new Date().getTime()) /
+          (1000 * 60 * 60 * 24)
       );
       return diasRestantes <= 30 && diasRestantes > 0;
     }).length,
@@ -525,11 +530,11 @@ const EntregasEPPSection = () => {
       {/* Actions */}
       <SectionToolbar
         title="Entregas de EPP"
-        onFilter={() => console.log('Filtros')}
-        onExport={() => console.log('Exportar')}
+        onFilter={() => {}}
+        onExport={() => {}}
         primaryAction={{
           label: 'Nueva Entrega',
-          onClick: () => console.log('Nueva Entrega'),
+          onClick: () => {},
         }}
       />
 
@@ -579,11 +584,15 @@ const EntregasEPPSection = () => {
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
                     <p className="font-medium">{entrega.colaborador.full_name}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{entrega.colaborador.username}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {entrega.colaborador.username}
+                    </p>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
                     <p className="font-medium">{entrega.tipo_epp.nombre}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Cant: {entrega.cantidad}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Cant: {entrega.cantidad}
+                    </p>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
                     <StatusBadge
@@ -603,7 +612,9 @@ const EntregasEPPSection = () => {
                     {format(new Date(entrega.fecha_entrega), 'dd/MM/yyyy', { locale: es })}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {format(new Date(entrega.fecha_reposicion_programada), 'dd/MM/yyyy', { locale: es })}
+                    {format(new Date(entrega.fecha_reposicion_programada), 'dd/MM/yyyy', {
+                      locale: es,
+                    })}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <StatusBadge status={entrega.estado} preset="proceso" />
@@ -653,7 +664,7 @@ const ProgramasSeguridadSection = () => {
         description="Comience creando programas de seguridad para gestionar las actividades de SST"
         action={{
           label: 'Nuevo Programa',
-          onClick: () => console.log('Nuevo Programa'),
+          onClick: () => {},
           icon: <Plus className="w-4 h-4" />,
         }}
       />
@@ -709,11 +720,11 @@ const ProgramasSeguridadSection = () => {
       {/* Actions */}
       <SectionToolbar
         title="Programas de Seguridad"
-        onFilter={() => console.log('Filtros')}
-        onExport={() => console.log('Exportar')}
+        onFilter={() => {}}
+        onExport={() => {}}
         primaryAction={{
           label: 'Nuevo Programa',
-          onClick: () => console.log('Nuevo Programa'),
+          onClick: () => {},
         }}
       />
 
@@ -726,7 +737,9 @@ const ProgramasSeguridadSection = () => {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <h4 className="font-semibold text-gray-900 dark:text-white">{programa.codigo}</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">
+                      {programa.codigo}
+                    </h4>
                     <StatusBadge status={programa.estado} preset="proceso" />
                     <StatusBadge
                       status={programa.tipo_programa}
@@ -734,8 +747,12 @@ const ProgramasSeguridadSection = () => {
                       label={formatTipo(programa.tipo_programa)}
                     />
                   </div>
-                  <p className="text-base font-medium text-gray-900 dark:text-white">{programa.nombre}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{programa.descripcion}</p>
+                  <p className="text-base font-medium text-gray-900 dark:text-white">
+                    {programa.nombre}
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                    {programa.descripcion}
+                  </p>
                 </div>
               </div>
 
@@ -770,7 +787,9 @@ const ProgramasSeguridadSection = () => {
               {/* Progress */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Avance del Programa</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Avance del Programa
+                  </span>
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     {programa.porcentaje_avance}%
                   </span>
@@ -781,7 +800,9 @@ const ProgramasSeguridadSection = () => {
               {/* Budget Progress */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Ejecucion Presupuestal</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Ejecucion Presupuestal
+                  </span>
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     ${(programa.presupuesto_ejecutado / 1000000).toFixed(1)}M / $
                     {(programa.presupuesto_asignado / 1000000).toFixed(1)}M

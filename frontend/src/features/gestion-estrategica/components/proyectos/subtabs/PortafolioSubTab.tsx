@@ -24,18 +24,16 @@ const VIEW_OPTIONS = [
 
 export const PortafolioSubTab = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('dashboard');
-  const [selectedProject, setSelectedProject] = useState<Proyecto | null>(null);
+  const [_selectedProject, setSelectedProject] = useState<Proyecto | null>(null);
   const { data: dashboard } = useProyectosDashboard();
 
   const handleProjectClick = (proyecto: Proyecto) => {
     setSelectedProject(proyecto);
     // TODO: Abrir modal de detalles del proyecto
-    console.log('Proyecto seleccionado:', proyecto);
   };
 
   const handleCreateProject = () => {
     // TODO: Abrir modal de crear proyecto
-    console.log('Crear nuevo proyecto');
   };
 
   // Contador de proyectos para el SectionHeader

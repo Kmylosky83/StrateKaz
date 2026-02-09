@@ -12,9 +12,8 @@ import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Textarea } from '@/components/forms/Textarea';
-import { Alert } from '@/components/common/Alert';
 import { Badge } from '@/components/common/Badge';
-import { TrendingUp, Target, Building2, User } from 'lucide-react';
+import { TrendingUp, Target } from 'lucide-react';
 import { useTiposParteInteresada } from '../../hooks/usePartesInteresadas';
 import type {
   ParteInteresada,
@@ -126,10 +125,9 @@ export const ParteFormModal = ({ parte, isOpen, onClose }: ParteFormModalProps) 
 
     try {
       // TODO: Implementar createMutation y updateMutation
-      console.log('Guardar parte interesada:', formData);
       onClose();
-    } catch (error: any) {
-      console.error('Error al guardar parte interesada:', error);
+    } catch {
+      // Error al guardar parte interesada
     }
   };
 

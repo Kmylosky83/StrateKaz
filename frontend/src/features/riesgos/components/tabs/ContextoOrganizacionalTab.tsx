@@ -19,7 +19,6 @@ import {
   Plus,
   Download,
   FileText,
-  CheckCircle2,
   AlertCircle,
 } from 'lucide-react';
 import { Tabs } from '@/components/common/Tabs';
@@ -57,7 +56,7 @@ const SUBTAB_IDS = {
   PORTER: 'porter',
 } as const;
 
-type SubtabId = typeof SUBTAB_IDS[keyof typeof SUBTAB_IDS];
+type SubtabId = (typeof SUBTAB_IDS)[keyof typeof SUBTAB_IDS];
 
 const SUBTABS = [
   {
@@ -95,7 +94,7 @@ const MOCK_ANALISIS_PORTER: AnalisisPorter | null = null;
 // =============================================================================
 
 export const ContextoOrganizacionalTab = ({
-  activeSection,
+  activeSection: _activeSection,
 }: ContextoOrganizacionalTabProps) => {
   const [activeSubtab, setActiveSubtab] = useState<SubtabId>(SUBTAB_IDS.DOFA);
 
@@ -104,7 +103,7 @@ export const ContextoOrganizacionalTab = ({
   const analisisPestel = MOCK_ANALISIS_PESTEL;
   const analisisPorter = MOCK_ANALISIS_PORTER;
 
-  const isLoading = false;
+  const _isLoading = false;
   const error = null;
 
   // =============================================================================
@@ -112,42 +111,34 @@ export const ContextoOrganizacionalTab = ({
   // =============================================================================
 
   const handleCreateAnalisisDofa = () => {
-    console.log('Crear nuevo análisis DOFA');
     // TODO: Abrir modal de creación
   };
 
   const handleCreateAnalisisPestel = () => {
-    console.log('Crear nuevo análisis PESTEL');
     // TODO: Abrir modal de creación
   };
 
   const handleCreateAnalisisPorter = () => {
-    console.log('Crear nuevo análisis Porter');
     // TODO: Abrir modal de creación
   };
 
-  const handleFactorDofaClick = (factor: FactorDOFA) => {
-    console.log('Factor DOFA seleccionado:', factor);
+  const handleFactorDofaClick = (_factor: FactorDOFA) => {
     // TODO: Abrir modal de detalle/edición
   };
 
-  const handleEstrategiaTowsClick = (estrategia: EstrategiaTOWS) => {
-    console.log('Estrategia TOWS seleccionada:', estrategia);
+  const handleEstrategiaTowsClick = (_estrategia: EstrategiaTOWS) => {
     // TODO: Abrir modal de detalle/edición
   };
 
-  const handleFactorPestelClick = (factor: FactorPESTEL) => {
-    console.log('Factor PESTEL seleccionado:', factor);
+  const handleFactorPestelClick = (_factor: FactorPESTEL) => {
     // TODO: Abrir modal de detalle/edición
   };
 
-  const handleFuerzaPorterClick = (fuerza: FuerzaPorter) => {
-    console.log('Fuerza Porter seleccionada:', fuerza);
+  const handleFuerzaPorterClick = (_fuerza: FuerzaPorter) => {
     // TODO: Abrir modal de detalle/edición
   };
 
   const handleExportAnalisis = () => {
-    console.log('Exportar análisis activo:', activeSubtab);
     // TODO: Implementar exportación a PDF/Excel
   };
 
@@ -174,7 +165,7 @@ export const ContextoOrganizacionalTab = ({
     }
 
     const factores = analisisDofa.factores || [];
-    const estrategias = analisisDofa.estrategias || [];
+    const _estrategias = analisisDofa.estrategias || [];
 
     return (
       <div className="space-y-6">
@@ -191,8 +182,8 @@ export const ContextoOrganizacionalTab = ({
                     analisisDofa.estado === 'vigente'
                       ? 'success'
                       : analisisDofa.estado === 'aprobado'
-                      ? 'info'
-                      : 'warning'
+                        ? 'info'
+                        : 'warning'
                   }
                 >
                   {analisisDofa.estado}
@@ -326,7 +317,7 @@ export const ContextoOrganizacionalTab = ({
             description="No hay estrategias TOWS definidas para este análisis. Las estrategias TOWS cruzan los factores DOFA para generar acciones estratégicas."
             action={{
               label: 'Agregar Estrategia',
-              onClick: () => console.log('Agregar estrategia TOWS'),
+              onClick: () => {},
               icon: <Plus className="h-4 w-4" />,
             }}
           />
@@ -360,7 +351,7 @@ export const ContextoOrganizacionalTab = ({
               <Button
                 variant="primary"
                 size="sm"
-                onClick={() => console.log('Agregar estrategia')}
+                onClick={() => {}}
                 leftIcon={<Plus className="h-4 w-4" />}
               >
                 Nueva Estrategia
@@ -417,8 +408,8 @@ export const ContextoOrganizacionalTab = ({
                     analisisPestel.estado === 'vigente'
                       ? 'success'
                       : analisisPestel.estado === 'aprobado'
-                      ? 'info'
-                      : 'warning'
+                        ? 'info'
+                        : 'warning'
                   }
                 >
                   {analisisPestel.estado}
@@ -454,20 +445,16 @@ export const ContextoOrganizacionalTab = ({
 
         {/* Estadísticas por tipo */}
         <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
-          {['politico', 'economico', 'social', 'tecnologico', 'ecologico', 'legal'].map(
-            (tipo) => (
-              <Card key={tipo} padding="sm">
-                <div className="text-center">
-                  <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                    {factores.filter((f) => f.tipo === tipo).length}
-                  </p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 capitalize">
-                    {tipo}
-                  </p>
-                </div>
-              </Card>
-            )
-          )}
+          {['politico', 'economico', 'social', 'tecnologico', 'ecologico', 'legal'].map((tipo) => (
+            <Card key={tipo} padding="sm">
+              <div className="text-center">
+                <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                  {factores.filter((f) => f.tipo === tipo).length}
+                </p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 capitalize">{tipo}</p>
+              </div>
+            </Card>
+          ))}
         </div>
 
         {/* Gráfico PESTEL */}
@@ -518,8 +505,8 @@ export const ContextoOrganizacionalTab = ({
                     analisisPorter.estado === 'vigente'
                       ? 'success'
                       : analisisPorter.estado === 'aprobado'
-                      ? 'info'
-                      : 'warning'
+                        ? 'info'
+                        : 'warning'
                   }
                 >
                   {analisisPorter.estado}

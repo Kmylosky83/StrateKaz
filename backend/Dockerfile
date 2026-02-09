@@ -86,6 +86,9 @@ RUN mkdir -p /app/staticfiles /app/media /app/logs && \
 # Copiar código de la aplicación
 COPY --chown=appuser:appgroup . .
 
+# Hacer ejecutable el entrypoint de produccion
+RUN chmod +x /app/docker/entrypoint.sh || true
+
 # Cambiar a usuario no-root
 USER appuser
 

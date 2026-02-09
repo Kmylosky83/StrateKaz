@@ -40,7 +40,6 @@ import {
   useObjetivosSistema,
   useProgramasGestion,
   useDashboardPlanificacion,
-  type ActividadPlan,
 } from '../hooks/usePlanificacion';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -55,7 +54,13 @@ interface ProgressProps {
   variant?: 'default' | 'success' | 'warning' | 'danger';
 }
 
-const Progress = ({ value, max = 100, className, showLabel = false, variant = 'default' }: ProgressProps) => {
+const Progress = ({
+  value,
+  max = 100,
+  className,
+  showLabel = false,
+  variant = 'default',
+}: ProgressProps) => {
   const percentage = Math.min(Math.max((value / max) * 100, 0), 100);
 
   const variantColors = {
@@ -154,7 +159,7 @@ const PlanTrabajoSection = ({ planId }: PlanTrabajoSectionProps) => {
         description="Comience creando actividades para el plan de trabajo anual"
         action={{
           label: 'Crear Actividad',
-          onClick: () => console.log('Crear actividad'),
+          onClick: () => {},
         }}
       />
     );
@@ -211,9 +216,7 @@ const PlanTrabajoSection = ({ planId }: PlanTrabajoSectionProps) => {
       {/* Actions */}
       <SectionToolbar
         title="Actividades Programadas"
-        onFilter={() => console.log('Filtros')}
-        onExport={() => console.log('Exportar')}
-        primaryAction={{ label: 'Nueva Actividad', onClick: () => console.log('Nueva Actividad') }}
+        primaryAction={{ label: 'Nueva Actividad', onClick: () => {} }}
       />
 
       {/* Activities Table */}
@@ -293,8 +296,8 @@ const PlanTrabajoSection = ({ planId }: PlanTrabajoSectionProps) => {
                         actividad.prioridad === 'CRITICA'
                           ? 'danger'
                           : actividad.prioridad === 'ALTA'
-                          ? 'warning'
-                          : 'info'
+                            ? 'warning'
+                            : 'info'
                       }
                       size="sm"
                     >
@@ -359,7 +362,7 @@ const ObjetivosSection = ({ planId }: ObjetivosSectionProps) => {
         description="Comience definiendo los objetivos estratégicos del sistema HSEQ"
         action={{
           label: 'Crear Objetivo',
-          onClick: () => console.log('Crear objetivo'),
+          onClick: () => {},
         }}
       />
     );
@@ -392,10 +395,10 @@ const ObjetivosSection = ({ planId }: ObjetivosSectionProps) => {
             stats.cumplimientoPromedio >= 90
               ? 'success'
               : stats.cumplimientoPromedio >= 70
-              ? 'primary'
-              : stats.cumplimientoPromedio >= 50
-              ? 'warning'
-              : 'danger'
+                ? 'primary'
+                : stats.cumplimientoPromedio >= 50
+                  ? 'warning'
+                  : 'danger'
           }
           description={
             <Badge variant={getBadgeVariant(stats.cumplimientoPromedio)} size="sm" className="mt-1">
@@ -408,9 +411,7 @@ const ObjetivosSection = ({ planId }: ObjetivosSectionProps) => {
       {/* Actions */}
       <SectionToolbar
         title="Objetivos del Sistema"
-        onFilter={() => console.log('Filtros')}
-        onExport={() => console.log('Exportar')}
-        primaryAction={{ label: 'Nuevo Objetivo', onClick: () => console.log('Nuevo Objetivo') }}
+        primaryAction={{ label: 'Nuevo Objetivo', onClick: () => {} }}
       />
 
       {/* Objectives Grid */}
@@ -446,7 +447,9 @@ const ObjetivosSection = ({ planId }: ObjetivosSectionProps) => {
                 </div>
                 <div>
                   <p className="text-gray-500 dark:text-gray-400 text-xs">Indicador</p>
-                  <p className="text-gray-900 dark:text-white font-medium mt-1">{objetivo.indicador_medicion}</p>
+                  <p className="text-gray-900 dark:text-white font-medium mt-1">
+                    {objetivo.indicador_medicion}
+                  </p>
                 </div>
               </div>
 
@@ -531,7 +534,7 @@ const ProgramasSection = ({ planId }: ProgramasSectionProps) => {
         description="Comience creando programas de gestión específicos para el sistema HSEQ"
         action={{
           label: 'Crear Programa',
-          onClick: () => console.log('Crear programa'),
+          onClick: () => {},
         }}
       />
     );
@@ -580,9 +583,7 @@ const ProgramasSection = ({ planId }: ProgramasSectionProps) => {
       {/* Actions */}
       <SectionToolbar
         title="Programas de Gestión"
-        onFilter={() => console.log('Filtros')}
-        onExport={() => console.log('Exportar')}
-        primaryAction={{ label: 'Nuevo Programa', onClick: () => console.log('Nuevo Programa') }}
+        primaryAction={{ label: 'Nuevo Programa', onClick: () => {} }}
       />
 
       {/* Programs Grid */}
@@ -594,7 +595,9 @@ const ProgramasSection = ({ planId }: ProgramasSectionProps) => {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <h4 className="font-semibold text-gray-900 dark:text-white">{programa.nombre}</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">
+                      {programa.nombre}
+                    </h4>
                     <StatusBadge status={programa.estado} preset="proceso" />
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-300">{programa.descripcion}</p>
@@ -723,7 +726,7 @@ const SeguimientoSection = ({ planId }: SeguimientoSectionProps) => {
       <SectionToolbar
         title="Dashboard de Planificación"
         subtitle="Seguimiento integral del plan de trabajo anual"
-        primaryAction={{ label: 'Descargar Reporte', onClick: () => console.log('Descargar') }}
+        primaryAction={{ label: 'Descargar Reporte', onClick: () => {} }}
       />
 
       {/* Main KPIs */}
@@ -746,7 +749,10 @@ const SeguimientoSection = ({ planId }: SeguimientoSectionProps) => {
           value={`${resumen.porcentaje_cumplimiento_cronograma.toFixed(1)}%`}
           color="primary"
           description={
-            <Badge variant={getBadgeVariant(resumen.porcentaje_cumplimiento_cronograma)} className="mt-1">
+            <Badge
+              variant={getBadgeVariant(resumen.porcentaje_cumplimiento_cronograma)}
+              className="mt-1"
+            >
               {getCumplimientoLabel(resumen.porcentaje_cumplimiento_cronograma)}
             </Badge>
           }
@@ -839,7 +845,10 @@ const SeguimientoSection = ({ planId }: SeguimientoSectionProps) => {
                       {actividad.nombre}
                     </p>
                     <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                      Vence: {format(new Date(actividad.fecha_fin_programada), 'dd/MM/yyyy', { locale: es })}
+                      Vence:{' '}
+                      {format(new Date(actividad.fecha_fin_programada), 'dd/MM/yyyy', {
+                        locale: es,
+                      })}
                     </p>
                   </div>
                 </div>
@@ -874,7 +883,10 @@ const SeguimientoSection = ({ planId }: SeguimientoSectionProps) => {
                       {actividad.nombre}
                     </p>
                     <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                      Venció: {format(new Date(actividad.fecha_fin_programada), 'dd/MM/yyyy', { locale: es })}
+                      Venció:{' '}
+                      {format(new Date(actividad.fecha_fin_programada), 'dd/MM/yyyy', {
+                        locale: es,
+                      })}
                     </p>
                   </div>
                 </div>
@@ -894,7 +906,9 @@ const SeguimientoSection = ({ planId }: SeguimientoSectionProps) => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="text-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
             <p className="text-sm text-gray-600 dark:text-gray-400">Total Programas</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{programas.total}</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+              {programas.total}
+            </p>
           </div>
           <div className="text-center p-4 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
             <p className="text-sm text-gray-600 dark:text-gray-400">En Ejecución</p>
@@ -911,7 +925,9 @@ const SeguimientoSection = ({ planId }: SeguimientoSectionProps) => {
         </div>
         <div className="mt-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Avance Promedio de Programas</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              Avance Promedio de Programas
+            </span>
             <span className="text-sm font-bold text-gray-900 dark:text-white">
               {programas.avance_promedio.toFixed(1)}%
             </span>
@@ -974,7 +990,9 @@ export default function PlanificacionSistemaPage() {
                 <Calendar className="w-6 h-6 text-primary-600 dark:text-primary-400" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white">{defaultPlan.nombre}</h3>
+                <h3 className="font-semibold text-gray-900 dark:text-white">
+                  {defaultPlan.nombre}
+                </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   {defaultPlan.codigo} • Año {defaultPlan.año}
                 </p>

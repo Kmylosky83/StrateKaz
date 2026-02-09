@@ -11,22 +11,14 @@ import {
   Plus,
   ArrowLeft,
   Play,
-  Archive,
   Copy,
   Trash2,
   Edit3,
-  CheckCircle2,
   Clock,
   FileText,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Card,
-  Badge,
-  EmptyState,
-  Spinner,
-  StatusBadge,
-} from '@/components/common';
+import { Card, Badge, EmptyState, Spinner, StatusBadge } from '@/components/common';
 import { Button } from '@/components/common/Button';
 import { PageHeader } from '@/components/layout';
 import { NODE_CONFIG } from '../components/nodes/BpmnNodes';
@@ -38,7 +30,6 @@ import {
   useActivarPlantilla,
   useDeletePlantilla,
   useCrearVersionPlantilla,
-  useCategorias,
 } from '../hooks/useWorkflows';
 import type { TipoNodo, PlantillaFlujo, EstadoPlantilla } from '../types/workflow.types';
 
@@ -91,7 +82,7 @@ const DraggableNode = ({ tipo, label }: DraggableNodeProps) => {
 // TARJETA DE PLANTILLA
 // ============================================================
 
-const estadoColors: Record<EstadoPlantilla, string> = {
+const _estadoColors: Record<EstadoPlantilla, string> = {
   BORRADOR: 'gray',
   ACTIVO: 'green',
   OBSOLETO: 'yellow',
@@ -106,7 +97,13 @@ interface PlantillaCardProps {
   onDelete: (id: number) => void;
 }
 
-const PlantillaCard = ({ plantilla, onSelect, onActivar, onNewVersion, onDelete }: PlantillaCardProps) => (
+const PlantillaCard = ({
+  plantilla,
+  onSelect,
+  onActivar,
+  onNewVersion,
+  onDelete,
+}: PlantillaCardProps) => (
   <Card className="hover:shadow-md transition-shadow">
     <div className="p-5">
       <div className="flex items-start justify-between mb-3">
@@ -120,7 +117,9 @@ const PlantillaCard = ({ plantilla, onSelect, onActivar, onNewVersion, onDelete 
           <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">{plantilla.codigo}</p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <Badge variant="gray" size="sm">v{plantilla.version}</Badge>
+          <Badge variant="gray" size="sm">
+            v{plantilla.version}
+          </Badge>
           <StatusBadge status={plantilla.estado} />
         </div>
       </div>
@@ -245,7 +244,9 @@ export default function DisenadorFlujosPage() {
           {/* Sidebar - Componentes arrastrables */}
           <Card className="lg:col-span-1">
             <div className="p-3 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Componentes BPMN</h3>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                Componentes BPMN
+              </h3>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Arrastra al canvas</p>
             </div>
             <div className="p-3 space-y-2">
@@ -259,9 +260,8 @@ export default function DisenadorFlujosPage() {
           <div className="lg:col-span-4 h-[650px]">
             <WorkflowDesignerCanvas
               plantilla={selectedPlantilla}
-              onEditNode={(nodoId) => {
+              onEditNode={() => {
                 // TODO: Abrir modal de edicion del nodo
-                console.log('Editar nodo:', nodoId);
               }}
             />
           </div>
@@ -294,10 +294,14 @@ export default function DisenadorFlujosPage() {
       {showNewForm && (
         <Card className="border-purple-200 dark:border-purple-800">
           <div className="p-4">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Nueva Plantilla de Flujo</h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
+              Nueva Plantilla de Flujo
+            </h3>
             <div className="flex gap-3 items-end">
               <div className="flex-1">
-                <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Codigo</label>
+                <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
+                  Codigo
+                </label>
                 <input
                   type="text"
                   value={newCode}
@@ -307,7 +311,9 @@ export default function DisenadorFlujosPage() {
                 />
               </div>
               <div className="flex-[2]">
-                <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Nombre</label>
+                <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
+                  Nombre
+                </label>
                 <input
                   type="text"
                   value={newName}
@@ -324,7 +330,15 @@ export default function DisenadorFlujosPage() {
               >
                 Crear
               </Button>
-              <Button variant="outline" size="sm" onClick={() => { setShowNewForm(false); setNewName(''); setNewCode(''); }}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setShowNewForm(false);
+                  setNewName('');
+                  setNewCode('');
+                }}
+              >
                 Cancelar
               </Button>
             </div>

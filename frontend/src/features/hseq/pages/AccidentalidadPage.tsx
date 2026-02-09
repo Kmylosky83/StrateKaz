@@ -36,7 +36,6 @@ import {
   KpiCardGrid,
   SectionToolbar,
   StatusBadge,
-  Progress,
   ExportButton,
 } from '@/components/common';
 import { formatStatusLabel } from '@/components/common/StatusBadge';
@@ -46,7 +45,6 @@ import {
   useIncidentesTrabajo,
   useInvestigacionesATEL,
 } from '../hooks/useAccidentalidad';
-import { cn } from '@/utils/cn';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -106,7 +104,7 @@ const AccidentesTrabajoSection = () => {
         description="Comience registrando los accidentes de trabajo para su análisis e investigación"
         action={{
           label: 'Nuevo Accidente',
-          onClick: () => console.log('Nuevo AT'),
+          onClick: () => {},
           icon: <Plus className="w-4 h-4" />,
         }}
       />
@@ -159,8 +157,8 @@ const AccidentesTrabajoSection = () => {
       <div className="flex items-center justify-between gap-2">
         <SectionToolbar
           title="Accidentes de Trabajo Registrados"
-          onFilter={() => console.log('Filtros AT')}
-          primaryAction={{ label: 'Nuevo Accidente', onClick: () => console.log('Nuevo AT') }}
+          onFilter={() => {}}
+          primaryAction={{ label: 'Nuevo Accidente', onClick: () => {} }}
           className="flex-1"
         />
         <ExportButton
@@ -175,14 +173,30 @@ const AccidentesTrabajoSection = () => {
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Código</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fecha</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Trabajador</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tipo Evento</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Gravedad</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Días Inc.</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Parte Cuerpo</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Código
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Fecha
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Trabajador
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Tipo Evento
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Gravedad
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Días Inc.
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Parte Cuerpo
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Acciones
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -197,7 +211,9 @@ const AccidentesTrabajoSection = () => {
                   <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
                     <div>
                       <p className="font-medium">{accidente.trabajador_nombre}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{accidente.cargo_trabajador}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {accidente.cargo_trabajador}
+                      </p>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
@@ -214,9 +230,15 @@ const AccidentesTrabajoSection = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm"><Eye className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="sm"><Edit className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="sm"><FileText className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="sm">
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <FileText className="w-4 h-4" />
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -251,7 +273,7 @@ const EnfermedadesLaboralesSection = () => {
         description="Comience registrando las enfermedades laborales diagnosticadas"
         action={{
           label: 'Nueva Enfermedad Laboral',
-          onClick: () => console.log('Nueva EL'),
+          onClick: () => {},
           icon: <Plus className="w-4 h-4" />,
         }}
       />
@@ -260,7 +282,9 @@ const EnfermedadesLaboralesSection = () => {
 
   const stats = {
     total: enfermedades.length,
-    calificadasLaborales: enfermedades.filter((el) => el.estado_calificacion === 'CALIFICADA_LABORAL').length,
+    calificadasLaborales: enfermedades.filter(
+      (el) => el.estado_calificacion === 'CALIFICADA_LABORAL'
+    ).length,
     enEstudio: enfermedades.filter((el) => el.estado_calificacion === 'EN_ESTUDIO').length,
     pclPromedio:
       enfermedades
@@ -307,9 +331,9 @@ const EnfermedadesLaboralesSection = () => {
 
       <SectionToolbar
         title="Enfermedades Laborales Registradas"
-        onFilter={() => console.log('Filtros EL')}
-        onExport={() => console.log('Exportar EL')}
-        primaryAction={{ label: 'Nueva Enfermedad Laboral', onClick: () => console.log('Nueva EL') }}
+        onFilter={() => {}}
+        onExport={() => {}}
+        primaryAction={{ label: 'Nueva Enfermedad Laboral', onClick: () => {} }}
       />
 
       {/* Enfermedades Grid */}
@@ -320,11 +344,19 @@ const EnfermedadesLaboralesSection = () => {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <h4 className="font-semibold text-gray-900 dark:text-white">{enfermedad.codigo_el}</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">
+                      {enfermedad.codigo_el}
+                    </h4>
                     <StatusBadge status={enfermedad.estado_calificacion} preset="proceso" />
-                    <StatusBadge status={enfermedad.tipo_enfermedad} variant="info" label={formatTipo(enfermedad.tipo_enfermedad)} />
+                    <StatusBadge
+                      status={enfermedad.tipo_enfermedad}
+                      variant="info"
+                      label={formatTipo(enfermedad.tipo_enfermedad)}
+                    />
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">{enfermedad.diagnostico_descripcion}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    {enfermedad.diagnostico_descripcion}
+                  </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                     Factor de Riesgo: {enfermedad.factor_riesgo}
                   </p>
@@ -334,8 +366,12 @@ const EnfermedadesLaboralesSection = () => {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Trabajador</p>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white mt-1">{enfermedad.trabajador_nombre}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{enfermedad.cargo_trabajador}</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white mt-1">
+                    {enfermedad.trabajador_nombre}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {enfermedad.cargo_trabajador}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Fecha Diagnóstico</p>
@@ -358,9 +394,15 @@ const EnfermedadesLaboralesSection = () => {
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                <Button variant="ghost" size="sm" leftIcon={<Eye className="w-4 h-4" />}>Ver Detalle</Button>
-                <Button variant="ghost" size="sm" leftIcon={<Edit className="w-4 h-4" />}>Editar</Button>
-                <Button variant="ghost" size="sm" leftIcon={<FileText className="w-4 h-4" />}>Documentos</Button>
+                <Button variant="ghost" size="sm" leftIcon={<Eye className="w-4 h-4" />}>
+                  Ver Detalle
+                </Button>
+                <Button variant="ghost" size="sm" leftIcon={<Edit className="w-4 h-4" />}>
+                  Editar
+                </Button>
+                <Button variant="ghost" size="sm" leftIcon={<FileText className="w-4 h-4" />}>
+                  Documentos
+                </Button>
               </div>
             </div>
           </Card>
@@ -392,7 +434,7 @@ const IncidentesSection = () => {
         description="Comience registrando los incidentes y casi accidentes para análisis preventivo"
         action={{
           label: 'Nuevo Incidente',
-          onClick: () => console.log('Nuevo Incidente'),
+          onClick: () => {},
           icon: <Plus className="w-4 h-4" />,
         }}
       />
@@ -402,7 +444,8 @@ const IncidentesSection = () => {
   const stats = {
     total: incidentes.length,
     casiAccidentes: incidentes.filter((inc) => inc.tipo_incidente === 'CASI_ACCIDENTE').length,
-    condicionesInseguras: incidentes.filter((inc) => inc.tipo_incidente === 'CONDICION_INSEGURA').length,
+    condicionesInseguras: incidentes.filter((inc) => inc.tipo_incidente === 'CONDICION_INSEGURA')
+      .length,
     potencialAlto: incidentes.filter(
       (inc) => inc.potencial_gravedad === 'ALTO' || inc.potencial_gravedad === 'CRITICO'
     ).length,
@@ -446,9 +489,9 @@ const IncidentesSection = () => {
 
       <SectionToolbar
         title="Incidentes Registrados"
-        onFilter={() => console.log('Filtros Incidentes')}
-        onExport={() => console.log('Exportar Incidentes')}
-        primaryAction={{ label: 'Nuevo Incidente', onClick: () => console.log('Nuevo Incidente') }}
+        onFilter={() => {}}
+        onExport={() => {}}
+        primaryAction={{ label: 'Nuevo Incidente', onClick: () => {} }}
       />
 
       {/* Incidentes Grid */}
@@ -459,15 +502,23 @@ const IncidentesSection = () => {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <h4 className="font-semibold text-gray-900 dark:text-white">{incidente.codigo_incidente}</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">
+                      {incidente.codigo_incidente}
+                    </h4>
                     <StatusBadge
                       status={incidente.potencial_gravedad}
                       preset="gravedad"
                       label={`Potencial ${formatStatusLabel(incidente.potencial_gravedad)}`}
                     />
-                    <StatusBadge status={incidente.tipo_incidente} variant="info" label={formatTipo(incidente.tipo_incidente)} />
+                    <StatusBadge
+                      status={incidente.tipo_incidente}
+                      variant="info"
+                      label={formatTipo(incidente.tipo_incidente)}
+                    />
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">{incidente.descripcion_evento}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    {incidente.descripcion_evento}
+                  </p>
                 </div>
               </div>
 
@@ -480,7 +531,9 @@ const IncidentesSection = () => {
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Reportado Por</p>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white mt-1">{incidente.reportado_por_nombre}</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white mt-1">
+                    {incidente.reportado_por_nombre}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Requiere Investigación</p>
@@ -491,10 +544,16 @@ const IncidentesSection = () => {
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                <Button variant="ghost" size="sm" leftIcon={<Eye className="w-4 h-4" />}>Ver Detalle</Button>
-                <Button variant="ghost" size="sm" leftIcon={<Edit className="w-4 h-4" />}>Editar</Button>
+                <Button variant="ghost" size="sm" leftIcon={<Eye className="w-4 h-4" />}>
+                  Ver Detalle
+                </Button>
+                <Button variant="ghost" size="sm" leftIcon={<Edit className="w-4 h-4" />}>
+                  Editar
+                </Button>
                 {incidente.requiere_investigacion && (
-                  <Button variant="ghost" size="sm" leftIcon={<Search className="w-4 h-4" />}>Investigar</Button>
+                  <Button variant="ghost" size="sm" leftIcon={<Search className="w-4 h-4" />}>
+                    Investigar
+                  </Button>
                 )}
               </div>
             </div>
@@ -527,7 +586,7 @@ const InvestigacionesSection = () => {
         description="Comience creando investigaciones para analizar las causas de accidentes e incidentes"
         action={{
           label: 'Nueva Investigación',
-          onClick: () => console.log('Nueva Investigación'),
+          onClick: () => {},
           icon: <Plus className="w-4 h-4" />,
         }}
       />
@@ -579,9 +638,9 @@ const InvestigacionesSection = () => {
 
       <SectionToolbar
         title="Investigaciones ATEL"
-        onFilter={() => console.log('Filtros Investigaciones')}
-        onExport={() => console.log('Exportar Investigaciones')}
-        primaryAction={{ label: 'Nueva Investigación', onClick: () => console.log('Nueva Investigación') }}
+        onFilter={() => {}}
+        onExport={() => {}}
+        primaryAction={{ label: 'Nueva Investigación', onClick: () => {} }}
       />
 
       {/* Investigaciones Table */}
@@ -590,14 +649,30 @@ const InvestigacionesSection = () => {
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Código</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Evento</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Metodología</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Líder</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Estado</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fecha Límite</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Causas</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Código
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Evento
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Metodología
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Líder
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Estado
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Fecha Límite
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Causas
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Acciones
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -631,9 +706,15 @@ const InvestigacionesSection = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm"><Eye className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="sm"><Edit className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="sm"><FileText className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="sm">
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <FileText className="w-4 h-4" />
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -652,8 +733,16 @@ export default function AccidentalidadPage() {
   const [activeTab, setActiveTab] = useState('accidentes-trabajo');
 
   const tabs = [
-    { id: 'accidentes-trabajo', label: 'Accidentes de Trabajo', icon: <AlertTriangle className="w-4 h-4" /> },
-    { id: 'enfermedades-laborales', label: 'Enfermedades Laborales', icon: <Stethoscope className="w-4 h-4" /> },
+    {
+      id: 'accidentes-trabajo',
+      label: 'Accidentes de Trabajo',
+      icon: <AlertTriangle className="w-4 h-4" />,
+    },
+    {
+      id: 'enfermedades-laborales',
+      label: 'Enfermedades Laborales',
+      icon: <Stethoscope className="w-4 h-4" />,
+    },
     { id: 'incidentes', label: 'Incidentes', icon: <AlertOctagon className="w-4 h-4" /> },
     { id: 'investigaciones', label: 'Investigaciones', icon: <Search className="w-4 h-4" /> },
   ];

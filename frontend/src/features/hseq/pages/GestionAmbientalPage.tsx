@@ -41,17 +41,8 @@ import {
   useVertimientos,
   useEmisiones,
   useConsumos,
-  useHuellasCarbono,
   useCertificados,
 } from '../hooks/useGestionAmbiental';
-
-import type {
-  ClaseResiduo,
-  TipoVertimiento,
-  CuerpoReceptor,
-  CategoriaRecurso,
-  TipoCertificado,
-} from '../types/gestion-ambiental.types';
 
 // ==================== ASPECTOS AMBIENTALES SECTION ====================
 
@@ -120,7 +111,7 @@ const GestionResiduosSection = () => {
         description="Comience registrando la generación y disposición de residuos"
         action={{
           label: 'Nuevo Registro',
-          onClick: () => console.log('Nuevo Registro'),
+          onClick: () => {},
         }}
       />
     );
@@ -160,9 +151,7 @@ const GestionResiduosSection = () => {
 
       <SectionToolbar
         title="Registros de Residuos"
-        onFilter={() => console.log('Filtros residuos')}
-        onExport={() => console.log('Exportar residuos')}
-        primaryAction={{ label: 'Nuevo Registro', onClick: () => console.log('Nuevo Registro') }}
+        primaryAction={{ label: 'Nuevo Registro', onClick: () => {} }}
       />
 
       <Card variant="bordered" padding="none">
@@ -205,7 +194,9 @@ const GestionResiduosSection = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <StatusBadge status={residuo.tipo_movimiento} variant="info" />
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{residuo.area_generadora}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                    {residuo.area_generadora}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
                       <Button variant="ghost" size="sm">
@@ -250,7 +241,7 @@ const VertimientosSection = () => {
         description="Comience registrando los vertimientos de aguas residuales"
         action={{
           label: 'Nuevo Vertimiento',
-          onClick: () => console.log('Nuevo Vertimiento'),
+          onClick: () => {},
         }}
       />
     );
@@ -258,7 +249,8 @@ const VertimientosSection = () => {
 
   const conformes = vertimientos.results.filter((v) => v.cumple_normativa === true).length;
   const noConformes = vertimientos.results.filter((v) => v.cumple_normativa === false).length;
-  const pctCumplimiento = vertimientos.count > 0 ? Math.round((conformes / vertimientos.count) * 100) : 0;
+  const pctCumplimiento =
+    vertimientos.count > 0 ? Math.round((conformes / vertimientos.count) * 100) : 0;
 
   return (
     <div className="space-y-6">
@@ -294,9 +286,7 @@ const VertimientosSection = () => {
 
       <SectionToolbar
         title="Registros de Vertimientos"
-        onFilter={() => console.log('Filtros vertimientos')}
-        onExport={() => console.log('Exportar vertimientos')}
-        primaryAction={{ label: 'Nuevo Vertimiento', onClick: () => console.log('Nuevo Vertimiento') }}
+        primaryAction={{ label: 'Nuevo Vertimiento', onClick: () => {} }}
       />
 
       <Card variant="bordered" padding="md">
@@ -329,7 +319,7 @@ const EmisionesSection = () => {
         description="Comience registrando las emisiones atmosféricas de sus fuentes"
         action={{
           label: 'Nueva Emisión',
-          onClick: () => console.log('Nueva Emisión'),
+          onClick: () => {},
         }}
       />
     );
@@ -348,7 +338,7 @@ const EmisionesSection = () => {
 
       <SectionToolbar
         title="Emisiones Atmosféricas"
-        primaryAction={{ label: 'Nueva Medición', onClick: () => console.log('Nueva Medición') }}
+        primaryAction={{ label: 'Nueva Medición', onClick: () => {} }}
       />
 
       <Card variant="bordered" padding="md">
@@ -381,7 +371,7 @@ const ConsumoRecursosSection = () => {
         description="Comience registrando el consumo de recursos (agua, energía, etc.)"
         action={{
           label: 'Nuevo Consumo',
-          onClick: () => console.log('Nuevo Consumo'),
+          onClick: () => {},
         }}
       />
     );
@@ -421,7 +411,7 @@ const ConsumoRecursosSection = () => {
 
       <SectionToolbar
         title="Consumo de Recursos"
-        primaryAction={{ label: 'Nuevo Registro', onClick: () => console.log('Nuevo Consumo') }}
+        primaryAction={{ label: 'Nuevo Registro', onClick: () => {} }}
       />
 
       <Card variant="bordered" padding="md">
@@ -454,7 +444,7 @@ const CertificadosSection = () => {
         description="Registre los certificados de disposición y cumplimiento ambiental"
         action={{
           label: 'Nuevo Certificado',
-          onClick: () => console.log('Nuevo Certificado'),
+          onClick: () => {},
         }}
       />
     );
@@ -497,7 +487,7 @@ const CertificadosSection = () => {
 
       <SectionToolbar
         title="Certificados Ambientales"
-        primaryAction={{ label: 'Nuevo Certificado', onClick: () => console.log('Nuevo Certificado') }}
+        primaryAction={{ label: 'Nuevo Certificado', onClick: () => {} }}
       />
 
       <Card variant="bordered" padding="md">

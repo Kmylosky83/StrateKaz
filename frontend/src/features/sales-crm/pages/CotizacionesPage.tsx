@@ -13,7 +13,7 @@ import {
   Copy,
   ChevronRight,
   Clock,
-  AlertCircle
+  AlertCircle,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -26,7 +26,10 @@ import { Spinner } from '@/components/common/Spinner';
 import { useCotizaciones } from '../hooks';
 import type { CotizacionList, EstadoCotizacion } from '../types';
 
-const ESTADO_CONFIG: Record<EstadoCotizacion, { variant: 'default' | 'primary' | 'success' | 'warning' | 'danger'; label: string }> = {
+const ESTADO_CONFIG: Record<
+  EstadoCotizacion,
+  { variant: 'default' | 'primary' | 'success' | 'warning' | 'danger'; label: string }
+> = {
   BORRADOR: { variant: 'default', label: 'Borrador' },
   ENVIADA: { variant: 'primary', label: 'Enviada' },
   APROBADA: { variant: 'success', label: 'Aprobada' },
@@ -50,7 +53,7 @@ function CotizacionCard({
   onAprobar,
   onRechazar,
   onClonar,
-  onConvertir
+  onConvertir,
 }: CotizacionCardProps) {
   const isVencida = cotizacion.dias_vigencia < 0;
   const isPorVencer = cotizacion.dias_vigencia >= 0 && cotizacion.dias_vigencia <= 3;
@@ -69,9 +72,7 @@ function CotizacionCard({
               {ESTADO_CONFIG[cotizacion.estado].label}
             </Badge>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            {cotizacion.cliente_nombre}
-          </p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">{cotizacion.cliente_nombre}</p>
         </div>
         <div className="text-right">
           <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">
@@ -90,7 +91,9 @@ function CotizacionCard({
         <div>
           <span className="text-gray-500 dark:text-gray-400">Vencimiento:</span>
           <div className="flex items-center gap-1">
-            <p className={`font-medium ${isVencida ? 'text-danger-600' : isPorVencer ? 'text-warning-600' : 'text-gray-900 dark:text-white'}`}>
+            <p
+              className={`font-medium ${isVencida ? 'text-danger-600' : isPorVencer ? 'text-warning-600' : 'text-gray-900 dark:text-white'}`}
+            >
               {format(new Date(cotizacion.fecha_vencimiento), 'PP', { locale: es })}
             </p>
             {isVencida && <AlertCircle className="w-4 h-4 text-danger-600" />}
@@ -99,13 +102,13 @@ function CotizacionCard({
         </div>
         <div>
           <span className="text-gray-500 dark:text-gray-400">Vendedor:</span>
-          <p className="font-medium text-gray-900 dark:text-white">
-            {cotizacion.vendedor_nombre}
-          </p>
+          <p className="font-medium text-gray-900 dark:text-white">{cotizacion.vendedor_nombre}</p>
         </div>
         <div>
           <span className="text-gray-500 dark:text-gray-400">Vigencia:</span>
-          <p className={`font-medium ${isVencida ? 'text-danger-600' : isPorVencer ? 'text-warning-600' : 'text-gray-900 dark:text-white'}`}>
+          <p
+            className={`font-medium ${isVencida ? 'text-danger-600' : isPorVencer ? 'text-warning-600' : 'text-gray-900 dark:text-white'}`}
+          >
             {isVencida ? 'Vencida' : `${cotizacion.dias_vigencia} días`}
           </p>
         </div>
@@ -167,7 +170,7 @@ function CotizacionCard({
 }
 
 export default function CotizacionesPage() {
-  const [filters, setFilters] = useState<any>({});
+  const [filters, _setFilters] = useState<any>({});
 
   const { data: cotizacionesData, isLoading } = useCotizaciones(filters);
 
@@ -184,27 +187,29 @@ export default function CotizacionesPage() {
   // Calcular estadísticas
   const stats = {
     total: cotizaciones.length,
-    enviadas: cotizaciones.filter(c => c.estado === 'ENVIADA').length,
-    aprobadas: cotizaciones.filter(c => c.estado === 'APROBADA').length,
-    vencidas: cotizaciones.filter(c => c.estado === 'VENCIDA' || c.dias_vigencia < 0).length,
+    enviadas: cotizaciones.filter((c) => c.estado === 'ENVIADA').length,
+    aprobadas: cotizaciones.filter((c) => c.estado === 'APROBADA').length,
+    vencidas: cotizaciones.filter((c) => c.estado === 'VENCIDA' || c.dias_vigencia < 0).length,
     valorTotal: cotizaciones.reduce((sum, c) => sum + c.total, 0),
-    valorAprobado: cotizaciones.filter(c => c.estado === 'APROBADA').reduce((sum, c) => sum + c.total, 0),
+    valorAprobado: cotizaciones
+      .filter((c) => c.estado === 'APROBADA')
+      .reduce((sum, c) => sum + c.total, 0),
   };
 
-  const handleAprobar = (id: number) => {
-    console.log('Aprobar cotización', id);
+  const handleAprobar = (_id: number) => {
+    // TODO: Implementar aprobación
   };
 
-  const handleRechazar = (id: number) => {
-    console.log('Rechazar cotización', id);
+  const handleRechazar = (_id: number) => {
+    // TODO: Implementar rechazo
   };
 
-  const handleClonar = (id: number) => {
-    console.log('Clonar cotización', id);
+  const handleClonar = (_id: number) => {
+    // TODO: Implementar clonación
   };
 
-  const handleConvertir = (id: number) => {
-    console.log('Convertir a pedido', id);
+  const handleConvertir = (_id: number) => {
+    // TODO: Implementar conversión a pedido
   };
 
   return (
@@ -220,9 +225,7 @@ export default function CotizacionesPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Total Cotizaciones</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                {stats.total}
-              </p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stats.total}</p>
             </div>
             <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
               <FileText className="w-6 h-6 text-primary-600 dark:text-primary-400" />
@@ -315,7 +318,7 @@ export default function CotizacionesPage() {
           description="Comience creando cotizaciones para sus clientes"
           action={{
             label: 'Nueva Cotización',
-            onClick: () => console.log('Nueva Cotización'),
+            onClick: () => {},
             icon: <Plus className="w-4 h-4" />,
           }}
         />
@@ -325,7 +328,7 @@ export default function CotizacionesPage() {
             <CotizacionCard
               key={cotizacion.id}
               cotizacion={cotizacion}
-              onView={(id) => console.log('Ver', id)}
+              onView={() => {}}
               onAprobar={handleAprobar}
               onRechazar={handleRechazar}
               onClonar={handleClonar}

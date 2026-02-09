@@ -118,15 +118,14 @@ const modulesApi = {
  * const { data: tree, isLoading } = useModulesTree();
  *
  * tree?.modules.forEach(module => {
- *   console.log(module.name, module.is_enabled);
+ *   // module.name, module.is_enabled
  * });
  * ```
  */
 export function useModulesTree() {
   // Obtener el tenant actual del localStorage para habilitar/deshabilitar la query
-  const currentTenantId = typeof window !== 'undefined'
-    ? localStorage.getItem('current_tenant_id')
-    : null;
+  const currentTenantId =
+    typeof window !== 'undefined' ? localStorage.getItem('current_tenant_id') : null;
 
   return useQuery({
     queryKey: modulesKeys.tree(),
@@ -158,9 +157,8 @@ export function useModulesTree() {
  */
 export function useSidebarModules() {
   // Obtener el tenant actual del localStorage para habilitar/deshabilitar la query
-  const currentTenantId = typeof window !== 'undefined'
-    ? localStorage.getItem('current_tenant_id')
-    : null;
+  const currentTenantId =
+    typeof window !== 'undefined' ? localStorage.getItem('current_tenant_id') : null;
 
   return useQuery({
     queryKey: modulesKeys.sidebar(),
@@ -523,7 +521,7 @@ export function useModulesByCategory() {
  * ```tsx
  * const { stats } = useModulesStats();
  *
- * console.log(`${stats.enabledModules}/${stats.totalModules} módulos habilitados`);
+ * // stats.enabledModules / stats.totalModules = módulos habilitados
  * ```
  */
 export function useModulesStats() {

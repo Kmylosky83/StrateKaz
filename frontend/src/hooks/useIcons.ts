@@ -10,7 +10,7 @@
  * const { icons, categories, getIconsByCategory, searchIcons, isLoading } = useIcons();
  *
  * // Obtener todos los iconos
- * icons.forEach(icon => console.log(icon.name, icon.label));
+ * icons.forEach(icon => renderIcon(icon.name, icon.label));
  *
  * // Filtrar por categoria
  * const valoresIcons = getIconsByCategory('VALORES');
@@ -97,14 +97,14 @@ const fetchCategories = async (): Promise<IconCategory[]> => {
 
 const fetchIconsByCategory = async (category: string): Promise<IconRegistryItem[]> => {
   const response = await axiosInstance.get('/configuracion/icons/by_category/', {
-    params: { category }
+    params: { category },
   });
   return response.data;
 };
 
 const searchIconsApi = async (query: string): Promise<IconRegistryItem[]> => {
   const response = await axiosInstance.get('/configuracion/icons/search/', {
-    params: { q: query }
+    params: { q: query },
   });
   return response.data;
 };
@@ -129,10 +129,7 @@ export function useIcons(options: UseIconsOptions = {}): UseIconsReturn {
   });
 
   // Query para categorias
-  const {
-    data: categories = [],
-    isLoading: isCategoriesLoading,
-  } = useQuery({
+  const { data: categories = [], isLoading: isCategoriesLoading } = useQuery({
     queryKey: ['icon-categories'],
     queryFn: fetchCategories,
     enabled,
@@ -142,22 +139,23 @@ export function useIcons(options: UseIconsOptions = {}): UseIconsReturn {
 
   // Filtrar iconos por categoria (desde cache local)
   const getIconsByCategory = (cat: string): IconRegistryItem[] => {
-    return icons.filter(icon => icon.category === cat);
+    return icons.filter((icon) => icon.category === cat);
   };
 
   // Buscar iconos (desde cache local)
   const searchIcons = (query: string): IconRegistryItem[] => {
     const q = query.toLowerCase();
-    return icons.filter(icon =>
-      icon.name.toLowerCase().includes(q) ||
-      icon.label.toLowerCase().includes(q) ||
-      (icon.keywords && icon.keywords.toLowerCase().includes(q))
+    return icons.filter(
+      (icon) =>
+        icon.name.toLowerCase().includes(q) ||
+        icon.label.toLowerCase().includes(q) ||
+        (icon.keywords && icon.keywords.toLowerCase().includes(q))
     );
   };
 
   // Obtener un icono por nombre
   const getIconByName = (name: string): IconRegistryItem | undefined => {
-    return icons.find(icon => icon.name === name);
+    return icons.find((icon) => icon.name === name);
   };
 
   return {

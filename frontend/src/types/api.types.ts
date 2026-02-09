@@ -19,8 +19,8 @@
  * }
  *
  * const response: PaginatedResponse<User> = await api.get('/users/');
- * console.log(response.count); // Total de usuarios
- * console.log(response.results); // Array de usuarios de la página actual
+ * // response.count → Total de usuarios
+ * // response.results → Array de usuarios de la página actual
  * ```
  */
 export interface PaginatedResponse<T> {
@@ -46,7 +46,7 @@ export interface PaginatedResponse<T> {
  * ```typescript
  * const response: ApiResponse<User> = await api.post('/users/', userData);
  * if (response.errors) {
- *   console.error('Errores de validación:', response.errors);
+ *   // Errores de validación: response.errors
  * }
  * ```
  */
@@ -98,7 +98,7 @@ export interface FilterParams {
  * ```typescript
  * catch (error) {
  *   const apiError = error as ApiError;
- *   console.error(apiError.detail);
+ *   // apiError.detail contiene el mensaje de error
  * }
  * ```
  */

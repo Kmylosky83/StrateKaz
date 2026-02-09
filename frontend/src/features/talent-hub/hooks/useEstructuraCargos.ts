@@ -69,7 +69,15 @@ export interface MatrizCompetencia {
 export interface RequisitoEspecial {
   id: string;
   profesiograma: string;
-  tipo_requisito: 'CERTIFICACION' | 'LICENCIA' | 'EXAMEN_MEDICO' | 'APTITUD_FISICA' | 'DISPONIBILIDAD' | 'SEGURIDAD' | 'TECNOLOGIA' | 'OTRO';
+  tipo_requisito:
+    | 'CERTIFICACION'
+    | 'LICENCIA'
+    | 'EXAMEN_MEDICO'
+    | 'APTITUD_FISICA'
+    | 'DISPONIBILIDAD'
+    | 'SEGURIDAD'
+    | 'TECNOLOGIA'
+    | 'OTRO';
   nombre_requisito: string;
   descripcion: string;
   criticidad: 'OBLIGATORIO' | 'REQUERIDO' | 'DESEABLE' | 'OPCIONAL';
@@ -332,7 +340,8 @@ export function useCreateProfesiograma() {
       toast.success('Profesiograma creado exitosamente');
     },
     onError: (error: any) => {
-      const message = error.response?.data?.detail ||
+      const message =
+        error.response?.data?.detail ||
         error.response?.data?.codigo?.[0] ||
         'Error al crear el profesiograma';
       toast.error(message);
@@ -357,7 +366,10 @@ export function useUpdateProfesiograma() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<ProfesiogramaFormData> }) => {
-      const response = await api.patch(`/api/talent-hub/estructura-cargos/profesiogramas/${id}/`, data);
+      const response = await api.patch(
+        `/api/talent-hub/estructura-cargos/profesiogramas/${id}/`,
+        data
+      );
       return response.data;
     },
     onSuccess: (_, variables) => {
@@ -386,7 +398,9 @@ export function useCompetencias(profesiogramaId: string) {
   return useQuery({
     queryKey: profesiogramaKeys.competencias(profesiogramaId),
     queryFn: async () => {
-      const response = await api.get(`/api/talent-hub/estructura-cargos/profesiogramas/${profesiogramaId}/competencias/`);
+      const response = await api.get(
+        `/api/talent-hub/estructura-cargos/profesiogramas/${profesiogramaId}/competencias/`
+      );
       return response.data;
     },
     enabled: !!profesiogramaId,
@@ -408,7 +422,9 @@ export function useRequisitos(profesiogramaId: string) {
   return useQuery({
     queryKey: profesiogramaKeys.requisitos(profesiogramaId),
     queryFn: async () => {
-      const response = await api.get(`/api/talent-hub/estructura-cargos/profesiogramas/${profesiogramaId}/requisitos-especiales/`);
+      const response = await api.get(
+        `/api/talent-hub/estructura-cargos/profesiogramas/${profesiogramaId}/requisitos-especiales/`
+      );
       return response.data;
     },
     enabled: !!profesiogramaId,
@@ -485,14 +501,16 @@ export function useVacantesAbiertas() {
  * ```tsx
  * const { data: stats } = useVacanteEstadisticas();
  *
- * console.log(stats.vacantes_abiertas, stats.posiciones_pendientes);
+ * // stats.vacantes_abiertas, stats.posiciones_pendientes
  * ```
  */
 export function useVacanteEstadisticas() {
   return useQuery({
     queryKey: vacanteKeys.estadisticas(),
     queryFn: async () => {
-      const response = await api.get<VacanteEstadisticas>('/api/talent-hub/estructura-cargos/vacantes/estadisticas/');
+      const response = await api.get<VacanteEstadisticas>(
+        '/api/talent-hub/estructura-cargos/vacantes/estadisticas/'
+      );
       return response.data;
     },
     staleTime: 5 * 60 * 1000,
@@ -524,7 +542,8 @@ export function useCreateVacante() {
       toast.success('Vacante creada exitosamente');
     },
     onError: (error: any) => {
-      const message = error.response?.data?.detail ||
+      const message =
+        error.response?.data?.detail ||
         error.response?.data?.codigo?.[0] ||
         'Error al crear la vacante';
       toast.error(message);
@@ -568,7 +587,7 @@ export function useCerrarVacante() {
   return useMutation({
     mutationFn: async ({ id, motivo }: { id: string; motivo?: string }) => {
       const response = await api.post(`/api/talent-hub/estructura-cargos/vacantes/${id}/cerrar/`, {
-        motivo_cierre: motivo
+        motivo_cierre: motivo,
       });
       return response.data;
     },

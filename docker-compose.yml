@@ -132,7 +132,7 @@ services:
     depends_on:
       - backend
       - redis
-    command: celery -A config worker -l info --concurrency=2 -Q celery,tenant_ops
+    command: celery -A config worker -l info --concurrency=2 -Q celery,tenant_ops,emails,reports,files,maintenance,monitoring,scraping,compliance,notifications,workflow
     networks:
       - stratekaz_network
 

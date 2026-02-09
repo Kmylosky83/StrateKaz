@@ -3,7 +3,7 @@
  * Gestión completa de clientes, contactos y scoring
  */
 import { useState } from 'react';
-import { Users, UserPlus, Filter, Download, TrendingUp, Star, DollarSign, AlertTriangle } from 'lucide-react';
+import { Users, UserPlus, Filter, Download, TrendingUp, Star, AlertTriangle } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
@@ -13,7 +13,7 @@ import { ClienteCard } from '../components/ClienteCard';
 import { useClientes, useClienteDashboard } from '../hooks';
 
 export default function ClientesPage() {
-  const [filters, setFilters] = useState<any>({});
+  const [filters, _setFilters] = useState<any>({});
 
   const { data: clientesData, isLoading: isLoadingClientes } = useClientes(filters);
   const { data: dashboard, isLoading: isLoadingDashboard } = useClienteDashboard();
@@ -128,19 +128,14 @@ export default function ClientesPage() {
           description="Comience agregando clientes a su sistema CRM"
           action={{
             label: 'Nuevo Cliente',
-            onClick: () => console.log('Nuevo Cliente'),
+            onClick: () => {},
             icon: <UserPlus className="w-4 h-4" />,
           }}
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {clientes.map((cliente) => (
-            <ClienteCard
-              key={cliente.id}
-              cliente={cliente}
-              onView={(id) => console.log('Ver cliente', id)}
-              onEdit={(id) => console.log('Editar cliente', id)}
-            />
+            <ClienteCard key={cliente.id} cliente={cliente} onView={() => {}} onEdit={() => {}} />
           ))}
         </div>
       )}

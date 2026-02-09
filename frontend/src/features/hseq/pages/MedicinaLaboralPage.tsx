@@ -34,7 +34,6 @@ import { Button } from '@/components/common/Button';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Badge } from '@/components/common/Badge';
 import { Spinner } from '@/components/common/Spinner';
-import { Input } from '@/components/forms/Input';
 import { KpiCard, KpiCardGrid } from '@/components/common';
 import { SectionToolbar } from '@/components/common';
 import { StatusBadge, formatStatusLabel } from '@/components/common/StatusBadge';
@@ -60,7 +59,13 @@ interface ProgressProps {
   variant?: 'default' | 'success' | 'warning' | 'danger';
 }
 
-const Progress = ({ value, max = 100, className, showLabel = false, variant = 'default' }: ProgressProps) => {
+const Progress = ({
+  value,
+  max = 100,
+  className,
+  showLabel = false,
+  variant = 'default',
+}: ProgressProps) => {
   const percentage = Math.min(Math.max((value / max) * 100, 0), 100);
 
   const variantColors = {
@@ -138,9 +143,7 @@ const formatTipoRestriccion = (tipo: string): string => {
   return tipoMap[tipo] || tipo;
 };
 
-const getSeveridadBadge = (
-  severidad: string
-): 'success' | 'warning' | 'danger' | 'gray' => {
+const getSeveridadBadge = (severidad: string): 'success' | 'warning' | 'danger' | 'gray' => {
   const severidadMap: Record<string, 'success' | 'warning' | 'danger' | 'gray'> = {
     LEVE: 'success',
     MODERADA: 'warning',
@@ -181,7 +184,7 @@ const ExamenesMedicosSection = () => {
         description="Comience programando exámenes médicos para sus colaboradores"
         action={{
           label: 'Programar Examen',
-          onClick: () => console.log('Programar examen'),
+          onClick: () => {},
         }}
       />
     );
@@ -239,9 +242,9 @@ const ExamenesMedicosSection = () => {
       {/* Actions */}
       <SectionToolbar
         title="Exámenes Médicos"
-        onFilter={() => console.log('Filtros')}
-        onExport={() => console.log('Exportar')}
-        primaryAction={{ label: 'Programar Examen', onClick: () => console.log('Programar examen') }}
+        onFilter={() => {}}
+        onExport={() => {}}
+        primaryAction={{ label: 'Programar Examen', onClick: () => {} }}
       />
 
       {/* Examenes Table */}
@@ -282,7 +285,9 @@ const ExamenesMedicosSection = () => {
                   <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
                     <div>
                       <p className="font-medium">Colaborador #{examen.colaborador_id}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{examen.tipo_examen_nombre || '-'}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {examen.tipo_examen_nombre || '-'}
+                      </p>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
@@ -292,8 +297,8 @@ const ExamenesMedicosSection = () => {
                     {examen.fecha_realizado
                       ? format(new Date(examen.fecha_realizado), 'dd/MM/yyyy', { locale: es })
                       : examen.fecha_programada
-                      ? format(new Date(examen.fecha_programada), 'dd/MM/yyyy', { locale: es })
-                      : '-'}
+                        ? format(new Date(examen.fecha_programada), 'dd/MM/yyyy', { locale: es })
+                        : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {examen.concepto_aptitud ? (
@@ -348,7 +353,7 @@ const RestriccionesMedicasSection = () => {
         description="Registre las restricciones médicas de los colaboradores"
         action={{
           label: 'Nueva Restricción',
-          onClick: () => console.log('Nueva restricción'),
+          onClick: () => {},
         }}
       />
     );
@@ -356,10 +361,15 @@ const RestriccionesMedicasSection = () => {
 
   const stats = {
     total: restricciones.filter((r) => r.estado === 'ACTIVA').length,
-    temporales: restricciones.filter((r) => r.tipo_restriccion === 'TEMPORAL' && r.estado === 'ACTIVA').length,
-    permanentes: restricciones.filter((r) => r.tipo_restriccion === 'PERMANENTE' && r.estado === 'ACTIVA').length,
+    temporales: restricciones.filter(
+      (r) => r.tipo_restriccion === 'TEMPORAL' && r.estado === 'ACTIVA'
+    ).length,
+    permanentes: restricciones.filter(
+      (r) => r.tipo_restriccion === 'PERMANENTE' && r.estado === 'ACTIVA'
+    ).length,
     porVencer: restricciones.filter((r) => {
-      if (r.tipo_restriccion === 'PERMANENTE' || !r.fecha_fin || r.estado !== 'ACTIVA') return false;
+      if (r.tipo_restriccion === 'PERMANENTE' || !r.fecha_fin || r.estado !== 'ACTIVA')
+        return false;
       const diff = new Date(r.fecha_fin).getTime() - new Date().getTime();
       const days = diff / (1000 * 60 * 60 * 24);
       return days <= 30 && days >= 0;
@@ -369,12 +379,15 @@ const RestriccionesMedicasSection = () => {
   // Agrupar restricciones por categoría
   const restriccionesPorCategoria = restricciones
     .filter((r) => r.estado === 'ACTIVA')
-    .reduce((acc, r) => {
-      const cat = r.categoria_display || r.categoria || 'Otros';
-      if (!acc[cat]) acc[cat] = 0;
-      acc[cat]++;
-      return acc;
-    }, {} as Record<string, number>);
+    .reduce(
+      (acc, r) => {
+        const cat = r.categoria_display || r.categoria || 'Otros';
+        if (!acc[cat]) acc[cat] = 0;
+        acc[cat]++;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
   return (
     <div className="space-y-6">
@@ -416,10 +429,15 @@ const RestriccionesMedicasSection = () => {
       {/* Dashboard de restricciones por categoría */}
       {Object.keys(restriccionesPorCategoria).length > 0 && (
         <Card variant="bordered" padding="md">
-          <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Restricciones por Categoría</h4>
+          <h4 className="font-semibold text-gray-900 dark:text-white mb-4">
+            Restricciones por Categoría
+          </h4>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {Object.entries(restriccionesPorCategoria).map(([categoria, count]) => (
-              <div key={categoria} className="text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <div
+                key={categoria}
+                className="text-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+              >
                 <p className="text-sm text-gray-600 dark:text-gray-400">{categoria}</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{count}</p>
               </div>
@@ -431,8 +449,8 @@ const RestriccionesMedicasSection = () => {
       {/* Actions */}
       <SectionToolbar
         title="Restricciones Médicas"
-        onFilter={() => console.log('Filtros')}
-        primaryAction={{ label: 'Nueva Restricción', onClick: () => console.log('Nueva restricción') }}
+        onFilter={() => {}}
+        primaryAction={{ label: 'Nueva Restricción', onClick: () => {} }}
       />
 
       {/* Restricciones Table */}
@@ -479,8 +497,12 @@ const RestriccionesMedicasSection = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={getTipoRestriccionBadge(restriccion.tipo_restriccion)} size="sm">
-                      {restriccion.tipo_restriccion_display || formatTipoRestriccion(restriccion.tipo_restriccion)}
+                    <Badge
+                      variant={getTipoRestriccionBadge(restriccion.tipo_restriccion)}
+                      size="sm"
+                    >
+                      {restriccion.tipo_restriccion_display ||
+                        formatTipoRestriccion(restriccion.tipo_restriccion)}
                     </Badge>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
@@ -491,7 +513,9 @@ const RestriccionesMedicasSection = () => {
                       <span className="text-danger-600">Indefinida</span>
                     ) : restriccion.fecha_fin ? (
                       <div>
-                        <p>{format(new Date(restriccion.fecha_fin), 'dd/MM/yyyy', { locale: es })}</p>
+                        <p>
+                          {format(new Date(restriccion.fecha_fin), 'dd/MM/yyyy', { locale: es })}
+                        </p>
                       </div>
                     ) : (
                       '-'
@@ -545,7 +569,7 @@ const VigilanciaEpidemiologicaSection = () => {
         description="Configure programas de vigilancia epidemiológica ocupacional"
         action={{
           label: 'Nuevo Caso',
-          onClick: () => console.log('Nuevo caso'),
+          onClick: () => {},
         }}
       />
     );
@@ -553,7 +577,8 @@ const VigilanciaEpidemiologicaSection = () => {
 
   const stats = {
     programasActivos: programas?.filter((p) => p.estado === 'ACTIVO').length || 0,
-    casosActivos: casos?.filter((c) => c.estado === 'EN_SEGUIMIENTO' || c.estado === 'ACTIVO').length || 0,
+    casosActivos:
+      casos?.filter((c) => c.estado === 'EN_SEGUIMIENTO' || c.estado === 'ACTIVO').length || 0,
     casosCriticos: casos?.filter((c) => c.severidad === 'CRITICA').length || 0,
     casosControlados: casos?.filter((c) => c.estado === 'CONTROLADO').length || 0,
   };
@@ -604,7 +629,9 @@ const VigilanciaEpidemiologicaSection = () => {
       {/* Programas con casos */}
       {casosPorPrograma && casosPorPrograma.length > 0 && (
         <Card variant="bordered" padding="md">
-          <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Casos por Programa de Vigilancia</h4>
+          <h4 className="font-semibold text-gray-900 dark:text-white mb-4">
+            Casos por Programa de Vigilancia
+          </h4>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {casosPorPrograma.map((programa) => (
               <div
@@ -612,7 +639,9 @@ const VigilanciaEpidemiologicaSection = () => {
                 className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <h5 className="font-medium text-gray-900 dark:text-white text-sm">{programa.nombre}</h5>
+                  <h5 className="font-medium text-gray-900 dark:text-white text-sm">
+                    {programa.nombre}
+                  </h5>
                   <Badge variant={programa.casos_count > 0 ? 'warning' : 'success'} size="sm">
                     {programa.casos_count}
                   </Badge>
@@ -627,11 +656,15 @@ const VigilanciaEpidemiologicaSection = () => {
       {/* Actions */}
       <SectionToolbar
         title="Casos de Vigilancia"
-        onFilter={() => console.log('Filtros')}
+        onFilter={() => {}}
         extraActions={[
-          { label: 'Registrar Seguimiento', onClick: () => console.log('Seguimiento'), icon: <RefreshCw className="w-4 h-4" /> }
+          {
+            label: 'Registrar Seguimiento',
+            onClick: () => {},
+            icon: <RefreshCw className="w-4 h-4" />,
+          },
         ]}
-        primaryAction={{ label: 'Nuevo Caso', onClick: () => console.log('Nuevo caso') }}
+        primaryAction={{ label: 'Nuevo Caso', onClick: () => {} }}
       />
 
       {/* Casos Table */}
@@ -690,7 +723,9 @@ const VigilanciaEpidemiologicaSection = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
                     {caso.fecha_ultimo_seguimiento
-                      ? format(new Date(caso.fecha_ultimo_seguimiento), 'dd/MM/yyyy', { locale: es })
+                      ? format(new Date(caso.fecha_ultimo_seguimiento), 'dd/MM/yyyy', {
+                          locale: es,
+                        })
                       : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -738,7 +773,7 @@ const DiagnosticosOcupacionalesSection = () => {
         description="Registre los diagnósticos ocupacionales y comunes de sus colaboradores"
         action={{
           label: 'Nuevo Diagnóstico',
-          onClick: () => console.log('Nuevo diagnóstico'),
+          onClick: () => {},
         }}
       />
     );
@@ -804,7 +839,7 @@ const DiagnosticosOcupacionalesSection = () => {
           searchValue={searchCIE10}
           searchPlaceholder="Buscar por código CIE-10 o nombre..."
           onSearchChange={setSearchCIE10}
-          primaryAction={{ label: 'Nuevo Diagnóstico', onClick: () => console.log('Nuevo diagnóstico') }}
+          primaryAction={{ label: 'Nuevo Diagnóstico', onClick: () => {} }}
         />
       </Card>
 
@@ -844,12 +879,17 @@ const DiagnosticosOcupacionalesSection = () => {
                     <div className="max-w-md">
                       <p className="font-medium">{diagnostico.nombre}</p>
                       {diagnostico.descripcion && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{diagnostico.descripcion}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                          {diagnostico.descripcion}
+                        </p>
                       )}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={diagnostico.origen === 'OCUPACIONAL' ? 'danger' : 'primary'} size="sm">
+                    <Badge
+                      variant={diagnostico.origen === 'OCUPACIONAL' ? 'danger' : 'primary'}
+                      size="sm"
+                    >
                       {diagnostico.origen_display || formatStatusLabel(diagnostico.origen)}
                     </Badge>
                   </td>
@@ -957,13 +997,15 @@ const EstadisticasReportesSection = () => {
         <SectionToolbar
           title="Estadísticas de Medicina Laboral"
           extraActions={[
-            { label: 'Generar Estadística', onClick: () => console.log('Generar'), variant: 'outline' },
-            { label: 'Exportar Reporte', onClick: () => console.log('Exportar'), variant: 'primary' }
+            { label: 'Generar Estadística', onClick: () => {}, variant: 'outline' },
+            { label: 'Exportar Reporte', onClick: () => {}, variant: 'primary' },
           ]}
         />
         <div className="flex items-center gap-4 mt-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Año</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Año
+            </label>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
@@ -977,7 +1019,9 @@ const EstadisticasReportesSection = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mes</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Mes
+            </label>
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
@@ -1004,8 +1048,8 @@ const EstadisticasReportesSection = () => {
                 Number(porcentajeAptitud) >= 90
                   ? 'text-success-600 dark:text-success-400'
                   : Number(porcentajeAptitud) >= 70
-                  ? 'text-warning-600 dark:text-warning-400'
-                  : 'text-danger-600 dark:text-danger-400'
+                    ? 'text-warning-600 dark:text-warning-400'
+                    : 'text-danger-600 dark:text-danger-400'
               )}
             >
               {porcentajeAptitud}%
@@ -1020,10 +1064,13 @@ const EstadisticasReportesSection = () => {
         <Card variant="bordered" padding="md">
           <div className="text-center">
             <p className="text-sm text-gray-600 dark:text-gray-400">Cobertura Exámenes</p>
-            <p className="text-3xl font-bold text-primary-600 dark:text-primary-400 mt-2">{coberturaExamenes}%</p>
+            <p className="text-3xl font-bold text-primary-600 dark:text-primary-400 mt-2">
+              {coberturaExamenes}%
+            </p>
             <Progress value={coberturaExamenes} className="mt-3" />
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-              {cobertura_examenes?.realizados || 0} de {cobertura_examenes?.total_colaboradores || 0} colaboradores
+              {cobertura_examenes?.realizados || 0} de{' '}
+              {cobertura_examenes?.total_colaboradores || 0} colaboradores
             </p>
           </div>
         </Card>
@@ -1044,7 +1091,9 @@ const EstadisticasReportesSection = () => {
         <Card variant="bordered" padding="md">
           <div className="text-center">
             <p className="text-sm text-gray-600 dark:text-gray-400">Casos PVE</p>
-            <p className="text-3xl font-bold text-danger-600 dark:text-danger-400 mt-2">{casos_vigilancia}</p>
+            <p className="text-3xl font-bold text-danger-600 dark:text-danger-400 mt-2">
+              {casos_vigilancia}
+            </p>
             <div className="mt-3 flex items-center justify-center gap-2">
               <Activity className="w-5 h-5 text-danger-600" />
             </div>
@@ -1057,18 +1106,24 @@ const EstadisticasReportesSection = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Tendencia de exámenes (placeholder) */}
         <Card variant="bordered" padding="md">
-          <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Tendencia de Exámenes Médicos</h4>
+          <h4 className="font-semibold text-gray-900 dark:text-white mb-4">
+            Tendencia de Exámenes Médicos
+          </h4>
           <div className="h-64 flex items-center justify-center bg-gray-50 dark:bg-gray-700/50 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
             <div className="text-center">
               <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-              <p className="text-sm text-gray-500 dark:text-gray-400">Gráfico de tendencia mensual</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Gráfico de tendencia mensual
+              </p>
             </div>
           </div>
         </Card>
 
         {/* Distribución por concepto */}
         <Card variant="bordered" padding="md">
-          <h4 className="font-semibold text-gray-900 dark:text-white mb-4">Distribución por Concepto de Aptitud</h4>
+          <h4 className="font-semibold text-gray-900 dark:text-white mb-4">
+            Distribución por Concepto de Aptitud
+          </h4>
           <div className="space-y-3">
             <div className="flex items-center justify-between p-3 bg-success-50 dark:bg-success-900/20 rounded-lg">
               <div className="flex items-center gap-3">
@@ -1076,10 +1131,15 @@ const EstadisticasReportesSection = () => {
                 <span className="text-sm font-medium text-gray-900 dark:text-white">Apto</span>
               </div>
               <div className="text-right">
-                <p className="text-lg font-bold text-gray-900 dark:text-white">{conceptos_aptitud.APTO || 0}</p>
+                <p className="text-lg font-bold text-gray-900 dark:text-white">
+                  {conceptos_aptitud.APTO || 0}
+                </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   {examenes_resumen.total_examenes > 0
-                    ? (((conceptos_aptitud.APTO || 0) / examenes_resumen.total_examenes) * 100).toFixed(1)
+                    ? (
+                        ((conceptos_aptitud.APTO || 0) / examenes_resumen.total_examenes) *
+                        100
+                      ).toFixed(1)
                     : 0}
                   %
                 </p>
@@ -1089,7 +1149,9 @@ const EstadisticasReportesSection = () => {
             <div className="flex items-center justify-between p-3 bg-warning-50 dark:bg-warning-900/20 rounded-lg">
               <div className="flex items-center gap-3">
                 <AlertTriangle className="w-5 h-5 text-warning-600" />
-                <span className="text-sm font-medium text-gray-900 dark:text-white">Apto con Restricciones</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  Apto con Restricciones
+                </span>
               </div>
               <div className="text-right">
                 <p className="text-lg font-bold text-gray-900 dark:text-white">
@@ -1098,7 +1160,8 @@ const EstadisticasReportesSection = () => {
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   {examenes_resumen.total_examenes > 0
                     ? (
-                        ((conceptos_aptitud.APTO_CON_RESTRICCIONES || 0) / examenes_resumen.total_examenes) *
+                        ((conceptos_aptitud.APTO_CON_RESTRICCIONES || 0) /
+                          examenes_resumen.total_examenes) *
                         100
                       ).toFixed(1)
                     : 0}
@@ -1113,10 +1176,15 @@ const EstadisticasReportesSection = () => {
                 <span className="text-sm font-medium text-gray-900 dark:text-white">No Apto</span>
               </div>
               <div className="text-right">
-                <p className="text-lg font-bold text-gray-900 dark:text-white">{conceptos_aptitud.NO_APTO || 0}</p>
+                <p className="text-lg font-bold text-gray-900 dark:text-white">
+                  {conceptos_aptitud.NO_APTO || 0}
+                </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   {examenes_resumen.total_examenes > 0
-                    ? (((conceptos_aptitud.NO_APTO || 0) / examenes_resumen.total_examenes) * 100).toFixed(1)
+                    ? (
+                        ((conceptos_aptitud.NO_APTO || 0) / examenes_resumen.total_examenes) *
+                        100
+                      ).toFixed(1)
                     : 0}
                   %
                 </p>
@@ -1156,11 +1224,15 @@ const EstadisticasReportesSection = () => {
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {top_diagnosticos.slice(0, 10).map((diag, index) => (
                   <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                    <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{index + 1}</td>
+                    <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                      {index + 1}
+                    </td>
                     <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
                       {diag.codigo}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">{diag.nombre}</td>
+                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                      {diag.nombre}
+                    </td>
                     <td className="px-4 py-3 text-center text-sm font-bold text-gray-900 dark:text-white">
                       {diag.cantidad}
                     </td>

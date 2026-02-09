@@ -11,7 +11,7 @@ import {
   Filter,
   Download,
   Plus,
-  ChevronRight
+  ChevronRight,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
 import { Card } from '@/components/common/Card';
@@ -22,14 +22,35 @@ import { Badge } from '@/components/common/Badge';
 import { usePipelineKanban, usePipelineDashboard } from '../hooks';
 import type { OportunidadList, EtapaVenta } from '../types';
 
-const ETAPAS_CONFIG: Record<EtapaVenta, { nombre: string; color: string }> = {
-  PROSPECTO: { nombre: 'Prospecto', color: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200' },
-  CONTACTADO: { nombre: 'Contactado', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' },
-  CALIFICADO: { nombre: 'Calificado', color: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200' },
-  PROPUESTA: { nombre: 'Propuesta', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' },
-  NEGOCIACION: { nombre: 'Negociación', color: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' },
-  GANADA: { nombre: 'Ganada', color: 'bg-success-100 text-success-800 dark:bg-success-900 dark:text-success-200' },
-  PERDIDA: { nombre: 'Perdida', color: 'bg-danger-100 text-danger-800 dark:bg-danger-900 dark:text-danger-200' },
+const _ETAPAS_CONFIG: Record<EtapaVenta, { nombre: string; color: string }> = {
+  PROSPECTO: {
+    nombre: 'Prospecto',
+    color: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200',
+  },
+  CONTACTADO: {
+    nombre: 'Contactado',
+    color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+  },
+  CALIFICADO: {
+    nombre: 'Calificado',
+    color: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200',
+  },
+  PROPUESTA: {
+    nombre: 'Propuesta',
+    color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+  },
+  NEGOCIACION: {
+    nombre: 'Negociación',
+    color: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
+  },
+  GANADA: {
+    nombre: 'Ganada',
+    color: 'bg-success-100 text-success-800 dark:bg-success-900 dark:text-success-200',
+  },
+  PERDIDA: {
+    nombre: 'Perdida',
+    color: 'bg-danger-100 text-danger-800 dark:bg-danger-900 dark:text-danger-200',
+  },
 };
 
 const PRIORIDAD_CONFIG = {
@@ -57,25 +78,18 @@ function OportunidadCard({ oportunidad, onClick }: OportunidadCardProps) {
           <h4 className="font-medium text-sm text-gray-900 dark:text-white line-clamp-2">
             {oportunidad.titulo}
           </h4>
-          <Badge
-            variant={PRIORIDAD_CONFIG[oportunidad.prioridad].variant}
-            size="xs"
-          >
+          <Badge variant={PRIORIDAD_CONFIG[oportunidad.prioridad].variant} size="xs">
             {PRIORIDAD_CONFIG[oportunidad.prioridad].label}
           </Badge>
         </div>
 
-        <div className="text-xs text-gray-600 dark:text-gray-400">
-          {oportunidad.cliente_nombre}
-        </div>
+        <div className="text-xs text-gray-600 dark:text-gray-400">{oportunidad.cliente_nombre}</div>
 
         <div className="flex items-center justify-between text-xs">
           <div className="font-semibold text-primary-600 dark:text-primary-400">
             ${oportunidad.valor_estimado.toLocaleString()}
           </div>
-          <div className="text-gray-500 dark:text-gray-400">
-            {oportunidad.probabilidad_cierre}%
-          </div>
+          <div className="text-gray-500 dark:text-gray-400">{oportunidad.probabilidad_cierre}%</div>
         </div>
 
         <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
@@ -98,7 +112,13 @@ interface KanbanColumnProps {
   onOportunidadClick: (id: number) => void;
 }
 
-function KanbanColumn({ etapa, nombre, oportunidades, valorTotal, onOportunidadClick }: KanbanColumnProps) {
+function KanbanColumn({
+  etapa: _etapa,
+  nombre,
+  oportunidades,
+  valorTotal,
+  onOportunidadClick,
+}: KanbanColumnProps) {
   return (
     <div className="flex-shrink-0 w-80 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
       <div className="mb-4">
@@ -133,7 +153,7 @@ function KanbanColumn({ etapa, nombre, oportunidades, valorTotal, onOportunidadC
 }
 
 export default function PipelinePage() {
-  const [selectedVendedor, setSelectedVendedor] = useState<number | undefined>();
+  const [selectedVendedor, _setSelectedVendedor] = useState<number | undefined>();
 
   const { data: kanbanData, isLoading: isLoadingKanban } = usePipelineKanban(selectedVendedor);
   const { data: dashboard, isLoading: isLoadingDashboard } = usePipelineDashboard(selectedVendedor);
@@ -155,8 +175,8 @@ export default function PipelinePage() {
     tiempo_promedio_cierre_dias: 0,
   };
 
-  const handleOportunidadClick = (id: number) => {
-    console.log('Ver oportunidad', id);
+  const handleOportunidadClick = (_id: number) => {
+    // TODO: Implementar vista de oportunidad
   };
 
   return (
@@ -265,7 +285,7 @@ export default function PipelinePage() {
           description="Comience agregando oportunidades a su pipeline de ventas"
           action={{
             label: 'Nueva Oportunidad',
-            onClick: () => console.log('Nueva Oportunidad'),
+            onClick: () => {},
             icon: <Plus className="w-4 h-4" />,
           }}
         />
@@ -273,7 +293,7 @@ export default function PipelinePage() {
         <div className="overflow-x-auto pb-4">
           <div className="flex gap-4 min-w-min">
             {etapas
-              .filter(e => e.etapa !== 'GANADA' && e.etapa !== 'PERDIDA')
+              .filter((e) => e.etapa !== 'GANADA' && e.etapa !== 'PERDIDA')
               .map((etapa) => (
                 <KanbanColumn
                   key={etapa.etapa}
@@ -291,13 +311,11 @@ export default function PipelinePage() {
       {/* Oportunidades Cerradas */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {etapas
-          .filter(e => e.etapa === 'GANADA' || e.etapa === 'PERDIDA')
+          .filter((e) => e.etapa === 'GANADA' || e.etapa === 'PERDIDA')
           .map((etapa) => (
             <Card key={etapa.etapa} variant="bordered" padding="md">
               <div className="flex items-center justify-between mb-4">
-                <h4 className="font-semibold text-gray-900 dark:text-white">
-                  {etapa.nombre}
-                </h4>
+                <h4 className="font-semibold text-gray-900 dark:text-white">{etapa.nombre}</h4>
                 <div className="flex items-center gap-2">
                   <Badge variant={etapa.etapa === 'GANADA' ? 'success' : 'danger'}>
                     {etapa.oportunidades.length}

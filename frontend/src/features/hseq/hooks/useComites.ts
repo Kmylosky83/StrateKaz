@@ -3,8 +3,19 @@
  * Sistema de gestión integral de comités HSEQ
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import comitesApi from '../api/comitesApi';
+
+/** Extrae el mensaje de error de un AxiosError o Error genérico */
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof AxiosError) {
+    const detail = (error.response?.data as Record<string, unknown> | undefined)?.detail;
+    if (typeof detail === 'string') return detail;
+  }
+  if (error instanceof Error) return error.message;
+  return fallback;
+}
 import type {
   CreateTipoComiteDTO,
   UpdateTipoComiteDTO,
@@ -15,12 +26,8 @@ import type {
   CreateReunionDTO,
   UpdateReunionDTO,
   CreateActaReunionDTO,
-  UpdateActaReunionDTO,
   CreateCompromisoDTO,
-  UpdateCompromisoDTO,
-  CreateSeguimientoCompromisoDTO,
   CreateVotacionDTO,
-  UpdateVotacionDTO,
   CreateVotoMiembroDTO,
   RegistrarAsistenciaDTO,
   AprobarActaDTO,
@@ -43,52 +50,60 @@ export const comitesKeys = {
   // Comités
   comites: () => [...comitesKeys.all, 'comites'] as const,
   comiteById: (id: number) => [...comitesKeys.comites(), id] as const,
-  comitesFiltered: (filters: Record<string, any>) => [...comitesKeys.comites(), 'filtered', filters] as const,
+  comitesFiltered: (filters: Record<string, unknown>) =>
+    [...comitesKeys.comites(), 'filtered', filters] as const,
   comitesVigentes: () => [...comitesKeys.comites(), 'vigentes'] as const,
   comiteEstadisticas: (id: number) => [...comitesKeys.comites(), id, 'estadisticas'] as const,
 
   // Miembros
   miembros: () => [...comitesKeys.all, 'miembros'] as const,
   miembroById: (id: number) => [...comitesKeys.miembros(), id] as const,
-  miembrosFiltered: (filters: Record<string, any>) => [...comitesKeys.miembros(), 'filtered', filters] as const,
+  miembrosFiltered: (filters: Record<string, unknown>) =>
+    [...comitesKeys.miembros(), 'filtered', filters] as const,
 
   // Reuniones
   reuniones: () => [...comitesKeys.all, 'reuniones'] as const,
   reunionById: (id: number) => [...comitesKeys.reuniones(), id] as const,
-  reunionesFiltered: (filters: Record<string, any>) => [...comitesKeys.reuniones(), 'filtered', filters] as const,
+  reunionesFiltered: (filters: Record<string, unknown>) =>
+    [...comitesKeys.reuniones(), 'filtered', filters] as const,
 
   // Actas
   actas: () => [...comitesKeys.all, 'actas'] as const,
   actaById: (id: number) => [...comitesKeys.actas(), id] as const,
-  actasFiltered: (filters: Record<string, any>) => [...comitesKeys.actas(), 'filtered', filters] as const,
+  actasFiltered: (filters: Record<string, unknown>) =>
+    [...comitesKeys.actas(), 'filtered', filters] as const,
 
   // Compromisos
   compromisos: () => [...comitesKeys.all, 'compromisos'] as const,
   compromisoById: (id: number) => [...comitesKeys.compromisos(), id] as const,
-  compromisosFiltered: (filters: Record<string, any>) => [...comitesKeys.compromisos(), 'filtered', filters] as const,
+  compromisosFiltered: (filters: Record<string, unknown>) =>
+    [...comitesKeys.compromisos(), 'filtered', filters] as const,
   compromisosVencidos: () => [...comitesKeys.compromisos(), 'vencidos'] as const,
   compromisosProximosVencer: () => [...comitesKeys.compromisos(), 'proximos-vencer'] as const,
 
   // Seguimientos
   seguimientos: () => [...comitesKeys.all, 'seguimientos'] as const,
   seguimientoById: (id: number) => [...comitesKeys.seguimientos(), id] as const,
-  seguimientosFiltered: (filters: Record<string, any>) => [...comitesKeys.seguimientos(), 'filtered', filters] as const,
+  seguimientosFiltered: (filters: Record<string, unknown>) =>
+    [...comitesKeys.seguimientos(), 'filtered', filters] as const,
 
   // Votaciones
   votaciones: () => [...comitesKeys.all, 'votaciones'] as const,
   votacionById: (id: number) => [...comitesKeys.votaciones(), id] as const,
-  votacionesFiltered: (filters: Record<string, any>) => [...comitesKeys.votaciones(), 'filtered', filters] as const,
+  votacionesFiltered: (filters: Record<string, unknown>) =>
+    [...comitesKeys.votaciones(), 'filtered', filters] as const,
   votacionResultados: (id: number) => [...comitesKeys.votaciones(), id, 'resultados'] as const,
 
   // Votos
   votos: () => [...comitesKeys.all, 'votos'] as const,
   votoById: (id: number) => [...comitesKeys.votos(), id] as const,
-  votosFiltered: (filters: Record<string, any>) => [...comitesKeys.votos(), 'filtered', filters] as const,
+  votosFiltered: (filters: Record<string, unknown>) =>
+    [...comitesKeys.votos(), 'filtered', filters] as const,
 };
 
 // ==================== TIPOS DE COMITÉ ====================
 
-export function useTiposComite(params?: any) {
+export function useTiposComite(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: comitesKeys.tiposComite(),
     queryFn: () => comitesApi.tipoComite.getAll(params),
@@ -111,8 +126,8 @@ export function useCreateTipoComite() {
       queryClient.invalidateQueries({ queryKey: comitesKeys.tiposComite() });
       toast.success('Tipo de comité creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear tipo de comité');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear tipo de comité'));
     },
   });
 }
@@ -128,15 +143,15 @@ export function useUpdateTipoComite() {
       queryClient.invalidateQueries({ queryKey: comitesKeys.tipoComiteById(id) });
       toast.success('Tipo de comité actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar tipo de comité');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar tipo de comité'));
     },
   });
 }
 
 // ==================== COMITÉS ====================
 
-export function useComites(params?: any) {
+export function useComites(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: params ? comitesKeys.comitesFiltered(params) : comitesKeys.comites(),
     queryFn: () => comitesApi.comite.getAll(params),
@@ -175,8 +190,8 @@ export function useCreateComite() {
       queryClient.invalidateQueries({ queryKey: comitesKeys.comites() });
       toast.success('Comité creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear comité');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear comité'));
     },
   });
 }
@@ -185,14 +200,15 @@ export function useUpdateComite() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, datos }: { id: number; datos: UpdateComiteDTO }) => comitesApi.comite.update(id, datos),
+    mutationFn: ({ id, datos }: { id: number; datos: UpdateComiteDTO }) =>
+      comitesApi.comite.update(id, datos),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: comitesKeys.comites() });
       queryClient.invalidateQueries({ queryKey: comitesKeys.comiteById(id) });
       toast.success('Comité actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar comité');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar comité'));
     },
   });
 }
@@ -207,15 +223,15 @@ export function useActivarComite() {
       queryClient.invalidateQueries({ queryKey: comitesKeys.comiteById(id) });
       toast.success('Comité activado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al activar comité');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al activar comité'));
     },
   });
 }
 
 // ==================== MIEMBROS ====================
 
-export function useMiembrosComite(params?: any) {
+export function useMiembrosComite(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: params ? comitesKeys.miembrosFiltered(params) : comitesKeys.miembros(),
     queryFn: () => comitesApi.miembroComite.getAll(params),
@@ -232,8 +248,8 @@ export function useCreateMiembroComite() {
       queryClient.invalidateQueries({ queryKey: comitesKeys.comites() });
       toast.success('Miembro agregado al comité exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al agregar miembro');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al agregar miembro'));
     },
   });
 }
@@ -249,8 +265,8 @@ export function useUpdateMiembroComite() {
       queryClient.invalidateQueries({ queryKey: comitesKeys.miembroById(id) });
       toast.success('Miembro actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar miembro');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar miembro'));
     },
   });
 }
@@ -266,15 +282,15 @@ export function useRetirarMiembroComite() {
       queryClient.invalidateQueries({ queryKey: comitesKeys.comites() });
       toast.success('Miembro retirado del comité');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al retirar miembro');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al retirar miembro'));
     },
   });
 }
 
 // ==================== REUNIONES ====================
 
-export function useReuniones(params?: any) {
+export function useReuniones(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: params ? comitesKeys.reunionesFiltered(params) : comitesKeys.reuniones(),
     queryFn: () => comitesApi.reunion.getAll(params),
@@ -298,8 +314,8 @@ export function useCreateReunion() {
       queryClient.invalidateQueries({ queryKey: comitesKeys.reuniones() });
       toast.success('Reunión creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear reunión');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear reunión'));
     },
   });
 }
@@ -308,14 +324,15 @@ export function useUpdateReunion() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, datos }: { id: number; datos: UpdateReunionDTO }) => comitesApi.reunion.update(id, datos),
+    mutationFn: ({ id, datos }: { id: number; datos: UpdateReunionDTO }) =>
+      comitesApi.reunion.update(id, datos),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: comitesKeys.reuniones() });
       queryClient.invalidateQueries({ queryKey: comitesKeys.reunionById(id) });
       toast.success('Reunión actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar reunión');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar reunión'));
     },
   });
 }
@@ -331,8 +348,8 @@ export function useRegistrarAsistenciaReunion() {
       queryClient.invalidateQueries({ queryKey: comitesKeys.reunionById(id) });
       toast.success('Asistencia registrada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al registrar asistencia');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al registrar asistencia'));
     },
   });
 }
@@ -347,8 +364,8 @@ export function useIniciarReunion() {
       queryClient.invalidateQueries({ queryKey: comitesKeys.reunionById(id) });
       toast.success('Reunión iniciada');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al iniciar reunión');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al iniciar reunión'));
     },
   });
 }
@@ -363,15 +380,15 @@ export function useFinalizarReunion() {
       queryClient.invalidateQueries({ queryKey: comitesKeys.reunionById(id) });
       toast.success('Reunión finalizada');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al finalizar reunión');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al finalizar reunión'));
     },
   });
 }
 
 // ==================== ACTAS ====================
 
-export function useActasReunion(params?: any) {
+export function useActasReunion(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: params ? comitesKeys.actasFiltered(params) : comitesKeys.actas(),
     queryFn: () => comitesApi.actaReunion.getAll(params),
@@ -395,8 +412,8 @@ export function useCreateActaReunion() {
       queryClient.invalidateQueries({ queryKey: comitesKeys.actas() });
       toast.success('Acta creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear acta');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear acta'));
     },
   });
 }
@@ -405,21 +422,22 @@ export function useAprobarActa() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, datos }: { id: number; datos: AprobarActaDTO }) => comitesApi.actaReunion.aprobar(id, datos),
+    mutationFn: ({ id, datos }: { id: number; datos: AprobarActaDTO }) =>
+      comitesApi.actaReunion.aprobar(id, datos),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: comitesKeys.actas() });
       queryClient.invalidateQueries({ queryKey: comitesKeys.actaById(id) });
       toast.success('Acta aprobada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al aprobar acta');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al aprobar acta'));
     },
   });
 }
 
 // ==================== COMPROMISOS ====================
 
-export function useCompromisos(params?: any) {
+export function useCompromisos(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: params ? comitesKeys.compromisosFiltered(params) : comitesKeys.compromisos(),
     queryFn: () => comitesApi.compromiso.getAll(params),
@@ -449,8 +467,8 @@ export function useCreateCompromiso() {
       queryClient.invalidateQueries({ queryKey: comitesKeys.compromisos() });
       toast.success('Compromiso creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear compromiso');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear compromiso'));
     },
   });
 }
@@ -466,8 +484,8 @@ export function useCerrarCompromiso() {
       queryClient.invalidateQueries({ queryKey: comitesKeys.compromisoById(id) });
       toast.success('Compromiso cerrado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al cerrar compromiso');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al cerrar compromiso'));
     },
   });
 }
@@ -483,15 +501,15 @@ export function useActualizarAvanceCompromiso() {
       queryClient.invalidateQueries({ queryKey: comitesKeys.compromisoById(id) });
       toast.success('Avance actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar avance');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar avance'));
     },
   });
 }
 
 // ==================== VOTACIONES ====================
 
-export function useVotaciones(params?: any) {
+export function useVotaciones(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: params ? comitesKeys.votacionesFiltered(params) : comitesKeys.votaciones(),
     queryFn: () => comitesApi.votacion.getAll(params),
@@ -515,8 +533,8 @@ export function useCreateVotacion() {
       queryClient.invalidateQueries({ queryKey: comitesKeys.votaciones() });
       toast.success('Votación creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear votación');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear votación'));
     },
   });
 }
@@ -525,14 +543,15 @@ export function useCerrarVotacion() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, datos }: { id: number; datos: CerrarVotacionDTO }) => comitesApi.votacion.cerrar(id, datos),
+    mutationFn: ({ id, datos }: { id: number; datos: CerrarVotacionDTO }) =>
+      comitesApi.votacion.cerrar(id, datos),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: comitesKeys.votaciones() });
       queryClient.invalidateQueries({ queryKey: comitesKeys.votacionById(id) });
       toast.success('Votación cerrada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al cerrar votación');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al cerrar votación'));
     },
   });
 }
@@ -557,8 +576,8 @@ export function useCreateVotoMiembro() {
       queryClient.invalidateQueries({ queryKey: comitesKeys.votaciones() });
       toast.success('Voto registrado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al registrar voto');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al registrar voto'));
     },
   });
 }

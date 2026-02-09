@@ -3,13 +3,68 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { AxiosError } from 'axios';
 import { clientesApi, contactosApi, segmentosApi, canalesVentaApi } from '../api';
 import { salesCRMKeys } from './queryKeys';
-import type { CreateClienteDTO, UpdateClienteDTO } from '../types';
+import type {
+  CreateClienteDTO,
+  UpdateClienteDTO,
+  ContactoCliente,
+  SegmentoCliente,
+  CanalVenta,
+} from '../types';
+import type { ApiError } from '@/types/api.types';
+
+// ==================== HELPERS ====================
+
+function getApiErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof AxiosError) {
+    return (error.response?.data as ApiError | undefined)?.detail || fallback;
+  }
+  return fallback;
+}
+
+// ==================== PARAM INTERFACES ====================
+
+interface ClientesFilterParams {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  tipo_cliente?: string;
+  estado?: string;
+  segmento?: number;
+  canal_venta?: number;
+  vendedor_asignado?: number;
+  scoring_min?: number;
+  scoring_max?: number;
+}
+
+interface ContactosFilterParams {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  cliente?: number;
+  es_principal?: boolean;
+  activo?: boolean;
+}
+
+interface SegmentosFilterParams {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  activo?: boolean;
+}
+
+interface CanalesVentaFilterParams {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  activo?: boolean;
+}
 
 // ==================== CLIENTES ====================
 
-export function useClientes(params?: any) {
+export function useClientes(params?: ClientesFilterParams) {
   return useQuery({
     queryKey: params ? salesCRMKeys.clientesFiltered(params) : salesCRMKeys.clientes(),
     queryFn: () => clientesApi.getAll(params),
@@ -41,8 +96,8 @@ export function useCreateCliente() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.clienteDashboard() });
       toast.success('Cliente creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear cliente');
+    onError: (error: Error) => {
+      toast.error(getApiErrorMessage(error, 'Error al crear cliente'));
     },
   });
 }
@@ -59,8 +114,8 @@ export function useUpdateCliente() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.clienteDashboard() });
       toast.success('Cliente actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar cliente');
+    onError: (error: Error) => {
+      toast.error(getApiErrorMessage(error, 'Error al actualizar cliente'));
     },
   });
 }
@@ -75,8 +130,8 @@ export function useDeleteCliente() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.clienteDashboard() });
       toast.success('Cliente eliminado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar cliente');
+    onError: (error: Error) => {
+      toast.error(getApiErrorMessage(error, 'Error al eliminar cliente'));
     },
   });
 }
@@ -91,15 +146,15 @@ export function useActualizarScoring() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.clienteById(id) });
       toast.success('Scoring actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar scoring');
+    onError: (error: Error) => {
+      toast.error(getApiErrorMessage(error, 'Error al actualizar scoring'));
     },
   });
 }
 
 // ==================== CONTACTOS ====================
 
-export function useContactos(params?: any) {
+export function useContactos(params?: ContactosFilterParams) {
   return useQuery({
     queryKey: params ? salesCRMKeys.contactosFiltered(params) : salesCRMKeys.contactos(),
     queryFn: () => contactosApi.getAll(params),
@@ -118,13 +173,13 @@ export function useCreateContacto() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (datos: any) => contactosApi.create(datos),
+    mutationFn: (datos: Partial<ContactoCliente>) => contactosApi.create(datos),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.contactos() });
       toast.success('Contacto creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear contacto');
+    onError: (error: Error) => {
+      toast.error(getApiErrorMessage(error, 'Error al crear contacto'));
     },
   });
 }
@@ -133,15 +188,15 @@ export function useUpdateContacto() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, datos }: { id: number; datos: any }) =>
+    mutationFn: ({ id, datos }: { id: number; datos: Partial<ContactoCliente> }) =>
       contactosApi.update(id, datos),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.contactos() });
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.contactoById(id) });
       toast.success('Contacto actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar contacto');
+    onError: (error: Error) => {
+      toast.error(getApiErrorMessage(error, 'Error al actualizar contacto'));
     },
   });
 }
@@ -155,15 +210,15 @@ export function useDeleteContacto() {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.contactos() });
       toast.success('Contacto eliminado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar contacto');
+    onError: (error: Error) => {
+      toast.error(getApiErrorMessage(error, 'Error al eliminar contacto'));
     },
   });
 }
 
 // ==================== SEGMENTOS ====================
 
-export function useSegmentos(params?: any) {
+export function useSegmentos(params?: SegmentosFilterParams) {
   return useQuery({
     queryKey: salesCRMKeys.segmentos(),
     queryFn: () => segmentosApi.getAll(params),
@@ -182,13 +237,13 @@ export function useCreateSegmento() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (datos: any) => segmentosApi.create(datos),
+    mutationFn: (datos: Partial<SegmentoCliente>) => segmentosApi.create(datos),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.segmentos() });
       toast.success('Segmento creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear segmento');
+    onError: (error: Error) => {
+      toast.error(getApiErrorMessage(error, 'Error al crear segmento'));
     },
   });
 }
@@ -197,22 +252,22 @@ export function useUpdateSegmento() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, datos }: { id: number; datos: any }) =>
+    mutationFn: ({ id, datos }: { id: number; datos: Partial<SegmentoCliente> }) =>
       segmentosApi.update(id, datos),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.segmentos() });
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.segmentoById(id) });
       toast.success('Segmento actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar segmento');
+    onError: (error: Error) => {
+      toast.error(getApiErrorMessage(error, 'Error al actualizar segmento'));
     },
   });
 }
 
 // ==================== CANALES DE VENTA ====================
 
-export function useCanalesVenta(params?: any) {
+export function useCanalesVenta(params?: CanalesVentaFilterParams) {
   return useQuery({
     queryKey: salesCRMKeys.canalesVenta(),
     queryFn: () => canalesVentaApi.getAll(params),
@@ -231,13 +286,13 @@ export function useCreateCanalVenta() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (datos: any) => canalesVentaApi.create(datos),
+    mutationFn: (datos: Partial<CanalVenta>) => canalesVentaApi.create(datos),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.canalesVenta() });
       toast.success('Canal de venta creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear canal de venta');
+    onError: (error: Error) => {
+      toast.error(getApiErrorMessage(error, 'Error al crear canal de venta'));
     },
   });
 }
@@ -246,15 +301,15 @@ export function useUpdateCanalVenta() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, datos }: { id: number; datos: any }) =>
+    mutationFn: ({ id, datos }: { id: number; datos: Partial<CanalVenta> }) =>
       canalesVentaApi.update(id, datos),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.canalesVenta() });
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.canalVentaById(id) });
       toast.success('Canal de venta actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar canal de venta');
+    onError: (error: Error) => {
+      toast.error(getApiErrorMessage(error, 'Error al actualizar canal de venta'));
     },
   });
 }

@@ -11,9 +11,8 @@ import {
   CheckCircle,
   XCircle,
   FileText,
-  Clock,
   Truck,
-  Package
+  Package,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -26,7 +25,10 @@ import { Spinner } from '@/components/common/Spinner';
 import { usePedidos } from '../hooks';
 import type { PedidoList, EstadoPedido } from '../types';
 
-const ESTADO_CONFIG: Record<EstadoPedido, { variant: 'default' | 'primary' | 'success' | 'warning' | 'danger'; label: string; icon: any }> = {
+const ESTADO_CONFIG: Record<
+  EstadoPedido,
+  { variant: 'default' | 'primary' | 'success' | 'warning' | 'danger'; label: string; icon: any }
+> = {
   BORRADOR: { variant: 'default', label: 'Borrador', icon: FileText },
   CONFIRMADO: { variant: 'primary', label: 'Confirmado', icon: CheckCircle },
   EN_PREPARACION: { variant: 'warning', label: 'En Preparación', icon: Package },
@@ -55,17 +57,13 @@ function PedidoCard({ pedido, onView, onAprobar, onCancelar, onGenerarFactura }:
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
-            <h3 className="font-semibold text-gray-900 dark:text-white">
-              {pedido.numero_pedido}
-            </h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white">{pedido.numero_pedido}</h3>
             <Badge variant={config.variant} size="sm">
               <Icon className="w-3 h-3 mr-1" />
               {config.label}
             </Badge>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            {pedido.cliente_nombre}
-          </p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">{pedido.cliente_nombre}</p>
         </div>
         <div className="text-right">
           <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">
@@ -91,9 +89,7 @@ function PedidoCard({ pedido, onView, onAprobar, onCancelar, onGenerarFactura }:
         </div>
         <div>
           <span className="text-gray-500 dark:text-gray-400">Vendedor:</span>
-          <p className="font-medium text-gray-900 dark:text-white">
-            {pedido.vendedor_nombre}
-          </p>
+          <p className="font-medium text-gray-900 dark:text-white">{pedido.vendedor_nombre}</p>
         </div>
         <div>
           <span className="text-gray-500 dark:text-gray-400">Factura:</span>
@@ -104,11 +100,7 @@ function PedidoCard({ pedido, onView, onAprobar, onCancelar, onGenerarFactura }:
       </div>
 
       <div className="flex items-center gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onView(pedido.id)}
-        >
+        <Button variant="outline" size="sm" onClick={() => onView(pedido.id)}>
           Ver Detalle
         </Button>
 
@@ -150,7 +142,7 @@ function PedidoCard({ pedido, onView, onAprobar, onCancelar, onGenerarFactura }:
 }
 
 export default function PedidosPage() {
-  const [filters, setFilters] = useState<any>({});
+  const [filters, _setFilters] = useState<any>({});
 
   const { data: pedidosData, isLoading } = usePedidos(filters);
 
@@ -167,24 +159,26 @@ export default function PedidosPage() {
   // Calcular estadísticas
   const stats = {
     total: pedidos.length,
-    confirmados: pedidos.filter(p => p.estado === 'CONFIRMADO').length,
-    enPreparacion: pedidos.filter(p => p.estado === 'EN_PREPARACION').length,
-    enviados: pedidos.filter(p => p.estado === 'ENVIADO').length,
-    entregados: pedidos.filter(p => p.estado === 'ENTREGADO').length,
+    confirmados: pedidos.filter((p) => p.estado === 'CONFIRMADO').length,
+    enPreparacion: pedidos.filter((p) => p.estado === 'EN_PREPARACION').length,
+    enviados: pedidos.filter((p) => p.estado === 'ENVIADO').length,
+    entregados: pedidos.filter((p) => p.estado === 'ENTREGADO').length,
     valorTotal: pedidos.reduce((sum, p) => sum + p.total, 0),
-    valorEntregado: pedidos.filter(p => p.estado === 'ENTREGADO').reduce((sum, p) => sum + p.total, 0),
+    valorEntregado: pedidos
+      .filter((p) => p.estado === 'ENTREGADO')
+      .reduce((sum, p) => sum + p.total, 0),
   };
 
-  const handleAprobar = (id: number) => {
-    console.log('Aprobar pedido', id);
+  const handleAprobar = (_id: number) => {
+    // TODO: Implementar aprobación
   };
 
-  const handleCancelar = (id: number) => {
-    console.log('Cancelar pedido', id);
+  const handleCancelar = (_id: number) => {
+    // TODO: Implementar cancelación
   };
 
-  const handleGenerarFactura = (id: number) => {
-    console.log('Generar factura para pedido', id);
+  const handleGenerarFactura = (_id: number) => {
+    // TODO: Implementar generación de factura
   };
 
   return (
@@ -200,9 +194,7 @@ export default function PedidosPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Total Pedidos</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                {stats.total}
-              </p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stats.total}</p>
             </div>
             <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
               <ShoppingCart className="w-6 h-6 text-primary-600 dark:text-primary-400" />
@@ -295,7 +287,7 @@ export default function PedidosPage() {
           description="Comience creando pedidos para sus clientes"
           action={{
             label: 'Nuevo Pedido',
-            onClick: () => console.log('Nuevo Pedido'),
+            onClick: () => {},
             icon: <Plus className="w-4 h-4" />,
           }}
         />
@@ -305,7 +297,7 @@ export default function PedidosPage() {
             <PedidoCard
               key={pedido.id}
               pedido={pedido}
-              onView={(id) => console.log('Ver', id)}
+              onView={() => {}}
               onAprobar={handleAprobar}
               onCancelar={handleCancelar}
               onGenerarFactura={handleGenerarFactura}

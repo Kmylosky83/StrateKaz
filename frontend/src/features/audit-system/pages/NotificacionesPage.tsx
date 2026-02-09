@@ -14,7 +14,6 @@
 import { useState, useEffect } from 'react';
 import {
   Bell,
-  BellOff,
   Mail,
   MessageSquare,
   Settings,
@@ -26,7 +25,6 @@ import {
   Clock,
   AlertTriangle,
   CheckSquare,
-  Loader2,
   Inbox,
   Eye,
   Trash2,
@@ -55,11 +53,7 @@ import {
 import { useCargos, useUsers } from '@/features/users/hooks/useUsers';
 import { useAreas } from '@/features/gestion-estrategica/hooks/useAreas';
 import { TipoNotificacionModal } from '../components';
-import type {
-  Notificacion,
-  TipoNotificacion,
-  PreferenciaNotificacion,
-} from '../types/notificaciones.types';
+import type { Notificacion, TipoNotificacion } from '../types/notificaciones.types';
 
 // ==================== UTILITY FUNCTIONS ====================
 
@@ -125,7 +119,10 @@ function BandejaTab() {
         <Card>
           <div className="p-6 space-y-4">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse-subtle" />
+              <div
+                key={i}
+                className="h-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse-subtle"
+              />
             ))}
           </div>
         </Card>
@@ -402,7 +399,10 @@ function TiposTab() {
         <Card>
           <div className="p-6 space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse-subtle" />
+              <div
+                key={i}
+                className="h-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse-subtle"
+              />
             ))}
           </div>
         </Card>
@@ -736,7 +736,10 @@ function PreferenciasTab() {
         <Card>
           <div className="p-6 space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse-subtle" />
+              <div
+                key={i}
+                className="h-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse-subtle"
+              />
             ))}
           </div>
         </Card>
@@ -748,7 +751,7 @@ function PreferenciasTab() {
     return <Alert variant="error" message="Error al cargar las preferencias." />;
   }
 
-  const prefList = preferencias || [];
+  const _prefList = preferencias || [];
 
   // Canales disponibles para configurar
   const canales = [
@@ -961,9 +964,6 @@ function MasivasTab() {
   // Obtener tipos de notificación para el select
   const { data: tiposData, isLoading: tiposLoading } = useTiposNotificacion();
   const tipos = tiposData || [];
-
-  // Log para debugging
-  console.log('Tipos de notificación:', tipos);
 
   // Estado del formulario
   const [formData, setFormData] = useState({

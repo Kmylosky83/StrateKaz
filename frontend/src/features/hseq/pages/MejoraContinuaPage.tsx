@@ -37,7 +37,6 @@ import {
 import { formatStatusLabel } from '@/components/common/StatusBadge';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { cn } from '@/utils/cn';
 
 import {
   useProgramasAuditoria,
@@ -66,10 +65,18 @@ import type {
 
 const getEstadoBadgeColor = (estado: string): 'default' | 'success' | 'warning' | 'danger' => {
   const estadoUpper = estado.toUpperCase();
-  if (estadoUpper.includes('COMPLETADO') || estadoUpper.includes('CERRAD') || estadoUpper.includes('APROBADO')) {
+  if (
+    estadoUpper.includes('COMPLETADO') ||
+    estadoUpper.includes('CERRAD') ||
+    estadoUpper.includes('APROBADO')
+  ) {
     return 'success';
   }
-  if (estadoUpper.includes('EJECUCION') || estadoUpper.includes('PROCESO') || estadoUpper.includes('CURSO')) {
+  if (
+    estadoUpper.includes('EJECUCION') ||
+    estadoUpper.includes('PROCESO') ||
+    estadoUpper.includes('CURSO')
+  ) {
     return 'warning';
   }
   if (estadoUpper.includes('CANCELAD')) {
@@ -154,7 +161,6 @@ const ProgramasAuditoriaSection = ({ onOpenModal }: ProgramasAuditoriaProps) => 
       {/* Actions */}
       <SectionToolbar
         title="Programas de Auditoría"
-        onFilter={() => console.log('Filtros')}
         primaryAction={{ label: 'Nuevo Programa', onClick: () => onOpenModal() }}
       />
 
@@ -206,12 +212,17 @@ const ProgramasAuditoriaSection = ({ onOpenModal }: ProgramasAuditoriaProps) => 
                     {programa.año}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <StatusBadge status={programa.estado} variant={getEstadoBadgeColor(programa.estado)} />
+                    <StatusBadge
+                      status={programa.estado}
+                      variant={getEstadoBadgeColor(programa.estado)}
+                    />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
                       <Progress value={programa.porcentaje_avance ?? 0} className="w-24" />
-                      <span className="text-xs text-gray-500">{programa.porcentaje_avance ?? 0}%</span>
+                      <span className="text-xs text-gray-500">
+                        {programa.porcentaje_avance ?? 0}%
+                      </span>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
@@ -331,7 +342,6 @@ const AuditoriasSection = ({ onOpenModal }: AuditoriasProps) => {
       {/* Actions */}
       <SectionToolbar
         title="Auditorías Registradas"
-        onFilter={() => console.log('Filtros')}
         primaryAction={{ label: 'Nueva Auditoría', onClick: () => onOpenModal() }}
       />
 
@@ -376,15 +386,22 @@ const AuditoriasSection = ({ onOpenModal }: AuditoriasProps) => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                     {auditoria.codigo}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{auditoria.titulo}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                    {auditoria.titulo}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant="default">{auditoria.tipo_display ?? formatStatusLabel(auditoria.tipo)}</Badge>
+                    <Badge variant="default">
+                      {auditoria.tipo_display ?? formatStatusLabel(auditoria.tipo)}
+                    </Badge>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                     {auditoria.norma_principal_display ?? auditoria.norma_principal}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <StatusBadge status={auditoria.estado} variant={getEstadoBadgeColor(auditoria.estado)} />
+                    <StatusBadge
+                      status={auditoria.estado}
+                      variant={getEstadoBadgeColor(auditoria.estado)}
+                    />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
@@ -407,7 +424,9 @@ const AuditoriasSection = ({ onOpenModal }: AuditoriasProps) => {
                     {auditoria.auditor_lider_nombre ?? 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                    {format(new Date(auditoria.fecha_planificada_inicio), 'dd/MM/yyyy', { locale: es })}
+                    {format(new Date(auditoria.fecha_planificada_inicio), 'dd/MM/yyyy', {
+                      locale: es,
+                    })}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                     <div className="flex items-center justify-end gap-2">
@@ -528,7 +547,6 @@ const HallazgosSection = ({ onOpenModal }: HallazgosProps) => {
       {/* Actions */}
       <SectionToolbar
         title="Hallazgos de Auditoría"
-        onFilter={() => console.log('Filtros')}
         primaryAction={{ label: 'Nuevo Hallazgo', onClick: () => onOpenModal() }}
       />
 
@@ -573,16 +591,23 @@ const HallazgosSection = ({ onOpenModal }: HallazgosProps) => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                     {hallazgo.codigo}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{hallazgo.titulo}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                    {hallazgo.titulo}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Badge variant={getTipoBadgeVariant(hallazgo.tipo)}>
                       {hallazgo.tipo_display ?? formatStatusLabel(hallazgo.tipo)}
                     </Badge>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <StatusBadge status={hallazgo.estado} variant={getEstadoBadgeColor(hallazgo.estado)} />
+                    <StatusBadge
+                      status={hallazgo.estado}
+                      variant={getEstadoBadgeColor(hallazgo.estado)}
+                    />
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{hallazgo.proceso_area}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                    {hallazgo.proceso_area}
+                  </td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
                     {hallazgo.responsable_proceso_nombre ?? 'N/A'}
                   </td>
@@ -592,7 +617,13 @@ const HallazgosSection = ({ onOpenModal }: HallazgosProps) => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     {hallazgo.dias_abierto !== undefined && (
                       <Badge
-                        variant={hallazgo.dias_abierto > 30 ? 'danger' : hallazgo.dias_abierto > 15 ? 'warning' : 'default'}
+                        variant={
+                          hallazgo.dias_abierto > 30
+                            ? 'danger'
+                            : hallazgo.dias_abierto > 15
+                              ? 'warning'
+                              : 'default'
+                        }
                       >
                         {hallazgo.dias_abierto} días
                       </Badge>
@@ -676,7 +707,9 @@ const EvaluacionesCumplimientoSection = ({ onOpenModal }: EvaluacionesCumplimien
     noCumple: evaluaciones.filter((e) => e.resultado === 'NO_CUMPLE').length,
   };
 
-  const getResultadoBadgeVariant = (resultado: string): 'success' | 'warning' | 'danger' | 'default' => {
+  const getResultadoBadgeVariant = (
+    resultado: string
+  ): 'success' | 'warning' | 'danger' | 'default' => {
     if (resultado === 'CUMPLE') return 'success';
     if (resultado === 'CUMPLE_PARCIAL') return 'warning';
     if (resultado === 'NO_CUMPLE') return 'danger';
@@ -716,7 +749,6 @@ const EvaluacionesCumplimientoSection = ({ onOpenModal }: EvaluacionesCumplimien
       {/* Actions */}
       <SectionToolbar
         title="Evaluaciones de Cumplimiento"
-        onFilter={() => console.log('Filtros')}
         primaryAction={{ label: 'Nueva Evaluación', onClick: () => onOpenModal() }}
       />
 
@@ -761,9 +793,13 @@ const EvaluacionesCumplimientoSection = ({ onOpenModal }: EvaluacionesCumplimien
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                     {evaluacion.codigo}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{evaluacion.nombre}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                    {evaluacion.nombre}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant="default">{evaluacion.tipo_display ?? formatStatusLabel(evaluacion.tipo)}</Badge>
+                    <Badge variant="default">
+                      {evaluacion.tipo_display ?? formatStatusLabel(evaluacion.tipo)}
+                    </Badge>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Badge variant={getResultadoBadgeVariant(evaluacion.resultado)}>
@@ -773,7 +809,9 @@ const EvaluacionesCumplimientoSection = ({ onOpenModal }: EvaluacionesCumplimien
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
                       <Progress value={evaluacion.porcentaje_cumplimiento} className="w-20" />
-                      <span className="text-sm font-medium">{evaluacion.porcentaje_cumplimiento}%</span>
+                      <span className="text-sm font-medium">
+                        {evaluacion.porcentaje_cumplimiento}%
+                      </span>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
@@ -781,7 +819,9 @@ const EvaluacionesCumplimientoSection = ({ onOpenModal }: EvaluacionesCumplimien
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                     {evaluacion.proxima_evaluacion
-                      ? format(new Date(evaluacion.proxima_evaluacion), 'dd/MM/yyyy', { locale: es })
+                      ? format(new Date(evaluacion.proxima_evaluacion), 'dd/MM/yyyy', {
+                          locale: es,
+                        })
                       : 'N/A'}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
@@ -833,7 +873,9 @@ export default function MejoraContinuaPage() {
   const [selectedPrograma, setSelectedPrograma] = useState<ProgramaAuditoriaList | undefined>();
   const [selectedAuditoria, setSelectedAuditoria] = useState<AuditoriaList | undefined>();
   const [selectedHallazgo, setSelectedHallazgo] = useState<HallazgoList | undefined>();
-  const [selectedEvaluacion, setSelectedEvaluacion] = useState<EvaluacionCumplimientoList | undefined>();
+  const [selectedEvaluacion, setSelectedEvaluacion] = useState<
+    EvaluacionCumplimientoList | undefined
+  >();
 
   const tabs = [
     {
@@ -908,10 +950,14 @@ export default function MejoraContinuaPage() {
       <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} variant="pills" />
 
       <div className="mt-6">
-        {activeTab === 'programas' && <ProgramasAuditoriaSection onOpenModal={handleOpenProgramaModal} />}
+        {activeTab === 'programas' && (
+          <ProgramasAuditoriaSection onOpenModal={handleOpenProgramaModal} />
+        )}
         {activeTab === 'auditorias' && <AuditoriasSection onOpenModal={handleOpenAuditoriaModal} />}
         {activeTab === 'hallazgos' && <HallazgosSection onOpenModal={handleOpenHallazgoModal} />}
-        {activeTab === 'cumplimiento' && <EvaluacionesCumplimientoSection onOpenModal={handleOpenEvaluacionModal} />}
+        {activeTab === 'cumplimiento' && (
+          <EvaluacionesCumplimientoSection onOpenModal={handleOpenEvaluacionModal} />
+        )}
       </div>
 
       {/* Modals */}
@@ -925,7 +971,11 @@ export default function MejoraContinuaPage() {
         isOpen={auditoriaModalOpen}
         onClose={handleCloseAuditoriaModal}
       />
-      <HallazgoFormModal item={selectedHallazgo ?? null} isOpen={hallazgoModalOpen} onClose={handleCloseHallazgoModal} />
+      <HallazgoFormModal
+        item={selectedHallazgo ?? null}
+        isOpen={hallazgoModalOpen}
+        onClose={handleCloseHallazgoModal}
+      />
       <EvaluacionCumplimientoFormModal
         item={selectedEvaluacion ?? null}
         isOpen={evaluacionModalOpen}

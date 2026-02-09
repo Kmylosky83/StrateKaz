@@ -3,19 +3,21 @@
  * Sistema de gestión de programaciones, asignaciones, ejecuciones y liquidaciones
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import programacionAbastecimientoApi from '../api/programacionApi';
+
+/** Extrae el mensaje de error de un AxiosError o Error genérico */
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof AxiosError) {
+    const detail = (error.response?.data as Record<string, unknown> | undefined)?.detail;
+    if (typeof detail === 'string') return detail;
+  }
+  if (error instanceof Error) return error.message;
+  return fallback;
+}
+
 import type {
-  Programacion,
-  ProgramacionList,
-  AsignacionRecurso,
-  Ejecucion,
-  Liquidacion,
-  TipoOperacion,
-  EstadoProgramacion,
-  UnidadMedidaProgramacion,
-  EstadoEjecucion,
-  EstadoLiquidacion,
   CreateProgramacionDTO,
   UpdateProgramacionDTO,
   CreateAsignacionRecursoDTO,
@@ -55,24 +57,30 @@ export const programacionKeys = {
 
   // Programaciones
   programaciones: () => [...programacionKeys.all, 'programaciones'] as const,
-  programacionesFiltered: (filters: Record<string, any>) => [...programacionKeys.programaciones(), 'filtered', filters] as const,
+  programacionesFiltered: (filters: Record<string, unknown>) =>
+    [...programacionKeys.programaciones(), 'filtered', filters] as const,
   programacion: (id: number) => [...programacionKeys.all, 'programacion', id] as const,
-  calendario: (params?: Record<string, any>) => [...programacionKeys.all, 'calendario', params] as const,
-  estadisticas: (params?: Record<string, any>) => [...programacionKeys.all, 'estadisticas', params] as const,
+  calendario: (params?: Record<string, unknown>) =>
+    [...programacionKeys.all, 'calendario', params] as const,
+  estadisticas: (params?: Record<string, unknown>) =>
+    [...programacionKeys.all, 'estadisticas', params] as const,
 
   // Asignaciones
   asignaciones: () => [...programacionKeys.all, 'asignaciones'] as const,
-  asignacionesFiltered: (filters: Record<string, any>) => [...programacionKeys.asignaciones(), 'filtered', filters] as const,
+  asignacionesFiltered: (filters: Record<string, unknown>) =>
+    [...programacionKeys.asignaciones(), 'filtered', filters] as const,
   asignacion: (id: number) => [...programacionKeys.all, 'asignacion', id] as const,
 
   // Ejecuciones
   ejecuciones: () => [...programacionKeys.all, 'ejecuciones'] as const,
-  ejecucionesFiltered: (filters: Record<string, any>) => [...programacionKeys.ejecuciones(), 'filtered', filters] as const,
+  ejecucionesFiltered: (filters: Record<string, unknown>) =>
+    [...programacionKeys.ejecuciones(), 'filtered', filters] as const,
   ejecucion: (id: number) => [...programacionKeys.all, 'ejecucion', id] as const,
 
   // Liquidaciones
   liquidaciones: () => [...programacionKeys.all, 'liquidaciones'] as const,
-  liquidacionesFiltered: (filters: Record<string, any>) => [...programacionKeys.liquidaciones(), 'filtered', filters] as const,
+  liquidacionesFiltered: (filters: Record<string, unknown>) =>
+    [...programacionKeys.liquidaciones(), 'filtered', filters] as const,
   liquidacion: (id: number) => [...programacionKeys.all, 'liquidacion', id] as const,
 };
 
@@ -104,7 +112,7 @@ export function useTipoOperacion(id: number) {
 export function useCreateTipoOperacion() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: CreateTipoOperacionDTO) => {
+    mutationFn: (_data: CreateTipoOperacionDTO) => {
       // API would need to support this endpoint
       throw new Error('Endpoint not implemented');
     },
@@ -112,8 +120,8 @@ export function useCreateTipoOperacion() {
       queryClient.invalidateQueries({ queryKey: programacionKeys.tiposOperacion() });
       toast.success('Tipo de operación creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear tipo de operación');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear tipo de operación'));
     },
   });
 }
@@ -121,7 +129,7 @@ export function useCreateTipoOperacion() {
 export function useUpdateTipoOperacion() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateTipoOperacionDTO }) => {
+    mutationFn: ({ _id, _data }: { _id: number; _data: UpdateTipoOperacionDTO }) => {
       // API would need to support this endpoint
       throw new Error('Endpoint not implemented');
     },
@@ -130,8 +138,8 @@ export function useUpdateTipoOperacion() {
       queryClient.invalidateQueries({ queryKey: programacionKeys.tipoOperacion(id) });
       toast.success('Tipo de operación actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar tipo de operación');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar tipo de operación'));
     },
   });
 }
@@ -139,7 +147,7 @@ export function useUpdateTipoOperacion() {
 export function useDeleteTipoOperacion() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => {
+    mutationFn: (_id: number) => {
       // API would need to support this endpoint
       throw new Error('Endpoint not implemented');
     },
@@ -147,8 +155,8 @@ export function useDeleteTipoOperacion() {
       queryClient.invalidateQueries({ queryKey: programacionKeys.tiposOperacion() });
       toast.success('Tipo de operación eliminado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar tipo de operación');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar tipo de operación'));
     },
   });
 }
@@ -171,7 +179,8 @@ export function useEstadoProgramacion(id: number) {
   return useQuery({
     queryKey: programacionKeys.estadoProgramacion(id),
     queryFn: async () => {
-      const response = await programacionAbastecimientoApi.catalogos.estadosProgramacion.getById(id);
+      const response =
+        await programacionAbastecimientoApi.catalogos.estadosProgramacion.getById(id);
       return response.data;
     },
     enabled: !!id,
@@ -181,15 +190,15 @@ export function useEstadoProgramacion(id: number) {
 export function useCreateEstadoProgramacion() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: CreateEstadoProgramacionDTO) => {
+    mutationFn: (_data: CreateEstadoProgramacionDTO) => {
       throw new Error('Endpoint not implemented');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: programacionKeys.estadosProgramacion() });
       toast.success('Estado de programación creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear estado');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear estado'));
     },
   });
 }
@@ -197,7 +206,7 @@ export function useCreateEstadoProgramacion() {
 export function useUpdateEstadoProgramacion() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateEstadoProgramacionDTO }) => {
+    mutationFn: ({ _id, _data }: { _id: number; _data: UpdateEstadoProgramacionDTO }) => {
       throw new Error('Endpoint not implemented');
     },
     onSuccess: (_, { id }) => {
@@ -205,8 +214,8 @@ export function useUpdateEstadoProgramacion() {
       queryClient.invalidateQueries({ queryKey: programacionKeys.estadoProgramacion(id) });
       toast.success('Estado de programación actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar estado');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar estado'));
     },
   });
 }
@@ -214,15 +223,15 @@ export function useUpdateEstadoProgramacion() {
 export function useDeleteEstadoProgramacion() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => {
+    mutationFn: (_id: number) => {
       throw new Error('Endpoint not implemented');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: programacionKeys.estadosProgramacion() });
       toast.success('Estado de programación eliminado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar estado');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar estado'));
     },
   });
 }
@@ -255,15 +264,15 @@ export function useUnidadMedidaProgramacion(id: number) {
 export function useCreateUnidadMedidaProgramacion() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: CreateUnidadMedidaProgramacionDTO) => {
+    mutationFn: (_data: CreateUnidadMedidaProgramacionDTO) => {
       throw new Error('Endpoint not implemented');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: programacionKeys.unidadesMedida() });
       toast.success('Unidad de medida creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear unidad de medida');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear unidad de medida'));
     },
   });
 }
@@ -271,7 +280,7 @@ export function useCreateUnidadMedidaProgramacion() {
 export function useUpdateUnidadMedidaProgramacion() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateUnidadMedidaProgramacionDTO }) => {
+    mutationFn: ({ _id, _data }: { _id: number; _data: UpdateUnidadMedidaProgramacionDTO }) => {
       throw new Error('Endpoint not implemented');
     },
     onSuccess: (_, { id }) => {
@@ -279,8 +288,8 @@ export function useUpdateUnidadMedidaProgramacion() {
       queryClient.invalidateQueries({ queryKey: programacionKeys.unidadMedida(id) });
       toast.success('Unidad de medida actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar unidad de medida');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar unidad de medida'));
     },
   });
 }
@@ -288,15 +297,15 @@ export function useUpdateUnidadMedidaProgramacion() {
 export function useDeleteUnidadMedidaProgramacion() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => {
+    mutationFn: (_id: number) => {
       throw new Error('Endpoint not implemented');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: programacionKeys.unidadesMedida() });
       toast.success('Unidad de medida eliminada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar unidad de medida');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar unidad de medida'));
     },
   });
 }
@@ -329,15 +338,15 @@ export function useEstadoEjecucion(id: number) {
 export function useCreateEstadoEjecucion() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: CreateEstadoEjecucionDTO) => {
+    mutationFn: (_data: CreateEstadoEjecucionDTO) => {
       throw new Error('Endpoint not implemented');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: programacionKeys.estadosEjecucion() });
       toast.success('Estado de ejecución creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear estado');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear estado'));
     },
   });
 }
@@ -345,7 +354,7 @@ export function useCreateEstadoEjecucion() {
 export function useUpdateEstadoEjecucion() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateEstadoEjecucionDTO }) => {
+    mutationFn: ({ _id, _data }: { _id: number; _data: UpdateEstadoEjecucionDTO }) => {
       throw new Error('Endpoint not implemented');
     },
     onSuccess: (_, { id }) => {
@@ -353,8 +362,8 @@ export function useUpdateEstadoEjecucion() {
       queryClient.invalidateQueries({ queryKey: programacionKeys.estadoEjecucion(id) });
       toast.success('Estado de ejecución actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar estado');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar estado'));
     },
   });
 }
@@ -362,15 +371,15 @@ export function useUpdateEstadoEjecucion() {
 export function useDeleteEstadoEjecucion() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => {
+    mutationFn: (_id: number) => {
       throw new Error('Endpoint not implemented');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: programacionKeys.estadosEjecucion() });
       toast.success('Estado de ejecución eliminado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar estado');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar estado'));
     },
   });
 }
@@ -403,15 +412,15 @@ export function useEstadoLiquidacion(id: number) {
 export function useCreateEstadoLiquidacion() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: CreateEstadoLiquidacionDTO) => {
+    mutationFn: (_data: CreateEstadoLiquidacionDTO) => {
       throw new Error('Endpoint not implemented');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: programacionKeys.estadosLiquidacion() });
       toast.success('Estado de liquidación creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear estado');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear estado'));
     },
   });
 }
@@ -419,7 +428,7 @@ export function useCreateEstadoLiquidacion() {
 export function useUpdateEstadoLiquidacion() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateEstadoLiquidacionDTO }) => {
+    mutationFn: ({ _id, _data }: { _id: number; _data: UpdateEstadoLiquidacionDTO }) => {
       throw new Error('Endpoint not implemented');
     },
     onSuccess: (_, { id }) => {
@@ -427,8 +436,8 @@ export function useUpdateEstadoLiquidacion() {
       queryClient.invalidateQueries({ queryKey: programacionKeys.estadoLiquidacion(id) });
       toast.success('Estado de liquidación actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar estado');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar estado'));
     },
   });
 }
@@ -436,24 +445,26 @@ export function useUpdateEstadoLiquidacion() {
 export function useDeleteEstadoLiquidacion() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => {
+    mutationFn: (_id: number) => {
       throw new Error('Endpoint not implemented');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: programacionKeys.estadosLiquidacion() });
       toast.success('Estado de liquidación eliminado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar estado');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar estado'));
     },
   });
 }
 
 // ==================== PROGRAMACIONES ====================
 
-export function useProgramaciones(params?: Record<string, any>) {
+export function useProgramaciones(params?: Record<string, unknown>) {
   return useQuery({
-    queryKey: params ? programacionKeys.programacionesFiltered(params) : programacionKeys.programaciones(),
+    queryKey: params
+      ? programacionKeys.programacionesFiltered(params)
+      : programacionKeys.programaciones(),
     queryFn: async () => {
       const response = await programacionAbastecimientoApi.programacion.getAll(params);
       return response.data;
@@ -484,8 +495,8 @@ export function useCreateProgramacion() {
       queryClient.invalidateQueries({ queryKey: programacionKeys.estadisticas() });
       toast.success('Programación creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear programación');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear programación'));
     },
   });
 }
@@ -502,8 +513,8 @@ export function useUpdateProgramacion() {
       queryClient.invalidateQueries({ queryKey: programacionKeys.programacion(id) });
       toast.success('Programación actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar programación');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar programación'));
     },
   });
 }
@@ -519,8 +530,8 @@ export function useDeleteProgramacion() {
       queryClient.invalidateQueries({ queryKey: programacionKeys.estadisticas() });
       toast.success('Programación eliminada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar programación');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar programación'));
     },
   });
 }
@@ -536,13 +547,17 @@ export function useRestoreProgramacion() {
       queryClient.invalidateQueries({ queryKey: programacionKeys.programaciones() });
       toast.success('Programación restaurada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al restaurar programación');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al restaurar programación'));
     },
   });
 }
 
-export function useCalendarioProgramaciones(params?: { fecha_inicio?: string; fecha_fin?: string; tipo_operacion?: number }) {
+export function useCalendarioProgramaciones(params?: {
+  fecha_inicio?: string;
+  fecha_fin?: string;
+  tipo_operacion?: number;
+}) {
   return useQuery({
     queryKey: programacionKeys.calendario(params),
     queryFn: async () => {
@@ -553,7 +568,10 @@ export function useCalendarioProgramaciones(params?: { fecha_inicio?: string; fe
   });
 }
 
-export function useEstadisticasProgramaciones(params?: { fecha_inicio?: string; fecha_fin?: string }) {
+export function useEstadisticasProgramaciones(params?: {
+  fecha_inicio?: string;
+  fecha_fin?: string;
+}) {
   return useQuery({
     queryKey: programacionKeys.estadisticas(params),
     queryFn: async () => {
@@ -566,9 +584,11 @@ export function useEstadisticasProgramaciones(params?: { fecha_inicio?: string; 
 
 // ==================== ASIGNACIONES DE RECURSOS ====================
 
-export function useAsignacionesRecurso(params?: Record<string, any>) {
+export function useAsignacionesRecurso(params?: Record<string, unknown>) {
   return useQuery({
-    queryKey: params ? programacionKeys.asignacionesFiltered(params) : programacionKeys.asignaciones(),
+    queryKey: params
+      ? programacionKeys.asignacionesFiltered(params)
+      : programacionKeys.asignaciones(),
     queryFn: async () => {
       const response = await programacionAbastecimientoApi.asignacionRecurso.getAll(params);
       return response.data;
@@ -598,8 +618,8 @@ export function useCreateAsignacionRecurso() {
       queryClient.invalidateQueries({ queryKey: programacionKeys.asignaciones() });
       toast.success('Asignación de recurso creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear asignación');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear asignación'));
     },
   });
 }
@@ -616,8 +636,8 @@ export function useUpdateAsignacionRecurso() {
       queryClient.invalidateQueries({ queryKey: programacionKeys.asignacion(id) });
       toast.success('Asignación de recurso actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar asignación');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar asignación'));
     },
   });
 }
@@ -632,17 +652,19 @@ export function useDeleteAsignacionRecurso() {
       queryClient.invalidateQueries({ queryKey: programacionKeys.asignaciones() });
       toast.success('Asignación de recurso eliminada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar asignación');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar asignación'));
     },
   });
 }
 
 // ==================== EJECUCIONES ====================
 
-export function useEjecuciones(params?: Record<string, any>) {
+export function useEjecuciones(params?: Record<string, unknown>) {
   return useQuery({
-    queryKey: params ? programacionKeys.ejecucionesFiltered(params) : programacionKeys.ejecuciones(),
+    queryKey: params
+      ? programacionKeys.ejecucionesFiltered(params)
+      : programacionKeys.ejecuciones(),
     queryFn: async () => {
       const response = await programacionAbastecimientoApi.ejecucion.getAll(params);
       return response.data;
@@ -672,8 +694,8 @@ export function useCreateEjecucion() {
       queryClient.invalidateQueries({ queryKey: programacionKeys.ejecuciones() });
       toast.success('Ejecución creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear ejecución');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear ejecución'));
     },
   });
 }
@@ -690,8 +712,8 @@ export function useUpdateEjecucion() {
       queryClient.invalidateQueries({ queryKey: programacionKeys.ejecucion(id) });
       toast.success('Ejecución actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar ejecución');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar ejecución'));
     },
   });
 }
@@ -706,8 +728,8 @@ export function useDeleteEjecucion() {
       queryClient.invalidateQueries({ queryKey: programacionKeys.ejecuciones() });
       toast.success('Ejecución eliminada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar ejecución');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar ejecución'));
     },
   });
 }
@@ -715,7 +737,13 @@ export function useDeleteEjecucion() {
 export function useCompletarEjecucion() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: { fecha_fin?: string; observaciones?: string } }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: { fecha_fin?: string; observaciones?: string };
+    }) => {
       const response = await programacionAbastecimientoApi.ejecucion.completar(id, data);
       return response.data;
     },
@@ -724,17 +752,19 @@ export function useCompletarEjecucion() {
       queryClient.invalidateQueries({ queryKey: programacionKeys.ejecucion(id) });
       toast.success('Ejecución completada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al completar ejecución');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al completar ejecución'));
     },
   });
 }
 
 // ==================== LIQUIDACIONES ====================
 
-export function useLiquidaciones(params?: Record<string, any>) {
+export function useLiquidaciones(params?: Record<string, unknown>) {
   return useQuery({
-    queryKey: params ? programacionKeys.liquidacionesFiltered(params) : programacionKeys.liquidaciones(),
+    queryKey: params
+      ? programacionKeys.liquidacionesFiltered(params)
+      : programacionKeys.liquidaciones(),
     queryFn: async () => {
       const response = await programacionAbastecimientoApi.liquidacion.getAll(params);
       return response.data;
@@ -764,8 +794,8 @@ export function useCreateLiquidacion() {
       queryClient.invalidateQueries({ queryKey: programacionKeys.liquidaciones() });
       toast.success('Liquidación creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear liquidación');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear liquidación'));
     },
   });
 }
@@ -782,8 +812,8 @@ export function useUpdateLiquidacion() {
       queryClient.invalidateQueries({ queryKey: programacionKeys.liquidacion(id) });
       toast.success('Liquidación actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar liquidación');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar liquidación'));
     },
   });
 }
@@ -798,8 +828,8 @@ export function useDeleteLiquidacion() {
       queryClient.invalidateQueries({ queryKey: programacionKeys.liquidaciones() });
       toast.success('Liquidación eliminada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar liquidación');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar liquidación'));
     },
   });
 }
@@ -808,7 +838,9 @@ export function useAprobarLiquidacion() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, observaciones }: { id: number; observaciones?: string }) => {
-      const response = await programacionAbastecimientoApi.liquidacion.aprobar(id, { observaciones });
+      const response = await programacionAbastecimientoApi.liquidacion.aprobar(id, {
+        observaciones,
+      });
       return response.data;
     },
     onSuccess: (_, { id }) => {
@@ -816,8 +848,8 @@ export function useAprobarLiquidacion() {
       queryClient.invalidateQueries({ queryKey: programacionKeys.liquidacion(id) });
       toast.success('Liquidación aprobada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al aprobar liquidación');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al aprobar liquidación'));
     },
   });
 }
@@ -834,8 +866,8 @@ export function useGenerarCxPLiquidacion() {
       queryClient.invalidateQueries({ queryKey: programacionKeys.liquidacion(id) });
       toast.success('Cuenta por pagar generada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al generar cuenta por pagar');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al generar cuenta por pagar'));
     },
   });
 }

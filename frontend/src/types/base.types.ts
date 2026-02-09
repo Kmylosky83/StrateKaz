@@ -67,7 +67,13 @@ export interface FullEntity extends AuditableEntity, SoftDeletableEntity, Activa
  */
 export type CreateDTO<T extends BaseEntity> = Omit<
   T,
-  'id' | 'created_at' | 'updated_at' | 'created_by' | 'created_by_name' | 'updated_by' | 'updated_by_name'
+  | 'id'
+  | 'created_at'
+  | 'updated_at'
+  | 'created_by'
+  | 'created_by_name'
+  | 'updated_by'
+  | 'updated_by_name'
 >;
 
 /**
@@ -96,7 +102,11 @@ export type ListItemDTO<T> = Pick<T, 'id'> & Partial<Omit<T, 'id'>>;
  * type Item = ArrayElement<User[]>; // User
  * ```
  */
-export type ArrayElement<T> = T extends readonly (infer U)[] ? U : T extends (infer U)[] ? U : never;
+export type ArrayElement<T> = T extends readonly (infer U)[]
+  ? U
+  : T extends (infer U)[]
+    ? U
+    : never;
 
 /**
  * Hace que campos específicos sean requeridos
@@ -314,7 +324,7 @@ export const hasProperty = <T extends object, K extends PropertyKey>(
  * ```typescript
  * function process(value: string | null) {
  *   assertDefined(value); // Después de esto, value es de tipo string
- *   console.log(value.toUpperCase());
+ *   value.toUpperCase(); // value es de tipo string aquí
  * }
  * ```
  */
@@ -420,15 +430,13 @@ export const createPositiveInteger = (value: number): PositiveInteger | null => 
  *
  * const result = divide(10, 2);
  * if (result.success) {
- *   console.log(result.value); // 5
+ *   // result.value → 5
  * } else {
- *   console.error(result.error);
+ *   // result.error contiene el mensaje de error
  * }
  * ```
  */
-export type Result<T, E = Error> =
-  | { success: true; value: T }
-  | { success: false; error: E };
+export type Result<T, E = Error> = { success: true; value: T } | { success: false; error: E };
 
 /**
  * Helper para crear un Result exitoso
@@ -464,19 +472,13 @@ export const handleResult = <T, E>(
 /**
  * Transforma un Result mapeando su valor
  */
-export const mapResult = <T, U, E>(
-  result: Result<T, E>,
-  fn: (value: T) => U
-): Result<U, E> => {
+export const mapResult = <T, U, E>(result: Result<T, E>, fn: (value: T) => U): Result<U, E> => {
   return result.success ? success(fn(result.value)) : result;
 };
 
 /**
  * Transforma un Result mapeando su error
  */
-export const mapError = <T, E, F>(
-  result: Result<T, E>,
-  fn: (error: E) => F
-): Result<T, F> => {
+export const mapError = <T, E, F>(result: Result<T, E>, fn: (error: E) => F): Result<T, F> => {
   return result.success ? result : failure(fn(result.error));
 };

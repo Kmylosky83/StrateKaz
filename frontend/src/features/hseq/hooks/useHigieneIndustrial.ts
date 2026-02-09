@@ -3,16 +3,20 @@
  * Sistema de gestión de mediciones ambientales, controles de exposición y monitoreo biológico
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import higieneIndustrialApi from '../api/higieneIndustrialApi';
+
+/** Extrae el mensaje de error de un AxiosError o Error genérico */
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof AxiosError) {
+    const detail = (error.response?.data as Record<string, unknown> | undefined)?.detail;
+    if (typeof detail === 'string') return detail;
+  }
+  if (error instanceof Error) return error.message;
+  return fallback;
+}
 import type {
-  TipoAgente,
-  AgenteRiesgo,
-  GrupoExposicionSimilar,
-  PuntoMedicion,
-  MedicionAmbiental,
-  ControlExposicion,
-  MonitoreoBiologico,
   CreateTipoAgenteDTO,
   UpdateTipoAgenteDTO,
   CreateAgenteRiesgoDTO,
@@ -37,51 +41,68 @@ export const higieneIndustrialKeys = {
   // Tipos de Agente
   tiposAgente: () => [...higieneIndustrialKeys.all, 'tipos-agente'] as const,
   tipoAgenteById: (id: number) => [...higieneIndustrialKeys.tiposAgente(), id] as const,
-  tiposAgenteFiltered: (filters: Record<string, any>) => [...higieneIndustrialKeys.tiposAgente(), 'filtered', filters] as const,
+  tiposAgenteFiltered: (filters: Record<string, unknown>) =>
+    [...higieneIndustrialKeys.tiposAgente(), 'filtered', filters] as const,
 
   // Agentes de Riesgo
   agentesRiesgo: () => [...higieneIndustrialKeys.all, 'agentes-riesgo'] as const,
   agenteRiesgoById: (id: number) => [...higieneIndustrialKeys.agentesRiesgo(), id] as const,
-  agentesRiesgoFiltered: (filters: Record<string, any>) => [...higieneIndustrialKeys.agentesRiesgo(), 'filtered', filters] as const,
+  agentesRiesgoFiltered: (filters: Record<string, unknown>) =>
+    [...higieneIndustrialKeys.agentesRiesgo(), 'filtered', filters] as const,
 
   // Grupos de Exposición
   gruposExposicion: () => [...higieneIndustrialKeys.all, 'grupos-exposicion'] as const,
   grupoExposicionById: (id: number) => [...higieneIndustrialKeys.gruposExposicion(), id] as const,
-  gruposExposicionFiltered: (filters: Record<string, any>) => [...higieneIndustrialKeys.gruposExposicion(), 'filtered', filters] as const,
+  gruposExposicionFiltered: (filters: Record<string, unknown>) =>
+    [...higieneIndustrialKeys.gruposExposicion(), 'filtered', filters] as const,
 
   // Puntos de Medición
   puntosMedicion: () => [...higieneIndustrialKeys.all, 'puntos-medicion'] as const,
   puntoMedicionById: (id: number) => [...higieneIndustrialKeys.puntosMedicion(), id] as const,
-  puntosMedicionFiltered: (filters: Record<string, any>) => [...higieneIndustrialKeys.puntosMedicion(), 'filtered', filters] as const,
+  puntosMedicionFiltered: (filters: Record<string, unknown>) =>
+    [...higieneIndustrialKeys.puntosMedicion(), 'filtered', filters] as const,
 
   // Mediciones Ambientales
   medicionesAmbientales: () => [...higieneIndustrialKeys.all, 'mediciones-ambientales'] as const,
-  medicionAmbientalById: (id: number) => [...higieneIndustrialKeys.medicionesAmbientales(), id] as const,
-  medicionesAmbientalesFiltered: (filters: Record<string, any>) => [...higieneIndustrialKeys.medicionesAmbientales(), 'filtered', filters] as const,
-  medicionesEstadisticas: () => [...higieneIndustrialKeys.medicionesAmbientales(), 'estadisticas'] as const,
+  medicionAmbientalById: (id: number) =>
+    [...higieneIndustrialKeys.medicionesAmbientales(), id] as const,
+  medicionesAmbientalesFiltered: (filters: Record<string, unknown>) =>
+    [...higieneIndustrialKeys.medicionesAmbientales(), 'filtered', filters] as const,
+  medicionesEstadisticas: () =>
+    [...higieneIndustrialKeys.medicionesAmbientales(), 'estadisticas'] as const,
   proximasMediciones: () => [...higieneIndustrialKeys.medicionesAmbientales(), 'proximas'] as const,
 
   // Controles de Exposición
   controlesExposicion: () => [...higieneIndustrialKeys.all, 'controles-exposicion'] as const,
-  controlExposicionById: (id: number) => [...higieneIndustrialKeys.controlesExposicion(), id] as const,
-  controlesExposicionFiltered: (filters: Record<string, any>) => [...higieneIndustrialKeys.controlesExposicion(), 'filtered', filters] as const,
-  controlesEstadisticas: () => [...higieneIndustrialKeys.controlesExposicion(), 'estadisticas'] as const,
-  controlesPorJerarquia: () => [...higieneIndustrialKeys.controlesExposicion(), 'por-jerarquia'] as const,
+  controlExposicionById: (id: number) =>
+    [...higieneIndustrialKeys.controlesExposicion(), id] as const,
+  controlesExposicionFiltered: (filters: Record<string, unknown>) =>
+    [...higieneIndustrialKeys.controlesExposicion(), 'filtered', filters] as const,
+  controlesEstadisticas: () =>
+    [...higieneIndustrialKeys.controlesExposicion(), 'estadisticas'] as const,
+  controlesPorJerarquia: () =>
+    [...higieneIndustrialKeys.controlesExposicion(), 'por-jerarquia'] as const,
 
   // Monitoreo Biológico
   monitoreoBiologico: () => [...higieneIndustrialKeys.all, 'monitoreo-biologico'] as const,
-  monitoreoBiologicoById: (id: number) => [...higieneIndustrialKeys.monitoreoBiologico(), id] as const,
-  monitoreoBiologicoFiltered: (filters: Record<string, any>) => [...higieneIndustrialKeys.monitoreoBiologico(), 'filtered', filters] as const,
-  monitoreoEstadisticas: () => [...higieneIndustrialKeys.monitoreoBiologico(), 'estadisticas'] as const,
+  monitoreoBiologicoById: (id: number) =>
+    [...higieneIndustrialKeys.monitoreoBiologico(), id] as const,
+  monitoreoBiologicoFiltered: (filters: Record<string, unknown>) =>
+    [...higieneIndustrialKeys.monitoreoBiologico(), 'filtered', filters] as const,
+  monitoreoEstadisticas: () =>
+    [...higieneIndustrialKeys.monitoreoBiologico(), 'estadisticas'] as const,
   examenesVencidos: () => [...higieneIndustrialKeys.monitoreoBiologico(), 'vencidos'] as const,
-  alertasSeguimiento: () => [...higieneIndustrialKeys.monitoreoBiologico(), 'alertas-seguimiento'] as const,
+  alertasSeguimiento: () =>
+    [...higieneIndustrialKeys.monitoreoBiologico(), 'alertas-seguimiento'] as const,
 };
 
 // ==================== TIPOS DE AGENTE ====================
 
-export function useTiposAgente(params?: any) {
+export function useTiposAgente(params?: Record<string, unknown>) {
   return useQuery({
-    queryKey: params ? higieneIndustrialKeys.tiposAgenteFiltered(params) : higieneIndustrialKeys.tiposAgente(),
+    queryKey: params
+      ? higieneIndustrialKeys.tiposAgenteFiltered(params)
+      : higieneIndustrialKeys.tiposAgente(),
     queryFn: async () => {
       const data = await higieneIndustrialApi.tipoAgente.getAll(params);
       return data;
@@ -112,8 +133,8 @@ export function useCreateTipoAgente() {
       queryClient.invalidateQueries({ queryKey: higieneIndustrialKeys.tiposAgente() });
       toast.success('Tipo de agente creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear tipo de agente');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear tipo de agente'));
     },
   });
 }
@@ -131,8 +152,8 @@ export function useUpdateTipoAgente() {
       queryClient.invalidateQueries({ queryKey: higieneIndustrialKeys.tipoAgenteById(id) });
       toast.success('Tipo de agente actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar tipo de agente');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar tipo de agente'));
     },
   });
 }
@@ -148,17 +169,19 @@ export function useDeleteTipoAgente() {
       queryClient.invalidateQueries({ queryKey: higieneIndustrialKeys.tiposAgente() });
       toast.success('Tipo de agente eliminado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar tipo de agente');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar tipo de agente'));
     },
   });
 }
 
 // ==================== AGENTES DE RIESGO ====================
 
-export function useAgentesRiesgo(params?: any) {
+export function useAgentesRiesgo(params?: Record<string, unknown>) {
   return useQuery({
-    queryKey: params ? higieneIndustrialKeys.agentesRiesgoFiltered(params) : higieneIndustrialKeys.agentesRiesgo(),
+    queryKey: params
+      ? higieneIndustrialKeys.agentesRiesgoFiltered(params)
+      : higieneIndustrialKeys.agentesRiesgo(),
     queryFn: async () => {
       const data = await higieneIndustrialApi.agenteRiesgo.getAll(params);
       return data;
@@ -189,8 +212,8 @@ export function useCreateAgenteRiesgo() {
       queryClient.invalidateQueries({ queryKey: higieneIndustrialKeys.agentesRiesgo() });
       toast.success('Agente de riesgo creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear agente de riesgo');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear agente de riesgo'));
     },
   });
 }
@@ -208,8 +231,8 @@ export function useUpdateAgenteRiesgo() {
       queryClient.invalidateQueries({ queryKey: higieneIndustrialKeys.agenteRiesgoById(id) });
       toast.success('Agente de riesgo actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar agente de riesgo');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar agente de riesgo'));
     },
   });
 }
@@ -225,17 +248,19 @@ export function useDeleteAgenteRiesgo() {
       queryClient.invalidateQueries({ queryKey: higieneIndustrialKeys.agentesRiesgo() });
       toast.success('Agente de riesgo eliminado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar agente de riesgo');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar agente de riesgo'));
     },
   });
 }
 
 // ==================== GRUPOS DE EXPOSICIÓN SIMILAR ====================
 
-export function useGruposExposicion(params?: any) {
+export function useGruposExposicion(params?: Record<string, unknown>) {
   return useQuery({
-    queryKey: params ? higieneIndustrialKeys.gruposExposicionFiltered(params) : higieneIndustrialKeys.gruposExposicion(),
+    queryKey: params
+      ? higieneIndustrialKeys.gruposExposicionFiltered(params)
+      : higieneIndustrialKeys.gruposExposicion(),
     queryFn: async () => {
       const data = await higieneIndustrialApi.grupoExposicion.getAll(params);
       return data;
@@ -266,8 +291,8 @@ export function useCreateGrupoExposicion() {
       queryClient.invalidateQueries({ queryKey: higieneIndustrialKeys.gruposExposicion() });
       toast.success('Grupo de exposición creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear grupo de exposición');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear grupo de exposición'));
     },
   });
 }
@@ -285,8 +310,8 @@ export function useUpdateGrupoExposicion() {
       queryClient.invalidateQueries({ queryKey: higieneIndustrialKeys.grupoExposicionById(id) });
       toast.success('Grupo de exposición actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar grupo de exposición');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar grupo de exposición'));
     },
   });
 }
@@ -302,17 +327,19 @@ export function useDeleteGrupoExposicion() {
       queryClient.invalidateQueries({ queryKey: higieneIndustrialKeys.gruposExposicion() });
       toast.success('Grupo de exposición eliminado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar grupo de exposición');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar grupo de exposición'));
     },
   });
 }
 
 // ==================== PUNTOS DE MEDICIÓN ====================
 
-export function usePuntosMedicion(params?: any) {
+export function usePuntosMedicion(params?: Record<string, unknown>) {
   return useQuery({
-    queryKey: params ? higieneIndustrialKeys.puntosMedicionFiltered(params) : higieneIndustrialKeys.puntosMedicion(),
+    queryKey: params
+      ? higieneIndustrialKeys.puntosMedicionFiltered(params)
+      : higieneIndustrialKeys.puntosMedicion(),
     queryFn: async () => {
       const data = await higieneIndustrialApi.puntoMedicion.getAll(params);
       return data;
@@ -343,8 +370,8 @@ export function useCreatePuntoMedicion() {
       queryClient.invalidateQueries({ queryKey: higieneIndustrialKeys.puntosMedicion() });
       toast.success('Punto de medición creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear punto de medición');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear punto de medición'));
     },
   });
 }
@@ -362,8 +389,8 @@ export function useUpdatePuntoMedicion() {
       queryClient.invalidateQueries({ queryKey: higieneIndustrialKeys.puntoMedicionById(id) });
       toast.success('Punto de medición actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar punto de medición');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar punto de medición'));
     },
   });
 }
@@ -379,17 +406,19 @@ export function useDeletePuntoMedicion() {
       queryClient.invalidateQueries({ queryKey: higieneIndustrialKeys.puntosMedicion() });
       toast.success('Punto de medición eliminado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar punto de medición');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar punto de medición'));
     },
   });
 }
 
 // ==================== MEDICIONES AMBIENTALES ====================
 
-export function useMedicionesAmbientales(params?: any) {
+export function useMedicionesAmbientales(params?: Record<string, unknown>) {
   return useQuery({
-    queryKey: params ? higieneIndustrialKeys.medicionesAmbientalesFiltered(params) : higieneIndustrialKeys.medicionesAmbientales(),
+    queryKey: params
+      ? higieneIndustrialKeys.medicionesAmbientalesFiltered(params)
+      : higieneIndustrialKeys.medicionesAmbientales(),
     queryFn: async () => {
       const data = await higieneIndustrialApi.medicionAmbiental.getAll(params);
       return data;
@@ -421,8 +450,8 @@ export function useCreateMedicionAmbiental() {
       queryClient.invalidateQueries({ queryKey: higieneIndustrialKeys.medicionesEstadisticas() });
       toast.success('Medición ambiental creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear medición ambiental');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear medición ambiental'));
     },
   });
 }
@@ -441,8 +470,8 @@ export function useUpdateMedicionAmbiental() {
       queryClient.invalidateQueries({ queryKey: higieneIndustrialKeys.medicionesEstadisticas() });
       toast.success('Medición ambiental actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar medición ambiental');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar medición ambiental'));
     },
   });
 }
@@ -459,8 +488,8 @@ export function useDeleteMedicionAmbiental() {
       queryClient.invalidateQueries({ queryKey: higieneIndustrialKeys.medicionesEstadisticas() });
       toast.success('Medición ambiental eliminada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar medición ambiental');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar medición ambiental'));
     },
   });
 }
@@ -488,8 +517,8 @@ export function useEvaluarCumplimientoMedicion() {
       queryClient.invalidateQueries({ queryKey: higieneIndustrialKeys.medicionAmbientalById(id) });
       toast.success('Cumplimiento evaluado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al evaluar cumplimiento');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al evaluar cumplimiento'));
     },
   });
 }
@@ -506,9 +535,11 @@ export function useProximasMediciones() {
 
 // ==================== CONTROLES DE EXPOSICIÓN ====================
 
-export function useControlesExposicion(params?: any) {
+export function useControlesExposicion(params?: Record<string, unknown>) {
   return useQuery({
-    queryKey: params ? higieneIndustrialKeys.controlesExposicionFiltered(params) : higieneIndustrialKeys.controlesExposicion(),
+    queryKey: params
+      ? higieneIndustrialKeys.controlesExposicionFiltered(params)
+      : higieneIndustrialKeys.controlesExposicion(),
     queryFn: async () => {
       const data = await higieneIndustrialApi.controlExposicion.getAll(params);
       return data;
@@ -540,8 +571,8 @@ export function useCreateControlExposicion() {
       queryClient.invalidateQueries({ queryKey: higieneIndustrialKeys.controlesEstadisticas() });
       toast.success('Control de exposición creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear control de exposición');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear control de exposición'));
     },
   });
 }
@@ -560,8 +591,8 @@ export function useUpdateControlExposicion() {
       queryClient.invalidateQueries({ queryKey: higieneIndustrialKeys.controlesEstadisticas() });
       toast.success('Control de exposición actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar control de exposición');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar control de exposición'));
     },
   });
 }
@@ -578,8 +609,8 @@ export function useDeleteControlExposicion() {
       queryClient.invalidateQueries({ queryKey: higieneIndustrialKeys.controlesEstadisticas() });
       toast.success('Control de exposición eliminado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar control de exposición');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar control de exposición'));
     },
   });
 }
@@ -617,17 +648,19 @@ export function useMedirEfectividadControl() {
       queryClient.invalidateQueries({ queryKey: higieneIndustrialKeys.controlExposicionById(id) });
       toast.success('Efectividad medida exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al medir efectividad');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al medir efectividad'));
     },
   });
 }
 
 // ==================== MONITOREO BIOLÓGICO ====================
 
-export function useMonitoreoBiologico(params?: any) {
+export function useMonitoreoBiologico(params?: Record<string, unknown>) {
   return useQuery({
-    queryKey: params ? higieneIndustrialKeys.monitoreoBiologicoFiltered(params) : higieneIndustrialKeys.monitoreoBiologico(),
+    queryKey: params
+      ? higieneIndustrialKeys.monitoreoBiologicoFiltered(params)
+      : higieneIndustrialKeys.monitoreoBiologico(),
     queryFn: async () => {
       const data = await higieneIndustrialApi.monitoreoBiologico.getAll(params);
       return data;
@@ -659,8 +692,8 @@ export function useCreateMonitoreoBiologico() {
       queryClient.invalidateQueries({ queryKey: higieneIndustrialKeys.monitoreoEstadisticas() });
       toast.success('Examen de monitoreo biológico creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear examen de monitoreo biológico');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear examen de monitoreo biológico'));
     },
   });
 }
@@ -679,8 +712,8 @@ export function useUpdateMonitoreoBiologico() {
       queryClient.invalidateQueries({ queryKey: higieneIndustrialKeys.monitoreoEstadisticas() });
       toast.success('Examen de monitoreo biológico actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar examen de monitoreo biológico');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar examen de monitoreo biológico'));
     },
   });
 }
@@ -697,8 +730,8 @@ export function useDeleteMonitoreoBiologico() {
       queryClient.invalidateQueries({ queryKey: higieneIndustrialKeys.monitoreoEstadisticas() });
       toast.success('Examen de monitoreo biológico eliminado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar examen de monitoreo biológico');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar examen de monitoreo biológico'));
     },
   });
 }

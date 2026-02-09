@@ -3,19 +3,11 @@
  * Sistema de gestión de requisiciones, cotizaciones, órdenes de compra, contratos y recepciones
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import comprasApi from '../api/comprasApi';
+import type { ApiError } from '@/types';
 import type {
-  Requisicion,
-  RequisicionList,
-  Cotizacion,
-  CotizacionList,
-  OrdenCompra,
-  OrdenCompraList,
-  Contrato,
-  ContratoList,
-  RecepcionCompra,
-  RecepcionCompraList,
   CreateRequisicionDTO,
   UpdateRequisicionDTO,
   CreateCotizacionDTO,
@@ -26,7 +18,7 @@ import type {
   CreateContratoDTO,
   UpdateContratoDTO,
   CreateRecepcionCompraDTO,
-  CreateEstadoRequisicionDTO,
+  UpdateRecepcionCompraDTO,
 } from '../types';
 
 // ==================== QUERY KEYS ====================
@@ -46,29 +38,34 @@ export const comprasKeys = {
 
   // Requisiciones
   requisiciones: () => [...comprasKeys.all, 'requisiciones'] as const,
-  requisicionesFiltered: (filters: Record<string, any>) => [...comprasKeys.requisiciones(), 'filtered', filters] as const,
+  requisicionesFiltered: (filters: Record<string, unknown>) =>
+    [...comprasKeys.requisiciones(), 'filtered', filters] as const,
   requisicion: (id: number) => [...comprasKeys.all, 'requisicion', id] as const,
 
   // Cotizaciones
   cotizaciones: () => [...comprasKeys.all, 'cotizaciones'] as const,
-  cotizacionesFiltered: (filters: Record<string, any>) => [...comprasKeys.cotizaciones(), 'filtered', filters] as const,
+  cotizacionesFiltered: (filters: Record<string, unknown>) =>
+    [...comprasKeys.cotizaciones(), 'filtered', filters] as const,
   cotizacion: (id: number) => [...comprasKeys.all, 'cotizacion', id] as const,
 
   // Órdenes de Compra
   ordenesCompra: () => [...comprasKeys.all, 'ordenes-compra'] as const,
-  ordenesCompraFiltered: (filters: Record<string, any>) => [...comprasKeys.ordenesCompra(), 'filtered', filters] as const,
+  ordenesCompraFiltered: (filters: Record<string, unknown>) =>
+    [...comprasKeys.ordenesCompra(), 'filtered', filters] as const,
   ordenCompra: (id: number) => [...comprasKeys.all, 'orden-compra', id] as const,
 
   // Contratos
   contratos: () => [...comprasKeys.all, 'contratos'] as const,
-  contratosFiltered: (filters: Record<string, any>) => [...comprasKeys.contratos(), 'filtered', filters] as const,
+  contratosFiltered: (filters: Record<string, unknown>) =>
+    [...comprasKeys.contratos(), 'filtered', filters] as const,
   contrato: (id: number) => [...comprasKeys.all, 'contrato', id] as const,
   contratosVigentes: () => [...comprasKeys.all, 'contratos-vigentes'] as const,
   contratosPorVencer: (dias: number) => [...comprasKeys.all, 'contratos-por-vencer', dias] as const,
 
   // Recepciones
   recepciones: () => [...comprasKeys.all, 'recepciones'] as const,
-  recepcionesFiltered: (filters: Record<string, any>) => [...comprasKeys.recepciones(), 'filtered', filters] as const,
+  recepcionesFiltered: (filters: Record<string, unknown>) =>
+    [...comprasKeys.recepciones(), 'filtered', filters] as const,
   recepcion: (id: number) => [...comprasKeys.all, 'recepcion', id] as const,
   recepcionesNoConformes: () => [...comprasKeys.all, 'recepciones-no-conformes'] as const,
 
@@ -156,7 +153,7 @@ export function useEstadosMaterial() {
 
 // ==================== REQUISICIONES ====================
 
-export function useRequisiciones(params?: Record<string, any>) {
+export function useRequisiciones(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: params ? comprasKeys.requisicionesFiltered(params) : comprasKeys.requisiciones(),
     queryFn: async () => {
@@ -189,7 +186,7 @@ export function useCreateRequisicion() {
       queryClient.invalidateQueries({ queryKey: comprasKeys.estadisticas() });
       toast.success('Requisición creada exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<ApiError>) => {
       toast.error(error?.response?.data?.detail || 'Error al crear requisición');
     },
   });
@@ -207,7 +204,7 @@ export function useUpdateRequisicion() {
       queryClient.invalidateQueries({ queryKey: comprasKeys.requisicion(id) });
       toast.success('Requisición actualizada exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<ApiError>) => {
       toast.error(error?.response?.data?.detail || 'Error al actualizar requisición');
     },
   });
@@ -223,7 +220,7 @@ export function useDeleteRequisicion() {
       queryClient.invalidateQueries({ queryKey: comprasKeys.requisiciones() });
       toast.success('Requisición eliminada exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<ApiError>) => {
       toast.error(error?.response?.data?.detail || 'Error al eliminar requisición');
     },
   });
@@ -241,7 +238,7 @@ export function useAprobarRequisicion() {
       queryClient.invalidateQueries({ queryKey: comprasKeys.requisicion(id) });
       toast.success('Requisición aprobada exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<ApiError>) => {
       toast.error(error?.response?.data?.detail || 'Error al aprobar requisición');
     },
   });
@@ -259,7 +256,7 @@ export function useRechazarRequisicion() {
       queryClient.invalidateQueries({ queryKey: comprasKeys.requisicion(id) });
       toast.success('Requisición rechazada');
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<ApiError>) => {
       toast.error(error?.response?.data?.detail || 'Error al rechazar requisición');
     },
   });
@@ -267,7 +264,7 @@ export function useRechazarRequisicion() {
 
 // ==================== COTIZACIONES ====================
 
-export function useCotizaciones(params?: Record<string, any>) {
+export function useCotizaciones(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: params ? comprasKeys.cotizacionesFiltered(params) : comprasKeys.cotizaciones(),
     queryFn: async () => {
@@ -299,7 +296,7 @@ export function useCreateCotizacion() {
       queryClient.invalidateQueries({ queryKey: comprasKeys.cotizaciones() });
       toast.success('Cotización creada exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<ApiError>) => {
       toast.error(error?.response?.data?.detail || 'Error al crear cotización');
     },
   });
@@ -317,7 +314,7 @@ export function useUpdateCotizacion() {
       queryClient.invalidateQueries({ queryKey: comprasKeys.cotizacion(id) });
       toast.success('Cotización actualizada exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<ApiError>) => {
       toast.error(error?.response?.data?.detail || 'Error al actualizar cotización');
     },
   });
@@ -333,7 +330,7 @@ export function useDeleteCotizacion() {
       queryClient.invalidateQueries({ queryKey: comprasKeys.cotizaciones() });
       toast.success('Cotización eliminada exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<ApiError>) => {
       toast.error(error?.response?.data?.detail || 'Error al eliminar cotización');
     },
   });
@@ -351,7 +348,7 @@ export function useEvaluarCotizacion() {
       queryClient.invalidateQueries({ queryKey: comprasKeys.cotizacion(id) });
       toast.success('Cotización evaluada exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<ApiError>) => {
       toast.error(error?.response?.data?.detail || 'Error al evaluar cotización');
     },
   });
@@ -369,7 +366,7 @@ export function useSeleccionarCotizacion() {
       queryClient.invalidateQueries({ queryKey: comprasKeys.cotizacion(id) });
       toast.success('Cotización seleccionada exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<ApiError>) => {
       toast.error(error?.response?.data?.detail || 'Error al seleccionar cotización');
     },
   });
@@ -377,7 +374,7 @@ export function useSeleccionarCotizacion() {
 
 // ==================== ÓRDENES DE COMPRA ====================
 
-export function useOrdenesCompra(params?: Record<string, any>) {
+export function useOrdenesCompra(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: params ? comprasKeys.ordenesCompraFiltered(params) : comprasKeys.ordenesCompra(),
     queryFn: async () => {
@@ -410,7 +407,7 @@ export function useCreateOrdenCompra() {
       queryClient.invalidateQueries({ queryKey: comprasKeys.estadisticas() });
       toast.success('Orden de compra creada exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<ApiError>) => {
       toast.error(error?.response?.data?.detail || 'Error al crear orden de compra');
     },
   });
@@ -428,7 +425,7 @@ export function useUpdateOrdenCompra() {
       queryClient.invalidateQueries({ queryKey: comprasKeys.ordenCompra(id) });
       toast.success('Orden de compra actualizada exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<ApiError>) => {
       toast.error(error?.response?.data?.detail || 'Error al actualizar orden de compra');
     },
   });
@@ -444,7 +441,7 @@ export function useDeleteOrdenCompra() {
       queryClient.invalidateQueries({ queryKey: comprasKeys.ordenesCompra() });
       toast.success('Orden de compra eliminada exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<ApiError>) => {
       toast.error(error?.response?.data?.detail || 'Error al eliminar orden de compra');
     },
   });
@@ -453,7 +450,13 @@ export function useDeleteOrdenCompra() {
 export function useRecepcionarOrdenCompra() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ ordenCompraId, data }: { ordenCompraId: number; data: CreateRecepcionCompraDTO }) => {
+    mutationFn: async ({
+      ordenCompraId,
+      data,
+    }: {
+      ordenCompraId: number;
+      data: CreateRecepcionCompraDTO;
+    }) => {
       const response = await comprasApi.recepcion.registrarRecepcion(ordenCompraId, data);
       return response.data;
     },
@@ -463,7 +466,7 @@ export function useRecepcionarOrdenCompra() {
       queryClient.invalidateQueries({ queryKey: comprasKeys.recepciones() });
       toast.success('Recepción registrada exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<ApiError>) => {
       toast.error(error?.response?.data?.detail || 'Error al registrar recepción');
     },
   });
@@ -471,7 +474,7 @@ export function useRecepcionarOrdenCompra() {
 
 // ==================== CONTRATOS ====================
 
-export function useContratos(params?: Record<string, any>) {
+export function useContratos(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: params ? comprasKeys.contratosFiltered(params) : comprasKeys.contratos(),
     queryFn: async () => {
@@ -503,7 +506,7 @@ export function useCreateContrato() {
       queryClient.invalidateQueries({ queryKey: comprasKeys.contratos() });
       toast.success('Contrato creado exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<ApiError>) => {
       toast.error(error?.response?.data?.detail || 'Error al crear contrato');
     },
   });
@@ -521,7 +524,7 @@ export function useUpdateContrato() {
       queryClient.invalidateQueries({ queryKey: comprasKeys.contrato(id) });
       toast.success('Contrato actualizado exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<ApiError>) => {
       toast.error(error?.response?.data?.detail || 'Error al actualizar contrato');
     },
   });
@@ -537,7 +540,7 @@ export function useDeleteContrato() {
       queryClient.invalidateQueries({ queryKey: comprasKeys.contratos() });
       toast.success('Contrato eliminado exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<ApiError>) => {
       toast.error(error?.response?.data?.detail || 'Error al eliminar contrato');
     },
   });
@@ -567,7 +570,7 @@ export function useContratosPorVencer(dias: number = 30) {
 
 // ==================== RECEPCIONES DE COMPRA ====================
 
-export function useRecepcionesCompra(params?: Record<string, any>) {
+export function useRecepcionesCompra(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: params ? comprasKeys.recepcionesFiltered(params) : comprasKeys.recepciones(),
     queryFn: async () => {
@@ -599,7 +602,7 @@ export function useCreateRecepcionCompra() {
       queryClient.invalidateQueries({ queryKey: comprasKeys.recepciones() });
       toast.success('Recepción de compra creada exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<ApiError>) => {
       toast.error(error?.response?.data?.detail || 'Error al crear recepción');
     },
   });
@@ -608,7 +611,7 @@ export function useCreateRecepcionCompra() {
 export function useUpdateRecepcionCompra() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+    mutationFn: async ({ _id, _data }: { _id: number; _data: UpdateRecepcionCompraDTO }) => {
       // The API doesn't have an update endpoint for recepciones
       throw new Error('Endpoint not implemented');
     },
@@ -617,7 +620,7 @@ export function useUpdateRecepcionCompra() {
       queryClient.invalidateQueries({ queryKey: comprasKeys.recepcion(id) });
       toast.success('Recepción actualizada exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<ApiError>) => {
       toast.error(error?.response?.data?.detail || 'Error al actualizar recepción');
     },
   });
@@ -626,7 +629,7 @@ export function useUpdateRecepcionCompra() {
 export function useDeleteRecepcionCompra() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async (_id: number) => {
       // The API doesn't have a delete endpoint for recepciones
       throw new Error('Endpoint not implemented');
     },
@@ -634,7 +637,7 @@ export function useDeleteRecepcionCompra() {
       queryClient.invalidateQueries({ queryKey: comprasKeys.recepciones() });
       toast.success('Recepción eliminada exitosamente');
     },
-    onError: (error: any) => {
+    onError: (error: AxiosError<ApiError>) => {
       toast.error(error?.response?.data?.detail || 'Error al eliminar recepción');
     },
   });

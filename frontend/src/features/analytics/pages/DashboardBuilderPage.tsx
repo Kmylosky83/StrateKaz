@@ -7,18 +7,7 @@
  * CRUD de vistas y widgets conectado a API real.
  */
 import { useState } from 'react';
-import {
-  Plus,
-  Edit,
-  Trash2,
-  Star,
-  Grid3x3,
-  LayoutDashboard,
-  RefreshCw,
-  Settings,
-  Eye,
-  EyeOff,
-} from 'lucide-react';
+import { Plus, Edit, Trash2, Star, Grid3x3, LayoutDashboard, Settings, Eye } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -43,7 +32,6 @@ import {
   Badge,
   Spinner,
   EmptyState,
-  Tabs,
   Modal,
   ConfirmDialog,
 } from '@/components/common';
@@ -80,17 +68,13 @@ const WidgetRenderer = ({ widget }: { widget: WidgetDashboard }) => {
           </h4>
           <p className="text-xs text-gray-500">{widget.tipo_widget}</p>
         </div>
-        {widget.mostrar_semaforo && (
-          <div className="w-3 h-3 rounded-full bg-green-500" />
-        )}
+        {widget.mostrar_semaforo && <div className="w-3 h-3 rounded-full bg-green-500" />}
       </div>
       <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-800 rounded border border-dashed border-gray-300 dark:border-gray-600">
         <p className="text-sm text-gray-500">Widget Preview</p>
       </div>
       {widget.mostrar_tendencia && (
-        <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">
-          Tendencia: +5.2%
-        </div>
+        <div className="mt-2 text-xs text-gray-600 dark:text-gray-400">Tendencia: +5.2%</div>
       )}
     </div>
   );
@@ -105,14 +89,10 @@ interface SortableWidgetProps {
   onDelete: () => void;
 }
 
-const SortableWidget = ({
-  widget,
-  isEditMode,
-  onEdit,
-  onDelete,
-}: SortableWidgetProps) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: widget.id });
+const SortableWidget = ({ widget, isEditMode, onEdit, onDelete }: SortableWidgetProps) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: widget.id,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -127,11 +107,7 @@ const SortableWidget = ({
       <Card
         variant="bordered"
         padding="md"
-        className={cn(
-          'h-full',
-          isDragging && 'ring-2 ring-blue-500',
-          isEditMode && 'cursor-move'
-        )}
+        className={cn('h-full', isDragging && 'ring-2 ring-blue-500', isEditMode && 'cursor-move')}
       >
         {isEditMode && (
           <div
@@ -180,11 +156,7 @@ interface VistaDashboardFormModalProps {
   vista?: VistaDashboard | null;
 }
 
-const VistaDashboardFormModal = ({
-  isOpen,
-  onClose,
-  vista,
-}: VistaDashboardFormModalProps) => {
+const VistaDashboardFormModal = ({ isOpen, onClose, vista }: VistaDashboardFormModalProps) => {
   const createMutation = useCreateVistaDashboard();
   const updateMutation = useUpdateVistaDashboard();
   const [formData, setFormData] = useState({
@@ -265,9 +237,7 @@ const VistaDashboardFormModal = ({
             </label>
             <select
               value={formData.perspectiva}
-              onChange={(e) =>
-                setFormData({ ...formData, perspectiva: e.target.value as any })
-              }
+              onChange={(e) => setFormData({ ...formData, perspectiva: e.target.value as any })}
               className="w-full px-3 py-2 border rounded-md"
             >
               <option value="general">General</option>
@@ -304,14 +274,10 @@ const VistaDashboardFormModal = ({
             <input
               type="checkbox"
               checked={formData.es_publica}
-              onChange={(e) =>
-                setFormData({ ...formData, es_publica: e.target.checked })
-              }
+              onChange={(e) => setFormData({ ...formData, es_publica: e.target.checked })}
               className="rounded"
             />
-            <span className="text-sm text-gray-700 dark:text-gray-300">
-              Vista Pública
-            </span>
+            <span className="text-sm text-gray-700 dark:text-gray-300">Vista Pública</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -328,10 +294,7 @@ const VistaDashboardFormModal = ({
           <Button type="button" variant="outline" onClick={onClose}>
             Cancelar
           </Button>
-          <Button
-            type="submit"
-            disabled={createMutation.isPending || updateMutation.isPending}
-          >
+          <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
             {vista ? 'Actualizar' : 'Crear'}
           </Button>
         </div>
@@ -346,11 +309,7 @@ interface WidgetSelectorModalProps {
   vistaId: number;
 }
 
-const WidgetSelectorModal = ({
-  isOpen,
-  onClose,
-  vistaId,
-}: WidgetSelectorModalProps) => {
+const WidgetSelectorModal = ({ isOpen, onClose, vistaId }: WidgetSelectorModalProps) => {
   const { data: catalogos, isLoading } = useCatalogosKPI({ activo: true });
   const createMutation = useCreateWidgetDashboard();
   const [selectedKPI, setSelectedKPI] = useState<number | null>(null);
@@ -383,12 +342,7 @@ const WidgetSelectorModal = ({
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Agregar Widget"
-      size="lg"
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title="Agregar Widget" size="lg">
       <form onSubmit={handleSubmit} className="space-y-4">
         {isLoading ? (
           <div className="flex justify-center py-8">
@@ -444,9 +398,7 @@ const WidgetSelectorModal = ({
                   min={1}
                   max={12}
                   value={config.ancho}
-                  onChange={(e) =>
-                    setConfig({ ...config, ancho: Number(e.target.value) })
-                  }
+                  onChange={(e) => setConfig({ ...config, ancho: Number(e.target.value) })}
                   className="w-full px-3 py-2 border rounded-md"
                 />
               </div>
@@ -459,9 +411,7 @@ const WidgetSelectorModal = ({
                   min={1}
                   max={6}
                   value={config.alto}
-                  onChange={(e) =>
-                    setConfig({ ...config, alto: Number(e.target.value) })
-                  }
+                  onChange={(e) => setConfig({ ...config, alto: Number(e.target.value) })}
                   className="w-full px-3 py-2 border rounded-md"
                 />
               </div>
@@ -473,9 +423,7 @@ const WidgetSelectorModal = ({
                   type="number"
                   min={1}
                   value={config.posicion_fila}
-                  onChange={(e) =>
-                    setConfig({ ...config, posicion_fila: Number(e.target.value) })
-                  }
+                  onChange={(e) => setConfig({ ...config, posicion_fila: Number(e.target.value) })}
                   className="w-full px-3 py-2 border rounded-md"
                 />
               </div>
@@ -501,9 +449,7 @@ const WidgetSelectorModal = ({
                 <input
                   type="checkbox"
                   checked={config.mostrar_tendencia}
-                  onChange={(e) =>
-                    setConfig({ ...config, mostrar_tendencia: e.target.checked })
-                  }
+                  onChange={(e) => setConfig({ ...config, mostrar_tendencia: e.target.checked })}
                   className="rounded"
                 />
                 <span className="text-sm">Mostrar Tendencia</span>
@@ -512,9 +458,7 @@ const WidgetSelectorModal = ({
                 <input
                   type="checkbox"
                   checked={config.mostrar_meta}
-                  onChange={(e) =>
-                    setConfig({ ...config, mostrar_meta: e.target.checked })
-                  }
+                  onChange={(e) => setConfig({ ...config, mostrar_meta: e.target.checked })}
                   className="rounded"
                 />
                 <span className="text-sm">Mostrar Meta</span>
@@ -523,9 +467,7 @@ const WidgetSelectorModal = ({
                 <input
                   type="checkbox"
                   checked={config.mostrar_semaforo}
-                  onChange={(e) =>
-                    setConfig({ ...config, mostrar_semaforo: e.target.checked })
-                  }
+                  onChange={(e) => setConfig({ ...config, mostrar_semaforo: e.target.checked })}
                   className="rounded"
                 />
                 <span className="text-sm">Mostrar Semáforo</span>
@@ -561,9 +503,7 @@ export default function DashboardBuilderPage() {
 
   const { data: vistas, isLoading: vistasLoading } = useVistasDashboard();
   const { data: favoritos } = useFavoritos();
-  const { data: widgets, isLoading: widgetsLoading } = useWidgetsByVista(
-    selectedVista?.id || 0
-  );
+  const { data: widgets, isLoading: widgetsLoading } = useWidgetsByVista(selectedVista?.id || 0);
 
   const deleteVistaMutation = useDeleteVistaDashboard();
   const deleteWidgetMutation = useDeleteWidgetDashboard();
@@ -583,8 +523,7 @@ export default function DashboardBuilderPage() {
     ? vistas?.filter((v) => favoritos?.some((f) => f.vista === v.id))
     : vistas;
 
-  const isFavorite = (vistaId: number) =>
-    favoritos?.some((f) => f.vista === vistaId);
+  const isFavorite = (vistaId: number) => favoritos?.some((f) => f.vista === vistaId);
 
   const toggleFavorite = async (vistaId: number) => {
     const favorito = favoritos?.find((f) => f.vista === vistaId);
@@ -668,9 +607,7 @@ export default function DashboardBuilderPage() {
       <Card variant="bordered" padding="md">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Mis Vistas
-            </h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Mis Vistas</h3>
             <Badge variant="outline">{filteredVistas?.length || 0}</Badge>
             <Button
               variant="ghost"
@@ -679,10 +616,7 @@ export default function DashboardBuilderPage() {
               className={cn(showFavoritesOnly && 'bg-yellow-100 dark:bg-yellow-900/20')}
             >
               <Star
-                className={cn(
-                  'w-4 h-4',
-                  showFavoritesOnly && 'fill-yellow-500 text-yellow-500'
-                )}
+                className={cn('w-4 h-4', showFavoritesOnly && 'fill-yellow-500 text-yellow-500')}
               />
             </Button>
           </div>
@@ -695,11 +629,7 @@ export default function DashboardBuilderPage() {
         {!filteredVistas || filteredVistas.length === 0 ? (
           <EmptyState
             icon={LayoutDashboard}
-            title={
-              showFavoritesOnly
-                ? 'No tienes vistas favoritas'
-                : 'No hay vistas disponibles'
-            }
+            title={showFavoritesOnly ? 'No tienes vistas favoritas' : 'No hay vistas disponibles'}
             description={
               showFavoritesOnly
                 ? 'Marca vistas como favoritas para acceso rápido'
@@ -780,9 +710,7 @@ export default function DashboardBuilderPage() {
                 </div>
 
                 <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
-                  <span className="text-xs text-gray-500">
-                    {vista.creado_por_nombre}
-                  </span>
+                  <span className="text-xs text-gray-500">{vista.creado_por_nombre}</span>
                   <div className="flex items-center gap-1">
                     <Button
                       variant="ghost"
@@ -876,10 +804,7 @@ export default function DashboardBuilderPage() {
               collisionDetection={closestCenter}
               onDragEnd={handleDragEnd}
             >
-              <SortableContext
-                items={widgets.map((w) => w.id)}
-                strategy={rectSortingStrategy}
-              >
+              <SortableContext items={widgets.map((w) => w.id)} strategy={rectSortingStrategy}>
                 <div className="grid grid-cols-12 gap-4 auto-rows-[150px]">
                   {widgets.map((widget) => (
                     <SortableWidget
@@ -888,7 +813,6 @@ export default function DashboardBuilderPage() {
                       isEditMode={isEditMode}
                       onEdit={() => {
                         // TODO: Implement widget edit modal
-                        console.log('Edit widget:', widget.id);
                       }}
                       onDelete={() => setDeleteWidgetId(widget.id)}
                     />

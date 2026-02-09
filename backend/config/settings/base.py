@@ -88,6 +88,7 @@ TENANT_APPS = [
     'apps.motor_cumplimiento.requisitos_legales',
     'apps.motor_cumplimiento.partes_interesadas',
     'apps.motor_cumplimiento.reglamentos_internos',
+    'apps.motor_cumplimiento.evidencias',
 
     'apps.motor_riesgos.riesgos_procesos',
     'apps.motor_riesgos.ipevr',

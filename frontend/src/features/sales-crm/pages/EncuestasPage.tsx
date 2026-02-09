@@ -12,7 +12,7 @@ import {
   ThumbsUp,
   ThumbsDown,
   Minus,
-  TrendingUp
+  TrendingUp,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -26,14 +26,20 @@ import { NPSGauge } from '../components/NPSGauge';
 import { useEncuestas, useNPSDashboard } from '../hooks';
 import type { EncuestaList, TipoEncuesta, EstadoEncuesta } from '../types';
 
-const TIPO_CONFIG: Record<TipoEncuesta, { variant: 'default' | 'primary' | 'success' | 'warning' | 'danger'; label: string }> = {
+const TIPO_CONFIG: Record<
+  TipoEncuesta,
+  { variant: 'default' | 'primary' | 'success' | 'warning' | 'danger'; label: string }
+> = {
   NPS: { variant: 'primary', label: 'NPS' },
   SATISFACCION: { variant: 'success', label: 'Satisfacción' },
   CALIDAD_PRODUCTO: { variant: 'warning', label: 'Calidad Producto' },
   SERVICIO_CLIENTE: { variant: 'primary', label: 'Servicio Cliente' },
 };
 
-const ESTADO_CONFIG: Record<EstadoEncuesta, { variant: 'default' | 'primary' | 'success' | 'warning' | 'danger'; label: string }> = {
+const ESTADO_CONFIG: Record<
+  EstadoEncuesta,
+  { variant: 'default' | 'primary' | 'success' | 'warning' | 'danger'; label: string }
+> = {
   BORRADOR: { variant: 'default', label: 'Borrador' },
   ACTIVA: { variant: 'primary', label: 'Activa' },
   FINALIZADA: { variant: 'success', label: 'Finalizada' },
@@ -62,9 +68,7 @@ function EncuestaCard({ encuesta, onView, onEnviar }: EncuestaCardProps) {
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
-            <h3 className="font-semibold text-gray-900 dark:text-white">
-              {encuesta.titulo}
-            </h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white">{encuesta.titulo}</h3>
             <Badge variant={TIPO_CONFIG[encuesta.tipo].variant} size="sm">
               {TIPO_CONFIG[encuesta.tipo].label}
             </Badge>
@@ -73,9 +77,7 @@ function EncuestaCard({ encuesta, onView, onEnviar }: EncuestaCardProps) {
             </Badge>
           </div>
           {encuesta.cliente_nombre && (
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {encuesta.cliente_nombre}
-            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">{encuesta.cliente_nombre}</p>
           )}
         </div>
         {encuesta.puntuacion_nps !== undefined && encuesta.puntuacion_nps !== null && (
@@ -123,11 +125,7 @@ function EncuestaCard({ encuesta, onView, onEnviar }: EncuestaCardProps) {
       </div>
 
       <div className="flex items-center gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onView(encuesta.id)}
-        >
+        <Button variant="outline" size="sm" onClick={() => onView(encuesta.id)}>
           Ver Detalle
         </Button>
 
@@ -147,7 +145,7 @@ function EncuestaCard({ encuesta, onView, onEnviar }: EncuestaCardProps) {
 }
 
 export default function EncuestasPage() {
-  const [filters, setFilters] = useState<any>({});
+  const [filters, _setFilters] = useState<any>({});
 
   const { data: encuestasData, isLoading: isLoadingEncuestas } = useEncuestas(filters);
   const { data: npsDashboard, isLoading: isLoadingNPS } = useNPSDashboard();
@@ -177,13 +175,13 @@ export default function EncuestasPage() {
   // Calcular estadísticas generales
   const stats = {
     total: encuestas.length,
-    activas: encuestas.filter(e => e.estado === 'ACTIVA').length,
-    respondidas: encuestas.filter(e => e.respondida).length,
-    pendientes: encuestas.filter(e => !e.respondida && e.estado === 'ACTIVA').length,
+    activas: encuestas.filter((e) => e.estado === 'ACTIVA').length,
+    respondidas: encuestas.filter((e) => e.respondida).length,
+    pendientes: encuestas.filter((e) => !e.respondida && e.estado === 'ACTIVA').length,
   };
 
-  const handleEnviar = (id: number) => {
-    console.log('Enviar encuesta', id);
+  const handleEnviar = (_id: number) => {
+    // TODO: Implementar envío de encuesta
   };
 
   return (
@@ -282,9 +280,7 @@ export default function EncuestasPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Total Encuestas</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                {stats.total}
-              </p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stats.total}</p>
             </div>
             <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
               <MessageCircle className="w-6 h-6 text-primary-600 dark:text-primary-400" />
@@ -361,7 +357,7 @@ export default function EncuestasPage() {
           description="Comience creando encuestas para medir la satisfacción de sus clientes"
           action={{
             label: 'Nueva Encuesta',
-            onClick: () => console.log('Nueva Encuesta'),
+            onClick: () => {},
             icon: <Plus className="w-4 h-4" />,
           }}
         />
@@ -371,7 +367,7 @@ export default function EncuestasPage() {
             <EncuestaCard
               key={encuesta.id}
               encuesta={encuesta}
-              onView={(id) => console.log('Ver', id)}
+              onView={() => {}}
               onEnviar={handleEnviar}
             />
           ))}

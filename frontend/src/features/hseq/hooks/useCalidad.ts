@@ -4,14 +4,20 @@
  * Salidas No Conformes, Solicitudes de Cambio y Control de Cambios
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import calidadApi from '../api/calidadApi';
+
+/** Extrae el mensaje de error de un AxiosError o Error genérico */
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof AxiosError) {
+    const detail = (error.response?.data as Record<string, unknown> | undefined)?.detail;
+    if (typeof detail === 'string') return detail;
+  }
+  if (error instanceof Error) return error.message;
+  return fallback;
+}
 import type {
-  NoConformidad,
-  AccionCorrectiva,
-  SalidaNoConforme,
-  SolicitudCambio,
-  ControlCambio,
   CreateNoConformidadDTO,
   UpdateNoConformidadDTO,
   CreateAccionCorrectivaDTO,
@@ -34,8 +40,6 @@ import type {
   EstadoSolicitudCambio,
   TipoSolicitudCambio,
   PrioridadCambio,
-  EstadisticasNoConformidades,
-  PaginatedResponse,
 } from '../types/calidad.types';
 
 // ==================== QUERY KEYS ====================
@@ -46,14 +50,14 @@ export const calidadKeys = {
   // No Conformidades
   noConformidades: () => [...calidadKeys.all, 'no-conformidades'] as const,
   noConformidad: (id: number) => [...calidadKeys.noConformidades(), id] as const,
-  noConformidadesFiltered: (filters: Record<string, any>) =>
+  noConformidadesFiltered: (filters: Record<string, unknown>) =>
     [...calidadKeys.noConformidades(), 'filtered', filters] as const,
   noConformidadesEstadisticas: () => [...calidadKeys.noConformidades(), 'estadisticas'] as const,
 
   // Acciones Correctivas
   acciones: () => [...calidadKeys.all, 'acciones'] as const,
   accion: (id: number) => [...calidadKeys.acciones(), id] as const,
-  accionesFiltered: (filters: Record<string, any>) =>
+  accionesFiltered: (filters: Record<string, unknown>) =>
     [...calidadKeys.acciones(), 'filtered', filters] as const,
   accionesPorNC: (ncId: number) => [...calidadKeys.acciones(), 'por-nc', ncId] as const,
   accionesVencidas: () => [...calidadKeys.acciones(), 'vencidas'] as const,
@@ -61,19 +65,19 @@ export const calidadKeys = {
   // Salidas No Conformes
   salidas: () => [...calidadKeys.all, 'salidas-no-conformes'] as const,
   salida: (id: number) => [...calidadKeys.salidas(), id] as const,
-  salidasFiltered: (filters: Record<string, any>) =>
+  salidasFiltered: (filters: Record<string, unknown>) =>
     [...calidadKeys.salidas(), 'filtered', filters] as const,
 
   // Solicitudes de Cambio
   solicitudes: () => [...calidadKeys.all, 'solicitudes-cambio'] as const,
   solicitud: (id: number) => [...calidadKeys.solicitudes(), id] as const,
-  solicitudesFiltered: (filters: Record<string, any>) =>
+  solicitudesFiltered: (filters: Record<string, unknown>) =>
     [...calidadKeys.solicitudes(), 'filtered', filters] as const,
 
   // Control de Cambios
   controles: () => [...calidadKeys.all, 'control-cambios'] as const,
   control: (id: number) => [...calidadKeys.controles(), id] as const,
-  controlesFiltered: (filters: Record<string, any>) =>
+  controlesFiltered: (filters: Record<string, unknown>) =>
     [...calidadKeys.controles(), 'filtered', filters] as const,
 };
 
@@ -132,8 +136,8 @@ export function useCreateNoConformidad() {
       queryClient.invalidateQueries({ queryKey: calidadKeys.noConformidadesEstadisticas() });
       toast.success('No conformidad creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear no conformidad');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear no conformidad'));
     },
   });
 }
@@ -155,8 +159,8 @@ export function useUpdateNoConformidad() {
       queryClient.invalidateQueries({ queryKey: calidadKeys.noConformidadesEstadisticas() });
       toast.success('No conformidad actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar no conformidad');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar no conformidad'));
     },
   });
 }
@@ -176,8 +180,8 @@ export function useDeleteNoConformidad() {
       queryClient.invalidateQueries({ queryKey: calidadKeys.noConformidadesEstadisticas() });
       toast.success('No conformidad eliminada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar no conformidad');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar no conformidad'));
     },
   });
 }
@@ -206,8 +210,8 @@ export function useCambiarEstadoNC() {
       queryClient.invalidateQueries({ queryKey: calidadKeys.noConformidad(id) });
       toast.success('Responsable asignado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al asignar responsable');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al asignar responsable'));
     },
   });
 }
@@ -239,8 +243,8 @@ export function useCerrarNC() {
       queryClient.invalidateQueries({ queryKey: calidadKeys.noConformidadesEstadisticas() });
       toast.success('No conformidad cerrada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al cerrar no conformidad');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al cerrar no conformidad'));
     },
   });
 }
@@ -315,8 +319,8 @@ export function useCreateAccionCorrectiva() {
       });
       toast.success('Acción correctiva creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear acción correctiva');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear acción correctiva'));
     },
   });
 }
@@ -338,8 +342,8 @@ export function useUpdateAccionCorrectiva() {
       queryClient.invalidateQueries({ queryKey: calidadKeys.accionesPorNC(data.no_conformidad) });
       toast.success('Acción correctiva actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar acción correctiva');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar acción correctiva'));
     },
   });
 }
@@ -358,8 +362,8 @@ export function useDeleteAccionCorrectiva() {
       queryClient.invalidateQueries({ queryKey: calidadKeys.acciones() });
       toast.success('Acción correctiva eliminada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar acción correctiva');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar acción correctiva'));
     },
   });
 }
@@ -387,8 +391,8 @@ export function useEjecutarAccion() {
       queryClient.invalidateQueries({ queryKey: calidadKeys.accionesPorNC(data.no_conformidad) });
       toast.success('Acción marcada como ejecutada');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al ejecutar acción');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al ejecutar acción'));
     },
   });
 }
@@ -424,8 +428,8 @@ export function useVerificarEficaciaAccion() {
       });
       toast.success('Eficacia verificada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al verificar eficacia');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al verificar eficacia'));
     },
   });
 }
@@ -509,8 +513,8 @@ export function useCreateSalidaNoConforme() {
       queryClient.invalidateQueries({ queryKey: calidadKeys.salidas() });
       toast.success('Salida no conforme creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear salida no conforme');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear salida no conforme'));
     },
   });
 }
@@ -531,8 +535,8 @@ export function useUpdateSalidaNoConforme() {
       queryClient.invalidateQueries({ queryKey: calidadKeys.salida(id) });
       toast.success('Salida no conforme actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar salida no conforme');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar salida no conforme'));
     },
   });
 }
@@ -551,8 +555,8 @@ export function useDeleteSalidaNoConforme() {
       queryClient.invalidateQueries({ queryKey: calidadKeys.salidas() });
       toast.success('Salida no conforme eliminada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar salida no conforme');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar salida no conforme'));
     },
   });
 }
@@ -579,8 +583,8 @@ export function useDefinirDisposicion() {
       queryClient.invalidateQueries({ queryKey: calidadKeys.salida(id) });
       toast.success('Disposición definida exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al definir disposición');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al definir disposición'));
     },
   });
 }
@@ -609,8 +613,8 @@ export function useLiberarSalida() {
       queryClient.invalidateQueries({ queryKey: calidadKeys.salida(id) });
       toast.success('Producto liberado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al liberar producto');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al liberar producto'));
     },
   });
 }
@@ -666,8 +670,8 @@ export function useCreateSolicitudCambio() {
       queryClient.invalidateQueries({ queryKey: calidadKeys.solicitudes() });
       toast.success('Solicitud de cambio creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear solicitud de cambio');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear solicitud de cambio'));
     },
   });
 }
@@ -688,8 +692,8 @@ export function useUpdateSolicitudCambio() {
       queryClient.invalidateQueries({ queryKey: calidadKeys.solicitud(id) });
       toast.success('Solicitud de cambio actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar solicitud de cambio');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar solicitud de cambio'));
     },
   });
 }
@@ -708,8 +712,8 @@ export function useDeleteSolicitudCambio() {
       queryClient.invalidateQueries({ queryKey: calidadKeys.solicitudes() });
       toast.success('Solicitud de cambio eliminada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar solicitud de cambio');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar solicitud de cambio'));
     },
   });
 }
@@ -730,8 +734,8 @@ export function useAprobarSolicitud() {
       queryClient.invalidateQueries({ queryKey: calidadKeys.solicitud(id) });
       toast.success('Solicitud de cambio aprobada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al aprobar solicitud');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al aprobar solicitud'));
     },
   });
 }
@@ -752,8 +756,8 @@ export function useRechazarSolicitud() {
       queryClient.invalidateQueries({ queryKey: calidadKeys.solicitud(id) });
       toast.success('Solicitud de cambio rechazada');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al rechazar solicitud');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al rechazar solicitud'));
     },
   });
 }
@@ -811,8 +815,8 @@ export function useCreateControlCambio() {
       });
       toast.success('Control de cambio creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear control de cambio');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear control de cambio'));
     },
   });
 }
@@ -833,8 +837,8 @@ export function useUpdateControlCambio() {
       queryClient.invalidateQueries({ queryKey: calidadKeys.control(id) });
       toast.success('Control de cambio actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar control de cambio');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar control de cambio'));
     },
   });
 }
@@ -868,8 +872,8 @@ export function useVerificarControlCambio() {
       });
       toast.success('Verificación de cambio completada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al verificar cambio');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al verificar cambio'));
     },
   });
 }

@@ -12,7 +12,6 @@ import { Badge } from '@/components/common/Badge';
 import { Spinner } from '@/components/common/Spinner';
 import {
   Calendar,
-  Clock,
   Truck,
   DollarSign,
   CalendarDays,
@@ -33,25 +32,29 @@ import {
   useAsignacionesRecurso,
   useEjecuciones,
   useLiquidaciones,
-  useEstadisticasProgramaciones,
 } from '../hooks';
 
 // ==================== UTILITY FUNCTIONS ====================
 
 const formatEstado = (estado: string): string => {
-  return estado.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase());
+  return estado
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (l) => l.toUpperCase());
 };
 
-const getEstadoBadgeVariant = (estado: string): 'success' | 'primary' | 'warning' | 'danger' | 'gray' => {
+const getEstadoBadgeVariant = (
+  estado: string
+): 'success' | 'primary' | 'warning' | 'danger' | 'gray' => {
   const estadosSuccess = ['COMPLETADA', 'LIQUIDADA', 'APROBADA', 'EJECUTADA'];
   const estadosPrimary = ['EN_EJECUCION', 'EN_CURSO', 'EN_PROCESO'];
   const estadosWarning = ['PROGRAMADA', 'PENDIENTE'];
   const estadosDanger = ['CANCELADA', 'RECHAZADA', 'VENCIDA'];
 
-  if (estadosSuccess.some(e => estado.includes(e))) return 'success';
-  if (estadosPrimary.some(e => estado.includes(e))) return 'primary';
-  if (estadosWarning.some(e => estado.includes(e))) return 'warning';
-  if (estadosDanger.some(e => estado.includes(e))) return 'danger';
+  if (estadosSuccess.some((e) => estado.includes(e))) return 'success';
+  if (estadosPrimary.some((e) => estado.includes(e))) return 'primary';
+  if (estadosWarning.some((e) => estado.includes(e))) return 'warning';
+  if (estadosDanger.some((e) => estado.includes(e))) return 'danger';
   return 'gray';
 };
 
@@ -77,7 +80,7 @@ const ProgramacionesSection = () => {
         description="Comience creando programaciones de abastecimiento"
         action={{
           label: 'Nueva Programación',
-          onClick: () => console.log('Nueva Programación'),
+          onClick: () => {},
           icon: <Plus className="w-4 h-4" />,
         }}
       />
@@ -108,12 +111,24 @@ const ProgramacionesSection = () => {
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Código</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tipo Operación</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fecha Programada</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cantidad</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Estado</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Código
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Tipo Operación
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Fecha Programada
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Cantidad
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Estado
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Acciones
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -126,7 +141,9 @@ const ProgramacionesSection = () => {
                     {prog.tipo_operacion_nombre}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {prog.fecha_programada ? format(new Date(prog.fecha_programada), 'dd/MM/yyyy', { locale: es }) : '-'}
+                    {prog.fecha_programada
+                      ? format(new Date(prog.fecha_programada), 'dd/MM/yyyy', { locale: es })
+                      : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
                     {prog.cantidad_programada} {prog.unidad_medida_codigo}
@@ -138,12 +155,20 @@ const ProgramacionesSection = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm"><Eye className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="sm"><Edit className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="sm">
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Edit className="w-4 h-4" />
+                      </Button>
                       {prog.deleted_at ? (
-                        <Button variant="ghost" size="sm"><RotateCcw className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="sm">
+                          <RotateCcw className="w-4 h-4" />
+                        </Button>
                       ) : (
-                        <Button variant="ghost" size="sm"><Trash2 className="w-4 h-4 text-danger-600" /></Button>
+                        <Button variant="ghost" size="sm">
+                          <Trash2 className="w-4 h-4 text-danger-600" />
+                        </Button>
                       )}
                     </div>
                   </td>
@@ -179,7 +204,7 @@ const AsignacionesSection = () => {
         description="Asigne recursos a las programaciones de abastecimiento"
         action={{
           label: 'Nueva Asignación',
-          onClick: () => console.log('Nueva Asignación'),
+          onClick: () => {},
           icon: <Plus className="w-4 h-4" />,
         }}
       />
@@ -189,7 +214,9 @@ const AsignacionesSection = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Asignación de Recursos</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          Asignación de Recursos
+        </h3>
         <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
           Nueva Asignación
         </Button>
@@ -200,18 +227,32 @@ const AsignacionesSection = () => {
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Programación</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Recurso</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tipo</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fecha Asignación</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Programación
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Recurso
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Tipo
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Fecha Asignación
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Acciones
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {asignaciones.map((asig: any) => (
                 <tr key={asig.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{asig.programacion_codigo}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{asig.recurso_nombre}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                    {asig.programacion_codigo}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                    {asig.recurso_nombre}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
                     {formatEstado(asig.tipo_recurso)}
                   </td>
@@ -220,8 +261,12 @@ const AsignacionesSection = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm"><Edit className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="sm"><Trash2 className="w-4 h-4 text-danger-600" /></Button>
+                      <Button variant="ghost" size="sm">
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Trash2 className="w-4 h-4 text-danger-600" />
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -256,7 +301,7 @@ const EjecucionesSection = () => {
         description="Registre las ejecuciones de las programaciones"
         action={{
           label: 'Nueva Ejecución',
-          onClick: () => console.log('Nueva Ejecución'),
+          onClick: () => {},
           icon: <Plus className="w-4 h-4" />,
         }}
       />
@@ -277,23 +322,39 @@ const EjecucionesSection = () => {
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Programación</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fecha Inicio</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fecha Fin</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Cantidad Real</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Estado</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Programación
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Fecha Inicio
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Fecha Fin
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Cantidad Real
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Estado
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Acciones
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {ejecuciones.map((ejec: any) => (
                 <tr key={ejec.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{ejec.programacion_codigo}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                    {ejec.programacion_codigo}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
                     {format(new Date(ejec.fecha_inicio), 'dd/MM/yyyy HH:mm', { locale: es })}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {ejec.fecha_fin ? format(new Date(ejec.fecha_fin), 'dd/MM/yyyy HH:mm', { locale: es }) : '-'}
+                    {ejec.fecha_fin
+                      ? format(new Date(ejec.fecha_fin), 'dd/MM/yyyy HH:mm', { locale: es })
+                      : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
                     {ejec.cantidad_real || '-'}
@@ -305,8 +366,12 @@ const EjecucionesSection = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm"><Eye className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="sm"><CheckCircle className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="sm">
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <CheckCircle className="w-4 h-4" />
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -341,7 +406,7 @@ const LiquidacionesSection = () => {
         description="Registre las liquidaciones de las ejecuciones"
         action={{
           label: 'Nueva Liquidación',
-          onClick: () => console.log('Nueva Liquidación'),
+          onClick: () => {},
           icon: <Plus className="w-4 h-4" />,
         }}
       />
@@ -362,17 +427,29 @@ const LiquidacionesSection = () => {
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ejecución</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fecha Liquidación</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Estado</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Ejecución
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Total
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Fecha Liquidación
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Estado
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Acciones
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {liquidaciones.map((liq: any) => (
                 <tr key={liq.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{liq.ejecucion_codigo}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                    {liq.ejecucion_codigo}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                     ${liq.total?.toLocaleString() || '0'}
                   </td>
@@ -386,9 +463,15 @@ const LiquidacionesSection = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm"><Eye className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="sm"><FileText className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="sm"><CheckCircle className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="sm">
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <FileText className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <CheckCircle className="w-4 h-4" />
+                      </Button>
                     </div>
                   </td>
                 </tr>

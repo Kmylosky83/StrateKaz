@@ -383,13 +383,7 @@ export default function AnalyticsDemoPage() {
             {/* Hero Stats */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {gaugeKPIs.map((kpi) => (
-                <KPIGaugeAdvanced
-                  key={kpi.id}
-                  kpi={kpi}
-                  size="sm"
-                  showPrediction
-                  showTrend
-                />
+                <KPIGaugeAdvanced key={kpi.id} kpi={kpi} size="sm" showPrediction showTrend />
               ))}
             </div>
 
@@ -402,11 +396,7 @@ export default function AnalyticsDemoPage() {
                 showPrevious
                 height={400}
               />
-              <KPITrendPrediction
-                kpi={trendKPIData}
-                projectionPeriods={3}
-                height={350}
-              />
+              <KPITrendPrediction kpi={trendKPIData} projectionPeriods={3} height={350} />
             </div>
 
             {/* Heatmap */}
@@ -438,9 +428,7 @@ export default function AnalyticsDemoPage() {
                 showPrevious
                 showLegend
                 height={500}
-                onPerspectiveClick={(perspective) => {
-                  console.log('Perspectiva seleccionada:', perspective);
-                }}
+                onPerspectiveClick={() => {}}
               />
             </Card>
           </div>
@@ -452,8 +440,8 @@ export default function AnalyticsDemoPage() {
             <Card className="p-6">
               <h3 className="text-lg font-semibold mb-4">Análisis de Tendencias con Predicción</h3>
               <p className="text-sm text-gray-500 mb-6">
-                Regresión lineal y polinomial para proyectar valores futuros.
-                El R² indica qué tan bien se ajusta el modelo a los datos históricos.
+                Regresión lineal y polinomial para proyectar valores futuros. El R² indica qué tan
+                bien se ajusta el modelo a los datos históricos.
               </p>
               <KPITrendPrediction
                 kpi={trendKPIData}
@@ -504,8 +492,8 @@ export default function AnalyticsDemoPage() {
             <Card className="p-6">
               <h3 className="text-lg font-semibold mb-4">Mapa de Calor - Actividad Anual</h3>
               <p className="text-sm text-gray-500 mb-6">
-                Visualización tipo GitHub de la actividad de mediciones durante el año.
-                Los colores más intensos indican mayor actividad.
+                Visualización tipo GitHub de la actividad de mediciones durante el año. Los colores
+                más intensos indican mayor actividad.
               </p>
             </Card>
 
@@ -554,8 +542,8 @@ export default function AnalyticsDemoPage() {
             <Card className="p-6">
               <h3 className="text-lg font-semibold mb-4">Matriz de Correlaciones entre KPIs</h3>
               <p className="text-sm text-gray-500 mb-6">
-                Análisis estadístico de relaciones entre indicadores usando el coeficiente
-                de correlación de Pearson. Valores cercanos a +1 o -1 indican relaciones fuertes.
+                Análisis estadístico de relaciones entre indicadores usando el coeficiente de
+                correlación de Pearson. Valores cercanos a +1 o -1 indican relaciones fuertes.
               </p>
               <KPICorrelationMatrix
                 kpis={correlationKPIs}
@@ -563,9 +551,7 @@ export default function AnalyticsDemoPage() {
                 showValues
                 threshold={0.1}
                 height={550}
-                onCellClick={(correlation) => {
-                  console.log('Correlación seleccionada:', correlation);
-                }}
+                onCellClick={() => {}}
               />
             </Card>
           </div>
@@ -578,8 +564,8 @@ export default function AnalyticsDemoPage() {
               <h3 className="text-lg font-semibold mb-4">Flujo Estratégico BSC</h3>
               <p className="text-sm text-gray-500 mb-6">
                 Diagrama Sankey que visualiza las relaciones causa-efecto entre perspectivas,
-                objetivos estratégicos y KPIs. El grosor de las líneas representa la fuerza
-                de la relación.
+                objetivos estratégicos y KPIs. El grosor de las líneas representa la fuerza de la
+                relación.
               </p>
               <KPISankeyFlow
                 nodes={sankeyNodes}
@@ -587,9 +573,7 @@ export default function AnalyticsDemoPage() {
                 title="Mapa de Relaciones Estratégicas"
                 orientation="horizontal"
                 height={600}
-                onNodeClick={(node) => {
-                  console.log('Nodo seleccionado:', node);
-                }}
+                onNodeClick={() => {}}
               />
             </Card>
           </div>
@@ -601,8 +585,8 @@ export default function AnalyticsDemoPage() {
             <Card className="p-6">
               <h3 className="text-lg font-semibold mb-4">Velocímetros Avanzados</h3>
               <p className="text-sm text-gray-500 mb-6">
-                Gauges enterprise con múltiples capas de información: valor actual, meta,
-                tendencia, predicción y progreso hacia el objetivo.
+                Gauges enterprise con múltiples capas de información: valor actual, meta, tendencia,
+                predicción y progreso hacia el objetivo.
               </p>
             </Card>
 
@@ -644,9 +628,7 @@ export default function AnalyticsDemoPage() {
 
       {/* Footer con info técnica */}
       <Card className="p-6 bg-gray-50 dark:bg-gray-800">
-        <h4 className="font-semibold text-gray-900 dark:text-white mb-3">
-          Información Técnica
-        </h4>
+        <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Información Técnica</h4>
         <div className="grid md:grid-cols-3 gap-4 text-sm text-gray-600 dark:text-gray-400">
           <div>
             <strong className="text-gray-900 dark:text-white">Librerías de Visualización:</strong>

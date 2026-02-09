@@ -59,15 +59,7 @@ import { cn } from '@/utils/cn';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-import type {
-  AnalisisVulnerabilidadList,
-  PlanEmergenciaList,
-  PlanoEvacuacion,
-  BrigadaList,
-  SimulacroList,
-  RecursoEmergenciaList,
-  TipoRecursoEmergencia,
-} from '../types/emergencias.types';
+import type { TipoRecursoEmergencia } from '../types/emergencias.types';
 
 // ==================== UTILITY FUNCTIONS ====================
 
@@ -92,7 +84,10 @@ const getTipoRecursoIcon = (tipo: TipoRecursoEmergencia) => {
  * Variant overrides for statuses not covered by StatusBadge's built-in PROCESO_MAP.
  * Only statuses that fall through to 'gray' but need a specific color are listed here.
  */
-const EMERGENCIAS_VARIANT_MAP: Record<string, 'success' | 'primary' | 'warning' | 'danger' | 'gray' | 'info'> = {
+const EMERGENCIAS_VARIANT_MAP: Record<
+  string,
+  'success' | 'primary' | 'warning' | 'danger' | 'gray' | 'info'
+> = {
   ACTUALIZADO: 'primary',
   DESACTUALIZADO: 'danger',
   EN_FORMACION: 'warning',
@@ -134,7 +129,7 @@ const AnalisisVulnerabilidadSection = () => {
         description="Comience identificando las amenazas y vulnerabilidades de la organización"
         action={{
           label: 'Nuevo Análisis',
-          onClick: () => console.log('Nuevo Análisis'),
+          onClick: () => {},
           icon: <Plus className="w-4 h-4" />,
         }}
       />
@@ -144,7 +139,9 @@ const AnalisisVulnerabilidadSection = () => {
   const stats = {
     total: analisis.length,
     aprobados: analisis.filter((a) => a.estado === 'APROBADO').length,
-    criticos: analisis.filter((a) => a.nivel_vulnerabilidad === 'CRITICO' || a.nivel_vulnerabilidad === 'ALTO').length,
+    criticos: analisis.filter(
+      (a) => a.nivel_vulnerabilidad === 'CRITICO' || a.nivel_vulnerabilidad === 'ALTO'
+    ).length,
     amenazasCriticas: analisis.reduce((acc, a) => acc + (a.amenazas_criticas || 0), 0),
   };
 
@@ -184,11 +181,11 @@ const AnalisisVulnerabilidadSection = () => {
       {/* Actions */}
       <SectionToolbar
         title="Análisis de Vulnerabilidad"
-        onFilter={() => console.log('Filtros')}
-        onExport={() => console.log('Exportar')}
+        onFilter={() => {}}
+        onExport={() => {}}
         primaryAction={{
           label: 'Nuevo Análisis',
-          onClick: () => console.log('Nuevo Análisis'),
+          onClick: () => {},
         }}
       />
 
@@ -198,24 +195,44 @@ const AnalisisVulnerabilidadSection = () => {
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Código</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tipo</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nivel</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Estado</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Amenazas</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Próx. Revisión</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Código
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Nombre
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Tipo
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Nivel
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Estado
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Amenazas
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Próx. Revisión
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Acciones
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {analisis.map((item) => (
                 <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{item.codigo}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                    {item.codigo}
+                  </td>
                   <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
                     <p className="font-medium truncate max-w-xs">{item.nombre}</p>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{formatStatusLabel(item.tipo_amenaza)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                    {formatStatusLabel(item.tipo_amenaza)}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <StatusBadge status={item.nivel_vulnerabilidad} preset="gravedad" />
                   </td>
@@ -229,17 +246,27 @@ const AnalisisVulnerabilidadSection = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <span className="text-gray-600 dark:text-gray-300">{item.total_amenazas}</span>
                     {item.amenazas_criticas && item.amenazas_criticas > 0 && (
-                      <span className="text-danger-600 dark:text-danger-400 ml-1">({item.amenazas_criticas} críticas)</span>
+                      <span className="text-danger-600 dark:text-danger-400 ml-1">
+                        ({item.amenazas_criticas} críticas)
+                      </span>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {item.proxima_revision ? format(new Date(item.proxima_revision), 'dd/MM/yyyy', { locale: es }) : '-'}
+                    {item.proxima_revision
+                      ? format(new Date(item.proxima_revision), 'dd/MM/yyyy', { locale: es })
+                      : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm"><Eye className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="sm"><Edit className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="sm"><Trash2 className="w-4 h-4 text-danger-600" /></Button>
+                      <Button variant="ghost" size="sm">
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Trash2 className="w-4 h-4 text-danger-600" />
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -274,7 +301,7 @@ const PlanesEmergenciaSection = () => {
         description="Comience creando el plan de emergencias de la organización"
         action={{
           label: 'Nuevo Plan',
-          onClick: () => console.log('Nuevo Plan'),
+          onClick: () => {},
           icon: <Plus className="w-4 h-4" />,
         }}
       />
@@ -286,10 +313,10 @@ const PlanesEmergenciaSection = () => {
       {/* Actions */}
       <SectionToolbar
         title="Planes de Emergencia"
-        onExport={() => console.log('Exportar')}
+        onExport={() => {}}
         primaryAction={{
           label: 'Nuevo Plan',
-          onClick: () => console.log('Nuevo Plan'),
+          onClick: () => {},
         }}
       />
 
@@ -309,7 +336,9 @@ const PlanesEmergenciaSection = () => {
                     />
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-300">{plan.nombre}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Versión {plan.version}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Versión {plan.version}
+                  </p>
                 </div>
                 <div className="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
                   <FileText className="w-5 h-5 text-primary-600 dark:text-primary-400" />
@@ -318,15 +347,21 @@ const PlanesEmergenciaSection = () => {
 
               <div className="grid grid-cols-3 gap-4 py-3 border-t border-b border-gray-200 dark:border-gray-700">
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{plan.total_procedimientos}</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {plan.total_procedimientos}
+                  </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Procedimientos</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{plan.total_planos}</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {plan.total_planos}
+                  </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Planos</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{plan.total_simulacros}</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {plan.total_simulacros}
+                  </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Simulacros</p>
                 </div>
               </div>
@@ -347,8 +382,12 @@ const PlanesEmergenciaSection = () => {
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2">
-                <Button variant="ghost" size="sm" leftIcon={<Eye className="w-4 h-4" />}>Ver</Button>
-                <Button variant="ghost" size="sm" leftIcon={<Edit className="w-4 h-4" />}>Editar</Button>
+                <Button variant="ghost" size="sm" leftIcon={<Eye className="w-4 h-4" />}>
+                  Ver
+                </Button>
+                <Button variant="ghost" size="sm" leftIcon={<Edit className="w-4 h-4" />}>
+                  Editar
+                </Button>
               </div>
             </div>
           </Card>
@@ -380,7 +419,7 @@ const PlanosEvacuacionSection = () => {
         description="Comience cargando los planos de evacuación de las instalaciones"
         action={{
           label: 'Nuevo Plano',
-          onClick: () => console.log('Nuevo Plano'),
+          onClick: () => {},
           icon: <Plus className="w-4 h-4" />,
         }}
       />
@@ -392,10 +431,10 @@ const PlanosEvacuacionSection = () => {
       {/* Actions */}
       <SectionToolbar
         title="Planos de Evacuación"
-        onFilter={() => console.log('Filtros')}
+        onFilter={() => {}}
         primaryAction={{
           label: 'Nuevo Plano',
-          onClick: () => console.log('Nuevo Plano'),
+          onClick: () => {},
         }}
       />
 
@@ -407,28 +446,40 @@ const PlanosEvacuacionSection = () => {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">{plano.codigo}</p>
-                  <h4 className="font-semibold text-gray-900 dark:text-white mt-1">{plano.nombre}</h4>
+                  <h4 className="font-semibold text-gray-900 dark:text-white mt-1">
+                    {plano.nombre}
+                  </h4>
                 </div>
                 {plano.publicado ? (
-                  <Badge variant="success" size="sm">Publicado</Badge>
+                  <Badge variant="success" size="sm">
+                    Publicado
+                  </Badge>
                 ) : (
-                  <Badge variant="gray" size="sm">Borrador</Badge>
+                  <Badge variant="gray" size="sm">
+                    Borrador
+                  </Badge>
                 )}
               </div>
 
               <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                 <MapPin className="w-4 h-4" />
-                <span>{plano.edificio} - Piso {plano.piso}</span>
+                <span>
+                  {plano.edificio} - Piso {plano.piso}
+                </span>
               </div>
 
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-gray-500 dark:text-gray-400">Capacidad</p>
-                  <p className="font-medium text-gray-900 dark:text-white">{plano.capacidad_personas} personas</p>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {plano.capacidad_personas} personas
+                  </p>
                 </div>
                 <div>
                   <p className="text-gray-500 dark:text-gray-400">Rutas</p>
-                  <p className="font-medium text-gray-900 dark:text-white">{plano.numero_rutas} rutas</p>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {plano.numero_rutas} rutas
+                  </p>
                 </div>
               </div>
 
@@ -445,8 +496,12 @@ const PlanosEvacuacionSection = () => {
               </div>
 
               <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
-                <Button variant="ghost" size="sm" leftIcon={<Eye className="w-4 h-4" />}>Ver Plano</Button>
-                <Button variant="ghost" size="sm" leftIcon={<Edit className="w-4 h-4" />}>Editar</Button>
+                <Button variant="ghost" size="sm" leftIcon={<Eye className="w-4 h-4" />}>
+                  Ver Plano
+                </Button>
+                <Button variant="ghost" size="sm" leftIcon={<Edit className="w-4 h-4" />}>
+                  Editar
+                </Button>
               </div>
             </div>
           </Card>
@@ -478,7 +533,7 @@ const BrigadasSection = () => {
         description="Comience conformando las brigadas de emergencia"
         action={{
           label: 'Nueva Brigada',
-          onClick: () => console.log('Nueva Brigada'),
+          onClick: () => {},
           icon: <Plus className="w-4 h-4" />,
         }}
       />
@@ -522,10 +577,10 @@ const BrigadasSection = () => {
       {/* Actions */}
       <SectionToolbar
         title="Brigadas de Emergencia"
-        onExport={() => console.log('Exportar')}
+        onExport={() => {}}
         primaryAction={{
           label: 'Nueva Brigada',
-          onClick: () => console.log('Nueva Brigada'),
+          onClick: () => {},
         }}
       />
 
@@ -543,8 +598,12 @@ const BrigadasSection = () => {
                     <Users className="w-5 h-5" style={{ color: brigada.tipo_brigada_color }} />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-gray-900 dark:text-white">{brigada.nombre}</h4>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{brigada.tipo_brigada_nombre}</p>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">
+                      {brigada.nombre}
+                    </h4>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {brigada.tipo_brigada_nombre}
+                    </p>
                   </div>
                 </div>
                 <StatusBadge
@@ -557,7 +616,9 @@ const BrigadasSection = () => {
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-500 dark:text-gray-400">Líder</span>
-                  <span className="font-medium text-gray-900 dark:text-white">{brigada.lider_brigada}</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {brigada.lider_brigada}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-500 dark:text-gray-400">Brigadistas</span>
@@ -584,13 +645,22 @@ const BrigadasSection = () => {
               {brigada.fecha_proxima_capacitacion && (
                 <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                   <Calendar className="w-3 h-3" />
-                  <span>Próx. capacitación: {format(new Date(brigada.fecha_proxima_capacitacion), 'dd/MM/yyyy', { locale: es })}</span>
+                  <span>
+                    Próx. capacitación:{' '}
+                    {format(new Date(brigada.fecha_proxima_capacitacion), 'dd/MM/yyyy', {
+                      locale: es,
+                    })}
+                  </span>
                 </div>
               )}
 
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                <Button variant="ghost" size="sm" leftIcon={<Eye className="w-4 h-4" />}>Ver</Button>
-                <Button variant="ghost" size="sm" leftIcon={<Users className="w-4 h-4" />}>Brigadistas</Button>
+                <Button variant="ghost" size="sm" leftIcon={<Eye className="w-4 h-4" />}>
+                  Ver
+                </Button>
+                <Button variant="ghost" size="sm" leftIcon={<Users className="w-4 h-4" />}>
+                  Brigadistas
+                </Button>
               </div>
             </div>
           </Card>
@@ -622,7 +692,7 @@ const SimulacrosSection = () => {
         description="Comience programando simulacros de emergencia"
         action={{
           label: 'Nuevo Simulacro',
-          onClick: () => console.log('Nuevo Simulacro'),
+          onClick: () => {},
           icon: <Plus className="w-4 h-4" />,
         }}
       />
@@ -630,8 +700,10 @@ const SimulacrosSection = () => {
   }
 
   const stats = {
-    programados: simulacros.filter((s) => s.estado === 'PROGRAMADO' || s.estado === 'CONFIRMADO').length,
-    realizados: simulacros.filter((s) => s.estado === 'REALIZADO' || s.estado === 'EVALUADO').length,
+    programados: simulacros.filter((s) => s.estado === 'PROGRAMADO' || s.estado === 'CONFIRMADO')
+      .length,
+    realizados: simulacros.filter((s) => s.estado === 'REALIZADO' || s.estado === 'EVALUADO')
+      .length,
     exitosos: simulacros.filter((s) => s.fue_exitoso).length,
   };
 
@@ -671,11 +743,11 @@ const SimulacrosSection = () => {
       {/* Actions */}
       <SectionToolbar
         title="Simulacros de Emergencia"
-        onFilter={() => console.log('Filtros')}
-        onExport={() => console.log('Exportar')}
+        onFilter={() => {}}
+        onExport={() => {}}
         primaryAction={{
           label: 'Nuevo Simulacro',
-          onClick: () => console.log('Nuevo Simulacro'),
+          onClick: () => {},
         }}
       />
 
@@ -685,25 +757,44 @@ const SimulacrosSection = () => {
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Código</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tipo</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fecha</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Estado</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Coordinador</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Resultado</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Código
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Nombre
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Tipo
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Fecha
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Estado
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Coordinador
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Resultado
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Acciones
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {simulacros.map((simulacro) => (
                 <tr key={simulacro.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{simulacro.codigo}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                    {simulacro.codigo}
+                  </td>
                   <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
                     <p className="font-medium truncate max-w-xs">{simulacro.nombre}</p>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {simulacro.tipo_simulacro_display || formatStatusLabel(simulacro.tipo_simulacro)}
+                    {simulacro.tipo_simulacro_display ||
+                      formatStatusLabel(simulacro.tipo_simulacro)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
                     {format(new Date(simulacro.fecha_programada), 'dd/MM/yyyy', { locale: es })}
@@ -715,13 +806,19 @@ const SimulacrosSection = () => {
                       variant={getVariantOverride(simulacro.estado)}
                     />
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{simulacro.coordinador}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                    {simulacro.coordinador}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {simulacro.estado === 'REALIZADO' || simulacro.estado === 'EVALUADO' ? (
                       simulacro.fue_exitoso ? (
-                        <Badge variant="success" size="sm">Exitoso</Badge>
+                        <Badge variant="success" size="sm">
+                          Exitoso
+                        </Badge>
                       ) : (
-                        <Badge variant="danger" size="sm">No Exitoso</Badge>
+                        <Badge variant="danger" size="sm">
+                          No Exitoso
+                        </Badge>
                       )
                     ) : (
                       <span className="text-sm text-gray-400">-</span>
@@ -729,9 +826,15 @@ const SimulacrosSection = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm"><Eye className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="sm"><Edit className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="sm"><FileText className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="sm">
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <FileText className="w-4 h-4" />
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -766,7 +869,7 @@ const RecursosEmergenciaSection = () => {
         description="Comience registrando los equipos y recursos de emergencia"
         action={{
           label: 'Nuevo Recurso',
-          onClick: () => console.log('Nuevo Recurso'),
+          onClick: () => {},
           icon: <Plus className="w-4 h-4" />,
         }}
       />
@@ -816,11 +919,11 @@ const RecursosEmergenciaSection = () => {
       {/* Actions */}
       <SectionToolbar
         title="Recursos de Emergencia"
-        onFilter={() => console.log('Filtros')}
-        onExport={() => console.log('Exportar')}
+        onFilter={() => {}}
+        onExport={() => {}}
         primaryAction={{
           label: 'Nuevo Recurso',
-          onClick: () => console.log('Nuevo Recurso'),
+          onClick: () => {},
         }}
       />
 
@@ -830,20 +933,38 @@ const RecursosEmergenciaSection = () => {
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Código</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tipo</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ubicación</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Estado</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Próx. Inspección</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Responsable</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Código
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Tipo
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Nombre
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Ubicación
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Estado
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Próx. Inspección
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Responsable
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Acciones
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {recursos.map((recurso) => (
                 <tr key={recurso.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{recurso.codigo}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                    {recurso.codigo}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
                       {getTipoRecursoIcon(recurso.tipo_recurso)}
@@ -852,7 +973,9 @@ const RecursosEmergenciaSection = () => {
                       </span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">{recurso.nombre}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                    {recurso.nombre}
+                  </td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
                     <p>{recurso.area}</p>
                     <p className="text-xs text-gray-400">{recurso.ubicacion_especifica}</p>
@@ -867,19 +990,34 @@ const RecursosEmergenciaSection = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
                     {recurso.fecha_proxima_inspeccion ? (
-                      <span className={cn(recurso.requiere_inspeccion && 'text-danger-600 dark:text-danger-400 font-medium')}>
-                        {format(new Date(recurso.fecha_proxima_inspeccion), 'dd/MM/yyyy', { locale: es })}
+                      <span
+                        className={cn(
+                          recurso.requiere_inspeccion &&
+                            'text-danger-600 dark:text-danger-400 font-medium'
+                        )}
+                      >
+                        {format(new Date(recurso.fecha_proxima_inspeccion), 'dd/MM/yyyy', {
+                          locale: es,
+                        })}
                       </span>
                     ) : (
                       '-'
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{recurso.responsable}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                    {recurso.responsable}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm"><Eye className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="sm"><Edit className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="sm"><CheckCircle className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="sm">
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <CheckCircle className="w-4 h-4" />
+                      </Button>
                     </div>
                   </td>
                 </tr>

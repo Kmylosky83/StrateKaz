@@ -3,21 +3,20 @@
  * Sistema de gestión integral de emergencias
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import emergenciasApi from '../api/emergenciasApi';
+
+/** Extrae el mensaje de error de un AxiosError o Error genérico */
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof AxiosError) {
+    const detail = (error.response?.data as Record<string, unknown> | undefined)?.detail;
+    if (typeof detail === 'string') return detail;
+  }
+  if (error instanceof Error) return error.message;
+  return fallback;
+}
 import type {
-  AnalisisVulnerabilidad,
-  Amenaza,
-  PlanEmergencia,
-  ProcedimientoEmergencia,
-  PlanoEvacuacion,
-  TipoBrigada,
-  Brigada,
-  BrigadistaActivo,
-  Simulacro,
-  EvaluacionSimulacro,
-  RecursoEmergencia,
-  InspeccionRecurso,
   CreateAnalisisVulnerabilidadDTO,
   UpdateAnalisisVulnerabilidadDTO,
   CreateAmenazaDTO,
@@ -49,30 +48,34 @@ export const emergenciasKeys = {
 
   // Análisis de Vulnerabilidad
   analisisVulnerabilidad: () => [...emergenciasKeys.all, 'analisis-vulnerabilidad'] as const,
-  analisisVulnerabilidadById: (id: number) => [...emergenciasKeys.analisisVulnerabilidad(), id] as const,
-  analisisVulnerabilidadFiltered: (filters: Record<string, any>) =>
+  analisisVulnerabilidadById: (id: number) =>
+    [...emergenciasKeys.analisisVulnerabilidad(), id] as const,
+  analisisVulnerabilidadFiltered: (filters: Record<string, unknown>) =>
     [...emergenciasKeys.analisisVulnerabilidad(), 'filtered', filters] as const,
 
   // Amenazas
   amenazas: () => [...emergenciasKeys.all, 'amenazas'] as const,
   amenazaById: (id: number) => [...emergenciasKeys.amenazas(), id] as const,
-  amenazasFiltered: (filters: Record<string, any>) => [...emergenciasKeys.amenazas(), 'filtered', filters] as const,
+  amenazasFiltered: (filters: Record<string, unknown>) =>
+    [...emergenciasKeys.amenazas(), 'filtered', filters] as const,
 
   // Planes de Emergencia
   planes: () => [...emergenciasKeys.all, 'planes-emergencia'] as const,
   planById: (id: number) => [...emergenciasKeys.planes(), id] as const,
-  planesFiltered: (filters: Record<string, any>) => [...emergenciasKeys.planes(), 'filtered', filters] as const,
+  planesFiltered: (filters: Record<string, unknown>) =>
+    [...emergenciasKeys.planes(), 'filtered', filters] as const,
 
   // Procedimientos
   procedimientos: () => [...emergenciasKeys.all, 'procedimientos'] as const,
   procedimientoById: (id: number) => [...emergenciasKeys.procedimientos(), id] as const,
-  procedimientosFiltered: (filters: Record<string, any>) =>
+  procedimientosFiltered: (filters: Record<string, unknown>) =>
     [...emergenciasKeys.procedimientos(), 'filtered', filters] as const,
 
   // Planos de Evacuación
   planos: () => [...emergenciasKeys.all, 'planos-evacuacion'] as const,
   planoById: (id: number) => [...emergenciasKeys.planos(), id] as const,
-  planosFiltered: (filters: Record<string, any>) => [...emergenciasKeys.planos(), 'filtered', filters] as const,
+  planosFiltered: (filters: Record<string, unknown>) =>
+    [...emergenciasKeys.planos(), 'filtered', filters] as const,
 
   // Tipos de Brigada
   tiposBrigada: () => [...emergenciasKeys.all, 'tipos-brigada'] as const,
@@ -81,18 +84,19 @@ export const emergenciasKeys = {
   // Brigadas
   brigadas: () => [...emergenciasKeys.all, 'brigadas'] as const,
   brigadaById: (id: number) => [...emergenciasKeys.brigadas(), id] as const,
-  brigadasFiltered: (filters: Record<string, any>) => [...emergenciasKeys.brigadas(), 'filtered', filters] as const,
+  brigadasFiltered: (filters: Record<string, unknown>) =>
+    [...emergenciasKeys.brigadas(), 'filtered', filters] as const,
 
   // Brigadistas
   brigadistas: () => [...emergenciasKeys.all, 'brigadistas'] as const,
   brigadistaById: (id: number) => [...emergenciasKeys.brigadistas(), id] as const,
-  brigadistasFiltered: (filters: Record<string, any>) =>
+  brigadistasFiltered: (filters: Record<string, unknown>) =>
     [...emergenciasKeys.brigadistas(), 'filtered', filters] as const,
 
   // Simulacros
   simulacros: () => [...emergenciasKeys.all, 'simulacros'] as const,
   simulacroById: (id: number) => [...emergenciasKeys.simulacros(), id] as const,
-  simulacrosFiltered: (filters: Record<string, any>) =>
+  simulacrosFiltered: (filters: Record<string, unknown>) =>
     [...emergenciasKeys.simulacros(), 'filtered', filters] as const,
 
   // Evaluaciones
@@ -102,22 +106,26 @@ export const emergenciasKeys = {
   // Recursos
   recursos: () => [...emergenciasKeys.all, 'recursos'] as const,
   recursoById: (id: number) => [...emergenciasKeys.recursos(), id] as const,
-  recursosFiltered: (filters: Record<string, any>) => [...emergenciasKeys.recursos(), 'filtered', filters] as const,
-  recursosRequierenInspeccion: () => [...emergenciasKeys.recursos(), 'requieren-inspeccion'] as const,
+  recursosFiltered: (filters: Record<string, unknown>) =>
+    [...emergenciasKeys.recursos(), 'filtered', filters] as const,
+  recursosRequierenInspeccion: () =>
+    [...emergenciasKeys.recursos(), 'requieren-inspeccion'] as const,
   recursosPorVencer: () => [...emergenciasKeys.recursos(), 'por-vencer'] as const,
 
   // Inspecciones
   inspecciones: () => [...emergenciasKeys.all, 'inspecciones'] as const,
   inspeccionById: (id: number) => [...emergenciasKeys.inspecciones(), id] as const,
-  inspeccionesFiltered: (filters: Record<string, any>) =>
+  inspeccionesFiltered: (filters: Record<string, unknown>) =>
     [...emergenciasKeys.inspecciones(), 'filtered', filters] as const,
 };
 
 // ==================== ANÁLISIS DE VULNERABILIDAD ====================
 
-export function useAnalisisVulnerabilidad(params?: any) {
+export function useAnalisisVulnerabilidad(params?: Record<string, unknown>) {
   return useQuery({
-    queryKey: params ? emergenciasKeys.analisisVulnerabilidadFiltered(params) : emergenciasKeys.analisisVulnerabilidad(),
+    queryKey: params
+      ? emergenciasKeys.analisisVulnerabilidadFiltered(params)
+      : emergenciasKeys.analisisVulnerabilidad(),
     queryFn: async () => {
       const data = await emergenciasApi.analisisVulnerabilidad.getAll(params);
       return data;
@@ -148,8 +156,8 @@ export function useCreateAnalisisVulnerabilidad() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.analisisVulnerabilidad() });
       toast.success('Análisis de vulnerabilidad creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear análisis de vulnerabilidad');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear análisis de vulnerabilidad'));
     },
   });
 }
@@ -167,8 +175,8 @@ export function useUpdateAnalisisVulnerabilidad() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.analisisVulnerabilidadById(id) });
       toast.success('Análisis de vulnerabilidad actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar análisis de vulnerabilidad');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar análisis de vulnerabilidad'));
     },
   });
 }
@@ -184,8 +192,8 @@ export function useDeleteAnalisisVulnerabilidad() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.analisisVulnerabilidad() });
       toast.success('Análisis de vulnerabilidad eliminado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar análisis de vulnerabilidad');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar análisis de vulnerabilidad'));
     },
   });
 }
@@ -203,15 +211,15 @@ export function useAprobarAnalisisVulnerabilidad() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.analisisVulnerabilidadById(id) });
       toast.success('Análisis aprobado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al aprobar análisis');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al aprobar análisis'));
     },
   });
 }
 
 // ==================== AMENAZAS ====================
 
-export function useAmenazas(params?: any) {
+export function useAmenazas(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: params ? emergenciasKeys.amenazasFiltered(params) : emergenciasKeys.amenazas(),
     queryFn: async () => {
@@ -234,8 +242,8 @@ export function useCreateAmenaza() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.analisisVulnerabilidad() });
       toast.success('Amenaza creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear amenaza');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear amenaza'));
     },
   });
 }
@@ -253,8 +261,8 @@ export function useUpdateAmenaza() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.amenazaById(id) });
       toast.success('Amenaza actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar amenaza');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar amenaza'));
     },
   });
 }
@@ -270,15 +278,15 @@ export function useDeleteAmenaza() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.amenazas() });
       toast.success('Amenaza eliminada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar amenaza');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar amenaza'));
     },
   });
 }
 
 // ==================== PLANES DE EMERGENCIA ====================
 
-export function usePlanesEmergencia(params?: any) {
+export function usePlanesEmergencia(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: params ? emergenciasKeys.planesFiltered(params) : emergenciasKeys.planes(),
     queryFn: async () => {
@@ -311,8 +319,8 @@ export function useCreatePlanEmergencia() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.planes() });
       toast.success('Plan de emergencia creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear plan de emergencia');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear plan de emergencia'));
     },
   });
 }
@@ -330,8 +338,8 @@ export function useUpdatePlanEmergencia() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.planById(id) });
       toast.success('Plan de emergencia actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar plan de emergencia');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar plan de emergencia'));
     },
   });
 }
@@ -347,8 +355,8 @@ export function useDeletePlanEmergencia() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.planes() });
       toast.success('Plan de emergencia eliminado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar plan de emergencia');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar plan de emergencia'));
     },
   });
 }
@@ -366,8 +374,8 @@ export function useAprobarPlanEmergencia() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.planById(id) });
       toast.success('Plan de emergencia aprobado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al aprobar plan de emergencia');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al aprobar plan de emergencia'));
     },
   });
 }
@@ -385,17 +393,19 @@ export function useActivarPlanEmergencia() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.planById(id) });
       toast.success('Plan de emergencia activado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al activar plan de emergencia');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al activar plan de emergencia'));
     },
   });
 }
 
 // ==================== PROCEDIMIENTOS ====================
 
-export function useProcedimientos(params?: any) {
+export function useProcedimientos(params?: Record<string, unknown>) {
   return useQuery({
-    queryKey: params ? emergenciasKeys.procedimientosFiltered(params) : emergenciasKeys.procedimientos(),
+    queryKey: params
+      ? emergenciasKeys.procedimientosFiltered(params)
+      : emergenciasKeys.procedimientos(),
     queryFn: async () => {
       const data = await emergenciasApi.procedimientoEmergencia.getAll(params);
       return data;
@@ -415,8 +425,8 @@ export function useCreateProcedimiento() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.procedimientos() });
       toast.success('Procedimiento creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear procedimiento');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear procedimiento'));
     },
   });
 }
@@ -434,8 +444,8 @@ export function useUpdateProcedimiento() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.procedimientoById(id) });
       toast.success('Procedimiento actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar procedimiento');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar procedimiento'));
     },
   });
 }
@@ -451,15 +461,15 @@ export function useDeleteProcedimiento() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.procedimientos() });
       toast.success('Procedimiento eliminado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar procedimiento');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar procedimiento'));
     },
   });
 }
 
 // ==================== PLANOS DE EVACUACIÓN ====================
 
-export function usePlanosEvacuacion(params?: any) {
+export function usePlanosEvacuacion(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: params ? emergenciasKeys.planosFiltered(params) : emergenciasKeys.planos(),
     queryFn: async () => {
@@ -481,8 +491,8 @@ export function useCreatePlanoEvacuacion() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.planos() });
       toast.success('Plano de evacuación creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear plano de evacuación');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear plano de evacuación'));
     },
   });
 }
@@ -500,8 +510,8 @@ export function useUpdatePlanoEvacuacion() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.planoById(id) });
       toast.success('Plano de evacuación actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar plano de evacuación');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar plano de evacuación'));
     },
   });
 }
@@ -517,8 +527,8 @@ export function useDeletePlanoEvacuacion() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.planos() });
       toast.success('Plano de evacuación eliminado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar plano de evacuación');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar plano de evacuación'));
     },
   });
 }
@@ -536,15 +546,15 @@ export function usePublicarPlanoEvacuacion() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.planoById(id) });
       toast.success('Plano de evacuación publicado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al publicar plano de evacuación');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al publicar plano de evacuación'));
     },
   });
 }
 
 // ==================== TIPOS DE BRIGADA ====================
 
-export function useTiposBrigada(params?: any) {
+export function useTiposBrigada(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: emergenciasKeys.tiposBrigada(),
     queryFn: async () => {
@@ -566,8 +576,8 @@ export function useCreateTipoBrigada() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.tiposBrigada() });
       toast.success('Tipo de brigada creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear tipo de brigada');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear tipo de brigada'));
     },
   });
 }
@@ -585,8 +595,8 @@ export function useUpdateTipoBrigada() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.tipoBrigadaById(id) });
       toast.success('Tipo de brigada actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar tipo de brigada');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar tipo de brigada'));
     },
   });
 }
@@ -602,15 +612,15 @@ export function useDeleteTipoBrigada() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.tiposBrigada() });
       toast.success('Tipo de brigada eliminado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar tipo de brigada');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar tipo de brigada'));
     },
   });
 }
 
 // ==================== BRIGADAS ====================
 
-export function useBrigadas(params?: any) {
+export function useBrigadas(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: params ? emergenciasKeys.brigadasFiltered(params) : emergenciasKeys.brigadas(),
     queryFn: async () => {
@@ -643,8 +653,8 @@ export function useCreateBrigada() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.brigadas() });
       toast.success('Brigada creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear brigada');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear brigada'));
     },
   });
 }
@@ -662,8 +672,8 @@ export function useUpdateBrigada() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.brigadaById(id) });
       toast.success('Brigada actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar brigada');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar brigada'));
     },
   });
 }
@@ -679,8 +689,8 @@ export function useDeleteBrigada() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.brigadas() });
       toast.success('Brigada eliminada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar brigada');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar brigada'));
     },
   });
 }
@@ -698,15 +708,15 @@ export function useActivarBrigada() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.brigadaById(id) });
       toast.success('Brigada activada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al activar brigada');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al activar brigada'));
     },
   });
 }
 
 // ==================== BRIGADISTAS ====================
 
-export function useBrigadistas(params?: any) {
+export function useBrigadistas(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: params ? emergenciasKeys.brigadistasFiltered(params) : emergenciasKeys.brigadistas(),
     queryFn: async () => {
@@ -729,8 +739,8 @@ export function useCreateBrigadista() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.brigadas() });
       toast.success('Brigadista creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear brigadista');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear brigadista'));
     },
   });
 }
@@ -749,8 +759,8 @@ export function useUpdateBrigadista() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.brigadas() });
       toast.success('Brigadista actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar brigadista');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar brigadista'));
     },
   });
 }
@@ -767,8 +777,8 @@ export function useDeleteBrigadista() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.brigadas() });
       toast.success('Brigadista eliminado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar brigadista');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar brigadista'));
     },
   });
 }
@@ -787,15 +797,15 @@ export function useInactivarBrigadista() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.brigadas() });
       toast.success('Brigadista inactivado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al inactivar brigadista');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al inactivar brigadista'));
     },
   });
 }
 
 // ==================== SIMULACROS ====================
 
-export function useSimulacros(params?: any) {
+export function useSimulacros(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: params ? emergenciasKeys.simulacrosFiltered(params) : emergenciasKeys.simulacros(),
     queryFn: async () => {
@@ -828,8 +838,8 @@ export function useCreateSimulacro() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.simulacros() });
       toast.success('Simulacro creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear simulacro');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear simulacro'));
     },
   });
 }
@@ -847,8 +857,8 @@ export function useUpdateSimulacro() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.simulacroById(id) });
       toast.success('Simulacro actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar simulacro');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar simulacro'));
     },
   });
 }
@@ -864,8 +874,8 @@ export function useDeleteSimulacro() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.simulacros() });
       toast.success('Simulacro eliminado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar simulacro');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar simulacro'));
     },
   });
 }
@@ -874,7 +884,18 @@ export function useMarcarSimulacroRealizado() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, datos }: { id: number; datos: any }) => {
+    mutationFn: async ({
+      id,
+      datos,
+    }: {
+      id: number;
+      datos: {
+        duracion_real?: number;
+        numero_participantes_reales?: number;
+        observaciones?: string;
+        fue_exitoso?: boolean;
+      };
+    }) => {
       const data = await emergenciasApi.simulacro.marcarRealizado(id, datos);
       return data;
     },
@@ -883,15 +904,15 @@ export function useMarcarSimulacroRealizado() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.simulacroById(id) });
       toast.success('Simulacro marcado como realizado');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al marcar simulacro como realizado');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al marcar simulacro como realizado'));
     },
   });
 }
 
 // ==================== RECURSOS DE EMERGENCIA ====================
 
-export function useRecursosEmergencia(params?: any) {
+export function useRecursosEmergencia(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: params ? emergenciasKeys.recursosFiltered(params) : emergenciasKeys.recursos(),
     queryFn: async () => {
@@ -933,8 +954,8 @@ export function useCreateRecursoEmergencia() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.recursos() });
       toast.success('Recurso de emergencia creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear recurso de emergencia');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al crear recurso de emergencia'));
     },
   });
 }
@@ -952,8 +973,8 @@ export function useUpdateRecursoEmergencia() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.recursoById(id) });
       toast.success('Recurso de emergencia actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar recurso de emergencia');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar recurso de emergencia'));
     },
   });
 }
@@ -969,17 +990,19 @@ export function useDeleteRecursoEmergencia() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.recursos() });
       toast.success('Recurso de emergencia eliminado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar recurso de emergencia');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar recurso de emergencia'));
     },
   });
 }
 
 // ==================== INSPECCIONES ====================
 
-export function useInspeccionesRecurso(params?: any) {
+export function useInspeccionesRecurso(params?: Record<string, unknown>) {
   return useQuery({
-    queryKey: params ? emergenciasKeys.inspeccionesFiltered(params) : emergenciasKeys.inspecciones(),
+    queryKey: params
+      ? emergenciasKeys.inspeccionesFiltered(params)
+      : emergenciasKeys.inspecciones(),
     queryFn: async () => {
       const data = await emergenciasApi.inspeccionRecurso.getAll(params);
       return data;
@@ -1000,8 +1023,8 @@ export function useCreateInspeccionRecurso() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.recursos() });
       toast.success('Inspección registrada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al registrar inspección');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al registrar inspección'));
     },
   });
 }
@@ -1020,8 +1043,8 @@ export function useUpdateInspeccionRecurso() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.recursos() });
       toast.success('Inspección actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar inspección');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al actualizar inspección'));
     },
   });
 }
@@ -1037,8 +1060,8 @@ export function useDeleteInspeccionRecurso() {
       queryClient.invalidateQueries({ queryKey: emergenciasKeys.inspecciones() });
       toast.success('Inspección eliminada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al eliminar inspección');
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar inspección'));
     },
   });
 }

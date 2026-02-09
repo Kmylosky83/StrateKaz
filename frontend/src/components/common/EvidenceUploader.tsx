@@ -8,7 +8,7 @@
  *   entityId={nc.id}
  *   categoria="FOTOGRAFICA"
  *   normasRelacionadas={['ISO_9001']}
- *   onUploadComplete={(ev) => console.log('Subida:', ev)}
+ *   onUploadComplete={(ev) => handleUpload(ev)}
  * />
  * ```
  */
@@ -152,9 +152,7 @@ export function EvidenceUploader({
   };
 
   const updateTitulo = (index: number, titulo: string) => {
-    setPendingFiles((prev) =>
-      prev.map((f, i) => (i === index ? { ...f, titulo } : f))
-    );
+    setPendingFiles((prev) => prev.map((f, i) => (i === index ? { ...f, titulo } : f)));
   };
 
   const uploadFile = async (index: number) => {
@@ -176,16 +174,12 @@ export function EvidenceUploader({
         tags,
       });
 
-      setPendingFiles((prev) =>
-        prev.map((f, i) => (i === index ? { ...f, status: 'done' } : f))
-      );
+      setPendingFiles((prev) => prev.map((f, i) => (i === index ? { ...f, status: 'done' } : f)));
 
       onUploadComplete?.(result as unknown as Evidencia);
     } catch {
       setPendingFiles((prev) =>
-        prev.map((f, i) =>
-          i === index ? { ...f, status: 'error', error: 'Error al subir' } : f
-        )
+        prev.map((f, i) => (i === index ? { ...f, status: 'error', error: 'Error al subir' } : f))
       );
     }
   };
@@ -221,15 +215,8 @@ export function EvidenceUploader({
             : 'border-gray-300 dark:border-gray-600 hover:border-primary-400 hover:bg-gray-50 dark:hover:bg-gray-800'
         )}
       >
-        <Upload
-          className={cn(
-            'h-8 w-8 mb-2',
-            isDragging ? 'text-primary-500' : 'text-gray-400'
-          )}
-        />
-        <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
-          {placeholder}
-        </p>
+        <Upload className={cn('h-8 w-8 mb-2', isDragging ? 'text-primary-500' : 'text-gray-400')} />
+        <p className="text-sm text-gray-600 dark:text-gray-400 text-center">{placeholder}</p>
         <p className="text-xs text-gray-400 mt-1">
           Máx. {maxSizeMB} MB por archivo &middot; Hasta {maxFiles} archivos
         </p>
@@ -285,15 +272,21 @@ export function EvidenceUploader({
                 )}
                 <div className="flex items-center gap-2 mt-0.5">
                   <span className="text-xs text-gray-500">{formatFileSize(pf.file.size)}</span>
-                  {pf.error && (
-                    <span className="text-xs text-red-500">{pf.error}</span>
-                  )}
+                  {pf.error && <span className="text-xs text-red-500">{pf.error}</span>}
                 </div>
               </div>
 
               {/* Status Badge */}
-              {pf.status === 'done' && <Badge variant="success" size="sm">Subido</Badge>}
-              {pf.status === 'uploading' && <Badge variant="info" size="sm">Subiendo...</Badge>}
+              {pf.status === 'done' && (
+                <Badge variant="success" size="sm">
+                  Subido
+                </Badge>
+              )}
+              {pf.status === 'uploading' && (
+                <Badge variant="info" size="sm">
+                  Subiendo...
+                </Badge>
+              )}
 
               {/* Remove Button */}
               {pf.status !== 'uploading' && (
@@ -312,11 +305,7 @@ export function EvidenceUploader({
 
           {/* Upload Button */}
           {pendingCount > 0 && (
-            <Button
-              onClick={uploadAll}
-              disabled={crearEvidencia.isPending}
-              className="w-full"
-            >
+            <Button onClick={uploadAll} disabled={crearEvidencia.isPending} className="w-full">
               <Upload className="h-4 w-4 mr-2" />
               Subir {pendingCount} archivo{pendingCount > 1 ? 's' : ''}
             </Button>

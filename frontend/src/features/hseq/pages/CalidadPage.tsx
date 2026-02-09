@@ -89,7 +89,7 @@ const NoConformidadesSection = () => {
         description="Comience registrando las no conformidades detectadas en el sistema de calidad"
         action={{
           label: 'Nueva No Conformidad',
-          onClick: () => console.log('Nueva NC'),
+          onClick: () => {},
           icon: <Plus className="w-4 h-4" />,
         }}
       />
@@ -141,8 +141,7 @@ const NoConformidadesSection = () => {
       <div className="flex items-center justify-between gap-2">
         <SectionToolbar
           title="No Conformidades Registradas"
-          onFilter={() => console.log('Filtros')}
-          primaryAction={{ label: 'Nueva No Conformidad', onClick: () => console.log('Nueva NC') }}
+          primaryAction={{ label: 'Nueva No Conformidad', onClick: () => {} }}
           className="flex-1"
         />
         <ExportButton
@@ -261,7 +260,7 @@ const AccionesCorrectivasSection = () => {
         description="Comience creando acciones correctivas para atender las no conformidades"
         action={{
           label: 'Nueva Acción',
-          onClick: () => console.log('Nueva Acción'),
+          onClick: () => {},
           icon: <Plus className="w-4 h-4" />,
         }}
       />
@@ -312,9 +311,7 @@ const AccionesCorrectivasSection = () => {
       {/* Actions */}
       <SectionToolbar
         title="Acciones Correctivas y Preventivas"
-        onFilter={() => console.log('Filtros')}
-        onExport={() => console.log('Exportar')}
-        primaryAction={{ label: 'Nueva Acción', onClick: () => console.log('Nueva Acción') }}
+        primaryAction={{ label: 'Nueva Acción', onClick: () => {} }}
       />
 
       {/* Actions Grid */}
@@ -328,7 +325,11 @@ const AccionesCorrectivasSection = () => {
                   <div className="flex items-center gap-2 mb-2">
                     <h4 className="font-semibold text-gray-900 dark:text-white">{accion.codigo}</h4>
                     <StatusBadge status={accion.estado} preset="proceso" />
-                    <StatusBadge status={accion.tipo} variant="info" label={formatTipo(accion.tipo)} />
+                    <StatusBadge
+                      status={accion.tipo}
+                      variant="info"
+                      label={formatTipo(accion.tipo)}
+                    />
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-300">{accion.descripcion}</p>
                   {accion.nc_relacionada && (
@@ -343,7 +344,9 @@ const AccionesCorrectivasSection = () => {
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Responsable</p>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white mt-1">{accion.responsable}</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white mt-1">
+                    {accion.responsable}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Fecha Límite</p>
@@ -353,7 +356,9 @@ const AccionesCorrectivasSection = () => {
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Avance</p>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white mt-1">{accion.avance}%</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white mt-1">
+                    {accion.avance}%
+                  </p>
                 </div>
               </div>
 
@@ -435,7 +440,7 @@ const SalidasNoConformesSection = () => {
         description="Comience registrando las salidas de producción no conformes"
         action={{
           label: 'Nueva Salida NC',
-          onClick: () => console.log('Nueva Salida NC'),
+          onClick: () => {},
           icon: <Plus className="w-4 h-4" />,
         }}
       />
@@ -486,9 +491,7 @@ const SalidasNoConformesSection = () => {
       {/* Actions */}
       <SectionToolbar
         title="Salidas No Conformes"
-        onFilter={() => console.log('Filtros')}
-        onExport={() => console.log('Exportar')}
-        primaryAction={{ label: 'Nueva Salida NC', onClick: () => console.log('Nueva Salida NC') }}
+        primaryAction={{ label: 'Nueva Salida NC', onClick: () => {} }}
       />
 
       {/* Salidas Table */}
@@ -539,7 +542,11 @@ const SalidasNoConformesSection = () => {
                     {salida.cantidad} {salida.unidad}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <StatusBadge status={salida.disposicion} variant="info" label={formatStatusLabel(salida.disposicion)} />
+                    <StatusBadge
+                      status={salida.disposicion}
+                      variant="info"
+                      label={formatStatusLabel(salida.disposicion)}
+                    />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <StatusBadge status={salida.estado} preset="proceso" />
@@ -592,7 +599,7 @@ const ControlCambiosSection = () => {
         description="Comience creando solicitudes de cambio para el sistema de gestión"
         action={{
           label: 'Nueva Solicitud',
-          onClick: () => console.log('Nueva Solicitud'),
+          onClick: () => {},
           icon: <Plus className="w-4 h-4" />,
         }}
       />
@@ -643,9 +650,7 @@ const ControlCambiosSection = () => {
       {/* Actions */}
       <SectionToolbar
         title="Control de Cambios"
-        onFilter={() => console.log('Filtros')}
-        onExport={() => console.log('Exportar')}
-        primaryAction={{ label: 'Nueva Solicitud', onClick: () => console.log('Nueva Solicitud') }}
+        primaryAction={{ label: 'Nueva Solicitud', onClick: () => {} }}
       />
 
       {/* Cambios Table */}

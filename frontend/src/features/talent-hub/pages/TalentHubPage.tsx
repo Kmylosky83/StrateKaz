@@ -125,7 +125,7 @@ function EstructuraCargosTab() {
           description="Gestione profesiogramas, matriz de competencias, requisitos especiales y vacantes de la organización"
           action={{
             label: 'Nuevo Profesiograma',
-            onClick: () => console.log('Nuevo profesiograma'),
+            onClick: () => {},
           }}
         />
       </Card>
@@ -216,7 +216,7 @@ function SeleccionContratacionTab() {
           description="Gestione el proceso de reclutamiento, candidatos, entrevistas, pruebas y contratación de personal"
           action={{
             label: 'Nuevo Candidato',
-            onClick: () => console.log('Nuevo candidato'),
+            onClick: () => {},
           }}
         />
       </Card>
@@ -307,7 +307,7 @@ function ColaboradoresTab() {
           description="Gestione el directorio de empleados, hojas de vida, información personal e historial laboral"
           action={{
             label: 'Nuevo Colaborador',
-            onClick: () => console.log('Nuevo colaborador'),
+            onClick: () => {},
           }}
         />
       </Card>
@@ -398,7 +398,7 @@ function OnboardingInduccionTab() {
           description="Gestione procesos de inducción, checklist de actividades, entregas de EPP y activos, firma de documentos"
           action={{
             label: 'Nuevo Proceso',
-            onClick: () => console.log('Nuevo proceso onboarding'),
+            onClick: () => {},
           }}
         />
       </Card>
@@ -489,7 +489,7 @@ function FormacionReinduccionTab() {
           description="Gestione planes de formación, capacitaciones, gamificación con puntos y badges, certificados y reinducciones"
           action={{
             label: 'Nueva Capacitación',
-            onClick: () => console.log('Nueva capacitación'),
+            onClick: () => {},
           }}
         />
       </Card>
@@ -580,7 +580,7 @@ function DesempenoTab() {
           description="Gestione evaluaciones 360°, planes de mejora, seguimientos y programa de reconocimientos con muro social"
           action={{
             label: 'Nuevo Ciclo Evaluación',
-            onClick: () => console.log('Nuevo ciclo evaluación'),
+            onClick: () => {},
           }}
         />
       </Card>

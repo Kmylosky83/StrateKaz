@@ -34,6 +34,7 @@ export const adminGlobalKeys = {
   tenantsDetail: (id: number) => [...adminGlobalKeys.tenants, 'detail', id] as const,
   tenantsStats: () => [...adminGlobalKeys.tenants, 'stats'] as const,
   tenantsUsers: (id: number) => [...adminGlobalKeys.tenants, 'users', id] as const,
+  tenantsCreationStatus: (id: number) => [...adminGlobalKeys.tenants, 'creation-status', id] as const,
 
   // Tenant Users
   tenantUsers: ['admin-global', 'tenant-users'] as const,
@@ -80,8 +81,8 @@ export const useCreatePlan = () => {
       queryClient.invalidateQueries({ queryKey: adminGlobalKeys.plans });
       toast.success('Plan creado correctamente');
     },
-    onError: () => {
-      toast.error('Error al crear el plan');
+    onError: (error: { response?: { data?: { detail?: string } }; message?: string }) => {
+      toast.error(error.response?.data?.detail || error.message || 'Error al crear el plan');
     },
   });
 };
@@ -95,8 +96,8 @@ export const useUpdatePlan = () => {
       queryClient.invalidateQueries({ queryKey: adminGlobalKeys.plans });
       toast.success('Plan actualizado correctamente');
     },
-    onError: () => {
-      toast.error('Error al actualizar el plan');
+    onError: (error: { response?: { data?: { detail?: string } }; message?: string }) => {
+      toast.error(error.response?.data?.detail || error.message || 'Error al actualizar el plan');
     },
   });
 };
@@ -110,8 +111,8 @@ export const useDeletePlan = () => {
       queryClient.invalidateQueries({ queryKey: adminGlobalKeys.plans });
       toast.success('Plan eliminado correctamente');
     },
-    onError: () => {
-      toast.error('Error al eliminar el plan');
+    onError: (error: { response?: { data?: { detail?: string } }; message?: string }) => {
+      toast.error(error.response?.data?.detail || error.message || 'Error al eliminar el plan');
     },
   });
 };
@@ -159,17 +160,75 @@ export const useTenantUsers = (tenantId: number) => {
   });
 };
 
+/**
+ * Hook para crear tenant con soporte de creación asíncrona.
+ *
+ * FLUJO:
+ * 1. Llama a la API para crear el registro del tenant
+ * 2. Retorna inmediatamente con task_id
+ * 3. Usar useTenantCreationStatus() para hacer polling del progreso
+ */
 export const useCreateTenant = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (data: CreateTenantDTO) => tenantsApi.create(data),
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: adminGlobalKeys.tenants });
-      toast.success('Empresa creada correctamente');
+      // NO mostramos toast de éxito aquí porque la creación es asíncrona
+      // El toast se mostrará cuando el schema esté listo
+      console.log('[useCreateTenant] Tenant creado, task_id:', response.task_id);
     },
-    onError: () => {
-      toast.error('Error al crear la empresa');
+    onError: (error: { response?: { data?: { detail?: string } }; message?: string }) => {
+      toast.error(error.response?.data?.detail || error.message || 'Error al crear la empresa');
+    },
+  });
+};
+
+/**
+ * Hook para obtener el estado de creación del schema de un tenant.
+ *
+ * Hace polling automático cada 3 segundos mientras el estado sea
+ * 'pending' o 'creating'. Se detiene cuando el estado es 'ready' o 'failed'.
+ *
+ * @param tenantId - ID del tenant a monitorear
+ * @param enabled - Si está habilitado el polling (default: true si tenantId > 0)
+ */
+export const useTenantCreationStatus = (tenantId: number, enabled = true) => {
+  return useQuery({
+    queryKey: adminGlobalKeys.tenantsCreationStatus(tenantId),
+    queryFn: () => tenantsApi.getCreationStatus(tenantId),
+    enabled: enabled && tenantId > 0,
+    // Polling cada 3 segundos
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      // Detener polling si el estado es final
+      if (data?.status === 'ready' || data?.status === 'completed' || data?.status === 'failed') {
+        return false;
+      }
+      return 3000; // 3 segundos
+    },
+    // No refrescar en background cuando la ventana pierde foco
+    refetchOnWindowFocus: false,
+    // Mantener datos previos mientras se refresca
+    staleTime: 0,
+  });
+};
+
+/**
+ * Hook para reintentar la creación del schema de un tenant que falló.
+ */
+export const useRetryTenantCreation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (tenantId: number) => tenantsApi.retryCreation(tenantId),
+    onSuccess: (_, tenantId) => {
+      queryClient.invalidateQueries({ queryKey: adminGlobalKeys.tenantsCreationStatus(tenantId) });
+      toast.info('Reintentando creación del tenant...');
+    },
+    onError: (error: { response?: { data?: { detail?: string } }; message?: string }) => {
+      toast.error(error.response?.data?.detail || error.message || 'Error al reintentar la creación');
     },
   });
 };
@@ -178,13 +237,13 @@ export const useUpdateTenant = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateTenantDTO }) => tenantsApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: UpdateTenantDTO | FormData }) => tenantsApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminGlobalKeys.tenants });
       toast.success('Empresa actualizada correctamente');
     },
-    onError: () => {
-      toast.error('Error al actualizar la empresa');
+    onError: (error: { response?: { data?: { detail?: string } }; message?: string }) => {
+      toast.error(error.response?.data?.detail || error.message || 'Error al actualizar la empresa');
     },
   });
 };
@@ -198,8 +257,8 @@ export const useDeleteTenant = () => {
       queryClient.invalidateQueries({ queryKey: adminGlobalKeys.tenants });
       toast.success('Empresa eliminada correctamente');
     },
-    onError: () => {
-      toast.error('Error al eliminar la empresa');
+    onError: (error: { response?: { data?: { detail?: string } }; message?: string }) => {
+      toast.error(error.response?.data?.detail || error.message || 'Error al eliminar la empresa');
     },
   });
 };
@@ -213,8 +272,8 @@ export const useToggleTenantActive = () => {
       queryClient.invalidateQueries({ queryKey: adminGlobalKeys.tenants });
       toast.success(data.message);
     },
-    onError: () => {
-      toast.error('Error al cambiar estado de la empresa');
+    onError: (error: { response?: { data?: { detail?: string } }; message?: string }) => {
+      toast.error(error.response?.data?.detail || error.message || 'Error al cambiar estado de la empresa');
     },
   });
 };
@@ -261,8 +320,8 @@ export const useCreateTenantUser = () => {
       queryClient.invalidateQueries({ queryKey: adminGlobalKeys.tenantUsers });
       toast.success('Usuario creado correctamente');
     },
-    onError: () => {
-      toast.error('Error al crear el usuario');
+    onError: (error: { response?: { data?: { detail?: string } }; message?: string }) => {
+      toast.error(error.response?.data?.detail || error.message || 'Error al crear el usuario');
     },
   });
 };
@@ -277,8 +336,8 @@ export const useUpdateTenantUser = () => {
       queryClient.invalidateQueries({ queryKey: adminGlobalKeys.tenantUsers });
       toast.success('Usuario actualizado correctamente');
     },
-    onError: () => {
-      toast.error('Error al actualizar el usuario');
+    onError: (error: { response?: { data?: { detail?: string } }; message?: string }) => {
+      toast.error(error.response?.data?.detail || error.message || 'Error al actualizar el usuario');
     },
   });
 };
@@ -292,8 +351,8 @@ export const useDeleteTenantUser = () => {
       queryClient.invalidateQueries({ queryKey: adminGlobalKeys.tenantUsers });
       toast.success('Usuario eliminado correctamente');
     },
-    onError: () => {
-      toast.error('Error al eliminar el usuario');
+    onError: (error: { response?: { data?: { detail?: string } }; message?: string }) => {
+      toast.error(error.response?.data?.detail || error.message || 'Error al eliminar el usuario');
     },
   });
 };
@@ -308,8 +367,8 @@ export const useAssignTenantToUser = () => {
       queryClient.invalidateQueries({ queryKey: adminGlobalKeys.tenantUsers });
       toast.success(data.message);
     },
-    onError: () => {
-      toast.error('Error al asignar empresa al usuario');
+    onError: (error: { response?: { data?: { detail?: string } }; message?: string }) => {
+      toast.error(error.response?.data?.detail || error.message || 'Error al asignar empresa al usuario');
     },
   });
 };
@@ -324,8 +383,8 @@ export const useRemoveTenantFromUser = () => {
       queryClient.invalidateQueries({ queryKey: adminGlobalKeys.tenantUsers });
       toast.success('Acceso removido correctamente');
     },
-    onError: () => {
-      toast.error('Error al remover acceso');
+    onError: (error: { response?: { data?: { detail?: string } }; message?: string }) => {
+      toast.error(error.response?.data?.detail || error.message || 'Error al remover acceso');
     },
   });
 };

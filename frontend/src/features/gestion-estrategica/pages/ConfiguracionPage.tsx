@@ -77,7 +77,7 @@ export const ConfiguracionPage = () => {
   const { data: sectionStats, isLoading: statsLoading } = useConfiguracionStats(activeSection);
 
   // Secciones que no tienen StatsGrid
-  const SECTIONS_WITHOUT_STATS = ['branding', 'normas-iso', 'modulos'];
+  const SECTIONS_WITHOUT_STATS = ['branding', 'normas_iso', 'modulos'];
 
   // Mapear stats del backend a StatItem[]
   const statsItems: StatItem[] = useMemo(() => {

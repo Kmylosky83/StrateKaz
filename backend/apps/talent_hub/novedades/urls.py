@@ -14,6 +14,8 @@ from .views import (
     PermisoViewSet,
     PeriodoVacacionesViewSet,
     SolicitudVacacionesViewSet,
+    ConfiguracionDotacionViewSet,
+    EntregaDotacionViewSet,
 )
 
 app_name = 'novedades'
@@ -36,6 +38,10 @@ router.register(r'permisos', PermisoViewSet, basename='permiso')
 # Vacaciones
 router.register(r'periodos-vacaciones', PeriodoVacacionesViewSet, basename='periodo-vacaciones')
 router.register(r'solicitudes-vacaciones', SolicitudVacacionesViewSet, basename='solicitud-vacaciones')
+
+# Dotación (Art. 230 CST)
+router.register(r'dotacion-config', ConfiguracionDotacionViewSet, basename='dotacion-config')
+router.register(r'entregas-dotacion', EntregaDotacionViewSet, basename='entrega-dotacion')
 
 urlpatterns = [
     path('', include(router.urls)),

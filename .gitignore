@@ -52,11 +52,15 @@ yarn-error.log*
 
 # Misc
 .DS_Store
+
+# Environment files (NEVER commit these)
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+frontend/.env
+frontend/.env.*
 .vscode/
 .idea/
 *.swp
@@ -95,9 +99,12 @@ analyze_*.py
 *_analysis_report.json
 model_analysis_report.json
 
-# Requirements específicos de deployment (usar deploy/cpanel/)
-backend/requirements-cpanel.txt
-backend/requirements-prod.txt
+# Docker volumes
+postgres_data/
+redis_data/
+
+# Archived docs (keep in repo but mark as legacy)
+# docs/archived/
 
 # OS specific
 Thumbs.db

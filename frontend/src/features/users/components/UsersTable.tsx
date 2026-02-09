@@ -128,7 +128,7 @@ export const UsersTable = ({
                       {user.is_superuser && (
                         <div
                           className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-amber-500 flex items-center justify-center ring-2 ring-white dark:ring-gray-900"
-                          title="Super Administrador"
+                          title="Superusuario - Acceso completo a este tenant"
                         >
                           <Shield className="h-2.5 w-2.5 text-white" />
                         </div>
@@ -140,7 +140,9 @@ export const UsersTable = ({
                           {user.full_name || user.username}
                         </span>
                         {user.is_superuser && (
-                          <Badge variant="warning" size="sm">Admin</Badge>
+                          <Badge variant="warning" size="sm" title="Tiene acceso completo a todas las secciones de este tenant">
+                            Superusuario
+                          </Badge>
                         )}
                       </div>
                       <div className="text-sm text-gray-500 dark:text-gray-400">

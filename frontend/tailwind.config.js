@@ -65,6 +65,7 @@ export default {
           950: 'rgb(var(--color-accent-950, 69 26 3) / <alpha-value>)',
         },
         // Grises Neutrales
+        // Light mode: tonos estándar | Dark mode (700-950): oscurecidos para look premium negro puro
         gray: {
           50: '#f9fafb',
           100: '#f3f4f6',
@@ -72,11 +73,11 @@ export default {
           300: '#d1d5db',
           400: '#9ca3af',
           500: '#6b7280',
-          600: '#4b5563',
-          700: '#374151',
-          800: '#1f2937',
-          900: '#111827',
-          950: '#030712',
+          600: '#3d3d3d',
+          700: '#252525',
+          800: '#141414',
+          900: '#0a0a0a',
+          950: '#000000',
         },
         // Estados
         success: {

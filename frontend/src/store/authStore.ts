@@ -2,128 +2,316 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { authAPI } from '@/api/auth.api';
 import { clearLastRoute } from '@/hooks/useLastRoute';
-import type { AuthState, LoginCredentials, User } from '@/types/auth.types';
+import { invalidateAllQueries, clearAllQueries } from '@/lib/queryClient';
+import type {
+  AuthState,
+  LoginCredentials,
+  User,
+  TenantUser,
+  TenantInfo,
+  TenantAccess,
+} from '@/types/auth.types';
+
+// Constantes para claves de localStorage
+const STORAGE_KEYS = {
+  ACCESS_TOKEN: 'access_token',
+  REFRESH_TOKEN: 'refresh_token',
+  CURRENT_TENANT_ID: 'current_tenant_id',
+} as const;
 
 // Inicializar currentTenantId desde localStorage
 const getInitialTenantId = (): number | null => {
   if (typeof window === 'undefined') return null;
-  const stored = localStorage.getItem('current_tenant_id');
+  const stored = localStorage.getItem(STORAGE_KEYS.CURRENT_TENANT_ID);
   return stored ? Number(stored) : null;
 };
 
+/**
+ * Store de autenticación multi-tenant.
+ *
+ * FLUJO DE AUTENTICACIÓN:
+ * 1. Usuario hace login con email/password
+ * 2. Backend retorna:
+ *    - Tokens JWT
+ *    - Info del TenantUser (usuario global)
+ *    - Lista de tenants accesibles
+ * 3. Si tiene múltiples tenants, mostrar selector
+ * 4. Al seleccionar tenant:
+ *    - Guardar currentTenantId
+ *    - Todas las APIs incluirán X-Tenant-ID header
+ * 5. Cargar perfil de User dentro del tenant (si existe)
+ */
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
+      // Estado inicial
+      tenantUser: null,
       user: null,
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
       currentTenantId: getInitialTenantId(),
+      currentTenant: null,
+      accessibleTenants: [],
+      isSuperadmin: false,
 
+      /**
+       * Login con TenantUser (sistema multi-tenant)
+       */
       login: async (credentials: LoginCredentials) => {
         try {
-          // Obtener tokens
-          const { access, refresh } = await authAPI.login(credentials);
+          // Obtener tokens + info de usuario + tenants
+          const response = await authAPI.login(credentials);
 
           // Guardar tokens en localStorage
-          localStorage.setItem('access_token', access);
-          localStorage.setItem('refresh_token', refresh);
+          localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, response.access);
+          localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, response.refresh);
 
-          // Obtener perfil del usuario
-          const user = await authAPI.getProfile();
+          // Determinar tenant inicial
+          let initialTenantId = get().currentTenantId;
+          let initialTenant: TenantInfo | null = null;
+
+          // Si no hay tenant guardado, usar el último o el primero disponible
+          if (!initialTenantId && response.tenants.length > 0) {
+            if (response.last_tenant_id) {
+              // Usar último tenant accedido
+              const lastTenant = response.tenants.find(
+                (t) => t.tenant.id === response.last_tenant_id
+              );
+              if (lastTenant) {
+                initialTenantId = lastTenant.tenant.id;
+                initialTenant = lastTenant.tenant;
+              }
+            }
+
+            // Si no hay último tenant válido, usar el primero
+            if (!initialTenantId && response.tenants.length > 0) {
+              initialTenantId = response.tenants[0].tenant.id;
+              initialTenant = response.tenants[0].tenant;
+            }
+          } else if (initialTenantId) {
+            // Verificar que el tenant guardado sigue siendo accesible
+            const savedTenant = response.tenants.find(
+              (t) => t.tenant.id === initialTenantId
+            );
+            if (savedTenant) {
+              initialTenant = savedTenant.tenant;
+            } else {
+              // Tenant no accesible, usar el primero
+              initialTenantId = response.tenants[0]?.tenant.id || null;
+              initialTenant = response.tenants[0]?.tenant || null;
+            }
+          }
+
+          // Guardar tenant inicial
+          if (initialTenantId) {
+            localStorage.setItem(STORAGE_KEYS.CURRENT_TENANT_ID, String(initialTenantId));
+          }
 
           // Actualizar estado
           set({
-            user,
-            accessToken: access,
-            refreshToken: refresh,
+            tenantUser: response.user,
+            accessToken: response.access,
+            refreshToken: response.refresh,
             isAuthenticated: true,
+            accessibleTenants: response.tenants,
+            isSuperadmin: response.user.is_superadmin,
+            currentTenantId: initialTenantId,
+            currentTenant: initialTenant,
           });
+
+          // Si hay tenant seleccionado, notificar al backend
+          if (initialTenantId) {
+            try {
+              await authAPI.selectTenant(initialTenantId);
+            } catch (error) {
+              console.warn('Failed to notify backend of tenant selection:', error);
+            }
+          }
         } catch (error) {
           // Limpiar estado en caso de error
           set({
+            tenantUser: null,
             user: null,
             accessToken: null,
             refreshToken: null,
             isAuthenticated: false,
+            accessibleTenants: [],
+            isSuperadmin: false,
+            currentTenantId: null,
+            currentTenant: null,
           });
           throw error;
         }
       },
 
+      /**
+       * Cerrar sesión
+       */
       logout: async () => {
-        // P0-03: Invalidar refresh token en el servidor antes de limpiar cliente
-        const refreshToken = localStorage.getItem('refresh_token');
+        // Invalidar refresh token en el servidor
+        const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
         if (refreshToken) {
           await authAPI.logout(refreshToken);
         }
 
         // Limpiar localStorage
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('current_tenant_id');
+        localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.CURRENT_TENANT_ID);
 
-        // Limpiar última ruta para que el próximo login use landing por rol
+        // Limpiar última ruta
         clearLastRoute();
+
+        // Limpiar todo el cache de React Query
+        clearAllQueries();
 
         // Limpiar estado
         set({
+          tenantUser: null,
           user: null,
           accessToken: null,
           refreshToken: null,
           isAuthenticated: false,
+          accessibleTenants: [],
+          isSuperadmin: false,
           currentTenantId: null,
+          currentTenant: null,
         });
       },
 
-      refreshProfile: async () => {
+      /**
+       * Refrescar perfil del TenantUser
+       */
+      refreshTenantProfile: async () => {
         try {
-          const user = await authAPI.getProfile();
-          set({ user });
+          const profile = await authAPI.getTenantProfile();
+          set({
+            tenantUser: {
+              id: profile.id,
+              email: profile.email,
+              first_name: profile.first_name,
+              last_name: profile.last_name,
+              full_name: profile.full_name,
+              is_superadmin: profile.is_superadmin,
+              last_tenant_id: profile.last_tenant_id,
+            },
+            accessibleTenants: profile.tenants,
+            isSuperadmin: profile.is_superadmin,
+          });
         } catch (error) {
-          console.error('Error refreshing profile:', error);
-          // Opcional: si falla el perfil (ej: token vencido), hacer logout
-          // set({ user: null, accessToken: null, refreshToken: null, isAuthenticated: false });
+          console.error('Error refreshing tenant profile:', error);
         }
       },
 
+      /**
+       * Seleccionar un tenant para trabajar
+       *
+       * IMPORTANTE: Invalida todas las queries de React Query para forzar
+       * la recarga de datos del nuevo tenant.
+       */
+      selectTenant: async (tenantId: number) => {
+        const { accessibleTenants, currentTenantId } = get();
+
+        // Si es el mismo tenant, no hacer nada
+        if (tenantId === currentTenantId) {
+          return;
+        }
+
+        // Verificar que el tenant es accesible
+        const tenantAccess = accessibleTenants.find((t) => t.tenant.id === tenantId);
+        if (!tenantAccess) {
+          throw new Error('No tienes acceso a este tenant');
+        }
+
+        // Notificar al backend
+        await authAPI.selectTenant(tenantId);
+
+        // Guardar en localStorage ANTES de invalidar queries
+        // para que las nuevas requests usen el nuevo X-Tenant-ID
+        localStorage.setItem(STORAGE_KEYS.CURRENT_TENANT_ID, String(tenantId));
+
+        // Actualizar estado
+        set({
+          currentTenantId: tenantId,
+          currentTenant: tenantAccess.tenant,
+          user: null, // Limpiar usuario del tenant anterior
+        });
+
+        // CRÍTICO: Invalidar TODAS las queries para forzar recarga con nuevo tenant
+        // Esto asegura que branding, usuarios, configuración, etc. se recarguen
+        invalidateAllQueries();
+      },
+
+      /**
+       * Establecer usuario del tenant actual (User)
+       */
       setUser: (user: User) => {
         set({ user });
       },
 
+      /**
+       * Establecer tenant actual (para restaurar desde localStorage)
+       */
       setCurrentTenantId: (tenantId: number | null) => {
+        const { accessibleTenants } = get();
+
         if (tenantId) {
-          localStorage.setItem('current_tenant_id', String(tenantId));
+          localStorage.setItem(STORAGE_KEYS.CURRENT_TENANT_ID, String(tenantId));
+          const tenantAccess = accessibleTenants.find((t) => t.tenant.id === tenantId);
+          set({
+            currentTenantId: tenantId,
+            currentTenant: tenantAccess?.tenant || null,
+          });
         } else {
-          localStorage.removeItem('current_tenant_id');
+          localStorage.removeItem(STORAGE_KEYS.CURRENT_TENANT_ID);
+          set({
+            currentTenantId: null,
+            currentTenant: null,
+          });
         }
-        set({ currentTenantId: tenantId });
       },
 
+      /**
+       * Limpiar contexto de tenant (para modo Admin Global)
+       */
       clearTenantContext: () => {
-        localStorage.removeItem('current_tenant_id');
-        set({ currentTenantId: null });
+        localStorage.removeItem(STORAGE_KEYS.CURRENT_TENANT_ID);
+        set({
+          currentTenantId: null,
+          currentTenant: null,
+          user: null,
+        });
+        // Invalidar queries para modo Admin Global
+        invalidateAllQueries();
       },
     }),
     {
       name: 'auth-storage',
-      version: 3, // Incrementar al cambiar estructura de User
+      version: 4, // Incrementar al cambiar estructura para multi-tenant
       partialize: (state) => ({
-        user: state.user,
+        tenantUser: state.tenantUser,
         isAuthenticated: state.isAuthenticated,
         currentTenantId: state.currentTenantId,
+        currentTenant: state.currentTenant,
+        accessibleTenants: state.accessibleTenants,
+        isSuperadmin: state.isSuperadmin,
       }),
       // Migración: limpia datos antiguos para forzar re-login
       migrate: (persistedState, version) => {
-        if (version < 3) {
+        if (version < 4) {
           // Versiones anteriores: forzar re-login para obtener nuevos campos
           return {
+            tenantUser: null,
             user: null,
             isAuthenticated: false,
             currentTenantId: null,
+            currentTenant: null,
+            accessibleTenants: [],
+            isSuperadmin: false,
           };
         }
-        return persistedState as { user: null; isAuthenticated: boolean; currentTenantId: number | null };
+        return persistedState as Partial<AuthState>;
       },
     }
   )

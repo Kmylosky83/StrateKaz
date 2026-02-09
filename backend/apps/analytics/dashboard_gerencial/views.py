@@ -11,6 +11,7 @@ from .serializers import (
     VistaDashboardSerializer, WidgetDashboardSerializer, FavoritoDashboardSerializer
 )
 from .widgets_valores_vividos import ValoresVividosWidgetService, get_valores_vividos_summary
+from .services import CrossModuleStatsService
 
 
 class VistaDashboardViewSet(StandardViewSetMixin, OrderingMixin, viewsets.ModelViewSet):
@@ -88,6 +89,29 @@ class VistaDashboardViewSet(StandardViewSetMixin, OrderingMixin, viewsets.ModelV
 
         resumen = get_valores_vividos_summary(empresa_id)
         return Response(resumen)
+
+    @action(detail=False, methods=['get'], url_path='dashboard-gerencial')
+    def dashboard_gerencial(self, request):
+        """
+        Dashboard gerencial cross-module.
+
+        GET /api/analytics/dashboards/vistas/dashboard-gerencial/
+
+        Agrega datos de Talent Hub, HSEQ, Riesgos, Cumplimiento,
+        Emergencias, Workflow y Proyectos en un unico endpoint.
+        """
+        empresa_id = getattr(request.user, 'empresa_id', None)
+        if not empresa_id:
+            empresa_id = request.query_params.get('empresa_id')
+
+        if not empresa_id:
+            return Response(
+                {'error': 'empresa_id requerido'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        data = CrossModuleStatsService.get_dashboard_completo(int(empresa_id))
+        return Response(data)
 
     @action(detail=False, methods=['get'], url_path='valores-vividos/widget')
     def valores_vividos_widget(self, request):

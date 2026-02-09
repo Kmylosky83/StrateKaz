@@ -17,6 +17,8 @@ from .views import (
     EntrevistaViewSet,
     PruebaViewSet,
     AfiliacionSSViewSet,
+    # Contratos (Ley 2466/2025)
+    HistorialContratoViewSet,
     # Estadísticas
     ProcesoSeleccionEstadisticasViewSet,
 )
@@ -37,6 +39,9 @@ router.register(r'candidatos', CandidatoViewSet, basename='candidato')
 router.register(r'entrevistas', EntrevistaViewSet, basename='entrevista')
 router.register(r'pruebas', PruebaViewSet, basename='prueba')
 router.register(r'afiliaciones', AfiliacionSSViewSet, basename='afiliacion')
+
+# Contratos (Ley 2466/2025)
+router.register(r'historial-contratos', HistorialContratoViewSet, basename='historial-contrato')
 
 # Estadísticas
 router.register(r'estadisticas', ProcesoSeleccionEstadisticasViewSet, basename='estadisticas')

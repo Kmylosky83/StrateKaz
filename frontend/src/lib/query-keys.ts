@@ -88,7 +88,7 @@ export const queryKeys = {
   cargos: createQueryKeys('cargos'),
   colaboradores: createQueryKeys('colaboradores'),
   sedes: createQueryKeys('sedes'),
-  normasIso: createQueryKeys('normas-iso'),
+  normasIso: createQueryKeys('normas_iso'),
   unidadesMedida: createQueryKeys('unidades-medida'),
   consecutivos: createQueryKeys('consecutivos'),
 

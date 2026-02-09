@@ -24,7 +24,7 @@ import { toast } from 'sonner';
 import axiosInstance from '@/api/axios-config';
 import { Card, EmptyState, Spinner } from '@/components/common';
 import { Building2, Network } from 'lucide-react';
-import { useEmpresaBasicInfo } from '../../hooks/useEmpresa';
+import { useAuthStore } from '@/store/authStore';
 
 import AreaNode from './AreaNode';
 import CargoNode from './CargoNode';
@@ -73,8 +73,8 @@ const OrganigramaCanvasInner = () => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const { fitView, zoomIn, zoomOut } = useReactFlow();
 
-  // Obtener nombre de la empresa para exportación
-  const { nombreComercial: empresaNombre } = useEmpresaBasicInfo();
+  // Obtener nombre de la empresa para exportación (desde el tenant actual)
+  const empresaNombre = useAuthStore((state) => state.currentTenant?.name);
 
   // Estado
   const [viewMode, setViewMode] = useState<ViewMode>('cargos');

@@ -17,7 +17,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'logo-dark.png', 'logo-light.png', 'pwa-icon.svg'],
       // MB-001: Manifest dinámico desde BD
-      // El manifest.json se genera dinámicamente desde /api/core/branding/manifest/
+      // El manifest.json se genera dinámicamente desde /api/tenant/public/manifest/
       // Solo definimos valores mínimos de fallback aquí
       manifest: false, // Deshabilitamos manifest estático - se carga dinámicamente
       injectManifest: {
@@ -81,6 +81,14 @@ export default defineConfig({
   server: {
     port: 3010,
     host: true,
+    proxy: {
+      // Proxy para API backend en desarrollo
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
   resolve: {
     alias: {

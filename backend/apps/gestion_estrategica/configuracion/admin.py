@@ -2,52 +2,12 @@
 Admin para el módulo de Configuración Empresarial
 
 NOTA: UnidadMedida y ConsecutivoConfig fueron migrados a organizacion.
-Ver: apps.gestion_estrategica.organizacion.admin
 """
 from django.contrib import admin
 from .models import (
-    EmpresaConfig, SedeEmpresa, IntegracionExterna,
+    SedeEmpresa, IntegracionExterna,
     TipoSede, TipoServicioIntegracion, ProveedorIntegracion, NormaISO, TipoCambio
 )
-
-
-@admin.register(EmpresaConfig)
-class EmpresaConfigAdmin(admin.ModelAdmin):
-    """Admin para configuración de empresa (singleton)"""
-    list_display = ['razon_social', 'nit', 'ciudad', 'regimen_tributario', 'updated_at']
-    readonly_fields = ['created_at', 'updated_at']
-
-    fieldsets = (
-        ('Identificación Fiscal', {
-            'fields': ('nit', 'razon_social', 'nombre_comercial', 'representante_legal',
-                      'cedula_representante', 'tipo_sociedad', 'regimen_tributario',
-                      'actividad_economica', 'descripcion_actividad')
-        }),
-        ('Datos de Contacto', {
-            'fields': ('direccion_fiscal', 'ciudad', 'departamento', 'pais', 'codigo_postal',
-                      'telefono_principal', 'telefono_secundario', 'email_corporativo', 'sitio_web')
-        }),
-        ('Registro Mercantil', {
-            'fields': ('matricula_mercantil', 'camara_comercio', 'fecha_constitucion',
-                      'fecha_inscripcion_registro'),
-            'classes': ('collapse',)
-        }),
-        ('Configuración Regional', {
-            'fields': ('zona_horaria', 'formato_fecha', 'moneda', 'simbolo_moneda',
-                      'separador_miles', 'separador_decimales')
-        }),
-        ('Auditoría', {
-            'fields': ('updated_by', 'created_at', 'updated_at'),
-            'classes': ('collapse',)
-        }),
-    )
-
-    def has_add_permission(self, request):
-        # Solo permitir agregar si no existe ningún registro
-        return not EmpresaConfig.objects.exists()
-
-    def has_delete_permission(self, request, obj=None):
-        return False
 
 
 @admin.register(SedeEmpresa)

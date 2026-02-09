@@ -1,167 +1,261 @@
+/**
+ * EjecucionPage - Bandeja de trabajo y gestion de tareas del workflow
+ *
+ * Conectada a APIs reales:
+ * - /api/workflows/ejecucion/tareas/mis_tareas/
+ * - /api/workflows/ejecucion/tareas/estadisticas/
+ * - /api/workflows/ejecucion/instancias/iniciar_flujo/
+ */
 import { useState } from 'react';
-import { Play, ArrowLeft, Clock, AlertCircle, CheckCircle2, User, Filter } from 'lucide-react';
+import {
+  Play,
+  ArrowLeft,
+  Clock,
+  AlertCircle,
+  CheckCircle2,
+  User,
+  Filter,
+  GitBranch,
+  ChevronRight,
+  Zap,
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Card } from '@/components/common';
+import {
+  Card,
+  Badge,
+  EmptyState,
+  Spinner,
+  StatusBadge,
+  KpiCard,
+  KpiCardGrid,
+  KpiCardSkeleton,
+} from '@/components/common';
 import { Button } from '@/components/common/Button';
 import { PageHeader } from '@/components/layout';
+import {
+  useMisTareas,
+  useEstadisticasTareas,
+  useCompletarTarea,
+  useRechazarTarea,
+  usePlantillasActivas,
+  useIniciarFlujo,
+} from '../hooks/useWorkflows';
+import type { TareaActiva, EstadoTarea, Prioridad } from '../types/workflow.types';
 
-// Mock data
-const mockTasks = [
-  {
-    id: '1',
-    title: 'Aprobar solicitud de compra #SC-2024-001',
-    workflow: 'Compras',
-    assignee: 'Juan Pérez',
-    dueDate: '2024-12-24',
-    priority: 'high',
-    status: 'pending',
-  },
-  {
-    id: '2',
-    title: 'Revisar documento de calidad',
-    workflow: 'Control de Calidad',
-    assignee: 'María González',
-    dueDate: '2024-12-25',
-    priority: 'medium',
-    status: 'pending',
-  },
-  {
-    id: '3',
-    title: 'Validar certificado de proveedor',
-    workflow: 'Proveedores',
-    assignee: 'Carlos Rodríguez',
-    dueDate: '2024-12-23',
-    priority: 'high',
-    status: 'in_progress',
-  },
-];
+// ============================================================
+// UTILIDADES
+// ============================================================
 
-const getPriorityColor = (priority: string) => {
-  switch (priority) {
-    case 'high':
-      return 'bg-red-100 text-red-700 border border-red-300';
-    case 'medium':
-      return 'bg-yellow-100 text-yellow-700 border border-yellow-300';
-    case 'low':
-      return 'bg-green-100 text-green-700 border border-green-300';
-    default:
-      return 'bg-gray-100 text-gray-700 border border-gray-300';
-  }
+const prioridadConfig: Record<Prioridad, { label: string; color: string }> = {
+  BAJA: { label: 'Baja', color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' },
+  NORMAL: { label: 'Normal', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' },
+  ALTA: { label: 'Alta', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' },
+  URGENTE: { label: 'Urgente', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' },
 };
 
-const getPriorityLabel = (priority: string) => {
-  switch (priority) {
-    case 'high':
-      return 'Alta';
-    case 'medium':
-      return 'Media';
-    case 'low':
-      return 'Baja';
-    default:
-      return priority;
-  }
+const formatDate = (dateStr: string | null) => {
+  if (!dateStr) return '-';
+  return new Date(dateStr).toLocaleDateString('es-CO', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
 };
 
-const getStatusIcon = (status: string) => {
-  switch (status) {
-    case 'pending':
-      return <Clock className="h-4 w-4" />;
-    case 'in_progress':
-      return <Play className="h-4 w-4" />;
-    case 'completed':
-      return <CheckCircle2 className="h-4 w-4" />;
-    default:
-      return <AlertCircle className="h-4 w-4" />;
-  }
+type TabType = 'PENDIENTE' | 'EN_PROGRESO' | 'COMPLETADA';
+
+// ============================================================
+// TARJETA DE TAREA
+// ============================================================
+
+interface TareaCardProps {
+  tarea: TareaActiva;
+  onCompletar: (id: number) => void;
+  onRechazar: (id: number) => void;
+}
+
+const TareaCard = ({ tarea, onCompletar, onRechazar }: TareaCardProps) => {
+  const isOverdue = tarea.esta_vencida;
+  const prioridad = prioridadConfig[tarea.instancia_detail?.prioridad as Prioridad] ?? prioridadConfig.NORMAL;
+
+  return (
+    <Card className={`hover:shadow-md transition-shadow ${
+      tarea.estado === 'EN_PROGRESO' ? 'border-l-4 border-l-blue-500' : ''
+    } ${isOverdue ? 'border-l-4 border-l-red-500' : ''}`}>
+      <div className="p-5">
+        <div className="flex items-start justify-between">
+          <div className="flex-1 space-y-2 min-w-0">
+            <div className="flex items-center gap-2">
+              <StatusBadge status={tarea.estado} />
+              <StatusBadge status={tarea.tipo_tarea} />
+              {isOverdue && (
+                <Badge variant="red" size="sm">Vencida</Badge>
+              )}
+            </div>
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">
+              {tarea.nombre_tarea}
+            </h3>
+            {tarea.descripcion && (
+              <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+                {tarea.descripcion}
+              </p>
+            )}
+            <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+              {tarea.asignado_a_detail && (
+                <span className="flex items-center gap-1">
+                  <User className="h-3.5 w-3.5" />
+                  {tarea.asignado_a_detail.first_name} {tarea.asignado_a_detail.last_name}
+                </span>
+              )}
+              <span className="flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5" />
+                Vence: {formatDate(tarea.fecha_vencimiento)}
+              </span>
+              <span className="flex items-center gap-1">
+                <GitBranch className="h-3.5 w-3.5" />
+                {tarea.codigo_tarea}
+              </span>
+              <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${prioridad.color}`}>
+                {prioridad.label}
+              </span>
+            </div>
+          </div>
+          <div className="flex gap-2 ml-4 flex-shrink-0">
+            {tarea.estado !== 'COMPLETADA' && (
+              <>
+                <Button
+                  size="sm"
+                  variant="primary"
+                  onClick={() => onCompletar(tarea.id)}
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                  Completar
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onRechazar(tarea.id)}
+                >
+                  Rechazar
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
 };
 
-type TabType = 'pending' | 'in_progress' | 'completed';
+// ============================================================
+// PAGINA PRINCIPAL
+// ============================================================
 
 export default function EjecucionPage() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<TabType>('pending');
+  const [activeTab, setActiveTab] = useState<TabType>('PENDIENTE');
 
-  const tabs = [
-    { id: 'pending', label: 'Pendientes' },
-    { id: 'in_progress', label: 'En Proceso' },
-    { id: 'completed', label: 'Completadas' },
+  // Queries
+  const { data: tareasData, isLoading: loadingTareas } = useMisTareas(activeTab);
+  const { data: stats, isLoading: loadingStats } = useEstadisticasTareas();
+  const { data: plantillasActivas } = usePlantillasActivas();
+
+  // Mutations
+  const completarMutation = useCompletarTarea();
+  const rechazarMutation = useRechazarTarea();
+  const iniciarFlujoMutation = useIniciarFlujo();
+
+  const tareas = tareasData?.tareas ?? [];
+
+  const tabs: { id: TabType; label: string; count?: number }[] = [
+    { id: 'PENDIENTE', label: 'Pendientes', count: stats?.pendientes },
+    { id: 'EN_PROGRESO', label: 'En Proceso', count: stats?.en_progreso },
+    { id: 'COMPLETADA', label: 'Completadas', count: stats?.completadas_hoy },
   ];
-
-  const filteredTasks = mockTasks.filter(t => t.status === activeTab);
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <PageHeader
-        title="Ejecución y Tareas"
-        description="Bandeja de trabajo y gestión de tareas pendientes"
+        title="Ejecucion y Tareas"
+        description="Bandeja de trabajo y gestion de tareas pendientes"
         actions={
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => navigate('/workflows')}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Volver
             </Button>
-            <Button variant="outline">
-              <Filter className="h-4 w-4 mr-2" />
-              Filtros
-            </Button>
           </div>
         }
       />
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Pendientes</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">8</p>
-            </div>
-            <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-              <Clock className="h-6 w-6 text-orange-600 dark:text-orange-400" />
-            </div>
-          </div>
-        </Card>
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">En Proceso</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">3</p>
-            </div>
-            <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-              <Play className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-            </div>
-          </div>
-        </Card>
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Completadas Hoy</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">12</p>
-            </div>
-            <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
-              <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
-            </div>
-          </div>
-        </Card>
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Vencidas</p>
-              <p className="text-2xl font-bold text-red-600">2</p>
-            </div>
-            <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-lg">
-              <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
-            </div>
-          </div>
-        </Card>
-      </div>
+      {/* KPI Cards */}
+      {loadingStats ? (
+        <KpiCardGrid columns={4}>
+          {[1, 2, 3, 4].map((i) => <KpiCardSkeleton key={i} />)}
+        </KpiCardGrid>
+      ) : (
+        <KpiCardGrid columns={4}>
+          <KpiCard
+            title="Pendientes"
+            value={stats?.pendientes ?? 0}
+            icon="Clock"
+            color="orange"
+          />
+          <KpiCard
+            title="En Proceso"
+            value={stats?.en_progreso ?? 0}
+            icon="Play"
+            color="blue"
+          />
+          <KpiCard
+            title="Completadas Hoy"
+            value={stats?.completadas_hoy ?? 0}
+            icon="CheckCircle2"
+            color="green"
+          />
+          <KpiCard
+            title="Vencidas"
+            value={stats?.vencidas ?? 0}
+            icon="AlertCircle"
+            color="red"
+          />
+        </KpiCardGrid>
+      )}
 
-      {/* Task List */}
+      {/* Iniciar Flujo Rapido */}
+      {plantillasActivas && (plantillasActivas as unknown[]).length > 0 && (
+        <Card>
+          <div className="p-4">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+              <Zap className="h-4 w-4 text-purple-600" />
+              Iniciar Flujo
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {(plantillasActivas as Array<{ id: number; nombre: string; codigo: string }>).slice(0, 5).map((p) => (
+                <Button
+                  key={p.id}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => iniciarFlujoMutation.mutate({
+                    plantilla_id: p.id,
+                    titulo: `${p.nombre} - ${new Date().toLocaleDateString('es-CO')}`,
+                  })}
+                  disabled={iniciarFlujoMutation.isPending}
+                >
+                  <Play className="h-3.5 w-3.5 mr-1" />
+                  {p.nombre}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Lista de tareas */}
       <Card>
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="p-5 border-b border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Bandeja de Trabajo</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">Tareas asignadas y procesos en ejecución</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Tareas asignadas y procesos en ejecucion</p>
         </div>
 
         {/* Tabs */}
@@ -170,100 +264,49 @@ export default function EjecucionPage() {
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as TabType)}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
                   activeTab === tab.id
                     ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
                     : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
                 }`}
               >
                 {tab.label}
+                {tab.count != null && (
+                  <Badge variant={activeTab === tab.id ? 'purple' : 'gray'} size="sm">
+                    {tab.count}
+                  </Badge>
+                )}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Task Content */}
-        <div className="p-6 space-y-4">
-          {filteredTasks.length === 0 ? (
-            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-              <CheckCircle2 className="h-12 w-12 mx-auto mb-4 text-gray-400 dark:text-gray-500" />
-              <p>No hay tareas en esta categoría</p>
+        {/* Contenido */}
+        <div className="p-5 space-y-3">
+          {loadingTareas ? (
+            <div className="flex items-center justify-center py-12">
+              <Spinner size="lg" />
             </div>
+          ) : tareas.length === 0 ? (
+            <EmptyState
+              icon={<CheckCircle2 className="h-12 w-12" />}
+              title="Sin tareas"
+              description={`No hay tareas ${activeTab === 'PENDIENTE' ? 'pendientes' : activeTab === 'EN_PROGRESO' ? 'en proceso' : 'completadas hoy'}`}
+            />
           ) : (
-            filteredTasks.map((task) => (
-              <Card
-                key={task.id}
-                className={`hover:shadow-md transition-shadow ${
-                  task.status === 'in_progress' ? 'border-l-4 border-l-blue-500' : ''
-                }`}
-              >
-                <div className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 space-y-3">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded ${
-                          task.status === 'in_progress' ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-purple-100 dark:bg-purple-900/30'
-                        }`}>
-                          {getStatusIcon(task.status)}
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-gray-900 dark:text-gray-100">{task.title}</h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">{task.workflow}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4 text-sm">
-                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                          <User className="h-4 w-4" />
-                          <span>{task.assignee}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                          <Clock className="h-4 w-4" />
-                          <span>Vence: {task.dueDate}</span>
-                        </div>
-                        <span className={`px-2 py-1 text-xs font-medium rounded ${getPriorityColor(task.priority)}`}>
-                          {getPriorityLabel(task.priority)}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant={task.status === 'in_progress' ? 'primary' : 'primary'}
-                      >
-                        {task.status === 'in_progress' ? 'Completar' : 'Procesar'}
-                      </Button>
-                      <Button size="sm" variant="outline">
-                        Ver Detalles
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </Card>
+            tareas.map((tarea) => (
+              <TareaCard
+                key={tarea.id}
+                tarea={tarea}
+                onCompletar={(id) => completarMutation.mutate({ id, data: {} })}
+                onRechazar={(id) => rechazarMutation.mutate({
+                  id,
+                  data: { motivo_rechazo: 'Rechazado desde bandeja' },
+                })}
+              />
             ))
           )}
-        </div>
-      </Card>
-
-      {/* Info Card */}
-      <Card className="bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800">
-        <div className="p-6">
-          <div className="flex items-start gap-3">
-            <Play className="h-6 w-6 text-purple-600 dark:text-purple-400 mt-1 flex-shrink-0" />
-            <div>
-              <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                Gestión de Tareas y Ejecución
-              </h3>
-              <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
-                <li>Bandeja de trabajo unificada para todas las tareas pendientes</li>
-                <li>Notificaciones automáticas de nuevas asignaciones</li>
-                <li>Priorización por urgencia y SLAs</li>
-                <li>Seguimiento de tiempo de respuesta</li>
-                <li>Historial de acciones y comentarios</li>
-                <li>Delegación y reasignación de tareas</li>
-              </ul>
-            </div>
-          </div>
         </div>
       </Card>
     </div>

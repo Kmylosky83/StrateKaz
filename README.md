@@ -1,178 +1,153 @@
-# StrateKaz - Sistema de Gestion Integral
+# StrateKaz - Sistema Integrado de Gestion Empresarial
 
-Sistema integral de gestion empresarial para empresas colombianas con cumplimiento normativo (SG-SST, PESV, ISO 9001/14001/45001).
+Plataforma ERP SaaS multi-tenant para empresas colombianas con cumplimiento normativo integrado (SG-SST, PESV, ISO 9001/14001/45001). Arquitectura modular de 6 niveles con 17 modulos y ~103 sub-apps, aislamiento de datos por schema de PostgreSQL.
 
 | Info | Valor |
 |------|-------|
-| **Nombre del Software** | StrateKaz |
-| **Version** | 3.7.2 |
-| **Ultima Actualizacion** | 22 Enero 2026 |
-| **Estado** | Produccion - VPS Hostinger + SSL |
-| **URL Produccion** | https://erp.stratekaz.com |
-| **Modelo Deployment** | VPS Multi-Instancia (1 BD por empresa) |
-| **Propietario** | StrateKaz S.A.S. |
+| **Version** | 4.0.0 |
+| **Ultima Actualizacion** | 6 Febrero 2026 |
+| **Licencia** | Apache-2.0 |
 
 ---
 
 ## Stack Tecnologico
 
-| Capa | Tecnologia | Version | Estado |
-|------|------------|---------|--------|
-| **Python** | Python | 3.11+ | OK |
-| **Backend** | Django + DRF | 5.0.9 | OK |
-| **Base de Datos** | MySQL | 8.0+ | OK |
-| **Node.js** | Node.js | 22.14.0 LTS | OK |
-| **Frontend** | React + TypeScript | 18.3 + 5.3 | OK |
-| **Build Tool** | Vite | 5.4.21 | OK |
-| **Estilos** | Tailwind CSS | 3.4.x | OK |
-| **Estado** | Zustand + TanStack Query v5 | 4.5 + 5.90 | OK |
-| **PWA** | Vite PWA Plugin | 1.2.0 | OK |
-| **Formularios** | React Hook Form + Zod | 7.66 + 3.22 | OK |
-| **Animaciones** | Framer Motion | 11.x | OK |
-| **Servidor WSGI** | Gunicorn | 21.2.0 | OK |
-| **Web Server** | Nginx | 1.18+ | OK |
-| **Cache/Broker** | Redis | 7.0+ | OK |
-| **Tareas Async** | Celery | 5.3.6 | OK |
-| **Process Manager** | Supervisor | 4.2+ | OK |
+| Capa | Tecnologia | Version |
+|------|------------|---------|
+| **Backend** | Django + DRF | 5.0+ |
+| **Multi-Tenant** | django-tenants (PostgreSQL schemas) | 3.6+ |
+| **Base de Datos** | PostgreSQL | 15+ |
+| **Cache/Broker** | Redis | 7+ |
+| **Tareas Async** | Celery + Celery Beat | 5.3+ |
+| **Frontend** | React + TypeScript | 18 + 5 |
+| **Build Tool** | Vite | 5.0+ |
+| **Estilos** | Tailwind CSS | 3.4+ |
+| **Estado** | Zustand + TanStack Query v5 | - |
+| **Formularios** | React Hook Form + Zod | - |
+| **Contenedores** | Docker + Docker Compose | - |
 
-### Estadisticas del Proyecto
+### Estadisticas
 
 | Metrica | Backend | Frontend |
 |---------|---------|----------|
-| **Archivos** | 818 .py | 542 .ts/.tsx |
-| **Apps/Features** | 103 apps | 20 features |
-| **Modelos** | 240 | - |
-| **Componentes** | - | 30+ reutilizables |
-| **Lineas de codigo** | ~50,000 | ~154,000 |
+| Apps/Features | 103 apps | 22 features |
+| Modelos/Componentes | 240+ modelos | 30+ reutilizables |
 
 ---
 
-## Arquitectura del Sistema
-
-### Estructura de 6 Niveles (14 Modulos, 81+ Apps)
+## Arquitectura de 6 Niveles
 
 ```
 NIVEL 0: CORE BASE
-└── core/ (Usuarios, RBAC, Menu, Configuracion)
+├── core/    (Usuarios, RBAC, Menu, Sesiones, 2FA)
+└── tenant/  (Tenant, Domain, Plan - schema public)
 
-NIVEL 1: ESTRATEGICO (9 apps) - CONSOLIDADO
-└── gestion_estrategica/
-    ├── configuracion/        # EmpresaConfig, SedeEmpresa, NormaISO, UnidadMedida
-    ├── organizacion/         # Areas, Cargos, Organigrama, Control de Acceso
-    ├── identidad/            # Mision, Vision, Valores, Politicas
-    ├── planeacion/           # Objetivos BSC, Estrategias, KPIs
-    │   └── contexto/         # DOFA, PESTEL, Porter (inputs estrategicos)
-    ├── gestion_documental/   # Sistema documental ISO (migrado desde HSEQ)
-    ├── planificacion_sistema/# Planes anuales, programas (migrado desde HSEQ)
-    ├── gestion_proyectos/    # Portafolios, Programas, Proyectos PMI
-    └── revision_direccion/   # Revision gerencial ISO 9.3
+NIVEL 1: ESTRATEGICO (10 apps)
+└── gestion_estrategica/ (Configuracion, Organizacion, Identidad,
+    Planeacion, Contexto DOFA/PESTEL, Proyectos PMI, Gestion Documental)
 
 NIVEL 2: CUMPLIMIENTO (14 apps)
-├── motor_cumplimiento/   # Matriz Legal, Requisitos, Partes Interesadas
-├── motor_riesgos/        # IPEVR, ISO 31000, Aspectos Ambientales, PESV
-└── workflow_engine/      # Motor BPMN
+├── motor_cumplimiento/  (Matriz Legal, Requisitos, Partes Interesadas)
+├── motor_riesgos/       (IPEVR, ISO 31000, Ambiental, Vial, SAGRILAFT)
+└── workflow_engine/     (BPMN, Firmas Digitales)
 
 NIVEL 3: TORRE DE CONTROL (9 apps)
-└── hseq_management/      # Calidad, SST, Ambiental, Comites, Emergencias
+└── hseq_management/     (Calidad, SST, Ambiental, Comites, Emergencias)
 
-NIVEL 4: CADENA DE VALOR (18 apps)
-├── supply_chain/         # Proveedores, Compras, Almacen
-├── production_ops/       # Recepcion, Procesamiento, Mantenimiento
-├── logistics_fleet/      # Flota, Transporte
-└── sales_crm/            # Clientes, Ventas, Facturacion
+NIVEL 4: CADENA DE VALOR (17 apps)
+├── supply_chain/        (Proveedores, Compras, Almacen)
+├── production_ops/      (Recepcion, Procesamiento, Mantenimiento)
+├── logistics_fleet/     (Flota, Transporte)
+└── sales_crm/           (Clientes, Ventas, Facturacion)
 
 NIVEL 5: HABILITADORES (19 apps)
-├── talent_hub/           # RRHH completo (11 apps)
-├── admin_finance/        # Tesoreria, Presupuesto, Activos
-└── accounting/           # Contabilidad (opcional)
+├── talent_hub/          (RRHH completo - 11 apps)
+├── admin_finance/       (Tesoreria, Presupuesto, Activos)
+└── accounting/          (Contabilidad)
 
 NIVEL 6: INTELIGENCIA (11 apps)
-├── analytics/            # KPIs, Dashboards, Informes
-└── audit_system/         # Logs, Notificaciones, Alertas
+├── analytics/           (KPIs, Dashboards, Informes)
+└── audit_system/        (Logs, Notificaciones, Alertas)
 ```
 
 ---
 
-## Inicio Rapido
+## Inicio Rapido (Docker)
 
 ### Requisitos
+- Docker y Docker Compose
+- Git
 
-- **Python** 3.11+ (usar venv incluido)
-- **MySQL** 8.0+
-- **Node.js** 20+
-- **npm** 10+
+### Levantar el proyecto
 
-### Backend
+```bash
+git clone <repo-url>
+cd StrateKaz
+cp .env.example .env
 
-```powershell
-cd backend
+# Levantar servicios (PostgreSQL, Redis, Backend, Celery)
+docker-compose up -d
 
-# Activar entorno virtual (Python 3.11)
-.\venv\Scripts\activate
-
-# Instalar dependencias
-pip install -r requirements.txt
-
-# Configurar base de datos MySQL
-# Crear BD: grasas_huesos_db
-
-# Ejecutar migraciones
-python manage.py migrate
+# Migraciones multi-tenant
+docker-compose exec backend python manage.py migrate_schemas
 
 # Crear superusuario
-python manage.py createsuperuser
+docker-compose exec backend python manage.py createsuperuser
 
-# Poblar datos iniciales
-python manage.py seed_empresa
-python manage.py seed_organizacion
-python manage.py seed_identidad
-python manage.py init_rbac
+# (Opcional) Frontend en Docker
+docker-compose --profile frontend up -d
+```
 
-# Iniciar servidor
+### Desarrollo local sin Docker
+
+```bash
+# Backend
+cd backend
+python -m venv venv && source venv/bin/activate
+pip install -r requirements/development.txt
+python manage.py migrate_schemas
 python manage.py runserver
-```
 
-### Frontend
-
-```powershell
+# Frontend
 cd frontend
-
-# Instalar dependencias
 npm install
-
-# Desarrollo (puerto 3010)
 npm run dev
-
-# Build para produccion
-npm run build
 ```
 
-### Accesos Desarrollo
+### Accesos
 
 | Servicio | URL |
 |----------|-----|
 | Frontend | http://localhost:3010 |
 | Backend API | http://localhost:8000/api |
+| API Docs (Swagger) | http://localhost:8000/api/docs/ |
 | Admin Django | http://localhost:8000/admin |
-| API Docs | http://localhost:8000/api/docs/ |
+| Flower (Celery) | http://localhost:5555 |
 
 ---
 
-## Sistema RBAC (3 Tipos de Roles)
+## Servicios Docker
 
-El sistema implementa un modelo RBAC hibrido con clara diferenciacion:
+| Servicio | Imagen | Puerto | Descripcion |
+|----------|--------|--------|-------------|
+| `db` | postgres:15-alpine | 5432 | Base de datos (schemas multi-tenant) |
+| `redis` | redis:7-alpine | 6379 | Cache y Celery broker |
+| `backend` | Python 3.11 + Django | 8000 | API REST |
+| `celery` | Python 3.11 + Celery | - | Worker de tareas async |
+| `celerybeat` | Python 3.11 + Celery | - | Scheduler de tareas periodicas |
+| `frontend` | Node 20 + Vite | 3010 | App React (profile: frontend) |
+| `flower` | Celery Flower | 5555 | Monitor Celery (profile: monitoring) |
+| `pgadmin` | pgAdmin 4 | 5050 | Admin BD (profile: tools) |
+
+---
+
+## RBAC (3 Tipos de Roles)
 
 | Tipo | Descripcion | Ejemplo |
 |------|-------------|---------|
 | **Cargo** | Posicion en organigrama, permisos base automaticos | Operario, Supervisor, Gerente |
 | **Rol Funcional** | Permisos RBAC adicionales, asignables | Aprobador, Auditor, Analista |
 | **Especialidad Certificada** | Roles legales con certificacion | COPASST, Brigadista, Vigia SST |
-
-### Asignacion
-
-- **Cargo**: Se asigna al crear/editar usuario
-- **Roles Funcionales**: Multi-seleccion en formulario de usuario
-- **Especialidades**: Se gestionan en modulo Organizacion > Especialidades Certificadas
 
 ---
 
@@ -181,498 +156,44 @@ El sistema implementa un modelo RBAC hibrido con clara diferenciacion:
 ```
 StrateKaz/
 ├── backend/
-│   ├── apps/                 # 81 aplicaciones Django
-│   │   ├── core/             # Usuarios, RBAC, Menu
-│   │   ├── gestion_estrategica/
-│   │   └── ...
-│   ├── config/               # Settings Django
-│   ├── venv/                 # Entorno virtual Python 3.11
-│   └── requirements.txt
+│   ├── apps/                    # 103 aplicaciones Django (6 niveles)
+│   ├── config/
+│   │   └── settings/            # base.py, development.py, production.py
+│   ├── requirements/            # base.txt, development.txt, production.txt
+│   └── Dockerfile
 ├── frontend/
 │   └── src/
-│       ├── components/       # Design System
-│       ├── features/         # Modulos por funcionalidad
-│       ├── hooks/            # Custom hooks (useMediaQuery, useBrandingConfig...)
-│       ├── layouts/          # DashboardLayout responsive
-│       └── store/            # Zustand stores
-├── docs/                     # Documentacion
-│   ├── INDEX-DOCUMENTACION.md
-│   ├── desarrollo/          # Guias tecnicas
-│   └── plans/               # Planes de trabajo
-└── deploy/
-    └── vps/                  # Scripts de despliegue VPS
+│       ├── components/          # Design System reutilizable
+│       ├── features/            # 22 modulos por funcionalidad
+│       ├── hooks/               # Custom hooks
+│       ├── layouts/             # DashboardLayout responsive
+│       └── store/               # Zustand stores
+├── docker/                      # Configuraciones Docker
+├── docs/                        # Documentacion (ver seccion abajo)
+├── docker-compose.yml
+└── .env.example
 ```
 
 ---
 
 ## Documentacion
 
-> **Indice maestro:** [docs/INDEX-DOCUMENTACION.md](docs/INDEX-DOCUMENTACION.md)
-
-### Guias por Objetivo
-
-| Objetivo | Documento | Descripcion |
-|----------|-----------|-------------|
-| **Continuar desarrollo** | [PLAN_CIERRE_BRECHAS.md](docs/plans/PLAN_CIERRE_BRECHAS.md) | Plan maestro de mejoras (aplicar despues de auditorias N1) |
-| **Entender arquitectura** | [ESTRUCTURA-6-NIVELES-ERP.md](docs/arquitectura/ESTRUCTURA-6-NIVELES-ERP.md) | 6 niveles del sistema |
-| **Referencia tecnica** | [DEPLOY-VPS.md](deploy/vps/DEPLOY-VPS.md) | Deploy VPS Hostinger |
-| **Sistema de modulos** | [INDEX_MODULOS_FEATURES.md](docs/INDEX_MODULOS_FEATURES.md) | Como agregar modulos dinamicos |
-| **Gestionar versiones** | [GUIA-VERSIONAMIENTO.md](docs/desarrollo/GUIA-VERSIONAMIENTO.md) | Como cambiar version del software |
-| **Patrones UI** | [CATALOGO_VISTAS_UI.md](docs/desarrollo/CATALOGO_VISTAS_UI.md) | 6 patrones estandarizados de vistas |
-
----
-
-## Comandos Utiles
-
-### Backend
-
-```powershell
-# Activar entorno (SIEMPRE usar este)
-.\venv\Scripts\activate
-
-# Migraciones
-python manage.py makemigrations
-python manage.py migrate
-
-# Seeds de datos
-python manage.py seed_empresa
-python manage.py seed_organizacion
-python manage.py seed_identidad
-python manage.py seed_configuracion_sistema
-
-# Tests
-python manage.py test apps.core
-```
-
-### Frontend
-
-```powershell
-# Desarrollo
-npm run dev
-
-# Build produccion
-npm run build
-
-# Type check
-npx tsc --noEmit
-
-# Lint
-npm run lint
-```
-
----
-
-## Configuracion
-
-### Variables de Entorno (.env)
-
-```env
-# Django
-SECRET_KEY=tu-secret-key
-DEBUG=True
-ALLOWED_HOSTS=localhost,127.0.0.1
-
-# Base de datos
-DB_NAME=grasas_huesos_db
-DB_USER=root
-DB_PASSWORD=tu-password
-DB_HOST=localhost
-DB_PORT=3306
-
-# JWT (7 dias refresh token)
-JWT_REFRESH_TOKEN_LIFETIME=10080
-
-# CORS
-CORS_ALLOWED_ORIGINS=http://localhost:3010
-
-# Frontend
-VITE_API_URL=http://localhost:8000/api
-```
-
----
-
-## Despliegue en Produccion (VPS)
-
-El sistema esta desplegado en VPS Hostinger con la siguiente arquitectura:
-
-```
-Internet → Nginx (SSL/HTTPS) → Gunicorn (Django) → MySQL
-                             → React SPA (static files)
-                             → Celery Workers → Redis
-```
-
-### Infraestructura de Produccion
-
-| Componente | Tecnologia | Funcion |
-|------------|------------|---------|
-| Web Server | Nginx 1.18+ | Proxy reverso, SSL, archivos estaticos |
-| WSGI Server | Gunicorn | Sirve Django (4 workers) |
-| Base de Datos | MySQL 8.0 | Persistencia multi-tenant |
-| Cache/Broker | Redis 7.0 | Celery broker, cache Django |
-| Task Queue | Celery 5.3 | Tareas asincronas (emails, reportes) |
-| Process Manager | Supervisor | Gestion de procesos |
-| SSL | Let's Encrypt | Certificados automaticos |
-
-### Comandos de Despliegue
-
-```bash
-# En el VPS (ssh root@IP)
-cd /var/www/stratekaz/repo
-git pull origin main
-
-# Backend
-source /var/www/stratekaz/venv/bin/activate
-cd backend
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py collectstatic --noinput
-
-# Frontend
-cd ../frontend
-npm install
-npm run build
-
-# Reiniciar servicios
-sudo supervisorctl restart all
-```
-
-> **Guia completa:** [deploy/vps/DEPLOY-VPS.md](deploy/vps/DEPLOY-VPS.md)
-
----
-
-## Changelog Reciente
-
-### v3.7.2 (22 Enero 2026) - Migracion a VPS Produccion
-
-- **Infraestructura VPS Hostinger**:
-  - Despliegue completo en VPS con Ubuntu 22.04
-  - Nginx como proxy reverso con SSL Let's Encrypt
-  - Gunicorn con 4 workers para Django
-  - Supervisor para gestion de procesos
-  - Redis para Celery y cache
-  - Dominio: erp.stratekaz.com
-
-- **Documentacion Actualizada**:
-  - README actualizado con stack de produccion
-  - Guia VPS completa en deploy/vps/DEPLOY-VPS.md
-  - Archivos cPanel movidos a legacy/deprecated
-
-- **Frontend Generalizado**:
-  - Descripcion de MateriaPrimaPage generalizada
-  - Eliminadas referencias especificas de industria
-
-### v3.7.0 (20 Enero 2026) - Módulo de Perfil 100%
-
-- **Avatar Upload Completo (MS-004)**:
-  - Endpoint `POST /api/core/users/upload_photo/` para subir foto de perfil
-  - Validación: JPG, PNG, WebP hasta 2MB
-  - Serializer `UserPhotoUploadSerializer` con validación de formato y tamaño
-  - Campo `photo_url` en User (URL absoluta de la foto)
-  - Logging de auditoría: `log_user_photo_updated()`
-  - Componente `AvatarUploadModal` con drag & drop
-  - Preview de imagen antes de subir
-  - Hook `useUploadPhoto` con actualización automática de authStore
-  - Integración en PerfilPage y UserMenu
-  - Limpieza automática de URLs de objeto (sin memory leaks)
-
-- **Preferencias de Usuario Completa (MS-003)**:
-  - Modelo `UserPreferences` con campos: language, timezone, date_format
-  - Endpoint `/api/core/user-preferences/` (GET, PUT, PATCH)
-  - Creación automática de preferencias por usuario
-  - Serializer con validación de choices y timezones (pytz)
-  - Tipos TypeScript completos: `Language`, `DateFormat`
-  - Hook `usePreferences` con React Query
-  - Constantes: 70+ zonas horarias organizadas por región
-  - UI funcional: selector de idioma (es/en), timezone, formato de fecha
-  - Botones "Guardar cambios" y "Restaurar valores"
-  - Persistencia completa en backend
-  - Logging de auditoría: `log_preferences_updated()`
-
-- **Estado del Módulo de Perfil**:
-  - ✅ **PerfilPage** (100%): Avatar real, edición completa, info laboral
-  - ✅ **SeguridadPage** (100%): Cambio contraseña, sesiones, 2FA
-  - ✅ **PreferenciasPage** (100%): Idioma, timezone, formato con persistencia
-  - ✅ **Avatar real**: Upload funcional con drag & drop
-  - ✅ **Todas las vistas siguen el catálogo** (Vista 4, Vista 6)
-  - Estado general: **100% funcional**
-
-- **Migraciones Backend**:
-  - `0017_userpreferences.py` - Tabla de preferencias de usuario
-  - `0015_add_twofactorauth.py` - Ya aplicada (2FA)
-  - `0016_add_normas_iso_section.py` - Ya aplicada (Normas)
-
-- **Documentación**:
-  - `IMPLEMENTACION_PREFERENCIAS_USUARIO.md` - Guía completa MS-003
-  - README actualizado con módulo de perfil al 100%
-
-### v3.6.0 (20 Enero 2026)
-
-- **Autenticación de Dos Factores (2FA) Completa**:
-  - Modelo `TwoFactorAuth` con soporte TOTP (Time-based One-Time Password)
-  - Integración con Google Authenticator, Authy, Microsoft Authenticator
-  - Generación de QR codes para configuración rápida
-  - Sistema de códigos de backup (10 códigos hasheados)
-  - Endpoints completos: `/api/core/2fa/status/`, `/setup/`, `/enable/`, `/disable/`, `/verify/`, `/regenerate-backup-codes/`
-  - UI completa en Perfil → Seguridad con flujo de 4 pasos
-  - Componentes: `TwoFactorModal`, `Disable2FAModal`
-  - Hook `use2FA` con todas las operaciones
-  - Logging de auditoría específico: `log_2fa_enabled()`, `log_2fa_disabled()`, `log_2fa_verified()`, `log_backup_code_used()`
-  - Rate limiting en todos los endpoints sensibles
-  - Integración con login flow para verificación durante autenticación
-
-- **Normas y Sistemas de Gestión (Catálogo Dinámico)**:
-  - Sección "Normas" agregada al tab de Configuración
-  - Componente `NormasISOSection` con Vista 2 (Lista CRUD)
-  - Modal `NormaISOFormModal` para creación/edición
-  - Hook `useNormasISO` con 7 operaciones (list, get, choices, by-category, create, update, delete)
-  - Soporte para ISO, PESV, SG-SST y otras normativas aplicables
-  - Selector de 10 iconos Lucide
-  - Selector de 10 colores predefinidos
-  - Protección de normas del sistema (es_sistema=true)
-  - Soft delete implementado
-  - Migración de datos: `0016_add_normas_iso_section.py`
-
-- **Módulo de Perfil - Análisis y Validación**:
-  - ✅ **PerfilPage** (Vista 4): Avatar con iniciales, edición modal, info personal/laboral
-  - ✅ **SeguridadPage** (Vista 6): Cambio contraseña, sesiones activas, 2FA
-  - ⚠️ **PreferenciasPage** (Vista 6): Parcial - idioma y formato sin persistencia
-  - ✅ **EditProfileModal**: Edición de first_name, last_name, email, phone con validación Zod
-  - ✅ **ChangePasswordModal**: Requisitos visuales, validación en tiempo real
-  - ✅ **ActiveSessionsCard**: Lista de dispositivos, cierre remoto, renombrado inline
-  - ❌ **Avatar real**: Modelo User.photo existe pero no hay carga de archivos (solo iniciales)
-  - Estado general: 80% funcional
-
-- **Correcciones y Mejoras**:
-  - Reemplazado `antd` por `sonner` en `use2FA.ts` (sistema de notificaciones consistente)
-  - Todas las funciones de logging 2FA implementadas en `audit_logging.py`
-  - Exports de vistas 2FA agregados a `views/__init__.py`
-  - Comentarios JSDoc actualizados en `strategic.types.ts` para reflejar alcance universal (ISO, PESV, SG-SST)
-
-### v3.5.6 (20 Enero 2026)
-
-- **NotificationService - Infraestructura de Notificaciones**:
-  - Service layer completo en `backend/apps/audit_system/centro_notificaciones/services.py`
-  - Métodos para envío individual: `send_notification()`
-  - Métodos para envío masivo: `send_bulk_notification()`
-  - Métodos especializados: `send_notification_by_role()`, `send_notification_by_area()`
-  - Renderizado de plantillas con variables: `render_template()`
-  - Respeto de preferencias de usuario (horarios, canales)
-  - Soporte multi-canal: App, Email, Push (pendiente), SMS (pendiente)
-  - Utilidades: `mark_as_read()`, `mark_all_as_read()`, `get_unread_count()`
-
-- **Documentación API Completa**:
-  - Guía de integración en `docs/desarrollo/API_NOTIFICACIONES.md`
-  - Ejemplos de uso por módulo (Planeación, HSEQ, Workflow, Talent Hub)
-  - API Reference con todos los parámetros
-  - Mejores prácticas y patrones de uso
-  - Configuración de email y testing
-
-- **Seed de Tipos Iniciales**:
-  - Command: `python manage.py seed_notification_types`
-  - 27 tipos de notificación predefinidos:
-    - **Planeación**: NUEVA_TAREA, TAREA_VENCIDA, TAREA_COMPLETADA, OBJETIVO_PROXIMO_VENCER
-    - **Workflow**: SOLICITUD_APROBACION, APROBACION_CONCEDIDA, APROBACION_RECHAZADA
-    - **HSEQ**: INCIDENTE_SST, CAPACITACION_PROXIMA, INSPECCION_PENDIENTE, AUDITORIA_PROGRAMADA, NO_CONFORMIDAD_ASIGNADA
-    - **Talent Hub**: BIENVENIDA, EVALUACION_PENDIENTE, VACACIONES_APROBADAS, DOCUMENTO_VENCIDO
-    - **Sistema**: ACTUALIZACION_SISTEMA, MANTENIMIENTO_PROGRAMADO, CAMBIO_CONTRASENA, NUEVO_MENSAJE
-    - **Supply Chain**: ORDEN_COMPRA_APROBADA, STOCK_BAJO, MANTENIMIENTO_EQUIPO
-    - **Gestión Documental**: DOCUMENTO_REVISION, DOCUMENTO_APROBADO
-  - Cada tipo con plantillas, colores, iconos, y canales configurados
-
-- **Listo para Integración**:
-  - Otros módulos pueden consumir el servicio inmediatamente
-  - Importar: `from apps.audit_system.centro_notificaciones.services import NotificationService`
-  - Ejemplo: `NotificationService.send_notification(tipo=tipo, usuario=user, titulo="...", mensaje="...")`
-
-### v3.5.5 (20 Enero 2026)
-
-- **Fix: PreferenciasTab - Toast Notifications Corregido**:
-  - Callbacks `onSettled` con timeout para permitir que el toast del hook se muestre
-  - Flag `isSaving` reseteado correctamente después de mutación
-  - Toast de éxito/error ahora se muestran del hook `useUpdatePreferencia`
-
-- **Fix: MasivasTab - Select Tipo de Notificación**:
-  - Estado `tiposLoading` agregado para mostrar loading state
-  - Mensaje dinámico en option vacío: "Cargando tipos..." vs "Seleccione un tipo"
-  - Advertencia cuando no hay tipos disponibles con link a pestaña Tipos
-  - Console log para debugging de tipos cargados
-
-- **Mejora UX: Usuarios Específicos - Checkboxes en lugar de Multi-Select**:
-  - Reemplazado `<select multiple>` por lista de checkboxes con scroll
-  - Contador de usuarios seleccionados en el label
-  - Highlight visual de usuarios seleccionados (bg-primary-50)
-  - Cada checkbox muestra: nombre completo + email
-  - Scroll vertical con max-height para listas largas
-  - Mensaje de error si no se selecciona ningún usuario
-  - Mejor accesibilidad y UX sin necesidad de Ctrl/Cmd
-
-- **Validaciones Mejoradas en MasivasTab**:
-  - Validación de cargo cuando destinatarios_tipo === 'rol'
-  - Validación de área cuando destinatarios_tipo === 'area'
-  - Validación de usuarios cuando destinatarios_tipo === 'usuarios_especificos'
-  - Mensajes de error específicos con toast
-
-### v3.5.4 (20 Enero 2026)
-
-- **Fix: Notificaciones Masivas - Payload Backend Correcto**:
-  - Corregido payload para coincidir con modelo backend `NotificacionMasiva`
-  - Campo `tipo` (ForeignKey a TipoNotificacion) agregado y requerido
-  - `destinatarios_tipo` actualizado a valores correctos: 'todos', 'rol', 'area', 'usuarios_especificos'
-  - ManyToMany fields: `roles` (array de IDs), `areas` (array de IDs), `usuarios` (array de IDs)
-  - Removidos campos inexistentes en backend: `prioridad`, `enviar_email`, `enviar_push`, `enviar_sms`
-  - Select de Tipo de Notificación agregado al formulario
-  - Vista Previa simplificada (sin prioridad ni canales)
-
-- **Fix: Preferencias de Notificación - Persistencia Corregida**:
-  - Flag `isSaving` para evitar re-sincronización después de guardar
-  - Toast notifications visibles en guardar y restaurar
-  - useEffect actualizado para no sobrescribir cambios guardados
-  - Callbacks `onSuccess`/`onError` implementados correctamente
-
-- **Mejoras en MasivasTab**:
-  - Hooks `useTiposNotificacion`, `useCargos`, `useAreas`, `useUsers` correctamente integrados
-  - Opciones de destinatarios alineadas con backend: 'todos', 'rol', 'area', 'usuarios_especificos'
-  - Validación de tipo de notificación antes de enviar
-  - Toast de éxito al enviar notificación masiva
-
-### v3.5.3 (20 Enero 2026)
-
-- **Centro de Notificaciones Completamente Funcional**:
-  - **BandejaTab**: Lista de notificaciones con marcar como leída, archivar, filtros
-  - **TiposTab**: CRUD completo de tipos de notificación con modal de creación/edición
-    - Modal `TipoNotificacionModal` con validación React Hook Form + Zod
-    - Campos: código, nombre, categoría, color, plantillas de título/mensaje, canales
-    - Hooks conectados: `useCreateTipoNotificacion`, `useUpdateTipoNotificacion`, `useDeleteTipoNotificacion`
-  - **PreferenciasTab**: Configuración de canales y horarios de notificaciones
-    - Toggles funcionales para canales (app, email, push)
-    - Inputs de horario controlados con estado
-    - Guardar y restaurar preferencias con `useUpdatePreferencia`
-  - **MasivasTab**: Envío de notificaciones masivas con destinatarios dinámicos
-    - Selección dinámica de cargos con `useCargos` (desde users)
-    - Selección dinámica de áreas con `useAreas` (desde gestion-estrategica)
-    - Formulario controlado con validación
-    - Canales configurables (email, push, SMS)
-    - Prioridad y plantillas personalizadas
-  - **Campanita Funcional**: Bell icon en Header con contador de no leídas
-  - Backend completo con ViewSets: `TipoNotificacionViewSet`, `NotificacionViewSet`, `PreferenciaNotificacionViewSet`, `NotificacionMasivaViewSet`
-  - Todos los hooks React Query implementados en `useNotificaciones.ts`
-
-### v3.5.2 (20 Enero 2026)
-
-- **Edición de Perfil Implementada**: Funcionalidad completa de actualización de datos personales
-  - Endpoint backend `PUT /api/core/users/update_profile/` en UserViewSet
-  - Hook `useUpdateProfile` con TanStack Query y actualización automática de authStore
-  - Componente `EditProfileModal` con validación React Hook Form + Zod
-  - Campos editables: nombre, apellido, email, teléfono
-  - Botón "Editar Perfil" en PageHeader de PerfilPage (Vista 1)
-  - Logging de auditoría con `log_user_updated()`
-  - Permisos self-service (usuario edita su propio perfil)
-- **Análisis Completo del Módulo Avatar/Perfil**:
-  - Documentado flujo de datos: authStore → `/api/core/users/me/` → PerfilPage
-  - Identificada arquitectura: Vista 1 (Cards de Información) con edición via modal
-  - Validada persistencia en localStorage via Zustand
-  - Confirmado funcionamiento de cambio de contraseña y sesiones activas
-
-### v3.5.1 (20 Enero 2026)
-
-- **Catalogo de Vistas UI Estandarizado**: 6 patrones documentados
-  - Vista 1: Tarjetas de Informacion (Cards de datos)
-  - Vista 2: Lista CRUD (Tabla + acciones)
-  - Vista 3: Panel de Activacion (Toggles + configuracion)
-  - Vista 4: Maestro-Detalle (Lista + panel lateral)
-  - Vista 5: Formulario de Accion (Form sencillo con submit)
-  - Vista 6: Panel de Configuracion con Acciones (Settings)
-  - Ver [CATALOGO_VISTAS_UI.md](docs/desarrollo/CATALOGO_VISTAS_UI.md)
-- **Modales Mejorados**: Sistema de scroll funcional
-  - BaseModal con `flex-1 overflow-y-auto` + `minHeight: 0`
-  - Indicadores de sombra sticky para scroll
-  - Modal size `2xl` para formularios extensos
-- **Branding PWA Completo**: Configuracion end-to-end
-  - Campos PWA agregados al modal de Branding
-  - Seccion "Configuracion PWA" con iconos 192x192, 512x512, maskable
-  - Colores PWA: theme_color y background_color
-  - app_version movido a solo-lectura (gestionado centralizadamente)
-  - Vista expandida: 6 cards en grid (3 columnas)
-- **Perfil Estandarizado con Vista 6**:
-  - SeguridadPage: Action Cards (Cambiar Contrasena, Sesiones, 2FA)
-  - PreferenciasPage: Action Cards (Idioma, Formato Fecha/Hora)
-- **Centro Notificaciones Estandarizado**:
-  - BandejaTab: Vista 4 (Maestro-Detalle)
-  - TiposTab: Vista 2 (Lista CRUD)
-  - PreferenciasTab: Vista 3 (Panel Activacion)
-  - MasivasTab: Vista 5 (Formulario Accion)
-- **Limpieza de Codigo**:
-  - Archivos de analisis temporal movidos a `docs/archive/analisis_temporal/`
-  - 7 documentos de auditoria archivados
-
-### v3.5.0 (19 Enero 2026)
-
-- **Branding Dinamico PWA**: Todo el branding desde BD
-  - Manifest PWA dinamico desde `/api/core/branding/manifest/`
-  - Meta tags actualizados dinamicamente (theme-color, og:title, etc)
-  - SplashScreen con logo FIJO StrateKaz (identidad de marca)
-  - Footer con branding fijo: "Powered by StrateKaz"
-- **Sesiones de Usuario (MS-002-A)**: Gestion completa de sesiones
-  - Tracking de dispositivos (SO, navegador, IP)
-  - Cierre remoto de sesiones
-  - Creacion automatica en login, invalidacion en logout
-  - UI en Perfil > Seguridad
-- **Sprint 4 Completo**: Catalogos y Polish
-  - UI Unidades de Medida con CRUD
-  - UI Consecutivos con formatos configurables
-- **Versionamiento Centralizado**: Single Source of Truth
-  - Version desde `package.json` inyectada en build time
-  - Constantes de marca en `constants/brand.ts`
-  - Ver [GUIA-VERSIONAMIENTO.md](docs/desarrollo/GUIA-VERSIONAMIENTO.md)
-
-### v3.4.0 (17 Enero 2026)
-
-- **Responsive PWA Enterprise**: Layout mobile-first completo
-  - useMediaQuery hook para breakpoints
-  - Sidebar drawer en mobile con overlay
-  - Header con animacion hamburger/X
-  - Footer responsive
-- **Splash Screen**: Logo StrateKaz mientras carga branding
-- **JWT 7 dias**: Sesion extendida para mejor UX
-- **Consolidacion N1**:
-  - Gestion Documental migrado de HSEQ a N1
-  - Planificacion Sistema migrado de HSEQ a N1
-  - Rutas frontend actualizadas
-- **Limpieza docs**: 25+ archivos legacy eliminados
-- **Auditoria funcional N1**: Sin redundancias criticas
-
-### v3.3.0 (15 Enero 2026)
-
-- **RBAC v4.0 Unificado**: Sistema de permisos simplificado
-  - CargoSectionAccess con acciones CRUD por seccion
-  - Eliminados componentes legacy de matriz de permisos
-- **Auditoria Tecnica Completa**: 7 agentes especializados
-  - Puntuacion global: 7.6/10
-- **Modelo Multi-Instancia**: 1 instalacion Django + 1 BD por empresa
-
-### v3.2.0 (11 Enero 2026)
-
-- **Testing Frontend**: 219 tests para Design System
-- **Optimizacion de Iconos**: Centralizacion via DynamicIcon
-
-### v3.1.0 (11 Enero 2026)
-
-- **Workflow de Firmas Digitales**: Flujo de 5 estados para politicas
-- **UI de Politicas Actualizada**: Botones contextuales por estado
-
-> Ver historial completo en docs/plans/PLAN_CIERRE_BRECHAS.md
+| Seccion | Ruta | Contenido |
+|---------|------|-----------|
+| **Indice** | [docs/00-INDICE.md](docs/00-INDICE.md) | Punto de entrada y onboarding |
+| **Arquitectura** | [docs/01-arquitectura/](docs/01-arquitectura/) | Sistema, DB, multi-tenant, RBAC |
+| **Desarrollo** | [docs/02-desarrollo/](docs/02-desarrollo/) | Convenciones, testing, API, frontend/backend |
+| **Modulos** | [docs/03-modulos/](docs/03-modulos/) | Documentacion por modulo |
+| **DevOps** | [docs/04-devops/](docs/04-devops/) | Docker, CI/CD, Celery/Redis |
+| **Refactoring** | [docs/05-refactoring/](docs/05-refactoring/) | Estado actual, brechas, planes activos |
 
 ---
 
 ## Licencia
 
-Copyright (c) 2024-2026 StrateKaz S.A.S. Todos los derechos reservados.
+Apache-2.0 - Ver [LICENSE](LICENSE)
 
 ## Contacto
 
 - **Web:** https://stratekaz.com
 - **Email:** soporte@stratekaz.com
-
----
-
-**Ultima actualizacion:** 22 Enero 2026

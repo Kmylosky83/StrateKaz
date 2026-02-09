@@ -8,7 +8,7 @@ from celery.schedules import crontab
 from decouple import config
 
 # Establecer el módulo de configuración de Django para Celery
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.production')
 
 # Crear la aplicación Celery
 app = Celery('stratekaz')
@@ -120,6 +120,161 @@ app.conf.beat_schedule = {
         'schedule': crontab(hour=7, minute=0),
         'options': {'queue': 'notifications'},
     },
+
+    # ═══════════════════════════════════════════════════
+    # TALENT HUB - GESTIÓN DE TALENTO HUMANO
+    # ═══════════════════════════════════════════════════
+
+    # Verificar contratos próximos a vencer - Diario a las 7:30 AM
+    'th-check-contratos-por-vencer': {
+        'task': 'apps.talent_hub.tasks.check_contratos_por_vencer',
+        'schedule': crontab(hour=7, minute=30),
+        'options': {'queue': 'notifications'},
+    },
+
+    # Verificar períodos de prueba por terminar - Diario a las 7:45 AM
+    'th-check-periodos-prueba': {
+        'task': 'apps.talent_hub.tasks.check_periodos_prueba',
+        'schedule': crontab(hour=7, minute=45),
+        'options': {'queue': 'notifications'},
+    },
+
+    # ═══════════════════════════════════════════════════
+    # WORKFLOW ENGINE - EJECUCIÓN DE FLUJOS
+    # ═══════════════════════════════════════════════════
+
+    # Verificar tareas vencidas (SLA) cada 5 minutos
+    'workflow-check-overdue-tasks': {
+        'task': 'apps.workflow_engine.ejecucion.tasks.verificar_tareas_vencidas',
+        'schedule': crontab(minute='*/5'),
+        'options': {'queue': 'workflow'},
+    },
+
+    # Actualizar métricas de flujos diariamente a la 1 AM
+    'workflow-update-metrics-daily': {
+        'task': 'apps.workflow_engine.ejecucion.tasks.actualizar_metricas_flujo',
+        'schedule': crontab(hour=1, minute=0),
+        'options': {'queue': 'reports'},
+    },
+
+    # ═══════════════════════════════════════════════════
+    # ANALYTICS - AUTO-KPI Y DASHBOARD CROSS-MODULE
+    # ═══════════════════════════════════════════════════
+
+    # Calculo automatico de KPIs desde modulos operativos (diario 2 AM)
+    'analytics-auto-kpi-daily': {
+        'task': 'apps.analytics.tasks.calcular_kpis_automaticos',
+        'schedule': crontab(hour=2, minute=30),
+        'options': {'queue': 'reports'},
+    },
+
+    # Snapshot del dashboard gerencial cross-module (cada hora)
+    'analytics-dashboard-snapshot-hourly': {
+        'task': 'apps.analytics.tasks.snapshot_dashboard_gerencial',
+        'schedule': crontab(minute=5),  # 5 min past each hour
+        'options': {'queue': 'reports'},
+    },
+
+    # ═══════════════════════════════════════════════════
+    # GESTION DOCUMENTAL - REVISIONES PROGRAMADAS
+    # ═══════════════════════════════════════════════════
+
+    # Verificar documentos con revisión programada vencida - Diario a las 7:15 AM
+    'documental-check-revision-programada': {
+        'task': 'apps.gestion_estrategica.gestion_documental.tasks.verificar_documentos_revision_programada',
+        'schedule': crontab(hour=7, minute=15),
+        'options': {'queue': 'compliance'},
+    },
+
+    # Notificar documentos próximos a vencer revisión (15 días) - Diario a las 8:15 AM
+    'documental-notify-revision-por-vencer': {
+        'task': 'apps.gestion_estrategica.gestion_documental.tasks.notificar_documentos_por_vencer',
+        'schedule': crontab(hour=8, minute=15),
+        'options': {'queue': 'notifications'},
+    },
+
+    # ═══════════════════════════════════════════════════
+    # REVISION POR LA DIRECCION (ISO 9.3)
+    # ═══════════════════════════════════════════════════
+
+    # ═══════════════════════════════════════════════════
+    # EVIDENCIAS CENTRALIZADAS
+    # ═══════════════════════════════════════════════════
+
+    # Verificar evidencias vencidas (certificados, licencias) - Diario a las 6 AM
+    'evidencias-check-expired': {
+        'task': 'apps.motor_cumplimiento.evidencias.tasks.verificar_evidencias_vencidas',
+        'schedule': crontab(hour=6, minute=0),
+        'options': {'queue': 'compliance'},
+    },
+
+    # ═══════════════════════════════════════════════════
+    # REVISION POR LA DIRECCION (ISO 9.3)
+    # ═══════════════════════════════════════════════════
+
+    # Verificar compromisos vencidos - Diario a las 7 AM
+    'revision-check-overdue-compromisos': {
+        'task': 'apps.gestion_estrategica.revision_direccion.tasks.verificar_compromisos_vencidos',
+        'schedule': crontab(hour=7, minute=0),
+        'options': {'queue': 'compliance'},
+    },
+
+    # Recordatorio de revisiones proximas - Diario a las 8 AM
+    'revision-send-reminder': {
+        'task': 'apps.gestion_estrategica.revision_direccion.tasks.enviar_recordatorio_revision',
+        'schedule': crontab(hour=8, minute=0),
+        'options': {'queue': 'notifications'},
+    },
+
+    # ═══════════════════════════════════════════════════
+    # AUDIT SYSTEM - ALERTAS AUTOMATICAS
+    # ═══════════════════════════════════════════════════
+
+    # Verificación de alertas según ConfiguracionAlerta - Cada hora
+    'audit-ejecutar-verificacion-alertas': {
+        'task': 'apps.audit_system.config_alertas.tasks.ejecutar_verificacion_alertas',
+        'schedule': crontab(minute=0),  # Cada hora en punto
+        'options': {'queue': 'compliance'},
+    },
+
+    # Escalamiento de alertas no atendidas - Cada 2 horas
+    'audit-escalar-alertas-no-atendidas': {
+        'task': 'apps.audit_system.config_alertas.tasks.escalar_alertas_no_atendidas',
+        'schedule': crontab(minute=30, hour='*/2'),
+        'options': {'queue': 'compliance'},
+    },
+
+    # Limpieza de alertas antiguas atendidas - Domingos a las 3 AM
+    'audit-limpiar-alertas-antiguas': {
+        'task': 'apps.audit_system.config_alertas.tasks.limpiar_alertas_antiguas',
+        'schedule': crontab(hour=3, minute=0, day_of_week=0),
+        'options': {'queue': 'maintenance'},
+    },
+
+    # ═══════════════════════════════════════════════════
+    # AUDIT SYSTEM - TAREAS Y RECORDATORIOS
+    # ═══════════════════════════════════════════════════
+
+    # Verificar tareas vencidas - Cada 30 minutos
+    'audit-verificar-tareas-vencidas': {
+        'task': 'apps.audit_system.tareas_recordatorios.tasks.verificar_tareas_vencidas',
+        'schedule': crontab(minute='*/30'),
+        'options': {'queue': 'compliance'},
+    },
+
+    # Ejecutar recordatorios programados - Cada 15 minutos
+    'audit-ejecutar-recordatorios': {
+        'task': 'apps.audit_system.tareas_recordatorios.tasks.ejecutar_recordatorios',
+        'schedule': crontab(minute='*/15'),
+        'options': {'queue': 'notifications'},
+    },
+
+    # Resumen diario de tareas pendientes - Diario a las 8:30 AM
+    'audit-resumen-tareas-diario': {
+        'task': 'apps.audit_system.tareas_recordatorios.tasks.enviar_resumen_tareas_diario',
+        'schedule': crontab(hour=8, minute=30),
+        'options': {'queue': 'notifications'},
+    },
 }
 
 # Configuración de colas (routing)
@@ -132,12 +287,52 @@ app.conf.task_routes = {
     'apps.core.tasks.backup_*': {'queue': 'maintenance'},
     'apps.core.tasks.*_health_check': {'queue': 'monitoring'},
 
+    # Tenant tasks (operaciones largas de schema)
+    'apps.tenant.tasks.create_tenant_schema': {'queue': 'tenant_ops'},
+    'apps.tenant.tasks.retry_tenant_schema': {'queue': 'tenant_ops'},
+    'apps.tenant.tasks.cleanup_failed_tenant': {'queue': 'tenant_ops'},
+
     # Motor de Cumplimiento tasks
     'apps.motor_cumplimiento.tasks.scrape_legal_updates': {'queue': 'scraping'},
     'apps.motor_cumplimiento.tasks.check_license_expirations': {'queue': 'compliance'},
     'apps.motor_cumplimiento.tasks.send_expiration_notifications': {'queue': 'notifications'},
     'apps.motor_cumplimiento.tasks.generate_compliance_report': {'queue': 'reports'},
     'apps.motor_cumplimiento.tasks.update_requisito_status': {'queue': 'compliance'},
+
+    # Talent Hub tasks
+    'apps.talent_hub.tasks.check_contratos_por_vencer': {'queue': 'notifications'},
+    'apps.talent_hub.tasks.check_periodos_prueba': {'queue': 'notifications'},
+
+    # Workflow Engine tasks
+    'apps.workflow_engine.ejecucion.tasks.verificar_tareas_vencidas': {'queue': 'workflow'},
+    'apps.workflow_engine.ejecucion.tasks.enviar_notificacion_workflow': {'queue': 'emails'},
+    'apps.workflow_engine.ejecucion.tasks.ejecutar_evento_temporizador': {'queue': 'workflow'},
+    'apps.workflow_engine.ejecucion.tasks.actualizar_metricas_flujo': {'queue': 'reports'},
+
+    # Analytics tasks
+    'apps.analytics.tasks.calcular_kpis_automaticos': {'queue': 'reports'},
+    'apps.analytics.tasks.snapshot_dashboard_gerencial': {'queue': 'reports'},
+
+    # Revision por la Direccion tasks
+    'apps.gestion_estrategica.revision_direccion.tasks.verificar_compromisos_vencidos': {'queue': 'compliance'},
+    'apps.gestion_estrategica.revision_direccion.tasks.enviar_recordatorio_revision': {'queue': 'notifications'},
+
+    # Evidencias Centralizadas tasks
+    'apps.motor_cumplimiento.evidencias.tasks.verificar_evidencias_vencidas': {'queue': 'compliance'},
+
+    # Gestion Documental tasks
+    'apps.gestion_estrategica.gestion_documental.tasks.verificar_documentos_revision_programada': {'queue': 'compliance'},
+    'apps.gestion_estrategica.gestion_documental.tasks.notificar_documentos_por_vencer': {'queue': 'notifications'},
+
+    # Audit System - Config Alertas tasks
+    'apps.audit_system.config_alertas.tasks.ejecutar_verificacion_alertas': {'queue': 'compliance'},
+    'apps.audit_system.config_alertas.tasks.escalar_alertas_no_atendidas': {'queue': 'compliance'},
+    'apps.audit_system.config_alertas.tasks.limpiar_alertas_antiguas': {'queue': 'maintenance'},
+
+    # Audit System - Tareas Recordatorios tasks
+    'apps.audit_system.tareas_recordatorios.tasks.verificar_tareas_vencidas': {'queue': 'compliance'},
+    'apps.audit_system.tareas_recordatorios.tasks.ejecutar_recordatorios': {'queue': 'notifications'},
+    'apps.audit_system.tareas_recordatorios.tasks.enviar_resumen_tareas_diario': {'queue': 'notifications'},
 }
 
 # Configuración de prioridades de cola

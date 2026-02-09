@@ -1524,3 +1524,125 @@ class LiquidacionFinal(BaseCompanyModel):
             raise ValidationError({
                 'neto_pagar': 'El neto a pagar no puede ser negativo. Revisar deducciones.'
             })
+
+
+# =============================================================================
+# CERTIFICADO DE TRABAJO - Art. 57 y 62 CST
+# =============================================================================
+
+TIPO_CERTIFICADO_CHOICES = [
+    ('laboral', 'Certificado Laboral'),
+    ('ingresos', 'Certificado de Ingresos y Retenciones'),
+    ('cargo', 'Certificado de Cargo y Funciones'),
+]
+
+ESTADO_CERTIFICADO_CHOICES = [
+    ('pendiente', 'Pendiente'),
+    ('generado', 'Generado'),
+    ('entregado', 'Entregado'),
+]
+
+
+class CertificadoTrabajo(BaseCompanyModel):
+    """
+    Certificado de Trabajo según Art. 57 numeral 7 y Art. 62 CST.
+
+    El empleador está obligado a expedir certificaciones laborales
+    al trabajador que lo solicite, indicando: tiempo de servicio,
+    índole de la labor y salario devengado.
+    """
+
+    colaborador = models.ForeignKey(
+        'colaboradores.Colaborador',
+        on_delete=models.PROTECT,
+        related_name='certificados_trabajo',
+        verbose_name='Colaborador',
+        help_text='Colaborador que solicita el certificado'
+    )
+    tipo_certificado = models.CharField(
+        max_length=20,
+        choices=TIPO_CERTIFICADO_CHOICES,
+        default='laboral',
+        db_index=True,
+        verbose_name='Tipo de Certificado',
+        help_text='Tipo de certificado a generar'
+    )
+    fecha_solicitud = models.DateField(
+        auto_now_add=True,
+        verbose_name='Fecha de Solicitud',
+        help_text='Fecha en que se solicita el certificado'
+    )
+    fecha_expedicion = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Expedición',
+        help_text='Fecha en que se expide el certificado'
+    )
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADO_CERTIFICADO_CHOICES,
+        default='pendiente',
+        db_index=True,
+        verbose_name='Estado',
+        help_text='Estado del certificado'
+    )
+
+    # Información a incluir en el certificado
+    incluir_cargo = models.BooleanField(
+        default=True,
+        verbose_name='Incluir Cargo',
+        help_text='Incluir el cargo desempeñado en el certificado'
+    )
+    incluir_salario = models.BooleanField(
+        default=False,
+        verbose_name='Incluir Salario',
+        help_text='Incluir el salario actual en el certificado'
+    )
+    incluir_funciones = models.BooleanField(
+        default=False,
+        verbose_name='Incluir Funciones',
+        help_text='Incluir las funciones principales del cargo'
+    )
+    informacion_adicional = models.TextField(
+        blank=True,
+        verbose_name='Información Adicional',
+        help_text='Información adicional a incluir en el certificado'
+    )
+
+    # Documento generado
+    documento_generado = models.FileField(
+        upload_to='talent_hub/certificados_trabajo/',
+        null=True,
+        blank=True,
+        verbose_name='Documento Generado',
+        help_text='Archivo PDF del certificado generado'
+    )
+    generado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='certificados_generados',
+        verbose_name='Generado Por',
+        help_text='Usuario que generó el certificado'
+    )
+    dirigido_a = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name='Dirigido A',
+        help_text='A quién va dirigido el certificado (opcional)'
+    )
+
+    class Meta:
+        db_table = 'talent_hub_certificado_trabajo'
+        verbose_name = 'Certificado de Trabajo'
+        verbose_name_plural = 'Certificados de Trabajo'
+        ordering = ['-fecha_solicitud']
+        indexes = [
+            models.Index(fields=['empresa', 'colaborador']),
+            models.Index(fields=['estado']),
+            models.Index(fields=['tipo_certificado']),
+        ]
+
+    def __str__(self):
+        return f"Certificado {self.get_tipo_certificado_display()} - {self.colaborador}"

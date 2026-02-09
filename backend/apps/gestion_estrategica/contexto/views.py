@@ -350,13 +350,14 @@ class EstrategiaTOWSViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
         estrategia = self.get_object()
 
-        # Validar que no esté ya convertida
-        if estrategia.objetivo_estrategico:
+        # Validar que no esté ya convertida (buscar si existe objetivo con esta estrategia como origen)
+        objetivo_existente = StrategicObjective.objects.filter(estrategia_origen=estrategia).first()
+        if objetivo_existente:
             return Response(
                 {
                     'error': 'Esta estrategia ya fue convertida en objetivo',
-                    'objetivo_id': str(estrategia.objetivo_estrategico.id),
-                    'objetivo_code': estrategia.objetivo_estrategico.code
+                    'objetivo_id': str(objetivo_existente.id),
+                    'objetivo_code': objetivo_existente.code
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
@@ -398,7 +399,7 @@ class EstrategiaTOWSViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Crear objetivo estratégico
+        # Crear objetivo estratégico con referencia a la estrategia de origen
         objetivo = StrategicObjective.objects.create(
             plan=plan_activo,
             code=code,
@@ -409,6 +410,7 @@ class EstrategiaTOWSViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             target_value=target_value,
             unit=unit,
             status='PENDIENTE',
+            estrategia_origen=estrategia,  # Nueva FK: objetivo apunta a estrategia
             created_by=request.user,
             updated_by=request.user
         )
@@ -416,10 +418,6 @@ class EstrategiaTOWSViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         # Vincular área responsable si existe
         if estrategia.area_responsable:
             objetivo.areas_responsables.add(estrategia.area_responsable)
-
-        # Vincular estrategia con objetivo
-        estrategia.objetivo_estrategico = objetivo
-        estrategia.save(update_fields=['objetivo_estrategico', 'updated_at'])
 
         # Serializar respuesta
         from apps.gestion_estrategica.planeacion.serializers import StrategicObjectiveSerializer

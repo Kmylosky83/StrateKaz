@@ -1,0 +1,806 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base layer */
+@layer base {
+  /* Prevent horizontal scroll and FOUC */
+  html,
+  body {
+    overflow-x: hidden;
+    max-width: 100%;
+    background-color: #000000;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Ensure root has dark background immediately */
+  #root {
+    background-color: #000000;
+    min-height: 100vh;
+  }
+
+  /* Ensure no element causes overflow */
+  * {
+    max-width: 100vw;
+  }
+
+  :root {
+    /* StrateKaz Minimalista - Paleta Ampliada Negro/Blanco/Rosa */
+
+    /* Base Blacks - Jerarquía de profundidad */
+    --black-deep: #000000; /* Fondo principal */
+    --black-card: #0a0a0a; /* Cards principales */
+    --black-card-soft: #0f0f0f; /* Cards secundarios, menos contraste */
+    --black-hover: #1a1a1a; /* Estados hover */
+    --black-hover-soft: #151515; /* Hover suave para elementos secundarios */
+    --black-border: #2a2a2a; /* Bordes principales */
+    --black-border-soft: #1f1f1f; /* Bordes sutiles */
+
+    /* Base Whites - Jerarquía de texto */
+    --white-text: #ffffff; /* Texto principal */
+    --white-text-soft: #f8f8f8; /* Texto principal suave */
+    --white-muted: #e5e5e5; /* Texto secundario */
+    --white-muted-soft: #d0d0d0; /* Texto terciario */
+    --white-subtle: #b8b8b8; /* Texto de menor importancia */
+    --white-soft: #f5f5f5; /* Fondos muy sutiles */
+
+    /* Grises Neutrales - Para elementos de apoyo */
+    --neutral-50: #fafafa; /* Casi blanco */
+    --neutral-100: #f4f4f5; /* Fondo suave */
+    --neutral-200: #e4e4e7; /* Bordes suaves */
+    --neutral-300: #d4d4d8; /* Separadores */
+    --neutral-400: #a1a1aa; /* Texto placeholder */
+    --neutral-500: #71717a; /* Texto deshabilitado */
+    --neutral-600: #52525b; /* Iconos secundarios */
+    --neutral-700: #3f3f46; /* Elementos oscuros */
+    --neutral-800: #27272a; /* Fondos oscuros */
+    --neutral-900: #18181b; /* Casi negro */
+
+    /* Brand colors - Rosa StrateKaz (USO LIMITADO) */
+    /* SOLO para: CTAs primarios, BPM highlight, elementos clave de acción */
+    --brand-50: #fdf2f8; /* Fondos muy sutiles */
+    --brand-100: #fce7f3; /* Fondos suaves */
+    --brand-200: #fbcfe8; /* Bordes suaves */
+    --brand-300: #f9a8d4; /* Elementos decorativos */
+    --brand-400: #f472b6; /* Accents secundarios */
+    --brand-500: #ec268f; /* PRINCIPAL - CTAs, BPM text */
+    --brand-600: #db2777; /* Hover states */
+    --brand-700: #be185d; /* Active states */
+    --brand-800: #9d174d; /* Elementos oscuros */
+    --brand-900: #831843; /* Muy oscuro */
+
+    /* Accent Grises - Para iconos y elementos secundarios */
+    --accent-icon: #71717a; /* Iconos por defecto */
+    --accent-icon-hover: #a1a1aa; /* Iconos hover */
+    --accent-highlight: #d4d4d8; /* Elementos destacados sin rosa */
+
+    /* System colors - Para categorización de gestión */
+    --system-blue-50: #eff6ff; /* ISO 9001 - Calidad */
+    --system-blue-100: #dbeafe;
+    --system-blue-200: #bfdbfe;
+    --system-blue-300: #93c5fd;
+    --system-blue-400: #60a5fa;
+    --system-blue-500: #3b82f6; /* PRINCIPAL ISO 9001 */
+    --system-blue-600: #2563eb;
+    --system-blue-700: #1d4ed8;
+    --system-blue-800: #1e40af;
+    --system-blue-900: #1e3a8a;
+
+    --system-green-50: #f0fdf4; /* ISO 14001 - Medio Ambiente */
+    --system-green-100: #dcfce7;
+    --system-green-200: #bbf7d0;
+    --system-green-300: #86efac;
+    --system-green-400: #4ade80;
+    --system-green-500: #22c55e; /* PRINCIPAL ISO 14001 */
+    --system-green-600: #16a34a;
+    --system-green-700: #15803d;
+    --system-green-800: #166534;
+    --system-green-900: #14532d;
+
+    --system-red-50: #fef2f2; /* ISO 45001 - Seguridad */
+    --system-red-100: #fee2e2;
+    --system-red-200: #fecaca;
+    --system-red-300: #fca5a5;
+    --system-red-400: #f87171;
+    --system-red-500: #ef4444; /* PRINCIPAL ISO 45001 */
+    --system-red-600: #dc2626;
+    --system-red-700: #b91c1c;
+    --system-red-800: #991b1b;
+    --system-red-900: #7f1d1d;
+
+    --system-orange-50: #fff7ed; /* Innovación */
+    --system-orange-100: #ffedd5;
+    --system-orange-200: #fed7aa;
+    --system-orange-300: #fdba74;
+    --system-orange-400: #fb923c;
+    --system-orange-500: #f97316; /* PRINCIPAL Innovación */
+    --system-orange-600: #ea580c;
+    --system-orange-700: #c2410c;
+    --system-orange-800: #9a3412;
+    --system-orange-900: #7c2d12;
+
+    --system-purple-50: #faf5ff; /* Nuevos Desafíos */
+    --system-purple-100: #f3e8ff;
+    --system-purple-200: #e9d5ff;
+    --system-purple-300: #d8b4fe;
+    --system-purple-400: #c084fc;
+    --system-purple-500: #a855f7; /* PRINCIPAL Nuevos Desafíos */
+    --system-purple-600: #9333ea;
+    --system-purple-700: #7c3aed;
+    --system-purple-800: #6b21a8;
+    --system-purple-900: #581c87;
+
+    --system-yellow-50: #fefce8; /* SST / Gestión Ambiental */
+    --system-yellow-100: #fef9c3;
+    --system-yellow-200: #fef08a;
+    --system-yellow-300: #fde047;
+    --system-yellow-400: #facc15;
+    --system-yellow-500: #eab308; /* PRINCIPAL SST */
+    --system-yellow-600: #ca8a04;
+    --system-yellow-700: #a16207;
+    --system-yellow-800: #854d0e;
+    --system-yellow-900: #713f12;
+
+    /* Dark mode colors */
+    --dark-50: #1a1a1a;
+    --dark-100: #2d2d2d;
+    --dark-200: #404040;
+    --dark-300: #525252;
+    --dark-400: #737373;
+    --dark-500: #a3a3a3;
+    --dark-600: #d4d4d4;
+    --dark-700: #e5e5e5;
+    --dark-800: #f5f5f5;
+    --dark-900: #fafafa;
+
+    /* Success colors */
+    --success-50: #f0fdf4;
+    --success-100: #dcfce7;
+    --success-200: #bbf7d0;
+    --success-300: #86efac;
+    --success-400: #4ade80;
+    --success-500: #22c55e;
+    --success-600: #16a34a;
+    --success-700: #15803d;
+    --success-800: #166534;
+    --success-900: #14532d;
+
+    /* Warning colors */
+    --warning-50: #fffbeb;
+    --warning-100: #fef3c7;
+    --warning-200: #fde68a;
+    --warning-300: #fcd34d;
+    --warning-400: #fbbf24;
+    --warning-500: #f59e0b;
+    --warning-600: #d97706;
+    --warning-700: #b45309;
+    --warning-800: #92400e;
+    --warning-900: #78350f;
+
+    /* Error colors */
+    --error-50: #fef2f2;
+    --error-100: #fee2e2;
+    --error-200: #fecaca;
+    --error-300: #fca5a5;
+    --error-400: #f87171;
+    --error-500: #ef4444;
+    --error-600: #dc2626;
+    --error-700: #b91c1c;
+    --error-800: #991b1b;
+    --error-900: #7f1d1d;
+
+    /* Shadows */
+    --shadow-soft: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-medium:
+      0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-hard:
+      0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-brutal:
+      0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+
+    /* Border radius */
+    --radius-sm: 0.125rem;
+    --radius-md: 0.375rem;
+    --radius-lg: 0.5rem;
+    --radius-xl: 0.75rem;
+    --radius-2xl: 1rem;
+    --radius-3xl: 1.5rem;
+
+    /* Typography - Jerarquía Clara */
+    --font-title: "Montserrat", sans-serif; /* Títulos principales (h1-h3) */
+    --font-subtitle: "Montserrat", sans-serif; /* Subtítulos (h4-h6) */
+    --font-content:
+      "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; /* Texto body */
+    --font-ui:
+      "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; /* Botones, labels */
+
+    /* Typography Weights */
+    --font-weight-light: 300;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --font-weight-extrabold: 800;
+  }
+
+  html {
+    font-family: var(--font-content);
+  }
+
+  body {
+    @apply bg-black-deep text-white-text antialiased;
+  }
+
+  /* Jerarquía Tipográfica Clara */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-title);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: -0.025em;
+  }
+
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-subtitle);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: -0.015em;
+  }
+
+  p,
+  span,
+  div {
+    font-family: var(--font-content);
+  }
+
+  button,
+  .btn,
+  label {
+    font-family: var(--font-ui);
+    font-weight: var(--font-weight-medium);
+  }
+}
+
+/* Component layer */
+@layer components {
+  /*
+  ===================================================================
+  GUIDELINES DE USO DE COLORES - DESIGN SYSTEM STRATEKAZ
+  ===================================================================
+
+  📌 ROSA (brand-*): USO LIMITADO Y ESTRATÉGICO
+  ✅ USAR PARA:
+  - CTAs primarios (botones principales)
+  - Highlight de "BPM" en títulos
+  - Elementos de acción críticos
+  - Ratings/stars (máximo 1 elemento destacado por sección)
+
+  ❌ NO USAR PARA:
+  - Iconos decorativos o secundarios
+  - Múltiples elementos en la misma vista
+  - Bordes o fondos extensos
+
+  📌 GRISES (accent-*, neutral-*): ELEMENTOS SECUNDARIOS
+  ✅ USAR PARA:
+  - Iconos por defecto (accent-icon)
+  - Texto de menor jerarquía (white-muted-soft, white-subtle)
+  - Fondos de cards secundarios (black-card-soft)
+  - Bordes sutiles (black-border-soft)
+
+  📌 BLANCOS (white-*): JERARQUÍA DE TEXTO
+  ✅ USAR PARA:
+  - Texto principal: white-text
+  - Texto principal suave: white-text-soft
+  - Texto secundario: white-muted
+  - Texto terciario: white-muted-soft
+  - Texto menor importancia: white-subtle
+
+  📌 TIPOGRAFÍA:
+  - Títulos (h1-h3): font-title (Montserrat)
+  - Subtítulos (h4-h6): font-subtitle (Montserrat)
+  - Contenido: font-content (Inter)
+  - UI elements: font-ui (Inter)
+  ===================================================================
+  */
+
+  /* Button base styles */
+  .btn {
+    @apply inline-flex items-center justify-center rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply bg-brand-500 text-white hover:bg-brand-600 focus:ring-brand-500 shadow-soft hover:shadow-medium;
+  }
+
+  .btn-secondary {
+    @apply bg-black-card text-white-text hover:bg-black-hover focus:ring-brand-500 border border-black-border;
+  }
+
+  .btn-ghost {
+    @apply text-white-muted hover:bg-black-hover focus:ring-brand-500;
+  }
+
+  .btn-outline {
+    @apply border border-black-border text-white-text hover:bg-black-hover focus:ring-brand-500;
+  }
+
+  /* Input styles */
+  .input {
+    @apply block w-full rounded-lg border border-black-border px-3 py-2 bg-black-card text-white-text placeholder-white-muted focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 transition-colors;
+  }
+
+  .input:disabled {
+    @apply bg-black-hover cursor-not-allowed;
+  }
+
+  /* Card styles */
+  .card {
+    @apply bg-black-card border border-black-border rounded-xl shadow-soft;
+  }
+
+  .card-body {
+    @apply p-6;
+  }
+
+  /* PROHIBIDO: Sin gradientes - Eliminado completamente */
+}
+
+/* Utility layer */
+@layer utilities {
+  /* Mobile-First Responsive Container System */
+  .container-responsive {
+    @apply w-full mx-auto px-4 sm:px-6 lg:px-8 max-w-container-2xl;
+  }
+
+  .container-content {
+    @apply w-full mx-auto px-4 sm:px-6 md:max-w-content-normal lg:max-w-content-wide;
+  }
+
+  .container-narrow {
+    @apply w-full mx-auto px-4 sm:px-6 sm:max-w-content-narrow md:max-w-content-narrow;
+  }
+
+  /* Simplified max-width utilities */
+  .max-w-content-responsive {
+    @apply max-w-content-narrow sm:max-w-content-normal lg:max-w-content-wide xl:max-w-container-xl 2xl:max-w-container-2xl;
+  }
+
+  .max-w-layout-responsive {
+    @apply max-w-full sm:max-w-container-sm md:max-w-container-md lg:max-w-container-lg xl:max-w-container-xl 2xl:max-w-container-2xl;
+  }
+
+  /* Custom shadows */
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+
+  .shadow-medium {
+    box-shadow: var(--shadow-medium);
+  }
+
+  .shadow-hard {
+    box-shadow: var(--shadow-hard);
+  }
+
+  .shadow-brutal {
+    box-shadow: var(--shadow-brutal);
+  }
+
+  /* Typography utilities */
+  .font-title {
+    font-family: var(--font-title);
+  }
+
+  .font-subtitle {
+    font-family: var(--font-subtitle);
+  }
+
+  .font-content {
+    font-family: var(--font-content);
+  }
+
+  .font-ui {
+    font-family: var(--font-ui);
+  }
+
+  /* Nuevas clases de color para la paleta ampliada */
+
+  /* Backgrounds */
+  .bg-black-card-soft {
+    background-color: var(--black-card-soft);
+  }
+
+  .bg-black-hover-soft {
+    background-color: var(--black-hover-soft);
+  }
+
+  .bg-neutral-800 {
+    background-color: var(--neutral-800);
+  }
+
+  .bg-neutral-900 {
+    background-color: var(--neutral-900);
+  }
+
+  /* Text colors */
+  .text-white-text-soft {
+    color: var(--white-text-soft);
+  }
+
+  .text-white-muted-soft {
+    color: var(--white-muted-soft);
+  }
+
+  .text-white-subtle {
+    color: var(--white-subtle);
+  }
+
+  .text-accent-icon {
+    color: var(--accent-icon);
+  }
+
+  .text-accent-icon-hover {
+    color: var(--accent-icon-hover);
+  }
+
+  .text-accent-highlight {
+    color: var(--accent-highlight);
+  }
+
+  /* System color utilities */
+  .text-system-blue-500 {
+    color: var(--system-blue-500);
+  }
+
+  .text-system-blue-400 {
+    color: var(--system-blue-400);
+  }
+
+  .text-system-green-500 {
+    color: var(--system-green-500);
+  }
+
+  .text-system-green-400 {
+    color: var(--system-green-400);
+  }
+
+  .text-system-red-500 {
+    color: var(--system-red-500);
+  }
+
+  .text-system-red-400 {
+    color: var(--system-red-400);
+  }
+
+  .text-system-orange-500 {
+    color: var(--system-orange-500);
+  }
+
+  .text-system-orange-400 {
+    color: var(--system-orange-400);
+  }
+
+  .text-system-purple-500 {
+    color: var(--system-purple-500);
+  }
+
+  .text-system-purple-400 {
+    color: var(--system-purple-400);
+  }
+
+  .text-system-yellow-500 {
+    color: var(--system-yellow-500);
+  }
+
+  .text-system-yellow-400 {
+    color: var(--system-yellow-400);
+  }
+
+  /* System background utilities with opacity */
+  .bg-system-blue-500\/10 {
+    background-color: rgb(59 130 246 / 0.1);
+  }
+
+  .bg-system-yellow-500\/10 {
+    background-color: rgb(234 179 8 / 0.1);
+  }
+
+  .bg-system-green-500\/10 {
+    background-color: rgb(34 197 94 / 0.1);
+  }
+
+  .bg-system-red-500\/10 {
+    background-color: rgb(239 68 68 / 0.1);
+  }
+
+  .bg-system-orange-500\/10 {
+    background-color: rgb(249 115 22 / 0.1);
+  }
+
+  .bg-system-purple-500\/10 {
+    background-color: rgb(168 85 247 / 0.1);
+  }
+
+  /* Border color utilities for system colors */
+  .border-system-blue-500 {
+    border-color: var(--system-blue-500);
+  }
+
+  .border-system-blue-400 {
+    border-color: var(--system-blue-400);
+  }
+
+  .border-system-yellow-500 {
+    border-color: var(--system-yellow-500);
+  }
+
+  .border-system-yellow-400 {
+    border-color: var(--system-yellow-400);
+  }
+
+  .border-system-green-500 {
+    border-color: var(--system-green-500);
+  }
+
+  .border-system-green-400 {
+    border-color: var(--system-green-400);
+  }
+
+  .border-system-red-500 {
+    border-color: var(--system-red-500);
+  }
+
+  .border-system-red-400 {
+    border-color: var(--system-red-400);
+  }
+
+  .border-system-purple-500 {
+    border-color: var(--system-purple-500);
+  }
+
+  .border-system-purple-400 {
+    border-color: var(--system-purple-400);
+  }
+
+  .border-system-orange-500 {
+    border-color: var(--system-orange-500);
+  }
+
+  .border-system-orange-400 {
+    border-color: var(--system-orange-400);
+  }
+
+  /* Hover border utilities for system colors */
+  .hover\:border-system-blue-400:hover {
+    border-color: var(--system-blue-400);
+  }
+
+  .hover\:border-system-yellow-400:hover {
+    border-color: var(--system-yellow-400);
+  }
+
+  .hover\:border-system-green-400:hover {
+    border-color: var(--system-green-400);
+  }
+
+  .hover\:border-system-purple-400:hover {
+    border-color: var(--system-purple-400);
+  }
+
+  .hover\:border-system-red-400:hover {
+    border-color: var(--system-red-400);
+  }
+
+  .hover\:border-system-orange-400:hover {
+    border-color: var(--system-orange-400);
+  }
+
+  .bg-system-red-500 {
+    background-color: var(--system-red-500);
+  }
+
+  .text-system-red-600 {
+    color: var(--system-red-600);
+  }
+
+  /* Border colors */
+  .border-black-border-soft {
+    border-color: var(--black-border-soft);
+  }
+
+  .border-neutral-700 {
+    border-color: var(--neutral-700);
+  }
+
+  .border-neutral-800 {
+    border-color: var(--neutral-800);
+  }
+
+  /* Hover utilities para la nueva paleta */
+  .hover\:bg-black-card-soft:hover {
+    background-color: var(--black-card-soft);
+  }
+
+  .hover\:bg-black-hover-soft:hover {
+    background-color: var(--black-hover-soft);
+  }
+
+  .hover\:text-accent-icon-hover:hover {
+    color: var(--accent-icon-hover);
+  }
+
+  .hover\:border-neutral-600:hover {
+    border-color: var(--neutral-600);
+  }
+
+  /* Animation utilities */
+  .animate-bounce-subtle {
+    animation: bounce-subtle 2s infinite;
+  }
+
+  @keyframes bounce-subtle {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-4px);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.5s ease-out;
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.3s ease-out;
+  }
+
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.3s ease-out;
+  }
+
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-border-glow {
+    animation: border-glow 3s ease-in-out infinite;
+  }
+
+  @keyframes border-glow {
+    0% {
+      box-shadow: 0 0 0 0 transparent;
+    }
+    50% {
+      box-shadow: 0 0 20px 2px rgba(239, 68, 68, 0.2);
+    }
+    100% {
+      box-shadow: 0 0 0 0 transparent;
+    }
+  }
+
+  /* Text utilities */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Focus ring utilities */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500;
+  }
+
+  .focus-ring-inset {
+    @apply focus:outline-none focus:ring-2 focus:ring-inset focus:ring-brand-500;
+  }
+
+  /* Backdrop utilities */
+  .backdrop-blur-soft {
+    backdrop-filter: blur(8px);
+  }
+
+  .backdrop-blur-medium {
+    backdrop-filter: blur(12px);
+  }
+
+  /* Scroll utilities */
+  .scroll-smooth {
+    scroll-behavior: smooth;
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Global styles */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom selection */
+::selection {
+  @apply bg-brand-500 text-white-text;
+}
+
+/* Focus visible */
+:focus-visible {
+  @apply outline-none ring-2 ring-brand-500 ring-offset-2;
+}
+
+/* Custom animations */
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Print styles */
+@media print {
+  * {
+    color: #000000 !important;
+    background: #ffffff !important;
+  }
+}

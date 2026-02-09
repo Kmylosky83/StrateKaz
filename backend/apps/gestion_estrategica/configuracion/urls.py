@@ -3,17 +3,17 @@ URLs del módulo Configuración - Dirección Estratégica
 Sistema de Gestión StrateKaz
 
 Define rutas para:
-- EmpresaConfig: /empresa-config/
 - SedeEmpresa: /sedes/
 - IntegracionExterna: /integraciones-externas/
+- NormaISO: /normas-iso/
+- IconRegistry: /icons/
 
+NOTA: Datos de empresa se gestionan via /api/tenant/tenants/me/
 NOTA: ConsecutivoConfig y UnidadMedida fueron migrados a organizacion.
-Ver: apps.gestion_estrategica.organizacion.urls
 """
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
-    EmpresaConfigViewSet,
     SedeEmpresaViewSet,
     IntegracionExternaViewSet,
     IconRegistryViewSet,
@@ -22,7 +22,6 @@ from .views import (
 from .stats_views import config_stats_view
 
 router = DefaultRouter()
-router.register(r'empresa-config', EmpresaConfigViewSet, basename='empresa-config')
 router.register(r'sedes', SedeEmpresaViewSet, basename='sede')
 router.register(r'integraciones-externas', IntegracionExternaViewSet, basename='integracion-externa')
 router.register(r'icons', IconRegistryViewSet, basename='icon')

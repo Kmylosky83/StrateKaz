@@ -190,6 +190,9 @@ export type { SearchModalProps } from './SearchModal';
 export { UserMenu } from './UserMenu';
 export type { UserMenuProps } from './UserMenu';
 
+export { TenantSwitcher } from './TenantSwitcher';
+export type { TenantSwitcherProps } from './TenantSwitcher';
+
 export { HeaderTabs } from './HeaderTabs';
 export type { HeaderTabsProps } from './HeaderTabs';
 
@@ -247,3 +250,37 @@ export { TenantSelector } from './TenantSelector';
 
 // Error Handling
 export { ErrorBoundary } from './ErrorBoundary';
+
+// KPI Cards (replaces 110+ inline stat cards across HSEQ/Cumplimiento/Riesgos/TalentHub)
+export { KpiCard, KpiCardGrid, KpiCardSkeleton } from './KpiCard';
+export type { KpiCardProps, KpiCardGridProps, KpiCardSkeletonProps, KpiCardColor } from './KpiCard';
+
+// Section Toolbar (replaces toolbar pattern in 20+ sections)
+export { SectionToolbar } from './SectionToolbar';
+export type { SectionToolbarProps, SectionToolbarAction } from './SectionToolbar';
+
+// Status Badge (smart status-to-color badge, replaces formatEstado + getBadgeVariant in 15+ tables)
+export { StatusBadge, formatStatusLabel } from './StatusBadge';
+export type { StatusBadgeProps, StatusPreset } from './StatusBadge';
+
+// DataGrid (Table + SectionToolbar combined, replaces manual HTML tables in 20+ sections)
+export { DataGrid } from './DataGrid';
+export type { DataGridProps } from './DataGrid';
+
+// DynamicFormRenderer (renders forms from CampoFormulario backend definitions)
+export { DynamicFormRenderer, validateDynamicForm } from './DynamicFormRenderer';
+export type { DynamicFieldDefinition, DynamicFormRendererProps } from './DynamicFormRenderer';
+
+// Export Button (CSV/Excel download from ViewSets with ExportMixin)
+export { ExportButton } from './ExportButton';
+export type { ExportButtonProps } from './ExportButton';
+
+// Evidence (Centralized Evidence Hub - cross-module file attachments)
+export { EvidenceUploader } from './EvidenceUploader';
+export type { EvidenceUploaderProps } from './EvidenceUploader';
+
+export { EvidenceGallery } from './EvidenceGallery';
+export type { EvidenceGalleryProps } from './EvidenceGallery';
+
+export { EvidenceTimeline } from './EvidenceTimeline';
+export type { EvidenceTimelineProps } from './EvidenceTimeline';

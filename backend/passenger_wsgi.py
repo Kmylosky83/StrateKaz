@@ -45,7 +45,7 @@ if VENV_PATH.exists():
 # o en un archivo .env en el directorio de la aplicación
 
 # Asegurar que Django use el archivo de configuración correcto
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.production')
 
 # Modo cPanel (sin Redis ni Celery workers)
 os.environ.setdefault('USE_CPANEL', 'True')
@@ -172,7 +172,7 @@ except Exception as e:
                 <ol>
                     <li>Verifica que todas las dependencias estén instaladas: <code>pip install -r requirements.txt</code></li>
                     <li>Verifica que el archivo .env exista y tenga las variables necesarias</li>
-                    <li>Verifica la conexión a la base de datos MySQL</li>
+                    <li>Verifica la conexión a la base de datos PostgreSQL</li>
                     <li>Revisa el archivo de logs: <code>logs/passenger.log</code></li>
                     <li>En cPanel, reinicia la aplicación Python desde "Setup Python App"</li>
                 </ol>

@@ -14,9 +14,9 @@ from rest_framework import serializers
 from django.db import transaction
 
 # Modelos de core (RBAC, Configuracion del Sistema) - imports absolutos
+# NOTA: BrandingConfig fue ELIMINADO - el branding está ahora en Tenant
 from apps.core.models import (
     SystemModule, ModuleTab, TabSection,
-    BrandingConfig,
     User, Cargo
 )
 
@@ -576,151 +576,11 @@ class ToggleModuleSerializer(serializers.Serializer):
     )
 
 
-class BrandingConfigSerializer(serializers.ModelSerializer):
-    """Serializer para Configuracion de Branding"""
-
-    logo = serializers.SerializerMethodField()
-    logo_white = serializers.SerializerMethodField()
-    favicon = serializers.SerializerMethodField()
-    login_background = serializers.SerializerMethodField()
-
-    class Meta:
-        model = BrandingConfig
-        fields = [
-            'id', 'company_name', 'company_short_name', 'company_slogan',
-            'logo', 'logo_white', 'favicon', 'login_background',
-            'primary_color', 'secondary_color', 'accent_color',
-            'app_version', 'is_active', 'created_at', 'updated_at'
-        ]
-        read_only_fields = ['created_at', 'updated_at']
-
-    def _build_absolute_url(self, file_field):
-        """Construye URL absoluta para archivos de media"""
-        if not file_field:
-            return None
-        request = self.context.get('request')
-        if request:
-            return request.build_absolute_uri(file_field.url)
-        return file_field.url
-
-    def get_logo(self, obj):
-        return self._build_absolute_url(obj.logo)
-
-    def get_logo_white(self, obj):
-        return self._build_absolute_url(obj.logo_white)
-
-    def get_favicon(self, obj):
-        return self._build_absolute_url(obj.favicon)
-
-    def get_login_background(self, obj):
-        return self._build_absolute_url(obj.login_background)
-
-
-class BrandingConfigCreateSerializer(serializers.ModelSerializer):
-    """Serializer para crear Configuracion de Branding"""
-
-    class Meta:
-        model = BrandingConfig
-        fields = [
-            'company_name', 'company_short_name', 'company_slogan',
-            'logo', 'logo_white', 'favicon', 'login_background',
-            'primary_color', 'secondary_color', 'accent_color',
-            'app_version', 'is_active'
-        ]
-
-    def validate_primary_color(self, value):
-        if value and not value.startswith('#'):
-            raise serializers.ValidationError('El color debe estar en formato HEX (#RRGGBB)')
-        return value
-
-    def validate_secondary_color(self, value):
-        if value and not value.startswith('#'):
-            raise serializers.ValidationError('El color debe estar en formato HEX (#RRGGBB)')
-        return value
-
-    def validate_accent_color(self, value):
-        if value and not value.startswith('#'):
-            raise serializers.ValidationError('El color debe estar en formato HEX (#RRGGBB)')
-        return value
-
-
-class BrandingConfigUpdateSerializer(serializers.ModelSerializer):
-    """Serializer para actualizar Configuracion de Branding
-
-    Soporta campos *_clear para eliminar archivos existentes:
-    - logo_clear: 'true' para eliminar el logo principal
-    - logo_white_clear: 'true' para eliminar el logo blanco
-    - favicon_clear: 'true' para eliminar el favicon
-    """
-
-    # Campos write_only para indicar eliminacion de archivos
-    logo_clear = serializers.BooleanField(write_only=True, required=False, default=False)
-    logo_white_clear = serializers.BooleanField(write_only=True, required=False, default=False)
-    favicon_clear = serializers.BooleanField(write_only=True, required=False, default=False)
-    login_background_clear = serializers.BooleanField(write_only=True, required=False, default=False)
-
-    class Meta:
-        model = BrandingConfig
-        fields = [
-            'company_name', 'company_short_name', 'company_slogan',
-            'logo', 'logo_white', 'favicon', 'login_background',
-            'logo_clear', 'logo_white_clear', 'favicon_clear', 'login_background_clear',
-            'primary_color', 'secondary_color', 'accent_color',
-            'app_version', 'is_active'
-        ]
-        extra_kwargs = {
-            'logo': {'required': False},
-            'logo_white': {'required': False},
-            'favicon': {'required': False},
-            'login_background': {'required': False},
-        }
-
-    def validate_primary_color(self, value):
-        if value and not value.startswith('#'):
-            raise serializers.ValidationError('El color debe estar en formato HEX (#RRGGBB)')
-        return value
-
-    def validate_secondary_color(self, value):
-        if value and not value.startswith('#'):
-            raise serializers.ValidationError('El color debe estar en formato HEX (#RRGGBB)')
-        return value
-
-    def validate_accent_color(self, value):
-        if value and not value.startswith('#'):
-            raise serializers.ValidationError('El color debe estar en formato HEX (#RRGGBB)')
-        return value
-
-    def update(self, instance, validated_data):
-        # Extraer campos clear
-        logo_clear = validated_data.pop('logo_clear', False)
-        logo_white_clear = validated_data.pop('logo_white_clear', False)
-        favicon_clear = validated_data.pop('favicon_clear', False)
-        login_background_clear = validated_data.pop('login_background_clear', False)
-
-        # Eliminar archivos si se solicito
-        if logo_clear and instance.logo:
-            instance.logo.delete(save=False)
-            instance.logo = None
-
-        if logo_white_clear and instance.logo_white:
-            instance.logo_white.delete(save=False)
-            instance.logo_white = None
-
-        if favicon_clear and instance.favicon:
-            instance.favicon.delete(save=False)
-            instance.favicon = None
-
-        if login_background_clear and instance.login_background:
-            instance.login_background.delete(save=False)
-            instance.login_background = None
-
-        # Actualizar campos restantes
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-
-        instance.save()
-        return instance
-
+# =============================================================================
+# NOTA: BrandingConfig serializers fueron ELIMINADOS
+# El branding se gestiona ahora en el modelo Tenant (apps.tenant.models.Tenant)
+# Endpoint: /api/tenant/public/branding/
+# =============================================================================
 
 # NOTA: Los serializers de Consecutivo fueron migrados a:
 # apps.gestion_estrategica.organizacion.serializers

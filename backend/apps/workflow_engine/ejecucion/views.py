@@ -1,6 +1,8 @@
 """
 Views para Ejecución de Flujos - Workflow Engine
 """
+import logging
+
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -21,6 +23,8 @@ from .serializers import (
     ArchivoAdjuntoSerializer,
     NotificacionFlujoSerializer
 )
+
+logger = logging.getLogger('workflow')
 
 
 class InstanciaFlujoViewSet(viewsets.ModelViewSet):
@@ -173,6 +177,67 @@ class InstanciaFlujoViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(instancia)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['post'])
+    def iniciar_flujo(self, request):
+        """
+        Iniciar una nueva instancia de flujo desde una plantilla.
+
+        POST body:
+        {
+            "plantilla_id": 1,
+            "titulo": "Solicitud de Compra - Materiales",
+            "descripcion": "...",
+            "prioridad": "NORMAL",
+            "datos_iniciales": {"monto": 5000000, "tipo": "URGENTE"},
+            "entidad_tipo": "solicitud_compra",
+            "entidad_id": 42
+        }
+        """
+        from .services import WorkflowExecutionService
+        from .services.node_handlers import WorkflowConfigError, WorkflowExecutionError
+
+        plantilla_id = request.data.get('plantilla_id')
+        if not plantilla_id:
+            return Response(
+                {'error': 'plantilla_id es requerido'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        empresa_id = request.headers.get('X-Empresa-ID')
+        if not empresa_id:
+            empresa_id = getattr(request.user, 'empresa_id', None)
+        if not empresa_id:
+            return Response(
+                {'error': 'empresa_id no disponible'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            instancia = WorkflowExecutionService.iniciar_flujo(
+                plantilla_id=int(plantilla_id),
+                datos_iniciales=request.data.get('datos_iniciales', {}),
+                usuario=request.user,
+                empresa_id=int(empresa_id),
+                titulo=request.data.get('titulo', ''),
+                descripcion=request.data.get('descripcion', ''),
+                prioridad=request.data.get('prioridad', 'NORMAL'),
+                entidad_tipo=request.data.get('entidad_tipo', ''),
+                entidad_id=request.data.get('entidad_id'),
+            )
+            serializer = self.get_serializer(instancia)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except WorkflowConfigError as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except WorkflowExecutionError as e:
+            logger.error(f"Error de ejecucion al iniciar flujo: {e}")
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
 
 class TareaActivaViewSet(viewsets.ModelViewSet):
     """ViewSet para tareas activas"""
@@ -316,6 +381,22 @@ class TareaActivaViewSet(viewsets.ModelViewSet):
             usuario=request.user,
             empresa_id=request.headers.get('X-Empresa-ID')
         )
+
+        # Auto-avanzar el flujo de trabajo
+        try:
+            from .services import WorkflowExecutionService
+            WorkflowExecutionService.completar_tarea_y_avanzar(
+                tarea_id=tarea.id,
+                datos=tarea.formulario_data or {},
+                decision=tarea.decision or '',
+                usuario=request.user,
+            )
+        except Exception as e:
+            logger.error(
+                f"Error avanzando flujo tras completar tarea {tarea.id}: {e}",
+                exc_info=True,
+            )
+
         serializer = self.get_serializer(tarea)
         return Response(serializer.data)
 
@@ -351,6 +432,21 @@ class TareaActivaViewSet(viewsets.ModelViewSet):
             usuario=request.user,
             empresa_id=request.headers.get('X-Empresa-ID')
         )
+
+        # Manejar rechazo en el flujo de trabajo
+        try:
+            from .services import WorkflowExecutionService
+            WorkflowExecutionService.rechazar_tarea(
+                tarea_id=tarea.id,
+                motivo=motivo_rechazo,
+                usuario=request.user,
+            )
+        except Exception as e:
+            logger.error(
+                f"Error manejando rechazo en flujo para tarea {tarea.id}: {e}",
+                exc_info=True,
+            )
+
         serializer = self.get_serializer(tarea)
         return Response(serializer.data)
 

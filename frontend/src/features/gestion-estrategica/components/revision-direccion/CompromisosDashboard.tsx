@@ -10,7 +10,6 @@ import {
   AlertTriangle,
   TrendingUp,
   Users,
-  Calendar,
   Filter,
 } from 'lucide-react';
 import { StatsGrid, type StatItem } from '@/components/layout/StatsGrid';
@@ -25,6 +24,7 @@ import {
 import type { CompromisoRevision, CompromisoRevisionFilters } from '../../types/strategic.types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { CompromisoDetailModal } from './CompromisoDetailModal';
 
 // ==================== SUB-COMPONENTES ====================
 
@@ -183,6 +183,7 @@ const CompromisosTable = ({
 export const CompromisosDashboard = () => {
   const [filters, setFilters] = useState<CompromisoRevisionFilters>({});
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedCompromisoId, setSelectedCompromisoId] = useState<number | null>(null);
 
   // Hooks de datos
   const { data: dashboardStats, isLoading: statsLoading } = useRevisionDireccionDashboard();
@@ -235,8 +236,7 @@ export const CompromisosDashboard = () => {
   ];
 
   const handleEditCompromiso = (compromiso: CompromisoRevision) => {
-    // TODO: Abrir modal de edición
-    console.log('Editar compromiso:', compromiso);
+    setSelectedCompromisoId(compromiso.id);
   };
 
   return (
@@ -410,6 +410,15 @@ export const CompromisosDashboard = () => {
           onEdit={handleEditCompromiso}
         />
       </DataTableCard>
+
+      {/* Modal Detalle Compromiso */}
+      {selectedCompromisoId && (
+        <CompromisoDetailModal
+          compromisoId={selectedCompromisoId}
+          isOpen={!!selectedCompromisoId}
+          onClose={() => setSelectedCompromisoId(null)}
+        />
+      )}
     </div>
   );
 };

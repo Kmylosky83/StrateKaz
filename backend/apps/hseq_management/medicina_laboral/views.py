@@ -95,7 +95,7 @@ class ExamenMedicoViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = [
-        'empresa_id', 'colaborador_id', 'tipo_examen', 'estado',
+        'empresa_id', 'colaborador', 'tipo_examen', 'estado',
         'concepto_aptitud', 'requiere_restricciones', 'requiere_seguimiento'
     ]
     search_fields = ['numero_examen', 'medico_evaluador', 'entidad_prestadora']
@@ -227,7 +227,7 @@ class RestriccionMedicaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = [
-        'empresa_id', 'colaborador_id', 'tipo_restriccion',
+        'empresa_id', 'colaborador', 'tipo_restriccion',
         'categoria', 'estado', 'ajuste_realizado'
     ]
     search_fields = ['codigo_restriccion', 'descripcion', 'medico_ordena']
@@ -427,7 +427,7 @@ class CasoVigilanciaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = [
-        'empresa_id', 'programa', 'colaborador_id',
+        'empresa_id', 'programa', 'colaborador',
         'severidad', 'estado'
     ]
     search_fields = ['numero_caso', 'descripcion_caso']

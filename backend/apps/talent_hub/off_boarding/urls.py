@@ -13,7 +13,8 @@ from .views import (
     PazSalvoViewSet,
     ExamenEgresoViewSet,
     EntrevistaRetiroViewSet,
-    LiquidacionFinalViewSet
+    LiquidacionFinalViewSet,
+    CertificadoTrabajoViewSet
 )
 
 app_name = 'off_boarding'
@@ -26,6 +27,7 @@ router.register(r'paz-salvos', PazSalvoViewSet, basename='paz-salvo')
 router.register(r'examenes-egreso', ExamenEgresoViewSet, basename='examen-egreso')
 router.register(r'entrevistas', EntrevistaRetiroViewSet, basename='entrevista')
 router.register(r'liquidaciones', LiquidacionFinalViewSet, basename='liquidacion')
+router.register(r'certificados-trabajo', CertificadoTrabajoViewSet, basename='certificado-trabajo')
 
 urlpatterns = [
     path('', include(router.urls)),

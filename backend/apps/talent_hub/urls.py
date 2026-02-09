@@ -16,6 +16,7 @@ Unifica las URLs de todas las apps del módulo Talent Hub:
 - off_boarding: Retiros, checklist, paz y salvos, exámenes, entrevistas, liquidación final
 """
 from django.urls import path, include
+from apps.talent_hub.api.people_analytics import PeopleAnalyticsView
 
 app_name = 'talent_hub'
 
@@ -52,4 +53,13 @@ urlpatterns = [
 
     # Off-Boarding (Retiros, Paz y Salvos, Liquidación Final)
     path('off-boarding/', include('apps.talent_hub.off_boarding.urls')),
+
+    # Portal Empleado (ESS - Employee Self-Service)
+    path('mi-portal/', include('apps.talent_hub.api.ess_urls')),
+
+    # Portal Jefe (MSS - Manager Self-Service)
+    path('mi-equipo/', include('apps.talent_hub.api.mss_urls')),
+
+    # People Analytics
+    path('people-analytics/', PeopleAnalyticsView.as_view(), name='people-analytics'),
 ]

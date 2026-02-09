@@ -4,7 +4,7 @@
  * Características:
  * - Carga módulos, tabs y secciones desde la API (sin hardcoding)
  * - Iconos dinámicos desde Lucide React
- * - Colores por módulo/categoría (6 niveles: ESTRATEGICO, MOTOR, INTEGRAL, MISIONAL, APOYO, INTELIGENCIA)
+ * - Colores por módulo/categoría (6 niveles: STRATEGIC, COMPLIANCE, INTEGRATED, OPERATIONAL, SUPPORT, INTELLIGENCE)
  * - Control granular: desactivar módulo/tab en ConfiguracionTab → desaparece del sidebar
  */
 import { useState, useMemo, useEffect } from 'react';
@@ -12,11 +12,12 @@ import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/utils/cn';
 import { useSidebarModules } from '@/features/gestion-estrategica/hooks/useModules';
 import type { SidebarModule } from '@/features/gestion-estrategica/types/modules.types';
-import { ChevronRight, ChevronDown, Circle, Loader2, LayoutDashboard, Shield } from 'lucide-react';
+import { ChevronRight, ChevronDown, Circle, Loader2, LayoutDashboard, Shield, UserCircle, Users } from 'lucide-react';
 
 import { getIconComponent as getDynamicIcon } from '@/components/common/DynamicIcon';
 import { APP_VERSION } from '@/constants/brand';
 import { useAuthStore } from '@/store/authStore';
+import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -214,6 +215,8 @@ interface NavItemComponentProps {
   toggleExpanded: (code: string) => void;
   location: ReturnType<typeof useLocation>;
   depth?: number;
+  /** Cuando el sidebar tiene color dinámico oscuro, usar colores neutros en vez de moduleColors */
+  useNeutralColors?: boolean;
 }
 
 const NavItemComponent = ({
@@ -223,11 +226,14 @@ const NavItemComponent = ({
   toggleExpanded,
   location,
   depth = 0,
+  useNeutralColors = false,
 }: NavItemComponentProps) => {
   const Icon = getIconComponent(item.icon);
   // Mapear color extendido de Tailwind a los 10 soportados
   const mappedColor = getMappedColor(item.color);
-  const colors = mappedColor ? moduleColors[mappedColor] : null;
+  // Cuando el sidebar tiene color dinámico oscuro, usar colores neutros
+  // para garantizar contraste (ej: sidebar azul + icono azul = invisible)
+  const colors = useNeutralColors ? null : (mappedColor ? moduleColors[mappedColor] : null);
   const hasChildren = item.children && item.children.length > 0;
   const isExpanded = expandedItems.includes(item.code);
 
@@ -331,6 +337,7 @@ const NavItemComponent = ({
                 toggleExpanded={toggleExpanded}
                 location={location}
                 depth={depth + 1}
+                useNeutralColors={useNeutralColors}
               />
             ))}
           </div>
@@ -411,6 +418,7 @@ const NavItemComponent = ({
                 toggleExpanded={toggleExpanded}
                 location={location}
                 depth={depth + 1}
+                useNeutralColors={useNeutralColors}
               />
             ))}
           </div>
@@ -470,15 +478,33 @@ export const Sidebar = ({
   onCloseMobile,
 }: SidebarProps) => {
   const location = useLocation();
-  const { data: sidebarModules, isLoading, error } = useSidebarModules();
   const user = useAuthStore((state) => state.user);
+  const tenantUser = useAuthStore((state) => state.tenantUser);
   const currentTenantId = useAuthStore((state) => state.currentTenantId);
-  const isSuperuser = user?.is_superuser ?? false;
+  const isSuperadmin = useAuthStore((state) => state.isSuperadmin);
+  // is_superuser viene del User (tenant), isSuperadmin viene del TenantUser (global)
+  const isSuperuser = user?.is_superuser ?? isSuperadmin ?? false;
 
   // Admin Global solo visible si es superusuario Y NO está en contexto de empresa
   // O si está en la ruta de admin-global (para poder navegar de vuelta)
   const showAdminGlobal =
     isSuperuser && (!currentTenantId || location.pathname.startsWith('/admin-global'));
+
+  // Determinar si estamos en modo Admin Global (sin contexto de tenant)
+  const isAdminGlobalMode = !currentTenantId || location.pathname.startsWith('/admin-global');
+
+  // Branding dinámico para sidebar
+  // Cuando hay color de sidebar personalizado, SIEMPRE usar estilo dark (más profesional)
+  // Solo en modo light sin color dinámico se usa el sidebar claro estándar
+  const { sidebarColor } = useBrandingConfig();
+  const hasDynamicSidebar = !!(sidebarColor && sidebarColor !== '#1E293B' && currentTenantId);
+
+  // Solo cargar módulos del sidebar si hay un tenant seleccionado
+  // En Admin Global no hay tenant, así que no se cargan módulos
+  const { data: sidebarModules, isLoading, error } = useSidebarModules();
+
+  // Si estamos en Admin Global, no necesitamos los módulos del tenant
+  const shouldShowTenantModules = currentTenantId && !location.pathname.startsWith('/admin-global');
 
   // Cerrar drawer al navegar en mobile
   useEffect(() => {
@@ -528,12 +554,20 @@ export const Sidebar = ({
     );
   };
 
-  // Clases base del sidebar
+  // Clases base del sidebar - dinámico cuando hay sidebarColor del branding
+  // Cuando hay color de sidebar personalizado, SIEMPRE forzar clase 'dark' para que
+  // todos los hijos (NavItems, separadores, textos) usen variantes dark: automáticamente.
+  // Esto da un look profesional uniforme sin importar si el color es claro u oscuro.
   const sidebarBaseClasses = cn(
     'fixed top-16 bottom-0 z-40',
-    'bg-white dark:bg-gray-800',
-    'border-r border-gray-200 dark:border-gray-700',
-    'transition-all duration-300 ease-in-out'
+    !hasDynamicSidebar && 'bg-white dark:bg-gray-800',
+    hasDynamicSidebar
+      ? 'border-r border-white/10'
+      : 'border-r border-gray-200 dark:border-gray-700',
+    'transition-all duration-300 ease-in-out',
+    // Forzar modo dark en el sidebar cuando tiene color dinámico de branding
+    // Así los NavItems usan sus clases dark: (texto claro) sobre el color de marca
+    hasDynamicSidebar && 'dark'
   );
 
   // Clases para mobile (drawer)
@@ -541,23 +575,27 @@ export const Sidebar = ({
     ? cn('left-0 w-72', isMobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full')
     : cn('left-0', isCollapsed ? 'w-16' : 'w-64');
 
-  // Loading state
-  if (isLoading) {
+  // Estilo inline para sidebar dinámico
+  const sidebarStyle = hasDynamicSidebar ? { backgroundColor: sidebarColor } : undefined;
+
+  // Loading state - solo si estamos cargando módulos de tenant
+  if (isLoading && shouldShowTenantModules) {
     return (
-      <aside className={cn(sidebarBaseClasses, mobileClasses)}>
+      <aside className={cn(sidebarBaseClasses, mobileClasses)} style={sidebarStyle}>
         <div className="flex items-center justify-center h-full">
-          <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+          <Loader2 className="h-6 w-6 animate-spin text-gray-400 dark:text-gray-500" />
         </div>
       </aside>
     );
   }
 
-  // Error state - mostrar sidebar vacío con mensaje
-  if (error || !sidebarModules) {
+  // Error state - solo mostrar si hay error Y deberíamos mostrar módulos de tenant
+  // En Admin Global (sin tenant), no es un error que no haya módulos
+  if (error && shouldShowTenantModules) {
     return (
-      <aside className={cn(sidebarBaseClasses, mobileClasses)}>
+      <aside className={cn(sidebarBaseClasses, mobileClasses)} style={sidebarStyle}>
         <div className="flex items-center justify-center h-full px-4 text-center">
-          <p className="text-sm text-gray-500">Error al cargar menú</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Error al cargar menú</p>
         </div>
       </aside>
     );
@@ -567,30 +605,92 @@ export const Sidebar = ({
   const effectiveCollapsed = isMobile ? false : isCollapsed;
 
   return (
-    <aside className={cn(sidebarBaseClasses, mobileClasses)}>
+    <aside className={cn(sidebarBaseClasses, mobileClasses)} style={sidebarStyle}>
       <nav className="h-full flex flex-col py-4">
-        {/* Dashboard Link - Siempre visible al inicio */}
-        <div className="px-2 mb-2">
-          <Link
-            to="/dashboard"
-            className={cn(
-              'flex items-center rounded-lg transition-colors px-3 py-2.5',
-              location.pathname === '/dashboard'
-                ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
-                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'
-            )}
-          >
-            <LayoutDashboard
+        {/* Dashboard Link - Solo visible cuando HAY tenant seleccionado (no en Admin Global) */}
+        {!isAdminGlobalMode && (
+          <div className="px-2 mb-2">
+            <Link
+              to="/dashboard"
               className={cn(
-                'h-5 w-5 flex-shrink-0',
+                'flex items-center rounded-lg transition-colors px-3 py-2.5',
                 location.pathname === '/dashboard'
-                  ? 'text-primary-600 dark:text-primary-400'
-                  : 'text-gray-500 dark:text-gray-400'
+                  ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50'
               )}
-            />
-            {!effectiveCollapsed && <span className="ml-3 font-medium">Dashboard</span>}
-          </Link>
-        </div>
+            >
+              <LayoutDashboard
+                className={cn(
+                  'h-5 w-5 flex-shrink-0',
+                  location.pathname === '/dashboard'
+                    ? 'text-primary-600 dark:text-primary-400'
+                    : 'text-gray-500 dark:text-gray-400'
+                )}
+              />
+              {!effectiveCollapsed && <span className="ml-3 font-medium">Dashboard</span>}
+            </Link>
+          </div>
+        )}
+
+        {/* Mi Portal - Visible para todos los usuarios con tenant */}
+        {!isAdminGlobalMode && (
+          <div className="px-2 mb-1">
+            <Link
+              to="/mi-portal"
+              className={cn(
+                'flex items-center rounded-lg transition-colors px-3 py-2.5 group relative',
+                location.pathname === '/mi-portal' || location.pathname.startsWith('/mi-portal/')
+                  ? 'bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-teal-50 dark:hover:bg-teal-900/20'
+              )}
+            >
+              <UserCircle
+                className={cn(
+                  'h-5 w-5 flex-shrink-0',
+                  location.pathname === '/mi-portal' || location.pathname.startsWith('/mi-portal/')
+                    ? 'text-teal-600 dark:text-teal-400'
+                    : 'text-gray-500 dark:text-gray-400'
+                )}
+              />
+              {!effectiveCollapsed && <span className="ml-3 font-medium">Mi Portal</span>}
+              {effectiveCollapsed && (
+                <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 dark:bg-gray-700 text-white text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
+                  Mi Portal
+                </div>
+              )}
+            </Link>
+          </div>
+        )}
+
+        {/* Mi Equipo - Solo visible para jefes (cargo con is_jefatura) */}
+        {!isAdminGlobalMode && user?.cargo?.is_jefatura && (
+          <div className="px-2 mb-2">
+            <Link
+              to="/mi-equipo"
+              className={cn(
+                'flex items-center rounded-lg transition-colors px-3 py-2.5 group relative',
+                location.pathname === '/mi-equipo' || location.pathname.startsWith('/mi-equipo/')
+                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+              )}
+            >
+              <Users
+                className={cn(
+                  'h-5 w-5 flex-shrink-0',
+                  location.pathname === '/mi-equipo' || location.pathname.startsWith('/mi-equipo/')
+                    ? 'text-blue-600 dark:text-blue-400'
+                    : 'text-gray-500 dark:text-gray-400'
+                )}
+              />
+              {!effectiveCollapsed && <span className="ml-3 font-medium">Mi Equipo</span>}
+              {effectiveCollapsed && (
+                <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 dark:bg-gray-700 text-white text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
+                  Mi Equipo
+                </div>
+              )}
+            </Link>
+          </div>
+        )}
 
         {/* Admin Global - Solo visible para superusuarios cuando NO están en contexto de empresa */}
         {showAdminGlobal && (
@@ -624,14 +724,16 @@ export const Sidebar = ({
           </div>
         )}
 
-        {/* Separador */}
-        <div className="px-4 mb-2">
-          <div className="border-t border-gray-200 dark:border-gray-700" />
-        </div>
+        {/* Separador - solo si hay contenido después */}
+        {(shouldShowTenantModules && sidebarModules && sidebarModules.length > 0) && (
+          <div className="px-4 mb-2">
+            <div className="border-t border-gray-200 dark:border-gray-700" />
+          </div>
+        )}
 
-        {/* Navigation Items - Dinámico desde API */}
+        {/* Navigation Items - Dinámico desde API (solo si hay tenant) */}
         <div className="flex-1 px-2 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
-          {sidebarModules.map((item) => (
+          {shouldShowTenantModules && sidebarModules && sidebarModules.map((item) => (
             <NavItemComponent
               key={item.code}
               item={item}
@@ -639,8 +741,21 @@ export const Sidebar = ({
               expandedItems={expandedItems}
               toggleExpanded={toggleExpanded}
               location={location}
+              useNeutralColors={hasDynamicSidebar}
             />
           ))}
+
+          {/* Mensaje cuando no hay módulos en Admin Global */}
+          {isAdminGlobalMode && !effectiveCollapsed && (
+            <div className="px-3 py-4 text-center">
+              <p className="text-xs text-gray-400 dark:text-gray-500">
+                Modo Administración Global
+              </p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                Selecciona una empresa para ver sus módulos
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Version Info (only when expanded) - FIJO StrateKaz */}

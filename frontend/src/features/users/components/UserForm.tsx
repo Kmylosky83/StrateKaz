@@ -20,12 +20,15 @@ import {
   HelpCircle,
   Building2,
   Lock,
+  Shield,
+  AlertTriangle,
 } from 'lucide-react';
 import { Modal } from '@/components/common/Modal';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
+import { useAuthStore } from '@/store/authStore';
 import type { User, CreateUserDTO, UpdateUserDTO, Cargo } from '@/types/users.types';
 
 // =============================================================================
@@ -78,7 +81,7 @@ type UpdateUserFormData = z.infer<typeof updateUserSchema>;
 
 const HELP_TEXTS = {
   cargo:
-    'El cargo define la posicion en el organigrama y otorga permisos automaticamente (configurados en Cargos).',
+    'El cargo define la posición en el organigrama y otorga permisos automáticamente (configurados en Cargos).',
   rolesAdicionales:
     'Roles especiales (COPASST, Brigadista, Auditor) se asignan desde Talento Humano > Roles Adicionales.',
 };
@@ -188,6 +191,12 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, cargos, isLoading }:
   const selectedCargoId = watch('cargo_id');
   const selectedCargo = cargos.find((c) => c.id === selectedCargoId);
 
+  // Fase 3: Detección de auto-degradación del último ADMIN
+  const currentAuthUser = useAuthStore((state) => state.user);
+  const isEditingSelf = isEditMode && user && currentAuthUser && user.id === currentAuthUser.id;
+  const userHadAdminCargo = user?.cargo?.code === 'ADMIN';
+  const isChangingFromAdmin = isEditingSelf && userHadAdminCargo && selectedCargo && selectedCargo.code !== 'ADMIN';
+
   useEffect(() => {
     if (isOpen && user) {
       setValue('username', user.username);
@@ -217,8 +226,8 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, cargos, isLoading }:
   }));
 
   const documentTypeOptions = [
-    { value: 'CC', label: 'Cedula de Ciudadania' },
-    { value: 'CE', label: 'Cedula de Extranjeria' },
+    { value: 'CC', label: 'Cédula de Ciudadanía' },
+    { value: 'CE', label: 'Cédula de Extranjería' },
     { value: 'NIT', label: 'NIT' },
   ];
 
@@ -230,8 +239,25 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, cargos, isLoading }:
       size="3xl"
     >
       <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
-        {/* SECCION 1: INFORMACION PERSONAL */}
-        <Section title="Informacion Personal" icon={<UserIcon className="w-5 h-5" />}>
+        {/* Alerta de Superusuario */}
+        {isEditMode && user?.is_superuser && (
+          <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+            <div className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                  Este usuario es Superusuario del Tenant
+                </p>
+                <p className="text-xs text-amber-600 dark:text-amber-300 mt-0.5">
+                  Tiene acceso completo a todas las secciones y funcionalidades de este tenant, independiente del cargo asignado.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* SECCIÓN 1: INFORMACIÓN PERSONAL */}
+        <Section title="Información Personal" icon={<UserIcon className="w-5 h-5" />}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               label="Nombre de Usuario *"
@@ -259,19 +285,19 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, cargos, isLoading }:
               placeholder="Perez"
             />
             <Select
-              label="Tipo de Documento *"
+              label="Tipo Documento *"
               {...register('document_type')}
               options={documentTypeOptions}
               error={errors.document_type?.message}
             />
             <Input
-              label="Numero de Documento *"
+              label="Número de Documento *"
               {...register('document_number')}
               error={errors.document_number?.message}
               placeholder="1234567890"
             />
             <Input
-              label="Telefono"
+              label="Teléfono"
               type="tel"
               {...register('phone')}
               error={errors.phone?.message}
@@ -282,26 +308,26 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, cargos, isLoading }:
           {!isEditMode && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
               <Input
-                label="Contrasena *"
+                label="Contraseña *"
                 type="password"
                 {...register('password' as keyof CreateUserFormData)}
                 error={(errors as any).password?.message}
-                placeholder="Minimo 8 caracteres"
+                placeholder="Mínimo 8 caracteres"
               />
               <Input
-                label="Confirmar Contrasena *"
+                label="Confirmar Contraseña *"
                 type="password"
                 {...register('password_confirm' as keyof CreateUserFormData)}
                 error={(errors as any).password_confirm?.message}
-                placeholder="Repetir contrasena"
+                placeholder="Repetir contraseña"
               />
             </div>
           )}
         </Section>
 
-        {/* SECCION 2: POSICION ORGANIZACIONAL */}
+        {/* SECCIÓN 2: POSICIÓN ORGANIZACIONAL */}
         <Section
-          title="Posicion Organizacional"
+          title="Posición Organizacional"
           icon={<Building2 className="w-5 h-5" />}
           helpText={HELP_TEXTS.cargo}
         >
@@ -313,7 +339,24 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, cargos, isLoading }:
             placeholder="Selecciona el cargo del empleado"
           />
 
-          {selectedCargo && (
+          {isChangingFromAdmin && (
+            <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                <div className="text-sm">
+                  <p className="font-medium text-red-800 dark:text-red-200">
+                    Advertencia: Está cambiando su propio cargo de Administrador
+                  </p>
+                  <p className="text-red-600 dark:text-red-300 mt-1">
+                    Si usted es el único administrador, perderá acceso a las funciones de administración.
+                    Asegúrese de que otro usuario tenga el cargo ADMIN antes de continuar.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {selectedCargo && !isChangingFromAdmin && (
             <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
               <div className="flex items-start gap-2">
                 <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
@@ -322,8 +365,8 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, cargos, isLoading }:
                     Cargo: {selectedCargo.name}
                   </p>
                   <p className="text-blue-600 dark:text-blue-300 mt-1">
-                    Los permisos de acceso y acciones se configuran en Configuracion &rarr; Cargos.
-                    {selectedCargo.level && ` Nivel: ${selectedCargo.level}`}
+                    Los permisos de acceso y acciones se configuran en Configuración &rarr; Cargos.
+                    {selectedCargo.level !== undefined && ` Nivel: ${selectedCargo.level}`}
                   </p>
                 </div>
               </div>
@@ -331,7 +374,7 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, cargos, isLoading }:
           )}
         </Section>
 
-        {/* SECCION 3: ROLES ADICIONALES (SOLO INFO) */}
+        {/* SECCIÓN 3: ROLES ADICIONALES (SOLO INFO) */}
         <Section
           title="Roles Adicionales"
           icon={<Award className="w-5 h-5" />}
@@ -351,11 +394,11 @@ export const UserForm = ({ isOpen, onClose, onSubmit, user, cargos, isLoading }:
               <Lock className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
               <div>
                 <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                  Gestion de Roles Adicionales
+                  Gestión de Roles Adicionales
                 </p>
                 <p className="text-sm text-amber-600 dark:text-amber-300 mt-1">
                   Roles especiales como <strong>COPASST</strong>, <strong>Brigadista</strong>,{' '}
-                  <strong>Auditor ISO</strong>, etc. se asignan desde el modulo de Talento Humano.
+                  <strong>Auditor ISO</strong>, etc. se asignan desde el módulo de Talento Humano.
                 </p>
                 <p className="text-xs text-amber-500 dark:text-amber-400 mt-2">
                   Ir a: Talento Humano &rarr; Roles Adicionales

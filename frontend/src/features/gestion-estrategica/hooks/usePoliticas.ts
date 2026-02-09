@@ -57,8 +57,8 @@ export const politicaKeys = {
   tipo: (id: number) => ['tipos-politica', id] as const,
 
   // Normas ISO
-  normas: () => ['normas-iso'] as const,
-  normasActivas: () => ['normas-iso', 'activas'] as const,
+  normas: () => ['normas_iso'] as const,
+  normasActivas: () => ['normas_iso', 'activas'] as const,
 
   // Workflows
   workflows: () => ['flujos-firma'] as const,

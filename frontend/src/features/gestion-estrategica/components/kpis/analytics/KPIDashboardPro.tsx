@@ -1,12 +1,11 @@
 /**
- * KPIDashboardPro - Dashboard Enterprise con Tremor + Nivo + ECharts
- * Sistema de Gestión StrateKaz - Analytics Pro Edition
+ * KPIDashboardPro - Dashboard Enterprise con ECharts
+ * Sistema de Gestion StrateKaz - Analytics Pro Edition
  */
 import { useMemo } from 'react';
-import { Grid, Card as TremorCard, Text, Title, Metric } from '@tremor/react';
-import { Card, Spinner, EmptyState, ColorLegend } from '@/components/common';
+import ReactEChartsCore from 'echarts-for-react';
+import { Card, Spinner, EmptyState } from '@/components/common';
 import { BarChart3, TrendingUp, Target, AlertTriangle } from 'lucide-react';
-import { ResponsivePie } from '@nivo/pie';
 import { useKPIs } from '../../../hooks/useKPIs';
 import type { KPIObjetivo } from '../../../types/kpi.types';
 import { SEMAFORO_COLORS, formatValue } from '../../../types/kpi.types';
@@ -43,7 +42,6 @@ export function KPIDashboardPro({ planId, objectiveId, className }: KPIDashboard
     const rojo = kpis.filter((k) => k.status_semaforo === 'ROJO').length;
     const sinDatos = kpis.filter((k) => k.status_semaforo === 'SIN_DATOS').length;
 
-    // Calcular progreso promedio
     const kpisWithValues = kpis.filter((k) => k.last_value !== null && k.last_value !== undefined);
     const avgProgress =
       kpisWithValues.length > 0
@@ -53,44 +51,39 @@ export function KPIDashboardPro({ planId, objectiveId, className }: KPIDashboard
           }, 0) / kpisWithValues.length
         : 0;
 
-    return {
-      total: kpis.length,
-      verde,
-      amarillo,
-      rojo,
-      sinDatos,
-      avgProgress,
-    };
+    return { total: kpis.length, verde, amarillo, rojo, sinDatos, avgProgress };
   }, [kpis]);
 
   const pieData = useMemo(() => {
     return [
-      {
-        id: 'En Meta',
-        label: 'En Meta',
-        value: stats.verde,
-        color: SEMAFORO_COLORS.VERDE,
-      },
-      {
-        id: 'En Alerta',
-        label: 'En Alerta',
-        value: stats.amarillo,
-        color: SEMAFORO_COLORS.AMARILLO,
-      },
-      {
-        id: 'Crítico',
-        label: 'Crítico',
-        value: stats.rojo,
-        color: SEMAFORO_COLORS.ROJO,
-      },
-      {
-        id: 'Sin Datos',
-        label: 'Sin Datos',
-        value: stats.sinDatos,
-        color: SEMAFORO_COLORS.SIN_DATOS,
-      },
+      { value: stats.verde, name: 'En Meta', itemStyle: { color: SEMAFORO_COLORS.VERDE } },
+      { value: stats.amarillo, name: 'En Alerta', itemStyle: { color: SEMAFORO_COLORS.AMARILLO } },
+      { value: stats.rojo, name: 'Critico', itemStyle: { color: SEMAFORO_COLORS.ROJO } },
+      { value: stats.sinDatos, name: 'Sin Datos', itemStyle: { color: SEMAFORO_COLORS.SIN_DATOS } },
     ].filter((item) => item.value > 0);
   }, [stats]);
+
+  const pieOption = useMemo(
+    () => ({
+      tooltip: { trigger: 'item' as const, formatter: '{b}: {c} ({d}%)' },
+      legend: { bottom: 0, left: 'center' },
+      series: [
+        {
+          type: 'pie' as const,
+          radius: ['40%', '70%'],
+          padAngle: 2,
+          itemStyle: { borderRadius: 4 },
+          label: { show: true, formatter: '{b}\n{d}%' },
+          emphasis: {
+            label: { show: true, fontSize: 14, fontWeight: 'bold' as const },
+            itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' },
+          },
+          data: pieData,
+        },
+      ],
+    }),
+    [pieData]
+  );
 
   const topPerformers = useMemo(() => {
     return [...kpis]
@@ -136,78 +129,29 @@ export function KPIDashboardPro({ planId, objectiveId, className }: KPIDashboard
     <div className={className}>
       <div className="space-y-6">
         {/* Hero Stats */}
-        <Grid numItems={1} numItemsSm={2} numItemsLg={4} className="gap-4">
-          <TremorCard decoration="top" decorationColor="blue">
-            <Text>Total KPIs</Text>
-            <Metric>{stats.total}</Metric>
-          </TremorCard>
-          <TremorCard decoration="top" decorationColor="emerald">
-            <Text>En Meta</Text>
-            <Metric>{stats.verde}</Metric>
-          </TremorCard>
-          <TremorCard decoration="top" decorationColor="amber">
-            <Text>En Alerta</Text>
-            <Metric>{stats.amarillo}</Metric>
-          </TremorCard>
-          <TremorCard decoration="top" decorationColor="rose">
-            <Text>Críticos</Text>
-            <Metric>{stats.rojo}</Metric>
-          </TremorCard>
-        </Grid>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard label="Total KPIs" value={stats.total} color="blue" icon={Target} />
+          <StatCard label="En Meta" value={stats.verde} color="emerald" icon={TrendingUp} />
+          <StatCard label="En Alerta" value={stats.amarillo} color="amber" icon={AlertTriangle} />
+          <StatCard label="Criticos" value={stats.rojo} color="rose" icon={AlertTriangle} />
+        </div>
 
         {/* Distribution Chart */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Pie Chart */}
           <Card className="p-6">
-            <Title className="mb-4">Distribución de KPIs por Estado</Title>
+            <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">
+              Distribucion de KPIs por Estado
+            </h3>
             <div className="h-80">
-              <ResponsivePie
-                data={pieData}
-                margin={{ top: 40, right: 80, bottom: 80, left: 80 }}
-                innerRadius={0.5}
-                padAngle={0.7}
-                cornerRadius={3}
-                activeOuterRadiusOffset={8}
-                colors={{ datum: 'data.color' }}
-                borderWidth={1}
-                borderColor={{
-                  from: 'color',
-                  modifiers: [['darker', 0.2]],
-                }}
-                arcLinkLabelsSkipAngle={10}
-                arcLinkLabelsTextColor="#333333"
-                arcLinkLabelsThickness={2}
-                arcLinkLabelsColor={{ from: 'color' }}
-                arcLabelsSkipAngle={10}
-                arcLabelsTextColor={{
-                  from: 'color',
-                  modifiers: [['darker', 2]],
-                }}
-                legends={[
-                  {
-                    anchor: 'bottom',
-                    direction: 'row',
-                    justify: false,
-                    translateX: 0,
-                    translateY: 56,
-                    itemsSpacing: 0,
-                    itemWidth: 100,
-                    itemHeight: 18,
-                    itemTextColor: '#999',
-                    itemDirection: 'left-to-right',
-                    itemOpacity: 1,
-                    symbolSize: 18,
-                    symbolShape: 'circle',
-                  },
-                ]}
-              />
+              <ReactEChartsCore option={pieOption} style={{ height: '100%', width: '100%' }} />
             </div>
           </Card>
 
-          {/* Top Performer Gauge */}
           {topPerformers[0] && (
             <div>
-              <Title className="mb-4">Mejor Desempeño</Title>
+              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                Mejor Desempeno
+              </h3>
               <KPIGaugeChart kpi={topPerformers[0]} size="md" showThresholds />
             </div>
           )}
@@ -215,12 +159,13 @@ export function KPIDashboardPro({ planId, objectiveId, className }: KPIDashboard
 
         {/* Performance Lists */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Top Performers */}
           {topPerformers.length > 0 && (
             <Card className="p-6">
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp className="h-5 w-5 text-success-600" />
-                <Title>Top 5 - Mejor Desempeño</Title>
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                  Top 5 - Mejor Desempeno
+                </h3>
               </div>
               <div className="space-y-3">
                 {topPerformers.map((kpi) => (
@@ -230,12 +175,13 @@ export function KPIDashboardPro({ planId, objectiveId, className }: KPIDashboard
             </Card>
           )}
 
-          {/* Bottom Performers */}
           {bottomPerformers.length > 0 && (
             <Card className="p-6">
               <div className="flex items-center gap-2 mb-4">
                 <AlertTriangle className="h-5 w-5 text-danger-600" />
-                <Title>Top 5 - Requieren Atención</Title>
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                  Top 5 - Requieren Atencion
+                </h3>
               </div>
               <div className="space-y-3">
                 {bottomPerformers.map((kpi) => (
@@ -248,8 +194,45 @@ export function KPIDashboardPro({ planId, objectiveId, className }: KPIDashboard
 
         {/* All KPIs Grid */}
         <div>
-          <Title className="mb-4">Todos los KPIs</Title>
+          <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            Todos los KPIs
+          </h3>
           <KPIMetricCards kpis={kpis} layout="grid" showDelta showSparkline />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =============================================================================
+// STAT CARD
+// =============================================================================
+
+const COLOR_MAP: Record<string, { border: string; text: string; bg: string }> = {
+  blue: { border: 'border-t-blue-500', text: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/20' },
+  emerald: { border: 'border-t-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+  amber: { border: 'border-t-amber-500', text: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20' },
+  rose: { border: 'border-t-rose-500', text: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-900/20' },
+};
+
+interface StatCardProps {
+  label: string;
+  value: number;
+  color: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+function StatCard({ label, value, color, icon: Icon }: StatCardProps) {
+  const colors = COLOR_MAP[color] || COLOR_MAP.blue;
+  return (
+    <div className={`rounded-lg border border-gray-200 dark:border-gray-700 border-t-4 ${colors.border} bg-white dark:bg-gray-800 p-4`}>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
+          <p className={`text-3xl font-bold ${colors.text}`}>{value}</p>
+        </div>
+        <div className={`p-2 rounded-lg ${colors.bg}`}>
+          <Icon className={`h-5 w-5 ${colors.text}`} />
         </div>
       </div>
     </div>

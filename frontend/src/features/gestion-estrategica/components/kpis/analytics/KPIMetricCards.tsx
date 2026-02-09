@@ -1,13 +1,11 @@
 /**
- * KPIMetricCards - Cards Enterprise con Tremor
- * Sistema de Gestión StrateKaz - Analytics Pro
+ * KPIMetricCards - Cards de KPIs con componentes propios
+ * Sistema de Gestion StrateKaz - Analytics Pro
  */
 import { useMemo } from 'react';
-import { Card as TremorCard, Text, Metric, BadgeDelta, type Color } from '@tremor/react';
 import { cn } from '@/lib/utils';
-import type { KPIObjetivo, SemaforoStatus } from '../../../types/kpi.types';
+import type { KPIObjetivo } from '../../../types/kpi.types';
 import { formatValue, calculateDelta, isDeltaPositive, SEMAFORO_COLORS } from '../../../types/kpi.types';
-import { DynamicIcon } from '@/components/common';
 
 export interface KPIMetricCardsProps {
   kpis: KPIObjetivo[];
@@ -17,13 +15,6 @@ export interface KPIMetricCardsProps {
   onCardClick?: (kpi: KPIObjetivo) => void;
   className?: string;
 }
-
-const SEMAFORO_TO_TREMOR_COLOR: Record<SemaforoStatus, Color> = {
-  VERDE: 'emerald',
-  AMARILLO: 'amber',
-  ROJO: 'rose',
-  SIN_DATOS: 'gray',
-};
 
 export function KPIMetricCards({
   kpis,
@@ -36,7 +27,7 @@ export function KPIMetricCards({
   if (kpis.length === 0) {
     return (
       <div className="text-center py-12">
-        <Text>No hay KPIs disponibles</Text>
+        <p className="text-sm text-gray-500 dark:text-gray-400">No hay KPIs disponibles</p>
       </div>
     );
   }
@@ -101,51 +92,67 @@ function KPIMetricCard({ kpi, showSparkline, showDelta, onClick }: KPIMetricCard
       .map((m) => m.value);
   }, [kpi, showSparkline]);
 
-  const semaforoColor = SEMAFORO_TO_TREMOR_COLOR[kpi.status_semaforo];
-
-  // Color del borde según semáforo
   const borderColor = SEMAFORO_COLORS[kpi.status_semaforo];
 
   return (
     <div
       className={cn(
-        'relative',
+        'rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4',
         onClick && 'cursor-pointer transition-transform hover:scale-105 hover:shadow-lg'
       )}
       onClick={onClick}
-      style={{
-        borderLeft: `4px solid ${borderColor}`,
-      }}
+      style={{ borderLeft: `4px solid ${borderColor}` }}
     >
-      <TremorCard decoration="left" decorationColor={semaforoColor}>
-        <div className="space-y-2">
-          <Text className="truncate" title={kpi.name}>
-            {kpi.name}
-          </Text>
-          <div className="flex items-baseline justify-between gap-2">
-            <Metric>{formatValue(kpi.last_value, kpi.unit)}</Metric>
-            {delta && (
-              <BadgeDelta
-                deltaType={delta.isPositive ? 'increase' : 'decrease'}
-                size="xs"
-              >
-                {Math.abs(delta.value).toFixed(1)}%
-              </BadgeDelta>
-            )}
-          </div>
-          {kpi.responsible_name && (
-            <Text className="text-xs text-gray-500 dark:text-gray-400 truncate">
-              Responsable: {kpi.responsible_name}
-            </Text>
-          )}
-          {sparklineData && sparklineData.length > 0 && (
-            <div className="mt-3">
-              <MiniSparkline data={sparklineData} color={borderColor} />
-            </div>
-          )}
+      <div className="space-y-2">
+        <p className="text-sm text-gray-500 dark:text-gray-400 truncate" title={kpi.name}>
+          {kpi.name}
+        </p>
+        <div className="flex items-baseline justify-between gap-2">
+          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            {formatValue(kpi.last_value, kpi.unit)}
+          </p>
+          {delta && <DeltaBadge value={delta.value} isPositive={delta.isPositive} />}
         </div>
-      </TremorCard>
+        {kpi.responsible_name && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+            Responsable: {kpi.responsible_name}
+          </p>
+        )}
+        {sparklineData && sparklineData.length > 0 && (
+          <div className="mt-3">
+            <MiniSparkline data={sparklineData} color={borderColor} />
+          </div>
+        )}
+      </div>
     </div>
+  );
+}
+
+// =============================================================================
+// DELTA BADGE
+// =============================================================================
+
+interface DeltaBadgeProps {
+  value: number;
+  isPositive: boolean;
+}
+
+function DeltaBadge({ value, isPositive }: DeltaBadgeProps) {
+  const absValue = Math.abs(value).toFixed(1);
+  const isIncrease = value > 0;
+
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-medium',
+        isPositive
+          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+          : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'
+      )}
+    >
+      <span>{isIncrease ? '\u2191' : '\u2193'}</span>
+      {absValue}%
+    </span>
   );
 }
 

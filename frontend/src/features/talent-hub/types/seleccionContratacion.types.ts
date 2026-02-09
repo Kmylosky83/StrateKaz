@@ -652,3 +652,82 @@ export interface ProcesoSeleccionEstadisticas {
   tasa_conversion: number;
   candidatos_por_fuente: Record<FuenteReclutamiento, number>;
 }
+
+// =============================================================================
+// HISTORIAL DE CONTRATOS - Ley 2466/2025
+// =============================================================================
+
+export type TipoMovimientoContrato =
+  | 'contrato_inicial'
+  | 'renovacion'
+  | 'otrosi'
+  | 'prorroga';
+
+export interface HistorialContrato {
+  id: number;
+  empresa: number;
+  colaborador: number;
+  colaborador_nombre?: string;
+  tipo_contrato: number;
+  tipo_contrato_nombre?: string;
+  numero_contrato: string;
+  fecha_inicio: string;
+  fecha_fin: string | null;
+  salario_pactado: string;
+  objeto_contrato: string;
+  tipo_movimiento: TipoMovimientoContrato;
+  tipo_movimiento_display?: string;
+  contrato_padre: number | null;
+  numero_renovacion: number;
+  justificacion_tipo_contrato: string;
+  fecha_preaviso_terminacion: string | null;
+  preaviso_entregado: boolean;
+  firmado: boolean;
+  fecha_firma: string | null;
+  archivo_contrato: string | null;
+  // Propiedades calculadas
+  esta_vigente?: boolean;
+  dias_para_vencer?: number | null;
+  duracion_meses?: number | null;
+  // Warnings Ley 2466/2025
+  warnings?: string[];
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HistorialContratoFormData {
+  colaborador: number;
+  tipo_contrato: number;
+  numero_contrato: string;
+  fecha_inicio: string;
+  fecha_fin?: string | null;
+  salario_pactado: number;
+  objeto_contrato?: string;
+  tipo_movimiento: TipoMovimientoContrato;
+  contrato_padre?: number | null;
+  numero_renovacion?: number;
+  justificacion_tipo_contrato?: string;
+  fecha_preaviso_terminacion?: string | null;
+  preaviso_entregado?: boolean;
+  firmado?: boolean;
+  fecha_firma?: string | null;
+  archivo_contrato?: File | null;
+}
+
+export interface HistorialContratoFilter {
+  empresa_id?: number;
+  colaborador?: number;
+  tipo_contrato?: number;
+  tipo_movimiento?: TipoMovimientoContrato;
+  firmado?: boolean;
+  fecha_inicio?: string;
+  fecha_fin?: string;
+}
+
+export const tipoMovimientoContratoOptions = [
+  { value: 'contrato_inicial', label: 'Contrato Inicial' },
+  { value: 'renovacion', label: 'Renovacion' },
+  { value: 'otrosi', label: 'Otrosi' },
+  { value: 'prorroga', label: 'Prorroga' },
+];

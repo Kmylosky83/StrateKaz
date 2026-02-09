@@ -1513,3 +1513,215 @@ class AfiliacionSS(BaseCompanyModel):
             raise ValidationError({
                 'motivo_rechazo': 'Se requiere especificar el motivo de rechazo.'
             })
+
+
+# ==============================================================================
+# HISTORIAL DE CONTRATOS - Ley 2466/2025
+# ==============================================================================
+
+TIPO_MOVIMIENTO_CONTRATO_CHOICES = [
+    ('contrato_inicial', 'Contrato Inicial'),
+    ('renovacion', 'Renovación'),
+    ('otrosi', 'Otrosí'),
+    ('prorroga', 'Prórroga'),
+]
+
+
+class HistorialContrato(BaseCompanyModel):
+    """
+    Historial de Contratos Laborales.
+
+    Ley 2466/2025 Compliance:
+    - Tras 3 renovaciones <1 año, siguiente debe ser >=1 año
+    - Duración acumulada max 4 años para término fijo (warning)
+    - Justificación requerida si tipo != indefinido
+    - Trazabilidad completa de renovaciones y otrosíes
+    """
+
+    colaborador = models.ForeignKey(
+        'colaboradores.Colaborador',
+        on_delete=models.PROTECT,
+        related_name='historial_contratos',
+        verbose_name='Colaborador'
+    )
+    tipo_contrato = models.ForeignKey(
+        TipoContrato,
+        on_delete=models.PROTECT,
+        related_name='historial_contratos',
+        verbose_name='Tipo de Contrato'
+    )
+    numero_contrato = models.CharField(
+        max_length=50,
+        db_index=True,
+        verbose_name='Número de Contrato'
+    )
+    fecha_inicio = models.DateField(
+        db_index=True,
+        verbose_name='Fecha de Inicio'
+    )
+    fecha_fin = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Fin',
+        help_text='Nulo para contratos a término indefinido'
+    )
+    salario_pactado = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name='Salario Pactado'
+    )
+    objeto_contrato = models.TextField(
+        blank=True,
+        verbose_name='Objeto del Contrato'
+    )
+
+    # Tipo de movimiento
+    tipo_movimiento = models.CharField(
+        max_length=20,
+        choices=TIPO_MOVIMIENTO_CONTRATO_CHOICES,
+        default='contrato_inicial',
+        verbose_name='Tipo de Movimiento'
+    )
+    contrato_padre = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='movimientos',
+        verbose_name='Contrato Padre'
+    )
+    numero_renovacion = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Número de Renovación'
+    )
+
+    # Ley 2466/2025 - Justificación
+    justificacion_tipo_contrato = models.TextField(
+        blank=True,
+        verbose_name='Justificación del Tipo de Contrato',
+        help_text='Ley 2466/2025: Requerido si no es indefinido'
+    )
+
+    # Preaviso
+    fecha_preaviso_terminacion = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Preaviso'
+    )
+    preaviso_entregado = models.BooleanField(
+        default=False,
+        verbose_name='Preaviso Entregado'
+    )
+
+    # Firma
+    firmado = models.BooleanField(
+        default=False,
+        verbose_name='Firmado'
+    )
+    fecha_firma = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Firma'
+    )
+    archivo_contrato = models.FileField(
+        upload_to='talent_hub/contratos/',
+        null=True,
+        blank=True,
+        verbose_name='Archivo del Contrato'
+    )
+
+    class Meta:
+        db_table = 'talent_hub_historial_contrato'
+        verbose_name = 'Historial de Contrato'
+        verbose_name_plural = 'Historial de Contratos'
+        ordering = ['-fecha_inicio']
+        unique_together = [['empresa', 'numero_contrato']]
+        indexes = [
+            models.Index(fields=['empresa', 'colaborador']),
+            models.Index(fields=['fecha_inicio']),
+            models.Index(fields=['tipo_movimiento']),
+            models.Index(fields=['numero_contrato']),
+        ]
+
+    def __str__(self):
+        return f"{self.numero_contrato} - {self.colaborador.get_nombre_corto()} ({self.tipo_contrato})"
+
+    @property
+    def esta_vigente(self):
+        if not self.fecha_fin:
+            return True
+        return self.fecha_fin >= timezone.now().date()
+
+    @property
+    def dias_para_vencer(self):
+        if not self.fecha_fin:
+            return None
+        return (self.fecha_fin - timezone.now().date()).days
+
+    @property
+    def duracion_meses(self):
+        if not self.fecha_fin:
+            return None
+        delta = self.fecha_fin - self.fecha_inicio
+        return round(delta.days / 30, 1)
+
+    def clean(self):
+        # Ley 2466/2025: Justificación requerida si no es indefinido
+        if self.tipo_contrato and self.tipo_contrato.codigo != 'INDEFINIDO':
+            if not self.justificacion_tipo_contrato and not self.pk:
+                raise ValidationError({
+                    'justificacion_tipo_contrato': 'Debe justificar el tipo de contrato cuando no es indefinido (Ley 2466/2025).'
+                })
+
+        # Validar fechas
+        if self.fecha_fin and self.fecha_inicio and self.fecha_fin < self.fecha_inicio:
+            raise ValidationError({
+                'fecha_fin': 'La fecha de fin no puede ser anterior a la de inicio.'
+            })
+
+    def get_warnings(self):
+        """Retorna advertencias según Ley 2466/2025 (no bloquea, solo informa)."""
+        warnings = []
+
+        if not self.tipo_contrato or self.tipo_contrato.codigo == 'INDEFINIDO':
+            return warnings
+
+        # Contar renovaciones del mismo colaborador con contratos <1 año
+        renovaciones_cortas = HistorialContrato.objects.filter(
+            empresa=self.empresa,
+            colaborador=self.colaborador,
+            tipo_movimiento='renovacion',
+            is_active=True
+        ).count()
+
+        if renovaciones_cortas >= 3:
+            if self.fecha_fin and self.fecha_inicio:
+                duracion_dias = (self.fecha_fin - self.fecha_inicio).days
+                if duracion_dias < 365:
+                    warnings.append(
+                        'Ley 2466/2025: Tras 3 renovaciones menores a 1 año, '
+                        'la siguiente debería ser de al menos 1 año.'
+                    )
+
+        # Duración acumulada
+        contratos_fijo = HistorialContrato.objects.filter(
+            empresa=self.empresa,
+            colaborador=self.colaborador,
+            tipo_contrato=self.tipo_contrato,
+            is_active=True
+        ).exclude(pk=self.pk)
+
+        total_dias = sum(
+            ((c.fecha_fin - c.fecha_inicio).days if c.fecha_fin else 0)
+            for c in contratos_fijo
+        )
+        if self.fecha_fin and self.fecha_inicio:
+            total_dias += (self.fecha_fin - self.fecha_inicio).days
+
+        if total_dias > 365 * 4:
+            warnings.append(
+                'Ley 2466/2025: La duración acumulada supera 4 años. '
+                'Considere contrato a término indefinido.'
+            )
+
+        return warnings

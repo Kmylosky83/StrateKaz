@@ -23,6 +23,7 @@ import type {
   UpdateCampoFormularioDTO,
   CreateControlDocumentalDTO,
   UpdateControlDocumentalDTO,
+  EstadisticasDocumentales,
 } from '../types/gestion-documental.types';
 import type { PaginatedResponse } from '@/types';
 
@@ -209,6 +210,14 @@ export const documentoApi = {
    */
   getFirmas: async (id: number): Promise<unknown[]> => {
     const response = await apiClient.get(`${BASE_URL}/documentos/${id}/firmas/`);
+    return response.data;
+  },
+
+  /**
+   * Estadísticas del sistema documental
+   */
+  estadisticas: async (): Promise<EstadisticasDocumentales> => {
+    const response = await apiClient.get(`${BASE_URL}/documentos/estadisticas/`);
     return response.data;
   },
 };

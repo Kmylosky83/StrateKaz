@@ -14,10 +14,10 @@ export const Card = ({
   ...props
 }: CardProps) => {
   const variants = {
-    default: 'bg-white dark:bg-gray-800 shadow-sm',
+    default: 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm',
     bordered:
       'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700',
-    elevated: 'bg-white dark:bg-gray-800 shadow-lg',
+    elevated: 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg',
   };
 
   const paddings = {

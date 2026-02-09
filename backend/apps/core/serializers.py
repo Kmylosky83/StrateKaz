@@ -146,12 +146,13 @@ class UserDetailSerializer(serializers.ModelSerializer):
 
     def get_empresa_nombre(self, obj):
         """
-        Retorna el nombre de la empresa desde BrandingConfig (singleton).
-        En modelo multi-instancia, cada BD tiene su propia configuración.
+        Retorna el nombre de la empresa desde el Tenant actual.
+        NOTA: El branding (company_name) está ahora en el modelo Tenant.
         """
-        from .models import BrandingConfig
-        config = BrandingConfig.objects.first()
-        return config.company_name if config else None
+        request = self.context.get('request')
+        if request and hasattr(request, 'tenant') and request.tenant:
+            return request.tenant.company_name
+        return None
 
     def get_photo_url(self, obj):
         """

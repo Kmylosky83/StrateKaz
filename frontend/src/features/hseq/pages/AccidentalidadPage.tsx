@@ -14,15 +14,11 @@ import {
   AlertOctagon,
   Search,
   Plus,
-  Download,
-  Filter,
   Clock,
   XCircle,
   Eye,
   Edit,
-  Trash2,
   FileText,
-  User,
   Calendar,
   TrendingUp,
   Activity,
@@ -30,124 +26,31 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
-import { Tabs } from '@/components/common/Tabs';
-import { Card } from '@/components/common/Card';
-import { Button } from '@/components/common/Button';
-import { EmptyState } from '@/components/common/EmptyState';
-import { Badge } from '@/components/common/Badge';
-import { Spinner } from '@/components/common/Spinner';
+import {
+  Tabs,
+  Card,
+  Button,
+  EmptyState,
+  Spinner,
+  KpiCard,
+  KpiCardGrid,
+  SectionToolbar,
+  StatusBadge,
+  Progress,
+  ExportButton,
+} from '@/components/common';
+import { formatStatusLabel } from '@/components/common/StatusBadge';
+import {
+  useAccidentesTrabajo,
+  useEnfermedadesLaborales,
+  useIncidentesTrabajo,
+  useInvestigacionesATEL,
+} from '../hooks/useAccidentalidad';
 import { cn } from '@/utils/cn';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-// Mock imports - to be replaced with actual hooks and types
-// import {
-//   useAccidentesTrabajo,
-//   useEnfermedadesLaborales,
-//   useIncidentes,
-//   useInvestigaciones,
-// } from '../hooks/useAccidentalidad';
-// import type {
-//   AccidenteTrabajo,
-//   EnfermedadLaboral,
-//   IncidenteTrabajo,
-//   InvestigacionATEL,
-// } from '../types/accidentalidad.types';
-
-// ==================== PROGRESS COMPONENT ====================
-
-interface ProgressProps {
-  value: number;
-  max?: number;
-  className?: string;
-  showLabel?: boolean;
-  variant?: 'default' | 'success' | 'warning' | 'danger';
-}
-
-const Progress = ({ value, max = 100, className, showLabel = false, variant = 'default' }: ProgressProps) => {
-  const percentage = Math.min(Math.max((value / max) * 100, 0), 100);
-
-  const variantColors = {
-    default: 'bg-primary-600',
-    success: 'bg-success-600',
-    warning: 'bg-warning-600',
-    danger: 'bg-danger-600',
-  };
-
-  const getVariant = (): 'default' | 'success' | 'warning' | 'danger' => {
-    if (variant !== 'default') return variant;
-    if (percentage >= 80) return 'success';
-    if (percentage >= 50) return 'warning';
-    return 'danger';
-  };
-
-  const currentVariant = getVariant();
-
-  return (
-    <div className={cn('w-full', className)}>
-      <div className="flex items-center gap-2">
-        <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-          <div
-            className={cn('h-full transition-all duration-300', variantColors[currentVariant])}
-            style={{ width: `${percentage}%` }}
-          />
-        </div>
-        {showLabel && (
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[3rem] text-right">
-            {percentage.toFixed(0)}%
-          </span>
-        )}
-      </div>
-    </div>
-  );
-};
-
 // ==================== UTILITY FUNCTIONS ====================
-
-const getEstadoBadgeVariant = (
-  estado: string
-): 'success' | 'primary' | 'warning' | 'danger' | 'info' | 'gray' => {
-  const estadoMap: Record<string, 'success' | 'primary' | 'warning' | 'danger' | 'info' | 'gray'> = {
-    COMPLETADA: 'success',
-    CERRADA: 'success',
-    VERIFICADO: 'success',
-    VERIFICADA: 'success',
-    CALIFICADA_LABORAL: 'success',
-    DIVULGADA: 'success',
-    EN_REVISION: 'primary',
-    EN_DESARROLLO: 'primary',
-    EN_PROGRESO: 'primary',
-    EN_EJECUCION: 'primary',
-    EN_PROCESO: 'primary',
-    INICIADA: 'warning',
-    PENDIENTE: 'warning',
-    PLANIFICADO: 'warning',
-    EN_ESTUDIO: 'warning',
-    CANCELADO: 'danger',
-    CANCELADA: 'danger',
-    CALIFICADA_COMUN: 'info',
-    APELADA: 'info',
-  };
-  return estadoMap[estado] || 'gray';
-};
-
-const getGravedadBadgeVariant = (gravedad: string): 'danger' | 'warning' | 'info' | 'success' => {
-  const gravedadMap: Record<string, 'danger' | 'warning' | 'info' | 'success'> = {
-    MORTAL: 'danger',
-    GRAVE: 'danger',
-    CRITICO: 'danger',
-    ALTO: 'danger',
-    MODERADO: 'warning',
-    MEDIO: 'warning',
-    LEVE: 'info',
-    BAJO: 'success',
-  };
-  return gravedadMap[gravedad] || 'info';
-};
-
-const formatEstado = (estado: string): string => {
-  return estado.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase());
-};
 
 const formatTipo = (tipo: string): string => {
   const tipoMap: Record<string, string> = {
@@ -178,188 +81,14 @@ const formatTipo = (tipo: string): string => {
     ISHIKAWA: 'Ishikawa (Espina de Pescado)',
     TAPROOT: 'TapRooT',
   };
-  return tipoMap[tipo] || formatEstado(tipo);
+  return tipoMap[tipo] || formatStatusLabel(tipo);
 };
-
-// ==================== MOCK DATA ====================
-
-const mockAccidentesTrabajo = [
-  {
-    id: 1,
-    codigo_at: 'AT-2024-001',
-    fecha_evento: '2024-01-15',
-    trabajador_nombre: 'Carlos Ramírez',
-    cargo_trabajador: 'Operario de Producción',
-    tipo_evento: 'CAIDA_MISMO_NIVEL',
-    gravedad: 'MODERADO',
-    tipo_lesion: 'ESGUINCE',
-    parte_cuerpo: 'TOBILLO_DERECHO',
-    dias_incapacidad: 5,
-    mortal: false,
-    reportado_arl: true,
-    requiere_investigacion: true,
-  },
-  {
-    id: 2,
-    codigo_at: 'AT-2024-002',
-    fecha_evento: '2024-01-18',
-    trabajador_nombre: 'Ana Martínez',
-    cargo_trabajador: 'Auxiliar de Despacho',
-    tipo_evento: 'GOLPE_OBJETO',
-    gravedad: 'LEVE',
-    tipo_lesion: 'CONTUSION',
-    parte_cuerpo: 'MANO_IZQUIERDA',
-    dias_incapacidad: 2,
-    mortal: false,
-    reportado_arl: true,
-    requiere_investigacion: false,
-  },
-  {
-    id: 3,
-    codigo_at: 'AT-2024-003',
-    fecha_evento: '2024-01-20',
-    trabajador_nombre: 'Pedro López',
-    cargo_trabajador: 'Conductor',
-    tipo_evento: 'ACCIDENTE_TRANSITO',
-    gravedad: 'GRAVE',
-    tipo_lesion: 'FRACTURA',
-    parte_cuerpo: 'PIERNA_DERECHA',
-    dias_incapacidad: 45,
-    mortal: false,
-    reportado_arl: true,
-    requiere_investigacion: true,
-  },
-];
-
-const mockEnfermedadesLaborales = [
-  {
-    id: 1,
-    codigo_el: 'EL-2024-001',
-    fecha_diagnostico: '2024-01-10',
-    trabajador_nombre: 'María González',
-    cargo_trabajador: 'Empacadora',
-    tipo_enfermedad: 'MUSCULOESQUELETICA',
-    diagnostico_descripcion: 'Síndrome del túnel carpiano bilateral',
-    factor_riesgo: 'Movimientos repetitivos',
-    estado_calificacion: 'CALIFICADA_LABORAL',
-    porcentaje_pcl: 15,
-    reportado_arl: true,
-    requiere_investigacion: true,
-  },
-  {
-    id: 2,
-    codigo_el: 'EL-2024-002',
-    fecha_diagnostico: '2024-01-12',
-    trabajador_nombre: 'José Rodríguez',
-    cargo_trabajador: 'Operario de Horno',
-    tipo_enfermedad: 'RESPIRATORIA',
-    diagnostico_descripcion: 'Bronquitis crónica ocupacional',
-    factor_riesgo: 'Exposición a vapores y humos',
-    estado_calificacion: 'EN_ESTUDIO',
-    porcentaje_pcl: null,
-    reportado_arl: true,
-    requiere_investigacion: true,
-  },
-  {
-    id: 3,
-    codigo_el: 'EL-2024-003',
-    fecha_diagnostico: '2024-01-15',
-    trabajador_nombre: 'Laura Sánchez',
-    cargo_trabajador: 'Auxiliar de Mantenimiento',
-    tipo_enfermedad: 'DERMATOLOGICA',
-    diagnostico_descripcion: 'Dermatitis de contacto',
-    factor_riesgo: 'Contacto con químicos de limpieza',
-    estado_calificacion: 'CALIFICADA_LABORAL',
-    porcentaje_pcl: 8,
-    reportado_arl: true,
-    requiere_investigacion: false,
-  },
-];
-
-const mockIncidentes = [
-  {
-    id: 1,
-    codigo_incidente: 'INC-2024-001',
-    fecha_evento: '2024-01-14',
-    tipo_incidente: 'CASI_ACCIDENTE',
-    descripcion_evento: 'Operario estuvo a punto de caer desde plataforma elevada',
-    potencial_gravedad: 'ALTO',
-    reportado_por_nombre: 'Supervisor Juan Pérez',
-    hubo_danos_materiales: false,
-    requiere_investigacion: true,
-  },
-  {
-    id: 2,
-    codigo_incidente: 'INC-2024-002',
-    fecha_evento: '2024-01-16',
-    tipo_incidente: 'CONDICION_INSEGURA',
-    descripcion_evento: 'Escalera con peldaño suelto identificada en área de producción',
-    potencial_gravedad: 'MEDIO',
-    reportado_por_nombre: 'Operario Carlos Gómez',
-    hubo_danos_materiales: false,
-    requiere_investigacion: false,
-  },
-  {
-    id: 3,
-    codigo_incidente: 'INC-2024-003',
-    fecha_evento: '2024-01-19',
-    tipo_incidente: 'ACTO_INSEGURO',
-    descripcion_evento: 'Trabajador operando montacargas sin cinturón de seguridad',
-    potencial_gravedad: 'ALTO',
-    reportado_por_nombre: 'Supervisor Ana Torres',
-    hubo_danos_materiales: false,
-    requiere_investigacion: true,
-  },
-];
-
-const mockInvestigaciones = [
-  {
-    id: 1,
-    codigo_investigacion: 'INV-2024-001',
-    evento_codigo: 'AT-2024-001',
-    evento_tipo: 'ACCIDENTE_TRABAJO',
-    metodologia: 'ARBOL_CAUSAS',
-    lider_investigacion_nombre: 'Coordinador SST',
-    fecha_inicio: '2024-01-16',
-    fecha_limite: '2024-01-31',
-    estado: 'EN_DESARROLLO',
-    aprobada: false,
-    total_causas: 3,
-  },
-  {
-    id: 2,
-    codigo_investigacion: 'INV-2024-002',
-    evento_codigo: 'INC-2024-001',
-    evento_tipo: 'INCIDENTE',
-    metodologia: 'CINCO_PORQUES',
-    lider_investigacion_nombre: 'Coordinador SST',
-    fecha_inicio: '2024-01-15',
-    fecha_limite: '2024-01-25',
-    estado: 'COMPLETADA',
-    aprobada: true,
-    total_causas: 5,
-  },
-  {
-    id: 3,
-    codigo_investigacion: 'INV-2024-003',
-    evento_codigo: 'EL-2024-001',
-    evento_tipo: 'ENFERMEDAD_LABORAL',
-    metodologia: 'ISHIKAWA',
-    lider_investigacion_nombre: 'Médico Laboral',
-    fecha_inicio: '2024-01-11',
-    fecha_limite: '2024-02-10',
-    estado: 'EN_REVISION',
-    aprobada: false,
-    total_causas: 4,
-  },
-];
 
 // ==================== ACCIDENTES DE TRABAJO SECTION ====================
 
 const AccidentesTrabajoSection = () => {
-  // const { data: accidentes, isLoading } = useAccidentesTrabajo();
-  const isLoading = false;
-  const accidentes = mockAccidentesTrabajo;
+  const { data, isLoading } = useAccidentesTrabajo();
+  const accidentes = data?.results ?? [];
 
   if (isLoading) {
     return (
@@ -393,79 +122,51 @@ const AccidentesTrabajoSection = () => {
 
   return (
     <div className="space-y-6">
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Accidentes</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stats.total}</p>
-            </div>
-            <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Este año</p>
-        </Card>
+      <KpiCardGrid>
+        <KpiCard
+          label="Total Accidentes"
+          value={stats.total}
+          icon={<AlertTriangle className="w-5 h-5" />}
+          color="red"
+          description="Este año"
+        />
+        <KpiCard
+          label="Graves/Mortales"
+          value={stats.graves}
+          icon={<AlertCircle className="w-5 h-5" />}
+          color="danger"
+          valueColor="text-danger-600 dark:text-danger-400"
+          description="Requieren investigación"
+        />
+        <KpiCard
+          label="Con Incapacidad"
+          value={stats.conIncapacidad}
+          icon={<Clock className="w-5 h-5" />}
+          color="warning"
+          valueColor="text-warning-600 dark:text-warning-400"
+          description="Generaron ausencias"
+        />
+        <KpiCard
+          label="Días Incapacidad"
+          value={stats.diasIncapacidadTotal}
+          icon={<Calendar className="w-5 h-5" />}
+          color="primary"
+          valueColor="text-primary-600 dark:text-primary-400"
+          description="Total acumulado"
+        />
+      </KpiCardGrid>
 
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Graves/Mortales</p>
-              <p className="text-2xl font-bold text-danger-600 dark:text-danger-400 mt-1">{stats.graves}</p>
-            </div>
-            <div className="w-12 h-12 bg-danger-100 dark:bg-danger-900/30 rounded-lg flex items-center justify-center">
-              <AlertCircle className="w-6 h-6 text-danger-600 dark:text-danger-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Requieren investigación</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Con Incapacidad</p>
-              <p className="text-2xl font-bold text-warning-600 dark:text-warning-400 mt-1">
-                {stats.conIncapacidad}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-warning-100 dark:bg-warning-900/30 rounded-lg flex items-center justify-center">
-              <Clock className="w-6 h-6 text-warning-600 dark:text-warning-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Generaron ausencias</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Días Incapacidad</p>
-              <p className="text-2xl font-bold text-primary-600 dark:text-primary-400 mt-1">
-                {stats.diasIncapacidadTotal}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <Calendar className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Total acumulado</p>
-        </Card>
-      </div>
-
-      {/* Actions */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Accidentes de Trabajo Registrados</h3>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
-            Filtros
-          </Button>
-          <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-            Exportar
-          </Button>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Nuevo Accidente
-          </Button>
-        </div>
+      <div className="flex items-center justify-between gap-2">
+        <SectionToolbar
+          title="Accidentes de Trabajo Registrados"
+          onFilter={() => console.log('Filtros AT')}
+          primaryAction={{ label: 'Nuevo Accidente', onClick: () => console.log('Nuevo AT') }}
+          className="flex-1"
+        />
+        <ExportButton
+          endpoint="/api/hseq/accidentalidad/accidentes-trabajo/export/"
+          filename="accidentes_trabajo"
+        />
       </div>
 
       {/* Accidentes Table */}
@@ -474,30 +175,14 @@ const AccidentesTrabajoSection = () => {
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Código
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Fecha
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Trabajador
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Tipo Evento
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Gravedad
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Días Inc.
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Parte Cuerpo
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Acciones
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Código</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fecha</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Trabajador</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tipo Evento</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Gravedad</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Días Inc.</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Parte Cuerpo</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -519,27 +204,19 @@ const AccidentesTrabajoSection = () => {
                     {formatTipo(accidente.tipo_evento)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={getGravedadBadgeVariant(accidente.gravedad)} size="sm">
-                      {formatEstado(accidente.gravedad)}
-                    </Badge>
+                    <StatusBadge status={accidente.gravedad} preset="gravedad" />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
                     {accidente.dias_incapacidad}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {formatEstado(accidente.parte_cuerpo)}
+                    {formatStatusLabel(accidente.parte_cuerpo)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <FileText className="w-4 h-4" />
-                      </Button>
+                      <Button variant="ghost" size="sm"><Eye className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="sm"><Edit className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="sm"><FileText className="w-4 h-4" /></Button>
                     </div>
                   </td>
                 </tr>
@@ -555,9 +232,8 @@ const AccidentesTrabajoSection = () => {
 // ==================== ENFERMEDADES LABORALES SECTION ====================
 
 const EnfermedadesLaboralesSection = () => {
-  // const { data: enfermedades, isLoading } = useEnfermedadesLaborales();
-  const isLoading = false;
-  const enfermedades = mockEnfermedadesLaborales;
+  const { data, isLoading } = useEnfermedadesLaborales();
+  const enfermedades = data?.results ?? [];
 
   if (isLoading) {
     return (
@@ -595,97 +271,58 @@ const EnfermedadesLaboralesSection = () => {
 
   return (
     <div className="space-y-6">
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total EL</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stats.total}</p>
-            </div>
-            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-              <Stethoscope className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Enfermedades registradas</p>
-        </Card>
+      <KpiCardGrid>
+        <KpiCard
+          label="Total EL"
+          value={stats.total}
+          icon={<Stethoscope className="w-5 h-5" />}
+          color="blue"
+          description="Enfermedades registradas"
+        />
+        <KpiCard
+          label="Calificadas Laborales"
+          value={stats.calificadasLaborales}
+          icon={<CheckCircle className="w-5 h-5" />}
+          color="success"
+          valueColor="text-success-600 dark:text-success-400"
+          description="Confirmadas como laborales"
+        />
+        <KpiCard
+          label="En Estudio"
+          value={stats.enEstudio}
+          icon={<Clock className="w-5 h-5" />}
+          color="warning"
+          valueColor="text-warning-600 dark:text-warning-400"
+          description="Pendientes de calificación"
+        />
+        <KpiCard
+          label="PCL Promedio"
+          value={`${stats.pclPromedio.toFixed(1)}%`}
+          icon={<TrendingUp className="w-5 h-5" />}
+          color="primary"
+          valueColor="text-primary-600 dark:text-primary-400"
+          description="Pérdida capacidad laboral"
+        />
+      </KpiCardGrid>
 
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Calificadas Laborales</p>
-              <p className="text-2xl font-bold text-success-600 dark:text-success-400 mt-1">
-                {stats.calificadasLaborales}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-success-100 dark:bg-success-900/30 rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-6 h-6 text-success-600 dark:text-success-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Confirmadas como laborales</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">En Estudio</p>
-              <p className="text-2xl font-bold text-warning-600 dark:text-warning-400 mt-1">{stats.enEstudio}</p>
-            </div>
-            <div className="w-12 h-12 bg-warning-100 dark:bg-warning-900/30 rounded-lg flex items-center justify-center">
-              <Clock className="w-6 h-6 text-warning-600 dark:text-warning-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Pendientes de calificación</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">PCL Promedio</p>
-              <p className="text-2xl font-bold text-primary-600 dark:text-primary-400 mt-1">
-                {stats.pclPromedio.toFixed(1)}%
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Pérdida capacidad laboral</p>
-        </Card>
-      </div>
-
-      {/* Actions */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Enfermedades Laborales Registradas</h3>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
-            Filtros
-          </Button>
-          <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-            Exportar
-          </Button>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Nueva Enfermedad Laboral
-          </Button>
-        </div>
-      </div>
+      <SectionToolbar
+        title="Enfermedades Laborales Registradas"
+        onFilter={() => console.log('Filtros EL')}
+        onExport={() => console.log('Exportar EL')}
+        primaryAction={{ label: 'Nueva Enfermedad Laboral', onClick: () => console.log('Nueva EL') }}
+      />
 
       {/* Enfermedades Grid */}
       <div className="grid grid-cols-1 gap-6">
         {enfermedades.map((enfermedad) => (
           <Card key={enfermedad.id} variant="bordered" padding="md">
             <div className="space-y-4">
-              {/* Header */}
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                     <h4 className="font-semibold text-gray-900 dark:text-white">{enfermedad.codigo_el}</h4>
-                    <Badge variant={getEstadoBadgeVariant(enfermedad.estado_calificacion)} size="sm">
-                      {formatEstado(enfermedad.estado_calificacion)}
-                    </Badge>
-                    <Badge variant="info" size="sm">
-                      {formatTipo(enfermedad.tipo_enfermedad)}
-                    </Badge>
+                    <StatusBadge status={enfermedad.estado_calificacion} preset="proceso" />
+                    <StatusBadge status={enfermedad.tipo_enfermedad} variant="info" label={formatTipo(enfermedad.tipo_enfermedad)} />
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-300">{enfermedad.diagnostico_descripcion}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -694,13 +331,10 @@ const EnfermedadesLaboralesSection = () => {
                 </div>
               </div>
 
-              {/* Details Grid */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Trabajador</p>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white mt-1">
-                    {enfermedad.trabajador_nombre}
-                  </p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white mt-1">{enfermedad.trabajador_nombre}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">{enfermedad.cargo_trabajador}</p>
                 </div>
                 <div>
@@ -723,17 +357,10 @@ const EnfermedadesLaboralesSection = () => {
                 </div>
               </div>
 
-              {/* Actions */}
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                <Button variant="ghost" size="sm" leftIcon={<Eye className="w-4 h-4" />}>
-                  Ver Detalle
-                </Button>
-                <Button variant="ghost" size="sm" leftIcon={<Edit className="w-4 h-4" />}>
-                  Editar
-                </Button>
-                <Button variant="ghost" size="sm" leftIcon={<FileText className="w-4 h-4" />}>
-                  Documentos
-                </Button>
+                <Button variant="ghost" size="sm" leftIcon={<Eye className="w-4 h-4" />}>Ver Detalle</Button>
+                <Button variant="ghost" size="sm" leftIcon={<Edit className="w-4 h-4" />}>Editar</Button>
+                <Button variant="ghost" size="sm" leftIcon={<FileText className="w-4 h-4" />}>Documentos</Button>
               </div>
             </div>
           </Card>
@@ -746,9 +373,8 @@ const EnfermedadesLaboralesSection = () => {
 // ==================== INCIDENTES SECTION ====================
 
 const IncidentesSection = () => {
-  // const { data: incidentes, isLoading } = useIncidentes();
-  const isLoading = false;
-  const incidentes = mockIncidentes;
+  const { data, isLoading } = useIncidentesTrabajo();
+  const incidentes = data?.results ?? [];
 
   if (isLoading) {
     return (
@@ -784,103 +410,67 @@ const IncidentesSection = () => {
 
   return (
     <div className="space-y-6">
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Incidentes</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stats.total}</p>
-            </div>
-            <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
-              <AlertOctagon className="w-6 h-6 text-orange-600 dark:text-orange-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Últimos 30 días</p>
-        </Card>
+      <KpiCardGrid>
+        <KpiCard
+          label="Total Incidentes"
+          value={stats.total}
+          icon={<AlertOctagon className="w-5 h-5" />}
+          color="orange"
+          description="Últimos 30 días"
+        />
+        <KpiCard
+          label="Casi Accidentes"
+          value={stats.casiAccidentes}
+          icon={<AlertTriangle className="w-5 h-5" />}
+          color="warning"
+          valueColor="text-warning-600 dark:text-warning-400"
+          description="Oportunidades de mejora"
+        />
+        <KpiCard
+          label="Condiciones Inseguras"
+          value={stats.condicionesInseguras}
+          icon={<XCircle className="w-5 h-5" />}
+          color="primary"
+          valueColor="text-primary-600 dark:text-primary-400"
+          description="Requieren corrección"
+        />
+        <KpiCard
+          label="Potencial Alto"
+          value={stats.potencialAlto}
+          icon={<AlertCircle className="w-5 h-5" />}
+          color="danger"
+          valueColor="text-danger-600 dark:text-danger-400"
+          description="Alta prioridad"
+        />
+      </KpiCardGrid>
 
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Casi Accidentes</p>
-              <p className="text-2xl font-bold text-warning-600 dark:text-warning-400 mt-1">
-                {stats.casiAccidentes}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-warning-100 dark:bg-warning-900/30 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-warning-600 dark:text-warning-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Oportunidades de mejora</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Condiciones Inseguras</p>
-              <p className="text-2xl font-bold text-primary-600 dark:text-primary-400 mt-1">
-                {stats.condicionesInseguras}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <XCircle className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Requieren corrección</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Potencial Alto</p>
-              <p className="text-2xl font-bold text-danger-600 dark:text-danger-400 mt-1">{stats.potencialAlto}</p>
-            </div>
-            <div className="w-12 h-12 bg-danger-100 dark:bg-danger-900/30 rounded-lg flex items-center justify-center">
-              <AlertCircle className="w-6 h-6 text-danger-600 dark:text-danger-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Alta prioridad</p>
-        </Card>
-      </div>
-
-      {/* Actions */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Incidentes Registrados</h3>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
-            Filtros
-          </Button>
-          <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-            Exportar
-          </Button>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Nuevo Incidente
-          </Button>
-        </div>
-      </div>
+      <SectionToolbar
+        title="Incidentes Registrados"
+        onFilter={() => console.log('Filtros Incidentes')}
+        onExport={() => console.log('Exportar Incidentes')}
+        primaryAction={{ label: 'Nuevo Incidente', onClick: () => console.log('Nuevo Incidente') }}
+      />
 
       {/* Incidentes Grid */}
       <div className="grid grid-cols-1 gap-6">
         {incidentes.map((incidente) => (
           <Card key={incidente.id} variant="bordered" padding="md">
             <div className="space-y-4">
-              {/* Header */}
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                     <h4 className="font-semibold text-gray-900 dark:text-white">{incidente.codigo_incidente}</h4>
-                    <Badge variant={getGravedadBadgeVariant(incidente.potencial_gravedad)} size="sm">
-                      Potencial {formatEstado(incidente.potencial_gravedad)}
-                    </Badge>
-                    <Badge variant="info" size="sm">
-                      {formatTipo(incidente.tipo_incidente)}
-                    </Badge>
+                    <StatusBadge
+                      status={incidente.potencial_gravedad}
+                      preset="gravedad"
+                      label={`Potencial ${formatStatusLabel(incidente.potencial_gravedad)}`}
+                    />
+                    <StatusBadge status={incidente.tipo_incidente} variant="info" label={formatTipo(incidente.tipo_incidente)} />
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-300">{incidente.descripcion_evento}</p>
                 </div>
               </div>
 
-              {/* Details Grid */}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Fecha Evento</p>
@@ -890,9 +480,7 @@ const IncidentesSection = () => {
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Reportado Por</p>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white mt-1">
-                    {incidente.reportado_por_nombre}
-                  </p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white mt-1">{incidente.reportado_por_nombre}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Requiere Investigación</p>
@@ -902,18 +490,11 @@ const IncidentesSection = () => {
                 </div>
               </div>
 
-              {/* Actions */}
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                <Button variant="ghost" size="sm" leftIcon={<Eye className="w-4 h-4" />}>
-                  Ver Detalle
-                </Button>
-                <Button variant="ghost" size="sm" leftIcon={<Edit className="w-4 h-4" />}>
-                  Editar
-                </Button>
+                <Button variant="ghost" size="sm" leftIcon={<Eye className="w-4 h-4" />}>Ver Detalle</Button>
+                <Button variant="ghost" size="sm" leftIcon={<Edit className="w-4 h-4" />}>Editar</Button>
                 {incidente.requiere_investigacion && (
-                  <Button variant="ghost" size="sm" leftIcon={<Search className="w-4 h-4" />}>
-                    Investigar
-                  </Button>
+                  <Button variant="ghost" size="sm" leftIcon={<Search className="w-4 h-4" />}>Investigar</Button>
                 )}
               </div>
             </div>
@@ -927,9 +508,8 @@ const IncidentesSection = () => {
 // ==================== INVESTIGACIONES SECTION ====================
 
 const InvestigacionesSection = () => {
-  // const { data: investigaciones, isLoading } = useInvestigaciones();
-  const isLoading = false;
-  const investigaciones = mockInvestigaciones;
+  const { data, isLoading } = useInvestigacionesATEL();
+  const investigaciones = data?.results ?? [];
 
   if (isLoading) {
     return (
@@ -963,78 +543,46 @@ const InvestigacionesSection = () => {
 
   return (
     <div className="space-y-6">
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Investigaciones</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stats.total}</p>
-            </div>
-            <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
-              <Search className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Este año</p>
-        </Card>
+      <KpiCardGrid>
+        <KpiCard
+          label="Total Investigaciones"
+          value={stats.total}
+          icon={<Search className="w-5 h-5" />}
+          color="purple"
+          description="Este año"
+        />
+        <KpiCard
+          label="En Desarrollo"
+          value={stats.enDesarrollo}
+          icon={<Activity className="w-5 h-5" />}
+          color="warning"
+          valueColor="text-warning-600 dark:text-warning-400"
+          description="En proceso"
+        />
+        <KpiCard
+          label="Completadas"
+          value={stats.completadas}
+          icon={<CheckCircle className="w-5 h-5" />}
+          color="primary"
+          valueColor="text-primary-600 dark:text-primary-400"
+          description="Finalizadas"
+        />
+        <KpiCard
+          label="Aprobadas"
+          value={stats.aprobadas}
+          icon={<CheckCircle className="w-5 h-5" />}
+          color="success"
+          valueColor="text-success-600 dark:text-success-400"
+          description="Validadas"
+        />
+      </KpiCardGrid>
 
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">En Desarrollo</p>
-              <p className="text-2xl font-bold text-warning-600 dark:text-warning-400 mt-1">
-                {stats.enDesarrollo}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-warning-100 dark:bg-warning-900/30 rounded-lg flex items-center justify-center">
-              <Activity className="w-6 h-6 text-warning-600 dark:text-warning-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">En proceso</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Completadas</p>
-              <p className="text-2xl font-bold text-primary-600 dark:text-primary-400 mt-1">{stats.completadas}</p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Finalizadas</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Aprobadas</p>
-              <p className="text-2xl font-bold text-success-600 dark:text-success-400 mt-1">{stats.aprobadas}</p>
-            </div>
-            <div className="w-12 h-12 bg-success-100 dark:bg-success-900/30 rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-6 h-6 text-success-600 dark:text-success-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Validadas</p>
-        </Card>
-      </div>
-
-      {/* Actions */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Investigaciones ATEL</h3>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
-            Filtros
-          </Button>
-          <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-            Exportar
-          </Button>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Nueva Investigación
-          </Button>
-        </div>
-      </div>
+      <SectionToolbar
+        title="Investigaciones ATEL"
+        onFilter={() => console.log('Filtros Investigaciones')}
+        onExport={() => console.log('Exportar Investigaciones')}
+        primaryAction={{ label: 'Nueva Investigación', onClick: () => console.log('Nueva Investigación') }}
+      />
 
       {/* Investigaciones Table */}
       <Card variant="bordered" padding="none">
@@ -1042,30 +590,14 @@ const InvestigacionesSection = () => {
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Código
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Evento
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Metodología
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Líder
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Estado
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Fecha Límite
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Causas
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Acciones
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Código</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Evento</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Metodología</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Líder</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Estado</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fecha Límite</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Causas</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -1078,7 +610,7 @@ const InvestigacionesSection = () => {
                     <div>
                       <p className="font-medium">{investigacion.evento_codigo}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {formatEstado(investigacion.evento_tipo || '')}
+                        {formatStatusLabel(investigacion.evento_tipo || '')}
                       </p>
                     </div>
                   </td>
@@ -1089,9 +621,7 @@ const InvestigacionesSection = () => {
                     {investigacion.lider_investigacion_nombre}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={getEstadoBadgeVariant(investigacion.estado)} size="sm">
-                      {formatEstado(investigacion.estado)}
-                    </Badge>
+                    <StatusBadge status={investigacion.estado} preset="proceso" />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
                     {format(new Date(investigacion.fecha_limite), 'dd/MM/yyyy', { locale: es })}
@@ -1101,15 +631,9 @@ const InvestigacionesSection = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <FileText className="w-4 h-4" />
-                      </Button>
+                      <Button variant="ghost" size="sm"><Eye className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="sm"><Edit className="w-4 h-4" /></Button>
+                      <Button variant="ghost" size="sm"><FileText className="w-4 h-4" /></Button>
                     </div>
                   </td>
                 </tr>
@@ -1128,26 +652,10 @@ export default function AccidentalidadPage() {
   const [activeTab, setActiveTab] = useState('accidentes-trabajo');
 
   const tabs = [
-    {
-      id: 'accidentes-trabajo',
-      label: 'Accidentes de Trabajo',
-      icon: <AlertTriangle className="w-4 h-4" />,
-    },
-    {
-      id: 'enfermedades-laborales',
-      label: 'Enfermedades Laborales',
-      icon: <Stethoscope className="w-4 h-4" />,
-    },
-    {
-      id: 'incidentes',
-      label: 'Incidentes',
-      icon: <AlertOctagon className="w-4 h-4" />,
-    },
-    {
-      id: 'investigaciones',
-      label: 'Investigaciones',
-      icon: <Search className="w-4 h-4" />,
-    },
+    { id: 'accidentes-trabajo', label: 'Accidentes de Trabajo', icon: <AlertTriangle className="w-4 h-4" /> },
+    { id: 'enfermedades-laborales', label: 'Enfermedades Laborales', icon: <Stethoscope className="w-4 h-4" /> },
+    { id: 'incidentes', label: 'Incidentes', icon: <AlertOctagon className="w-4 h-4" /> },
+    { id: 'investigaciones', label: 'Investigaciones', icon: <Search className="w-4 h-4" /> },
   ];
 
   return (
@@ -1157,10 +665,8 @@ export default function AccidentalidadPage() {
         description="Control integral de accidentes de trabajo, enfermedades laborales, incidentes e investigaciones ATEL"
       />
 
-      {/* Tabs */}
       <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} variant="pills" />
 
-      {/* Tab Content */}
       <div className="mt-6">
         {activeTab === 'accidentes-trabajo' && <AccidentesTrabajoSection />}
         {activeTab === 'enfermedades-laborales' && <EnfermedadesLaboralesSection />}

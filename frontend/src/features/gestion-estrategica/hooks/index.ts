@@ -2,13 +2,14 @@
  * Index de hooks del modulo Direccion Estrategica
  *
  * Organizacion:
- * 1. Core hooks (Strategic, TenantConfig, Modules, Empresa)
+ * 1. Core hooks (Strategic, TenantConfig, Modules)
  * 2. Areas y Organizacion
  * 3. Gestion de Proyectos (PMI)
  * 4. Revision por Direccion (ISO 9.3)
  * 5. Identidad Corporativa (Politicas, Workflow, Valores)
  *
  * NOTA: RBAC hooks fueron movidos a configuracion/hooks/useCargos.ts
+ * NOTA: Empresa hooks fueron eliminados (legacy) - datos de empresa se manejan via Admin Global
  */
 
 // ============================================================================
@@ -17,7 +18,6 @@
 export * from './useStrategic';
 export * from './useTenantConfig';
 export * from './useModules';
-export * from './useEmpresa';
 
 // ============================================================================
 // AREAS Y ORGANIZACION

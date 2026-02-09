@@ -45,6 +45,13 @@ ESTADO_ASISTENCIA_CHOICES = [
     ('licencia', 'Licencia'),
 ]
 
+TIPO_JORNADA_CHOICES = [
+    ('ordinaria', 'Jornada Ordinaria'),
+    ('flexible', 'Jornada Flexible'),
+    ('por_turnos', 'Jornada por Turnos'),
+    ('reducida', 'Jornada Reducida'),
+]
+
 TIPO_HORA_EXTRA_CHOICES = [
     ('diurna', 'Diurna - Recargo 25%'),
     ('nocturna', 'Nocturna - Recargo 75%'),
@@ -134,6 +141,23 @@ class Turno(BaseCompanyModel):
         default=list,
         verbose_name='Días de la Semana',
         help_text='Lista de días en que aplica el turno. Ej: ["lunes", "martes", ...]'
+    )
+
+    # Ley 2101/2021 - Reducción gradual de jornada laboral
+    horas_semanales_maximas = models.DecimalField(
+        max_digits=4,
+        decimal_places=2,
+        default=Decimal('42.00'),
+        validators=[MinValueValidator(Decimal('1.00')), MaxValueValidator(Decimal('48.00'))],
+        verbose_name='Horas Semanales Máximas',
+        help_text='Ley 2101/2021 - Reducción progresiva: 47h(2023), 46h(2024), 44h(2025), 42h(julio 2026)'
+    )
+    tipo_jornada = models.CharField(
+        max_length=20,
+        choices=TIPO_JORNADA_CHOICES,
+        default='ordinaria',
+        verbose_name='Tipo de Jornada',
+        help_text='Tipo de jornada según legislación colombiana'
     )
 
     class Meta:
@@ -446,6 +470,86 @@ class RegistroAsistencia(BaseCompanyModel):
 
 
 # =============================================================================
+# CONFIGURACIÓN DE RECARGOS - Ley 2466/2025
+# =============================================================================
+
+class ConfiguracionRecargo(BaseCompanyModel):
+    """
+    Configuración de factores de recargo por tipo de hora extra.
+
+    Ley 2466/2025: Incremento gradual de recargos dominicales y festivos:
+    - Fase 1 (Jul 2025): 80% del recargo pleno
+    - Fase 2 (Jul 2026): 90% del recargo pleno
+    - Fase 3 (Jul 2027): 100% del recargo pleno
+    """
+
+    tipo_hora_extra = models.CharField(
+        max_length=25,
+        choices=TIPO_HORA_EXTRA_CHOICES,
+        verbose_name='Tipo de Hora Extra'
+    )
+    factor_vigente = models.DecimalField(
+        max_digits=4,
+        decimal_places=2,
+        verbose_name='Factor Vigente Actual',
+        help_text='Factor de recargo vigente antes de la ley'
+    )
+
+    # Fases de implementación Ley 2466/2025
+    factor_fase_1 = models.DecimalField(
+        max_digits=4,
+        decimal_places=2,
+        verbose_name='Factor Fase 1 (80%)',
+        help_text='Desde julio 2025 - 80% del recargo pleno'
+    )
+    fecha_inicio_fase_1 = models.DateField(
+        default='2025-07-15',
+        verbose_name='Inicio Fase 1'
+    )
+    factor_fase_2 = models.DecimalField(
+        max_digits=4,
+        decimal_places=2,
+        verbose_name='Factor Fase 2 (90%)',
+        help_text='Desde julio 2026 - 90% del recargo pleno'
+    )
+    fecha_inicio_fase_2 = models.DateField(
+        default='2026-07-15',
+        verbose_name='Inicio Fase 2'
+    )
+    factor_fase_3 = models.DecimalField(
+        max_digits=4,
+        decimal_places=2,
+        verbose_name='Factor Fase 3 (100%)',
+        help_text='Desde julio 2027 - 100% del recargo pleno'
+    )
+    fecha_inicio_fase_3 = models.DateField(
+        default='2027-07-15',
+        verbose_name='Inicio Fase 3'
+    )
+
+    class Meta:
+        db_table = 'talent_hub_configuracion_recargo'
+        verbose_name = 'Configuración de Recargo'
+        verbose_name_plural = 'Configuraciones de Recargo'
+        unique_together = [['empresa', 'tipo_hora_extra']]
+        ordering = ['tipo_hora_extra']
+
+    def __str__(self):
+        return f"{self.get_tipo_hora_extra_display()} - Factor actual: {self.get_factor_actual()}"
+
+    def get_factor_actual(self):
+        """Retorna el factor de recargo vigente según la fecha actual."""
+        hoy = timezone.now().date()
+        if hoy >= self.fecha_inicio_fase_3:
+            return self.factor_fase_3
+        elif hoy >= self.fecha_inicio_fase_2:
+            return self.factor_fase_2
+        elif hoy >= self.fecha_inicio_fase_1:
+            return self.factor_fase_1
+        return self.factor_vigente
+
+
+# =============================================================================
 # HORA EXTRA - Registro de horas extras
 # =============================================================================
 
@@ -550,10 +654,55 @@ class HoraExtra(BaseCompanyModel):
 
     def clean(self):
         """Validaciones del modelo."""
-        # Validar que hora_fin sea posterior a hora_inicio
-        if self.hora_fin <= self.hora_inicio:
-            # Podría ser turno que cruza medianoche
-            pass
+        # Calcular horas para validar
+        if self.hora_inicio and self.hora_fin:
+            inicio = datetime.combine(self.fecha or timezone.now().date(), self.hora_inicio)
+            fin = datetime.combine(self.fecha or timezone.now().date(), self.hora_fin)
+            if fin < inicio:
+                fin += timedelta(days=1)
+            horas = Decimal(str((fin - inicio).total_seconds() / 3600))
+
+            # Ley 2466/2025: Máximo 2 horas extra por día
+            if horas > Decimal('2.00'):
+                raise ValidationError({
+                    'hora_fin': 'Ley 2466/2025: Máximo 2 horas extra por día.'
+                })
+
+        # Ley 2466/2025: Máximo 12 horas extra por semana
+        if self.colaborador and self.fecha:
+            from datetime import timedelta as td
+            # Calcular inicio de semana (lunes)
+            dia_semana = self.fecha.weekday()
+            inicio_semana = self.fecha - td(days=dia_semana)
+            fin_semana = inicio_semana + td(days=6)
+
+            horas_semana_qs = HoraExtra.objects.filter(
+                colaborador=self.colaborador,
+                fecha__gte=inicio_semana,
+                fecha__lte=fin_semana,
+                is_active=True,
+                estado__in=['pendiente', 'aprobada']
+            )
+            if self.pk:
+                horas_semana_qs = horas_semana_qs.exclude(pk=self.pk)
+
+            total_semana = sum(
+                he.horas_trabajadas for he in horas_semana_qs
+            ) or Decimal('0')
+
+            if self.hora_inicio and self.hora_fin:
+                inicio = datetime.combine(self.fecha, self.hora_inicio)
+                fin = datetime.combine(self.fecha, self.hora_fin)
+                if fin < inicio:
+                    fin += timedelta(days=1)
+                horas_nuevas = Decimal(str((fin - inicio).total_seconds() / 3600))
+                total_semana += horas_nuevas
+
+            if total_semana > Decimal('12.00'):
+                raise ValidationError(
+                    'Ley 2466/2025: Máximo 12 horas extra por semana. '
+                    f'Total acumulado esta semana: {total_semana:.1f}h.'
+                )
 
     def save(self, *args, **kwargs):
         """Override de save para calcular horas y factor automáticamente."""
@@ -569,8 +718,16 @@ class HoraExtra(BaseCompanyModel):
         self.horas_trabajadas = Decimal(str(diferencia.total_seconds() / 3600))
         self.horas_trabajadas = round(self.horas_trabajadas, 2)
 
-        # Asignar factor de recargo según tipo
-        self.factor_recargo = FACTOR_RECARGO_MAP.get(self.tipo, Decimal('1.25'))
+        # Asignar factor de recargo: usar ConfiguracionRecargo si existe, sino fallback
+        try:
+            config = ConfiguracionRecargo.objects.get(
+                empresa=self.empresa,
+                tipo_hora_extra=self.tipo,
+                is_active=True
+            )
+            self.factor_recargo = config.get_factor_actual()
+        except ConfiguracionRecargo.DoesNotExist:
+            self.factor_recargo = FACTOR_RECARGO_MAP.get(self.tipo, Decimal('1.25'))
 
         # Si se aprueba, actualizar campos
         if self.estado == 'aprobada' and not self.aprobado:

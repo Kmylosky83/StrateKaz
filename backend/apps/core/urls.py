@@ -6,10 +6,12 @@ Incluye endpoints para:
 - Gestion de usuarios
 - Sistema RBAC (Cargos, Roles, Grupos, Permisos)
 - Menu dinamico
-- Configuración del Sistema (Módulos, Tabs, Branding)
+- Configuración del Sistema (Módulos, Tabs)
 
 NOTA: Los endpoints de Identidad y Planeación se registran condicionalmente
 cuando las apps gestion_estrategica.identidad/planeacion están activas.
+
+NOTA: Branding se maneja ahora en /api/tenant/public/branding/
 """
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
@@ -31,7 +33,6 @@ from .viewsets_config import (
     SystemModuleViewSet,
     ModuleTabViewSet,
     TabSectionViewSet,
-    BrandingConfigViewSet,
 )
 # ViewSet de Sesiones de Usuario (MS-002-A)
 from .viewsets_session import UserSessionViewSet
@@ -45,6 +46,14 @@ from .views.two_factor_views import (
     TwoFactorDisableView,
     TwoFactorVerifyView,
     TwoFactorRegenerateBackupCodesView,
+)
+# Views de Sincronización de Secciones (RBAC v4.1)
+from .api.sections_api import (
+    get_all_sections,
+    get_section_codes_typescript,
+    get_user_section_access,
+    invalidate_user_cache,
+    invalidate_cargo_cache,
 )
 
 app_name = 'core'
@@ -73,7 +82,7 @@ router.register(r'roles-adicionales', RolAdicionalViewSet, basename='rol-adicion
 router.register(r'system-modules', SystemModuleViewSet, basename='system-module')
 router.register(r'module-tabs', ModuleTabViewSet, basename='module-tab')
 router.register(r'tab-sections', TabSectionViewSet, basename='tab-section')
-router.register(r'branding', BrandingConfigViewSet, basename='branding')
+# NOTA: Branding eliminado de core - ahora está en /api/tenant/public/branding/
 
 # Endpoints Sesiones de Usuario (MS-002-A)
 router.register(r'sessions', UserSessionViewSet, basename='session')
@@ -98,6 +107,13 @@ urlpatterns = [
 
     # Endpoints User Preferences (MS-003) - Singleton pattern
     path('user-preferences/', UserPreferencesView.as_view(), name='user-preferences'),
+
+    # Endpoints Sincronización de Secciones (RBAC v4.1)
+    path('sections/all/', get_all_sections, name='sections-all'),
+    path('sections/typescript/', get_section_codes_typescript, name='sections-typescript'),
+    path('sections/user-access/', get_user_section_access, name='sections-user-access'),
+    path('sections/invalidate-cache/', invalidate_user_cache, name='sections-invalidate-cache'),
+    path('sections/invalidate-cargo-cache/', invalidate_cargo_cache, name='sections-invalidate-cargo-cache'),
 
     # Incluir rutas del router
     path('', include(router.urls)),

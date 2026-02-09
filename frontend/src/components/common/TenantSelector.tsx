@@ -13,10 +13,10 @@ import { motion } from 'framer-motion';
 import { Building2, ArrowRight, Shield, User, Eye, Settings2 } from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import { useAuthStore } from '@/store/authStore';
-import type { TenantUserAccess } from '@/types/tenant.types';
+import type { TenantAccess } from '@/types/auth.types';
 
 interface TenantSelectorProps {
-  tenants: TenantUserAccess[];
+  tenants: TenantAccess[];
   lastTenantId: number | null;
   onSelect: (tenantId: number) => void;
   onBack?: () => void;
@@ -25,22 +25,25 @@ interface TenantSelectorProps {
   isSuperuser?: boolean;
 }
 
-const roleIcons = {
+const roleIcons: Record<string, typeof Shield> = {
   admin: Shield,
   user: User,
   readonly: Eye,
+  superadmin: Shield,
 };
 
-const roleLabels = {
+const roleLabels: Record<string, string> = {
   admin: 'Administrador',
   user: 'Usuario',
   readonly: 'Solo lectura',
+  superadmin: 'Superadmin',
 };
 
-const roleColors = {
+const roleColors: Record<string, string> = {
   admin: 'text-purple-600 bg-purple-100 dark:text-purple-400 dark:bg-purple-900/30',
   user: 'text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30',
   readonly: 'text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-700/50',
+  superadmin: 'text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-900/30',
 };
 
 export const TenantSelector = ({
@@ -161,7 +164,9 @@ export const TenantSelector = ({
         <div className="space-y-2 max-h-60 overflow-y-auto">
           {sortedTenants.map((access, index) => {
             const { tenant, role } = access;
-            const RoleIcon = roleIcons[role];
+            const RoleIcon = roleIcons[role] || User;
+            const roleLabel = roleLabels[role] || role;
+            const roleColor = roleColors[role] || roleColors['user'];
             const isLast = tenant.id === lastTenantId;
             const isSelected = selectedId === tenant.id;
 
@@ -188,12 +193,12 @@ export const TenantSelector = ({
                 <div
                   className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
                   style={{
-                    backgroundColor: tenant.logo_url ? 'transparent' : `${tenant.primary_color}20`,
+                    backgroundColor: (tenant.logo_effective || tenant.logo_url) ? 'transparent' : `${tenant.primary_color}20`,
                   }}
                 >
-                  {tenant.logo_url ? (
+                  {(tenant.logo_effective || tenant.logo_url) ? (
                     <img
-                      src={tenant.logo_url}
+                      src={tenant.logo_effective || tenant.logo_url}
                       alt={tenant.name}
                       className="w-full h-full object-contain rounded-lg"
                     />
@@ -221,13 +226,13 @@ export const TenantSelector = ({
                   </div>
                   <div className="flex items-center gap-2 mt-1">
                     <span
-                      className={`text-xs px-2 py-0.5 rounded-full inline-flex items-center gap-1 ${roleColors[role]}`}
+                      className={`text-xs px-2 py-0.5 rounded-full inline-flex items-center gap-1 ${roleColor}`}
                     >
                       <RoleIcon className="w-3 h-3" />
-                      {roleLabels[role]}
+                      {roleLabel}
                     </span>
                     <span className="text-xs text-gray-400">
-                      {tenant.subdomain}.stratekaz.com
+                      {tenant.primary_domain}
                     </span>
                   </div>
                 </div>

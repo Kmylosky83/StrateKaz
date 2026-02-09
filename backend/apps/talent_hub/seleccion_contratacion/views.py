@@ -22,6 +22,7 @@ from .models import (
     Entrevista,
     Prueba,
     AfiliacionSS,
+    HistorialContrato,
 )
 from .serializers import (
     TipoContratoSerializer,
@@ -41,6 +42,11 @@ from .serializers import (
     AfiliacionSSSerializer,
     AfiliacionSSCreateSerializer,
     ProcesoSeleccionEstadisticasSerializer,
+)
+from .serializers_contrato import (
+    HistorialContratoListSerializer,
+    HistorialContratoDetailSerializer,
+    HistorialContratoCreateSerializer,
 )
 
 
@@ -644,4 +650,96 @@ class ProcesoSeleccionEstadisticasViewSet(viewsets.ViewSet):
         }
 
         serializer = ProcesoSeleccionEstadisticasSerializer(data)
+        return Response(serializer.data)
+
+
+# =============================================================================
+# HISTORIAL DE CONTRATOS (Ley 2466/2025)
+# =============================================================================
+
+class HistorialContratoViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestión de Historial de Contratos.
+
+    Ley 2466/2025 Compliance:
+    - Validación de renovaciones y duraciones acumuladas
+    - Justificación obligatoria para contratos no indefinidos
+    - Warnings automáticos sin bloqueo
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = HistorialContrato.objects.filter(is_active=True)
+
+        if hasattr(user, 'empresa_id') and user.empresa_id:
+            queryset = queryset.filter(empresa_id=user.empresa_id)
+
+        colaborador_id = self.request.query_params.get('colaborador')
+        if colaborador_id:
+            queryset = queryset.filter(colaborador_id=colaborador_id)
+
+        tipo_movimiento = self.request.query_params.get('tipo_movimiento')
+        if tipo_movimiento:
+            queryset = queryset.filter(tipo_movimiento=tipo_movimiento)
+
+        vigentes = self.request.query_params.get('vigentes')
+        if vigentes == 'true':
+            queryset = queryset.filter(
+                Q(fecha_fin__isnull=True) | Q(fecha_fin__gte=timezone.now().date())
+            )
+
+        return queryset.select_related(
+            'colaborador', 'tipo_contrato', 'contrato_padre'
+        ).order_by('-fecha_inicio')
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return HistorialContratoListSerializer
+        elif self.action in ['create', 'update', 'partial_update']:
+            return HistorialContratoCreateSerializer
+        return HistorialContratoDetailSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(
+            empresa=self.request.user.empresa,
+            created_by=self.request.user,
+            updated_by=self.request.user
+        )
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
+
+    def perform_destroy(self, instance):
+        instance.soft_delete()
+
+    @action(detail=True, methods=['post'])
+    def firmar(self, request, pk=None):
+        """Registra la firma del contrato"""
+        contrato = self.get_object()
+        contrato.firmado = True
+        contrato.fecha_firma = timezone.now()
+        contrato.save()
+        return Response(HistorialContratoDetailSerializer(contrato).data)
+
+    @action(detail=True, methods=['get'])
+    def warnings(self, request, pk=None):
+        """Obtiene advertencias Ley 2466/2025 para el contrato"""
+        contrato = self.get_object()
+        return Response({'warnings': contrato.get_warnings()})
+
+    @action(detail=False, methods=['get'])
+    def por_vencer(self, request):
+        """Lista contratos que vencen en los próximos N días"""
+        dias = int(request.query_params.get('dias', 30))
+        hoy = timezone.now().date()
+        from datetime import timedelta
+        fecha_limite = hoy + timedelta(days=dias)
+
+        queryset = self.get_queryset().filter(
+            fecha_fin__isnull=False,
+            fecha_fin__gte=hoy,
+            fecha_fin__lte=fecha_limite
+        )
+        serializer = HistorialContratoListSerializer(queryset, many=True)
         return Response(serializer.data)

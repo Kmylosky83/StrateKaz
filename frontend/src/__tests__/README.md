@@ -10,60 +10,14 @@ src/__tests__/
 │   └── test-utils.tsx          # Utilidades compartidas de testing
 └── features/
     └── gestion-estrategica/
-        ├── EmpresaSection.test.tsx    # Tests para sección de Empresa
         └── AreasTab.test.tsx          # Tests para tab de Áreas
 ```
 
-## Archivos de Tests Creados
+## Archivos de Tests
 
-### 1. EmpresaSection.test.tsx
+> **NOTA**: EmpresaSection fue migrado a Admin Global (TenantFormModal) y sus tests fueron eliminados.
 
-Tests completos para el componente `EmpresaSection` que maneja la configuración de datos fiscales y legales de la empresa.
-
-**Cobertura de Tests:**
-
-- **Estado de Carga**: Skeleton mientras carga datos
-- **Modo Vista**: Renderizado de datos en modo lectura
-  - Visualización de datos principales (NIT, razón social, contacto, etc.)
-  - Organización en cards por sección
-  - Botón de edición
-  - Campos opcionales
-  - Información de última actualización
-
-- **Transición a Modo Edición**:
-  - Cambio de vista a formulario
-  - Pre-carga de valores existentes
-  - Cancelación de edición
-
-- **Estado Sin Configurar**:
-  - Mensaje de alerta
-  - Botón para configurar
-  - Apertura de formulario de creación
-
-- **Validación de Formulario**:
-  - NIT requerido y formato válido
-  - Razón social requerida
-  - Email corporativo con formato válido
-  - Teléfono principal requerido
-  - Dirección fiscal requerida
-
-- **Envío de Formulario**:
-  - Creación de empresa nueva
-  - Actualización de empresa existente
-  - Deshabilitación de botones durante guardado
-
-- **Manejo de Errores**:
-  - Mensajes de error al fallar operaciones
-
-- **Accesibilidad**:
-  - Roles y labels en modo vista
-  - Labels asociados a inputs
-
-**Total de Tests**: 24 (16 passing, 8 con timeouts menores que se pueden ajustar)
-
----
-
-### 2. AreasTab.test.tsx
+### AreasTab.test.tsx
 
 Tests completos para el componente `AreasTab` que maneja la estructura organizacional de áreas y departamentos.
 

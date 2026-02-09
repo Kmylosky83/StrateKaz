@@ -51,6 +51,7 @@ const IDENTIDAD_URL = '/identidad';
 const PLANEACION_URL = '/planeacion';
 const CONFIGURACION_URL = '/configuracion';
 const ORGANIZACION_URL = '/organizacion'; // Consecutivos y Unidades de Medida migrados aquí
+const TENANT_URL = '/tenant'; // Para endpoints públicos de tenant (branding, verificación dominio)
 
 // ==================== NORMAS ISO (Dinámico) ====================
 
@@ -410,19 +411,25 @@ export const modulesApi = {
 };
 
 // ==================== BRANDING CONFIG ====================
+// NOTA: El branding ahora se gestiona en el modelo Tenant.
+// Las funciones legacy que apuntaban a /core/branding/ han sido eliminadas.
+// Usar getByDomain() para branding público o getActive() para el tenant actual.
 
 export const brandingApi = {
-  getAll: async (): Promise<PaginatedResponse<BrandingConfig>> => {
-    const response = await axiosInstance.get(`${CORE_URL}/branding/`);
-    return response.data;
-  },
-
-  getActive: async (): Promise<BrandingConfig | null> => {
+  /**
+   * Obtiene el branding del tenant por dominio.
+   * Este es el endpoint PÚBLICO que no requiere autenticación.
+   * Usado para cargar branding ANTES del login.
+   *
+   * @param domain - Dominio completo (ej: 'empresa.localhost:5173')
+   */
+  getByDomain: async (domain: string): Promise<BrandingConfig | null> => {
     try {
-      const response = await axiosInstance.get(`${CORE_URL}/branding/active/`);
+      const response = await axiosInstance.get(`${TENANT_URL}/public/branding/`, {
+        params: { domain },
+      });
       return response.data;
     } catch (error: unknown) {
-      // 404 significa que no hay branding activo, retornar null
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as { response?: { status?: number } };
         if (axiosError.response?.status === 404) {
@@ -433,29 +440,163 @@ export const brandingApi = {
     }
   },
 
-  getById: async (id: number): Promise<BrandingConfig> => {
-    const response = await axiosInstance.get(`${CORE_URL}/branding/${id}/`);
+  /**
+   * Obtiene la configuración de branding activa.
+   *
+   * FLUJO (v3.11 - fix loop infinito):
+   * 1. Si hay token Y tenant seleccionado, obtener branding del tenant via API autenticada
+   * 2. Si no hay token o falla, usar endpoint público por dominio (no requiere auth)
+   * 3. Fallback a null para usar valores por defecto
+   */
+  getActive: async (): Promise<BrandingConfig | null> => {
+    // Verificar si hay token de autenticación válido
+    const accessToken = localStorage.getItem('access_token');
+    const currentTenantId = localStorage.getItem('current_tenant_id');
+
+    // Solo intentar endpoint autenticado si hay token Y tenant seleccionado
+    if (accessToken && currentTenantId) {
+      try {
+        // Usar el endpoint de tenant que incluye branding
+        const response = await axiosInstance.get(`${TENANT_URL}/tenants/${currentTenantId}/`);
+        const tenant = response.data;
+
+        // Mapear campos del tenant a formato BrandingConfig
+        return {
+          id: tenant.id,
+          company_name: tenant.name,
+          company_short_name: tenant.nombre_comercial || tenant.name,
+          company_slogan: tenant.company_slogan || '',
+          logo: tenant.logo,
+          logo_white: tenant.logo_white,
+          logo_dark: tenant.logo_dark,
+          favicon: tenant.favicon,
+          login_background: tenant.login_background,
+          primary_color: tenant.primary_color || '#ec268f',
+          secondary_color: tenant.secondary_color || '#000000',
+          accent_color: tenant.accent_color || '#f4ec25',
+          sidebar_color: tenant.sidebar_color || '#1E293B',
+          background_color: tenant.background_color || '#F5F5F5',
+          showcase_background: tenant.showcase_background || '#1F2937',
+          gradient_mission: tenant.gradient_mission || '',
+          gradient_vision: tenant.gradient_vision || '',
+          gradient_policy: tenant.gradient_policy || '',
+          gradient_values: tenant.gradient_values || [],
+          app_version: '2.4.0',
+          pwa_name: tenant.pwa_name || tenant.name,
+          pwa_short_name: tenant.pwa_short_name || tenant.nombre_comercial || tenant.name,
+          pwa_description: tenant.pwa_description || '',
+          pwa_theme_color: tenant.pwa_theme_color || tenant.primary_color || '#ec268f',
+          pwa_background_color: tenant.pwa_background_color || '#FFFFFF',
+          pwa_icon_192: tenant.pwa_icon_192,
+          pwa_icon_512: tenant.pwa_icon_512,
+          pwa_icon_maskable: tenant.pwa_icon_maskable,
+          is_active: true,
+        };
+      } catch {
+        // Si falla (401, 403, etc), continuar con el flujo por dominio público
+        console.warn('[brandingApi] Failed to get tenant branding, falling back to domain');
+      }
+    }
+
+    // Usar endpoint público (no requiere autenticación)
+    try {
+      const currentDomain = window.location.host;
+      const response = await axiosInstance.get(`${TENANT_URL}/public/branding/`, {
+        params: { domain: currentDomain },
+      });
+      return response.data;
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number } };
+        if (axiosError.response?.status === 404) {
+          // Retornar null para usar valores por defecto
+          return null;
+        }
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Obtiene branding por tenant ID.
+   * Obtiene los datos del tenant y mapea a formato BrandingConfig.
+   *
+   * @param tenantId - ID del tenant
+   */
+  getById: async (tenantId: number): Promise<BrandingConfig> => {
+    const response = await axiosInstance.get(`${TENANT_URL}/tenants/${tenantId}/`);
+    const tenant = response.data;
+
+    // Mapear campos del tenant a formato BrandingConfig
+    return {
+      id: tenant.id,
+      company_name: tenant.name,
+      company_short_name: tenant.nombre_comercial || tenant.name,
+      company_slogan: tenant.company_slogan || '',
+      logo: tenant.logo,
+      logo_white: tenant.logo_white,
+      logo_dark: tenant.logo_dark,
+      favicon: tenant.favicon,
+      login_background: tenant.login_background,
+      primary_color: tenant.primary_color || '#ec268f',
+      secondary_color: tenant.secondary_color || '#000000',
+      accent_color: tenant.accent_color || '#f4ec25',
+      sidebar_color: tenant.sidebar_color || '#1E293B',
+      background_color: tenant.background_color || '#F5F5F5',
+      showcase_background: tenant.showcase_background || '#1F2937',
+      gradient_mission: tenant.gradient_mission || '',
+      gradient_vision: tenant.gradient_vision || '',
+      gradient_policy: tenant.gradient_policy || '',
+      gradient_values: tenant.gradient_values || [],
+      app_version: '2.4.0',
+      pwa_name: tenant.pwa_name || tenant.name,
+      pwa_short_name: tenant.pwa_short_name || tenant.nombre_comercial || tenant.name,
+      pwa_description: tenant.pwa_description || '',
+      pwa_theme_color: tenant.pwa_theme_color || tenant.primary_color || '#ec268f',
+      pwa_background_color: tenant.pwa_background_color || '#FFFFFF',
+      pwa_icon_192: tenant.pwa_icon_192,
+      pwa_icon_512: tenant.pwa_icon_512,
+      pwa_icon_maskable: tenant.pwa_icon_maskable,
+      is_active: true,
+    };
+  },
+
+  /**
+   * Actualiza la configuración de branding del tenant.
+   * En Admin Global se actualiza directamente el Tenant.
+   *
+   * @param tenantId - ID del tenant a actualizar
+   * @param data - Datos de branding a actualizar
+   */
+  update: async (
+    tenantId: number,
+    data: UpdateBrandingConfigDTO | FormData
+  ): Promise<BrandingConfig> => {
+    const response = await axiosInstance.patch(
+      `${TENANT_URL}/tenants/${tenantId}/`,
+      data
+    );
     return response.data;
   },
 
+  /**
+   * Actualiza el branding del tenant actual (desde el contexto del tenant).
+   */
+  updateCurrent: async (data: UpdateBrandingConfigDTO | FormData): Promise<BrandingConfig> => {
+    const currentTenantId = localStorage.getItem('current_tenant_id');
+    if (!currentTenantId) {
+      throw new Error('No hay tenant seleccionado');
+    }
+    return brandingApi.update(parseInt(currentTenantId), data);
+  },
+
+  /**
+   * Crea una configuración de branding.
+   * En multi-tenant, esto no es necesario ya que el branding se crea con el Tenant.
+   * @deprecated El branding se configura al crear el Tenant
+   */
   create: async (data: CreateBrandingConfigDTO | FormData): Promise<BrandingConfig> => {
-    const isFormData = data instanceof FormData;
-    const response = await axiosInstance.post(`${CORE_URL}/branding/`, data, {
-      headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
-    });
-    return response.data;
-  },
-
-  update: async (id: number, data: UpdateBrandingConfigDTO | FormData): Promise<BrandingConfig> => {
-    const isFormData = data instanceof FormData;
-    const response = await axiosInstance.patch(`${CORE_URL}/branding/${id}/`, data, {
-      headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined,
-    });
-    return response.data;
-  },
-
-  delete: async (id: number): Promise<void> => {
-    await axiosInstance.delete(`${CORE_URL}/branding/${id}/`);
+    throw new Error('El branding se configura al crear el Tenant. Use la API de Tenant.');
   },
 };
 
@@ -1162,6 +1303,79 @@ export const consecutivosApi = {
     total: number;
   }> => {
     const response = await axiosInstance.post(`${ORGANIZACION_URL}/consecutivos/cargar-sistema/`);
+    return response.data;
+  },
+};
+
+// ==================== CURRENT TENANT (Admin Tenant Self-Edit) ====================
+
+export interface CurrentTenantData {
+  id: number;
+  code: string;
+  name: string;
+  nit: string;
+  razon_social: string;
+  nombre_comercial: string;
+  representante_legal: string;
+  cedula_representante: string;
+  tipo_sociedad: string;
+  actividad_economica: string;
+  descripcion_actividad: string;
+  regimen_tributario: string;
+  direccion_fiscal: string;
+  ciudad: string;
+  departamento: string;
+  pais: string;
+  codigo_postal: string;
+  telefono_principal: string;
+  telefono_secundario: string;
+  email_corporativo: string;
+  sitio_web: string;
+  matricula_mercantil: string;
+  camara_comercio: string;
+  fecha_constitucion: string | null;
+  fecha_inscripcion_registro: string | null;
+  zona_horaria: string;
+  formato_fecha: string;
+  moneda: string;
+  simbolo_moneda: string;
+  separador_miles: string;
+  separador_decimales: string;
+  company_slogan: string;
+  logo: string | null;
+  logo_white: string | null;
+  logo_dark: string | null;
+  favicon: string | null;
+  login_background: string | null;
+  primary_color: string;
+  secondary_color: string;
+  accent_color: string;
+  sidebar_color: string;
+  background_color: string;
+  showcase_background: string;
+  gradient_mission: string;
+  gradient_vision: string;
+  gradient_policy: string;
+  gradient_values: string;
+  pwa_name: string;
+  pwa_short_name: string;
+  pwa_description: string;
+  pwa_theme_color: string;
+  pwa_background_color: string;
+  [key: string]: unknown;
+}
+
+export const currentTenantApi = {
+  get: async (): Promise<CurrentTenantData> => {
+    const response = await axiosInstance.get(`${TENANT_URL}/tenants/me/`);
+    return response.data;
+  },
+
+  update: async (data: FormData | Partial<CurrentTenantData>): Promise<CurrentTenantData> => {
+    const isFormData = data instanceof FormData;
+    const response = await axiosInstance.patch(`${TENANT_URL}/tenants/me/`, data, {
+      headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : {},
+    });
     return response.data;
   },
 };

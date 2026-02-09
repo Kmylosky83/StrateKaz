@@ -14,140 +14,44 @@ import {
   Package,
   RefreshCw,
   Plus,
-  Download,
-  Filter,
   Clock,
   XCircle,
   Eye,
   Edit,
   Trash2,
   FileText,
-  User,
-  Calendar,
   TrendingUp,
   Activity,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
-import { Tabs } from '@/components/common/Tabs';
-import { Card } from '@/components/common/Card';
-import { Button } from '@/components/common/Button';
-import { EmptyState } from '@/components/common/EmptyState';
-import { Badge } from '@/components/common/Badge';
-import { Spinner } from '@/components/common/Spinner';
-import { cn } from '@/utils/cn';
+import {
+  Tabs,
+  Card,
+  Button,
+  EmptyState,
+  Spinner,
+  KpiCard,
+  KpiCardGrid,
+  SectionToolbar,
+  StatusBadge,
+  Progress,
+  EvidenceGallery,
+  EvidenceUploader,
+  Modal,
+  ExportButton,
+} from '@/components/common';
+import { formatStatusLabel } from '@/components/common/StatusBadge';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-// Mock imports - to be replaced with actual hooks and types
-// import {
-//   useNoConformidades,
-//   useAccionesCorrectivas,
-//   useSalidasNoConformes,
-//   useControlCambios,
-// } from '../hooks/useCalidad';
-// import type {
-//   NoConformidad,
-//   AccionCorrectiva,
-//   SalidaNoConforme,
-//   SolicitudCambio,
-// } from '../types/calidad.types';
-
-// ==================== PROGRESS COMPONENT ====================
-
-interface ProgressProps {
-  value: number;
-  max?: number;
-  className?: string;
-  showLabel?: boolean;
-  variant?: 'default' | 'success' | 'warning' | 'danger';
-}
-
-const Progress = ({ value, max = 100, className, showLabel = false, variant = 'default' }: ProgressProps) => {
-  const percentage = Math.min(Math.max((value / max) * 100, 0), 100);
-
-  const variantColors = {
-    default: 'bg-primary-600',
-    success: 'bg-success-600',
-    warning: 'bg-warning-600',
-    danger: 'bg-danger-600',
-  };
-
-  const getVariant = (): 'default' | 'success' | 'warning' | 'danger' => {
-    if (variant !== 'default') return variant;
-    if (percentage >= 80) return 'success';
-    if (percentage >= 50) return 'warning';
-    return 'danger';
-  };
-
-  const currentVariant = getVariant();
-
-  return (
-    <div className={cn('w-full', className)}>
-      <div className="flex items-center gap-2">
-        <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-          <div
-            className={cn('h-full transition-all duration-300', variantColors[currentVariant])}
-            style={{ width: `${percentage}%` }}
-          />
-        </div>
-        {showLabel && (
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[3rem] text-right">
-            {percentage.toFixed(0)}%
-          </span>
-        )}
-      </div>
-    </div>
-  );
-};
+import {
+  useNoConformidades,
+  useAccionesCorrectivas,
+  useSalidasNoConformes,
+  useSolicitudesCambio,
+} from '../hooks/useCalidad';
 
 // ==================== UTILITY FUNCTIONS ====================
-
-const getEstadoBadgeVariant = (
-  estado: string
-): 'success' | 'primary' | 'warning' | 'danger' | 'info' | 'gray' => {
-  const estadoMap: Record<string, 'success' | 'primary' | 'warning' | 'danger' | 'info' | 'gray'> = {
-    CERRADA: 'success',
-    RESUELTA: 'success',
-    APROBADA: 'success',
-    IMPLEMENTADA: 'success',
-    COMPLETADA: 'success',
-    EN_VERIFICACION: 'primary',
-    EN_REVISION: 'primary',
-    EN_TRATAMIENTO: 'primary',
-    EN_ANALISIS: 'primary',
-    ABIERTA: 'warning',
-    PENDIENTE: 'warning',
-    BLOQUEADA: 'danger',
-    RECHAZADA: 'danger',
-    VENCIDA: 'danger',
-    BORRADOR: 'gray',
-  };
-  return estadoMap[estado] || 'gray';
-};
-
-const getSeveridadBadgeVariant = (severidad: string): 'danger' | 'warning' | 'info' => {
-  const severidadMap: Record<string, 'danger' | 'warning' | 'info'> = {
-    MAYOR: 'danger',
-    CRITICA: 'danger',
-    MENOR: 'warning',
-    OBSERVACION: 'info',
-  };
-  return severidadMap[severidad] || 'info';
-};
-
-const getPrioridadBadgeVariant = (prioridad: string): 'danger' | 'warning' | 'primary' | 'gray' => {
-  const prioridadMap: Record<string, 'danger' | 'warning' | 'primary' | 'gray'> = {
-    CRITICA: 'danger',
-    ALTA: 'warning',
-    MEDIA: 'primary',
-    BAJA: 'gray',
-  };
-  return prioridadMap[prioridad] || 'gray';
-};
-
-const formatEstado = (estado: string): string => {
-  return estado.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase());
-};
 
 const formatTipo = (tipo: string): string => {
   const tipoMap: Record<string, string> = {
@@ -160,158 +64,14 @@ const formatTipo = (tipo: string): string => {
     CORRECTIVA: 'Correctiva',
     MEJORA: 'Mejora',
   };
-  return tipoMap[tipo] || formatEstado(tipo);
+  return tipoMap[tipo] || formatStatusLabel(tipo);
 };
-
-// ==================== MOCK DATA ====================
-
-const mockNoConformidades = [
-  {
-    id: 1,
-    codigo: 'NC-2024-001',
-    titulo: 'Falta de calibración en equipos de medición',
-    origen: 'AUDITORIA_INTERNA',
-    severidad: 'MAYOR',
-    estado: 'ABIERTA',
-    fecha_deteccion: '2024-01-15',
-    area_afectada: 'Producción',
-    responsable: 'Juan Pérez',
-  },
-  {
-    id: 2,
-    codigo: 'NC-2024-002',
-    titulo: 'Documentación desactualizada en proceso de empaque',
-    origen: 'INSPECCION',
-    severidad: 'MENOR',
-    estado: 'EN_VERIFICACION',
-    fecha_deteccion: '2024-01-18',
-    area_afectada: 'Empaque',
-    responsable: 'María González',
-  },
-  {
-    id: 3,
-    codigo: 'NC-2024-003',
-    titulo: 'Incumplimiento de temperatura en almacenamiento',
-    origen: 'QUEJA_CLIENTE',
-    severidad: 'CRITICA',
-    estado: 'ABIERTA',
-    fecha_deteccion: '2024-01-20',
-    area_afectada: 'Almacén',
-    responsable: 'Carlos Rodríguez',
-  },
-];
-
-const mockAccionesCorrectivas = [
-  {
-    id: 1,
-    codigo: 'AC-2024-001',
-    tipo: 'CORRECTIVA',
-    nc_relacionada: 'NC-2024-001',
-    descripcion: 'Realizar calibración de todos los equipos de medición',
-    estado: 'PENDIENTE',
-    responsable: 'Juan Pérez',
-    fecha_limite: '2024-02-15',
-    avance: 30,
-  },
-  {
-    id: 2,
-    codigo: 'AC-2024-002',
-    tipo: 'PREVENTIVA',
-    nc_relacionada: null,
-    descripcion: 'Actualizar procedimientos de control de documentos',
-    estado: 'EJECUTADA',
-    responsable: 'María González',
-    fecha_limite: '2024-01-30',
-    avance: 100,
-  },
-  {
-    id: 3,
-    codigo: 'AC-2024-003',
-    tipo: 'MEJORA',
-    nc_relacionada: null,
-    descripcion: 'Implementar sistema de monitoreo de temperatura en tiempo real',
-    estado: 'PENDIENTE',
-    responsable: 'Carlos Rodríguez',
-    fecha_limite: '2024-03-01',
-    avance: 15,
-  },
-];
-
-const mockSalidasNoConformes = [
-  {
-    id: 1,
-    codigo: 'SNC-2024-001',
-    producto: 'Huesos bovinos premium',
-    lote: 'LOT-2024-0115',
-    cantidad: 250,
-    unidad: 'kg',
-    disposicion: 'REPROCESO',
-    estado: 'EN_TRATAMIENTO',
-    fecha_deteccion: '2024-01-15',
-  },
-  {
-    id: 2,
-    codigo: 'SNC-2024-002',
-    producto: 'Grasa porcina refinada',
-    lote: 'LOT-2024-0118',
-    cantidad: 100,
-    unidad: 'kg',
-    disposicion: 'ELIMINACION',
-    estado: 'BLOQUEADA',
-    fecha_deteccion: '2024-01-18',
-  },
-  {
-    id: 3,
-    codigo: 'SNC-2024-003',
-    producto: 'Huesos porcinos',
-    lote: 'LOT-2024-0120',
-    cantidad: 150,
-    unidad: 'kg',
-    disposicion: 'RECLASIFICACION',
-    estado: 'RESUELTA',
-    fecha_deteccion: '2024-01-20',
-  },
-];
-
-const mockControlCambios = [
-  {
-    id: 1,
-    codigo: 'CC-2024-001',
-    titulo: 'Modificación proceso de limpieza de equipos',
-    tipo: 'PROCESO',
-    prioridad: 'ALTA',
-    estado: 'PENDIENTE',
-    solicitante: 'Ana Martínez',
-    fecha_solicitud: '2024-01-10',
-  },
-  {
-    id: 2,
-    codigo: 'CC-2024-002',
-    titulo: 'Actualización de software de gestión de calidad',
-    tipo: 'SISTEMA',
-    prioridad: 'MEDIA',
-    estado: 'EN_REVISION',
-    solicitante: 'Pedro López',
-    fecha_solicitud: '2024-01-12',
-  },
-  {
-    id: 3,
-    codigo: 'CC-2024-003',
-    titulo: 'Cambio de proveedor de empaques',
-    tipo: 'PROVEEDOR',
-    prioridad: 'ALTA',
-    estado: 'APROBADA',
-    solicitante: 'Laura Sánchez',
-    fecha_solicitud: '2024-01-14',
-  },
-];
 
 // ==================== NO CONFORMIDADES SECTION ====================
 
 const NoConformidadesSection = () => {
-  // const { data: noConformidades, isLoading } = useNoConformidades();
-  const isLoading = false;
-  const noConformidades = mockNoConformidades;
+  const { data, isLoading } = useNoConformidades();
+  const noConformidades = data?.results ?? [];
 
   if (isLoading) {
     return (
@@ -346,76 +106,49 @@ const NoConformidadesSection = () => {
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total NC</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stats.total}</p>
-            </div>
-            <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Últimos 30 días</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Abiertas</p>
-              <p className="text-2xl font-bold text-warning-600 dark:text-warning-400 mt-1">{stats.abiertas}</p>
-            </div>
-            <div className="w-12 h-12 bg-warning-100 dark:bg-warning-900/30 rounded-lg flex items-center justify-center">
-              <XCircle className="w-6 h-6 text-warning-600 dark:text-warning-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Requieren acción</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">En Verificación</p>
-              <p className="text-2xl font-bold text-primary-600 dark:text-primary-400 mt-1">
-                {stats.enVerificacion}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <Clock className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">En proceso de verificación</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Cerradas</p>
-              <p className="text-2xl font-bold text-success-600 dark:text-success-400 mt-1">{stats.cerradas}</p>
-            </div>
-            <div className="w-12 h-12 bg-success-100 dark:bg-success-900/30 rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-6 h-6 text-success-600 dark:text-success-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Este mes</p>
-        </Card>
-      </div>
+      <KpiCardGrid>
+        <KpiCard
+          label="Total NC"
+          value={stats.total}
+          icon={<AlertTriangle className="w-5 h-5" />}
+          color="red"
+          description="Últimos 30 días"
+        />
+        <KpiCard
+          label="Abiertas"
+          value={stats.abiertas}
+          icon={<XCircle className="w-5 h-5" />}
+          color="warning"
+          description="Requieren acción"
+        />
+        <KpiCard
+          label="En Verificación"
+          value={stats.enVerificacion}
+          icon={<Clock className="w-5 h-5" />}
+          color="primary"
+          description="En proceso de verificación"
+        />
+        <KpiCard
+          label="Cerradas"
+          value={stats.cerradas}
+          icon={<CheckCircle className="w-5 h-5" />}
+          color="success"
+          description="Este mes"
+        />
+      </KpiCardGrid>
 
       {/* Actions */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">No Conformidades Registradas</h3>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
-            Filtros
-          </Button>
-          <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-            Exportar
-          </Button>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Nueva No Conformidad
-          </Button>
-        </div>
+      <div className="flex items-center justify-between gap-2">
+        <SectionToolbar
+          title="No Conformidades Registradas"
+          onFilter={() => console.log('Filtros')}
+          primaryAction={{ label: 'Nueva No Conformidad', onClick: () => console.log('Nueva NC') }}
+          className="flex-1"
+        />
+        <ExportButton
+          endpoint="/api/hseq/calidad/no-conformidades/export/"
+          filename="no_conformidades"
+        />
       </div>
 
       {/* NC Table */}
@@ -468,14 +201,10 @@ const NoConformidadesSection = () => {
                     {formatTipo(nc.origen)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={getSeveridadBadgeVariant(nc.severidad)} size="sm">
-                      {formatEstado(nc.severidad)}
-                    </Badge>
+                    <StatusBadge status={nc.severidad} preset="gravedad" />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={getEstadoBadgeVariant(nc.estado)} size="sm">
-                      {formatEstado(nc.estado)}
-                    </Badge>
+                    <StatusBadge status={nc.estado} preset="proceso" />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
                     {format(new Date(nc.fecha_deteccion), 'dd/MM/yyyy', { locale: es })}
@@ -512,9 +241,9 @@ const NoConformidadesSection = () => {
 // ==================== ACCIONES CORRECTIVAS SECTION ====================
 
 const AccionesCorrectivasSection = () => {
-  // const { data: acciones, isLoading } = useAccionesCorrectivas();
-  const isLoading = false;
-  const acciones = mockAccionesCorrectivas;
+  const { data, isLoading } = useAccionesCorrectivas();
+  const acciones = data?.results ?? [];
+  const [evidenciaAccionId, setEvidenciaAccionId] = useState<number | null>(null);
 
   if (isLoading) {
     return (
@@ -549,75 +278,44 @@ const AccionesCorrectivasSection = () => {
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Acciones</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stats.total}</p>
-            </div>
-            <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Correctivas y preventivas</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Pendientes</p>
-              <p className="text-2xl font-bold text-warning-600 dark:text-warning-400 mt-1">{stats.pendientes}</p>
-            </div>
-            <div className="w-12 h-12 bg-warning-100 dark:bg-warning-900/30 rounded-lg flex items-center justify-center">
-              <Clock className="w-6 h-6 text-warning-600 dark:text-warning-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">En ejecución</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Ejecutadas</p>
-              <p className="text-2xl font-bold text-success-600 dark:text-success-400 mt-1">{stats.ejecutadas}</p>
-            </div>
-            <div className="w-12 h-12 bg-success-100 dark:bg-success-900/30 rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-6 h-6 text-success-600 dark:text-success-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Completadas</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Vencidas</p>
-              <p className="text-2xl font-bold text-danger-600 dark:text-danger-400 mt-1">{stats.vencidas}</p>
-            </div>
-            <div className="w-12 h-12 bg-danger-100 dark:bg-danger-900/30 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-danger-600 dark:text-danger-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Requieren atención</p>
-        </Card>
-      </div>
+      <KpiCardGrid>
+        <KpiCard
+          label="Total Acciones"
+          value={stats.total}
+          icon={<CheckCircle className="w-5 h-5" />}
+          color="green"
+          description="Correctivas y preventivas"
+        />
+        <KpiCard
+          label="Pendientes"
+          value={stats.pendientes}
+          icon={<Clock className="w-5 h-5" />}
+          color="warning"
+          description="En ejecución"
+        />
+        <KpiCard
+          label="Ejecutadas"
+          value={stats.ejecutadas}
+          icon={<CheckCircle className="w-5 h-5" />}
+          color="success"
+          description="Completadas"
+        />
+        <KpiCard
+          label="Vencidas"
+          value={stats.vencidas}
+          icon={<AlertTriangle className="w-5 h-5" />}
+          color="danger"
+          description="Requieren atención"
+        />
+      </KpiCardGrid>
 
       {/* Actions */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Acciones Correctivas y Preventivas</h3>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
-            Filtros
-          </Button>
-          <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-            Exportar
-          </Button>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Nueva Acción
-          </Button>
-        </div>
-      </div>
+      <SectionToolbar
+        title="Acciones Correctivas y Preventivas"
+        onFilter={() => console.log('Filtros')}
+        onExport={() => console.log('Exportar')}
+        primaryAction={{ label: 'Nueva Acción', onClick: () => console.log('Nueva Acción') }}
+      />
 
       {/* Actions Grid */}
       <div className="grid grid-cols-1 gap-6">
@@ -629,12 +327,8 @@ const AccionesCorrectivasSection = () => {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                     <h4 className="font-semibold text-gray-900 dark:text-white">{accion.codigo}</h4>
-                    <Badge variant={getEstadoBadgeVariant(accion.estado)} size="sm">
-                      {formatEstado(accion.estado)}
-                    </Badge>
-                    <Badge variant="info" size="sm">
-                      {formatTipo(accion.tipo)}
-                    </Badge>
+                    <StatusBadge status={accion.estado} preset="proceso" />
+                    <StatusBadge status={accion.tipo} variant="info" label={formatTipo(accion.tipo)} />
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-300">{accion.descripcion}</p>
                   {accion.nc_relacionada && (
@@ -676,7 +370,12 @@ const AccionesCorrectivasSection = () => {
                 <Button variant="ghost" size="sm" leftIcon={<Edit className="w-4 h-4" />}>
                   Editar
                 </Button>
-                <Button variant="ghost" size="sm" leftIcon={<FileText className="w-4 h-4" />}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leftIcon={<FileText className="w-4 h-4" />}
+                  onClick={() => setEvidenciaAccionId(accion.id)}
+                >
                   Evidencias
                 </Button>
               </div>
@@ -684,6 +383,32 @@ const AccionesCorrectivasSection = () => {
           </Card>
         ))}
       </div>
+
+      {/* Modal de Evidencias */}
+      {evidenciaAccionId && (
+        <Modal
+          isOpen={!!evidenciaAccionId}
+          onClose={() => setEvidenciaAccionId(null)}
+          title="Evidencias de Acción Correctiva"
+          size="lg"
+        >
+          <div className="space-y-4">
+            <EvidenceGallery
+              entityType="calidad.accioncorrectiva"
+              entityId={evidenciaAccionId}
+              layout="list"
+              showActions
+            />
+            <EvidenceUploader
+              entityType="calidad.accioncorrectiva"
+              entityId={evidenciaAccionId}
+              categoria="REGISTRO"
+              normasRelacionadas={['ISO_9001']}
+              placeholder="Adjuntar evidencia de la acción correctiva"
+            />
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };
@@ -691,9 +416,8 @@ const AccionesCorrectivasSection = () => {
 // ==================== SALIDAS NO CONFORMES SECTION ====================
 
 const SalidasNoConformesSection = () => {
-  // const { data: salidas, isLoading } = useSalidasNoConformes();
-  const isLoading = false;
-  const salidas = mockSalidasNoConformes;
+  const { data, isLoading } = useSalidasNoConformes();
+  const salidas = data?.results ?? [];
 
   if (isLoading) {
     return (
@@ -728,77 +452,44 @@ const SalidasNoConformesSection = () => {
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Salidas</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stats.total}</p>
-            </div>
-            <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
-              <Package className="w-6 h-6 text-orange-600 dark:text-orange-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Productos no conformes</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Bloqueadas</p>
-              <p className="text-2xl font-bold text-danger-600 dark:text-danger-400 mt-1">{stats.bloqueadas}</p>
-            </div>
-            <div className="w-12 h-12 bg-danger-100 dark:bg-danger-900/30 rounded-lg flex items-center justify-center">
-              <XCircle className="w-6 h-6 text-danger-600 dark:text-danger-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">En cuarentena</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">En Tratamiento</p>
-              <p className="text-2xl font-bold text-warning-600 dark:text-warning-400 mt-1">
-                {stats.enTratamiento}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-warning-100 dark:bg-warning-900/30 rounded-lg flex items-center justify-center">
-              <Activity className="w-6 h-6 text-warning-600 dark:text-warning-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">En proceso de disposición</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Resueltas</p>
-              <p className="text-2xl font-bold text-success-600 dark:text-success-400 mt-1">{stats.resueltas}</p>
-            </div>
-            <div className="w-12 h-12 bg-success-100 dark:bg-success-900/30 rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-6 h-6 text-success-600 dark:text-success-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Disposición completada</p>
-        </Card>
-      </div>
+      <KpiCardGrid>
+        <KpiCard
+          label="Total Salidas"
+          value={stats.total}
+          icon={<Package className="w-5 h-5" />}
+          color="orange"
+          description="Productos no conformes"
+        />
+        <KpiCard
+          label="Bloqueadas"
+          value={stats.bloqueadas}
+          icon={<XCircle className="w-5 h-5" />}
+          color="danger"
+          description="En cuarentena"
+        />
+        <KpiCard
+          label="En Tratamiento"
+          value={stats.enTratamiento}
+          icon={<Activity className="w-5 h-5" />}
+          color="warning"
+          description="En proceso de disposición"
+        />
+        <KpiCard
+          label="Resueltas"
+          value={stats.resueltas}
+          icon={<CheckCircle className="w-5 h-5" />}
+          color="success"
+          description="Disposición completada"
+        />
+      </KpiCardGrid>
 
       {/* Actions */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Salidas No Conformes</h3>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
-            Filtros
-          </Button>
-          <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-            Exportar
-          </Button>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Nueva Salida NC
-          </Button>
-        </div>
-      </div>
+      <SectionToolbar
+        title="Salidas No Conformes"
+        onFilter={() => console.log('Filtros')}
+        onExport={() => console.log('Exportar')}
+        primaryAction={{ label: 'Nueva Salida NC', onClick: () => console.log('Nueva Salida NC') }}
+      />
 
       {/* Salidas Table */}
       <Card variant="bordered" padding="none">
@@ -848,14 +539,10 @@ const SalidasNoConformesSection = () => {
                     {salida.cantidad} {salida.unidad}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant="info" size="sm">
-                      {formatEstado(salida.disposicion)}
-                    </Badge>
+                    <StatusBadge status={salida.disposicion} variant="info" label={formatStatusLabel(salida.disposicion)} />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={getEstadoBadgeVariant(salida.estado)} size="sm">
-                      {formatEstado(salida.estado)}
-                    </Badge>
+                    <StatusBadge status={salida.estado} preset="proceso" />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
                     {format(new Date(salida.fecha_deteccion), 'dd/MM/yyyy', { locale: es })}
@@ -886,9 +573,8 @@ const SalidasNoConformesSection = () => {
 // ==================== CONTROL DE CAMBIOS SECTION ====================
 
 const ControlCambiosSection = () => {
-  // const { data: cambios, isLoading } = useControlCambios();
-  const isLoading = false;
-  const cambios = mockControlCambios;
+  const { data, isLoading } = useSolicitudesCambio();
+  const cambios = data?.results ?? [];
 
   if (isLoading) {
     return (
@@ -923,75 +609,44 @@ const ControlCambiosSection = () => {
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Pendientes</p>
-              <p className="text-2xl font-bold text-warning-600 dark:text-warning-400 mt-1">{stats.pendientes}</p>
-            </div>
-            <div className="w-12 h-12 bg-warning-100 dark:bg-warning-900/30 rounded-lg flex items-center justify-center">
-              <Clock className="w-6 h-6 text-warning-600 dark:text-warning-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Esperando revisión</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">En Revisión</p>
-              <p className="text-2xl font-bold text-primary-600 dark:text-primary-400 mt-1">{stats.enRevision}</p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <Activity className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">En evaluación</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Aprobadas</p>
-              <p className="text-2xl font-bold text-success-600 dark:text-success-400 mt-1">{stats.aprobadas}</p>
-            </div>
-            <div className="w-12 h-12 bg-success-100 dark:bg-success-900/30 rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-6 h-6 text-success-600 dark:text-success-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Listas para implementar</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Implementadas</p>
-              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">{stats.implementadas}</p>
-            </div>
-            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Este mes</p>
-        </Card>
-      </div>
+      <KpiCardGrid>
+        <KpiCard
+          label="Pendientes"
+          value={stats.pendientes}
+          icon={<Clock className="w-5 h-5" />}
+          color="warning"
+          description="Esperando revisión"
+        />
+        <KpiCard
+          label="En Revisión"
+          value={stats.enRevision}
+          icon={<Activity className="w-5 h-5" />}
+          color="primary"
+          description="En evaluación"
+        />
+        <KpiCard
+          label="Aprobadas"
+          value={stats.aprobadas}
+          icon={<CheckCircle className="w-5 h-5" />}
+          color="success"
+          description="Listas para implementar"
+        />
+        <KpiCard
+          label="Implementadas"
+          value={stats.implementadas}
+          icon={<TrendingUp className="w-5 h-5" />}
+          color="blue"
+          description="Este mes"
+        />
+      </KpiCardGrid>
 
       {/* Actions */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Control de Cambios</h3>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
-            Filtros
-          </Button>
-          <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-            Exportar
-          </Button>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Nueva Solicitud
-          </Button>
-        </div>
-      </div>
+      <SectionToolbar
+        title="Control de Cambios"
+        onFilter={() => console.log('Filtros')}
+        onExport={() => console.log('Exportar')}
+        primaryAction={{ label: 'Nueva Solicitud', onClick: () => console.log('Nueva Solicitud') }}
+      />
 
       {/* Cambios Table */}
       <Card variant="bordered" padding="none">
@@ -1037,17 +692,13 @@ const ControlCambiosSection = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {formatEstado(cambio.tipo)}
+                    {formatStatusLabel(cambio.tipo)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={getPrioridadBadgeVariant(cambio.prioridad)} size="sm">
-                      {formatEstado(cambio.prioridad)}
-                    </Badge>
+                    <StatusBadge status={cambio.prioridad} preset="prioridad" />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={getEstadoBadgeVariant(cambio.estado)} size="sm">
-                      {formatEstado(cambio.estado)}
-                    </Badge>
+                    <StatusBadge status={cambio.estado} preset="proceso" />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
                     {cambio.solicitante}

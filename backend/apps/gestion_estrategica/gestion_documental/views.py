@@ -13,6 +13,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from django.db.models import Q, Count
 from django.contrib.contenttypes.models import ContentType
+from apps.core.mixins import ExportMixin
 from .models import (
     TipoDocumento,
     PlantillaDocumento,
@@ -38,9 +39,11 @@ from .serializers import (
 )
 
 
-class TipoDocumentoViewSet(viewsets.ModelViewSet):
+class TipoDocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
     """ViewSet para Tipos de Documento"""
     permission_classes = [IsAuthenticated]
+    export_fields = [('codigo', 'Código'), ('nombre', 'Nombre'), ('nivel_documento', 'Nivel'), ('prefijo_codigo', 'Prefijo'), ('requiere_aprobacion', 'Req. Aprobación'), ('requiere_firma', 'Req. Firma')]
+    export_filename = 'tipos_documento'
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -200,7 +203,7 @@ class CampoFormularioViewSet(viewsets.ModelViewSet):
         return Response({'message': 'Campos reordenados exitosamente'})
 
 
-class DocumentoViewSet(viewsets.ModelViewSet):
+class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
     """
     ViewSet para Documentos.
 
@@ -208,6 +211,8 @@ class DocumentoViewSet(viewsets.ModelViewSet):
     Use el método get_firmas_digitales() del documento o el endpoint /firmas/ para acceder a ellas.
     """
     permission_classes = [IsAuthenticated]
+    export_fields = [('codigo', 'Código'), ('titulo', 'Título'), ('tipo_documento__nombre', 'Tipo'), ('estado', 'Estado'), ('version_actual', 'Versión'), ('clasificacion', 'Clasificación'), ('fecha_publicacion', 'Fecha Publicación'), ('fecha_vigencia', 'Fecha Vigencia')]
+    export_filename = 'documentos'
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -367,6 +372,16 @@ class DocumentoViewSet(viewsets.ModelViewSet):
         documento.numero_impresiones += 1
         documento.save(update_fields=['numero_impresiones'])
         return Response({'impresiones': documento.numero_impresiones})
+
+    @action(detail=False, methods=['get'])
+    def estadisticas(self, request):
+        """Estadísticas del sistema documental para dashboard"""
+        from .services import DocumentoService
+        empresa_id = request.headers.get('X-Empresa-ID')
+        if not empresa_id:
+            return Response({'error': 'X-Empresa-ID requerido'}, status=status.HTTP_400_BAD_REQUEST)
+        stats = DocumentoService.obtener_estadisticas(empresa_id)
+        return Response(stats)
 
     @action(detail=False, methods=['get'])
     def pendientes_revision(self, request):

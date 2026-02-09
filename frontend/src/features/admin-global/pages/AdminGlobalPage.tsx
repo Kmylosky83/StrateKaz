@@ -5,7 +5,10 @@
  * - Empresas (Tenants)
  * - Planes de Suscripción
  * - Usuarios Globales
- * - Módulos del Sistema
+ *
+ * NOTA: La sección "Módulos" fue eliminada porque:
+ * - Los módulos se asignan por tenant en TenantFormModal (enabled_modules)
+ * - La activación granular se hace dentro de cada tenant (ConfiguracionTab)
  *
  * Solo visible para superusuarios (is_superuser=true)
  */
@@ -15,22 +18,17 @@ import {
   Building2,
   Users,
   CreditCard,
-  Blocks,
-  TrendingUp,
   AlertTriangle,
-  CheckCircle,
-  Clock,
   Shield,
   Globe,
   type LucideIcon,
 } from 'lucide-react';
-import { PageHeader, StatsGrid, StatsGridSkeleton } from '@/components/layout';
-import { Card, Badge, Button, BrandedSkeleton } from '@/components/common';
+import { StatsGrid, StatsGridSkeleton } from '@/components/layout';
+import { Card, Badge } from '@/components/common';
 import { useTenantsStats, useTenantUsersStats, usePlansStats } from '../hooks/useAdminGlobal';
 import { TenantsSection } from '../components/TenantsSection';
 import { PlansSection } from '../components/PlansSection';
 import { UsersGlobalSection } from '../components/UsersGlobalSection';
-import { ModulesSection } from '../components/ModulesSection';
 import type { StatItem } from '@/components/layout';
 
 // Secciones del Admin Global
@@ -60,12 +58,6 @@ const ADMIN_SECTIONS: AdminSection[] = [
     description: 'Usuarios con acceso multi-tenant y superadministradores',
     icon: Users,
   },
-  {
-    code: 'modulos',
-    name: 'Módulos',
-    description: 'Activación de módulos y features del sistema',
-    icon: Blocks,
-  },
 ];
 
 // Mapeo de secciones a componentes
@@ -73,7 +65,6 @@ const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
   empresas: TenantsSection,
   planes: PlansSection,
   usuarios: UsersGlobalSection,
-  modulos: ModulesSection,
 };
 
 export const AdminGlobalPage = () => {

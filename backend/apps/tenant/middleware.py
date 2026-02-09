@@ -1,273 +1,125 @@
 """
-Tenant Middleware - StrateKaz Multi-Tenant System
+Middleware de Autenticación Multi-Tenant
 
-Este middleware detecta el tenant basándose en:
-1. Subdominio (constructora-abc.stratekaz.com)
-2. Dominio personalizado (erp.constructora.com)
-3. Header X-Tenant-ID (para testing/API)
+Este middleware maneja la autenticación JWT en un contexto multi-tenant:
+1. El login usa TenantUser (schema público)
+2. Una vez autenticado, las requests van al schema del tenant seleccionado
+3. El header X-Tenant-ID indica qué tenant usar
 
-Una vez identificado el tenant, configura la conexión a su BD.
+FLUJO:
+1. Usuario hace login con email/password
+2. Backend verifica TenantUser en schema público
+3. Backend retorna tokens JWT + lista de tenants accesibles
+4. Frontend guarda tenant_id seleccionado
+5. Requests subsiguientes incluyen X-Tenant-ID header
+6. Este middleware cambia al schema del tenant correspondiente
 """
-import threading
-from django.http import HttpResponseNotFound, HttpResponseForbidden
+import logging
 from django.conf import settings
-from django.core.cache import cache
+from django.http import JsonResponse
+from django_tenants.utils import get_tenant_model, get_public_schema_name
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 
-# Thread-local storage para el tenant actual
-_thread_locals = threading.local()
-
-
-def get_current_tenant():
-    """Obtiene el tenant del thread actual"""
-    return getattr(_thread_locals, 'tenant', None)
+logger = logging.getLogger(__name__)
 
 
-def set_current_tenant(tenant):
-    """Establece el tenant para el thread actual"""
-    _thread_locals.tenant = tenant
-
-
-def clear_current_tenant():
-    """Limpia el tenant del thread actual"""
-    if hasattr(_thread_locals, 'tenant'):
-        del _thread_locals.tenant
-
-
-class TenantMiddleware:
+class TenantAuthenticationMiddleware:
     """
-    Middleware que identifica el tenant por subdominio/dominio
-    y configura la conexión a la BD correspondiente.
+    Middleware que maneja la autenticación multi-tenant.
+
+    Funciona en conjunto con TenantMainMiddleware de django-tenants.
+
+    Orden de prioridad para determinar el tenant:
+    1. Dominio (ya manejado por TenantMainMiddleware)
+    2. Header X-Tenant-ID (para desarrollo y apps móviles)
+    3. Claim tenant_id en el JWT token
     """
-
-    # Subdominios que no son tenants (acceso a BD master)
-    EXCLUDED_SUBDOMAINS = [
-        'www',
-        'admin',
-        'api',
-        'erp',
-        'app',
-        'localhost',
-        '127',
-    ]
-
-    # Paths que no requieren tenant (acceso a BD master)
-    PUBLIC_PATHS = [
-        '/admin/',
-        '/api/tenant/',
-        '/api/health/',
-        '/api/auth/',
-        '/api/docs/',
-        '/api/schema/',
-        '/api/redoc/',
-        '/api/core/',  # Core siempre disponible (RBAC, branding, system-modules)
-        '/api/audit/',  # Audit system (logs, notificaciones)
-        '/health/',
-        '/static/',
-        '/media/',
-    ]
 
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        # Limpiar tenant anterior
-        clear_current_tenant()
+        # Rutas que siempre van al schema público
+        public_paths = [
+            '/api/auth/',
+            '/api/tenant/auth/',  # Auth endpoints multi-tenant
+            '/api/tenant/public/',
+            '/api/tenant/plans/',
+            '/api/health/',
+            '/api/schema/',
+            '/api/docs/',
+            '/api/redoc/',
+            '/admin/',
+        ]
 
-        # Verificar si es un path público
-        if self._is_public_path(request.path):
+        # Si es una ruta pública, no hacer nada especial
+        if any(request.path.startswith(path) for path in public_paths):
             return self.get_response(request)
 
-        # Intentar identificar tenant
-        tenant = self._identify_tenant(request)
+        # Verificar si hay un X-Tenant-ID header
+        tenant_id = request.headers.get('X-Tenant-ID')
 
-        if tenant:
-            # Validar que el tenant esté activo y con suscripción válida
-            if not tenant.is_active:
-                return HttpResponseForbidden(
-                    "Esta cuenta está desactivada. "
-                    "Por favor contacte a soporte."
-                )
+        if tenant_id:
+            try:
+                # Validar que el usuario tiene acceso a este tenant
+                # Esto se hace en las views/permissions, no aquí
+                # Solo verificamos que el tenant existe y está activo
+                Tenant = get_tenant_model()
+                tenant = Tenant.objects.get(id=tenant_id, is_active=True)
 
-            if not tenant.is_subscription_valid:
-                return HttpResponseForbidden(
-                    "La suscripción ha vencido. "
-                    "Por favor renueve su plan para continuar."
-                )
+                # Cambiar al schema del tenant
+                from django.db import connection
+                connection.set_tenant(tenant)
 
-            # Establecer tenant en thread local
-            set_current_tenant(tenant)
+                # Guardar el tenant en el request para uso posterior
+                request.tenant = tenant
+                request.tenant_id = tenant.id
 
-            # Agregar tenant al request para acceso fácil
-            request.tenant = tenant
-
-        elif not self._is_optional_tenant_path(request.path):
-            # Si se requiere tenant y no se encontró
-            return HttpResponseNotFound(
-                "Empresa no encontrada. "
-                "Verifique la URL e intente nuevamente."
-            )
+            except Tenant.DoesNotExist:
+                # Tenant no existe o no está activo
+                # El TenantMainMiddleware ya habrá establecido un tenant por dominio
+                pass
+            except Exception as e:
+                logger.error(f"Error al cambiar de tenant: {e}")
 
         response = self.get_response(request)
-
-        # Limpiar tenant después de la respuesta
-        clear_current_tenant()
-
         return response
 
-    def _identify_tenant(self, request):
-        """
-        Identifica el tenant basándose en:
-        1. Header X-Tenant-ID (para testing/API)
-        2. Dominio personalizado
-        3. Subdominio
-        """
-        from apps.tenant.models import Tenant, TenantDomain
 
-        # 1. Verificar header (útil para testing y API calls)
-        tenant_id = request.headers.get('X-Tenant-ID')
-        if tenant_id:
-            return self._get_tenant_by_id(tenant_id)
-
-        # Obtener host
-        host = request.get_host().split(':')[0].lower()
-
-        # 2. Verificar dominio personalizado
-        tenant = self._get_tenant_by_custom_domain(host)
-        if tenant:
-            return tenant
-
-        # 3. Verificar subdominio
-        return self._get_tenant_by_subdomain(host)
-
-    def _get_tenant_by_id(self, tenant_id):
-        """Obtiene tenant por ID (para testing)"""
-        from apps.tenant.models import Tenant
-
-        cache_key = f"tenant:id:{tenant_id}"
-        tenant = cache.get(cache_key)
-
-        if tenant is None:
-            try:
-                tenant = Tenant.objects.select_related('plan').get(
-                    pk=tenant_id,
-                    is_active=True
-                )
-                cache.set(cache_key, tenant, timeout=300)  # 5 minutos
-            except Tenant.DoesNotExist:
-                return None
-
-        return tenant
-
-    def _get_tenant_by_custom_domain(self, host):
-        """Obtiene tenant por dominio personalizado"""
-        from apps.tenant.models import Tenant, TenantDomain
-
-        # Verificar en Tenant.custom_domain
-        cache_key = f"tenant:domain:{host}"
-        tenant = cache.get(cache_key)
-
-        if tenant is None:
-            # Buscar en custom_domain del Tenant
-            tenant = Tenant.objects.select_related('plan').filter(
-                custom_domain=host,
-                is_active=True
-            ).first()
-
-            # Si no, buscar en TenantDomain
-            if not tenant:
-                domain_obj = TenantDomain.objects.select_related(
-                    'tenant', 'tenant__plan'
-                ).filter(
-                    domain=host,
-                    is_active=True,
-                    tenant__is_active=True
-                ).first()
-
-                if domain_obj:
-                    tenant = domain_obj.tenant
-
-            if tenant:
-                cache.set(cache_key, tenant, timeout=300)
-
-        return tenant
-
-    def _get_tenant_by_subdomain(self, host):
-        """Obtiene tenant por subdominio"""
-        from apps.tenant.models import Tenant
-
-        # Extraer subdominio
-        parts = host.split('.')
-
-        # Necesitamos al menos 3 partes (subdomain.domain.tld)
-        # o 2 partes en desarrollo (subdomain.localhost)
-        if len(parts) < 2:
-            return None
-
-        subdomain = parts[0]
-
-        # Verificar si es un subdominio excluido
-        if subdomain in self.EXCLUDED_SUBDOMAINS:
-            return None
-
-        # Buscar tenant por subdominio
-        cache_key = f"tenant:subdomain:{subdomain}"
-        tenant = cache.get(cache_key)
-
-        if tenant is None:
-            tenant = Tenant.objects.select_related('plan').filter(
-                subdomain=subdomain,
-                is_active=True
-            ).first()
-
-            if tenant:
-                cache.set(cache_key, tenant, timeout=300)
-
-        return tenant
-
-    def _is_public_path(self, path):
-        """Verifica si el path es público (no requiere tenant)"""
-        return any(path.startswith(p) for p in self.PUBLIC_PATHS)
-
-    def _is_optional_tenant_path(self, path):
-        """
-        Paths donde el tenant es opcional.
-        Por ejemplo, el login genérico en erp.stratekaz.com
-        """
-        optional_paths = [
-            '/api/auth/login/',
-            '/api/core/branding/active/',
-            '/api/core/branding/manifest/',
-        ]
-        return any(path.startswith(p) for p in optional_paths)
-
-
-class TenantDatabaseMiddleware:
+class TenantJWTAuthenticationMiddleware:
     """
-    Middleware adicional para configurar la conexión a BD del tenant.
+    Middleware opcional que extrae el tenant_id del JWT y lo establece.
 
-    Debe ejecutarse DESPUÉS de TenantMiddleware.
+    Útil cuando el token JWT incluye el tenant_id en sus claims.
     """
 
     def __init__(self, get_response):
         self.get_response = get_response
+        self.jwt_auth = JWTAuthentication()
 
     def __call__(self, request):
-        tenant = get_current_tenant()
+        # Solo procesar si hay un header Authorization
+        auth_header = request.headers.get('Authorization', '')
 
-        if tenant:
-            # Configurar la conexión a la BD del tenant
-            self._setup_tenant_database(tenant)
+        if auth_header.startswith('Bearer '):
+            try:
+                # Extraer y validar el token
+                raw_token = auth_header.split(' ')[1]
+                validated_token = self.jwt_auth.get_validated_token(raw_token)
+
+                # Verificar si el token tiene tenant_id
+                tenant_id = validated_token.get('tenant_id')
+
+                if tenant_id and not request.headers.get('X-Tenant-ID'):
+                    # Si no hay X-Tenant-ID pero sí tenant_id en el token,
+                    # usar el del token
+                    request.META['HTTP_X_TENANT_ID'] = str(tenant_id)
+
+            except (InvalidToken, TokenError):
+                # Token inválido, dejar que DRF maneje el error
+                pass
+            except Exception as e:
+                logger.debug(f"Error procesando JWT para tenant: {e}")
 
         return self.get_response(request)
-
-    def _setup_tenant_database(self, tenant):
-        """
-        Configura la conexión dinámica a la BD del tenant.
-        """
-        from django.db import connections
-
-        db_alias = f"tenant_{tenant.id}"
-
-        # Si la conexión no existe, crearla
-        if db_alias not in connections.databases:
-            connections.databases[db_alias] = tenant.get_database_config()

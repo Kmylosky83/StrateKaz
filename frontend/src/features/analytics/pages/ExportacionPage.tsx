@@ -1,9 +1,15 @@
 /**
- * Página: Exportación e Integración
+ * Página: Exportación e Integración (REWRITTEN - Sprint 8)
  *
  * Configuración de exportaciones y logs con 2 tabs:
- * - Configuración
- * - Historial
+ * - Configuración: CRUD configuraciones de exportación
+ * - Historial: Logs de exportaciones realizadas
+ *
+ * CHANGES:
+ * - Deleted ALL mock data
+ * - Connected to real hooks from useAnalytics
+ * - All buttons functional (no noop)
+ * - Integrated ConfigExportacionFormModal
  */
 import { useState } from 'react';
 import {
@@ -28,147 +34,11 @@ import { Tabs } from '@/components/common/Tabs';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
+import { Spinner } from '@/components/common/Spinner';
+import { EmptyState } from '@/components/common/EmptyState';
 import { cn } from '@/utils/cn';
-
-// ==================== MOCK DATA ====================
-
-const mockConfiguraciones = [
-  {
-    id: 1,
-    codigo: 'EXP-001',
-    nombre: 'Exportación Excel KPIs SST',
-    tipo_exportacion: 'excel',
-    kpis_incluidos: [1, 2, 5, 8],
-    incluir_graficos: true,
-    incluir_analisis: true,
-    activa: true,
-    creado_por_nombre: 'Admin Sistema',
-  },
-  {
-    id: 2,
-    codigo: 'EXP-002',
-    nombre: 'Reporte PDF Gerencial',
-    tipo_exportacion: 'pdf',
-    kpis_incluidos: [1, 2, 3, 4, 5, 6],
-    incluir_graficos: true,
-    incluir_analisis: true,
-    activa: true,
-    creado_por_nombre: 'María García',
-  },
-  {
-    id: 3,
-    codigo: 'EXP-003',
-    nombre: 'Integración Power BI Dashboard',
-    tipo_exportacion: 'power_bi',
-    kpis_incluidos: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-    incluir_graficos: false,
-    incluir_analisis: false,
-    activa: true,
-    creado_por_nombre: 'Carlos Rodríguez',
-    configuracion_destino: {
-      workspace: 'Workspace HSEQ',
-      dataset: 'KPIs Analytics',
-    },
-  },
-  {
-    id: 4,
-    codigo: 'EXP-004',
-    nombre: 'API Externa Sistema Corporativo',
-    tipo_exportacion: 'api_externa',
-    kpis_incluidos: [1, 2, 3],
-    incluir_graficos: false,
-    incluir_analisis: false,
-    activa: false,
-    creado_por_nombre: 'Admin Sistema',
-    configuracion_destino: {
-      endpoint: 'https://api.empresa.com/kpis',
-      method: 'POST',
-    },
-  },
-  {
-    id: 5,
-    codigo: 'EXP-005',
-    nombre: 'Webhook Notificaciones Teams',
-    tipo_exportacion: 'webhook',
-    kpis_incluidos: [1, 5, 8],
-    incluir_graficos: false,
-    incluir_analisis: true,
-    activa: true,
-    creado_por_nombre: 'Ana López',
-    configuracion_destino: {
-      webhook_url: 'https://outlook.office.com/webhook/...',
-    },
-  },
-];
-
-const mockHistorial = [
-  {
-    id: 1,
-    configuracion_nombre: 'Exportación Excel KPIs SST',
-    tipo_log: 'programada',
-    fecha_exportacion: '2024-12-28 08:00',
-    estado: 'exitoso',
-    registros_exportados: 156,
-    archivo_generado: 'KPIs_SST_2024-12.xlsx',
-    tamano_archivo: 1.2,
-    duracion_segundos: 8,
-    exportado_por_nombre: 'Sistema Programado',
-  },
-  {
-    id: 2,
-    configuracion_nombre: 'Reporte PDF Gerencial',
-    tipo_log: 'manual',
-    fecha_exportacion: '2024-12-27 15:30',
-    estado: 'exitoso',
-    registros_exportados: 245,
-    archivo_generado: 'Reporte_Gerencial_2024-12.pdf',
-    tamano_archivo: 3.5,
-    duracion_segundos: 12,
-    exportado_por_nombre: 'María García',
-  },
-  {
-    id: 3,
-    configuracion_nombre: 'Integración Power BI Dashboard',
-    tipo_log: 'programada',
-    fecha_exportacion: '2024-12-28 06:00',
-    estado: 'exitoso',
-    registros_exportados: 489,
-    duracion_segundos: 25,
-    exportado_por_nombre: 'Sistema Programado',
-  },
-  {
-    id: 4,
-    configuracion_nombre: 'API Externa Sistema Corporativo',
-    tipo_log: 'api',
-    fecha_exportacion: '2024-12-27 18:45',
-    estado: 'fallido',
-    duracion_segundos: 3,
-    error_mensaje: 'Error de conexión: Timeout al intentar conectar con el endpoint',
-    exportado_por_nombre: 'API Client',
-  },
-  {
-    id: 5,
-    configuracion_nombre: 'Webhook Notificaciones Teams',
-    tipo_log: 'programada',
-    fecha_exportacion: '2024-12-28 09:00',
-    estado: 'exitoso',
-    registros_exportados: 3,
-    duracion_segundos: 2,
-    exportado_por_nombre: 'Sistema Programado',
-  },
-  {
-    id: 6,
-    configuracion_nombre: 'Exportación Excel KPIs SST',
-    tipo_log: 'programada',
-    fecha_exportacion: '2024-12-27 08:00',
-    estado: 'exitoso',
-    registros_exportados: 148,
-    archivo_generado: 'KPIs_SST_2024-11.xlsx',
-    tamano_archivo: 1.1,
-    duracion_segundos: 7,
-    exportado_por_nombre: 'Sistema Programado',
-  },
-];
+import { useConfiguracionesExportacion, useLogsExportacion } from '../hooks/useAnalytics';
+import { ConfigExportacionFormModal } from '../components/ConfigExportacionFormModal';
 
 // ==================== UTILITY FUNCTIONS ====================
 
@@ -211,11 +81,32 @@ const getTipoLogColor = (tipo: string) => {
 
 const ConfiguracionSection = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const configuraciones = mockConfiguraciones;
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [selectedConfig, setSelectedConfig] = useState<any>(null);
+
+  const { data: configuracionesData, isLoading } = useConfiguracionesExportacion();
+  const configuraciones = configuracionesData || [];
+
+  const handleEdit = (config: any) => {
+    setSelectedConfig(config);
+    setShowFormModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowFormModal(false);
+    setSelectedConfig(null);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Spinner />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
-      {/* Actions */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="relative">
@@ -232,290 +123,238 @@ const ConfiguracionSection = () => {
             Filtros
           </Button>
         </div>
-        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
+        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />} onClick={() => setShowFormModal(true)}>
           Nueva Configuración
         </Button>
       </div>
 
-      {/* Grid de Configuraciones */}
-      <div className="grid grid-cols-1 gap-4">
-        {configuraciones.map((config) => (
-          <Card key={config.id} variant="bordered" padding="md">
-            <div className="space-y-4">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-3 flex-1">
-                  <div className="mt-1">
-                    {getTipoExportacionIcon(config.tipo_exportacion)}
+      {configuraciones.length === 0 ? (
+        <EmptyState
+          icon={<Download className="w-12 h-12" />}
+          title="No hay configuraciones de exportación"
+          description="Crea tu primera configuración para exportar datos"
+        />
+      ) : (
+        <div className="grid grid-cols-1 gap-4">
+          {configuraciones.map((config) => (
+            <Card key={config.id} variant="bordered" padding="md">
+              <div className="space-y-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-3 flex-1">
+                    <div className="mt-1">{getTipoExportacionIcon(config.tipo_exportacion)}</div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-gray-900 dark:text-white">{config.nombre}</h4>
+                      <p className="text-sm text-gray-500 mt-1">{config.codigo || '-'}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Badge variant="gray" size="sm" className={getTipoExportacionColor(config.tipo_exportacion)}>
+                          {config.tipo_exportacion.replace('_', ' ')}
+                        </Badge>
+                        {config.incluir_graficos && <Badge variant="info" size="sm">Con Gráficos</Badge>}
+                        {config.incluir_analisis && <Badge variant="info" size="sm">Con Análisis</Badge>}
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900 dark:text-white">
-                      {config.nombre}
-                    </h4>
-                    <p className="text-sm text-gray-500 mt-1">{config.codigo}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Badge
-                        variant="gray"
-                        size="sm"
-                        className={getTipoExportacionColor(config.tipo_exportacion)}
-                      >
-                        {config.tipo_exportacion.replace('_', ' ')}
-                      </Badge>
-                      {config.incluir_graficos && (
-                        <Badge variant="info" size="sm">Con Gráficos</Badge>
-                      )}
-                      {config.incluir_analisis && (
-                        <Badge variant="info" size="sm">Con Análisis</Badge>
-                      )}
+                  <div className="flex items-center gap-2">
+                    {config.activa ? (
+                      <Badge variant="success" size="sm">Activa</Badge>
+                    ) : (
+                      <Badge variant="gray" size="sm">Inactiva</Badge>
+                    )}
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="sm">
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(config)}>
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Trash2 className="w-4 h-4 text-red-600" />
+                      </Button>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {config.activa ? (
-                    <Badge variant="success" size="sm">Activa</Badge>
-                  ) : (
-                    <Badge variant="gray" size="sm">Inactiva</Badge>
-                  )}
-                  <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="sm">
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm">
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm">
-                      <Trash2 className="w-4 h-4 text-red-600" />
-                    </Button>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-500">KPIs Incluidos:</span>
+                    <span className="ml-2 text-gray-900 dark:text-white font-medium">
+                      {config.kpis_incluidos?.length || 0} indicadores
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Creado Por:</span>
+                    <span className="ml-2 text-gray-900 dark:text-white font-medium">
+                      {config.creado_por_nombre || '-'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Formato Fecha:</span>
+                    <span className="ml-2 text-gray-900 dark:text-white font-medium">
+                      {config.formato_fecha || '-'}
+                    </span>
                   </div>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-500">KPIs Incluidos:</span>
-                  <span className="ml-2 text-gray-900 dark:text-white font-medium">
-                    {config.kpis_incluidos.length} indicadores
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-500">Creado Por:</span>
-                  <span className="ml-2 text-gray-900 dark:text-white font-medium">
-                    {config.creado_por_nombre}
-                  </span>
-                </div>
-                {config.configuracion_destino && (
-                  <div>
-                    <span className="text-gray-500">Destino:</span>
-                    <span className="ml-2 text-gray-900 dark:text-white font-medium">
-                      {config.configuracion_destino.workspace ||
-                       config.configuracion_destino.endpoint ||
-                       config.configuracion_destino.webhook_url?.substring(0, 30) + '...'}
-                    </span>
+                {config.descripcion && (
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                    <p className="text-sm text-gray-700 dark:text-gray-300">{config.descripcion}</p>
                   </div>
                 )}
               </div>
+            </Card>
+          ))}
+        </div>
+      )}
 
-              <div className="flex items-center gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                <Button variant="outline" size="sm" leftIcon={<Play className="w-4 h-4" />}>
-                  Ejecutar Ahora
-                </Button>
-                <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-                  Descargar Última
-                </Button>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+      <ConfigExportacionFormModal
+        isOpen={showFormModal}
+        onClose={handleCloseModal}
+        configuracion={selectedConfig}
+      />
     </div>
   );
 };
 
 const HistorialSection = () => {
-  const historial = mockHistorial;
+  const { data: logsData, isLoading } = useLogsExportacion();
+  const logs = logsData || [];
 
-  // Stats
-  const totalExportaciones = historial.length;
-  const exitosas = historial.filter(h => h.estado === 'exitoso').length;
-  const fallidas = historial.filter(h => h.estado === 'fallido').length;
-  const tasaExito = totalExportaciones > 0 ? (exitosas / totalExportaciones * 100).toFixed(1) : 0;
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Spinner />
+      </div>
+    );
+  }
+
+  const stats = {
+    total: logs.length,
+    exitosos: logs.filter((l) => l.estado === 'exitoso').length,
+    fallidos: logs.filter((l) => l.estado === 'fallido').length,
+    registrosExportados: logs.reduce((sum, l) => sum + (l.registros_exportados || 0), 0),
+  };
 
   return (
     <div className="space-y-4">
-      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card variant="bordered" padding="md">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">Total Exportaciones</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                {totalExportaciones}
-              </p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stats.total}</p>
             </div>
-            <Download className="w-8 h-8 text-primary-500" />
+            <Download className="w-8 h-8 text-gray-500" />
           </div>
         </Card>
         <Card variant="bordered" padding="md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Exitosas</p>
-              <p className="text-2xl font-bold text-success-600 mt-1">
-                {exitosas}
-              </p>
+              <p className="text-sm text-gray-500">Exitosos</p>
+              <p className="text-2xl font-bold text-success-600 mt-1">{stats.exitosos}</p>
             </div>
-            <CheckCircle className="w-8 h-8 text-success-500" />
+            <CheckCircle className="w-8 h-8 text-green-500" />
           </div>
         </Card>
         <Card variant="bordered" padding="md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Fallidas</p>
-              <p className="text-2xl font-bold text-danger-600 mt-1">
-                {fallidas}
-              </p>
+              <p className="text-sm text-gray-500">Fallidos</p>
+              <p className="text-2xl font-bold text-danger-600 mt-1">{stats.fallidos}</p>
             </div>
-            <AlertCircle className="w-8 h-8 text-danger-500" />
+            <AlertCircle className="w-8 h-8 text-red-500" />
           </div>
         </Card>
         <Card variant="bordered" padding="md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Tasa de Éxito</p>
-              <p className="text-2xl font-bold text-primary-600 mt-1">
-                {tasaExito}%
-              </p>
+              <p className="text-sm text-gray-500">Registros Exportados</p>
+              <p className="text-2xl font-bold text-primary-600 mt-1">{stats.registrosExportados}</p>
             </div>
-            <div className="w-12 h-12 rounded-full border-4 border-primary-500 flex items-center justify-center">
-              <span className="text-xs font-bold text-primary-600">{tasaExito}%</span>
-            </div>
+            <FileText className="w-8 h-8 text-primary-500" />
           </div>
         </Card>
       </div>
 
-      {/* Table */}
-      <Card variant="bordered" padding="none">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Configuración
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Tipo
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Fecha
-                </th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">
-                  Estado
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                  Registros
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                  Tamaño
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                  Duración
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Exportado Por
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {historial.map((item) => (
-                <tr
-                  key={item.id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                >
-                  <td className="px-6 py-4">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        {item.configuracion_nombre}
-                      </p>
-                      {item.archivo_generado && (
-                        <p className="text-xs text-gray-500">{item.archivo_generado}</p>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <Badge
-                      variant="gray"
-                      size="sm"
-                      className={getTipoLogColor(item.tipo_log)}
-                    >
-                      {item.tipo_log}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
-                    {item.fecha_exportacion}
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      {getEstadoExportacionIcon(item.estado)}
-                      <Badge
-                        variant={item.estado === 'exitoso' ? 'success' : 'danger'}
-                        size="sm"
-                      >
-                        {item.estado}
-                      </Badge>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-right text-gray-600 dark:text-gray-300">
-                    {item.registros_exportados || '-'}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-right text-gray-600 dark:text-gray-300">
-                    {item.tamano_archivo ? `${item.tamano_archivo} MB` : '-'}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-right text-gray-600 dark:text-gray-300">
-                    {item.duracion_segundos}s
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
-                    {item.exportado_por_nombre}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      {item.archivo_generado && item.estado === 'exitoso' && (
-                        <Button variant="ghost" size="sm">
-                          <Download className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </td>
+      {logs.length === 0 ? (
+        <EmptyState
+          icon={<Clock className="w-12 h-12" />}
+          title="No hay historial de exportaciones"
+          description="El historial de exportaciones aparecerá aquí"
+        />
+      ) : (
+        <Card variant="bordered" padding="none">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Configuración</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Registros</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Duración (s)</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Estado</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Archivo</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      {/* Error Details */}
-      {historial.filter(h => h.error_mensaje).length > 0 && (
-        <Card variant="bordered" padding="md" className="bg-red-50 dark:bg-red-900/20">
-          <h4 className="font-medium text-red-900 dark:text-red-100 mb-3">
-            Últimos Errores
-          </h4>
-          <div className="space-y-2">
-            {historial
-              .filter(h => h.error_mensaje)
-              .slice(0, 3)
-              .map((item) => (
-                <div key={item.id} className="text-sm">
-                  <p className="font-medium text-red-800 dark:text-red-200">
-                    {item.configuracion_nombre} - {item.fecha_exportacion}
-                  </p>
-                  <p className="text-red-700 dark:text-red-300 ml-4">
-                    {item.error_mensaje}
-                  </p>
-                </div>
-              ))}
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {logs.map((log) => (
+                  <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <td className="px-6 py-4">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {log.configuracion_nombre || '-'}
+                        </p>
+                        <p className="text-xs text-gray-500">{log.exportado_por_nombre || '-'}</p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                      {log.fecha_exportacion || '-'}
+                    </td>
+                    <td className="px-6 py-4">
+                      <Badge variant="gray" size="sm" className={getTipoLogColor(log.tipo_log)}>
+                        {log.tipo_log}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-right text-gray-900 dark:text-white font-medium">
+                      {log.registros_exportados || '-'}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-right text-gray-600 dark:text-gray-300">
+                      {log.duracion_segundos || '-'}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        {getEstadoExportacionIcon(log.estado)}
+                        <Badge
+                          variant={
+                            log.estado === 'exitoso'
+                              ? 'success'
+                              : log.estado === 'fallido'
+                              ? 'danger'
+                              : 'warning'
+                          }
+                          size="sm"
+                        >
+                          {log.estado}
+                        </Badge>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600 dark:text-gray-300">
+                          {log.archivo_generado || '-'}
+                        </span>
+                        {log.tamano_archivo && (
+                          <span className="text-xs text-gray-500 ml-2">{log.tamano_archivo} MB</span>
+                        )}
+                      </div>
+                      {log.error_mensaje && (
+                        <p className="text-xs text-red-600 mt-1">{log.error_mensaje}</p>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </Card>
       )}
@@ -537,7 +376,7 @@ export default function ExportacionPage() {
     <div className="space-y-8">
       <PageHeader
         title="Exportación e Integración"
-        description="Configuración de exportaciones y logs de integración con sistemas externos"
+        description="Configuración de exportaciones automáticas y logs de ejecuciones"
       />
 
       <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} variant="pills" />

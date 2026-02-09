@@ -1,23 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
+import { DURATION, EASING, shouldReduceMotion } from '@/lib/animations';
 import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/common/Button';
 import { TenantSelector } from '@/components/common/TenantSelector';
 import { Input } from '@/components/forms/Input';
-import { User, Lock, Key, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, Key, ShieldCheck } from 'lucide-react';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
-import { useTenants } from '@/hooks/useTenants';
 import { APP_VERSION } from '@/constants/brand';
-import { authAPI } from '@/api/auth.api';
 import { verifyTwoFactor } from '@/features/perfil/api/twoFactor.api';
+import { authAPI } from '@/api/auth.api';
+
+// Lazy load NetworkBackground for better initial load performance
+const NetworkBackground = lazy(() => import('@/components/common/NetworkBackground'));
 
 const loginSchema = z.object({
-  username: z.string().min(1, 'Usuario requerido'),
+  email: z.string().min(1, 'Email requerido').email('Email inválido'),
   password: z.string().min(1, 'Contraseña requerida'),
 });
 
@@ -38,23 +41,16 @@ type LoginStep = 'credentials' | '2fa' | 'tenant-select';
 export const LoginPage = () => {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
-  const user = useAuthStore((state) => state.user);
+  const tenantUser = useAuthStore((state) => state.tenantUser);
+  const accessibleTenants = useAuthStore((state) => state.accessibleTenants);
+  const isSuperadmin = useAuthStore((state) => state.isSuperadmin);
+  const selectTenant = useAuthStore((state) => state.selectTenant);
   const clearTenantContext = useAuthStore((state) => state.clearTenantContext);
   const [isLoading, setIsLoading] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [loginStep, setLoginStep] = useState<LoginStep>('credentials');
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [useBackupCode, setUseBackupCode] = useState(false);
-
-  // Multi-tenant state
-  const {
-    tenants,
-    lastTenantId,
-    isLoading: tenantsLoading,
-    fetchTenants,
-    selectTenant,
-    reset: resetTenants,
-  } = useTenants();
 
   const {
     companyName,
@@ -111,76 +107,55 @@ export const LoginPage = () => {
   });
 
   /**
-   * Verifica si el usuario tiene múltiples tenants y procesa el flujo
+   * Procesa el flujo después del login exitoso
+   * El store ya tiene los tenants accesibles después del login
    */
   const handlePostLoginFlow = async () => {
-    try {
-      // Obtener usuario actualizado del store
-      const currentUser = useAuthStore.getState().user;
-      const tenantsResponse = await fetchTenants();
+    const { tenantUser, accessibleTenants, isSuperadmin, currentTenant } = useAuthStore.getState();
 
-      if (!tenantsResponse || tenantsResponse.tenants.length === 0) {
-        // Usuario sin tenants
-        if (currentUser?.is_superuser) {
-          // Superusuario sin tenants → Admin Global (limpiar contexto de tenant)
-          clearTenantContext();
-          toast.success('Bienvenido al Panel de Administración!');
-          navigate('/admin-global');
-        } else {
-          // Usuario normal sin tenants → Dashboard (caso raro)
-          toast.success('Bienvenido!');
-          navigate('/dashboard');
-        }
-        return;
-      }
-
-      // Superusuario con tenants → mostrar selector con opción Admin Global
-      if (currentUser?.is_superuser) {
-        setLoginStep('tenant-select');
-        return;
-      }
-
-      if (tenantsResponse.tenants.length === 1) {
-        // Solo un tenant - seleccionar automáticamente
-        const tenant = tenantsResponse.tenants[0].tenant;
-        toast.success(`Bienvenido a ${tenant.name}!`);
-        await handleTenantSelect(tenant.id);
-        return;
-      }
-
-      // Múltiples tenants - mostrar selector
-      setLoginStep('tenant-select');
-    } catch {
-      // Si falla la obtención de tenants
-      const currentUser = useAuthStore.getState().user;
-      if (currentUser?.is_superuser) {
+    if (accessibleTenants.length === 0) {
+      // Usuario sin tenants
+      if (isSuperadmin) {
+        // Superadmin sin tenants → Admin Global
         clearTenantContext();
         toast.success('Bienvenido al Panel de Administración!');
         navigate('/admin-global');
       } else {
-        toast.success('Bienvenido!');
-        navigate('/dashboard');
+        toast.error('No tienes acceso a ninguna empresa.');
       }
+      return;
     }
+
+    // Superadmin con tenants → mostrar selector con opción Admin Global
+    if (isSuperadmin) {
+      setLoginStep('tenant-select');
+      return;
+    }
+
+    if (accessibleTenants.length === 1) {
+      // Solo un tenant - ya fue seleccionado automáticamente en el store
+      toast.success(`Bienvenido a ${currentTenant?.name || accessibleTenants[0].tenant.name}!`);
+      navigate('/mi-portal');
+      return;
+    }
+
+    // Múltiples tenants - mostrar selector
+    setLoginStep('tenant-select');
   };
 
   // Handler: Login inicial
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     try {
-      // Intentar login
-      const response = await authAPI.login(data);
+      // Login con el nuevo sistema multi-tenant
+      await login(data);
 
-      // Verificar si requiere 2FA
-      if ('requires_2fa' in response && response.requires_2fa) {
-        setLoginStep('2fa');
-        setUsername(data.username);
-        toast.info('Ingresa el código de autenticación de dos factores');
-      } else {
-        // Login exitoso sin 2FA - verificar tenants
-        await login(data);
-        await handlePostLoginFlow();
-      }
+      // TODO: Verificar si requiere 2FA
+      // Por ahora, el backend no retorna requires_2fa en la nueva API
+      // Si se implementa 2FA, habría que verificar la respuesta aquí
+
+      // Login exitoso - procesar flujo de tenants
+      await handlePostLoginFlow();
     } catch (error: any) {
       toast.error(error.response?.data?.detail || 'Error al iniciar sesión');
     } finally {
@@ -193,7 +168,7 @@ export const LoginPage = () => {
     setIsLoading(true);
     try {
       const response = await verifyTwoFactor({
-        username,
+        username: email, // Usamos el email guardado del paso anterior
         token: data.token,
         use_backup_code: useBackupCode,
       });
@@ -232,75 +207,92 @@ export const LoginPage = () => {
   // Handler: Volver al login
   const handleBackToLogin = () => {
     setLoginStep('credentials');
-    setUsername('');
+    setEmail('');
     setUseBackupCode(false);
     reset2FA();
-    resetTenants();
   };
 
   // Handler: Seleccionar tenant
   const handleTenantSelect = async (tenantId: number) => {
-    const redirectUrl = await selectTenant(tenantId);
-
-    if (redirectUrl) {
-      // Redirigir al subdominio del tenant
-      window.location.href = redirectUrl;
-    } else {
-      // Si falla, ir al dashboard
-      toast.error('Error al seleccionar empresa. Intenta de nuevo.');
+    try {
+      await selectTenant(tenantId);
+      const tenant = accessibleTenants.find((t) => t.tenant.id === tenantId);
+      toast.success(`Bienvenido a ${tenant?.tenant.name || 'la empresa'}!`);
+      navigate('/mi-portal');
+    } catch (error: any) {
+      toast.error(error.message || 'Error al seleccionar empresa. Intenta de nuevo.');
     }
   };
 
-  // Animaciones con tipos correctos
-  const containerVariants: Variants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        duration: 0.6,
-        staggerChildren: 0.1,
-      },
-    },
-  };
+  // Reduced motion detection
+  const reduceMotion = shouldReduceMotion();
 
-  const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] },
-    },
-  };
+  // Animaciones con tipos correctos - Usando constantes centralizadas
+  // Sincronizadas con marketing_site para consistencia visual
+  const containerVariants: Variants = reduceMotion
+    ? { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { duration: DURATION.fast } } }
+    : {
+        hidden: { opacity: 0 },
+        visible: {
+          opacity: 1,
+          transition: {
+            duration: 0.6,
+            staggerChildren: 0.1,
+          },
+        },
+      };
 
-  const logoVariants: Variants = {
-    hidden: { opacity: 0, scale: 0.8 },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] },
-    },
-  };
+  const itemVariants: Variants = reduceMotion
+    ? { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { duration: DURATION.fast } } }
+    : {
+        hidden: { opacity: 0, y: 20 },
+        visible: {
+          opacity: 1,
+          y: 0,
+          transition: { duration: DURATION.slow, ease: EASING.smooth },
+        },
+      };
+
+  const logoVariants: Variants = reduceMotion
+    ? { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { duration: DURATION.fast } } }
+    : {
+        hidden: { opacity: 0, scale: 0.95 },
+        visible: {
+          opacity: 1,
+          scale: 1,
+          transition: { duration: 0.6, ease: EASING.smooth },
+        },
+      };
 
   // Animación para la imagen de fondo
-  const backgroundImageVariants: Variants = {
-    hidden: { opacity: 0, scale: 1.1 },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      transition: { duration: 1.2, ease: [0.25, 0.46, 0.45, 0.94] },
-    },
-  };
+  const backgroundImageVariants: Variants = reduceMotion
+    ? { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { duration: DURATION.fast } } }
+    : {
+        hidden: { opacity: 0, scale: 1.1 },
+        visible: {
+          opacity: 1,
+          scale: 1,
+          transition: { duration: 1.2, ease: EASING.smooth },
+        },
+      };
+
+  // Determinar si usar el fondo animado de red (cuando no hay imagen personalizada)
+  const useNetworkBackground = !loginBackground || !imageLoaded;
 
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
-      {/* Fondo base */}
-      <div className="absolute inset-0 bg-gray-50 dark:bg-gray-900 -z-20" />
+      {/* Fondo animado de red - Solo cuando no hay imagen de fondo personalizada */}
+      {useNetworkBackground && (
+        <Suspense fallback={<div className="fixed inset-0 bg-neutral-950" />}>
+          <NetworkBackground brandColor={primaryColor} />
+        </Suspense>
+      )}
 
-      {/* Imagen de fondo con fade-in elegante */}
+      {/* Imagen de fondo con fade-in elegante (cuando hay imagen personalizada) */}
       <AnimatePresence>
         {loginBackground && imageLoaded && (
           <motion.div
-            className="absolute inset-0 -z-15"
+            className="absolute inset-0 z-0"
             variants={backgroundImageVariants}
             initial="hidden"
             animate="visible"
@@ -324,38 +316,6 @@ export const LoginPage = () => {
         )}
       </AnimatePresence>
 
-      {/* Background con gradiente dinámico (siempre visible) */}
-      <div
-        className="absolute inset-0 transition-all duration-700 -z-10"
-        style={{
-          background:
-            loginBackground && imageLoaded
-              ? 'transparent'
-              : `
-              linear-gradient(
-                135deg,
-                ${primaryColor}15 0%,
-                transparent 50%,
-                ${secondaryColor}10 100%
-              )
-            `,
-        }}
-      />
-
-      {/* Formas decorativas sutiles (solo cuando no hay imagen de fondo) */}
-      {(!loginBackground || !imageLoaded) && (
-        <>
-          <div
-            className="absolute top-0 right-0 w-96 h-96 rounded-full blur-3xl opacity-20 dark:opacity-10 -z-5"
-            style={{ backgroundColor: primaryColor }}
-          />
-          <div
-            className="absolute bottom-0 left-0 w-80 h-80 rounded-full blur-3xl opacity-15 dark:opacity-5 -z-5"
-            style={{ backgroundColor: secondaryColor }}
-          />
-        </>
-      )}
-
       {/* Contenedor principal con animación - full responsive */}
       <motion.div
         className="relative z-10 w-full max-w-[90%] sm:max-w-md md:max-w-lg lg:max-w-xl px-4 sm:px-6"
@@ -363,10 +323,13 @@ export const LoginPage = () => {
         initial="hidden"
         animate="visible"
       >
-        {/* Tarjeta con Glassmorphism */}
+        {/* Tarjeta con Glassmorphism - Adaptada para fondo oscuro o claro */}
         <motion.div
-          className="backdrop-blur-xl bg-white/70 dark:bg-gray-800/70 rounded-2xl shadow-xl
-                     border border-white/20 dark:border-gray-700/50 p-6 sm:p-8 md:p-10 lg:p-12"
+          className={`backdrop-blur-xl rounded-2xl shadow-xl p-6 sm:p-8 md:p-10 lg:p-12
+                     ${useNetworkBackground
+                       ? 'bg-neutral-900/80 border border-neutral-700/50'
+                       : 'bg-white/70 dark:bg-gray-800/70 border border-white/20 dark:border-gray-700/50'
+                     }`}
           variants={itemVariants}
         >
           {/* Logo y título - Solo mostrar en credentials y 2fa, no en tenant-select */}
@@ -374,33 +337,44 @@ export const LoginPage = () => {
             <motion.div className="text-center mb-6 sm:mb-8" variants={logoVariants}>
               {/* Logo con loading state */}
               {brandingLoading ? (
-                <div className="mx-auto h-16 sm:h-20 w-16 sm:w-20 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse-subtle mb-4" />
+                <div className={`mx-auto h-16 sm:h-20 w-16 sm:w-20 rounded-full animate-pulse-subtle mb-4 ${useNetworkBackground ? 'bg-neutral-700' : 'bg-gray-200 dark:bg-gray-700'}`} />
               ) : (
                 <>
-                  <img
-                    src={logo}
-                    alt={companyName}
-                    className="mx-auto h-16 sm:h-20 w-auto object-contain mb-4 dark:hidden drop-shadow-md"
-                  />
-                  <img
-                    src={logoWhite}
-                    alt={companyName}
-                    className="mx-auto h-16 sm:h-20 w-auto object-contain mb-4 hidden dark:block drop-shadow-md"
-                  />
+                  {/* Si hay fondo de red, siempre mostrar logo blanco; si no, usar lógica dark/light */}
+                  {useNetworkBackground ? (
+                    <img
+                      src={logoWhite}
+                      alt={companyName}
+                      className="mx-auto h-16 sm:h-20 w-auto object-contain mb-4 drop-shadow-md"
+                    />
+                  ) : (
+                    <>
+                      <img
+                        src={logo}
+                        alt={companyName}
+                        className="mx-auto h-16 sm:h-20 w-auto object-contain mb-4 dark:hidden drop-shadow-md"
+                      />
+                      <img
+                        src={logoWhite}
+                        alt={companyName}
+                        className="mx-auto h-16 sm:h-20 w-auto object-contain mb-4 hidden dark:block drop-shadow-md"
+                      />
+                    </>
+                  )}
                 </>
               )}
 
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white font-heading leading-tight break-words">
+              <h1 className={`text-xl sm:text-2xl md:text-3xl font-bold font-heading leading-tight break-words ${useNetworkBackground ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
                 {brandingLoading ? (
-                  <span className="inline-block h-8 w-48 bg-gray-200 dark:bg-gray-700 rounded animate-pulse-subtle" />
+                  <span className={`inline-block h-8 w-48 rounded animate-pulse-subtle ${useNetworkBackground ? 'bg-neutral-700' : 'bg-gray-200 dark:bg-gray-700'}`} />
                 ) : (
                   companyName
                 )}
               </h1>
 
-              <p className="mt-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+              <p className={`mt-2 text-xs sm:text-sm ${useNetworkBackground ? 'text-neutral-400' : 'text-gray-600 dark:text-gray-400'}`}>
                 {brandingLoading ? (
-                  <span className="inline-block h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse-subtle" />
+                  <span className={`inline-block h-4 w-32 rounded animate-pulse-subtle ${useNetworkBackground ? 'bg-neutral-700' : 'bg-gray-200 dark:bg-gray-700'}`} />
                 ) : (
                   companySlogan
                 )}
@@ -419,23 +393,34 @@ export const LoginPage = () => {
             >
               <div className="space-y-4">
                 <Input
-                  label="Usuario"
-                  type="text"
-                  autoComplete="username"
-                  leftIcon={<User className="h-5 w-5 text-gray-400" />}
-                  {...register('username')}
-                  error={errors.username?.message}
-                  className="bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm"
+                  label="Correo electrónico"
+                  type="email"
+                  autoComplete="email"
+                  leftIcon={<Mail className={`h-5 w-5 ${useNetworkBackground ? 'text-neutral-400' : 'text-gray-400'}`} />}
+                  {...register('email')}
+                  error={errors.email?.message}
+                  className={useNetworkBackground
+                    ? 'bg-neutral-800/50 border-neutral-600 text-white placeholder:text-neutral-500'
+                    : 'bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm'
+                  }
+                  style={useNetworkBackground ? { '--tw-ring-color': `${primaryColor}33` } as React.CSSProperties : undefined}
+                  labelClassName={useNetworkBackground ? 'text-neutral-300' : undefined}
+                  placeholder="correo@ejemplo.com"
                 />
 
                 <Input
                   label="Contraseña"
                   type="password"
                   autoComplete="current-password"
-                  leftIcon={<Lock className="h-5 w-5 text-gray-400" />}
+                  leftIcon={<Lock className={`h-5 w-5 ${useNetworkBackground ? 'text-neutral-400' : 'text-gray-400'}`} />}
                   {...register('password')}
                   error={errors.password?.message}
-                  className="bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm"
+                  className={useNetworkBackground
+                    ? 'bg-neutral-800/50 border-neutral-600 text-white placeholder:text-neutral-500'
+                    : 'bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm'
+                  }
+                  style={useNetworkBackground ? { '--tw-ring-color': `${primaryColor}33` } as React.CSSProperties : undefined}
+                  labelClassName={useNetworkBackground ? 'text-neutral-300' : undefined}
                 />
               </div>
 
@@ -457,10 +442,13 @@ export const LoginPage = () => {
               variants={itemVariants}
               key="2fa-form"
             >
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+              <div className={`rounded-lg p-4 mb-4 ${useNetworkBackground
+                ? 'bg-blue-900/30 border border-blue-700/50'
+                : 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'
+              }`}>
                 <div className="flex items-start gap-3">
-                  <ShieldCheck className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                  <div className="text-sm text-blue-800 dark:text-blue-200">
+                  <ShieldCheck className={`h-5 w-5 mt-0.5 flex-shrink-0 ${useNetworkBackground ? 'text-blue-400' : 'text-blue-600 dark:text-blue-400'}`} />
+                  <div className={`text-sm ${useNetworkBackground ? 'text-blue-200' : 'text-blue-800 dark:text-blue-200'}`}>
                     <p className="font-medium mb-1">Verificación de dos factores</p>
                     <p className="text-xs">
                       {useBackupCode
@@ -477,17 +465,23 @@ export const LoginPage = () => {
                 autoComplete="off"
                 autoFocus
                 maxLength={6}
-                leftIcon={<Key className="h-5 w-5 text-gray-400" />}
+                leftIcon={<Key className={`h-5 w-5 ${useNetworkBackground ? 'text-neutral-400' : 'text-gray-400'}`} />}
                 {...register2FA('token')}
                 error={errors2FA.token?.message}
-                className="bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm"
+                className={useNetworkBackground
+                  ? 'bg-neutral-800/50 border-neutral-600 text-white placeholder:text-neutral-500'
+                  : 'bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm'
+                }
+                style={useNetworkBackground ? { '--tw-ring-color': `${primaryColor}33` } as React.CSSProperties : undefined}
+                labelClassName={useNetworkBackground ? 'text-neutral-300' : undefined}
                 placeholder="123456"
               />
 
               <div className="flex justify-between items-center">
                 <button
                   type="button"
-                  className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                  className="text-sm hover:underline text-blue-600 dark:text-blue-400"
+                  style={useNetworkBackground ? { color: primaryColor } : undefined}
                   onClick={() => setUseBackupCode(!useBackupCode)}
                 >
                   {useBackupCode ? 'Usar código de la app' : 'Usar código de respaldo'}
@@ -506,7 +500,7 @@ export const LoginPage = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full"
+                  className={`w-full ${useNetworkBackground ? 'border-neutral-600 text-neutral-300 hover:bg-neutral-800' : ''}`}
                   onClick={handleBackToLogin}
                   disabled={isLoading}
                 >
@@ -523,12 +517,12 @@ export const LoginPage = () => {
               key="tenant-select"
             >
               <TenantSelector
-                tenants={tenants}
-                lastTenantId={lastTenantId}
+                tenants={accessibleTenants}
+                lastTenantId={tenantUser?.last_tenant_id ?? null}
                 onSelect={handleTenantSelect}
                 onBack={handleBackToLogin}
-                isLoading={tenantsLoading}
-                isSuperuser={user?.is_superuser ?? false}
+                isLoading={isLoading}
+                isSuperuser={isSuperadmin}
               />
             </motion.div>
           )}
@@ -537,7 +531,11 @@ export const LoginPage = () => {
         {/* Footer */}
         <motion.div
           className={`text-center mt-6 text-sm ${
-            loginBackground && imageLoaded ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'
+            useNetworkBackground
+              ? 'text-neutral-400'
+              : loginBackground && imageLoaded
+                ? 'text-white/80'
+                : 'text-gray-500 dark:text-gray-400'
           }`}
           variants={itemVariants}
         >
@@ -545,7 +543,7 @@ export const LoginPage = () => {
             v{APP_VERSION} • Powered by{' '}
             <span
               className="font-medium hover:opacity-80 transition-opacity cursor-default"
-              style={{ color: loginBackground && imageLoaded ? '#ffffff' : primaryColor }}
+              style={{ color: useNetworkBackground ? primaryColor : (loginBackground && imageLoaded ? '#ffffff' : primaryColor) }}
             >
               StrateKaz
             </span>

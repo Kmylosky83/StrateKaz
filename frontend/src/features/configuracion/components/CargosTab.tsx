@@ -45,9 +45,9 @@ export const CargosTab = () => {
 
   // RBAC: Verificar permisos del usuario
   const { canDo } = usePermissions();
-  const canCreate = canDo(Modules.CORE, Sections.CARGOS, 'create');
-  const canEdit = canDo(Modules.CORE, Sections.CARGOS, 'edit');
-  const canDelete = canDo(Modules.CORE, Sections.CARGOS, 'delete');
+  const canCreate = canDo(Modules.GESTION_ESTRATEGICA, Sections.CARGOS, 'create');
+  const canEdit = canDo(Modules.GESTION_ESTRATEGICA, Sections.CARGOS, 'edit');
+  const canDelete = canDo(Modules.GESTION_ESTRATEGICA, Sections.CARGOS, 'delete');
 
   // Color del módulo (sin hardcoding)
   const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');

@@ -1,14 +1,13 @@
 /**
- * KPIScatter3D - Visualización 3D Científica con Plotly
- * Sistema de Gestión StrateKaz - Analytics Pro Edition
+ * KPIScatter3D - Visualizacion 3D con ECharts GL
+ * Sistema de Gestion StrateKaz - Analytics Pro Edition
  */
 import { useMemo } from 'react';
-import Plot from 'react-plotly.js';
-import type { Data, Layout } from 'plotly.js';
-import { Card, Spinner } from '@/components/common';
+import ReactEChartsCore from 'echarts-for-react';
+import { Card } from '@/components/common';
 import { cn } from '@/lib/utils';
 import type { KPIObjetivo } from '../../../types/kpi.types';
-import { SEMAFORO_COLORS, getBSCColor, formatValue } from '../../../types/kpi.types';
+import { SEMAFORO_COLORS, getBSCColor } from '../../../types/kpi.types';
 
 export interface KPIScatter3DProps {
   kpis: KPIObjetivo[];
@@ -41,14 +40,8 @@ const AXIS_CONFIG = {
     label: 'Frecuencia',
     getValue: (kpi: KPIObjetivo) => {
       const order: Record<string, number> = {
-        DIARIO: 1,
-        SEMANAL: 2,
-        QUINCENAL: 3,
-        MENSUAL: 4,
-        BIMESTRAL: 5,
-        TRIMESTRAL: 6,
-        SEMESTRAL: 7,
-        ANUAL: 8,
+        DIARIO: 1, SEMANAL: 2, QUINCENAL: 3, MENSUAL: 4,
+        BIMESTRAL: 5, TRIMESTRAL: 6, SEMESTRAL: 7, ANUAL: 8,
       };
       return order[kpi.frequency] || 0;
     },
@@ -72,75 +65,56 @@ export function KPIScatter3D({
   height = 600,
   className,
 }: KPIScatter3DProps) {
-  const plotData = useMemo(() => {
-    if (kpis.length === 0) return [];
+  const option = useMemo(() => {
+    if (kpis.length === 0) return {};
 
     const xConfig = AXIS_CONFIG[xAxis];
     const yConfig = AXIS_CONFIG[yAxis];
     const zConfig = AXIS_CONFIG[zAxis];
 
-    const data: Data = {
-      type: 'scatter3d',
-      mode: 'markers',
-      x: kpis.map(xConfig.getValue),
-      y: kpis.map(yConfig.getValue),
-      z: kpis.map(zConfig.getValue),
-      text: kpis.map((kpi) => kpi.name),
-      hovertemplate:
-        '<b>%{text}</b><br>' +
-        `${xConfig.label}: %{x}<br>` +
-        `${yConfig.label}: %{y}<br>` +
-        `${zConfig.label}: %{z}<br>` +
-        '<extra></extra>',
-      marker: {
-        size: kpis.map((kpi) => {
-          // Tamaño según importancia (target_value normalizado)
-          const maxTarget = Math.max(...kpis.map((k) => k.target_value));
-          return 5 + (kpi.target_value / maxTarget) * 15;
-        }),
-        color: kpis.map((kpi) => {
-          if (colorBy === 'semaforo') {
-            return SEMAFORO_COLORS[kpi.status_semaforo];
-          } else {
-            return getBSCColor(kpi.bsc_perspective);
-          }
-        }),
-        opacity: 0.8,
-        line: {
-          color: 'rgba(0, 0, 0, 0.2)',
-          width: 1,
-        },
-      },
-    };
+    const maxTarget = Math.max(...kpis.map((k) => k.target_value));
 
-    return [data];
-  }, [kpis, xAxis, yAxis, zAxis, colorBy]);
+    const data = kpis.map((kpi) => {
+      const color =
+        colorBy === 'semaforo'
+          ? SEMAFORO_COLORS[kpi.status_semaforo]
+          : getBSCColor(kpi.bsc_perspective);
 
-  const layout = useMemo<Partial<Layout>>(() => {
-    const xConfig = AXIS_CONFIG[xAxis];
-    const yConfig = AXIS_CONFIG[yAxis];
-    const zConfig = AXIS_CONFIG[zAxis];
+      const size = 10 + (kpi.target_value / maxTarget) * 30;
+
+      return {
+        value: [xConfig.getValue(kpi), yConfig.getValue(kpi), zConfig.getValue(kpi)],
+        name: kpi.name,
+        itemStyle: { color, opacity: 0.8 },
+        symbolSize: size,
+      };
+    });
 
     return {
-      autosize: true,
-      height,
-      scene: {
-        xaxis: { title: xConfig.label },
-        yaxis: { title: yConfig.label },
-        zaxis: { title: zConfig.label },
-        camera: {
-          eye: { x: 1.5, y: 1.5, z: 1.5 },
+      tooltip: {
+        trigger: 'item' as const,
+        formatter: (params: { name: string; value: number[] }) => {
+          return `<b>${params.name}</b><br/>${xConfig.label}: ${params.value[0]}<br/>${yConfig.label}: ${params.value[1]}<br/>${zConfig.label}: ${params.value[2]}`;
         },
       },
-      paper_bgcolor: 'rgba(0,0,0,0)',
-      plot_bgcolor: 'rgba(0,0,0,0)',
-      margin: { l: 0, r: 0, t: 30, b: 0 },
-      title: {
-        text: 'Vista 3D de KPIs',
-        font: { size: 16 },
+      xAxis3D: { name: xConfig.label, type: 'value' as const },
+      yAxis3D: { name: yConfig.label, type: 'value' as const },
+      zAxis3D: { name: zConfig.label, type: 'value' as const },
+      grid3D: {
+        viewControl: { autoRotate: false, distance: 200 },
+        light: { main: { intensity: 1.2 }, ambient: { intensity: 0.3 } },
       },
+      series: [
+        {
+          type: 'scatter3D' as const,
+          data,
+          emphasis: {
+            itemStyle: { borderColor: '#333', borderWidth: 1 },
+          },
+        },
+      ],
     };
-  }, [xAxis, yAxis, zAxis, height]);
+  }, [kpis, xAxis, yAxis, zAxis, colorBy]);
 
   if (kpis.length === 0) {
     return (
@@ -152,17 +126,10 @@ export function KPIScatter3D({
 
   return (
     <Card className={cn('p-4', className)}>
-      <Plot
-        data={plotData}
-        layout={layout}
-        config={{
-          responsive: true,
-          displayModeBar: true,
-          displaylogo: false,
-          modeBarButtonsToRemove: ['sendDataToCloud', 'lasso2d', 'select2d'],
-        }}
-        style={{ width: '100%', height: '100%' }}
-      />
+      <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">
+        Vista 3D de KPIs
+      </h3>
+      <ReactEChartsCore option={option} style={{ height: `${height}px`, width: '100%' }} />
     </Card>
   );
 }

@@ -15,7 +15,7 @@ import { Menu, X, Bell, Moon, Sun, Search } from 'lucide-react';
 import { useThemeStore } from '@/store/themeStore';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import { useNotificacionesNoLeidas } from '@/features/audit-system/hooks/useNotificaciones';
-import { UserMenu, SearchModal, useSearchModal } from '@/components/common';
+import { UserMenu, SearchModal, useSearchModal, TenantSwitcher } from '@/components/common';
 import { cn } from '@/utils/cn';
 import { HEADER_LABELS, ROUTES } from '@/constants';
 
@@ -93,6 +93,12 @@ export const Header = ({ onToggleSidebar, isMobileMenuOpen = false }: HeaderProp
                 )}
               </div>
             </Link>
+
+            {/* Separador antes del TenantSwitcher */}
+            <div className="h-8 w-px bg-gray-200 dark:bg-gray-700 mx-2 hidden md:block" />
+
+            {/* Selector de Empresa (para multi-tenant y superadmins) */}
+            <TenantSwitcher className="hidden md:flex" />
           </div>
 
           {/* ═══════════════════════════════════════════════════════════════ */}

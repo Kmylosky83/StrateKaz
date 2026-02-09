@@ -1,22 +1,28 @@
 /**
- * Rutas del Sistema ERP - Estructura de 6 Niveles
+ * Rutas del Sistema ERP StrateKaz - Orden Logico de 8 Niveles (0-7)
  *
- * NIVEL 1 - Estratégico: Dirección Estratégica
- * NIVEL 2 - Cumplimiento: Cumplimiento, Riesgos, Workflows
- * NIVEL 3 - Torre de Control: Gestión HSEQ
- * NIVEL 4 - Cadena de Valor: Supply Chain, Producción, Logística, Ventas
- * NIVEL 5 - Habilitadores: Talento, Finanzas, Contabilidad
- * NIVEL 6 - Inteligencia: Analítica, Auditoría
+ * Alineado con docs/01-arquitectura/ORDEN-LOGICO-CONFIGURACION.md
+ *
+ * NIVEL 0 - AUTOMATICO: Seed al crear tenant (SystemModules, Tabs, Secciones, RBAC)
+ * NIVEL 1 - FUNDACION EMPRESARIAL: EmpresaConfig, Branding, Modulos habilitados
+ * NIVEL 2 - ESTRUCTURA ORGANIZACIONAL: Areas, Cargos, Sedes, Organigrama
+ * NIVEL 3 - DIRECCION ESTRATEGICA: Identidad, DOFA, Planeacion, Proyectos, Docs, Plan Trabajo
+ * NIVEL 4 - TALENTO HUMANO: Seleccion, Colaboradores, Formacion, Nomina, Desempeno
+ * NIVEL 5 - RIESGOS Y CUMPLIMIENTO: Cumplimiento, Riesgos, Workflows
+ * NIVEL 6 - GESTION HSEQ: Medicina, Seguridad, Higiene, Accidentalidad, Emergencias, Ambiental
+ * NIVEL 7 - OPERACIONES: Supply Chain, Produccion, Logistica, Ventas, Finanzas, Contabilidad, Analytics
  *
  * OPTIMIZADO: Code splitting con React.lazy() para reducir bundle inicial
  */
 import { lazy, Suspense, ComponentType } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
+import { ModuleGuard } from './ModuleGuard';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { LoginPage } from '@/pages/LoginPage';
 import { AuthCallbackPage } from '@/pages/AuthCallbackPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
+import { ErrorPage } from '@/pages/ErrorPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { PageLoader } from '@/components/common/PageLoader';
 
@@ -27,13 +33,21 @@ const withSuspense = (Component: ComponentType) => (
   </Suspense>
 );
 
+// Helper para envolver con Suspense + ModuleGuard (doble proteccion frontend)
+const withModuleGuard = (Component: ComponentType, moduleCode: string) => (
+  <ModuleGuard moduleCode={moduleCode}>
+    <Suspense fallback={<PageLoader />}>
+      <Component />
+    </Suspense>
+  </ModuleGuard>
+);
+
 // ==================== ADMIN GLOBAL (Solo Superusuarios) ====================
 const AdminGlobalPage = lazy(() =>
   import('@/features/admin-global').then((m) => ({ default: m.AdminGlobalPage }))
 );
 
-// ==================== NIVEL 1: DIRECCIÓN ESTRATÉGICA ====================
-// Importación directa de páginas para mejor tree-shaking y chunks más pequeños
+// ==================== NIVEL 1-2: FUNDACION + ESTRUCTURA (gestion_estrategica) ====================
 const UsersPage = lazy(() => import('@/features/users/pages/UsersPage'));
 const ConfiguracionPage = lazy(
   () => import('@/features/gestion-estrategica/pages/ConfiguracionPage')
@@ -41,6 +55,8 @@ const ConfiguracionPage = lazy(
 const OrganizacionPage = lazy(
   () => import('@/features/gestion-estrategica/pages/OrganizacionPage')
 );
+
+// ==================== NIVEL 3: DIRECCION ESTRATEGICA ====================
 const IdentidadPage = lazy(() => import('@/features/gestion-estrategica/pages/IdentidadPage'));
 const PlaneacionPage = lazy(() => import('@/features/gestion-estrategica/pages/PlaneacionPage'));
 const ProyectosPage = lazy(() => import('@/features/gestion-estrategica/pages/ProyectosPage'));
@@ -51,15 +67,12 @@ const ContextoPage = lazy(
   () => import('@/features/gestion-estrategica/pages/ContextoPage')
 );
 
-// Soporte Estratégico (nuevo módulo)
-const GestionDocumentalPage = lazy(
-  () => import('@/features/soporte-estrategico/pages/GestionDocumentalPage')
-);
-const PlanificacionSistemaPageNueva = lazy(
-  () => import('@/features/soporte-estrategico/pages/PlanificacionSistemaPage')
+// ==================== NIVEL 4: TALENTO HUMANO ====================
+const TalentHubPage = lazy(() =>
+  import('@/features/talent-hub').then((m) => ({ default: m.TalentHubPage }))
 );
 
-// ==================== NIVEL 2: CUMPLIMIENTO ====================
+// ==================== NIVEL 5: RIESGOS Y CUMPLIMIENTO ====================
 // Motor de Cumplimiento
 const MatrizLegalPage = lazy(() =>
   import('@/features/cumplimiento').then((m) => ({ default: m.MatrizLegalPage }))
@@ -103,7 +116,7 @@ const MonitoreoPage = lazy(() =>
   import('@/features/workflows').then((m) => ({ default: m.MonitoreoPage }))
 );
 
-// ==================== NIVEL 3: TORRE DE CONTROL (HSEQ) ====================
+// ==================== NIVEL 6: GESTION INTEGRAL HSEQ ====================
 const HSEQPage = lazy(() => import('@/features/hseq').then((m) => ({ default: m.HSEQPage })));
 const SistemaDocumentalPage = lazy(() =>
   import('@/features/hseq').then((m) => ({ default: m.SistemaDocumentalPage }))
@@ -137,23 +150,24 @@ const MejoraContinuaPage = lazy(() =>
   import('@/features/hseq').then((m) => ({ default: m.MejoraContinuaPage }))
 );
 
-// ==================== NIVEL 4: CADENA DE VALOR ====================
-// Operaciones de Producción
+// ==================== NIVEL 7: OPERACIONES Y SOPORTE ====================
+// Cadena de Suministro (supply_chain)
+const SupplyChainPage = lazy(() =>
+  import('@/features/supply-chain').then((m) => ({ default: m.SupplyChainPage }))
+);
+const GestionProveedoresPage = lazy(() =>
+  import('@/features/supply-chain').then((m) => ({ default: m.GestionProveedoresPage }))
+);
+
+// Operaciones de Produccion
 const ProductionOpsPage = lazy(() => import('@/features/production-ops/pages/ProductionOpsPage'));
 
-// Logística y Flota
+// Logistica y Flota
 const LogisticsFleetPage = lazy(
   () => import('@/features/logistics-fleet/pages/LogisticsFleetPage')
 );
 
-// Supply Chain (Proveedores legacy → será refactorizado a supply_chain)
-const MateriaPrimaPage = lazy(() => import('@/features/proveedores/pages/MateriaPrimaPage'));
-const ProductosServiciosPage = lazy(
-  () => import('@/features/proveedores/pages/ProductosServiciosPage')
-);
-const PruebasAcidezPage = lazy(() => import('@/features/proveedores/pages/PruebasAcidezPage'));
-
-// Sales & CRM
+// Ventas y CRM
 const ClientesPage = lazy(() =>
   import('@/features/sales-crm').then((m) => ({ default: m.ClientesPage }))
 );
@@ -177,13 +191,7 @@ const FidelizacionPage = lazy(() =>
   import('@/features/sales-crm').then((m) => ({ default: m.FidelizacionPage }))
 );
 
-// ==================== NIVEL 5: HABILITADORES ====================
-// Centro de Talento (Talent Hub)
-const TalentHubPage = lazy(() =>
-  import('@/features/talent-hub').then((m) => ({ default: m.TalentHubPage }))
-);
-
-// Administración y Finanzas
+// Administracion y Finanzas
 const TesoreriaPage = lazy(() =>
   import('@/features/admin-finance').then((m) => ({ default: m.TesoreriaPage }))
 );
@@ -197,7 +205,7 @@ const ServiciosGeneralesPage = lazy(() =>
   import('@/features/admin-finance').then((m) => ({ default: m.ServiciosGeneralesPage }))
 );
 
-// Contabilidad (Módulo Activable)
+// Contabilidad (Modulo Activable)
 const ConfigContablePage = lazy(() =>
   import('@/features/accounting').then((m) => ({ default: m.ConfigContablePage }))
 );
@@ -211,8 +219,7 @@ const IntegracionContablePage = lazy(() =>
   import('@/features/accounting').then((m) => ({ default: m.IntegracionContablePage }))
 );
 
-// ==================== NIVEL 6: INTELIGENCIA ====================
-// Analítica
+// Analitica e Inteligencia de Negocios
 const ConfigIndicadoresPage = lazy(() =>
   import('@/features/analytics').then((m) => ({ default: m.ConfigIndicadoresPage }))
 );
@@ -237,8 +244,11 @@ const ExportacionPage = lazy(() =>
 const AnalyticsDemoPage = lazy(() =>
   import('@/features/analytics').then((m) => ({ default: m.AnalyticsDemoPage }))
 );
+const DashboardBuilderPage = lazy(() =>
+  import('@/features/analytics').then((m) => ({ default: m.DashboardBuilderPage }))
+);
 
-// Sistema de Auditoría
+// Sistema de Auditoria
 const LogsSistemaPage = lazy(() =>
   import('@/features/audit-system').then((m) => ({ default: m.LogsSistemaPage }))
 );
@@ -250,6 +260,19 @@ const AlertasPage = lazy(() =>
 );
 const TareasPage = lazy(() =>
   import('@/features/audit-system').then((m) => ({ default: m.TareasPage }))
+);
+
+// ==================== PAGINA PUBLICA (Sin autenticacion) ====================
+const EncuestaPublicaPage = lazy(
+  () => import('@/features/gestion-estrategica/pages/EncuestaPublicaPage')
+);
+
+// ==================== PORTALES ESS / MSS ====================
+const MiPortalPage = lazy(() =>
+  import('@/features/mi-portal').then((m) => ({ default: m.MiPortalPage }))
+);
+const MiEquipoPage = lazy(() =>
+  import('@/features/mi-equipo').then((m) => ({ default: m.MiEquipoPage }))
 );
 
 // ==================== PERFIL DE USUARIO ====================
@@ -265,10 +288,11 @@ export const AppRoutes = () => {
   return (
     <Routes>
       {/* ═══════════════════════════════════════════════════════════════ */}
-      {/* RUTAS PÚBLICAS */}
+      {/* RUTAS PUBLICAS */}
       {/* ═══════════════════════════════════════════════════════════════ */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
+      <Route path="/encuestas/responder/:token" element={withSuspense(EncuestaPublicaPage)} />
 
       {/* ═══════════════════════════════════════════════════════════════ */}
       {/* RUTAS PROTEGIDAS */}
@@ -276,13 +300,13 @@ export const AppRoutes = () => {
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
           {/* ═══════════════════════════════════════════════════════════════ */}
-          {/* DASHBOARD PRINCIPAL - Página de inicio post-login */}
+          {/* DASHBOARD PRINCIPAL - Pagina de inicio post-login */}
           {/* ═══════════════════════════════════════════════════════════════ */}
           <Route path="/dashboard" element={<DashboardPage />} />
 
           {/* ═══════════════════════════════════════════════════════════════ */}
           {/* ADMIN GLOBAL - Solo Superusuarios (is_superuser=true) */}
-          {/* Gestión de: Tenants, Planes, Usuarios Globales, Módulos */}
+          {/* Gestion de: Tenants, Planes, Usuarios Globales, Modulos */}
           {/* ═══════════════════════════════════════════════════════════════ */}
           <Route path="/admin-global" element={withSuspense(AdminGlobalPage)} />
 
@@ -294,289 +318,271 @@ export const AppRoutes = () => {
           <Route path="/perfil/preferencias" element={withSuspense(PreferenciasPage)} />
 
           {/* ═══════════════════════════════════════════════════════════════ */}
-          {/* NIVEL 1: DIRECCIÓN ESTRATÉGICA */}
-          {/* Código: Gestion_Estrategica */}
+          {/* PORTALES ESS / MSS (Acceso universal, sin ModuleGuard) */}
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          <Route path="/mi-portal" element={withSuspense(MiPortalPage)} />
+          <Route path="/mi-equipo" element={withSuspense(MiEquipoPage)} />
+
+          {/* Usuarios - Modulo transversal */}
+          <Route path="/usuarios" element={withSuspense(UsersPage)} />
+
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          {/* NIVEL 1-2: FUNDACION EMPRESARIAL + ESTRUCTURA ORGANIZACIONAL */}
+          {/* Modulo: gestion_estrategica (es el modulo core, siempre activo) */}
+          {/* Nivel 1: Configuracion empresa (EmpresaConfig, branding, modulos) */}
+          {/* Nivel 2: Estructura (Areas, Cargos, Sedes, Organigrama) */}
           {/* ═══════════════════════════════════════════════════════════════ */}
           <Route
             path="/gestion-estrategica"
             element={<Navigate to="/gestion-estrategica/configuracion" replace />}
           />
 
-          {/* Tab 1: Configuración */}
+          {/* Tab 1: Configuracion (Nivel 1 - Fundacion) */}
           <Route
             path="/gestion-estrategica/configuracion"
-            element={withSuspense(ConfiguracionPage)}
+            element={withModuleGuard(ConfiguracionPage, 'gestion_estrategica')}
           />
 
-          {/* Tab 2: Organización */}
+          {/* Tab 2: Organizacion (Nivel 2 - Estructura) */}
           <Route
             path="/gestion-estrategica/organizacion"
-            element={withSuspense(OrganizacionPage)}
+            element={withModuleGuard(OrganizacionPage, 'gestion_estrategica')}
           />
 
-          {/* Tab 3: Identidad Corporativa */}
-          <Route path="/gestion-estrategica/identidad" element={withSuspense(IdentidadPage)} />
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          {/* NIVEL 3: DIRECCION ESTRATEGICA */}
+          {/* Identidad, Contexto, Planeacion, Proyectos, Revision Direccion */}
+          {/* Gestion Documental y Planificacion Sistema (via HSEQ) */}
+          {/* ═══════════════════════════════════════════════════════════════ */}
 
-          {/* Tab 4: Planeación Estratégica */}
-          <Route path="/gestion-estrategica/planeacion" element={withSuspense(PlaneacionPage)} />
+          {/* Tab 3: Identidad Corporativa (mision, vision, valores, politicas) */}
+          <Route
+            path="/gestion-estrategica/identidad"
+            element={withModuleGuard(IdentidadPage, 'gestion_estrategica')}
+          />
+
+          {/* Tab 4: Planeacion Estrategica (objetivos, indicadores, metas) */}
+          <Route
+            path="/gestion-estrategica/planeacion"
+            element={withModuleGuard(PlaneacionPage, 'gestion_estrategica')}
+          />
+
           {/* Tab 4b: Contexto Organizacional (DOFA/PESTEL/Porter/TOWS) */}
           <Route
             path="/gestion-estrategica/contexto"
-            element={withSuspense(ContextoPage)}
+            element={withModuleGuard(ContextoPage, 'gestion_estrategica')}
           />
 
-          {/* Tab 5: Gestión de Proyectos (PMI) */}
-          <Route path="/gestion-estrategica/proyectos" element={withSuspense(ProyectosPage)} />
+          {/* Tab 5: Gestion de Proyectos (PMI/PMBOK con Kanban) */}
+          <Route
+            path="/gestion-estrategica/proyectos"
+            element={withModuleGuard(ProyectosPage, 'gestion_estrategica')}
+          />
 
-          {/* Tab 6: Revisión por Dirección (ISO 9.3) */}
+          {/* Tab 6: Revision por Direccion (ISO 9.3) */}
           <Route
             path="/gestion-estrategica/revision-direccion"
-            element={withSuspense(RevisionDireccionPage)}
+            element={withModuleGuard(RevisionDireccionPage, 'gestion_estrategica')}
           />
 
-          {/* ═══════════════════════════════════════════════════════════════ */}
-          {/* MÓDULO: SOPORTE ESTRATÉGICO (soporte_estrategico) */}
-          {/* Gestión Documental y Planificación del Sistema */}
-          {/* ═══════════════════════════════════════════════════════════════ */}
+          {/* Soporte Estrategico: Gestion Documental y Planificacion Sistema */}
+          {/* Redirige a HSEQ donde estan las implementaciones completas */}
           <Route
             path="/soporte-estrategico"
-            element={<Navigate to="/soporte-estrategico/gestion-documental" replace />}
+            element={<Navigate to="/hseq/sistema-documental" replace />}
           />
           <Route
             path="/soporte-estrategico/gestion-documental"
-            element={withSuspense(GestionDocumentalPage)}
+            element={<Navigate to="/hseq/sistema-documental" replace />}
           />
           <Route
             path="/soporte-estrategico/planificacion-sistema"
-            element={withSuspense(PlanificacionSistemaPageNueva)}
+            element={<Navigate to="/hseq/planificacion" replace />}
           />
 
-          {/* Usuarios - Módulo transversal dentro de Dirección Estratégica */}
-          <Route path="/usuarios" element={withSuspense(UsersPage)} />
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          {/* NIVEL 4: TALENTO HUMANO (Centro de Talento) */}
+          {/* Modulo: talent_hub */}
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          <Route path="/talento" element={<Navigate to="/talento/estructura" replace />} />
+          <Route path="/talento/estructura" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
+          <Route path="/talento/seleccion" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
+          <Route path="/talento/colaboradores" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
+          <Route path="/talento/onboarding" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
+          <Route path="/talento/formacion" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
+          <Route path="/talento/desempeno" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
+          <Route path="/talento/control-tiempo" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
+          <Route path="/talento/novedades" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
+          <Route path="/talento/disciplinario" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
+          <Route path="/talento/nomina" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
+          <Route path="/talento/off-boarding" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
 
           {/* ═══════════════════════════════════════════════════════════════ */}
-          {/* NIVEL 2: CUMPLIMIENTO */}
+          {/* NIVEL 5: GESTION DE RIESGOS Y CUMPLIMIENTO */}
           {/* ═══════════════════════════════════════════════════════════════ */}
 
-          {/* Módulo: Motor de Cumplimiento (motor_cumplimiento) */}
+          {/* Modulo: Motor de Cumplimiento (motor_cumplimiento) */}
           <Route path="/cumplimiento" element={<Navigate to="/cumplimiento/matriz-legal" replace />} />
-          <Route path="/cumplimiento/matriz-legal" element={withSuspense(MatrizLegalPage)} />
+          <Route path="/cumplimiento/matriz-legal" element={withModuleGuard(MatrizLegalPage, 'motor_cumplimiento')} />
           <Route
             path="/cumplimiento/requisitos-legales"
-            element={withSuspense(RequisitosLegalesPage)}
+            element={withModuleGuard(RequisitosLegalesPage, 'motor_cumplimiento')}
           />
           <Route
             path="/cumplimiento/partes-interesadas"
-            element={withSuspense(PartesInteresadasPage)}
+            element={withModuleGuard(PartesInteresadasPage, 'motor_cumplimiento')}
           />
           <Route
             path="/cumplimiento/reglamentos-internos"
-            element={withSuspense(ReglamentosInternosPage)}
+            element={withModuleGuard(ReglamentosInternosPage, 'motor_cumplimiento')}
           />
 
-          {/* Módulo: Motor de Riesgos (motor_riesgos) */}
-          {/* NOTA: contexto_organizacional en /gestion-estrategica/contexto */}
+          {/* Modulo: Motor de Riesgos (motor_riesgos) */}
           <Route path="/riesgos" element={<Navigate to="/riesgos/procesos" replace />} />
-          <Route path="/riesgos/procesos" element={withSuspense(RiesgosProcesosPage)} />
-          <Route path="/riesgos/ipevr" element={withSuspense(IPEVRPage)} />
-          <Route path="/riesgos/ambientales" element={withSuspense(AspectosAmbientalesPage)} />
-          <Route path="/riesgos/viales" element={withSuspense(RiesgosVialesPage)} />
-          <Route path="/riesgos/sagrilaft" element={withSuspense(SagrilaftPteePage)} />
-          <Route path="/riesgos/seguridad-info" element={withSuspense(SeguridadInformacionPage)} />
+          <Route path="/riesgos/procesos" element={withModuleGuard(RiesgosProcesosPage, 'motor_riesgos')} />
+          <Route path="/riesgos/ipevr" element={withModuleGuard(IPEVRPage, 'motor_riesgos')} />
+          <Route path="/riesgos/ambientales" element={withModuleGuard(AspectosAmbientalesPage, 'motor_riesgos')} />
+          <Route path="/riesgos/viales" element={withModuleGuard(RiesgosVialesPage, 'motor_riesgos')} />
+          <Route path="/riesgos/sagrilaft" element={withModuleGuard(SagrilaftPteePage, 'motor_riesgos')} />
+          <Route path="/riesgos/seguridad-info" element={withModuleGuard(SeguridadInformacionPage, 'motor_riesgos')} />
 
-          {/* Módulo: Flujos de Trabajo (workflow_engine) */}
+          {/* Modulo: Flujos de Trabajo (workflow_engine) */}
           <Route path="/workflows" element={<Navigate to="/workflows/disenador" replace />} />
-          <Route path="/workflows/disenador" element={withSuspense(DisenadorFlujosPage)} />
-          <Route path="/workflows/ejecucion" element={withSuspense(EjecucionPage)} />
-          <Route path="/workflows/monitoreo" element={withSuspense(MonitoreoPage)} />
+          <Route path="/workflows/disenador" element={withModuleGuard(DisenadorFlujosPage, 'workflow_engine')} />
+          <Route path="/workflows/ejecucion" element={withModuleGuard(EjecucionPage, 'workflow_engine')} />
+          <Route path="/workflows/monitoreo" element={withModuleGuard(MonitoreoPage, 'workflow_engine')} />
 
           {/* ═══════════════════════════════════════════════════════════════ */}
-          {/* NIVEL 3: TORRE DE CONTROL (HSEQ MANAGEMENT) */}
-          {/* Código: hseq_management - Rutas definidas desde BD via seed */}
+          {/* NIVEL 6: GESTION INTEGRAL HSEQ */}
+          {/* Modulo: hseq_management */}
           {/* ═══════════════════════════════════════════════════════════════ */}
           <Route path="/hseq" element={<Navigate to="/hseq/sistema-documental" replace />} />
-          <Route path="/hseq/dashboard" element={withSuspense(HSEQPage)} />
+          <Route path="/hseq/dashboard" element={withModuleGuard(HSEQPage, 'hseq_management')} />
 
-          {/* Tab 1: Sistema Documental */}
-          <Route path="/hseq/sistema-documental" element={withSuspense(SistemaDocumentalPage)} />
+          {/* Tab 1: Sistema Documental (Gestion Documental centralizada) */}
+          <Route path="/hseq/sistema-documental" element={withModuleGuard(SistemaDocumentalPage, 'hseq_management')} />
 
-          {/* Tab 2: Planificación Sistema */}
-          <Route path="/hseq/planificacion" element={withSuspense(PlanificacionSistemaPage)} />
+          {/* Tab 2: Planificacion del Sistema (Plan de Trabajo Anual, Programas) */}
+          <Route path="/hseq/planificacion" element={withModuleGuard(PlanificacionSistemaPage, 'hseq_management')} />
 
-          {/* Tab 3: Calidad */}
-          <Route path="/hseq/calidad" element={withSuspense(CalidadPage)} />
+          {/* Tab 3: Calidad (No conformidades, Auditorias) */}
+          <Route path="/hseq/calidad" element={withModuleGuard(CalidadPage, 'hseq_management')} />
 
-          {/* Tab 4: Medicina Laboral */}
-          <Route path="/hseq/medicina-laboral" element={withSuspense(MedicinaLaboralPage)} />
+          {/* Tab 4: Medicina Laboral (Examenes medicos) */}
+          <Route path="/hseq/medicina-laboral" element={withModuleGuard(MedicinaLaboralPage, 'hseq_management')} />
 
-          {/* Tab 5: Seguridad Industrial */}
+          {/* Tab 5: Seguridad Industrial (Inspecciones, EPP) */}
           <Route
             path="/hseq/seguridad-industrial"
-            element={withSuspense(SeguridadIndustrialPage)}
+            element={withModuleGuard(SeguridadIndustrialPage, 'hseq_management')}
           />
 
-          {/* Tab 6: Higiene Industrial */}
-          <Route path="/hseq/higiene-industrial" element={withSuspense(HigieneIndustrialPage)} />
+          {/* Tab 6: Higiene Industrial (Mediciones ambientales) */}
+          <Route path="/hseq/higiene-industrial" element={withModuleGuard(HigieneIndustrialPage, 'hseq_management')} />
 
-          {/* Tab 7: Gestión de Comités */}
-          <Route path="/hseq/comites" element={withSuspense(GestionComitesPage)} />
+          {/* Tab 7: Gestion de Comites */}
+          <Route path="/hseq/comites" element={withModuleGuard(GestionComitesPage, 'hseq_management')} />
 
-          {/* Tab 8: Accidentalidad (ATEL) */}
-          <Route path="/hseq/accidentalidad" element={withSuspense(AccidentalidadPage)} />
+          {/* Tab 8: Accidentalidad (ATEL - Investigacion AT/EL) */}
+          <Route path="/hseq/accidentalidad" element={withModuleGuard(AccidentalidadPage, 'hseq_management')} />
 
-          {/* Tab 9: Emergencias */}
-          <Route path="/hseq/emergencias" element={withSuspense(EmergenciasPage)} />
+          {/* Tab 9: Emergencias (Planes, Brigadas) */}
+          <Route path="/hseq/emergencias" element={withModuleGuard(EmergenciasPage, 'hseq_management')} />
 
-          {/* Tab 10: Gestión Ambiental */}
-          <Route path="/hseq/gestion-ambiental" element={withSuspense(GestionAmbientalPage)} />
+          {/* Tab 10: Gestion Ambiental */}
+          <Route path="/hseq/gestion-ambiental" element={withModuleGuard(GestionAmbientalPage, 'hseq_management')} />
 
-          {/* Tab 11: Mejora Continua */}
-          <Route path="/hseq/mejora-continua" element={withSuspense(MejoraContinuaPage)} />
+          {/* Tab 11: Mejora Continua (Acciones correctivas) */}
+          <Route path="/hseq/mejora-continua" element={withModuleGuard(MejoraContinuaPage, 'hseq_management')} />
 
           {/* ═══════════════════════════════════════════════════════════════ */}
-          {/* NIVEL 4: CADENA DE VALOR */}
+          {/* NIVEL 7: OPERACIONES Y SOPORTE (Independientes entre si) */}
           {/* ═══════════════════════════════════════════════════════════════ */}
 
-          {/* Módulo: Cadena de Suministro (supply_chain) */}
-          {/* NOTA: proveedores/ y econorte/ son legacy, serán refactorizados */}
+          {/* Modulo: Cadena de Suministro (supply_chain) */}
+          <Route path="/supply-chain" element={<Navigate to="/supply-chain/proveedores" replace />} />
+          <Route path="/supply-chain/proveedores" element={withModuleGuard(GestionProveedoresPage, 'supply_chain')} />
+          <Route path="/supply-chain/programacion" element={withModuleGuard(SupplyChainPage, 'supply_chain')} />
+          <Route path="/supply-chain/compras" element={withModuleGuard(SupplyChainPage, 'supply_chain')} />
+          <Route path="/supply-chain/almacenamiento" element={withModuleGuard(SupplyChainPage, 'supply_chain')} />
+          <Route path="/supply-chain/pruebas-acidez" element={withModuleGuard(SupplyChainPage, 'supply_chain')} />
+          <Route path="/supply-chain/catalogos" element={withModuleGuard(SupplyChainPage, 'supply_chain')} />
 
-          {/* Proveedores (legacy - temporal hasta refactor) */}
-          <Route
-            path="/proveedores"
-            element={<Navigate to="/proveedores/materia-prima" replace />}
-          />
-          <Route path="/proveedores/materia-prima" element={withSuspense(MateriaPrimaPage)} />
-          <Route
-            path="/proveedores/productos-servicios"
-            element={withSuspense(ProductosServiciosPage)}
-          />
-          <Route path="/proveedores/programacion" element={withSuspense(MateriaPrimaPage)} />
-          <Route path="/proveedores/compras" element={withSuspense(MateriaPrimaPage)} />
-          <Route path="/proveedores/almacenamiento" element={withSuspense(MateriaPrimaPage)} />
-          <Route path="/proveedores/pruebas-acidez" element={withSuspense(PruebasAcidezPage)} />
-
-          {/* Módulo: Operaciones de Producción (production_ops) */}
+          {/* Modulo: Operaciones de Produccion (production_ops) */}
           <Route path="/produccion" element={<Navigate to="/produccion/recepcion" replace />} />
-          <Route path="/produccion/recepcion" element={withSuspense(ProductionOpsPage)} />
-          <Route path="/produccion/procesamiento" element={withSuspense(ProductionOpsPage)} />
-          <Route path="/produccion/mantenimiento" element={withSuspense(ProductionOpsPage)} />
-          <Route path="/produccion/producto-terminado" element={withSuspense(ProductionOpsPage)} />
+          <Route path="/produccion/recepcion" element={withModuleGuard(ProductionOpsPage, 'production_ops')} />
+          <Route path="/produccion/procesamiento" element={withModuleGuard(ProductionOpsPage, 'production_ops')} />
+          <Route path="/produccion/mantenimiento" element={withModuleGuard(ProductionOpsPage, 'production_ops')} />
+          <Route path="/produccion/producto-terminado" element={withModuleGuard(ProductionOpsPage, 'production_ops')} />
 
-          {/* Módulo: Logística y Flota (logistics_fleet) */}
+          {/* Modulo: Logistica y Flota (logistics_fleet) */}
           <Route path="/logistica" element={<Navigate to="/logistica/transporte" replace />} />
-          <Route path="/logistica/transporte" element={withSuspense(LogisticsFleetPage)} />
-          <Route path="/logistica/despachos" element={withSuspense(LogisticsFleetPage)} />
-          <Route path="/logistica/flota" element={withSuspense(LogisticsFleetPage)} />
-          <Route path="/logistica/pesv" element={withSuspense(LogisticsFleetPage)} />
+          <Route path="/logistica/transporte" element={withModuleGuard(LogisticsFleetPage, 'logistics_fleet')} />
+          <Route path="/logistica/despachos" element={withModuleGuard(LogisticsFleetPage, 'logistics_fleet')} />
+          <Route path="/logistica/flota" element={withModuleGuard(LogisticsFleetPage, 'logistics_fleet')} />
+          <Route path="/logistica/pesv" element={withModuleGuard(LogisticsFleetPage, 'logistics_fleet')} />
 
-          {/* Módulo: Ventas y CRM (sales_crm) */}
+          {/* Modulo: Ventas y CRM (sales_crm) */}
           <Route path="/ventas" element={<Navigate to="/ventas/clientes" replace />} />
-          {/* Tab 1: Gestión de Clientes */}
-          <Route path="/ventas/clientes" element={withSuspense(ClientesPage)} />
-          {/* Tab 2: Pipeline de Ventas */}
-          <Route path="/ventas/pipeline" element={withSuspense(PipelinePage)} />
-          {/* Tab 3: Cotizaciones */}
-          <Route path="/ventas/cotizaciones" element={withSuspense(CotizacionesPage)} />
-          {/* Tab 4: Pedidos */}
-          <Route path="/ventas/pedidos" element={withSuspense(PedidosPage)} />
-          {/* Tab 5: Facturas */}
-          <Route path="/ventas/facturas" element={withSuspense(FacturasPage)} />
-          {/* Tab 6: PQRS */}
-          <Route path="/ventas/pqrs" element={withSuspense(PQRSPage)} />
-          {/* Tab 7: Encuestas NPS */}
-          <Route path="/ventas/encuestas" element={withSuspense(EncuestasPage)} />
-          {/* Tab 8: Fidelización */}
-          <Route path="/ventas/fidelizacion" element={withSuspense(FidelizacionPage)} />
+          <Route path="/ventas/clientes" element={withModuleGuard(ClientesPage, 'sales_crm')} />
+          <Route path="/ventas/pipeline" element={withModuleGuard(PipelinePage, 'sales_crm')} />
+          <Route path="/ventas/cotizaciones" element={withModuleGuard(CotizacionesPage, 'sales_crm')} />
+          <Route path="/ventas/pedidos" element={withModuleGuard(PedidosPage, 'sales_crm')} />
+          <Route path="/ventas/facturas" element={withModuleGuard(FacturasPage, 'sales_crm')} />
+          <Route path="/ventas/pqrs" element={withModuleGuard(PQRSPage, 'sales_crm')} />
+          <Route path="/ventas/encuestas" element={withModuleGuard(EncuestasPage, 'sales_crm')} />
+          <Route path="/ventas/fidelizacion" element={withModuleGuard(FidelizacionPage, 'sales_crm')} />
 
-          {/* ═══════════════════════════════════════════════════════════════ */}
-          {/* NIVEL 5: HABILITADORES */}
-          {/* ═══════════════════════════════════════════════════════════════ */}
-
-          {/* Módulo: Talent Hub - Gestión del Talento Humano */}
-          <Route path="/talento" element={<Navigate to="/talento/estructura" replace />} />
-          <Route path="/talento/estructura" element={withSuspense(TalentHubPage)} />
-          <Route path="/talento/seleccion" element={withSuspense(TalentHubPage)} />
-          <Route path="/talento/colaboradores" element={withSuspense(TalentHubPage)} />
-          <Route path="/talento/onboarding" element={withSuspense(TalentHubPage)} />
-          <Route path="/talento/formacion" element={withSuspense(TalentHubPage)} />
-          <Route path="/talento/desempeno" element={withSuspense(TalentHubPage)} />
-          <Route path="/talento/control-tiempo" element={withSuspense(TalentHubPage)} />
-          <Route path="/talento/novedades" element={withSuspense(TalentHubPage)} />
-          <Route path="/talento/disciplinario" element={withSuspense(TalentHubPage)} />
-          <Route path="/talento/nomina" element={withSuspense(TalentHubPage)} />
-          <Route path="/talento/off-boarding" element={withSuspense(TalentHubPage)} />
-
-          {/* Módulo: Administración y Finanzas (admin_finance) */}
+          {/* Modulo: Administracion y Finanzas (admin_finance) */}
           <Route path="/finanzas" element={<Navigate to="/finanzas/tesoreria" replace />} />
-          <Route path="/finanzas/tesoreria" element={withSuspense(TesoreriaPage)} />
-          <Route path="/finanzas/presupuesto" element={withSuspense(PresupuestoPage)} />
-          <Route path="/finanzas/activos-fijos" element={withSuspense(ActivosFijosPage)} />
+          <Route path="/finanzas/tesoreria" element={withModuleGuard(TesoreriaPage, 'admin_finance')} />
+          <Route path="/finanzas/presupuesto" element={withModuleGuard(PresupuestoPage, 'admin_finance')} />
+          <Route path="/finanzas/activos-fijos" element={withModuleGuard(ActivosFijosPage, 'admin_finance')} />
           <Route
             path="/finanzas/servicios-generales"
-            element={withSuspense(ServiciosGeneralesPage)}
+            element={withModuleGuard(ServiciosGeneralesPage, 'admin_finance')}
           />
 
-          {/* Módulo: Contabilidad (accounting) - MÓDULO ACTIVABLE */}
+          {/* Modulo: Contabilidad (accounting) */}
           <Route path="/contabilidad" element={<Navigate to="/contabilidad/configuracion" replace />} />
-          <Route path="/contabilidad/configuracion" element={withSuspense(ConfigContablePage)} />
+          <Route path="/contabilidad/configuracion" element={withModuleGuard(ConfigContablePage, 'accounting')} />
           <Route
             path="/contabilidad/movimientos"
-            element={withSuspense(MovimientosContablesPage)}
+            element={withModuleGuard(MovimientosContablesPage, 'accounting')}
           />
-          <Route path="/contabilidad/informes" element={withSuspense(InformesContablesPage)} />
-          <Route path="/contabilidad/integracion" element={withSuspense(IntegracionContablePage)} />
+          <Route path="/contabilidad/informes" element={withModuleGuard(InformesContablesPage, 'accounting')} />
+          <Route path="/contabilidad/integracion" element={withModuleGuard(IntegracionContablePage, 'accounting')} />
 
-          {/* ═══════════════════════════════════════════════════════════════ */}
-          {/* NIVEL 6: INTELIGENCIA */}
-          {/* ═══════════════════════════════════════════════════════════════ */}
-
-          {/* Módulo: Analítica (analytics) */}
+          {/* Modulo: Analitica e Inteligencia de Negocios (analytics) */}
           <Route path="/analytics" element={<Navigate to="/analytics/configuracion" replace />} />
+          <Route path="/analytics/configuracion" element={withModuleGuard(ConfigIndicadoresPage, 'analytics')} />
+          <Route path="/analytics/dashboards" element={withModuleGuard(DashboardGerencialPage, 'analytics')} />
+          <Route path="/analytics/indicadores" element={withModuleGuard(IndicadoresAreaPage, 'analytics')} />
+          <Route path="/analytics/analisis" element={withModuleGuard(AnalisisTendenciasPage, 'analytics')} />
+          <Route path="/analytics/informes" element={withModuleGuard(GeneradorInformesPage, 'analytics')} />
+          <Route path="/analytics/acciones" element={withModuleGuard(AccionesIndicadorPage, 'analytics')} />
+          <Route path="/analytics/exportacion" element={withModuleGuard(ExportacionPage, 'analytics')} />
+          <Route path="/analytics/builder" element={withModuleGuard(DashboardBuilderPage, 'analytics')} />
+          <Route path="/analytics/demo" element={withModuleGuard(AnalyticsDemoPage, 'analytics')} />
 
-          {/* Semana 23 - Configuración e Indicadores */}
-          <Route path="/analytics/configuracion" element={withSuspense(ConfigIndicadoresPage)} />
-          <Route path="/analytics/dashboards" element={withSuspense(DashboardGerencialPage)} />
-          <Route path="/analytics/indicadores" element={withSuspense(IndicadoresAreaPage)} />
-
-          {/* Semana 24 - Análisis, Informes, Acciones y Exportación */}
-          <Route path="/analytics/analisis" element={withSuspense(AnalisisTendenciasPage)} />
-          <Route path="/analytics/informes" element={withSuspense(GeneradorInformesPage)} />
-          <Route path="/analytics/acciones" element={withSuspense(AccionesIndicadorPage)} />
-          <Route path="/analytics/exportacion" element={withSuspense(ExportacionPage)} />
-
-          {/* Demo: Componentes Enterprise de Analytics */}
-          <Route path="/analytics/demo" element={withSuspense(AnalyticsDemoPage)} />
-
-          {/* Módulo: Sistema de Auditoría (audit_system) */}
+          {/* Modulo: Sistema de Auditoria (audit_system) */}
           <Route path="/auditoria" element={<Navigate to="/auditoria/logs" replace />} />
-
-          {/* Semana 25 - Sistema de Auditoría */}
-          <Route path="/auditoria/logs" element={withSuspense(LogsSistemaPage)} />
-          <Route path="/auditoria/notificaciones" element={withSuspense(NotificacionesPage)} />
-          <Route path="/auditoria/alertas" element={withSuspense(AlertasPage)} />
-          <Route path="/auditoria/tareas" element={withSuspense(TareasPage)} />
-
-          {/* ═══════════════════════════════════════════════════════════════ */}
-          {/* RUTAS LEGACY - DEPRECADAS (Mantener temporalmente para compatibilidad) */}
-          {/* ═══════════════════════════════════════════════════════════════ */}
-
-          {/* Redirigir rutas antiguas a nuevas ubicaciones */}
-          <Route path="/motor-operaciones/*" element={<Navigate to="/proveedores" replace />} />
-          <Route path="/gestion-integral/*" element={<Navigate to="/hseq" replace />} />
-          <Route path="/cadena-valor/*" element={<Navigate to="/proveedores" replace />} />
-          <Route path="/procesos-apoyo/*" element={<Navigate to="/talento" replace />} />
-          <Route path="/inteligencia/*" element={<Navigate to="/analitica" replace />} />
-          <Route path="/sst/*" element={<Navigate to="/hseq" replace />} />
-          <Route path="/reportes" element={<Navigate to="/analitica" replace />} />
+          <Route path="/auditoria/logs" element={withModuleGuard(LogsSistemaPage, 'audit_system')} />
+          <Route path="/auditoria/notificaciones" element={withModuleGuard(NotificacionesPage, 'audit_system')} />
+          <Route path="/auditoria/alertas" element={withModuleGuard(AlertasPage, 'audit_system')} />
+          <Route path="/auditoria/tareas" element={withModuleGuard(TareasPage, 'audit_system')} />
         </Route>
       </Route>
 
       {/* ═══════════════════════════════════════════════════════════════ */}
-      {/* REDIRECT RAÍZ Y 404 */}
+      {/* REDIRECT RAIZ Y 404 */}
       {/* ═══════════════════════════════════════════════════════════════ */}
 
-      {/* Ruta raíz redirige al dashboard */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      {/* Ruta raiz redirige a Mi Portal (home del empleado) */}
+      <Route path="/" element={<Navigate to="/mi-portal" replace />} />
+
+      {/* 500 Error */}
+      <Route path="/error" element={<ErrorPage />} />
 
       {/* 404 */}
       <Route path="*" element={<NotFoundPage />} />

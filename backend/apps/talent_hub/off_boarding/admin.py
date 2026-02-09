@@ -13,7 +13,8 @@ from .models import (
     PazSalvo,
     ExamenEgreso,
     EntrevistaRetiro,
-    LiquidacionFinal
+    LiquidacionFinal,
+    CertificadoTrabajo
 )
 
 
@@ -563,3 +564,40 @@ class LiquidacionFinalAdmin(admin.ModelAdmin):
         """Neto a pagar formateado."""
         return f"${obj.neto_pagar:,.2f}"
     neto_pagar_display.short_description = 'Neto a Pagar'
+
+
+# =============================================================================
+# CERTIFICADO DE TRABAJO - Art. 57 y 62 CST
+# =============================================================================
+
+@admin.register(CertificadoTrabajo)
+class CertificadoTrabajoAdmin(admin.ModelAdmin):
+    """Admin para certificados de trabajo."""
+    list_display = [
+        'colaborador', 'tipo_certificado', 'fecha_solicitud',
+        'estado', 'generado_por', 'is_active'
+    ]
+    list_filter = ['tipo_certificado', 'estado', 'empresa', 'is_active']
+    search_fields = ['colaborador__primer_nombre', 'colaborador__primer_apellido', 'dirigido_a']
+    ordering = ['-fecha_solicitud']
+    readonly_fields = ['fecha_solicitud', 'created_at', 'updated_at', 'created_by', 'updated_by']
+    raw_id_fields = ['colaborador', 'generado_por']
+
+    fieldsets = (
+        ('Solicitud', {
+            'fields': ('empresa', 'colaborador', 'tipo_certificado', 'fecha_solicitud', 'dirigido_a')
+        }),
+        ('Contenido', {
+            'fields': ('incluir_cargo', 'incluir_salario', 'incluir_funciones', 'informacion_adicional')
+        }),
+        ('Generación', {
+            'fields': ('estado', 'fecha_expedicion', 'documento_generado', 'generado_por')
+        }),
+        ('Estado', {
+            'fields': ('is_active',)
+        }),
+        ('Auditoría', {
+            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
+            'classes': ('collapse',)
+        }),
+    )

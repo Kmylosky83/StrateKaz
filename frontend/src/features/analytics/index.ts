@@ -24,6 +24,9 @@ export { default as GeneradorInformesPage } from './pages/GeneradorInformesPage'
 export { default as AccionesIndicadorPage } from './pages/AccionesIndicadorPage';
 export { default as ExportacionPage } from './pages/ExportacionPage';
 
+// Pages - Sprint 10 Dashboard Builder
+export { default as DashboardBuilderPage } from './pages/DashboardBuilderPage';
+
 // Pages - Analytics Enterprise Demo
 export { default as AnalyticsDemoPage } from './pages/AnalyticsDemoPage';
 

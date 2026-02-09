@@ -13,21 +13,16 @@ import {
   Target,
   Briefcase,
   BarChart3,
-  Plus,
-  Download,
-  Filter,
   CheckCircle2,
   AlertTriangle,
   Clock,
   TrendingUp,
-  Users,
-  DollarSign,
   Activity,
-  FileText,
   Edit,
   Trash2,
   Eye,
   RefreshCw,
+  FileText,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
 import { Tabs } from '@/components/common/Tabs';
@@ -36,19 +31,16 @@ import { Button } from '@/components/common/Button';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Badge } from '@/components/common/Badge';
 import { Spinner } from '@/components/common/Spinner';
+import { KpiCard, KpiCardGrid, SectionToolbar, StatusBadge } from '@/components/common';
+import { formatStatusLabel } from '@/components/common/StatusBadge';
 import { cn } from '@/utils/cn';
 import {
   usePlanesTrabajo,
   useActividadesPlan,
   useObjetivosSistema,
   useProgramasGestion,
-  useSeguimientosCronograma,
   useDashboardPlanificacion,
-  type PlanTrabajoAnual,
   type ActividadPlan,
-  type ObjetivoSistema,
-  type ProgramaGestion,
-  type SeguimientoCronograma,
 } from '../hooks/usePlanificacion';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -117,32 +109,6 @@ const getCumplimientoLabel = (cumplimiento: number): string => {
   return 'DEFICIENTE';
 };
 
-const getEstadoBadgeVariant = (
-  estado: string
-): 'success' | 'primary' | 'warning' | 'danger' | 'info' | 'gray' => {
-  const estadoMap: Record<string, 'success' | 'primary' | 'warning' | 'danger' | 'info' | 'gray'> = {
-    COMPLETADO: 'success',
-    COMPLETADA: 'success',
-    EJECUTADA: 'success',
-    APROBADO: 'success',
-    EN_EJECUCION: 'primary',
-    EN_PROCESO: 'primary',
-    ACTIVO: 'primary',
-    PENDIENTE: 'warning',
-    PLANIFICADO: 'warning',
-    BORRADOR: 'gray',
-    VENCIDA: 'danger',
-    CANCELADO: 'danger',
-    CANCELADA: 'danger',
-    SUSPENDIDO: 'danger',
-  };
-  return estadoMap[estado] || 'gray';
-};
-
-const formatEstado = (estado: string): string => {
-  return estado.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase());
-};
-
 const formatPrioridad = (prioridad: string): string => {
   const prioridadMap: Record<string, string> = {
     CRITICA: 'Crítica',
@@ -189,7 +155,6 @@ const PlanTrabajoSection = ({ planId }: PlanTrabajoSectionProps) => {
         action={{
           label: 'Crear Actividad',
           onClick: () => console.log('Crear actividad'),
-          icon: <Plus className="w-4 h-4" />,
         }}
       />
     );
@@ -208,81 +173,48 @@ const PlanTrabajoSection = ({ planId }: PlanTrabajoSectionProps) => {
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Actividades</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stats.total}</p>
+      <KpiCardGrid>
+        <KpiCard
+          label="Total Actividades"
+          value={stats.total}
+          icon={<Activity className="w-5 h-5" />}
+          color="primary"
+          description={
+            <div className="mt-2">
+              <Progress value={avanceGlobal} showLabel />
             </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <Activity className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-          <Progress value={avanceGlobal} className="mt-4" showLabel />
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Completadas</p>
-              <p className="text-2xl font-bold text-success-600 dark:text-success-400 mt-1">
-                {stats.completadas}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-success-100 dark:bg-success-900/30 rounded-lg flex items-center justify-center">
-              <CheckCircle2 className="w-6 h-6 text-success-600 dark:text-success-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-            {stats.total > 0 ? ((stats.completadas / stats.total) * 100).toFixed(1) : 0}% del total
-          </p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">En Proceso</p>
-              <p className="text-2xl font-bold text-primary-600 dark:text-primary-400 mt-1">
-                {stats.enProceso}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <Clock className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">En ejecución actualmente</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Vencidas</p>
-              <p className="text-2xl font-bold text-danger-600 dark:text-danger-400 mt-1">{stats.vencidas}</p>
-            </div>
-            <div className="w-12 h-12 bg-danger-100 dark:bg-danger-900/30 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-danger-600 dark:text-danger-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Requieren atención inmediata</p>
-        </Card>
-      </div>
+          }
+        />
+        <KpiCard
+          label="Completadas"
+          value={stats.completadas}
+          icon={<CheckCircle2 className="w-5 h-5" />}
+          color="success"
+          description={`${stats.total > 0 ? ((stats.completadas / stats.total) * 100).toFixed(1) : 0}% del total`}
+        />
+        <KpiCard
+          label="En Proceso"
+          value={stats.enProceso}
+          icon={<Clock className="w-5 h-5" />}
+          color="primary"
+          description="En ejecución actualmente"
+        />
+        <KpiCard
+          label="Vencidas"
+          value={stats.vencidas}
+          icon={<AlertTriangle className="w-5 h-5" />}
+          color="danger"
+          description="Requieren atención inmediata"
+        />
+      </KpiCardGrid>
 
       {/* Actions */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Actividades Programadas</h3>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
-            Filtros
-          </Button>
-          <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-            Exportar
-          </Button>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Nueva Actividad
-          </Button>
-        </div>
-      </div>
+      <SectionToolbar
+        title="Actividades Programadas"
+        onFilter={() => console.log('Filtros')}
+        onExport={() => console.log('Exportar')}
+        primaryAction={{ label: 'Nueva Actividad', onClick: () => console.log('Nueva Actividad') }}
+      />
 
       {/* Activities Table */}
       <Card variant="bordered" padding="none">
@@ -336,7 +268,7 @@ const PlanTrabajoSection = ({ planId }: PlanTrabajoSectionProps) => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {formatEstado(actividad.tipo_actividad)}
+                    {formatStatusLabel(actividad.tipo_actividad)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
                     {actividad.responsable_nombre || 'No asignado'}
@@ -345,9 +277,7 @@ const PlanTrabajoSection = ({ planId }: PlanTrabajoSectionProps) => {
                     {format(new Date(actividad.fecha_fin_programada), 'dd/MM/yyyy', { locale: es })}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={getEstadoBadgeVariant(actividad.estado)} size="sm">
-                      {formatEstado(actividad.estado)}
-                    </Badge>
+                    <StatusBadge status={actividad.estado} preset="proceso" />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
@@ -430,7 +360,6 @@ const ObjetivosSection = ({ planId }: ObjetivosSectionProps) => {
         action={{
           label: 'Crear Objetivo',
           onClick: () => console.log('Crear objetivo'),
-          icon: <Plus className="w-4 h-4" />,
         }}
       />
     );
@@ -451,74 +380,38 @@ const ObjetivosSection = ({ planId }: ObjetivosSectionProps) => {
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <Card variant="bordered" padding="md">
-          <div className="text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400">Total Objetivos</p>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">{stats.total}</p>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400">SST</p>
-            <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mt-2">{stats.sst}</p>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400">Ambiental</p>
-            <p className="text-3xl font-bold text-green-600 dark:text-green-400 mt-2">{stats.ambiental}</p>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400">Calidad</p>
-            <p className="text-3xl font-bold text-purple-600 dark:text-purple-400 mt-2">{stats.calidad}</p>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400">Cumplimiento</p>
-            <p
-              className={cn(
-                'text-3xl font-bold mt-2',
-                stats.cumplimientoPromedio >= 90
-                  ? 'text-success-600 dark:text-success-400'
-                  : stats.cumplimientoPromedio >= 70
-                  ? 'text-primary-600 dark:text-primary-400'
-                  : stats.cumplimientoPromedio >= 50
-                  ? 'text-warning-600 dark:text-warning-400'
-                  : 'text-danger-600 dark:text-danger-400'
-              )}
-            >
-              {stats.cumplimientoPromedio.toFixed(1)}%
-            </p>
-            <Badge variant={getBadgeVariant(stats.cumplimientoPromedio)} size="sm" className="mt-2">
+      <KpiCardGrid columns={5}>
+        <KpiCard label="Total Objetivos" value={stats.total} color="gray" />
+        <KpiCard label="SST" value={stats.sst} color="blue" />
+        <KpiCard label="Ambiental" value={stats.ambiental} color="green" />
+        <KpiCard label="Calidad" value={stats.calidad} color="purple" />
+        <KpiCard
+          label="Cumplimiento"
+          value={`${stats.cumplimientoPromedio.toFixed(1)}%`}
+          valueColor={
+            stats.cumplimientoPromedio >= 90
+              ? 'success'
+              : stats.cumplimientoPromedio >= 70
+              ? 'primary'
+              : stats.cumplimientoPromedio >= 50
+              ? 'warning'
+              : 'danger'
+          }
+          description={
+            <Badge variant={getBadgeVariant(stats.cumplimientoPromedio)} size="sm" className="mt-1">
               {getCumplimientoLabel(stats.cumplimientoPromedio)}
             </Badge>
-          </div>
-        </Card>
-      </div>
+          }
+        />
+      </KpiCardGrid>
 
       {/* Actions */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Objetivos del Sistema</h3>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
-            Filtros
-          </Button>
-          <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-            Exportar
-          </Button>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Nuevo Objetivo
-          </Button>
-        </div>
-      </div>
+      <SectionToolbar
+        title="Objetivos del Sistema"
+        onFilter={() => console.log('Filtros')}
+        onExport={() => console.log('Exportar')}
+        primaryAction={{ label: 'Nuevo Objetivo', onClick: () => console.log('Nuevo Objetivo') }}
+      />
 
       {/* Objectives Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -529,11 +422,9 @@ const ObjetivosSection = ({ planId }: ObjetivosSectionProps) => {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <Badge variant={getEstadoBadgeVariant(objetivo.categoria)} size="sm">
-                      {objetivo.categoria}
-                    </Badge>
+                    <StatusBadge status={objetivo.categoria} preset="default" />
                     <Badge variant="gray" size="sm">
-                      {formatEstado(objetivo.tipo_objetivo)}
+                      {formatStatusLabel(objetivo.tipo_objetivo)}
                     </Badge>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
                       {objetivo.codigo_objetivo}
@@ -641,7 +532,6 @@ const ProgramasSection = ({ planId }: ProgramasSectionProps) => {
         action={{
           label: 'Crear Programa',
           onClick: () => console.log('Crear programa'),
-          icon: <Plus className="w-4 h-4" />,
         }}
       />
     );
@@ -660,77 +550,40 @@ const ProgramasSection = ({ planId }: ProgramasSectionProps) => {
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Programas</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stats.total}</p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <Briefcase className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">En Ejecución</p>
-              <p className="text-2xl font-bold text-primary-600 dark:text-primary-400 mt-1">
-                {stats.enEjecucion}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <Activity className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Completados</p>
-              <p className="text-2xl font-bold text-success-600 dark:text-success-400 mt-1">
-                {stats.completados}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-success-100 dark:bg-success-900/30 rounded-lg flex items-center justify-center">
-              <CheckCircle2 className="w-6 h-6 text-success-600 dark:text-success-400" />
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Avance Promedio</p>
-              <p className="text-2xl font-bold text-primary-600 dark:text-primary-400 mt-1">
-                {stats.avancePromedio.toFixed(1)}%
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-        </Card>
-      </div>
+      <KpiCardGrid>
+        <KpiCard
+          label="Total Programas"
+          value={stats.total}
+          icon={<Briefcase className="w-5 h-5" />}
+          color="primary"
+        />
+        <KpiCard
+          label="En Ejecución"
+          value={stats.enEjecucion}
+          icon={<Activity className="w-5 h-5" />}
+          color="primary"
+        />
+        <KpiCard
+          label="Completados"
+          value={stats.completados}
+          icon={<CheckCircle2 className="w-5 h-5" />}
+          color="success"
+        />
+        <KpiCard
+          label="Avance Promedio"
+          value={`${stats.avancePromedio.toFixed(1)}%`}
+          icon={<TrendingUp className="w-5 h-5" />}
+          color="primary"
+        />
+      </KpiCardGrid>
 
       {/* Actions */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Programas de Gestión</h3>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
-            Filtros
-          </Button>
-          <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-            Exportar
-          </Button>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Nuevo Programa
-          </Button>
-        </div>
-      </div>
+      <SectionToolbar
+        title="Programas de Gestión"
+        onFilter={() => console.log('Filtros')}
+        onExport={() => console.log('Exportar')}
+        primaryAction={{ label: 'Nuevo Programa', onClick: () => console.log('Nuevo Programa') }}
+      />
 
       {/* Programs Grid */}
       <div className="grid grid-cols-1 gap-6">
@@ -742,9 +595,7 @@ const ProgramasSection = ({ planId }: ProgramasSectionProps) => {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                     <h4 className="font-semibold text-gray-900 dark:text-white">{programa.nombre}</h4>
-                    <Badge variant={getEstadoBadgeVariant(programa.estado)} size="sm">
-                      {formatEstado(programa.estado)}
-                    </Badge>
+                    <StatusBadge status={programa.estado} preset="proceso" />
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-300">{programa.descripcion}</p>
                   <div className="flex items-center gap-4 mt-2">
@@ -752,7 +603,7 @@ const ProgramasSection = ({ planId }: ProgramasSectionProps) => {
                       {programa.codigo_programa}
                     </Badge>
                     <Badge variant="info" size="sm">
-                      {formatEstado(programa.tipo_programa)}
+                      {formatStatusLabel(programa.tipo_programa)}
                     </Badge>
                   </div>
                 </div>
@@ -869,130 +720,100 @@ const SeguimientoSection = ({ planId }: SeguimientoSectionProps) => {
   return (
     <div className="space-y-6">
       {/* Dashboard Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Dashboard de Planificación</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Seguimiento integral del plan de trabajo anual
-          </p>
-        </div>
-        <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-          Descargar Reporte
-        </Button>
-      </div>
+      <SectionToolbar
+        title="Dashboard de Planificación"
+        subtitle="Seguimiento integral del plan de trabajo anual"
+        primaryAction={{ label: 'Descargar Reporte', onClick: () => console.log('Descargar') }}
+      />
 
       {/* Main KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card variant="bordered" padding="md">
-          <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Avance Global</p>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
-              {resumen.porcentaje_avance_global.toFixed(1)}%
-            </p>
-            <Progress value={resumen.porcentaje_avance_global} className="mt-3" />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-              {resumen.actividades_completadas} de {resumen.total_actividades} actividades
-            </p>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Cumplimiento Cronograma</p>
-            <p className="text-3xl font-bold text-primary-600 dark:text-primary-400 mt-2">
-              {resumen.porcentaje_cumplimiento_cronograma.toFixed(1)}%
-            </p>
-            <Badge variant={getBadgeVariant(resumen.porcentaje_cumplimiento_cronograma)} className="mt-3">
+      <KpiCardGrid>
+        <KpiCard
+          label="Avance Global"
+          value={`${resumen.porcentaje_avance_global.toFixed(1)}%`}
+          color="gray"
+          description={
+            <div className="space-y-2">
+              <Progress value={resumen.porcentaje_avance_global} className="mt-1" />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {resumen.actividades_completadas} de {resumen.total_actividades} actividades
+              </p>
+            </div>
+          }
+        />
+        <KpiCard
+          label="Cumplimiento Cronograma"
+          value={`${resumen.porcentaje_cumplimiento_cronograma.toFixed(1)}%`}
+          color="primary"
+          description={
+            <Badge variant={getBadgeVariant(resumen.porcentaje_cumplimiento_cronograma)} className="mt-1">
               {getCumplimientoLabel(resumen.porcentaje_cumplimiento_cronograma)}
             </Badge>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Objetivos Logrados</p>
-            <p className="text-3xl font-bold text-success-600 dark:text-success-400 mt-2">
-              {objetivos.completados} / {objetivos.total}
-            </p>
-            <Progress
-              value={objetivos.total > 0 ? (objetivos.completados / objetivos.total) * 100 : 0}
-              className="mt-3"
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-              Cumplimiento promedio: {objetivos.cumplimiento_promedio.toFixed(1)}%
-            </p>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Ejecución Presupuestal</p>
-            <p className="text-3xl font-bold text-primary-600 dark:text-primary-400 mt-2">
-              {presupuesto.porcentaje_ejecucion.toFixed(1)}%
-            </p>
-            <Progress value={presupuesto.porcentaje_ejecucion} className="mt-3" />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-              Ejecutado:{' '}
-              {new Intl.NumberFormat('es-CO', {
-                style: 'currency',
-                currency: 'COP',
-                minimumFractionDigits: 0,
-              }).format(presupuesto.ejecutado)}
-            </p>
-          </div>
-        </Card>
-      </div>
+          }
+        />
+        <KpiCard
+          label="Objetivos Logrados"
+          value={`${objetivos.completados} / ${objetivos.total}`}
+          color="success"
+          description={
+            <div className="space-y-2">
+              <Progress
+                value={objetivos.total > 0 ? (objetivos.completados / objetivos.total) * 100 : 0}
+                className="mt-1"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Cumplimiento promedio: {objetivos.cumplimiento_promedio.toFixed(1)}%
+              </p>
+            </div>
+          }
+        />
+        <KpiCard
+          label="Ejecución Presupuestal"
+          value={`${presupuesto.porcentaje_ejecucion.toFixed(1)}%`}
+          color="primary"
+          description={
+            <div className="space-y-2">
+              <Progress value={presupuesto.porcentaje_ejecucion} className="mt-1" />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Ejecutado:{' '}
+                {new Intl.NumberFormat('es-CO', {
+                  style: 'currency',
+                  currency: 'COP',
+                  minimumFractionDigits: 0,
+                }).format(presupuesto.ejecutado)}
+              </p>
+            </div>
+          }
+        />
+      </KpiCardGrid>
 
       {/* Activities Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card variant="bordered" padding="md">
-          <div className="text-center">
-            <div className="w-12 h-12 bg-success-100 dark:bg-success-900/30 rounded-full flex items-center justify-center mx-auto">
-              <CheckCircle2 className="w-6 h-6 text-success-600 dark:text-success-400" />
-            </div>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white mt-3">
-              {resumen.actividades_completadas}
-            </p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Completadas</p>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="text-center">
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center mx-auto">
-              <Activity className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white mt-3">
-              {resumen.actividades_en_proceso}
-            </p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">En Proceso</p>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="text-center">
-            <div className="w-12 h-12 bg-warning-100 dark:bg-warning-900/30 rounded-full flex items-center justify-center mx-auto">
-              <Clock className="w-6 h-6 text-warning-600 dark:text-warning-400" />
-            </div>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white mt-3">
-              {resumen.actividades_pendientes}
-            </p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Pendientes</p>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="text-center">
-            <div className="w-12 h-12 bg-danger-100 dark:bg-danger-900/30 rounded-full flex items-center justify-center mx-auto">
-              <AlertTriangle className="w-6 h-6 text-danger-600 dark:text-danger-400" />
-            </div>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white mt-3">
-              {resumen.actividades_vencidas}
-            </p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Vencidas</p>
-          </div>
-        </Card>
-      </div>
+      <KpiCardGrid>
+        <KpiCard
+          label="Completadas"
+          value={resumen.actividades_completadas}
+          icon={<CheckCircle2 className="w-5 h-5" />}
+          color="success"
+        />
+        <KpiCard
+          label="En Proceso"
+          value={resumen.actividades_en_proceso}
+          icon={<Activity className="w-5 h-5" />}
+          color="primary"
+        />
+        <KpiCard
+          label="Pendientes"
+          value={resumen.actividades_pendientes}
+          icon={<Clock className="w-5 h-5" />}
+          color="warning"
+        />
+        <KpiCard
+          label="Vencidas"
+          value={resumen.actividades_vencidas}
+          icon={<AlertTriangle className="w-5 h-5" />}
+          color="danger"
+        />
+      </KpiCardGrid>
 
       {/* Alerts Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1166,9 +987,7 @@ export default function PlanificacionSistemaPage() {
                   {defaultPlan.porcentaje_avance}%
                 </p>
               </div>
-              <Badge variant={getEstadoBadgeVariant(defaultPlan.estado)}>
-                {formatEstado(defaultPlan.estado)}
-              </Badge>
+              <StatusBadge status={defaultPlan.estado} preset="proceso" />
             </div>
           </div>
           <Progress value={defaultPlan.porcentaje_avance} className="mt-4" />

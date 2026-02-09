@@ -209,12 +209,12 @@ export interface SidebarModule {
  * Mapeo de categorías a labels en español
  */
 export const CATEGORY_LABELS: Record<ModuleCategory, string> = {
-  ESTRATEGICO: 'Dirección Estratégica',
-  MOTOR: 'Motor de Operaciones',
-  INTEGRAL: 'Gestión Integral',
-  MISIONAL: 'Gestión Misional',
-  APOYO: 'Procesos de Apoyo',
-  INTELIGENCIA: 'Inteligencia de Negocios',
+  STRATEGIC: 'Direccion Estrategica',
+  COMPLIANCE: 'Motores del Sistema',
+  INTEGRATED: 'Gestion Integral',
+  OPERATIONAL: 'Gestion Misional',
+  SUPPORT: 'Procesos de Apoyo',
+  INTELLIGENCE: 'Inteligencia de Negocios',
 };
 
 /**
@@ -222,10 +222,10 @@ export const CATEGORY_LABELS: Record<ModuleCategory, string> = {
  * NOTA: Debe coincidir con CATEGORY_DEFAULT_COLORS en backend/apps/core/models.py
  */
 export const CATEGORY_COLORS: Record<ModuleCategory, ModuleColor> = {
-  ESTRATEGICO: 'purple',
-  MOTOR: 'teal',
-  INTEGRAL: 'orange',
-  MISIONAL: 'blue',
-  APOYO: 'green',
-  INTELIGENCIA: 'purple',
+  STRATEGIC: 'purple',
+  COMPLIANCE: 'teal',
+  INTEGRATED: 'orange',
+  OPERATIONAL: 'blue',
+  SUPPORT: 'green',
+  INTELLIGENCE: 'purple',
 };

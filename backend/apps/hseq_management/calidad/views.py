@@ -10,6 +10,7 @@ from rest_framework.pagination import PageNumberPagination
 from django.utils import timezone
 from django.db.models import Q, Count, Avg
 from datetime import timedelta
+from apps.core.mixins import ExportMixin
 
 
 class StandardResultsSetPagination(PageNumberPagination):
@@ -42,9 +43,11 @@ from .serializers import (
 # NO CONFORMIDADES
 # ============================================================================
 
-class NoConformidadViewSet(viewsets.ModelViewSet):
+class NoConformidadViewSet(ExportMixin, viewsets.ModelViewSet):
     """ViewSet para No Conformidades"""
     permission_classes = [IsAuthenticated]
+    export_fields = [('codigo', 'Código'), ('titulo', 'Título'), ('tipo', 'Tipo'), ('estado', 'Estado'), ('severidad', 'Severidad'), ('origen', 'Origen'), ('fecha_deteccion', 'Fecha Detección')]
+    export_filename = 'no_conformidades'
     pagination_class = StandardResultsSetPagination
     filterset_fields = ['estado', 'tipo', 'origen', 'severidad']
     search_fields = ['codigo', 'titulo', 'descripcion', 'ubicacion']

@@ -3,12 +3,12 @@
  *
  * Lista, crea, edita y gestiona tenants de la plataforma.
  */
-import { useState, useMemo } from 'react';
+import { useState, useMemo, forwardRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Building2,
   Plus,
   Search,
-  MoreVertical,
   Edit,
   Trash2,
   ToggleLeft,
@@ -19,6 +19,7 @@ import {
   CheckCircle,
   XCircle,
   AlertTriangle,
+  LogIn,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -27,10 +28,12 @@ import {
   Button,
   ConfirmDialog,
   BrandedSkeleton,
+  Dropdown,
 } from '@/components/common';
 import type { BadgeVariant } from '@/components/common/Badge';
 import { useTenantsList, useToggleTenantActive, useDeleteTenant } from '../hooks/useAdminGlobal';
 import { TenantFormModal } from './TenantFormModal';
+import { useAuthStore } from '@/store/authStore';
 import type { Tenant } from '../types';
 
 // Colores para los tiers - mapeados a BadgeVariant válidos
@@ -55,10 +58,11 @@ interface TenantCardProps {
   onEdit: (tenant: Tenant) => void;
   onToggle: (id: number) => void;
   onDelete: (id: number) => void;
+  onEnter: (tenant: Tenant) => void;
 }
 
-const TenantCard = ({ tenant, onEdit, onToggle, onDelete }: TenantCardProps) => {
-  const [showMenu, setShowMenu] = useState(false);
+const TenantCard = forwardRef<HTMLDivElement, TenantCardProps>(
+  ({ tenant, onEdit, onToggle, onDelete, onEnter }, ref) => {
 
   const statusColor: BadgeVariant = tenant.is_active
     ? tenant.is_subscription_valid
@@ -74,12 +78,16 @@ const TenantCard = ({ tenant, onEdit, onToggle, onDelete }: TenantCardProps) => 
 
   return (
     <motion.div
+      ref={ref}
       layout
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
     >
-      <Card className="p-4 hover:shadow-md transition-shadow relative group">
+      <Card
+        className="p-4 hover:shadow-md transition-shadow relative group"
+        style={{ borderColor: tenant.primary_color || '#6366F1' }}
+      >
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
@@ -88,9 +96,9 @@ const TenantCard = ({ tenant, onEdit, onToggle, onDelete }: TenantCardProps) => 
               className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold"
               style={{ backgroundColor: tenant.primary_color || '#6366F1' }}
             >
-              {tenant.logo_url ? (
+              {(tenant.logo_effective || tenant.logo_url) ? (
                 <img
-                  src={tenant.logo_url}
+                  src={tenant.logo_effective || tenant.logo_url}
                   alt={tenant.name}
                   className="w-8 h-8 object-contain"
                 />
@@ -109,69 +117,39 @@ const TenantCard = ({ tenant, onEdit, onToggle, onDelete }: TenantCardProps) => 
           </div>
 
           {/* Menu */}
-          <div className="relative">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowMenu(!showMenu)}
-              className="opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-
-            <AnimatePresence>
-              {showMenu && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="absolute right-0 top-8 z-10 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1"
-                  onMouseLeave={() => setShowMenu(false)}
-                >
-                  <button
-                    onClick={() => {
-                      onEdit(tenant);
-                      setShowMenu(false);
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                  >
-                    <Edit className="h-4 w-4" />
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => {
-                      onToggle(tenant.id);
-                      setShowMenu(false);
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                  >
-                    {tenant.is_active ? (
-                      <>
-                        <ToggleLeft className="h-4 w-4" />
-                        Desactivar
-                      </>
-                    ) : (
-                      <>
-                        <ToggleRight className="h-4 w-4" />
-                        Activar
-                      </>
-                    )}
-                  </button>
-                  <hr className="my-1 border-gray-200 dark:border-gray-700" />
-                  <button
-                    onClick={() => {
-                      onDelete(tenant.id);
-                      setShowMenu(false);
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Eliminar
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+          <Dropdown
+            items={[
+              // Entrar a la empresa - Solo si está activa
+              ...(tenant.is_active
+                ? [{
+                    label: 'Entrar como usuario',
+                    icon: <LogIn className="h-4 w-4" />,
+                    onClick: () => onEnter(tenant),
+                  }]
+                : []),
+              {
+                label: 'Editar',
+                icon: <Edit className="h-4 w-4" />,
+                onClick: () => onEdit(tenant),
+              },
+              {
+                label: tenant.is_active ? 'Desactivar' : 'Activar',
+                icon: tenant.is_active
+                  ? <ToggleLeft className="h-4 w-4" />
+                  : <ToggleRight className="h-4 w-4" />,
+                onClick: () => onToggle(tenant.id),
+              },
+              { label: '', onClick: () => {}, divider: true },
+              {
+                label: 'Eliminar',
+                icon: <Trash2 className="h-4 w-4" />,
+                onClick: () => onDelete(tenant.id),
+                variant: 'danger' as const,
+              },
+            ]}
+            align="right"
+            className="opacity-0 group-hover:opacity-100 transition-opacity"
+          />
         </div>
 
         {/* Badges */}
@@ -219,14 +197,21 @@ const TenantCard = ({ tenant, onEdit, onToggle, onDelete }: TenantCardProps) => 
       </Card>
     </motion.div>
   );
-};
+});
+
+TenantCard.displayName = 'TenantCard';
 
 export const TenantsSection = () => {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [filterActive, setFilterActive] = useState<boolean | undefined>(undefined);
   const [tenantToDelete, setTenantToDelete] = useState<number | null>(null);
   const [tenantToEdit, setTenantToEdit] = useState<Tenant | null>(null);
   const [showFormModal, setShowFormModal] = useState(false);
+
+  // Obtener funciones del authStore para cambiar de tenant
+  const setCurrentTenantId = useAuthStore((state) => state.setCurrentTenantId);
+  const accessibleTenants = useAuthStore((state) => state.accessibleTenants);
 
   const { data: tenants, isLoading } = useTenantsList({
     search: search || undefined,
@@ -272,6 +257,18 @@ export const TenantsSection = () => {
     setShowFormModal(true);
   };
 
+  /**
+   * Entrar a una empresa como usuario
+   * Cambia el contexto de tenant y navega al dashboard
+   */
+  const handleEnterTenant = (tenant: Tenant) => {
+    // Establecer el tenant actual
+    setCurrentTenantId(tenant.id);
+
+    // Navegar a Mi Portal (home del empleado)
+    navigate('/mi-portal');
+  };
+
   const handleCloseModal = () => {
     setShowFormModal(false);
     setTenantToEdit(null);
@@ -295,7 +292,7 @@ export const TenantsSection = () => {
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
                      bg-white dark:bg-gray-800 text-gray-900 dark:text-white
-                     focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                     focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           />
         </div>
 
@@ -349,6 +346,7 @@ export const TenantsSection = () => {
               onEdit={handleEditTenant}
               onToggle={handleToggle}
               onDelete={setTenantToDelete}
+              onEnter={handleEnterTenant}
             />
           ))}
         </AnimatePresence>

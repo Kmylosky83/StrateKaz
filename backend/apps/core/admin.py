@@ -28,7 +28,6 @@ from .models import (
     SystemModule,
     ModuleTab,
     TabSection,
-    BrandingConfig,
     RolAdicional,
     RolAdicionalPermiso,
     UserRolAdicional,
@@ -522,13 +521,7 @@ class TabSectionAdmin(admin.ModelAdmin):
     list_editable = ['orden', 'is_enabled']
 
 
-@admin.register(BrandingConfig)
-class BrandingConfigAdmin(admin.ModelAdmin):
-    """Admin para Configuración de Marca"""
-    # BrandingConfig tiene 'company_name' no 'empresa_nombre'
-    list_display = ['company_name', 'primary_color', 'is_active']
-    list_filter = ['is_active']
-    search_fields = ['company_name']
+# NOTA: BrandingConfig eliminado - el branding está ahora en Tenant
 
 
 @admin.register(RolAdicional)

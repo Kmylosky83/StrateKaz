@@ -1,167 +1,341 @@
-import { BarChart3, ArrowLeft, TrendingUp, TrendingDown, Clock, Activity, Download } from 'lucide-react';
+/**
+ * MonitoreoPage - Metricas y monitoreo del Workflow Engine
+ *
+ * Conectada a APIs reales:
+ * - /api/workflows/monitoreo/metricas/dashboard/
+ * - /api/workflows/ejecucion/instancias/ (estadisticas)
+ * - /api/workflows/ejecucion/tareas/ (estadisticas)
+ */
+import {
+  BarChart3,
+  ArrowLeft,
+  TrendingUp,
+  Clock,
+  Activity,
+  Download,
+  AlertTriangle,
+  CheckCircle2,
+  GitBranch,
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Card } from '@/components/common';
+import {
+  Card,
+  EmptyState,
+  Spinner,
+  KpiCard,
+  KpiCardGrid,
+  KpiCardSkeleton,
+} from '@/components/common';
 import { Button } from '@/components/common/Button';
 import { PageHeader } from '@/components/layout';
+import {
+  useMonitoreoDashboard,
+  useInstancias,
+  useEstadisticasTareas,
+  useEstadisticasInstancias,
+} from '../hooks/useWorkflows';
 
-// Mock data for charts
-const workflowMetrics = [
-  { name: 'Compras', total: 145, completed: 120, pending: 18, overdue: 7, avgTime: '2.3 días' },
-  { name: 'Aprobaciones', total: 89, completed: 76, pending: 10, overdue: 3, avgTime: '1.8 días' },
-  { name: 'Calidad', total: 67, completed: 58, pending: 7, overdue: 2, avgTime: '3.1 días' },
-  { name: 'Proveedores', total: 54, completed: 45, pending: 8, overdue: 1, avgTime: '2.7 días' },
-];
-
-const kpis = [
-  { label: 'Flujos Activos', value: '24', icon: Activity, color: 'purple', trend: '+12%', trendUp: true },
-  { label: 'Tasa de Completitud', value: '94.5%', icon: TrendingUp, color: 'green', trend: '+8%', trendUp: true },
-  { label: 'Tiempo Promedio', value: '2.4 días', icon: Clock, color: 'blue', trend: '-15%', trendUp: false },
-  { label: 'Cumplimiento SLA', value: '91.2%', icon: BarChart3, color: 'orange', trend: '+5%', trendUp: true },
-];
+// ============================================================
+// PAGINA PRINCIPAL
+// ============================================================
 
 export default function MonitoreoPage() {
   const navigate = useNavigate();
 
+  // Queries
+  const { data: dashboard, isLoading: loadingDashboard } = useMonitoreoDashboard();
+  const { data: statsInstancias, isLoading: loadingInstancias } = useEstadisticasInstancias();
+  const { data: statsTareas, isLoading: loadingTareas } = useEstadisticasTareas();
+  const { data: instanciasRecientes } = useInstancias({ estado: 'EN_PROCESO' });
+
+  const isLoading = loadingDashboard || loadingInstancias || loadingTareas;
+  const instancias = instanciasRecientes?.results ?? [];
+
   return (
     <div className="space-y-6">
-      {/* Header */}
       <PageHeader
-        title="Monitoreo y Métricas"
-        description="Análisis de rendimiento, tiempos y cumplimiento de SLAs"
+        title="Monitoreo y Metricas"
+        description="Analisis de rendimiento, tiempos y cumplimiento de SLAs"
         actions={
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => navigate('/workflows')}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Volver
             </Button>
-            <Button variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Exportar Reporte
-            </Button>
           </div>
         }
       />
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {kpis.map((kpi, index) => {
-          const Icon = kpi.icon;
-          return (
-            <Card key={index} className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className={`p-2 bg-${kpi.color}-100 dark:bg-${kpi.color}-900/30 rounded-lg`}>
-                  <Icon className={`h-5 w-5 text-${kpi.color}-600 dark:text-${kpi.color}-400`} />
-                </div>
-                <div className={`flex items-center text-sm ${kpi.trendUp ? 'text-green-600' : 'text-red-600'}`}>
-                  {kpi.trendUp ? <TrendingUp className="h-4 w-4 mr-1" /> : <TrendingDown className="h-4 w-4 mr-1" />}
-                  <span>{kpi.trend}</span>
-                </div>
+      {isLoading ? (
+        <KpiCardGrid columns={4}>
+          {[1, 2, 3, 4].map((i) => <KpiCardSkeleton key={i} />)}
+        </KpiCardGrid>
+      ) : (
+        <KpiCardGrid columns={4}>
+          <KpiCard
+            title="Flujos Activos"
+            value={statsInstancias?.activas ?? 0}
+            icon="Activity"
+            color="purple"
+          />
+          <KpiCard
+            title="Tareas Pendientes"
+            value={statsTareas?.pendientes ?? 0}
+            icon="Clock"
+            color="orange"
+          />
+          <KpiCard
+            title="Completadas Hoy"
+            value={statsTareas?.completadas_hoy ?? 0}
+            icon="CheckCircle2"
+            color="green"
+          />
+          <KpiCard
+            title="Tareas Vencidas"
+            value={statsTareas?.vencidas ?? 0}
+            icon="AlertTriangle"
+            color="red"
+          />
+        </KpiCardGrid>
+      )}
+
+      {/* Resumen de Instancias */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Estadisticas generales */}
+        <Card>
+          <div className="p-5 border-b border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Resumen de Flujos
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Estado general de instancias de flujo
+            </p>
+          </div>
+          <div className="p-5 space-y-4">
+            <StatBar
+              label="Activas"
+              value={statsInstancias?.activas ?? 0}
+              total={statsInstancias?.total ?? 1}
+              color="bg-blue-500"
+            />
+            <StatBar
+              label="Completadas"
+              value={statsInstancias?.completadas ?? 0}
+              total={statsInstancias?.total ?? 1}
+              color="bg-green-500"
+            />
+            <StatBar
+              label="Canceladas"
+              value={statsInstancias?.canceladas ?? 0}
+              total={statsInstancias?.total ?? 1}
+              color="bg-red-500"
+            />
+            <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600 dark:text-gray-400">Total de flujos</span>
+                <span className="font-semibold text-gray-900 dark:text-gray-100">
+                  {statsInstancias?.total ?? 0}
+                </span>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">{kpi.label}</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{kpi.value}</p>
-            </Card>
-          );
-        })}
+            </div>
+          </div>
+        </Card>
+
+        {/* Cumplimiento SLA */}
+        <Card>
+          <div className="p-5 border-b border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Cumplimiento de SLAs
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Estado de tareas respecto a tiempos limite
+            </p>
+          </div>
+          <div className="p-5 space-y-3">
+            <SLACard
+              label="Dentro de SLA"
+              description="Completadas a tiempo"
+              value={statsTareas ? Math.max(0, (statsTareas.completadas_hoy ?? 0)) : 0}
+              color="green"
+            />
+            <SLACard
+              label="En Proceso"
+              description="Dentro de plazo"
+              value={statsTareas?.en_progreso ?? 0}
+              color="yellow"
+            />
+            <SLACard
+              label="Fuera de SLA"
+              description="Vencidas"
+              value={statsTareas?.vencidas ?? 0}
+              color="red"
+            />
+          </div>
+        </Card>
       </div>
 
-      {/* Workflow Metrics Table */}
+      {/* Instancias en Proceso */}
       <Card>
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Métricas por Flujo de Trabajo</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">Resumen de actividad y rendimiento por tipo de flujo</p>
+        <div className="p-5 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            Flujos en Proceso
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Instancias de flujo actualmente en ejecucion
+          </p>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-                <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Flujo</th>
-                <th className="text-center py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Total</th>
-                <th className="text-center py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Completadas</th>
-                <th className="text-center py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Pendientes</th>
-                <th className="text-center py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Vencidas</th>
-                <th className="text-center py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Tiempo Prom.</th>
-                <th className="text-center py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Tasa Éxito</th>
-              </tr>
-            </thead>
-            <tbody>
-              {workflowMetrics.map((metric, index) => {
-                const successRate = ((metric.completed / metric.total) * 100).toFixed(1);
-                return (
-                  <tr key={index} className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                    <td className="py-3 px-4 font-medium text-gray-900 dark:text-gray-100">{metric.name}</td>
-                    <td className="py-3 px-4 text-center text-gray-600 dark:text-gray-400">{metric.total}</td>
-                    <td className="py-3 px-4 text-center text-green-600">{metric.completed}</td>
-                    <td className="py-3 px-4 text-center text-blue-600">{metric.pending}</td>
-                    <td className="py-3 px-4 text-center text-red-600">{metric.overdue}</td>
-                    <td className="py-3 px-4 text-center text-gray-600 dark:text-gray-400">{metric.avgTime}</td>
+          {instancias.length === 0 ? (
+            <div className="p-8">
+              <EmptyState
+                icon={<GitBranch className="h-10 w-10" />}
+                title="Sin flujos activos"
+                description="No hay instancias de flujo en proceso actualmente"
+              />
+            </div>
+          ) : (
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">
+                    Flujo
+                  </th>
+                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">
+                    Plantilla
+                  </th>
+                  <th className="text-center py-3 px-4 text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">
+                    Estado
+                  </th>
+                  <th className="text-center py-3 px-4 text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">
+                    Prioridad
+                  </th>
+                  <th className="text-center py-3 px-4 text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">
+                    Progreso
+                  </th>
+                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">
+                    Inicio
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {instancias.slice(0, 10).map((inst) => (
+                  <tr
+                    key={inst.id}
+                    className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                  >
+                    <td className="py-3 px-4">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate max-w-[200px]">
+                          {inst.titulo}
+                        </p>
+                        <p className="text-xs text-gray-500 font-mono">{inst.codigo_instancia}</p>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">
+                      {inst.plantilla_detail?.nombre ?? '-'}
+                    </td>
                     <td className="py-3 px-4 text-center">
-                      <span className={`font-medium ${
-                        parseFloat(successRate) >= 90 ? 'text-green-600' :
-                        parseFloat(successRate) >= 80 ? 'text-yellow-600' :
-                        'text-red-600'
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                        inst.estado === 'EN_PROCESO'
+                          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                          : inst.estado === 'COMPLETADO'
+                          ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                          : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
                       }`}>
-                        {successRate}%
+                        {inst.estado}
                       </span>
                     </td>
+                    <td className="py-3 px-4 text-center">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                        inst.prioridad === 'URGENTE'
+                          ? 'bg-red-100 text-red-700'
+                          : inst.prioridad === 'ALTA'
+                          ? 'bg-orange-100 text-orange-700'
+                          : 'bg-gray-100 text-gray-700'
+                      }`}>
+                        {inst.prioridad}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                          <div
+                            className="bg-purple-500 h-2 rounded-full"
+                            style={{ width: `${inst.progreso_porcentaje ?? 0}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-gray-600 dark:text-gray-400">
+                          {inst.progreso_porcentaje ?? 0}%
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">
+                      {new Date(inst.fecha_inicio).toLocaleDateString('es-CO')}
+                    </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      {/* SLA Compliance */}
-      <Card>
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Cumplimiento de SLAs</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">Análisis de cumplimiento de acuerdos de nivel de servicio</p>
-        </div>
-        <div className="p-6 space-y-4">
-          <div className="flex items-center justify-between p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-            <div>
-              <p className="font-medium text-gray-900 dark:text-gray-100">Dentro de SLA</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Completadas a tiempo</p>
-            </div>
-            <div className="text-2xl font-bold text-green-600">87%</div>
-          </div>
-          <div className="flex items-center justify-between p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-            <div>
-              <p className="font-medium text-gray-900 dark:text-gray-100">En Riesgo</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Próximas a vencer</p>
-            </div>
-            <div className="text-2xl font-bold text-yellow-600">9%</div>
-          </div>
-          <div className="flex items-center justify-between p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-            <div>
-              <p className="font-medium text-gray-900 dark:text-gray-100">Fuera de SLA</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Vencidas</p>
-            </div>
-            <div className="text-2xl font-bold text-red-600">4%</div>
-          </div>
-        </div>
-      </Card>
-
-      {/* Info Card */}
-      <Card className="bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800">
-        <div className="p-6">
-          <div className="flex items-start gap-3">
-            <BarChart3 className="h-6 w-6 text-purple-600 dark:text-purple-400 mt-1 flex-shrink-0" />
-            <div>
-              <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                Métricas y Análisis de Rendimiento
-              </h3>
-              <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
-                <li>Dashboard en tiempo real con KPIs principales</li>
-                <li>Análisis de tiempos promedio por flujo y paso</li>
-                <li>Identificación de cuellos de botella y áreas de mejora</li>
-                <li>Seguimiento de cumplimiento de SLAs</li>
-                <li>Reportes exportables en PDF y Excel</li>
-              </ul>
-            </div>
-          </div>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </Card>
     </div>
   );
 }
+
+// ============================================================
+// COMPONENTES AUXILIARES
+// ============================================================
+
+interface StatBarProps {
+  label: string;
+  value: number;
+  total: number;
+  color: string;
+}
+
+const StatBar = ({ label, value, total, color }: StatBarProps) => {
+  const pct = total > 0 ? Math.round((value / total) * 100) : 0;
+  return (
+    <div>
+      <div className="flex justify-between text-sm mb-1">
+        <span className="text-gray-600 dark:text-gray-400">{label}</span>
+        <span className="font-medium text-gray-900 dark:text-gray-100">{value} ({pct}%)</span>
+      </div>
+      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+        <div className={`${color} h-2 rounded-full transition-all`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+};
+
+interface SLACardProps {
+  label: string;
+  description: string;
+  value: number;
+  color: 'green' | 'yellow' | 'red';
+}
+
+const SLACard = ({ label, description, value, color }: SLACardProps) => {
+  const colorMap = {
+    green: 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800',
+    yellow: 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800',
+    red: 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800',
+  };
+  const valueColorMap = {
+    green: 'text-green-600',
+    yellow: 'text-yellow-600',
+    red: 'text-red-600',
+  };
+
+  return (
+    <div className={`flex items-center justify-between p-4 rounded-lg border ${colorMap[color]}`}>
+      <div>
+        <p className="font-medium text-gray-900 dark:text-gray-100">{label}</p>
+        <p className="text-sm text-gray-600 dark:text-gray-400">{description}</p>
+      </div>
+      <div className={`text-2xl font-bold ${valueColorMap[color]}`}>{value}</div>
+    </div>
+  );
+};

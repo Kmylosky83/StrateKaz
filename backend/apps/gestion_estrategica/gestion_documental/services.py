@@ -1,0 +1,232 @@
+"""
+DocumentoService - Servicio de lógica de negocio para Gestión Documental.
+Patron @classmethod consistente con EvidenciaService, WorkflowExecutionService.
+"""
+import logging
+from django.utils import timezone
+from django.db.models import Count, Q
+
+from .models import (
+    TipoDocumento,
+    Documento,
+    VersionDocumento,
+    ControlDocumental,
+)
+
+logger = logging.getLogger(__name__)
+
+
+class DocumentoService:
+    """Servicio central para gestión documental."""
+
+    @classmethod
+    def generar_codigo(cls, tipo_documento, empresa_id):
+        """Genera código único: {prefijo}{secuencial:04d}."""
+        prefijo = tipo_documento.prefijo_codigo or f'{tipo_documento.codigo}-'
+        ultimo = Documento.objects.filter(
+            empresa_id=empresa_id,
+            codigo__startswith=prefijo
+        ).order_by('-codigo').first()
+
+        if ultimo:
+            try:
+                ultimo_num = int(ultimo.codigo.replace(prefijo, ''))
+                nuevo_num = ultimo_num + 1
+            except (ValueError, IndexError):
+                nuevo_num = 1
+        else:
+            nuevo_num = 1
+
+        return f'{prefijo}{nuevo_num:04d}'
+
+    @classmethod
+    def enviar_a_revision(cls, documento_id, usuario, empresa_id, revisor_id=None):
+        """BORRADOR -> EN_REVISION."""
+        doc = Documento.objects.get(id=documento_id, empresa_id=empresa_id)
+        if doc.estado != 'BORRADOR':
+            raise ValueError('Solo se pueden enviar borradores a revisión')
+
+        doc.estado = 'EN_REVISION'
+        if revisor_id:
+            doc.revisado_por_id = revisor_id
+        doc.save(update_fields=['estado', 'revisado_por_id', 'updated_at'])
+        return doc
+
+    @classmethod
+    def aprobar_documento(cls, documento_id, usuario, empresa_id, observaciones=''):
+        """EN_REVISION -> APROBADO, crea VersionDocumento snapshot."""
+        doc = Documento.objects.get(id=documento_id, empresa_id=empresa_id)
+        if doc.estado != 'EN_REVISION':
+            raise ValueError('Solo se pueden aprobar documentos en revisión')
+
+        doc.estado = 'APROBADO'
+        doc.aprobado_por = usuario
+        doc.fecha_aprobacion = timezone.now().date()
+        if observaciones:
+            doc.observaciones = observaciones
+        doc.save()
+        return doc
+
+    @classmethod
+    def publicar_documento(cls, documento_id, usuario, empresa_id, fecha_vigencia=None):
+        """APROBADO -> PUBLICADO, crea VersionDocumento + ControlDocumental."""
+        doc = Documento.objects.get(id=documento_id, empresa_id=empresa_id)
+        if doc.estado != 'APROBADO':
+            raise ValueError('Solo se pueden publicar documentos aprobados')
+
+        doc.estado = 'PUBLICADO'
+        doc.fecha_publicacion = timezone.now().date()
+        doc.fecha_vigencia = fecha_vigencia or timezone.now().date()
+        doc.save()
+
+        # Marcar versiones anteriores como no actuales
+        VersionDocumento.objects.filter(
+            documento=doc, is_version_actual=True
+        ).update(is_version_actual=False)
+
+        # Crear snapshot de versión
+        VersionDocumento.objects.create(
+            documento=doc,
+            numero_version=doc.version_actual,
+            tipo_cambio='CREACION' if doc.numero_revision == 0 else 'REVISION_MAYOR',
+            contenido_snapshot=doc.contenido,
+            datos_formulario_snapshot=doc.datos_formulario,
+            descripcion_cambios=doc.motivo_cambio_version or 'Publicación',
+            creado_por=usuario,
+            aprobado_por=doc.aprobado_por,
+            fecha_aprobacion=doc.fecha_aprobacion,
+            is_version_actual=True,
+            empresa_id=empresa_id,
+        )
+
+        # Crear control de distribución automático
+        ControlDocumental.objects.create(
+            documento=doc,
+            tipo_control='DISTRIBUCION',
+            fecha_distribucion=timezone.now().date(),
+            medio_distribucion='DIGITAL',
+            areas_distribucion=doc.areas_aplicacion,
+            observaciones='Distribución automática al publicar',
+            empresa_id=empresa_id,
+            created_by=usuario,
+        )
+
+        return doc
+
+    @classmethod
+    def marcar_obsoleto(cls, documento_id, usuario, empresa_id, motivo, sustituto_id=None):
+        """PUBLICADO -> OBSOLETO, crea ControlDocumental de retiro."""
+        doc = Documento.objects.get(id=documento_id, empresa_id=empresa_id)
+        doc.estado = 'OBSOLETO'
+        doc.fecha_obsolescencia = timezone.now().date()
+        doc.save(update_fields=['estado', 'fecha_obsolescencia', 'updated_at'])
+
+        ControlDocumental.objects.create(
+            documento=doc,
+            tipo_control='RETIRO',
+            fecha_retiro=timezone.now().date(),
+            motivo_retiro=motivo,
+            documento_sustituto_id=sustituto_id,
+            empresa_id=empresa_id,
+            created_by=usuario,
+        )
+        return doc
+
+    @classmethod
+    def obtener_estadisticas(cls, empresa_id):
+        """Dashboard stats: totales por estado, por tipo, revisiones pendientes."""
+        hoy = timezone.now().date()
+        docs = Documento.objects.filter(empresa_id=empresa_id)
+
+        por_estado = dict(
+            docs.values_list('estado').annotate(total=Count('id')).values_list('estado', 'total')
+        )
+
+        por_tipo = list(
+            docs.values('tipo_documento__nombre')
+            .annotate(total=Count('id'))
+            .order_by('-total')[:10]
+        )
+
+        revision_vencida = docs.filter(
+            estado='PUBLICADO',
+            fecha_revision_programada__lte=hoy
+        ).count()
+
+        proximas_revision = docs.filter(
+            estado='PUBLICADO',
+            fecha_revision_programada__gt=hoy,
+            fecha_revision_programada__lte=hoy + timezone.timedelta(days=30)
+        ).count()
+
+        # Stats de distribución
+        distribuciones = ControlDocumental.objects.filter(
+            empresa_id=empresa_id,
+            tipo_control='DISTRIBUCION',
+            documento__estado='PUBLICADO'
+        )
+        total_distribuciones = distribuciones.count()
+        total_confirmaciones = sum(
+            len(d.confirmaciones_recepcion or [])
+            for d in distribuciones.only('confirmaciones_recepcion')
+        )
+
+        return {
+            'total': docs.count(),
+            'por_estado': {
+                'borrador': por_estado.get('BORRADOR', 0),
+                'en_revision': por_estado.get('EN_REVISION', 0),
+                'aprobado': por_estado.get('APROBADO', 0),
+                'publicado': por_estado.get('PUBLICADO', 0),
+                'obsoleto': por_estado.get('OBSOLETO', 0),
+                'archivado': por_estado.get('ARCHIVADO', 0),
+            },
+            'por_tipo': por_tipo,
+            'revision_vencida': revision_vencida,
+            'proximas_revision_30d': proximas_revision,
+            'distribucion': {
+                'total_distribuciones': total_distribuciones,
+                'total_confirmaciones': total_confirmaciones,
+            },
+        }
+
+    @classmethod
+    def verificar_revisiones_programadas(cls, empresa_id=None):
+        """
+        Encuentra documentos con fecha_revision_programada pasada.
+        Retorna lista de IDs para notificación.
+        """
+        hoy = timezone.now().date()
+        filtros = Q(
+            estado='PUBLICADO',
+            fecha_revision_programada__lte=hoy,
+        )
+        if empresa_id:
+            filtros &= Q(empresa_id=empresa_id)
+
+        docs_vencidos = Documento.objects.filter(filtros).values_list(
+            'id', 'codigo', 'titulo', 'empresa_id', 'elaborado_por_id'
+        )
+        return list(docs_vencidos)
+
+    @classmethod
+    def documentos_por_vencer(cls, empresa_id=None, dias=15):
+        """
+        Documentos cuya revisión programada vence en los próximos N días.
+        """
+        hoy = timezone.now().date()
+        limite = hoy + timezone.timedelta(days=dias)
+        filtros = Q(
+            estado='PUBLICADO',
+            fecha_revision_programada__gt=hoy,
+            fecha_revision_programada__lte=limite,
+        )
+        if empresa_id:
+            filtros &= Q(empresa_id=empresa_id)
+
+        return list(
+            Documento.objects.filter(filtros).values_list(
+                'id', 'codigo', 'titulo', 'empresa_id', 'elaborado_por_id',
+                'fecha_revision_programada'
+            )
+        )

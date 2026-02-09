@@ -14,9 +14,6 @@ export * from './strategic.types';
 // Módulos del sistema
 export * from './modules.types';
 
-// Empresa y configuración
-export * from './empresa.types';
-
 // Organización (Normas ISO, Unidades, Consecutivos)
 export * from './organizacion.types';
 

@@ -28,6 +28,8 @@ export interface SplashScreenProps {
   showProgress?: boolean;
   /** Callback cuando termina la animación de salida */
   onExitComplete?: () => void;
+  /** Variante del splash: 'default' para fondo claro, 'dark' para fondo oscuro (login) */
+  variant?: 'default' | 'dark';
 }
 
 // Variantes de animación para el contenedor principal
@@ -61,9 +63,8 @@ const logoVariants = {
   },
   exit: {
     opacity: 0,
-    scale: 1.1,
     transition: {
-      duration: DURATION.normal,
+      duration: DURATION.fast,
       ease: EASING.easeIn,
     },
   },
@@ -159,12 +160,18 @@ export const SplashScreen = ({
   statusMessage = 'Cargando...',
   showProgress = true,
   onExitComplete,
+  variant = 'default',
 }: SplashScreenProps) => {
   const reduceMotion = shouldReduceMotion();
 
   // Seleccionar variantes según preferencia de movimiento
   const containerV = reduceMotion ? reducedMotionVariants.container : containerVariants;
   const logoV = reduceMotion ? reducedMotionVariants.logo : logoVariants;
+
+  // Clases de fondo según variante
+  const backgroundClasses = variant === 'dark'
+    ? 'bg-neutral-950' // Fondo oscuro fijo para login (coincide con NetworkBackground)
+    : 'bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900';
 
   return (
     <AnimatePresence mode="wait" onExitComplete={onExitComplete}>
@@ -175,22 +182,23 @@ export const SplashScreen = ({
           initial="initial"
           animate="animate"
           exit="exit"
-          className="
+          className={`
             fixed inset-0 z-[9999]
             flex flex-col items-center justify-center
-            bg-gradient-to-br from-gray-50 via-white to-gray-100
-            dark:from-gray-900 dark:via-gray-800 dark:to-gray-900
-          "
+            ${backgroundClasses}
+          `}
         >
-          {/* Background Pattern (sutil) */}
-          <div
-            className="
-              absolute inset-0 opacity-[0.02] dark:opacity-[0.05]
-              bg-[radial-gradient(circle_at_1px_1px,_currentColor_1px,_transparent_0)]
-              bg-[length:24px_24px]
-            "
-            aria-hidden="true"
-          />
+          {/* Background Pattern (sutil) - oculto en variante dark */}
+          {variant !== 'dark' && (
+            <div
+              className="
+                absolute inset-0 opacity-[0.02] dark:opacity-[0.05]
+                bg-[radial-gradient(circle_at_1px_1px,_currentColor_1px,_transparent_0)]
+                bg-[length:24px_24px]
+              "
+              aria-hidden="true"
+            />
+          )}
 
           {/* Logo Container */}
           <motion.div
@@ -200,12 +208,13 @@ export const SplashScreen = ({
             exit="exit"
             className="relative"
           >
-            {/* Glow Effect (solo en dark mode) */}
+            {/* Glow Effect (en dark mode o variante dark) */}
             <div
-              className="
-                absolute -inset-8 opacity-0 dark:opacity-30
-                bg-primary-500/20 blur-3xl rounded-full
-              "
+              className={`
+                absolute -inset-8 blur-3xl rounded-full
+                bg-primary-500/20
+                ${variant === 'dark' ? 'opacity-30' : 'opacity-0 dark:opacity-30'}
+              `}
               aria-hidden="true"
             />
 
@@ -215,26 +224,37 @@ export const SplashScreen = ({
               animate="animate"
               className="relative"
             >
-              <img
-                src={BRAND.logos.light}
-                alt={BRAND.name}
-                className="
-                  h-24 w-auto
-                  sm:h-28 md:h-32
-                  dark:hidden
-                  drop-shadow-lg
-                "
-              />
-              <img
-                src={BRAND.logos.dark}
-                alt={BRAND.name}
-                className="
-                  h-24 w-auto
-                  sm:h-28 md:h-32
-                  hidden dark:block
-                  drop-shadow-lg
-                "
-              />
+              {/* En variante dark siempre mostrar logo dark */}
+              {variant === 'dark' ? (
+                <img
+                  src={BRAND.logos.dark}
+                  alt={BRAND.name}
+                  className="h-24 w-auto sm:h-28 md:h-32 drop-shadow-lg"
+                />
+              ) : (
+                <>
+                  <img
+                    src={BRAND.logos.light}
+                    alt={BRAND.name}
+                    className="
+                      h-24 w-auto
+                      sm:h-28 md:h-32
+                      dark:hidden
+                      drop-shadow-lg
+                    "
+                  />
+                  <img
+                    src={BRAND.logos.dark}
+                    alt={BRAND.name}
+                    className="
+                      h-24 w-auto
+                      sm:h-28 md:h-32
+                      hidden dark:block
+                      drop-shadow-lg
+                    "
+                  />
+                </>
+              )}
             </motion.div>
           </motion.div>
 
@@ -244,11 +264,10 @@ export const SplashScreen = ({
             initial="initial"
             animate="animate"
             exit="exit"
-            className="
-              mt-6 text-lg sm:text-xl font-medium
-              text-gray-600 dark:text-gray-300
-              tracking-wide
-            "
+            className={`
+              mt-6 text-lg sm:text-xl font-medium tracking-wide
+              ${variant === 'dark' ? 'text-gray-300' : 'text-gray-600 dark:text-gray-300'}
+            `}
           >
             {BRAND.slogan}
           </motion.p>
@@ -257,10 +276,10 @@ export const SplashScreen = ({
           {showProgress && (
             <div className="mt-8 w-48 sm:w-56">
               <div
-                className="
+                className={`
                   h-1 w-full overflow-hidden rounded-full
-                  bg-gray-200 dark:bg-gray-700
-                "
+                  ${variant === 'dark' ? 'bg-gray-700' : 'bg-gray-200 dark:bg-gray-700'}
+                `}
               >
                 <motion.div
                   variants={reduceMotion ? {} : progressBarVariants}
@@ -280,10 +299,10 @@ export const SplashScreen = ({
                 variants={reduceMotion ? {} : statusVariants}
                 initial="initial"
                 animate="animate"
-                className="
+                className={`
                   mt-3 text-center text-sm
-                  text-gray-500 dark:text-gray-400
-                "
+                  ${variant === 'dark' ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}
+                `}
               >
                 {statusMessage}
               </motion.p>
@@ -295,10 +314,10 @@ export const SplashScreen = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1, transition: { delay: 0.5 } }}
             exit={{ opacity: 0 }}
-            className="
-              absolute bottom-6
-              text-xs text-gray-400 dark:text-gray-500
-            "
+            className={`
+              absolute bottom-6 text-xs
+              ${variant === 'dark' ? 'text-gray-500' : 'text-gray-400 dark:text-gray-500'}
+            `}
           >
             v{APP_VERSION}
           </motion.div>

@@ -108,6 +108,9 @@ const modulesApi = {
  * Hook para obtener el árbol completo de módulos
  * Usado en ConfiguracionTab para mostrar todos los módulos/tabs/secciones
  *
+ * IMPORTANTE: Solo se ejecuta si hay un tenant seleccionado (currentTenantId).
+ * En modo Admin Global (sin tenant), la query no se ejecuta.
+ *
  * @returns Query con árbol completo de módulos
  *
  * @example
@@ -120,17 +123,27 @@ const modulesApi = {
  * ```
  */
 export function useModulesTree() {
+  // Obtener el tenant actual del localStorage para habilitar/deshabilitar la query
+  const currentTenantId = typeof window !== 'undefined'
+    ? localStorage.getItem('current_tenant_id')
+    : null;
+
   return useQuery({
     queryKey: modulesKeys.tree(),
     queryFn: modulesApi.getTree,
     staleTime: 5 * 60 * 1000, // 5 minutos
     retry: 2,
+    // Solo ejecutar si hay un tenant seleccionado
+    enabled: !!currentTenantId,
   });
 }
 
 /**
  * Hook para obtener módulos del sidebar (solo habilitados)
  * Usado en Sidebar.tsx para renderizar la navegación
+ *
+ * IMPORTANTE: Solo se ejecuta si hay un tenant seleccionado (currentTenantId).
+ * En modo Admin Global (sin tenant), retorna array vacío.
  *
  * @returns Query con módulos habilitados en estructura jerárquica
  *
@@ -144,11 +157,18 @@ export function useModulesTree() {
  * ```
  */
 export function useSidebarModules() {
+  // Obtener el tenant actual del localStorage para habilitar/deshabilitar la query
+  const currentTenantId = typeof window !== 'undefined'
+    ? localStorage.getItem('current_tenant_id')
+    : null;
+
   return useQuery({
     queryKey: modulesKeys.sidebar(),
     queryFn: modulesApi.getSidebar,
     staleTime: 5 * 60 * 1000, // 5 minutos
     retry: 2,
+    // Solo ejecutar si hay un tenant seleccionado
+    enabled: !!currentTenantId,
   });
 }
 

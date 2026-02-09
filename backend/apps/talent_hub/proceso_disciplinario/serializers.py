@@ -7,7 +7,8 @@ from rest_framework import serializers
 from django.utils import timezone
 
 from .models import (
-    TipoFalta, LlamadoAtencion, Descargo, Memorando, HistorialDisciplinario
+    TipoFalta, LlamadoAtencion, Descargo, Memorando, HistorialDisciplinario,
+    NotificacionDisciplinaria, PruebaDisciplinaria, DenunciaAcosoLaboral
 )
 
 
@@ -213,6 +214,9 @@ class DescargoListSerializer(serializers.ModelSerializer):
     tipo_falta_nombre = serializers.CharField(source='tipo_falta.nombre', read_only=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     decision_display = serializers.CharField(source='get_decision_display', read_only=True)
+    tipo_acompanante_display = serializers.CharField(
+        source='get_tipo_acompanante_display', read_only=True
+    )
 
     class Meta:
         model = Descargo
@@ -222,6 +226,8 @@ class DescargoListSerializer(serializers.ModelSerializer):
             'fecha_citacion', 'fecha_descargo',
             'estado', 'estado_display',
             'decision', 'decision_display',
+            'tipo_acompanante', 'tipo_acompanante_display',
+            'apelado', 'resultado_apelacion',
             'created_at'
         ]
         read_only_fields = ['created_at']
@@ -234,14 +240,30 @@ class DescargoDetailSerializer(serializers.ModelSerializer):
     tipo_falta_info = serializers.SerializerMethodField()
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     decision_display = serializers.CharField(source='get_decision_display', read_only=True)
+    tipo_acompanante_display = serializers.CharField(
+        source='get_tipo_acompanante_display', read_only=True
+    )
+    resultado_apelacion_display = serializers.CharField(
+        source='get_resultado_apelacion_display', read_only=True
+    )
     decidido_por_nombre = serializers.CharField(
         source='decidido_por.get_full_name',
         read_only=True
+    )
+    resuelto_por_nombre = serializers.CharField(
+        source='resuelto_por.get_full_name',
+        read_only=True,
+        default=None
     )
     esta_pendiente = serializers.BooleanField(read_only=True)
     fue_realizado = serializers.BooleanField(read_only=True)
     tiene_decision = serializers.BooleanField(read_only=True)
     fue_sancionado = serializers.BooleanField(read_only=True)
+    tiene_acompanante = serializers.BooleanField(read_only=True)
+
+    # Pruebas y notificaciones asociadas
+    pruebas = serializers.SerializerMethodField()
+    notificaciones = serializers.SerializerMethodField()
 
     class Meta:
         model = Descargo
@@ -266,6 +288,16 @@ class DescargoDetailSerializer(serializers.ModelSerializer):
             'gravedad': obj.tipo_falta.gravedad,
         }
 
+    def get_pruebas(self, obj):
+        """Pruebas asociadas al descargo."""
+        pruebas = obj.pruebas.filter(is_active=True)
+        return PruebaDisciplinariaSerializer(pruebas, many=True).data
+
+    def get_notificaciones(self, obj):
+        """Notificaciones asociadas al descargo."""
+        notificaciones = obj.notificaciones.filter(is_active=True)
+        return NotificacionDisciplinariaSerializer(notificaciones, many=True).data
+
 
 class DescargoCreateSerializer(serializers.ModelSerializer):
     """Serializer para creación de descargo (citación)."""
@@ -275,7 +307,8 @@ class DescargoCreateSerializer(serializers.ModelSerializer):
         fields = [
             'colaborador', 'tipo_falta', 'llamado_atencion_previo',
             'fecha_citacion', 'fecha_descargo', 'hora_citacion',
-            'lugar_citacion', 'descripcion_cargos'
+            'lugar_citacion', 'descripcion_cargos',
+            'tipo_acompanante', 'nombre_acompanante', 'representante_sindical',
         ]
 
     def validate(self, attrs):
@@ -286,6 +319,22 @@ class DescargoCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({
                     'fecha_descargo': 'La fecha del descargo debe ser posterior a la citación.'
                 })
+
+        # Ley 2466/2025: Mínimo 5 días entre hoy y la citación (solo para nuevos)
+        if not self.instance and attrs.get('fecha_citacion'):
+            hoy = timezone.now().date()
+            dias = (attrs['fecha_citacion'] - hoy).days
+            if dias < 5:
+                raise serializers.ValidationError({
+                    'fecha_citacion': 'Mínimo 5 días hábiles entre la citación y la diligencia (Ley 2466/2025 Art.7).'
+                })
+
+        # Si tiene acompañante, debe indicar nombre
+        tipo_acomp = attrs.get('tipo_acompanante', 'ninguno')
+        if tipo_acomp != 'ninguno' and not attrs.get('nombre_acompanante'):
+            raise serializers.ValidationError({
+                'nombre_acompanante': 'Debe indicar el nombre del acompañante.'
+            })
 
         return attrs
 
@@ -532,3 +581,184 @@ class HistorialDisciplinarioDetailSerializer(serializers.ModelSerializer):
             is_active=True
         ).order_by('-fecha_memorando')[:5]
         return MemorandoListSerializer(memorandos, many=True).data
+
+
+# =============================================================================
+# NOTIFICACIÓN DISCIPLINARIA SERIALIZERS (Ley 2466/2025)
+# =============================================================================
+
+class NotificacionDisciplinariaSerializer(serializers.ModelSerializer):
+    """Serializer para notificaciones disciplinarias."""
+
+    tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
+    colaborador_nombre = serializers.CharField(
+        source='colaborador.get_nombre_completo', read_only=True
+    )
+
+    class Meta:
+        model = NotificacionDisciplinaria
+        fields = [
+            'id', 'colaborador', 'colaborador_nombre',
+            'descargo', 'memorando',
+            'tipo', 'tipo_display', 'contenido',
+            'fecha_entrega', 'acuse_recibo', 'fecha_acuse',
+            'testigo_entrega', 'archivo_soporte',
+            'created_at',
+        ]
+        read_only_fields = ['created_at']
+
+
+class NotificacionDisciplinariaCreateSerializer(serializers.ModelSerializer):
+    """Serializer para creación de notificación disciplinaria."""
+
+    class Meta:
+        model = NotificacionDisciplinaria
+        fields = [
+            'colaborador', 'descargo', 'memorando',
+            'tipo', 'contenido', 'fecha_entrega',
+            'testigo_entrega', 'archivo_soporte',
+        ]
+
+    def validate(self, attrs):
+        if not attrs.get('descargo') and not attrs.get('memorando'):
+            raise serializers.ValidationError(
+                'Debe asociar la notificación a un descargo o memorando.'
+            )
+        return attrs
+
+
+# =============================================================================
+# PRUEBA DISCIPLINARIA SERIALIZERS (Ley 2466/2025)
+# =============================================================================
+
+class PruebaDisciplinariaSerializer(serializers.ModelSerializer):
+    """Serializer para pruebas disciplinarias."""
+
+    tipo_prueba_display = serializers.CharField(
+        source='get_tipo_prueba_display', read_only=True
+    )
+    presentada_por_display = serializers.CharField(
+        source='get_presentada_por_display', read_only=True
+    )
+
+    class Meta:
+        model = PruebaDisciplinaria
+        fields = [
+            'id', 'descargo',
+            'tipo_prueba', 'tipo_prueba_display',
+            'descripcion',
+            'presentada_por', 'presentada_por_display',
+            'archivo', 'fecha_presentacion',
+            'admitida', 'observaciones_admision',
+            'created_at',
+        ]
+        read_only_fields = ['fecha_presentacion', 'created_at']
+
+
+class PruebaDisciplinariaCreateSerializer(serializers.ModelSerializer):
+    """Serializer para creación de prueba disciplinaria."""
+
+    class Meta:
+        model = PruebaDisciplinaria
+        fields = [
+            'descargo', 'tipo_prueba', 'descripcion',
+            'presentada_por', 'archivo',
+        ]
+
+
+class ApelarDescargoSerializer(serializers.Serializer):
+    """Serializer para registrar apelación de descargo (Ley 2466/2025)."""
+
+    motivo_apelacion = serializers.CharField()
+    fecha_apelacion = serializers.DateField()
+
+
+class ResolverApelacionDescargoSerializer(serializers.Serializer):
+    """Serializer para resolver apelación de descargo."""
+
+    resultado_apelacion = serializers.ChoiceField(
+        choices=['confirmado', 'modificado', 'revocado']
+    )
+    justificacion = serializers.CharField(required=False, allow_blank=True)
+
+
+# =============================================================================
+# DENUNCIA ACOSO LABORAL - Ley 1010/2006
+# =============================================================================
+
+class DenunciaAcosoLaboralListSerializer(serializers.ModelSerializer):
+    """Serializer de lista para denuncias de acoso laboral."""
+    denunciado_nombre = serializers.CharField(source='denunciado.get_nombre_completo', read_only=True)
+    tipo_acoso_display = serializers.CharField(source='get_tipo_acoso_display', read_only=True)
+    estado_display = serializers.CharField(source='get_estado_display', read_only=True)
+    testigos_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DenunciaAcosoLaboral
+        fields = [
+            'id', 'es_anonima', 'denunciado', 'denunciado_nombre',
+            'tipo_acoso', 'tipo_acoso_display',
+            'fecha_hechos', 'estado', 'estado_display',
+            'comite_convivencia_notificado', 'testigos_count',
+            'created_at'
+        ]
+        read_only_fields = ['created_at']
+
+    def get_testigos_count(self, obj):
+        return obj.testigos.count()
+
+
+class DenunciaAcosoLaboralDetailSerializer(serializers.ModelSerializer):
+    """Serializer detallado para denuncias de acoso laboral."""
+    denunciado_nombre = serializers.CharField(source='denunciado.get_nombre_completo', read_only=True)
+    tipo_acoso_display = serializers.CharField(source='get_tipo_acoso_display', read_only=True)
+    estado_display = serializers.CharField(source='get_estado_display', read_only=True)
+    testigos_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DenunciaAcosoLaboral
+        fields = '__all__'
+        read_only_fields = [
+            'empresa', 'created_at', 'updated_at', 'created_by', 'updated_by'
+        ]
+
+    def get_testigos_count(self, obj):
+        return obj.testigos.count()
+
+
+class DenunciaAcosoLaboralCreateSerializer(serializers.ModelSerializer):
+    """Serializer de creación para denuncias de acoso laboral."""
+
+    class Meta:
+        model = DenunciaAcosoLaboral
+        fields = [
+            'es_anonima', 'denunciado', 'tipo_acoso',
+            'descripcion_hechos', 'fecha_hechos', 'lugar_hechos',
+            'testigos', 'evidencia'
+        ]
+
+    def validate(self, data):
+        """Validaciones."""
+        # Si es anónima, no asignar denunciante
+        if data.get('es_anonima'):
+            return data
+        return data
+
+    def create(self, validated_data):
+        """Asignar denunciante si no es anónima."""
+        testigos = validated_data.pop('testigos', [])
+        request = self.context.get('request')
+        if request and not validated_data.get('es_anonima'):
+            validated_data['denunciante'] = request.user
+        instance = super().create(validated_data)
+        if testigos:
+            instance.testigos.set(testigos)
+        return instance
+
+
+class CambiarEstadoDenunciaSerializer(serializers.Serializer):
+    """Serializer para cambiar estado de una denuncia."""
+    estado = serializers.ChoiceField(
+        choices=['recibida', 'investigacion', 'comite', 'resolucion', 'cerrada', 'archivada']
+    )
+    observacion = serializers.CharField(required=False, allow_blank=True)

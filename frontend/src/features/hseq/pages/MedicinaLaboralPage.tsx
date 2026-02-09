@@ -15,9 +15,6 @@ import {
   Activity,
   FileText,
   BarChart3,
-  Plus,
-  Download,
-  Filter,
   CheckCircle2,
   AlertTriangle,
   Clock,
@@ -38,6 +35,9 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { Badge } from '@/components/common/Badge';
 import { Spinner } from '@/components/common/Spinner';
 import { Input } from '@/components/forms/Input';
+import { KpiCard, KpiCardGrid } from '@/components/common';
+import { SectionToolbar } from '@/components/common';
+import { StatusBadge, formatStatusLabel } from '@/components/common/StatusBadge';
 import { cn } from '@/utils/cn';
 import {
   useExamenesMedicos,
@@ -160,28 +160,6 @@ const formatSeveridad = (severidad: string): string => {
   return severidadMap[severidad] || severidad;
 };
 
-const getEstadoBadgeVariant = (
-  estado: string
-): 'success' | 'primary' | 'warning' | 'danger' | 'info' | 'gray' => {
-  const estadoMap: Record<string, 'success' | 'primary' | 'warning' | 'danger' | 'info' | 'gray'> = {
-    PROGRAMADO: 'warning',
-    COMPLETADO: 'success',
-    REALIZADO: 'success',
-    PENDIENTE: 'warning',
-    VENCIDO: 'danger',
-    CANCELADO: 'gray',
-    ACTIVO: 'primary',
-    INACTIVO: 'gray',
-    CONTROLADO: 'success',
-    EN_SEGUIMIENTO: 'primary',
-  };
-  return estadoMap[estado] || 'gray';
-};
-
-const formatEstado = (estado: string): string => {
-  return estado.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase());
-};
-
 // ==================== EXAMENES MEDICOS SECTION ====================
 
 const ExamenesMedicosSection = () => {
@@ -204,7 +182,6 @@ const ExamenesMedicosSection = () => {
         action={{
           label: 'Programar Examen',
           onClick: () => console.log('Programar examen'),
-          icon: <Plus className="w-4 h-4" />,
         }}
       />
     );
@@ -225,77 +202,47 @@ const ExamenesMedicosSection = () => {
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Programados</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stats.programados}</p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <Calendar className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Pendientes de realizar</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Completados</p>
-              <p className="text-2xl font-bold text-success-600 dark:text-success-400 mt-1">
-                {stats.completados}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-success-100 dark:bg-success-900/30 rounded-lg flex items-center justify-center">
-              <CheckCircle2 className="w-6 h-6 text-success-600 dark:text-success-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Este mes</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Vencidos</p>
-              <p className="text-2xl font-bold text-danger-600 dark:text-danger-400 mt-1">{stats.vencidos}</p>
-            </div>
-            <div className="w-12 h-12 bg-danger-100 dark:bg-danger-900/30 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-danger-600 dark:text-danger-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Requieren atención</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Próximos 30 días</p>
-              <p className="text-2xl font-bold text-warning-600 dark:text-warning-400 mt-1">{stats.proximos30}</p>
-            </div>
-            <div className="w-12 h-12 bg-warning-100 dark:bg-warning-900/30 rounded-lg flex items-center justify-center">
-              <Clock className="w-6 h-6 text-warning-600 dark:text-warning-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Por vencer</p>
-        </Card>
-      </div>
+      <KpiCardGrid>
+        <KpiCard
+          label="Programados"
+          value={stats.programados}
+          icon={<Calendar className="w-5 h-5" />}
+          color="primary"
+          description="Pendientes de realizar"
+        />
+        <KpiCard
+          label="Completados"
+          value={stats.completados}
+          icon={<CheckCircle2 className="w-5 h-5" />}
+          color="success"
+          description="Este mes"
+          valueColor="text-success-600 dark:text-success-400"
+        />
+        <KpiCard
+          label="Vencidos"
+          value={stats.vencidos}
+          icon={<AlertTriangle className="w-5 h-5" />}
+          color="danger"
+          description="Requieren atención"
+          valueColor="text-danger-600 dark:text-danger-400"
+        />
+        <KpiCard
+          label="Próximos 30 días"
+          value={stats.proximos30}
+          icon={<Clock className="w-5 h-5" />}
+          color="warning"
+          description="Por vencer"
+          valueColor="text-warning-600 dark:text-warning-400"
+        />
+      </KpiCardGrid>
 
       {/* Actions */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Exámenes Médicos</h3>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
-            Filtros
-          </Button>
-          <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-            Exportar
-          </Button>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Programar Examen
-          </Button>
-        </div>
-      </div>
+      <SectionToolbar
+        title="Exámenes Médicos"
+        onFilter={() => console.log('Filtros')}
+        onExport={() => console.log('Exportar')}
+        primaryAction={{ label: 'Programar Examen', onClick: () => console.log('Programar examen') }}
+      />
 
       {/* Examenes Table */}
       <Card variant="bordered" padding="none">
@@ -358,9 +305,7 @@ const ExamenesMedicosSection = () => {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={getEstadoBadgeVariant(examen.estado)} size="sm">
-                      {examen.estado_display || formatEstado(examen.estado)}
-                    </Badge>
+                    <StatusBadge status={examen.estado} preset="proceso" />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
@@ -369,9 +314,6 @@ const ExamenesMedicosSection = () => {
                       </Button>
                       <Button variant="ghost" size="sm">
                         <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Download className="w-4 h-4" />
                       </Button>
                     </div>
                   </td>
@@ -407,7 +349,6 @@ const RestriccionesMedicasSection = () => {
         action={{
           label: 'Nueva Restricción',
           onClick: () => console.log('Nueva restricción'),
-          icon: <Plus className="w-4 h-4" />,
         }}
       />
     );
@@ -438,59 +379,39 @@ const RestriccionesMedicasSection = () => {
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Activas Total</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stats.total}</p>
-            </div>
-            <div className="w-12 h-12 bg-danger-100 dark:bg-danger-900/30 rounded-lg flex items-center justify-center">
-              <AlertOctagon className="w-6 h-6 text-danger-600 dark:text-danger-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Restricciones vigentes</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Temporales</p>
-              <p className="text-2xl font-bold text-warning-600 dark:text-warning-400 mt-1">{stats.temporales}</p>
-            </div>
-            <div className="w-12 h-12 bg-warning-100 dark:bg-warning-900/30 rounded-lg flex items-center justify-center">
-              <Clock className="w-6 h-6 text-warning-600 dark:text-warning-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Con fecha de fin</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Permanentes</p>
-              <p className="text-2xl font-bold text-danger-600 dark:text-danger-400 mt-1">{stats.permanentes}</p>
-            </div>
-            <div className="w-12 h-12 bg-danger-100 dark:bg-danger-900/30 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-danger-600 dark:text-danger-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Sin fecha de finalización</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Por Vencer (30 días)</p>
-              <p className="text-2xl font-bold text-primary-600 dark:text-primary-400 mt-1">{stats.porVencer}</p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <Calendar className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Requieren revisión</p>
-        </Card>
-      </div>
+      <KpiCardGrid>
+        <KpiCard
+          label="Activas Total"
+          value={stats.total}
+          icon={<AlertOctagon className="w-5 h-5" />}
+          color="danger"
+          description="Restricciones vigentes"
+        />
+        <KpiCard
+          label="Temporales"
+          value={stats.temporales}
+          icon={<Clock className="w-5 h-5" />}
+          color="warning"
+          description="Con fecha de fin"
+          valueColor="text-warning-600 dark:text-warning-400"
+        />
+        <KpiCard
+          label="Permanentes"
+          value={stats.permanentes}
+          icon={<AlertTriangle className="w-5 h-5" />}
+          color="danger"
+          description="Sin fecha de finalización"
+          valueColor="text-danger-600 dark:text-danger-400"
+        />
+        <KpiCard
+          label="Por Vencer (30 días)"
+          value={stats.porVencer}
+          icon={<Calendar className="w-5 h-5" />}
+          color="primary"
+          description="Requieren revisión"
+          valueColor="text-primary-600 dark:text-primary-400"
+        />
+      </KpiCardGrid>
 
       {/* Dashboard de restricciones por categoría */}
       {Object.keys(restriccionesPorCategoria).length > 0 && (
@@ -508,17 +429,11 @@ const RestriccionesMedicasSection = () => {
       )}
 
       {/* Actions */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Restricciones Médicas</h3>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
-            Filtros
-          </Button>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Nueva Restricción
-          </Button>
-        </div>
-      </div>
+      <SectionToolbar
+        title="Restricciones Médicas"
+        onFilter={() => console.log('Filtros')}
+        primaryAction={{ label: 'Nueva Restricción', onClick: () => console.log('Nueva restricción') }}
+      />
 
       {/* Restricciones Table */}
       <Card variant="bordered" padding="none">
@@ -583,9 +498,7 @@ const RestriccionesMedicasSection = () => {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={getEstadoBadgeVariant(restriccion.estado)} size="sm">
-                      {restriccion.estado_display || formatEstado(restriccion.estado)}
-                    </Badge>
+                    <StatusBadge status={restriccion.estado} preset="proceso" />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
@@ -633,7 +546,6 @@ const VigilanciaEpidemiologicaSection = () => {
         action={{
           label: 'Nuevo Caso',
           onClick: () => console.log('Nuevo caso'),
-          icon: <Plus className="w-4 h-4" />,
         }}
       />
     );
@@ -655,61 +567,39 @@ const VigilanciaEpidemiologicaSection = () => {
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Programas Activos</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stats.programasActivos}</p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <ClipboardList className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">En ejecución</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Casos Activos</p>
-              <p className="text-2xl font-bold text-primary-600 dark:text-primary-400 mt-1">{stats.casosActivos}</p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <Users className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">En seguimiento</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Casos Críticos</p>
-              <p className="text-2xl font-bold text-danger-600 dark:text-danger-400 mt-1">{stats.casosCriticos}</p>
-            </div>
-            <div className="w-12 h-12 bg-danger-100 dark:bg-danger-900/30 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-danger-600 dark:text-danger-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Requieren atención</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Controlados</p>
-              <p className="text-2xl font-bold text-success-600 dark:text-success-400 mt-1">
-                {stats.casosControlados}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-success-100 dark:bg-success-900/30 rounded-lg flex items-center justify-center">
-              <CheckCircle2 className="w-6 h-6 text-success-600 dark:text-success-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Bajo control</p>
-        </Card>
-      </div>
+      <KpiCardGrid>
+        <KpiCard
+          label="Programas Activos"
+          value={stats.programasActivos}
+          icon={<ClipboardList className="w-5 h-5" />}
+          color="primary"
+          description="En ejecución"
+        />
+        <KpiCard
+          label="Casos Activos"
+          value={stats.casosActivos}
+          icon={<Users className="w-5 h-5" />}
+          color="primary"
+          description="En seguimiento"
+          valueColor="text-primary-600 dark:text-primary-400"
+        />
+        <KpiCard
+          label="Casos Críticos"
+          value={stats.casosCriticos}
+          icon={<AlertTriangle className="w-5 h-5" />}
+          color="danger"
+          description="Requieren atención"
+          valueColor="text-danger-600 dark:text-danger-400"
+        />
+        <KpiCard
+          label="Controlados"
+          value={stats.casosControlados}
+          icon={<CheckCircle2 className="w-5 h-5" />}
+          color="success"
+          description="Bajo control"
+          valueColor="text-success-600 dark:text-success-400"
+        />
+      </KpiCardGrid>
 
       {/* Programas con casos */}
       {casosPorPrograma && casosPorPrograma.length > 0 && (
@@ -735,20 +625,14 @@ const VigilanciaEpidemiologicaSection = () => {
       )}
 
       {/* Actions */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Casos de Vigilancia</h3>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
-            Filtros
-          </Button>
-          <Button variant="outline" size="sm" leftIcon={<RefreshCw className="w-4 h-4" />}>
-            Registrar Seguimiento
-          </Button>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Nuevo Caso
-          </Button>
-        </div>
-      </div>
+      <SectionToolbar
+        title="Casos de Vigilancia"
+        onFilter={() => console.log('Filtros')}
+        extraActions={[
+          { label: 'Registrar Seguimiento', onClick: () => console.log('Seguimiento'), icon: <RefreshCw className="w-4 h-4" /> }
+        ]}
+        primaryAction={{ label: 'Nuevo Caso', onClick: () => console.log('Nuevo caso') }}
+      />
 
       {/* Casos Table */}
       <Card variant="bordered" padding="none">
@@ -802,9 +686,7 @@ const VigilanciaEpidemiologicaSection = () => {
                     </Badge>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={getEstadoBadgeVariant(caso.estado)} size="sm">
-                      {caso.estado_display || formatEstado(caso.estado)}
-                    </Badge>
+                    <StatusBadge status={caso.estado} preset="proceso" />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
                     {caso.fecha_ultimo_seguimiento
@@ -857,7 +739,6 @@ const DiagnosticosOcupacionalesSection = () => {
         action={{
           label: 'Nuevo Diagnóstico',
           onClick: () => console.log('Nuevo diagnóstico'),
-          icon: <Plus className="w-4 h-4" />,
         }}
       />
     );
@@ -881,77 +762,50 @@ const DiagnosticosOcupacionalesSection = () => {
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Diagnósticos</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stats.total}</p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <FileText className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Registrados en el sistema</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Ocupacionales</p>
-              <p className="text-2xl font-bold text-danger-600 dark:text-danger-400 mt-1">{stats.ocupacionales}</p>
-            </div>
-            <div className="w-12 h-12 bg-danger-100 dark:bg-danger-900/30 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-danger-600 dark:text-danger-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Relacionados con el trabajo</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Comunes</p>
-              <p className="text-2xl font-bold text-primary-600 dark:text-primary-400 mt-1">{stats.comunes}</p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <Activity className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">No ocupacionales</p>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Requieren Vigilancia</p>
-              <p className="text-2xl font-bold text-warning-600 dark:text-warning-400 mt-1">
-                {stats.requierenVigilancia}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-warning-100 dark:bg-warning-900/30 rounded-lg flex items-center justify-center">
-              <Eye className="w-6 h-6 text-warning-600 dark:text-warning-400" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Incluir en PVE</p>
-        </Card>
-      </div>
+      <KpiCardGrid>
+        <KpiCard
+          label="Total Diagnósticos"
+          value={stats.total}
+          icon={<FileText className="w-5 h-5" />}
+          color="primary"
+          description="Registrados en el sistema"
+        />
+        <KpiCard
+          label="Ocupacionales"
+          value={stats.ocupacionales}
+          icon={<AlertTriangle className="w-5 h-5" />}
+          color="danger"
+          description="Relacionados con el trabajo"
+          valueColor="text-danger-600 dark:text-danger-400"
+        />
+        <KpiCard
+          label="Comunes"
+          value={stats.comunes}
+          icon={<Activity className="w-5 h-5" />}
+          color="primary"
+          description="No ocupacionales"
+          valueColor="text-primary-600 dark:text-primary-400"
+        />
+        <KpiCard
+          label="Requieren Vigilancia"
+          value={stats.requierenVigilancia}
+          icon={<Eye className="w-5 h-5" />}
+          color="warning"
+          description="Incluir en PVE"
+          valueColor="text-warning-600 dark:text-warning-400"
+        />
+      </KpiCardGrid>
 
       {/* Buscador CIE-10 */}
       <Card variant="bordered" padding="md">
-        <div className="flex items-center gap-4">
-          <div className="flex-1">
-            <Input
-              placeholder="Buscar por código CIE-10 o nombre del diagnóstico..."
-              value={searchCIE10}
-              onChange={(e) => setSearchCIE10(e.target.value)}
-              leftIcon={<Search className="w-4 h-4" />}
-            />
-          </div>
-          <Button variant="primary" leftIcon={<Plus className="w-4 h-4" />}>
-            Nuevo Diagnóstico
-          </Button>
-        </div>
+        <SectionToolbar
+          title="Diagnósticos CIE-10"
+          searchable
+          searchValue={searchCIE10}
+          searchPlaceholder="Buscar por código CIE-10 o nombre..."
+          onSearchChange={setSearchCIE10}
+          primaryAction={{ label: 'Nuevo Diagnóstico', onClick: () => console.log('Nuevo diagnóstico') }}
+        />
       </Card>
 
       {/* Diagnosticos Table */}
@@ -996,7 +850,7 @@ const DiagnosticosOcupacionalesSection = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Badge variant={diagnostico.origen === 'OCUPACIONAL' ? 'danger' : 'primary'} size="sm">
-                      {diagnostico.origen_display || formatEstado(diagnostico.origen)}
+                      {diagnostico.origen_display || formatStatusLabel(diagnostico.origen)}
                     </Badge>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center">
@@ -1100,50 +954,47 @@ const EstadisticasReportesSection = () => {
     <div className="space-y-6">
       {/* Selector de Período */}
       <Card variant="bordered" padding="md">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Año</label>
-              <select
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(Number(e.target.value))}
-                className="block w-32 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
-              >
-                {[2024, 2025, 2026].map((year) => (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mes</label>
-              <select
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                className="block w-40 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
-              >
-                {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
-                  <option key={month} value={month}>
-                    {format(new Date(2024, month - 1), 'MMMM', { locale: es })}
-                  </option>
-                ))}
-              </select>
-            </div>
+        <SectionToolbar
+          title="Estadísticas de Medicina Laboral"
+          extraActions={[
+            { label: 'Generar Estadística', onClick: () => console.log('Generar'), variant: 'outline' },
+            { label: 'Exportar Reporte', onClick: () => console.log('Exportar'), variant: 'primary' }
+          ]}
+        />
+        <div className="flex items-center gap-4 mt-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Año</label>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              className="block w-32 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+            >
+              {[2024, 2025, 2026].map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-              Generar Estadística
-            </Button>
-            <Button variant="primary" size="sm" leftIcon={<FileText className="w-4 h-4" />}>
-              Exportar Reporte
-            </Button>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mes</label>
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(Number(e.target.value))}
+              className="block w-40 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
+            >
+              {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+                <option key={month} value={month}>
+                  {format(new Date(2024, month - 1), 'MMMM', { locale: es })}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       </Card>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <KpiCardGrid>
         <Card variant="bordered" padding="md">
           <div className="text-center">
             <p className="text-sm text-gray-600 dark:text-gray-400">% Aptitud</p>
@@ -1200,7 +1051,7 @@ const EstadisticasReportesSection = () => {
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">En seguimiento</p>
           </div>
         </Card>
-      </div>
+      </KpiCardGrid>
 
       {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -16,7 +16,9 @@ import {
   integracionesApi,
   alcancesApi,
   normasISOApi,
+  currentTenantApi,
 } from '../api/strategicApi';
+import type { CurrentTenantData } from '../api/strategicApi';
 import type {
   CreateCorporateIdentityDTO,
   UpdateCorporateIdentityDTO,
@@ -110,9 +112,9 @@ export const strategicKeys = {
     ['alcances', 'certifications', identityId] as const,
 
   // Normas ISO (Dinámico)
-  normasISO: ['normas-iso'] as const,
-  normasISOChoices: ['normas-iso', 'choices'] as const,
-  normasISOByCategory: ['normas-iso', 'by-category'] as const,
+  normasISO: ['normas_iso'] as const,
+  normasISOChoices: ['normas_iso', 'choices'] as const,
+  normasISOByCategory: ['normas_iso', 'by-category'] as const,
 };
 
 // ==================== CORPORATE IDENTITY HOOKS ====================
@@ -573,44 +575,46 @@ export const useModuleCategories = () => {
 };
 
 // ==================== BRANDING CONFIG HOOKS ====================
-
-export const useBrandingConfigs = () => {
-  return useQuery({
-    queryKey: strategicKeys.brandings,
-    queryFn: brandingApi.getAll,
-  });
-};
+// NOTA: El branding ahora se gestiona en el modelo Tenant.
+// useBrandingConfigs eliminado - no hay lista de brandings, es por tenant.
+// useDeleteBranding eliminado - no se puede eliminar branding, solo actualizar.
 
 export const useActiveBranding = () => {
-  // Este endpoint es público (AllowAny) - se usa en login para mostrar branding dinámico
+  // Intentar leer branding cacheado en localStorage para evitar flash al recargar
+  const cachedBranding = (() => {
+    try {
+      const cached = localStorage.getItem('last_branding');
+      return cached ? JSON.parse(cached) : undefined;
+    } catch {
+      return undefined;
+    }
+  })();
+
+  // Obtiene el branding del tenant actual (localStorage) o por dominio
   return useQuery({
     queryKey: strategicKeys.activeBranding,
-    queryFn: brandingApi.getActive,
+    queryFn: async () => {
+      const data = await brandingApi.getActive();
+      // Persistir en localStorage para usar como initialData en próxima carga
+      try {
+        localStorage.setItem('last_branding', JSON.stringify(data));
+      } catch {
+        // Ignorar errores de localStorage (quota, etc.)
+      }
+      return data;
+    },
     retry: 1, // Un reintento en caso de error temporal
     staleTime: 5 * 60 * 1000, // 5 minutos - evitar refetch excesivo
+    initialData: cachedBranding, // Usa cache localStorage mientras carga
   });
 };
 
-export const useBranding = (id: number) => {
+export const useBranding = (tenantId: number) => {
+  // Obtiene el branding de un tenant específico por su ID
   return useQuery({
-    queryKey: strategicKeys.branding(id),
-    queryFn: () => brandingApi.getById(id),
-    enabled: !!id,
-  });
-};
-
-export const useCreateBranding = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreateBrandingConfigDTO | FormData) => brandingApi.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.brandings });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.activeBranding });
-      toast.success('Configuración de marca creada exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al crear la configuración de marca');
-    },
+    queryKey: strategicKeys.branding(tenantId),
+    queryFn: () => brandingApi.getById(tenantId),
+    enabled: !!tenantId,
   });
 };
 
@@ -620,28 +624,12 @@ export const useUpdateBranding = () => {
     mutationFn: ({ id, data }: { id: number; data: UpdateBrandingConfigDTO | FormData }) =>
       brandingApi.update(id, data),
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.brandings });
       queryClient.invalidateQueries({ queryKey: strategicKeys.branding(id) });
       queryClient.invalidateQueries({ queryKey: strategicKeys.activeBranding });
       toast.success('Configuración de marca actualizada exitosamente');
     },
     onError: () => {
       toast.error('Error al actualizar la configuración de marca');
-    },
-  });
-};
-
-export const useDeleteBranding = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => brandingApi.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.brandings });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.activeBranding });
-      toast.success('Configuración de marca eliminada exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al eliminar la configuración de marca');
     },
   });
 };
@@ -656,7 +644,7 @@ export const useStrategicStats = () => {
 };
 
 // Secciones de configuración que no tienen StatsGrid
-const SECTIONS_WITHOUT_STATS = ['branding', 'normas-iso', 'modulos'];
+const SECTIONS_WITHOUT_STATS = ['branding', 'normas_iso', 'modulos'];
 
 export const useConfiguracionStats = (section: string) => {
   return useQuery({
@@ -1386,6 +1374,39 @@ export const useCargarConsecutivosSistema = () => {
     },
     onError: () => {
       toast.error('Error al cargar los consecutivos del sistema');
+    },
+  });
+};
+
+// ==================== CURRENT TENANT (Admin Tenant Self-Edit) ====================
+
+const currentTenantKeys = {
+  all: ['current-tenant'] as const,
+  detail: () => ['current-tenant', 'detail'] as const,
+};
+
+export const useCurrentTenant = () => {
+  return useQuery<CurrentTenantData>({
+    queryKey: currentTenantKeys.detail(),
+    queryFn: currentTenantApi.get,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+export const useUpdateCurrentTenant = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: FormData | Partial<CurrentTenantData>) => currentTenantApi.update(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: currentTenantKeys.all });
+      queryClient.invalidateQueries({ queryKey: ['branding'] });
+      toast.success('Datos de la empresa actualizados correctamente');
+    },
+    onError: (error: { response?: { data?: { detail?: string } }; message?: string }) => {
+      toast.error(
+        error.response?.data?.detail || error.message || 'Error al actualizar los datos'
+      );
     },
   });
 };

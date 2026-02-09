@@ -18,8 +18,6 @@ import {
   Calendar,
   Package,
   Plus,
-  Download,
-  Filter,
   Eye,
   Edit,
   Trash2,
@@ -36,12 +34,27 @@ import {
   Radio,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
-import { Tabs } from '@/components/common/Tabs';
-import { Card } from '@/components/common/Card';
-import { Button } from '@/components/common/Button';
-import { EmptyState } from '@/components/common/EmptyState';
-import { Badge } from '@/components/common/Badge';
-import { Spinner } from '@/components/common/Spinner';
+import {
+  Tabs,
+  Card,
+  Button,
+  EmptyState,
+  Badge,
+  Spinner,
+  KpiCard,
+  KpiCardGrid,
+  SectionToolbar,
+  StatusBadge,
+} from '@/components/common';
+import { formatStatusLabel } from '@/components/common/StatusBadge';
+import {
+  useAnalisisVulnerabilidad,
+  usePlanesEmergencia,
+  usePlanosEvacuacion,
+  useBrigadas,
+  useSimulacros,
+  useRecursosEmergencia,
+} from '../hooks/useEmergencias';
 import { cn } from '@/utils/cn';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -53,91 +66,10 @@ import type {
   BrigadaList,
   SimulacroList,
   RecursoEmergenciaList,
-  NivelVulnerabilidad,
-  EstadoAnalisisVulnerabilidad,
-  EstadoPlanEmergencia,
-  EstadoBrigada,
-  EstadoSimulacro,
-  EstadoRecursoEmergencia,
   TipoRecursoEmergencia,
 } from '../types/emergencias.types';
 
 // ==================== UTILITY FUNCTIONS ====================
-
-const getNivelVulnerabilidadVariant = (
-  nivel: NivelVulnerabilidad
-): 'success' | 'warning' | 'danger' | 'info' => {
-  const map: Record<NivelVulnerabilidad, 'success' | 'warning' | 'danger' | 'info'> = {
-    BAJO: 'success',
-    MEDIO: 'warning',
-    ALTO: 'danger',
-    CRITICO: 'danger',
-  };
-  return map[nivel] || 'info';
-};
-
-const getEstadoAnalisisVariant = (
-  estado: EstadoAnalisisVulnerabilidad
-): 'success' | 'primary' | 'warning' | 'gray' => {
-  const map: Record<EstadoAnalisisVulnerabilidad, 'success' | 'primary' | 'warning' | 'gray'> = {
-    BORRADOR: 'gray',
-    EN_REVISION: 'warning',
-    APROBADO: 'success',
-    ACTUALIZADO: 'primary',
-  };
-  return map[estado] || 'gray';
-};
-
-const getEstadoPlanVariant = (
-  estado: EstadoPlanEmergencia
-): 'success' | 'primary' | 'warning' | 'danger' | 'gray' => {
-  const map: Record<EstadoPlanEmergencia, 'success' | 'primary' | 'warning' | 'danger' | 'gray'> = {
-    BORRADOR: 'gray',
-    EN_REVISION: 'warning',
-    APROBADO: 'primary',
-    VIGENTE: 'success',
-    DESACTUALIZADO: 'danger',
-  };
-  return map[estado] || 'gray';
-};
-
-const getEstadoBrigadaVariant = (
-  estado: EstadoBrigada
-): 'success' | 'primary' | 'warning' | 'danger' => {
-  const map: Record<EstadoBrigada, 'success' | 'primary' | 'warning' | 'danger'> = {
-    ACTIVA: 'success',
-    EN_FORMACION: 'warning',
-    INACTIVA: 'danger',
-    DISUELTA: 'danger',
-  };
-  return map[estado] || 'warning';
-};
-
-const getEstadoSimulacroVariant = (
-  estado: EstadoSimulacro
-): 'success' | 'primary' | 'warning' | 'danger' | 'info' | 'gray' => {
-  const map: Record<EstadoSimulacro, 'success' | 'primary' | 'warning' | 'danger' | 'info' | 'gray'> = {
-    PROGRAMADO: 'info',
-    CONFIRMADO: 'primary',
-    REALIZADO: 'success',
-    EVALUADO: 'success',
-    CANCELADO: 'danger',
-    POSPUESTO: 'warning',
-  };
-  return map[estado] || 'gray';
-};
-
-const getEstadoRecursoVariant = (
-  estado: EstadoRecursoEmergencia
-): 'success' | 'warning' | 'danger' | 'gray' => {
-  const map: Record<EstadoRecursoEmergencia, 'success' | 'warning' | 'danger' | 'gray'> = {
-    OPERATIVO: 'success',
-    EN_MANTENIMIENTO: 'warning',
-    FUERA_SERVICIO: 'danger',
-    DADO_BAJA: 'gray',
-  };
-  return map[estado] || 'gray';
-};
 
 const getTipoRecursoIcon = (tipo: TipoRecursoEmergencia) => {
   const iconMap: Record<TipoRecursoEmergencia, React.ReactNode> = {
@@ -156,324 +88,35 @@ const getTipoRecursoIcon = (tipo: TipoRecursoEmergencia) => {
   return iconMap[tipo] || <Package className="w-4 h-4" />;
 };
 
-const formatEstado = (estado: string): string => {
-  return estado.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase());
+/**
+ * Variant overrides for statuses not covered by StatusBadge's built-in PROCESO_MAP.
+ * Only statuses that fall through to 'gray' but need a specific color are listed here.
+ */
+const EMERGENCIAS_VARIANT_MAP: Record<string, 'success' | 'primary' | 'warning' | 'danger' | 'gray' | 'info'> = {
+  ACTUALIZADO: 'primary',
+  DESACTUALIZADO: 'danger',
+  EN_FORMACION: 'warning',
+  DISUELTA: 'danger',
+  CONFIRMADO: 'primary',
+  EVALUADO: 'success',
+  POSPUESTO: 'warning',
+  OPERATIVO: 'success',
+  EN_MANTENIMIENTO: 'warning',
+  FUERA_SERVICIO: 'danger',
+  DADO_BAJA: 'gray',
 };
 
-// ==================== MOCK DATA ====================
-
-const mockAnalisis: AnalisisVulnerabilidadList[] = [
-  {
-    id: 1,
-    codigo: 'AV-2024-001',
-    nombre: 'Análisis de vulnerabilidad sede principal',
-    tipo_amenaza: 'NATURAL',
-    fecha_analisis: '2024-01-15',
-    nivel_vulnerabilidad: 'MEDIO',
-    puntuacion_vulnerabilidad: '65',
-    estado: 'APROBADO',
-    proxima_revision: '2024-07-15',
-    total_amenazas: 8,
-    amenazas_criticas: 2,
-    creado_en: '2024-01-15',
-    actualizado_en: '2024-01-20',
-  },
-  {
-    id: 2,
-    codigo: 'AV-2024-002',
-    nombre: 'Análisis de vulnerabilidad planta de producción',
-    tipo_amenaza: 'TECNOLOGICA',
-    fecha_analisis: '2024-02-01',
-    nivel_vulnerabilidad: 'ALTO',
-    puntuacion_vulnerabilidad: '78',
-    estado: 'EN_REVISION',
-    proxima_revision: null,
-    total_amenazas: 12,
-    amenazas_criticas: 5,
-    creado_en: '2024-02-01',
-    actualizado_en: '2024-02-05',
-  },
-];
-
-const mockPlanes: PlanEmergenciaList[] = [
-  {
-    id: 1,
-    codigo: 'PE-2024-001',
-    nombre: 'Plan de Emergencias Sede Principal',
-    version: '2.0',
-    fecha_elaboracion: '2024-01-10',
-    fecha_vigencia: '2025-01-10',
-    fecha_revision: '2024-07-10',
-    estado: 'VIGENTE',
-    total_procedimientos: 8,
-    total_planos: 5,
-    total_simulacros: 3,
-    creado_en: '2024-01-10',
-    actualizado_en: '2024-01-15',
-  },
-  {
-    id: 2,
-    codigo: 'PE-2024-002',
-    nombre: 'Plan de Emergencias Planta Producción',
-    version: '1.0',
-    fecha_elaboracion: '2024-02-15',
-    fecha_vigencia: '2025-02-15',
-    fecha_revision: '2024-08-15',
-    estado: 'APROBADO',
-    total_procedimientos: 6,
-    total_planos: 3,
-    total_simulacros: 1,
-    creado_en: '2024-02-15',
-    actualizado_en: '2024-02-20',
-  },
-];
-
-const mockPlanos: PlanoEvacuacion[] = [
-  {
-    id: 1,
-    empresa_id: 1,
-    plan_emergencia: 1,
-    codigo: 'PLN-2024-001',
-    nombre: 'Plano Evacuación Piso 1 - Administración',
-    version: '1.0',
-    edificio: 'Edificio Principal',
-    piso: '1',
-    area: 'Administración',
-    descripcion: 'Plano de evacuación del área administrativa',
-    capacidad_personas: 50,
-    numero_rutas: 2,
-    rutas_detalle: [],
-    puntos_encuentro: [],
-    punto_encuentro_principal: 'Parqueadero Norte',
-    punto_encuentro_alterno: 'Zona Verde Este',
-    salidas_emergencia: 3,
-    extintores: 4,
-    alarmas: 2,
-    botiquines: 1,
-    archivo_plano: '/planos/piso1.pdf',
-    plano_thumbnail: null,
-    fecha_elaboracion: '2024-01-15',
-    fecha_actualizacion: '2024-01-15',
-    fecha_revision_programada: '2024-07-15',
-    publicado: true,
-    ubicaciones_publicacion: 'Recepción, Sala de reuniones',
-    activo: true,
-    creado_en: '2024-01-15',
-    actualizado_en: '2024-01-15',
-    creado_por: 'admin',
-  },
-  {
-    id: 2,
-    empresa_id: 1,
-    plan_emergencia: 1,
-    codigo: 'PLN-2024-002',
-    nombre: 'Plano Evacuación Piso 2 - Producción',
-    version: '1.0',
-    edificio: 'Planta Producción',
-    piso: '2',
-    area: 'Producción',
-    descripcion: 'Plano de evacuación del área de producción',
-    capacidad_personas: 80,
-    numero_rutas: 3,
-    rutas_detalle: [],
-    puntos_encuentro: [],
-    punto_encuentro_principal: 'Parqueadero Sur',
-    punto_encuentro_alterno: 'Cancha deportiva',
-    salidas_emergencia: 4,
-    extintores: 8,
-    alarmas: 4,
-    botiquines: 2,
-    archivo_plano: '/planos/piso2.pdf',
-    plano_thumbnail: null,
-    fecha_elaboracion: '2024-01-20',
-    fecha_actualizacion: '2024-01-20',
-    fecha_revision_programada: '2024-07-20',
-    publicado: true,
-    ubicaciones_publicacion: 'Entrada producción, Área de máquinas',
-    activo: true,
-    creado_en: '2024-01-20',
-    actualizado_en: '2024-01-20',
-    creado_por: 'admin',
-  },
-];
-
-const mockBrigadas: BrigadaList[] = [
-  {
-    id: 1,
-    codigo: 'BRG-001',
-    nombre: 'Brigada de Primeros Auxilios',
-    tipo_brigada: 1,
-    tipo_brigada_nombre: 'Primeros Auxilios',
-    tipo_brigada_color: '#10B981',
-    lider_brigada: 'María González',
-    estado: 'ACTIVA',
-    numero_minimo_brigadistas: 5,
-    numero_brigadistas_actuales: 6,
-    total_brigadistas: 6,
-    brigadistas_activos: 6,
-    estado_capacidad: 'OPTIMO',
-    fecha_conformacion: '2023-06-15',
-    fecha_proxima_capacitacion: '2024-03-15',
-    creado_en: '2023-06-15',
-    actualizado_en: '2024-01-10',
-  },
-  {
-    id: 2,
-    codigo: 'BRG-002',
-    nombre: 'Brigada Contra Incendios',
-    tipo_brigada: 2,
-    tipo_brigada_nombre: 'Contra Incendios',
-    tipo_brigada_color: '#EF4444',
-    lider_brigada: 'Carlos Rodríguez',
-    estado: 'ACTIVA',
-    numero_minimo_brigadistas: 6,
-    numero_brigadistas_actuales: 5,
-    total_brigadistas: 5,
-    brigadistas_activos: 5,
-    estado_capacidad: 'MINIMO',
-    fecha_conformacion: '2023-06-15',
-    fecha_proxima_capacitacion: '2024-02-20',
-    creado_en: '2023-06-15',
-    actualizado_en: '2024-01-10',
-  },
-  {
-    id: 3,
-    codigo: 'BRG-003',
-    nombre: 'Brigada de Evacuación',
-    tipo_brigada: 3,
-    tipo_brigada_nombre: 'Evacuación',
-    tipo_brigada_color: '#3B82F6',
-    lider_brigada: 'Ana Martínez',
-    estado: 'EN_FORMACION',
-    numero_minimo_brigadistas: 8,
-    numero_brigadistas_actuales: 4,
-    total_brigadistas: 4,
-    brigadistas_activos: 4,
-    estado_capacidad: 'INSUFICIENTE',
-    fecha_conformacion: '2024-01-01',
-    fecha_proxima_capacitacion: '2024-02-15',
-    creado_en: '2024-01-01',
-    actualizado_en: '2024-01-15',
-  },
-];
-
-const mockSimulacros: SimulacroList[] = [
-  {
-    id: 1,
-    codigo: 'SIM-2024-001',
-    nombre: 'Simulacro de Evacuación General',
-    tipo_simulacro: 'EVACUACION',
-    tipo_simulacro_display: 'Evacuación',
-    plan_emergencia: 1,
-    plan_emergencia_nombre: 'Plan de Emergencias Sede Principal',
-    alcance: 'TOTAL',
-    estado: 'PROGRAMADO',
-    fecha_programada: '2024-03-15',
-    fecha_realizada: null,
-    coordinador: 'Carlos Rodríguez',
-    fue_exitoso: false,
-    total_brigadas: 3,
-    total_evaluaciones: 0,
-    dias_hasta_fecha: 45,
-    creado_en: '2024-01-20',
-    actualizado_en: '2024-01-20',
-  },
-  {
-    id: 2,
-    codigo: 'SIM-2024-002',
-    nombre: 'Simulacro de Incendio - Área Producción',
-    tipo_simulacro: 'INCENDIO',
-    tipo_simulacro_display: 'Incendio',
-    plan_emergencia: 1,
-    plan_emergencia_nombre: 'Plan de Emergencias Sede Principal',
-    alcance: 'PARCIAL',
-    estado: 'REALIZADO',
-    fecha_programada: '2024-01-25',
-    fecha_realizada: '2024-01-25',
-    coordinador: 'María González',
-    fue_exitoso: true,
-    total_brigadas: 2,
-    total_evaluaciones: 1,
-    dias_hasta_fecha: null,
-    creado_en: '2024-01-10',
-    actualizado_en: '2024-01-26',
-  },
-];
-
-const mockRecursos: RecursoEmergenciaList[] = [
-  {
-    id: 1,
-    codigo: 'EXT-001',
-    tipo_recurso: 'EXTINTOR',
-    tipo_recurso_display: 'Extintor',
-    nombre: 'Extintor ABC 10 lb',
-    area: 'Producción',
-    ubicacion_especifica: 'Al lado de la puerta principal',
-    estado: 'OPERATIVO',
-    estado_display: 'Operativo',
-    fecha_proxima_inspeccion: '2024-02-15',
-    ultima_inspeccion: {
-      fecha: '2024-01-15',
-      resultado: 'CONFORME',
-      inspector: 'Juan Pérez',
-    },
-    dias_proxima_inspeccion: 30,
-    requiere_inspeccion: false,
-    responsable: 'Coordinador SST',
-    creado_en: '2023-06-01',
-    actualizado_en: '2024-01-15',
-  },
-  {
-    id: 2,
-    codigo: 'BOT-001',
-    tipo_recurso: 'BOTIQUIN',
-    tipo_recurso_display: 'Botiquín',
-    nombre: 'Botiquín Tipo A',
-    area: 'Administración',
-    ubicacion_especifica: 'Recepción',
-    estado: 'OPERATIVO',
-    estado_display: 'Operativo',
-    fecha_proxima_inspeccion: '2024-02-01',
-    ultima_inspeccion: {
-      fecha: '2024-01-01',
-      resultado: 'CONFORME',
-      inspector: 'María González',
-    },
-    dias_proxima_inspeccion: 15,
-    requiere_inspeccion: false,
-    responsable: 'Enfermera Ocupacional',
-    creado_en: '2023-06-01',
-    actualizado_en: '2024-01-01',
-  },
-  {
-    id: 3,
-    codigo: 'CAM-001',
-    tipo_recurso: 'CAMILLA',
-    tipo_recurso_display: 'Camilla',
-    nombre: 'Camilla Rígida',
-    area: 'Enfermería',
-    ubicacion_especifica: 'Consultorio médico',
-    estado: 'EN_MANTENIMIENTO',
-    estado_display: 'En Mantenimiento',
-    fecha_proxima_inspeccion: '2024-03-01',
-    ultima_inspeccion: {
-      fecha: '2024-01-10',
-      resultado: 'NO_CONFORME_MENOR',
-      inspector: 'Carlos Rodríguez',
-    },
-    dias_proxima_inspeccion: 45,
-    requiere_inspeccion: false,
-    responsable: 'Enfermera Ocupacional',
-    creado_en: '2023-06-01',
-    actualizado_en: '2024-01-10',
-  },
-];
+/**
+ * Returns a variant override for statuses not in the PROCESO_MAP,
+ * or undefined to let StatusBadge resolve from its built-in maps.
+ */
+const getVariantOverride = (status: string) => EMERGENCIAS_VARIANT_MAP[status] || undefined;
 
 // ==================== ANÁLISIS DE VULNERABILIDAD SECTION ====================
 
 const AnalisisVulnerabilidadSection = () => {
-  const isLoading = false;
-  const analisis = mockAnalisis;
+  const { data, isLoading } = useAnalisisVulnerabilidad();
+  const analisis = data?.results ?? [];
 
   if (isLoading) {
     return (
@@ -508,71 +151,46 @@ const AnalisisVulnerabilidadSection = () => {
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Análisis</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stats.total}</p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <Shield className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Aprobados</p>
-              <p className="text-2xl font-bold text-success-600 dark:text-success-400 mt-1">{stats.aprobados}</p>
-            </div>
-            <div className="w-12 h-12 bg-success-100 dark:bg-success-900/30 rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-6 h-6 text-success-600 dark:text-success-400" />
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Alto/Crítico</p>
-              <p className="text-2xl font-bold text-danger-600 dark:text-danger-400 mt-1">{stats.criticos}</p>
-            </div>
-            <div className="w-12 h-12 bg-danger-100 dark:bg-danger-900/30 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-danger-600 dark:text-danger-400" />
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Amenazas Críticas</p>
-              <p className="text-2xl font-bold text-warning-600 dark:text-warning-400 mt-1">{stats.amenazasCriticas}</p>
-            </div>
-            <div className="w-12 h-12 bg-warning-100 dark:bg-warning-900/30 rounded-lg flex items-center justify-center">
-              <XCircle className="w-6 h-6 text-warning-600 dark:text-warning-400" />
-            </div>
-          </div>
-        </Card>
-      </div>
+      <KpiCardGrid columns={4}>
+        <KpiCard
+          label="Total Análisis"
+          value={stats.total}
+          icon={<Shield className="w-6 h-6" />}
+          color="primary"
+        />
+        <KpiCard
+          label="Aprobados"
+          value={stats.aprobados}
+          icon={<CheckCircle className="w-6 h-6" />}
+          color="success"
+          valueColor="text-success-600 dark:text-success-400"
+        />
+        <KpiCard
+          label="Alto/Crítico"
+          value={stats.criticos}
+          icon={<AlertTriangle className="w-6 h-6" />}
+          color="danger"
+          valueColor="text-danger-600 dark:text-danger-400"
+        />
+        <KpiCard
+          label="Amenazas Críticas"
+          value={stats.amenazasCriticas}
+          icon={<XCircle className="w-6 h-6" />}
+          color="warning"
+          valueColor="text-warning-600 dark:text-warning-400"
+        />
+      </KpiCardGrid>
 
       {/* Actions */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Análisis de Vulnerabilidad</h3>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
-            Filtros
-          </Button>
-          <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-            Exportar
-          </Button>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Nuevo Análisis
-          </Button>
-        </div>
-      </div>
+      <SectionToolbar
+        title="Análisis de Vulnerabilidad"
+        onFilter={() => console.log('Filtros')}
+        onExport={() => console.log('Exportar')}
+        primaryAction={{
+          label: 'Nuevo Análisis',
+          onClick: () => console.log('Nuevo Análisis'),
+        }}
+      />
 
       {/* Table */}
       <Card variant="bordered" padding="none">
@@ -597,16 +215,16 @@ const AnalisisVulnerabilidadSection = () => {
                   <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
                     <p className="font-medium truncate max-w-xs">{item.nombre}</p>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{formatEstado(item.tipo_amenaza)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{formatStatusLabel(item.tipo_amenaza)}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={getNivelVulnerabilidadVariant(item.nivel_vulnerabilidad)} size="sm">
-                      {formatEstado(item.nivel_vulnerabilidad)}
-                    </Badge>
+                    <StatusBadge status={item.nivel_vulnerabilidad} preset="gravedad" />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={getEstadoAnalisisVariant(item.estado)} size="sm">
-                      {formatEstado(item.estado)}
-                    </Badge>
+                    <StatusBadge
+                      status={item.estado}
+                      preset="proceso"
+                      variant={getVariantOverride(item.estado)}
+                    />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <span className="text-gray-600 dark:text-gray-300">{item.total_amenazas}</span>
@@ -637,8 +255,8 @@ const AnalisisVulnerabilidadSection = () => {
 // ==================== PLANES DE EMERGENCIA SECTION ====================
 
 const PlanesEmergenciaSection = () => {
-  const isLoading = false;
-  const planes = mockPlanes;
+  const { data, isLoading } = usePlanesEmergencia();
+  const planes = data?.results ?? [];
 
   if (isLoading) {
     return (
@@ -666,17 +284,14 @@ const PlanesEmergenciaSection = () => {
   return (
     <div className="space-y-6">
       {/* Actions */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Planes de Emergencia</h3>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-            Exportar
-          </Button>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Nuevo Plan
-          </Button>
-        </div>
-      </div>
+      <SectionToolbar
+        title="Planes de Emergencia"
+        onExport={() => console.log('Exportar')}
+        primaryAction={{
+          label: 'Nuevo Plan',
+          onClick: () => console.log('Nuevo Plan'),
+        }}
+      />
 
       {/* Plans Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -687,9 +302,11 @@ const PlanesEmergenciaSection = () => {
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <h4 className="font-semibold text-gray-900 dark:text-white">{plan.codigo}</h4>
-                    <Badge variant={getEstadoPlanVariant(plan.estado)} size="sm">
-                      {formatEstado(plan.estado)}
-                    </Badge>
+                    <StatusBadge
+                      status={plan.estado}
+                      preset="proceso"
+                      variant={getVariantOverride(plan.estado)}
+                    />
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-300">{plan.nombre}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Versión {plan.version}</p>
@@ -732,7 +349,6 @@ const PlanesEmergenciaSection = () => {
               <div className="flex items-center justify-end gap-2 pt-2">
                 <Button variant="ghost" size="sm" leftIcon={<Eye className="w-4 h-4" />}>Ver</Button>
                 <Button variant="ghost" size="sm" leftIcon={<Edit className="w-4 h-4" />}>Editar</Button>
-                <Button variant="ghost" size="sm" leftIcon={<Download className="w-4 h-4" />}>Descargar</Button>
               </div>
             </div>
           </Card>
@@ -745,8 +361,8 @@ const PlanesEmergenciaSection = () => {
 // ==================== PLANOS DE EVACUACIÓN SECTION ====================
 
 const PlanosEvacuacionSection = () => {
-  const isLoading = false;
-  const planos = mockPlanos;
+  const { data, isLoading } = usePlanosEvacuacion();
+  const planos = data?.results ?? [];
 
   if (isLoading) {
     return (
@@ -774,17 +390,14 @@ const PlanosEvacuacionSection = () => {
   return (
     <div className="space-y-6">
       {/* Actions */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Planos de Evacuación</h3>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
-            Filtros
-          </Button>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Nuevo Plano
-          </Button>
-        </div>
-      </div>
+      <SectionToolbar
+        title="Planos de Evacuación"
+        onFilter={() => console.log('Filtros')}
+        primaryAction={{
+          label: 'Nuevo Plano',
+          onClick: () => console.log('Nuevo Plano'),
+        }}
+      />
 
       {/* Planos Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -846,8 +459,8 @@ const PlanosEvacuacionSection = () => {
 // ==================== BRIGADAS SECTION ====================
 
 const BrigadasSection = () => {
-  const isLoading = false;
-  const brigadas = mockBrigadas;
+  const { data, isLoading } = useBrigadas();
+  const brigadas = data?.results ?? [];
 
   if (isLoading) {
     return (
@@ -877,72 +490,44 @@ const BrigadasSection = () => {
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Brigadas</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{brigadas.length}</p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <Users className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Activas</p>
-              <p className="text-2xl font-bold text-success-600 dark:text-success-400 mt-1">
-                {brigadas.filter((b) => b.estado === 'ACTIVA').length}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-success-100 dark:bg-success-900/30 rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-6 h-6 text-success-600 dark:text-success-400" />
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Brigadistas</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{totalBrigadistas}</p>
-            </div>
-            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-              <User className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">En Formación</p>
-              <p className="text-2xl font-bold text-warning-600 dark:text-warning-400 mt-1">
-                {brigadas.filter((b) => b.estado === 'EN_FORMACION').length}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-warning-100 dark:bg-warning-900/30 rounded-lg flex items-center justify-center">
-              <Clock className="w-6 h-6 text-warning-600 dark:text-warning-400" />
-            </div>
-          </div>
-        </Card>
-      </div>
+      <KpiCardGrid columns={4}>
+        <KpiCard
+          label="Total Brigadas"
+          value={brigadas.length}
+          icon={<Users className="w-6 h-6" />}
+          color="primary"
+        />
+        <KpiCard
+          label="Activas"
+          value={brigadas.filter((b) => b.estado === 'ACTIVA').length}
+          icon={<CheckCircle className="w-6 h-6" />}
+          color="success"
+          valueColor="text-success-600 dark:text-success-400"
+        />
+        <KpiCard
+          label="Total Brigadistas"
+          value={totalBrigadistas}
+          icon={<User className="w-6 h-6" />}
+          color="blue"
+        />
+        <KpiCard
+          label="En Formación"
+          value={brigadas.filter((b) => b.estado === 'EN_FORMACION').length}
+          icon={<Clock className="w-6 h-6" />}
+          color="warning"
+          valueColor="text-warning-600 dark:text-warning-400"
+        />
+      </KpiCardGrid>
 
       {/* Actions */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Brigadas de Emergencia</h3>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-            Exportar
-          </Button>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Nueva Brigada
-          </Button>
-        </div>
-      </div>
+      <SectionToolbar
+        title="Brigadas de Emergencia"
+        onExport={() => console.log('Exportar')}
+        primaryAction={{
+          label: 'Nueva Brigada',
+          onClick: () => console.log('Nueva Brigada'),
+        }}
+      />
 
       {/* Brigadas Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -962,9 +547,11 @@ const BrigadasSection = () => {
                     <p className="text-xs text-gray-500 dark:text-gray-400">{brigada.tipo_brigada_nombre}</p>
                   </div>
                 </div>
-                <Badge variant={getEstadoBrigadaVariant(brigada.estado)} size="sm">
-                  {formatEstado(brigada.estado)}
-                </Badge>
+                <StatusBadge
+                  status={brigada.estado}
+                  preset="proceso"
+                  variant={getVariantOverride(brigada.estado)}
+                />
               </div>
 
               <div className="space-y-2">
@@ -1016,8 +603,8 @@ const BrigadasSection = () => {
 // ==================== SIMULACROS SECTION ====================
 
 const SimulacrosSection = () => {
-  const isLoading = false;
-  const simulacros = mockSimulacros;
+  const { data, isLoading } = useSimulacros();
+  const simulacros = data?.results ?? [];
 
   if (isLoading) {
     return (
@@ -1051,71 +638,46 @@ const SimulacrosSection = () => {
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Simulacros</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{simulacros.length}</p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <Calendar className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Programados</p>
-              <p className="text-2xl font-bold text-info-600 dark:text-info-400 mt-1">{stats.programados}</p>
-            </div>
-            <div className="w-12 h-12 bg-info-100 dark:bg-info-900/30 rounded-lg flex items-center justify-center">
-              <Clock className="w-6 h-6 text-info-600 dark:text-info-400" />
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Realizados</p>
-              <p className="text-2xl font-bold text-success-600 dark:text-success-400 mt-1">{stats.realizados}</p>
-            </div>
-            <div className="w-12 h-12 bg-success-100 dark:bg-success-900/30 rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-6 h-6 text-success-600 dark:text-success-400" />
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Exitosos</p>
-              <p className="text-2xl font-bold text-success-600 dark:text-success-400 mt-1">{stats.exitosos}</p>
-            </div>
-            <div className="w-12 h-12 bg-success-100 dark:bg-success-900/30 rounded-lg flex items-center justify-center">
-              <Activity className="w-6 h-6 text-success-600 dark:text-success-400" />
-            </div>
-          </div>
-        </Card>
-      </div>
+      <KpiCardGrid columns={4}>
+        <KpiCard
+          label="Total Simulacros"
+          value={simulacros.length}
+          icon={<Calendar className="w-6 h-6" />}
+          color="primary"
+        />
+        <KpiCard
+          label="Programados"
+          value={stats.programados}
+          icon={<Clock className="w-6 h-6" />}
+          color="info"
+          valueColor="text-info-600 dark:text-info-400"
+        />
+        <KpiCard
+          label="Realizados"
+          value={stats.realizados}
+          icon={<CheckCircle className="w-6 h-6" />}
+          color="success"
+          valueColor="text-success-600 dark:text-success-400"
+        />
+        <KpiCard
+          label="Exitosos"
+          value={stats.exitosos}
+          icon={<Activity className="w-6 h-6" />}
+          color="success"
+          valueColor="text-success-600 dark:text-success-400"
+        />
+      </KpiCardGrid>
 
       {/* Actions */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Simulacros de Emergencia</h3>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
-            Filtros
-          </Button>
-          <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-            Exportar
-          </Button>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Nuevo Simulacro
-          </Button>
-        </div>
-      </div>
+      <SectionToolbar
+        title="Simulacros de Emergencia"
+        onFilter={() => console.log('Filtros')}
+        onExport={() => console.log('Exportar')}
+        primaryAction={{
+          label: 'Nuevo Simulacro',
+          onClick: () => console.log('Nuevo Simulacro'),
+        }}
+      />
 
       {/* Table */}
       <Card variant="bordered" padding="none">
@@ -1141,15 +703,17 @@ const SimulacrosSection = () => {
                     <p className="font-medium truncate max-w-xs">{simulacro.nombre}</p>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {simulacro.tipo_simulacro_display || formatEstado(simulacro.tipo_simulacro)}
+                    {simulacro.tipo_simulacro_display || formatStatusLabel(simulacro.tipo_simulacro)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
                     {format(new Date(simulacro.fecha_programada), 'dd/MM/yyyy', { locale: es })}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={getEstadoSimulacroVariant(simulacro.estado)} size="sm">
-                      {formatEstado(simulacro.estado)}
-                    </Badge>
+                    <StatusBadge
+                      status={simulacro.estado}
+                      preset="proceso"
+                      variant={getVariantOverride(simulacro.estado)}
+                    />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{simulacro.coordinador}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -1183,8 +747,8 @@ const SimulacrosSection = () => {
 // ==================== RECURSOS DE EMERGENCIA SECTION ====================
 
 const RecursosEmergenciaSection = () => {
-  const isLoading = false;
-  const recursos = mockRecursos;
+  const { data, isLoading } = useRecursosEmergencia();
+  const recursos = data?.results ?? [];
 
   if (isLoading) {
     return (
@@ -1219,71 +783,46 @@ const RecursosEmergenciaSection = () => {
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Recursos</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stats.total}</p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <Package className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Operativos</p>
-              <p className="text-2xl font-bold text-success-600 dark:text-success-400 mt-1">{stats.operativos}</p>
-            </div>
-            <div className="w-12 h-12 bg-success-100 dark:bg-success-900/30 rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-6 h-6 text-success-600 dark:text-success-400" />
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">En Mantenimiento</p>
-              <p className="text-2xl font-bold text-warning-600 dark:text-warning-400 mt-1">{stats.mantenimiento}</p>
-            </div>
-            <div className="w-12 h-12 bg-warning-100 dark:bg-warning-900/30 rounded-lg flex items-center justify-center">
-              <Clock className="w-6 h-6 text-warning-600 dark:text-warning-400" />
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Requieren Inspección</p>
-              <p className="text-2xl font-bold text-danger-600 dark:text-danger-400 mt-1">{stats.requierenInspeccion}</p>
-            </div>
-            <div className="w-12 h-12 bg-danger-100 dark:bg-danger-900/30 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-danger-600 dark:text-danger-400" />
-            </div>
-          </div>
-        </Card>
-      </div>
+      <KpiCardGrid columns={4}>
+        <KpiCard
+          label="Total Recursos"
+          value={stats.total}
+          icon={<Package className="w-6 h-6" />}
+          color="primary"
+        />
+        <KpiCard
+          label="Operativos"
+          value={stats.operativos}
+          icon={<CheckCircle className="w-6 h-6" />}
+          color="success"
+          valueColor="text-success-600 dark:text-success-400"
+        />
+        <KpiCard
+          label="En Mantenimiento"
+          value={stats.mantenimiento}
+          icon={<Clock className="w-6 h-6" />}
+          color="warning"
+          valueColor="text-warning-600 dark:text-warning-400"
+        />
+        <KpiCard
+          label="Requieren Inspección"
+          value={stats.requierenInspeccion}
+          icon={<AlertTriangle className="w-6 h-6" />}
+          color="danger"
+          valueColor="text-danger-600 dark:text-danger-400"
+        />
+      </KpiCardGrid>
 
       {/* Actions */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Recursos de Emergencia</h3>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
-            Filtros
-          </Button>
-          <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-            Exportar
-          </Button>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Nuevo Recurso
-          </Button>
-        </div>
-      </div>
+      <SectionToolbar
+        title="Recursos de Emergencia"
+        onFilter={() => console.log('Filtros')}
+        onExport={() => console.log('Exportar')}
+        primaryAction={{
+          label: 'Nuevo Recurso',
+          onClick: () => console.log('Nuevo Recurso'),
+        }}
+      />
 
       {/* Table */}
       <Card variant="bordered" padding="none">
@@ -1309,7 +848,7 @@ const RecursosEmergenciaSection = () => {
                     <div className="flex items-center gap-2">
                       {getTipoRecursoIcon(recurso.tipo_recurso)}
                       <span className="text-sm text-gray-600 dark:text-gray-300">
-                        {recurso.tipo_recurso_display || formatEstado(recurso.tipo_recurso)}
+                        {recurso.tipo_recurso_display || formatStatusLabel(recurso.tipo_recurso)}
                       </span>
                     </div>
                   </td>
@@ -1319,9 +858,12 @@ const RecursosEmergenciaSection = () => {
                     <p className="text-xs text-gray-400">{recurso.ubicacion_especifica}</p>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={getEstadoRecursoVariant(recurso.estado)} size="sm">
-                      {recurso.estado_display || formatEstado(recurso.estado)}
-                    </Badge>
+                    <StatusBadge
+                      status={recurso.estado}
+                      preset="proceso"
+                      variant={getVariantOverride(recurso.estado)}
+                      label={recurso.estado_display || undefined}
+                    />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
                     {recurso.fecha_proxima_inspeccion ? (

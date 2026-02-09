@@ -3,9 +3,10 @@ Views del módulo Configuración - Dirección Estratégica
 Sistema de Gestión StrateKaz
 
 Define viewsets para:
-- EmpresaConfig: Gestión de datos fiscales de la empresa (Singleton)
 - SedeEmpresa: Gestión de sedes y ubicaciones
-- ConsecutivoConfig: Configuración de consecutivos automáticos
+- IntegracionExterna: Integraciones con servicios externos
+- NormaISO: Normas ISO y sistemas de gestión
+- IconRegistry: Registro de iconos
 """
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -15,10 +16,8 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 
-from .models import EmpresaConfig, SedeEmpresa, IconRegistry, NormaISO, ICON_CATEGORY_CHOICES
+from .models import SedeEmpresa, IconRegistry, NormaISO, ICON_CATEGORY_CHOICES
 from .serializers import (
-    EmpresaConfigSerializer,
-    EmpresaConfigChoicesSerializer,
     SedeEmpresaSerializer,
     SedeEmpresaListSerializer,
     SedeEmpresaChoicesSerializer,
@@ -29,152 +28,6 @@ from .serializers import (
     NormaISOListSerializer,
 )
 from apps.core.permissions import GranularActionPermission
-
-
-class EmpresaConfigViewSet(viewsets.ViewSet):
-    """
-    ViewSet para gestionar la configuración de la empresa (Singleton).
-
-    No es un ModelViewSet tradicional porque:
-    - Solo puede existir un registro
-    - No hay listado ni eliminación
-    - La URL principal retorna la única instancia
-
-    Endpoints:
-    - GET /empresa-config/ -> Obtiene la configuración actual
-    - PUT /empresa-config/ -> Actualiza la configuración
-    - PATCH /empresa-config/ -> Actualización parcial
-    - GET /empresa-config/choices/ -> Obtiene opciones para dropdowns
-    """
-
-    permission_classes = [IsAuthenticated, GranularActionPermission]
-    section_code = 'empresa'
-
-    def list(self, request):
-        """
-        Obtiene la configuración de la empresa.
-        Si no existe, retorna 404 con mensaje indicativo.
-        """
-        instance = EmpresaConfig.get_instance()
-
-        if not instance:
-            return Response(
-                {
-                    'detail': 'No se ha configurado la información de la empresa.',
-                    'configured': False
-                },
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        serializer = EmpresaConfigSerializer(instance, context={'request': request})
-        return Response({
-            'configured': True,
-            **serializer.data
-        })
-
-    def create(self, request):
-        """
-        Crea la configuración de la empresa.
-        Solo permitido si no existe configuración previa.
-        """
-        existing = EmpresaConfig.get_instance()
-        if existing:
-            return Response(
-                {'detail': 'Ya existe una configuración de empresa. Use PUT para actualizar.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        serializer = EmpresaConfigSerializer(data=request.data, context={'request': request})
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    def update(self, request, pk=None):
-        """
-        Actualiza la configuración de la empresa.
-        pk se ignora porque es singleton.
-        """
-        instance = EmpresaConfig.get_instance()
-
-        if not instance:
-            return Response(
-                {'detail': 'No existe configuración de empresa. Use POST para crear.'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        serializer = EmpresaConfigSerializer(
-            instance,
-            data=request.data,
-            context={'request': request}
-        )
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-
-        return Response(serializer.data)
-
-    def partial_update(self, request, pk=None):
-        """
-        Actualización parcial de la configuración.
-        pk se ignora porque es singleton.
-        """
-        instance = EmpresaConfig.get_instance()
-
-        if not instance:
-            return Response(
-                {'detail': 'No existe configuración de empresa. Use POST para crear.'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        serializer = EmpresaConfigSerializer(
-            instance,
-            data=request.data,
-            partial=True,
-            context={'request': request}
-        )
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-
-        return Response(serializer.data)
-
-    @action(detail=False, methods=['get'])
-    def choices(self, request):
-        """
-        Retorna todas las opciones para los campos con choices.
-        Útil para poblar selects/dropdowns en el frontend.
-
-        GET /empresa-config/choices/
-        """
-        serializer = EmpresaConfigChoicesSerializer({})
-        return Response(serializer.data)
-
-    @action(detail=False, methods=['post'])
-    def initialize(self, request):
-        """
-        Inicializa la configuración con valores por defecto si no existe.
-        Útil para el setup inicial del sistema.
-
-        POST /empresa-config/initialize/
-        """
-        instance, created = EmpresaConfig.get_or_create_default()
-
-        if created:
-            return Response(
-                {
-                    'detail': 'Configuración inicializada con valores por defecto.',
-                    'created': True,
-                    'data': EmpresaConfigSerializer(instance, context={'request': request}).data
-                },
-                status=status.HTTP_201_CREATED
-            )
-
-        return Response(
-            {
-                'detail': 'Ya existe una configuración de empresa.',
-                'created': False,
-                'data': EmpresaConfigSerializer(instance, context={'request': request}).data
-            }
-        )
 
 
 # ==============================================================================

@@ -19,12 +19,14 @@ export const DURATION = {
   verySlow: 0.8,
 } as const;
 
-/** Easings predefinidos */
+/** Easings predefinidos - SINCRONIZADOS con marketing_site */
 export const EASING = {
   // Curvas suaves para UI
   easeOut: [0.0, 0.0, 0.2, 1] as const,
   easeIn: [0.4, 0.0, 1, 1] as const,
   easeInOut: [0.4, 0.0, 0.2, 1] as const,
+  // Curva personalizada compartida (usada en Login y Marketing)
+  smooth: [0.25, 0.46, 0.45, 0.94] as const,
   // Curvas con bounce
   bounce: [0.68, -0.55, 0.265, 1.55] as const,
   // Spring-like
@@ -745,3 +747,38 @@ export const moduleBadgeVariants: Variants = {
     transition: { type: 'spring', stiffness: 400, damping: 20 },
   },
 };
+
+// ============================================
+// UTILIDADES DE RENDIMIENTO
+// ============================================
+
+/**
+ * Detecta si el dispositivo es de bajo rendimiento (mobile/tablet)
+ */
+export const isLowPerformanceDevice = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  const lowCores = navigator.hardwareConcurrency ? navigator.hardwareConcurrency <= 4 : false;
+  const smallScreen = window.innerWidth < 768;
+  const lowMemory = (navigator as any).deviceMemory ? (navigator as any).deviceMemory < 4 : false;
+  return lowCores || smallScreen || lowMemory;
+};
+
+// ============================================
+// CONSTANTES DE PARTICULAS 3D (Sincronizadas con marketing_site)
+// ============================================
+
+/** Configuración del fondo de red 3D - COMPARTIDA con marketing_site */
+export const PARTICLE_CONFIG = {
+  /** Número de partículas en desktop */
+  desktopCount: 80,
+  /** Número de partículas en móvil (rendimiento) */
+  mobileCount: 45,
+  /** Distancia máxima para conectar partículas */
+  connectionDistance: 25,
+  /** Velocidad de movimiento de partículas */
+  speed: 0.04,
+  /** Color de marca primario */
+  brandColor: '#ec268f',
+  /** Ratio de colores: % partículas de color primario */
+  primaryColorRatio: 0.7,
+} as const;

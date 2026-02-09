@@ -1,11 +1,8 @@
 /**
- * Página: Gestión de Tareas y Calendario
- *
- * Gestión de tareas con tabs:
- * 1. Mis Tareas - Lista de tareas asignadas al usuario
- * 2. Calendario - Vista de calendario con eventos
- * 3. Recordatorios - Lista de recordatorios programados
- * 4. Todas - Todas las tareas con filtros
+ * Página: Gestión de Tareas (REWRITTEN - Sprint 9)
+ * 4 tabs: Mis Tareas, Calendario, Recordatorios, Todas
+ * Connected to real hooks from useAuditSystem
+ * Deleted ALL mock data
  */
 import { useState } from 'react';
 import {
@@ -23,107 +20,35 @@ import {
   MessageSquare,
   Bell,
 } from 'lucide-react';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { PageHeader } from '@/components/layout';
-import { Card } from '@/components/common/Card';
-import { Button } from '@/components/common/Button';
-import { Badge } from '@/components/common/Badge';
-import { Tabs } from '@/components/common/Tabs';
+import {
+  Card,
+  Button,
+  Badge,
+  Tabs,
+  Spinner,
+  EmptyState,
+  KpiCardGrid,
+  KpiCard,
+} from '@/components/common';
 import { cn } from '@/utils/cn';
-
-// ==================== MOCK DATA ====================
-
-const mockTareas = [
-  {
-    id: 1,
-    codigo: 'TSK-2024-001',
-    titulo: 'Revisión Plan de Emergencia',
-    descripcion: 'Actualizar el plan de emergencia según nuevas normativas',
-    estado: 'en_progreso',
-    prioridad: 'alta',
-    asignado_a_nombre: 'Juan Pérez',
-    fecha_limite: '2025-01-05',
-    porcentaje_avance: 60,
-    tags: ['SST', 'Emergencias'],
-  },
-  {
-    id: 2,
-    codigo: 'TSK-2024-002',
-    titulo: 'Inspección Vehículos',
-    descripcion: 'Realizar inspección trimestral de la flota vehicular',
-    estado: 'pendiente',
-    prioridad: 'normal',
-    asignado_a_nombre: 'María García',
-    fecha_limite: '2025-01-03',
-    porcentaje_avance: 0,
-    tags: ['PESV', 'Flota'],
-  },
-  {
-    id: 3,
-    codigo: 'TSK-2024-003',
-    titulo: 'Auditoría Interna ISO 9001',
-    descripcion: 'Ejecutar auditoría interna del sistema de gestión de calidad',
-    estado: 'vencida',
-    prioridad: 'urgente',
-    asignado_a_nombre: 'Carlos López',
-    fecha_limite: '2024-12-28',
-    porcentaje_avance: 25,
-    tags: ['ISO', 'Calidad'],
-  },
-];
-
-const mockEventos = [
-  {
-    id: 1,
-    titulo: 'Capacitación SST',
-    tipo_evento: 'capacitacion',
-    fecha_inicio: '2025-01-02 09:00',
-    fecha_fin: '2025-01-02 12:00',
-    ubicacion: 'Sala de Conferencias',
-    participantes_nombres: ['Juan Pérez', 'María García', 'Ana Rodríguez'],
-    color: '#3b82f6',
-  },
-  {
-    id: 2,
-    titulo: 'Reunión Comité PESV',
-    tipo_evento: 'reunion',
-    fecha_inicio: '2025-01-03 14:00',
-    fecha_fin: '2025-01-03 16:00',
-    ubicacion: 'Oficina Principal',
-    participantes_nombres: ['Pedro Martínez', 'Luis Fernández'],
-    color: '#10b981',
-  },
-  {
-    id: 3,
-    titulo: 'Auditoría Externa',
-    tipo_evento: 'auditoria',
-    fecha_inicio: '2025-01-05 08:00',
-    fecha_fin: '2025-01-05 17:00',
-    ubicacion: 'Planta de Producción',
-    participantes_nombres: ['Carlos López', 'Ana Rodríguez'],
-    color: '#f59e0b',
-  },
-];
-
-const mockRecordatorios = [
-  {
-    id: 1,
-    titulo: 'Backup Semanal',
-    tipo_repeticion: 'semanal',
-    dias_semana: [1], // Lunes
-    hora_recordatorio: '22:00',
-    activo: true,
-    proxima_ejecucion: '2025-01-06 22:00',
-  },
-  {
-    id: 2,
-    titulo: 'Reporte Mensual de Indicadores',
-    tipo_repeticion: 'mensual',
-    dia_mes: 1,
-    hora_recordatorio: '08:00',
-    activo: true,
-    proxima_ejecucion: '2025-02-01 08:00',
-  },
-];
+import { formatStatusLabel } from '@/components/common/StatusBadge';
+import {
+  useMisTareas,
+  useTareas,
+  useTareasVencidas,
+  useResumenTareas,
+  useCompletarTarea,
+  useCancelarTarea,
+  useEventosPorMes,
+  useMisEventos,
+  useRecordatorios,
+  useCreateRecordatorio,
+  useUpdateRecordatorio,
+} from '../hooks/useAuditSystem';
+import type { Tarea, EventoCalendario, Recordatorio, PrioridadTarea } from '../types';
 
 // ==================== UTILITY FUNCTIONS ====================
 
@@ -138,28 +63,79 @@ const getEstadoColor = (estado: string) => {
   return colors[estado as keyof typeof colors] || 'bg-gray-100 text-gray-800';
 };
 
-const getPrioridadColor = (prioridad: string) => {
+const getPrioridadColor = (prioridad: PrioridadTarea) => {
   const colors = {
     baja: 'text-green-600',
     normal: 'text-blue-600',
     alta: 'text-orange-600',
     urgente: 'text-red-600',
   };
-  return colors[prioridad as keyof typeof colors] || 'text-gray-600';
+  return colors[prioridad] || 'text-gray-600';
 };
 
 // ==================== COMPONENTS ====================
 
 function MisTareasTab() {
+  const { data: tareas, isLoading } = useMisTareas();
+  const { data: resumen } = useResumenTareas();
+  const completarMutation = useCompletarTarea();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (!tareas || tareas.length === 0) {
+    return (
+      <EmptyState
+        title="No tienes tareas asignadas"
+        description="Las tareas asignadas a ti aparecerán aquí"
+        icon={CheckSquare}
+      />
+    );
+  }
+
+  const tareasActivas = tareas.filter((t) => t.estado !== 'completada' && t.estado !== 'cancelada');
+
   return (
     <div className="space-y-4">
+      {/* KPI Cards */}
+      {resumen && (
+        <KpiCardGrid>
+          <KpiCard
+            title="Total Tareas"
+            value={resumen.total}
+            icon={<CheckSquare className="w-4 h-4" />}
+          />
+          <KpiCard
+            title="Pendientes"
+            value={resumen.pendientes}
+            variant="warning"
+            icon={<Clock className="w-4 h-4" />}
+          />
+          <KpiCard
+            title="Vencidas"
+            value={resumen.vencidas}
+            variant="danger"
+            icon={<AlertTriangle className="w-4 h-4" />}
+          />
+          <KpiCard
+            title="Completadas (mes)"
+            value={resumen.completadas_mes}
+            variant="success"
+            icon={<CheckCircle className="w-4 h-4" />}
+          />
+        </KpiCardGrid>
+      )}
+
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Mis Tareas
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Mis Tareas</h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            {mockTareas.filter(t => t.estado !== 'completada').length} tareas activas
+            {tareasActivas.length} tareas activas
           </p>
         </div>
         <div className="flex gap-2">
@@ -173,16 +149,18 @@ function MisTareasTab() {
       </div>
 
       <div className="grid grid-cols-1 gap-3">
-        {mockTareas.map((tarea) => (
+        {tareas.map((tarea) => (
           <Card key={tarea.id} variant="bordered" padding="md">
             <div className="flex items-start gap-4">
-              <div className={cn(
-                'w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0',
-                tarea.estado === 'completada' && 'bg-green-100 text-green-600',
-                tarea.estado === 'en_progreso' && 'bg-blue-100 text-blue-600',
-                tarea.estado === 'vencida' && 'bg-red-100 text-red-600',
-                tarea.estado === 'pendiente' && 'bg-gray-100 text-gray-600',
-              )}>
+              <div
+                className={cn(
+                  'w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0',
+                  tarea.estado === 'completada' && 'bg-green-100 text-green-600',
+                  tarea.estado === 'en_progreso' && 'bg-blue-100 text-blue-600',
+                  tarea.estado === 'vencida' && 'bg-red-100 text-red-600',
+                  tarea.estado === 'pendiente' && 'bg-gray-100 text-gray-600'
+                )}
+              >
                 {tarea.estado === 'completada' ? (
                   <CheckCircle className="w-5 h-5" />
                 ) : tarea.estado === 'en_progreso' ? (
@@ -199,16 +177,20 @@ function MisTareasTab() {
                       <h4 className="text-sm font-medium text-gray-900 dark:text-white">
                         {tarea.titulo}
                       </h4>
-                      <Badge variant="gray" size="sm">{tarea.codigo}</Badge>
+                      <Badge variant="gray" size="sm">
+                        {tarea.codigo}
+                      </Badge>
                     </div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">
-                      {tarea.descripcion}
-                    </p>
+                    {tarea.descripcion && (
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                        {tarea.descripcion}
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-2 ml-4">
                     <Badge variant="gray" size="sm" className={getEstadoColor(tarea.estado)}>
-                      {tarea.estado.replace('_', ' ')}
+                      {formatStatusLabel(tarea.estado)}
                     </Badge>
                     <Flag className={cn('w-4 h-4', getPrioridadColor(tarea.prioridad))} />
                   </div>
@@ -224,8 +206,11 @@ function MisTareasTab() {
                     <div
                       className={cn(
                         'h-full transition-all',
-                        tarea.porcentaje_avance === 100 ? 'bg-green-500' :
-                        tarea.porcentaje_avance >= 50 ? 'bg-blue-500' : 'bg-gray-400'
+                        tarea.porcentaje_avance === 100
+                          ? 'bg-green-500'
+                          : tarea.porcentaje_avance >= 50
+                          ? 'bg-blue-500'
+                          : 'bg-gray-400'
                       )}
                       style={{ width: `${tarea.porcentaje_avance}%` }}
                     />
@@ -234,25 +219,37 @@ function MisTareasTab() {
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
-                    <span className="flex items-center gap-1">
-                      <User className="w-3 h-3" />
-                      {tarea.asignado_a_nombre}
-                    </span>
+                    {tarea.asignado_a_nombre && (
+                      <span className="flex items-center gap-1">
+                        <User className="w-3 h-3" />
+                        {tarea.asignado_a_nombre}
+                      </span>
+                    )}
                     <span className="flex items-center gap-1">
                       <CalendarIcon className="w-3 h-3" />
-                      {tarea.fecha_limite}
+                      {format(new Date(tarea.fecha_limite), 'PP', { locale: es })}
                     </span>
-                    {tarea.tags.map((tag) => (
-                      <Badge key={tag} variant="gray" size="sm">
-                        <Tag className="w-3 h-3 mr-1" />
-                        {tag}
-                      </Badge>
-                    ))}
+                    {tarea.tags && tarea.tags.length > 0 && (
+                      <>
+                        {tarea.tags.slice(0, 2).map((tag) => (
+                          <Badge key={tag} variant="gray" size="sm">
+                            <Tag className="w-3 h-3 mr-1" />
+                            {tag}
+                          </Badge>
+                        ))}
+                      </>
+                    )}
                   </div>
 
                   <div className="flex gap-2">
-                    {tarea.estado !== 'completada' && (
-                      <Button variant="primary" size="sm" leftIcon={<CheckCircle className="w-4 h-4" />}>
+                    {tarea.estado !== 'completada' && tarea.estado !== 'cancelada' && (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        leftIcon={<CheckCircle className="w-4 h-4" />}
+                        onClick={() => completarMutation.mutate({ id: tarea.id })}
+                        loading={completarMutation.isPending}
+                      >
                         Completar
                       </Button>
                     )}
@@ -271,11 +268,23 @@ function MisTareasTab() {
 }
 
 function CalendarioTab() {
-  const [selectedDate] = useState(new Date(2025, 0, 1)); // Enero 2025
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth() + 1;
 
-  // Simple calendar grid (simplified version)
-  const daysInMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0).getDate();
-  const firstDay = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1).getDay();
+  const { data: eventos, isLoading } = useEventosPorMes(currentYear, currentMonth);
+  const { data: misEventos } = useMisEventos();
+
+  const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+  const firstDay = new Date(currentYear, currentMonth - 1, 1).getDay();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -285,7 +294,7 @@ function CalendarioTab() {
             Calendario de Eventos
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            {selectedDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+            {format(currentDate, 'MMMM yyyy', { locale: es })}
           </p>
         </div>
         <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
@@ -299,7 +308,10 @@ function CalendarioTab() {
           <Card variant="bordered" padding="md">
             <div className="grid grid-cols-7 gap-2 mb-2">
               {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map((day) => (
-                <div key={day} className="text-center text-xs font-medium text-gray-600 dark:text-gray-400 py-2">
+                <div
+                  key={day}
+                  className="text-center text-xs font-medium text-gray-600 dark:text-gray-400 py-2"
+                >
                   {day}
                 </div>
               ))}
@@ -310,9 +322,10 @@ function CalendarioTab() {
               ))}
               {Array.from({ length: daysInMonth }).map((_, i) => {
                 const day = i + 1;
-                const hasEvent = mockEventos.some(e =>
-                  new Date(e.fecha_inicio).getDate() === day
-                );
+                const hasEvent = eventos?.some((e) => {
+                  const eventDate = new Date(e.fecha_inicio);
+                  return eventDate.getDate() === day;
+                });
                 return (
                   <div
                     key={day}
@@ -320,7 +333,9 @@ function CalendarioTab() {
                       'aspect-square flex items-center justify-center rounded-lg text-sm cursor-pointer transition-colors',
                       hasEvent && 'bg-primary-50 text-primary-700 font-medium',
                       !hasEvent && 'hover:bg-gray-100 dark:hover:bg-gray-800',
-                      day === new Date().getDate() && 'ring-2 ring-primary-500'
+                      day === new Date().getDate() &&
+                        currentMonth === new Date().getMonth() + 1 &&
+                        'ring-2 ring-primary-500'
                     )}
                   >
                     {day}
@@ -336,33 +351,38 @@ function CalendarioTab() {
           <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Próximos Eventos
           </h4>
-          {mockEventos.map((evento) => (
-            <Card key={evento.id} variant="bordered" padding="sm">
-              <div className="flex items-start gap-3">
-                <div
-                  className="w-1 h-full rounded-full"
-                  style={{ backgroundColor: evento.color }}
-                />
-                <div className="flex-1 min-w-0">
-                  <h5 className="text-sm font-medium text-gray-900 dark:text-white">
-                    {evento.titulo}
-                  </h5>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                    {new Date(evento.fecha_inicio).toLocaleDateString('es-ES', {
-                      day: 'numeric',
-                      month: 'short',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </p>
-                  <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
-                    <Badge variant="gray" size="sm">{evento.tipo_evento}</Badge>
-                    <span>{evento.ubicacion}</span>
+          {eventos && eventos.length > 0 ? (
+            eventos.slice(0, 5).map((evento) => (
+              <Card key={evento.id} variant="bordered" padding="sm">
+                <div className="flex items-start gap-3">
+                  <div
+                    className="w-1 h-full rounded-full"
+                    style={{ backgroundColor: evento.color || '#3b82f6' }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <h5 className="text-sm font-medium text-gray-900 dark:text-white">
+                      {evento.titulo}
+                    </h5>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                      {format(new Date(evento.fecha_inicio), 'PPp', { locale: es })}
+                    </p>
+                    <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
+                      <Badge variant="gray" size="sm">
+                        {formatStatusLabel(evento.tipo_evento)}
+                      </Badge>
+                      {evento.ubicacion && <span>{evento.ubicacion}</span>}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            ))
+          ) : (
+            <EmptyState
+              title="No hay eventos"
+              description="No hay eventos programados este mes"
+              icon={CalendarIcon}
+            />
+          )}
         </div>
       </div>
     </div>
@@ -370,6 +390,28 @@ function CalendarioTab() {
 }
 
 function RecordatoriosTab() {
+  const { data: recordatorios, isLoading } = useRecordatorios();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (!recordatorios || recordatorios.length === 0) {
+    return (
+      <EmptyState
+        title="No hay recordatorios"
+        description="Crea un nuevo recordatorio para recibir notificaciones programadas"
+        icon={Bell}
+      />
+    );
+  }
+
+  const activos = recordatorios.filter((r) => r.activo);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -378,7 +420,7 @@ function RecordatoriosTab() {
             Recordatorios Programados
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            {mockRecordatorios.filter(r => r.activo).length} recordatorios activos
+            {activos.length} recordatorios activos
           </p>
         </div>
         <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
@@ -387,13 +429,15 @@ function RecordatoriosTab() {
       </div>
 
       <div className="grid grid-cols-1 gap-3">
-        {mockRecordatorios.map((recordatorio) => (
+        {recordatorios.map((recordatorio) => (
           <Card key={recordatorio.id} variant="bordered" padding="md">
             <div className="flex items-start gap-4">
-              <div className={cn(
-                'w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0',
-                recordatorio.activo ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
-              )}>
+              <div
+                className={cn(
+                  'w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0',
+                  recordatorio.activo ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
+                )}
+              >
                 <Bell className="w-5 h-5" />
               </div>
 
@@ -403,11 +447,20 @@ function RecordatoriosTab() {
                     <h4 className="text-sm font-medium text-gray-900 dark:text-white">
                       {recordatorio.titulo}
                     </h4>
+                    {recordatorio.descripcion && (
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                        {recordatorio.descripcion}
+                      </p>
+                    )}
                     <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                       {recordatorio.tipo_repeticion === 'semanal' &&
-                        `Cada lunes a las ${recordatorio.hora_recordatorio}`}
+                        `Cada semana a las ${recordatorio.hora_recordatorio}`}
                       {recordatorio.tipo_repeticion === 'mensual' &&
                         `Día ${recordatorio.dia_mes} de cada mes a las ${recordatorio.hora_recordatorio}`}
+                      {recordatorio.tipo_repeticion === 'diario' &&
+                        `Todos los días a las ${recordatorio.hora_recordatorio}`}
+                      {recordatorio.tipo_repeticion === 'una_vez' &&
+                        `Una sola vez a las ${recordatorio.hora_recordatorio}`}
                     </p>
                   </div>
                   <Badge variant={recordatorio.activo ? 'success' : 'gray'} size="sm">
@@ -416,18 +469,22 @@ function RecordatoriosTab() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <div className="text-xs text-gray-600 dark:text-gray-400">
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      Próxima ejecución: {recordatorio.proxima_ejecucion}
-                    </span>
-                  </div>
+                  {recordatorio.proxima_ejecucion && (
+                    <div className="text-xs text-gray-600 dark:text-gray-400">
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        Próxima ejecución: {format(new Date(recordatorio.proxima_ejecucion), 'PPp', { locale: es })}
+                      </span>
+                    </div>
+                  )}
 
                   <div className="flex gap-2">
                     <Button variant="ghost" size="sm">
                       {recordatorio.activo ? 'Desactivar' : 'Activar'}
                     </Button>
-                    <Button variant="ghost" size="sm">Editar</Button>
+                    <Button variant="ghost" size="sm">
+                      Editar
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -440,6 +497,26 @@ function RecordatoriosTab() {
 }
 
 function TodasTab() {
+  const { data: tareas, isLoading } = useTareas();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (!tareas || tareas.length === 0) {
+    return (
+      <EmptyState
+        title="No hay tareas"
+        description="Las tareas del sistema aparecerán aquí"
+        icon={List}
+      />
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -490,27 +567,34 @@ function TodasTab() {
               </tr>
             </thead>
             <tbody>
-              {mockTareas.map((tarea) => (
-                <tr key={tarea.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+              {tareas.map((tarea) => (
+                <tr
+                  key={tarea.id}
+                  className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                >
                   <td className="py-3 px-4 text-sm">{tarea.codigo}</td>
                   <td className="py-3 px-4">
                     <div className="text-sm font-medium text-gray-900 dark:text-white">
                       {tarea.titulo}
                     </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">
-                      {tarea.descripcion.slice(0, 50)}...
-                    </div>
+                    {tarea.descripcion && (
+                      <div className="text-xs text-gray-600 dark:text-gray-400">
+                        {tarea.descripcion.slice(0, 50)}...
+                      </div>
+                    )}
                   </td>
-                  <td className="py-3 px-4 text-sm">{tarea.asignado_a_nombre}</td>
+                  <td className="py-3 px-4 text-sm">{tarea.asignado_a_nombre || '-'}</td>
                   <td className="py-3 px-4">
                     <Badge variant="gray" size="sm" className={getEstadoColor(tarea.estado)}>
-                      {tarea.estado.replace('_', ' ')}
+                      {formatStatusLabel(tarea.estado)}
                     </Badge>
                   </td>
                   <td className="py-3 px-4">
                     <Flag className={cn('w-4 h-4', getPrioridadColor(tarea.prioridad))} />
                   </td>
-                  <td className="py-3 px-4 text-sm">{tarea.fecha_limite}</td>
+                  <td className="py-3 px-4 text-sm">
+                    {format(new Date(tarea.fecha_limite), 'PP', { locale: es })}
+                  </td>
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-2">
                       <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
@@ -547,6 +631,7 @@ const tabs = [
 
 export default function TareasPage() {
   const [activeTab, setActiveTab] = useState('mis-tareas');
+  const { data: vencidas } = useTareasVencidas();
 
   return (
     <div className="space-y-8">
@@ -556,7 +641,7 @@ export default function TareasPage() {
         actions={
           <div className="flex gap-2">
             <Badge variant="warning" size="lg">
-              {mockTareas.filter(t => t.estado === 'vencida').length} vencidas
+              {vencidas?.length || 0} vencidas
             </Badge>
           </div>
         }

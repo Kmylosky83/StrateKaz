@@ -7,10 +7,11 @@
 
     <!-- MB-001: PWA Manifest dinámico desde BD -->
     <!-- El manifest se carga desde el backend para reflejar el branding de cada empresa -->
-    <link rel="manifest" id="dynamic-manifest" href="/api/core/branding/manifest/" crossorigin="use-credentials" />
+    <!-- NOTA: Migrado de /api/core/branding/manifest/ a /api/tenant/public/manifest/ -->
+    <link rel="manifest" id="dynamic-manifest" href="/api/tenant/public/manifest/" crossorigin="use-credentials" />
 
     <!-- PWA Meta Tags - Valores iniciales, se actualizan dinámicamente via useDynamicTheme -->
-    <meta name="theme-color" id="meta-theme-color" content="#16A34A" />
+    <meta name="theme-color" id="meta-theme-color" content="#ec268f" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -32,6 +33,21 @@
     <meta property="og:description" id="og-description" content="ERP de Consultoría 4.0 para empresas colombianas" />
     <meta property="og:type" content="website" />
     <meta property="og:image" id="og-image" content="/logo-dark.png" />
+    <!-- Login page initial background - prevents white flash -->
+    <!-- Uses gray-950 from design system: #000000 -->
+    <style>
+      html.login-loading,
+      html.login-loading body {
+        background-color: #000000 !important;
+      }
+    </style>
+    <script>
+      // Apply dark background immediately if navigating to login
+      // Only modify documentElement since body might not exist yet
+      if (window.location.pathname === '/login' || window.location.pathname === '/forgot-password') {
+        document.documentElement.classList.add('login-loading');
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

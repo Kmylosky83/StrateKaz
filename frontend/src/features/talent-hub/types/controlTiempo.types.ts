@@ -255,6 +255,44 @@ export interface GenerarConsolidadoData {
   periodo_fin: string;
 }
 
+// ============== CONFIGURACION RECARGOS — LEY 2466/2025 ==============
+
+export interface ConfiguracionRecargo {
+  id: number;
+  empresa: number;
+  tipo_hora_extra: TipoHoraExtra;
+  tipo_hora_extra_display?: string;
+  factor_vigente: string;
+  factor_fase_1: string;
+  fecha_inicio_fase_1: string;
+  factor_fase_2: string;
+  fecha_inicio_fase_2: string;
+  factor_fase_3: string;
+  fecha_inicio_fase_3: string;
+  // Calculado
+  factor_actual?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ConfiguracionRecargoFormData {
+  tipo_hora_extra: TipoHoraExtra;
+  factor_vigente: number;
+  factor_fase_1: number;
+  fecha_inicio_fase_1?: string;
+  factor_fase_2: number;
+  fecha_inicio_fase_2?: string;
+  factor_fase_3: number;
+  fecha_inicio_fase_3?: string;
+}
+
+export interface ConfiguracionRecargoFilter {
+  empresa_id?: number;
+  tipo_hora_extra?: TipoHoraExtra;
+  is_active?: boolean;
+}
+
 // ============== OPTIONS ==============
 
 export const tipoTurnoOptions = [

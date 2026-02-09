@@ -13,6 +13,7 @@ from .models import (
     Entrevista,
     Prueba,
     AfiliacionSS,
+    HistorialContrato,
 )
 
 
@@ -406,3 +407,64 @@ class AfiliacionSSAdmin(admin.ModelAdmin):
         'updated_by',
     ]
     date_hierarchy = 'fecha_solicitud'
+
+
+# =============================================================================
+# HISTORIAL DE CONTRATOS - Ley 2466/2025
+# =============================================================================
+
+@admin.register(HistorialContrato)
+class HistorialContratoAdmin(admin.ModelAdmin):
+    """Admin para Historial de Contratos - Ley 2466/2025"""
+    list_display = [
+        'numero_contrato', 'colaborador', 'tipo_contrato',
+        'tipo_movimiento', 'fecha_inicio', 'fecha_fin',
+        'firmado', 'is_active',
+    ]
+    list_filter = [
+        'tipo_movimiento', 'tipo_contrato', 'firmado',
+        'preaviso_entregado', 'is_active', 'empresa',
+    ]
+    search_fields = [
+        'numero_contrato',
+        'colaborador__primer_nombre',
+        'colaborador__primer_apellido',
+        'objeto_contrato',
+    ]
+    readonly_fields = [
+        'esta_vigente', 'dias_para_vencer', 'duracion_meses',
+        'created_at', 'updated_at', 'created_by', 'updated_by',
+    ]
+    date_hierarchy = 'fecha_inicio'
+    raw_id_fields = ['colaborador', 'contrato_padre']
+    fieldsets = [
+        ('Identificacion', {
+            'fields': ['empresa', 'numero_contrato', 'colaborador', 'tipo_contrato']
+        }),
+        ('Movimiento', {
+            'fields': ['tipo_movimiento', 'contrato_padre', 'numero_renovacion']
+        }),
+        ('Vigencia', {
+            'fields': [
+                'fecha_inicio', 'fecha_fin', 'salario_pactado',
+                'esta_vigente', 'dias_para_vencer', 'duracion_meses',
+            ]
+        }),
+        ('Objeto del Contrato', {
+            'fields': ['objeto_contrato']
+        }),
+        ('Ley 2466/2025', {
+            'fields': ['justificacion_tipo_contrato'],
+            'description': 'Justificacion requerida para contratos que no son a termino indefinido',
+        }),
+        ('Preaviso', {
+            'fields': ['fecha_preaviso_terminacion', 'preaviso_entregado']
+        }),
+        ('Firma', {
+            'fields': ['firmado', 'fecha_firma', 'archivo_contrato']
+        }),
+        ('Auditoria', {
+            'fields': ['is_active', 'created_at', 'updated_at', 'created_by', 'updated_by'],
+            'classes': ['collapse'],
+        }),
+    ]

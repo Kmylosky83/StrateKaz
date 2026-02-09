@@ -1,13 +1,8 @@
 /**
- * Página: Gestión Ambiental HSEQ
+ * Gestión Ambiental HSEQ
  *
- * Sistema completo de gestión ambiental con 6 subsecciones:
- * - Aspectos Ambientales
- * - Gestión de Residuos
- * - Vertimientos
- * - Emisiones Atmosféricas
- * - Consumo de Recursos
- * - Certificados Ambientales
+ * 6 subsecciones: Aspectos Ambientales, Gestión de Residuos, Vertimientos,
+ * Emisiones Atmosféricas, Consumo de Recursos, Certificados Ambientales.
  */
 import { useState } from 'react';
 import {
@@ -17,27 +12,27 @@ import {
   Wind,
   Zap,
   FileCheck,
-  Plus,
-  Download,
-  Filter,
   Eye,
   Edit,
   Trash,
   AlertTriangle,
   CheckCircle,
   XCircle,
-  TrendingUp,
   TrendingDown,
   BarChart3,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
-import { Tabs } from '@/components/common/Tabs';
-import { Card } from '@/components/common/Card';
-import { Button } from '@/components/common/Button';
-import { EmptyState } from '@/components/common/EmptyState';
-import { Badge } from '@/components/common/Badge';
-import { Spinner } from '@/components/common/Spinner';
-import { cn } from '@/utils/cn';
+import {
+  Tabs,
+  Card,
+  Button,
+  EmptyState,
+  Spinner,
+  KpiCard,
+  KpiCardGrid,
+  SectionToolbar,
+  StatusBadge,
+} from '@/components/common';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -58,83 +53,42 @@ import type {
   TipoCertificado,
 } from '../types/gestion-ambiental.types';
 
-// ==================== UTILITY FUNCTIONS ====================
-
-const getClaseResiduoVariant = (clase: ClaseResiduo): 'success' | 'warning' | 'danger' | 'info' => {
-  const map: Record<ClaseResiduo, 'success' | 'warning' | 'danger' | 'info'> = {
-    PELIGROSO: 'danger',
-    NO_PELIGROSO: 'success',
-    RECICLABLE: 'info',
-    ORGANICO: 'success',
-    RAEE: 'warning',
-    RCD: 'warning',
-    ESPECIAL: 'warning',
-  };
-  return map[clase] || 'info';
-};
-
-const formatEstado = (estado: string): string => {
-  return estado.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (l) => l.toUpperCase());
-};
-
 // ==================== ASPECTOS AMBIENTALES SECTION ====================
 
 const AspectosAmbientalesSection = () => {
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Residuos Generados</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">2,450 kg</p>
-              <p className="text-xs text-success-600 mt-1">-12% vs mes anterior</p>
-            </div>
-            <div className="w-12 h-12 bg-success-100 dark:bg-success-900/30 rounded-lg flex items-center justify-center">
-              <TrendingDown className="w-6 h-6 text-success-600 dark:text-success-400" />
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Tasa de Reciclaje</p>
-              <p className="text-2xl font-bold text-success-600 dark:text-success-400 mt-1">68%</p>
-              <p className="text-xs text-success-600 mt-1">+5% vs mes anterior</p>
-            </div>
-            <div className="w-12 h-12 bg-info-100 dark:bg-info-900/30 rounded-lg flex items-center justify-center">
-              <BarChart3 className="w-6 h-6 text-info-600 dark:text-info-400" />
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Huella de Carbono</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">12.5 tCO₂e</p>
-              <p className="text-xs text-warning-600 mt-1">+3% vs año anterior</p>
-            </div>
-            <div className="w-12 h-12 bg-warning-100 dark:bg-warning-900/30 rounded-lg flex items-center justify-center">
-              <Leaf className="w-6 h-6 text-warning-600 dark:text-warning-400" />
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Consumo de Agua</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">1,850 m³</p>
-              <p className="text-xs text-success-600 mt-1">-8% vs mes anterior</p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <Droplet className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-        </Card>
-      </div>
+      <KpiCardGrid>
+        <KpiCard
+          label="Residuos Generados"
+          value="2,450 kg"
+          icon={<TrendingDown className="w-5 h-5" />}
+          color="green"
+          description="-12% vs mes anterior"
+        />
+        <KpiCard
+          label="Tasa de Reciclaje"
+          value="68%"
+          icon={<BarChart3 className="w-5 h-5" />}
+          color="info"
+          valueColor="text-success-600 dark:text-success-400"
+          description="+5% vs mes anterior"
+        />
+        <KpiCard
+          label="Huella de Carbono"
+          value="12.5 tCO₂e"
+          icon={<Leaf className="w-5 h-5" />}
+          color="warning"
+          description="+3% vs año anterior"
+        />
+        <KpiCard
+          label="Consumo de Agua"
+          value="1,850 m³"
+          icon={<Droplet className="w-5 h-5" />}
+          color="primary"
+          description="-8% vs mes anterior"
+        />
+      </KpiCardGrid>
 
       <EmptyState
         icon={<Leaf className="w-16 h-16" />}
@@ -167,7 +121,6 @@ const GestionResiduosSection = () => {
         action={{
           label: 'Nuevo Registro',
           onClick: () => console.log('Nuevo Registro'),
-          icon: <Plus className="w-4 h-4" />,
         }}
       />
     );
@@ -175,74 +128,43 @@ const GestionResiduosSection = () => {
 
   return (
     <div className="space-y-6">
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Registros</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{residuos.count}</p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <Trash2 className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-        </Card>
+      <KpiCardGrid>
+        <KpiCard
+          label="Total Registros"
+          value={residuos.count}
+          icon={<Trash2 className="w-5 h-5" />}
+          color="primary"
+        />
+        <KpiCard
+          label="Peligrosos"
+          value="45 kg"
+          icon={<AlertTriangle className="w-5 h-5" />}
+          color="danger"
+          valueColor="text-danger-600 dark:text-danger-400"
+        />
+        <KpiCard
+          label="Reciclables"
+          value="1,680 kg"
+          icon={<CheckCircle className="w-5 h-5" />}
+          color="green"
+          valueColor="text-success-600 dark:text-success-400"
+        />
+        <KpiCard
+          label="Orgánicos"
+          value="725 kg"
+          icon={<Leaf className="w-5 h-5" />}
+          color="green"
+          valueColor="text-success-600 dark:text-success-400"
+        />
+      </KpiCardGrid>
 
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Peligrosos</p>
-              <p className="text-2xl font-bold text-danger-600 dark:text-danger-400 mt-1">45 kg</p>
-            </div>
-            <div className="w-12 h-12 bg-danger-100 dark:bg-danger-900/30 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-danger-600 dark:text-danger-400" />
-            </div>
-          </div>
-        </Card>
+      <SectionToolbar
+        title="Registros de Residuos"
+        onFilter={() => console.log('Filtros residuos')}
+        onExport={() => console.log('Exportar residuos')}
+        primaryAction={{ label: 'Nuevo Registro', onClick: () => console.log('Nuevo Registro') }}
+      />
 
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Reciclables</p>
-              <p className="text-2xl font-bold text-success-600 dark:text-success-400 mt-1">1,680 kg</p>
-            </div>
-            <div className="w-12 h-12 bg-success-100 dark:bg-success-900/30 rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-6 h-6 text-success-600 dark:text-success-400" />
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Orgánicos</p>
-              <p className="text-2xl font-bold text-success-600 dark:text-success-400 mt-1">725 kg</p>
-            </div>
-            <div className="w-12 h-12 bg-success-100 dark:bg-success-900/30 rounded-lg flex items-center justify-center">
-              <Leaf className="w-6 h-6 text-success-600 dark:text-success-400" />
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Actions */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Registros de Residuos</h3>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
-            Filtros
-          </Button>
-          <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-            Exportar
-          </Button>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Nuevo Registro
-          </Button>
-        </div>
-      </div>
-
-      {/* Table */}
       <Card variant="bordered" padding="none">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -281,9 +203,7 @@ const GestionResiduosSection = () => {
                     {residuo.cantidad} {residuo.unidad_medida}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant="info" size="sm">
-                      {formatEstado(residuo.tipo_movimiento)}
-                    </Badge>
+                    <StatusBadge status={residuo.tipo_movimiento} variant="info" />
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{residuo.area_generadora}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -331,7 +251,6 @@ const VertimientosSection = () => {
         action={{
           label: 'Nuevo Vertimiento',
           onClick: () => console.log('Nuevo Vertimiento'),
-          icon: <Plus className="w-4 h-4" />,
         }}
       />
     );
@@ -339,79 +258,47 @@ const VertimientosSection = () => {
 
   const conformes = vertimientos.results.filter((v) => v.cumple_normativa === true).length;
   const noConformes = vertimientos.results.filter((v) => v.cumple_normativa === false).length;
+  const pctCumplimiento = vertimientos.count > 0 ? Math.round((conformes / vertimientos.count) * 100) : 0;
 
   return (
     <div className="space-y-6">
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Vertimientos</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{vertimientos.count}</p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <Droplet className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-        </Card>
+      <KpiCardGrid>
+        <KpiCard
+          label="Total Vertimientos"
+          value={vertimientos.count}
+          icon={<Droplet className="w-5 h-5" />}
+          color="primary"
+        />
+        <KpiCard
+          label="Conformes"
+          value={conformes}
+          icon={<CheckCircle className="w-5 h-5" />}
+          color="green"
+          valueColor="text-success-600 dark:text-success-400"
+        />
+        <KpiCard
+          label="No Conformes"
+          value={noConformes}
+          icon={<XCircle className="w-5 h-5" />}
+          color="danger"
+          valueColor="text-danger-600 dark:text-danger-400"
+        />
+        <KpiCard
+          label="Cumplimiento"
+          value={`${pctCumplimiento}%`}
+          icon={<BarChart3 className="w-5 h-5" />}
+          color="green"
+          valueColor="text-success-600 dark:text-success-400"
+        />
+      </KpiCardGrid>
 
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Conformes</p>
-              <p className="text-2xl font-bold text-success-600 dark:text-success-400 mt-1">{conformes}</p>
-            </div>
-            <div className="w-12 h-12 bg-success-100 dark:bg-success-900/30 rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-6 h-6 text-success-600 dark:text-success-400" />
-            </div>
-          </div>
-        </Card>
+      <SectionToolbar
+        title="Registros de Vertimientos"
+        onFilter={() => console.log('Filtros vertimientos')}
+        onExport={() => console.log('Exportar vertimientos')}
+        primaryAction={{ label: 'Nuevo Vertimiento', onClick: () => console.log('Nuevo Vertimiento') }}
+      />
 
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">No Conformes</p>
-              <p className="text-2xl font-bold text-danger-600 dark:text-danger-400 mt-1">{noConformes}</p>
-            </div>
-            <div className="w-12 h-12 bg-danger-100 dark:bg-danger-900/30 rounded-lg flex items-center justify-center">
-              <XCircle className="w-6 h-6 text-danger-600 dark:text-danger-400" />
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Cumplimiento</p>
-              <p className="text-2xl font-bold text-success-600 dark:text-success-400 mt-1">
-                {vertimientos.count > 0 ? Math.round((conformes / vertimientos.count) * 100) : 0}%
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-success-100 dark:bg-success-900/30 rounded-lg flex items-center justify-center">
-              <BarChart3 className="w-6 h-6 text-success-600 dark:text-success-400" />
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Actions */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Registros de Vertimientos</h3>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
-            Filtros
-          </Button>
-          <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-            Exportar
-          </Button>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Nuevo Vertimiento
-          </Button>
-        </div>
-      </div>
-
-      {/* Table Preview */}
       <Card variant="bordered" padding="md">
         <p className="text-sm text-gray-600 dark:text-gray-400">
           Total de {vertimientos.count} vertimientos registrados
@@ -443,7 +330,6 @@ const EmisionesSection = () => {
         action={{
           label: 'Nueva Emisión',
           onClick: () => console.log('Nueva Emisión'),
-          icon: <Plus className="w-4 h-4" />,
         }}
       />
     );
@@ -451,26 +337,19 @@ const EmisionesSection = () => {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Mediciones</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{emisiones.count}</p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <Wind className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-        </Card>
-      </div>
+      <KpiCardGrid>
+        <KpiCard
+          label="Total Mediciones"
+          value={emisiones.count}
+          icon={<Wind className="w-5 h-5" />}
+          color="primary"
+        />
+      </KpiCardGrid>
 
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Emisiones Atmosféricas</h3>
-        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-          Nueva Medición
-        </Button>
-      </div>
+      <SectionToolbar
+        title="Emisiones Atmosféricas"
+        primaryAction={{ label: 'Nueva Medición', onClick: () => console.log('Nueva Medición') }}
+      />
 
       <Card variant="bordered" padding="md">
         <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -503,7 +382,6 @@ const ConsumoRecursosSection = () => {
         action={{
           label: 'Nuevo Consumo',
           onClick: () => console.log('Nuevo Consumo'),
-          icon: <Plus className="w-4 h-4" />,
         }}
       />
     );
@@ -511,62 +389,40 @@ const ConsumoRecursosSection = () => {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Registros</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{consumos.count}</p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <Zap className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-        </Card>
+      <KpiCardGrid>
+        <KpiCard
+          label="Total Registros"
+          value={consumos.count}
+          icon={<Zap className="w-5 h-5" />}
+          color="primary"
+        />
+        <KpiCard
+          label="Agua"
+          value="1,850 m³"
+          icon={<Droplet className="w-5 h-5" />}
+          color="primary"
+          valueColor="text-primary-600 dark:text-primary-400"
+        />
+        <KpiCard
+          label="Energía"
+          value="15,200 kWh"
+          icon={<Zap className="w-5 h-5" />}
+          color="warning"
+          valueColor="text-warning-600 dark:text-warning-400"
+        />
+        <KpiCard
+          label="CO₂ Generado"
+          value="3.2 tCO₂"
+          icon={<Leaf className="w-5 h-5" />}
+          color="danger"
+          valueColor="text-danger-600 dark:text-danger-400"
+        />
+      </KpiCardGrid>
 
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Agua</p>
-              <p className="text-2xl font-bold text-primary-600 dark:text-primary-400 mt-1">1,850 m³</p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <Droplet className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Energía</p>
-              <p className="text-2xl font-bold text-warning-600 dark:text-warning-400 mt-1">15,200 kWh</p>
-            </div>
-            <div className="w-12 h-12 bg-warning-100 dark:bg-warning-900/30 rounded-lg flex items-center justify-center">
-              <Zap className="w-6 h-6 text-warning-600 dark:text-warning-400" />
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">CO₂ Generado</p>
-              <p className="text-2xl font-bold text-danger-600 dark:text-danger-400 mt-1">3.2 tCO₂</p>
-            </div>
-            <div className="w-12 h-12 bg-danger-100 dark:bg-danger-900/30 rounded-lg flex items-center justify-center">
-              <Leaf className="w-6 h-6 text-danger-600 dark:text-danger-400" />
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Consumo de Recursos</h3>
-        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-          Nuevo Registro
-        </Button>
-      </div>
+      <SectionToolbar
+        title="Consumo de Recursos"
+        primaryAction={{ label: 'Nuevo Registro', onClick: () => console.log('Nuevo Consumo') }}
+      />
 
       <Card variant="bordered" padding="md">
         <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -599,7 +455,6 @@ const CertificadosSection = () => {
         action={{
           label: 'Nuevo Certificado',
           onClick: () => console.log('Nuevo Certificado'),
-          icon: <Plus className="w-4 h-4" />,
         }}
       />
     );
@@ -610,62 +465,40 @@ const CertificadosSection = () => {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Certificados</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{certificados.count}</p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <FileCheck className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-        </Card>
+      <KpiCardGrid>
+        <KpiCard
+          label="Total Certificados"
+          value={certificados.count}
+          icon={<FileCheck className="w-5 h-5" />}
+          color="primary"
+        />
+        <KpiCard
+          label="Vigentes"
+          value={vigentes}
+          icon={<CheckCircle className="w-5 h-5" />}
+          color="green"
+          valueColor="text-success-600 dark:text-success-400"
+        />
+        <KpiCard
+          label="Vencidos"
+          value={vencidos}
+          icon={<AlertTriangle className="w-5 h-5" />}
+          color="danger"
+          valueColor="text-danger-600 dark:text-danger-400"
+        />
+        <KpiCard
+          label="Próximos a Vencer"
+          value={3}
+          icon={<AlertTriangle className="w-5 h-5" />}
+          color="warning"
+          valueColor="text-warning-600 dark:text-warning-400"
+        />
+      </KpiCardGrid>
 
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Vigentes</p>
-              <p className="text-2xl font-bold text-success-600 dark:text-success-400 mt-1">{vigentes}</p>
-            </div>
-            <div className="w-12 h-12 bg-success-100 dark:bg-success-900/30 rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-6 h-6 text-success-600 dark:text-success-400" />
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Vencidos</p>
-              <p className="text-2xl font-bold text-danger-600 dark:text-danger-400 mt-1">{vencidos}</p>
-            </div>
-            <div className="w-12 h-12 bg-danger-100 dark:bg-danger-900/30 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-danger-600 dark:text-danger-400" />
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Próximos a Vencer</p>
-              <p className="text-2xl font-bold text-warning-600 dark:text-warning-400 mt-1">3</p>
-            </div>
-            <div className="w-12 h-12 bg-warning-100 dark:bg-warning-900/30 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-warning-600 dark:text-warning-400" />
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Certificados Ambientales</h3>
-        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-          Nuevo Certificado
-        </Button>
-      </div>
+      <SectionToolbar
+        title="Certificados Ambientales"
+        primaryAction={{ label: 'Nuevo Certificado', onClick: () => console.log('Nuevo Certificado') }}
+      />
 
       <Card variant="bordered" padding="md">
         <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -721,10 +554,8 @@ export default function GestionAmbientalPage() {
         description="Sistema integral de gestión ambiental: residuos, vertimientos, emisiones, consumo de recursos y certificados"
       />
 
-      {/* Tabs */}
       <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} variant="pills" />
 
-      {/* Tab Content */}
       <div className="mt-6">
         {activeTab === 'aspectos' && <AspectosAmbientalesSection />}
         {activeTab === 'residuos' && <GestionResiduosSection />}

@@ -6,7 +6,7 @@ Este paquete contiene los modelos del módulo Core organizados por dominio:
 - models_rbac_permisos: Permiso, PermisoModulo, PermisoAccion, PermisoAlcance
 - models_rbac_roles: Role, Group, UserRole, UserGroup
 - models_rbac_adicionales: RolAdicional, UserRolAdicional, CargoSectionAccess
-- models_system_modules: SystemModule, ModuleTab, TabSection, BrandingConfig
+- models_system_modules: SystemModule, ModuleTab, TabSection
 - models_menu: MenuItem
 """
 
@@ -55,13 +55,27 @@ from apps.core.models.models_rbac_adicionales import (
 )
 
 # =============================================================================
+# RBAC - PLANTILLAS DE PERMISOS (v4.1)
+# =============================================================================
+from apps.core.models.models_permission_templates import (
+    PermissionTemplate,
+    PermissionTemplateApplication,
+)
+
+# =============================================================================
+# RBAC - HISTORIAL DE CAMBIOS (v4.1)
+# =============================================================================
+from apps.core.models.models_permission_history import (
+    PermissionChangeLog,
+)
+
+# =============================================================================
 # SYSTEM MODULES & CONFIG
 # =============================================================================
 from apps.core.models.models_system_modules import (
     SystemModule,
     ModuleTab,
     TabSection,
-    BrandingConfig,
 )
 
 # =============================================================================
@@ -147,11 +161,15 @@ __all__ = [
     'RolAdicionalPermiso',
     'UserRolAdicional',
     'CargoSectionAccess',
+    # Permission Templates (v4.1)
+    'PermissionTemplate',
+    'PermissionTemplateApplication',
+    # Permission History (v4.1)
+    'PermissionChangeLog',
     # System Modules
     'SystemModule',
     'ModuleTab',
     'TabSection',
-    'BrandingConfig',
     # Menu
     'MenuItem',
     # User Sessions (MS-002-A)

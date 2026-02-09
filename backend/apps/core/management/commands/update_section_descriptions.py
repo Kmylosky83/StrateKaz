@@ -37,7 +37,7 @@ class Command(BaseCommand):
             'configuracion.sedes': 'Ubicaciones físicas de la empresa',
             'configuracion.integraciones': 'Conexiones con sistemas externos',
             'configuracion.branding': 'Identidad visual y colores',
-            'configuracion.normas-iso': 'Normas ISO y sistemas de gestión',
+            'configuracion.normas_iso': 'Normas ISO y sistemas de gestión',
             'configuracion.modulos': 'Activar o desactivar funcionalidades',
 
             # Identidad Corporativa

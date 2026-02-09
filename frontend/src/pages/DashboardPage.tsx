@@ -30,25 +30,25 @@ const getIconComponent = (iconName: string | undefined): LucideIcon => {
  * Sincronizado con routes/index.tsx y seed_estructura_final.py
  */
 const MODULE_ROUTES: Record<string, string> = {
-  // Nivel 1: Dirección Estratégica
+  // Nivel 1-2: Fundacion + Estructura
   'gestion_estrategica': '/gestion-estrategica',
-  'soporte_estrategico': '/soporte-estrategico',
-  // Nivel 2: Cumplimiento
+  // Nivel 3: Direccion Estrategica (soporte redirige a HSEQ)
+  'soporte_estrategico': '/hseq',
+  // Nivel 4: Talento Humano
+  'talent_hub': '/talento',
+  // Nivel 5: Riesgos y Cumplimiento
   'motor_cumplimiento': '/cumplimiento',
   'motor_riesgos': '/riesgos',
   'workflow_engine': '/workflows',
-  // Nivel 3: Torre de Control
+  // Nivel 6: Gestion HSEQ
   'hseq_management': '/hseq',
-  // Nivel 4: Cadena de Valor
-  'supply_chain': '/proveedores',
+  // Nivel 7: Operaciones y Soporte
+  'supply_chain': '/supply-chain',
   'production_ops': '/produccion',
   'logistics_fleet': '/logistica',
   'sales_crm': '/ventas',
-  // Nivel 5: Habilitadores
-  'talent_hub': '/talento',
   'admin_finance': '/finanzas',
   'accounting': '/contabilidad',
-  // Nivel 6: Inteligencia
   'analytics': '/analytics',
   'audit_system': '/auditoria',
 };
@@ -138,6 +138,7 @@ const getModuleRoute = (module: {
 
 export const DashboardPage = () => {
   const user = useAuthStore((state) => state.user);
+  const tenantUser = useAuthStore((state) => state.tenantUser);
   const { companyName } = useBrandingConfig();
   const { data: modulesTree, isLoading } = useModulesTree();
 
@@ -170,7 +171,7 @@ export const DashboardPage = () => {
       {/* Header */}
       <motion.header variants={headerVariants}>
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-          Bienvenido, {user?.first_name || user?.username}
+          Bienvenido, {user?.first_name || tenantUser?.first_name || tenantUser?.email?.split('@')[0]}
         </h1>
         <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
           Sistema Integrado de Gestión •{' '}

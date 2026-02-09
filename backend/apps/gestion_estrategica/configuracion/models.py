@@ -3,9 +3,14 @@ Modelos del módulo Configuración - Dirección Estratégica
 Sistema de Gestión StrateKaz
 
 Define:
-- EmpresaConfig: Datos fiscales y legales de la empresa (Singleton)
 - SedeEmpresa: Sedes y ubicaciones
 - IntegracionExterna: Integraciones con servicios externos
+- NormaISO: Normas ISO y sistemas de gestión
+- TipoSede, TipoCambio: Tipos dinámicos configurables
+
+NOTA: EmpresaConfig fue ELIMINADO - todos los datos fiscales y branding
+ahora están consolidados en el modelo Tenant (apps.tenant.models.Tenant)
+Ver: apps.tenant.models para la fuente única de verdad.
 
 NOTA: UnidadMedida y ConsecutivoConfig fueron migrados a organizacion.
 Ver: apps.gestion_estrategica.organizacion.models
@@ -154,582 +159,68 @@ def validar_nit_colombiano(value):
 
 
 # ==============================================================================
-# MODELO EMPRESA CONFIG (SINGLETON)
+# MODELO EMPRESA CONFIG
+# ==============================================================================
+# Modelo requerido por BaseCompanyModel (FK 'configuracion.EmpresaConfig').
+# Se crea una instancia por tenant schema en el seed inicial.
+# Los datos reales de la empresa están en el modelo Tenant (schema público).
 # ==============================================================================
 
 class EmpresaConfig(TimestampedModel):
     """
-    Configuración de Datos Fiscales y Legales de la Empresa
+    Registro de empresa por tenant schema.
 
-    Modelo Singleton: Solo puede existir un registro en la base de datos.
-    Almacena toda la información fiscal, legal y de configuración regional
-    de la empresa para uso en reportes, certificados y documentos oficiales.
-
-    Hereda de TimestampedModel:
-    - created_at, updated_at (automáticos)
+    Requerido por BaseCompanyModel como FK para todos los modelos del sistema.
+    Se crea automáticamente una instancia en cada tenant al momento del seed.
+    Los datos completos de la empresa se gestionan via /api/tenant/tenants/me/.
     """
-
-    # =========================================================================
-    # DATOS DE IDENTIFICACIÓN FISCAL
-    # =========================================================================
 
     nit = models.CharField(
         max_length=20,
         unique=True,
         verbose_name='NIT',
-        help_text='Número de Identificación Tributaria (ej: 900123456-7)',
         validators=[validar_nit_colombiano]
     )
     razon_social = models.CharField(
         max_length=250,
         verbose_name='Razón Social',
-        help_text='Nombre legal completo de la empresa'
-    )
-    nombre_comercial = models.CharField(
-        max_length=200,
-        blank=True,
-        null=True,
-        verbose_name='Nombre Comercial',
-        help_text='Nombre comercial o de fantasía (opcional)'
-    )
-    representante_legal = models.CharField(
-        max_length=200,
-        verbose_name='Representante Legal',
-        help_text='Nombre completo del representante legal'
-    )
-    cedula_representante = models.CharField(
-        max_length=20,
-        blank=True,
-        null=True,
-        verbose_name='Cédula del Representante',
-        help_text='Número de cédula del representante legal'
-    )
-    tipo_sociedad = models.CharField(
-        max_length=30,
-        choices=TIPO_SOCIEDAD_CHOICES,
-        default='SAS',
-        verbose_name='Tipo de Sociedad',
-        help_text='Tipo de persona jurídica'
-    )
-    actividad_economica = models.CharField(
-        max_length=10,
-        blank=True,
-        null=True,
-        verbose_name='Actividad Económica (CIIU)',
-        help_text='Código de Clasificación Industrial Internacional Uniforme'
-    )
-    descripcion_actividad = models.CharField(
-        max_length=300,
-        blank=True,
-        null=True,
-        verbose_name='Descripción de Actividad',
-        help_text='Descripción de la actividad económica principal'
-    )
-    regimen_tributario = models.CharField(
-        max_length=30,
-        choices=REGIMEN_TRIBUTARIO_CHOICES,
-        default='COMUN',
-        verbose_name='Régimen Tributario',
-        help_text='Régimen tributario de la empresa'
-    )
-
-    # =========================================================================
-    # DATOS DE CONTACTO OFICIAL
-    # =========================================================================
-
-    direccion_fiscal = models.TextField(
-        verbose_name='Dirección Fiscal',
-        help_text='Dirección fiscal completa'
-    )
-    ciudad = models.CharField(
-        max_length=100,
-        verbose_name='Ciudad'
-    )
-    departamento = models.CharField(
-        max_length=50,
-        choices=DEPARTAMENTOS_COLOMBIA,
-        verbose_name='Departamento'
-    )
-    pais = models.CharField(
-        max_length=100,
-        default='Colombia',
-        verbose_name='País'
-    )
-    codigo_postal = models.CharField(
-        max_length=10,
-        blank=True,
-        null=True,
-        verbose_name='Código Postal'
-    )
-    telefono_principal = models.CharField(
-        max_length=20,
-        verbose_name='Teléfono Principal',
-        help_text='Teléfono fijo o móvil principal'
-    )
-    telefono_secundario = models.CharField(
-        max_length=20,
-        blank=True,
-        null=True,
-        verbose_name='Teléfono Secundario'
-    )
-    email_corporativo = models.EmailField(
-        verbose_name='Email Corporativo',
-        help_text='Email institucional de la empresa'
-    )
-    sitio_web = models.URLField(
-        blank=True,
-        null=True,
-        verbose_name='Sitio Web'
-    )
-
-    # =========================================================================
-    # DATOS DE REGISTRO
-    # =========================================================================
-
-    matricula_mercantil = models.CharField(
-        max_length=50,
-        blank=True,
-        null=True,
-        verbose_name='Matrícula Mercantil',
-        help_text='Número de matrícula en Cámara de Comercio'
-    )
-    camara_comercio = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
-        verbose_name='Cámara de Comercio',
-        help_text='Cámara de Comercio donde está registrada'
-    )
-    fecha_constitucion = models.DateField(
-        blank=True,
-        null=True,
-        verbose_name='Fecha de Constitución',
-        help_text='Fecha de constitución de la sociedad'
-    )
-    fecha_inscripcion_registro = models.DateField(
-        blank=True,
-        null=True,
-        verbose_name='Fecha de Inscripción en Registro',
-        help_text='Fecha de inscripción en el registro mercantil'
-    )
-
-    # =========================================================================
-    # CONFIGURACIÓN REGIONAL
-    # =========================================================================
-
-    zona_horaria = models.CharField(
-        max_length=50,
-        choices=TIMEZONE_CHOICES,
-        default='America/Bogota',
-        verbose_name='Zona Horaria'
-    )
-    formato_fecha = models.CharField(
-        max_length=20,
-        choices=FORMATO_FECHA_CHOICES,
-        default='DD/MM/YYYY',
-        verbose_name='Formato de Fecha'
-    )
-    moneda = models.CharField(
-        max_length=3,
-        choices=MONEDA_CHOICES,
-        default='COP',
-        verbose_name='Moneda'
-    )
-    simbolo_moneda = models.CharField(
-        max_length=5,
-        default='$',
-        verbose_name='Símbolo de Moneda'
     )
     separador_miles = models.CharField(
         max_length=1,
         default='.',
         verbose_name='Separador de Miles',
-        help_text='Carácter para separar miles (. o ,)'
     )
     separador_decimales = models.CharField(
         max_length=1,
         default=',',
         verbose_name='Separador de Decimales',
-        help_text='Carácter para separar decimales (. o ,)'
-    )
-
-    # =========================================================================
-    # UNIDADES DE MEDIDA
-    # =========================================================================
-
-    unidad_capacidad_default = models.ForeignKey(
-        'organizacion.UnidadMedida',
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name='empresas_capacidad_default',
-        verbose_name='Unidad de Capacidad por Defecto',
-        help_text='Unidad de medida predeterminada para capacidad de almacenamiento (ej: kg, ton, m³)'
-    )
-
-    # =========================================================================
-    # BRANDING Y COLORES CORPORATIVOS
-    # =========================================================================
-    # ⚠️ DEPRECATED: Estos campos están deprecados desde v3.9.0
-    # La fuente única de verdad para branding es ahora BrandingConfig
-    # (apps.core.models.models_system_modules.BrandingConfig)
-    # Estos campos se mantienen por compatibilidad con datos existentes.
-    # Para nuevas implementaciones, usar BrandingConfig.
-    # =========================================================================
-
-    logo = models.ImageField(
-        upload_to='empresa/logos/',
-        blank=True,
-        null=True,
-        verbose_name='Logo Principal',
-        help_text='Logo de la empresa en formato PNG o SVG (recomendado fondo transparente)'
-    )
-    logo_dark = models.ImageField(
-        upload_to='empresa/logos/',
-        blank=True,
-        null=True,
-        verbose_name='Logo para Modo Oscuro',
-        help_text='Versión del logo para fondos oscuros (opcional)'
-    )
-    favicon = models.ImageField(
-        upload_to='empresa/favicons/',
-        blank=True,
-        null=True,
-        verbose_name='Favicon',
-        help_text='Icono pequeño para pestañas del navegador (32x32 o 64x64 px)'
-    )
-    color_primario = models.CharField(
-        max_length=7,
-        blank=True,
-        null=True,
-        verbose_name='Color Primario',
-        help_text='Color principal de la marca en formato HEX (ej: #3B82F6)'
-    )
-    color_secundario = models.CharField(
-        max_length=7,
-        blank=True,
-        null=True,
-        verbose_name='Color Secundario',
-        help_text='Color secundario/acento en formato HEX (ej: #10B981)'
-    )
-    color_fondo_showcase = models.CharField(
-        max_length=7,
-        blank=True,
-        null=True,
-        verbose_name='Color Fondo Showcase',
-        help_text='Color de fondo para presentaciones (ej: #1F2937)'
-    )
-    gradiente_mision = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
-        verbose_name='Gradiente Misión',
-        help_text='Clases Tailwind para el gradiente de la slide de Misión'
-    )
-    gradiente_vision = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
-        verbose_name='Gradiente Visión',
-        help_text='Clases Tailwind para el gradiente de la slide de Visión'
-    )
-    gradiente_politica = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
-        verbose_name='Gradiente Política',
-        help_text='Clases Tailwind para el gradiente de la slide de Política'
-    )
-    gradiente_valores = models.JSONField(
-        blank=True,
-        null=True,
-        verbose_name='Gradientes Valores',
-        help_text='Lista de gradientes Tailwind para carrusel de valores'
-    )
-    slogan = models.CharField(
-        max_length=200,
-        blank=True,
-        null=True,
-        verbose_name='Slogan',
-        help_text='Frase corta que identifica a la empresa'
-    )
-
-    # =========================================================================
-    # BRANDING ADICIONAL
-    # =========================================================================
-    # ⚠️ DEPRECATED: Estos campos están deprecados desde v3.9.0
-    # La fuente única de verdad para branding es ahora BrandingConfig
-    # (apps.core.models.models_system_modules.BrandingConfig)
-    # =========================================================================
-
-    logo_white = models.ImageField(
-        upload_to='empresa/logos/',
-        blank=True,
-        null=True,
-        verbose_name='Logo Blanco',
-        help_text='Versión del logo en blanco para fondos oscuros'
-    )
-    login_background = models.ImageField(
-        upload_to='empresa/backgrounds/',
-        blank=True,
-        null=True,
-        verbose_name='Fondo de Login',
-        help_text='Imagen de fondo para la página de login'
-    )
-    color_acento = models.CharField(
-        max_length=7,
-        blank=True,
-        null=True,
-        verbose_name='Color de Acento',
-        help_text='Color de acento para botones y destacados (ej: #10B981)'
-    )
-    color_sidebar = models.CharField(
-        max_length=7,
-        blank=True,
-        null=True,
-        default='#1E293B',
-        verbose_name='Color del Sidebar',
-        help_text='Color de fondo del menú lateral'
-    )
-    color_fondo = models.CharField(
-        max_length=7,
-        blank=True,
-        null=True,
-        default='#F5F5F5',
-        verbose_name='Color de Fondo',
-        help_text='Color de fondo general de la aplicación'
-    )
-
-    # =========================================================================
-    # PWA (Progressive Web App)
-    # =========================================================================
-
-    pwa_name = models.CharField(
-        max_length=200,
-        blank=True,
-        null=True,
-        verbose_name='PWA - Nombre',
-        help_text='Nombre completo de la app (ej: "Constructora ABC - ERP")'
-    )
-    pwa_short_name = models.CharField(
-        max_length=12,
-        blank=True,
-        null=True,
-        verbose_name='PWA - Nombre Corto',
-        help_text='Nombre corto para el ícono del dispositivo (máx 12 caracteres)'
-    )
-    pwa_description = models.TextField(
-        blank=True,
-        null=True,
-        verbose_name='PWA - Descripción',
-        help_text='Descripción de la aplicación para tiendas de apps'
-    )
-    pwa_theme_color = models.CharField(
-        max_length=7,
-        blank=True,
-        null=True,
-        verbose_name='PWA - Color del Tema',
-        help_text='Color de la barra de estado del navegador (HEX)'
-    )
-    pwa_background_color = models.CharField(
-        max_length=7,
-        blank=True,
-        null=True,
-        default='#FFFFFF',
-        verbose_name='PWA - Color de Fondo',
-        help_text='Color de fondo durante la carga de la app'
-    )
-    pwa_icon_192 = models.ImageField(
-        upload_to='empresa/pwa/',
-        blank=True,
-        null=True,
-        verbose_name='PWA - Ícono 192x192',
-        help_text='Ícono de 192x192 píxeles para PWA (PNG)'
-    )
-    pwa_icon_512 = models.ImageField(
-        upload_to='empresa/pwa/',
-        blank=True,
-        null=True,
-        verbose_name='PWA - Ícono 512x512',
-        help_text='Ícono de 512x512 píxeles para PWA (PNG)'
-    )
-    pwa_icon_maskable = models.ImageField(
-        upload_to='empresa/pwa/',
-        blank=True,
-        null=True,
-        verbose_name='PWA - Ícono Maskable',
-        help_text='Ícono adaptativo para Android (PNG con área segura)'
-    )
-
-    # =========================================================================
-    # PERSONALIZACIÓN ADICIONAL
-    # =========================================================================
-
-    mostrar_powered_by = models.BooleanField(
-        default=True,
-        verbose_name='Mostrar "Powered by StrateKaz"',
-        help_text='Muestra el crédito de StrateKaz en el footer'
-    )
-    texto_footer = models.CharField(
-        max_length=200,
-        blank=True,
-        null=True,
-        verbose_name='Texto del Footer',
-        help_text='Texto personalizado para el pie de página'
-    )
-
-    # =========================================================================
-    # AUDITORÍA (created_at, updated_at heredados de TimestampedModel)
-    # =========================================================================
-
-    updated_by = models.ForeignKey(
-        'core.User',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='empresa_config_updates',
-        verbose_name='Actualizado por',
-        help_text='Usuario que realizó la última actualización'
     )
 
     class Meta:
         db_table = 'configuracion_empresa'
         verbose_name = 'Configuración de Empresa'
-        verbose_name_plural = 'Configuración de Empresa'
+        verbose_name_plural = 'Configuraciones de Empresa'
 
     def __str__(self):
         return f"{self.razon_social} - NIT: {self.nit}"
 
-    def save(self, *args, **kwargs):
-        """
-        Override save para garantizar que solo exista un registro (Singleton).
-        """
-        # Si ya existe un registro y no es este, lanzar error
-        existing = EmpresaConfig.objects.exclude(pk=self.pk).first()
-        if existing:
-            raise ValidationError(
-                'Ya existe una configuración de empresa. '
-                'Solo puede haber un registro. Use get_instance() para obtenerlo.'
-            )
-
-        # Formatear NIT antes de guardar
-        if self.nit:
-            self.nit = self._formatear_nit(self.nit)
-
-        super().save(*args, **kwargs)
-
-    def clean(self):
-        """Validaciones adicionales."""
-        super().clean()
-
-        # Validar que separador de miles y decimales sean diferentes
-        if self.separador_miles == self.separador_decimales:
-            raise ValidationError({
-                'separador_decimales': 'El separador de decimales debe ser diferente al de miles.'
-            })
-
-    @staticmethod
-    def _formatear_nit(nit):
-        """Formatea el NIT al formato estándar: 900123456-7"""
-        # Limpiar todo excepto dígitos
-        solo_digitos = re.sub(r'\D', '', nit)
-
-        if len(solo_digitos) == 10:
-            return f"{solo_digitos[:9]}-{solo_digitos[9]}"
-
-        return nit
-
     @classmethod
     def get_instance(cls):
-        """
-        Obtiene la única instancia de configuración de empresa.
-
-        Returns:
-            EmpresaConfig: La instancia existente o None si no existe.
-        """
+        """Obtiene la instancia de configuración del tenant actual."""
         return cls.objects.first()
 
     @classmethod
     def get_or_create_default(cls):
-        """
-        Obtiene la instancia existente o crea una con valores por defecto.
-
-        Returns:
-            tuple: (instance, created) donde created es True si se creó nueva.
-        """
+        """Obtiene o crea instancia con valores por defecto."""
         instance = cls.get_instance()
         if instance:
             return instance, False
-
-        # Crear instancia con valores mínimos por defecto
         instance = cls(
             nit='000000000-0',
             razon_social='Empresa Sin Configurar',
-            representante_legal='Por Definir',
-            direccion_fiscal='Por Definir',
-            ciudad='Bogotá',
-            departamento='CUNDINAMARCA',
-            telefono_principal='0000000',
-            email_corporativo='configurar@empresa.com',
         )
         instance.save()
         return instance, True
-
-    @property
-    def nit_sin_dv(self):
-        """Retorna el NIT sin el dígito de verificación."""
-        if self.nit:
-            return self.nit.split('-')[0]
-        return None
-
-    @property
-    def digito_verificacion(self):
-        """Retorna el dígito de verificación del NIT."""
-        if self.nit and '-' in self.nit:
-            return self.nit.split('-')[1]
-        return None
-
-    @property
-    def direccion_completa(self):
-        """Retorna la dirección completa formateada."""
-        partes = [self.direccion_fiscal]
-        if self.ciudad:
-            partes.append(self.ciudad)
-        if self.departamento:
-            # Obtener nombre display del departamento
-            for code, name in DEPARTAMENTOS_COLOMBIA:
-                if code == self.departamento:
-                    partes.append(name)
-                    break
-        if self.pais and self.pais != 'Colombia':
-            partes.append(self.pais)
-        return ', '.join(partes)
-
-    def formatear_valor(self, valor):
-        """
-        Formatea un valor numérico según la configuración regional.
-
-        Args:
-            valor: Número a formatear
-
-        Returns:
-            str: Valor formateado con símbolo de moneda
-        """
-        try:
-            # Formatear con separadores
-            entero = int(valor)
-            decimal = valor - entero
-
-            # Formatear parte entera con separador de miles
-            entero_str = f"{entero:,}".replace(',', self.separador_miles)
-
-            if decimal > 0:
-                decimal_str = f"{decimal:.2f}"[2:]  # Obtener solo decimales
-                return f"{self.simbolo_moneda} {entero_str}{self.separador_decimales}{decimal_str}"
-
-            return f"{self.simbolo_moneda} {entero_str}"
-        except (ValueError, TypeError):
-            return str(valor)
 
 
 # ==============================================================================
@@ -1263,12 +754,14 @@ class SedeEmpresa(AuditModel, SoftDeleteModel):
             return str(self.capacidad_almacenamiento)
 
         # Usar el método de formateo de la unidad
-        empresa_config = EmpresaConfig.get_instance()
+        # Los valores regionales ahora vienen del Tenant
+        from django.db import connection
         locale_config = None
-        if empresa_config:
+        if hasattr(connection, 'tenant') and connection.tenant:
+            tenant = connection.tenant
             locale_config = {
-                'separador_miles': empresa_config.separador_miles,
-                'separador_decimales': empresa_config.separador_decimales,
+                'separador_miles': getattr(tenant, 'separador_miles', '.'),
+                'separador_decimales': getattr(tenant, 'separador_decimales', ','),
             }
 
         return self.unidad_capacidad.formatear(
@@ -1304,14 +797,8 @@ class SedeEmpresa(AuditModel, SoftDeleteModel):
         """Validaciones personalizadas."""
         super().clean()
 
-        # Validar que exista EmpresaConfig antes de crear sedes
-        if not self.pk:  # Solo en creación
-            empresa_config = EmpresaConfig.get_instance()
-            if not empresa_config:
-                raise ValidationError(
-                    'Debe configurar los datos de la empresa antes de crear sedes. '
-                    'Vaya a Configuración > Datos de Empresa para completar la información.'
-                )
+        # Validar que exista un tenant activo antes de crear sedes
+        # (Esta validación ya es implícita en el contexto multi-tenant)
 
         # Validar que solo haya una sede principal
         if self.es_sede_principal:
@@ -1455,6 +942,12 @@ class TipoServicioIntegracion(TimestampedModel, SoftDeleteModel):
             {'code': 'RASTREO', 'name': 'Rastreo GPS', 'category': 'Geolocalización', 'icon': 'Navigation', 'orden': 51},
             # Legal
             {'code': 'FIRMA_DIGITAL', 'name': 'Firma Digital Certificada', 'category': 'Legal', 'icon': 'PenTool', 'orden': 60},
+            # Cumplimiento
+            {'code': 'OFAC', 'name': 'Validación OFAC/Listas Restrictivas', 'category': 'Cumplimiento', 'icon': 'ShieldAlert', 'orden': 61},
+            {'code': 'SAGRILAFT', 'name': 'SAGRILAFT/SARLAFT', 'category': 'Cumplimiento', 'icon': 'ShieldCheck', 'orden': 62},
+            # Inteligencia Artificial
+            {'code': 'IA', 'name': 'Inteligencia Artificial', 'category': 'IA', 'icon': 'Brain', 'orden': 65},
+            {'code': 'OCR', 'name': 'Reconocimiento de Documentos (OCR)', 'category': 'IA', 'icon': 'ScanLine', 'orden': 66},
             # ERP/CRM
             {'code': 'ERP', 'name': 'Integración con ERP Externo', 'category': 'Sistemas', 'icon': 'Server', 'orden': 70},
             {'code': 'CRM', 'name': 'Integración con CRM Externo', 'category': 'Sistemas', 'icon': 'UserCheck', 'orden': 71},

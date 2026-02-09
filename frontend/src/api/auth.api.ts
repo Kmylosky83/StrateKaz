@@ -1,17 +1,54 @@
 import axios from './axios-config';
-import type { LoginCredentials, LoginResponse, User } from '@/types/auth.types';
+import type {
+  LoginCredentials,
+  LoginResponse,
+  User,
+  TenantMeResponse,
+  SelectTenantResponse,
+} from '@/types/auth.types';
 
+/**
+ * API de autenticación multi-tenant.
+ *
+ * FLUJO:
+ * 1. login() - Autentica con TenantUser (schema público)
+ * 2. getTenantProfile() - Obtiene info del TenantUser + tenants accesibles
+ * 3. selectTenant() - Selecciona un tenant para trabajar
+ * 4. Una vez en un tenant, las demás APIs usan X-Tenant-ID header
+ */
 export const authAPI = {
   /**
-   * Iniciar sesión
+   * Iniciar sesión con TenantUser (sistema multi-tenant)
+   * Retorna tokens JWT + info de usuario + lista de tenants accesibles
    */
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
-    const response = await axios.post<LoginResponse>('/auth/login/', credentials);
+    const response = await axios.post<LoginResponse>('/tenant/auth/login/', credentials);
     return response.data;
   },
 
   /**
-   * Obtener perfil del usuario autenticado
+   * Obtener perfil del TenantUser autenticado y sus tenants accesibles
+   * Usa el token JWT para identificar al usuario
+   */
+  getTenantProfile: async (): Promise<TenantMeResponse> => {
+    const response = await axios.get<TenantMeResponse>('/tenant/auth/me/');
+    return response.data;
+  },
+
+  /**
+   * Seleccionar/cambiar de tenant
+   * Guarda la preferencia y retorna info del tenant seleccionado
+   */
+  selectTenant: async (tenantId: number): Promise<SelectTenantResponse> => {
+    const response = await axios.post<SelectTenantResponse>('/tenant/auth/select-tenant/', {
+      tenant_id: tenantId,
+    });
+    return response.data;
+  },
+
+  /**
+   * Obtener perfil del usuario dentro del tenant actual
+   * Este endpoint requiere X-Tenant-ID header
    */
   getProfile: async (): Promise<User> => {
     const response = await axios.get<User>('/core/users/me/');
@@ -39,23 +76,21 @@ export const authAPI = {
   /**
    * Refrescar token de acceso
    */
-  refreshToken: async (refreshToken: string): Promise<{ access: string }> => {
-    const response = await axios.post<{ access: string }>('/auth/refresh/', {
+  refreshToken: async (refreshToken: string): Promise<{ access: string; refresh?: string }> => {
+    const response = await axios.post<{ access: string; refresh?: string }>('/tenant/auth/refresh/', {
       refresh: refreshToken,
     });
     return response.data;
   },
 
   /**
-   * Cerrar sesión (P0-03: Invalida el refresh token en el servidor)
-   * Esto agrega el token a la blacklist para que no pueda ser usado nuevamente
+   * Cerrar sesión (invalida el refresh token en el servidor)
    */
   logout: async (refreshToken: string): Promise<void> => {
     try {
-      await axios.post('/auth/logout/', { refresh: refreshToken });
+      await axios.post('/tenant/auth/logout/', { refresh: refreshToken });
     } catch (error) {
       // Si falla el logout en servidor (token ya inválido), continuamos
-      // El cliente debe limpiar su estado de todas formas
       console.warn('Server logout failed (token may be expired):', error);
     }
   },

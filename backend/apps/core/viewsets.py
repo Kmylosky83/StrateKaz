@@ -118,6 +118,38 @@ class UserViewSet(viewsets.ModelViewSet):
              return [IsAuthenticated()]
         return [permission() for permission in self.permission_classes]
 
+    def perform_update(self, serializer):
+        """
+        Actualizar usuario con protección contra auto-degradación.
+
+        Si el usuario está cambiando su propio cargo y es el último ADMIN
+        del tenant, se rechaza el cambio para evitar dejar el tenant sin
+        administrador.
+        """
+        instance = serializer.instance
+        new_cargo_id = serializer.validated_data.get('cargo')
+
+        # Solo validar si se está cambiando el cargo
+        if new_cargo_id is not None and instance.cargo_id != getattr(new_cargo_id, 'id', new_cargo_id):
+            # Verificar si el usuario actual tiene cargo ADMIN
+            current_cargo = instance.cargo
+            if current_cargo and current_cargo.code == 'ADMIN':
+                # Contar cuántos usuarios activos tienen cargo ADMIN
+                admin_count = User.objects.filter(
+                    cargo__code='ADMIN',
+                    is_active=True,
+                    deleted_at__isnull=True
+                ).count()
+
+                if admin_count <= 1:
+                    from rest_framework.exceptions import ValidationError
+                    raise ValidationError({
+                        'cargo': 'No se puede cambiar el cargo del único Administrador del sistema. '
+                                'Asigne cargo ADMIN a otro usuario primero.'
+                    })
+
+        serializer.save()
+
     def perform_create(self, serializer):
         """Crear usuario con logging de auditoría"""
         user = serializer.save()

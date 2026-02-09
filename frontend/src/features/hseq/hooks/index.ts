@@ -29,5 +29,8 @@ export * from './useGestionAmbiental';
 // Mejora Continua
 export * from './useMejoraContinua';
 
+// Higiene Industrial
+export * from './useHigieneIndustrial';
+
 // Gestión de Comités
 export * from './useComites';

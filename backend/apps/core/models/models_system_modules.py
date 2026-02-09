@@ -4,7 +4,9 @@ Modelos de Configuracion del Sistema - StrateKaz
 SystemModule: Marketplace de modulos On/Off
 ModuleTab: Tabs dentro de modulos
 TabSection: Secciones dentro de tabs
-BrandingConfig: Logo, colores, favicon
+
+NOTA: BrandingConfig fue ELIMINADO - el branding se maneja ahora
+directamente en el modelo Tenant (apps.tenant.models.Tenant)
 """
 from django.db import models
 from django.core.exceptions import ValidationError
@@ -18,12 +20,12 @@ class SystemModule(models.Model):
     """
 
     CATEGORY_CHOICES = [
-        ('ESTRATEGICO', 'Nivel Estrategico'),
-        ('MOTOR', 'Motores del Sistema'),
-        ('INTEGRAL', 'Gestion Integral'),
-        ('MISIONAL', 'Nivel Misional'),
-        ('APOYO', 'Nivel de Apoyo'),
-        ('INTELIGENCIA', 'Inteligencia de Negocio'),
+        ('STRATEGIC', 'Nivel Estrategico'),
+        ('COMPLIANCE', 'Motores del Sistema'),
+        ('INTEGRATED', 'Gestion Integral'),
+        ('OPERATIONAL', 'Nivel Misional'),
+        ('SUPPORT', 'Nivel de Apoyo'),
+        ('INTELLIGENCE', 'Inteligencia de Negocio'),
     ]
 
     COLOR_CHOICES = [
@@ -41,12 +43,12 @@ class SystemModule(models.Model):
 
     # Mapeo de colores por categoria (Design System)
     CATEGORY_DEFAULT_COLORS = {
-        'ESTRATEGICO': 'purple',
-        'MOTOR': 'teal',
-        'INTEGRAL': 'orange',
-        'MISIONAL': 'blue',
-        'APOYO': 'green',
-        'INTELIGENCIA': 'purple',
+        'STRATEGIC': 'purple',
+        'COMPLIANCE': 'teal',
+        'INTEGRATED': 'orange',
+        'OPERATIONAL': 'blue',
+        'SUPPORT': 'green',
+        'INTELLIGENCE': 'purple',
     }
 
     code = models.CharField(
@@ -146,18 +148,48 @@ class SystemModule(models.Model):
     def __str__(self):
         return f"{self.name} ({self.code})"
 
+    # Cadenas de dependencia implícitas (FKs directos entre módulos)
+    # Estas dependencias NO están en M2M dependencies pero sí existen a nivel de BD
+    IMPLICIT_DEPENDENCY_CHAIN = {
+        'talent_hub': ['hseq_management'],  # Colaborador FK en medicina_laboral, accidentalidad
+        'workflow_engine': [],  # firma_digital afecta identidad, pero solo es warning
+    }
+
+    # Módulos que requieren advertencia (no bloqueo) al desactivar
+    DISABLE_WARNINGS = {
+        'workflow_engine': 'Desactivar este módulo afectará las firmas digitales en políticas de Identidad Corporativa.',
+    }
+
     def can_disable(self):
         """Verifica si el modulo puede ser desactivado"""
         if self.is_core:
             return False, "Este es un modulo core y no puede desactivarse"
 
-        # Verificar si hay modulos que dependen de este
+        # Verificar si hay modulos que dependen de este (M2M explícito)
         dependents = self.dependents.filter(is_enabled=True)
         if dependents.exists():
             names = ", ".join(dependents.values_list('name', flat=True))
             return False, f"Los siguientes modulos dependen de este: {names}"
 
+        # Verificar cadenas de dependencia implícitas (FKs directos)
+        implicit_deps = self.IMPLICIT_DEPENDENCY_CHAIN.get(self.code, [])
+        if implicit_deps:
+            blocking_modules = SystemModule.objects.filter(
+                code__in=implicit_deps,
+                is_enabled=True,
+            )
+            if blocking_modules.exists():
+                names = ", ".join(blocking_modules.values_list('name', flat=True))
+                return False, (
+                    f"No se puede desactivar '{self.name}' porque los siguientes "
+                    f"módulos activos dependen de él: {names}"
+                )
+
         return True, None
+
+    def get_disable_warning(self):
+        """Retorna advertencia al desactivar (no bloquea, solo informa)"""
+        return self.DISABLE_WARNINGS.get(self.code, None)
 
     def enable(self):
         """Activa el modulo y sus dependencias"""
@@ -423,222 +455,3 @@ class TabSection(models.Model):
     def full_path(self):
         """Retorna la ruta completa de la seccion"""
         return f"{self.tab.module.code}.{self.tab.code}.{self.code}"
-
-
-class BrandingConfig(models.Model):
-    """
-    Configuracion de Branding - Logo, Colores, Favicon
-
-    Permite personalizar la apariencia del sistema.
-    """
-
-    company_name = models.CharField(
-        max_length=200,
-        default='StrateKaz',
-        verbose_name='Nombre de la Empresa'
-    )
-    company_short_name = models.CharField(
-        max_length=50,
-        default='GRASHNORTE',
-        verbose_name='Nombre Corto'
-    )
-    company_slogan = models.CharField(
-        max_length=200,
-        blank=True,
-        null=True,
-        verbose_name='Slogan'
-    )
-    logo = models.ImageField(
-        upload_to='branding/logos/',
-        blank=True,
-        null=True,
-        verbose_name='Logo Principal'
-    )
-    logo_white = models.ImageField(
-        upload_to='branding/logos/',
-        blank=True,
-        null=True,
-        verbose_name='Logo Blanco (para fondos oscuros)'
-    )
-    favicon = models.ImageField(
-        upload_to='branding/favicons/',
-        blank=True,
-        null=True,
-        verbose_name='Favicon'
-    )
-    primary_color = models.CharField(
-        max_length=7,
-        default='#16A34A',
-        verbose_name='Color Primario',
-        help_text='Color en formato HEX (ej: #16A34A)'
-    )
-    secondary_color = models.CharField(
-        max_length=7,
-        default='#059669',
-        verbose_name='Color Secundario'
-    )
-    accent_color = models.CharField(
-        max_length=7,
-        default='#10B981',
-        verbose_name='Color de Acento'
-    )
-    login_background = models.ImageField(
-        upload_to='branding/backgrounds/',
-        blank=True,
-        null=True,
-        verbose_name='Imagen de Fondo Login',
-        help_text='Imagen de fondo para la pagina de login (recomendado: 1920x1080)'
-    )
-    app_version = models.CharField(
-        max_length=20,
-        default='2.0.0',
-        verbose_name='Version de la Aplicacion',
-        help_text='Version que se muestra en el login y footer'
-    )
-
-    # Campos PWA (Progressive Web App)
-    pwa_name = models.CharField(
-        max_length=200,
-        blank=True,
-        null=True,
-        verbose_name='Nombre PWA',
-        help_text='Nombre completo de la app para manifest.json'
-    )
-    pwa_short_name = models.CharField(
-        max_length=50,
-        blank=True,
-        null=True,
-        verbose_name='Nombre Corto PWA',
-        help_text='Nombre corto para iconos de app (max 12 caracteres recomendado)'
-    )
-    pwa_description = models.TextField(
-        blank=True,
-        null=True,
-        verbose_name='Descripcion PWA',
-        help_text='Descripcion de la aplicacion para manifest.json'
-    )
-    pwa_theme_color = models.CharField(
-        max_length=7,
-        blank=True,
-        null=True,
-        verbose_name='Color de Tema PWA',
-        help_text='Color de la barra de titulo del navegador (formato HEX)'
-    )
-    pwa_background_color = models.CharField(
-        max_length=7,
-        blank=True,
-        null=True,
-        verbose_name='Color de Fondo PWA',
-        help_text='Color de fondo del splash screen (formato HEX)'
-    )
-    pwa_icon_192 = models.ImageField(
-        upload_to='branding/pwa/',
-        blank=True,
-        null=True,
-        verbose_name='Icono PWA 192x192',
-        help_text='Icono para manifest.json (192x192 px, PNG)'
-    )
-    pwa_icon_512 = models.ImageField(
-        upload_to='branding/pwa/',
-        blank=True,
-        null=True,
-        verbose_name='Icono PWA 512x512',
-        help_text='Icono para manifest.json (512x512 px, PNG)'
-    )
-    pwa_icon_maskable = models.ImageField(
-        upload_to='branding/pwa/',
-        blank=True,
-        null=True,
-        verbose_name='Icono Maskable PWA',
-        help_text='Icono maskable para Android (512x512 px, PNG con padding)'
-    )
-
-    # =========================================================================
-    # COLORES ADICIONALES DE INTERFAZ (consolidados desde EmpresaConfig)
-    # =========================================================================
-    sidebar_color = models.CharField(
-        max_length=7,
-        default='#1E293B',
-        verbose_name='Color del Sidebar',
-        help_text='Color de fondo del sidebar en formato HEX'
-    )
-    background_color = models.CharField(
-        max_length=7,
-        default='#F5F5F5',
-        verbose_name='Color de Fondo',
-        help_text='Color de fondo general de la aplicacion'
-    )
-    showcase_background = models.CharField(
-        max_length=7,
-        default='#1F2937',
-        verbose_name='Color Fondo Presentaciones',
-        help_text='Color de fondo para secciones showcase/presentaciones'
-    )
-
-    # =========================================================================
-    # GRADIENTES PARA PRESENTACIONES (consolidados desde EmpresaConfig)
-    # =========================================================================
-    gradient_mission = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
-        verbose_name='Gradiente Mision',
-        help_text='Clases Tailwind para gradiente de mision (ej: from-blue-500 to-purple-600)'
-    )
-    gradient_vision = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
-        verbose_name='Gradiente Vision',
-        help_text='Clases Tailwind para gradiente de vision'
-    )
-    gradient_policy = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
-        verbose_name='Gradiente Politica',
-        help_text='Clases Tailwind para gradiente de politica'
-    )
-    gradient_values = models.JSONField(
-        default=list,
-        blank=True,
-        verbose_name='Gradientes Valores',
-        help_text='Lista de gradientes Tailwind para carrusel de valores corporativos'
-    )
-
-    # =========================================================================
-    # LOGO ADICIONAL (consolidado desde EmpresaConfig)
-    # =========================================================================
-    logo_dark = models.ImageField(
-        upload_to='branding/logos/',
-        blank=True,
-        null=True,
-        verbose_name='Logo para Modo Oscuro',
-        help_text='Version del logo optimizada para fondos claros (si difiere del principal)'
-    )
-
-    is_active = models.BooleanField(
-        default=True,
-        verbose_name='Activo'
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Fecha de creacion'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Fecha de actualizacion'
-    )
-
-    class Meta:
-        db_table = 'core_branding_config'
-        verbose_name = 'Configuracion de Branding'
-        verbose_name_plural = 'Configuraciones de Branding'
-
-    def __str__(self):
-        return f"Branding - {self.company_name}"
-
-    def save(self, *args, **kwargs):
-        if self.is_active:
-            BrandingConfig.objects.exclude(pk=self.pk).update(is_active=False)
-        super().save(*args, **kwargs)

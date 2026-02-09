@@ -68,7 +68,7 @@ interface CargoFormModalProps {
 type TabType = 'identificacion' | 'funciones' | 'requisitos' | 'sst' | 'acceso';
 
 const TABS: Tab[] = [
-  { id: 'identificacion', label: 'Identificacion', icon: <UserCircle size={16} /> },
+  { id: 'identificacion', label: 'Identificación', icon: <UserCircle size={16} /> },
   { id: 'funciones', label: 'Funciones', icon: <FileText size={16} /> },
   { id: 'requisitos', label: 'Requisitos', icon: <GraduationCap size={16} /> },
   { id: 'sst', label: 'SST', icon: <ShieldCheck size={16} /> },
@@ -436,26 +436,26 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
           variant="pills"
         />
 
-        <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+        <form onSubmit={handleSubmit} className="space-y-6 max-h-[65vh] overflow-y-auto px-1">
           {/* ========== TAB 1: IDENTIFICACION Y UBICACION ========== */}
           {activeTab === 'identificacion' && (
             <div className="space-y-4">
               <Alert
                 variant="info"
-                message="Define la informacion basica del cargo y su ubicacion en la estructura organizacional."
+                message="Define la información básica del cargo y su ubicación en la estructura organizacional."
               />
 
-              {/* Identificacion */}
+              {/* Identificación */}
               <div className="grid grid-cols-2 gap-4">
                 <Input
-                  label="Codigo *"
+                  label="Código *"
                   value={formData.code}
                   onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
                   placeholder="GERENTE_OPERACIONES"
                   disabled={isEditing}
                   required
                   helperText={
-                    isEditing ? 'El codigo no se puede modificar' : 'Codigo unico del cargo'
+                    isEditing ? 'El código no se puede modificar' : 'Código único del cargo'
                   }
                 />
                 <Input
@@ -468,21 +468,21 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
               </div>
 
               <Textarea
-                label="Descripcion"
+                label="Descripción"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Descripcion general del cargo..."
+                placeholder="Descripción general del cargo..."
                 rows={2}
               />
 
-              {/* Ubicacion Organizacional */}
+              {/* Ubicación Organizacional */}
               <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
                 <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
-                  Ubicacion Organizacional
+                  Ubicación Organizacional
                 </h4>
                 <div className="grid grid-cols-2 gap-4">
                   <Select
-                    label="Area"
+                    label="Área"
                     value={formData.area?.toString() || ''}
                     onChange={(e) =>
                       setFormData({
@@ -491,12 +491,12 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
                       })
                     }
                     options={[
-                      { value: '', label: 'Sin area asignada' },
+                      { value: '', label: 'Sin área asignada' },
                       ...areaOptions.map((a) => ({ value: a.value.toString(), label: a.label })),
                     ]}
                   />
                   <Select
-                    label="Nivel Jerarquico *"
+                    label="Nivel Jerárquico *"
                     value={formData.nivel_jerarquico}
                     onChange={(e) =>
                       setFormData({
@@ -532,10 +532,10 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
                 </div>
               </div>
 
-              {/* Configuracion del Cargo */}
+              {/* Configuración del Cargo */}
               <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
                 <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
-                  Configuracion del Cargo
+                  Configuración del Cargo
                 </h4>
                 <div className="grid grid-cols-2 gap-4">
                   <Input
@@ -549,7 +549,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
                         cantidad_posiciones: parseInt(e.target.value) || 1,
                       })
                     }
-                    helperText="Cuantas personas pueden ocupar este cargo"
+                    helperText="Cuántas personas pueden ocupar este cargo"
                   />
                   <div className="flex flex-col gap-3 pt-6">
                     <Switch
@@ -571,7 +571,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
                       onCheckedChange={(checked) =>
                         setFormData({ ...formData, requiere_licencia_conduccion: checked })
                       }
-                      label="Requiere Licencia de Conduccion"
+                      label="Requiere Licencia de Conducción"
                     />
                     <Switch
                       checked={formData.requiere_licencia_sst}
@@ -600,7 +600,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
                 {formData.requiere_licencia_conduccion && (
                   <div className="mt-4">
                     <Input
-                      label="Categoria de Licencia"
+                      label="Categoría de Licencia"
                       value={formData.categoria_licencia}
                       onChange={(e) =>
                         setFormData({ ...formData, categoria_licencia: e.target.value })
@@ -618,14 +618,14 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
             <div className="space-y-4">
               <Alert
                 variant="info"
-                message="Define el objetivo, funciones y responsabilidades del cargo segun el manual de funciones."
+                message="Define el objetivo, funciones y responsabilidades del cargo según el manual de funciones."
               />
 
               <Textarea
                 label="Objetivo del Cargo"
                 value={formData.objetivo_cargo}
                 onChange={(e) => setFormData({ ...formData, objetivo_cargo: e.target.value })}
-                placeholder="Describir el proposito principal del cargo en la organizacion..."
+                placeholder="Describir el propósito principal del cargo en la organización..."
                 rows={3}
               />
 
@@ -635,14 +635,14 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
                 onChange={(items) =>
                   setFormData({ ...formData, funciones_responsabilidades: items })
                 }
-                placeholder="Agregar funcion o responsabilidad..."
+                placeholder="Agregar función o responsabilidad..."
               />
 
               <Textarea
-                label="Autoridad y Autonomia"
+                label="Autoridad y Autonomía"
                 value={formData.autoridad_autonomia}
                 onChange={(e) => setFormData({ ...formData, autoridad_autonomia: e.target.value })}
-                placeholder="Decisiones que puede tomar, limite de aprobaciones, etc..."
+                placeholder="Decisiones que puede tomar, límite de aprobaciones, etc..."
                 rows={2}
               />
 
@@ -653,7 +653,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
                   onChange={(e) =>
                     setFormData({ ...formData, relaciones_internas: e.target.value })
                   }
-                  placeholder="Areas o cargos con los que interactua internamente..."
+                  placeholder="Áreas o cargos con los que interactúa internamente..."
                   rows={2}
                 />
                 <Textarea
@@ -674,17 +674,17 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
             <div className="space-y-4">
               <Alert
                 variant="info"
-                message="Define los requisitos de formacion, experiencia y competencias para ocupar el cargo."
+                message="Define los requisitos de formación, experiencia y competencias para ocupar el cargo."
               />
 
               {/* Formacion Academica */}
               <div className="border-b border-gray-200 dark:border-gray-700 pb-4">
                 <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
-                  Formacion Academica
+                  Formación Académica
                 </h4>
                 <div className="grid grid-cols-2 gap-4">
                   <Select
-                    label="Nivel Educativo Minimo"
+                    label="Nivel Educativo Mínimo"
                     value={formData.nivel_educativo || ''}
                     onChange={(e) =>
                       setFormData({
@@ -693,7 +693,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
                       })
                     }
                     options={[
-                      { value: '', label: 'Sin requisito especifico' },
+                      { value: '', label: 'Sin requisito específico' },
                       ...NIVEL_EDUCATIVO_OPTIONS.map((opt) => ({
                         value: opt.value as string,
                         label: opt.label,
@@ -704,7 +704,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
                     label="Titulo Requerido"
                     value={formData.titulo_requerido}
                     onChange={(e) => setFormData({ ...formData, titulo_requerido: e.target.value })}
-                    placeholder="Ingeniero Industrial, Contador Publico..."
+                    placeholder="Ingeniero Industrial, Contador Público..."
                   />
                 </div>
               </div>
@@ -716,7 +716,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
                 </h4>
                 <div className="grid grid-cols-2 gap-4">
                   <Select
-                    label="Experiencia Minima"
+                    label="Experiencia Mínima"
                     value={formData.experiencia_requerida || ''}
                     onChange={(e) =>
                       setFormData({
@@ -726,7 +726,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
                       })
                     }
                     options={[
-                      { value: '', label: 'Sin requisito especifico' },
+                      { value: '', label: 'Sin requisito específico' },
                       ...EXPERIENCIA_OPTIONS.map((opt) => ({
                         value: opt.value as string,
                         label: opt.label,
@@ -736,7 +736,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
                 </div>
                 <div className="mt-3">
                   <Textarea
-                    label="Experiencia Especifica"
+                    label="Experiencia Específica"
                     value={formData.experiencia_especifica}
                     onChange={(e) =>
                       setFormData({ ...formData, experiencia_especifica: e.target.value })
@@ -749,7 +749,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
 
               {/* Competencias */}
               <ListEditor
-                label="Competencias Tecnicas"
+                label="Competencias Técnicas"
                 items={formData.competencias_tecnicas}
                 onChange={(items) => setFormData({ ...formData, competencias_tecnicas: items })}
                 placeholder="Excel avanzado, manejo de ERP..."
@@ -766,16 +766,16 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
                 label="Licencias y Certificaciones"
                 items={formData.licencias_certificaciones}
                 onChange={(items) => setFormData({ ...formData, licencias_certificaciones: items })}
-                placeholder="Licencia SST, Certificado manipulacion alimentos..."
+                placeholder="Licencia SST, Certificado manipulación de alimentos..."
               />
 
               <Textarea
-                label="Formacion Complementaria (Deseable)"
+                label="Formación Complementaria (Deseable)"
                 value={formData.formacion_complementaria}
                 onChange={(e) =>
                   setFormData({ ...formData, formacion_complementaria: e.target.value })
                 }
-                placeholder="Cursos o capacitaciones adicionales que serian valoradas..."
+                placeholder="Cursos o capacitaciones adicionales que serían valoradas..."
                 rows={2}
               />
             </div>
@@ -786,7 +786,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
             <div className="space-y-4">
               <Alert
                 variant="warning"
-                message="Define los riesgos ocupacionales, EPP y requisitos de SST segun el SG-SST."
+                message="Define los riesgos ocupacionales, EPP y requisitos de SST según el SG-SST."
               />
 
               {/* Riesgos Ocupacionales con RiesgoSelector */}
@@ -801,7 +801,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
                 ) : (
                   <div className="text-center py-8">
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      No hay riesgos ocupacionales configurados. Agregalos desde el catalogo de SST.
+                      No hay riesgos ocupacionales configurados. Agrégalos desde el catálogo de SST.
                     </p>
                   </div>
                 )}
@@ -816,20 +816,20 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
               />
 
               <ListEditor
-                label="Examenes Medicos Ocupacionales"
+                label="Exámenes Médicos Ocupacionales"
                 items={formData.examenes_medicos}
                 onChange={(items) => setFormData({ ...formData, examenes_medicos: items })}
-                placeholder="Agregar examen medico..."
+                placeholder="Agregar examen médico..."
                 suggestions={EXAMENES_MEDICOS_SUGERIDOS}
               />
 
               <Textarea
-                label="Restricciones Medicas"
+                label="Restricciones Médicas"
                 value={formData.restricciones_medicas}
                 onChange={(e) =>
                   setFormData({ ...formData, restricciones_medicas: e.target.value })
                 }
-                placeholder="Condiciones medicas que impiden ejercer el cargo..."
+                placeholder="Condiciones médicas que impiden ejercer el cargo..."
                 rows={2}
               />
 
@@ -837,7 +837,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
                 label="Capacitaciones SST Requeridas"
                 items={formData.capacitaciones_sst}
                 onChange={(items) => setFormData({ ...formData, capacitaciones_sst: items })}
-                placeholder="Agregar capacitacion..."
+                placeholder="Agregar capacitación..."
                 suggestions={CAPACITACIONES_SST_SUGERIDAS}
               />
             </div>

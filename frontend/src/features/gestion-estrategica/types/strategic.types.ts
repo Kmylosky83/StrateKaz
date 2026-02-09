@@ -42,12 +42,12 @@ export type ObjectiveStatus =
   | 'RETRASADO';
 
 export type ModuleCategory =
-  | 'ESTRATEGICO'
-  | 'MOTOR'
-  | 'INTEGRAL'
-  | 'MISIONAL'
-  | 'APOYO'
-  | 'INTELIGENCIA';
+  | 'STRATEGIC'
+  | 'COMPLIANCE'
+  | 'INTEGRATED'
+  | 'OPERATIONAL'
+  | 'SUPPORT'
+  | 'INTELLIGENCE';
 
 export type PeriodType = 'ANUAL' | 'BIANUAL' | 'TRIANUAL' | 'QUINQUENAL';
 
@@ -781,9 +781,26 @@ export type TipoServicio =
   | 'MAPAS'
   | 'ALMACENAMIENTO'
   | 'BI'
+  | 'ANALYTICS'
   | 'PAGOS'
   | 'ERP'
-  | 'FIRMA_DIGITAL';
+  | 'CRM'
+  | 'FIRMA_DIGITAL'
+  | 'OFAC'
+  | 'SAGRILAFT'
+  | 'IA'
+  | 'OCR'
+  | 'NOTIFICACIONES'
+  | 'NOMINA'
+  | 'RADIAN'
+  | 'CDN'
+  | 'BACKUP'
+  | 'PSE'
+  | 'BANCARIO'
+  | 'RASTREO'
+  | 'API_TERCEROS'
+  | 'WEBHOOK'
+  | 'OTRO';
 
 export type Proveedor =
   // Email

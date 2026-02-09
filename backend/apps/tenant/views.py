@@ -1,35 +1,39 @@
 """
-Views para Multi-Tenant System
+Views para Multi-Tenant System (django-tenants)
 
 Endpoints para gestión de tenants desde el frontend.
 
 ARQUITECTURA:
 - TenantViewSet: CRUD de tenants (solo superadmins)
 - TenantUserViewSet: Gestión de usuarios globales
-- PlanViewSet: Consulta de planes (solo lectura para usuarios, CRUD para superadmins)
-- PublicTenantViewSet: Endpoints públicos (sin auth)
-
-NUEVO en v4.0:
-- AdminGlobalViewSet: Panel de administración global para superusuarios
+- PlanViewSet: Consulta de planes
+- DomainViewSet: Gestión de dominios
 """
-from rest_framework import viewsets, status, filters
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated, BasePermission
 from django_filters.rest_framework import DjangoFilterBackend
+from django.db import models
+from django.db.models import Count
 from django.utils import timezone
-from django.db.models import Count, Q
 
-from apps.tenant.models import Tenant, TenantUser, TenantUserAccess, TenantDomain, Plan
-from apps.tenant.serializers import (
+from .models import Tenant, Domain, TenantUser, TenantUserAccess, Plan
+from .serializers import (
     TenantSerializer,
     TenantMinimalSerializer,
+    TenantCreateSerializer,
+    TenantUpdateSerializer,
+    TenantSelfEditSerializer,
+    TenantBrandingSerializer,
     TenantUserSerializer,
+    TenantUserCreateSerializer,
     TenantUserAccessSerializer,
-    TenantDomainSerializer,
+    DomainSerializer,
     PlanSerializer,
     UserTenantsSerializer,
 )
+from .authentication import TenantJWTAuthentication, HybridJWTAuthentication
 
 
 # =============================================================================
@@ -38,464 +42,682 @@ from apps.tenant.serializers import (
 
 class IsSuperAdmin(BasePermission):
     """
-    Permiso que solo permite acceso a superusuarios de Django.
-    Usado para el panel de Admin Global.
+    Permiso que permite acceso a superadministradores.
+
+    Funciona tanto con:
+    - TenantUser (is_superadmin) - para Admin Global
+    - User (is_superuser) - para contexto de tenant
     """
     message = 'Solo los superadministradores pueden acceder a esta función.'
 
     def has_permission(self, request, view):
-        return bool(
-            request.user and
-            request.user.is_authenticated and
-            request.user.is_superuser
-        )
+        if not request.user or not request.user.is_authenticated:
+            return False
+
+        # Verificar si es TenantUser (tiene is_superadmin)
+        if hasattr(request.user, 'is_superadmin'):
+            return request.user.is_superadmin
+
+        # Verificar si es User (tiene is_superuser)
+        if hasattr(request.user, 'is_superuser'):
+            return request.user.is_superuser
+
+        return False
+
+
+class IsTenantSuperAdmin(BasePermission):
+    """
+    Permiso para superadministradores de tenant (TenantUser.is_superadmin).
+    """
+    message = 'Solo los superadministradores de tenant pueden acceder.'
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+
+        # Verificar TenantUser.is_superadmin
+        if hasattr(request.user, 'is_superadmin'):
+            return request.user.is_superadmin
+
+        # Fallback a User.is_superuser
+        if hasattr(request.user, 'is_superuser'):
+            return request.user.is_superuser
+
+        return False
+
+
+class IsAdminTenant(BasePermission):
+    """
+    Permiso para administradores del tenant actual.
+
+    Verifica que el User local tenga cargo ADMIN o que el TenantUser
+    tenga role='admin' para el tenant actual via TenantUserAccess.
+    """
+    message = 'Solo los administradores de la empresa pueden realizar esta acción.'
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+
+        # Si es TenantUser global con is_superadmin, siempre tiene acceso
+        if hasattr(request.user, 'is_superadmin') and request.user.is_superadmin:
+            return True
+
+        # User local: verificar cargo ADMIN
+        if hasattr(request.user, 'cargo') and request.user.cargo:
+            if request.user.cargo.code == 'ADMIN':
+                return True
+
+        return False
+
+
+# =============================================================================
+# VIEWSETS
+# =============================================================================
+
+class PlanViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para Planes de suscripción.
+
+    - GET (list/retrieve): Accesible para todos (solo planes activos)
+    - POST/PUT/PATCH/DELETE: Solo superadmins (todos los planes)
+    """
+    queryset = Plan.objects.all()
+    serializer_class = PlanSerializer
+    authentication_classes = [TenantJWTAuthentication]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['code', 'is_default', 'is_active']
+
+    def get_permissions(self):
+        """
+        Permisos diferenciados:
+        - Lectura: Público
+        - Escritura: Solo superadmins
+        """
+        if self.action in ['list', 'retrieve']:
+            return [AllowAny()]
+        return [IsSuperAdmin()]
+
+    def get_queryset(self):
+        """
+        Superadmins ven todos los planes, otros solo los activos.
+        """
+        if self.request.user.is_authenticated:
+            is_super = getattr(self.request.user, 'is_superadmin', False) or \
+                       getattr(self.request.user, 'is_superuser', False)
+            if is_super:
+                return Plan.objects.all()
+        return Plan.objects.filter(is_active=True)
+
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        """Estadísticas de planes."""
+        from django.db.models import Count
+        stats = {
+            'total': Plan.objects.count(),
+            'active': Plan.objects.filter(is_active=True).count(),
+            'by_plan': list(
+                Tenant.objects.exclude(schema_name='public')
+                .values('plan__name')
+                .annotate(count=Count('id'))
+            ),
+        }
+        return Response(stats)
 
 
 class TenantViewSet(viewsets.ModelViewSet):
     """
-    ViewSet para gestión de Tenants.
+    ViewSet para Tenants.
+    Solo accesible por superadmins.
 
-    Solo accesible por superadmins de Django.
-    Proporciona CRUD completo + acciones adicionales.
+    Usa TenantJWTAuthentication para permitir que TenantUser
+    (usuarios globales) puedan gestionar tenants.
     """
-    queryset = Tenant.objects.select_related('plan').annotate(
-        user_count=Count('user_accesses', filter=Q(user_accesses__is_active=True))
-    ).all()
-    serializer_class = TenantSerializer
+    queryset = Tenant.objects.all()
+    authentication_classes = [TenantJWTAuthentication]
     permission_classes = [IsSuperAdmin]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['is_active', 'is_trial', 'plan', 'tier']
-    search_fields = ['name', 'code', 'subdomain', 'nit']
-    ordering_fields = ['name', 'created_at', 'subscription_ends_at']
-    ordering = ['-created_at']
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['is_active', 'is_trial', 'tier', 'plan']
+    search_fields = ['name', 'code', 'nit']
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return TenantCreateSerializer
+        if self.action == 'list':
+            return TenantMinimalSerializer
+        if self.action in ['update', 'partial_update']:
+            return TenantUpdateSerializer
+        return TenantSerializer
 
     def get_queryset(self):
-        """Filtrar según permisos del usuario"""
-        user = self.request.user
-
-        # Solo superusuarios pueden ver todos los tenants
-        if user.is_superuser:
-            return self.queryset
-
-        return self.queryset.none()
-
-    @action(detail=True, methods=['post'])
-    def toggle_active(self, request, pk=None):
         """
-        POST /api/tenant/tenants/{id}/toggle_active/
-        Activa o desactiva un tenant.
+        Retorna todos los tenants EXCEPTO el schema 'public'.
+        El tenant público es interno del sistema y no debe mostrarse en Admin Global.
         """
+        return Tenant.objects.exclude(
+            schema_name='public'
+        ).prefetch_related('domains').select_related('plan')
+
+    @action(detail=True, methods=['get'], url_path='creation-status')
+    def creation_status(self, request, pk=None):
+        """
+        Obtener el estado de creación del schema de un tenant.
+
+        Retorna información sobre el progreso de la tarea Celery.
+        El frontend puede hacer polling a este endpoint cada 2-5 segundos.
+
+        Returns:
+            - status: 'pending' | 'creating' | 'ready' | 'failed'
+            - progress: 0-100
+            - message: Descripción del estado actual
+            - phase: Fase actual de la creación
+        """
+        from apps.tenant.tasks import get_task_status
+
         tenant = self.get_object()
-        tenant.is_active = not tenant.is_active
-        tenant.save(update_fields=['is_active', 'updated_at'])
 
-        return Response({
-            'id': tenant.id,
-            'is_active': tenant.is_active,
-            'message': f"Tenant {'activado' if tenant.is_active else 'desactivado'} correctamente"
-        })
-
-    @action(detail=True, methods=['get'])
-    def users(self, request, pk=None):
-        """
-        GET /api/tenant/tenants/{id}/users/
-        Lista usuarios con acceso a este tenant.
-        """
-        tenant = self.get_object()
-        accesses = TenantUserAccess.objects.filter(
-            tenant=tenant
-        ).select_related('tenant_user')
-
-        data = []
-        for access in accesses:
-            data.append({
-                'id': access.tenant_user.id,
-                'email': access.tenant_user.email,
-                'full_name': access.tenant_user.full_name,
-                'role': access.role,
-                'is_active': access.is_active,
-                'last_login': access.tenant_user.last_login,
+        # Si el schema ya está listo, retornar inmediatamente
+        if tenant.schema_status == 'ready':
+            return Response({
+                'status': 'ready',
+                'progress': 100,
+                'message': f'Tenant {tenant.name} está listo',
+                'phase': 'done',
+                'tenant_id': tenant.id,
+                'schema_name': tenant.schema_name,
             })
 
-        return Response({'users': data, 'count': len(data)})
+        # Si falló, retornar el error
+        if tenant.schema_status == 'failed':
+            return Response({
+                'status': 'failed',
+                'progress': 0,
+                'message': tenant.schema_error or 'Error al crear el schema',
+                'phase': 'error',
+                'tenant_id': tenant.id,
+                'error': tenant.schema_error,
+            })
+
+        # Si está pendiente o creando, consultar el estado de la tarea
+        if tenant.schema_task_id:
+            task_status = get_task_status(tenant.schema_task_id)
+            if task_status:
+                # Actualizar estado del tenant si la tarea terminó
+                if task_status.get('status') == 'completed':
+                    tenant.schema_status = 'ready'
+                    tenant.save(update_fields=['schema_status'])
+                elif task_status.get('status') == 'failed':
+                    tenant.schema_status = 'failed'
+                    tenant.schema_error = task_status.get('error', 'Error desconocido')
+                    tenant.save(update_fields=['schema_status', 'schema_error'])
+
+                return Response(task_status)
+
+        # Estado por defecto
+        return Response({
+            'status': tenant.schema_status,
+            'progress': 0 if tenant.schema_status == 'pending' else 5,
+            'message': 'Esperando en cola...' if tenant.schema_status == 'pending' else 'Creando schema...',
+            'phase': 'queued' if tenant.schema_status == 'pending' else 'creating_schema',
+            'tenant_id': tenant.id,
+        })
+
+    @action(detail=True, methods=['post'], url_path='retry-creation')
+    def retry_creation(self, request, pk=None):
+        """
+        Reintentar la creación del schema de un tenant que falló.
+
+        Solo se puede llamar si el schema_status es 'failed'.
+        """
+        from apps.tenant.tasks import create_tenant_schema_task
+
+        tenant = self.get_object()
+
+        if tenant.schema_status == 'ready':
+            return Response(
+                {'detail': 'El schema ya está creado'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if tenant.schema_status == 'creating':
+            return Response(
+                {'detail': 'El schema está siendo creado actualmente'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Lanzar nueva tarea
+        task = create_tenant_schema_task.delay(tenant_id=tenant.id)
+
+        # Actualizar tenant
+        tenant.schema_task_id = task.id
+        tenant.schema_status = 'creating'
+        tenant.schema_error = ''
+        tenant.save(update_fields=['schema_task_id', 'schema_status', 'schema_error'])
+
+        return Response({
+            'status': 'retry_started',
+            'task_id': task.id,
+            'message': 'Reintentando creación del schema...',
+        })
+
+    @action(detail=True, methods=['post'])
+    def activate(self, request, pk=None):
+        """Activar un tenant."""
+        tenant = self.get_object()
+        tenant.is_active = True
+        tenant.save(update_fields=['is_active'])
+        return Response({'status': 'tenant activado'})
+
+    @action(detail=True, methods=['post'])
+    def deactivate(self, request, pk=None):
+        """Desactivar un tenant."""
+        tenant = self.get_object()
+        tenant.is_active = False
+        tenant.save(update_fields=['is_active'])
+        return Response({'status': 'tenant desactivado'})
 
     @action(detail=False, methods=['get'])
     def stats(self, request):
-        """
-        GET /api/tenant/tenants/stats/
-        Estadísticas globales de tenants para dashboard admin.
-        """
-        today = timezone.now().date()
+        """Estadísticas globales de tenants."""
+        from datetime import timedelta
 
-        total = Tenant.objects.count()
-        active = Tenant.objects.filter(is_active=True).count()
-        trial = Tenant.objects.filter(is_trial=True, is_active=True).count()
-        expiring_soon = Tenant.objects.filter(
-            subscription_ends_at__lte=today + timezone.timedelta(days=30),
-            subscription_ends_at__gte=today,
+        # Calcular fecha límite para "por vencer" (próximos 30 días)
+        now = timezone.now()
+        expiring_limit = now + timedelta(days=30)
+
+        # Tenants por vencer: activos con suscripción que termina en los próximos 30 días
+        # o en trial que termina en los próximos 30 días (excluyendo schema public)
+        expiring_soon_count = Tenant.objects.exclude(
+            schema_name='public'
+        ).filter(
             is_active=True
-        ).count()
-        expired = Tenant.objects.filter(
-            subscription_ends_at__lt=today,
-            is_active=True
+        ).filter(
+            # Suscripción por vencer
+            models.Q(
+                is_trial=False,
+                subscription_ends_at__isnull=False,
+                subscription_ends_at__lte=expiring_limit,
+                subscription_ends_at__gt=now
+            ) |
+            # Trial por vencer
+            models.Q(
+                is_trial=True,
+                trial_ends_at__isnull=False,
+                trial_ends_at__lte=expiring_limit,
+                trial_ends_at__gt=now
+            )
         ).count()
 
-        # Tenants por plan
-        by_plan = list(Tenant.objects.values('plan__name').annotate(
-            count=Count('id')
-        ).order_by('-count'))
+        # Excluir schema 'public' de todas las consultas
+        base_qs = Tenant.objects.exclude(schema_name='public')
 
-        return Response({
-            'total': total,
-            'active': active,
-            'inactive': total - active,
-            'trial': trial,
-            'expiring_soon': expiring_soon,
-            'expired': expired,
-            'by_plan': by_plan,
-        })
+        stats = {
+            'total': base_qs.count(),
+            'active': base_qs.filter(is_active=True).count(),
+            'trial': base_qs.filter(is_trial=True).count(),
+            'expiring_soon': expiring_soon_count,
+            'by_tier': dict(
+                base_qs.values_list('tier').annotate(count=Count('id'))
+            ),
+            'by_plan': dict(
+                base_qs.values_list('plan__name').annotate(count=Count('id'))
+            ),
+        }
+        return Response(stats)
+
+    @action(
+        detail=False, methods=['get', 'patch'], url_path='me',
+        authentication_classes=[HybridJWTAuthentication],
+        permission_classes=[IsAdminTenant],
+    )
+    def me(self, request):
+        """
+        Endpoint para que el Admin Tenant consulte/edite datos de su empresa.
+
+        GET: Retorna datos completos del tenant actual.
+        PATCH: Actualiza datos fiscales, branding, contacto, regional.
+               No permite modificar plan, tier, max_users ni estado.
+        """
+        from django.db import connection
+        tenant = connection.tenant
+
+        if request.method == 'GET':
+            serializer = TenantSerializer(tenant, context={'request': request})
+            return Response(serializer.data)
+
+        # PATCH
+        serializer = TenantSelfEditSerializer(
+            tenant, data=request.data, partial=True, context={'request': request}
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        # Retornar datos completos actualizados
+        return Response(TenantSerializer(tenant, context={'request': request}).data)
+
+
+class DomainViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para Dominios de tenants.
+    """
+    queryset = Domain.objects.all()
+    serializer_class = DomainSerializer
+    permission_classes = [IsSuperAdmin]
+    filterset_fields = ['tenant', 'is_primary', 'is_active']
+
+    def get_queryset(self):
+        return Domain.objects.select_related('tenant')
 
 
 class TenantUserViewSet(viewsets.ModelViewSet):
     """
-    ViewSet para gestión de usuarios globales.
+    ViewSet para usuarios globales del sistema multi-tenant.
 
-    - Usuarios normales: solo pueden ver su propio perfil (/me/)
-    - Superadmins: CRUD completo de usuarios globales
+    Usa TenantJWTAuthentication para permitir que TenantUser
+    (usuarios globales) puedan gestionar otros usuarios globales.
     """
-    queryset = TenantUser.objects.prefetch_related('tenants', 'accesses__tenant').all()
-    serializer_class = TenantUserSerializer
-    permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    queryset = TenantUser.objects.all()
+    authentication_classes = [TenantJWTAuthentication]
+    permission_classes = [IsSuperAdmin]
+    filter_backends = [DjangoFilterBackend]
     filterset_fields = ['is_active', 'is_superadmin']
     search_fields = ['email', 'first_name', 'last_name']
-    ordering_fields = ['email', 'last_login', 'created_at']
-    ordering = ['-created_at']
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return TenantUserCreateSerializer
+        return TenantUserSerializer
 
     def get_queryset(self):
-        """Solo superadmins pueden ver todos los usuarios"""
-        if self.request.user.is_superuser:
-            return self.queryset
-        # Usuarios normales solo pueden verse a sí mismos
-        return self.queryset.filter(email=self.request.user.email)
+        return TenantUser.objects.prefetch_related('tenant_accesses__tenant')
 
-    def get_permissions(self):
-        """Acciones CRUD requieren superadmin"""
-        if self.action in ['create', 'update', 'partial_update', 'destroy', 'list']:
-            if self.action == 'list' and not self.request.user.is_superuser:
-                return [IsAuthenticated()]  # Retornará queryset vacío
-            return [IsSuperAdmin()] if self.action != 'list' else [IsAuthenticated()]
-        return [IsAuthenticated()]
-
-    @action(detail=False, methods=['get'])
-    def stats(self, request):
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def me(self, request):
         """
-        GET /api/tenant/users/stats/
-        Estadísticas de usuarios globales para admin.
+        Obtener información del usuario actual y sus tenants.
+        Este endpoint es accesible para cualquier usuario autenticado.
         """
-        if not request.user.is_superuser:
-            return Response({'detail': 'No autorizado'}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            tenant_user = TenantUser.objects.get(email=request.user.email)
+            serializer = UserTenantsSerializer(tenant_user)
+            return Response(serializer.data)
+        except TenantUser.DoesNotExist:
+            return Response(
+                {'detail': 'Usuario no encontrado en el sistema de tenants'},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
-        total = TenantUser.objects.count()
-        active = TenantUser.objects.filter(is_active=True).count()
-        superadmins = TenantUser.objects.filter(is_superadmin=True).count()
-
-        # Usuarios por cantidad de tenants
-        multi_tenant = TenantUser.objects.annotate(
-            tenant_count=Count('accesses', filter=Q(accesses__is_active=True))
-        ).filter(tenant_count__gt=1).count()
-
-        return Response({
-            'total': total,
-            'active': active,
-            'inactive': total - active,
-            'superadmins': superadmins,
-            'multi_tenant': multi_tenant,
-        })
-
-    @action(detail=True, methods=['post'], permission_classes=[IsSuperAdmin])
-    def assign_tenant(self, request, pk=None):
+    @action(detail=True, methods=['post'])
+    def grant_access(self, request, pk=None):
         """
-        POST /api/tenant/users/{id}/assign_tenant/
-        Asigna un usuario a un tenant.
+        Otorgar acceso a un tenant.
+        Espera: { "tenant_id": 1 }
 
-        Body: { "tenant_id": 1, "role": "admin" }
+        NOTA: El campo 'role' está DEPRECATED.
+        Los permisos granulares se manejan via User.cargo dentro del tenant.
         """
         user = self.get_object()
         tenant_id = request.data.get('tenant_id')
-        role = request.data.get('role', 'user')
-
-        if not tenant_id:
-            return Response({'detail': 'tenant_id es requerido'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             tenant = Tenant.objects.get(id=tenant_id)
         except Tenant.DoesNotExist:
-            return Response({'detail': 'Tenant no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {'detail': 'Tenant no encontrado'},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
         access, created = TenantUserAccess.objects.update_or_create(
             tenant_user=user,
             tenant=tenant,
             defaults={
-                'role': role,
                 'is_active': True,
-                'granted_by': request.user.email,
             }
         )
 
         return Response({
-            'message': f"Usuario {'asignado' if created else 'actualizado'} correctamente",
+            'status': 'acceso otorgado' if created else 'acceso actualizado',
             'tenant': tenant.name,
-            'role': role,
         })
 
-    @action(detail=True, methods=['post'], permission_classes=[IsSuperAdmin])
-    def remove_tenant(self, request, pk=None):
+    @action(detail=True, methods=['post'])
+    def revoke_access(self, request, pk=None):
         """
-        POST /api/tenant/users/{id}/remove_tenant/
-        Remueve acceso de un usuario a un tenant.
-
-        Body: { "tenant_id": 1 }
+        Revocar acceso a un tenant.
+        Espera: { "tenant_id": 1 }
         """
         user = self.get_object()
         tenant_id = request.data.get('tenant_id')
 
-        if not tenant_id:
-            return Response({'detail': 'tenant_id es requerido'}, status=status.HTTP_400_BAD_REQUEST)
-
         try:
-            access = TenantUserAccess.objects.get(tenant_user=user, tenant_id=tenant_id)
+            access = TenantUserAccess.objects.get(
+                tenant_user=user,
+                tenant_id=tenant_id
+            )
             access.is_active = False
-            access.save(update_fields=['is_active', 'updated_at'])
-            return Response({'message': 'Acceso removido correctamente'})
-        except TenantUserAccess.DoesNotExist:
-            return Response({'detail': 'Acceso no encontrado'}, status=status.HTTP_404_NOT_FOUND)
-
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
-    def me(self, request):
-        """
-        GET /api/tenant/users/me/
-        Retorna el usuario global actual con sus tenants.
-        """
-        email = request.user.email
-        try:
-            tenant_user = TenantUser.objects.prefetch_related(
-                'accesses__tenant__plan'
-            ).get(email=email)
-
-            return Response(UserTenantsSerializer(tenant_user).data)
-        except TenantUser.DoesNotExist:
-            return Response(
-                {'detail': 'Usuario no encontrado en sistema multi-tenant'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
-    def tenants(self, request):
-        """
-        GET /api/tenant/users/tenants/
-        Retorna la lista de tenants a los que el usuario tiene acceso.
-        """
-        email = request.user.email
-        try:
-            tenant_user = TenantUser.objects.prefetch_related(
-                'accesses__tenant__plan'
-            ).get(email=email)
-
-            accesses = tenant_user.accesses.filter(
-                is_active=True,
-                tenant__is_active=True
-            ).select_related('tenant')
-
-            tenants_data = []
-            for access in accesses:
-                tenant = access.tenant
-                tenants_data.append({
-                    'tenant': {
-                        'id': tenant.id,
-                        'code': tenant.code,
-                        'name': tenant.name,
-                        'subdomain': tenant.subdomain,
-                        'logo_url': tenant.logo_url,
-                        'primary_color': tenant.primary_color,
-                        'is_active': tenant.is_active,
-                    },
-                    'role': access.role,
-                    'is_active': access.is_active,
-                })
-
-            return Response({
-                'tenants': tenants_data,
-                'last_tenant_id': tenant_user.last_tenant_id,
-            })
-
-        except TenantUser.DoesNotExist:
-            return Response({
-                'tenants': [],
-                'last_tenant_id': None,
-            })
-
-    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
-    def select(self, request):
-        """
-        POST /api/tenant/users/select/
-        Selecciona un tenant y retorna la URL de redirección.
-
-        Body: { "tenant_id": 1 }
-        """
-        tenant_id = request.data.get('tenant_id')
-        if not tenant_id:
-            return Response(
-                {'detail': 'tenant_id es requerido'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        email = request.user.email
-
-        try:
-            tenant_user = TenantUser.objects.get(email=email)
-        except TenantUser.DoesNotExist:
-            return Response(
-                {'detail': 'Usuario no encontrado'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        # Verificar acceso al tenant
-        try:
-            access = TenantUserAccess.objects.select_related('tenant').get(
-                tenant_user=tenant_user,
-                tenant_id=tenant_id,
-                is_active=True,
-                tenant__is_active=True
-            )
+            access.save(update_fields=['is_active'])
+            return Response({'status': 'acceso revocado'})
         except TenantUserAccess.DoesNotExist:
             return Response(
-                {'detail': 'No tienes acceso a esta empresa'},
-                status=status.HTTP_403_FORBIDDEN
+                {'detail': 'Acceso no encontrado'},
+                status=status.HTTP_404_NOT_FOUND
             )
-
-        tenant = access.tenant
-
-        # Verificar suscripción válida
-        if not tenant.is_subscription_valid:
-            return Response(
-                {'detail': 'La suscripción de esta empresa ha vencido'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
-        # Actualizar último tenant
-        tenant_user.last_tenant = tenant
-        tenant_user.last_login = timezone.now()
-        tenant_user.save(update_fields=['last_tenant', 'last_login'])
-
-        # Generar URL de redirección
-        # En desarrollo local, redirigir a localhost con header X-Tenant-ID
-        from django.conf import settings
-        if settings.DEBUG:
-            # En desarrollo, usar localhost y pasar tenant_id como parámetro
-            frontend_port = '3010'  # Puerto del frontend en desarrollo
-            redirect_url = f"http://localhost:{frontend_port}/auth/callback?tenant_id={tenant.id}"
-        else:
-            # En producción, usar el dominio real del tenant
-            redirect_url = f"https://{tenant.full_domain}/auth/callback"
-
-        return Response({
-            'redirect_url': redirect_url,
-            'tenant': {
-                'id': tenant.id,
-                'code': tenant.code,
-                'name': tenant.name,
-                'subdomain': tenant.subdomain,
-                'logo_url': tenant.logo_url,
-                'primary_color': tenant.primary_color,
-            }
-        })
-
-
-class PlanViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet para gestión de Planes.
-
-    - Usuarios autenticados: solo lectura de planes activos
-    - Superadmins: CRUD completo
-    """
-    queryset = Plan.objects.annotate(
-        tenant_count=Count('tenants', filter=Q(tenants__is_active=True))
-    ).all()
-    serializer_class = PlanSerializer
-    permission_classes = [IsAuthenticated]
-    filter_backends = [filters.OrderingFilter]
-    ordering_fields = ['order', 'price_monthly', 'name']
-    ordering = ['order', 'price_monthly']
-
-    def get_queryset(self):
-        """Solo mostrar planes activos a usuarios normales"""
-        if self.request.user.is_superuser:
-            return self.queryset
-        return self.queryset.filter(is_active=True)
-
-    def get_permissions(self):
-        """Superadmins pueden crear/editar/eliminar"""
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            return [IsSuperAdmin()]
-        return [IsAuthenticated()]
 
     @action(detail=False, methods=['get'])
     def stats(self, request):
-        """
-        GET /api/tenant/plans/stats/
-        Estadísticas de planes para admin.
-        """
-        if not request.user.is_superuser:
-            return Response(
-                {'detail': 'No autorizado'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
-        plans_data = []
-        for plan in Plan.objects.all():
-            tenant_count = Tenant.objects.filter(plan=plan, is_active=True).count()
-            plans_data.append({
-                'id': plan.id,
-                'name': plan.name,
-                'code': plan.code,
-                'price_monthly': str(plan.price_monthly),
-                'tenant_count': tenant_count,
-                'is_active': plan.is_active,
-            })
-
-        return Response({'plans': plans_data})
+        """Estadísticas globales de usuarios."""
+        stats = {
+            'total': TenantUser.objects.count(),
+            'active': TenantUser.objects.filter(is_active=True).count(),
+            'superadmins': TenantUser.objects.filter(is_superadmin=True).count(),
+            'multi_tenant': TenantUser.objects.annotate(
+                tenant_count=Count('tenants')
+            ).filter(tenant_count__gt=1).count(),
+        }
+        return Response(stats)
 
 
 class PublicTenantViewSet(viewsets.ViewSet):
     """
-    Endpoints públicos para tenant (sin autenticación).
+    Endpoints públicos para tenants (sin autenticación).
+    Usado para verificación de dominios, login y branding.
+
+    IMPORTANTE: Estos endpoints son públicos y no requieren autenticación.
+    El frontend los usa para cargar el branding ANTES de que el usuario haga login.
+
+    authentication_classes = [] evita que HybridJWTAuthentication (el default global)
+    intente resolver User en el schema público donde core_user no existe.
     """
+    authentication_classes = []  # Sin auth - evita query a core_user en schema público
     permission_classes = [AllowAny]
 
     @action(detail=False, methods=['get'])
-    def check(self, request):
+    def by_domain(self, request):
         """
-        GET /api/tenant/public/check/?subdomain=xxx
-        Verifica si un subdominio existe y está activo.
+        Obtener información básica del tenant por dominio.
+        Query param: ?domain=empresa.stratekaz.com
+
+        Usado para:
+        - Verificar que el dominio pertenece a un tenant activo
+        - Mostrar el nombre de la empresa en el login
         """
-        subdomain = request.query_params.get('subdomain')
-        if not subdomain:
+        domain_name = request.query_params.get('domain')
+
+        if not domain_name:
             return Response(
-                {'detail': 'subdomain es requerido'},
+                {'detail': 'Parámetro domain requerido'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         try:
-            tenant = Tenant.objects.get(subdomain=subdomain, is_active=True)
+            domain = Domain.objects.select_related('tenant').get(
+                domain=domain_name,
+                is_active=True,
+                tenant__is_active=True
+            )
+            tenant = domain.tenant
+
             return Response({
-                'exists': True,
+                'id': tenant.id,
+                'code': tenant.code,
                 'name': tenant.name,
-                'logo_url': tenant.logo_url,
+                'logo_url': tenant.logo_effective,
                 'primary_color': tenant.primary_color,
-                'is_subscription_valid': tenant.is_subscription_valid,
             })
-        except Tenant.DoesNotExist:
+        except Domain.DoesNotExist:
+            return Response(
+                {'detail': 'Tenant no encontrado'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+    @action(detail=False, methods=['get'])
+    def branding(self, request):
+        """
+        Obtener configuración completa de branding del tenant por dominio.
+        Query param: ?domain=empresa.stratekaz.com
+
+        Este endpoint permite al frontend cargar todo el branding (logo, colores,
+        PWA config, etc.) ANTES del login, para personalizar la página de login
+        y el tema de la aplicación.
+
+        IMPORTANTE: Este endpoint es PÚBLICO. No expone datos sensibles,
+        solo información visual de branding.
+        """
+        domain_name = request.query_params.get('domain')
+
+        if not domain_name:
+            return Response(
+                {'detail': 'Parámetro domain requerido'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            domain = Domain.objects.select_related('tenant').get(
+                domain=domain_name,
+                is_active=True,
+                tenant__is_active=True
+            )
+            tenant = domain.tenant
+
+            serializer = TenantBrandingSerializer(tenant, context={'request': request})
+            return Response(serializer.data)
+
+        except Domain.DoesNotExist:
+            # Retornar branding por defecto si no se encuentra el tenant
+            # Esto permite que la app funcione incluso en dominios no configurados
             return Response({
-                'exists': False,
+                'company_name': 'StrateKaz',
+                'company_short_name': 'StrateKaz',
+                'company_slogan': 'Consultoría 4.0',
+                'primary_color': '#ec268f',
+                'secondary_color': '#000000',
+                'accent_color': '#f4ec25',
+                'sidebar_color': '#1E293B',
+                'background_color': '#F5F5F5',
+                'showcase_background': '#1F2937',
+                'pwa_name': 'StrateKaz',
+                'pwa_short_name': 'StrateKaz',
+                'pwa_theme_color': '#ec268f',
+                'pwa_background_color': '#FFFFFF',
             })
+
+    @action(detail=False, methods=['get'])
+    def manifest(self, request):
+        """
+        Generar manifest.json dinámico para PWA basado en el branding del tenant.
+
+        Obtiene el tenant del dominio actual (connection.tenant) y genera
+        un manifest.json con la configuración PWA del tenant.
+
+        Este endpoint es usado por el navegador para la PWA.
+        """
+        from django.db import connection
+
+        # Obtener tenant actual del schema
+        tenant = getattr(connection, 'tenant', None)
+
+        # Valores por defecto
+        manifest_data = {
+            'name': 'StrateKaz SGI',
+            'short_name': 'StrateKaz',
+            'description': 'Sistema de Gestión Integral',
+            'start_url': '/',
+            'display': 'standalone',
+            'background_color': '#FFFFFF',
+            'theme_color': '#ec268f',
+            'orientation': 'portrait-primary',
+            'icons': [],
+        }
+
+        if tenant and hasattr(tenant, 'pwa_name'):
+            # Usar configuración del tenant
+            manifest_data.update({
+                'name': tenant.pwa_name or tenant.name or 'StrateKaz SGI',
+                'short_name': tenant.pwa_short_name or tenant.nombre_comercial or tenant.name[:12] if tenant.name else 'StrateKaz',
+                'description': tenant.pwa_description or f'Sistema de Gestión Integral - {tenant.name}',
+                'theme_color': tenant.pwa_theme_color or tenant.primary_color or '#ec268f',
+                'background_color': tenant.pwa_background_color or '#FFFFFF',
+            })
+
+            # Agregar iconos si existen
+            icons = []
+            if tenant.pwa_icon_192:
+                icons.append({
+                    'src': request.build_absolute_uri(tenant.pwa_icon_192.url),
+                    'sizes': '192x192',
+                    'type': 'image/png',
+                    'purpose': 'any'
+                })
+            if tenant.pwa_icon_512:
+                icons.append({
+                    'src': request.build_absolute_uri(tenant.pwa_icon_512.url),
+                    'sizes': '512x512',
+                    'type': 'image/png',
+                    'purpose': 'any'
+                })
+            if tenant.pwa_icon_maskable:
+                icons.append({
+                    'src': request.build_absolute_uri(tenant.pwa_icon_maskable.url),
+                    'sizes': '512x512',
+                    'type': 'image/png',
+                    'purpose': 'maskable'
+                })
+
+            # Si no hay iconos configurados, usar defaults
+            if not icons:
+                icons = [
+                    {'src': '/pwa-192x192.png', 'sizes': '192x192', 'type': 'image/png'},
+                    {'src': '/pwa-512x512.png', 'sizes': '512x512', 'type': 'image/png'},
+                ]
+
+            manifest_data['icons'] = icons
+        else:
+            # Iconos por defecto
+            manifest_data['icons'] = [
+                {'src': '/pwa-192x192.png', 'sizes': '192x192', 'type': 'image/png'},
+                {'src': '/pwa-512x512.png', 'sizes': '512x512', 'type': 'image/png'},
+            ]
+
+        from django.http import JsonResponse
+        return JsonResponse(manifest_data, content_type='application/manifest+json')
+
+    @action(detail=False, methods=['get'])
+    def check_domain(self, request):
+        """
+        Verificar si un dominio está disponible.
+        Query param: ?domain=nuevo-cliente
+        """
+        domain_name = request.query_params.get('domain')
+
+        if not domain_name:
+            return Response(
+                {'detail': 'Parámetro domain requerido'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        exists = Domain.objects.filter(domain__iexact=domain_name).exists()
+
+        return Response({
+            'domain': domain_name,
+            'available': not exists,
+        })

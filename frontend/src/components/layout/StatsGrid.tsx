@@ -147,7 +147,7 @@ function StatCard({ stat, variant, colorKey }: StatCardProps) {
 
   // Clases base con hover del color del módulo
   const cardClasses = cn(
-    'shadow-sm transition-all duration-200 hover:-translate-y-0.5 cursor-default border-gray-200/60 dark:border-gray-700/60',
+    'transition-all duration-200 hover:-translate-y-0.5 cursor-default',
     colors.shadow,
     colors.border,
     'hover:shadow-md'
@@ -224,7 +224,7 @@ function StatCard({ stat, variant, colorKey }: StatCardProps) {
  */
 export function StatCardSkeleton() {
   return (
-    <Card className="p-5 shadow-sm border-gray-200/40 dark:border-gray-700/40">
+    <Card className="p-5">
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="h-4 w-24 bg-gray-100 dark:bg-gray-800 rounded animate-pulse-subtle" />

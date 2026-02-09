@@ -6,3 +6,4 @@ export * from './ui-labels';
 export * from './brand';
 export * from './permissions';
 export * from './timezones';
+export * from './modules';

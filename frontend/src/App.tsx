@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useThemeStore } from '@/store/themeStore';
 import { useDynamicTheme } from '@/hooks/useDynamicTheme';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
@@ -10,6 +10,18 @@ function App() {
   const { isLoading: isBrandingLoading } = useBrandingConfig();
   const [showSplash, setShowSplash] = useState(true);
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
+
+  // Detectar si estamos en página de login para usar splash oscuro
+  const isLoginPage = useMemo(() => {
+    const path = window.location.pathname;
+    return path === '/login' || path === '/forgot-password';
+  }, []);
+
+  // Si hay branding cacheado, reducir splash a 300ms (ya tenemos datos)
+  const hasCachedBranding = useMemo(() => {
+    try { return !!localStorage.getItem('last_branding'); }
+    catch { return false; }
+  }, []);
 
   // Aplicar colores dinámicos del branding (colores sí son dinámicos)
   useDynamicTheme();
@@ -23,14 +35,14 @@ function App() {
     }
   }, [theme]);
 
-  // Tiempo mínimo de splash para UX (evita flash muy rápido)
+  // Tiempo mínimo de splash: 300ms si hay cache, 1200ms primera vez
   useEffect(() => {
     const timer = setTimeout(() => {
       setMinTimeElapsed(true);
-    }, 1200); // 1.2 segundos mínimo
+    }, hasCachedBranding ? 300 : 1200);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [hasCachedBranding]);
 
   // Ocultar splash cuando branding cargó Y pasó el tiempo mínimo
   useEffect(() => {
@@ -42,10 +54,12 @@ function App() {
   return (
     <>
       {/* Splash Screen - Logo FIJO de StrateKaz (identidad de marca) */}
+      {/* Usa variante 'dark' en páginas de login para coincidir con NetworkBackground */}
       <SplashScreen
         isVisible={showSplash}
         statusMessage="Iniciando sistema..."
         showProgress={true}
+        variant={isLoginPage ? 'dark' : 'default'}
       />
 
       {/* Contenido principal */}

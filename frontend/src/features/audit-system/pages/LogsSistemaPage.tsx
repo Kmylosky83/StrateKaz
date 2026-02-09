@@ -1,11 +1,8 @@
 /**
- * Página: Logs del Sistema
- *
- * Gestión de logs de auditoría con tabs:
- * 1. Configuración - Qué módulos/modelos auditar
- * 2. Accesos - Logs de login/logout
- * 3. Cambios - Historial de cambios en datos
- * 4. Consultas - Logs de consultas y exportaciones
+ * Página: Logs del Sistema (REWRITTEN - Sprint 9)
+ * 4 tabs: Configuración, Accesos, Cambios, Consultas
+ * Connected to real hooks from useAuditSystem
+ * Deleted ALL mock data
  */
 import { useState } from 'react';
 import {
@@ -21,171 +18,47 @@ import {
   Monitor,
   MapPin,
   Chrome,
-  Smartphone,
   CheckCircle,
   XCircle,
-  Eye,
-  FileCode,
 } from 'lucide-react';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { PageHeader } from '@/components/layout';
-import { Card } from '@/components/common/Card';
-import { Button } from '@/components/common/Button';
-import { Badge } from '@/components/common/Badge';
-import { Tabs } from '@/components/common/Tabs';
+import { Card, Button, Badge, Tabs, Spinner, EmptyState } from '@/components/common';
 import { cn } from '@/utils/cn';
-
-// ==================== MOCK DATA ====================
-
-const mockConfiguraciones = [
-  {
-    id: 1,
-    modulo: 'talent_hub',
-    modelo: 'Colaborador',
-    auditar_creacion: true,
-    auditar_modificacion: true,
-    auditar_eliminacion: true,
-    auditar_consulta: false,
-    campos_sensibles: ['salario', 'datos_bancarios'],
-    dias_retencion: 365,
-    is_active: true,
-  },
-  {
-    id: 2,
-    modulo: 'hseq_management',
-    modelo: 'Incidente',
-    auditar_creacion: true,
-    auditar_modificacion: true,
-    auditar_eliminacion: true,
-    auditar_consulta: true,
-    campos_sensibles: ['lesionado', 'descripcion_lesion'],
-    dias_retencion: 730,
-    is_active: true,
-  },
-  {
-    id: 3,
-    modulo: 'supply_chain',
-    modelo: 'OrdenCompra',
-    auditar_creacion: true,
-    auditar_modificacion: true,
-    auditar_eliminacion: false,
-    auditar_consulta: false,
-    campos_sensibles: ['monto_total', 'proveedor'],
-    dias_retencion: 365,
-    is_active: true,
-  },
-];
-
-const mockLogsAcceso = [
-  {
-    id: 1,
-    usuario_nombre: 'Juan Pérez',
-    tipo_evento: 'login',
-    ip_address: '192.168.1.100',
-    user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-    ubicacion: 'Bogotá, Colombia',
-    dispositivo: 'Windows',
-    navegador: 'Chrome 120',
-    fue_exitoso: true,
-    fecha: '2024-12-30 08:30:15',
-  },
-  {
-    id: 2,
-    usuario_nombre: 'María García',
-    tipo_evento: 'login_fallido',
-    ip_address: '192.168.1.105',
-    user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-    ubicacion: 'Medellín, Colombia',
-    dispositivo: 'Windows',
-    navegador: 'Firefox 121',
-    fue_exitoso: false,
-    mensaje_error: 'Contraseña incorrecta',
-    fecha: '2024-12-30 08:15:42',
-  },
-  {
-    id: 3,
-    usuario_nombre: 'Carlos López',
-    tipo_evento: 'logout',
-    ip_address: '192.168.1.102',
-    user_agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X)',
-    ubicacion: 'Cali, Colombia',
-    dispositivo: 'MacOS',
-    navegador: 'Safari 17',
-    fue_exitoso: true,
-    fecha: '2024-12-30 07:45:20',
-  },
-];
-
-const mockLogsCambio = [
-  {
-    id: 1,
-    usuario_nombre: 'Ana Rodríguez',
-    content_type_nombre: 'Vehículo',
-    object_repr: 'ABC-123',
-    accion: 'modificar',
-    cambios: {
-      kilometraje: { old: 45000, new: 45500 },
-      estado_mantenimiento: { old: 'Pendiente', new: 'Completado' },
-    },
-    fecha: '2024-12-30 14:20:00',
-    ip_address: '192.168.1.110',
-  },
-  {
-    id: 2,
-    usuario_nombre: 'Pedro Martínez',
-    content_type_nombre: 'Colaborador',
-    object_repr: 'Juan Pérez - 123456789',
-    accion: 'crear',
-    cambios: {
-      nombre: { old: null, new: 'Juan Pérez' },
-      cargo: { old: null, new: 'Operario' },
-      salario: { old: null, new: '***SENSIBLE***' },
-    },
-    fecha: '2024-12-30 13:10:15',
-    ip_address: '192.168.1.115',
-  },
-  {
-    id: 3,
-    usuario_nombre: 'Luis Fernández',
-    content_type_nombre: 'Incidente SST',
-    object_repr: 'INC-2024-045',
-    accion: 'modificar',
-    cambios: {
-      estado: { old: 'Reportado', new: 'En Investigación' },
-      investigador_asignado: { old: null, new: 'María García' },
-    },
-    fecha: '2024-12-30 12:30:45',
-    ip_address: '192.168.1.120',
-  },
-];
-
-const mockLogsConsulta = [
-  {
-    id: 1,
-    usuario_nombre: 'María García',
-    modulo: 'hseq_management',
-    modelo: 'Incidente',
-    tipo_consulta: 'exportacion',
-    parametros: { fecha_inicio: '2024-01-01', fecha_fin: '2024-12-31', formato: 'excel' },
-    registros_afectados: 245,
-    duracion_ms: 1250,
-    fecha: '2024-12-30 15:00:00',
-  },
-  {
-    id: 2,
-    usuario_nombre: 'Carlos López',
-    modulo: 'talent_hub',
-    modelo: 'Colaborador',
-    tipo_consulta: 'reporte',
-    parametros: { area: 'Producción', estado: 'Activo' },
-    registros_afectados: 58,
-    duracion_ms: 450,
-    fecha: '2024-12-30 14:30:00',
-  },
-];
+import {
+  useConfiguracionesAuditoria,
+  useCreateConfiguracionAuditoria,
+  useUpdateConfiguracionAuditoria,
+  useLogsAcceso,
+  useLogsCambio,
+  useLogsConsulta,
+} from '../hooks/useAuditSystem';
+import type { ConfiguracionAuditoria, LogAcceso, LogCambio, LogConsulta } from '../types';
 
 // ==================== COMPONENTS ====================
 
 function ConfiguracionTab() {
+  const { data: configuraciones, isLoading } = useConfiguracionesAuditoria();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (!configuraciones || configuraciones.length === 0) {
+    return (
+      <EmptyState
+        title="No hay configuraciones de auditoría"
+        description="Crea una nueva configuración para empezar a auditar módulos"
+        icon={Settings}
+      />
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -203,7 +76,7 @@ function ConfiguracionTab() {
       </div>
 
       <div className="grid grid-cols-1 gap-4">
-        {mockConfiguraciones.map((config) => (
+        {configuraciones.map((config) => (
           <Card key={config.id} variant="bordered" padding="md">
             <div className="flex items-start justify-between">
               <div className="flex-1">
@@ -251,14 +124,16 @@ function ConfiguracionTab() {
                   </div>
                 </div>
 
-                <div className="mt-3 flex items-center gap-4 text-xs text-gray-600 dark:text-gray-400">
-                  <span>
-                    <strong>Campos sensibles:</strong> {config.campos_sensibles.join(', ')}
-                  </span>
-                  <span>
-                    <strong>Retención:</strong> {config.dias_retencion} días
-                  </span>
-                </div>
+                {config.campos_sensibles && config.campos_sensibles.length > 0 && (
+                  <div className="mt-3 flex items-center gap-4 text-xs text-gray-600 dark:text-gray-400">
+                    <span>
+                      <strong>Campos sensibles:</strong> {config.campos_sensibles.join(', ')}
+                    </span>
+                    <span>
+                      <strong>Retención:</strong> {config.dias_retencion} días
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-2 ml-4">
@@ -275,13 +150,31 @@ function ConfiguracionTab() {
 }
 
 function AccesosTab() {
+  const { data: logs, isLoading } = useLogsAcceso();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (!logs || logs.length === 0) {
+    return (
+      <EmptyState
+        title="No hay logs de acceso"
+        description="Los registros de login y logout aparecerán aquí"
+        icon={LogIn}
+      />
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Logs de Acceso
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Logs de Acceso</h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
             Historial de login, logout y eventos de sesión
           </p>
@@ -297,13 +190,15 @@ function AccesosTab() {
       </div>
 
       <div className="grid grid-cols-1 gap-3">
-        {mockLogsAcceso.map((log) => (
+        {logs.map((log) => (
           <Card key={log.id} variant="bordered" padding="md">
             <div className="flex items-start gap-4">
-              <div className={cn(
-                'w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0',
-                log.fue_exitoso ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
-              )}>
+              <div
+                className={cn(
+                  'w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0',
+                  log.fue_exitoso ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+                )}
+              >
                 {log.tipo_evento === 'login' || log.tipo_evento === 'login_fallido' ? (
                   <LogIn className="w-5 h-5" />
                 ) : (
@@ -318,29 +213,34 @@ function AccesosTab() {
                       {log.usuario_nombre}
                     </h4>
                     <div className="flex items-center gap-3 mt-2 text-xs text-gray-600 dark:text-gray-400">
-                      <span className="flex items-center gap-1">
-                        <Monitor className="w-3 h-3" />
-                        {log.dispositivo}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Chrome className="w-3 h-3" />
-                        {log.navegador}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <MapPin className="w-3 h-3" />
-                        {log.ubicacion}
-                      </span>
+                      {log.dispositivo && (
+                        <span className="flex items-center gap-1">
+                          <Monitor className="w-3 h-3" />
+                          {log.dispositivo}
+                        </span>
+                      )}
+                      {log.navegador && (
+                        <span className="flex items-center gap-1">
+                          <Chrome className="w-3 h-3" />
+                          {log.navegador}
+                        </span>
+                      )}
+                      {log.ubicacion && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          {log.ubicacion}
+                        </span>
+                      )}
                     </div>
                   </div>
 
                   <div className="text-right">
-                    <Badge
-                      variant={log.fue_exitoso ? 'success' : 'danger'}
-                      size="sm"
-                    >
+                    <Badge variant={log.fue_exitoso ? 'success' : 'danger'} size="sm">
                       {log.tipo_evento.replace('_', ' ')}
                     </Badge>
-                    <p className="text-xs text-gray-500 mt-1">{log.fecha}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {format(new Date(log.fecha), 'PPp', { locale: es })}
+                    </p>
                   </div>
                 </div>
 
@@ -362,13 +262,31 @@ function AccesosTab() {
 }
 
 function CambiosTab() {
+  const { data: logs, isLoading } = useLogsCambio();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (!logs || logs.length === 0) {
+    return (
+      <EmptyState
+        title="No hay logs de cambios"
+        description="Los cambios en registros aparecerán aquí"
+        icon={FileEdit}
+      />
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Logs de Cambios
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Logs de Cambios</h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
             Historial de creación, modificación y eliminación de registros
           </p>
@@ -384,15 +302,17 @@ function CambiosTab() {
       </div>
 
       <div className="grid grid-cols-1 gap-3">
-        {mockLogsCambio.map((log) => (
+        {logs.map((log) => (
           <Card key={log.id} variant="bordered" padding="md">
             <div className="flex items-start gap-4">
-              <div className={cn(
-                'w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0',
-                log.accion === 'crear' && 'bg-green-100 text-green-600',
-                log.accion === 'modificar' && 'bg-blue-100 text-blue-600',
-                log.accion === 'eliminar' && 'bg-red-100 text-red-600'
-              )}>
+              <div
+                className={cn(
+                  'w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0',
+                  log.accion === 'crear' && 'bg-green-100 text-green-600',
+                  log.accion === 'modificar' && 'bg-blue-100 text-blue-600',
+                  log.accion === 'eliminar' && 'bg-red-100 text-red-600'
+                )}
+              >
                 <FileEdit className="w-5 h-5" />
               </div>
 
@@ -403,53 +323,58 @@ function CambiosTab() {
                       {log.usuario_nombre}
                     </h4>
                     <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                      {log.content_type_nombre}: <strong>{log.object_repr}</strong>
+                      {log.content_type_nombre || 'Registro'}: <strong>{log.object_repr}</strong>
                     </p>
                   </div>
 
                   <div className="text-right">
                     <Badge
                       variant={
-                        log.accion === 'crear' ? 'success' :
-                        log.accion === 'modificar' ? 'info' : 'danger'
+                        log.accion === 'crear'
+                          ? 'success'
+                          : log.accion === 'modificar'
+                          ? 'info'
+                          : 'danger'
                       }
                       size="sm"
                     >
                       {log.accion}
                     </Badge>
-                    <p className="text-xs text-gray-500 mt-1">{log.fecha}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {format(new Date(log.fecha), 'PPp', { locale: es })}
+                    </p>
                   </div>
                 </div>
 
                 {/* Cambios Diff */}
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 space-y-2">
-                  {Object.entries(log.cambios).map(([campo, valores]) => (
-                    <div key={campo} className="text-xs">
-                      <div className="font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        {campo}:
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {valores.old !== null && (
-                          <div className="flex-1 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 px-2 py-1 rounded">
-                            <span className="font-mono">
-                              {JSON.stringify(valores.old)}
-                            </span>
+                {log.cambios && Object.keys(log.cambios).length > 0 && (
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 space-y-2">
+                    {Object.entries(log.cambios).map(([campo, valores]) => (
+                      <div key={campo} className="text-xs">
+                        <div className="font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          {campo}:
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {valores.old !== null && (
+                            <div className="flex-1 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 px-2 py-1 rounded">
+                              <span className="font-mono">{JSON.stringify(valores.old)}</span>
+                            </div>
+                          )}
+                          <span className="text-gray-400">→</span>
+                          <div className="flex-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 px-2 py-1 rounded">
+                            <span className="font-mono">{JSON.stringify(valores.new)}</span>
                           </div>
-                        )}
-                        <span className="text-gray-400">→</span>
-                        <div className="flex-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 px-2 py-1 rounded">
-                          <span className="font-mono">
-                            {JSON.stringify(valores.new)}
-                          </span>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
 
-                <p className="text-xs text-gray-500 mt-2">
-                  <strong>IP:</strong> {log.ip_address}
-                </p>
+                {log.ip_address && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    <strong>IP:</strong> {log.ip_address}
+                  </p>
+                )}
               </div>
             </div>
           </Card>
@@ -460,6 +385,26 @@ function CambiosTab() {
 }
 
 function ConsultasTab() {
+  const { data: logs, isLoading } = useLogsConsulta();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (!logs || logs.length === 0) {
+    return (
+      <EmptyState
+        title="No hay logs de consultas"
+        description="Las consultas y exportaciones aparecerán aquí"
+        icon={Search}
+      />
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -482,7 +427,7 @@ function ConsultasTab() {
       </div>
 
       <div className="grid grid-cols-1 gap-3">
-        {mockLogsConsulta.map((log) => (
+        {logs.map((log) => (
           <Card key={log.id} variant="bordered" padding="md">
             <div className="flex items-start gap-4">
               <div className="w-10 h-10 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -508,28 +453,34 @@ function ConsultasTab() {
                     <Badge variant="info" size="sm">
                       {log.tipo_consulta}
                     </Badge>
-                    <p className="text-xs text-gray-500 mt-1">{log.fecha}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {format(new Date(log.fecha), 'PPp', { locale: es })}
+                    </p>
                   </div>
                 </div>
 
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 space-y-2">
-                  <div className="text-xs">
-                    <div className="font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Parámetros:
+                {log.parametros && Object.keys(log.parametros).length > 0 && (
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 space-y-2">
+                    <div className="text-xs">
+                      <div className="font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Parámetros:
+                      </div>
+                      <pre className="text-xs font-mono text-gray-600 dark:text-gray-400 overflow-x-auto">
+                        {JSON.stringify(log.parametros, null, 2)}
+                      </pre>
                     </div>
-                    <pre className="text-xs font-mono text-gray-600 dark:text-gray-400 overflow-x-auto">
-                      {JSON.stringify(log.parametros, null, 2)}
-                    </pre>
                   </div>
-                </div>
+                )}
 
                 <div className="flex items-center gap-4 mt-2 text-xs text-gray-600 dark:text-gray-400">
                   <span>
                     <strong>Registros:</strong> {log.registros_afectados.toLocaleString()}
                   </span>
-                  <span>
-                    <strong>Duración:</strong> {log.duracion_ms}ms
-                  </span>
+                  {log.duracion_ms && (
+                    <span>
+                      <strong>Duración:</strong> {log.duracion_ms}ms
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

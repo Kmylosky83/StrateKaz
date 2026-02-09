@@ -5,3 +5,9 @@ class DesempenoConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'apps.talent_hub.desempeno'
     verbose_name = 'Desempeno'
+
+    def ready(self):
+        try:
+            import apps.talent_hub.desempeno.signals  # noqa
+        except ImportError:
+            pass

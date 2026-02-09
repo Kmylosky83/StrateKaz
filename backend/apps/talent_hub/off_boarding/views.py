@@ -18,7 +18,8 @@ from .models import (
     PazSalvo,
     ExamenEgreso,
     EntrevistaRetiro,
-    LiquidacionFinal
+    LiquidacionFinal,
+    CertificadoTrabajo
 )
 from .serializers import (
     TipoRetiroListSerializer,
@@ -41,7 +42,10 @@ from .serializers import (
     EntrevistaRetiroCreateSerializer,
     LiquidacionFinalListSerializer,
     LiquidacionFinalDetailSerializer,
-    LiquidacionFinalCreateSerializer
+    LiquidacionFinalCreateSerializer,
+    CertificadoTrabajoListSerializer,
+    CertificadoTrabajoDetailSerializer,
+    CertificadoTrabajoCreateSerializer
 )
 
 
@@ -804,4 +808,90 @@ class LiquidacionFinalViewSet(viewsets.ModelViewSet):
         return Response({
             'message': 'Pago registrado exitosamente.',
             'liquidacion': serializer.data
+        })
+
+
+# =============================================================================
+# CERTIFICADO DE TRABAJO - Art. 57 y 62 CST
+# =============================================================================
+
+class CertificadoTrabajoViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para certificados de trabajo.
+
+    Gestión de certificados laborales según Art. 57 y 62 CST.
+    Acciones personalizadas:
+    - generar: Marca el certificado como generado
+    - entregar: Marca el certificado como entregado
+    """
+
+    queryset = CertificadoTrabajo.objects.all()
+
+    def get_queryset(self):
+        queryset = CertificadoTrabajo.objects.filter(
+            empresa=self.request.user.empresa,
+            is_active=True
+        ).select_related('colaborador', 'generado_por')
+
+        # Filtros
+        estado = self.request.query_params.get('estado')
+        if estado:
+            queryset = queryset.filter(estado=estado)
+
+        tipo = self.request.query_params.get('tipo_certificado')
+        if tipo:
+            queryset = queryset.filter(tipo_certificado=tipo)
+
+        colaborador_id = self.request.query_params.get('colaborador')
+        if colaborador_id:
+            queryset = queryset.filter(colaborador_id=colaborador_id)
+
+        return queryset.order_by('-fecha_solicitud')
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return CertificadoTrabajoListSerializer
+        elif self.action in ['create', 'update', 'partial_update']:
+            return CertificadoTrabajoCreateSerializer
+        return CertificadoTrabajoDetailSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(empresa=self.request.user.empresa)
+
+    def perform_destroy(self, instance):
+        instance.soft_delete()
+
+    @action(detail=True, methods=['post'])
+    def generar(self, request, pk=None):
+        """Marca el certificado como generado."""
+        certificado = self.get_object()
+        certificado.estado = 'generado'
+        certificado.fecha_expedicion = timezone.now().date()
+        certificado.generado_por = request.user
+        certificado.save()
+
+        serializer = self.get_serializer(certificado)
+        return Response({
+            'message': 'Certificado generado exitosamente.',
+            'certificado': serializer.data
+        })
+
+    @action(detail=True, methods=['post'])
+    def entregar(self, request, pk=None):
+        """Marca el certificado como entregado."""
+        certificado = self.get_object()
+
+        if certificado.estado != 'generado':
+            return Response(
+                {'error': 'El certificado debe estar generado antes de entregarse.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        certificado.estado = 'entregado'
+        certificado.save()
+
+        serializer = self.get_serializer(certificado)
+        return Response({
+            'message': 'Certificado marcado como entregado.',
+            'certificado': serializer.data
         })

@@ -11,7 +11,7 @@ import type { CreateNormaISODTO, UpdateNormaISODTO } from '../api/strategicApi';
 
 // Query Keys
 export const normasISOKeys = {
-  all: ['normas-iso'] as const,
+  all: ['normas_iso'] as const,
   lists: () => [...normasISOKeys.all, 'list'] as const,
   list: () => [...normasISOKeys.lists()] as const,
   details: () => [...normasISOKeys.all, 'detail'] as const,

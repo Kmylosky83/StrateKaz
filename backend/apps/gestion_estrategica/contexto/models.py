@@ -314,16 +314,9 @@ class EstrategiaTOWS(BaseCompanyModel):
         related_name='estrategias_tows',
         verbose_name='Área Responsable'
     )
-    # Vinculación con objetivo estratégico (cuando la estrategia se convierte en objetivo)
-    objetivo_estrategico = models.ForeignKey(
-        'planeacion.StrategicObjective',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='estrategias_origen',
-        verbose_name='Objetivo Estratégico Derivado',
-        help_text='Objetivo estratégico creado a partir de esta estrategia TOWS'
-    )
+    # NOTA: La vinculación con objetivo estratégico se movió a StrategicObjective.estrategia_origen
+    # para eliminar la dependencia circular contexto → planeacion.
+    # Ahora la relación es: planeacion.StrategicObjective.estrategia_origen → EstrategiaTOWS
     fecha_implementacion = models.DateField(
         null=True,
         blank=True,

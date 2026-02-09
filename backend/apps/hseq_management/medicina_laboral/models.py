@@ -230,16 +230,21 @@ class ExamenMedico(models.Model):
         related_name='examenes',
         verbose_name='Tipo de Examen'
     )
-    colaborador_id = models.PositiveIntegerField(
-        db_index=True,
-        verbose_name='ID Colaborador',
-        help_text='ID del colaborador evaluado'
+    colaborador = models.ForeignKey(
+        'colaboradores.Colaborador',
+        on_delete=models.PROTECT,
+        related_name='examenes_medicos',
+        verbose_name='Colaborador',
+        help_text='Colaborador evaluado'
     )
-    cargo_id = models.PositiveIntegerField(
+    cargo = models.ForeignKey(
+        'core.Cargo',
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name='ID Cargo',
-        help_text='ID del cargo del colaborador al momento del examen'
+        related_name='+',
+        verbose_name='Cargo',
+        help_text='Cargo del colaborador al momento del examen'
     )
 
     # Programación
@@ -397,7 +402,7 @@ class ExamenMedico(models.Model):
         verbose_name_plural = 'Exámenes Médicos'
         ordering = ['-fecha_programada']
         indexes = [
-            models.Index(fields=['empresa_id', 'colaborador_id']),
+            models.Index(fields=['empresa_id', 'colaborador']),
             models.Index(fields=['numero_examen']),
             models.Index(fields=['estado', 'fecha_programada']),
             models.Index(fields=['concepto_aptitud']),
@@ -492,16 +497,21 @@ class RestriccionMedica(models.Model):
         verbose_name='Examen Médico',
         help_text='Examen médico que originó la restricción'
     )
-    colaborador_id = models.PositiveIntegerField(
-        db_index=True,
-        verbose_name='ID Colaborador',
-        help_text='ID del colaborador'
+    colaborador = models.ForeignKey(
+        'colaboradores.Colaborador',
+        on_delete=models.PROTECT,
+        related_name='restricciones_medicas',
+        verbose_name='Colaborador',
+        help_text='Colaborador con restricción'
     )
-    cargo_id = models.PositiveIntegerField(
+    cargo = models.ForeignKey(
+        'core.Cargo',
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name='ID Cargo',
-        help_text='ID del cargo actual del colaborador'
+        related_name='+',
+        verbose_name='Cargo',
+        help_text='Cargo actual del colaborador'
     )
 
     # Clasificación
@@ -632,7 +642,7 @@ class RestriccionMedica(models.Model):
         verbose_name_plural = 'Restricciones Médicas'
         ordering = ['-fecha_inicio']
         indexes = [
-            models.Index(fields=['empresa_id', 'colaborador_id']),
+            models.Index(fields=['empresa_id', 'colaborador']),
             models.Index(fields=['codigo_restriccion']),
             models.Index(fields=['estado', 'fecha_fin']),
             models.Index(fields=['tipo_restriccion', 'categoria']),
@@ -894,15 +904,20 @@ class CasoVigilancia(models.Model):
         related_name='casos',
         verbose_name='Programa de Vigilancia'
     )
-    colaborador_id = models.PositiveIntegerField(
-        db_index=True,
-        verbose_name='ID Colaborador',
-        help_text='ID del colaborador en seguimiento'
+    colaborador = models.ForeignKey(
+        'colaboradores.Colaborador',
+        on_delete=models.PROTECT,
+        related_name='casos_vigilancia',
+        verbose_name='Colaborador',
+        help_text='Colaborador en seguimiento'
     )
-    cargo_id = models.PositiveIntegerField(
+    cargo = models.ForeignKey(
+        'core.Cargo',
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name='ID Cargo'
+        related_name='+',
+        verbose_name='Cargo'
     )
 
     # Identificación del caso
@@ -1033,7 +1048,7 @@ class CasoVigilancia(models.Model):
         verbose_name_plural = 'Casos en Vigilancia'
         ordering = ['-fecha_apertura']
         indexes = [
-            models.Index(fields=['empresa_id', 'colaborador_id']),
+            models.Index(fields=['empresa_id', 'colaborador']),
             models.Index(fields=['numero_caso']),
             models.Index(fields=['programa', 'estado']),
             models.Index(fields=['severidad', 'estado']),

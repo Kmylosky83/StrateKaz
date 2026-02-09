@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" href="/logo.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180x180.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="StrateKaz | Consultoría 4.0. 20+ años de experiencia en ISO 9001, 14001, 45001, SG-SST y PESV. Consultoría estratégica + Plataforma de Gestión Integral para empresas colombianas." />
+    <meta name="keywords" content="stratekaz, consultoría ISO, ISO 9001 Colombia, ISO 14001, ISO 45001, SG-SST, PESV, gestión de calidad, seguridad y salud en el trabajo, certificación ISO Colombia, software gestión empresarial" />
+    <meta name="author" content="StrateKaz - Consultoría 4.0" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://stratekaz.com" />
+
+    <!-- Theme Color for PWA -->
+    <meta name="theme-color" content="#ec268f" />
+    <meta name="msapplication-TileColor" content="#ec268f" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://stratekaz.com" />
+    <meta property="og:title" content="StrateKaz | Consultoría 4.0 - ISO, SST, PESV" />
+    <meta property="og:description" content="20+ años transformando empresas colombianas. Consultoría estratégica + Software de Gestión Integral. 100% éxito en certificaciones ISO." />
+    <meta property="og:image" content="https://stratekaz.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="es_CO" />
+    <meta property="og:site_name" content="StrateKaz" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://stratekaz.com" />
+    <meta name="twitter:title" content="StrateKaz | Consultoría 4.0" />
+    <meta name="twitter:description" content="Consultoría estratégica + Plataforma de Gestión Integral. ISO 9001, 14001, 45001, SG-SST, PESV." />
+    <meta name="twitter:image" content="https://stratekaz.com/og-image.png" />
+
+    <!-- Geo Tags for Colombia -->
+    <meta name="geo.region" content="CO" />
+    <meta name="geo.country" content="Colombia" />
+
+    <!-- Mobile Web App Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="StrateKaz" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon-180x180.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/icons/apple-touch-icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="144x144" href="/icons/apple-touch-icon-144x144.png" />
+    <link rel="apple-touch-icon" sizes="120x120" href="/icons/apple-touch-icon-120x120.png" />
+    <link rel="apple-touch-icon" sizes="76x76" href="/icons/apple-touch-icon-76x76.png" />
+
+    <title>StrateKaz | Consultoría 4.0</title>
+
+    <!-- CRITICAL: Cache Killer must load BEFORE React -->
+    <script src="/cache-killer.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Prevent FOUC - Dark background immediately -->
+    <style>
+      html,
+      body {
+        background-color: #000000;
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+      }
+
+      #root {
+        background-color: #000000;
+        min-height: 100vh;
+      }
+
+      /* Loading spinner while app loads */
+      .app-loader {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .spinner {
+        width: 32px;
+        height: 32px;
+        border: 2px solid #2a2a2a;
+        border-top: 2px solid #ec268f;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      .loading-text {
+        color: #cccccc;
+        font-family: Inter, sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        opacity: 0;
+        animation: fadeIn 0.5s ease-in 0.3s forwards;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      /* Hide loader when React app is ready */
+      .app-loader.fade-out {
+        opacity: 0;
+        transition: opacity 0.3s ease-out;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Loading indicator -->
+    <div class="app-loader">
+      <div class="spinner"></div>
+      <div class="loading-text">Cargando StrateKaz...</div>
+    </div>
+
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

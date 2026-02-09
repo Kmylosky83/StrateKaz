@@ -15,6 +15,7 @@ from django.views.static import serve
 from django.apps import apps
 from apps.core.views import RateLimitedTokenObtainPairView, RateLimitedTokenRefreshView
 from apps.core.views.core_views import logout_view
+from django.contrib.auth.decorators import login_required
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
 
@@ -131,10 +132,10 @@ urlpatterns = [
     # Admin panel
     path('admin/', admin.site.urls),
 
-    # API Documentation
-    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
-    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
-    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+    # API Documentation (protegido con login requerido)
+    path('api/schema/', login_required(SpectacularAPIView.as_view()), name='schema'),
+    path('api/docs/', login_required(SpectacularSwaggerView.as_view(url_name='schema')), name='swagger-ui'),
+    path('api/redoc/', login_required(SpectacularRedocView.as_view(url_name='schema')), name='redoc'),
 
     # JWT Authentication (with rate limiting protection)
     path('api/auth/login/', RateLimitedTokenObtainPairView.as_view(), name='token_obtain_pair'),
@@ -195,16 +196,12 @@ if is_app_installed('apps.workflow_engine.disenador_flujos'):
 # NIVEL 3: TORRE DE CONTROL - HSEQ Management
 # NOTA: sistema_documental migrado a N1 (gestion_estrategica.gestion_documental)
 # ═══════════════════════════════════════════════════════════════════════════
-if is_app_installed('apps.hseq_management.planificacion_sistema'):
+if is_app_installed('apps.hseq_management.calidad'):
     urlpatterns.append(path('api/hseq/', include('apps.hseq_management.urls')))
 
 # ═══════════════════════════════════════════════════════════════════════════
 # NIVEL 4: CADENA DE VALOR - Supply + Production + Logistics + Sales
 # ═══════════════════════════════════════════════════════════════════════════
-# Legacy proveedores (solo si está activa)
-if is_app_installed('apps.proveedores'):
-    urlpatterns.append(path('api/proveedores/', include('apps.proveedores.urls')))
-
 if is_app_installed('apps.supply_chain.gestion_proveedores'):
     urlpatterns.append(path('api/supply-chain/', include('apps.supply_chain.gestion_proveedores.urls')))
 

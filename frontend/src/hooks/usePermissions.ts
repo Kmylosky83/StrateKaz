@@ -104,10 +104,12 @@ interface AccessOptions {
  */
 export function usePermissions(): PermissionsContext {
   const user = useAuthStore((state) => state.user);
+  const isSuperadminGlobal = useAuthStore((state) => state.isSuperadmin);
 
+  // Superadmin si: TenantUser.is_superadmin (global) O User.is_superuser (dentro del tenant)
   const isSuperAdmin = useMemo(() => {
-    return user?.is_superuser ?? false;
-  }, [user?.is_superuser]);
+    return isSuperadminGlobal || (user?.is_superuser ?? false);
+  }, [isSuperadminGlobal, user?.is_superuser]);
 
   const cargoCode = useMemo(() => {
     return user?.cargo_code ?? null;
@@ -315,10 +317,12 @@ export function usePermissions(): PermissionsContext {
 
 /**
  * Hook simplificado para verificar si es superadmin
+ * Considera tanto TenantUser.is_superadmin (global) como User.is_superuser (local)
  */
 export function useIsSuperAdmin(): boolean {
   const user = useAuthStore((state) => state.user);
-  return user?.is_superuser ?? false;
+  const isSuperadminGlobal = useAuthStore((state) => state.isSuperadmin);
+  return isSuperadminGlobal || (user?.is_superuser ?? false);
 }
 
 /**

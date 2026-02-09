@@ -6,6 +6,8 @@
  * - Firmas digitales
  * - Plantillas y constructor de documentos
  * - Distribución y control documental
+ *
+ * Sprint 6: Todos los botones conectados a modales + estadísticas reales.
  */
 import { useState } from 'react';
 import {
@@ -35,35 +37,51 @@ import {
   Archive,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
-import { Tabs } from '@/components/common/Tabs';
-import { Card } from '@/components/common/Card';
-import { Button } from '@/components/common/Button';
-import { EmptyState } from '@/components/common/EmptyState';
-import { Badge } from '@/components/common/Badge';
-import { Spinner } from '@/components/common/Spinner';
+import {
+  Tabs,
+  Card,
+  Button,
+  EmptyState,
+  Badge,
+  Spinner,
+  ConfirmDialog,
+  ExportButton,
+} from '@/components/common';
 
-// Importar hooks del módulo (migrado a gestion-estrategica)
 import {
   useDocumentos,
   useTiposDocumento,
   usePlantillasDocumento,
   useListadoMaestro,
   useVersionesDocumento,
+  useDeleteTipoDocumento,
+  useDeletePlantillaDocumento,
+  useActivarPlantilla,
+  useDeleteDocumento,
+  useDistribucionesActivas,
+  useEstadisticasDocumentales,
 } from '@/features/gestion-estrategica/hooks/useGestionDocumental';
 import { useMisFirmasPendientes } from '@/features/gestion-estrategica/hooks/useWorkflowFirmas';
 import type {
-  Documento,
   TipoDocumento,
   PlantillaDocumento,
-  VersionDocumento,
-  ControlDocumental,
 } from '@/features/gestion-estrategica/types/gestion-documental.types';
 
+import { TipoDocumentoFormModal } from '@/features/gestion-estrategica/components/gestion-documental/TipoDocumentoFormModal';
+import { PlantillaFormModal } from '@/features/gestion-estrategica/components/gestion-documental/PlantillaFormModal';
+import { DocumentoFormModal } from '@/features/gestion-estrategica/components/gestion-documental/DocumentoFormModal';
+import { DocumentoDetailModal } from '@/features/gestion-estrategica/components/gestion-documental/DocumentoDetailModal';
+
 // ==================== SECCIÓN: LISTADO MAESTRO ====================
-function ListadoMaestroSection() {
+function ListadoMaestroSection({
+  onViewDocumento,
+  onCreateDocumento,
+}: {
+  onViewDocumento: (id: number) => void;
+  onCreateDocumento: () => void;
+}) {
   const { data: listadoMaestro, isLoading } = useListadoMaestro();
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterEstado, setFilterEstado] = useState<string>('');
 
   if (isLoading) {
     return (
@@ -81,7 +99,7 @@ function ListadoMaestroSection() {
         description="El listado maestro mostrará todos los documentos vigentes una vez que publiques documentos."
         action={{
           label: 'Crear Primer Documento',
-          onClick: () => {},
+          onClick: onCreateDocumento,
           icon: <Plus className="w-4 h-4" />,
         }}
       />
@@ -169,112 +187,143 @@ function ListadoMaestroSection() {
             className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
           />
         </div>
+        <ExportButton
+          endpoint="/api/gestion-estrategica/gestion-documental/documentos/export/"
+          filename="documentos"
+        />
         <Button variant="outline" leftIcon={<Filter className="w-4 h-4" />}>
           Filtrar
-        </Button>
-        <Button variant="outline" leftIcon={<Download className="w-4 h-4" />}>
-          Exportar PDF
         </Button>
       </div>
 
       {/* Listado por tipo de documento */}
       <div className="space-y-6">
-        {listadoMaestro.map((tipoDocumento) => (
-          <Card key={tipoDocumento.tipo_documento} className="overflow-hidden">
-            <div className="bg-gray-50 dark:bg-gray-800/50 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {tipoDocumento.tipo_documento}
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {tipoDocumento.documentos.length} documento(s)
-              </p>
-            </div>
+        {listadoMaestro.map((tipoDocumento) => {
+          const filteredDocs = searchTerm
+            ? tipoDocumento.documentos.filter(
+                (d) =>
+                  d.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  d.titulo.toLowerCase().includes(searchTerm.toLowerCase())
+              )
+            : tipoDocumento.documentos;
 
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 dark:bg-gray-800/30">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Código
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Título
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Versión
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Fecha Vigencia
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Estado
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Acciones
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {tipoDocumento.documentos.map((doc) => (
-                    <tr key={doc.codigo} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">
-                          {doc.codigo}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-gray-900 dark:text-white">{doc.titulo}</span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <Badge variant="secondary">{doc.version}</Badge>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                        {new Date(doc.fecha_vigencia).toLocaleDateString('es-CO')}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <Badge
-                          variant={
-                            doc.estado === 'PUBLICADO'
-                              ? 'success'
-                              : doc.estado === 'APROBADO'
-                                ? 'primary'
-                                : 'warning'
-                          }
-                        >
-                          {doc.estado}
-                        </Badge>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button variant="ghost" size="sm" leftIcon={<Eye className="w-4 h-4" />}>
-                            Ver
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            leftIcon={<Download className="w-4 h-4" />}
-                          >
-                            PDF
-                          </Button>
-                        </div>
-                      </td>
+          if (filteredDocs.length === 0) return null;
+
+          return (
+            <Card key={tipoDocumento.tipo_documento} className="overflow-hidden">
+              <div className="bg-gray-50 dark:bg-gray-800/50 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  {tipoDocumento.tipo_documento}
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {filteredDocs.length} documento(s)
+                </p>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 dark:bg-gray-800/30">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Código
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Título
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Versión
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Fecha Vigencia
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Estado
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Acciones
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        ))}
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {filteredDocs.map((doc) => (
+                      <tr key={doc.codigo} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="text-sm font-medium text-gray-900 dark:text-white">
+                            {doc.codigo}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-sm text-gray-900 dark:text-white">{doc.titulo}</span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Badge variant="secondary">{doc.version}</Badge>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                          {doc.fecha_vigencia
+                            ? new Date(doc.fecha_vigencia).toLocaleDateString('es-CO')
+                            : '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Badge
+                            variant={
+                              doc.estado === 'PUBLICADO'
+                                ? 'success'
+                                : doc.estado === 'APROBADO'
+                                  ? 'primary'
+                                  : 'warning'
+                            }
+                          >
+                            {doc.estado}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              leftIcon={<Eye className="w-4 h-4" />}
+                              onClick={() => doc.id && onViewDocumento(doc.id)}
+                            >
+                              Ver
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
 }
 
 // ==================== SECCIÓN: TIPOS Y PLANTILLAS ====================
-function TiposPlantillasSection() {
+function TiposPlantillasSection({
+  onCreateTipo,
+  onEditTipo,
+  onCreatePlantilla,
+  onEditPlantilla,
+}: {
+  onCreateTipo: () => void;
+  onEditTipo: (tipo: TipoDocumento) => void;
+  onCreatePlantilla: () => void;
+  onEditPlantilla: (plantilla: PlantillaDocumento) => void;
+}) {
   const { data: tipos, isLoading: isLoadingTipos } = useTiposDocumento();
   const { data: plantillas, isLoading: isLoadingPlantillas } = usePlantillasDocumento();
+  const deleteTipoMutation = useDeleteTipoDocumento();
+  const deletePlantillaMutation = useDeletePlantillaDocumento();
+  const activarPlantillaMutation = useActivarPlantilla();
+
   const [selectedTipo, setSelectedTipo] = useState<number | null>(null);
+  const [confirmDeleteTipo, setConfirmDeleteTipo] = useState<TipoDocumento | null>(null);
+  const [confirmDeletePlantilla, setConfirmDeletePlantilla] = useState<PlantillaDocumento | null>(null);
+  const [tipoMenuOpen, setTipoMenuOpen] = useState<number | null>(null);
+  const [plantillaMenuOpen, setPlantillaMenuOpen] = useState<number | null>(null);
 
   if (isLoadingTipos || isLoadingPlantillas) {
     return (
@@ -285,156 +334,291 @@ function TiposPlantillasSection() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* Tipos de Documento */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Tipos de Documento
-          </h3>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Nuevo Tipo
-          </Button>
+    <>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Tipos de Documento */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Tipos de Documento
+            </h3>
+            <Button
+              variant="primary"
+              size="sm"
+              leftIcon={<Plus className="w-4 h-4" />}
+              onClick={onCreateTipo}
+            >
+              Nuevo Tipo
+            </Button>
+          </div>
+
+          {!tipos || tipos.length === 0 ? (
+            <EmptyState
+              icon={<Files className="w-12 h-12" />}
+              title="No hay tipos de documento"
+              description="Crea tipos de documento para organizar tu sistema documental."
+              action={{
+                label: 'Crear Tipo',
+                onClick: onCreateTipo,
+                icon: <Plus className="w-4 h-4" />,
+              }}
+            />
+          ) : (
+            <div className="space-y-2">
+              {tipos.map((tipo) => (
+                <Card
+                  key={tipo.id}
+                  className={`p-4 cursor-pointer transition-all ${
+                    selectedTipo === tipo.id ? 'ring-2 ring-blue-500' : ''
+                  }`}
+                  onClick={() => setSelectedTipo(tipo.id)}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: tipo.color_identificacion }}
+                        />
+                        <h4 className="font-medium text-gray-900 dark:text-white">{tipo.nombre}</h4>
+                        <Badge variant="secondary">{tipo.codigo}</Badge>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                        {tipo.descripcion}
+                      </p>
+                      <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                        <span className="flex items-center gap-1">
+                          <Tag className="w-3 h-3" />
+                          {tipo.nivel_documento}
+                        </span>
+                        {tipo.requiere_aprobacion && (
+                          <span className="flex items-center gap-1">
+                            <CheckCircle className="w-3 h-3" />
+                            Requiere aprobación
+                          </span>
+                        )}
+                        {tipo.requiere_firma && (
+                          <span className="flex items-center gap-1">
+                            <PenTool className="w-3 h-3" />
+                            Requiere firma
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={tipo.is_active ? 'success' : 'secondary'}>
+                        {tipo.is_active ? 'Activo' : 'Inactivo'}
+                      </Badge>
+                      <div className="relative">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setTipoMenuOpen(tipoMenuOpen === tipo.id ? null : tipo.id);
+                          }}
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                        {tipoMenuOpen === tipo.id && (
+                          <div
+                            className="absolute right-0 top-8 z-50 w-40 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
+                              onClick={() => {
+                                onEditTipo(tipo);
+                                setTipoMenuOpen(null);
+                              }}
+                            >
+                              <Edit className="w-3 h-3" /> Editar
+                            </button>
+                            <button
+                              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 text-red-600 flex items-center gap-2"
+                              onClick={() => {
+                                setConfirmDeleteTipo(tipo);
+                                setTipoMenuOpen(null);
+                              }}
+                            >
+                              <Trash2 className="w-3 h-3" /> Eliminar
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
 
-        {!tipos || tipos.length === 0 ? (
-          <EmptyState
-            icon={<Files className="w-12 h-12" />}
-            title="No hay tipos de documento"
-            description="Crea tipos de documento para organizar tu sistema documental."
-            action={{
-              label: 'Crear Tipo',
-              onClick: () => {},
-              icon: <Plus className="w-4 h-4" />,
-            }}
-          />
-        ) : (
-          <div className="space-y-2">
-            {tipos.map((tipo) => (
-              <Card
-                key={tipo.id}
-                className={`p-4 cursor-pointer transition-all ${
-                  selectedTipo === tipo.id ? 'ring-2 ring-blue-500' : ''
-                }`}
-                onClick={() => setSelectedTipo(tipo.id)}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: tipo.color_identificacion }}
-                      />
-                      <h4 className="font-medium text-gray-900 dark:text-white">{tipo.nombre}</h4>
-                      <Badge variant="secondary">{tipo.codigo}</Badge>
-                    </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                      {tipo.descripcion}
-                    </p>
-                    <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
-                      <span className="flex items-center gap-1">
-                        <Tag className="w-3 h-3" />
-                        {tipo.nivel_documento}
-                      </span>
-                      {tipo.requiere_aprobacion && (
-                        <span className="flex items-center gap-1">
-                          <CheckCircle className="w-3 h-3" />
-                          Requiere aprobación
-                        </span>
-                      )}
-                      {tipo.requiere_firma && (
-                        <span className="flex items-center gap-1">
-                          <PenTool className="w-3 h-3" />
-                          Requiere firma
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={tipo.is_active ? 'success' : 'secondary'}>
-                      {tipo.is_active ? 'Activo' : 'Inactivo'}
-                    </Badge>
-                    <Button variant="ghost" size="sm">
-                      <MoreVertical className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            ))}
+        {/* Plantillas */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Plantillas</h3>
+            <Button
+              variant="primary"
+              size="sm"
+              leftIcon={<Plus className="w-4 h-4" />}
+              onClick={onCreatePlantilla}
+            >
+              Nueva Plantilla
+            </Button>
           </div>
-        )}
-      </div>
 
-      {/* Plantillas */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Plantillas</h3>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Nueva Plantilla
-          </Button>
+          {!plantillas || plantillas.length === 0 ? (
+            <EmptyState
+              icon={<Layout className="w-12 h-12" />}
+              title="No hay plantillas"
+              description="Crea plantillas reutilizables para generar documentos de forma rápida."
+              action={{
+                label: 'Crear Plantilla',
+                onClick: onCreatePlantilla,
+                icon: <Plus className="w-4 h-4" />,
+              }}
+            />
+          ) : (
+            <div className="space-y-2">
+              {plantillas.map((plantilla) => (
+                <Card key={plantilla.id} className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Layout className="w-4 h-4 text-gray-400" />
+                        <h4 className="font-medium text-gray-900 dark:text-white">
+                          {plantilla.nombre}
+                        </h4>
+                        {plantilla.es_por_defecto && <Badge variant="primary">Por defecto</Badge>}
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                        {plantilla.descripcion}
+                      </p>
+                      <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                        <span>{plantilla.tipo_plantilla}</span>
+                        <span>v{plantilla.version}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant={
+                          plantilla.estado === 'ACTIVA'
+                            ? 'success'
+                            : plantilla.estado === 'BORRADOR'
+                              ? 'warning'
+                              : 'secondary'
+                        }
+                      >
+                        {plantilla.estado}
+                      </Badge>
+                      <div className="relative">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            setPlantillaMenuOpen(
+                              plantillaMenuOpen === plantilla.id ? null : plantilla.id
+                            )
+                          }
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                        {plantillaMenuOpen === plantilla.id && (
+                          <div className="absolute right-0 top-8 z-50 w-44 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1">
+                            <button
+                              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
+                              onClick={() => {
+                                onEditPlantilla(plantilla);
+                                setPlantillaMenuOpen(null);
+                              }}
+                            >
+                              <Edit className="w-3 h-3" /> Editar
+                            </button>
+                            {plantilla.estado !== 'ACTIVA' && (
+                              <button
+                                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 text-green-600 flex items-center gap-2"
+                                onClick={() => {
+                                  activarPlantillaMutation.mutate(plantilla.id);
+                                  setPlantillaMenuOpen(null);
+                                }}
+                              >
+                                <CheckCircle className="w-3 h-3" /> Activar
+                              </button>
+                            )}
+                            <button
+                              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 text-red-600 flex items-center gap-2"
+                              onClick={() => {
+                                setConfirmDeletePlantilla(plantilla);
+                                setPlantillaMenuOpen(null);
+                              }}
+                            >
+                              <Trash2 className="w-3 h-3" /> Eliminar
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
-
-        {!plantillas || plantillas.length === 0 ? (
-          <EmptyState
-            icon={<Layout className="w-12 h-12" />}
-            title="No hay plantillas"
-            description="Crea plantillas reutilizables para generar documentos de forma rápida."
-            action={{
-              label: 'Crear Plantilla',
-              onClick: () => {},
-              icon: <Plus className="w-4 h-4" />,
-            }}
-          />
-        ) : (
-          <div className="space-y-2">
-            {plantillas.map((plantilla) => (
-              <Card key={plantilla.id} className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Layout className="w-4 h-4 text-gray-400" />
-                      <h4 className="font-medium text-gray-900 dark:text-white">
-                        {plantilla.nombre}
-                      </h4>
-                      {plantilla.es_por_defecto && <Badge variant="primary">Por defecto</Badge>}
-                    </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                      {plantilla.descripcion}
-                    </p>
-                    <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
-                      <span>{plantilla.tipo_plantilla}</span>
-                      <span>v{plantilla.version}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      variant={
-                        plantilla.estado === 'ACTIVA'
-                          ? 'success'
-                          : plantilla.estado === 'BORRADOR'
-                            ? 'warning'
-                            : 'secondary'
-                      }
-                    >
-                      {plantilla.estado}
-                    </Badge>
-                    <Button variant="ghost" size="sm">
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
       </div>
-    </div>
+
+      {/* Confirm Delete Tipo */}
+      <ConfirmDialog
+        isOpen={!!confirmDeleteTipo}
+        onClose={() => setConfirmDeleteTipo(null)}
+        onConfirm={() => {
+          if (confirmDeleteTipo) {
+            deleteTipoMutation.mutate(confirmDeleteTipo.id, {
+              onSuccess: () => setConfirmDeleteTipo(null),
+            });
+          }
+        }}
+        title="Eliminar Tipo de Documento"
+        message={`¿Eliminar el tipo "${confirmDeleteTipo?.nombre}"? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        variant="danger"
+        isLoading={deleteTipoMutation.isPending}
+      />
+
+      {/* Confirm Delete Plantilla */}
+      <ConfirmDialog
+        isOpen={!!confirmDeletePlantilla}
+        onClose={() => setConfirmDeletePlantilla(null)}
+        onConfirm={() => {
+          if (confirmDeletePlantilla) {
+            deletePlantillaMutation.mutate(confirmDeletePlantilla.id, {
+              onSuccess: () => setConfirmDeletePlantilla(null),
+            });
+          }
+        }}
+        title="Eliminar Plantilla"
+        message={`¿Eliminar la plantilla "${confirmDeletePlantilla?.nombre}"? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        variant="danger"
+        isLoading={deletePlantillaMutation.isPending}
+      />
+    </>
   );
 }
 
 // ==================== SECCIÓN: CONSTRUCTOR DE DOCUMENTOS ====================
-function ConstructorDocumentosSection() {
+function ConstructorDocumentosSection({
+  onCreateDocumento,
+  onViewDocumento,
+  onEditDocumento,
+}: {
+  onCreateDocumento: () => void;
+  onViewDocumento: (id: number) => void;
+  onEditDocumento: (id: number) => void;
+}) {
   const { data: documentos, isLoading } = useDocumentos();
+  const deleteDocumentoMutation = useDeleteDocumento();
+  const [confirmDelete, setConfirmDelete] = useState<{ id: number; titulo: string } | null>(null);
 
   if (isLoading) {
     return (
@@ -445,139 +629,181 @@ function ConstructorDocumentosSection() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header con acciones */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Mis Documentos</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Gestiona tus documentos en borrador y en proceso
-          </p>
+    <>
+      <div className="space-y-6">
+        {/* Header con acciones */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Mis Documentos</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Gestiona tus documentos en borrador y en proceso
+            </p>
+          </div>
+          <Button
+            variant="primary"
+            leftIcon={<Plus className="w-4 h-4" />}
+            onClick={onCreateDocumento}
+          >
+            Crear Documento
+          </Button>
         </div>
-        <Button variant="primary" leftIcon={<Plus className="w-4 h-4" />}>
-          Crear Documento
-        </Button>
-      </div>
 
-      {/* Estadísticas rápidas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center">
-              <Edit className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+        {/* Estadísticas rápidas */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center">
+                <Edit className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Borradores</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">
+                  {documentos?.filter((d) => d.estado === 'BORRADOR').length || 0}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Borradores</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">
-                {documentos?.filter((d) => d.estado === 'BORRADOR').length || 0}
-              </p>
-            </div>
-          </div>
-        </Card>
+          </Card>
 
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
-              <Clock className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+          <Card className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
+                <Clock className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">En Revisión</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">
+                  {documentos?.filter((d) => d.estado === 'EN_REVISION').length || 0}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">En Revisión</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">
-                {documentos?.filter((d) => d.estado === 'EN_REVISION').length || 0}
-              </p>
-            </div>
-          </div>
-        </Card>
+          </Card>
 
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+          <Card className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Aprobados</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">
+                  {documentos?.filter((d) => d.estado === 'APROBADO').length || 0}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Aprobados</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">
-                {documentos?.filter((d) => d.estado === 'APROBADO').length || 0}
-              </p>
-            </div>
-          </div>
-        </Card>
-      </div>
+          </Card>
+        </div>
 
-      {/* Lista de documentos */}
-      {!documentos || documentos.length === 0 ? (
-        <EmptyState
-          icon={<FileText className="w-16 h-16" />}
-          title="No tienes documentos"
-          description="Comienza creando tu primer documento usando una plantilla o desde cero."
-          action={{
-            label: 'Crear Documento',
-            onClick: () => {},
-            icon: <Plus className="w-4 h-4" />,
-          }}
-        />
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {documentos.map((documento) => (
-            <Card key={documento.id} className="p-4 hover:shadow-lg transition-shadow">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h4 className="font-medium text-gray-900 dark:text-white">
-                      {documento.titulo}
-                    </h4>
-                    <Badge variant="secondary" size="sm">
-                      {documento.codigo}
-                    </Badge>
+        {/* Lista de documentos */}
+        {!documentos || documentos.length === 0 ? (
+          <EmptyState
+            icon={<FileText className="w-16 h-16" />}
+            title="No tienes documentos"
+            description="Comienza creando tu primer documento usando una plantilla o desde cero."
+            action={{
+              label: 'Crear Documento',
+              onClick: onCreateDocumento,
+              icon: <Plus className="w-4 h-4" />,
+            }}
+          />
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {documentos.map((documento) => (
+              <Card key={documento.id} className="p-4 hover:shadow-lg transition-shadow">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-medium text-gray-900 dark:text-white">
+                        {documento.titulo}
+                      </h4>
+                      <Badge variant="secondary" size="sm">
+                        {documento.codigo}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+                      {documento.resumen}
+                    </p>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-                    {documento.resumen}
-                  </p>
                 </div>
-                <Button variant="ghost" size="sm">
-                  <MoreVertical className="w-4 h-4" />
-                </Button>
-              </div>
 
-              <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-3">
-                <span className="flex items-center gap-1">
-                  <Calendar className="w-3 h-3" />
-                  {new Date(documento.created_at).toLocaleDateString('es-CO')}
-                </span>
-                <span>v{documento.version_actual}</span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <Badge
-                  variant={
-                    documento.estado === 'APROBADO'
-                      ? 'success'
-                      : documento.estado === 'EN_REVISION'
-                        ? 'warning'
-                        : 'secondary'
-                  }
-                >
-                  {documento.estado}
-                </Badge>
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="sm" leftIcon={<Eye className="w-4 h-4" />}>
-                    Ver
-                  </Button>
-                  <Button variant="ghost" size="sm" leftIcon={<Edit className="w-4 h-4" />}>
-                    Editar
-                  </Button>
+                <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-3">
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    {new Date(documento.created_at).toLocaleDateString('es-CO')}
+                  </span>
+                  <span>v{documento.version_actual}</span>
                 </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-      )}
-    </div>
+
+                <div className="flex items-center justify-between">
+                  <Badge
+                    variant={
+                      documento.estado === 'APROBADO'
+                        ? 'success'
+                        : documento.estado === 'EN_REVISION'
+                          ? 'warning'
+                          : 'secondary'
+                    }
+                  >
+                    {documento.estado}
+                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      leftIcon={<Eye className="w-4 h-4" />}
+                      onClick={() => onViewDocumento(documento.id)}
+                    >
+                      Ver
+                    </Button>
+                    {documento.estado === 'BORRADOR' && (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          leftIcon={<Edit className="w-4 h-4" />}
+                          onClick={() => onEditDocumento(documento.id)}
+                        >
+                          Editar
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          leftIcon={<Trash2 className="w-4 h-4" />}
+                          onClick={() =>
+                            setConfirmDelete({ id: documento.id, titulo: documento.titulo })
+                          }
+                        />
+                      </>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <ConfirmDialog
+        isOpen={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={() => {
+          if (confirmDelete) {
+            deleteDocumentoMutation.mutate(confirmDelete.id, {
+              onSuccess: () => setConfirmDelete(null),
+            });
+          }
+        }}
+        title="Eliminar Documento"
+        message={`¿Eliminar "${confirmDelete?.titulo}"? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        variant="danger"
+        isLoading={deleteDocumentoMutation.isPending}
+      />
+    </>
   );
 }
 
 // ==================== SECCIÓN: CONTROL DE VERSIONES ====================
-function VersionesSection() {
+function VersionesSection({ onViewDocumento }: { onViewDocumento: (id: number) => void }) {
   const [selectedDocumento, setSelectedDocumento] = useState<number | null>(null);
   const { data: documentos } = useDocumentos();
 
@@ -637,7 +863,7 @@ function VersionesSection() {
               description="Elige un documento para ver su historial de versiones"
             />
           ) : (
-            <VersionTimeline documentoId={selectedDocumento} />
+            <VersionTimeline documentoId={selectedDocumento} onViewDocumento={onViewDocumento} />
           )}
         </div>
       </div>
@@ -645,7 +871,13 @@ function VersionesSection() {
   );
 }
 
-function VersionTimeline({ documentoId }: { documentoId: number }) {
+function VersionTimeline({
+  documentoId,
+  onViewDocumento,
+}: {
+  documentoId: number;
+  onViewDocumento: (id: number) => void;
+}) {
   const { data: versiones, isLoading } = useVersionesDocumento(documentoId);
 
   if (isLoading) {
@@ -671,7 +903,6 @@ function VersionTimeline({ documentoId }: { documentoId: number }) {
       {versiones.map((version, index) => (
         <Card key={version.id} className="p-4">
           <div className="flex items-start gap-4">
-            {/* Timeline indicator */}
             <div className="flex flex-col items-center">
               <div
                 className={`w-10 h-10 rounded-full flex items-center justify-center ${
@@ -687,7 +918,6 @@ function VersionTimeline({ documentoId }: { documentoId: number }) {
               )}
             </div>
 
-            {/* Version details */}
             <div className="flex-1">
               <div className="flex items-start justify-between mb-2">
                 <div>
@@ -724,16 +954,24 @@ function VersionTimeline({ documentoId }: { documentoId: number }) {
               </div>
 
               <div className="flex items-center gap-2 mt-3">
-                <Button variant="ghost" size="sm" leftIcon={<Eye className="w-4 h-4" />}>
-                  Ver
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leftIcon={<Eye className="w-4 h-4" />}
+                  onClick={() => onViewDocumento(documentoId)}
+                >
+                  Ver Documento
                 </Button>
-                <Button variant="ghost" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-                  Descargar
-                </Button>
-                {!version.is_version_actual && (
-                  <Button variant="ghost" size="sm" leftIcon={<Copy className="w-4 h-4" />}>
-                    Restaurar
-                  </Button>
+                {version.archivo_pdf_version && (
+                  <a
+                    href={version.archivo_pdf_version}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Button variant="ghost" size="sm" leftIcon={<Download className="w-4 h-4" />}>
+                      Descargar
+                    </Button>
+                  </a>
                 )}
               </div>
             </div>
@@ -746,7 +984,6 @@ function VersionTimeline({ documentoId }: { documentoId: number }) {
 
 // ==================== SECCIÓN: FIRMAS DIGITALES ====================
 function FirmasSection() {
-  // Usar el nuevo hook de workflow de firmas (migrado de sistema_documental)
   const { firmasPendientes, totalPendientes, miTurno, isLoading } = useMisFirmasPendientes();
 
   if (isLoading) {
@@ -882,8 +1119,15 @@ function FirmasSection() {
 }
 
 // ==================== SECCIÓN: DISTRIBUCIÓN ====================
-function DistribucionSection() {
+function DistribucionSection({ onViewDocumento }: { onViewDocumento: (id: number) => void }) {
   const { data: documentos } = useDocumentos({ estado: 'PUBLICADO' });
+  const { data: estadisticas, isLoading: isLoadingStats } = useEstadisticasDocumentales();
+  const { data: distribuciones } = useDistribucionesActivas();
+
+  const totalDistribuidos = documentos?.length || 0;
+  const totalConfirmados = estadisticas?.distribucion?.confirmadas || 0;
+  const totalPendientes = estadisticas?.distribucion?.pendientes || 0;
+  const totalAreas = estadisticas?.distribucion?.total || 0;
 
   return (
     <div className="space-y-6">
@@ -896,7 +1140,7 @@ function DistribucionSection() {
         </p>
       </div>
 
-      {/* Estadísticas */}
+      {/* Estadísticas from API */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="p-4">
           <div className="flex items-center gap-3">
@@ -906,7 +1150,7 @@ function DistribucionSection() {
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Distribuidos</p>
               <p className="text-xl font-bold text-gray-900 dark:text-white">
-                {documentos?.length || 0}
+                {isLoadingStats ? '...' : totalDistribuidos}
               </p>
             </div>
           </div>
@@ -918,8 +1162,10 @@ function DistribucionSection() {
               <Users className="w-5 h-5 text-purple-600 dark:text-purple-400" />
             </div>
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Áreas</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">12</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Registros</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">
+                {isLoadingStats ? '...' : totalAreas}
+              </p>
             </div>
           </div>
         </Card>
@@ -931,7 +1177,9 @@ function DistribucionSection() {
             </div>
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Confirmados</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">45</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">
+                {isLoadingStats ? '...' : totalConfirmados}
+              </p>
             </div>
           </div>
         </Card>
@@ -943,7 +1191,9 @@ function DistribucionSection() {
             </div>
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Pendientes</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">8</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">
+                {isLoadingStats ? '...' : totalPendientes}
+              </p>
             </div>
           </div>
         </Card>
@@ -998,12 +1248,12 @@ function DistribucionSection() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-1">
-                        {doc.areas_aplicacion.slice(0, 2).map((area, idx) => (
+                        {doc.areas_aplicacion?.slice(0, 2).map((area, idx) => (
                           <Badge key={idx} variant="outline" size="sm">
                             {area}
                           </Badge>
                         ))}
-                        {doc.areas_aplicacion.length > 2 && (
+                        {(doc.areas_aplicacion?.length || 0) > 2 && (
                           <Badge variant="outline" size="sm">
                             +{doc.areas_aplicacion.length - 2}
                           </Badge>
@@ -1011,25 +1261,20 @@ function DistribucionSection() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                      {doc.numero_descargas} descargas
+                      {doc.numero_descargas || 0} descargas
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <Badge variant="success">Distribuido</Badge>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <Button variant="ghost" size="sm" leftIcon={<Eye className="w-4 h-4" />}>
-                          Ver
-                        </Button>
-                        <Button variant="ghost" size="sm" leftIcon={<Share2 className="w-4 h-4" />}>
-                          Distribuir
-                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"
-                          leftIcon={<Archive className="w-4 h-4" />}
+                          leftIcon={<Eye className="w-4 h-4" />}
+                          onClick={() => onViewDocumento(doc.id)}
                         >
-                          Archivar
+                          Ver
                         </Button>
                       </div>
                     </td>
@@ -1047,6 +1292,24 @@ function DistribucionSection() {
 // ==================== COMPONENTE PRINCIPAL ====================
 export default function SistemaDocumentalPage() {
   const [activeTab, setActiveTab] = useState('listado-maestro');
+
+  // Modal state
+  const [tipoFormModal, setTipoFormModal] = useState<{
+    isOpen: boolean;
+    tipo?: TipoDocumento;
+  }>({ isOpen: false });
+  const [plantillaFormModal, setPlantillaFormModal] = useState<{
+    isOpen: boolean;
+    plantilla?: PlantillaDocumento;
+  }>({ isOpen: false });
+  const [documentoFormModal, setDocumentoFormModal] = useState<{
+    isOpen: boolean;
+    documentoId?: number;
+  }>({ isOpen: false });
+  const [documentoDetailModal, setDocumentoDetailModal] = useState<{
+    isOpen: boolean;
+    documentoId: number | null;
+  }>({ isOpen: false, documentoId: null });
 
   const tabs = [
     {
@@ -1088,18 +1351,77 @@ export default function SistemaDocumentalPage() {
         description="Gestión integral de documentos HSEQ con control de versiones y firmas digitales"
       />
 
-      {/* Tabs Navigation */}
       <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} variant="pills" />
 
-      {/* Tab Content */}
       <div className="mt-6">
-        {activeTab === 'listado-maestro' && <ListadoMaestroSection />}
-        {activeTab === 'tipos-plantillas' && <TiposPlantillasSection />}
-        {activeTab === 'constructor' && <ConstructorDocumentosSection />}
-        {activeTab === 'versiones' && <VersionesSection />}
+        {activeTab === 'listado-maestro' && (
+          <ListadoMaestroSection
+            onViewDocumento={(id) =>
+              setDocumentoDetailModal({ isOpen: true, documentoId: id })
+            }
+            onCreateDocumento={() => setDocumentoFormModal({ isOpen: true })}
+          />
+        )}
+        {activeTab === 'tipos-plantillas' && (
+          <TiposPlantillasSection
+            onCreateTipo={() => setTipoFormModal({ isOpen: true })}
+            onEditTipo={(tipo) => setTipoFormModal({ isOpen: true, tipo })}
+            onCreatePlantilla={() => setPlantillaFormModal({ isOpen: true })}
+            onEditPlantilla={(plantilla) =>
+              setPlantillaFormModal({ isOpen: true, plantilla })
+            }
+          />
+        )}
+        {activeTab === 'constructor' && (
+          <ConstructorDocumentosSection
+            onCreateDocumento={() => setDocumentoFormModal({ isOpen: true })}
+            onViewDocumento={(id) =>
+              setDocumentoDetailModal({ isOpen: true, documentoId: id })
+            }
+            onEditDocumento={(id) => setDocumentoFormModal({ isOpen: true, documentoId: id })}
+          />
+        )}
+        {activeTab === 'versiones' && (
+          <VersionesSection
+            onViewDocumento={(id) =>
+              setDocumentoDetailModal({ isOpen: true, documentoId: id })
+            }
+          />
+        )}
         {activeTab === 'firmas' && <FirmasSection />}
-        {activeTab === 'distribucion' && <DistribucionSection />}
+        {activeTab === 'distribucion' && (
+          <DistribucionSection
+            onViewDocumento={(id) =>
+              setDocumentoDetailModal({ isOpen: true, documentoId: id })
+            }
+          />
+        )}
       </div>
+
+      {/* Modales */}
+      <TipoDocumentoFormModal
+        isOpen={tipoFormModal.isOpen}
+        onClose={() => setTipoFormModal({ isOpen: false })}
+        tipo={tipoFormModal.tipo}
+      />
+
+      <PlantillaFormModal
+        isOpen={plantillaFormModal.isOpen}
+        onClose={() => setPlantillaFormModal({ isOpen: false })}
+        plantilla={plantillaFormModal.plantilla}
+      />
+
+      <DocumentoFormModal
+        isOpen={documentoFormModal.isOpen}
+        onClose={() => setDocumentoFormModal({ isOpen: false })}
+        documentoId={documentoFormModal.documentoId}
+      />
+
+      <DocumentoDetailModal
+        isOpen={documentoDetailModal.isOpen}
+        onClose={() => setDocumentoDetailModal({ isOpen: false, documentoId: null })}
+        documentoId={documentoDetailModal.documentoId}
+      />
     </div>
   );
 }

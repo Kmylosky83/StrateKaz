@@ -14,3 +14,9 @@ class NovedadesConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'apps.talent_hub.novedades'
     verbose_name = 'Novedades de Talento Humano'
+
+    def ready(self):
+        try:
+            import apps.talent_hub.novedades.signals  # noqa
+        except ImportError:
+            pass

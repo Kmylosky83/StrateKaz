@@ -9,6 +9,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from datetime import date, timedelta
+from apps.core.mixins import ExportMixin
 
 from .models import (
     AccidenteTrabajo,
@@ -35,7 +36,7 @@ from .serializers import (
 )
 
 
-class AccidenteTrabajoViewSet(viewsets.ModelViewSet):
+class AccidenteTrabajoViewSet(ExportMixin, viewsets.ModelViewSet):
     """
     ViewSet para Accidentes de Trabajo
 
@@ -44,6 +45,8 @@ class AccidenteTrabajoViewSet(viewsets.ModelViewSet):
     - estadisticas: Muestra estadísticas de accidentalidad
     """
     permission_classes = [IsAuthenticated]
+    export_fields = [('fecha_evento', 'Fecha'), ('tipo_evento', 'Tipo Evento'), ('gravedad', 'Gravedad'), ('dias_incapacidad', 'Días Incapacidad'), ('mortal', 'Mortal'), ('reportado_arl', 'Reportado ARL')]
+    export_filename = 'accidentes_trabajo'
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['gravedad', 'mortal', 'reportado_arl', 'requiere_investigacion']
     ordering_fields = ['fecha_evento', 'dias_incapacidad', 'fecha_reporte_interno']

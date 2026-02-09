@@ -30,6 +30,23 @@ import {
   Database,
   Lock,
   RefreshCw,
+  Bell,
+  Users,
+  CheckCircle,
+  Globe,
+  TrendingUp,
+  Landmark,
+  Building,
+  Navigation,
+  Server,
+  UserCheck,
+  Code,
+  Webhook,
+  MoreHorizontal,
+  ShieldAlert,
+  ShieldCheck,
+  Brain,
+  ScanLine,
 } from 'lucide-react';
 import { Card, Badge, Button, BadgeVariant, BrandedSkeleton } from '@/components/common';
 import { ActionButtons } from '@/components/common/ActionButtons';
@@ -54,31 +71,87 @@ import type {
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-// Iconos por tipo de servicio
+// Iconos por tipo de servicio (sincronizado con backend cargar_tipos_sistema)
 const TIPO_SERVICIO_ICONS: Record<TipoServicio, React.ComponentType<{ className?: string }>> = {
+  // Comunicación
   EMAIL: Mail,
-  FACTURACION: FileText,
   SMS: MessageSquare,
   WHATSAPP: Phone,
-  MAPAS: MapPin,
+  NOTIFICACIONES: Bell,
+  // Tributario
+  FACTURACION: FileText,
+  NOMINA: Users,
+  RADIAN: CheckCircle,
+  // Archivos
   ALMACENAMIENTO: HardDrive,
+  CDN: Globe,
+  BACKUP: Database,
+  // Analítica
   BI: BarChart3,
+  ANALYTICS: TrendingUp,
+  // Financiero
   PAGOS: CreditCard,
-  ERP: Building2,
+  PSE: Landmark,
+  BANCARIO: Building,
+  // Geolocalización
+  MAPAS: MapPin,
+  RASTREO: Navigation,
+  // Legal
   FIRMA_DIGITAL: PenTool,
+  // Cumplimiento
+  OFAC: ShieldAlert,
+  SAGRILAFT: ShieldCheck,
+  // IA
+  IA: Brain,
+  OCR: ScanLine,
+  // Sistemas
+  ERP: Server,
+  CRM: UserCheck,
+  // Otros
+  API_TERCEROS: Code,
+  WEBHOOK: Webhook,
+  OTRO: MoreHorizontal,
 };
 
 const TIPO_SERVICIO_LABELS: Record<TipoServicio, string> = {
+  // Comunicación
   EMAIL: 'Email',
-  FACTURACION: 'Facturación Electrónica',
   SMS: 'SMS',
   WHATSAPP: 'WhatsApp',
-  MAPAS: 'Mapas',
+  NOTIFICACIONES: 'Notificaciones Push',
+  // Tributario
+  FACTURACION: 'Facturación Electrónica',
+  NOMINA: 'Nómina Electrónica',
+  RADIAN: 'RADIAN',
+  // Archivos
   ALMACENAMIENTO: 'Almacenamiento',
+  CDN: 'CDN',
+  BACKUP: 'Backup',
+  // Analítica
   BI: 'Business Intelligence',
+  ANALYTICS: 'Analytics',
+  // Financiero
   PAGOS: 'Pagos',
-  ERP: 'ERP',
+  PSE: 'PSE',
+  BANCARIO: 'Bancario',
+  // Geolocalización
+  MAPAS: 'Mapas',
+  RASTREO: 'Rastreo GPS',
+  // Legal
   FIRMA_DIGITAL: 'Firma Digital',
+  // Cumplimiento
+  OFAC: 'OFAC/Listas Restrictivas',
+  SAGRILAFT: 'SAGRILAFT/SARLAFT',
+  // IA
+  IA: 'Inteligencia Artificial',
+  OCR: 'OCR',
+  // Sistemas
+  ERP: 'ERP',
+  CRM: 'CRM',
+  // Otros
+  API_TERCEROS: 'API Terceros',
+  WEBHOOK: 'Webhooks',
+  OTRO: 'Otro',
 };
 
 // Badge de estado de salud
@@ -230,16 +303,41 @@ export const IntegracionesSection = () => {
               onChange={(e) => setFilterTipoServicio(e.target.value as TipoServicio | '')}
               options={[
                 { value: '', label: 'Todos los tipos' },
+                // Comunicación
                 { value: 'EMAIL', label: 'Email' },
-                { value: 'FACTURACION', label: 'Facturación' },
                 { value: 'SMS', label: 'SMS' },
                 { value: 'WHATSAPP', label: 'WhatsApp' },
-                { value: 'MAPAS', label: 'Mapas' },
+                { value: 'NOTIFICACIONES', label: 'Notificaciones' },
+                // Tributario
+                { value: 'FACTURACION', label: 'Facturación' },
+                { value: 'NOMINA', label: 'Nómina' },
+                // Archivos
                 { value: 'ALMACENAMIENTO', label: 'Almacenamiento' },
+                { value: 'BACKUP', label: 'Backup' },
+                // Analítica
                 { value: 'BI', label: 'BI' },
+                { value: 'ANALYTICS', label: 'Analytics' },
+                // Financiero
                 { value: 'PAGOS', label: 'Pagos' },
-                { value: 'ERP', label: 'ERP' },
+                { value: 'PSE', label: 'PSE' },
+                { value: 'BANCARIO', label: 'Bancario' },
+                // Geolocalización
+                { value: 'MAPAS', label: 'Mapas' },
+                { value: 'RASTREO', label: 'Rastreo GPS' },
+                // Legal y Cumplimiento
                 { value: 'FIRMA_DIGITAL', label: 'Firma Digital' },
+                { value: 'OFAC', label: 'OFAC' },
+                { value: 'SAGRILAFT', label: 'SAGRILAFT' },
+                // IA
+                { value: 'IA', label: 'IA' },
+                { value: 'OCR', label: 'OCR' },
+                // Sistemas
+                { value: 'ERP', label: 'ERP' },
+                { value: 'CRM', label: 'CRM' },
+                // Otros
+                { value: 'API_TERCEROS', label: 'API Terceros' },
+                { value: 'WEBHOOK', label: 'Webhooks' },
+                { value: 'OTRO', label: 'Otro' },
               ]}
               className="w-48"
             />

@@ -15,7 +15,8 @@ from .models import (
     PazSalvo,
     ExamenEgreso,
     EntrevistaRetiro,
-    LiquidacionFinal
+    LiquidacionFinal,
+    CertificadoTrabajo
 )
 
 
@@ -527,3 +528,54 @@ class LiquidacionFinalCreateSerializer(serializers.ModelSerializer):
                 'fecha_retiro': 'La fecha de retiro no puede ser anterior a la fecha de ingreso.'
             })
         return data
+
+
+# =============================================================================
+# CERTIFICADO DE TRABAJO - Art. 57 y 62 CST
+# =============================================================================
+
+class CertificadoTrabajoListSerializer(serializers.ModelSerializer):
+    """Serializer de lista para certificados de trabajo."""
+    colaborador_nombre = serializers.CharField(source='colaborador.get_nombre_completo', read_only=True)
+    tipo_certificado_display = serializers.CharField(source='get_tipo_certificado_display', read_only=True)
+    estado_display = serializers.CharField(source='get_estado_display', read_only=True)
+    generado_por_nombre = serializers.CharField(source='generado_por.get_full_name', read_only=True)
+
+    class Meta:
+        model = CertificadoTrabajo
+        fields = [
+            'id', 'colaborador', 'colaborador_nombre',
+            'tipo_certificado', 'tipo_certificado_display',
+            'fecha_solicitud', 'fecha_expedicion',
+            'estado', 'estado_display',
+            'generado_por_nombre', 'created_at'
+        ]
+        read_only_fields = ['id', 'fecha_solicitud', 'created_at']
+
+
+class CertificadoTrabajoDetailSerializer(serializers.ModelSerializer):
+    """Serializer detallado para certificados de trabajo."""
+    colaborador_nombre = serializers.CharField(source='colaborador.get_nombre_completo', read_only=True)
+    tipo_certificado_display = serializers.CharField(source='get_tipo_certificado_display', read_only=True)
+    estado_display = serializers.CharField(source='get_estado_display', read_only=True)
+    generado_por_nombre = serializers.CharField(source='generado_por.get_full_name', read_only=True)
+
+    class Meta:
+        model = CertificadoTrabajo
+        fields = '__all__'
+        read_only_fields = [
+            'id', 'empresa', 'fecha_solicitud',
+            'created_at', 'updated_at', 'created_by', 'updated_by'
+        ]
+
+
+class CertificadoTrabajoCreateSerializer(serializers.ModelSerializer):
+    """Serializer de creacion para certificados de trabajo."""
+
+    class Meta:
+        model = CertificadoTrabajo
+        fields = [
+            'colaborador', 'tipo_certificado', 'dirigido_a',
+            'incluir_cargo', 'incluir_salario', 'incluir_funciones',
+            'informacion_adicional'
+        ]

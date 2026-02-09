@@ -509,3 +509,12 @@ export function useDistribucionesActivas() {
     queryFn: () => controlDocumentalApi.distribucionesActivas(),
   });
 }
+
+// ==================== ESTADISTICAS HOOK ====================
+
+export function useEstadisticasDocumentales() {
+  return useQuery({
+    queryKey: [...gestionDocumentalKeys.all, 'estadisticas'],
+    queryFn: () => documentoApi.estadisticas(),
+  });
+}

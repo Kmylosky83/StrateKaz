@@ -1,26 +1,24 @@
 """
 Management command para setup inicial del sistema con datos de prueba
+
+NOTA: El branding ahora se gestiona en el modelo Tenant (apps.tenant.models.Tenant)
+Para configurar branding, usar el endpoint /api/tenant/public/branding/ o el admin de Django.
 """
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
-from apps.core.models import BrandingConfig, Cargo
+from apps.core.models import Cargo
 
 User = get_user_model()
 
 
 class Command(BaseCommand):
-    help = 'Configura datos de prueba iniciales (usuario demo + branding)'
+    help = 'Configura datos de prueba iniciales (usuario demo)'
 
     def add_arguments(self, parser):
         parser.add_argument(
             '--skip-user',
             action='store_true',
             help='No crear usuario de prueba',
-        )
-        parser.add_argument(
-            '--skip-branding',
-            action='store_true',
-            help='No crear configuración de branding',
         )
 
     def handle(self, *args, **options):
@@ -32,10 +30,6 @@ class Command(BaseCommand):
         if not options['skip_user']:
             self.create_demo_user()
 
-        # 2. Crear configuración de branding
-        if not options['skip_branding']:
-            self.create_default_branding()
-
         self.stdout.write(self.style.SUCCESS('\n' + '=' * 60))
         self.stdout.write(self.style.SUCCESS('✅ SETUP COMPLETADO'))
         self.stdout.write(self.style.SUCCESS('=' * 60))
@@ -45,6 +39,9 @@ class Command(BaseCommand):
         self.stdout.write('\nPara acceder al admin de Django:')
         self.stdout.write('  http://localhost:8000/admin/')
         self.stdout.write('  Usuario: admin (si fue creado con createsuperuser)')
+        self.stdout.write('\nNOTA: El branding se configura en el modelo Tenant')
+        self.stdout.write('  Endpoint: /api/tenant/public/branding/')
+        self.stdout.write('  Admin: Tenant > Tenants > [tenant] > Branding')
 
     def create_demo_user(self):
         self.stdout.write('\n' + '-' * 60)
@@ -94,46 +91,3 @@ class Command(BaseCommand):
 
         except Exception as e:
             self.stdout.write(self.style.ERROR(f'\n  ❌ Error al crear usuario: {str(e)}'))
-
-    def create_default_branding(self):
-        self.stdout.write('\n' + '-' * 60)
-        self.stdout.write('2. CREANDO CONFIGURACIÓN DE BRANDING')
-        self.stdout.write('-' * 60)
-
-        # Verificar si ya existe configuración activa
-        if BrandingConfig.objects.filter(is_active=True).exists():
-            active = BrandingConfig.objects.filter(is_active=True).first()
-            self.stdout.write(
-                self.style.WARNING(f'Ya existe configuración de branding activa (ID: {active.id}). Omitiendo...')
-            )
-            return
-
-        # Crear configuración
-        try:
-            branding = BrandingConfig.objects.create(
-                company_name='StrateKaz',
-                company_short_name='GRASHNORTE',
-                company_slogan='Consultoría 4.0',
-                # Imágenes se suben desde la UI
-                logo='',
-                logo_white='',
-                favicon='',
-                login_background='',
-                primary_color='#16A34A',
-                secondary_color='#059669',
-                accent_color='#10B981',
-                app_version='2.0.0',
-                is_active=True,
-            )
-
-            self.stdout.write(self.style.SUCCESS(f'\n  ✅ Branding creado (ID: {branding.id})'))
-            self.stdout.write(f'     Nombre: {branding.company_name}')
-            self.stdout.write(f'     Color primario: {branding.primary_color}')
-
-            self.stdout.write(self.style.WARNING('\n  ⚠️  Para agregar imágenes (logo, favicon, fondo):'))
-            self.stdout.write('     1. Accede a http://localhost:8000/admin/')
-            self.stdout.write(f'     2. Ve a Core > Branding Configs > ID {branding.id}')
-            self.stdout.write('     3. Sube las imágenes requeridas')
-
-        except Exception as e:
-            self.stdout.write(self.style.ERROR(f'\n  ❌ Error al crear branding: {str(e)}'))

@@ -10,19 +10,25 @@ Incluye:
 - SystemModuleViewSet
 - ModuleTabViewSet
 - TabSectionViewSet
-- BrandingConfigViewSet
+
+NOTA: BrandingConfigViewSet fue ELIMINADO - el branding se maneja ahora
+directamente en el modelo Tenant (apps.tenant.models.Tenant)
+Ver: /api/tenant/public/branding/ para endpoint público de branding
 """
+import logging
 from rest_framework import viewsets, status, filters
+
+logger = logging.getLogger(__name__)
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 from apps.core.permissions import GranularActionPermission
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Prefetch
 
 # Modelos de core (sin dependencias externas)
 from .models import (
-    SystemModule, ModuleTab, TabSection, BrandingConfig,
+    SystemModule, ModuleTab, TabSection,
     CargoSectionAccess  # RBAC v3.3: Filtrado por cargo
 )
 
@@ -34,7 +40,6 @@ from .serializers_config import (
     ModuleTabSerializer, ModuleTabCreateSerializer, ToggleTabSerializer,
     TabSectionSerializer, TabSectionCreateSerializer, ToggleSectionSerializer,
     SidebarModuleSerializer,
-    BrandingConfigSerializer, BrandingConfigCreateSerializer, BrandingConfigUpdateSerializer,
 )
 
 
@@ -141,11 +146,19 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
             module.is_enabled = False
             module.save(update_fields=['is_enabled'])
 
-        return Response({
+        response_data = {
             'success': True,
             'message': f'Módulo {"activado" if is_enabled else "desactivado"} correctamente',
-            'is_enabled': module.is_enabled
-        })
+            'is_enabled': module.is_enabled,
+        }
+
+        # Incluir advertencia si aplica (ej: workflow_engine afecta firmas)
+        if not is_enabled:
+            warning = module.get_disable_warning()
+            if warning:
+                response_data['warning'] = warning
+
+        return Response(response_data)
 
     @action(detail=True, methods=['get'])
     def dependents(self, request, pk=None):
@@ -243,7 +256,9 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
         user = request.user
 
         # Super usuario ve todo
-        if user.is_superuser:
+        # Usar getattr porque TenantUser no tiene is_superuser, pero User sí
+        is_superuser = getattr(user, 'is_superuser', False) or getattr(user, 'is_superadmin', False)
+        if is_superuser:
             return self._get_full_tree()
 
         # Usuario normal: filtrar por CargoSectionAccess
@@ -273,8 +288,21 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
         return self._get_filtered_tree(authorized_section_ids)
 
     def _get_full_tree(self):
-        """Retorna árbol completo para super usuarios."""
+        """
+        Retorna árbol completo para super usuarios.
+
+        Filtra por Tenant.effective_modules si está configurado.
+        """
+        # Obtener módulos permitidos por el tenant
+        effective_modules = self._get_tenant_effective_modules()
+
+        # Base queryset
         modules = self.get_queryset()
+
+        # Aplicar filtro de effective_modules si existe
+        if effective_modules:
+            modules = modules.filter(code__in=effective_modules)
+
         total = modules.count()
         enabled = modules.filter(is_enabled=True).count()
 
@@ -363,7 +391,9 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
         user = request.user
 
         # Super usuario ve todo
-        if user.is_superuser:
+        # Usar getattr porque TenantUser no tiene is_superuser, pero User sí
+        is_superuser = getattr(user, 'is_superuser', False) or getattr(user, 'is_superadmin', False)
+        if is_superuser:
             return self._get_full_sidebar()
 
         # Usuario normal: filtrar por CargoSectionAccess
@@ -428,16 +458,62 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
 
         return self._build_sidebar_response(modules, include_sections=True)
 
+    def _get_tenant_effective_modules(self):
+        """
+        Obtiene los módulos efectivos del tenant actual.
+
+        FLUJO DE CONTROL DE MÓDULOS:
+        1. Admin Global configura Tenant.enabled_modules (o hereda de Plan.features)
+        2. Tenant.effective_modules retorna la lista de códigos de módulos permitidos
+        3. El sidebar filtra SystemModule.code IN effective_modules
+
+        Retorna None si no hay restricción (mostrar todos los módulos habilitados).
+        """
+        from django.db import connection
+
+        # Si estamos en schema 'public', no hay restricción
+        if connection.schema_name == 'public':
+            return None
+
+        # Obtener el tenant actual desde connection
+        tenant = getattr(connection, 'tenant', None)
+        if not tenant:
+            return None
+
+        # Obtener effective_modules (propiedad del modelo Tenant)
+        effective_modules = getattr(tenant, 'effective_modules', None)
+
+        # Si no hay módulos configurados, no hay restricción
+        if not effective_modules:
+            return None
+
+        return effective_modules
+
     def _get_full_sidebar(self):
-        """Retorna sidebar completo para super usuarios."""
-        modules = SystemModule.objects.filter(
-            is_enabled=True
-        ).prefetch_related(
+        """
+        Retorna sidebar completo para super usuarios.
+
+        Filtra por:
+        1. SystemModule.is_enabled = True (configuración del schema)
+        2. SystemModule.code IN Tenant.effective_modules (control desde Admin Global)
+        """
+        # Obtener módulos permitidos por el tenant
+        effective_modules = self._get_tenant_effective_modules()
+
+        # Base queryset: módulos habilitados en el schema
+        queryset = SystemModule.objects.filter(is_enabled=True)
+
+        # Aplicar filtro de effective_modules si existe
+        if effective_modules:
+            queryset = queryset.filter(code__in=effective_modules)
+
+        modules = queryset.prefetch_related(
             Prefetch(
                 'tabs',
                 queryset=ModuleTab.objects.filter(is_enabled=True).order_by('orden')
             )
         ).order_by('orden', 'name')
+
         return self._build_sidebar_response(modules, include_sections=False)
 
     def _build_sidebar_response(self, modules, include_sections=False):
@@ -616,241 +692,3 @@ class TabSectionViewSet(viewsets.ModelViewSet):
             'message': f'Sección {"activada" if is_enabled else "desactivada"} correctamente',
             'is_enabled': section.is_enabled
         })
-
-
-class BrandingConfigViewSet(viewsets.ModelViewSet):
-    """ViewSet para Configuración de Branding"""
-
-    queryset = BrandingConfig.objects.all()
-    permission_classes = [IsAuthenticated, GranularActionPermission]
-    section_code = 'branding'
-
-    granular_action_map = {
-        'active': 'can_view', # Aunque AllowAny sobreescribe esto
-    }
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['is_active']
-    ordering = ['-created_at']
-
-    def get_serializer_class(self):
-        if self.action == 'create':
-            return BrandingConfigCreateSerializer
-        elif self.action in ['update', 'partial_update']:
-            return BrandingConfigUpdateSerializer
-        return BrandingConfigSerializer
-
-    def partial_update(self, request, *args, **kwargs):
-        """Override para debugging de errores 400"""
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.info(f"[BRANDING DEBUG] Request data: {request.data}")
-        logger.info(f"[BRANDING DEBUG] Content-Type: {request.content_type}")
-
-        serializer = self.get_serializer(
-            self.get_object(),
-            data=request.data,
-            partial=True
-        )
-        if not serializer.is_valid():
-            logger.error(f"[BRANDING DEBUG] Validation errors: {serializer.errors}")
-
-        return super().partial_update(request, *args, **kwargs)
-
-    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
-    def active(self, request):
-        """
-        GET /api/core/branding/active/
-        Retorna la configuración de branding activa (público para login page).
-
-        En modo multi-tenant, lee de EmpresaConfig de la BD del tenant.
-        Si no hay tenant (login genérico), usa BrandingConfig de BD master.
-        """
-        # Verificar si hay tenant activo (multi-tenant mode)
-        tenant = getattr(request, 'tenant', None)
-
-        if tenant:
-            # Modo multi-tenant: leer branding de EmpresaConfig del tenant
-            try:
-                from apps.gestion_estrategica.configuracion.models import EmpresaConfig
-                empresa_config = EmpresaConfig.objects.first()
-
-                if empresa_config:
-                    # Mapear EmpresaConfig a formato de BrandingConfig
-                    branding_data = {
-                        'id': empresa_config.pk,
-                        'company_name': empresa_config.nombre_comercial or empresa_config.razon_social,
-                        'company_short_name': (empresa_config.nombre_comercial or empresa_config.razon_social)[:12] if empresa_config.nombre_comercial or empresa_config.razon_social else 'ERP',
-                        'company_slogan': empresa_config.slogan,
-                        'logo': request.build_absolute_uri(empresa_config.logo.url) if empresa_config.logo else None,
-                        'logo_white': request.build_absolute_uri(empresa_config.logo_white.url) if empresa_config.logo_white else None,
-                        'favicon': request.build_absolute_uri(empresa_config.favicon.url) if empresa_config.favicon else None,
-                        'login_background': request.build_absolute_uri(empresa_config.login_background.url) if empresa_config.login_background else None,
-                        'primary_color': empresa_config.color_primario or '#1E40AF',
-                        'secondary_color': empresa_config.color_secundario or '#3B82F6',
-                        'accent_color': empresa_config.color_acento or '#10B981',
-                        'app_version': '3.8.1',
-                        'pwa_name': empresa_config.pwa_name,
-                        'pwa_short_name': empresa_config.pwa_short_name,
-                        'pwa_description': empresa_config.pwa_description,
-                        'pwa_theme_color': empresa_config.pwa_theme_color or empresa_config.color_primario,
-                        'pwa_background_color': empresa_config.pwa_background_color or '#ffffff',
-                        'pwa_icon_192': request.build_absolute_uri(empresa_config.pwa_icon_192.url) if empresa_config.pwa_icon_192 else None,
-                        'pwa_icon_512': request.build_absolute_uri(empresa_config.pwa_icon_512.url) if empresa_config.pwa_icon_512 else None,
-                        'pwa_icon_maskable': request.build_absolute_uri(empresa_config.pwa_icon_maskable.url) if empresa_config.pwa_icon_maskable else None,
-                        'is_active': True,
-                    }
-                    return Response(branding_data)
-            except Exception as e:
-                logger.warning(f"Error obteniendo branding de tenant: {e}")
-
-        # Fallback: usar BrandingConfig de BD master
-        branding = BrandingConfig.objects.filter(is_active=True).first()
-        if not branding:
-            return Response(
-                {'detail': 'No hay configuración de branding activa'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        serializer = BrandingConfigSerializer(branding, context={'request': request})
-        return Response(serializer.data)
-
-    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
-    def manifest(self, request):
-        """
-        GET /api/core/branding/manifest/
-
-        MB-001: Retorna manifest.json dinámico para PWA.
-        Este endpoint genera un manifest.json basado en la configuración
-        de branding activa, permitiendo personalización por tenant.
-
-        En modo multi-tenant, lee de EmpresaConfig de la BD del tenant.
-        """
-        manifest = None
-        tenant = getattr(request, 'tenant', None)
-
-        # Intentar obtener branding del tenant primero
-        if tenant:
-            try:
-                from apps.gestion_estrategica.configuracion.models import EmpresaConfig
-                empresa_config = EmpresaConfig.objects.first()
-
-                if empresa_config:
-                    icons = []
-
-                    if empresa_config.pwa_icon_192:
-                        icons.append({
-                            "src": request.build_absolute_uri(empresa_config.pwa_icon_192.url),
-                            "sizes": "192x192",
-                            "type": "image/png",
-                            "purpose": "any"
-                        })
-
-                    if empresa_config.pwa_icon_512:
-                        icons.append({
-                            "src": request.build_absolute_uri(empresa_config.pwa_icon_512.url),
-                            "sizes": "512x512",
-                            "type": "image/png",
-                            "purpose": "any"
-                        })
-
-                    if empresa_config.pwa_icon_maskable:
-                        icons.append({
-                            "src": request.build_absolute_uri(empresa_config.pwa_icon_maskable.url),
-                            "sizes": "512x512",
-                            "type": "image/png",
-                            "purpose": "maskable"
-                        })
-
-                    # Fallback a favicon si no hay iconos PWA
-                    if not icons and empresa_config.favicon:
-                        icons.append({
-                            "src": request.build_absolute_uri(empresa_config.favicon.url),
-                            "sizes": "any",
-                            "type": "image/png",
-                            "purpose": "any"
-                        })
-
-                    company_name = empresa_config.nombre_comercial or empresa_config.razon_social or "ERP"
-
-                    manifest = {
-                        "name": empresa_config.pwa_name or f"{company_name} - ERP",
-                        "short_name": empresa_config.pwa_short_name or company_name[:12],
-                        "description": empresa_config.pwa_description or empresa_config.slogan or "Sistema de Gestión Empresarial",
-                        "start_url": "/",
-                        "scope": "/",
-                        "display": "standalone",
-                        "orientation": "portrait-primary",
-                        "background_color": empresa_config.pwa_background_color or "#ffffff",
-                        "theme_color": empresa_config.pwa_theme_color or empresa_config.color_primario or "#1E40AF",
-                        "icons": icons,
-                        "categories": ["business", "productivity"],
-                        "lang": "es-CO"
-                    }
-            except Exception as e:
-                logger.warning(f"Error obteniendo manifest de tenant: {e}")
-
-        # Fallback a BrandingConfig de BD master
-        if not manifest:
-            branding = BrandingConfig.objects.filter(is_active=True).first()
-
-            if not branding:
-                manifest = {
-                    "name": "StrateKaz",
-                    "short_name": "StrateKaz",
-                    "description": "Sistema de Gestión Empresarial",
-                    "start_url": "/",
-                    "display": "standalone",
-                    "background_color": "#ffffff",
-                    "theme_color": "#16A34A",
-                    "icons": []
-                }
-            else:
-                icons = []
-
-                if branding.pwa_icon_192:
-                    icons.append({
-                        "src": request.build_absolute_uri(branding.pwa_icon_192.url),
-                        "sizes": "192x192",
-                        "type": "image/png",
-                        "purpose": "any"
-                    })
-
-                if branding.pwa_icon_512:
-                    icons.append({
-                        "src": request.build_absolute_uri(branding.pwa_icon_512.url),
-                        "sizes": "512x512",
-                        "type": "image/png",
-                        "purpose": "any"
-                    })
-
-                if branding.pwa_icon_maskable:
-                    icons.append({
-                        "src": request.build_absolute_uri(branding.pwa_icon_maskable.url),
-                        "sizes": "512x512",
-                        "type": "image/png",
-                        "purpose": "maskable"
-                    })
-
-                if not icons and branding.favicon:
-                    icons.append({
-                        "src": request.build_absolute_uri(branding.favicon.url),
-                        "sizes": "any",
-                        "type": "image/png",
-                        "purpose": "any"
-                    })
-
-                manifest = {
-                    "name": branding.pwa_name or branding.company_name or "StrateKaz",
-                    "short_name": branding.pwa_short_name or branding.company_short_name or "StrateKaz",
-                    "description": branding.pwa_description or branding.company_slogan or "Sistema de Gestión Empresarial",
-                    "start_url": "/",
-                    "scope": "/",
-                    "display": "standalone",
-                    "orientation": "portrait-primary",
-                    "background_color": branding.pwa_background_color or "#ffffff",
-                    "theme_color": branding.pwa_theme_color or branding.primary_color or "#16A34A",
-                    "icons": icons,
-                    "categories": ["business", "productivity"],
-                    "lang": "es-CO"
-                }
-
-        return Response(manifest, content_type='application/manifest+json')

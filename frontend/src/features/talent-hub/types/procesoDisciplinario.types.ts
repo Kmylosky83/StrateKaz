@@ -255,6 +255,82 @@ export interface ResumenDisciplinario {
   ultimo_evento: HistorialDisciplinario | null;
 }
 
+// ============== LEY 2466/2025 — NOTIFICACIONES Y PRUEBAS ==============
+
+export type TipoNotificacionDisciplinaria =
+  | 'citacion_descargos'
+  | 'notificacion_sancion'
+  | 'notificacion_apelacion'
+  | 'notificacion_resultado';
+
+export type TipoPruebaDisciplinaria =
+  | 'documental'
+  | 'testimonial'
+  | 'tecnica'
+  | 'fotografica'
+  | 'video';
+
+export type PresentadaPor = 'empresa' | 'colaborador';
+
+export interface NotificacionDisciplinaria {
+  id: number;
+  empresa: number;
+  colaborador: number;
+  colaborador_nombre?: string;
+  descargo: number | null;
+  memorando: number | null;
+  tipo: TipoNotificacionDisciplinaria;
+  tipo_display?: string;
+  contenido: string;
+  fecha_entrega: string | null;
+  acuse_recibo: boolean;
+  fecha_acuse: string | null;
+  testigo_entrega: string;
+  archivo_soporte: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NotificacionDisciplinariaFormData {
+  colaborador: number;
+  descargo?: number | null;
+  memorando?: number | null;
+  tipo: TipoNotificacionDisciplinaria;
+  contenido: string;
+  fecha_entrega?: string | null;
+  acuse_recibo?: boolean;
+  fecha_acuse?: string | null;
+  testigo_entrega?: string;
+  archivo_soporte?: File | null;
+}
+
+export interface PruebaDisciplinaria {
+  id: number;
+  empresa: number;
+  descargo: number;
+  tipo_prueba: TipoPruebaDisciplinaria;
+  tipo_prueba_display?: string;
+  descripcion: string;
+  presentada_por: PresentadaPor;
+  presentada_por_display?: string;
+  archivo: string | null;
+  fecha_presentacion: string;
+  admitida: boolean | null;
+  observaciones_admision: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PruebaDisciplinariaFormData {
+  descargo: number;
+  tipo_prueba: TipoPruebaDisciplinaria;
+  descripcion: string;
+  presentada_por: PresentadaPor;
+  archivo?: File | null;
+}
+
 // ============== OPTIONS ==============
 
 export const gravedadFaltaOptions = [

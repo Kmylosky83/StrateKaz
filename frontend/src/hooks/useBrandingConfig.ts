@@ -110,7 +110,15 @@ export interface UseBrandingConfigReturn {
 }
 
 export const useBrandingConfig = (): UseBrandingConfigReturn => {
-  const { data: branding, isLoading, isError } = useActiveBranding();
+  const { data: rawBranding, isLoading, isError } = useActiveBranding();
+
+  // Cuando hay error (ej: sin tenant en Admin Global), React Query puede
+  // conservar datos stale del tenant anterior. Forzar null para usar defaults.
+  // También limpiar cache localStorage para evitar flash con branding incorrecto
+  if (isError) {
+    try { localStorage.removeItem('last_branding'); } catch { /* ignore */ }
+  }
+  const branding = isError ? null : rawBranding;
 
   // Helpers con fallback a defaults
   const companyName = branding?.company_name || DEFAULT_BRANDING.company_name!;

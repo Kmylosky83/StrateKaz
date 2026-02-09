@@ -113,6 +113,7 @@ INSTALLED_APPS = [
     'apps.motor_cumplimiento.requisitos_legales',  # Requisito, Evaluacion
     'apps.motor_cumplimiento.partes_interesadas',  # ParteInteresada, Comunicacion
     'apps.motor_cumplimiento.reglamentos_internos',# Reglamento, Publicacion
+    'apps.motor_cumplimiento.evidencias',         # Evidencias Centralizadas (cross-module)
     # --- Motor de Riesgos (7 apps) ---
     'apps.motor_riesgos.riesgos_procesos',         # Riesgo, Control, Tratamiento
     'apps.motor_riesgos.ipevr',                    # Peligro, RiesgoSST (GTC-45)
@@ -234,6 +235,8 @@ MIDDLEWARE = [
     # Custom Security Middleware
     'apps.core.middleware.IPBlockMiddleware',
     'apps.core.middleware.SecurityMiddleware',
+    # Validar que módulos estén activos antes de permitir acceso a APIs
+    'apps.core.middleware.ModuleAccessMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -270,11 +273,6 @@ DATABASES = {
         'CONN_MAX_AGE': config('DB_CONN_MAX_AGE', default=60, cast=int),
     }
 }
-
-# =============================================================================
-# MULTI-TENANT DATABASE ROUTER
-# =============================================================================
-DATABASE_ROUTERS = ['apps.tenant.db_router.TenantDatabaseRouter']
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -397,18 +395,16 @@ if DEBUG:
 else:
     CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:5173,http://localhost:3000,http://localhost:3010').split(',')
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_HEADERS = [
+# CORS Headers - lista explícita incluyendo x-tenant-id para multi-tenant
+CORS_ALLOW_HEADERS = (
     'accept',
-    'accept-encoding',
     'authorization',
     'content-type',
-    'dnt',
-    'origin',
     'user-agent',
     'x-csrftoken',
     'x-requested-with',
-    'x-tenant-id',  # Multi-tenant header
-]
+    'x-tenant-id',
+)
 CORS_ALLOW_METHODS = [
     'DELETE',
     'GET',

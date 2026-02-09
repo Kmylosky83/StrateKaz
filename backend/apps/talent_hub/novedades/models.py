@@ -981,3 +981,125 @@ class SolicitudVacaciones(BaseCompanyModel):
         if self.fecha_inicio and self.fecha_fin:
             self.dias_calendario = (self.fecha_fin - self.fecha_inicio).days + 1
         super().save(*args, **kwargs)
+
+
+# =============================================================================
+# DOTACION - Art. 230 CST
+# =============================================================================
+
+PERIODO_DOTACION_CHOICES = [
+    ('abril', 'Abril (30 de abril)'),
+    ('agosto', 'Agosto (31 de agosto)'),
+    ('diciembre', 'Diciembre (20 de diciembre)'),
+]
+
+
+class ConfiguracionDotacion(BaseCompanyModel):
+    """
+    Configuración de dotación laboral según Art. 230 CST.
+
+    Todo empleador que ocupe uno o más trabajadores permanentes debe
+    suministrar dotación cada cuatro meses (abril, agosto, diciembre)
+    a quienes devenguen hasta 2 SMMLV.
+    """
+
+    periodos_entrega = models.JSONField(
+        default=list,
+        verbose_name='Períodos de Entrega',
+        help_text='Períodos en que se entrega dotación. Por defecto: abril, agosto, diciembre'
+    )
+    salario_maximo_smmlv = models.DecimalField(
+        max_digits=4,
+        decimal_places=2,
+        default=Decimal('2.00'),
+        validators=[MinValueValidator(Decimal('0.01'))],
+        verbose_name='Salario Máximo (SMMLV)',
+        help_text='Hasta cuántos SMMLV aplica la obligación de dotación (Art. 230 CST: 2 SMMLV)'
+    )
+    items_obligatorios = models.JSONField(
+        default=list,
+        verbose_name='Ítems Obligatorios',
+        help_text='Lista de ítems que componen la dotación (calzado, vestido de labor)'
+    )
+    politica_devolucion = models.TextField(
+        blank=True,
+        verbose_name='Política de Devolución',
+        help_text='Política sobre devolución por no uso de dotación anterior'
+    )
+
+    class Meta:
+        db_table = 'talent_hub_configuracion_dotacion'
+        verbose_name = 'Configuración de Dotación'
+        verbose_name_plural = 'Configuraciones de Dotación'
+
+    def __str__(self):
+        return f"Configuración Dotación - {self.empresa}"
+
+
+class EntregaDotacion(BaseCompanyModel):
+    """
+    Registro de entregas individuales de dotación.
+
+    Documenta la entrega de calzado y vestido de labor a cada colaborador
+    según Art. 230 CST. El trabajador debe haber cumplido más de 3 meses
+    al servicio del empleador.
+    """
+
+    colaborador = models.ForeignKey(
+        'colaboradores.Colaborador',
+        on_delete=models.PROTECT,
+        related_name='entregas_dotacion',
+        verbose_name='Colaborador',
+        help_text='Colaborador que recibe la dotación'
+    )
+    periodo = models.CharField(
+        max_length=20,
+        choices=PERIODO_DOTACION_CHOICES,
+        db_index=True,
+        verbose_name='Período',
+        help_text='Período de entrega (abril, agosto, diciembre)'
+    )
+    anio = models.PositiveIntegerField(
+        verbose_name='Año',
+        help_text='Año de la entrega'
+    )
+    fecha_entrega = models.DateField(
+        verbose_name='Fecha de Entrega',
+        help_text='Fecha efectiva de entrega de la dotación'
+    )
+    items_entregados = models.JSONField(
+        default=list,
+        verbose_name='Ítems Entregados',
+        help_text='Lista de ítems entregados con descripción y talla'
+    )
+    acta_entrega = models.FileField(
+        upload_to='talent_hub/dotacion/actas/',
+        null=True,
+        blank=True,
+        verbose_name='Acta de Entrega',
+        help_text='Documento firmado de acta de entrega'
+    )
+    firma_recibido = models.BooleanField(
+        default=False,
+        verbose_name='Firmado por Colaborador',
+        help_text='Indica si el colaborador firmó el recibido'
+    )
+    observaciones = models.TextField(
+        blank=True,
+        verbose_name='Observaciones',
+        help_text='Notas adicionales sobre la entrega'
+    )
+
+    class Meta:
+        db_table = 'talent_hub_entrega_dotacion'
+        verbose_name = 'Entrega de Dotación'
+        verbose_name_plural = 'Entregas de Dotación'
+        ordering = ['-anio', '-fecha_entrega']
+        unique_together = [['empresa', 'colaborador', 'periodo', 'anio']]
+        indexes = [
+            models.Index(fields=['empresa', 'periodo', 'anio']),
+            models.Index(fields=['colaborador', 'anio']),
+        ]
+
+    def __str__(self):
+        return f"Dotación {self.periodo}/{self.anio} - {self.colaborador}"

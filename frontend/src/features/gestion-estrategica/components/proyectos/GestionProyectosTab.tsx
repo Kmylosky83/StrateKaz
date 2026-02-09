@@ -36,7 +36,7 @@ const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
   portafolio: PortafolioSubTab,
   iniciacion: IniciacionSubTab,
   planificacion: PlanificacionSubTab,
-  'ejecucion-monitoreo': MonitoreoSubTab,
+  ejecucion_monitoreo: MonitoreoSubTab,
   cierre: CierreSubTab,
 };
 

@@ -18,6 +18,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, Badge, Button, ConfirmDialog, BrandedSkeleton } from '@/components/common';
 import { usePlans, useDeletePlan } from '../hooks/useAdminGlobal';
+import { PlanFormModal } from './PlanFormModal';
 import type { Plan } from '../types';
 
 // Colores para los planes
@@ -55,7 +56,7 @@ const PlanCard = ({ plan, onEdit, onDelete }: PlanCardProps) => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
     >
-      <Card className={`p-6 ${colors.bg} border-2 ${colors.border} relative overflow-hidden`}>
+      <Card className={`p-6 ${colors.bg} ${colors.border} relative overflow-hidden hover:shadow-md transition-shadow`}>
         {/* Default badge */}
         {plan.is_default && (
           <div className="absolute top-4 right-4">
@@ -145,7 +146,7 @@ const PlanCard = ({ plan, onEdit, onDelete }: PlanCardProps) => {
               variant="ghost"
               size="sm"
               onClick={() => onDelete(plan.id)}
-              className="text-red-500 hover:text-red-600"
+              className="text-danger-500 hover:text-danger-600"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -159,9 +160,20 @@ const PlanCard = ({ plan, onEdit, onDelete }: PlanCardProps) => {
 export const PlansSection = () => {
   const [planToDelete, setPlanToDelete] = useState<number | null>(null);
   const [planToEdit, setPlanToEdit] = useState<Plan | null>(null);
+  const [showFormModal, setShowFormModal] = useState(false);
 
   const { data: plans, isLoading } = usePlans();
   const deletePlan = useDeletePlan();
+
+  const handleOpenNewPlan = () => {
+    setPlanToEdit(null);
+    setShowFormModal(true);
+  };
+
+  const handleEditPlan = (plan: Plan) => {
+    setPlanToEdit(plan);
+    setShowFormModal(true);
+  };
 
   const handleDelete = () => {
     if (planToDelete) {
@@ -181,7 +193,7 @@ export const PlansSection = () => {
         <p className="text-sm text-gray-500 dark:text-gray-400">
           {plans?.length || 0} planes configurados
         </p>
-        <Button variant="primary" className="flex items-center gap-2">
+        <Button variant="primary" className="flex items-center gap-2" onClick={handleOpenNewPlan}>
           <Plus className="h-4 w-4" />
           Nuevo Plan
         </Button>
@@ -194,7 +206,7 @@ export const PlansSection = () => {
             <PlanCard
               key={plan.id}
               plan={plan}
-              onEdit={setPlanToEdit}
+              onEdit={handleEditPlan}
               onDelete={setPlanToDelete}
             />
           ))}
@@ -206,7 +218,7 @@ export const PlansSection = () => {
         <div className="text-center py-12">
           <CreditCard className="h-12 w-12 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-500 dark:text-gray-400">No hay planes configurados</p>
-          <Button variant="primary" className="mt-4">
+          <Button variant="primary" className="mt-4" onClick={handleOpenNewPlan}>
             <Plus className="h-4 w-4 mr-2" />
             Crear primer plan
           </Button>
@@ -223,6 +235,16 @@ export const PlansSection = () => {
         confirmText="Eliminar"
         confirmVariant="destructive"
         isLoading={deletePlan.isPending}
+      />
+
+      {/* Plan Form Modal */}
+      <PlanFormModal
+        isOpen={showFormModal}
+        onClose={() => {
+          setShowFormModal(false);
+          setPlanToEdit(null);
+        }}
+        plan={planToEdit}
       />
     </div>
   );

@@ -9,13 +9,21 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models import Count, Q
 from django.utils import timezone
 
-from .models import TipoFalta, LlamadoAtencion, Descargo, Memorando, HistorialDisciplinario
+from .models import (
+    TipoFalta, LlamadoAtencion, Descargo, Memorando, HistorialDisciplinario,
+    NotificacionDisciplinaria, PruebaDisciplinaria, DenunciaAcosoLaboral
+)
 from .serializers import (
     TipoFaltaListSerializer, TipoFaltaDetailSerializer,
     LlamadoAtencionListSerializer, LlamadoAtencionDetailSerializer, LlamadoAtencionCreateSerializer,
     DescargoListSerializer, DescargoDetailSerializer, DescargoCreateSerializer,
+    ApelarDescargoSerializer, ResolverApelacionDescargoSerializer,
     MemorandoListSerializer, MemorandoDetailSerializer, MemorandoCreateSerializer,
-    HistorialDisciplinarioSerializer
+    HistorialDisciplinarioSerializer,
+    NotificacionDisciplinariaSerializer, NotificacionDisciplinariaCreateSerializer,
+    PruebaDisciplinariaSerializer, PruebaDisciplinariaCreateSerializer,
+    DenunciaAcosoLaboralListSerializer, DenunciaAcosoLaboralDetailSerializer,
+    DenunciaAcosoLaboralCreateSerializer, CambiarEstadoDenunciaSerializer,
 )
 
 
@@ -165,6 +173,35 @@ class DescargoViewSet(viewsets.ModelViewSet):
         serializer = DescargoDetailSerializer(descargo)
         return Response(serializer.data)
 
+    @action(detail=True, methods=['post'])
+    def apelar(self, request, pk=None):
+        """Registra apelación del descargo (Ley 2466/2025)"""
+        descargo = self.get_object()
+        serializer = ApelarDescargoSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        descargo.apelado = True
+        descargo.fecha_apelacion = serializer.validated_data['fecha_apelacion']
+        descargo.motivo_apelacion = serializer.validated_data['motivo_apelacion']
+        descargo.resultado_apelacion = 'pendiente'
+        descargo.save()
+        return Response(DescargoDetailSerializer(descargo).data)
+
+    @action(detail=True, methods=['post'])
+    def resolver_apelacion(self, request, pk=None):
+        """Resuelve apelación del descargo"""
+        descargo = self.get_object()
+        if not descargo.apelado:
+            return Response(
+                {'error': 'Este descargo no ha sido apelado.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        serializer = ResolverApelacionDescargoSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        descargo.resultado_apelacion = serializer.validated_data['resultado_apelacion']
+        descargo.resuelto_por = request.user
+        descargo.save()
+        return Response(DescargoDetailSerializer(descargo).data)
+
 
 class MemorandoViewSet(viewsets.ModelViewSet):
     """ViewSet para gestión de Memorandos"""
@@ -258,4 +295,196 @@ class HistorialDisciplinarioViewSet(viewsets.ReadOnlyModelViewSet):
             'total_eventos': historial.count(),
             'resumen_por_tipo': list(resumen),
             'ultimo_evento': HistorialDisciplinarioSerializer(historial.first()).data if historial.exists() else None
+        })
+
+
+class NotificacionDisciplinariaViewSet(viewsets.ModelViewSet):
+    """ViewSet para gestión de Notificaciones Disciplinarias (Ley 2466/2025)"""
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = NotificacionDisciplinaria.objects.filter(is_active=True)
+        if hasattr(user, 'empresa'):
+            queryset = queryset.filter(empresa=user.empresa)
+        colaborador_id = self.request.query_params.get('colaborador')
+        if colaborador_id:
+            queryset = queryset.filter(colaborador_id=colaborador_id)
+        descargo_id = self.request.query_params.get('descargo')
+        if descargo_id:
+            queryset = queryset.filter(descargo_id=descargo_id)
+        memorando_id = self.request.query_params.get('memorando')
+        if memorando_id:
+            queryset = queryset.filter(memorando_id=memorando_id)
+        tipo = self.request.query_params.get('tipo')
+        if tipo:
+            queryset = queryset.filter(tipo=tipo)
+        return queryset.select_related('colaborador', 'descargo', 'memorando').order_by('-created_at')
+
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return NotificacionDisciplinariaCreateSerializer
+        return NotificacionDisciplinariaSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(
+            empresa=self.request.user.empresa,
+            created_by=self.request.user,
+            updated_by=self.request.user
+        )
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
+
+    def perform_destroy(self, instance):
+        instance.soft_delete()
+
+    @action(detail=True, methods=['post'])
+    def registrar_acuse(self, request, pk=None):
+        """Registra acuse de recibo de la notificación"""
+        notificacion = self.get_object()
+        notificacion.acuse_recibo = True
+        notificacion.fecha_acuse = timezone.now()
+        notificacion.save()
+        return Response(NotificacionDisciplinariaSerializer(notificacion).data)
+
+
+class PruebaDisciplinariaViewSet(viewsets.ModelViewSet):
+    """ViewSet para gestión de Pruebas Disciplinarias (Ley 2466/2025)"""
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = PruebaDisciplinaria.objects.filter(is_active=True)
+        if hasattr(user, 'empresa'):
+            queryset = queryset.filter(empresa=user.empresa)
+        descargo_id = self.request.query_params.get('descargo')
+        if descargo_id:
+            queryset = queryset.filter(descargo_id=descargo_id)
+        presentada_por = self.request.query_params.get('presentada_por')
+        if presentada_por:
+            queryset = queryset.filter(presentada_por=presentada_por)
+        return queryset.select_related('descargo').order_by('-fecha_presentacion')
+
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return PruebaDisciplinariaCreateSerializer
+        return PruebaDisciplinariaSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(
+            empresa=self.request.user.empresa,
+            created_by=self.request.user,
+            updated_by=self.request.user
+        )
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
+
+    def perform_destroy(self, instance):
+        instance.soft_delete()
+
+    @action(detail=True, methods=['post'])
+    def admitir(self, request, pk=None):
+        """Admite o rechaza una prueba"""
+        prueba = self.get_object()
+        admitida = request.data.get('admitida')
+        if admitida is None:
+            return Response(
+                {'error': 'Debe indicar si la prueba es admitida (true/false).'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        prueba.admitida = admitida
+        prueba.observaciones_admision = request.data.get('observaciones_admision', '')
+        prueba.save()
+        return Response(PruebaDisciplinariaSerializer(prueba).data)
+
+
+# =============================================================================
+# DENUNCIA ACOSO LABORAL - Ley 1010/2006
+# =============================================================================
+
+class DenunciaAcosoLaboralViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para denuncias de acoso laboral - Ley 1010/2006.
+
+    Acciones personalizadas:
+    - cambiar_estado: Cambiar estado de la denuncia
+    - notificar_comite: Notificar al Comité de Convivencia
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = DenunciaAcosoLaboral.objects.filter(is_active=True)
+        if hasattr(user, 'empresa'):
+            queryset = queryset.filter(empresa=user.empresa)
+
+        # Filtros
+        estado = self.request.query_params.get('estado')
+        if estado:
+            queryset = queryset.filter(estado=estado)
+
+        tipo_acoso = self.request.query_params.get('tipo_acoso')
+        if tipo_acoso:
+            queryset = queryset.filter(tipo_acoso=tipo_acoso)
+
+        return queryset.select_related('denunciante', 'denunciado').order_by('-created_at')
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return DenunciaAcosoLaboralListSerializer
+        elif self.action in ['create', 'update', 'partial_update']:
+            return DenunciaAcosoLaboralCreateSerializer
+        return DenunciaAcosoLaboralDetailSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(
+            empresa=self.request.user.empresa,
+            created_by=self.request.user,
+            updated_by=self.request.user
+        )
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
+
+    def perform_destroy(self, instance):
+        instance.soft_delete()
+
+    @action(detail=True, methods=['post'])
+    def cambiar_estado(self, request, pk=None):
+        """Cambiar estado de la denuncia."""
+        denuncia = self.get_object()
+        serializer = CambiarEstadoDenunciaSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        denuncia.estado = serializer.validated_data['estado']
+        if serializer.validated_data.get('observacion'):
+            denuncia.resolucion = serializer.validated_data['observacion']
+
+        if denuncia.estado == 'cerrada':
+            denuncia.fecha_cierre = timezone.now().date()
+
+        denuncia.save()
+        return Response(DenunciaAcosoLaboralDetailSerializer(denuncia).data)
+
+    @action(detail=True, methods=['post'])
+    def notificar_comite(self, request, pk=None):
+        """Notificar al Comité de Convivencia Laboral."""
+        denuncia = self.get_object()
+
+        if denuncia.comite_convivencia_notificado:
+            return Response(
+                {'error': 'El Comité ya fue notificado.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        denuncia.comite_convivencia_notificado = True
+        denuncia.fecha_notificacion_comite = timezone.now().date()
+        denuncia.estado = 'comite'
+        denuncia.save()
+
+        return Response({
+            'message': 'Comité de Convivencia notificado exitosamente.',
+            'denuncia': DenunciaAcosoLaboralDetailSerializer(denuncia).data
         })

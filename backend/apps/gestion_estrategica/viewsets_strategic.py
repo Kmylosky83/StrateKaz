@@ -22,9 +22,9 @@ from django.contrib.auth import get_user_model
 from django.db.models import Prefetch
 
 # Modelos de core (RBAC, Configuracion del Sistema)
+# NOTA: BrandingConfig fue ELIMINADO - el branding está ahora en Tenant
 from apps.core.models import (
     SystemModule, ModuleTab, TabSection,
-    BrandingConfig,
     Role, Cargo, CargoSectionAccess
 )
 
@@ -52,7 +52,7 @@ from .serializers_strategic import (
     ModuleTabSerializer, ModuleTabCreateSerializer, ToggleTabSerializer,
     TabSectionSerializer, TabSectionCreateSerializer, ToggleSectionSerializer,
     ModulesTreeSerializer, SidebarModuleSerializer,
-    BrandingConfigSerializer, BrandingConfigCreateSerializer, BrandingConfigUpdateSerializer,
+    # NOTA: BrandingConfig serializers ELIMINADOS - branding está en Tenant
     # Stats
     StrategicStatsSerializer,
 )
@@ -580,14 +580,49 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
             'categories': categories
         })
 
+    def _get_tenant_effective_modules(self):
+        """
+        Obtiene los módulos efectivos del tenant actual.
+
+        FLUJO DE CONTROL DE MÓDULOS:
+        1. Admin Global configura Tenant.enabled_modules (o hereda de Plan.features)
+        2. Tenant.effective_modules retorna la lista de códigos de módulos permitidos
+        3. El sidebar filtra SystemModule.code IN effective_modules
+
+        Retorna None si no hay restricción (mostrar todos los módulos habilitados).
+        """
+        from django.db import connection
+
+        # Si estamos en schema 'public', no hay restricción
+        if connection.schema_name == 'public':
+            return None
+
+        # Obtener el tenant actual desde connection
+        tenant = getattr(connection, 'tenant', None)
+        if not tenant:
+            return None
+
+        # Obtener effective_modules (propiedad del modelo Tenant)
+        effective_modules = getattr(tenant, 'effective_modules', None)
+
+        # Si no hay módulos configurados, no hay restricción
+        if not effective_modules:
+            return None
+
+        return effective_modules
+
     @action(detail=False, methods=['get'])
     def sidebar(self, request):
         """
         GET /api/core/system-modules/sidebar/
 
-        Retorna módulos filtrados según permisos del usuario:
-        - Super usuario: todos los módulos habilitados
-        - Usuario normal: solo módulos/tabs/secciones autorizadas por su cargo
+        Retorna módulos filtrados según:
+        1. Módulos habilitados en el tenant (Tenant.effective_modules del schema público)
+        2. SystemModule.is_enabled = True (configuración dentro del schema)
+        3. Permisos del usuario (CargoSectionAccess para usuarios normales)
+
+        Super usuario: todos los módulos habilitados Y permitidos por el tenant
+        Usuario normal: solo módulos/tabs/secciones autorizadas por su cargo
 
         Cada módulo tiene:
         - code, name, icon, color
@@ -598,7 +633,7 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
         """
         user = request.user
 
-        # Super usuario ve todo
+        # Super usuario ve todos los módulos permitidos por el tenant
         if user.is_superuser:
             return self._get_full_sidebar()
 
@@ -641,10 +676,19 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
             return Response([])
 
         # Construir sidebar filtrado con secciones incluidas
-        modules = SystemModule.objects.filter(
+        # También aplicar filtro de effective_modules del tenant
+        effective_modules = self._get_tenant_effective_modules()
+
+        queryset = SystemModule.objects.filter(
             id__in=authorized_module_ids,
             is_enabled=True
-        ).prefetch_related(
+        )
+
+        # Aplicar filtro de effective_modules si existe
+        if effective_modules:
+            queryset = queryset.filter(code__in=effective_modules)
+
+        modules = queryset.prefetch_related(
             Prefetch(
                 'tabs',
                 queryset=ModuleTab.objects.filter(
@@ -665,15 +709,30 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
         return self._build_sidebar_response(modules, include_sections=True)
 
     def _get_full_sidebar(self):
-        """Retorna sidebar completo para super usuarios."""
-        modules = SystemModule.objects.filter(
-            is_enabled=True
-        ).prefetch_related(
+        """
+        Retorna sidebar completo para super usuarios.
+
+        Filtra por:
+        1. SystemModule.is_enabled = True (configuración del schema)
+        2. SystemModule.code IN Tenant.effective_modules (control desde Admin Global)
+        """
+        # Obtener módulos permitidos por el tenant
+        effective_modules = self._get_tenant_effective_modules()
+
+        # Base queryset: módulos habilitados en el schema
+        queryset = SystemModule.objects.filter(is_enabled=True)
+
+        # Aplicar filtro de effective_modules si existe
+        if effective_modules:
+            queryset = queryset.filter(code__in=effective_modules)
+
+        modules = queryset.prefetch_related(
             Prefetch(
                 'tabs',
                 queryset=ModuleTab.objects.filter(is_enabled=True).order_by('orden')
             )
         ).order_by('orden', 'name')
+
         return self._build_sidebar_response(modules, include_sections=False)
 
     def _build_sidebar_response(self, modules, include_sections=False):
@@ -858,72 +917,11 @@ class TabSectionViewSet(viewsets.ModelViewSet):
         })
 
 
-class BrandingConfigViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet para Configuracion de Branding
-
-    Endpoints:
-    - GET /api/core/branding/ - Listar configuraciones
-    - POST /api/core/branding/ - Crear configuracion
-    - GET /api/core/branding/{id}/ - Detalle
-    - PATCH /api/core/branding/{id}/ - Actualizar
-    - DELETE /api/core/branding/{id}/ - Eliminar
-    - GET /api/core/branding/active/ - Configuracion activa
-    """
-
-    queryset = BrandingConfig.objects.all()
-    permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['is_active']
-    ordering = ['-created_at']
-
-    def get_serializer_class(self):
-        if self.action == 'create':
-            return BrandingConfigCreateSerializer
-        elif self.action in ['update', 'partial_update']:
-            return BrandingConfigUpdateSerializer
-        return BrandingConfigSerializer
-
-    def partial_update(self, request, *args, **kwargs):
-        """Override para debugging de errores 400"""
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.info(f"[BRANDING DEBUG] Request data: {request.data}")
-        logger.info(f"[BRANDING DEBUG] Content-Type: {request.content_type}")
-
-        serializer = self.get_serializer(
-            self.get_object(),
-            data=request.data,
-            partial=True
-        )
-        if not serializer.is_valid():
-            logger.error(f"[BRANDING DEBUG] Validation errors: {serializer.errors}")
-
-        return super().partial_update(request, *args, **kwargs)
-
-    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
-    def active(self, request):
-        """
-        GET /api/core/branding/active/
-
-        Retorna la configuracion de branding activa.
-        Retorna 404 si no hay configuracion activa (el frontend usa defaults locales).
-
-        NOTA: Este endpoint es publico (sin autenticacion) porque el branding
-        se necesita en la pagina de login, antes de que el usuario se autentique.
-        """
-        branding = BrandingConfig.objects.filter(is_active=True).first()
-        if not branding:
-            # Retornar 404 para que el frontend use sus defaults locales
-            # Esto es consistente con corporate-identity/active/
-            return Response(
-                {'detail': 'No hay configuracion de branding activa'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        # Pasar request al context para construir URLs absolutas de media
-        serializer = BrandingConfigSerializer(branding, context={'request': request})
-        return Response(serializer.data)
-
+# =============================================================================
+# NOTA: BrandingConfigViewSet fue ELIMINADO
+# El branding se gestiona ahora en el modelo Tenant (apps.tenant.models.Tenant)
+# Endpoint: /api/tenant/public/branding/
+# =============================================================================
 
 # NOTA: ConsecutivoConfigViewSet fue migrado a apps.gestion_estrategica.organizacion.views
 # Los consecutivos ahora estan disponibles en /api/organizacion/consecutivos/

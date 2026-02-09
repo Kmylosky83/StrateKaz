@@ -70,12 +70,12 @@ export const BRAND = {
 
   /** Colores de marca (para manifest PWA y theme) */
   colors: {
-    /** Color primario de la marca */
-    primary: '#2563eb',
+    /** Color primario de la marca (rosa StrateKaz) */
+    primary: '#ec268f',
     /** Color de fondo del tema */
     background: '#ffffff',
-    /** Color del tema para PWA */
-    theme: '#2563eb',
+    /** Color del tema para PWA (rosa StrateKaz) */
+    theme: '#ec268f',
   },
 } as const;
 

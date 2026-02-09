@@ -1,15 +1,10 @@
 """
-Admin para Multi-Tenant System
+Admin para Multi-Tenant System (django-tenants)
 """
 from django.contrib import admin
 from django.utils.html import format_html
-from apps.tenant.models import (
-    Plan,
-    Tenant,
-    TenantUser,
-    TenantUserAccess,
-    TenantDomain,
-)
+from django_tenants.admin import TenantAdminMixin
+from .models import Plan, Tenant, Domain, TenantUser, TenantUserAccess
 
 
 @admin.register(Plan)
@@ -43,76 +38,57 @@ class PlanAdmin(admin.ModelAdmin):
     )
 
 
-class TenantUserAccessInline(admin.TabularInline):
-    model = TenantUserAccess
-    extra = 0
-    fields = ['tenant_user', 'role', 'is_active', 'created_at']
-    readonly_fields = ['created_at']
-    autocomplete_fields = ['tenant_user']
-
-
-class TenantDomainInline(admin.TabularInline):
-    model = TenantDomain
-    extra = 0
+class DomainInline(admin.TabularInline):
+    """Inline para dominios de un tenant"""
+    model = Domain
+    extra = 1
     fields = ['domain', 'is_primary', 'is_active', 'ssl_enabled']
 
 
+class TenantUserAccessInline(admin.TabularInline):
+    model = TenantUserAccess
+    extra = 0
+    fields = ['tenant_user', 'role', 'is_active', 'granted_at']
+    readonly_fields = ['granted_at']
+    autocomplete_fields = ['tenant_user']
+
+
 @admin.register(Tenant)
-class TenantAdmin(admin.ModelAdmin):
+class TenantAdmin(TenantAdminMixin, admin.ModelAdmin):
     list_display = [
-        'name', 'code', 'subdomain_link', 'plan',
-        'is_active', 'is_subscription_valid_display', 'created_at'
+        'name', 'code', 'schema_name', 'plan',
+        'is_active', 'is_subscription_valid_display', 'tier', 'created_at'
     ]
-    list_filter = ['is_active', 'plan', 'is_trial', 'created_at']
-    search_fields = ['name', 'code', 'subdomain', 'nit']
+    list_filter = ['is_active', 'plan', 'is_trial', 'tier', 'created_at']
+    search_fields = ['name', 'code', 'nit', 'schema_name']
     ordering = ['-created_at']
-    readonly_fields = ['created_at', 'updated_at', 'full_domain']
+    readonly_fields = ['schema_name', 'created_at', 'updated_at']
     autocomplete_fields = ['plan']
-    inlines = [TenantUserAccessInline, TenantDomainInline]
+    inlines = [DomainInline, TenantUserAccessInline]
 
     fieldsets = (
         ('Identificación', {
-            'fields': ('code', 'name', 'nit')
+            'fields': ('code', 'name', 'nit', 'schema_name')
         }),
-        ('Acceso', {
-            'fields': ('subdomain', 'custom_domain', 'full_domain'),
-            'description': 'Configuración de dominio de acceso'
+        ('Plan y Límites', {
+            'fields': ('plan', 'max_users', 'max_storage_gb', 'tier', 'enabled_modules')
         }),
-        ('Base de Datos', {
-            'fields': ('db_name', 'db_host', 'db_port'),
-            'classes': ('collapse',),
-            'description': 'Configuración de conexión a BD del tenant'
+        ('Estado y Suscripción', {
+            'fields': ('is_active', 'is_trial', 'trial_ends_at', 'subscription_ends_at')
         }),
-        ('Plan y Suscripción', {
-            'fields': (
-                'plan', 'max_users_override',
-                'is_trial', 'trial_ends_at', 'subscription_ends_at'
-            )
-        }),
-        ('Branding (Login)', {
+        ('Branding', {
             'fields': ('logo_url', 'primary_color'),
-            'description': 'Branding mínimo para página de login'
+            'classes': ('collapse',)
         }),
         ('Backups', {
             'fields': ('backup_enabled', 'backup_retention_days'),
             'classes': ('collapse',)
-        }),
-        ('Estado', {
-            'fields': ('is_active', 'notes')
         }),
         ('Auditoría', {
             'fields': ('created_at', 'updated_at', 'created_by'),
             'classes': ('collapse',)
         }),
     )
-
-    def subdomain_link(self, obj):
-        url = f"https://{obj.full_domain}"
-        return format_html(
-            '<a href="{}" target="_blank">{}</a>',
-            url, obj.subdomain
-        )
-    subdomain_link.short_description = 'Subdominio'
 
     def is_subscription_valid_display(self, obj):
         if obj.is_subscription_valid:
@@ -121,11 +97,21 @@ class TenantAdmin(admin.ModelAdmin):
     is_subscription_valid_display.short_description = 'Suscripción'
 
 
+@admin.register(Domain)
+class DomainAdmin(admin.ModelAdmin):
+    list_display = ['domain', 'tenant', 'is_primary', 'is_active', 'ssl_enabled']
+    list_filter = ['is_primary', 'is_active', 'ssl_enabled']
+    search_fields = ['domain', 'tenant__name']
+    autocomplete_fields = ['tenant']
+
+
 class TenantUserAccessUserInline(admin.TabularInline):
+    """Inline para accesos de un usuario a tenants"""
     model = TenantUserAccess
+    fk_name = 'tenant_user'  # Especificar FK porque hay dos FKs a TenantUser
     extra = 0
-    fields = ['tenant', 'role', 'is_active', 'created_at']
-    readonly_fields = ['created_at']
+    fields = ['tenant', 'role', 'is_active', 'granted_at']
+    readonly_fields = ['granted_at']
     autocomplete_fields = ['tenant']
 
 
@@ -143,10 +129,10 @@ class TenantUserAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('Credenciales', {
-            'fields': ('email', 'password')
+            'fields': ('email',)
         }),
         ('Datos Personales', {
-            'fields': ('first_name', 'last_name', 'phone')
+            'fields': ('first_name', 'last_name')
         }),
         ('Permisos', {
             'fields': ('is_active', 'is_superadmin')
@@ -171,15 +157,7 @@ class TenantUserAdmin(admin.ModelAdmin):
 
 @admin.register(TenantUserAccess)
 class TenantUserAccessAdmin(admin.ModelAdmin):
-    list_display = ['tenant_user', 'tenant', 'role', 'is_active', 'created_at']
+    list_display = ['tenant_user', 'tenant', 'role', 'is_active', 'granted_at']
     list_filter = ['role', 'is_active', 'tenant']
     search_fields = ['tenant_user__email', 'tenant__name']
-    autocomplete_fields = ['tenant_user', 'tenant']
-
-
-@admin.register(TenantDomain)
-class TenantDomainAdmin(admin.ModelAdmin):
-    list_display = ['domain', 'tenant', 'is_primary', 'is_active', 'ssl_enabled']
-    list_filter = ['is_primary', 'is_active', 'ssl_enabled']
-    search_fields = ['domain', 'tenant__name']
-    autocomplete_fields = ['tenant']
+    autocomplete_fields = ['tenant_user', 'tenant', 'granted_by']

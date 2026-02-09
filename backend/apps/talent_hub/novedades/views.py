@@ -18,7 +18,9 @@ from .models import (
     Licencia,
     Permiso,
     PeriodoVacaciones,
-    SolicitudVacaciones
+    SolicitudVacaciones,
+    ConfiguracionDotacion,
+    EntregaDotacion
 )
 from .serializers import (
     # Tipos
@@ -45,6 +47,11 @@ from .serializers import (
     SolicitudVacacionesListSerializer,
     SolicitudVacacionesDetailSerializer,
     SolicitudVacacionesCreateSerializer,
+    # Dotación
+    ConfiguracionDotacionSerializer,
+    EntregaDotacionListSerializer,
+    EntregaDotacionDetailSerializer,
+    EntregaDotacionCreateSerializer,
 )
 
 
@@ -618,3 +625,80 @@ class SolicitudVacacionesViewSet(viewsets.ModelViewSet):
         queryset = self.get_queryset().filter(estado='solicitada')
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+
+# =============================================================================
+# DOTACIÓN - Art. 230 CST
+# =============================================================================
+
+class ConfiguracionDotacionViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para configuración de dotación.
+
+    Catálogo de configuración según Art. 230 CST.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return ConfiguracionDotacion.objects.filter(
+            empresa=self.request.user.empresa,
+            is_active=True
+        )
+
+    def get_serializer_class(self):
+        return ConfiguracionDotacionSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(
+            empresa=self.request.user.empresa,
+            created_by=self.request.user
+        )
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
+
+
+class EntregaDotacionViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para entregas de dotación.
+
+    Gestión de entregas individuales según Art. 230 CST.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = EntregaDotacion.objects.filter(
+            empresa=self.request.user.empresa,
+            is_active=True
+        ).select_related('colaborador').order_by('-anio', '-fecha_entrega')
+
+        # Filtros
+        colaborador_id = self.request.query_params.get('colaborador')
+        if colaborador_id:
+            queryset = queryset.filter(colaborador_id=colaborador_id)
+
+        periodo = self.request.query_params.get('periodo')
+        if periodo:
+            queryset = queryset.filter(periodo=periodo)
+
+        anio = self.request.query_params.get('anio')
+        if anio:
+            queryset = queryset.filter(anio=anio)
+
+        return queryset
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return EntregaDotacionListSerializer
+        elif self.action in ['create', 'update', 'partial_update']:
+            return EntregaDotacionCreateSerializer
+        return EntregaDotacionDetailSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(
+            empresa=self.request.user.empresa,
+            created_by=self.request.user
+        )
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)

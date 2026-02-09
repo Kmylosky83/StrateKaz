@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
+from django.db.models import Avg, Count, Q
 from django.utils import timezone
 
 from .models import (
@@ -83,6 +84,27 @@ class AnalisisVulnerabilidadViewSet(viewsets.ModelViewSet):
         return Response({
             'message': 'Análisis aprobado exitosamente',
             'analisis': self.get_serializer(analisis).data
+        })
+
+    @action(detail=False, methods=['get'])
+    def estadisticas(self, request):
+        """Estadisticas de analisis de vulnerabilidad"""
+        qs = self.get_queryset()
+        total = qs.count()
+        por_estado = dict(qs.values_list('estado').annotate(c=Count('id')).values_list('estado', 'c'))
+        por_nivel = dict(qs.values_list('nivel_vulnerabilidad').annotate(c=Count('id')).values_list('nivel_vulnerabilidad', 'c'))
+        amenazas_criticas = Amenaza.objects.filter(
+            analisis__in=qs,
+            nivel_riesgo__in=['ALTO', 'MUY_ALTO'],
+            activo=True,
+        ).count()
+
+        return Response({
+            'total': total,
+            'por_estado': por_estado,
+            'por_nivel_vulnerabilidad': por_nivel,
+            'amenazas_criticas': amenazas_criticas,
+            'aprobados': por_estado.get('APROBADO', 0),
         })
 
 
@@ -327,6 +349,29 @@ class BrigadaViewSet(viewsets.ModelViewSet):
         return Response({
             'message': 'Brigada activada exitosamente',
             'brigada': self.get_serializer(brigada).data
+        })
+
+    @action(detail=False, methods=['get'])
+    def estadisticas(self, request):
+        """Estadisticas de brigadas"""
+        qs = self.get_queryset()
+        user = request.user
+        empresa_id = getattr(user, 'empresa_id', None)
+
+        total_brigadas = qs.count()
+        activas = qs.filter(estado='ACTIVA').count()
+
+        brigadistas_qs = BrigadistaActivo.objects.filter(
+            empresa_id=empresa_id, activo=True
+        )
+        total_brigadistas = brigadistas_qs.count()
+        en_formacion = brigadistas_qs.filter(estado='EN_FORMACION').count()
+
+        return Response({
+            'total_brigadas': total_brigadas,
+            'brigadas_activas': activas,
+            'total_brigadistas': total_brigadistas,
+            'brigadistas_en_formacion': en_formacion,
         })
 
 
@@ -590,6 +635,32 @@ class SimulacroViewSet(viewsets.ModelViewSet):
             'evaluacion': EvaluacionSimulacroSerializer(evaluacion).data
         }, status=status.HTTP_201_CREATED)
 
+    @action(detail=False, methods=['get'])
+    def estadisticas(self, request):
+        """Estadisticas de simulacros"""
+        qs = self.get_queryset()
+        año = timezone.now().year
+        qs_año = qs.filter(fecha_programada__year=año)
+
+        total = qs_año.count()
+        por_estado = dict(qs_año.values_list('estado').annotate(c=Count('id')).values_list('estado', 'c'))
+        realizados = qs_año.filter(estado__in=['REALIZADO', 'EVALUADO'])
+        exitosos = realizados.filter(fue_exitoso=True).count()
+        calificacion_promedio = EvaluacionSimulacro.objects.filter(
+            simulacro__in=realizados,
+            activo=True,
+        ).aggregate(avg=Avg('calificacion_porcentaje'))['avg']
+
+        return Response({
+            'total': total,
+            'por_estado': por_estado,
+            'programados': por_estado.get('PROGRAMADO', 0),
+            'realizados': realizados.count(),
+            'exitosos': exitosos,
+            'calificacion_promedio': round(calificacion_promedio, 1) if calificacion_promedio else None,
+            'año': año,
+        })
+
 
 class EvaluacionSimulacroViewSet(viewsets.ModelViewSet):
     """
@@ -652,6 +723,33 @@ class RecursoEmergenciaViewSet(viewsets.ModelViewSet):
             empresa_id=empresa_id,
             creado_por=user.get_full_name() or user.username
         )
+
+    @action(detail=False, methods=['get'])
+    def estadisticas(self, request):
+        """Estadisticas de recursos de emergencia"""
+        qs = self.get_queryset()
+        total = qs.count()
+        por_estado = dict(qs.values_list('estado').annotate(c=Count('id')).values_list('estado', 'c'))
+        por_tipo = dict(qs.values_list('tipo_recurso').annotate(c=Count('id')).values_list('tipo_recurso', 'c'))
+        requieren_inspeccion = qs.filter(
+            fecha_proxima_inspeccion__lte=timezone.now().date(),
+            estado='OPERATIVO',
+        ).count()
+        por_vencer_30d = qs.filter(
+            fecha_vencimiento__lte=timezone.now().date() + timezone.timedelta(days=30),
+            fecha_vencimiento__gt=timezone.now().date(),
+            estado='OPERATIVO',
+        ).count()
+
+        return Response({
+            'total': total,
+            'por_estado': por_estado,
+            'por_tipo_recurso': por_tipo,
+            'operativos': por_estado.get('OPERATIVO', 0),
+            'en_mantenimiento': por_estado.get('EN_MANTENIMIENTO', 0),
+            'requieren_inspeccion': requieren_inspeccion,
+            'por_vencer_30d': por_vencer_30d,
+        })
 
     @action(detail=False, methods=['get'])
     def requieren_inspeccion(self, request):

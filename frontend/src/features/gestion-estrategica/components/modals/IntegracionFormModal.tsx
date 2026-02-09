@@ -78,67 +78,111 @@ const defaultFormData: FormData = {
   password: '',
 };
 
-// Mapeo de tipos de servicio a proveedores compatibles
-const PROVEEDOR_POR_TIPO: Record<TipoServicio, { value: Proveedor; label: string }[]> = {
+// Mapeo de tipos de servicio a proveedores compatibles (sincronizado con backend)
+const PROVEEDOR_POR_TIPO: Partial<Record<TipoServicio, { value: Proveedor; label: string }[]>> = {
+  // Comunicación
   EMAIL: [
     { value: 'GMAIL', label: 'Gmail / Google Workspace' },
     { value: 'OUTLOOK', label: 'Outlook / Microsoft 365' },
     { value: 'SMTP_CUSTOM', label: 'SMTP Personalizado' },
-  ],
-  FACTURACION: [
-    { value: 'DIAN', label: 'DIAN (Directo)' },
-    { value: 'SIIGO', label: 'Siigo' },
-    { value: 'ALEGRA', label: 'Alegra' },
   ],
   SMS: [
     { value: 'TWILIO', label: 'Twilio' },
     { value: 'MESSAGEBIRD', label: 'MessageBird' },
   ],
   WHATSAPP: [{ value: 'WHATSAPP_BUSINESS', label: 'WhatsApp Business API' }],
-  MAPAS: [
-    { value: 'GOOGLE_MAPS', label: 'Google Maps Platform' },
-    { value: 'OSM', label: 'OpenStreetMap' },
+  // Tributario
+  FACTURACION: [
+    { value: 'DIAN', label: 'DIAN (Directo)' },
+    { value: 'SIIGO', label: 'Siigo' },
+    { value: 'ALEGRA', label: 'Alegra' },
   ],
+  NOMINA: [
+    { value: 'SIIGO', label: 'Siigo' },
+    { value: 'ALEGRA', label: 'Alegra' },
+  ],
+  // Almacenamiento
   ALMACENAMIENTO: [
     { value: 'GOOGLE_DRIVE', label: 'Google Drive' },
     { value: 'AWS_S3', label: 'Amazon S3' },
     { value: 'AZURE_BLOB', label: 'Azure Blob Storage' },
     { value: 'GCS', label: 'Google Cloud Storage' },
   ],
+  // Analítica
   BI: [
     { value: 'GOOGLE_LOOKER', label: 'Google Looker Studio' },
     { value: 'GOOGLE_SHEETS', label: 'Google Sheets' },
   ],
+  // Financiero
   PAGOS: [
     { value: 'PSE', label: 'PSE (ACH Colombia)' },
     { value: 'WOMPI', label: 'Wompi' },
     { value: 'PAYU', label: 'PayU Latam' },
     { value: 'MERCADOPAGO', label: 'MercadoPago' },
   ],
+  // Geolocalización
+  MAPAS: [
+    { value: 'GOOGLE_MAPS', label: 'Google Maps Platform' },
+    { value: 'OSM', label: 'OpenStreetMap' },
+  ],
+  RASTREO: [
+    { value: 'RUNT', label: 'RUNT' },
+    { value: 'MINTRANSPORTE', label: 'MinTransporte' },
+  ],
+  // Legal
+  FIRMA_DIGITAL: [
+    { value: 'CERTICAMARA', label: 'Certicámara' },
+    { value: 'GSE', label: 'GSE' },
+    { value: 'ANDES_SCD', label: 'Andes SCD' },
+  ],
+  // Sistemas
   ERP: [
     { value: 'SIIGO', label: 'Siigo' },
     { value: 'ALEGRA', label: 'Alegra' },
     { value: 'WORLD_OFFICE', label: 'World Office' },
     { value: 'SAP', label: 'SAP' },
   ],
-  FIRMA_DIGITAL: [
-    { value: 'CERTICAMARA', label: 'Certicámara' },
-    { value: 'GSE', label: 'GSE' },
-    { value: 'ANDES_SCD', label: 'Andes SCD' },
-  ],
 };
 
+// Tipos de servicio organizados por categoría
 const TIPO_SERVICIO_OPTIONS = [
+  // Comunicación
   { value: 'EMAIL', label: 'Correo Electrónico' },
-  { value: 'FACTURACION', label: 'Facturación Electrónica' },
   { value: 'SMS', label: 'SMS' },
   { value: 'WHATSAPP', label: 'WhatsApp' },
-  { value: 'MAPAS', label: 'Mapas y Geocodificación' },
+  { value: 'NOTIFICACIONES', label: 'Notificaciones Push' },
+  // Tributario
+  { value: 'FACTURACION', label: 'Facturación Electrónica' },
+  { value: 'NOMINA', label: 'Nómina Electrónica' },
+  { value: 'RADIAN', label: 'RADIAN' },
+  // Archivos
   { value: 'ALMACENAMIENTO', label: 'Almacenamiento en la Nube' },
+  { value: 'CDN', label: 'CDN' },
+  { value: 'BACKUP', label: 'Backup y Recuperación' },
+  // Analítica
   { value: 'BI', label: 'Business Intelligence' },
+  { value: 'ANALYTICS', label: 'Analytics y Métricas' },
+  // Financiero
   { value: 'PAGOS', label: 'Pasarela de Pagos' },
+  { value: 'PSE', label: 'PSE' },
+  { value: 'BANCARIO', label: 'Integración Bancaria' },
+  // Geolocalización
+  { value: 'MAPAS', label: 'Mapas y Geocodificación' },
+  { value: 'RASTREO', label: 'Rastreo GPS' },
+  // Legal y Cumplimiento
+  { value: 'FIRMA_DIGITAL', label: 'Firma Digital Certificada' },
+  { value: 'OFAC', label: 'OFAC / Listas Restrictivas' },
+  { value: 'SAGRILAFT', label: 'SAGRILAFT / SARLAFT' },
+  // Inteligencia Artificial
+  { value: 'IA', label: 'Inteligencia Artificial' },
+  { value: 'OCR', label: 'Reconocimiento OCR' },
+  // Sistemas
   { value: 'ERP', label: 'Integración ERP' },
-  { value: 'FIRMA_DIGITAL', label: 'Firma Digital' },
+  { value: 'CRM', label: 'Integración CRM' },
+  // Otros
+  { value: 'API_TERCEROS', label: 'API de Terceros' },
+  { value: 'WEBHOOK', label: 'Webhooks' },
+  { value: 'OTRO', label: 'Otro Servicio' },
 ];
 
 const METODO_AUTENTICACION_OPTIONS = [

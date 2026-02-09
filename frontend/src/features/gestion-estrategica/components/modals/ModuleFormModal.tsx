@@ -35,7 +35,7 @@ export const ModuleFormModal = ({ module, isOpen, onClose }: ModuleFormModalProp
     code: '',
     name: '',
     description: '',
-    category: 'APOYO' as ModuleCategory,
+    category: 'SUPPORT' as ModuleCategory,
     icon: '',
     route: '',
     is_core: false,
@@ -71,7 +71,7 @@ export const ModuleFormModal = ({ module, isOpen, onClose }: ModuleFormModalProp
         code: '',
         name: '',
         description: '',
-        category: 'APOYO',
+        category: 'SUPPORT',
         icon: '',
         route: '',
         is_core: false,
@@ -127,12 +127,12 @@ export const ModuleFormModal = ({ module, isOpen, onClose }: ModuleFormModalProp
   const isSystemModule = module?.is_core;
 
   const categoryOptions = categories?.map((c) => ({ value: c.value, label: c.label })) || [
-    { value: 'ESTRATEGICO', label: 'Estratégico' },
-    { value: 'MOTOR', label: 'Motor' },
-    { value: 'INTEGRAL', label: 'Integral' },
-    { value: 'MISIONAL', label: 'Misional' },
-    { value: 'APOYO', label: 'Apoyo' },
-    { value: 'INTELIGENCIA', label: 'Inteligencia' },
+    { value: 'STRATEGIC', label: 'Estrategico' },
+    { value: 'COMPLIANCE', label: 'Cumplimiento' },
+    { value: 'INTEGRATED', label: 'Integral' },
+    { value: 'OPERATIONAL', label: 'Operacional' },
+    { value: 'SUPPORT', label: 'Apoyo' },
+    { value: 'INTELLIGENCE', label: 'Inteligencia' },
   ];
 
   const title = (

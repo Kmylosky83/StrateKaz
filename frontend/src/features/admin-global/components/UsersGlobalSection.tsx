@@ -14,13 +14,11 @@ import {
   Building2,
   Mail,
   Clock,
-  MoreVertical,
-  UserPlus,
-  UserMinus,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Card, Badge, Button, ConfirmDialog, BrandedSkeleton, Avatar } from '@/components/common';
+import { Card, Badge, Button, ConfirmDialog, BrandedSkeleton, Avatar, Dropdown } from '@/components/common';
 import { useTenantUsersList, useDeleteTenantUser } from '../hooks/useAdminGlobal';
+import { TenantUserFormModal } from './TenantUserFormModal';
 import type { TenantUser } from '../types';
 
 interface UserRowProps {
@@ -31,8 +29,6 @@ interface UserRowProps {
 }
 
 const UserRow = ({ user, onEdit, onDelete, onManageTenants }: UserRowProps) => {
-  const [showMenu, setShowMenu] = useState(false);
-
   const formatDate = (dateStr: string | null | undefined) => {
     if (!dateStr) return 'Nunca';
     return new Date(dateStr).toLocaleDateString('es-CO', {
@@ -128,55 +124,28 @@ const UserRow = ({ user, onEdit, onDelete, onManageTenants }: UserRowProps) => {
 
       {/* Acciones */}
       <td className="px-4 py-3">
-        <div className="relative">
-          <Button variant="ghost" size="sm" onClick={() => setShowMenu(!showMenu)}>
-            <MoreVertical className="h-4 w-4" />
-          </Button>
-
-          <AnimatePresence>
-            {showMenu && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="absolute right-0 top-8 z-10 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1"
-                onMouseLeave={() => setShowMenu(false)}
-              >
-                <button
-                  onClick={() => {
-                    onEdit(user);
-                    setShowMenu(false);
-                  }}
-                  className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                >
-                  <Edit className="h-4 w-4" />
-                  Editar
-                </button>
-                <button
-                  onClick={() => {
-                    onManageTenants(user);
-                    setShowMenu(false);
-                  }}
-                  className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                >
-                  <Building2 className="h-4 w-4" />
-                  Gestionar Empresas
-                </button>
-                <hr className="my-1 border-gray-200 dark:border-gray-700" />
-                <button
-                  onClick={() => {
-                    onDelete(user.id);
-                    setShowMenu(false);
-                  }}
-                  className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Eliminar
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+        <Dropdown
+          items={[
+            {
+              label: 'Editar',
+              icon: <Edit className="h-4 w-4" />,
+              onClick: () => onEdit(user),
+            },
+            {
+              label: 'Gestionar Empresas',
+              icon: <Building2 className="h-4 w-4" />,
+              onClick: () => onManageTenants(user),
+            },
+            { label: '', onClick: () => {}, divider: true },
+            {
+              label: 'Eliminar',
+              icon: <Trash2 className="h-4 w-4" />,
+              onClick: () => onDelete(user.id),
+              variant: 'danger' as const,
+            },
+          ]}
+          align="right"
+        />
       </td>
     </motion.tr>
   );
@@ -188,7 +157,7 @@ export const UsersGlobalSection = () => {
   const [filterSuperadmin, setFilterSuperadmin] = useState<boolean | undefined>(undefined);
   const [userToDelete, setUserToDelete] = useState<number | null>(null);
   const [userToEdit, setUserToEdit] = useState<TenantUser | null>(null);
-  const [userToManage, setUserToManage] = useState<TenantUser | null>(null);
+  const [showFormModal, setShowFormModal] = useState(false);
 
   const { data: users, isLoading } = useTenantUsersList({
     search: search || undefined,
@@ -211,6 +180,16 @@ export const UsersGlobalSection = () => {
         u.last_name.toLowerCase().includes(searchLower)
     );
   }, [users, search]);
+
+  const handleOpenNewUser = () => {
+    setUserToEdit(null);
+    setShowFormModal(true);
+  };
+
+  const handleEditUser = (user: TenantUser) => {
+    setUserToEdit(user);
+    setShowFormModal(true);
+  };
 
   const handleDelete = () => {
     if (userToDelete) {
@@ -237,7 +216,7 @@ export const UsersGlobalSection = () => {
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
                      bg-white dark:bg-gray-800 text-gray-900 dark:text-white
-                     focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                     focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           />
         </div>
 
@@ -271,7 +250,7 @@ export const UsersGlobalSection = () => {
             <option value="normal">Usuarios</option>
           </select>
 
-          <Button variant="primary" className="flex items-center gap-2">
+          <Button variant="primary" className="flex items-center gap-2" onClick={handleOpenNewUser}>
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Nuevo Usuario</span>
           </Button>
@@ -288,7 +267,7 @@ export const UsersGlobalSection = () => {
       </div>
 
       {/* Table */}
-      <Card className="overflow-hidden">
+      <Card>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-800">
@@ -316,9 +295,9 @@ export const UsersGlobalSection = () => {
                   <UserRow
                     key={user.id}
                     user={user}
-                    onEdit={setUserToEdit}
+                    onEdit={handleEditUser}
                     onDelete={setUserToDelete}
-                    onManageTenants={setUserToManage}
+                    onManageTenants={handleEditUser}
                   />
                 ))}
               </AnimatePresence>
@@ -347,6 +326,16 @@ export const UsersGlobalSection = () => {
         confirmText="Eliminar"
         confirmVariant="destructive"
         isLoading={deleteUser.isPending}
+      />
+
+      {/* User Form Modal */}
+      <TenantUserFormModal
+        isOpen={showFormModal}
+        onClose={() => {
+          setShowFormModal(false);
+          setUserToEdit(null);
+        }}
+        user={userToEdit}
       />
     </div>
   );

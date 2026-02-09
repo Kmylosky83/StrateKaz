@@ -89,6 +89,8 @@ export function useDynamicTheme() {
     primaryColor,
     secondaryColor,
     accentColor,
+    sidebarColor,
+    backgroundColor,
     favicon,
     companyName,
     isLoading,
@@ -241,7 +243,15 @@ export function useDynamicTheme() {
       });
       root.style.setProperty('--color-accent', hexToRgb(accentColor));
     }
-  }, [primaryColor, secondaryColor, accentColor, isLoading, isError, branding]);
+
+    // Aplicar colores de layout (sidebar, background)
+    if (sidebarColor) {
+      root.style.setProperty('--color-sidebar', hexToRgb(sidebarColor));
+    }
+    if (backgroundColor) {
+      root.style.setProperty('--color-background', hexToRgb(backgroundColor));
+    }
+  }, [primaryColor, secondaryColor, accentColor, sidebarColor, backgroundColor, isLoading, isError, branding]);
 }
 
 export default useDynamicTheme;

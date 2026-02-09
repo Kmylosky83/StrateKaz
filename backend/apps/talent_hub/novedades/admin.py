@@ -13,7 +13,9 @@ from .models import (
     Licencia,
     Permiso,
     PeriodoVacaciones,
-    SolicitudVacaciones
+    SolicitudVacaciones,
+    ConfiguracionDotacion,
+    EntregaDotacion
 )
 
 
@@ -442,3 +444,65 @@ class SolicitudVacacionesAdmin(admin.ModelAdmin):
             obj.get_estado_display()
         )
     estado_badge.short_description = 'Estado'
+
+
+# =============================================================================
+# DOTACIÓN - Art. 230 CST
+# =============================================================================
+
+@admin.register(ConfiguracionDotacion)
+class ConfiguracionDotacionAdmin(admin.ModelAdmin):
+    """Admin para configuración de dotación."""
+    list_display = ['empresa', 'salario_maximo_smmlv', 'is_active']
+    list_filter = ['empresa', 'is_active']
+    readonly_fields = ['created_at', 'updated_at', 'created_by', 'updated_by']
+
+    fieldsets = (
+        ('Configuración', {
+            'fields': ('empresa', 'periodos_entrega', 'salario_maximo_smmlv', 'items_obligatorios')
+        }),
+        ('Política', {
+            'fields': ('politica_devolucion',)
+        }),
+        ('Estado', {
+            'fields': ('is_active',)
+        }),
+        ('Auditoría', {
+            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
+            'classes': ('collapse',)
+        }),
+    )
+
+
+@admin.register(EntregaDotacion)
+class EntregaDotacionAdmin(admin.ModelAdmin):
+    """Admin para entregas de dotación."""
+    list_display = ['colaborador', 'periodo', 'anio', 'fecha_entrega', 'firma_recibido', 'is_active']
+    list_filter = ['periodo', 'anio', 'firma_recibido', 'empresa', 'is_active']
+    search_fields = ['colaborador__primer_nombre', 'colaborador__primer_apellido']
+    ordering = ['-anio', '-fecha_entrega']
+    readonly_fields = ['created_at', 'updated_at', 'created_by', 'updated_by']
+    raw_id_fields = ['colaborador']
+
+    fieldsets = (
+        ('Información', {
+            'fields': ('empresa', 'colaborador', 'periodo', 'anio', 'fecha_entrega')
+        }),
+        ('Ítems', {
+            'fields': ('items_entregados',)
+        }),
+        ('Acta', {
+            'fields': ('acta_entrega', 'firma_recibido')
+        }),
+        ('Observaciones', {
+            'fields': ('observaciones',),
+            'classes': ('collapse',)
+        }),
+        ('Estado', {
+            'fields': ('is_active',)
+        }),
+        ('Auditoría', {
+            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
+            'classes': ('collapse',)
+        }),
+    )

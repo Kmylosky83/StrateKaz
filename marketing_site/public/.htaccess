@@ -1,0 +1,234 @@
+# ============================================================================
+# StrateKaz Marketing Site - Optimized cPanel Configuration
+# Production-ready .htaccess for React SPA on shared hosting
+# ============================================================================
+
+RewriteEngine On
+RewriteBase /
+
+# Force HTTPS (Production Security)
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Remove trailing slashes for better SEO
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} (.+)/$
+RewriteRule ^(.+)/$ /$1 [R=301,L]
+
+# Handle React Router (SPA Routing)
+# Don't rewrite files that exist (JS, CSS, images, etc.)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+# Don't rewrite for assets directory
+RewriteCond %{REQUEST_URI} !^/assets/
+# Don't rewrite for common file extensions
+RewriteCond %{REQUEST_URI} !\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|webp|avif|json|xml|txt)$
+# Rewrite everything else to index.html
+RewriteRule ^(.*)$ /index.html [L]
+
+# Security and Performance Headers
+<IfModule mod_headers.c>
+  # Security Headers (Production)
+  Header always set X-Frame-Options "DENY"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-XSS-Protection "1; mode=block"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+  # Content Security Policy (Permissive for Google Fonts and PWA)
+  Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://api.stratekaz.com https://www.google-analytics.com https://www.googletagmanager.com; worker-src 'self' blob:; manifest-src 'self'"
+
+  # Optimized Caching Strategy
+  # Static Assets with hash (1 year - safe because filenames change with content)
+  <FilesMatch "\.(js|css)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+
+  # Images and fonts (1 month - reasonable balance)
+  <FilesMatch "\.(png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|webp|avif)$">
+    Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
+
+  # PWA Files (CRITICAL: Always check for updates)
+  <FilesMatch "sw\.js$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+    Header set Service-Worker-Allowed "/"
+  </FilesMatch>
+
+  <FilesMatch "registerSW\.js$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+
+  <FilesMatch "manifest\.webmanifest$">
+    Header set Content-Type "application/manifest+json"
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+
+  # HTML Files (CRITICAL: Never cache - always fetch fresh)
+  <FilesMatch "\.(html|htm)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate, max-age=0"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+    Header unset ETag
+  </FilesMatch>
+
+  # API and Dynamic Content
+  <FilesMatch "\.(json|xml)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+</IfModule>
+
+# Advanced Brotli + GZIP Compression (Dual Support)
+<IfModule mod_brotli.c>
+  # Enable Brotli compression for better performance (15-20% smaller than gzip)
+  SetOutputFilter BROTLI_COMPRESS
+  SetEnvIfNoCase Request_URI \
+    \.(?:gif|jpe?g|png|webp|avif|ico|bmp)$ no-brotli dont-vary
+  SetEnvIfNoCase Request_URI \
+    \.(?:zip|t?gz|sit|bz2|tar|7z|rar|exe|dmg|mp[34]|mov|avi|wmv|flv|pdf)$ no-brotli dont-vary
+
+  # Compress specific content types
+  AddOutputFilterByType BROTLI_COMPRESS text/plain
+  AddOutputFilterByType BROTLI_COMPRESS text/html
+  AddOutputFilterByType BROTLI_COMPRESS text/xml
+  AddOutputFilterByType BROTLI_COMPRESS text/css
+  AddOutputFilterByType BROTLI_COMPRESS text/javascript
+  AddOutputFilterByType BROTLI_COMPRESS text/csv
+  AddOutputFilterByType BROTLI_COMPRESS text/tab-separated-values
+
+  # Application content
+  AddOutputFilterByType BROTLI_COMPRESS application/xml
+  AddOutputFilterByType BROTLI_COMPRESS application/xhtml+xml
+  AddOutputFilterByType BROTLI_COMPRESS application/rss+xml
+  AddOutputFilterByType BROTLI_COMPRESS application/javascript
+  AddOutputFilterByType BROTLI_COMPRESS application/x-javascript
+  AddOutputFilterByType BROTLI_COMPRESS application/json
+  AddOutputFilterByType BROTLI_COMPRESS application/ld+json
+  AddOutputFilterByType BROTLI_COMPRESS application/manifest+json
+  AddOutputFilterByType BROTLI_COMPRESS application/atom+xml
+
+  # Fonts (for better bundle compression)
+  AddOutputFilterByType BROTLI_COMPRESS font/truetype
+  AddOutputFilterByType BROTLI_COMPRESS font/opentype
+  AddOutputFilterByType BROTLI_COMPRESS font/woff
+  AddOutputFilterByType BROTLI_COMPRESS font/woff2
+  AddOutputFilterByType BROTLI_COMPRESS application/vnd.ms-fontobject
+  AddOutputFilterByType BROTLI_COMPRESS application/font-woff
+  AddOutputFilterByType BROTLI_COMPRESS application/font-woff2
+
+  # SVG and icons
+  AddOutputFilterByType BROTLI_COMPRESS image/svg+xml
+  AddOutputFilterByType BROTLI_COMPRESS image/x-icon
+</IfModule>
+
+# Fallback GZIP Compression (for servers without Brotli support)
+<IfModule mod_deflate.c>
+  # Only apply GZIP if Brotli is not available
+  <IfModule !mod_brotli.c>
+    # Text-based content
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/xml
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE text/csv
+    AddOutputFilterByType DEFLATE text/tab-separated-values
+
+    # Application content
+    AddOutputFilterByType DEFLATE application/xml
+    AddOutputFilterByType DEFLATE application/xhtml+xml
+    AddOutputFilterByType DEFLATE application/rss+xml
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/x-javascript
+    AddOutputFilterByType DEFLATE application/json
+    AddOutputFilterByType DEFLATE application/ld+json
+    AddOutputFilterByType DEFLATE application/manifest+json
+    AddOutputFilterByType DEFLATE application/atom+xml
+
+    # Fonts (if not already compressed)
+    AddOutputFilterByType DEFLATE font/truetype
+    AddOutputFilterByType DEFLATE font/opentype
+    AddOutputFilterByType DEFLATE application/vnd.ms-fontobject
+
+    # SVG
+    AddOutputFilterByType DEFLATE image/svg+xml
+    AddOutputFilterByType DEFLATE image/x-icon
+  </IfModule>
+</IfModule>
+
+# Modern MIME Types
+<IfModule mod_mime.c>
+  # Web fonts
+  AddType font/woff2                              .woff2
+  AddType font/woff                               .woff
+  AddType font/truetype                           .ttf
+  AddType font/opentype                           .otf
+  AddType application/vnd.ms-fontobject           .eot
+
+  # Modern image formats
+  AddType image/webp                              .webp
+  AddType image/avif                              .avif
+
+  # JavaScript and CSS
+  AddType application/javascript                  .js
+  AddType application/javascript                  .mjs
+  AddType text/css                                .css
+
+  # Web app manifest and service worker
+  AddType application/manifest+json               .webmanifest
+  AddType application/x-web-app-manifest+json     .webapp
+
+  # Data interchange
+  AddType application/json                        .json
+  AddType application/ld+json                     .jsonld
+  AddType application/xml                         .xml
+  AddType text/xml                                .xml
+
+  # Media
+  AddType image/svg+xml                           .svg
+  AddType image/x-icon                            .ico
+</IfModule>
+
+# Prevent access to sensitive files
+<FilesMatch "(^#.*#|\.(bak|conf|dist|fla|in[ci]|log|psd|sh|sql|sw[op])|~)$">
+  Require all denied
+</FilesMatch>
+
+# Prevent access to hidden files and directories
+<IfModule mod_rewrite.c>
+  RewriteRule "(^|/)\." - [F]
+</IfModule>
+
+# Performance: Disable ETags for HTML, enable for static assets
+<IfModule mod_expires.c>
+  ExpiresActive on
+
+  # HTML - NEVER cache (most important!)
+  ExpiresByType text/html                         "access plus 0 seconds"
+
+  # Static assets with hash-based names (long cache - safe)
+  ExpiresByType text/css                          "access plus 1 year"
+  ExpiresByType application/javascript             "access plus 1 year"
+
+  # Images (1 month)
+  ExpiresByType image/png                         "access plus 1 month"
+  ExpiresByType image/jpg                         "access plus 1 month"
+  ExpiresByType image/jpeg                        "access plus 1 month"
+  ExpiresByType image/gif                         "access plus 1 month"
+  ExpiresByType image/svg+xml                     "access plus 1 month"
+  ExpiresByType image/webp                        "access plus 1 month"
+  ExpiresByType image/avif                        "access plus 1 month"
+  ExpiresByType image/x-icon                      "access plus 1 month"
+
+  # Fonts (1 year - rarely change)
+  ExpiresByType font/woff2                        "access plus 1 year"
+  ExpiresByType font/woff                         "access plus 1 year"
+  ExpiresByType font/truetype                     "access plus 1 year"
+  ExpiresByType font/opentype                     "access plus 1 year"
+
+  # PWA specific - NEVER cache
+  ExpiresByType application/manifest+json         "access plus 0 seconds"
+</IfModule>

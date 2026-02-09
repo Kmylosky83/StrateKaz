@@ -18,4 +18,7 @@ urlpatterns = [
 
     # Reglamentos Internos
     path('reglamentos-internos/', include('apps.motor_cumplimiento.reglamentos_internos.urls')),
+
+    # Evidencias Centralizadas
+    path('evidencias/', include('apps.motor_cumplimiento.evidencias.urls')),
 ]

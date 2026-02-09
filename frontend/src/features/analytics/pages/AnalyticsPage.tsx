@@ -2,21 +2,17 @@
  * Página: Analytics Dashboard Principal
  *
  * Dashboard principal de Business Intelligence con:
- * - KPIs resumen
+ * - KPIs resumen (datos reales desde API)
  * - Últimos valores de indicadores principales
  * - Alertas pendientes
  * - Acciones rápidas
  */
-import { useState } from 'react';
 import {
   BarChart3,
-  TrendingUp,
-  TrendingDown,
-  Activity,
   AlertCircle,
   CheckCircle2,
   XCircle,
-  Clock,
+  Activity,
   Target,
   Settings,
   FileText,
@@ -30,133 +26,27 @@ import { PageHeader } from '@/components/layout';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
+import { Spinner } from '@/components/common/Spinner';
+import { EmptyState } from '@/components/common/EmptyState';
 import { cn } from '@/utils/cn';
 import { useNavigate } from 'react-router-dom';
-
-// ==================== MOCK DATA ====================
-
-const mockStats = {
-  total_kpis: 48,
-  kpis_activos: 45,
-  kpis_verde: 32,
-  kpis_amarillo: 9,
-  kpis_rojo: 4,
-  alertas_pendientes: 7,
-  acciones_pendientes: 12,
-  mediciones_mes: 156,
-};
-
-const mockKPISummary = [
-  {
-    id: 1,
-    codigo: 'KPI-SST-001',
-    nombre: 'Índice de Frecuencia de Accidentalidad',
-    categoria: 'sst',
-    ultimo_valor: 2.3,
-    meta: 2.5,
-    unidad: 'IF',
-    color_semaforo: 'verde',
-    tendencia: 'descendente',
-    variacion: -12.5,
-  },
-  {
-    id: 2,
-    codigo: 'KPI-FIN-001',
-    nombre: 'EBITDA Mensual',
-    categoria: 'financiero',
-    ultimo_valor: 18.5,
-    meta: 15.0,
-    unidad: '%',
-    color_semaforo: 'verde',
-    tendencia: 'ascendente',
-    variacion: 23.4,
-  },
-  {
-    id: 3,
-    codigo: 'KPI-OP-001',
-    nombre: 'Eficiencia Operacional',
-    categoria: 'operacional',
-    ultimo_valor: 82.0,
-    meta: 85.0,
-    unidad: '%',
-    color_semaforo: 'amarillo',
-    tendencia: 'estable',
-    variacion: 0.5,
-  },
-  {
-    id: 4,
-    codigo: 'KPI-COM-001',
-    nombre: 'Satisfacción del Cliente',
-    categoria: 'comercial',
-    ultimo_valor: 4.2,
-    meta: 4.5,
-    unidad: '/5',
-    color_semaforo: 'amarillo',
-    tendencia: 'descendente',
-    variacion: -5.2,
-  },
-  {
-    id: 5,
-    codigo: 'KPI-PESV-001',
-    nombre: 'Cumplimiento Inspección Preoperacional',
-    categoria: 'pesv',
-    ultimo_valor: 68.0,
-    meta: 90.0,
-    unidad: '%',
-    color_semaforo: 'rojo',
-    tendencia: 'descendente',
-    variacion: -8.1,
-  },
-  {
-    id: 6,
-    codigo: 'KPI-CAL-001',
-    nombre: 'No Conformidades Proceso',
-    categoria: 'calidad',
-    ultimo_valor: 12.0,
-    meta: 8.0,
-    unidad: 'NC',
-    color_semaforo: 'rojo',
-    tendencia: 'ascendente',
-    variacion: 33.3,
-  },
-];
-
-const mockAlertas = [
-  {
-    id: 1,
-    kpi_nombre: 'Cumplimiento Inspección Preoperacional',
-    tipo: 'umbral_rojo',
-    descripcion: 'El indicador ha caído al 68%, por debajo del umbral mínimo de 80%',
-    severidad: 'alta',
-    fecha: '2024-12-28',
-  },
-  {
-    id: 2,
-    kpi_nombre: 'No Conformidades Proceso',
-    tipo: 'tendencia_negativa',
-    descripcion: 'Se ha detectado un incremento del 33% en las no conformidades',
-    severidad: 'alta',
-    fecha: '2024-12-27',
-  },
-  {
-    id: 3,
-    kpi_nombre: 'Rotación de Personal',
-    tipo: 'meta_no_cumplida',
-    descripcion: 'No se cumplió la meta del periodo trimestral',
-    severidad: 'media',
-    fecha: '2024-12-26',
-  },
-];
+import {
+  useAnalyticsStats,
+  useKPISummary,
+  useAlertasKPI,
+  useMarcarAlertaLeida,
+} from '../hooks/useAnalytics';
+import type { AlertaKPI } from '../types';
 
 // ==================== UTILITY FUNCTIONS ====================
 
 const getSemaforoColor = (color: string) => {
-  const colors = {
+  const colors: Record<string, string> = {
     verde: 'bg-green-500',
     amarillo: 'bg-yellow-500',
     rojo: 'bg-red-500',
   };
-  return colors[color as keyof typeof colors] || 'bg-gray-500';
+  return colors[color] || 'bg-gray-500';
 };
 
 const getTendenciaIcon = (tendencia: string) => {
@@ -166,7 +56,7 @@ const getTendenciaIcon = (tendencia: string) => {
 };
 
 const getCategoriaColor = (categoria: string) => {
-  const colors = {
+  const colors: Record<string, string> = {
     sst: 'bg-orange-100 text-orange-800',
     pesv: 'bg-blue-100 text-blue-800',
     ambiental: 'bg-green-100 text-green-800',
@@ -176,18 +66,40 @@ const getCategoriaColor = (categoria: string) => {
     rrhh: 'bg-pink-100 text-pink-800',
     comercial: 'bg-teal-100 text-teal-800',
   };
-  return colors[categoria as keyof typeof colors] || 'bg-gray-100 text-gray-800';
+  return colors[categoria] || 'bg-gray-100 text-gray-800';
+};
+
+const getSeveridadVariant = (severidad: string) => {
+  if (severidad === 'alta' || severidad === 'critica') return 'danger' as const;
+  if (severidad === 'media') return 'warning' as const;
+  return 'info' as const;
 };
 
 // ==================== MAIN COMPONENT ====================
 
 export default function AnalyticsPage() {
   const navigate = useNavigate();
-  const stats = mockStats;
-  const kpiSummary = mockKPISummary;
-  const alertas = mockAlertas;
+  const { data: stats, isLoading: loadingStats } = useAnalyticsStats();
+  const { data: kpiSummaryData, isLoading: loadingKPIs } = useKPISummary();
+  const { data: alertasData, isLoading: loadingAlertas } = useAlertasKPI();
+  const marcarLeida = useMarcarAlertaLeida();
 
-  const porcentajeVerde = (stats.kpis_verde / stats.kpis_activos) * 100;
+  const kpiSummary = Array.isArray(kpiSummaryData) ? kpiSummaryData : [];
+  const alertas = Array.isArray(alertasData) ? alertasData.slice(0, 5) : [];
+
+  const porcentajeVerde = stats && stats.kpis_activos > 0
+    ? (stats.kpis_verde / stats.kpis_activos) * 100
+    : 0;
+
+  const isLoading = loadingStats || loadingKPIs;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -231,10 +143,10 @@ export default function AnalyticsPage() {
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Total KPIs</p>
               <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">
-                {stats.total_kpis}
+                {stats?.total_kpis ?? 0}
               </p>
               <p className="text-xs text-gray-500 mt-1">
-                {stats.kpis_activos} activos
+                {stats?.kpis_activos ?? 0} activos
               </p>
             </div>
             <div className="w-14 h-14 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
@@ -248,7 +160,7 @@ export default function AnalyticsPage() {
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">KPIs en Verde</p>
               <p className="text-3xl font-bold text-success-600 mt-1">
-                {stats.kpis_verde}
+                {stats?.kpis_verde ?? 0}
               </p>
               <p className="text-xs text-gray-500 mt-1">
                 {porcentajeVerde.toFixed(0)}% del total
@@ -265,7 +177,7 @@ export default function AnalyticsPage() {
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">KPIs en Rojo</p>
               <p className="text-3xl font-bold text-danger-600 mt-1">
-                {stats.kpis_rojo}
+                {stats?.kpis_rojo ?? 0}
               </p>
               <p className="text-xs text-gray-500 mt-1">
                 Requieren atención
@@ -282,10 +194,10 @@ export default function AnalyticsPage() {
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Alertas Pendientes</p>
               <p className="text-3xl font-bold text-warning-600 mt-1">
-                {stats.alertas_pendientes}
+                {stats?.alertas_pendientes ?? 0}
               </p>
               <p className="text-xs text-gray-500 mt-1">
-                {stats.acciones_pendientes} acciones abiertas
+                {stats?.acciones_pendientes ?? 0} acciones abiertas
               </p>
             </div>
             <div className="w-14 h-14 bg-warning-100 dark:bg-warning-900/30 rounded-lg flex items-center justify-center">
@@ -312,81 +224,102 @@ export default function AnalyticsPage() {
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {kpiSummary.map((kpi) => (
-              <Card key={kpi.id} variant="bordered" padding="md">
-                <div className="space-y-3">
-                  {/* Header */}
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
+          {kpiSummary.length === 0 ? (
+            <EmptyState
+              icon={<Target className="w-12 h-12" />}
+              title="Sin indicadores configurados"
+              description="Configure indicadores KPI desde la sección de configuración"
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {kpiSummary.slice(0, 6).map((item: any) => {
+                const kpi = item.kpi || item;
+                const ultimoValor = item.ultimo_valor?.valor_numerico ?? item.ultimo_valor ?? 0;
+                const meta = item.meta_actual?.meta_esperada ?? item.meta ?? 0;
+                const unidad = kpi.unidad_medida || item.unidad || '';
+                const tendencia = item.tendencia || 'estable';
+                const variacion = item.porcentaje_cambio ?? item.variacion ?? 0;
+                const colorSemaforo = item.ultimo_valor?.color_semaforo || item.color_semaforo || 'verde';
+                const categoria = kpi.categoria || item.categoria || '';
+
+                return (
+                  <Card key={kpi.id} variant="bordered" padding="md">
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <div
+                              className={cn(
+                                'w-3 h-3 rounded-full',
+                                getSemaforoColor(colorSemaforo)
+                              )}
+                            />
+                            {categoria && (
+                              <Badge
+                                variant="gray"
+                                size="sm"
+                                className={getCategoriaColor(categoria)}
+                              >
+                                {categoria.toUpperCase()}
+                              </Badge>
+                            )}
+                          </div>
+                          <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                            {kpi.nombre}
+                          </h4>
+                          <p className="text-xs text-gray-500">{kpi.codigo}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-end justify-between">
+                        <div>
+                          <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                            {typeof ultimoValor === 'number' ? ultimoValor.toLocaleString() : ultimoValor}
+                            <span className="text-sm font-normal text-gray-500 ml-1">
+                              {unidad}
+                            </span>
+                          </p>
+                          {meta > 0 && (
+                            <p className="text-xs text-gray-500">
+                              Meta: {meta} {unidad}
+                            </p>
+                          )}
+                        </div>
+
                         <div
                           className={cn(
-                            'w-3 h-3 rounded-full',
-                            getSemaforoColor(kpi.color_semaforo)
+                            'flex items-center gap-1 px-2 py-1 rounded text-xs font-medium',
+                            variacion > 0
+                              ? 'bg-green-100 text-green-700'
+                              : variacion < 0
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-gray-100 text-gray-700'
                           )}
-                        />
-                        <Badge
-                          variant="gray"
-                          size="sm"
-                          className={getCategoriaColor(kpi.categoria)}
                         >
-                          {kpi.categoria.toUpperCase()}
-                        </Badge>
+                          {getTendenciaIcon(tendencia)}
+                          <span>{Math.abs(variacion).toFixed(1)}%</span>
+                        </div>
                       </div>
-                      <h4 className="text-sm font-medium text-gray-900 dark:text-white">
-                        {kpi.nombre}
-                      </h4>
-                      <p className="text-xs text-gray-500">{kpi.codigo}</p>
-                    </div>
-                  </div>
 
-                  {/* Valor y Meta */}
-                  <div className="flex items-end justify-between">
-                    <div>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                        {kpi.ultimo_valor}
-                        <span className="text-sm font-normal text-gray-500 ml-1">
-                          {kpi.unidad}
-                        </span>
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Meta: {kpi.meta} {kpi.unidad}
-                      </p>
-                    </div>
-
-                    {/* Tendencia */}
-                    <div
-                      className={cn(
-                        'flex items-center gap-1 px-2 py-1 rounded text-xs font-medium',
-                        kpi.variacion > 0
-                          ? 'bg-green-100 text-green-700'
-                          : kpi.variacion < 0
-                          ? 'bg-red-100 text-red-700'
-                          : 'bg-gray-100 text-gray-700'
+                      {meta > 0 && (
+                        <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                          <div
+                            className={cn(
+                              'h-full transition-all',
+                              getSemaforoColor(colorSemaforo)
+                            )}
+                            style={{
+                              width: `${Math.min((ultimoValor / meta) * 100, 100)}%`,
+                            }}
+                          />
+                        </div>
                       )}
-                    >
-                      {getTendenciaIcon(kpi.tendencia)}
-                      <span>{Math.abs(kpi.variacion).toFixed(1)}%</span>
                     </div>
-                  </div>
-
-                  {/* Progress Bar */}
-                  <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                    <div
-                      className={cn(
-                        'h-full transition-all',
-                        getSemaforoColor(kpi.color_semaforo)
-                      )}
-                      style={{
-                        width: `${Math.min((kpi.ultimo_valor / kpi.meta) * 100, 100)}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Alertas */}
@@ -400,51 +333,67 @@ export default function AnalyticsPage() {
             </Badge>
           </div>
 
-          <div className="space-y-3">
-            {alertas.map((alerta) => (
-              <Card key={alerta.id} variant="bordered" padding="sm">
-                <div className="space-y-2">
-                  <div className="flex items-start gap-2">
-                    <AlertCircle
-                      className={cn(
-                        'w-5 h-5 flex-shrink-0 mt-0.5',
-                        alerta.severidad === 'alta'
-                          ? 'text-red-600'
-                          : alerta.severidad === 'media'
-                          ? 'text-orange-600'
-                          : 'text-yellow-600'
-                      )}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-medium text-gray-900 dark:text-white">
-                        {alerta.kpi_nombre}
-                      </h4>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                        {alerta.descripcion}
-                      </p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <Badge
-                          variant={
-                            alerta.severidad === 'alta'
-                              ? 'danger'
-                              : alerta.severidad === 'media'
-                              ? 'warning'
-                              : 'info'
-                          }
-                          size="sm"
-                        >
-                          {alerta.severidad}
-                        </Badge>
-                        <span className="text-xs text-gray-500">{alerta.fecha}</span>
+          {loadingAlertas ? (
+            <Spinner size="md" />
+          ) : alertas.length === 0 ? (
+            <Card variant="bordered" padding="md">
+              <p className="text-sm text-gray-500 text-center">Sin alertas pendientes</p>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {alertas.map((alerta: AlertaKPI) => (
+                <Card key={alerta.id} variant="bordered" padding="sm">
+                  <div className="space-y-2">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle
+                        className={cn(
+                          'w-5 h-5 flex-shrink-0 mt-0.5',
+                          alerta.severidad === 'alta' || alerta.severidad === 'critica'
+                            ? 'text-red-600'
+                            : alerta.severidad === 'media'
+                            ? 'text-orange-600'
+                            : 'text-yellow-600'
+                        )}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                          {alerta.kpi_nombre}
+                        </h4>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                          {alerta.descripcion}
+                        </p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Badge variant={getSeveridadVariant(alerta.severidad)} size="sm">
+                            {alerta.severidad}
+                          </Badge>
+                          <span className="text-xs text-gray-500">
+                            {alerta.fecha_alerta}
+                          </span>
+                          {!alerta.leida && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => marcarLeida.mutate(alerta.id)}
+                              className="text-xs ml-auto"
+                            >
+                              Marcar leída
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+                </Card>
+              ))}
+            </div>
+          )}
 
-          <Button variant="outline" size="sm" className="w-full">
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={() => navigate('/analytics/acciones')}
+          >
             Ver todas las alertas
           </Button>
         </div>
@@ -499,6 +448,7 @@ export default function AnalyticsPage() {
             variant="outline"
             size="md"
             leftIcon={<FileText className="w-5 h-5" />}
+            onClick={() => navigate('/analytics/informes')}
             className="justify-start"
           >
             <div className="text-left">

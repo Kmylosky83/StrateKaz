@@ -191,12 +191,11 @@ def current_user(request):
     if hasattr(user, 'get_permisos_efectivos'):
         permission_codes = user.get_permisos_efectivos()
 
-    # 3. Obtener empresa_nombre desde BrandingConfig
+    # 3. Obtener empresa_nombre desde el Tenant actual
+    # NOTA: El branding (incluyendo company_name) está ahora en el modelo Tenant
     empresa_nombre = None
-    from apps.core.models import BrandingConfig
-    config = BrandingConfig.objects.filter(is_active=True).first()
-    if config:
-        empresa_nombre = config.company_name
+    if hasattr(request, 'tenant') and request.tenant:
+        empresa_nombre = request.tenant.company_name
 
     # 4. Obtener area_nombre desde cargo.area
     area_nombre = None

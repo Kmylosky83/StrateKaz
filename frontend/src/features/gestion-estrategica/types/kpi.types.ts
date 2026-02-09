@@ -46,17 +46,17 @@ export type ChartType =
 /**
  * Engines de visualización disponibles
  */
-export type ChartEngine = 'recharts' | 'echarts' | 'plotly' | 'nivo' | 'tremor' | 'visx';
+export type ChartEngine = 'recharts' | 'echarts';
 
 /**
- * Configuración de capacidades por engine
+ * Configuracion de capacidades por engine
  */
 export const CHART_ENGINE_CONFIG: Record<
   ChartEngine,
   {
     label: string;
     capabilities: ChartType[];
-    level: 'basic' | 'enterprise' | '3d';
+    level: 'basic' | 'enterprise';
     description: string;
   }
 > = {
@@ -64,37 +64,13 @@ export const CHART_ENGINE_CONFIG: Record<
     label: 'Recharts',
     capabilities: ['line', 'bar', 'area', 'pie', 'radar', 'scatter'],
     level: 'basic',
-    description: 'Gráficos básicos y responsivos',
+    description: 'Graficos basicos y responsivos',
   },
   echarts: {
     label: 'Apache ECharts',
-    capabilities: ['line', 'bar', 'area', 'pie', 'gauge', 'heatmap', 'treemap', 'sankey', 'funnel', 'radar'],
+    capabilities: ['line', 'bar', 'area', 'pie', 'donut', 'gauge', 'heatmap', 'calendar_heatmap', 'scatter3d', 'surface3d', 'bar3d', 'treemap', 'sankey', 'funnel', 'radar', 'scatter', 'bubble'],
     level: 'enterprise',
-    description: 'Visualizaciones enterprise de alto rendimiento',
-  },
-  plotly: {
-    label: 'Plotly.js',
-    capabilities: ['scatter3d', 'surface3d', 'bar3d', 'line', 'scatter', 'bubble'],
-    level: '3d',
-    description: 'Gráficos 3D científicos e interactivos',
-  },
-  nivo: {
-    label: 'Nivo',
-    capabilities: ['line', 'bar', 'area', 'pie', 'calendar_heatmap', 'treemap', 'sankey', 'heatmap'],
-    level: 'enterprise',
-    description: 'Gráficos hermosos y altamente personalizables',
-  },
-  tremor: {
-    label: 'Tremor',
-    capabilities: ['line', 'bar', 'area', 'donut'],
-    level: 'enterprise',
-    description: 'Componentes de dashboard enterprise',
-  },
-  visx: {
-    label: 'Visx',
-    capabilities: ['line', 'bar', 'area', 'heatmap', 'scatter'],
-    level: 'enterprise',
-    description: 'Gráficos composables de bajo nivel',
+    description: 'Visualizaciones enterprise de alto rendimiento (incluye 3D via echarts-gl)',
   },
 };
 
@@ -114,36 +90,36 @@ export const CHART_TYPE_CONFIG: Record<
   line: {
     label: 'Líneas',
     icon: 'TrendingUp',
-    engines: ['recharts', 'echarts', 'plotly', 'nivo', 'tremor', 'visx'],
+    engines: ['recharts', 'echarts'],
     use_case: 'Tendencias temporales, evolución de KPIs',
     complexity: 'simple',
   },
   bar: {
     label: 'Barras',
     icon: 'BarChart3',
-    engines: ['recharts', 'echarts', 'nivo', 'tremor', 'visx'],
-    use_case: 'Comparación de valores categóricos',
+    engines: ['recharts', 'echarts'],
+    use_case: 'Comparacion de valores categoricos',
     complexity: 'simple',
   },
   area: {
-    label: 'Áreas',
+    label: 'Areas',
     icon: 'AreaChart',
-    engines: ['recharts', 'echarts', 'nivo', 'tremor', 'visx'],
-    use_case: 'Volúmenes acumulados en el tiempo',
+    engines: ['recharts', 'echarts'],
+    use_case: 'Volumenes acumulados en el tiempo',
     complexity: 'simple',
   },
   pie: {
     label: 'Pastel',
     icon: 'PieChart',
-    engines: ['recharts', 'echarts', 'nivo'],
-    use_case: 'Distribución porcentual',
+    engines: ['recharts', 'echarts'],
+    use_case: 'Distribucion porcentual',
     complexity: 'simple',
   },
   donut: {
     label: 'Dona',
     icon: 'Donut',
-    engines: ['tremor', 'nivo', 'echarts'],
-    use_case: 'Distribución con espacio central',
+    engines: ['echarts'],
+    use_case: 'Distribucion con espacio central',
     complexity: 'simple',
   },
   gauge: {
@@ -156,49 +132,49 @@ export const CHART_TYPE_CONFIG: Record<
   heatmap: {
     label: 'Mapa de Calor',
     icon: 'Grid3x3',
-    engines: ['echarts', 'nivo', 'visx'],
+    engines: ['echarts'],
     use_case: 'Patrones en matrices de datos',
     complexity: 'medium',
   },
   calendar_heatmap: {
     label: 'Calendario de Calor',
     icon: 'Calendar',
-    engines: ['nivo'],
+    engines: ['echarts'],
     use_case: 'Actividad diaria tipo GitHub',
     complexity: 'medium',
   },
   scatter3d: {
-    label: 'Dispersión 3D',
+    label: 'Dispersion 3D',
     icon: 'Box',
-    engines: ['plotly'],
+    engines: ['echarts'],
     use_case: 'Correlaciones multidimensionales',
     complexity: 'advanced',
   },
   surface3d: {
     label: 'Superficie 3D',
     icon: 'Layers',
-    engines: ['plotly'],
+    engines: ['echarts'],
     use_case: 'Superficies continuas en 3 dimensiones',
     complexity: 'advanced',
   },
   bar3d: {
     label: 'Barras 3D',
     icon: 'Box',
-    engines: ['plotly'],
+    engines: ['echarts'],
     use_case: 'Comparaciones tridimensionales',
     complexity: 'advanced',
   },
   treemap: {
-    label: 'Mapa de Árbol',
+    label: 'Mapa de Arbol',
     icon: 'GitBranch',
-    engines: ['echarts', 'nivo'],
-    use_case: 'Jerarquías y proporciones',
+    engines: ['echarts'],
+    use_case: 'Jerarquias y proporciones',
     complexity: 'medium',
   },
   sankey: {
     label: 'Sankey',
     icon: 'Workflow',
-    engines: ['echarts', 'nivo'],
+    engines: ['echarts'],
     use_case: 'Flujos y transferencias',
     complexity: 'advanced',
   },
@@ -219,15 +195,15 @@ export const CHART_TYPE_CONFIG: Record<
   scatter: {
     label: 'Dispersión',
     icon: 'Scatter',
-    engines: ['recharts', 'plotly', 'visx'],
+    engines: ['recharts', 'echarts'],
     use_case: 'Correlaciones entre variables',
     complexity: 'simple',
   },
   bubble: {
     label: 'Burbujas',
     icon: 'Circle',
-    engines: ['plotly'],
-    use_case: 'Tres variables simultáneas',
+    engines: ['echarts'],
+    use_case: 'Tres variables simultaneas',
     complexity: 'medium',
   },
 };

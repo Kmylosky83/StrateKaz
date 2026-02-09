@@ -101,6 +101,32 @@ export const plansApi = {
 };
 
 // =============================================================================
+// TIPOS PARA CREACIÓN ASÍNCRONA DE TENANT
+// =============================================================================
+
+/**
+ * Respuesta de creación de tenant (incluye task_id para seguimiento)
+ */
+export interface TenantCreateResponse extends Tenant {
+  task_id: string;
+  schema_status: 'pending' | 'creating' | 'ready' | 'failed';
+}
+
+/**
+ * Estado del progreso de creación del tenant
+ */
+export interface TenantCreationStatus {
+  status: 'pending' | 'creating' | 'running' | 'ready' | 'completed' | 'failed';
+  progress: number;
+  message: string;
+  phase: string;
+  tenant_id?: number;
+  schema_name?: string;
+  error?: string;
+  duration_seconds?: number;
+}
+
+// =============================================================================
 // TENANTS API
 // =============================================================================
 
@@ -129,18 +155,74 @@ export const tenantsApi = {
   },
 
   /**
-   * Crea un nuevo tenant
+   * Crea un nuevo tenant (creación asíncrona)
+   *
+   * El tenant se crea inmediatamente en la BD, pero el schema PostgreSQL
+   * se crea de forma asíncrona via Celery. Usa getCreationStatus() para
+   * seguir el progreso.
+   *
+   * @returns TenantCreateResponse con task_id para seguimiento
    */
-  create: async (data: CreateTenantDTO): Promise<Tenant> => {
-    const response = await axiosInstance.post(`${BASE_URL}/tenants/`, data);
+  create: async (data: CreateTenantDTO): Promise<TenantCreateResponse> => {
+    // El backend espera "domain" en lugar de "subdomain"
+    const { subdomain, ...rest } = data;
+    const payload = {
+      ...rest,
+      domain: subdomain ? `${subdomain}.${import.meta.env.VITE_BASE_DOMAIN || 'localhost'}` : undefined,
+    };
+    const response = await axiosInstance.post(`${BASE_URL}/tenants/`, payload);
+    return response.data;
+  },
+
+  /**
+   * Obtiene el estado de creación de un tenant
+   *
+   * Usar para polling mientras el schema se está creando.
+   * Recomendación: polling cada 2-3 segundos.
+   */
+  getCreationStatus: async (tenantId: number): Promise<TenantCreationStatus> => {
+    const response = await axiosInstance.get(`${BASE_URL}/tenants/${tenantId}/creation-status/`);
+    return response.data;
+  },
+
+  /**
+   * Reintenta la creación del schema de un tenant que falló
+   */
+  retryCreation: async (tenantId: number): Promise<{ status: string; task_id: string; message: string }> => {
+    const response = await axiosInstance.post(`${BASE_URL}/tenants/${tenantId}/retry-creation/`);
     return response.data;
   },
 
   /**
    * Actualiza un tenant
+   * Excluye campos inmutables (code, subdomain) del payload
+   * Convierte valores vacíos a null para campos opcionales
+   * Soporta FormData para subir archivos (logos, iconos PWA)
    */
-  update: async (id: number, data: UpdateTenantDTO): Promise<Tenant> => {
-    const response = await axiosInstance.patch(`${BASE_URL}/tenants/${id}/`, data);
+  update: async (id: number, data: UpdateTenantDTO | FormData): Promise<Tenant> => {
+    // Si es FormData (con archivos), enviar directamente
+    if (data instanceof FormData) {
+      const response = await axiosInstance.patch(`${BASE_URL}/tenants/${id}/`, data);
+      return response.data;
+    }
+
+    // Si es objeto normal, procesar como antes
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { code, subdomain, notes, ...rest } = data as CreateTenantDTO & { code?: string; subdomain?: string; notes?: string };
+
+    // Convertir valores vacíos a null para campos opcionales
+    const updateData = {
+      ...rest,
+      // plan debe ser null si está vacío o undefined, no string vacío
+      plan: rest.plan === '' || rest.plan === undefined ? null : rest.plan,
+      // fechas vacías deben ser null
+      trial_ends_at: rest.trial_ends_at === '' ? null : rest.trial_ends_at,
+      subscription_ends_at: rest.subscription_ends_at === '' ? null : rest.subscription_ends_at,
+      // nit vacío debe ser null
+      nit: rest.nit === '' ? null : rest.nit,
+    };
+
+    const response = await axiosInstance.patch(`${BASE_URL}/tenants/${id}/`, updateData);
     return response.data;
   },
 

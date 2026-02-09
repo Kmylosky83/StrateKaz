@@ -231,19 +231,26 @@ class AuditMixin:
 
 class ExportMixin:
     """
-    Mixin para exportar datos a diferentes formatos.
+    Mixin para exportar datos a CSV/Excel.
 
     Endpoints generados:
         GET /api/resource/export/?format=csv
         GET /api/resource/export/?format=excel
+
+    Configuración en el ViewSet:
+        export_fields = [('campo', 'Encabezado'), ...]  # Campos personalizados
+        export_filename = 'mi_export'                    # Nombre del archivo
     """
 
     export_formats = ['csv', 'excel']
     export_fields = []
+    export_filename = 'export'
 
     @action(detail=False, methods=['get'])
     def export(self, request):
         """Exporta el queryset actual al formato solicitado."""
+        from .services.export_service import ExportService
+
         format_type = request.query_params.get('format', 'csv')
         if format_type not in self.export_formats:
             return Response(
@@ -253,13 +260,17 @@ class ExportMixin:
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
+
         queryset = self.filter_queryset(self.get_queryset())
-        return Response({
-            'message': 'Funcionalidad de exportación pendiente de implementar',
-            'format': format_type,
-            'count': queryset.count(),
-            'note': 'Requiere instalación de pandas/openpyxl para Excel'
-        })
+        fields = ExportService.get_export_fields(
+            self.get_serializer_class(),
+            custom_fields=self.export_fields or None,
+        )
+        filename = self.export_filename
+
+        if format_type == 'excel':
+            return ExportService.to_excel(queryset, fields, filename=filename)
+        return ExportService.to_csv(queryset, fields, filename=filename)
 
 
 class OrderingMixin:

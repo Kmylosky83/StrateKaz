@@ -13,6 +13,9 @@ router.register(r'llamados-atencion', views.LlamadoAtencionViewSet, basename='ll
 router.register(r'descargos', views.DescargoViewSet, basename='descargo')
 router.register(r'memorandos', views.MemorandoViewSet, basename='memorando')
 router.register(r'historial', views.HistorialDisciplinarioViewSet, basename='historial')
+router.register(r'notificaciones-disciplinarias', views.NotificacionDisciplinariaViewSet, basename='notificaciondisciplinaria')
+router.register(r'pruebas-disciplinarias', views.PruebaDisciplinariaViewSet, basename='pruebadisciplinaria')
+router.register(r'denuncias-acoso', views.DenunciaAcosoLaboralViewSet, basename='denunciaacoso')
 
 urlpatterns = [
     path('', include(router.urls)),

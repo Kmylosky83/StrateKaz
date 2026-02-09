@@ -154,16 +154,32 @@ class HasModulePermission(permissions.BasePermission):
 
 class IsSuperAdmin(permissions.BasePermission):
     """
-    Permiso solo para SuperAdmin
-    
-    Para operaciones críticas del sistema
+    Permiso solo para SuperAdmin.
+
+    Verifica por:
+    1. TenantUser.is_superadmin (usuarios globales)
+    2. User.cargo.code == 'ADMIN' (usuarios locales creados via HybridJWT)
+    3. User.is_superuser (fallback legacy)
     """
-    
+
     message = 'Solo SuperAdmin puede realizar esta operación.'
-    
+
     def has_permission(self, request, view):
         """Verificar que sea SuperAdmin"""
-        return request.user and request.user.is_superuser
+        if not request.user or not request.user.is_authenticated:
+            return False
+
+        # TenantUser global (usado con TenantJWTAuthentication)
+        if hasattr(request.user, 'is_superadmin'):
+            return request.user.is_superadmin
+
+        # User local con cargo ADMIN (creado via HybridJWTAuthentication)
+        if hasattr(request.user, 'cargo') and request.user.cargo:
+            if request.user.cargo.code == 'ADMIN':
+                return True
+
+        # Fallback legacy
+        return request.user.is_superuser
 
 
 class CanManageCargos(permissions.BasePermission):
@@ -598,32 +614,87 @@ class RequireSectionAndCRUD(permissions.BasePermission):
 
 class GranularActionPermission(permissions.BasePermission):
     """
-    Permiso granular basado en CargoSectionAccess (RBAC v4.0).
-    Verifica las banderas booleanas can_view, can_create, can_edit, can_delete.
-    
+    Permiso granular basado en CargoSectionAccess (RBAC v4.1).
+
+    Verifica las banderas booleanas can_view, can_create, can_edit, can_delete
+    combinando permisos de múltiples fuentes:
+    1. Cargo base (CargoSectionAccess)
+    2. Roles Adicionales (futura implementación)
+    3. Grupos (futura implementación)
+
+    Lógica OR: Si CUALQUIER fuente tiene el permiso, se permite.
+
     Uso en ViewSet:
         permission_classes = [GranularActionPermission]
         section_code = 'identidad_corporativa'
+
+        # Opcional: mapeo de acciones personalizadas
+        granular_action_map = {
+            'enviar': 'enviar',
+            'aprobar': 'aprobar',
+        }
+
+    Mejoras v4.1:
+    - Usa CombinedPermissionService para combinar permisos
+    - Soporte para cache de permisos
+    - Mejor logging de denegaciones
     """
-    
+
     message = 'No tiene permiso granular para realizar esta acción.'
-    
+
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
-            
+
         # Superusuario siempre tiene acceso
         if request.user.is_superuser:
             return True
-            
+
         # Determinar acción requerida
+        required_flag = self._get_required_flag(request, view)
+        if not required_flag:
+            return False
+
+        # Identificar sección
+        section_code = getattr(view, 'section_code', None)
+        section_id = getattr(view, 'section_id', None)
+
+        if not section_code and not section_id:
+            # Si la vista no define sección, este permiso no aplica
+            return False
+
+        # Usar el servicio de permisos combinados (v4.1)
+        try:
+            from apps.core.services.permission_service import CombinedPermissionService
+
+            has_access = CombinedPermissionService.check_section_permission(
+                user=request.user,
+                section_code=section_code,
+                section_id=section_id,
+                required_permission=required_flag
+            )
+
+            if not has_access:
+                self.message = (
+                    f'No tiene permiso "{required_flag}" en la sección '
+                    f'"{section_code or section_id}".'
+                )
+
+            return has_access
+
+        except ImportError:
+            # Fallback al método legacy si el servicio no está disponible
+            return self._legacy_check(request, view, section_code, section_id, required_flag)
+
+    def _get_required_flag(self, request, view) -> str | None:
+        """Determina el flag de permiso requerido basándose en la acción o método HTTP."""
         required_flag = None
-        
+
         # 1. Buscar mapeo específico por acción en la vista
         granular_action_map = getattr(view, 'granular_action_map', {})
         if hasattr(view, 'action') and view.action in granular_action_map:
             required_flag = granular_action_map[view.action]
-            
+
         # 2. Fallback al mapeo por método HTTP
         if not required_flag:
             method_action_map = {
@@ -636,46 +707,40 @@ class GranularActionPermission(permissions.BasePermission):
                 'DELETE': 'can_delete'
             }
             required_flag = method_action_map.get(request.method)
-        if not required_flag:
-            return False
-            
-        # Identificar sección
-        section_code = getattr(view, 'section_code', None)
-        section_id = getattr(view, 'section_id', None)
-        
-        if not section_code and not section_id:
-            # Si la vista no define sección, este permiso no aplica (o se niega por seguridad)
-            # En este caso asumimos que si se agregó el permiso, ES porque se quiere validar
-            return False
-            
+
+        return required_flag
+
+    def _legacy_check(self, request, view, section_code, section_id, required_flag) -> bool:
+        """
+        Método legacy de verificación de permisos (pre v4.1).
+
+        Se mantiene como fallback por compatibilidad.
+        """
         cargo = getattr(request.user, 'cargo', None)
         if not cargo:
             return False
-            
+
         from .models import CargoSectionAccess
-        
+
         # Consultar acceso
         access_query = CargoSectionAccess.objects.filter(cargo=cargo)
-        
+
         if section_id:
             access_query = access_query.filter(section_id=section_id)
         elif section_code:
             access_query = access_query.filter(section__code=section_code)
-            
+
         access = access_query.first()
-        
+
         if not access:
-            # Si no existe registro de acceso, se deniega (default False)
             return False
-            
+
         # Verificar la bandera especifica
-        # 1. Si es una bandera estándar (columna en BD), usar getattr
         if required_flag in ['can_view', 'can_create', 'can_edit', 'can_delete']:
             return getattr(access, required_flag, False)
-            
-        # 2. Si es una acción personalizada, buscar en el JSONField custom_actions
+
+        # Acción personalizada en JSONField
         custom_actions = getattr(access, 'custom_actions', {}) or {}
-        # Convertir a buleano por seguridad
         return bool(custom_actions.get(required_flag, False))
 
 

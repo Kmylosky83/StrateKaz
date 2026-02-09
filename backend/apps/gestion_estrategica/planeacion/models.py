@@ -311,6 +311,17 @@ class StrategicObjective(AuditModel, SoftDeleteModel):
         db_index=True,
         verbose_name='Orden'
     )
+    # Vinculación con estrategia TOWS de origen (cuando el objetivo deriva de una estrategia)
+    # FK movida desde contexto.EstrategiaTOWS para evitar dependencia circular
+    estrategia_origen = models.ForeignKey(
+        'gestion_estrategica_contexto.EstrategiaTOWS',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='objetivos_derivados',
+        verbose_name='Estrategia TOWS de Origen',
+        help_text='Estrategia TOWS de la que se derivó este objetivo'
+    )
 
     class Meta:
         db_table = 'planeacion_strategic_objective'

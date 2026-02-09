@@ -14,7 +14,9 @@ from .models import (
     Licencia,
     Permiso,
     PeriodoVacaciones,
-    SolicitudVacaciones
+    SolicitudVacaciones,
+    ConfiguracionDotacion,
+    EntregaDotacion
 )
 
 
@@ -391,4 +393,69 @@ class SolicitudVacacionesCreateSerializer(serializers.ModelSerializer):
                 'periodo': 'El período no pertenece al colaborador seleccionado.'
             })
 
+        return data
+
+
+# =============================================================================
+# DOTACION - Art. 230 CST
+# =============================================================================
+
+class ConfiguracionDotacionSerializer(serializers.ModelSerializer):
+    """Serializer para configuracion de dotacion."""
+
+    class Meta:
+        model = ConfiguracionDotacion
+        fields = '__all__'
+        read_only_fields = ['empresa', 'created_at', 'updated_at', 'created_by', 'updated_by']
+
+
+class EntregaDotacionListSerializer(serializers.ModelSerializer):
+    """Serializer de lista para entregas de dotacion."""
+    colaborador_nombre = serializers.CharField(source='colaborador.get_nombre_completo', read_only=True)
+    periodo_display = serializers.CharField(source='get_periodo_display', read_only=True)
+
+    class Meta:
+        model = EntregaDotacion
+        fields = [
+            'id', 'colaborador', 'colaborador_nombre',
+            'periodo', 'periodo_display', 'anio',
+            'fecha_entrega', 'firma_recibido', 'created_at'
+        ]
+
+
+class EntregaDotacionDetailSerializer(serializers.ModelSerializer):
+    """Serializer detallado para entregas de dotacion."""
+    colaborador_nombre = serializers.CharField(source='colaborador.get_nombre_completo', read_only=True)
+    periodo_display = serializers.CharField(source='get_periodo_display', read_only=True)
+
+    class Meta:
+        model = EntregaDotacion
+        fields = '__all__'
+        read_only_fields = ['empresa', 'created_at', 'updated_at', 'created_by', 'updated_by']
+
+
+class EntregaDotacionCreateSerializer(serializers.ModelSerializer):
+    """Serializer de creacion para entregas de dotacion."""
+
+    class Meta:
+        model = EntregaDotacion
+        fields = [
+            'colaborador', 'periodo', 'anio', 'fecha_entrega',
+            'items_entregados', 'acta_entrega', 'firma_recibido',
+            'observaciones'
+        ]
+
+    def validate(self, data):
+        """Validar entrega unica por colaborador/periodo/anio."""
+        empresa = self.context['request'].user.empresa
+        if EntregaDotacion.objects.filter(
+            empresa=empresa,
+            colaborador=data['colaborador'],
+            periodo=data['periodo'],
+            anio=data['anio'],
+            is_active=True
+        ).exists():
+            raise serializers.ValidationError(
+                f"Ya existe una entrega de dotacion para este colaborador en {data['periodo']}/{data['anio']}."
+            )
         return data

@@ -83,8 +83,14 @@ DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@stratekaz.com
 # =============================================================================
 # LOGGING
 # =============================================================================
-LOGGING['handlers']['file']['filename'] = '/var/log/stratekaz/django.log'
+LOGGING['handlers']['file'] = {
+    'class': 'logging.FileHandler',
+    'filename': '/var/log/stratekaz/django.log',
+    'formatter': 'verbose',
+}
+LOGGING['loggers']['django']['handlers'] = ['console', 'file']
 LOGGING['loggers']['django']['level'] = 'WARNING'
+LOGGING['loggers']['apps']['handlers'] = ['console', 'file']
 LOGGING['loggers']['apps']['level'] = 'INFO'
 
 # =============================================================================

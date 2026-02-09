@@ -11,11 +11,14 @@ Vistas que permiten al empleado:
 Seguridad: Todas las vistas filtran por request.user,
 nunca aceptan IDs del cliente para acceder a datos de otros.
 """
+import logging
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
+
+logger = logging.getLogger('apps')
 
 from .ess_serializers import (
     ColaboradorESSSerializer,
@@ -38,17 +41,24 @@ class MiPerfilView(APIView):
         if hasattr(user, 'colaborador'):
             return user.colaborador
         from apps.talent_hub.colaboradores.models import Colaborador
-        return Colaborador.objects.filter(user=user, is_active=True).first()
+        return Colaborador.objects.filter(usuario=user, is_active=True).first()
 
     def get(self, request):
-        colaborador = self._get_colaborador(request.user)
-        if not colaborador:
+        try:
+            colaborador = self._get_colaborador(request.user)
+            if not colaborador:
+                return Response(
+                    {'error': 'No tiene un perfil de colaborador asociado.'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            serializer = ColaboradorESSSerializer(colaborador)
+            return Response(serializer.data)
+        except Exception as e:
+            logger.error(f'mi-perfil GET error: {type(e).__name__}: {e}', exc_info=True)
             return Response(
-                {'error': 'No tiene un perfil de colaborador asociado.'},
-                status=status.HTTP_404_NOT_FOUND
+                {'error': f'{type(e).__name__}: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-        serializer = ColaboradorESSSerializer(colaborador)
-        return Response(serializer.data)
 
     def put(self, request):
         colaborador = self._get_colaborador(request.user)
@@ -78,7 +88,7 @@ class MisVacacionesView(APIView):
         if hasattr(user, 'colaborador'):
             return user.colaborador
         from apps.talent_hub.colaboradores.models import Colaborador
-        return Colaborador.objects.filter(user=user, is_active=True).first()
+        return Colaborador.objects.filter(usuario=user, is_active=True).first()
 
     def get(self, request):
         colaborador = self._get_colaborador(request.user)
@@ -148,7 +158,7 @@ class SolicitarPermisoView(APIView):
         else:
             from apps.talent_hub.colaboradores.models import Colaborador
             colaborador = Colaborador.objects.filter(
-                user=request.user, is_active=True
+                usuario=request.user, is_active=True
             ).first()
 
         if not colaborador:
@@ -187,7 +197,7 @@ class MisRecibosView(APIView):
         else:
             from apps.talent_hub.colaboradores.models import Colaborador
             colaborador = Colaborador.objects.filter(
-                user=request.user, is_active=True
+                usuario=request.user, is_active=True
             ).first()
 
         if not colaborador:
@@ -224,7 +234,7 @@ class MisCapacitacionesView(APIView):
         else:
             from apps.talent_hub.colaboradores.models import Colaborador
             colaborador = Colaborador.objects.filter(
-                user=request.user, is_active=True
+                usuario=request.user, is_active=True
             ).first()
 
         if not colaborador:
@@ -262,7 +272,7 @@ class MiEvaluacionView(APIView):
         else:
             from apps.talent_hub.colaboradores.models import Colaborador
             colaborador = Colaborador.objects.filter(
-                user=request.user, is_active=True
+                usuario=request.user, is_active=True
             ).first()
 
         if not colaborador:

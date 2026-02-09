@@ -388,6 +388,16 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
         - Super usuario: todos los módulos habilitados
         - Usuario normal: solo módulos/tabs/secciones autorizadas por su cargo
         """
+        try:
+            return self._sidebar_inner(request)
+        except Exception as e:
+            logger.error(f'sidebar error: {type(e).__name__}: {e}', exc_info=True)
+            return Response(
+                {'error': f'Error cargando sidebar: {type(e).__name__}: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def _sidebar_inner(self, request):
         user = request.user
 
         # Super usuario ve todo

@@ -26,16 +26,16 @@ class ColaboradorESSSerializer(serializers.Serializer):
         return obj.get_nombre_completo()
 
     def get_cargo_nombre(self, obj):
-        return obj.cargo.nombre if obj.cargo else None
+        return obj.cargo.name if obj.cargo else None
 
     def get_area_nombre(self, obj):
-        return obj.area.nombre if obj.area else None
+        return obj.area.name if obj.area else None
 
     def get_sede_nombre(self, obj):
-        return obj.sede.nombre if hasattr(obj, 'sede') and obj.sede else None
+        return None
 
     def get_email(self, obj):
-        return obj.user.email if hasattr(obj, 'user') and obj.user else None
+        return obj.usuario.email if hasattr(obj, 'usuario') and obj.usuario else None
 
     def get_telefono(self, obj):
         return getattr(obj, 'telefono_personal', None) or getattr(obj, 'telefono', None)

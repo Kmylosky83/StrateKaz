@@ -18,6 +18,7 @@ eggs/
 lib/
 lib64/
 !frontend/src/lib/
+!marketing_site/src/lib/
 parts/
 sdist/
 var/

@@ -22,18 +22,11 @@ import {
   LogIn,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Card,
-  Badge,
-  Button,
-  ConfirmDialog,
-  BrandedSkeleton,
-  Dropdown,
-} from '@/components/common';
+import { Card, Badge, Button, ConfirmDialog, BrandedSkeleton, Dropdown } from '@/components/common';
 import type { BadgeVariant } from '@/components/common/Badge';
 import { useTenantsList, useToggleTenantActive, useDeleteTenant } from '../hooks/useAdminGlobal';
-import { TenantFormModal } from './TenantFormModal';
 import { useAuthStore } from '@/store/authStore';
+import { TenantFormModal } from './TenantFormModal';
 import type { Tenant } from '../types';
 
 // Colores para los tiers - mapeados a BadgeVariant válidos
@@ -63,141 +56,141 @@ interface TenantCardProps {
 
 const TenantCard = forwardRef<HTMLDivElement, TenantCardProps>(
   ({ tenant, onEdit, onToggle, onDelete, onEnter }, ref) => {
+    const statusColor: BadgeVariant = tenant.is_active
+      ? tenant.is_subscription_valid
+        ? 'success'
+        : 'warning'
+      : 'gray';
 
-  const statusColor: BadgeVariant = tenant.is_active
-    ? tenant.is_subscription_valid
-      ? 'success'
-      : 'warning'
-    : 'gray';
+    const statusText = tenant.is_active
+      ? tenant.is_subscription_valid
+        ? 'Activo'
+        : 'Suscripción Vencida'
+      : 'Inactivo';
 
-  const statusText = tenant.is_active
-    ? tenant.is_subscription_valid
-      ? 'Activo'
-      : 'Suscripción Vencida'
-    : 'Inactivo';
-
-  return (
-    <motion.div
-      ref={ref}
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-    >
-      <Card
-        className="p-4 hover:shadow-md transition-shadow relative group"
-        style={{ borderColor: tenant.primary_color || '#6366F1' }}
+    return (
+      <motion.div
+        ref={ref}
+        layout
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
       >
-        {/* Header */}
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-3">
-            {/* Logo o inicial */}
-            <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold"
-              style={{ backgroundColor: tenant.primary_color || '#6366F1' }}
-            >
-              {(tenant.logo_effective || tenant.logo_url) ? (
-                <img
-                  src={tenant.logo_effective || tenant.logo_url}
-                  alt={tenant.name}
-                  className="w-8 h-8 object-contain"
-                />
-              ) : (
-                tenant.name.charAt(0).toUpperCase()
-              )}
+        <Card
+          className="p-4 hover:shadow-md transition-shadow relative group"
+          style={{ borderColor: tenant.primary_color || '#6366F1' }}
+        >
+          {/* Header */}
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex items-center gap-3">
+              {/* Logo o inicial */}
+              <div
+                className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold"
+                style={{ backgroundColor: tenant.primary_color || '#6366F1' }}
+              >
+                {tenant.logo_effective || tenant.logo_url ? (
+                  <img
+                    src={tenant.logo_effective || tenant.logo_url}
+                    alt={tenant.name}
+                    className="w-8 h-8 object-contain"
+                  />
+                ) : (
+                  tenant.name.charAt(0).toUpperCase()
+                )}
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white">{tenant.name}</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {tenant.subdomain}.stratekaz.com
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white">
-                {tenant.name}
-              </h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {tenant.subdomain}.stratekaz.com
-              </p>
-            </div>
+
+            {/* Menu */}
+            <Dropdown
+              items={[
+                // Entrar a la empresa - Solo si está activa
+                ...(tenant.is_active
+                  ? [
+                      {
+                        label: 'Entrar como usuario',
+                        icon: <LogIn className="h-4 w-4" />,
+                        onClick: () => onEnter(tenant),
+                      },
+                    ]
+                  : []),
+                {
+                  label: 'Editar',
+                  icon: <Edit className="h-4 w-4" />,
+                  onClick: () => onEdit(tenant),
+                },
+                {
+                  label: tenant.is_active ? 'Desactivar' : 'Activar',
+                  icon: tenant.is_active ? (
+                    <ToggleLeft className="h-4 w-4" />
+                  ) : (
+                    <ToggleRight className="h-4 w-4" />
+                  ),
+                  onClick: () => onToggle(tenant.id),
+                },
+                { label: '', onClick: () => {}, divider: true },
+                {
+                  label: 'Eliminar',
+                  icon: <Trash2 className="h-4 w-4" />,
+                  onClick: () => onDelete(tenant.id),
+                  variant: 'danger' as const,
+                },
+              ]}
+              align="right"
+              className="opacity-0 group-hover:opacity-100 transition-opacity"
+            />
           </div>
 
-          {/* Menu */}
-          <Dropdown
-            items={[
-              // Entrar a la empresa - Solo si está activa
-              ...(tenant.is_active
-                ? [{
-                    label: 'Entrar como usuario',
-                    icon: <LogIn className="h-4 w-4" />,
-                    onClick: () => onEnter(tenant),
-                  }]
-                : []),
-              {
-                label: 'Editar',
-                icon: <Edit className="h-4 w-4" />,
-                onClick: () => onEdit(tenant),
-              },
-              {
-                label: tenant.is_active ? 'Desactivar' : 'Activar',
-                icon: tenant.is_active
-                  ? <ToggleLeft className="h-4 w-4" />
-                  : <ToggleRight className="h-4 w-4" />,
-                onClick: () => onToggle(tenant.id),
-              },
-              { label: '', onClick: () => {}, divider: true },
-              {
-                label: 'Eliminar',
-                icon: <Trash2 className="h-4 w-4" />,
-                onClick: () => onDelete(tenant.id),
-                variant: 'danger' as const,
-              },
-            ]}
-            align="right"
-            className="opacity-0 group-hover:opacity-100 transition-opacity"
-          />
-        </div>
-
-        {/* Badges */}
-        <div className="flex flex-wrap gap-2 mb-3">
-          <Badge variant={statusColor} size="sm">
-            {statusText}
-          </Badge>
-          <Badge variant={TIER_COLORS[tenant.tier] || 'gray'} size="sm">
-            {TIER_LABELS[tenant.tier] || tenant.tier}
-          </Badge>
-          {tenant.is_trial && (
-            <Badge variant="warning" size="sm">
-              Trial
+          {/* Badges */}
+          <div className="flex flex-wrap gap-2 mb-3">
+            <Badge variant={statusColor} size="sm">
+              {statusText}
             </Badge>
-          )}
-          {tenant.plan_name && (
-            <Badge variant="accent" size="sm">
-              {tenant.plan_name}
+            <Badge variant={TIER_COLORS[tenant.tier] || 'gray'} size="sm">
+              {TIER_LABELS[tenant.tier] || tenant.tier}
             </Badge>
-          )}
-        </div>
+            {tenant.is_trial && (
+              <Badge variant="warning" size="sm">
+                Trial
+              </Badge>
+            )}
+            {tenant.plan_name && (
+              <Badge variant="accent" size="sm">
+                {tenant.plan_name}
+              </Badge>
+            )}
+          </div>
 
-        {/* Info */}
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
-            <Users className="h-3.5 w-3.5" />
-            <span>{tenant.user_count || 0} usuarios</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
-            <Database className="h-3.5 w-3.5" />
-            <span>{tenant.db_name}</span>
-          </div>
-          {tenant.subscription_ends_at && (
-            <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400 col-span-2">
-              <Calendar className="h-3.5 w-3.5" />
-              <span>Vence: {new Date(tenant.subscription_ends_at).toLocaleDateString()}</span>
+          {/* Info */}
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+              <Users className="h-3.5 w-3.5" />
+              <span>{tenant.user_count || 0} usuarios</span>
             </div>
-          )}
-        </div>
+            <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+              <Database className="h-3.5 w-3.5" />
+              <span>{tenant.db_name}</span>
+            </div>
+            {tenant.subscription_ends_at && (
+              <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400 col-span-2">
+                <Calendar className="h-3.5 w-3.5" />
+                <span>Vence: {new Date(tenant.subscription_ends_at).toLocaleDateString()}</span>
+              </div>
+            )}
+          </div>
 
-        {/* NIT si existe */}
-        {tenant.nit && (
-          <p className="text-xs text-gray-400 mt-2">NIT: {tenant.nit}</p>
-        )}
-      </Card>
-    </motion.div>
-  );
-});
+          {/* NIT si existe */}
+          {tenant.nit && <p className="text-xs text-gray-400 mt-2">NIT: {tenant.nit}</p>}
+        </Card>
+      </motion.div>
+    );
+  }
+);
 
 TenantCard.displayName = 'TenantCard';
 
@@ -220,6 +213,7 @@ export const TenantsSection = () => {
 
   const toggleActive = useToggleTenantActive();
   const deleteTenant = useDeleteTenant();
+  const refreshTenantProfile = useAuthStore((state) => state.refreshTenantProfile);
 
   // Filtrar localmente para búsqueda instantánea
   const filteredTenants = useMemo(() => {
@@ -242,7 +236,12 @@ export const TenantsSection = () => {
 
   const handleDelete = () => {
     if (tenantToDelete) {
-      deleteTenant.mutate(tenantToDelete);
+      deleteTenant.mutate(tenantToDelete, {
+        onSuccess: () => {
+          // Refrescar lista de tenants accesibles en el header
+          refreshTenantProfile();
+        },
+      });
       setTenantToDelete(null);
     }
   };
@@ -313,7 +312,11 @@ export const TenantsSection = () => {
             <option value="inactive">Inactivos</option>
           </select>
 
-          <Button variant="primary" className="flex items-center gap-2" onClick={handleOpenNewTenant}>
+          <Button
+            variant="primary"
+            className="flex items-center gap-2"
+            onClick={handleOpenNewTenant}
+          >
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Nueva Empresa</span>
           </Button>
@@ -373,19 +376,15 @@ export const TenantsSection = () => {
         isOpen={!!tenantToDelete}
         onClose={() => setTenantToDelete(null)}
         onConfirm={handleDelete}
-        title="Eliminar Empresa"
-        message="¿Estás seguro de que deseas eliminar esta empresa? Esta acción no se puede deshacer y eliminará todos los datos asociados."
-        confirmText="Eliminar"
+        title="Desactivar Empresa"
+        message="La empresa será desactivada y sus usuarios perderán acceso. Los datos se preservan y puede reactivarse después. Para eliminación permanente, contacte soporte."
+        confirmText="Desactivar"
         variant="danger"
         isLoading={deleteTenant.isPending}
       />
 
       {/* Tenant Form Modal */}
-      <TenantFormModal
-        isOpen={showFormModal}
-        onClose={handleCloseModal}
-        tenant={tenantToEdit}
-      />
+      <TenantFormModal isOpen={showFormModal} onClose={handleCloseModal} tenant={tenantToEdit} />
     </div>
   );
 };

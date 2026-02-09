@@ -4,19 +4,17 @@
  * Gestión de usuarios con acceso multi-tenant.
  */
 import { useState, useMemo } from 'react';
-import {
-  Users,
-  Plus,
-  Search,
-  Edit,
-  Trash2,
-  Shield,
-  Building2,
-  Mail,
-  Clock,
-} from 'lucide-react';
+import { Users, Plus, Search, Edit, Trash2, Shield, Building2, Mail, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Card, Badge, Button, ConfirmDialog, BrandedSkeleton, Avatar, Dropdown } from '@/components/common';
+import {
+  Card,
+  Badge,
+  Button,
+  ConfirmDialog,
+  BrandedSkeleton,
+  Avatar,
+  Dropdown,
+} from '@/components/common';
 import { useTenantUsersList, useDeleteTenantUser } from '../hooks/useAdminGlobal';
 import { TenantUserFormModal } from './TenantUserFormModal';
 import type { TenantUser } from '../types';
@@ -158,6 +156,8 @@ export const UsersGlobalSection = () => {
   const [userToDelete, setUserToDelete] = useState<number | null>(null);
   const [userToEdit, setUserToEdit] = useState<TenantUser | null>(null);
   const [showFormModal, setShowFormModal] = useState(false);
+  const [userToManageTenants, setUserToManageTenants] = useState<TenantUser | null>(null);
+  const [showTenantsModal, setShowTenantsModal] = useState(false);
 
   const { data: users, isLoading } = useTenantUsersList({
     search: search || undefined,
@@ -189,6 +189,11 @@ export const UsersGlobalSection = () => {
   const handleEditUser = (user: TenantUser) => {
     setUserToEdit(user);
     setShowFormModal(true);
+  };
+
+  const handleManageTenants = (user: TenantUser) => {
+    setUserToManageTenants(user);
+    setShowTenantsModal(true);
   };
 
   const handleDelete = () => {
@@ -297,7 +302,7 @@ export const UsersGlobalSection = () => {
                     user={user}
                     onEdit={handleEditUser}
                     onDelete={setUserToDelete}
-                    onManageTenants={handleEditUser}
+                    onManageTenants={handleManageTenants}
                   />
                 ))}
               </AnimatePresence>
@@ -328,7 +333,7 @@ export const UsersGlobalSection = () => {
         isLoading={deleteUser.isPending}
       />
 
-      {/* User Form Modal */}
+      {/* User Form Modal - Editar datos del usuario */}
       <TenantUserFormModal
         isOpen={showFormModal}
         onClose={() => {
@@ -336,6 +341,17 @@ export const UsersGlobalSection = () => {
           setUserToEdit(null);
         }}
         user={userToEdit}
+      />
+
+      {/* Manage Tenants Modal - Solo gestión de empresas asignadas */}
+      <TenantUserFormModal
+        isOpen={showTenantsModal}
+        onClose={() => {
+          setShowTenantsModal(false);
+          setUserToManageTenants(null);
+        }}
+        user={userToManageTenants}
+        initialSection="tenants"
       />
     </div>
   );

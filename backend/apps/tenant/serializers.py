@@ -285,7 +285,7 @@ class TenantUpdateSerializer(serializers.ModelSerializer):
     pwa_icon_512_clear = serializers.BooleanField(write_only=True, required=False, default=False)
     pwa_icon_maskable_clear = serializers.BooleanField(write_only=True, required=False, default=False)
 
-    # Override campos que deben aceptar null desde el frontend
+    # Override campos que deben aceptar null/empty desde el frontend
     enabled_modules = serializers.JSONField(required=False, allow_null=True, default=list)
     nit = serializers.CharField(required=False, allow_blank=True, allow_null=True, default='')
 
@@ -331,6 +331,21 @@ class TenantUpdateSerializer(serializers.ModelSerializer):
             'favicon_clear', 'login_background_clear',
             'pwa_icon_192_clear', 'pwa_icon_512_clear', 'pwa_icon_maskable_clear',
         ]
+
+    # Campos de fecha que aceptan null - convertir empty string antes de validar
+    NULLABLE_DATE_FIELDS = [
+        'trial_ends_at', 'subscription_ends_at',
+        'fecha_constitucion', 'fecha_inscripcion_registro',
+    ]
+
+    def to_internal_value(self, data):
+        """Convertir empty strings a None para campos de fecha/hora antes de validar."""
+        # Convertir QueryDict a dict mutable para limpieza
+        mutable_data = data.copy() if hasattr(data, 'copy') else dict(data)
+        for field in self.NULLABLE_DATE_FIELDS:
+            if field in mutable_data and mutable_data[field] in ('', 'null', 'None'):
+                mutable_data[field] = None
+        return super().to_internal_value(mutable_data)
 
     def validate_plan(self, value):
         """Permitir null para plan."""

@@ -42,9 +42,10 @@ import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
 import { AVAILABLE_MODULES, DEFAULT_ENABLED_MODULES } from '@/constants/modules';
-import { useCreateTenant, useUpdateTenant, usePlans } from '../hooks/useAdminGlobal';
+import { useCreateTenant, useUpdateTenant, usePlans, useTenant } from '../hooks/useAdminGlobal';
 import type { Tenant, CreateTenantDTO, UpdateTenantDTO, TenantTier } from '../types';
 import { TenantCreationProgress } from './TenantCreationProgress';
+import { useAuthStore } from '@/store/authStore';
 
 // =============================================================================
 // IMAGE UPLOAD COMPONENT
@@ -107,7 +108,13 @@ const ImageUpload = ({
   return (
     <div className="space-y-2">
       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>
-      <input ref={inputRef} type="file" accept={accept} onChange={handleChange} className="hidden" />
+      <input
+        ref={inputRef}
+        type="file"
+        accept={accept}
+        onChange={handleChange}
+        className="hidden"
+      />
 
       {preview ? (
         <div className="relative inline-block">
@@ -272,6 +279,11 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
   const createTenant = useCreateTenant();
   const updateTenant = useUpdateTenant();
   const { data: plans } = usePlans();
+  const refreshTenantProfile = useAuthStore((state) => state.refreshTenantProfile);
+
+  // Fetch full tenant detail when editing (list endpoint uses TenantMinimalSerializer
+  // which doesn't include fiscal, contact, regional, PWA, branding fields)
+  const { data: fullTenant, isLoading: isLoadingDetail } = useTenant(tenant?.id ?? 0);
 
   const [activeTab, setActiveTab] = useState<TabId>('basico');
   const [creatingTenant, setCreatingTenant] = useState<{ id: number; name: string } | null>(null);
@@ -354,66 +366,69 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
     enabled_modules: DEFAULT_ENABLED_MODULES,
   });
 
-  // Reset form when opening
+  // Helper to populate form from tenant data
+  const populateFormFromTenant = (t: Tenant) => {
+    setFormData({
+      code: t.code || '',
+      name: t.name || '',
+      subdomain: t.subdomain || '',
+      plan: t.plan || null,
+      tier: t.tier || 'starter',
+      max_users: t.max_users ?? 5,
+      max_storage_gb: t.max_storage_gb ?? 5,
+      is_active: t.is_active ?? true,
+      is_trial: t.is_trial ?? false,
+      trial_ends_at: t.trial_ends_at?.split('T')[0] || '',
+      subscription_ends_at: t.subscription_ends_at?.split('T')[0] || '',
+      notes: t.notes || '',
+      nit: t.nit || '',
+      razon_social: t.razon_social || '',
+      nombre_comercial: t.nombre_comercial || '',
+      representante_legal: t.representante_legal || '',
+      cedula_representante: t.cedula_representante || '',
+      tipo_sociedad: t.tipo_sociedad || 'SAS',
+      actividad_economica: t.actividad_economica || '',
+      descripcion_actividad: t.descripcion_actividad || '',
+      regimen_tributario: t.regimen_tributario || 'COMUN',
+      direccion_fiscal: t.direccion_fiscal || '',
+      ciudad: t.ciudad || '',
+      departamento: t.departamento || '',
+      pais: t.pais || 'Colombia',
+      codigo_postal: t.codigo_postal || '',
+      telefono_principal: t.telefono_principal || '',
+      telefono_secundario: t.telefono_secundario || '',
+      email_corporativo: t.email_corporativo || '',
+      sitio_web: t.sitio_web || '',
+      matricula_mercantil: t.matricula_mercantil || '',
+      camara_comercio: t.camara_comercio || '',
+      fecha_constitucion: t.fecha_constitucion?.split('T')[0] || null,
+      fecha_inscripcion_registro: t.fecha_inscripcion_registro?.split('T')[0] || null,
+      zona_horaria: t.zona_horaria || 'America/Bogota',
+      formato_fecha: t.formato_fecha || 'DD/MM/YYYY',
+      moneda: t.moneda || 'COP',
+      simbolo_moneda: t.simbolo_moneda || '$',
+      separador_miles: t.separador_miles || '.',
+      separador_decimales: t.separador_decimales || ',',
+      primary_color: t.primary_color || '#6366F1',
+      secondary_color: t.secondary_color || '#10B981',
+      accent_color: t.accent_color || '#F59E0B',
+      sidebar_color: t.sidebar_color || '#1E293B',
+      background_color: t.background_color || '#F5F5F5',
+      company_slogan: t.company_slogan || '',
+      pwa_name: t.pwa_name || '',
+      pwa_short_name: t.pwa_short_name || '',
+      pwa_description: t.pwa_description || '',
+      pwa_theme_color: t.pwa_theme_color || '#6366F1',
+      pwa_background_color: t.pwa_background_color || '#FFFFFF',
+      enabled_modules: t.enabled_modules || DEFAULT_ENABLED_MODULES,
+    });
+  };
+
+  // Reset form when modal opens (new tenant) or clear state when closing
   useEffect(() => {
     if (!isOpen) return;
 
-    if (tenant) {
-      setFormData({
-        code: tenant.code || '',
-        name: tenant.name || '',
-        subdomain: tenant.subdomain || '',
-        plan: tenant.plan || null,
-        tier: tenant.tier || 'starter',
-        max_users: tenant.max_users ?? 5,
-        max_storage_gb: tenant.max_storage_gb ?? 5,
-        is_active: tenant.is_active ?? true,
-        is_trial: tenant.is_trial ?? false,
-        trial_ends_at: tenant.trial_ends_at?.split('T')[0] || '',
-        subscription_ends_at: tenant.subscription_ends_at?.split('T')[0] || '',
-        notes: tenant.notes || '',
-        nit: tenant.nit || '',
-        razon_social: tenant.razon_social || '',
-        nombre_comercial: tenant.nombre_comercial || '',
-        representante_legal: tenant.representante_legal || '',
-        cedula_representante: tenant.cedula_representante || '',
-        tipo_sociedad: tenant.tipo_sociedad || 'SAS',
-        actividad_economica: tenant.actividad_economica || '',
-        descripcion_actividad: tenant.descripcion_actividad || '',
-        regimen_tributario: tenant.regimen_tributario || 'COMUN',
-        direccion_fiscal: tenant.direccion_fiscal || '',
-        ciudad: tenant.ciudad || '',
-        departamento: tenant.departamento || '',
-        pais: tenant.pais || 'Colombia',
-        codigo_postal: tenant.codigo_postal || '',
-        telefono_principal: tenant.telefono_principal || '',
-        telefono_secundario: tenant.telefono_secundario || '',
-        email_corporativo: tenant.email_corporativo || '',
-        sitio_web: tenant.sitio_web || '',
-        matricula_mercantil: tenant.matricula_mercantil || '',
-        camara_comercio: tenant.camara_comercio || '',
-        fecha_constitucion: tenant.fecha_constitucion?.split('T')[0] || null,
-        fecha_inscripcion_registro: tenant.fecha_inscripcion_registro?.split('T')[0] || null,
-        zona_horaria: tenant.zona_horaria || 'America/Bogota',
-        formato_fecha: tenant.formato_fecha || 'DD/MM/YYYY',
-        moneda: tenant.moneda || 'COP',
-        simbolo_moneda: tenant.simbolo_moneda || '$',
-        separador_miles: tenant.separador_miles || '.',
-        separador_decimales: tenant.separador_decimales || ',',
-        primary_color: tenant.primary_color || '#6366F1',
-        secondary_color: tenant.secondary_color || '#10B981',
-        accent_color: tenant.accent_color || '#F59E0B',
-        sidebar_color: tenant.sidebar_color || '#1E293B',
-        background_color: tenant.background_color || '#F5F5F5',
-        company_slogan: tenant.company_slogan || '',
-        pwa_name: tenant.pwa_name || '',
-        pwa_short_name: tenant.pwa_short_name || '',
-        pwa_description: tenant.pwa_description || '',
-        pwa_theme_color: tenant.pwa_theme_color || '#6366F1',
-        pwa_background_color: tenant.pwa_background_color || '#FFFFFF',
-        enabled_modules: tenant.enabled_modules || DEFAULT_ENABLED_MODULES,
-      });
-    } else {
+    if (!tenant) {
       // Reset for new tenant
       const trialDate = new Date();
       trialDate.setDate(trialDate.getDate() + 14);
@@ -486,6 +501,14 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
     setPwaIconMaskableFile(null);
     setClearImages({});
   }, [isOpen, tenant]);
+
+  // Populate form when full tenant detail loads (editing mode)
+  // This runs after useTenant() returns the complete data from GET /tenants/{id}/
+  useEffect(() => {
+    if (isOpen && fullTenant) {
+      populateFormFromTenant(fullTenant);
+    }
+  }, [isOpen, fullTenant]);
 
   // Handlers
   const handleChange = (field: string, value: unknown) => {
@@ -570,8 +593,14 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
 
     // Verificar si hay archivos para subir
     const hasFiles =
-      logoFile || logoWhiteFile || logoDarkFile || faviconFile ||
-      loginBackgroundFile || pwaIcon192File || pwaIcon512File || pwaIconMaskableFile ||
+      logoFile ||
+      logoWhiteFile ||
+      logoDarkFile ||
+      faviconFile ||
+      loginBackgroundFile ||
+      pwaIcon192File ||
+      pwaIcon512File ||
+      pwaIconMaskableFile ||
       Object.values(clearImages).some(Boolean);
 
     try {
@@ -580,8 +609,12 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
           // Usar FormData para enviar archivos
           const formDataToSend = new FormData();
 
-          // Agregar todos los campos de texto
+          // Campos inmutables que el backend rechaza en update (PATCH)
+          const EXCLUDED_FIELDS = ['code', 'subdomain', 'notes'];
+
+          // Agregar campos de texto (excluyendo inmutables)
           Object.entries(formData).forEach(([key, value]) => {
+            if (EXCLUDED_FIELDS.includes(key)) return;
             if (value !== null && value !== undefined && value !== '') {
               if (Array.isArray(value)) {
                 formDataToSend.append(key, JSON.stringify(value));
@@ -606,7 +639,7 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
             if (value) formDataToSend.append(`${key}_clear`, 'true');
           });
 
-          await updateTenant.mutateAsync({ id: tenant.id, data: formDataToSend as unknown as UpdateTenantDTO });
+          await updateTenant.mutateAsync({ id: tenant.id, data: formDataToSend });
         } else {
           await updateTenant.mutateAsync({ id: tenant.id, data: formData });
         }
@@ -622,10 +655,15 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
 
   const handleCreationComplete = () => {
     setCreatingTenant(null);
+    // Refrescar lista de tenants accesibles en el header (TenantSwitcher)
+    refreshTenantProfile();
     onClose();
   };
 
   const isLoading = createTenant.isPending || updateTenant.isPending;
+
+  // Use full detail data for image previews (fallback to list data)
+  const effectiveTenant = fullTenant || tenant;
 
   if (!isOpen) return null;
 
@@ -696,15 +734,22 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
                   .stratekaz.com
                 </span>
               </div>
-              {errors.subdomain && <p className="text-xs text-danger-600 mt-1">{errors.subdomain}</p>}
+              {errors.subdomain && (
+                <p className="text-xs text-danger-600 mt-1">{errors.subdomain}</p>
+              )}
             </div>
             <Select
               label="Plan"
               value={formData.plan ?? ''}
-              onChange={(e) => handleChange('plan', e.target.value === '' ? null : Number(e.target.value))}
+              onChange={(e) =>
+                handleChange('plan', e.target.value === '' ? null : Number(e.target.value))
+              }
               options={[
                 { value: '', label: 'Sin plan asignado' },
-                ...(plans?.map((p) => ({ value: p.id, label: `${p.name} - $${p.price_monthly}/mes` })) || []),
+                ...(plans?.map((p) => ({
+                  value: p.id,
+                  label: `${p.name} - $${p.price_monthly}/mes`,
+                })) || []),
               ]}
             />
             <Select
@@ -1070,7 +1115,7 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
                 <ImageUpload
                   label="Logo Principal"
                   value={logoFile}
-                  previewUrl={tenant?.logo}
+                  previewUrl={effectiveTenant?.logo}
                   onChange={setLogoFile}
                   onClear={() => setClearImages((prev) => ({ ...prev, logo: true }))}
                   accept="image/png,image/jpeg,image/svg+xml"
@@ -1079,7 +1124,7 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
                 <ImageUpload
                   label="Logo Blanco"
                   value={logoWhiteFile}
-                  previewUrl={tenant?.logo_white}
+                  previewUrl={effectiveTenant?.logo_white}
                   onChange={setLogoWhiteFile}
                   onClear={() => setClearImages((prev) => ({ ...prev, logo_white: true }))}
                   accept="image/png,image/svg+xml"
@@ -1089,7 +1134,7 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
                 <ImageUpload
                   label="Logo Modo Oscuro"
                   value={logoDarkFile}
-                  previewUrl={tenant?.logo_dark}
+                  previewUrl={effectiveTenant?.logo_dark}
                   onChange={setLogoDarkFile}
                   onClear={() => setClearImages((prev) => ({ ...prev, logo_dark: true }))}
                   accept="image/png,image/svg+xml"
@@ -1099,7 +1144,7 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
                 <ImageUpload
                   label="Favicon"
                   value={faviconFile}
-                  previewUrl={tenant?.favicon}
+                  previewUrl={effectiveTenant?.favicon}
                   onChange={setFaviconFile}
                   onClear={() => setClearImages((prev) => ({ ...prev, favicon: true }))}
                   accept="image/png,image/x-icon"
@@ -1109,7 +1154,7 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
                   <ImageUpload
                     label="Fondo de Login"
                     value={loginBackgroundFile}
-                    previewUrl={tenant?.login_background}
+                    previewUrl={effectiveTenant?.login_background}
                     onChange={setLoginBackgroundFile}
                     onClear={() => setClearImages((prev) => ({ ...prev, login_background: true }))}
                     accept="image/png,image/jpeg,image/webp"
@@ -1173,7 +1218,9 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
                   placeholder="#6366F1"
                 />
               </div>
-              <p className="mt-1 text-xs text-gray-500">Color de la barra de estado del navegador</p>
+              <p className="mt-1 text-xs text-gray-500">
+                Color de la barra de estado del navegador
+              </p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -1192,7 +1239,9 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
                   placeholder="#FFFFFF"
                 />
               </div>
-              <p className="mt-1 text-xs text-gray-500">Color de fondo durante la carga de la app</p>
+              <p className="mt-1 text-xs text-gray-500">
+                Color de fondo durante la carga de la app
+              </p>
             </div>
             {/* Seccion de Iconos PWA - Solo en edicion */}
             {isEditing && (
@@ -1206,7 +1255,7 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
                 <ImageUpload
                   label="Icono 192x192"
                   value={pwaIcon192File}
-                  previewUrl={tenant?.pwa_icon_192}
+                  previewUrl={effectiveTenant?.pwa_icon_192}
                   onChange={setPwaIcon192File}
                   onClear={() => setClearImages((prev) => ({ ...prev, pwa_icon_192: true }))}
                   accept="image/png"
@@ -1215,7 +1264,7 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
                 <ImageUpload
                   label="Icono 512x512"
                   value={pwaIcon512File}
-                  previewUrl={tenant?.pwa_icon_512}
+                  previewUrl={effectiveTenant?.pwa_icon_512}
                   onChange={setPwaIcon512File}
                   onClear={() => setClearImages((prev) => ({ ...prev, pwa_icon_512: true }))}
                   accept="image/png"
@@ -1224,7 +1273,7 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
                 <ImageUpload
                   label="Icono Maskable"
                   value={pwaIconMaskableFile}
-                  previewUrl={tenant?.pwa_icon_maskable}
+                  previewUrl={effectiveTenant?.pwa_icon_maskable}
                   onChange={setPwaIconMaskableFile}
                   onClear={() => setClearImages((prev) => ({ ...prev, pwa_icon_maskable: true }))}
                   accept="image/png"
@@ -1285,7 +1334,9 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
                           >
                             <div
                               className={`flex-shrink-0 w-4 h-4 rounded flex items-center justify-center ${
-                                isEnabled ? 'bg-primary-500 text-white' : 'bg-gray-200 dark:bg-gray-700'
+                                isEnabled
+                                  ? 'bg-primary-500 text-white'
+                                  : 'bg-gray-200 dark:bg-gray-700'
                               }`}
                             >
                               {isEnabled && <Check className="h-3 w-3" />}
@@ -1355,7 +1406,9 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
                   {isEditing ? 'Editar Empresa' : 'Nueva Empresa'}
                 </h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {isEditing ? 'Actualiza la configuracion completa' : 'Crea una nueva empresa en la plataforma'}
+                  {isEditing
+                    ? 'Actualiza la configuracion completa'
+                    : 'Crea una nueva empresa en la plataforma'}
                 </p>
               </div>
             </div>
@@ -1366,19 +1419,41 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
 
           {/* Tabs - Fixed */}
           <div className="px-4 pt-4 flex-shrink-0">
-            <Tabs tabs={TABS} activeTab={activeTab} onChange={(id) => setActiveTab(id as TabId)} variant="pills" />
+            <Tabs
+              tabs={TABS}
+              activeTab={activeTab}
+              onChange={(id) => setActiveTab(id as TabId)}
+              variant="pills"
+            />
           </div>
 
           {/* Form Content - Scrollable */}
           <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
-            <div className="flex-1 overflow-y-auto p-4">{renderTabContent()}</div>
+            <div className="flex-1 overflow-y-auto p-4 relative">
+              {isEditing && isLoadingDetail ? (
+                <div className="flex items-center justify-center py-16">
+                  <div className="text-center space-y-3">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto" />
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Cargando datos de la empresa...
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                renderTabContent()
+              )}
+            </div>
 
             {/* Footer - Fixed */}
             <div className="flex justify-end gap-3 p-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
               <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
                 Cancelar
               </Button>
-              <Button type="submit" variant="primary" disabled={isLoading}>
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={isLoading || (isEditing && isLoadingDetail)}
+              >
                 {isLoading ? 'Guardando...' : isEditing ? 'Guardar Cambios' : 'Crear Empresa'}
               </Button>
             </div>

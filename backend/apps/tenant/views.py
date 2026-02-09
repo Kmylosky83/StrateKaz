@@ -198,6 +198,72 @@ class TenantViewSet(viewsets.ModelViewSet):
             schema_name='public'
         ).prefetch_related('domains').select_related('plan')
 
+    @action(detail=True, methods=['post'], url_path='toggle_active')
+    def toggle_active(self, request, pk=None):
+        """
+        Activa/desactiva un tenant. Toggle simple.
+        """
+        tenant = self.get_object()
+        tenant.is_active = not tenant.is_active
+        tenant.save(update_fields=['is_active'])
+        return Response({
+            'id': tenant.id,
+            'is_active': tenant.is_active,
+            'message': f'Empresa {"activada" if tenant.is_active else "desactivada"} correctamente'
+        })
+
+    def perform_destroy(self, instance):
+        """
+        Soft delete: desactiva el tenant en lugar de eliminarlo.
+        El schema PostgreSQL se preserva para posible recuperación.
+        Para eliminación permanente (schema + datos), usar el action 'hard-delete'.
+        """
+        instance.is_active = False
+        instance.save(update_fields=['is_active'])
+
+    @action(detail=True, methods=['post'], url_path='hard-delete')
+    def hard_delete(self, request, pk=None):
+        """
+        Eliminación permanente: borra el registro Y el schema PostgreSQL.
+        IRREVERSIBLE - requiere confirmación explícita.
+        """
+        from django.db import connection
+
+        tenant = self.get_object()
+        schema_name = tenant.schema_name
+
+        if schema_name == 'public':
+            return Response(
+                {'detail': 'No se puede eliminar el schema público'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Verificar confirmación explícita
+        confirm = request.data.get('confirm_name')
+        if confirm != tenant.name:
+            return Response(
+                {'detail': f'Para confirmar, envía confirm_name: "{tenant.name}"'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Eliminar schema PostgreSQL
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(f'DROP SCHEMA IF EXISTS "{schema_name}" CASCADE')
+        except Exception as e:
+            return Response(
+                {'detail': f'Error eliminando schema: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        # Eliminar registro
+        tenant_name = tenant.name
+        tenant.delete()
+
+        return Response({
+            'detail': f'Empresa "{tenant_name}" y schema "{schema_name}" eliminados permanentemente'
+        })
+
     @action(detail=True, methods=['get'], url_path='creation-status')
     def creation_status(self, request, pk=None):
         """

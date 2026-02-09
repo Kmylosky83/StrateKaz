@@ -17,7 +17,11 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/common';
-import { useTenantCreationStatus, useRetryTenantCreation, adminGlobalKeys } from '../hooks/useAdminGlobal';
+import {
+  useTenantCreationStatus,
+  useRetryTenantCreation,
+  adminGlobalKeys,
+} from '../hooks/useAdminGlobal';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -64,7 +68,13 @@ export const TenantCreationProgress = ({
     // Verificar cada 30 segundos si el progreso lleva >5 min sin cambiar
     const interval = setInterval(() => {
       const elapsed = Date.now() - lastChangeRef.current;
-      if (elapsed > 5 * 60 * 1000 && !isStale && status?.status !== 'ready' && status?.status !== 'completed' && status?.status !== 'failed') {
+      if (
+        elapsed > 5 * 60 * 1000 &&
+        !isStale &&
+        status?.status !== 'ready' &&
+        status?.status !== 'completed' &&
+        status?.status !== 'failed'
+      ) {
         setIsStale(true);
       }
     }, 30_000);
@@ -144,20 +154,14 @@ export const TenantCreationProgress = ({
 
         {/* Status Icon */}
         <div className="flex justify-center mb-6">
-          <div className="p-4 rounded-full bg-gray-100 dark:bg-gray-700">
-            {getStatusIcon()}
-          </div>
+          <div className="p-4 rounded-full bg-gray-100 dark:bg-gray-700">{getStatusIcon()}</div>
         </div>
 
         {/* Progress Bar */}
         <div className="mb-4">
           <div className="flex justify-between text-sm mb-2">
-            <span className="text-gray-600 dark:text-gray-400">
-              {phaseLabels[phase] || phase}
-            </span>
-            <span className="text-gray-600 dark:text-gray-400 font-medium">
-              {progress}%
-            </span>
+            <span className="text-gray-600 dark:text-gray-400">{phaseLabels[phase] || phase}</span>
+            <span className="text-gray-600 dark:text-gray-400 font-medium">{progress}%</span>
           </div>
           <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
             <motion.div
@@ -208,8 +212,8 @@ export const TenantCreationProgress = ({
         {!isComplete && !isFailed && !isStale && (
           <div className="mb-6 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
             <p className="text-sm text-blue-600 dark:text-blue-400">
-              Este proceso puede tomar varios minutos. La empresa estará lista cuando
-              la barra de progreso llegue al 100%.
+              Este proceso puede tomar varios minutos. La empresa estará lista cuando la barra de
+              progreso llegue al 100%.
             </p>
           </div>
         )}
@@ -217,28 +221,26 @@ export const TenantCreationProgress = ({
         {/* Actions */}
         <div className="flex justify-end gap-3">
           {(isFailed || isStale) && (
-            <Button
-              variant="primary"
-              onClick={handleRetry}
-              disabled={retryMutation.isPending}
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${retryMutation.isPending ? 'animate-spin' : ''}`} />
+            <Button variant="primary" onClick={handleRetry} disabled={retryMutation.isPending}>
+              <RefreshCw
+                className={`h-4 w-4 mr-2 ${retryMutation.isPending ? 'animate-spin' : ''}`}
+              />
               Reintentar
             </Button>
           )}
 
-          {(isComplete || isFailed) && (
-            <Button variant="outline" onClick={onClose}>
-              {isComplete ? 'Cerrar' : 'Cancelar'}
-            </Button>
-          )}
-
-          {!isComplete && !isFailed && !isStale && (
-            <p className="text-xs text-gray-500 dark:text-gray-400 italic">
-              Puedes cerrar esta ventana. La creación continuará en segundo plano.
-            </p>
-          )}
+          {/* Siempre mostrar botón de cerrar/continuar */}
+          <Button variant="outline" onClick={onClose}>
+            {isComplete ? 'Cerrar' : isFailed ? 'Cancelar' : 'Continuar en segundo plano'}
+          </Button>
         </div>
+
+        {/* Hint para progreso en curso */}
+        {!isComplete && !isFailed && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 italic text-center mt-3">
+            La creación continuará aunque cierres esta ventana.
+          </p>
+        )}
 
         {/* Duration info */}
         {status?.duration_seconds && isComplete && (

@@ -818,3 +818,50 @@ class PublicTenantViewSet(viewsets.ViewSet):
             'domain': domain_name,
             'available': not exists,
         })
+
+    @action(detail=False, methods=['get'], url_path='debug-tenants')
+    def debug_tenants(self, request):
+        """
+        TEMPORAL: Debug endpoint para diagnosticar 500 en TenantViewSet.list().
+        Sin autenticación para poder probar directamente.
+        ELIMINAR después de resolver el bug.
+        """
+        from django.db import connection as db_connection
+        import traceback
+
+        debug_info = {
+            'schema_name': db_connection.schema_name,
+            'search_path': None,
+            'tenant_count': 0,
+            'tenants': [],
+            'error': None,
+        }
+
+        try:
+            with db_connection.cursor() as cursor:
+                cursor.execute("SHOW search_path")
+                debug_info['search_path'] = cursor.fetchone()[0]
+
+            qs = Tenant.objects.exclude(schema_name='public').prefetch_related('domains').select_related('plan')
+            debug_info['tenant_count'] = qs.count()
+
+            for t in qs:
+                tenant_info = {
+                    'id': t.id, 'name': t.name, 'code': t.code,
+                    'schema_name': t.schema_name, 'plan_id': t.plan_id,
+                }
+                try:
+                    ser = TenantMinimalSerializer(t, context={'request': request})
+                    data = ser.data  # Force evaluation
+                    tenant_info['serialization'] = 'OK'
+                    tenant_info['fields_count'] = len(data)
+                except Exception as e:
+                    tenant_info['serialization'] = f'FAIL: {type(e).__name__}: {e}'
+                    tenant_info['traceback'] = traceback.format_exc()[-500:]
+                debug_info['tenants'].append(tenant_info)
+
+        except Exception as e:
+            debug_info['error'] = f'{type(e).__name__}: {e}'
+            debug_info['traceback'] = traceback.format_exc()[-500:]
+
+        return Response(debug_info)

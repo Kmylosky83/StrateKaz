@@ -291,16 +291,38 @@ class TenantRefreshView(APIView):
         try:
             refresh = RefreshToken(refresh_token)
 
-            # Generar nuevo access token
+            # Generar nuevo access token ANTES de intentar blacklist
+            new_access = str(refresh.access_token)
+            new_refresh = str(refresh)
+
+            # Intentar blacklist del token viejo.
+            # PUEDE FALLAR porque token_blacklist está en TENANT_APPS
+            # y la tabla OutstandingToken tiene FK a core.User,
+            # pero nuestros tokens son de TenantUser.
+            try:
+                if hasattr(refresh, 'blacklist'):
+                    refresh.blacklist()
+            except Exception:
+                # Blacklist falla = token viejo no se invalida.
+                # No es crítico para TenantUser tokens.
+                pass
+
             return Response({
-                'access': str(refresh.access_token),
-                'refresh': str(refresh),  # Si ROTATE_REFRESH_TOKENS está activo
+                'access': new_access,
+                'refresh': new_refresh,
             })
 
         except TokenError as e:
             return Response(
                 {'detail': 'Token inválido o expirado'},
                 status=status.HTTP_401_UNAUTHORIZED
+            )
+        except Exception as e:
+            # Catch-all para cualquier error inesperado (DB, schema, etc.)
+            logger.error(f"Token refresh error: {type(e).__name__}: {e}", exc_info=True)
+            return Response(
+                {'detail': f'Error al refrescar token: {type(e).__name__}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
 

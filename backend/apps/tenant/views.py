@@ -93,8 +93,10 @@ class IsAdminTenant(BasePermission):
     """
     Permiso para administradores del tenant actual.
 
-    Verifica que el User local tenga cargo ADMIN o que el TenantUser
-    tenga role='admin' para el tenant actual via TenantUserAccess.
+    Verifica (en orden):
+    1. TenantUser.is_superadmin (Admin Global)
+    2. core.User.is_superuser (superusuario del tenant)
+    3. core.User.cargo.code == 'ADMIN' (cargo admin asignado)
     """
     message = 'Solo los administradores de la empresa pueden realizar esta acción.'
 
@@ -104,6 +106,10 @@ class IsAdminTenant(BasePermission):
 
         # Si es TenantUser global con is_superadmin, siempre tiene acceso
         if hasattr(request.user, 'is_superadmin') and request.user.is_superadmin:
+            return True
+
+        # Si es core.User con is_superuser, tiene acceso
+        if hasattr(request.user, 'is_superuser') and request.user.is_superuser:
             return True
 
         # User local: verificar cargo ADMIN
@@ -819,101 +825,3 @@ class PublicTenantViewSet(viewsets.ViewSet):
             'available': not exists,
         })
 
-    @action(detail=False, methods=['get'], url_path='debug-tenants')
-    def debug_tenants(self, request):
-        """
-        TEMPORAL: Debug endpoint para diagnosticar 500 en TenantViewSet.list().
-        Sin autenticación para poder probar directamente.
-        Acepta ?token=<access_token> para probar auth.
-        ELIMINAR después de resolver el bug.
-        """
-        from django.db import connection as db_connection
-        import traceback
-
-        debug_info = {
-            'schema_name': db_connection.schema_name,
-            'search_path': None,
-            'tenant_count': 0,
-            'tenants': [],
-            'auth_test': None,
-            'error': None,
-        }
-
-        try:
-            with db_connection.cursor() as cursor:
-                cursor.execute("SHOW search_path")
-                debug_info['search_path'] = cursor.fetchone()[0]
-
-            # Test serialization
-            qs = Tenant.objects.exclude(schema_name='public').prefetch_related('domains').select_related('plan')
-            debug_info['tenant_count'] = qs.count()
-
-            for t in qs:
-                tenant_info = {
-                    'id': t.id, 'name': t.name, 'code': t.code,
-                    'schema_name': t.schema_name, 'plan_id': t.plan_id,
-                }
-                try:
-                    ser = TenantMinimalSerializer(t, context={'request': request})
-                    data = ser.data
-                    tenant_info['serialization'] = 'OK'
-                    tenant_info['fields_count'] = len(data)
-                except Exception as e:
-                    tenant_info['serialization'] = f'FAIL: {type(e).__name__}: {e}'
-                    tenant_info['traceback'] = traceback.format_exc()[-500:]
-                debug_info['tenants'].append(tenant_info)
-
-            # Test auth if token provided
-            token = request.query_params.get('token')
-            if token:
-                auth_info = {'token_prefix': token[:20] + '...'}
-                try:
-                    from rest_framework_simplejwt.tokens import AccessToken
-                    validated = AccessToken(token)
-                    auth_info['claims'] = {
-                        'user_id': validated.get('user_id'),
-                        'tenant_user_id': validated.get('tenant_user_id'),
-                        'email': validated.get('email'),
-                        'is_superadmin': validated.get('is_superadmin'),
-                        'token_type': validated.get('token_type'),
-                    }
-
-                    # Test TenantJWTAuthentication.get_user()
-                    tenant_user_id = validated.get('tenant_user_id')
-                    if tenant_user_id:
-                        try:
-                            from .models import TenantUser
-                            tu = TenantUser.objects.get(id=tenant_user_id, is_active=True)
-                            auth_info['tenant_user'] = {
-                                'id': tu.id, 'email': tu.email,
-                                'is_superadmin': tu.is_superadmin,
-                                'is_active': tu.is_active,
-                            }
-                            # Test IsSuperAdmin permission
-                            auth_info['has_is_superadmin'] = hasattr(tu, 'is_superadmin')
-                            auth_info['is_superadmin_value'] = getattr(tu, 'is_superadmin', None)
-                            auth_info['has_is_superuser'] = hasattr(tu, 'is_superuser')
-                        except TenantUser.DoesNotExist:
-                            auth_info['tenant_user'] = 'NOT FOUND'
-                    else:
-                        auth_info['note'] = 'No tenant_user_id claim - will use default get_user()'
-                        # Test default get_user
-                        try:
-                            from apps.core.models import User
-                            uid = validated.get('user_id')
-                            u = User.objects.get(id=uid)
-                            auth_info['core_user'] = {'id': u.id, 'email': u.email}
-                        except Exception as e2:
-                            auth_info['core_user_error'] = f'{type(e2).__name__}: {e2}'
-
-                except Exception as e:
-                    auth_info['error'] = f'{type(e).__name__}: {e}'
-                    auth_info['traceback'] = traceback.format_exc()[-500:]
-
-                debug_info['auth_test'] = auth_info
-
-        except Exception as e:
-            debug_info['error'] = f'{type(e).__name__}: {e}'
-            debug_info['traceback'] = traceback.format_exc()[-500:]
-
-        return Response(debug_info)

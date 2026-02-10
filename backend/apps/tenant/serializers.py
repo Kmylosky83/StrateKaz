@@ -214,23 +214,32 @@ class TenantCreateSerializer(serializers.ModelSerializer):
         Crear tenant y dominio, luego encolar tarea para crear schema.
 
         El schema se crea de forma asíncrona para no bloquear la UI.
+
+        IMPORTANTE: django-tenants solo permite crear Tenant/Domain desde
+        el schema 'public'. Como esta request puede llegar desde un dominio
+        de tenant (ej: app.stratekaz.com → tenant_stratekaz), usamos
+        schema_context('public') para forzar el schema correcto.
         """
+        from django_tenants.utils import schema_context
         from apps.tenant.tasks import create_tenant_schema_task
 
         domain_name = validated_data.pop('domain')
 
-        # Crear tenant con estado 'pending' (sin schema aún)
-        tenant = Tenant.objects.create(
-            **validated_data,
-            schema_status='pending'
-        )
+        # Forzar schema public para crear Tenant y Domain
+        # (django-tenants exige que sean creados en public)
+        with schema_context('public'):
+            # Crear tenant con estado 'pending' (sin schema aún)
+            tenant = Tenant.objects.create(
+                **validated_data,
+                schema_status='pending'
+            )
 
-        # Crear dominio primario
-        Domain.objects.create(
-            domain=domain_name,
-            tenant=tenant,
-            is_primary=True
-        )
+            # Crear dominio primario
+            Domain.objects.create(
+                domain=domain_name,
+                tenant=tenant,
+                is_primary=True
+            )
 
         # Encolar tarea Celery para crear el schema
         # Obtener el user que está creando (si existe)
@@ -245,10 +254,11 @@ class TenantCreateSerializer(serializers.ModelSerializer):
             created_by_id=created_by_id
         )
 
-        # Actualizar tenant con el task_id
-        tenant.schema_task_id = task.id
-        tenant.schema_status = 'creating'
-        tenant.save(update_fields=['schema_task_id', 'schema_status'])
+        # Actualizar tenant con el task_id (también en public)
+        with schema_context('public'):
+            tenant.schema_task_id = task.id
+            tenant.schema_status = 'creating'
+            tenant.save(update_fields=['schema_task_id', 'schema_status'])
 
         # Agregar task_id al objeto para el serializer de respuesta
         tenant.task_id = task.id

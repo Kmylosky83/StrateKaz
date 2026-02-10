@@ -9,6 +9,7 @@ ARQUITECTURA:
 - PlanViewSet: Consulta de planes
 - DomainViewSet: Gestión de dominios
 """
+import logging
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -17,6 +18,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.db import models
 from django.db.models import Count
 from django.utils import timezone
+
+logger = logging.getLogger('apps')
 
 from .models import Tenant, Domain, TenantUser, TenantUserAccess, Plan
 from .serializers import (
@@ -197,6 +200,34 @@ class TenantViewSet(viewsets.ModelViewSet):
         return Tenant.objects.exclude(
             schema_name='public'
         ).prefetch_related('domains').select_related('plan')
+
+    def list(self, request, *args, **kwargs):
+        """Override list para capturar errores con detalle."""
+        try:
+            return super().list(request, *args, **kwargs)
+        except Exception as e:
+            logger.error(
+                f'TenantViewSet.list ERROR: {type(e).__name__}: {e}',
+                exc_info=True
+            )
+            return Response(
+                {'detail': f'Error al listar tenants: {type(e).__name__}: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def create(self, request, *args, **kwargs):
+        """Override create para capturar errores con detalle."""
+        try:
+            return super().create(request, *args, **kwargs)
+        except Exception as e:
+            logger.error(
+                f'TenantViewSet.create ERROR: {type(e).__name__}: {e}',
+                exc_info=True
+            )
+            return Response(
+                {'detail': f'Error al crear tenant: {type(e).__name__}: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     @action(detail=True, methods=['post'], url_path='toggle_active')
     def toggle_active(self, request, pk=None):

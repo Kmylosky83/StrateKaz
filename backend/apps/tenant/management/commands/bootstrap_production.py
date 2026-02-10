@@ -306,7 +306,7 @@ class Command(BaseCommand):
         access, access_created = TenantUserAccess.objects.get_or_create(
             tenant_user=tenant_user,
             tenant=tenant,
-            defaults={'is_admin': True}
+            defaults={'is_active': True, 'role': 'admin'}
         )
         if access_created:
             self.stdout.write(self.style.SUCCESS('   ✅ Acceso otorgado'))

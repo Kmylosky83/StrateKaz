@@ -42,10 +42,13 @@ import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
 import { AVAILABLE_MODULES, DEFAULT_ENABLED_MODULES } from '@/constants/modules';
+import {
+  TIPO_SOCIEDAD_OPTIONS,
+  REGIMEN_OPTIONS,
+  DEPARTAMENTOS_OPTIONS,
+} from '@/constants/tenant-options';
 import { useCreateTenant, useUpdateTenant, usePlans, useTenant } from '../hooks/useAdminGlobal';
 import type { Tenant, CreateTenantDTO, UpdateTenantDTO, TenantTier } from '../types';
-import { TenantCreationProgress } from './TenantCreationProgress';
-import { useAuthStore } from '@/store/authStore';
 
 // =============================================================================
 // IMAGE UPLOAD COMPONENT
@@ -159,6 +162,7 @@ interface TenantFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   tenant?: Tenant | null;
+  onCreationStarted?: (id: number, name: string) => void;
 }
 
 type TabId = 'basico' | 'fiscal' | 'contacto' | 'regional' | 'branding' | 'pwa' | 'modulos';
@@ -179,62 +183,6 @@ const TIER_OPTIONS = [
   { value: 'medium', label: 'Mediana' },
   { value: 'large', label: 'Grande' },
   { value: 'enterprise', label: 'Enterprise' },
-];
-
-const TIPO_SOCIEDAD_OPTIONS = [
-  { value: 'SAS', label: 'S.A.S. - Sociedad por Acciones Simplificada' },
-  { value: 'SA', label: 'S.A. - Sociedad Anonima' },
-  { value: 'LTDA', label: 'Ltda. - Sociedad Limitada' },
-  { value: 'SCA', label: 'Sociedad en Comandita por Acciones' },
-  { value: 'SC', label: 'Sociedad en Comandita Simple' },
-  { value: 'COLECTIVA', label: 'Sociedad Colectiva' },
-  { value: 'ESAL', label: 'Entidad Sin Animo de Lucro' },
-  { value: 'PERSONA_NATURAL', label: 'Persona Natural' },
-  { value: 'SUCURSAL_EXTRANJERA', label: 'Sucursal de Sociedad Extranjera' },
-  { value: 'OTRO', label: 'Otro' },
-];
-
-const REGIMEN_OPTIONS = [
-  { value: 'COMUN', label: 'Regimen Comun (Responsable de IVA)' },
-  { value: 'SIMPLE', label: 'Regimen Simple de Tributacion (RST)' },
-  { value: 'NO_RESPONSABLE', label: 'No Responsable de IVA' },
-  { value: 'ESPECIAL', label: 'Regimen Tributario Especial' },
-  { value: 'GRAN_CONTRIBUYENTE', label: 'Gran Contribuyente' },
-];
-
-const DEPARTAMENTOS_OPTIONS = [
-  { value: 'AMAZONAS', label: 'Amazonas' },
-  { value: 'ANTIOQUIA', label: 'Antioquia' },
-  { value: 'ARAUCA', label: 'Arauca' },
-  { value: 'ATLANTICO', label: 'Atlantico' },
-  { value: 'BOLIVAR', label: 'Bolivar' },
-  { value: 'BOYACA', label: 'Boyaca' },
-  { value: 'CALDAS', label: 'Caldas' },
-  { value: 'CAQUETA', label: 'Caqueta' },
-  { value: 'CASANARE', label: 'Casanare' },
-  { value: 'CAUCA', label: 'Cauca' },
-  { value: 'CESAR', label: 'Cesar' },
-  { value: 'CHOCO', label: 'Choco' },
-  { value: 'CORDOBA', label: 'Cordoba' },
-  { value: 'CUNDINAMARCA', label: 'Cundinamarca' },
-  { value: 'GUAINIA', label: 'Guainia' },
-  { value: 'GUAVIARE', label: 'Guaviare' },
-  { value: 'HUILA', label: 'Huila' },
-  { value: 'LA_GUAJIRA', label: 'La Guajira' },
-  { value: 'MAGDALENA', label: 'Magdalena' },
-  { value: 'META', label: 'Meta' },
-  { value: 'NARINO', label: 'Narino' },
-  { value: 'NORTE_DE_SANTANDER', label: 'Norte de Santander' },
-  { value: 'PUTUMAYO', label: 'Putumayo' },
-  { value: 'QUINDIO', label: 'Quindio' },
-  { value: 'RISARALDA', label: 'Risaralda' },
-  { value: 'SAN_ANDRES', label: 'San Andres y Providencia' },
-  { value: 'SANTANDER', label: 'Santander' },
-  { value: 'SUCRE', label: 'Sucre' },
-  { value: 'TOLIMA', label: 'Tolima' },
-  { value: 'VALLE_DEL_CAUCA', label: 'Valle del Cauca' },
-  { value: 'VAUPES', label: 'Vaupes' },
-  { value: 'VICHADA', label: 'Vichada' },
 ];
 
 const ZONA_HORARIA_OPTIONS = [
@@ -274,19 +222,22 @@ const CATEGORY_LABELS: Record<string, { label: string; icon: React.ReactNode }> 
 // COMPONENT
 // =============================================================================
 
-export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProps) => {
+export const TenantFormModal = ({
+  isOpen,
+  onClose,
+  tenant,
+  onCreationStarted,
+}: TenantFormModalProps) => {
   const isEditing = !!tenant;
   const createTenant = useCreateTenant();
   const updateTenant = useUpdateTenant();
   const { data: plans } = usePlans();
-  const refreshTenantProfile = useAuthStore((state) => state.refreshTenantProfile);
 
   // Fetch full tenant detail when editing (list endpoint uses TenantMinimalSerializer
   // which doesn't include fiscal, contact, regional, PWA, branding fields)
   const { data: fullTenant, isLoading: isLoadingDetail } = useTenant(tenant?.id ?? 0);
 
   const [activeTab, setActiveTab] = useState<TabId>('basico');
-  const [creatingTenant, setCreatingTenant] = useState<{ id: number; name: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Estados para archivos de imagen
@@ -610,7 +561,7 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
           const formDataToSend = new FormData();
 
           // Campos inmutables que el backend rechaza en update (PATCH)
-          const EXCLUDED_FIELDS = ['code', 'subdomain', 'notes'];
+          const EXCLUDED_FIELDS = ['code', 'subdomain'];
 
           // Agregar campos de texto (excluyendo inmutables)
           Object.entries(formData).forEach(([key, value]) => {
@@ -646,18 +597,12 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
         onClose();
       } else {
         const response = await createTenant.mutateAsync(formData as CreateTenantDTO);
-        setCreatingTenant({ id: response.id, name: response.name });
+        onCreationStarted?.(response.id, response.name);
+        onClose();
       }
     } catch {
       // Error handled by hook
     }
-  };
-
-  const handleCreationComplete = () => {
-    setCreatingTenant(null);
-    // Refrescar lista de tenants accesibles en el header (TenantSwitcher)
-    refreshTenantProfile();
-    onClose();
   };
 
   const isLoading = createTenant.isPending || updateTenant.isPending;
@@ -666,17 +611,6 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
   const effectiveTenant = fullTenant || tenant;
 
   if (!isOpen) return null;
-
-  if (creatingTenant) {
-    return (
-      <TenantCreationProgress
-        tenantId={creatingTenant.id}
-        tenantName={creatingTenant.name}
-        onComplete={handleCreationComplete}
-        onClose={handleCreationComplete}
-      />
-    );
-  }
 
   // =============================================================================
   // RENDER TABS CONTENT
@@ -1087,19 +1021,19 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Color del Sidebar
+                Color de Fondo
               </label>
               <div className="flex gap-2">
                 <input
                   type="color"
-                  value={formData.sidebar_color || '#1E293B'}
-                  onChange={(e) => handleChange('sidebar_color', e.target.value)}
+                  value={formData.background_color || '#F5F5F5'}
+                  onChange={(e) => handleChange('background_color', e.target.value)}
                   className="h-10 w-14 rounded border border-gray-300 dark:border-gray-600 cursor-pointer"
                 />
                 <Input
-                  value={formData.sidebar_color || '#1E293B'}
-                  onChange={(e) => handleChange('sidebar_color', e.target.value)}
-                  placeholder="#1E293B"
+                  value={formData.background_color || '#F5F5F5'}
+                  onChange={(e) => handleChange('background_color', e.target.value)}
+                  placeholder="#F5F5F5"
                 />
               </div>
             </div>
@@ -1118,8 +1052,8 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
                   previewUrl={effectiveTenant?.logo}
                   onChange={setLogoFile}
                   onClear={() => setClearImages((prev) => ({ ...prev, logo: true }))}
-                  accept="image/png,image/jpeg,image/svg+xml"
-                  hint="Para fondos claros (PNG, JPG, SVG)"
+                  accept="image/png,image/jpeg,image/webp"
+                  hint="Para fondos claros (PNG, JPG, WebP)"
                 />
                 <ImageUpload
                   label="Logo Blanco"
@@ -1127,8 +1061,8 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
                   previewUrl={effectiveTenant?.logo_white}
                   onChange={setLogoWhiteFile}
                   onClear={() => setClearImages((prev) => ({ ...prev, logo_white: true }))}
-                  accept="image/png,image/svg+xml"
-                  hint="Para fondos oscuros (PNG, SVG)"
+                  accept="image/png,image/jpeg,image/webp"
+                  hint="Para fondos oscuros (PNG, JPG, WebP)"
                   darkPreview
                 />
                 <ImageUpload
@@ -1137,8 +1071,8 @@ export const TenantFormModal = ({ isOpen, onClose, tenant }: TenantFormModalProp
                   previewUrl={effectiveTenant?.logo_dark}
                   onChange={setLogoDarkFile}
                   onClear={() => setClearImages((prev) => ({ ...prev, logo_dark: true }))}
-                  accept="image/png,image/svg+xml"
-                  hint="Para el tema oscuro (PNG, SVG)"
+                  accept="image/png,image/jpeg,image/webp"
+                  hint="Para el tema oscuro (PNG, JPG, WebP)"
                   darkPreview
                 />
                 <ImageUpload

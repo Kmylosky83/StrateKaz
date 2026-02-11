@@ -8,28 +8,25 @@
 
 import { memo, useMemo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import {
-  Users,
-  Briefcase,
-  ChevronDown,
-  ChevronRight,
-  MapPin,
-} from 'lucide-react';
+import { Users, Briefcase, ChevronDown, ChevronRight, MapPin } from 'lucide-react';
 import { Badge, DynamicIcon } from '@/components/common';
 import type { AreaNodeData } from '../../types/organigrama.types';
 
 // Mapa de clases de color para cada color disponible
-const COLOR_CLASSES: Record<string, {
-  bg: string;
-  bgLight: string;
-  bgLightDark: string;
-  border: string;
-  borderDark: string;
-  text: string;
-  textDark: string;
-  hover: string;
-  hoverDark: string;
-}> = {
+const COLOR_CLASSES: Record<
+  string,
+  {
+    bg: string;
+    bgLight: string;
+    bgLightDark: string;
+    border: string;
+    borderDark: string;
+    text: string;
+    textDark: string;
+    hover: string;
+    hoverDark: string;
+  }
+> = {
   purple: {
     bg: 'bg-purple-500',
     bgLight: 'from-purple-50 to-purple-100',
@@ -173,9 +170,10 @@ const AreaNode = memo(({ data, selected }: AreaNodeProps) => {
       className={`
         min-w-[280px] rounded-xl border-2 shadow-lg transition-all duration-200
         bg-white dark:bg-gray-900
-        ${selected
-          ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800'
-          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+        ${
+          selected
+            ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800'
+            : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
         }
       `}
     >
@@ -187,18 +185,16 @@ const AreaNode = memo(({ data, selected }: AreaNodeProps) => {
       />
 
       {/* Header del área con color dinámico */}
-      <div className={`px-4 py-3 bg-gradient-to-r ${colors.bgLight} ${colors.bgLightDark} rounded-t-xl border-b ${colors.border} ${colors.borderDark}`}>
+      <div
+        className={`px-4 py-3 bg-gradient-to-r ${colors.bgLight} ${colors.bgLightDark} rounded-t-xl border-b ${colors.border} ${colors.borderDark}`}
+      >
         <div className="flex items-center gap-3">
           <div className={`p-2 rounded-lg ${colors.bg} text-white shadow-sm`}>
             <DynamicIcon name={area.icon || 'Building2'} size={20} className="text-white" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">
-              {area.name}
-            </h3>
-            <p className={`text-xs ${colors.text} ${colors.textDark} font-medium`}>
-              {area.code}
-            </p>
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">{area.name}</h3>
+            <p className={`text-xs ${colors.text} ${colors.textDark} font-medium`}>{area.code}</p>
           </div>
           {hasChildren && (
             <button
@@ -249,7 +245,7 @@ const AreaNode = memo(({ data, selected }: AreaNodeProps) => {
           )}
           {(area.children_count ?? 0) > 0 && (
             <Badge variant="gray" size="sm">
-              {area.children_count} subáreas
+              {area.children_count} subprocesos
             </Badge>
           )}
         </div>
@@ -257,7 +253,7 @@ const AreaNode = memo(({ data, selected }: AreaNodeProps) => {
         {/* Estado */}
         {!area.is_active && (
           <Badge variant="warning" size="sm" className="w-full justify-center">
-            Área Inactiva
+            Proceso Inactivo
           </Badge>
         )}
       </div>

@@ -134,7 +134,12 @@ export const NormasISOSection = () => {
                               name={norma.icon || 'FileCheck'}
                               size={16}
                               color={norma.color || '#3b82f6'}
-                              fallback={<FileCheck className="h-4 w-4" style={{ color: norma.color || '#3b82f6' }} />}
+                              fallback={
+                                <FileCheck
+                                  className="h-4 w-4"
+                                  style={{ color: norma.color || '#3b82f6' }}
+                                />
+                              }
                             />
                           </div>
                           <div>
@@ -248,7 +253,7 @@ export const NormasISOSection = () => {
         title="Eliminar Norma o Sistema de Gestión"
         message={`¿Está seguro de eliminar la norma "${normaToDelete?.name}"? Esta acción no se puede deshacer.`}
         confirmText="Eliminar"
-        confirmVariant="danger"
+        variant="danger"
         isLoading={deleteMutation.isPending}
       />
     </>

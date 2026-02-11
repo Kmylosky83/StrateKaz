@@ -34,10 +34,12 @@ interface TenantCreationProgressProps {
 
 const phaseLabels: Record<string, string> = {
   queued: 'En cola de procesamiento',
+  started: 'Iniciando procesamiento',
   initializing: 'Inicializando',
   creating_schema: 'Creando schema de base de datos',
   running_migrations: 'Aplicando estructura de datos',
-  finalizing: 'Finalizando configuración',
+  seeding_data: 'Cargando datos iniciales del sistema',
+  finalizing: 'Finalizando configuracion',
   done: 'Completado',
   error: 'Error',
 };

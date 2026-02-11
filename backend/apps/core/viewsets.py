@@ -91,14 +91,17 @@ class UserViewSet(viewsets.ModelViewSet):
     ordering = ['-date_joined']
     
     def get_queryset(self):
-        """Excluir usuarios eliminados por defecto"""
+        """Excluir usuarios eliminados y superusuarios por defecto"""
         queryset = super().get_queryset()
-        
+
+        # Excluir superusuarios (usuario técnico, no es colaborador real)
+        queryset = queryset.exclude(is_superuser=True)
+
         # Excluir eliminados lógicamente
         include_deleted = self.request.query_params.get('include_deleted', 'false')
         if include_deleted.lower() != 'true':
             queryset = queryset.filter(deleted_at__isnull=True)
-        
+
         return queryset.select_related('cargo', 'created_by')
 
     def get_serializer_class(self):
@@ -340,13 +343,16 @@ class UserViewSet(viewsets.ModelViewSet):
 
         GET /api/core/users/stats/
         """
-        total_users = User.objects.filter(deleted_at__isnull=True).count()
-        active_users = User.objects.filter(is_active=True, deleted_at__isnull=True).count()
-        inactive_users = User.objects.filter(is_active=False, deleted_at__isnull=True).count()
-        deleted_users = User.objects.filter(deleted_at__isnull=False).count()
+        # Excluir superusuarios (usuario técnico, no es colaborador real)
+        base_qs = User.objects.exclude(is_superuser=True)
+
+        total_users = base_qs.filter(deleted_at__isnull=True).count()
+        active_users = base_qs.filter(is_active=True, deleted_at__isnull=True).count()
+        inactive_users = base_qs.filter(is_active=False, deleted_at__isnull=True).count()
+        deleted_users = base_qs.filter(deleted_at__isnull=False).count()
 
         # Usuarios por cargo
-        by_cargo = User.objects.filter(
+        by_cargo = base_qs.filter(
             deleted_at__isnull=True
         ).values(
             'cargo__name', 'cargo__code'

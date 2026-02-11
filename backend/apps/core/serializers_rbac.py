@@ -319,7 +319,9 @@ class CargoListRBACSerializer(serializers.ModelSerializer):
         read_only_fields = ['created_at', 'updated_at']
 
     def get_users_count(self, obj):
-        return obj.usuarios.filter(is_active=True, deleted_at__isnull=True).count()
+        return obj.usuarios.filter(
+            is_active=True, deleted_at__isnull=True
+        ).exclude(is_superuser=True).count()
 
     def get_default_roles_count(self, obj):
         return obj.default_roles.filter(is_active=True).count()
@@ -425,13 +427,15 @@ class CargoDetailRBACSerializer(serializers.ModelSerializer):
         return obj.permisos.filter(is_active=True).count()
 
     def get_users_count(self, obj):
-        return obj.usuarios.filter(is_active=True, deleted_at__isnull=True).count()
+        return obj.usuarios.filter(
+            is_active=True, deleted_at__isnull=True
+        ).exclude(is_superuser=True).count()
 
     def get_users(self, obj):
         """Lista de usuarios con este cargo (primeros 20)"""
         usuarios = obj.usuarios.filter(
             is_active=True, deleted_at__isnull=True
-        )[:20]
+        ).exclude(is_superuser=True)[:20]
         return [{
             'id': u.id,
             'username': u.username,

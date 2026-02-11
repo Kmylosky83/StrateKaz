@@ -394,8 +394,10 @@ class Cargo(models.Model):
 
     @property
     def usuarios_asignados_count(self):
-        """Cuenta usuarios asignados a este cargo"""
-        return self.usuarios.filter(is_active=True, deleted_at__isnull=True).count()
+        """Cuenta usuarios asignados a este cargo (excluye superusuarios)"""
+        return self.usuarios.filter(
+            is_active=True, deleted_at__isnull=True
+        ).exclude(is_superuser=True).count()
 
     @property
     def posiciones_disponibles(self):

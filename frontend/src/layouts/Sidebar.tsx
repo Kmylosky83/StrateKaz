@@ -12,12 +12,20 @@ import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/utils/cn';
 import { useSidebarModules } from '@/features/gestion-estrategica/hooks/useModules';
 import type { SidebarModule } from '@/features/gestion-estrategica/types/modules.types';
-import { ChevronRight, ChevronDown, Circle, Loader2, LayoutDashboard, Shield, UserCircle, Users } from 'lucide-react';
+import {
+  ChevronRight,
+  ChevronDown,
+  Circle,
+  Loader2,
+  LayoutDashboard,
+  Shield,
+  UserCircle,
+  Users,
+} from 'lucide-react';
 
 import { getIconComponent as getDynamicIcon } from '@/components/common/DynamicIcon';
 import { APP_VERSION } from '@/constants/brand';
 import { useAuthStore } from '@/store/authStore';
-import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -233,7 +241,7 @@ const NavItemComponent = ({
   const mappedColor = getMappedColor(item.color);
   // Cuando el sidebar tiene color dinámico oscuro, usar colores neutros
   // para garantizar contraste (ej: sidebar azul + icono azul = invisible)
-  const colors = useNeutralColors ? null : (mappedColor ? moduleColors[mappedColor] : null);
+  const colors = useNeutralColors ? null : mappedColor ? moduleColors[mappedColor] : null;
   const hasChildren = item.children && item.children.length > 0;
   const isExpanded = expandedItems.includes(item.code);
 
@@ -493,11 +501,8 @@ export const Sidebar = ({
   // Determinar si estamos en modo Admin Global (sin contexto de tenant)
   const isAdminGlobalMode = !currentTenantId || location.pathname.startsWith('/admin-global');
 
-  // Branding dinámico para sidebar
-  // Cuando hay color de sidebar personalizado, SIEMPRE usar estilo dark (más profesional)
-  // Solo en modo light sin color dinámico se usa el sidebar claro estándar
-  const { sidebarColor } = useBrandingConfig();
-  const hasDynamicSidebar = !!(sidebarColor && sidebarColor !== '#1E293B' && currentTenantId);
+  // Sidebar siempre usa colores neutros estaticos para garantizar contraste y legibilidad.
+  // Los colores de branding del tenant se aplican en Header y acentos, no en la navegacion.
 
   // Solo cargar módulos del sidebar si hay un tenant seleccionado
   // En Admin Global no hay tenant, así que no se cargan módulos
@@ -554,20 +559,12 @@ export const Sidebar = ({
     );
   };
 
-  // Clases base del sidebar - dinámico cuando hay sidebarColor del branding
-  // Cuando hay color de sidebar personalizado, SIEMPRE forzar clase 'dark' para que
-  // todos los hijos (NavItems, separadores, textos) usen variantes dark: automáticamente.
-  // Esto da un look profesional uniforme sin importar si el color es claro u oscuro.
+  // Sidebar siempre neutro: blanco en light, gris oscuro en dark
   const sidebarBaseClasses = cn(
     'fixed top-16 bottom-0 z-40',
-    !hasDynamicSidebar && 'bg-white dark:bg-gray-800',
-    hasDynamicSidebar
-      ? 'border-r border-white/10'
-      : 'border-r border-gray-200 dark:border-gray-700',
-    'transition-all duration-300 ease-in-out',
-    // Forzar modo dark en el sidebar cuando tiene color dinámico de branding
-    // Así los NavItems usan sus clases dark: (texto claro) sobre el color de marca
-    hasDynamicSidebar && 'dark'
+    'bg-white dark:bg-gray-800',
+    'border-r border-gray-200 dark:border-gray-700',
+    'transition-all duration-300 ease-in-out'
   );
 
   // Clases para mobile (drawer)
@@ -575,8 +572,8 @@ export const Sidebar = ({
     ? cn('left-0 w-72', isMobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full')
     : cn('left-0', isCollapsed ? 'w-16' : 'w-64');
 
-  // Estilo inline para sidebar dinámico
-  const sidebarStyle = hasDynamicSidebar ? { backgroundColor: sidebarColor } : undefined;
+  // Sin estilo inline - sidebar siempre neutro
+  const sidebarStyle = undefined;
 
   // Loading state - solo si estamos cargando módulos de tenant
   if (isLoading && shouldShowTenantModules) {
@@ -699,7 +696,8 @@ export const Sidebar = ({
               to="/admin-global"
               className={cn(
                 'flex items-center rounded-lg transition-colors px-3 py-2.5 group relative',
-                location.pathname === '/admin-global' || location.pathname.startsWith('/admin-global/')
+                location.pathname === '/admin-global' ||
+                  location.pathname.startsWith('/admin-global/')
                   ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
                   : 'text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20'
               )}
@@ -707,14 +705,13 @@ export const Sidebar = ({
               <Shield
                 className={cn(
                   'h-5 w-5 flex-shrink-0',
-                  location.pathname === '/admin-global' || location.pathname.startsWith('/admin-global/')
+                  location.pathname === '/admin-global' ||
+                    location.pathname.startsWith('/admin-global/')
                     ? 'text-purple-600 dark:text-purple-400'
                     : 'text-purple-500 dark:text-purple-400'
                 )}
               />
-              {!effectiveCollapsed && (
-                <span className="ml-3 font-medium">Admin Global</span>
-              )}
+              {!effectiveCollapsed && <span className="ml-3 font-medium">Admin Global</span>}
               {effectiveCollapsed && (
                 <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 dark:bg-gray-700 text-white text-sm rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
                   Admin Global
@@ -725,7 +722,7 @@ export const Sidebar = ({
         )}
 
         {/* Separador - solo si hay contenido después */}
-        {(shouldShowTenantModules && sidebarModules && sidebarModules.length > 0) && (
+        {shouldShowTenantModules && sidebarModules && sidebarModules.length > 0 && (
           <div className="px-4 mb-2">
             <div className="border-t border-gray-200 dark:border-gray-700" />
           </div>
@@ -733,24 +730,24 @@ export const Sidebar = ({
 
         {/* Navigation Items - Dinámico desde API (solo si hay tenant) */}
         <div className="flex-1 px-2 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
-          {shouldShowTenantModules && sidebarModules && sidebarModules.map((item) => (
-            <NavItemComponent
-              key={item.code}
-              item={item}
-              isCollapsed={effectiveCollapsed}
-              expandedItems={expandedItems}
-              toggleExpanded={toggleExpanded}
-              location={location}
-              useNeutralColors={hasDynamicSidebar}
-            />
-          ))}
+          {shouldShowTenantModules &&
+            sidebarModules &&
+            sidebarModules.map((item) => (
+              <NavItemComponent
+                key={item.code}
+                item={item}
+                isCollapsed={effectiveCollapsed}
+                expandedItems={expandedItems}
+                toggleExpanded={toggleExpanded}
+                location={location}
+                useNeutralColors={false}
+              />
+            ))}
 
           {/* Mensaje cuando no hay módulos en Admin Global */}
           {isAdminGlobalMode && !effectiveCollapsed && (
             <div className="px-3 py-4 text-center">
-              <p className="text-xs text-gray-400 dark:text-gray-500">
-                Modo Administración Global
-              </p>
+              <p className="text-xs text-gray-400 dark:text-gray-500">Modo Administración Global</p>
               <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                 Selecciona una empresa para ver sus módulos
               </p>

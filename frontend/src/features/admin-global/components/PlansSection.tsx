@@ -56,7 +56,9 @@ const PlanCard = ({ plan, onEdit, onDelete }: PlanCardProps) => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
     >
-      <Card className={`p-6 ${colors.bg} ${colors.border} relative overflow-hidden hover:shadow-md transition-shadow`}>
+      <Card
+        className={`p-6 ${colors.bg} ${colors.border} relative overflow-hidden hover:shadow-md transition-shadow`}
+      >
         {/* Default badge */}
         {plan.is_default && (
           <div className="absolute top-4 right-4">
@@ -233,7 +235,7 @@ export const PlansSection = () => {
         title="Eliminar Plan"
         message="¿Estás seguro de que deseas eliminar este plan? Las empresas con este plan deberán ser reasignadas a otro plan."
         confirmText="Eliminar"
-        confirmVariant="destructive"
+        variant="danger"
         isLoading={deletePlan.isPending}
       />
 

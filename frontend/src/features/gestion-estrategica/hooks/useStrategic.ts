@@ -4,6 +4,7 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useAuthStore } from '@/store/authStore';
 import {
   identityApi,
   valuesApi,
@@ -580,11 +581,19 @@ export const useModuleCategories = () => {
 // useDeleteBranding eliminado - no se puede eliminar branding, solo actualizar.
 
 export const useActiveBranding = () => {
+  // Incluir tenantId en query key para separar cache por tenant
+  // Esto evita mostrar branding del tenant anterior al cambiar
+  const currentTenantId = useAuthStore((state) => state.currentTenantId);
+
   // Intentar leer branding cacheado en localStorage para evitar flash al recargar
   const cachedBranding = (() => {
     try {
       const cached = localStorage.getItem('last_branding');
-      return cached ? JSON.parse(cached) : undefined;
+      if (!cached) return undefined;
+      const parsed = JSON.parse(cached);
+      // Solo usar cache si corresponde al tenant actual
+      if (parsed._tenantId && parsed._tenantId !== currentTenantId) return undefined;
+      return parsed;
     } catch {
       return undefined;
     }
@@ -592,12 +601,15 @@ export const useActiveBranding = () => {
 
   // Obtiene el branding del tenant actual (localStorage) o por dominio
   return useQuery({
-    queryKey: strategicKeys.activeBranding,
+    queryKey: [...strategicKeys.activeBranding, currentTenantId],
     queryFn: async () => {
       const data = await brandingApi.getActive();
-      // Persistir en localStorage para usar como initialData en próxima carga
+      // Persistir en localStorage con tenantId para validar en próxima carga
       try {
-        localStorage.setItem('last_branding', JSON.stringify(data));
+        localStorage.setItem(
+          'last_branding',
+          JSON.stringify({ ...data, _tenantId: currentTenantId })
+        );
       } catch {
         // Ignorar errores de localStorage (quota, etc.)
       }
@@ -605,7 +617,7 @@ export const useActiveBranding = () => {
     },
     retry: 1, // Un reintento en caso de error temporal
     staleTime: 5 * 60 * 1000, // 5 minutos - evitar refetch excesivo
-    initialData: cachedBranding, // Usa cache localStorage mientras carga
+    initialData: cachedBranding, // Usa cache localStorage mientras carga (solo si mismo tenant)
   });
 };
 
@@ -644,7 +656,7 @@ export const useStrategicStats = () => {
 };
 
 // Secciones de configuración que no tienen StatsGrid
-const SECTIONS_WITHOUT_STATS = ['branding', 'normas_iso', 'modulos'];
+const SECTIONS_WITHOUT_STATS = ['normas_iso', 'modulos'];
 
 export const useConfiguracionStats = (section: string) => {
   return useQuery({
@@ -801,6 +813,7 @@ export const useCreateIntegracion = () => {
     mutationFn: (data: CreateIntegracionDTO) => integracionesApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: strategicKeys.integraciones() });
+      queryClient.invalidateQueries({ queryKey: strategicKeys.configStats('integraciones') });
       toast.success('Integración creada exitosamente');
     },
     onError: () => {
@@ -817,6 +830,7 @@ export const useUpdateIntegracion = () => {
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: strategicKeys.integraciones() });
       queryClient.invalidateQueries({ queryKey: strategicKeys.integracion(id) });
+      queryClient.invalidateQueries({ queryKey: strategicKeys.configStats('integraciones') });
       toast.success('Integración actualizada exitosamente');
     },
     onError: () => {
@@ -831,6 +845,7 @@ export const useDeleteIntegracion = () => {
     mutationFn: (id: number) => integracionesApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: strategicKeys.integraciones() });
+      queryClient.invalidateQueries({ queryKey: strategicKeys.configStats('integraciones') });
       toast.success('Integración eliminada exitosamente');
     },
     onError: () => {
@@ -990,6 +1005,7 @@ export const useCreateAlcance = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alcances'] });
       queryClient.invalidateQueries({ queryKey: strategicKeys.activeIdentity });
+      queryClient.invalidateQueries({ queryKey: strategicKeys.configStats('alcances') });
       toast.success('Alcance del sistema creado exitosamente');
     },
     onError: () => {
@@ -1007,6 +1023,7 @@ export const useUpdateAlcance = () => {
       queryClient.invalidateQueries({ queryKey: ['alcances'] });
       queryClient.invalidateQueries({ queryKey: strategicKeys.alcance(id) });
       queryClient.invalidateQueries({ queryKey: strategicKeys.activeIdentity });
+      queryClient.invalidateQueries({ queryKey: strategicKeys.configStats('alcances') });
       toast.success('Alcance del sistema actualizado exitosamente');
     },
     onError: () => {
@@ -1022,6 +1039,7 @@ export const useDeleteAlcance = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alcances'] });
       queryClient.invalidateQueries({ queryKey: strategicKeys.activeIdentity });
+      queryClient.invalidateQueries({ queryKey: strategicKeys.configStats('alcances') });
       toast.success('Alcance del sistema eliminado exitosamente');
     },
     onError: () => {
@@ -1401,12 +1419,12 @@ export const useUpdateCurrentTenant = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: currentTenantKeys.all });
       queryClient.invalidateQueries({ queryKey: ['branding'] });
+      // Invalidar stats de empresa para que la card "Estado" se actualice
+      queryClient.invalidateQueries({ queryKey: strategicKeys.configStats('empresa') });
       toast.success('Datos de la empresa actualizados correctamente');
     },
     onError: (error: { response?: { data?: { detail?: string } }; message?: string }) => {
-      toast.error(
-        error.response?.data?.detail || error.message || 'Error al actualizar los datos'
-      );
+      toast.error(error.response?.data?.detail || error.message || 'Error al actualizar los datos');
     },
   });
 };

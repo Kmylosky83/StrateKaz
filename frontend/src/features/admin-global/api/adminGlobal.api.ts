@@ -168,7 +168,9 @@ export const tenantsApi = {
     const { subdomain, ...rest } = data;
     const payload = {
       ...rest,
-      domain: subdomain ? `${subdomain}.${import.meta.env.VITE_BASE_DOMAIN || 'localhost'}` : undefined,
+      domain: subdomain
+        ? `${subdomain}.${import.meta.env.VITE_BASE_DOMAIN || 'localhost'}`
+        : undefined,
     };
     const response = await axiosInstance.post(`${BASE_URL}/tenants/`, payload);
     return response.data;
@@ -188,7 +190,9 @@ export const tenantsApi = {
   /**
    * Reintenta la creación del schema de un tenant que falló
    */
-  retryCreation: async (tenantId: number): Promise<{ status: string; task_id: string; message: string }> => {
+  retryCreation: async (
+    tenantId: number
+  ): Promise<{ status: string; task_id: string; message: string }> => {
     const response = await axiosInstance.post(`${BASE_URL}/tenants/${tenantId}/retry-creation/`);
     return response.data;
   },
@@ -200,15 +204,22 @@ export const tenantsApi = {
    * Soporta FormData para subir archivos (logos, iconos PWA)
    */
   update: async (id: number, data: UpdateTenantDTO | FormData): Promise<Tenant> => {
-    // Si es FormData (con archivos), enviar directamente
+    // Si es FormData (con archivos), enviar con Content-Type multipart
+    // IMPORTANTE: Eliminar el Content-Type default (application/json) para que
+    // axios auto-genere el boundary correcto de multipart/form-data
     if (data instanceof FormData) {
-      const response = await axiosInstance.patch(`${BASE_URL}/tenants/${id}/`, data);
+      const response = await axiosInstance.patch(`${BASE_URL}/tenants/${id}/`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
       return response.data;
     }
 
     // Si es objeto normal, procesar como antes
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { code, subdomain, notes, ...rest } = data as CreateTenantDTO & { code?: string; subdomain?: string; notes?: string };
+    const { code, subdomain, ...rest } = data as CreateTenantDTO & {
+      code?: string;
+      subdomain?: string;
+    };
 
     // Convertir valores vacíos a null para campos opcionales
     const updateData = {
@@ -227,16 +238,23 @@ export const tenantsApi = {
   },
 
   /**
-   * Elimina un tenant
+   * Eliminacion permanente de un tenant (hard delete).
+   * Borra schema PostgreSQL + registro. IRREVERSIBLE.
+   * Solo superadmin.
    */
-  delete: async (id: number): Promise<void> => {
-    await axiosInstance.delete(`${BASE_URL}/tenants/${id}/`);
+  hardDelete: async (id: number, confirmName: string): Promise<{ detail: string }> => {
+    const response = await axiosInstance.post(`${BASE_URL}/tenants/${id}/hard-delete/`, {
+      confirm_name: confirmName,
+    });
+    return response.data;
   },
 
   /**
    * Activa/desactiva un tenant
    */
-  toggleActive: async (id: number): Promise<{ id: number; is_active: boolean; message: string }> => {
+  toggleActive: async (
+    id: number
+  ): Promise<{ id: number; is_active: boolean; message: string }> => {
     const response = await axiosInstance.post(`${BASE_URL}/tenants/${id}/toggle_active/`);
     return response.data;
   },
@@ -244,7 +262,9 @@ export const tenantsApi = {
   /**
    * Obtiene usuarios de un tenant
    */
-  getUsers: async (id: number): Promise<{
+  getUsers: async (
+    id: number
+  ): Promise<{
     users: Array<{
       id: number;
       email: string;
@@ -320,7 +340,10 @@ export const tenantUsersApi = {
   /**
    * Asigna un usuario a un tenant
    */
-  assignTenant: async (userId: number, data: AssignTenantDTO): Promise<{
+  assignTenant: async (
+    userId: number,
+    data: AssignTenantDTO
+  ): Promise<{
     message: string;
     tenant: string;
     role: string;

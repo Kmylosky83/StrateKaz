@@ -384,6 +384,12 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
         if include_inactive.lower() != 'true':
             queryset = queryset.filter(is_active=True)
 
+        # Excluir cargos del sistema (ADMIN, USUARIO) de las vistas de negocio
+        # Estos son cargos técnicos, no posiciones reales de la empresa
+        include_system = self.request.query_params.get('include_system', 'false')
+        if include_system.lower() != 'true':
+            queryset = queryset.filter(is_system=False)
+
         return queryset.select_related('parent_cargo', 'area', 'rol_sistema').prefetch_related(
             'permisos', 'default_roles', 'expuesto_riesgos'
         )
@@ -1138,12 +1144,14 @@ class RBACStatsViewSet(viewsets.ViewSet):
             'active_groups': Group.objects.filter(is_active=True).count(),
             'total_permissions': Permiso.objects.count(),
             'active_permissions': Permiso.objects.filter(is_active=True).count(),
-            'total_users': User.objects.filter(deleted_at__isnull=True).count(),
+            'total_users': User.objects.filter(
+                deleted_at__isnull=True
+            ).exclude(is_superuser=True).count(),
             'users_with_cargo': User.objects.filter(
                 cargo__isnull=False,
                 is_active=True,
                 deleted_at__isnull=True
-            ).count(),
+            ).exclude(is_superuser=True).count(),
         }
 
         return Response(stats)

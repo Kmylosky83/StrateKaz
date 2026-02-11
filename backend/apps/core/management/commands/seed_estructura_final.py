@@ -111,9 +111,8 @@ class Command(BaseCommand):
                             {'code': 'empresa', 'name': 'Empresa', 'icon': 'Building2', 'orden': 1, 'description': 'Datos generales de la empresa'},
                             {'code': 'sedes', 'name': 'Sedes', 'icon': 'MapPin', 'orden': 2, 'description': 'Ubicaciones físicas de la empresa'},
                             {'code': 'integraciones', 'name': 'Integraciones', 'icon': 'Plug', 'orden': 3, 'description': 'Conexiones con sistemas externos'},
-                            {'code': 'branding', 'name': 'Branding', 'icon': 'Palette', 'orden': 4, 'description': 'Identidad visual y colores'},
-                            {'code': 'normas_iso', 'name': 'Normas', 'icon': 'Award', 'orden': 5, 'description': 'Normas ISO y sistemas de gestión'},
-                            {'code': 'modulos', 'name': 'Módulos', 'icon': 'LayoutGrid', 'orden': 6, 'description': 'Activar o desactivar funcionalidades'},
+                            {'code': 'normas_iso', 'name': 'Normas', 'icon': 'Award', 'orden': 4, 'description': 'Normas ISO y sistemas de gestión'},
+                            {'code': 'modulos', 'name': 'Módulos', 'icon': 'LayoutGrid', 'orden': 5, 'description': 'Activar o desactivar funcionalidades'},
                         ]
                     },
                     {
@@ -123,7 +122,7 @@ class Command(BaseCommand):
                         'route': 'organizacion',
                         'orden': 2,
                         'sections': [
-                            {'code': 'areas', 'name': 'Áreas', 'icon': 'FolderTree', 'orden': 1, 'description': 'Estructura organizacional jerárquica'},
+                            {'code': 'areas', 'name': 'Procesos', 'icon': 'FolderTree', 'orden': 1, 'description': 'Mapa de procesos organizacionales'},
                             {'code': 'cargos', 'name': 'Cargos', 'icon': 'Briefcase', 'orden': 2, 'description': 'Puestos y niveles jerárquicos'},
                             {'code': 'organigrama', 'name': 'Organigrama', 'icon': 'Network', 'orden': 3, 'description': 'Vista gráfica de la estructura'},
                             {'code': 'colaboradores', 'name': 'Colaboradores', 'icon': 'Users', 'orden': 4, 'description': 'Gestión del equipo de trabajo'},

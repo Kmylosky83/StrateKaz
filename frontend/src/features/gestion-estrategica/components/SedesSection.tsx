@@ -253,7 +253,7 @@ export const SedesSection = () => {
         title="Eliminar Sede"
         message={`¿Está seguro de eliminar la sede "${sedeToDelete?.nombre}"? Esta acción se puede revertir.`}
         confirmText="Eliminar"
-        confirmVariant="danger"
+        variant="danger"
         isLoading={deleteMutation.isPending}
       />
     </>

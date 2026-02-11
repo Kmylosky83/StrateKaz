@@ -664,7 +664,17 @@ class Tenant(TenantMixin):
     )
 
     # ==========================================================================
-    # BACKUP (Configuración)
+    # NOTAS INTERNAS (solo visible para superadmins)
+    # ==========================================================================
+    notes = models.TextField(
+        blank=True,
+        default='',
+        verbose_name='Notas internas',
+        help_text='Notas internas sobre esta empresa (solo superadmins)'
+    )
+
+    # ==========================================================================
+    # BACKUP (Configuracion)
     # ==========================================================================
     backup_enabled = models.BooleanField(
         default=True,
@@ -889,6 +899,21 @@ class TenantUser(models.Model):
     # Auditoría
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    # Password Reset
+    password_reset_token = models.CharField(
+        max_length=64,
+        blank=True,
+        null=True,
+        verbose_name='Token de reset',
+        help_text='Token temporal para restablecer contraseña'
+    )
+    password_reset_expires = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name='Expiracion del token',
+        help_text='Fecha/hora de expiracion del token de reset'
+    )
 
     # Relación M:N con tenants
     tenants = models.ManyToManyField(

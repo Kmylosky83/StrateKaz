@@ -317,7 +317,7 @@ export const ActiveSessionsCard = () => {
         title="Cerrar otras sesiones"
         message={`Se cerrarán ${otherSessionsCount} ${otherSessionsCount === 1 ? 'sesión' : 'sesiones'} en otros dispositivos. Tendrás que volver a iniciar sesión en esos dispositivos.`}
         confirmText="Cerrar sesiones"
-        confirmVariant="danger"
+        variant="danger"
         isLoading={closeOtherSessions.isPending}
       />
     </Card>

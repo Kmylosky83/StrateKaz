@@ -212,7 +212,6 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
     examenes_medicos: [] as string[],
     restricciones_medicas: '',
     capacitaciones_sst: [] as string[],
-
   });
 
   const [activeTab, setActiveTab] = useState<TabType>('identificacion');
@@ -482,7 +481,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
                 </h4>
                 <div className="grid grid-cols-2 gap-4">
                   <Select
-                    label="Área"
+                    label="Proceso"
                     value={formData.area?.toString() || ''}
                     onChange={(e) =>
                       setFormData({
@@ -491,7 +490,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
                       })
                     }
                     options={[
-                      { value: '', label: 'Sin área asignada' },
+                      { value: '', label: 'Sin proceso asignado' },
                       ...areaOptions.map((a) => ({ value: a.value.toString(), label: a.label })),
                     ]}
                   />

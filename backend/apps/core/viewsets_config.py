@@ -285,6 +285,21 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
                 'categories': []
             })
 
+        # Excluir secciones restringidas a superadmin (ej: 'modulos')
+        superadmin_only_sections = set(
+            TabSection.objects.filter(code__in=['modulos'])
+            .values_list('id', flat=True)
+        )
+        authorized_section_ids -= superadmin_only_sections
+
+        if not authorized_section_ids:
+            return Response({
+                'modules': [],
+                'total_modules': 0,
+                'enabled_modules': 0,
+                'categories': []
+            })
+
         return self._get_filtered_tree(authorized_section_ids)
 
     def _get_full_tree(self):
@@ -420,6 +435,15 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
 
         if not authorized_section_ids:
             # Sin secciones autorizadas = sidebar vacío
+            return Response([])
+
+        # Excluir secciones restringidas a superadmin (ej: 'modulos')
+        superadmin_only_sections = TabSection.objects.filter(
+            code__in=['modulos']
+        ).values_list('id', flat=True)
+        authorized_section_ids -= set(superadmin_only_sections)
+
+        if not authorized_section_ids:
             return Response([])
 
         # Obtener tabs que contienen secciones autorizadas

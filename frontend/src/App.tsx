@@ -14,13 +14,16 @@ function App() {
   // Detectar si estamos en página de login para usar splash oscuro
   const isLoginPage = useMemo(() => {
     const path = window.location.pathname;
-    return path === '/login' || path === '/forgot-password';
+    return path === '/login' || path === '/forgot-password' || path === '/reset-password';
   }, []);
 
   // Si hay branding cacheado, reducir splash a 300ms (ya tenemos datos)
   const hasCachedBranding = useMemo(() => {
-    try { return !!localStorage.getItem('last_branding'); }
-    catch { return false; }
+    try {
+      return !!localStorage.getItem('last_branding');
+    } catch {
+      return false;
+    }
   }, []);
 
   // Aplicar colores dinámicos del branding (colores sí son dinámicos)
@@ -37,9 +40,12 @@ function App() {
 
   // Tiempo mínimo de splash: 300ms si hay cache, 1200ms primera vez
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setMinTimeElapsed(true);
-    }, hasCachedBranding ? 300 : 1200);
+    const timer = setTimeout(
+      () => {
+        setMinTimeElapsed(true);
+      },
+      hasCachedBranding ? 300 : 1200
+    );
 
     return () => clearTimeout(timer);
   }, [hasCachedBranding]);

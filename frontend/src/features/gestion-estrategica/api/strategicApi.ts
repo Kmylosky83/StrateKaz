@@ -572,10 +572,7 @@ export const brandingApi = {
     tenantId: number,
     data: UpdateBrandingConfigDTO | FormData
   ): Promise<BrandingConfig> => {
-    const response = await axiosInstance.patch(
-      `${TENANT_URL}/tenants/${tenantId}/`,
-      data
-    );
+    const response = await axiosInstance.patch(`${TENANT_URL}/tenants/${tenantId}/`, data);
     return response.data;
   },
 
@@ -1362,6 +1359,9 @@ export interface CurrentTenantData {
   pwa_description: string;
   pwa_theme_color: string;
   pwa_background_color: string;
+  pwa_icon_192: string | null;
+  pwa_icon_512: string | null;
+  pwa_icon_maskable: string | null;
   [key: string]: unknown;
 }
 

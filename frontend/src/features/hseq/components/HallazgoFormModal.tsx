@@ -37,11 +37,7 @@ const TIPO_OPTIONS = [
   { value: 'FORTALEZA', label: 'Fortaleza' },
 ];
 
-export default function HallazgoFormModal({
-  item,
-  isOpen,
-  onClose,
-}: HallazgoFormModalProps) {
+export default function HallazgoFormModal({ item, isOpen, onClose }: HallazgoFormModalProps) {
   const [formData, setFormData] = useState<CreateHallazgoDTO>(INITIAL_FORM);
 
   const createMutation = useCreateHallazgo();
@@ -79,10 +75,7 @@ export default function HallazgoFormModal({
     e.preventDefault();
 
     if (item) {
-      updateMutation.mutate(
-        { id: item.id, datos: formData },
-        { onSuccess: onClose }
-      );
+      updateMutation.mutate({ id: item.id, datos: formData }, { onSuccess: onClose });
     } else {
       createMutation.mutate(formData, { onSuccess: onClose });
     }
@@ -138,7 +131,7 @@ export default function HallazgoFormModal({
           </Select>
 
           <Input
-            label="Proceso/Área"
+            label="Proceso"
             value={formData.proceso_area}
             onChange={(e) => handleChange('proceso_area', e.target.value)}
             placeholder="Ej: Producción, Gestión de Calidad"

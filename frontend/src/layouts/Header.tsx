@@ -4,15 +4,15 @@
  * Diseno optimizado:
  * - ZONA A: Menu toggle + Logo/Marca (sin limite de ancho)
  * - Espacio flexible
- * - ZONA B: Busqueda + Notificaciones + Tema + Usuario (fijo)
- *
- * NOTA: Los tabs de secciones ahora van en el PageHeader de cada pagina,
- * no en el Header principal. Esto da mas espacio y mejor UX.
+ * - ZONA B: Contextual segun modo
+ *   - Admin Global: Tema + Nombre admin + Logout
+ *   - Tenant: Busqueda + Notificaciones + Tema + UserMenu completo
  */
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Bell, Moon, Sun, Search } from 'lucide-react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Menu, X, Bell, Moon, Sun, Search, LogOut } from 'lucide-react';
 import { useThemeStore } from '@/store/themeStore';
+import { useAuthStore } from '@/store/authStore';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import { useNotificacionesNoLeidas } from '@/features/audit-system/hooks/useNotificaciones';
 import { UserMenu, SearchModal, useSearchModal, TenantSwitcher } from '@/components/common';
@@ -26,19 +26,31 @@ interface HeaderProps {
 
 export const Header = ({ onToggleSidebar, isMobileMenuOpen = false }: HeaderProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { theme, toggleTheme } = useThemeStore();
   const { companyName, companySlogan, getLogoForTheme } = useBrandingConfig();
 
-  // Estado de busqueda global
+  // Auth context
+  const tenantUser = useAuthStore((state) => state.tenantUser);
+  const currentTenantId = useAuthStore((state) => state.currentTenantId);
+  const logout = useAuthStore((state) => state.logout);
+
+  // Detectar modo Admin Global (mismo patron que Sidebar)
+  const isAdminGlobalMode = !currentTenantId || location.pathname.startsWith('/admin-global');
+
+  // Estado de busqueda global (solo aplica en modo tenant)
   const searchModal = useSearchModal();
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Notificaciones no leidas
+  // Notificaciones no leidas (hook ya tiene enabled: !!user?.id, no fetcha sin tenant)
   const { data: notificacionesNoLeidas } = useNotificacionesNoLeidas();
   const unreadCount = notificacionesNoLeidas?.length ?? 0;
 
   // Logo segun tema
   const currentLogo = getLogoForTheme(theme);
+
+  // Nombre del admin para modo Admin Global
+  const adminDisplayName = tenantUser?.first_name || tenantUser?.email?.split('@')[0] || 'Admin';
 
   return (
     <>
@@ -102,87 +114,137 @@ export const Header = ({ onToggleSidebar, isMobileMenuOpen = false }: HeaderProp
           </div>
 
           {/* ═══════════════════════════════════════════════════════════════ */}
-          {/* ZONA B: Busqueda + Notificaciones + Tema + Usuario */}
+          {/* ZONA B: Contextual segun modo */}
           {/* ═══════════════════════════════════════════════════════════════ */}
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-            {/* Busqueda Global */}
-            <button
-              onClick={searchModal.open}
-              className={cn(
-                'p-2 rounded-lg transition-colors',
-                'hover:bg-gray-100 dark:hover:bg-gray-700',
-                'focus:outline-none focus:ring-2 focus:ring-primary-500'
-              )}
-              title={HEADER_LABELS.SEARCH_SHORTCUT}
-            >
-              <Search className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-            </button>
-
-            {/* Notificaciones */}
-            <button
-              onClick={() => navigate(ROUTES.NOTIFICATIONS)}
-              className={cn(
-                'relative p-2 rounded-lg transition-colors',
-                'hover:bg-gray-100 dark:hover:bg-gray-700',
-                'focus:outline-none focus:ring-2 focus:ring-primary-500'
-              )}
-              title={
-                unreadCount > 0
-                  ? `${unreadCount} ${HEADER_LABELS.NOTIFICATIONS}`
-                  : HEADER_LABELS.NOTIFICATIONS
-              }
-            >
-              <Bell className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-              {unreadCount > 0 && (
-                <span
+            {isAdminGlobalMode ? (
+              /* ─── Admin Global: Tema + Nombre + Logout ─── */
+              <>
+                {/* Theme Toggle */}
+                <button
+                  onClick={toggleTheme}
                   className={cn(
-                    'absolute -top-0.5 -right-0.5',
-                    'flex items-center justify-center',
-                    'min-w-[18px] h-[18px] px-1',
-                    'text-[10px] font-bold text-white',
-                    'bg-red-500 rounded-full',
-                    'ring-2 ring-white dark:ring-gray-800'
+                    'p-2 rounded-lg transition-colors',
+                    'hover:bg-gray-100 dark:hover:bg-gray-700',
+                    'focus:outline-none focus:ring-2 focus:ring-primary-500'
                   )}
+                  title={theme === 'dark' ? HEADER_LABELS.LIGHT_MODE : HEADER_LABELS.DARK_MODE}
                 >
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </span>
-              )}
-            </button>
+                  {theme === 'dark' ? (
+                    <Sun className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+                  ) : (
+                    <Moon className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+                  )}
+                </button>
 
-            {/* Theme Toggle */}
-            <button
-              onClick={toggleTheme}
-              className={cn(
-                'p-2 rounded-lg transition-colors',
-                'hover:bg-gray-100 dark:hover:bg-gray-700',
-                'focus:outline-none focus:ring-2 focus:ring-primary-500'
-              )}
-              title={theme === 'dark' ? HEADER_LABELS.LIGHT_MODE : HEADER_LABELS.DARK_MODE}
-            >
-              {theme === 'dark' ? (
-                <Sun className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-              ) : (
-                <Moon className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-              )}
-            </button>
+                {/* Separador */}
+                <div className="h-8 w-px bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block" />
 
-            {/* Separador vertical */}
-            <div className="h-8 w-px bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block" />
+                {/* Admin name + Logout */}
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 hidden sm:block">
+                    {adminDisplayName}
+                  </span>
+                  <button
+                    onClick={logout}
+                    title="Cerrar sesion"
+                    className={cn(
+                      'p-2 rounded-lg transition-colors',
+                      'text-gray-600 dark:text-gray-300',
+                      'hover:bg-red-50 dark:hover:bg-red-900/20',
+                      'hover:text-red-600 dark:hover:text-red-400',
+                      'focus:outline-none focus:ring-2 focus:ring-red-500'
+                    )}
+                  >
+                    <LogOut className="h-5 w-5" />
+                  </button>
+                </div>
+              </>
+            ) : (
+              /* ─── Tenant Mode: Busqueda + Notificaciones + Tema + UserMenu ─── */
+              <>
+                {/* Busqueda Global */}
+                <button
+                  onClick={searchModal.open}
+                  className={cn(
+                    'p-2 rounded-lg transition-colors',
+                    'hover:bg-gray-100 dark:hover:bg-gray-700',
+                    'focus:outline-none focus:ring-2 focus:ring-primary-500'
+                  )}
+                  title={HEADER_LABELS.SEARCH_SHORTCUT}
+                >
+                  <Search className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+                </button>
 
-            {/* User Menu (muestra nombre + cargo) */}
-            <UserMenu />
+                {/* Notificaciones */}
+                <button
+                  onClick={() => navigate(ROUTES.NOTIFICATIONS)}
+                  className={cn(
+                    'relative p-2 rounded-lg transition-colors',
+                    'hover:bg-gray-100 dark:hover:bg-gray-700',
+                    'focus:outline-none focus:ring-2 focus:ring-primary-500'
+                  )}
+                  title={
+                    unreadCount > 0
+                      ? `${unreadCount} ${HEADER_LABELS.NOTIFICATIONS}`
+                      : HEADER_LABELS.NOTIFICATIONS
+                  }
+                >
+                  <Bell className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+                  {unreadCount > 0 && (
+                    <span
+                      className={cn(
+                        'absolute -top-0.5 -right-0.5',
+                        'flex items-center justify-center',
+                        'min-w-[18px] h-[18px] px-1',
+                        'text-[10px] font-bold text-white',
+                        'bg-red-500 rounded-full',
+                        'ring-2 ring-white dark:ring-gray-800'
+                      )}
+                    >
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Theme Toggle */}
+                <button
+                  onClick={toggleTheme}
+                  className={cn(
+                    'p-2 rounded-lg transition-colors',
+                    'hover:bg-gray-100 dark:hover:bg-gray-700',
+                    'focus:outline-none focus:ring-2 focus:ring-primary-500'
+                  )}
+                  title={theme === 'dark' ? HEADER_LABELS.LIGHT_MODE : HEADER_LABELS.DARK_MODE}
+                >
+                  {theme === 'dark' ? (
+                    <Sun className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+                  ) : (
+                    <Moon className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+                  )}
+                </button>
+
+                {/* Separador vertical */}
+                <div className="h-8 w-px bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block" />
+
+                {/* User Menu (muestra nombre + cargo) */}
+                <UserMenu />
+              </>
+            )}
           </div>
         </div>
       </header>
 
-      {/* Modal de Busqueda Global */}
-      <SearchModal
-        isOpen={searchModal.isOpen}
-        onClose={searchModal.close}
-        value={searchQuery}
-        onChange={setSearchQuery}
-        placeholder="Buscar en todo el sistema..."
-      />
+      {/* Modal de Busqueda Global (solo renderiza si no es Admin Global) */}
+      {!isAdminGlobalMode && (
+        <SearchModal
+          isOpen={searchModal.isOpen}
+          onClose={searchModal.close}
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="Buscar en todo el sistema..."
+        />
+      )}
     </>
   );
 };

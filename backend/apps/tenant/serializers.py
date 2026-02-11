@@ -81,13 +81,15 @@ class TenantSerializer(serializers.ModelSerializer):
             'pwa_name', 'pwa_short_name', 'pwa_description',
             'pwa_theme_color', 'pwa_background_color',
             'pwa_icon_192', 'pwa_icon_512', 'pwa_icon_maskable',
+            # Notas internas
+            'notes',
             # Backup
             'backup_enabled', 'backup_retention_days',
             # Legacy (deprecated)
             'logo_url',
             # Relaciones
             'domains',
-            # Auditoría
+            # Auditoria
             'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'schema_name', 'created_at', 'updated_at']
@@ -109,16 +111,14 @@ class TenantMinimalSerializer(serializers.ModelSerializer):
     """
     Serializer mínimo para Tenant (usado en listas, selección y respuesta de login).
     Incluye datos esenciales para identificación y branding básico.
-
-    NOTA: No exponer campos internos como schema_name, db_name, schema_task_id,
-    schema_error. Estos solo son necesarios en el serializer completo para Admin Global.
     """
     primary_domain = serializers.SerializerMethodField()
     subdomain = serializers.SerializerMethodField()
     plan_name = serializers.CharField(source='plan.name', read_only=True, allow_null=True)
     is_subscription_valid = serializers.BooleanField(read_only=True)
-    # Propiedad calculada para logo efectivo
     logo_effective = serializers.SerializerMethodField()
+    user_count = serializers.SerializerMethodField()
+    db_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Tenant
@@ -128,6 +128,8 @@ class TenantMinimalSerializer(serializers.ModelSerializer):
             'nit', 'tier', 'plan', 'plan_name',
             'max_users', 'max_storage_gb',
             'is_active', 'is_trial', 'is_subscription_valid',
+            'schema_status', 'subscription_ends_at',
+            'user_count', 'db_name',
             # Branding básico
             'logo', 'logo_url', 'logo_effective',
             'primary_color', 'secondary_color', 'accent_color',
@@ -147,10 +149,31 @@ class TenantMinimalSerializer(serializers.ModelSerializer):
         return None
 
     def get_logo_effective(self, obj):
-        """Retorna el logo efectivo (nuevo campo o URL legacy)."""
+        """Retorna el logo efectivo como URL absoluta (nuevo campo o URL legacy)."""
         if obj.logo:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.logo.url)
             return obj.logo.url
         return obj.logo_url or None
+
+    def get_user_count(self, obj):
+        """Contar usuarios del tenant via query cross-schema."""
+        try:
+            from django.db import connection
+            if obj.schema_name and obj.schema_status == 'ready':
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        'SELECT COUNT(*) FROM "%s".core_user' % obj.schema_name
+                    )
+                    return cursor.fetchone()[0]
+        except Exception:
+            pass
+        return 0
+
+    def get_db_name(self, obj):
+        """Retorna el schema_name como db_name para el frontend."""
+        return obj.schema_name
 
 
 class TenantCreateSerializer(serializers.ModelSerializer):
@@ -191,14 +214,28 @@ class TenantCreateSerializer(serializers.ModelSerializer):
 
     def validate_code(self, value):
         """
-        Validar que el código cumpla el formato requerido.
-        Debe empezar con letra y contener solo letras minúsculas, números y guiones bajos.
+        Validar formato y unicidad del codigo del tenant.
+        Debe empezar con letra, contener solo minusculas/numeros/guion bajo,
+        y no existir en la base de datos.
         """
         import re
         if not re.match(r'^[a-z][a-z0-9_]*$', value):
             raise serializers.ValidationError(
-                "El código debe empezar con letra y contener solo letras minúsculas, "
-                "números y guiones bajos."
+                "El codigo debe empezar con letra y contener solo letras minusculas, "
+                "numeros y guiones bajos."
+            )
+        # Verificar que el code no exista
+        if Tenant.objects.filter(code=value).exists():
+            raise serializers.ValidationError(
+                f"Ya existe una empresa con el codigo '{value}'. "
+                "Usa un codigo diferente."
+            )
+        # Verificar que el schema_name no exista
+        schema_name = f'tenant_{value}'
+        if Tenant.objects.filter(schema_name=schema_name).exists():
+            raise serializers.ValidationError(
+                f"Ya existe un schema '{schema_name}'. "
+                "Usa un codigo diferente."
             )
         return value
 
@@ -332,11 +369,13 @@ class TenantUpdateSerializer(serializers.ModelSerializer):
             'pwa_name', 'pwa_short_name', 'pwa_description',
             'pwa_theme_color', 'pwa_background_color',
             'pwa_icon_192', 'pwa_icon_512', 'pwa_icon_maskable',
+            # Notas internas
+            'notes',
             # Backup
             'backup_enabled', 'backup_retention_days',
             # Legacy (deprecated)
             'logo_url',
-            # Campos de eliminación de imágenes
+            # Campos de eliminacion de imagenes
             'logo_clear', 'logo_white_clear', 'logo_dark_clear',
             'favicon_clear', 'login_background_clear',
             'pwa_icon_192_clear', 'pwa_icon_512_clear', 'pwa_icon_maskable_clear',
@@ -652,6 +691,88 @@ class TenantUserCreateSerializer(serializers.ModelSerializer):
         return user
 
 
+class TenantUserUpdateSerializer(serializers.ModelSerializer):
+    """
+    Serializer para actualizar TenantUser con sincronización de accesos a tenants.
+
+    Procesa tenant_assignments para hacer sync completo:
+    - Nuevos tenant_ids -> crear TenantUserAccess
+    - tenant_ids removidos -> desactivar TenantUserAccess
+    - Existentes -> mantener sin cambios
+    """
+    password = serializers.CharField(
+        write_only=True, min_length=8, required=False, allow_blank=True
+    )
+    tenant_assignments = serializers.ListField(
+        child=serializers.DictField(),
+        write_only=True,
+        required=False,
+    )
+
+    class Meta:
+        model = TenantUser
+        fields = [
+            'first_name', 'last_name',
+            'is_active', 'is_superadmin',
+            'password', 'tenant_assignments',
+        ]
+
+    def validate_tenant_assignments(self, value):
+        """Validar que los tenants existan."""
+        for assignment in value:
+            tenant_id = assignment.get('tenant_id')
+            if tenant_id and not Tenant.objects.filter(id=tenant_id).exists():
+                raise serializers.ValidationError(
+                    f"Tenant con ID {tenant_id} no existe."
+                )
+        return value
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        password = validated_data.pop('password', None)
+        tenant_assignments = validated_data.pop('tenant_assignments', None)
+
+        # Actualizar campos básicos
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        # Actualizar password si se proporcionó
+        if password:
+            instance.set_password(password)
+
+        instance.save()
+
+        # Sincronizar accesos a tenants (solo si se envió el campo)
+        if tenant_assignments is not None:
+            desired_ids = {
+                a['tenant_id'] for a in tenant_assignments if a.get('tenant_id')
+            }
+            current_accesses = TenantUserAccess.objects.filter(tenant_user=instance)
+            current_ids = set(current_accesses.values_list('tenant_id', flat=True))
+
+            # Revocar accesos que ya no están en la lista
+            to_revoke = current_ids - desired_ids
+            if to_revoke:
+                current_accesses.filter(tenant_id__in=to_revoke).delete()
+
+            # Crear accesos nuevos
+            to_grant = desired_ids - current_ids
+            for tenant_id in to_grant:
+                TenantUserAccess.objects.create(
+                    tenant_user=instance,
+                    tenant_id=tenant_id,
+                    role='user',
+                    is_active=True,
+                )
+
+            # Reactivar accesos que existían pero estaban inactivos
+            current_accesses.filter(
+                tenant_id__in=desired_ids, is_active=False
+            ).update(is_active=True)
+
+        return instance
+
+
 class UserTenantsSerializer(serializers.ModelSerializer):
     """
     Serializer para obtener los tenants de un usuario.
@@ -671,7 +792,7 @@ class UserTenantsSerializer(serializers.ModelSerializer):
 
         return [
             {
-                'tenant': TenantMinimalSerializer(access.tenant).data,
+                'tenant': TenantMinimalSerializer(access.tenant, context=self.context).data,
                 'role': access.role,
             }
             for access in accesses

@@ -176,26 +176,30 @@ def current_user(request):
     user = request.user
 
     # Obtener permisos efectivos y secciones
-    section_ids = []
-    permission_codes = []
+    if user.is_superuser:
+        # Superusuario tiene acceso total - no necesita lista de secciones ni permisos
+        section_ids = None
+        permission_codes = ['*']
+    else:
+        section_ids = []
+        permission_codes = []
 
-    # 1. Obtener section_ids del Cargo (si tiene)
-    if user.cargo:
-        from apps.core.models import CargoSectionAccess
-        section_ids = list(CargoSectionAccess.objects.filter(
-            cargo=user.cargo
-        ).values_list('section_id', flat=True))
+        # 1. Obtener section_ids del Cargo (si tiene)
+        if user.cargo:
+            from apps.core.models import CargoSectionAccess
+            section_ids = list(CargoSectionAccess.objects.filter(
+                cargo=user.cargo, can_view=True
+            ).values_list('section_id', flat=True))
 
-    # 2. Obtener códigos de permisos efectivos (RBAC Híbrido)
-    # El método get_permisos_efectivos ya maneja superusuario, cargo, roles y grupos
-    if hasattr(user, 'get_permisos_efectivos'):
-        permission_codes = user.get_permisos_efectivos()
+        # 2. Obtener códigos de permisos efectivos (RBAC Híbrido)
+        if hasattr(user, 'get_permisos_efectivos'):
+            permission_codes = user.get_permisos_efectivos()
 
     # 3. Obtener empresa_nombre desde el Tenant actual
     # NOTA: El branding (incluyendo company_name) está ahora en el modelo Tenant
     empresa_nombre = None
     if hasattr(request, 'tenant') and request.tenant:
-        empresa_nombre = request.tenant.company_name
+        empresa_nombre = request.tenant.name
 
     # 4. Obtener area_nombre desde cargo.area
     area_nombre = None

@@ -1,8 +1,8 @@
 /**
- * Tab de Áreas y Departamentos
+ * Tab de Procesos Organizacionales
  *
  * Sección dinámica desde BD (TabSection.code = 'areas')
- * Gestión de estructura organizacional por áreas/departamentos
+ * Gestión de mapa de procesos organizacionales
  *
  * Usa Design System:
  * - Card para contenedores
@@ -31,7 +31,16 @@ import {
   CheckCircle,
   GitBranch,
 } from 'lucide-react';
-import { Card, Badge, Button, EmptyState, ConfirmDialog, DynamicIcon, BrandedSkeleton, SectionHeader } from '@/components/common';
+import {
+  Card,
+  Badge,
+  Button,
+  EmptyState,
+  ConfirmDialog,
+  DynamicIcon,
+  BrandedSkeleton,
+  SectionHeader,
+} from '@/components/common';
 import { Input, Switch } from '@/components/forms';
 import { StatsGrid, StatsGridSkeleton } from '@/components/layout';
 import type { StatItem } from '@/components/layout';
@@ -54,18 +63,105 @@ import { Modules, Sections } from '@/constants/permissions';
 // HELPER: CLASES DE COLOR DINÁMICO
 // =============================================================================
 const getColorClasses = (color: string) => {
-  const colorMap: Record<string, { bg: string; bgDark: string; text: string; textDark: string; border: string; borderDark: string }> = {
-    purple: { bg: 'bg-purple-100', bgDark: 'dark:bg-purple-900/30', text: 'text-purple-600', textDark: 'dark:text-purple-400', border: 'hover:border-purple-300', borderDark: 'dark:hover:border-purple-600' },
-    blue: { bg: 'bg-blue-100', bgDark: 'dark:bg-blue-900/30', text: 'text-blue-600', textDark: 'dark:text-blue-400', border: 'hover:border-blue-300', borderDark: 'dark:hover:border-blue-600' },
-    green: { bg: 'bg-green-100', bgDark: 'dark:bg-green-900/30', text: 'text-green-600', textDark: 'dark:text-green-400', border: 'hover:border-green-300', borderDark: 'dark:hover:border-green-600' },
-    red: { bg: 'bg-red-100', bgDark: 'dark:bg-red-900/30', text: 'text-red-600', textDark: 'dark:text-red-400', border: 'hover:border-red-300', borderDark: 'dark:hover:border-red-600' },
-    amber: { bg: 'bg-amber-100', bgDark: 'dark:bg-amber-900/30', text: 'text-amber-600', textDark: 'dark:text-amber-400', border: 'hover:border-amber-300', borderDark: 'dark:hover:border-amber-600' },
-    orange: { bg: 'bg-orange-100', bgDark: 'dark:bg-orange-900/30', text: 'text-orange-600', textDark: 'dark:text-orange-400', border: 'hover:border-orange-300', borderDark: 'dark:hover:border-orange-600' },
-    teal: { bg: 'bg-teal-100', bgDark: 'dark:bg-teal-900/30', text: 'text-teal-600', textDark: 'dark:text-teal-400', border: 'hover:border-teal-300', borderDark: 'dark:hover:border-teal-600' },
-    cyan: { bg: 'bg-cyan-100', bgDark: 'dark:bg-cyan-900/30', text: 'text-cyan-600', textDark: 'dark:text-cyan-400', border: 'hover:border-cyan-300', borderDark: 'dark:hover:border-cyan-600' },
-    indigo: { bg: 'bg-indigo-100', bgDark: 'dark:bg-indigo-900/30', text: 'text-indigo-600', textDark: 'dark:text-indigo-400', border: 'hover:border-indigo-300', borderDark: 'dark:hover:border-indigo-600' },
-    pink: { bg: 'bg-pink-100', bgDark: 'dark:bg-pink-900/30', text: 'text-pink-600', textDark: 'dark:text-pink-400', border: 'hover:border-pink-300', borderDark: 'dark:hover:border-pink-600' },
-    gray: { bg: 'bg-gray-100', bgDark: 'dark:bg-gray-700', text: 'text-gray-600', textDark: 'dark:text-gray-400', border: 'hover:border-gray-300', borderDark: 'dark:hover:border-gray-500' },
+  const colorMap: Record<
+    string,
+    {
+      bg: string;
+      bgDark: string;
+      text: string;
+      textDark: string;
+      border: string;
+      borderDark: string;
+    }
+  > = {
+    purple: {
+      bg: 'bg-purple-100',
+      bgDark: 'dark:bg-purple-900/30',
+      text: 'text-purple-600',
+      textDark: 'dark:text-purple-400',
+      border: 'hover:border-purple-300',
+      borderDark: 'dark:hover:border-purple-600',
+    },
+    blue: {
+      bg: 'bg-blue-100',
+      bgDark: 'dark:bg-blue-900/30',
+      text: 'text-blue-600',
+      textDark: 'dark:text-blue-400',
+      border: 'hover:border-blue-300',
+      borderDark: 'dark:hover:border-blue-600',
+    },
+    green: {
+      bg: 'bg-green-100',
+      bgDark: 'dark:bg-green-900/30',
+      text: 'text-green-600',
+      textDark: 'dark:text-green-400',
+      border: 'hover:border-green-300',
+      borderDark: 'dark:hover:border-green-600',
+    },
+    red: {
+      bg: 'bg-red-100',
+      bgDark: 'dark:bg-red-900/30',
+      text: 'text-red-600',
+      textDark: 'dark:text-red-400',
+      border: 'hover:border-red-300',
+      borderDark: 'dark:hover:border-red-600',
+    },
+    amber: {
+      bg: 'bg-amber-100',
+      bgDark: 'dark:bg-amber-900/30',
+      text: 'text-amber-600',
+      textDark: 'dark:text-amber-400',
+      border: 'hover:border-amber-300',
+      borderDark: 'dark:hover:border-amber-600',
+    },
+    orange: {
+      bg: 'bg-orange-100',
+      bgDark: 'dark:bg-orange-900/30',
+      text: 'text-orange-600',
+      textDark: 'dark:text-orange-400',
+      border: 'hover:border-orange-300',
+      borderDark: 'dark:hover:border-orange-600',
+    },
+    teal: {
+      bg: 'bg-teal-100',
+      bgDark: 'dark:bg-teal-900/30',
+      text: 'text-teal-600',
+      textDark: 'dark:text-teal-400',
+      border: 'hover:border-teal-300',
+      borderDark: 'dark:hover:border-teal-600',
+    },
+    cyan: {
+      bg: 'bg-cyan-100',
+      bgDark: 'dark:bg-cyan-900/30',
+      text: 'text-cyan-600',
+      textDark: 'dark:text-cyan-400',
+      border: 'hover:border-cyan-300',
+      borderDark: 'dark:hover:border-cyan-600',
+    },
+    indigo: {
+      bg: 'bg-indigo-100',
+      bgDark: 'dark:bg-indigo-900/30',
+      text: 'text-indigo-600',
+      textDark: 'dark:text-indigo-400',
+      border: 'hover:border-indigo-300',
+      borderDark: 'dark:hover:border-indigo-600',
+    },
+    pink: {
+      bg: 'bg-pink-100',
+      bgDark: 'dark:bg-pink-900/30',
+      text: 'text-pink-600',
+      textDark: 'dark:text-pink-400',
+      border: 'hover:border-pink-300',
+      borderDark: 'dark:hover:border-pink-600',
+    },
+    gray: {
+      bg: 'bg-gray-100',
+      bgDark: 'dark:bg-gray-700',
+      text: 'text-gray-600',
+      textDark: 'dark:text-gray-400',
+      border: 'hover:border-gray-300',
+      borderDark: 'dark:hover:border-gray-500',
+    },
   };
   return colorMap[color] || colorMap.purple;
 };
@@ -141,14 +237,14 @@ const AreaCard = ({
         {/* Información */}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-mono text-gray-500 dark:text-gray-400">
-              {area.code}
-            </span>
+            <span className="text-xs font-mono text-gray-500 dark:text-gray-400">{area.code}</span>
             <span className="font-medium text-gray-900 dark:text-gray-100 truncate">
               {area.name}
             </span>
             {!area.is_active && (
-              <Badge variant="gray" size="sm">Inactiva</Badge>
+              <Badge variant="gray" size="sm">
+                Inactiva
+              </Badge>
             )}
           </div>
           {'description' in area && area.description && (
@@ -172,7 +268,7 @@ const AreaCard = ({
             {'children_count' in area && area.children_count > 0 && (
               <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                 <FolderTree className="h-3 w-3" />
-                {area.children_count} subáreas
+                {area.children_count} subprocesos
               </span>
             )}
           </div>
@@ -186,23 +282,18 @@ const AreaCard = ({
             variant="ghost"
             size="sm"
             onClick={() => onToggleActive(area)}
-            title={area.is_active ? 'Desactivar área' : 'Activar área'}
-            className={area.is_active ? '' : 'text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20'}
+            title={area.is_active ? 'Desactivar proceso' : 'Activar proceso'}
+            className={
+              area.is_active
+                ? ''
+                : 'text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20'
+            }
           >
-            {area.is_active ? (
-              <PowerOff className="h-4 w-4" />
-            ) : (
-              <Power className="h-4 w-4" />
-            )}
+            {area.is_active ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
           </Button>
         )}
         {canEdit && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onEdit(area)}
-            title="Editar área"
-          >
+          <Button variant="ghost" size="sm" onClick={() => onEdit(area)} title="Editar proceso">
             <Edit className="h-4 w-4" />
           </Button>
         )}
@@ -212,7 +303,7 @@ const AreaCard = ({
             size="sm"
             onClick={() => onDelete(area)}
             className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-            title="Eliminar área"
+            title="Eliminar proceso"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -283,23 +374,23 @@ export const AreasTab = () => {
 
     return [
       {
-        label: 'Total Áreas',
+        label: 'Total Procesos',
         value: areas.length,
         icon: Building2,
         iconColor: 'info' as const,
       },
       {
-        label: 'Áreas Activas',
+        label: 'Procesos Activos',
         value: activas,
         icon: CheckCircle,
         iconColor: 'success' as const,
       },
       {
-        label: 'Áreas Raíz',
+        label: 'Procesos Raiz',
         value: areasRaiz,
         icon: GitBranch,
         iconColor: 'info' as const,
-        description: 'Sin área padre',
+        description: 'Sin proceso padre',
       },
       {
         label: 'Con Responsable',
@@ -399,8 +490,8 @@ export const AreasTab = () => {
         <div className="p-6">
           <EmptyState
             icon={<Building2 className="h-12 w-12" />}
-            title="Error al cargar áreas"
-            description="No se pudieron cargar las áreas. Por favor, intente nuevamente."
+            title="Error al cargar procesos"
+            description="No se pudieron cargar los procesos. Por favor, intente nuevamente."
             action={{
               label: 'Reintentar',
               onClick: () => refetch(),
@@ -422,21 +513,21 @@ export const AreasTab = () => {
           <div className="p-6">
             <EmptyState
               icon={<Building2 className="h-12 w-12" />}
-              title="Sin Áreas Configuradas"
-              description="No hay áreas o departamentos definidos. Crea la primera área para comenzar a estructurar tu organización."
-              action={canCreate ? {
-                label: 'Crear Primera Área',
-                onClick: handleAdd,
-                icon: <Plus className="h-4 w-4" />,
-              } : undefined}
+              title="Sin Procesos Configurados"
+              description="No hay procesos definidos. Crea el primer proceso para comenzar a estructurar tu organizacion."
+              action={
+                canCreate
+                  ? {
+                      label: 'Crear Primer Proceso',
+                      onClick: handleAdd,
+                      icon: <Plus className="h-4 w-4" />,
+                    }
+                  : undefined
+              }
             />
           </div>
         </Card>
-        <AreaFormModal
-          area={null}
-          isOpen={showFormModal}
-          onClose={() => setShowFormModal(false)}
-        />
+        <AreaFormModal area={null} isOpen={showFormModal} onClose={() => setShowFormModal(false)} />
       </>
     );
   }
@@ -453,8 +544,8 @@ export const AreasTab = () => {
             <Building2 className={`h-5 w-5 ${moduleColorClasses.icon}`} />
           </div>
         }
-        title="Áreas y Departamentos"
-        description="Estructura organizacional jerárquica"
+        title="Procesos"
+        description="Mapa de procesos organizacionales"
         variant="compact"
         actions={
           <div className="flex items-center gap-3 flex-nowrap">
@@ -483,7 +574,7 @@ export const AreasTab = () => {
             {canCreate && (
               <Button variant="primary" size="sm" onClick={handleAdd}>
                 <Plus className="h-4 w-4 mr-2" />
-                Nueva Área
+                Nuevo Proceso
               </Button>
             )}
           </div>
@@ -499,25 +590,27 @@ export const AreasTab = () => {
               title="Sin resultados"
               description={
                 searchTerm
-                  ? `No se encontraron áreas que coincidan con "${searchTerm}"`
+                  ? `No se encontraron procesos que coincidan con "${searchTerm}"`
                   : !showInactive
-                    ? 'No hay áreas activas. Activa el filtro "Incluir inactivas" para ver todas.'
-                    : 'No hay áreas configuradas.'
+                    ? 'No hay procesos activos. Activa el filtro "Incluir inactivos" para ver todos.'
+                    : 'No hay procesos configurados.'
               }
               action={
                 searchTerm
                   ? { label: 'Limpiar búsqueda', onClick: () => setSearchTerm('') }
                   : !showInactive
                     ? { label: 'Incluir inactivas', onClick: () => setShowInactive(true) }
-                    : { label: 'Crear Área', onClick: handleAdd, icon: <Plus className="h-4 w-4" /> }
+                    : {
+                        label: 'Crear Proceso',
+                        onClick: handleAdd,
+                        icon: <Plus className="h-4 w-4" />,
+                      }
               }
             />
           </div>
         </Card>
       ) : (
-        <div className="space-y-2">
-          {rootAreas.map((area) => renderAreaWithChildren(area))}
-        </div>
+        <div className="space-y-2">{rootAreas.map((area) => renderAreaWithChildren(area))}</div>
       )}
 
       {/* Modal de formulario */}
@@ -535,13 +628,13 @@ export const AreasTab = () => {
         isOpen={!!areaToDelete}
         onClose={() => setAreaToDelete(null)}
         onConfirm={confirmDelete}
-        title="Eliminar Área"
+        title="Eliminar Proceso"
         message={
           <>
-            ¿Estás seguro de eliminar el área <strong>"{areaToDelete?.name}"</strong>?
+            ¿Estas seguro de eliminar el proceso <strong>"{areaToDelete?.name}"</strong>?
             {(areaToDelete as Area)?.children_count > 0 && (
               <span className="block mt-2 text-amber-600 dark:text-amber-400">
-                Esta área tiene subáreas que también serán afectadas.
+                Este proceso tiene subprocesos que tambien seran afectados.
               </span>
             )}
             <span className="block mt-2">Esta acción no se puede deshacer.</span>

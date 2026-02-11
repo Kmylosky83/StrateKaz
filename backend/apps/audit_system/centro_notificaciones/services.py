@@ -50,48 +50,89 @@ class NotificationService:
 
     @staticmethod
     def send_notification(
-        tipo: TipoNotificacion,
-        usuario: User,
-        titulo: str,
-        mensaje: str,
+        tipo: TipoNotificacion = None,
+        usuario: User = None,
+        titulo: str = None,
+        mensaje: str = None,
         url: Optional[str] = None,
         datos_extra: Optional[Dict] = None,
+        datos: Optional[Dict] = None,
         prioridad: str = 'normal',
-        force: bool = False
+        force: bool = False,
+        tipo_codigo: Optional[str] = None,
     ) -> Optional[Notificacion]:
         """
-        Envía una notificación individual a un usuario.
+        Envia una notificacion individual a un usuario.
 
         Args:
-            tipo: Instancia de TipoNotificacion
+            tipo: Instancia de TipoNotificacion (o usar tipo_codigo)
             usuario: Instancia de User destinatario
-            titulo: Título de la notificación
-            mensaje: Cuerpo del mensaje
-            url: URL opcional para navegación al hacer clic
+            titulo: Titulo de la notificacion (o se genera desde plantilla del tipo)
+            mensaje: Cuerpo del mensaje (o se genera desde plantilla del tipo)
+            url: URL opcional para navegacion al hacer clic
             datos_extra: Diccionario opcional con datos JSON adicionales
+            datos: Alias de datos_extra (compatibilidad con NotificadorTH)
             prioridad: 'baja' | 'normal' | 'alta' | 'urgente' (default: 'normal')
             force: Si True, ignora preferencias de usuario (default: False)
+            tipo_codigo: Codigo string del TipoNotificacion (alternativa a pasar instancia)
 
         Returns:
-            Notificacion instance si se creó, None si se bloqueó por preferencias
+            Notificacion instance si se creo, None si se bloqueo por preferencias
 
         Example:
+            # Modo clasico (instancia):
             >>> tipo = TipoNotificacion.objects.get(codigo='NUEVA_TAREA')
-            >>> notif = NotificationService.send_notification(
-            ...     tipo=tipo,
-            ...     usuario=request.user,
-            ...     titulo="Nueva tarea asignada",
-            ...     mensaje="Revisa la tarea urgente en el módulo de planeación",
-            ...     url="/planeacion/tareas/456",
-            ...     prioridad='alta'
+            >>> NotificationService.send_notification(
+            ...     tipo=tipo, usuario=user,
+            ...     titulo="Nueva tarea", mensaje="Detalles..."
+            ... )
+
+            # Modo simplificado (codigo + datos para plantilla):
+            >>> NotificationService.send_notification(
+            ...     tipo_codigo='TH_EVALUACION_PENDIENTE',
+            ...     usuario=user,
+            ...     datos={'periodo': '2026-Q1'},
+            ...     url='/talent-hub/desempeno/evaluaciones/1'
             ... )
         """
         try:
+            # Resolver tipo desde codigo si se paso string
+            if tipo_codigo and not tipo:
+                tipo = TipoNotificacion.objects.filter(codigo=tipo_codigo).first()
+                if not tipo:
+                    logger.warning(f"TipoNotificacion '{tipo_codigo}' no encontrado")
+                    return None
+
+            # Alias datos -> datos_extra (compatibilidad NotificadorTH)
+            if datos and not datos_extra:
+                datos_extra = datos
+
+            # Si no hay titulo/mensaje, renderizar desde plantilla del tipo
+            if tipo and not titulo and tipo.plantilla_titulo:
+                titulo = NotificationService.render_template(
+                    tipo.plantilla_titulo, datos_extra or {}
+                )
+            if tipo and not mensaje and tipo.plantilla_mensaje:
+                mensaje = NotificationService.render_template(
+                    tipo.plantilla_mensaje, datos_extra or {}
+                )
+
+            # Fallbacks si aun no hay titulo/mensaje
+            if not titulo:
+                titulo = tipo.nombre if tipo else 'Notificacion'
+            if not mensaje:
+                mensaje = ''
+
+            # Validar usuario
+            if not usuario:
+                logger.warning("send_notification llamado sin usuario")
+                return None
+
             # Obtener preferencias del usuario para este tipo
             preferencias = PreferenciaNotificacion.objects.filter(
                 usuario=usuario,
                 tipo_notificacion=tipo
-            ).first()
+            ).first() if tipo else None
 
             # Verificar horario si no es forzado
             if not force and preferencias:

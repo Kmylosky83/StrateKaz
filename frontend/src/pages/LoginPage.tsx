@@ -10,6 +10,7 @@ import { useAuthStore } from '@/store/authStore';
 import { Button } from '@/components/common/Button';
 import { TenantSelector } from '@/components/common/TenantSelector';
 import { Input } from '@/components/forms/Input';
+import { Link } from 'react-router-dom';
 import { Mail, Lock, Key, ShieldCheck } from 'lucide-react';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import { APP_VERSION } from '@/constants/brand';
@@ -326,9 +327,10 @@ export const LoginPage = () => {
         {/* Tarjeta con Glassmorphism - Adaptada para fondo oscuro o claro */}
         <motion.div
           className={`backdrop-blur-xl rounded-2xl shadow-xl p-6 sm:p-8 md:p-10 lg:p-12
-                     ${useNetworkBackground
-                       ? 'bg-neutral-900/80 border border-neutral-700/50'
-                       : 'bg-white/70 dark:bg-gray-800/70 border border-white/20 dark:border-gray-700/50'
+                     ${
+                       useNetworkBackground
+                         ? 'bg-neutral-900/80 border border-neutral-700/50'
+                         : 'bg-white/70 dark:bg-gray-800/70 border border-white/20 dark:border-gray-700/50'
                      }`}
           variants={itemVariants}
         >
@@ -337,7 +339,9 @@ export const LoginPage = () => {
             <motion.div className="text-center mb-6 sm:mb-8" variants={logoVariants}>
               {/* Logo con loading state */}
               {brandingLoading ? (
-                <div className={`mx-auto h-16 sm:h-20 w-16 sm:w-20 rounded-full animate-pulse-subtle mb-4 ${useNetworkBackground ? 'bg-neutral-700' : 'bg-gray-200 dark:bg-gray-700'}`} />
+                <div
+                  className={`mx-auto h-16 sm:h-20 w-16 sm:w-20 rounded-full animate-pulse-subtle mb-4 ${useNetworkBackground ? 'bg-neutral-700' : 'bg-gray-200 dark:bg-gray-700'}`}
+                />
               ) : (
                 <>
                   {/* Si hay fondo de red, siempre mostrar logo blanco; si no, usar lógica dark/light */}
@@ -364,17 +368,25 @@ export const LoginPage = () => {
                 </>
               )}
 
-              <h1 className={`text-xl sm:text-2xl md:text-3xl font-bold font-heading leading-tight break-words ${useNetworkBackground ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
+              <h1
+                className={`text-xl sm:text-2xl md:text-3xl font-bold font-heading leading-tight break-words ${useNetworkBackground ? 'text-white' : 'text-gray-900 dark:text-white'}`}
+              >
                 {brandingLoading ? (
-                  <span className={`inline-block h-8 w-48 rounded animate-pulse-subtle ${useNetworkBackground ? 'bg-neutral-700' : 'bg-gray-200 dark:bg-gray-700'}`} />
+                  <span
+                    className={`inline-block h-8 w-48 rounded animate-pulse-subtle ${useNetworkBackground ? 'bg-neutral-700' : 'bg-gray-200 dark:bg-gray-700'}`}
+                  />
                 ) : (
                   companyName
                 )}
               </h1>
 
-              <p className={`mt-2 text-xs sm:text-sm ${useNetworkBackground ? 'text-neutral-400' : 'text-gray-600 dark:text-gray-400'}`}>
+              <p
+                className={`mt-2 text-xs sm:text-sm ${useNetworkBackground ? 'text-neutral-400' : 'text-gray-600 dark:text-gray-400'}`}
+              >
                 {brandingLoading ? (
-                  <span className={`inline-block h-4 w-32 rounded animate-pulse-subtle ${useNetworkBackground ? 'bg-neutral-700' : 'bg-gray-200 dark:bg-gray-700'}`} />
+                  <span
+                    className={`inline-block h-4 w-32 rounded animate-pulse-subtle ${useNetworkBackground ? 'bg-neutral-700' : 'bg-gray-200 dark:bg-gray-700'}`}
+                  />
                 ) : (
                   companySlogan
                 )}
@@ -396,14 +408,23 @@ export const LoginPage = () => {
                   label="Correo electrónico"
                   type="email"
                   autoComplete="email"
-                  leftIcon={<Mail className={`h-5 w-5 ${useNetworkBackground ? 'text-neutral-400' : 'text-gray-400'}`} />}
+                  leftIcon={
+                    <Mail
+                      className={`h-5 w-5 ${useNetworkBackground ? 'text-neutral-400' : 'text-gray-400'}`}
+                    />
+                  }
                   {...register('email')}
                   error={errors.email?.message}
-                  className={useNetworkBackground
-                    ? 'bg-neutral-800/50 border-neutral-600 text-white placeholder:text-neutral-500'
-                    : 'bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm'
+                  className={
+                    useNetworkBackground
+                      ? 'bg-neutral-800/50 border-neutral-600 text-white placeholder:text-neutral-500'
+                      : 'bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm'
                   }
-                  style={useNetworkBackground ? { '--tw-ring-color': `${primaryColor}33` } as React.CSSProperties : undefined}
+                  style={
+                    useNetworkBackground
+                      ? ({ '--tw-ring-color': `${primaryColor}33` } as React.CSSProperties)
+                      : undefined
+                  }
                   labelClassName={useNetworkBackground ? 'text-neutral-300' : undefined}
                   placeholder="correo@ejemplo.com"
                 />
@@ -412,14 +433,23 @@ export const LoginPage = () => {
                   label="Contraseña"
                   type="password"
                   autoComplete="current-password"
-                  leftIcon={<Lock className={`h-5 w-5 ${useNetworkBackground ? 'text-neutral-400' : 'text-gray-400'}`} />}
+                  leftIcon={
+                    <Lock
+                      className={`h-5 w-5 ${useNetworkBackground ? 'text-neutral-400' : 'text-gray-400'}`}
+                    />
+                  }
                   {...register('password')}
                   error={errors.password?.message}
-                  className={useNetworkBackground
-                    ? 'bg-neutral-800/50 border-neutral-600 text-white placeholder:text-neutral-500'
-                    : 'bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm'
+                  className={
+                    useNetworkBackground
+                      ? 'bg-neutral-800/50 border-neutral-600 text-white placeholder:text-neutral-500'
+                      : 'bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm'
                   }
-                  style={useNetworkBackground ? { '--tw-ring-color': `${primaryColor}33` } as React.CSSProperties : undefined}
+                  style={
+                    useNetworkBackground
+                      ? ({ '--tw-ring-color': `${primaryColor}33` } as React.CSSProperties)
+                      : undefined
+                  }
                   labelClassName={useNetworkBackground ? 'text-neutral-300' : undefined}
                 />
               </div>
@@ -431,6 +461,16 @@ export const LoginPage = () => {
               >
                 {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
               </Button>
+
+              <div className="text-center pt-1">
+                <Link
+                  to="/forgot-password"
+                  className={`text-sm hover:underline ${useNetworkBackground ? '' : 'text-gray-600 dark:text-gray-400'}`}
+                  style={useNetworkBackground ? { color: primaryColor } : undefined}
+                >
+                  ¿Olvidaste tu contraseña?
+                </Link>
+              </div>
             </motion.form>
           )}
 
@@ -442,13 +482,20 @@ export const LoginPage = () => {
               variants={itemVariants}
               key="2fa-form"
             >
-              <div className={`rounded-lg p-4 mb-4 ${useNetworkBackground
-                ? 'bg-blue-900/30 border border-blue-700/50'
-                : 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'
-              }`}>
+              <div
+                className={`rounded-lg p-4 mb-4 ${
+                  useNetworkBackground
+                    ? 'bg-blue-900/30 border border-blue-700/50'
+                    : 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'
+                }`}
+              >
                 <div className="flex items-start gap-3">
-                  <ShieldCheck className={`h-5 w-5 mt-0.5 flex-shrink-0 ${useNetworkBackground ? 'text-blue-400' : 'text-blue-600 dark:text-blue-400'}`} />
-                  <div className={`text-sm ${useNetworkBackground ? 'text-blue-200' : 'text-blue-800 dark:text-blue-200'}`}>
+                  <ShieldCheck
+                    className={`h-5 w-5 mt-0.5 flex-shrink-0 ${useNetworkBackground ? 'text-blue-400' : 'text-blue-600 dark:text-blue-400'}`}
+                  />
+                  <div
+                    className={`text-sm ${useNetworkBackground ? 'text-blue-200' : 'text-blue-800 dark:text-blue-200'}`}
+                  >
                     <p className="font-medium mb-1">Verificación de dos factores</p>
                     <p className="text-xs">
                       {useBackupCode
@@ -465,14 +512,23 @@ export const LoginPage = () => {
                 autoComplete="off"
                 autoFocus
                 maxLength={6}
-                leftIcon={<Key className={`h-5 w-5 ${useNetworkBackground ? 'text-neutral-400' : 'text-gray-400'}`} />}
+                leftIcon={
+                  <Key
+                    className={`h-5 w-5 ${useNetworkBackground ? 'text-neutral-400' : 'text-gray-400'}`}
+                  />
+                }
                 {...register2FA('token')}
                 error={errors2FA.token?.message}
-                className={useNetworkBackground
-                  ? 'bg-neutral-800/50 border-neutral-600 text-white placeholder:text-neutral-500'
-                  : 'bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm'
+                className={
+                  useNetworkBackground
+                    ? 'bg-neutral-800/50 border-neutral-600 text-white placeholder:text-neutral-500'
+                    : 'bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm'
                 }
-                style={useNetworkBackground ? { '--tw-ring-color': `${primaryColor}33` } as React.CSSProperties : undefined}
+                style={
+                  useNetworkBackground
+                    ? ({ '--tw-ring-color': `${primaryColor}33` } as React.CSSProperties)
+                    : undefined
+                }
                 labelClassName={useNetworkBackground ? 'text-neutral-300' : undefined}
                 placeholder="123456"
               />
@@ -512,10 +568,7 @@ export const LoginPage = () => {
 
           {loginStep === 'tenant-select' && (
             /* Selector de Tenant */
-            <motion.div
-              variants={itemVariants}
-              key="tenant-select"
-            >
+            <motion.div variants={itemVariants} key="tenant-select">
               <TenantSelector
                 tenants={accessibleTenants}
                 lastTenantId={tenantUser?.last_tenant_id ?? null}
@@ -543,7 +596,13 @@ export const LoginPage = () => {
             v{APP_VERSION} • Powered by{' '}
             <span
               className="font-medium hover:opacity-80 transition-opacity cursor-default"
-              style={{ color: useNetworkBackground ? primaryColor : (loginBackground && imageLoaded ? '#ffffff' : primaryColor) }}
+              style={{
+                color: useNetworkBackground
+                  ? primaryColor
+                  : loginBackground && imageLoaded
+                    ? '#ffffff'
+                    : primaryColor,
+              }}
             >
               StrateKaz
             </span>

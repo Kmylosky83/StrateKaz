@@ -105,7 +105,7 @@ export const OrganigramaToolbar = ({
 
   // Opciones de modo de vista
   const viewModeOptions = [
-    { value: 'areas' as ViewMode, label: 'Por Áreas', icon: <Grid3X3 className="h-4 w-4" /> },
+    { value: 'areas' as ViewMode, label: 'Por Procesos', icon: <Grid3X3 className="h-4 w-4" /> },
     { value: 'cargos' as ViewMode, label: 'Por Cargos', icon: <Network className="h-4 w-4" /> },
     { value: 'compact' as ViewMode, label: 'Compacto', icon: <LayoutList className="h-4 w-4" /> },
   ];
@@ -129,7 +129,7 @@ export const OrganigramaToolbar = ({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               type="search"
-              placeholder="Buscar área o cargo..."
+              placeholder="Buscar proceso o cargo..."
               value={searchValue}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-9 h-9"
@@ -148,9 +148,10 @@ export const OrganigramaToolbar = ({
               onClick={() => onViewModeChange(option.value)}
               className={`
                 flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors
-                ${viewMode === option.value
-                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                ${
+                  viewMode === option.value
+                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
                 }
               `}
               title={option.label}
@@ -173,9 +174,10 @@ export const OrganigramaToolbar = ({
             }
             items={nivelOptions.map((option) => ({
               label: option.label,
-              onClick: () => onFiltersChange({
-                nivelJerarquico: option.value as NivelJerarquico | 'all',
-              }),
+              onClick: () =>
+                onFiltersChange({
+                  nivelJerarquico: option.value as NivelJerarquico | 'all',
+                }),
             }))}
           />
         )}
@@ -185,28 +187,13 @@ export const OrganigramaToolbar = ({
 
         {/* Controles de zoom */}
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onZoomIn}
-            title="Acercar"
-          >
+          <Button variant="ghost" size="sm" onClick={onZoomIn} title="Acercar">
             <ZoomIn className="h-4 w-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onZoomOut}
-            title="Alejar"
-          >
+          <Button variant="ghost" size="sm" onClick={onZoomOut} title="Alejar">
             <ZoomOut className="h-4 w-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onFitView}
-            title="Ajustar vista"
-          >
+          <Button variant="ghost" size="sm" onClick={onFitView} title="Ajustar vista">
             <Maximize className="h-4 w-4" />
           </Button>
           <Button
@@ -224,28 +211,13 @@ export const OrganigramaToolbar = ({
 
         {/* Expandir/Colapsar */}
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onExpandAll}
-            title="Expandir todo"
-          >
+          <Button variant="ghost" size="sm" onClick={onExpandAll} title="Expandir todo">
             <Expand className="h-4 w-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onCollapseAll}
-            title="Colapsar todo"
-          >
+          <Button variant="ghost" size="sm" onClick={onCollapseAll} title="Colapsar todo">
             <Minimize className="h-4 w-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onResetLayout}
-            title="Restablecer layout"
-          >
+          <Button variant="ghost" size="sm" onClick={onResetLayout} title="Restablecer layout">
             <RotateCcw className="h-4 w-4" />
           </Button>
         </div>
@@ -286,7 +258,7 @@ export const OrganigramaToolbar = ({
         {stats && !isLoading && (
           <div className="hidden lg:flex items-center gap-2 ml-auto">
             <Badge variant="gray" size="sm">
-              {stats.areas_activas} áreas
+              {stats.areas_activas} procesos
             </Badge>
             <Badge variant="gray" size="sm">
               {stats.cargos_activos} cargos

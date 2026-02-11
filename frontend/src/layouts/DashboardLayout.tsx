@@ -19,6 +19,7 @@ import { cn } from '@/utils/cn';
 import { useRouteTracker } from '@/hooks/useLastRoute';
 import { useIsMobile, useIsTablet } from '@/hooks/useMediaQuery';
 import { BottomNavigation } from '@/components/mobile';
+import { useAuthStore } from '@/store/authStore';
 
 export const DashboardLayout = () => {
   const isMobile = useIsMobile();
@@ -30,6 +31,18 @@ export const DashboardLayout = () => {
 
   // Persistir ultima ruta visitada para landing inteligente
   useRouteTracker();
+
+  // Cargar perfil del User (core.User) cuando hay tenant pero no user
+  // Esto cubre: recarga de página (F5), navegación directa, primer acceso
+  const currentTenantId = useAuthStore((state) => state.currentTenantId);
+  const user = useAuthStore((state) => state.user);
+  const loadUserProfile = useAuthStore((state) => state.loadUserProfile);
+
+  useEffect(() => {
+    if (currentTenantId && !user) {
+      loadUserProfile();
+    }
+  }, [currentTenantId, user, loadUserProfile]);
 
   // Auto-collapse en tablet, auto-close en mobile cuando cambia el viewport
   useEffect(() => {
@@ -129,9 +142,7 @@ export const DashboardLayout = () => {
         </main>
 
         {/* Bottom Navigation - Solo visible en mobile */}
-        <BottomNavigation
-          onOpenMenu={() => setIsMobileMenuOpen(true)}
-        />
+        <BottomNavigation onOpenMenu={() => setIsMobileMenuOpen(true)} />
       </div>
     </HeaderProvider>
   );

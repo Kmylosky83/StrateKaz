@@ -72,12 +72,7 @@ const COLOR_OPTIONS = [
 
 // ==================== COMPONENT ====================
 
-export const AreaFormModal = ({
-  area,
-  isOpen,
-  onClose,
-  onSuccess,
-}: AreaFormModalProps) => {
+export const AreaFormModal = ({ area, isOpen, onClose, onSuccess }: AreaFormModalProps) => {
   const isEditing = !!area;
 
   // Hooks de mutación
@@ -157,12 +152,10 @@ export const AreaFormModal = ({
   const parentOptions = useMemo(() => {
     const areas = areasData?.results || [];
     // Filtrar área actual si estamos editando (no puede ser su propio padre)
-    const filtered = area
-      ? areas.filter((a) => a.id !== area.id)
-      : areas;
+    const filtered = area ? areas.filter((a) => a.id !== area.id) : areas;
 
     return [
-      { value: '', label: 'Sin área padre (raíz)' },
+      { value: '', label: 'Sin proceso padre (raiz)' },
       ...filtered.map((a) => ({
         value: a.id.toString(),
         label: a.name,
@@ -217,11 +210,11 @@ export const AreaFormModal = ({
     <BaseModal
       isOpen={isOpen}
       onClose={onClose}
-      title={isEditing ? 'Editar Área' : 'Nueva Área'}
+      title={isEditing ? 'Editar Proceso' : 'Nuevo Proceso'}
       subtitle={
         isEditing
-          ? `Modificar información del área ${area?.code}`
-          : 'Complete los campos para crear una nueva área o departamento'
+          ? `Modificar informacion del proceso ${area?.code}`
+          : 'Complete los campos para crear un nuevo proceso organizacional'
       }
       size="lg"
       id="area-form-modal"
@@ -236,7 +229,7 @@ export const AreaFormModal = ({
             disabled={isPending}
             isLoading={isPending}
           >
-            {isEditing ? 'Guardar Cambios' : 'Crear Área'}
+            {isEditing ? 'Guardar Cambios' : 'Crear Proceso'}
           </Button>
         </>
       }
@@ -255,7 +248,7 @@ export const AreaFormModal = ({
               label="Código *"
               placeholder="Ej: GER, OPE, ADM"
               error={errors.code?.message}
-              helperText="Código único del área (3-20 caracteres)"
+              helperText="Codigo unico del proceso (3-20 caracteres)"
               {...register('code', {
                 required: 'El código es obligatorio',
                 minLength: {
@@ -298,7 +291,7 @@ export const AreaFormModal = ({
           {/* Descripción */}
           <Textarea
             label="Descripción"
-            placeholder="Descripción de las funciones y responsabilidades del área..."
+            placeholder="Descripcion del proceso, alcance y responsabilidades..."
             rows={3}
             error={errors.description?.message}
             {...register('description', {
@@ -325,10 +318,10 @@ export const AreaFormModal = ({
               control={control}
               render={({ field }) => (
                 <Select
-                  label="Área Padre"
+                  label="Proceso Padre"
                   options={parentOptions}
-                  placeholder="Seleccionar área padre"
-                  helperText="Deje vacío si es un área raíz"
+                  placeholder="Seleccionar proceso padre"
+                  helperText="Deje vacio si es un proceso raiz"
                   {...field}
                   disabled={isPending}
                 />
@@ -361,7 +354,7 @@ export const AreaFormModal = ({
                   label="Responsable"
                   options={managerOptions}
                   placeholder="Seleccionar responsable"
-                  helperText="Usuario responsable del área"
+                  helperText="Usuario responsable del proceso"
                   {...field}
                   disabled={isPending}
                 />
@@ -401,39 +394,61 @@ export const AreaFormModal = ({
                 Vista previa
               </label>
               <div className="flex items-center gap-3 p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-                <div className={`p-2 rounded-lg ${
-                  watchedColor === 'blue' ? 'bg-blue-100 dark:bg-blue-900/30' :
-                  watchedColor === 'green' ? 'bg-green-100 dark:bg-green-900/30' :
-                  watchedColor === 'red' ? 'bg-red-100 dark:bg-red-900/30' :
-                  watchedColor === 'amber' ? 'bg-amber-100 dark:bg-amber-900/30' :
-                  watchedColor === 'orange' ? 'bg-orange-100 dark:bg-orange-900/30' :
-                  watchedColor === 'teal' ? 'bg-teal-100 dark:bg-teal-900/30' :
-                  watchedColor === 'cyan' ? 'bg-cyan-100 dark:bg-cyan-900/30' :
-                  watchedColor === 'indigo' ? 'bg-indigo-100 dark:bg-indigo-900/30' :
-                  watchedColor === 'pink' ? 'bg-pink-100 dark:bg-pink-900/30' :
-                  watchedColor === 'gray' ? 'bg-gray-100 dark:bg-gray-700' :
-                  'bg-purple-100 dark:bg-purple-900/30'
-                }`}>
+                <div
+                  className={`p-2 rounded-lg ${
+                    watchedColor === 'blue'
+                      ? 'bg-blue-100 dark:bg-blue-900/30'
+                      : watchedColor === 'green'
+                        ? 'bg-green-100 dark:bg-green-900/30'
+                        : watchedColor === 'red'
+                          ? 'bg-red-100 dark:bg-red-900/30'
+                          : watchedColor === 'amber'
+                            ? 'bg-amber-100 dark:bg-amber-900/30'
+                            : watchedColor === 'orange'
+                              ? 'bg-orange-100 dark:bg-orange-900/30'
+                              : watchedColor === 'teal'
+                                ? 'bg-teal-100 dark:bg-teal-900/30'
+                                : watchedColor === 'cyan'
+                                  ? 'bg-cyan-100 dark:bg-cyan-900/30'
+                                  : watchedColor === 'indigo'
+                                    ? 'bg-indigo-100 dark:bg-indigo-900/30'
+                                    : watchedColor === 'pink'
+                                      ? 'bg-pink-100 dark:bg-pink-900/30'
+                                      : watchedColor === 'gray'
+                                        ? 'bg-gray-100 dark:bg-gray-700'
+                                        : 'bg-purple-100 dark:bg-purple-900/30'
+                  }`}
+                >
                   <DynamicIcon
                     name={watchedIcon || 'Building2'}
                     size={24}
                     className={
-                      watchedColor === 'blue' ? 'text-blue-600 dark:text-blue-400' :
-                      watchedColor === 'green' ? 'text-green-600 dark:text-green-400' :
-                      watchedColor === 'red' ? 'text-red-600 dark:text-red-400' :
-                      watchedColor === 'amber' ? 'text-amber-600 dark:text-amber-400' :
-                      watchedColor === 'orange' ? 'text-orange-600 dark:text-orange-400' :
-                      watchedColor === 'teal' ? 'text-teal-600 dark:text-teal-400' :
-                      watchedColor === 'cyan' ? 'text-cyan-600 dark:text-cyan-400' :
-                      watchedColor === 'indigo' ? 'text-indigo-600 dark:text-indigo-400' :
-                      watchedColor === 'pink' ? 'text-pink-600 dark:text-pink-400' :
-                      watchedColor === 'gray' ? 'text-gray-600 dark:text-gray-400' :
-                      'text-purple-600 dark:text-purple-400'
+                      watchedColor === 'blue'
+                        ? 'text-blue-600 dark:text-blue-400'
+                        : watchedColor === 'green'
+                          ? 'text-green-600 dark:text-green-400'
+                          : watchedColor === 'red'
+                            ? 'text-red-600 dark:text-red-400'
+                            : watchedColor === 'amber'
+                              ? 'text-amber-600 dark:text-amber-400'
+                              : watchedColor === 'orange'
+                                ? 'text-orange-600 dark:text-orange-400'
+                                : watchedColor === 'teal'
+                                  ? 'text-teal-600 dark:text-teal-400'
+                                  : watchedColor === 'cyan'
+                                    ? 'text-cyan-600 dark:text-cyan-400'
+                                    : watchedColor === 'indigo'
+                                      ? 'text-indigo-600 dark:text-indigo-400'
+                                      : watchedColor === 'pink'
+                                        ? 'text-pink-600 dark:text-pink-400'
+                                        : watchedColor === 'gray'
+                                          ? 'text-gray-600 dark:text-gray-400'
+                                          : 'text-purple-600 dark:text-purple-400'
                     }
                   />
                 </div>
                 <span className="text-sm text-gray-600 dark:text-gray-400">
-                  Así se verá el área
+                  Asi se vera el proceso
                 </span>
               </div>
             </div>
@@ -464,7 +479,7 @@ export const AreaFormModal = ({
                     ))}
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Selecciona el color que identificará esta área
+                    Selecciona el color que identificara este proceso
                   </p>
                 </div>
               )}
@@ -477,10 +492,10 @@ export const AreaFormModal = ({
             control={control}
             render={({ field }) => (
               <AreaIconSelector
-                label="Icono del area"
+                label="Icono del proceso"
                 value={field.value}
                 onChange={field.onChange}
-                helperText="Selecciona un icono para identificar visualmente esta area"
+                helperText="Selecciona un icono para identificar visualmente este proceso"
                 disabled={isPending}
                 columns={8}
               />
@@ -495,10 +510,10 @@ export const AreaFormModal = ({
             control={control}
             render={({ field: { value, onChange, ...field } }) => (
               <Switch
-                label="Área Activa"
+                label="Proceso Activo"
                 checked={value}
                 onCheckedChange={onChange}
-                description="Las áreas inactivas no aparecen en los selectores"
+                description="Los procesos inactivos no aparecen en los selectores"
                 {...field}
                 disabled={isPending}
               />

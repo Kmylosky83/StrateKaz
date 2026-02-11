@@ -77,7 +77,7 @@ export const ConfiguracionPage = () => {
   const { data: sectionStats, isLoading: statsLoading } = useConfiguracionStats(activeSection);
 
   // Secciones que no tienen StatsGrid
-  const SECTIONS_WITHOUT_STATS = ['branding', 'normas_iso', 'modulos'];
+  const SECTIONS_WITHOUT_STATS = ['normas_iso', 'modulos'];
 
   // Mapear stats del backend a StatItem[]
   const statsItems: StatItem[] = useMemo(() => {
@@ -126,7 +126,8 @@ export const ConfiguracionPage = () => {
       />
 
       {/* StatsGrid - solo si hay stats y la sección lo soporta */}
-      {activeSection && !SECTIONS_WITHOUT_STATS.includes(activeSection) &&
+      {activeSection &&
+        !SECTIONS_WITHOUT_STATS.includes(activeSection) &&
         (statsLoading ? (
           <StatsGridSkeleton count={4} />
         ) : statsItems.length > 0 ? (

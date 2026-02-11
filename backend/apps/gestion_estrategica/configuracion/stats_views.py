@@ -76,26 +76,31 @@ def config_stats_view(request):
 
 
 def calculate_empresa_stats():
-    """Calcula estadisticas de la seccion Empresa"""
-    from .models import EmpresaConfig
+    """
+    Calcula estadisticas de la seccion Empresa.
+
+    Lee datos del Tenant actual (via django-tenants connection.tenant)
+    que es el modelo fuente editado por /api/tenant/tenants/me/.
+    """
+    from django.db import connection
 
     stats = []
-    instance = EmpresaConfig.get_instance()
 
-    if not instance:
-        # No hay configuracion
+    # Obtener el Tenant actual del schema activo
+    tenant = getattr(connection, 'tenant', None)
+    if not tenant:
         stats.append({
             'key': 'is_configured',
             'label': 'Estado',
             'value': 'Sin configurar',
             'icon': 'AlertCircle',
             'iconColor': 'warning',
-            'description': 'La empresa no ha sido configurada'
+            'description': 'No se pudo determinar la empresa actual'
         })
         return stats
 
-    # Empresa configurada
-    is_configured = bool(instance.nit)
+    # Empresa configurada (tiene NIT?)
+    is_configured = bool(getattr(tenant, 'nit', None))
     stats.append({
         'key': 'is_configured',
         'label': 'Estado',
@@ -105,14 +110,15 @@ def calculate_empresa_stats():
     })
 
     # Antiguedad
-    if instance.fecha_constitucion:
+    fecha_constitucion = getattr(tenant, 'fecha_constitucion', None)
+    if fecha_constitucion:
         today = timezone.now().date()
-        dias = (today - instance.fecha_constitucion).days
+        dias = (today - fecha_constitucion).days
         years = dias // 365
         months = (dias % 365) // 30
 
         if years > 0:
-            antiguedad_text = f"{years} año{'s' if years > 1 else ''}"
+            antiguedad_text = f"{years} ano{'s' if years > 1 else ''}"
             if months > 0:
                 antiguedad_text += f", {months} mes{'es' if months > 1 else ''}"
         else:
@@ -126,39 +132,31 @@ def calculate_empresa_stats():
             'iconColor': 'primary',
         })
 
-    # Campos completos - CORREGIDO: usar nombres de campos reales del modelo
-    # Verificar en models.py (EmpresaConfig) para nombres exactos
+    # Campos completos - usando campos del modelo Tenant
     campos_requeridos = [
-        # Datos de identificación fiscal
-        'razon_social',           # CharField - requerido
-        'nit',                    # CharField - requerido (unique)
-        'representante_legal',    # CharField - requerido
-        'tipo_sociedad',         # CharField con choices - requerido (no tipo_empresa)
-        'regimen_tributario',     # CharField con choices - requerido
-
+        # Datos de identificacion fiscal
+        'razon_social',
+        'nit',
+        'representante_legal',
+        'tipo_sociedad',
+        'regimen_tributario',
         # Datos de contacto oficial
-        'direccion_fiscal',       # TextField - requerido (no direccion)
-        'ciudad',                 # CharField - requerido
-        'departamento',           # CharField con choices - requerido
-        'telefono_principal',     # CharField - requerido (no telefono)
-        'email_corporativo',      # EmailField - requerido (no email)
-
-        # Datos opcionales pero importantes para funcionalidad completa
-        'actividad_economica',    # CharField - opcional pero importante (CIIU)
-        'nombre_comercial',       # CharField - opcional
+        'direccion_fiscal',
+        'ciudad',
+        'departamento',
+        'telefono_principal',
+        'email_corporativo',
+        # Datos opcionales pero importantes
+        'actividad_economica',
+        'nombre_comercial',
     ]
 
-    # Contar cuántos de estos campos tienen valor
     campos_completos = 0
     for campo in campos_requeridos:
-        valor = getattr(instance, campo, None)
-        # Un campo se considera completo si:
-        # 1. No es None
-        # 2. No es una cadena vacía (si es string)
-        # 3. No es solo espacios en blanco
+        valor = getattr(tenant, campo, None)
         if valor is not None:
             if isinstance(valor, str):
-                if valor.strip():  # Tiene contenido no vacío
+                if valor.strip():
                     campos_completos += 1
             else:
                 campos_completos += 1

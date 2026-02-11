@@ -79,9 +79,10 @@ class UserDetailSerializer(serializers.ModelSerializer):
 
     full_name = serializers.SerializerMethodField()
     cargo = CargoSerializer(read_only=True)
-    created_by_username = serializers.CharField(source='created_by.username', read_only=True)
+    created_by_username = serializers.CharField(source='created_by.username', read_only=True, allow_null=True, default=None)
     document_type_display = serializers.CharField(source='get_document_type_display', read_only=True)
-    cargo_level = serializers.IntegerField(read_only=True)
+    cargo_code = serializers.CharField(read_only=True, allow_null=True)
+    cargo_level = serializers.IntegerField(read_only=True, allow_null=True)
     is_deleted = serializers.BooleanField(read_only=True)
 
     # Campos RBAC para control de acceso
@@ -90,7 +91,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
 
     # Campos de contexto laboral para perfil/dropdown
     empresa_nombre = serializers.SerializerMethodField()
-    area_nombre = serializers.CharField(source='cargo.area.name', read_only=True)
+    area_nombre = serializers.SerializerMethodField()
 
     # URL de foto de perfil
     photo_url = serializers.SerializerMethodField()
@@ -105,6 +106,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'last_name',
             'full_name',
             'cargo',
+            'cargo_code',
             'cargo_level',
             'phone',
             'document_type',
@@ -151,7 +153,14 @@ class UserDetailSerializer(serializers.ModelSerializer):
         """
         request = self.context.get('request')
         if request and hasattr(request, 'tenant') and request.tenant:
-            return request.tenant.company_name
+            return request.tenant.name
+        return None
+
+    def get_area_nombre(self, obj):
+        """Retorna el nombre del área del cargo (None si no tiene cargo o área)"""
+        cargo = getattr(obj, 'cargo', None)
+        if cargo and hasattr(cargo, 'area') and cargo.area:
+            return cargo.area.name
         return None
 
     def get_photo_url(self, obj):

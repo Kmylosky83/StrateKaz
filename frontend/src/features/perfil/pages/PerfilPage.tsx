@@ -139,7 +139,7 @@ export const PerfilPage = () => {
             </h3>
             <div className="space-y-3 pl-7">
               <InfoItem icon={Building2} label="Empresa" value={empresaName} />
-              <InfoItem icon={Briefcase} label="Área" value={areaName} />
+              <InfoItem icon={Briefcase} label="Proceso" value={areaName} />
               <InfoItem icon={User} label="Cargo" value={cargoName} />
               <InfoItem icon={Calendar} label="Fecha de ingreso" value={dateJoined} />
             </div>

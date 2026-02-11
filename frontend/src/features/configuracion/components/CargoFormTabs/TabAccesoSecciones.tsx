@@ -118,7 +118,8 @@ export const TabAccesoSecciones = ({ cargoId, cargoName: _cargoName }: TabAcceso
         localAccess.can_edit !== serverAccess.can_edit ||
         localAccess.can_edit !== serverAccess.can_edit ||
         localAccess.can_delete !== serverAccess.can_delete ||
-        JSON.stringify(localAccess.custom_actions || {}) !== JSON.stringify(serverAccess.custom_actions || {})
+        JSON.stringify(localAccess.custom_actions || {}) !==
+          JSON.stringify(serverAccess.custom_actions || {})
       ) {
         return true;
       }
@@ -334,7 +335,8 @@ export const TabAccesoSecciones = ({ cargoId, cargoName: _cargoName }: TabAcceso
   );
 
   // Usuarios y autenticación
-  const { user, refreshProfile } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
+  const loadUserProfile = useAuthStore((s) => s.loadUserProfile);
 
   // Guardar cambios
   const handleSave = async () => {
@@ -347,7 +349,9 @@ export const TabAccesoSecciones = ({ cargoId, cargoName: _cargoName }: TabAcceso
     // Si estamos editando el cargo del usuario actual, refrescar su perfil
     // para que los cambios de permisos se reflejen inmediatamente en la UI
     if (user?.cargo?.id === cargoId) {
-      await refreshProfile();
+      // Forzar recarga del perfil para actualizar permission_codes
+      useAuthStore.setState({ user: null });
+      await loadUserProfile();
     }
   };
 
@@ -469,6 +473,12 @@ export const TabAccesoSecciones = ({ cargoId, cargoName: _cargoName }: TabAcceso
       <div className="border border-gray-200 dark:border-gray-700 rounded-lg divide-y divide-gray-200 dark:divide-gray-700 max-h-[50vh] overflow-y-auto">
         {modulesTree?.modules
           .filter((m) => m.is_enabled)
+          .filter((m) => {
+            // Solo mostrar módulos que tienen al menos una sección asignable
+            return m.tabs
+              .filter((t) => t.is_enabled)
+              .some((t) => t.sections.some((s) => s.is_enabled));
+          })
           .map((module) => {
             const isExpanded = expandedModules.has(module.id);
             const sectionIds = module.tabs
@@ -624,7 +634,9 @@ export const TabAccesoSecciones = ({ cargoId, cargoName: _cargoName }: TabAcceso
                                             <input
                                               type="checkbox"
                                               checked={access?.can_create || false}
-                                              onChange={() => toggleAction(section.id, 'can_create')}
+                                              onChange={() =>
+                                                toggleAction(section.id, 'can_create')
+                                              }
                                               className="sr-only"
                                             />
                                             <Plus className="h-3 w-3" />
@@ -662,7 +674,9 @@ export const TabAccesoSecciones = ({ cargoId, cargoName: _cargoName }: TabAcceso
                                             <input
                                               type="checkbox"
                                               checked={access?.can_delete || false}
-                                              onChange={() => toggleAction(section.id, 'can_delete')}
+                                              onChange={() =>
+                                                toggleAction(section.id, 'can_delete')
+                                              }
                                               className="sr-only"
                                             />
                                             <Trash2 className="h-3 w-3" />
@@ -670,11 +684,22 @@ export const TabAccesoSecciones = ({ cargoId, cargoName: _cargoName }: TabAcceso
 
                                           {/* Acciones Personalizadas Dinámicas */}
                                           {section.supported_actions?.map((actionName) => {
-                                            const isChecked = access?.custom_actions?.[actionName] || false;
+                                            const isChecked =
+                                              access?.custom_actions?.[actionName] || false;
                                             // Icon selection logic
                                             let ActionIcon = Zap;
-                                            if (['enviar', 'send', 'notificar'].some(k => actionName.toLowerCase().includes(k))) ActionIcon = Send;
-                                            if (['aprobar', 'approve', 'confirmar'].some(k => actionName.toLowerCase().includes(k))) ActionIcon = CheckCheck;
+                                            if (
+                                              ['enviar', 'send', 'notificar'].some((k) =>
+                                                actionName.toLowerCase().includes(k)
+                                              )
+                                            )
+                                              ActionIcon = Send;
+                                            if (
+                                              ['aprobar', 'approve', 'confirmar'].some((k) =>
+                                                actionName.toLowerCase().includes(k)
+                                              )
+                                            )
+                                              ActionIcon = CheckCheck;
 
                                             return (
                                               <label
@@ -690,7 +715,9 @@ export const TabAccesoSecciones = ({ cargoId, cargoName: _cargoName }: TabAcceso
                                                 <input
                                                   type="checkbox"
                                                   checked={isChecked}
-                                                  onChange={() => toggleCustomAction(section.id, actionName)}
+                                                  onChange={() =>
+                                                    toggleCustomAction(section.id, actionName)
+                                                  }
                                                   className="sr-only"
                                                 />
                                                 <ActionIcon className="h-3 w-3" />

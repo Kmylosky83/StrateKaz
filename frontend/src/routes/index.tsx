@@ -20,6 +20,8 @@ import { ProtectedRoute } from './ProtectedRoute';
 import { ModuleGuard } from './ModuleGuard';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { LoginPage } from '@/pages/LoginPage';
+import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
+import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
 import { AuthCallbackPage } from '@/pages/AuthCallbackPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { ErrorPage } from '@/pages/ErrorPage';
@@ -63,9 +65,7 @@ const ProyectosPage = lazy(() => import('@/features/gestion-estrategica/pages/Pr
 const RevisionDireccionPage = lazy(
   () => import('@/features/gestion-estrategica/pages/RevisionDireccionPage')
 );
-const ContextoPage = lazy(
-  () => import('@/features/gestion-estrategica/pages/ContextoPage')
-);
+const ContextoPage = lazy(() => import('@/features/gestion-estrategica/pages/ContextoPage'));
 
 // ==================== NIVEL 4: TALENTO HUMANO ====================
 const TalentHubPage = lazy(() =>
@@ -291,6 +291,8 @@ export const AppRoutes = () => {
       {/* RUTAS PUBLICAS */}
       {/* ═══════════════════════════════════════════════════════════════ */}
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
       <Route path="/encuestas/responder/:token" element={withSuspense(EncuestaPublicaPage)} />
 
@@ -405,25 +407,49 @@ export const AppRoutes = () => {
           {/* Modulo: talent_hub */}
           {/* ═══════════════════════════════════════════════════════════════ */}
           <Route path="/talento" element={<Navigate to="/talento/estructura" replace />} />
-          <Route path="/talento/estructura" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
+          <Route
+            path="/talento/estructura"
+            element={withModuleGuard(TalentHubPage, 'talent_hub')}
+          />
           <Route path="/talento/seleccion" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
-          <Route path="/talento/colaboradores" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
-          <Route path="/talento/onboarding" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
+          <Route
+            path="/talento/colaboradores"
+            element={withModuleGuard(TalentHubPage, 'talent_hub')}
+          />
+          <Route
+            path="/talento/onboarding"
+            element={withModuleGuard(TalentHubPage, 'talent_hub')}
+          />
           <Route path="/talento/formacion" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
           <Route path="/talento/desempeno" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
-          <Route path="/talento/control-tiempo" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
+          <Route
+            path="/talento/control-tiempo"
+            element={withModuleGuard(TalentHubPage, 'talent_hub')}
+          />
           <Route path="/talento/novedades" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
-          <Route path="/talento/disciplinario" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
+          <Route
+            path="/talento/disciplinario"
+            element={withModuleGuard(TalentHubPage, 'talent_hub')}
+          />
           <Route path="/talento/nomina" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
-          <Route path="/talento/off-boarding" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
+          <Route
+            path="/talento/off-boarding"
+            element={withModuleGuard(TalentHubPage, 'talent_hub')}
+          />
 
           {/* ═══════════════════════════════════════════════════════════════ */}
           {/* NIVEL 5: GESTION DE RIESGOS Y CUMPLIMIENTO */}
           {/* ═══════════════════════════════════════════════════════════════ */}
 
           {/* Modulo: Motor de Cumplimiento (motor_cumplimiento) */}
-          <Route path="/cumplimiento" element={<Navigate to="/cumplimiento/matriz-legal" replace />} />
-          <Route path="/cumplimiento/matriz-legal" element={withModuleGuard(MatrizLegalPage, 'motor_cumplimiento')} />
+          <Route
+            path="/cumplimiento"
+            element={<Navigate to="/cumplimiento/matriz-legal" replace />}
+          />
+          <Route
+            path="/cumplimiento/matriz-legal"
+            element={withModuleGuard(MatrizLegalPage, 'motor_cumplimiento')}
+          />
           <Route
             path="/cumplimiento/requisitos-legales"
             element={withModuleGuard(RequisitosLegalesPage, 'motor_cumplimiento')}
@@ -439,18 +465,42 @@ export const AppRoutes = () => {
 
           {/* Modulo: Motor de Riesgos (motor_riesgos) */}
           <Route path="/riesgos" element={<Navigate to="/riesgos/procesos" replace />} />
-          <Route path="/riesgos/procesos" element={withModuleGuard(RiesgosProcesosPage, 'motor_riesgos')} />
+          <Route
+            path="/riesgos/procesos"
+            element={withModuleGuard(RiesgosProcesosPage, 'motor_riesgos')}
+          />
           <Route path="/riesgos/ipevr" element={withModuleGuard(IPEVRPage, 'motor_riesgos')} />
-          <Route path="/riesgos/ambientales" element={withModuleGuard(AspectosAmbientalesPage, 'motor_riesgos')} />
-          <Route path="/riesgos/viales" element={withModuleGuard(RiesgosVialesPage, 'motor_riesgos')} />
-          <Route path="/riesgos/sagrilaft" element={withModuleGuard(SagrilaftPteePage, 'motor_riesgos')} />
-          <Route path="/riesgos/seguridad-info" element={withModuleGuard(SeguridadInformacionPage, 'motor_riesgos')} />
+          <Route
+            path="/riesgos/ambientales"
+            element={withModuleGuard(AspectosAmbientalesPage, 'motor_riesgos')}
+          />
+          <Route
+            path="/riesgos/viales"
+            element={withModuleGuard(RiesgosVialesPage, 'motor_riesgos')}
+          />
+          <Route
+            path="/riesgos/sagrilaft"
+            element={withModuleGuard(SagrilaftPteePage, 'motor_riesgos')}
+          />
+          <Route
+            path="/riesgos/seguridad-info"
+            element={withModuleGuard(SeguridadInformacionPage, 'motor_riesgos')}
+          />
 
           {/* Modulo: Flujos de Trabajo (workflow_engine) */}
           <Route path="/workflows" element={<Navigate to="/workflows/disenador" replace />} />
-          <Route path="/workflows/disenador" element={withModuleGuard(DisenadorFlujosPage, 'workflow_engine')} />
-          <Route path="/workflows/ejecucion" element={withModuleGuard(EjecucionPage, 'workflow_engine')} />
-          <Route path="/workflows/monitoreo" element={withModuleGuard(MonitoreoPage, 'workflow_engine')} />
+          <Route
+            path="/workflows/disenador"
+            element={withModuleGuard(DisenadorFlujosPage, 'workflow_engine')}
+          />
+          <Route
+            path="/workflows/ejecucion"
+            element={withModuleGuard(EjecucionPage, 'workflow_engine')}
+          />
+          <Route
+            path="/workflows/monitoreo"
+            element={withModuleGuard(MonitoreoPage, 'workflow_engine')}
+          />
 
           {/* ═══════════════════════════════════════════════════════════════ */}
           {/* NIVEL 6: GESTION INTEGRAL HSEQ */}
@@ -460,16 +510,25 @@ export const AppRoutes = () => {
           <Route path="/hseq/dashboard" element={withModuleGuard(HSEQPage, 'hseq_management')} />
 
           {/* Tab 1: Sistema Documental (Gestion Documental centralizada) */}
-          <Route path="/hseq/sistema-documental" element={withModuleGuard(SistemaDocumentalPage, 'hseq_management')} />
+          <Route
+            path="/hseq/sistema-documental"
+            element={withModuleGuard(SistemaDocumentalPage, 'hseq_management')}
+          />
 
           {/* Tab 2: Planificacion del Sistema (Plan de Trabajo Anual, Programas) */}
-          <Route path="/hseq/planificacion" element={withModuleGuard(PlanificacionSistemaPage, 'hseq_management')} />
+          <Route
+            path="/hseq/planificacion"
+            element={withModuleGuard(PlanificacionSistemaPage, 'hseq_management')}
+          />
 
           {/* Tab 3: Calidad (No conformidades, Auditorias) */}
           <Route path="/hseq/calidad" element={withModuleGuard(CalidadPage, 'hseq_management')} />
 
           {/* Tab 4: Medicina Laboral (Examenes medicos) */}
-          <Route path="/hseq/medicina-laboral" element={withModuleGuard(MedicinaLaboralPage, 'hseq_management')} />
+          <Route
+            path="/hseq/medicina-laboral"
+            element={withModuleGuard(MedicinaLaboralPage, 'hseq_management')}
+          />
 
           {/* Tab 5: Seguridad Industrial (Inspecciones, EPP) */}
           <Route
@@ -478,97 +537,217 @@ export const AppRoutes = () => {
           />
 
           {/* Tab 6: Higiene Industrial (Mediciones ambientales) */}
-          <Route path="/hseq/higiene-industrial" element={withModuleGuard(HigieneIndustrialPage, 'hseq_management')} />
+          <Route
+            path="/hseq/higiene-industrial"
+            element={withModuleGuard(HigieneIndustrialPage, 'hseq_management')}
+          />
 
           {/* Tab 7: Gestion de Comites */}
-          <Route path="/hseq/comites" element={withModuleGuard(GestionComitesPage, 'hseq_management')} />
+          <Route
+            path="/hseq/comites"
+            element={withModuleGuard(GestionComitesPage, 'hseq_management')}
+          />
 
           {/* Tab 8: Accidentalidad (ATEL - Investigacion AT/EL) */}
-          <Route path="/hseq/accidentalidad" element={withModuleGuard(AccidentalidadPage, 'hseq_management')} />
+          <Route
+            path="/hseq/accidentalidad"
+            element={withModuleGuard(AccidentalidadPage, 'hseq_management')}
+          />
 
           {/* Tab 9: Emergencias (Planes, Brigadas) */}
-          <Route path="/hseq/emergencias" element={withModuleGuard(EmergenciasPage, 'hseq_management')} />
+          <Route
+            path="/hseq/emergencias"
+            element={withModuleGuard(EmergenciasPage, 'hseq_management')}
+          />
 
           {/* Tab 10: Gestion Ambiental */}
-          <Route path="/hseq/gestion-ambiental" element={withModuleGuard(GestionAmbientalPage, 'hseq_management')} />
+          <Route
+            path="/hseq/gestion-ambiental"
+            element={withModuleGuard(GestionAmbientalPage, 'hseq_management')}
+          />
 
           {/* Tab 11: Mejora Continua (Acciones correctivas) */}
-          <Route path="/hseq/mejora-continua" element={withModuleGuard(MejoraContinuaPage, 'hseq_management')} />
+          <Route
+            path="/hseq/mejora-continua"
+            element={withModuleGuard(MejoraContinuaPage, 'hseq_management')}
+          />
 
           {/* ═══════════════════════════════════════════════════════════════ */}
           {/* NIVEL 7: OPERACIONES Y SOPORTE (Independientes entre si) */}
           {/* ═══════════════════════════════════════════════════════════════ */}
 
           {/* Modulo: Cadena de Suministro (supply_chain) */}
-          <Route path="/supply-chain" element={<Navigate to="/supply-chain/proveedores" replace />} />
-          <Route path="/supply-chain/proveedores" element={withModuleGuard(GestionProveedoresPage, 'supply_chain')} />
-          <Route path="/supply-chain/programacion" element={withModuleGuard(SupplyChainPage, 'supply_chain')} />
-          <Route path="/supply-chain/compras" element={withModuleGuard(SupplyChainPage, 'supply_chain')} />
-          <Route path="/supply-chain/almacenamiento" element={withModuleGuard(SupplyChainPage, 'supply_chain')} />
-          <Route path="/supply-chain/pruebas-acidez" element={withModuleGuard(SupplyChainPage, 'supply_chain')} />
-          <Route path="/supply-chain/catalogos" element={withModuleGuard(SupplyChainPage, 'supply_chain')} />
+          <Route
+            path="/supply-chain"
+            element={<Navigate to="/supply-chain/proveedores" replace />}
+          />
+          <Route
+            path="/supply-chain/proveedores"
+            element={withModuleGuard(GestionProveedoresPage, 'supply_chain')}
+          />
+          <Route
+            path="/supply-chain/programacion"
+            element={withModuleGuard(SupplyChainPage, 'supply_chain')}
+          />
+          <Route
+            path="/supply-chain/compras"
+            element={withModuleGuard(SupplyChainPage, 'supply_chain')}
+          />
+          <Route
+            path="/supply-chain/almacenamiento"
+            element={withModuleGuard(SupplyChainPage, 'supply_chain')}
+          />
+          <Route
+            path="/supply-chain/pruebas-acidez"
+            element={withModuleGuard(SupplyChainPage, 'supply_chain')}
+          />
+          <Route
+            path="/supply-chain/catalogos"
+            element={withModuleGuard(SupplyChainPage, 'supply_chain')}
+          />
 
           {/* Modulo: Operaciones de Produccion (production_ops) */}
           <Route path="/produccion" element={<Navigate to="/produccion/recepcion" replace />} />
-          <Route path="/produccion/recepcion" element={withModuleGuard(ProductionOpsPage, 'production_ops')} />
-          <Route path="/produccion/procesamiento" element={withModuleGuard(ProductionOpsPage, 'production_ops')} />
-          <Route path="/produccion/mantenimiento" element={withModuleGuard(ProductionOpsPage, 'production_ops')} />
-          <Route path="/produccion/producto-terminado" element={withModuleGuard(ProductionOpsPage, 'production_ops')} />
+          <Route
+            path="/produccion/recepcion"
+            element={withModuleGuard(ProductionOpsPage, 'production_ops')}
+          />
+          <Route
+            path="/produccion/procesamiento"
+            element={withModuleGuard(ProductionOpsPage, 'production_ops')}
+          />
+          <Route
+            path="/produccion/mantenimiento"
+            element={withModuleGuard(ProductionOpsPage, 'production_ops')}
+          />
+          <Route
+            path="/produccion/producto-terminado"
+            element={withModuleGuard(ProductionOpsPage, 'production_ops')}
+          />
 
           {/* Modulo: Logistica y Flota (logistics_fleet) */}
           <Route path="/logistica" element={<Navigate to="/logistica/transporte" replace />} />
-          <Route path="/logistica/transporte" element={withModuleGuard(LogisticsFleetPage, 'logistics_fleet')} />
-          <Route path="/logistica/despachos" element={withModuleGuard(LogisticsFleetPage, 'logistics_fleet')} />
-          <Route path="/logistica/flota" element={withModuleGuard(LogisticsFleetPage, 'logistics_fleet')} />
-          <Route path="/logistica/pesv" element={withModuleGuard(LogisticsFleetPage, 'logistics_fleet')} />
+          <Route
+            path="/logistica/transporte"
+            element={withModuleGuard(LogisticsFleetPage, 'logistics_fleet')}
+          />
+          <Route
+            path="/logistica/despachos"
+            element={withModuleGuard(LogisticsFleetPage, 'logistics_fleet')}
+          />
+          <Route
+            path="/logistica/flota"
+            element={withModuleGuard(LogisticsFleetPage, 'logistics_fleet')}
+          />
+          <Route
+            path="/logistica/pesv"
+            element={withModuleGuard(LogisticsFleetPage, 'logistics_fleet')}
+          />
 
           {/* Modulo: Ventas y CRM (sales_crm) */}
           <Route path="/ventas" element={<Navigate to="/ventas/clientes" replace />} />
           <Route path="/ventas/clientes" element={withModuleGuard(ClientesPage, 'sales_crm')} />
           <Route path="/ventas/pipeline" element={withModuleGuard(PipelinePage, 'sales_crm')} />
-          <Route path="/ventas/cotizaciones" element={withModuleGuard(CotizacionesPage, 'sales_crm')} />
+          <Route
+            path="/ventas/cotizaciones"
+            element={withModuleGuard(CotizacionesPage, 'sales_crm')}
+          />
           <Route path="/ventas/pedidos" element={withModuleGuard(PedidosPage, 'sales_crm')} />
           <Route path="/ventas/facturas" element={withModuleGuard(FacturasPage, 'sales_crm')} />
           <Route path="/ventas/pqrs" element={withModuleGuard(PQRSPage, 'sales_crm')} />
           <Route path="/ventas/encuestas" element={withModuleGuard(EncuestasPage, 'sales_crm')} />
-          <Route path="/ventas/fidelizacion" element={withModuleGuard(FidelizacionPage, 'sales_crm')} />
+          <Route
+            path="/ventas/fidelizacion"
+            element={withModuleGuard(FidelizacionPage, 'sales_crm')}
+          />
 
           {/* Modulo: Administracion y Finanzas (admin_finance) */}
           <Route path="/finanzas" element={<Navigate to="/finanzas/tesoreria" replace />} />
-          <Route path="/finanzas/tesoreria" element={withModuleGuard(TesoreriaPage, 'admin_finance')} />
-          <Route path="/finanzas/presupuesto" element={withModuleGuard(PresupuestoPage, 'admin_finance')} />
-          <Route path="/finanzas/activos-fijos" element={withModuleGuard(ActivosFijosPage, 'admin_finance')} />
+          <Route
+            path="/finanzas/tesoreria"
+            element={withModuleGuard(TesoreriaPage, 'admin_finance')}
+          />
+          <Route
+            path="/finanzas/presupuesto"
+            element={withModuleGuard(PresupuestoPage, 'admin_finance')}
+          />
+          <Route
+            path="/finanzas/activos-fijos"
+            element={withModuleGuard(ActivosFijosPage, 'admin_finance')}
+          />
           <Route
             path="/finanzas/servicios-generales"
             element={withModuleGuard(ServiciosGeneralesPage, 'admin_finance')}
           />
 
           {/* Modulo: Contabilidad (accounting) */}
-          <Route path="/contabilidad" element={<Navigate to="/contabilidad/configuracion" replace />} />
-          <Route path="/contabilidad/configuracion" element={withModuleGuard(ConfigContablePage, 'accounting')} />
+          <Route
+            path="/contabilidad"
+            element={<Navigate to="/contabilidad/configuracion" replace />}
+          />
+          <Route
+            path="/contabilidad/configuracion"
+            element={withModuleGuard(ConfigContablePage, 'accounting')}
+          />
           <Route
             path="/contabilidad/movimientos"
             element={withModuleGuard(MovimientosContablesPage, 'accounting')}
           />
-          <Route path="/contabilidad/informes" element={withModuleGuard(InformesContablesPage, 'accounting')} />
-          <Route path="/contabilidad/integracion" element={withModuleGuard(IntegracionContablePage, 'accounting')} />
+          <Route
+            path="/contabilidad/informes"
+            element={withModuleGuard(InformesContablesPage, 'accounting')}
+          />
+          <Route
+            path="/contabilidad/integracion"
+            element={withModuleGuard(IntegracionContablePage, 'accounting')}
+          />
 
           {/* Modulo: Analitica e Inteligencia de Negocios (analytics) */}
           <Route path="/analytics" element={<Navigate to="/analytics/configuracion" replace />} />
-          <Route path="/analytics/configuracion" element={withModuleGuard(ConfigIndicadoresPage, 'analytics')} />
-          <Route path="/analytics/dashboards" element={withModuleGuard(DashboardGerencialPage, 'analytics')} />
-          <Route path="/analytics/indicadores" element={withModuleGuard(IndicadoresAreaPage, 'analytics')} />
-          <Route path="/analytics/analisis" element={withModuleGuard(AnalisisTendenciasPage, 'analytics')} />
-          <Route path="/analytics/informes" element={withModuleGuard(GeneradorInformesPage, 'analytics')} />
-          <Route path="/analytics/acciones" element={withModuleGuard(AccionesIndicadorPage, 'analytics')} />
-          <Route path="/analytics/exportacion" element={withModuleGuard(ExportacionPage, 'analytics')} />
-          <Route path="/analytics/builder" element={withModuleGuard(DashboardBuilderPage, 'analytics')} />
+          <Route
+            path="/analytics/configuracion"
+            element={withModuleGuard(ConfigIndicadoresPage, 'analytics')}
+          />
+          <Route
+            path="/analytics/dashboards"
+            element={withModuleGuard(DashboardGerencialPage, 'analytics')}
+          />
+          <Route
+            path="/analytics/indicadores"
+            element={withModuleGuard(IndicadoresAreaPage, 'analytics')}
+          />
+          <Route
+            path="/analytics/analisis"
+            element={withModuleGuard(AnalisisTendenciasPage, 'analytics')}
+          />
+          <Route
+            path="/analytics/informes"
+            element={withModuleGuard(GeneradorInformesPage, 'analytics')}
+          />
+          <Route
+            path="/analytics/acciones"
+            element={withModuleGuard(AccionesIndicadorPage, 'analytics')}
+          />
+          <Route
+            path="/analytics/exportacion"
+            element={withModuleGuard(ExportacionPage, 'analytics')}
+          />
+          <Route
+            path="/analytics/builder"
+            element={withModuleGuard(DashboardBuilderPage, 'analytics')}
+          />
           <Route path="/analytics/demo" element={withModuleGuard(AnalyticsDemoPage, 'analytics')} />
 
           {/* Modulo: Sistema de Auditoria (audit_system) */}
           <Route path="/auditoria" element={<Navigate to="/auditoria/logs" replace />} />
-          <Route path="/auditoria/logs" element={withModuleGuard(LogsSistemaPage, 'audit_system')} />
-          <Route path="/auditoria/notificaciones" element={withModuleGuard(NotificacionesPage, 'audit_system')} />
+          <Route
+            path="/auditoria/logs"
+            element={withModuleGuard(LogsSistemaPage, 'audit_system')}
+          />
+          <Route
+            path="/auditoria/notificaciones"
+            element={withModuleGuard(NotificacionesPage, 'audit_system')}
+          />
           <Route path="/auditoria/alertas" element={withModuleGuard(AlertasPage, 'audit_system')} />
           <Route path="/auditoria/tareas" element={withModuleGuard(TareasPage, 'audit_system')} />
         </Route>

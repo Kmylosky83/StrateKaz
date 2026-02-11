@@ -253,17 +253,22 @@ export const useUpdateTenant = () => {
   });
 };
 
-export const useDeleteTenant = () => {
+export const useHardDeleteTenant = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: number) => tenantsApi.delete(id),
-    onSuccess: () => {
+    mutationFn: ({ id, confirmName }: { id: number; confirmName: string }) =>
+      tenantsApi.hardDelete(id, confirmName),
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: adminGlobalKeys.tenants });
-      toast.success('Empresa eliminada correctamente');
+      toast.success(data.detail || 'Empresa eliminada permanentemente');
     },
     onError: (error: { response?: { data?: { detail?: string } }; message?: string }) => {
-      toast.error(error.response?.data?.detail || error.message || 'Error al eliminar la empresa');
+      toast.error(
+        error.response?.data?.detail ||
+          error.message ||
+          'Error al eliminar la empresa permanentemente'
+      );
     },
   });
 };

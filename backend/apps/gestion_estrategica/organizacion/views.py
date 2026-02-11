@@ -219,24 +219,25 @@ class OrganigramaView(APIView):
                 'level': area.level,
                 'children_count': area.children.filter(is_active=True).count() if solo_activos else area.children.count(),
             }
-            # Contar cargos en esta área
-            cargos_area = Cargo.objects.filter(area=area)
+            # Contar cargos en esta área (excluir cargos del sistema)
+            cargos_area = Cargo.objects.filter(area=area, is_system=False)
             if solo_activos:
                 cargos_area = cargos_area.filter(is_active=True)
             area_dict['cargos_count'] = cargos_area.count()
 
-            # Contar usuarios en esta área
+            # Contar usuarios en esta área (excluir superusuarios y cargos del sistema)
             usuarios_area = User.objects.filter(
                 cargo__area=area,
+                cargo__is_system=False,
                 is_active=True,
                 deleted_at__isnull=True
-            ).count()
+            ).exclude(is_superuser=True).count()
             area_dict['usuarios_count'] = usuarios_area
 
             areas_data.append(area_dict)
 
-        # Obtener cargos
-        cargos_qs = Cargo.objects.select_related('area', 'parent_cargo')
+        # Obtener cargos (excluir cargos del sistema: ADMIN, USUARIO)
+        cargos_qs = Cargo.objects.filter(is_system=False).select_related('area', 'parent_cargo')
         if solo_activos:
             cargos_qs = cargos_qs.filter(is_active=True)
 
@@ -256,12 +257,12 @@ class OrganigramaView(APIView):
                 'is_active': cargo.is_active,
                 'cantidad_posiciones': cargo.cantidad_posiciones,
             }
-            # Obtener usuarios asignados
+            # Obtener usuarios asignados (excluir superusuario del sistema)
             usuarios_cargo = User.objects.filter(
                 cargo=cargo,
                 is_active=True,
                 deleted_at__isnull=True
-            )
+            ).exclude(is_superuser=True)
             cargo_dict['usuarios_count'] = usuarios_cargo.count()
 
             cargo_dict['usuarios_asignados'] = [
@@ -274,21 +275,21 @@ class OrganigramaView(APIView):
                 for u in usuarios_cargo[:5]
             ]
 
-            # Contar subordinados directos
-            subordinados = Cargo.objects.filter(parent_cargo=cargo)
+            # Contar subordinados directos (excluir cargos del sistema)
+            subordinados = Cargo.objects.filter(parent_cargo=cargo, is_system=False)
             if solo_activos:
                 subordinados = subordinados.filter(is_active=True)
             cargo_dict['subordinados_count'] = subordinados.count()
 
             cargos_data.append(cargo_dict)
 
-        # Usuarios (opcional)
+        # Usuarios (opcional, excluir superusuario del sistema)
         usuarios_data = []
         if include_usuarios:
             usuarios_qs = User.objects.filter(
                 is_active=True,
                 deleted_at__isnull=True
-            ).select_related('cargo', 'cargo__area')
+            ).exclude(is_superuser=True).select_related('cargo', 'cargo__area')
 
             for user in usuarios_qs:
                 usuarios_data.append({
@@ -303,13 +304,15 @@ class OrganigramaView(APIView):
                     'initials': self._get_initials(user.get_full_name() or user.username),
                 })
 
-        # Estadísticas
+        # Estadísticas (excluir superusuarios y cargos del sistema)
         stats = {
             'total_areas': Area.objects.count(),
-            'total_cargos': Cargo.objects.count(),
-            'total_usuarios': User.objects.filter(is_active=True, deleted_at__isnull=True).count(),
+            'total_cargos': Cargo.objects.filter(is_system=False).count(),
+            'total_usuarios': User.objects.filter(
+                is_active=True, deleted_at__isnull=True
+            ).exclude(is_superuser=True).count(),
             'areas_activas': Area.objects.filter(is_active=True).count(),
-            'cargos_activos': Cargo.objects.filter(is_active=True).count(),
+            'cargos_activos': Cargo.objects.filter(is_active=True, is_system=False).count(),
         }
 
         response_data = {

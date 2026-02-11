@@ -1,8 +1,8 @@
 """
-Signals de Colaboradores - Auto-creacion desde User
+Signals de Colaboradores
 
-Cuando se crea un usuario con cargo asignado, se genera automaticamente
-un registro Colaborador vinculado para que Mi Portal (ESS) funcione.
+1. Auto-creacion: Cuando se crea un User con cargo, genera un Colaborador.
+2. Sync foto: Cuando User.photo cambia, sincroniza con Colaborador.foto.
 """
 import logging
 from datetime import date
@@ -78,6 +78,7 @@ def auto_create_colaborador(sender, instance, created, **kwargs):
             tipo_documento=doc_type_map.get(user.document_type, 'CC'),
             cargo=user.cargo,
             area=user.cargo.area,
+            foto=user.photo if user.photo else None,
             fecha_ingreso=date.today(),
             tipo_contrato='indefinido',
             salario=0,  # Placeholder - requiere configuracion manual
@@ -93,4 +94,39 @@ def auto_create_colaborador(sender, instance, created, **kwargs):
             'Error al crear Colaborador para User %s (%s): %s',
             user.id, user.email, e,
             exc_info=True
+        )
+
+
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def sync_user_photo_to_colaborador(sender, instance, **kwargs):
+    """
+    Sincroniza User.photo con Colaborador.foto cuando cambia.
+
+    Solo actua cuando save() se llama con update_fields que incluye 'photo'.
+    Esto ocurre en UserViewSet.upload_photo() via UserPhotoUploadSerializer.save().
+    """
+    update_fields = kwargs.get('update_fields')
+    if not update_fields:
+        return
+    if 'photo' not in update_fields:
+        return
+
+    from .models import Colaborador
+    try:
+        colaborador = Colaborador.objects.get(usuario=instance)
+        if instance.photo:
+            colaborador.foto = instance.photo
+        else:
+            colaborador.foto = None
+        colaborador.save(update_fields=['foto'])
+        logger.info(
+            'Foto sincronizada User %s -> Colaborador %s',
+            instance.id, colaborador.id
+        )
+    except Colaborador.DoesNotExist:
+        pass
+    except Exception as e:
+        logger.error(
+            'Error sincronizando foto User %s -> Colaborador: %s',
+            instance.id, e
         )

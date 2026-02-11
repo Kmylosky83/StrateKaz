@@ -48,12 +48,7 @@ import {
   useEscalamientosAlerta,
   useResumenAlertas,
 } from '../hooks/useAuditSystem';
-import type {
-  AlertaGenerada,
-  TipoAlerta,
-  ConfiguracionAlerta,
-  SeveridadAlerta,
-} from '../types';
+import type { AlertaGenerada, TipoAlerta, ConfiguracionAlerta, SeveridadAlerta } from '../types';
 
 const getSeveridadColor = (severidad: SeveridadAlerta) => {
   const colors = {
@@ -140,9 +135,7 @@ function AlertasActivasTab() {
 
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Alertas Activas
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Alertas Activas</h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
             {pendientes.length} alertas pendientes
           </p>
@@ -188,8 +181,8 @@ function AlertasActivasTab() {
                       alerta.severidad === 'critical' || alerta.severidad === 'danger'
                         ? 'danger'
                         : alerta.severidad === 'warning'
-                        ? 'warning'
-                        : 'info'
+                          ? 'warning'
+                          : 'info'
                     }
                     size="sm"
                   >
@@ -259,7 +252,7 @@ function AlertasActivasTab() {
         title="Atender Alerta"
         message="¿Estás seguro de que deseas marcar esta alerta como atendida?"
         confirmLabel="Atender"
-        confirmVariant="primary"
+        variant="info"
       />
     </div>
   );
@@ -290,9 +283,7 @@ function TiposTab() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Tipos de Alerta
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Tipos de Alerta</h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
             Catálogo de tipos de alerta disponibles
           </p>
@@ -435,9 +426,7 @@ function ConfiguracionTab() {
                 {config.escalar_automaticamente && config.dias_escalamiento && (
                   <div className="mt-3 flex items-center gap-2 text-sm text-orange-600">
                     <ArrowUp className="w-4 h-4" />
-                    <span>
-                      Escalamiento automático después de {config.dias_escalamiento} días
-                    </span>
+                    <span>Escalamiento automático después de {config.dias_escalamiento} días</span>
                   </div>
                 )}
               </div>
@@ -471,8 +460,8 @@ function EscalamientoTab() {
         <div className="space-y-4">
           <p className="text-sm text-gray-600 dark:text-gray-400">
             El escalamiento de alertas se configura por tipo de alerta en la pestaña de
-            Configuración. Las alertas se escalan automáticamente según los días configurados
-            si no son atendidas.
+            Configuración. Las alertas se escalan automáticamente según los días configurados si no
+            son atendidas.
           </p>
 
           <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">

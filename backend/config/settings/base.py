@@ -308,6 +308,7 @@ REST_FRAMEWORK = {
         'anon': '30/minute',
         'user': '120/minute',
         'login': '5/minute',
+        'password_reset': '3/minute',
     },
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',

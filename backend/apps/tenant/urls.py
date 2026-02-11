@@ -21,6 +21,8 @@ from .auth_views import (
     TenantRefreshView,
     TenantLogoutView,
     TenantMeView,
+    ForgotPasswordView,
+    ResetPasswordView,
 )
 
 router = DefaultRouter()
@@ -37,6 +39,8 @@ urlpatterns = [
     path('auth/logout/', TenantLogoutView.as_view(), name='tenant-logout'),
     path('auth/me/', TenantMeView.as_view(), name='tenant-me'),
     path('auth/select-tenant/', TenantSelectView.as_view(), name='tenant-select'),
+    path('auth/forgot-password/', ForgotPasswordView.as_view(), name='tenant-forgot-password'),
+    path('auth/reset-password/', ResetPasswordView.as_view(), name='tenant-reset-password'),
 
     # ViewSets (CRUD)
     path('', include(router.urls)),

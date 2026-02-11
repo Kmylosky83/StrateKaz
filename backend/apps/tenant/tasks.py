@@ -78,27 +78,26 @@ def publish_progress(task_id: str, data: Dict[str, Any]):
 
 def get_migration_count() -> int:
     """
-    Obtener el número aproximado de migraciones a ejecutar.
-    Esto se usa para calcular el porcentaje de progreso.
+    Obtener el numero de migraciones a ejecutar.
+    Calcula dinamicamente desde el MigrationLoader de Django.
     """
-    # Contamos apps que tienen migraciones
-    # Este es un número aproximado basado en la estructura del proyecto
-    return 100  # Ajustar según el proyecto real
+    try:
+        from django.db.migrations.loader import MigrationLoader
+        loader = MigrationLoader(connection)
+        return len(loader.disk_migrations)
+    except Exception:
+        return 200  # Fallback conservador
 
 
 @shared_task(
     bind=True,
     name='apps.tenant.tasks.create_tenant_schema',
-    max_retries=2,
-    default_retry_delay=60,
-    autoretry_for=(Exception,),
-    retry_backoff=True,
-    retry_jitter=True,
+    max_retries=0,  # Sin auto-retry. El retry se hace manual desde Admin Global.
     acks_late=True,
     reject_on_worker_lost=True,
     track_started=True,
-    time_limit=45 * 60,  # 45 minutos límite hard
-    soft_time_limit=40 * 60,  # 40 minutos límite soft
+    time_limit=45 * 60,  # 45 minutos limite hard
+    soft_time_limit=40 * 60,  # 40 minutos limite soft
 )
 def create_tenant_schema_task(
     self,
@@ -173,28 +172,8 @@ def create_tenant_schema_task(
             'schema_name': schema_name,
         })
 
-        # Ejecutar migraciones con callback de progreso
-        migration_progress = {'count': 0, 'total': get_migration_count()}
-
-        def migration_callback(app_name, migration_name):
-            """Callback para reportar progreso de migraciones."""
-            migration_progress['count'] += 1
-            progress = 10 + int((migration_progress['count'] / migration_progress['total']) * 85)
-            progress = min(progress, 95)  # Máximo 95% durante migraciones
-
-            publish_progress(task_id, {
-                'status': 'running',
-                'phase': 'running_migrations',
-                'message': f'Aplicando migración: {app_name}',
-                'progress': progress,
-                'tenant_id': tenant_id,
-                'schema_name': schema_name,
-                'current_migration': f'{app_name}.{migration_name}',
-                'migrations_completed': migration_progress['count'],
-            })
-
         # Ejecutar migrate para el schema del tenant
-        # django-tenants se encarga de esto automáticamente al guardar con auto_create_schema
+        # django-tenants se encarga de esto automaticamente al guardar con auto_create_schema
         # Pero lo hacemos manual para tener control del progreso
         #
         # Publicar progreso estimado durante migraciones ya que migrate_schemas
@@ -259,30 +238,41 @@ def create_tenant_schema_task(
         })
 
         # Ejecutar seeds dentro del contexto del tenant
+        # CRITICO: Si los seeds esenciales fallan, el tenant queda inutilizable.
+        # En ese caso marcamos como 'failed' para que el admin pueda reintentar.
         from django_tenants.utils import schema_context
+        seed_errors = []
         with schema_context(schema_name):
-            # 1. Estructura de módulos (CRÍTICO - sin esto no hay sidebar)
+            # 1. Estructura de modulos (CRITICO - sin esto no hay sidebar)
             try:
                 call_command('seed_estructura_final', verbosity=0)
                 logger.info(f"[Task {task_id}] seed_estructura_final completed")
             except Exception as e:
-                logger.warning(f"[Task {task_id}] seed_estructura_final failed: {e}")
+                error_msg = f"seed_estructura_final failed: {e}"
+                logger.error(f"[Task {task_id}] {error_msg}")
+                seed_errors.append(error_msg)
 
-            # 2. Permisos RBAC
+            # 2. Permisos RBAC (CRITICO - sin esto no hay control de acceso)
             try:
                 call_command('seed_permisos_rbac', verbosity=0)
                 logger.info(f"[Task {task_id}] seed_permisos_rbac completed")
             except Exception as e:
-                logger.warning(f"[Task {task_id}] seed_permisos_rbac failed: {e}")
+                error_msg = f"seed_permisos_rbac failed: {e}"
+                logger.error(f"[Task {task_id}] {error_msg}")
+                seed_errors.append(error_msg)
 
-            # 3. Cargo Administrador con permisos completos (BOOTSTRAP)
-            # Crea el cargo ADMIN con acceso a todas las secciones.
-            # El cargo se asigna automaticamente cuando el primer usuario accede al tenant.
+            # 3. Cargo Administrador con permisos completos
+            # No critico: el cargo se puede crear despues manualmente
             try:
                 call_command('seed_admin_cargo', verbosity=0)
                 logger.info(f"[Task {task_id}] seed_admin_cargo completed")
             except Exception as e:
-                logger.warning(f"[Task {task_id}] seed_admin_cargo failed: {e}")
+                logger.warning(f"[Task {task_id}] seed_admin_cargo failed (non-critical): {e}")
+
+        # Si hubo errores en seeds criticos, marcar como failed
+        if seed_errors:
+            error_detail = '; '.join(seed_errors)
+            raise Exception(f"Seeds criticos fallaron: {error_detail}")
 
         # Fase 4: Finalización (95% - 100%)
         # Cerrar conexiones viejas antes de actualizar estado
@@ -556,6 +546,7 @@ def cleanup_stale_creating_tenants():
         # Verificar si el schema existe y tiene tablas
         try:
             with connection.cursor() as cursor:
+                # Contar tablas del tenant sospechoso
                 cursor.execute("""
                     SELECT COUNT(*)
                     FROM information_schema.tables
@@ -563,24 +554,39 @@ def cleanup_stale_creating_tenants():
                 """, [tenant.schema_name])
                 table_count = cursor.fetchone()[0]
 
-            if table_count >= 600:
+                # Obtener referencia de un tenant 'ready' para comparar
+                reference_count = 600  # fallback
+                ready_tenant = Tenant.objects.filter(
+                    schema_status='ready'
+                ).exclude(schema_name='public').first()
+                if ready_tenant:
+                    cursor.execute("""
+                        SELECT COUNT(*)
+                        FROM information_schema.tables
+                        WHERE table_schema = %s
+                    """, [ready_tenant.schema_name])
+                    reference_count = cursor.fetchone()[0]
+
+            # Si tiene >= 90% de las tablas del tenant de referencia, esta completo
+            threshold = int(reference_count * 0.9)
+            if table_count >= threshold:
                 # Schema parece completo
                 tenant.schema_status = 'ready'
                 tenant.schema_error = ''
                 logger.info(
                     f"Stale tenant {tenant.name} auto-repaired to 'ready' "
-                    f"({table_count} tables found)"
+                    f"({table_count}/{reference_count} tables found)"
                 )
             else:
                 tenant.schema_status = 'failed'
                 tenant.schema_error = (
-                    f'Tarea de creación no completó. '
-                    f'Schema tiene {table_count}/~612 tablas. '
-                    f'Detectado por cleanup automático.'
+                    f'Tarea de creacion no completo. '
+                    f'Schema tiene {table_count}/{reference_count} tablas. '
+                    f'Detectado por cleanup automatico.'
                 )
                 logger.warning(
                     f"Stale tenant {tenant.name} marked as 'failed' "
-                    f"({table_count} tables, expected ~612)"
+                    f"({table_count}/{reference_count} tables)"
                 )
 
             tenant.save(update_fields=['schema_status', 'schema_error'])

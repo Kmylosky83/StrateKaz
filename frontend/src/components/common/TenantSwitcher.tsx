@@ -112,10 +112,7 @@ export const TenantSwitcher = ({ className }: TenantSwitcherProps) => {
           {isInAdminGlobal ? (
             <Shield className="w-3.5 h-3.5 text-white" />
           ) : (
-            <Building2
-              className="w-3.5 h-3.5"
-              style={{ color: tenantColor }}
-            />
+            <Building2 className="w-3.5 h-3.5" style={{ color: tenantColor }} />
           )}
         </div>
 
@@ -174,9 +171,7 @@ export const TenantSwitcher = ({ className }: TenantSwitcherProps) => {
                     Gestionar plataforma
                   </p>
                 </div>
-                {isInAdminGlobal && (
-                  <Check className="w-4 h-4 text-purple-600 flex-shrink-0" />
-                )}
+                {isInAdminGlobal && <Check className="w-4 h-4 text-purple-600 flex-shrink-0" />}
               </button>
             </div>
           )}
@@ -186,69 +181,76 @@ export const TenantSwitcher = ({ className }: TenantSwitcherProps) => {
             {accessibleTenants
               .filter((access) => access.tenant.code !== 'public')
               .map((access) => {
-              const { tenant, role } = access;
-              const isSelected = tenant.id === currentTenantId && !isInAdminGlobal;
+                const { tenant, role } = access;
+                const isSelected = tenant.id === currentTenantId && !isInAdminGlobal;
 
-              return (
-                <button
-                  key={tenant.id}
-                  onClick={() => handleSelectTenant(tenant.id)}
-                  className={cn(
-                    'w-full flex items-center gap-3 px-4 py-2.5 transition-colors text-left',
-                    isSelected
-                      ? 'bg-primary-50 dark:bg-primary-900/20'
-                      : 'hover:bg-gray-50 dark:hover:bg-gray-700'
-                  )}
-                >
-                  {/* Logo o inicial */}
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                    style={{
-                      backgroundColor: tenant.logo_url
-                        ? 'transparent'
-                        : `${tenant.primary_color}20`,
-                    }}
-                  >
-                    {tenant.logo_url ? (
-                      <img
-                        src={tenant.logo_url}
-                        alt={tenant.name}
-                        className="w-full h-full object-contain rounded-lg"
-                      />
-                    ) : (
-                      <span
-                        className="text-sm font-bold"
-                        style={{ color: tenant.primary_color }}
-                      >
-                        {tenant.name.charAt(0).toUpperCase()}
-                      </span>
+                return (
+                  <button
+                    key={tenant.id}
+                    onClick={() => handleSelectTenant(tenant.id)}
+                    className={cn(
+                      'w-full flex items-center gap-3 px-4 py-2.5 transition-colors text-left',
+                      isSelected
+                        ? 'bg-primary-50 dark:bg-primary-900/20'
+                        : 'hover:bg-gray-50 dark:hover:bg-gray-700'
                     )}
-                  </div>
+                  >
+                    {/* Logo o inicial */}
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{
+                        backgroundColor:
+                          tenant.logo || tenant.logo_effective || tenant.logo_url
+                            ? 'transparent'
+                            : `${tenant.primary_color}20`,
+                      }}
+                    >
+                      {tenant.logo || tenant.logo_effective || tenant.logo_url ? (
+                        <img
+                          src={tenant.logo || tenant.logo_effective || tenant.logo_url}
+                          alt={tenant.name}
+                          className="w-full h-full object-contain rounded-lg"
+                        />
+                      ) : (
+                        <span className="text-sm font-bold" style={{ color: tenant.primary_color }}>
+                          {tenant.name.charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
 
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                      {tenant.name}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                      {role === 'superadmin' ? 'Superadmin' : role === 'admin' ? 'Administrador' : 'Usuario'}
-                    </p>
-                  </div>
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                        {tenant.name}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        {role === 'superadmin'
+                          ? 'Superadmin'
+                          : role === 'admin'
+                            ? 'Administrador'
+                            : 'Usuario'}
+                      </p>
+                    </div>
 
-                  {/* Check si está seleccionado */}
-                  {isSelected && (
-                    <Check className="w-4 h-4 text-primary-600 flex-shrink-0" />
-                  )}
-                </button>
-              );
-            })}
+                    {/* Check si está seleccionado */}
+                    {isSelected && <Check className="w-4 h-4 text-primary-600 flex-shrink-0" />}
+                  </button>
+                );
+              })}
           </div>
 
           {/* Footer con info (excluir public del conteo) */}
-          {accessibleTenants.filter(a => a.tenant.code !== 'public').length > 0 && (
+          {accessibleTenants.filter((a) => a.tenant.code !== 'public').length > 0 && (
             <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700">
               <p className="text-xs text-gray-400 dark:text-gray-500">
-                {accessibleTenants.filter(a => a.tenant.code !== 'public').length} empresa{accessibleTenants.filter(a => a.tenant.code !== 'public').length !== 1 ? 's' : ''} disponible{accessibleTenants.filter(a => a.tenant.code !== 'public').length !== 1 ? 's' : ''}
+                {accessibleTenants.filter((a) => a.tenant.code !== 'public').length} empresa
+                {accessibleTenants.filter((a) => a.tenant.code !== 'public').length !== 1
+                  ? 's'
+                  : ''}{' '}
+                disponible
+                {accessibleTenants.filter((a) => a.tenant.code !== 'public').length !== 1
+                  ? 's'
+                  : ''}
               </p>
             </div>
           )}

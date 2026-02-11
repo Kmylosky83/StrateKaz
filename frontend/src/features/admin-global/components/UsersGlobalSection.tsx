@@ -23,10 +23,9 @@ interface UserRowProps {
   user: TenantUser;
   onEdit: (user: TenantUser) => void;
   onDelete: (id: number) => void;
-  onManageTenants: (user: TenantUser) => void;
 }
 
-const UserRow = ({ user, onEdit, onDelete, onManageTenants }: UserRowProps) => {
+const UserRow = ({ user, onEdit, onDelete }: UserRowProps) => {
   const formatDate = (dateStr: string | null | undefined) => {
     if (!dateStr) return 'Nunca';
     return new Date(dateStr).toLocaleDateString('es-CO', {
@@ -129,11 +128,6 @@ const UserRow = ({ user, onEdit, onDelete, onManageTenants }: UserRowProps) => {
               icon: <Edit className="h-4 w-4" />,
               onClick: () => onEdit(user),
             },
-            {
-              label: 'Gestionar Empresas',
-              icon: <Building2 className="h-4 w-4" />,
-              onClick: () => onManageTenants(user),
-            },
             { label: '', onClick: () => {}, divider: true },
             {
               label: 'Eliminar',
@@ -156,8 +150,6 @@ export const UsersGlobalSection = () => {
   const [userToDelete, setUserToDelete] = useState<number | null>(null);
   const [userToEdit, setUserToEdit] = useState<TenantUser | null>(null);
   const [showFormModal, setShowFormModal] = useState(false);
-  const [userToManageTenants, setUserToManageTenants] = useState<TenantUser | null>(null);
-  const [showTenantsModal, setShowTenantsModal] = useState(false);
 
   const { data: users, isLoading } = useTenantUsersList({
     search: search || undefined,
@@ -189,11 +181,6 @@ export const UsersGlobalSection = () => {
   const handleEditUser = (user: TenantUser) => {
     setUserToEdit(user);
     setShowFormModal(true);
-  };
-
-  const handleManageTenants = (user: TenantUser) => {
-    setUserToManageTenants(user);
-    setShowTenantsModal(true);
   };
 
   const handleDelete = () => {
@@ -302,7 +289,6 @@ export const UsersGlobalSection = () => {
                     user={user}
                     onEdit={handleEditUser}
                     onDelete={setUserToDelete}
-                    onManageTenants={handleManageTenants}
                   />
                 ))}
               </AnimatePresence>
@@ -329,7 +315,7 @@ export const UsersGlobalSection = () => {
         title="Eliminar Usuario"
         message="¿Estás seguro de que deseas eliminar este usuario? Perderá acceso a todas las empresas."
         confirmText="Eliminar"
-        confirmVariant="destructive"
+        variant="danger"
         isLoading={deleteUser.isPending}
       />
 
@@ -341,17 +327,6 @@ export const UsersGlobalSection = () => {
           setUserToEdit(null);
         }}
         user={userToEdit}
-      />
-
-      {/* Manage Tenants Modal - Solo gestión de empresas asignadas */}
-      <TenantUserFormModal
-        isOpen={showTenantsModal}
-        onClose={() => {
-          setShowTenantsModal(false);
-          setUserToManageTenants(null);
-        }}
-        user={userToManageTenants}
-        initialSection="tenants"
       />
     </div>
   );

@@ -50,6 +50,7 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
+      isLoadingUser: false,
       currentTenantId: getInitialTenantId(),
       currentTenant: null,
       accessibleTenants: [],
@@ -91,9 +92,7 @@ export const useAuthStore = create<AuthState>()(
             }
           } else if (initialTenantId) {
             // Verificar que el tenant guardado sigue siendo accesible
-            const savedTenant = response.tenants.find(
-              (t) => t.tenant.id === initialTenantId
-            );
+            const savedTenant = response.tenants.find((t) => t.tenant.id === initialTenantId);
             if (savedTenant) {
               initialTenant = savedTenant.tenant;
             } else {
@@ -120,12 +119,22 @@ export const useAuthStore = create<AuthState>()(
             currentTenant: initialTenant,
           });
 
-          // Si hay tenant seleccionado, notificar al backend
+          // Si hay tenant seleccionado, notificar al backend y cargar perfil del User
           if (initialTenantId) {
             try {
               await authAPI.selectTenant(initialTenantId);
             } catch (error) {
               console.warn('Failed to notify backend of tenant selection:', error);
+            }
+
+            // Cargar perfil del User dentro del tenant (permission_codes, cargo, etc.)
+            try {
+              set({ isLoadingUser: true });
+              const userProfile = await authAPI.getProfile();
+              set({ user: userProfile, isLoadingUser: false });
+            } catch (error) {
+              console.warn('Failed to load user profile after login:', error);
+              set({ isLoadingUser: false });
             }
           }
         } catch (error) {
@@ -236,11 +245,49 @@ export const useAuthStore = create<AuthState>()(
           currentTenantId: tenantId,
           currentTenant: tenantAccess.tenant,
           user: null, // Limpiar usuario del tenant anterior
+          isLoadingUser: true,
         });
+
+        // Limpiar cache de branding en localStorage para evitar flash con datos del tenant anterior
+        try {
+          localStorage.removeItem('last_branding');
+        } catch {
+          /* ignore */
+        }
 
         // CRÍTICO: Invalidar TODAS las queries para forzar recarga con nuevo tenant
         // Esto asegura que branding, usuarios, configuración, etc. se recarguen
         invalidateAllQueries();
+
+        // Cargar perfil del User dentro del nuevo tenant (permission_codes, cargo, etc.)
+        try {
+          const userProfile = await authAPI.getProfile();
+          set({ user: userProfile, isLoadingUser: false });
+        } catch (error) {
+          console.warn('Failed to load user profile after tenant switch:', error);
+          set({ isLoadingUser: false });
+        }
+      },
+
+      /**
+       * Cargar perfil del User dentro del tenant actual.
+       * Se llama automáticamente desde DashboardLayout cuando hay tenant pero no user.
+       * Esto cubre el caso de recarga de página (F5) donde user no se persiste.
+       */
+      loadUserProfile: async () => {
+        const { currentTenantId, user, isLoadingUser } = get();
+
+        // Solo cargar si hay tenant seleccionado y no hay user ni carga en curso
+        if (!currentTenantId || user || isLoadingUser) return;
+
+        try {
+          set({ isLoadingUser: true });
+          const userProfile = await authAPI.getProfile();
+          set({ user: userProfile, isLoadingUser: false });
+        } catch (error) {
+          console.warn('Failed to load user profile:', error);
+          set({ isLoadingUser: false });
+        }
       },
 
       /**

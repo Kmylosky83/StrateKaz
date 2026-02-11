@@ -1220,7 +1220,7 @@ function MasivasTab() {
                   className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   required
                 >
-                  <option value="">Seleccione un área</option>
+                  <option value="">Seleccione un proceso</option>
                   {areas.map((area: any) => (
                     <option key={area.id} value={area.id}>
                       {area.name}

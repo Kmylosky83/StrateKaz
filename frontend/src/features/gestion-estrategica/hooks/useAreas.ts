@@ -83,7 +83,7 @@ const getFieldLabel = (field: string): string => {
     code: 'Código',
     name: 'Nombre',
     description: 'Descripción',
-    parent: 'Área padre',
+    parent: 'Proceso padre',
     cost_center: 'Centro de costo',
     manager: 'Responsable',
     is_active: 'Estado',
@@ -178,7 +178,7 @@ export const useCreateArea = () => {
     onSuccess: (newArea) => {
       // Invalidar todas las queries de áreas
       queryClient.invalidateQueries({ queryKey: areaKeys.all });
-      toast.success(`Área "${newArea.name}" creada exitosamente`);
+      toast.success(`Proceso "${newArea.name}" creado exitosamente`);
     },
     onError: (error: unknown) => {
       const message = getErrorMessage(error);
@@ -194,12 +194,11 @@ export const useUpdateArea = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateAreaDTO }) =>
-      areasApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: UpdateAreaDTO }) => areasApi.update(id, data),
     onSuccess: (updatedArea, { id }) => {
       queryClient.invalidateQueries({ queryKey: areaKeys.all });
       queryClient.setQueryData(areaKeys.detail(id), updatedArea);
-      toast.success(`Área "${updatedArea.name}" actualizada exitosamente`);
+      toast.success(`Proceso "${updatedArea.name}" actualizado exitosamente`);
     },
     onError: (error: unknown) => {
       const message = getErrorMessage(error);
@@ -218,7 +217,7 @@ export const useDeleteArea = () => {
     mutationFn: (id: number) => areasApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: areaKeys.all });
-      toast.success('Área eliminada exitosamente');
+      toast.success('Proceso eliminado exitosamente');
     },
     onError: (error: unknown) => {
       const message = getErrorMessage(error);
@@ -238,8 +237,8 @@ export const useToggleArea = () => {
       areasApi.toggle(id, isActive),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: areaKeys.all });
-      const estado = result.is_active ? 'activada' : 'desactivada';
-      toast.success(`Área ${estado} exitosamente`);
+      const estado = result.is_active ? 'activado' : 'desactivado';
+      toast.success(`Proceso ${estado} exitosamente`);
     },
     onError: (error: unknown) => {
       const message = getErrorMessage(error);

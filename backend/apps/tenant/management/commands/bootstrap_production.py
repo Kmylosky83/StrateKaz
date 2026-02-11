@@ -64,13 +64,13 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.stdout.write(self.style.MIGRATE_HEADING(
-            '\n══════════════════════════════════════════════'
+            '\n=============================================='
         ))
         self.stdout.write(self.style.MIGRATE_HEADING(
-            '  STRATEKAZ - Bootstrap de Producción'
+            '  STRATEKAZ - Bootstrap de Produccion'
         ))
         self.stdout.write(self.style.MIGRATE_HEADING(
-            '══════════════════════════════════════════════\n'
+            '==============================================\n'
         ))
 
         email = options['email'].lower().strip()
@@ -80,11 +80,11 @@ class Command(BaseCommand):
         domain = options['domain']
         schema_name = f'tenant_{tenant_code}'
 
-        # ══════════════════════════════════════════════
+        # ==============================================
         # FASE 1: TenantUser superadmin (schema public)
-        # ══════════════════════════════════════════════
-        self.stdout.write('\n📌 Fase 1: TenantUser superadmin (schema public)')
-        self.stdout.write('─' * 50)
+        # ==============================================
+        self.stdout.write('\n[*]Fase 1: TenantUser superadmin (schema public)')
+        self.stdout.write('-' * 50)
 
         from apps.tenant.models import TenantUser
         tenant_user, created = TenantUser.objects.get_or_create(
@@ -99,27 +99,27 @@ class Command(BaseCommand):
         if created:
             tenant_user.set_password(password)
             tenant_user.save()
-            self.stdout.write(self.style.SUCCESS(f'   ✅ TenantUser creado: {email}'))
+            self.stdout.write(self.style.SUCCESS(f'   [OK]TenantUser creado: {email}'))
         else:
-            self.stdout.write(f'   ℹ️  TenantUser ya existe: {email}')
+            self.stdout.write(f'   [i]TenantUser ya existe: {email}')
             # Asegurar que es superadmin
             if not tenant_user.is_superadmin:
                 tenant_user.is_superadmin = True
                 tenant_user.save(update_fields=['is_superadmin'])
-                self.stdout.write('   → Marcado como superadmin')
+                self.stdout.write('   ->Marcado como superadmin')
 
-        # ══════════════════════════════════════════════
+        # ==============================================
         # FASE 2: Planes (schema public)
-        # ══════════════════════════════════════════════
-        self.stdout.write('\n📌 Fase 2: Planes de suscripción')
-        self.stdout.write('─' * 50)
+        # ==============================================
+        self.stdout.write('\n[*]Fase 2: Planes de suscripcion')
+        self.stdout.write('-' * 50)
 
         from apps.tenant.models import Plan
         plan, plan_created = Plan.objects.get_or_create(
             code='empresarial',
             defaults={
                 'name': 'Plan Empresarial',
-                'description': 'Todos los módulos incluidos.',
+                'description': 'Todos los modulos incluidos.',
                 'max_users': 100,
                 'max_storage_gb': 100,
                 'is_default': True,
@@ -127,15 +127,15 @@ class Command(BaseCommand):
             }
         )
         if plan_created:
-            self.stdout.write(self.style.SUCCESS('   ✅ Plan Empresarial creado'))
+            self.stdout.write(self.style.SUCCESS('   [OK]Plan Empresarial creado'))
         else:
-            self.stdout.write('   ℹ️  Plan Empresarial ya existe')
+            self.stdout.write('   [i]Plan Empresarial ya existe')
 
-        # ══════════════════════════════════════════════
+        # ==============================================
         # FASE 3: Tenant (schema public)
-        # ══════════════════════════════════════════════
-        self.stdout.write('\n📌 Fase 3: Tenant')
-        self.stdout.write('─' * 50)
+        # ==============================================
+        self.stdout.write('\n[*]Fase 3: Tenant')
+        self.stdout.write('-' * 50)
 
         from apps.tenant.models import Tenant
         tenant = Tenant.objects.filter(code=tenant_code).first()
@@ -144,15 +144,15 @@ class Command(BaseCommand):
             old_schema = tenant.schema_name
             if old_schema == 'public':
                 self.stdout.write(self.style.WARNING(
-                    f'   ⚠️  Tenant existe con schema_name="public" (incorrecto)'
+                    f'   [!]Tenant existe con schema_name="public" (incorrecto)'
                 ))
-                self.stdout.write(f'   → Actualizando a schema_name="{schema_name}"')
+                self.stdout.write(f'   ->Actualizando a schema_name="{schema_name}"')
                 tenant.schema_name = schema_name
                 tenant.save(update_fields=['schema_name'])
             elif old_schema == schema_name:
-                self.stdout.write(f'   ℹ️  Tenant ya existe: {tenant.name} (schema: {schema_name})')
+                self.stdout.write(f'   [i]Tenant ya existe: {tenant.name} (schema: {schema_name})')
             else:
-                self.stdout.write(f'   ℹ️  Tenant existe con schema: {old_schema}')
+                self.stdout.write(f'   [i]Tenant existe con schema: {old_schema}')
                 schema_name = old_schema  # Usar el schema existente
         else:
             tenant = Tenant(
@@ -168,28 +168,28 @@ class Command(BaseCommand):
             tenant.auto_create_schema = False
             tenant.save()
             self.stdout.write(self.style.SUCCESS(
-                f'   ✅ Tenant creado: {tenant_name} (schema: {schema_name})'
+                f'   [OK]Tenant creado: {tenant_name} (schema: {schema_name})'
             ))
 
-        # ══════════════════════════════════════════════
+        # ==============================================
         # FASE 4: Crear schema PostgreSQL
-        # ══════════════════════════════════════════════
-        self.stdout.write('\n📌 Fase 4: Schema PostgreSQL')
-        self.stdout.write('─' * 50)
+        # ==============================================
+        self.stdout.write('\n[*]Fase 4: Schema PostgreSQL')
+        self.stdout.write('-' * 50)
 
         with connection.cursor() as cursor:
             cursor.execute(
                 f'CREATE SCHEMA IF NOT EXISTS "{schema_name}"'
             )
-        self.stdout.write(self.style.SUCCESS(f'   ✅ Schema "{schema_name}" listo'))
+        self.stdout.write(self.style.SUCCESS(f'   [OK]Schema "{schema_name}" listo'))
 
-        # ══════════════════════════════════════════════
+        # ==============================================
         # FASE 4b: Limpiar migraciones fantasma del schema public
-        # ══════════════════════════════════════════════
+        # ==============================================
         # Las migraciones de TENANT_APPS quedaron registradas en public
         # pero sin tablas reales. Limpiar para evitar conflictos.
-        self.stdout.write('\n📌 Fase 4b: Limpiar migraciones fantasma (schema public)')
-        self.stdout.write('─' * 50)
+        self.stdout.write('\n[*]Fase 4b: Limpiar migraciones fantasma (schema public)')
+        self.stdout.write('-' * 50)
 
         shared_apps = ('contenttypes', 'sessions', 'tenant')
         with connection.cursor() as cursor:
@@ -200,16 +200,16 @@ class Command(BaseCommand):
             deleted = cursor.rowcount
         if deleted:
             self.stdout.write(self.style.WARNING(
-                f'   🧹 {deleted} registros fantasma eliminados de public.django_migrations'
+                f'   [clean]{deleted} registros fantasma eliminados de public.django_migrations'
             ))
         else:
-            self.stdout.write('   ℹ️  Sin registros fantasma')
+            self.stdout.write('   [i]Sin registros fantasma')
 
-        # ══════════════════════════════════════════════
+        # ==============================================
         # FASE 5: Migraciones en el schema del tenant
-        # ══════════════════════════════════════════════
-        self.stdout.write('\n📌 Fase 5: Migraciones')
-        self.stdout.write('─' * 50)
+        # ==============================================
+        self.stdout.write('\n[*]Fase 5: Migraciones')
+        self.stdout.write('-' * 50)
         self.stdout.write(f'   Ejecutando migraciones en schema "{schema_name}"...')
         self.stdout.write('   (esto puede tardar varios minutos)')
 
@@ -219,42 +219,42 @@ class Command(BaseCommand):
             interactive=False,
             verbosity=1,
         )
-        self.stdout.write(self.style.SUCCESS('   ✅ Migraciones completadas'))
+        self.stdout.write(self.style.SUCCESS('   [OK]Migraciones completadas'))
 
-        # ══════════════════════════════════════════════
+        # ==============================================
         # FASE 6: Seed data dentro del schema del tenant
-        # ══════════════════════════════════════════════
-        self.stdout.write('\n📌 Fase 6: Datos iniciales (seeds)')
-        self.stdout.write('─' * 50)
+        # ==============================================
+        self.stdout.write('\n[*]Fase 6: Datos iniciales (seeds)')
+        self.stdout.write('-' * 50)
 
         from django_tenants.utils import schema_context
         with schema_context(schema_name):
-            # 6a. Estructura de módulos
+            # 6a. Estructura de modulos
             try:
                 call_command('seed_estructura_final', verbosity=0)
-                self.stdout.write(self.style.SUCCESS('   ✅ seed_estructura_final'))
+                self.stdout.write(self.style.SUCCESS('   [OK]seed_estructura_final'))
             except Exception as e:
-                self.stdout.write(self.style.WARNING(f'   ⚠️  seed_estructura_final: {e}'))
+                self.stdout.write(self.style.WARNING(f'   [!]seed_estructura_final: {e}'))
 
             # 6b. Permisos RBAC
             try:
                 call_command('seed_permisos_rbac', verbosity=0)
-                self.stdout.write(self.style.SUCCESS('   ✅ seed_permisos_rbac'))
+                self.stdout.write(self.style.SUCCESS('   [OK]seed_permisos_rbac'))
             except Exception as e:
-                self.stdout.write(self.style.WARNING(f'   ⚠️  seed_permisos_rbac: {e}'))
+                self.stdout.write(self.style.WARNING(f'   [!]seed_permisos_rbac: {e}'))
 
             # 6c. Cargo Admin
             try:
                 call_command('seed_admin_cargo', verbosity=0)
-                self.stdout.write(self.style.SUCCESS('   ✅ seed_admin_cargo'))
+                self.stdout.write(self.style.SUCCESS('   [OK]seed_admin_cargo'))
             except Exception as e:
-                self.stdout.write(self.style.WARNING(f'   ⚠️  seed_admin_cargo: {e}'))
+                self.stdout.write(self.style.WARNING(f'   [!]seed_admin_cargo: {e}'))
 
-        # ══════════════════════════════════════════════
+        # ==============================================
         # FASE 7: User superadmin dentro del tenant
-        # ══════════════════════════════════════════════
-        self.stdout.write('\n📌 Fase 7: User en schema del tenant')
-        self.stdout.write('─' * 50)
+        # ==============================================
+        self.stdout.write('\n[*]Fase 7: User en schema del tenant')
+        self.stdout.write('-' * 50)
 
         with schema_context(schema_name):
             from apps.core.models import User
@@ -271,36 +271,37 @@ class Command(BaseCommand):
             if user_created:
                 user.set_password(password)
                 user.save()
-                self.stdout.write(self.style.SUCCESS(f'   ✅ User creado en {schema_name}: {email}'))
+                self.stdout.write(self.style.SUCCESS(f'   [OK]User creado en {schema_name}: {email}'))
             else:
-                self.stdout.write(f'   ℹ️  User ya existe en {schema_name}: {email}')
+                self.stdout.write(f'   [i]User ya existe en {schema_name}: {email}')
                 # Asegurar permisos
                 if not user.is_superuser:
                     user.is_superuser = True
                     user.is_staff = True
                     user.save(update_fields=['is_superuser', 'is_staff'])
 
-        # ══════════════════════════════════════════════
+        # ==============================================
         # FASE 8: Dominio
-        # ══════════════════════════════════════════════
-        self.stdout.write('\n📌 Fase 8: Dominio')
-        self.stdout.write('─' * 50)
+        # ==============================================
+        self.stdout.write('\n[*]Fase 8: Dominio')
+        self.stdout.write('-' * 50)
 
         from apps.tenant.models import Domain
-        # Limpiar dominios viejos que apunten a este tenant
+        # Limpiar dominios viejos que apunten a este tenant O que usen el mismo dominio
         Domain.objects.filter(tenant=tenant).delete()
+        Domain.objects.filter(domain=domain).delete()
         Domain.objects.create(
             domain=domain,
             tenant=tenant,
             is_primary=True,
         )
-        self.stdout.write(self.style.SUCCESS(f'   ✅ Dominio configurado: {domain} → {schema_name}'))
+        self.stdout.write(self.style.SUCCESS(f'   [OK]Dominio configurado: {domain} -> {schema_name}'))
 
-        # ══════════════════════════════════════════════
+        # ==============================================
         # FASE 9: TenantUserAccess
-        # ══════════════════════════════════════════════
-        self.stdout.write('\n📌 Fase 9: Acceso del superadmin al tenant')
-        self.stdout.write('─' * 50)
+        # ==============================================
+        self.stdout.write('\n[*]Fase 9: Acceso del superadmin al tenant')
+        self.stdout.write('-' * 50)
 
         from apps.tenant.models import TenantUserAccess
         access, access_created = TenantUserAccess.objects.get_or_create(
@@ -309,30 +310,30 @@ class Command(BaseCommand):
             defaults={'is_active': True, 'role': 'admin'}
         )
         if access_created:
-            self.stdout.write(self.style.SUCCESS('   ✅ Acceso otorgado'))
+            self.stdout.write(self.style.SUCCESS('   [OK]Acceso otorgado'))
         else:
-            self.stdout.write('   ℹ️  Acceso ya existía')
+            self.stdout.write('   [i]Acceso ya existia')
 
-        # ══════════════════════════════════════════════
+        # ==============================================
         # FASE 10: Actualizar estado del tenant
-        # ══════════════════════════════════════════════
+        # ==============================================
         tenant.schema_status = 'ready'
         tenant.schema_error = ''
         tenant.save(update_fields=['schema_status', 'schema_error'])
 
-        # ══════════════════════════════════════════════
+        # ==============================================
         # RESUMEN
-        # ══════════════════════════════════════════════
-        self.stdout.write('\n' + '═' * 50)
-        self.stdout.write(self.style.MIGRATE_HEADING('  ✅ BOOTSTRAP COMPLETADO'))
-        self.stdout.write('═' * 50)
+        # ==============================================
+        self.stdout.write('\n' + '=' * 50)
+        self.stdout.write(self.style.MIGRATE_HEADING('  [OK] BOOTSTRAP COMPLETADO'))
+        self.stdout.write('=' * 50)
         self.stdout.write(f'\n  Tenant:     {tenant.name}')
         self.stdout.write(f'  Schema:     {schema_name}')
         self.stdout.write(f'  Dominio:    {domain}')
         self.stdout.write(f'  SuperAdmin: {email}')
         self.stdout.write(f'  Password:   {password}')
         self.stdout.write(f'\n  URL: https://{domain}/login')
-        self.stdout.write('\n  Próximo paso: reiniciar gunicorn')
+        self.stdout.write('\n  Proximo paso: reiniciar gunicorn')
         self.stdout.write('  pkill gunicorn && DJANGO_SETTINGS_MODULE=config.settings.production '
                           'gunicorn config.wsgi:application --bind 127.0.0.1:8000 '
                           '--workers 3 --timeout 120 --daemon '

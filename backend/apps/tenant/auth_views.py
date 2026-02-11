@@ -15,6 +15,7 @@ FLUJO DE LOGIN:
 6. Requests subsiguientes incluyen X-Tenant-ID header
 """
 import logging
+import uuid
 from datetime import timedelta
 from django.conf import settings
 from django.utils import timezone
@@ -131,7 +132,7 @@ class TenantLoginView(APIView):
         tokens = create_tokens_for_tenant_user(user)
 
         # Obtener tenants accesibles
-        tenants_data = self._get_accessible_tenants(user)
+        tenants_data = self._get_accessible_tenants(user, request)
 
         # Actualizar último login
         user.last_login = timezone.now()
@@ -157,7 +158,7 @@ class TenantLoginView(APIView):
             'last_tenant_id': user.last_tenant_id,
         })
 
-    def _get_accessible_tenants(self, user):
+    def _get_accessible_tenants(self, user, request=None):
         """Obtiene la lista de tenants a los que el usuario tiene acceso."""
         if user.is_superadmin:
             # Superadmin tiene acceso a todos los tenants activos
@@ -169,7 +170,7 @@ class TenantLoginView(APIView):
             )
             return [
                 {
-                    'tenant': TenantMinimalSerializer(t).data,
+                    'tenant': TenantMinimalSerializer(t, context={'request': request}).data,
                     'role': 'superadmin',
                 }
                 for t in tenants
@@ -184,7 +185,7 @@ class TenantLoginView(APIView):
 
         return [
             {
-                'tenant': TenantMinimalSerializer(access.tenant).data,
+                'tenant': TenantMinimalSerializer(access.tenant, context={'request': request}).data,
                 'role': access.role,
             }
             for access in accesses
@@ -262,7 +263,7 @@ class TenantSelectView(APIView):
 
         return Response({
             'status': 'ok',
-            'tenant': TenantMinimalSerializer(tenant).data,
+            'tenant': TenantMinimalSerializer(tenant, context={'request': request}).data,
             'message': f'Conectado a {tenant.name}',
         })
 
@@ -410,7 +411,7 @@ class TenantMeView(APIView):
             tenants = Tenant.objects.filter(is_active=True)
             tenants_data = [
                 {
-                    'tenant': TenantMinimalSerializer(t).data,
+                    'tenant': TenantMinimalSerializer(t, context={'request': request}).data,
                     'role': 'superadmin',
                 }
                 for t in tenants
@@ -424,7 +425,7 @@ class TenantMeView(APIView):
 
             tenants_data = [
                 {
-                    'tenant': TenantMinimalSerializer(access.tenant).data,
+                    'tenant': TenantMinimalSerializer(access.tenant, context={'request': request}).data,
                     'role': access.role,
                 }
                 for access in accesses
@@ -440,3 +441,196 @@ class TenantMeView(APIView):
             'last_tenant_id': tenant_user.last_tenant_id,
             'tenants': tenants_data,
         })
+
+
+class ForgotPasswordView(APIView):
+    """
+    Solicitar restablecimiento de contrasena.
+
+    POST /api/tenant/auth/forgot-password/
+    {
+        "email": "usuario@ejemplo.com"
+    }
+
+    Siempre retorna 200 para no revelar si el email existe.
+    Si el email existe, envia un correo con link de reset.
+    """
+    authentication_classes = []
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'password_reset'
+
+    def post(self, request):
+        email = request.data.get('email', '').lower().strip()
+        ip_address = self._get_client_ip(request)
+
+        if not email:
+            return Response(
+                {'detail': 'El email es requerido'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Siempre retornar el mismo mensaje (no revelar si email existe)
+        success_message = (
+            'Si el email esta registrado, recibiras un enlace '
+            'para restablecer tu contrasena.'
+        )
+
+        try:
+            user = TenantUser.objects.get(email=email, is_active=True)
+        except TenantUser.DoesNotExist:
+            security_logger.info(
+                f"Password reset solicitado para email no existente: {email} - IP: {ip_address}"
+            )
+            return Response({'message': success_message})
+
+        # Generar token y expiracion (1 hora)
+        token = uuid.uuid4().hex
+        user.password_reset_token = token
+        user.password_reset_expires = timezone.now() + timedelta(hours=1)
+        user.save(update_fields=['password_reset_token', 'password_reset_expires'])
+
+        # Enviar email
+        self._send_reset_email(user, token)
+
+        security_logger.info(
+            f"Password reset enviado a {email} - IP: {ip_address}"
+        )
+
+        return Response({'message': success_message})
+
+    def _send_reset_email(self, user, token):
+        """Envia email de restablecimiento de contrasena."""
+        try:
+            from apps.audit_system.centro_notificaciones.email_service import EmailService
+
+            frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3010')
+            reset_url = f"{frontend_url}/reset-password?token={token}&email={user.email}"
+
+            EmailService.send_email(
+                to_email=user.email,
+                subject='Restablecer contrasena',
+                template_name='password_reset',
+                context={
+                    'user_name': user.full_name,
+                    'reset_url': reset_url,
+                    'expiry_hours': 1,
+                }
+            )
+        except Exception as e:
+            logger.error(f"Error enviando email de reset a {user.email}: {e}")
+            # Fallback: enviar email simple con Django
+            try:
+                from django.core.mail import send_mail
+                frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3010')
+                reset_url = f"{frontend_url}/reset-password?token={token}&email={user.email}"
+                send_mail(
+                    subject='[StrateKaz] Restablecer contrasena',
+                    message=(
+                        f'Hola {user.full_name},\n\n'
+                        f'Recibimos una solicitud para restablecer tu contrasena.\n\n'
+                        f'Haz clic en el siguiente enlace:\n{reset_url}\n\n'
+                        f'Este enlace expira en 1 hora.\n\n'
+                        f'Si no solicitaste esto, ignora este correo.\n\n'
+                        f'Equipo StrateKaz'
+                    ),
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[user.email],
+                    fail_silently=True,
+                )
+            except Exception as e2:
+                logger.error(f"Fallback email tambien fallo: {e2}")
+
+    def _get_client_ip(self, request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            return x_forwarded_for.split(',')[0].strip()
+        return request.META.get('REMOTE_ADDR', 'unknown')
+
+
+class ResetPasswordView(APIView):
+    """
+    Restablecer contrasena con token.
+
+    POST /api/tenant/auth/reset-password/
+    {
+        "email": "usuario@ejemplo.com",
+        "token": "abc123...",
+        "new_password": "NuevaContrasena123"
+    }
+    """
+    authentication_classes = []
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'password_reset'
+
+    def post(self, request):
+        email = request.data.get('email', '').lower().strip()
+        token = request.data.get('token', '').strip()
+        new_password = request.data.get('new_password', '')
+        ip_address = self._get_client_ip(request)
+
+        # Validar datos requeridos
+        if not email or not token or not new_password:
+            return Response(
+                {'detail': 'Email, token y nueva contrasena son requeridos'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validar complejidad de contrasena
+        if len(new_password) < 8:
+            return Response(
+                {'detail': 'La contrasena debe tener al menos 8 caracteres'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Buscar usuario y validar token
+        try:
+            user = TenantUser.objects.get(
+                email=email,
+                password_reset_token=token,
+                is_active=True
+            )
+        except TenantUser.DoesNotExist:
+            security_logger.warning(
+                f"Reset password fallido - token invalido para {email} - IP: {ip_address}"
+            )
+            return Response(
+                {'detail': 'Enlace invalido o expirado. Solicita uno nuevo.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Verificar expiracion
+        if not user.password_reset_expires or user.password_reset_expires < timezone.now():
+            # Limpiar token expirado
+            user.password_reset_token = None
+            user.password_reset_expires = None
+            user.save(update_fields=['password_reset_token', 'password_reset_expires'])
+
+            security_logger.warning(
+                f"Reset password fallido - token expirado para {email} - IP: {ip_address}"
+            )
+            return Response(
+                {'detail': 'El enlace ha expirado. Solicita uno nuevo.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Cambiar contrasena y limpiar token
+        user.set_password(new_password)
+        user.password_reset_token = None
+        user.password_reset_expires = None
+        user.save(update_fields=['password', 'password_reset_token', 'password_reset_expires'])
+
+        security_logger.info(
+            f"Password restablecido exitosamente para {email} - IP: {ip_address}"
+        )
+
+        return Response({
+            'message': 'Contrasena restablecida exitosamente. Ya puedes iniciar sesion.'
+        })
+
+    def _get_client_ip(self, request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            return x_forwarded_for.split(',')[0].strip()
+        return request.META.get('REMOTE_ADDR', 'unknown')

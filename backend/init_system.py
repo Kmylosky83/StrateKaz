@@ -31,7 +31,7 @@ try:
     if tenant_count > 0:
         tenants = Tenant.objects.filter(is_active=True)
         for tenant in tenants:
-            print(f"   ✅ Tenant activo: {tenant.name} ({tenant.company_name or 'Sin nombre de empresa'})")
+            print(f"   ✅ Tenant activo: {tenant.name} ({tenant.nombre_comercial or 'Sin nombre comercial'})")
     else:
         print("   ⚠️  No hay tenants activos. Crear uno desde el admin de Django.")
 except Exception as e:

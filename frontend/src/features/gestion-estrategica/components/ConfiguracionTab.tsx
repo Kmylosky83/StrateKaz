@@ -45,7 +45,7 @@ import {
 } from '../hooks/useModules';
 import { CATEGORY_LABELS, CATEGORY_COLORS } from '../types/modules.types';
 import type { SystemModuleTree } from '../types/modules.types';
-import { usePermissions } from '@/hooks/usePermissions';
+import { usePermissions, useIsSuperAdmin } from '@/hooks/usePermissions';
 import { Modules, Sections } from '@/constants/permissions';
 import { SedesSection } from './SedesSection';
 import { IntegracionesSection } from './IntegracionesSection';
@@ -263,11 +263,13 @@ const ModulosAndFeaturesSection = () => {
           <Blocks className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
           <div>
             <p className="text-sm text-blue-800 dark:text-blue-200">
-              <strong>¿Para qué sirve esta sección?</strong> Aquí puedes activar o desactivar los módulos contratados
-              según las necesidades de tu organización. Los módulos desactivados no aparecerán en el menú lateral.
+              <strong>¿Para qué sirve esta sección?</strong> Aquí puedes activar o desactivar los
+              módulos contratados según las necesidades de tu organización. Los módulos desactivados
+              no aparecerán en el menú lateral.
             </p>
             <p className="text-xs text-blue-600 dark:text-blue-300 mt-1">
-              Los módulos marcados como "Core" son esenciales para el funcionamiento del sistema y no pueden desactivarse.
+              Los módulos marcados como "Core" son esenciales para el funcionamiento del sistema y
+              no pueden desactivarse.
             </p>
           </div>
         </div>
@@ -474,7 +476,7 @@ const ModulosAndFeaturesSection = () => {
           )
         }
         confirmText="Desactivar"
-        confirmVariant="destructive"
+        variant="danger"
         isLoading={toggleModule.isPending}
       />
     </div>
@@ -566,6 +568,20 @@ const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
 };
 
 export const ConfiguracionTab = ({ activeSection, searchQuery }: ConfiguracionTabProps) => {
+  const isSuperAdmin = useIsSuperAdmin();
+
+  // Secciones restringidas a superadmin (no se renderizan para usuarios normales)
+  const SUPERADMIN_ONLY_SECTIONS = ['modulos'];
+
+  // Verificar acceso: si la seccion es solo-superadmin y el usuario no lo es
+  if (activeSection && SUPERADMIN_ONLY_SECTIONS.includes(activeSection) && !isSuperAdmin) {
+    return (
+      <div className="space-y-6">
+        <GenericSectionFallback sectionCode={activeSection} parentName="Configuración" />
+      </div>
+    );
+  }
+
   // Renderizar el componente de la seccion activa
   const ActiveComponent = activeSection ? SECTION_COMPONENTS[activeSection] : null;
 

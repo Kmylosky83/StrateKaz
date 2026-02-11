@@ -115,12 +115,20 @@ class HybridJWTAuthentication(JWTAuthentication):
         if email:
             # Token de TenantUser - buscar o crear User en schema actual
             from apps.core.models import User
+            is_superadmin = validated_token.get('is_superadmin', False)
             try:
-                return User.objects.get(email=email, is_active=True)
+                user = User.objects.get(email=email, is_active=True)
+                # Sincronizar is_superuser si el TenantUser es superadmin
+                # pero el User aun no tiene el flag (creado antes de este fix)
+                if is_superadmin and not user.is_superuser:
+                    user.is_superuser = True
+                    user.is_staff = True
+                    user.save(update_fields=['is_superuser', 'is_staff'])
+                    logger.info(f"Upgraded User {email} to superuser (superadmin sync)")
+                return user
             except User.DoesNotExist:
                 # El User no existe en este tenant, intentar crearlo
                 tenant_user_id = validated_token.get('tenant_user_id')
-                is_superadmin = validated_token.get('is_superadmin', False)
 
                 if tenant_user_id:
                     try:
@@ -194,14 +202,18 @@ class HybridJWTAuthentication(JWTAuthentication):
             # Generar un document_number temporal (requerido por el modelo)
             temp_document = f"TEMP-{uuid.uuid4().hex[:8].upper()}"
 
+            # Superadmin global -> is_superuser=True para acceso total en el tenant
+            # Esto permite que GranularActionPermission y el sistema RBAC le den acceso completo
+            grant_superuser = is_superadmin
+
             user = User.objects.create(
                 username=username,
                 email=tenant_user.email,
                 first_name=tenant_user.first_name or '',
                 last_name=tenant_user.last_name or '',
                 is_active=True,
-                is_superuser=False,  # Nunca auto-grant is_superuser; permisos via RBAC (Cargo)
-                is_staff=False,
+                is_superuser=grant_superuser,
+                is_staff=grant_superuser,
                 document_type='CC',
                 document_number=temp_document,
                 cargo=admin_cargo,  # Asignar cargo ADMIN si aplica

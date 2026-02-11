@@ -77,9 +77,12 @@ export const authAPI = {
    * Refrescar token de acceso
    */
   refreshToken: async (refreshToken: string): Promise<{ access: string; refresh?: string }> => {
-    const response = await axios.post<{ access: string; refresh?: string }>('/tenant/auth/refresh/', {
-      refresh: refreshToken,
-    });
+    const response = await axios.post<{ access: string; refresh?: string }>(
+      '/tenant/auth/refresh/',
+      {
+        refresh: refreshToken,
+      }
+    );
     return response.data;
   },
 
@@ -93,6 +96,29 @@ export const authAPI = {
       // Si falla el logout en servidor (token ya inválido), continuamos
       console.warn('Server logout failed (token may be expired):', error);
     }
+  },
+
+  /**
+   * Solicitar restablecimiento de contrasena
+   * Siempre retorna 200 por seguridad (no revela si el email existe)
+   */
+  forgotPassword: async (email: string): Promise<{ message: string }> => {
+    const response = await axios.post<{ message: string }>('/tenant/auth/forgot-password/', {
+      email,
+    });
+    return response.data;
+  },
+
+  /**
+   * Restablecer contrasena con token
+   */
+  resetPassword: async (data: {
+    email: string;
+    token: string;
+    new_password: string;
+  }): Promise<{ message: string }> => {
+    const response = await axios.post<{ message: string }>('/tenant/auth/reset-password/', data);
+    return response.data;
   },
 
   /**

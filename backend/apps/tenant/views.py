@@ -1,13 +1,18 @@
 """
 Views para Multi-Tenant System (django-tenants)
 
-Endpoints para gestión de tenants desde el frontend.
+Endpoints para gestion de tenants desde el frontend.
 
 ARQUITECTURA:
+- PublicSchemaWriteMixin: Fuerza todas las escrituras en schema 'public'
 - TenantViewSet: CRUD de tenants (solo superadmins)
-- TenantUserViewSet: Gestión de usuarios globales
+- TenantUserViewSet: Gestion de usuarios globales
 - PlanViewSet: Consulta de planes
-- DomainViewSet: Gestión de dominios
+- DomainViewSet: Gestion de dominios
+
+IMPORTANTE: Todos los modelos del schema public (Tenant, Domain, TenantUser,
+TenantUserAccess, Plan) DEBEN escribirse dentro de schema_context('public').
+django-tenants bloquea .save() fuera del schema propio del objeto.
 """
 import logging
 from rest_framework import viewsets, status
@@ -15,6 +20,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated, BasePermission
 from django_filters.rest_framework import DjangoFilterBackend
+from django_tenants.utils import schema_context
 from django.db import models
 from django.db.models import Count
 from django.utils import timezone
@@ -31,12 +37,40 @@ from .serializers import (
     TenantBrandingSerializer,
     TenantUserSerializer,
     TenantUserCreateSerializer,
+    TenantUserUpdateSerializer,
     TenantUserAccessSerializer,
     DomainSerializer,
     PlanSerializer,
     UserTenantsSerializer,
 )
 from .authentication import TenantJWTAuthentication, HybridJWTAuthentication
+
+
+# =============================================================================
+# MIXIN: Forzar escrituras en schema public
+# =============================================================================
+
+class PublicSchemaWriteMixin:
+    """
+    Mixin para ViewSets que operan sobre modelos del schema public
+    (Tenant, Domain, TenantUser, TenantUserAccess, Plan).
+
+    django-tenants bloquea .save() / .delete() sobre objetos del schema public
+    cuando el request viene desde un schema de tenant (ej: tenant_stratekaz).
+    Este mixin envuelve todas las operaciones de escritura en schema_context('public').
+    """
+
+    def perform_create(self, serializer):
+        with schema_context('public'):
+            serializer.save()
+
+    def perform_update(self, serializer):
+        with schema_context('public'):
+            serializer.save()
+
+    def perform_destroy(self, instance):
+        with schema_context('public'):
+            instance.delete()
 
 
 # =============================================================================
@@ -124,12 +158,13 @@ class IsAdminTenant(BasePermission):
 # VIEWSETS
 # =============================================================================
 
-class PlanViewSet(viewsets.ModelViewSet):
+class PlanViewSet(PublicSchemaWriteMixin, viewsets.ModelViewSet):
     """
-    ViewSet para Planes de suscripción.
+    ViewSet para Planes de suscripcion.
 
     - GET (list/retrieve): Accesible para todos (solo planes activos)
     - POST/PUT/PATCH/DELETE: Solo superadmins (todos los planes)
+    Hereda PublicSchemaWriteMixin para escrituras en schema public.
     """
     queryset = Plan.objects.all()
     serializer_class = PlanSerializer
@@ -174,13 +209,16 @@ class PlanViewSet(viewsets.ModelViewSet):
         return Response(stats)
 
 
-class TenantViewSet(viewsets.ModelViewSet):
+class TenantViewSet(PublicSchemaWriteMixin, viewsets.ModelViewSet):
     """
     ViewSet para Tenants.
     Solo accesible por superadmins.
 
     Usa TenantJWTAuthentication para permitir que TenantUser
     (usuarios globales) puedan gestionar tenants.
+
+    Hereda PublicSchemaWriteMixin para que create/update/delete
+    se ejecuten dentro de schema_context('public').
     """
     queryset = Tenant.objects.all()
     authentication_classes = [TenantJWTAuthentication]
@@ -201,7 +239,7 @@ class TenantViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """
         Retorna todos los tenants EXCEPTO el schema 'public'.
-        El tenant público es interno del sistema y no debe mostrarse en Admin Global.
+        El tenant publico es interno del sistema y no debe mostrarse en Admin Global.
         """
         return Tenant.objects.exclude(
             schema_name='public'
@@ -237,12 +275,11 @@ class TenantViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], url_path='toggle_active')
     def toggle_active(self, request, pk=None):
-        """
-        Activa/desactiva un tenant. Toggle simple.
-        """
+        """Activa/desactiva un tenant. Toggle simple."""
         tenant = self.get_object()
         tenant.is_active = not tenant.is_active
-        tenant.save(update_fields=['is_active'])
+        with schema_context('public'):
+            tenant.save(update_fields=['is_active'])
         return Response({
             'id': tenant.id,
             'is_active': tenant.is_active,
@@ -252,54 +289,89 @@ class TenantViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         """
         Soft delete: desactiva el tenant en lugar de eliminarlo.
-        El schema PostgreSQL se preserva para posible recuperación.
-        Para eliminación permanente (schema + datos), usar el action 'hard-delete'.
+        El schema PostgreSQL se preserva para posible recuperacion.
+        Para eliminacion permanente (schema + datos), usar el action 'hard-delete'.
         """
         instance.is_active = False
-        instance.save(update_fields=['is_active'])
+        with schema_context('public'):
+            instance.save(update_fields=['is_active'])
 
     @action(detail=True, methods=['post'], url_path='hard-delete')
     def hard_delete(self, request, pk=None):
         """
-        Eliminación permanente: borra el registro Y el schema PostgreSQL.
-        IRREVERSIBLE - requiere confirmación explícita.
+        Eliminacion permanente: borra el registro Y el schema PostgreSQL.
+        IRREVERSIBLE - requiere confirmacion explicita.
+
+        Limpia en orden:
+        1. TenantUser.last_tenant FK references (SET NULL)
+        2. TenantUserAccess (accesos de usuarios)
+        3. Domain (dominios asociados)
+        4. Schema PostgreSQL (DROP CASCADE)
+        5. Tenant record (DELETE real via raw SQL)
         """
         from django.db import connection
+        from apps.tenant.models import Domain, TenantUser, TenantUserAccess
 
         tenant = self.get_object()
         schema_name = tenant.schema_name
 
         if schema_name == 'public':
             return Response(
-                {'detail': 'No se puede eliminar el schema público'},
+                {'detail': 'No se puede eliminar el schema publico'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Verificar confirmación explícita
+        # Verificar confirmacion explicita
         confirm = request.data.get('confirm_name')
         if confirm != tenant.name:
             return Response(
-                {'detail': f'Para confirmar, envía confirm_name: "{tenant.name}"'},
+                {'detail': f'Para confirmar, envia confirm_name: "{tenant.name}"'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Eliminar schema PostgreSQL
+        tenant_name = tenant.name
+        tenant_id = tenant.id
+
         try:
-            with connection.cursor() as cursor:
-                cursor.execute(f'DROP SCHEMA IF EXISTS "{schema_name}" CASCADE')
-        except Exception as e:
-            return Response(
-                {'detail': f'Error eliminando schema: {str(e)}'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            with schema_context('public'):
+                # 1. Limpiar FK last_tenant en TenantUser
+                TenantUser.objects.filter(last_tenant=tenant).update(last_tenant=None)
+
+                # 2. Eliminar accesos de usuarios a este tenant
+                TenantUserAccess.objects.filter(tenant=tenant).delete()
+
+                # 3. Eliminar dominios asociados
+                Domain.objects.filter(tenant=tenant).delete()
+
+                # 4. Eliminar schema PostgreSQL
+                with connection.cursor() as cursor:
+                    cursor.execute(f'DROP SCHEMA IF EXISTS "{schema_name}" CASCADE')
+
+                # 5. Eliminar registro del tenant (DELETE real, no soft-delete)
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "DELETE FROM tenant_tenant WHERE id = %s",
+                        [tenant_id]
+                    )
+
+            logger.info(
+                f'Hard delete completado: "{tenant_name}" '
+                f'(schema={schema_name}, id={tenant_id})'
             )
 
-        # Eliminar registro
-        tenant_name = tenant.name
-        tenant.delete()
+            return Response({
+                'detail': f'Empresa "{tenant_name}" y schema "{schema_name}" eliminados permanentemente'
+            })
 
-        return Response({
-            'detail': f'Empresa "{tenant_name}" y schema "{schema_name}" eliminados permanentemente'
-        })
+        except Exception as e:
+            logger.error(
+                f'Hard delete fallido para tenant {tenant_id}: {e}',
+                exc_info=True
+            )
+            return Response(
+                {'detail': f'Error eliminando tenant: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     @action(detail=True, methods=['get'], url_path='creation-status')
     def creation_status(self, request, pk=None):
@@ -345,14 +417,16 @@ class TenantViewSet(viewsets.ModelViewSet):
         if tenant.schema_task_id:
             task_status = get_task_status(tenant.schema_task_id)
             if task_status:
-                # Actualizar estado del tenant si la tarea terminó
+                # Actualizar estado del tenant si la tarea termino
                 if task_status.get('status') == 'completed':
                     tenant.schema_status = 'ready'
-                    tenant.save(update_fields=['schema_status'])
+                    with schema_context('public'):
+                        tenant.save(update_fields=['schema_status'])
                 elif task_status.get('status') == 'failed':
                     tenant.schema_status = 'failed'
                     tenant.schema_error = task_status.get('error', 'Error desconocido')
-                    tenant.save(update_fields=['schema_status', 'schema_error'])
+                    with schema_context('public'):
+                        tenant.save(update_fields=['schema_status', 'schema_error'])
 
                 return Response(task_status)
 
@@ -395,7 +469,8 @@ class TenantViewSet(viewsets.ModelViewSet):
         tenant.schema_task_id = task.id
         tenant.schema_status = 'creating'
         tenant.schema_error = ''
-        tenant.save(update_fields=['schema_task_id', 'schema_status', 'schema_error'])
+        with schema_context('public'):
+            tenant.save(update_fields=['schema_task_id', 'schema_status', 'schema_error'])
 
         return Response({
             'status': 'retry_started',
@@ -408,7 +483,8 @@ class TenantViewSet(viewsets.ModelViewSet):
         """Activar un tenant."""
         tenant = self.get_object()
         tenant.is_active = True
-        tenant.save(update_fields=['is_active'])
+        with schema_context('public'):
+            tenant.save(update_fields=['is_active'])
         return Response({'status': 'tenant activado'})
 
     @action(detail=True, methods=['post'])
@@ -416,7 +492,8 @@ class TenantViewSet(viewsets.ModelViewSet):
         """Desactivar un tenant."""
         tenant = self.get_object()
         tenant.is_active = False
-        tenant.save(update_fields=['is_active'])
+        with schema_context('public'):
+            tenant.save(update_fields=['is_active'])
         return Response({'status': 'tenant desactivado'})
 
     @action(detail=False, methods=['get'])
@@ -493,15 +570,17 @@ class TenantViewSet(viewsets.ModelViewSet):
             tenant, data=request.data, partial=True, context={'request': request}
         )
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        with schema_context('public'):
+            serializer.save()
 
         # Retornar datos completos actualizados
         return Response(TenantSerializer(tenant, context={'request': request}).data)
 
 
-class DomainViewSet(viewsets.ModelViewSet):
+class DomainViewSet(PublicSchemaWriteMixin, viewsets.ModelViewSet):
     """
     ViewSet para Dominios de tenants.
+    Hereda PublicSchemaWriteMixin para escrituras en schema public.
     """
     queryset = Domain.objects.all()
     serializer_class = DomainSerializer
@@ -512,12 +591,13 @@ class DomainViewSet(viewsets.ModelViewSet):
         return Domain.objects.select_related('tenant')
 
 
-class TenantUserViewSet(viewsets.ModelViewSet):
+class TenantUserViewSet(PublicSchemaWriteMixin, viewsets.ModelViewSet):
     """
     ViewSet para usuarios globales del sistema multi-tenant.
 
     Usa TenantJWTAuthentication para permitir que TenantUser
     (usuarios globales) puedan gestionar otros usuarios globales.
+    Hereda PublicSchemaWriteMixin para escrituras en schema public.
     """
     queryset = TenantUser.objects.all()
     authentication_classes = [TenantJWTAuthentication]
@@ -529,6 +609,8 @@ class TenantUserViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'create':
             return TenantUserCreateSerializer
+        if self.action in ['update', 'partial_update']:
+            return TenantUserUpdateSerializer
         return TenantUserSerializer
 
     def get_queryset(self):
@@ -570,13 +652,14 @@ class TenantUserViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        access, created = TenantUserAccess.objects.update_or_create(
-            tenant_user=user,
-            tenant=tenant,
-            defaults={
-                'is_active': True,
-            }
-        )
+        with schema_context('public'):
+            access, created = TenantUserAccess.objects.update_or_create(
+                tenant_user=user,
+                tenant=tenant,
+                defaults={
+                    'is_active': True,
+                }
+            )
 
         return Response({
             'status': 'acceso otorgado' if created else 'acceso actualizado',
@@ -598,7 +681,8 @@ class TenantUserViewSet(viewsets.ModelViewSet):
                 tenant_id=tenant_id
             )
             access.is_active = False
-            access.save(update_fields=['is_active'])
+            with schema_context('public'):
+                access.save(update_fields=['is_active'])
             return Response({'status': 'acceso revocado'})
         except TenantUserAccess.DoesNotExist:
             return Response(

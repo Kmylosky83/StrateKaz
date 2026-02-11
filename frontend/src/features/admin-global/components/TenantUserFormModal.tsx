@@ -15,17 +15,9 @@ interface TenantUserFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   user?: TenantUser | null;
-  /** Si es 'tenants', muestra solo la sección de gestión de empresas */
-  initialSection?: 'all' | 'tenants';
 }
 
-export const TenantUserFormModal = ({
-  isOpen,
-  onClose,
-  user,
-  initialSection = 'all',
-}: TenantUserFormModalProps) => {
-  const tenantsOnly = initialSection === 'tenants' && !!user;
+export const TenantUserFormModal = ({ isOpen, onClose, user }: TenantUserFormModalProps) => {
   const isEditing = !!user;
   const createUser = useCreateTenantUser();
   const updateUser = useUpdateTenantUser();
@@ -178,18 +170,10 @@ export const TenantUserFormModal = ({
             </div>
             <div>
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {tenantsOnly
-                  ? 'Gestionar Empresas'
-                  : isEditing
-                    ? 'Editar Usuario'
-                    : 'Nuevo Usuario'}
+                {isEditing ? 'Editar Usuario' : 'Nuevo Usuario'}
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                {tenantsOnly
-                  ? `Asignar empresas a ${user?.first_name} ${user?.last_name} (${user?.email})`
-                  : isEditing
-                    ? 'Actualiza los datos del usuario'
-                    : 'Crea un nuevo usuario global'}
+                {isEditing ? 'Actualiza los datos del usuario' : 'Crea un nuevo usuario global'}
               </p>
             </div>
           </div>
@@ -200,121 +184,117 @@ export const TenantUserFormModal = ({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
-          {/* Datos personales - ocultos en modo "Gestionar Empresas" */}
-          {!tenantsOnly && (
-            <>
-              {/* Email */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  <Mail className="inline h-4 w-4 mr-1" /> Email *
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  disabled={isEditing}
-                  className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
+          {/* Datos personales */}
+          <>
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <Mail className="inline h-4 w-4 mr-1" /> Email *
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                disabled={isEditing}
+                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
                     text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500
                     ${isEditing ? 'opacity-50 cursor-not-allowed' : ''}
                     ${errors.email ? 'border-danger-500' : 'border-gray-300 dark:border-gray-600'}`}
-                  placeholder="usuario@ejemplo.com"
-                />
-                {errors.email && <p className="text-xs text-danger-500 mt-1">{errors.email}</p>}
-              </div>
+                placeholder="usuario@ejemplo.com"
+              />
+              {errors.email && <p className="text-xs text-danger-500 mt-1">{errors.email}</p>}
+            </div>
 
-              {/* Contraseña */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Contraseña {!isEditing && '*'}
-                </label>
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
+            {/* Contraseña */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Contraseña {!isEditing && '*'}
+              </label>
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
                     text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500
                     ${errors.password ? 'border-danger-500' : 'border-gray-300 dark:border-gray-600'}`}
-                  placeholder={isEditing ? 'Dejar vacío para no cambiar' : 'Mínimo 8 caracteres'}
+                placeholder={isEditing ? 'Dejar vacío para no cambiar' : 'Mínimo 8 caracteres'}
+              />
+              {errors.password && <p className="text-xs text-danger-500 mt-1">{errors.password}</p>}
+            </div>
+
+            {/* Nombre y Apellido */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Nombre *
+                </label>
+                <input
+                  type="text"
+                  name="first_name"
+                  value={formData.first_name}
+                  onChange={handleChange}
+                  className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
+                      text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500
+                      ${errors.first_name ? 'border-danger-500' : 'border-gray-300 dark:border-gray-600'}`}
+                  placeholder="Juan"
                 />
-                {errors.password && (
-                  <p className="text-xs text-danger-500 mt-1">{errors.password}</p>
+                {errors.first_name && (
+                  <p className="text-xs text-danger-500 mt-1">{errors.first_name}</p>
                 )}
               </div>
 
-              {/* Nombre y Apellido */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Nombre *
-                  </label>
-                  <input
-                    type="text"
-                    name="first_name"
-                    value={formData.first_name}
-                    onChange={handleChange}
-                    className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
-                      text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500
-                      ${errors.first_name ? 'border-danger-500' : 'border-gray-300 dark:border-gray-600'}`}
-                    placeholder="Juan"
-                  />
-                  {errors.first_name && (
-                    <p className="text-xs text-danger-500 mt-1">{errors.first_name}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Apellido *
-                  </label>
-                  <input
-                    type="text"
-                    name="last_name"
-                    value={formData.last_name}
-                    onChange={handleChange}
-                    className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Apellido *
+                </label>
+                <input
+                  type="text"
+                  name="last_name"
+                  value={formData.last_name}
+                  onChange={handleChange}
+                  className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
                       text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500
                       ${errors.last_name ? 'border-danger-500' : 'border-gray-300 dark:border-gray-600'}`}
-                    placeholder="Pérez"
-                  />
-                  {errors.last_name && (
-                    <p className="text-xs text-danger-500 mt-1">{errors.last_name}</p>
-                  )}
-                </div>
+                  placeholder="Pérez"
+                />
+                {errors.last_name && (
+                  <p className="text-xs text-danger-500 mt-1">{errors.last_name}</p>
+                )}
               </div>
+            </div>
 
-              {/* Opciones */}
-              <div className="flex gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    name="is_active"
-                    checked={formData.is_active}
-                    onChange={handleChange}
-                    className="h-4 w-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
-                  />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Activo</span>
-                </label>
+            {/* Opciones */}
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="is_active"
+                  checked={formData.is_active}
+                  onChange={handleChange}
+                  className="h-4 w-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
+                />
+                <span className="text-sm text-gray-700 dark:text-gray-300">Activo</span>
+              </label>
 
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    name="is_superadmin"
-                    checked={formData.is_superadmin}
-                    onChange={handleChange}
-                    className="h-4 w-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
-                  />
-                  <span className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                    <Shield className="h-4 w-4" /> Super Admin
-                  </span>
-                </label>
-              </div>
-            </>
-          )}
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="is_superadmin"
+                  checked={formData.is_superadmin}
+                  onChange={handleChange}
+                  className="h-4 w-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
+                />
+                <span className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                  <Shield className="h-4 w-4" /> Super Admin
+                </span>
+              </label>
+            </div>
+          </>
 
-          {/* Asignación de Tenants (siempre en modo tenants, o si no es superadmin) */}
-          {(tenantsOnly || !formData.is_superadmin) && (
+          {/* Asignación de Tenants (si no es superadmin) */}
+          {!formData.is_superadmin && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 <Building2 className="inline h-4 w-4 mr-1" /> Asignar a Empresas

@@ -193,20 +193,20 @@ export const TenantSelector = ({
                 <div
                   className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
                   style={{
-                    backgroundColor: (tenant.logo_effective || tenant.logo_url) ? 'transparent' : `${tenant.primary_color}20`,
+                    backgroundColor:
+                      tenant.logo || tenant.logo_effective || tenant.logo_url
+                        ? 'transparent'
+                        : `${tenant.primary_color}20`,
                   }}
                 >
-                  {(tenant.logo_effective || tenant.logo_url) ? (
+                  {tenant.logo || tenant.logo_effective || tenant.logo_url ? (
                     <img
-                      src={tenant.logo_effective || tenant.logo_url}
+                      src={tenant.logo || tenant.logo_effective || tenant.logo_url}
                       alt={tenant.name}
                       className="w-full h-full object-contain rounded-lg"
                     />
                   ) : (
-                    <span
-                      className="text-xl font-bold"
-                      style={{ color: tenant.primary_color }}
-                    >
+                    <span className="text-xl font-bold" style={{ color: tenant.primary_color }}>
                       {tenant.name.charAt(0).toUpperCase()}
                     </span>
                   )}
@@ -231,9 +231,7 @@ export const TenantSelector = ({
                       <RoleIcon className="w-3 h-3" />
                       {roleLabel}
                     </span>
-                    <span className="text-xs text-gray-400">
-                      {tenant.primary_domain}
-                    </span>
+                    <span className="text-xs text-gray-400">{tenant.primary_domain}</span>
                   </div>
                 </div>
 
@@ -251,12 +249,7 @@ export const TenantSelector = ({
 
       {/* Botón volver */}
       {onBack && (
-        <Button
-          variant="outline"
-          className="w-full mt-4"
-          onClick={onBack}
-          disabled={isLoading}
-        >
+        <Button variant="outline" className="w-full mt-4" onClick={onBack} disabled={isLoading}>
           Volver al login
         </Button>
       )}

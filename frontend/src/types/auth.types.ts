@@ -142,6 +142,8 @@ export interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
+  /** Indica si el perfil del User (core.User) está siendo cargado */
+  isLoadingUser: boolean;
   /** ID del tenant actual (null = modo Admin Global o sin tenant) */
   currentTenantId: number | null;
   /** Información del tenant actual */
@@ -155,6 +157,7 @@ export interface AuthState {
   logout: () => Promise<void>;
   refreshTenantProfile: () => Promise<void>;
   selectTenant: (tenantId: number) => Promise<void>;
+  loadUserProfile: () => Promise<void>;
   setUser: (user: User) => void;
   setCurrentTenantId: (tenantId: number | null) => void;
   clearTenantContext: () => void;

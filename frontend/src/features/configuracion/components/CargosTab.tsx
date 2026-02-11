@@ -67,9 +67,20 @@ export const CargosTab = () => {
     const cargosConUsuarios = cargos.filter((c) => (c.users_count || 0) > 0).length;
 
     return [
-      { label: 'Total Cargos', value: data?.count || cargos.length, icon: Briefcase, iconColor: 'info' },
+      {
+        label: 'Total Cargos',
+        value: data?.count || cargos.length,
+        icon: Briefcase,
+        iconColor: 'info',
+      },
       { label: 'Usuarios Asignados', value: totalUsuarios, icon: Users, iconColor: 'primary' },
-      { label: 'Con Usuarios', value: cargosConUsuarios, icon: CheckCircle, iconColor: 'gray', description: 'Cargos ocupados' },
+      {
+        label: 'Con Usuarios',
+        value: cargosConUsuarios,
+        icon: CheckCircle,
+        iconColor: 'gray',
+        description: 'Cargos ocupados',
+      },
     ];
   }, [data]);
 
@@ -114,7 +125,11 @@ export const CargosTab = () => {
 
   if (error) {
     return (
-      <Alert variant="error" title="Error" message="Error al cargar los cargos. Intente de nuevo." />
+      <Alert
+        variant="error"
+        title="Error"
+        message="Error al cargar los cargos. Intente de nuevo."
+      />
     );
   }
 
@@ -186,7 +201,7 @@ export const CargosTab = () => {
                 })
               }
               options={[
-                { value: '', label: 'Todas las áreas' },
+                { value: '', label: 'Todos los procesos' },
                 ...areaOptions.map((opt) => ({
                   value: opt.value.toString(),
                   label: opt.label,
@@ -216,15 +231,20 @@ export const CargosTab = () => {
           <EmptyState
             icon={<Briefcase className="h-12 w-12" />}
             title="Sin cargos"
-            description={canCreate
-              ? "No hay cargos configurados en el sistema. Crea el primer cargo para comenzar."
-              : "No hay cargos configurados en el sistema."
+            description={
+              canCreate
+                ? 'No hay cargos configurados en el sistema. Crea el primer cargo para comenzar.'
+                : 'No hay cargos configurados en el sistema.'
             }
-            action={canCreate ? {
-              label: 'Crear Cargo',
-              onClick: handleCreate,
-              icon: <Plus className="h-4 w-4" />,
-            } : undefined}
+            action={
+              canCreate
+                ? {
+                    label: 'Crear Cargo',
+                    onClick: handleCreate,
+                    icon: <Plus className="h-4 w-4" />,
+                  }
+                : undefined
+            }
           />
         ) : (
           <>
@@ -239,7 +259,7 @@ export const CargosTab = () => {
                       Nivel
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Área
+                      Proceso
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Usuarios

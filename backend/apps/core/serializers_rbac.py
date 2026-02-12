@@ -446,6 +446,100 @@ class CargoDetailRBACSerializer(serializers.ModelSerializer):
         } for u in usuarios]
 
 
+# =============================================================================
+# HELPERS: Validacion y normalizacion de JSON estructurado (funciones/competencias)
+# =============================================================================
+
+FRECUENCIA_VALIDAS = {'diaria', 'semanal', 'mensual', 'ocasional'}
+CRITICIDAD_VALIDAS = {'alta', 'media', 'baja'}
+NIVEL_COMPETENCIA_VALIDOS = {'basico', 'intermedio', 'avanzado', 'experto'}
+
+
+def normalize_funciones(data):
+    """
+    Normaliza funciones_responsabilidades: acepta formato legacy (string[])
+    y nuevo formato estructurado ([{nombre, descripcion?, frecuencia, criticidad}]).
+    Retorna siempre lista de dicts.
+    """
+    if not data or not isinstance(data, list):
+        return []
+    result = []
+    for item in data:
+        if isinstance(item, str):
+            # Legacy: string -> objeto con defaults
+            result.append({
+                'nombre': item,
+                'frecuencia': 'diaria',
+                'criticidad': 'media',
+            })
+        elif isinstance(item, dict):
+            nombre = item.get('nombre', '').strip()
+            if not nombre:
+                raise serializers.ValidationError(
+                    'Cada funcion debe tener un campo "nombre" no vacio.'
+                )
+            frecuencia = item.get('frecuencia', 'diaria')
+            if frecuencia not in FRECUENCIA_VALIDAS:
+                raise serializers.ValidationError(
+                    f'Frecuencia invalida "{frecuencia}". Valores validos: {", ".join(FRECUENCIA_VALIDAS)}'
+                )
+            criticidad = item.get('criticidad', 'media')
+            if criticidad not in CRITICIDAD_VALIDAS:
+                raise serializers.ValidationError(
+                    f'Criticidad invalida "{criticidad}". Valores validos: {", ".join(CRITICIDAD_VALIDAS)}'
+                )
+            result.append({
+                'nombre': nombre,
+                'descripcion': item.get('descripcion', ''),
+                'frecuencia': frecuencia,
+                'criticidad': criticidad,
+            })
+        else:
+            raise serializers.ValidationError(
+                'Cada funcion debe ser un string o un objeto {nombre, descripcion?, frecuencia, criticidad}.'
+            )
+    return result
+
+
+def normalize_competencias(data):
+    """
+    Normaliza competencias (tecnicas/blandas): acepta formato legacy (string[])
+    y nuevo formato estructurado ([{nombre, nivel, descripcion?}]).
+    Retorna siempre lista de dicts.
+    """
+    if not data or not isinstance(data, list):
+        return []
+    result = []
+    for item in data:
+        if isinstance(item, str):
+            # Legacy: string -> objeto con defaults
+            result.append({
+                'nombre': item,
+                'nivel': 'intermedio',
+            })
+        elif isinstance(item, dict):
+            nombre = item.get('nombre', '').strip()
+            if not nombre:
+                raise serializers.ValidationError(
+                    'Cada competencia debe tener un campo "nombre" no vacio.'
+                )
+            nivel = item.get('nivel', 'intermedio')
+            if nivel not in NIVEL_COMPETENCIA_VALIDOS:
+                raise serializers.ValidationError(
+                    f'Nivel invalido "{nivel}". Valores validos: {", ".join(NIVEL_COMPETENCIA_VALIDOS)}'
+                )
+            result.append({
+                'nombre': nombre,
+                'nivel': nivel,
+                'descripcion': item.get('descripcion', ''),
+            })
+        else:
+            raise serializers.ValidationError(
+                'Cada competencia debe ser un string o un objeto {nombre, nivel, descripcion?}.'
+            )
+    return result
+
+
 class CargoCreateSerializer(serializers.ModelSerializer):
     """Serializer para crear cargos con todos los campos"""
 
@@ -508,6 +602,15 @@ class CargoCreateSerializer(serializers.ModelSerializer):
         if Cargo.objects.filter(code=value).exists():
             raise serializers.ValidationError('Este código de cargo ya existe')
         return value.upper()
+
+    def validate_funciones_responsabilidades(self, value):
+        return normalize_funciones(value)
+
+    def validate_competencias_tecnicas(self, value):
+        return normalize_competencias(value)
+
+    def validate_competencias_blandas(self, value):
+        return normalize_competencias(value)
 
     @transaction.atomic
     def create(self, validated_data):
@@ -610,6 +713,15 @@ class CargoUpdateSerializer(serializers.ModelSerializer):
             # Control
             'is_active', 'fecha_aprobacion',
         ]
+
+    def validate_funciones_responsabilidades(self, value):
+        return normalize_funciones(value)
+
+    def validate_competencias_tecnicas(self, value):
+        return normalize_competencias(value)
+
+    def validate_competencias_blandas(self, value):
+        return normalize_competencias(value)
 
     def validate(self, attrs):
         instance = self.instance

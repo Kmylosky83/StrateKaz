@@ -29,6 +29,8 @@ class CargoSerializer(serializers.ModelSerializer):
             'level_display',
             'parent_cargo',
             'is_active',
+            'is_jefatura',
+            'is_externo',
             'subordinados_count',
             'area_id',
             'area_nombre',

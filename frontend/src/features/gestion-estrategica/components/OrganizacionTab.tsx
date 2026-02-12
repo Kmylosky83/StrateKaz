@@ -2,52 +2,51 @@
  * Tab de Organizacion - Modulo Direccion Estrategica
  *
  * Secciones (orden desde BD):
- * 1. Áreas - Gestión de áreas/departamentos (Vista 7: Tree Cards)
- * 2. Cargos - Gestión de cargos organizacionales (Vista 2: Lista CRUD)
- * 3. Organigrama - Vista interactiva del organigrama (Vista 8: Organigrama)
- * 4. Colaboradores - Gestión de usuarios/colaboradores (Vista 2: Lista CRUD)
- * 5. Consecutivos - Configuración de consecutivos automáticos (Vista 2: Lista CRUD)
- * 6. Unidades - Catálogo de unidades de medida (Vista 2: Lista CRUD)
+ * 1. Procesos (Areas) - Gestion de areas/departamentos (Vista 7: Tree Cards)
+ * 2. Organigrama - Vista interactiva del organigrama (Vista 8: Organigrama)
+ * 3. Colaboradores - Gestion de usuarios/colaboradores (Vista 2: Lista CRUD)
+ * 4. Consecutivos - Configuracion de consecutivos automaticos (Vista 2: Lista CRUD)
+ * 5. Unidades - Catalogo de unidades de medida (Vista 2: Lista CRUD)
  *
- * Las secciones se controlan desde DynamicSections en la página padre.
+ * NOTA: La seccion "Cargos" fue migrada a Talento Humano > Estructura de Cargos.
+ * El Organigrama sigue leyendo cargos (read-only) desde la API /core/cargos-rbac/.
  *
- * NOTA: La sección "Control de Acceso" fue removida del sistema.
- * Los permisos RBAC se configuran dentro del modal de edición de Cargos
- * (CargoFormModal > TabAccesoSecciones).
+ * Los permisos RBAC se configuran dentro del modal de edicion de Cargos
+ * en Talento Humano (CargoFormModal > TabAccesoSecciones).
  */
-
-// Importar CargosTab desde configuracion
-import { CargosTab } from '@/features/configuracion/components/CargosTab';
 
 // Importar componentes internos
 import { OrganigramaView } from './OrganigramaView';
 import { AreasTab } from './AreasTab';
 import { ColaboradoresSection } from './ColaboradoresSection';
 
-// Consecutivos y Unidades de Medida migrados desde Configuración
+// Consecutivos y Unidades de Medida migrados desde Configuracion
 import { ConsecutivosSection } from './ConsecutivosSection';
 import { UnidadesMedidaSection } from './UnidadesMedidaSection';
 
 /**
  * Props del OrganizacionTab
- * activeSection viene desde DynamicSections en la página padre
+ * activeSection viene desde DynamicSections en la pagina padre
  */
 interface OrganizacionTabProps {
-  /** Código de la sección activa (desde API) */
+  /** Codigo de la seccion activa (desde API) */
   activeSection?: string;
 }
 
 /**
- * Mapeo de códigos de sección a componentes
- * Los códigos deben coincidir con los de la BD (TabSection.code)
- * IMPORTANTE: Los códigos en BD están en minúsculas
+ * Mapeo de codigos de seccion a componentes
+ * Los codigos deben coincidir con los de la BD (TabSection.code)
+ * IMPORTANTE: Los codigos en BD estan en minusculas
+ *
+ * NOTA: 'cargos' fue migrado a Talento Humano.
+ * Si el usuario navega a la seccion 'cargos' (por cache de BD),
+ * se redirige al fallback (AreasTab).
  */
 const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
   areas: AreasTab,
-  cargos: CargosTab,
   organigrama: OrganigramaView,
   colaboradores: ColaboradoresSection,
-  // Migrados desde Configuración
+  // Migrados desde Configuracion
   consecutivos: ConsecutivosSection,
   unidades_medida: UnidadesMedidaSection,
 };

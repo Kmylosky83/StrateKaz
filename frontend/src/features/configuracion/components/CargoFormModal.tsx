@@ -37,6 +37,8 @@ import type {
   NivelJerarquico,
   NivelEducativo,
   ExperienciaRequerida,
+  FuncionCargo,
+  CompetenciaCargo,
 } from '../types/rbac.types';
 import {
   NIVEL_JERARQUICO_OPTIONS,
@@ -45,7 +47,11 @@ import {
   EPP_SUGERIDOS,
   EXAMENES_MEDICOS_SUGERIDOS,
   CAPACITACIONES_SST_SUGERIDAS,
+  normalizeFunciones,
+  normalizeCompetencias,
 } from '../types/rbac.types';
+import { FuncionesTable } from './FuncionesTable';
+import { CompetenciasTable } from './CompetenciasTable';
 import type { Tab } from '@/components/common';
 import {
   UserCircle,
@@ -63,6 +69,8 @@ interface CargoFormModalProps {
   cargo: CargoList | null;
   isOpen: boolean;
   onClose: () => void;
+  /** Callback tras crear cargo exitosamente (retorna ID del nuevo cargo) */
+  onSuccess?: (newCargoId: number) => void;
 }
 
 type TabType = 'identificacion' | 'funciones' | 'requisitos' | 'sst' | 'acceso';
@@ -168,7 +176,7 @@ const ListEditor = ({
   );
 };
 
-export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) => {
+export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormModalProps) => {
   const isEditing = cargo !== null;
 
   // Form state organizado por tabs
@@ -191,7 +199,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
 
     // Tab 2: Manual de Funciones
     objetivo_cargo: '',
-    funciones_responsabilidades: [] as string[],
+    funciones_responsabilidades: [] as FuncionCargo[],
     autoridad_autonomia: '',
     relaciones_internas: '',
     relaciones_externas: '',
@@ -201,8 +209,8 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
     titulo_requerido: '',
     experiencia_requerida: undefined as ExperienciaRequerida | undefined,
     experiencia_especifica: '',
-    competencias_tecnicas: [] as string[],
-    competencias_blandas: [] as string[],
+    competencias_tecnicas: [] as CompetenciaCargo[],
+    competencias_blandas: [] as CompetenciaCargo[],
     licencias_certificaciones: [] as string[],
     formacion_complementaria: '',
 
@@ -247,7 +255,9 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
         requiere_tarjeta_abogado: cargoCompleto.requiere_tarjeta_abogado,
 
         objetivo_cargo: cargoCompleto.objetivo_cargo || '',
-        funciones_responsabilidades: cargoCompleto.funciones_responsabilidades || [],
+        funciones_responsabilidades: normalizeFunciones(
+          cargoCompleto.funciones_responsabilidades || []
+        ),
         autoridad_autonomia: cargoCompleto.autoridad_autonomia || '',
         relaciones_internas: cargoCompleto.relaciones_internas || '',
         relaciones_externas: cargoCompleto.relaciones_externas || '',
@@ -256,8 +266,8 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
         titulo_requerido: cargoCompleto.titulo_requerido || '',
         experiencia_requerida: cargoCompleto.experiencia_requerida,
         experiencia_especifica: cargoCompleto.experiencia_especifica || '',
-        competencias_tecnicas: cargoCompleto.competencias_tecnicas || [],
-        competencias_blandas: cargoCompleto.competencias_blandas || [],
+        competencias_tecnicas: normalizeCompetencias(cargoCompleto.competencias_tecnicas || []),
+        competencias_blandas: normalizeCompetencias(cargoCompleto.competencias_blandas || []),
         licencias_certificaciones: cargoCompleto.licencias_certificaciones || [],
         formacion_complementaria: cargoCompleto.formacion_complementaria || '',
 
@@ -391,7 +401,8 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
         restricciones_medicas: formData.restricciones_medicas || undefined,
         capacitaciones_sst: formData.capacitaciones_sst,
       };
-      await createMutation.mutateAsync(createData);
+      const newCargo = await createMutation.mutateAsync(createData);
+      onSuccess?.(newCargo.id);
     }
 
     onClose();
@@ -628,13 +639,11 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
                 rows={3}
               />
 
-              <ListEditor
-                label="Funciones y Responsabilidades"
+              <FuncionesTable
                 items={formData.funciones_responsabilidades}
                 onChange={(items) =>
                   setFormData({ ...formData, funciones_responsabilidades: items })
                 }
-                placeholder="Agregar función o responsabilidad..."
               />
 
               <Textarea
@@ -747,14 +756,14 @@ export const CargoFormModal = ({ cargo, isOpen, onClose }: CargoFormModalProps) 
               </div>
 
               {/* Competencias */}
-              <ListEditor
-                label="Competencias Técnicas"
+              <CompetenciasTable
+                label="Competencias Tecnicas"
                 items={formData.competencias_tecnicas}
                 onChange={(items) => setFormData({ ...formData, competencias_tecnicas: items })}
                 placeholder="Excel avanzado, manejo de ERP..."
               />
 
-              <ListEditor
+              <CompetenciasTable
                 label="Competencias Blandas"
                 items={formData.competencias_blandas}
                 onChange={(items) => setFormData({ ...formData, competencias_blandas: items })}

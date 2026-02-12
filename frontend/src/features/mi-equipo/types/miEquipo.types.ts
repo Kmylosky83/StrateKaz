@@ -8,6 +8,7 @@ export interface ColaboradorEquipo {
   nombre_completo: string;
   numero_identificacion: string;
   cargo_nombre: string;
+  is_externo: boolean;
   estado: string;
   fecha_ingreso: string;
   foto_url: string | null;
@@ -47,8 +48,4 @@ export interface EvaluacionEquipo {
   fecha_evaluacion: string | null;
 }
 
-export type MiEquipoTab =
-  | 'equipo'
-  | 'aprobaciones'
-  | 'asistencia'
-  | 'evaluaciones';
+export type MiEquipoTab = 'equipo' | 'aprobaciones' | 'asistencia' | 'evaluaciones';

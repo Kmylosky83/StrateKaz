@@ -13,6 +13,8 @@ export interface Cargo {
   is_active: boolean;
   /** Indica si el cargo tiene rol de jefatura (ve Mi Equipo en sidebar) */
   is_jefatura: boolean;
+  /** Indica si es un cargo externo (contratista, consultor, auditor) */
+  is_externo: boolean;
   subordinados_count: number;
   /** ID del área a la que pertenece el cargo */
   area_id?: number;

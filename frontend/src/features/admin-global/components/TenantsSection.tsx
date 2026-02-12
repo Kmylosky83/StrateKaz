@@ -118,7 +118,7 @@ const TenantCard = forwardRef<HTMLDivElement, TenantCardProps>(
               <div>
                 <h3 className="font-semibold text-gray-900 dark:text-white">{tenant.name}</h3>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {tenant.subdomain}.stratekaz.com
+                  {tenant.subdomain}.{import.meta.env.VITE_BASE_DOMAIN || 'localhost'}
                 </p>
               </div>
             </div>

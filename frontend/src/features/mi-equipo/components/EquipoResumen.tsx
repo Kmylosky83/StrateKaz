@@ -48,11 +48,7 @@ export function EquipoResumen() {
         {equipo.map((col) => (
           <Card key={col.id} className="p-4 hover:shadow-md transition-shadow">
             <div className="flex items-center gap-3">
-              <Avatar
-                src={col.foto_url}
-                alt={col.nombre_completo}
-                size="md"
-              />
+              <Avatar src={col.foto_url} alt={col.nombre_completo} size="md" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                   {col.nombre_completo}
@@ -62,9 +58,16 @@ export function EquipoResumen() {
                   <span className="truncate">{col.cargo_nombre}</span>
                 </div>
               </div>
-              <Badge variant={col.estado === 'activo' ? 'success' : 'warning'} size="sm">
-                {col.estado}
-              </Badge>
+              <div className="flex flex-col items-end gap-1">
+                {col.is_externo && (
+                  <Badge variant="info" size="sm">
+                    Externo
+                  </Badge>
+                )}
+                <Badge variant={col.estado === 'activo' ? 'success' : 'warning'} size="sm">
+                  {col.estado}
+                </Badge>
+              </div>
             </div>
           </Card>
         ))}

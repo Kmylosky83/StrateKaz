@@ -120,6 +120,87 @@ export interface AreaReference {
   full_path?: string;
 }
 
+// ==================== FUNCIONES Y COMPETENCIAS ESTRUCTURADAS ====================
+
+/** Frecuencia de ejecucion de una funcion del cargo */
+export type FrecuenciaFuncion = 'diaria' | 'semanal' | 'mensual' | 'ocasional';
+
+/** Nivel de criticidad de una funcion o competencia */
+export type CriticidadFuncion = 'alta' | 'media' | 'baja';
+
+/** Nivel de dominio de una competencia */
+export type NivelCompetencia = 'basico' | 'intermedio' | 'avanzado' | 'experto';
+
+/**
+ * Funcion/Responsabilidad del cargo - formato estructurado
+ * Reemplaza el array plano de strings con metadata enriquecida
+ */
+export interface FuncionCargo {
+  nombre: string;
+  descripcion?: string;
+  frecuencia: FrecuenciaFuncion;
+  criticidad: CriticidadFuncion;
+}
+
+/**
+ * Competencia (tecnica o blanda) del cargo - formato estructurado
+ * Reemplaza el array plano de strings con nivel y descripcion
+ */
+export interface CompetenciaCargo {
+  nombre: string;
+  nivel: NivelCompetencia;
+  descripcion?: string;
+}
+
+/** Opciones de frecuencia para selects */
+export const FRECUENCIA_OPTIONS: { value: FrecuenciaFuncion; label: string }[] = [
+  { value: 'diaria', label: 'Diaria' },
+  { value: 'semanal', label: 'Semanal' },
+  { value: 'mensual', label: 'Mensual' },
+  { value: 'ocasional', label: 'Ocasional' },
+];
+
+/** Opciones de criticidad para selects */
+export const CRITICIDAD_OPTIONS: { value: CriticidadFuncion; label: string }[] = [
+  { value: 'alta', label: 'Alta' },
+  { value: 'media', label: 'Media' },
+  { value: 'baja', label: 'Baja' },
+];
+
+/** Opciones de nivel de competencia para selects */
+export const NIVEL_COMPETENCIA_OPTIONS: { value: NivelCompetencia; label: string }[] = [
+  { value: 'basico', label: 'Basico' },
+  { value: 'intermedio', label: 'Intermedio' },
+  { value: 'avanzado', label: 'Avanzado' },
+  { value: 'experto', label: 'Experto' },
+];
+
+/**
+ * Helper: normaliza datos legacy (string[]) al formato estructurado (FuncionCargo[])
+ * Compatible con datos existentes en BD
+ */
+export function normalizeFunciones(data: (string | FuncionCargo)[]): FuncionCargo[] {
+  return data.map((item) => {
+    if (typeof item === 'string') {
+      return { nombre: item, frecuencia: 'diaria', criticidad: 'media' };
+    }
+    return item;
+  });
+}
+
+/**
+ * Helper: normaliza datos legacy (string[]) al formato estructurado (CompetenciaCargo[])
+ * Compatible con datos existentes en BD
+ */
+export function normalizeCompetencias(data: (string | CompetenciaCargo)[]): CompetenciaCargo[] {
+  return data.map((item) => {
+    if (typeof item === 'string') {
+      return { nombre: item, nivel: 'intermedio' };
+    }
+    return item;
+  });
+}
+
 // ==================== CARGO (EXTENDIDO CON MANUAL DE FUNCIONES) ====================
 
 export type NivelJerarquico = 'ESTRATEGICO' | 'TACTICO' | 'OPERATIVO' | 'APOYO' | 'EXTERNO';
@@ -195,7 +276,7 @@ export interface Cargo {
 
   // TAB 2: Manual de Funciones
   objetivo_cargo?: string;
-  funciones_responsabilidades: string[];
+  funciones_responsabilidades: (string | FuncionCargo)[];
   autoridad_autonomia?: string;
   relaciones_internas?: string;
   relaciones_externas?: string;
@@ -207,8 +288,8 @@ export interface Cargo {
   experiencia_requerida?: ExperienciaRequerida;
   experiencia_requerida_display?: string;
   experiencia_especifica?: string;
-  competencias_tecnicas: string[];
-  competencias_blandas: string[];
+  competencias_tecnicas: (string | CompetenciaCargo)[];
+  competencias_blandas: (string | CompetenciaCargo)[];
   licencias_certificaciones: string[];
   formacion_complementaria?: string;
 
@@ -292,7 +373,7 @@ export interface CreateCargoDTO {
 
   // Manual de funciones
   objetivo_cargo?: string;
-  funciones_responsabilidades?: string[];
+  funciones_responsabilidades?: FuncionCargo[];
   autoridad_autonomia?: string;
   relaciones_internas?: string;
   relaciones_externas?: string;
@@ -302,8 +383,8 @@ export interface CreateCargoDTO {
   titulo_requerido?: string;
   experiencia_requerida?: ExperienciaRequerida;
   experiencia_especifica?: string;
-  competencias_tecnicas?: string[];
-  competencias_blandas?: string[];
+  competencias_tecnicas?: CompetenciaCargo[];
+  competencias_blandas?: CompetenciaCargo[];
   licencias_certificaciones?: string[];
   formacion_complementaria?: string;
 
@@ -345,7 +426,7 @@ export interface UpdateCargoDTO {
 
   // Manual de funciones
   objetivo_cargo?: string;
-  funciones_responsabilidades?: string[];
+  funciones_responsabilidades?: FuncionCargo[];
   autoridad_autonomia?: string;
   relaciones_internas?: string;
   relaciones_externas?: string;
@@ -355,8 +436,8 @@ export interface UpdateCargoDTO {
   titulo_requerido?: string;
   experiencia_requerida?: ExperienciaRequerida;
   experiencia_especifica?: string;
-  competencias_tecnicas?: string[];
-  competencias_blandas?: string[];
+  competencias_tecnicas?: CompetenciaCargo[];
+  competencias_blandas?: CompetenciaCargo[];
   licencias_certificaciones?: string[];
   formacion_complementaria?: string;
 
@@ -589,7 +670,7 @@ export const NIVEL_JERARQUICO_OPTIONS: SelectOption[] = [
   { value: 'TACTICO', label: 'Tactico' },
   { value: 'OPERATIVO', label: 'Operativo' },
   { value: 'APOYO', label: 'Apoyo' },
-  { value: 'EXTERNO', label: 'Externo' },  // Contratistas, consultores, auditores, socios
+  { value: 'EXTERNO', label: 'Externo' }, // Contratistas, consultores, auditores, socios
 ];
 
 export const NIVEL_EDUCATIVO_OPTIONS: SelectOption[] = [

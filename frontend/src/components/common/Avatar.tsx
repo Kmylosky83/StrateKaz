@@ -6,17 +6,13 @@ export interface AvatarProps {
   src?: string;
   alt?: string;
   name?: string;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  /** Muestra borde de estado: 'active'=verde, 'inactive'=gris, 'external'=azul */
+  status?: 'active' | 'inactive' | 'external';
   className?: string;
 }
 
-export const Avatar = ({
-  src,
-  alt,
-  name,
-  size = 'md',
-  className,
-}: AvatarProps) => {
+export const Avatar = ({ src, alt, name, size = 'md', status, className }: AvatarProps) => {
   const [imageError, setImageError] = useState(false);
 
   const sizeClasses = {
@@ -24,6 +20,7 @@ export const Avatar = ({
     md: 'h-10 w-10 text-sm',
     lg: 'h-12 w-12 text-base',
     xl: 'h-16 w-16 text-lg',
+    '2xl': 'h-24 w-24 text-3xl',
   };
 
   const iconSizes = {
@@ -31,6 +28,13 @@ export const Avatar = ({
     md: 'h-5 w-5',
     lg: 'h-6 w-6',
     xl: 'h-8 w-8',
+    '2xl': 'h-10 w-10',
+  };
+
+  const statusClasses = {
+    active: 'ring-2 ring-green-400',
+    inactive: 'ring-2 ring-gray-300',
+    external: 'ring-2 ring-blue-400',
   };
 
   const getInitials = (name: string): string => {
@@ -71,6 +75,7 @@ export const Avatar = ({
         sizeClasses[size],
         shouldShowInitials && getBackgroundColor(name || ''),
         shouldShowIcon && 'bg-gray-200 dark:bg-gray-700',
+        status && statusClasses[status],
         className
       )}
     >
@@ -83,11 +88,7 @@ export const Avatar = ({
         />
       )}
 
-      {shouldShowInitials && (
-        <span className="font-semibold text-white">
-          {getInitials(name!)}
-        </span>
-      )}
+      {shouldShowInitials && <span className="font-semibold text-white">{getInitials(name!)}</span>}
 
       {shouldShowIcon && (
         <User className={cn(iconSizes[size], 'text-gray-500 dark:text-gray-400')} />

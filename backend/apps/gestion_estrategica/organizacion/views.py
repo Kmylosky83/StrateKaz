@@ -254,6 +254,7 @@ class OrganigramaView(APIView):
                 'parent_cargo_name': cargo.parent_cargo.name if cargo.parent_cargo else None,
                 'nivel_jerarquico': cargo.nivel_jerarquico,
                 'is_jefatura': cargo.is_jefatura,
+                'is_externo': cargo.is_externo,
                 'is_active': cargo.is_active,
                 'cantidad_posiciones': cargo.cantidad_posiciones,
             }

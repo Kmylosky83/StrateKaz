@@ -23,7 +23,7 @@
 export const APP_VERSION: string =
   (import.meta.env.VITE_APP_VERSION as string) ||
   (import.meta.env.PACKAGE_VERSION as string) ||
-  '3.5.2';
+  '4.0.0';
 
 /**
  * Constantes de identidad de marca StrateKaz

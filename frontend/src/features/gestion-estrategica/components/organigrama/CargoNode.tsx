@@ -7,14 +7,13 @@
 
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import {
-  Users,
-  ChevronDown,
-  ChevronRight,
-  AlertCircle,
-} from 'lucide-react';
+import { Users, ChevronDown, ChevronRight, AlertCircle } from 'lucide-react';
 import { Badge, Avatar, DynamicIcon } from '@/components/common';
-import type { CargoNodeData, NivelJerarquico, UsuarioAsignado } from '../../types/organigrama.types';
+import type {
+  CargoNodeData,
+  NivelJerarquico,
+  UsuarioAsignado,
+} from '../../types/organigrama.types';
 import { NIVEL_COLORS, NIVEL_LABELS } from '../../types/organigrama.types';
 
 /** Iconos por nivel jerárquico */
@@ -36,11 +35,7 @@ const AvatarGroup = ({ usuarios, max = 4 }: { usuarios: UsuarioAsignado[]; max?:
   return (
     <div className="flex items-center -space-x-2">
       {visibles.map((usuario) => (
-        <div
-          key={usuario.id}
-          className="relative"
-          title={usuario.full_name}
-        >
+        <div key={usuario.id} className="relative" title={usuario.full_name}>
           <Avatar
             src={usuario.photo_url || undefined}
             name={usuario.full_name}
@@ -78,9 +73,10 @@ const CargoNode = memo(({ data, selected }: CargoNodeProps) => {
       className={`
         min-w-[260px] rounded-xl border-2 shadow-lg transition-all duration-200
         bg-white dark:bg-gray-900
-        ${selected
-          ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800'
-          : `${colors.border} ${colors.darkBorder} hover:shadow-xl`
+        ${
+          selected
+            ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800'
+            : `${colors.border} ${colors.darkBorder} hover:shadow-xl`
         }
       `}
     >
@@ -99,6 +95,7 @@ const CargoNode = memo(({ data, selected }: CargoNodeProps) => {
           ${nivel === 'TACTICO' ? 'bg-blue-500' : ''}
           ${nivel === 'OPERATIVO' ? 'bg-green-500' : ''}
           ${nivel === 'APOYO' ? 'bg-purple-500' : ''}
+          ${nivel === 'EXTERNO' ? 'bg-cyan-500' : ''}
         `}
       />
 
@@ -117,13 +114,9 @@ const CargoNode = memo(({ data, selected }: CargoNodeProps) => {
               {cargo.name}
             </h3>
             <div className="flex items-center gap-2">
-              <span className={`text-xs font-medium ${colors.text}`}>
-                {cargo.code}
-              </span>
+              <span className={`text-xs font-medium ${colors.text}`}>{cargo.code}</span>
               <span className="text-xs text-gray-400">•</span>
-              <span className={`text-xs ${colors.text}`}>
-                {NIVEL_LABELS[nivel]}
-              </span>
+              <span className={`text-xs ${colors.text}`}>{NIVEL_LABELS[nivel]}</span>
             </div>
           </div>
           {hasChildren && (
@@ -165,10 +158,7 @@ const CargoNode = memo(({ data, selected }: CargoNodeProps) => {
         {/* Estadísticas */}
         <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
           {/* Usuarios asignados */}
-          <Badge
-            variant={cargo.usuarios_count ? 'success' : 'gray'}
-            size="sm"
-          >
+          <Badge variant={cargo.usuarios_count ? 'success' : 'gray'} size="sm">
             <Users className="h-3 w-3 mr-1" />
             {cargo.usuarios_count ?? 0}/{cargo.cantidad_posiciones}
           </Badge>
@@ -185,6 +175,14 @@ const CargoNode = memo(({ data, selected }: CargoNodeProps) => {
             <Badge variant="warning" size="sm">
               <DynamicIcon name="Crown" size={12} className="mr-1" />
               Jefatura
+            </Badge>
+          )}
+
+          {/* Indicador de externo */}
+          {cargo.is_externo && (
+            <Badge variant="info" size="sm">
+              <DynamicIcon name="UserCheck" size={12} className="mr-1" />
+              Externo
             </Badge>
           )}
         </div>

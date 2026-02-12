@@ -18,7 +18,7 @@ import {
   Pencil,
   Camera,
 } from 'lucide-react';
-import { Card, Button } from '@/components/common';
+import { Card, Button, Avatar } from '@/components/common';
 import { PageHeader } from '@/components/layout';
 import { useAuthStore } from '@/store/authStore';
 import { useHeaderContext } from '@/contexts/HeaderContext';
@@ -44,9 +44,6 @@ export const PerfilPage = () => {
   const cargoName = user?.cargo?.name || USER_MENU_LABELS.DEFAULT_CARGO;
   const areaName = user?.area_nombre || user?.cargo?.area_nombre || '-';
   const empresaName = user?.empresa_nombre || '-';
-
-  const initials =
-    user?.first_name?.[0]?.toUpperCase() || user?.username?.[0]?.toUpperCase() || 'U';
 
   // Formatear fecha de ingreso
   const dateJoined = user?.date_joined
@@ -75,20 +72,10 @@ export const PerfilPage = () => {
       <Card className="p-6 md:p-8">
         {/* Header del perfil con avatar */}
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 mb-8 pb-6 border-b border-gray-200 dark:border-gray-700">
-          {/* Avatar con botón para cambiar foto */}
+          {/* Avatar con boton para cambiar foto */}
           <div className="relative group flex-shrink-0">
-            {user?.photo_url ? (
-              <img
-                src={user.photo_url}
-                alt={displayName}
-                className="h-24 w-24 rounded-full object-cover shadow-lg"
-              />
-            ) : (
-              <div className="h-24 w-24 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
-                {initials}
-              </div>
-            )}
-            {/* Botón flotante para cambiar foto */}
+            <Avatar src={user?.photo_url} name={displayName} size="2xl" className="shadow-lg" />
+            {/* Boton flotante para cambiar foto */}
             <button
               onClick={() => setShowAvatarModal(true)}
               className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"

@@ -53,6 +53,7 @@ export interface CargoData {
   parent_cargo_name?: string | null;
   nivel_jerarquico: NivelJerarquico;
   is_jefatura: boolean;
+  is_externo: boolean;
   is_active: boolean;
   cantidad_posiciones: number;
   usuarios_count?: number;
@@ -95,14 +96,17 @@ export interface OrganigramaStats {
 export type NivelJerarquico = 'ESTRATEGICO' | 'TACTICO' | 'OPERATIVO' | 'APOYO' | 'EXTERNO';
 
 /** Colores por nivel jerárquico */
-export const NIVEL_COLORS: Record<NivelJerarquico, {
-  bg: string;
-  bgLight: string;
-  border: string;
-  text: string;
-  darkBg: string;
-  darkBorder: string;
-}> = {
+export const NIVEL_COLORS: Record<
+  NivelJerarquico,
+  {
+    bg: string;
+    bgLight: string;
+    border: string;
+    text: string;
+    darkBg: string;
+    darkBorder: string;
+  }
+> = {
   ESTRATEGICO: {
     bg: 'bg-red-500',
     bgLight: 'bg-red-50',

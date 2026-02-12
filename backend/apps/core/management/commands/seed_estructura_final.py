@@ -123,11 +123,10 @@ class Command(BaseCommand):
                         'orden': 2,
                         'sections': [
                             {'code': 'areas', 'name': 'Procesos', 'icon': 'FolderTree', 'orden': 1, 'description': 'Mapa de procesos organizacionales'},
-                            {'code': 'cargos', 'name': 'Cargos', 'icon': 'Briefcase', 'orden': 2, 'description': 'Puestos y niveles jerárquicos'},
-                            {'code': 'organigrama', 'name': 'Organigrama', 'icon': 'Network', 'orden': 3, 'description': 'Vista gráfica de la estructura'},
-                            {'code': 'colaboradores', 'name': 'Colaboradores', 'icon': 'Users', 'orden': 4, 'description': 'Gestión del equipo de trabajo'},
-                            {'code': 'consecutivos', 'name': 'Consecutivos', 'icon': 'Hash', 'orden': 5, 'description': 'Numeración automática de documentos'},
-                            {'code': 'unidades_medida', 'name': 'Unidades', 'icon': 'Ruler', 'orden': 6, 'description': 'Catálogo de unidades de medida'},
+                            {'code': 'organigrama', 'name': 'Organigrama', 'icon': 'Network', 'orden': 2, 'description': 'Vista gráfica de la estructura'},
+                            {'code': 'consecutivos', 'name': 'Consecutivos', 'icon': 'Hash', 'orden': 3, 'description': 'Numeración automática de documentos'},
+                            {'code': 'unidades_medida', 'name': 'Unidades', 'icon': 'Ruler', 'orden': 4, 'description': 'Catálogo de unidades de medida'},
+                            # NOTA: 'cargos' y 'colaboradores' migrados a Talento Humano (Sprint 13)
                             # NOTA: 'roles' (Control de Acceso) removido - los permisos se configuran en CargoFormModal
                         ]
                     },

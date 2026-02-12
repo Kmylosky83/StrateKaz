@@ -8,7 +8,7 @@
  * - Control granular: desactivar módulo/tab en ConfiguracionTab → desaparece del sidebar
  */
 import { useState, useMemo, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/utils/cn';
 import { useSidebarModules } from '@/features/gestion-estrategica/hooks/useModules';
 import type { SidebarModule } from '@/features/gestion-estrategica/types/modules.types';
@@ -21,6 +21,8 @@ import {
   Shield,
   UserCircle,
   Users,
+  Building2,
+  Check,
 } from 'lucide-react';
 
 import { getIconComponent as getDynamicIcon } from '@/components/common/DynamicIcon';
@@ -486,12 +488,21 @@ export const Sidebar = ({
   onCloseMobile,
 }: SidebarProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const tenantUser = useAuthStore((state) => state.tenantUser);
   const currentTenantId = useAuthStore((state) => state.currentTenantId);
+  const currentTenant = useAuthStore((state) => state.currentTenant);
+  const accessibleTenants = useAuthStore((state) => state.accessibleTenants);
+  const selectTenant = useAuthStore((state) => state.selectTenant);
+  const clearTenantContext = useAuthStore((state) => state.clearTenantContext);
   const isSuperadmin = useAuthStore((state) => state.isSuperadmin);
   // is_superuser viene del User (tenant), isSuperadmin viene del TenantUser (global)
   const isSuperuser = user?.is_superuser ?? isSuperadmin ?? false;
+
+  // Estado para el tenant switcher móvil
+  const [tenantSwitcherOpen, setTenantSwitcherOpen] = useState(false);
+  const showMobileTenantSwitcher = isMobile && (accessibleTenants.length > 1 || isSuperadmin);
 
   // Admin Global solo visible si es superusuario Y NO está en contexto de empresa
   // O si está en la ruta de admin-global (para poder navegar de vuelta)
@@ -604,6 +615,116 @@ export const Sidebar = ({
   return (
     <aside className={cn(sidebarBaseClasses, mobileClasses)} style={sidebarStyle}>
       <nav className="h-full flex flex-col py-4">
+        {/* ═══ Tenant Switcher Móvil ═══ */}
+        {showMobileTenantSwitcher && (
+          <div className="px-2 mb-2">
+            {/* Botón para expandir/colapsar */}
+            <button
+              type="button"
+              onClick={() => setTenantSwitcherOpen((prev) => !prev)}
+              className={cn(
+                'w-full flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors',
+                'bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700'
+              )}
+            >
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                style={{ backgroundColor: currentTenant?.primary_color || '#6366F1' }}
+              >
+                {currentTenant?.name?.charAt(0)?.toUpperCase() || <Building2 className="w-4 h-4" />}
+              </div>
+              <div className="flex-1 text-left min-w-0">
+                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                  {currentTenant?.name || 'Seleccionar empresa'}
+                </p>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
+                  {currentTenant?.primary_domain || currentTenant?.code || ''}
+                </p>
+              </div>
+              <ChevronDown
+                className={cn(
+                  'w-4 h-4 text-gray-400 transition-transform flex-shrink-0',
+                  tenantSwitcherOpen && 'rotate-180'
+                )}
+              />
+            </button>
+
+            {/* Lista de tenants */}
+            {tenantSwitcherOpen && (
+              <div className="mt-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 overflow-hidden">
+                {accessibleTenants.map(({ tenant, role }) => {
+                  const isActive = tenant.id === currentTenantId;
+                  return (
+                    <button
+                      key={tenant.id}
+                      type="button"
+                      onClick={async () => {
+                        if (!isActive) {
+                          await selectTenant(tenant.id);
+                          navigate('/dashboard');
+                        }
+                        setTenantSwitcherOpen(false);
+                        onCloseMobile?.();
+                      }}
+                      className={cn(
+                        'w-full flex items-center gap-3 px-3 py-2 text-left transition-colors',
+                        isActive
+                          ? 'bg-primary-50 dark:bg-primary-900/20'
+                          : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                      )}
+                    >
+                      <div
+                        className="w-6 h-6 rounded flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
+                        style={{ backgroundColor: tenant.primary_color || '#6366F1' }}
+                      >
+                        {tenant.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                          {tenant.name}
+                        </p>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400">{role}</p>
+                      </div>
+                      {isActive && (
+                        <Check className="w-4 h-4 text-primary-600 dark:text-primary-400 flex-shrink-0" />
+                      )}
+                    </button>
+                  );
+                })}
+                {/* Admin Global - solo superadmins */}
+                {isSuperadmin && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clearTenantContext();
+                      navigate('/admin-global');
+                      setTenantSwitcherOpen(false);
+                      onCloseMobile?.();
+                    }}
+                    className={cn(
+                      'w-full flex items-center gap-3 px-3 py-2 text-left transition-colors border-t border-gray-200 dark:border-gray-600',
+                      isAdminGlobalMode
+                        ? 'bg-purple-50 dark:bg-purple-900/20'
+                        : 'hover:bg-purple-50 dark:hover:bg-purple-900/10'
+                    )}
+                  >
+                    <Shield className="w-5 h-5 text-purple-500 flex-shrink-0" />
+                    <span className="text-sm font-medium text-purple-700 dark:text-purple-300">
+                      Admin Global
+                    </span>
+                    {isAdminGlobalMode && (
+                      <Check className="w-4 h-4 text-purple-600 dark:text-purple-400 flex-shrink-0" />
+                    )}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Separador */}
+            <div className="mt-2 border-t border-gray-200 dark:border-gray-700" />
+          </div>
+        )}
+
         {/* Dashboard Link - Solo visible cuando HAY tenant seleccionado (no en Admin Global) */}
         {!isAdminGlobalMode && (
           <div className="px-2 mb-2">

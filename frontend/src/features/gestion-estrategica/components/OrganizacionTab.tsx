@@ -4,21 +4,17 @@
  * Secciones (orden desde BD):
  * 1. Procesos (Areas) - Gestion de areas/departamentos (Vista 7: Tree Cards)
  * 2. Organigrama - Vista interactiva del organigrama (Vista 8: Organigrama)
- * 3. Colaboradores - Gestion de usuarios/colaboradores (Vista 2: Lista CRUD)
- * 4. Consecutivos - Configuracion de consecutivos automaticos (Vista 2: Lista CRUD)
- * 5. Unidades - Catalogo de unidades de medida (Vista 2: Lista CRUD)
+ * 3. Consecutivos - Configuracion de consecutivos automaticos (Vista 2: Lista CRUD)
+ * 4. Unidades - Catalogo de unidades de medida (Vista 2: Lista CRUD)
  *
- * NOTA: La seccion "Cargos" fue migrada a Talento Humano > Estructura de Cargos.
+ * NOTA: 'Cargos' y 'Colaboradores' migrados a Talento Humano (Sprint 13).
  * El Organigrama sigue leyendo cargos (read-only) desde la API /core/cargos-rbac/.
- *
- * Los permisos RBAC se configuran dentro del modal de edicion de Cargos
- * en Talento Humano (CargoFormModal > TabAccesoSecciones).
+ * Los permisos RBAC se configuran en CargoFormModal > TabAccesoSecciones.
  */
 
 // Importar componentes internos
 import { OrganigramaView } from './OrganigramaView';
 import { AreasTab } from './AreasTab';
-import { ColaboradoresSection } from './ColaboradoresSection';
 
 // Consecutivos y Unidades de Medida migrados desde Configuracion
 import { ConsecutivosSection } from './ConsecutivosSection';
@@ -37,16 +33,10 @@ interface OrganizacionTabProps {
  * Mapeo de codigos de seccion a componentes
  * Los codigos deben coincidir con los de la BD (TabSection.code)
  * IMPORTANTE: Los codigos en BD estan en minusculas
- *
- * NOTA: 'cargos' fue migrado a Talento Humano.
- * Si el usuario navega a la seccion 'cargos' (por cache de BD),
- * se redirige al fallback (AreasTab).
  */
 const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
   areas: AreasTab,
   organigrama: OrganigramaView,
-  colaboradores: ColaboradoresSection,
-  // Migrados desde Configuracion
   consecutivos: ConsecutivosSection,
   unidades_medida: UnidadesMedidaSection,
 };

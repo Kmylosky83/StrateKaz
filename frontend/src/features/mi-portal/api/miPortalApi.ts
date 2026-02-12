@@ -39,9 +39,15 @@ export const miPortalKeys = {
 export function useMiPerfil() {
   return useQuery({
     queryKey: miPortalKeys.perfil(),
-    queryFn: async () => {
-      const response = await api.get<ColaboradorESS>(`${BASE_URL}/mi-perfil/`);
-      return response.data;
+    queryFn: async (): Promise<ColaboradorESS | null> => {
+      try {
+        const response = await api.get<ColaboradorESS>(`${BASE_URL}/mi-perfil/`);
+        return response.data;
+      } catch (error: any) {
+        // 404 = usuario sin colaborador asociado (no es error real)
+        if (error.response?.status === 404) return null;
+        throw error;
+      }
     },
     staleTime: 10 * 60 * 1000,
   });

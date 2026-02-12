@@ -7,7 +7,7 @@ import { Card, Badge, Avatar, Skeleton } from '@/components/common';
 import type { ColaboradorESS } from '../types';
 
 interface MiPerfilCardProps {
-  perfil: ColaboradorESS | undefined;
+  perfil: ColaboradorESS | null | undefined;
   isLoading: boolean;
   onEdit: () => void;
 }
@@ -31,9 +31,17 @@ export function MiPerfilCard({ perfil, isLoading, onEdit }: MiPerfilCardProps) {
   if (!perfil) {
     return (
       <Card className="p-6">
-        <div className="flex items-center gap-3 text-amber-600 dark:text-amber-400">
-          <AlertCircle className="w-5 h-5" />
-          <p>No tiene un perfil de colaborador asociado.</p>
+        <div className="flex flex-col items-center justify-center py-8 text-center">
+          <div className="w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-4">
+            <AlertCircle className="w-8 h-8 text-amber-500 dark:text-amber-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            Perfil no vinculado
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md">
+            Tu cuenta aun no tiene un perfil de colaborador asociado. Contacta al administrador para
+            vincular tu usuario con un registro de colaborador.
+          </p>
         </div>
       </Card>
     );

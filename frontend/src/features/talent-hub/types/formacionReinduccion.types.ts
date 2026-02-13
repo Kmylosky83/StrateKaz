@@ -2,7 +2,7 @@
  * Tipos TypeScript para Formacion y Reinduccion - Talent Hub
  * Sistema de Gestion StrateKaz
  *
- * Basado en: backend/apps/talent_hub/formacion_reinduccion/models.py
+ * Alineado 1:1 con backend/apps/talent_hub/formacion_reinduccion/models.py
  */
 
 // =============================================================================
@@ -12,25 +12,23 @@
 export type TipoCapacitacion =
   | 'induccion'
   | 'reinduccion'
-  | 'sst'
-  | 'pesv'
   | 'tecnica'
   | 'habilidades_blandas'
-  | 'normativa'
+  | 'sst'
+  | 'calidad'
+  | 'ambiente'
+  | 'pesv'
   | 'liderazgo'
-  | 'especifica';
+  | 'normativa'
+  | 'otro';
 
-export type ModalidadCapacitacion =
-  | 'presencial'
-  | 'virtual'
-  | 'hibrida'
-  | 'e_learning';
+export type ModalidadCapacitacion = 'presencial' | 'virtual' | 'asincronica' | 'mixta' | 'outdoor';
 
 export type EstadoCapacitacion =
   | 'borrador'
   | 'publicada'
   | 'en_ejecucion'
-  | 'completada'
+  | 'finalizada'
   | 'cancelada';
 
 export type EstadoProgramacion =
@@ -43,20 +41,17 @@ export type EstadoProgramacion =
 
 export type EstadoEjecucionCapacitacion =
   | 'inscrito'
+  | 'confirmado'
   | 'asistio'
   | 'no_asistio'
+  | 'cancelado'
+  | 'pendiente_evaluacion'
   | 'aprobado'
-  | 'reprobado'
-  | 'pendiente_evaluacion';
+  | 'reprobado';
 
-export type TipoBadge =
-  | 'logro'
-  | 'habilidad'
-  | 'participacion'
-  | 'liderazgo'
-  | 'especial';
+export type TipoBadge = 'logro' | 'nivel' | 'especial' | 'competencia' | 'racha';
 
-export type NivelEvaluacionEficacia = 1 | 2 | 3 | 4;
+export type NivelEvaluacionEficacia = 'reaccion' | 'aprendizaje' | 'comportamiento' | 'resultados';
 
 // =============================================================================
 // INTERFACES DE MODELOS
@@ -70,15 +65,17 @@ export interface PlanFormacion {
   anio: number;
   fecha_inicio: string;
   fecha_fin: string;
-  responsable?: number;
-  responsable_nombre?: string;
   presupuesto_asignado: number;
   presupuesto_ejecutado: number;
-  porcentaje_ejecucion?: number;
+  objetivos?: string[];
+  responsable?: number;
+  responsable_nombre?: string;
   aprobado: boolean;
+  fecha_aprobacion?: string;
   aprobado_por?: number;
   aprobado_por_nombre?: string;
-  fecha_aprobacion?: string;
+  observaciones?: string;
+  porcentaje_ejecucion_presupuesto?: number;
   capacitaciones_count?: number;
   is_active: boolean;
 }
@@ -100,8 +97,8 @@ export interface Capacitacion {
   instructor_nombre?: string;
   instructor_externo?: string;
   proveedor_externo?: string;
-  objetivos?: string;
-  contenido_tematico?: string;
+  objetivos?: string[];
+  contenido_tematico?: string[];
   material_apoyo?: string;
   cupo_maximo: number;
   cupo_minimo: number;
@@ -115,6 +112,7 @@ export interface Capacitacion {
   puntos_otorgados: number;
   estado: EstadoCapacitacion;
   estado_display?: string;
+  observaciones?: string;
   is_active: boolean;
 }
 
@@ -125,41 +123,46 @@ export interface ProgramacionCapacitacion {
   capacitacion_info?: Capacitacion;
   numero_sesion: number;
   titulo_sesion?: string;
-  descripcion_sesion?: string;
   fecha: string;
   hora_inicio: string;
   hora_fin: string;
   lugar?: string;
+  direccion?: string;
   enlace_virtual?: string;
   instructor?: number;
   instructor_nombre?: string;
-  material_sesion?: string;
+  instructor_externo?: string;
   inscritos: number;
   cupo_disponible?: number;
   esta_llena?: boolean;
+  material_sesion?: string;
   estado: EstadoProgramacion;
   estado_display?: string;
+  observaciones?: string;
 }
 
 export interface EjecucionCapacitacion {
   id: number;
-  colaborador: number;
-  colaborador_nombre?: string;
   programacion: number;
   programacion_info?: ProgramacionCapacitacion;
+  colaborador: number;
+  colaborador_nombre?: string;
   capacitacion_nombre?: string;
   fecha?: string;
-  fecha_inscripcion: string;
+  estado: EstadoEjecucionCapacitacion;
+  estado_display?: string;
   asistio: boolean;
   hora_entrada?: string;
   hora_salida?: string;
+  justificacion_inasistencia?: string;
   nota_evaluacion?: number;
   fecha_evaluacion?: string;
   intentos_evaluacion: number;
-  estado: EstadoEjecucionCapacitacion;
-  estado_display?: string;
   puntos_ganados: number;
   retroalimentacion?: string;
+  calificacion_instructor?: number;
+  calificacion_contenido?: number;
+  observaciones?: string;
   aprobo?: boolean;
 }
 
@@ -174,7 +177,8 @@ export interface Badge {
   color: string;
   puntos_requeridos: number;
   capacitaciones_requeridas: number;
-  criterios_especiales?: string;
+  criterio_especial?: string;
+  puntos_otorgados: number;
   orden: number;
   is_active: boolean;
 }
@@ -184,14 +188,15 @@ export interface GamificacionColaborador {
   colaborador: number;
   colaborador_nombre?: string;
   puntos_totales: number;
+  puntos_mes: number;
+  puntos_anio: number;
   nivel: number;
-  nombre_nivel?: string;
-  puntos_siguiente_nivel?: number;
-  badges_obtenidos: number;
+  nombre_nivel: string;
   capacitaciones_completadas: number;
-  horas_formacion: number;
+  badges_obtenidos: number;
   racha_actual: number;
-  mejor_racha: number;
+  racha_maxima: number;
+  posicion_ranking?: number;
   ultima_actividad?: string;
 }
 
@@ -202,8 +207,8 @@ export interface BadgeColaborador {
   badge: number;
   badge_info?: Badge;
   fecha_obtencion: string;
-  otorgado_automaticamente: boolean;
   motivo?: string;
+  capacitacion_relacionada?: number;
 }
 
 export interface LeaderboardEntry {
@@ -225,31 +230,36 @@ export interface EvaluacionEficacia {
   nivel_evaluacion: NivelEvaluacionEficacia;
   nivel_display?: string;
   fecha_evaluacion: string;
+  fecha_programada?: string;
   evaluador: number;
   evaluador_nombre?: string;
   calificacion: number;
-  evidencia_aplicacion?: string;
-  impacto_observado?: string;
+  criterios_evaluados?: unknown[];
+  evidencias?: string;
+  mejoras_observadas?: string;
+  areas_oportunidad?: string;
   requiere_refuerzo: boolean;
-  plan_refuerzo?: string;
+  recomendaciones?: string;
   observaciones?: string;
 }
 
 export interface Certificado {
   id: number;
+  numero_certificado: string;
   ejecucion: number;
   colaborador_nombre?: string;
-  numero_certificado: string;
-  titulo_capacitacion: string;
   fecha_emision: string;
   fecha_vencimiento?: string;
   esta_vigente?: boolean;
-  horas_certificadas: number;
-  nota_obtenida: number;
-  codigo_verificacion: string;
-  url_certificado?: string;
+  titulo_capacitacion: string;
+  duracion_horas: number;
+  nota_obtenida?: number;
+  firmado_por?: string;
+  cargo_firmante?: string;
+  archivo_certificado?: string;
   anulado: boolean;
   motivo_anulacion?: string;
+  codigo_verificacion: string;
 }
 
 // =============================================================================
@@ -270,6 +280,17 @@ export interface FormacionEstadisticas {
 // =============================================================================
 // INTERFACES PARA FORMULARIOS
 // =============================================================================
+
+export interface PlanFormacionFormData {
+  codigo: string;
+  nombre: string;
+  descripcion?: string;
+  anio: number;
+  fecha_inicio: string;
+  fecha_fin: string;
+  presupuesto_asignado?: number;
+  observaciones?: string;
+}
 
 export interface CapacitacionFormData {
   codigo: string;
@@ -302,8 +323,10 @@ export interface ProgramacionFormData {
   hora_inicio: string;
   hora_fin: string;
   lugar?: string;
+  direccion?: string;
   enlace_virtual?: string;
   instructor?: number;
+  instructor_externo?: string;
 }
 
 export interface InscripcionFormData {

@@ -43,6 +43,14 @@ import {
 import { CargosSection } from '../components/estructura';
 import { SeleccionSection } from '../components/seleccion';
 import { ColaboradoresSection } from '../components/colaboradores';
+import { OnboardingSection } from '../components/onboarding';
+import { FormacionSection } from '../components/formacion';
+import { DesempenoSection } from '../components/desempeno';
+import { ControlTiempoSection } from '../components/control-tiempo';
+import { NovedadesSection } from '../components/novedades';
+import { ProcesoDisciplinarioSection } from '../components/proceso-disciplinario';
+import { NominaSection } from '../components/nomina';
+import { OffBoardingSection } from '../components/off-boarding';
 
 // ============================================================================
 // Mapa de secciones por ruta
@@ -85,49 +93,49 @@ const SECTION_MAP: Record<string, SectionMeta> = {
     description:
       'Procesos de induccion, checklist de actividades, entregas de EPP y firma de documentos',
     icon: <Rocket className="w-5 h-5" />,
-    component: null,
+    component: OnboardingSection,
   },
   formacion: {
     title: 'Formacion y Reinduccion',
     description: 'Planes de formacion, capacitaciones, gamificacion, certificados y reinducciones',
     icon: <BookOpen className="w-5 h-5" />,
-    component: null,
+    component: FormacionSection,
   },
   desempeno: {
     title: 'Desempeno',
     description: 'Evaluaciones 360, planes de mejora, seguimientos y programa de reconocimientos',
     icon: <Award className="w-5 h-5" />,
-    component: null,
+    component: DesempenoSection,
   },
   'control-tiempo': {
     title: 'Control de Tiempo',
     description: 'Turnos, asistencia, horas extra, tardanzas y consolidacion mensual',
     icon: <Clock className="w-5 h-5" />,
-    component: null,
+    component: ControlTiempoSection,
   },
   novedades: {
     title: 'Novedades',
     description: 'Incapacidades, permisos, licencias, vacaciones y ausencias',
     icon: <Bell className="w-5 h-5" />,
-    component: null,
+    component: NovedadesSection,
   },
   disciplinario: {
     title: 'Proceso Disciplinario',
     description: 'Llamados de atencion, descargos, memorandos e historial disciplinario',
     icon: <Gavel className="w-5 h-5" />,
-    component: null,
+    component: ProcesoDisciplinarioSection,
   },
   nomina: {
     title: 'Nomina',
     description: 'Configuracion de conceptos, periodos de pago, liquidaciones y reportes',
     icon: <DollarSign className="w-5 h-5" />,
-    component: null,
+    component: NominaSection,
   },
   'off-boarding': {
     title: 'Off-Boarding',
     description: 'Proceso de salida, checklist de entrega, paz y salvo y liquidacion final',
     icon: <LogOut className="w-5 h-5" />,
-    component: null,
+    component: OffBoardingSection,
   },
 };
 

@@ -283,7 +283,7 @@ export function useProfesiogramas(filters?: ProfesiogramaFilters) {
       if (filters?.page) params.append('page', String(filters.page));
       if (filters?.page_size) params.append('page_size', String(filters.page_size));
 
-      const response = await api.get(`/api/talent-hub/estructura-cargos/profesiogramas/?${params}`);
+      const response = await api.get(`/talent-hub/estructura-cargos/profesiogramas/?${params}`);
       return response.data;
     },
     staleTime: 5 * 60 * 1000, // 5 minutos
@@ -305,7 +305,7 @@ export function useProfesiograma(id: string) {
   return useQuery({
     queryKey: profesiogramaKeys.detail(id),
     queryFn: async () => {
-      const response = await api.get(`/api/talent-hub/estructura-cargos/profesiogramas/${id}/`);
+      const response = await api.get(`/talent-hub/estructura-cargos/profesiogramas/${id}/`);
       return response.data;
     },
     enabled: !!id,
@@ -332,7 +332,7 @@ export function useCreateProfesiograma() {
 
   return useMutation({
     mutationFn: async (data: ProfesiogramaFormData) => {
-      const response = await api.post('/api/talent-hub/estructura-cargos/profesiogramas/', data);
+      const response = await api.post('/talent-hub/estructura-cargos/profesiogramas/', data);
       return response.data;
     },
     onSuccess: () => {
@@ -366,10 +366,7 @@ export function useUpdateProfesiograma() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<ProfesiogramaFormData> }) => {
-      const response = await api.patch(
-        `/api/talent-hub/estructura-cargos/profesiogramas/${id}/`,
-        data
-      );
+      const response = await api.patch(`/talent-hub/estructura-cargos/profesiogramas/${id}/`, data);
       return response.data;
     },
     onSuccess: (_, variables) => {
@@ -399,7 +396,7 @@ export function useCompetencias(profesiogramaId: string) {
     queryKey: profesiogramaKeys.competencias(profesiogramaId),
     queryFn: async () => {
       const response = await api.get(
-        `/api/talent-hub/estructura-cargos/profesiogramas/${profesiogramaId}/competencias/`
+        `/talent-hub/estructura-cargos/profesiogramas/${profesiogramaId}/competencias/`
       );
       return response.data;
     },
@@ -423,7 +420,7 @@ export function useRequisitos(profesiogramaId: string) {
     queryKey: profesiogramaKeys.requisitos(profesiogramaId),
     queryFn: async () => {
       const response = await api.get(
-        `/api/talent-hub/estructura-cargos/profesiogramas/${profesiogramaId}/requisitos-especiales/`
+        `/talent-hub/estructura-cargos/profesiogramas/${profesiogramaId}/requisitos-especiales/`
       );
       return response.data;
     },
@@ -464,7 +461,7 @@ export function useVacantes(filters?: VacanteFilters) {
       if (filters?.page) params.append('page', String(filters.page));
       if (filters?.page_size) params.append('page_size', String(filters.page_size));
 
-      const response = await api.get(`/api/talent-hub/estructura-cargos/vacantes/?${params}`);
+      const response = await api.get(`/talent-hub/estructura-cargos/vacantes/?${params}`);
       return response.data;
     },
     staleTime: 3 * 60 * 1000, // 3 minutos (datos más dinámicos)
@@ -485,7 +482,7 @@ export function useVacantesAbiertas() {
   return useQuery({
     queryKey: vacanteKeys.abiertas(),
     queryFn: async () => {
-      const response = await api.get('/api/talent-hub/estructura-cargos/vacantes/?abierta=true');
+      const response = await api.get('/talent-hub/estructura-cargos/vacantes/?abierta=true');
       return response.data;
     },
     staleTime: 2 * 60 * 1000, // 2 minutos
@@ -509,7 +506,7 @@ export function useVacanteEstadisticas() {
     queryKey: vacanteKeys.estadisticas(),
     queryFn: async () => {
       const response = await api.get<VacanteEstadisticas>(
-        '/api/talent-hub/estructura-cargos/vacantes/estadisticas/'
+        '/talent-hub/estructura-cargos/vacantes/estadisticas/'
       );
       return response.data;
     },
@@ -534,7 +531,7 @@ export function useCreateVacante() {
 
   return useMutation({
     mutationFn: async (data: VacanteFormData) => {
-      const response = await api.post('/api/talent-hub/estructura-cargos/vacantes/', data);
+      const response = await api.post('/talent-hub/estructura-cargos/vacantes/', data);
       return response.data;
     },
     onSuccess: () => {
@@ -561,7 +558,7 @@ export function useUpdateVacante() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<VacanteFormData> }) => {
-      const response = await api.patch(`/api/talent-hub/estructura-cargos/vacantes/${id}/`, data);
+      const response = await api.patch(`/talent-hub/estructura-cargos/vacantes/${id}/`, data);
       return response.data;
     },
     onSuccess: (_, variables) => {
@@ -586,7 +583,7 @@ export function useCerrarVacante() {
 
   return useMutation({
     mutationFn: async ({ id, motivo }: { id: string; motivo?: string }) => {
-      const response = await api.post(`/api/talent-hub/estructura-cargos/vacantes/${id}/cerrar/`, {
+      const response = await api.post(`/talent-hub/estructura-cargos/vacantes/${id}/cerrar/`, {
         motivo_cierre: motivo,
       });
       return response.data;

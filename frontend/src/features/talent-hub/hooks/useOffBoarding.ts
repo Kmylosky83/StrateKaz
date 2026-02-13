@@ -5,7 +5,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import api from '@/lib/api-client';
+import { api } from '@/lib/api-client';
 import type {
   TipoRetiro,
   TipoRetiroFormData,
@@ -32,7 +32,7 @@ import type {
   CalcularLiquidacionFinalData,
 } from '../types';
 
-const BASE_URL = '/api/v1/talent-hub/off-boarding';
+const BASE_URL = '/talent-hub/off-boarding';
 
 // ============== QUERY KEYS ==============
 
@@ -45,32 +45,38 @@ export const offBoardingKeys = {
   },
   procesos: {
     all: () => [...offBoardingKeys.all, 'procesos'] as const,
-    list: (filters?: ProcesoRetiroFilter) => [...offBoardingKeys.procesos.all(), 'list', filters] as const,
+    list: (filters?: ProcesoRetiroFilter) =>
+      [...offBoardingKeys.procesos.all(), 'list', filters] as const,
     detail: (id: number) => [...offBoardingKeys.procesos.all(), 'detail', id] as const,
   },
   checklist: {
     all: () => [...offBoardingKeys.all, 'checklist'] as const,
-    list: (filters?: ChecklistRetiroFilter) => [...offBoardingKeys.checklist.all(), 'list', filters] as const,
+    list: (filters?: ChecklistRetiroFilter) =>
+      [...offBoardingKeys.checklist.all(), 'list', filters] as const,
     detail: (id: number) => [...offBoardingKeys.checklist.all(), 'detail', id] as const,
   },
   pazSalvos: {
     all: () => [...offBoardingKeys.all, 'paz-salvos'] as const,
-    list: (filters?: PazSalvoFilter) => [...offBoardingKeys.pazSalvos.all(), 'list', filters] as const,
+    list: (filters?: PazSalvoFilter) =>
+      [...offBoardingKeys.pazSalvos.all(), 'list', filters] as const,
     detail: (id: number) => [...offBoardingKeys.pazSalvos.all(), 'detail', id] as const,
   },
   examenes: {
     all: () => [...offBoardingKeys.all, 'examenes'] as const,
-    list: (filters?: ExamenEgresoFilter) => [...offBoardingKeys.examenes.all(), 'list', filters] as const,
+    list: (filters?: ExamenEgresoFilter) =>
+      [...offBoardingKeys.examenes.all(), 'list', filters] as const,
     detail: (id: number) => [...offBoardingKeys.examenes.all(), 'detail', id] as const,
   },
   entrevistas: {
     all: () => [...offBoardingKeys.all, 'entrevistas'] as const,
-    list: (filters?: EntrevistaRetiroFilter) => [...offBoardingKeys.entrevistas.all(), 'list', filters] as const,
+    list: (filters?: EntrevistaRetiroFilter) =>
+      [...offBoardingKeys.entrevistas.all(), 'list', filters] as const,
     detail: (id: number) => [...offBoardingKeys.entrevistas.all(), 'detail', id] as const,
   },
   liquidaciones: {
     all: () => [...offBoardingKeys.all, 'liquidaciones'] as const,
-    list: (filters?: LiquidacionFinalFilter) => [...offBoardingKeys.liquidaciones.all(), 'list', filters] as const,
+    list: (filters?: LiquidacionFinalFilter) =>
+      [...offBoardingKeys.liquidaciones.all(), 'list', filters] as const,
     detail: (id: number) => [...offBoardingKeys.liquidaciones.all(), 'detail', id] as const,
   },
 };
@@ -117,7 +123,10 @@ export const useUpdateTipoRetiro = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<TipoRetiroFormData> }) => {
-      const { data: response } = await api.patch<TipoRetiro>(`${BASE_URL}/tipos-retiro/${id}/`, data);
+      const { data: response } = await api.patch<TipoRetiro>(
+        `${BASE_URL}/tipos-retiro/${id}/`,
+        data
+      );
       return response;
     },
     onSuccess: (_, { id }) => {
@@ -185,7 +194,10 @@ export const useUpdateProcesoRetiro = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<ProcesoRetiroFormData> }) => {
-      const { data: response } = await api.patch<ProcesoRetiro>(`${BASE_URL}/procesos/${id}/`, data);
+      const { data: response } = await api.patch<ProcesoRetiro>(
+        `${BASE_URL}/procesos/${id}/`,
+        data
+      );
       return response;
     },
     onSuccess: (_, { id }) => {
@@ -215,7 +227,9 @@ export const useFinalizarProcesoRetiro = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const { data: response } = await api.post<ProcesoRetiro>(`${BASE_URL}/procesos/${id}/finalizar/`);
+      const { data: response } = await api.post<ProcesoRetiro>(
+        `${BASE_URL}/procesos/${id}/finalizar/`
+      );
       return response;
     },
     onSuccess: (_, id) => {
@@ -231,7 +245,10 @@ export const useCancelarProcesoRetiro = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, motivo }: { id: number; motivo: string }) => {
-      const { data: response } = await api.post<ProcesoRetiro>(`${BASE_URL}/procesos/${id}/cancelar/`, { observaciones: motivo });
+      const { data: response } = await api.post<ProcesoRetiro>(
+        `${BASE_URL}/procesos/${id}/cancelar/`,
+        { observaciones: motivo }
+      );
       return response;
     },
     onSuccess: (_, { id }) => {
@@ -249,7 +266,9 @@ export const useChecklistRetiro = (filters?: ChecklistRetiroFilter) => {
   return useQuery({
     queryKey: offBoardingKeys.checklist.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<ChecklistRetiro[]>(`${BASE_URL}/checklist/`, { params: filters });
+      const { data } = await api.get<ChecklistRetiro[]>(`${BASE_URL}/checklist/`, {
+        params: filters,
+      });
       return data;
     },
   });
@@ -285,7 +304,10 @@ export const useUpdateChecklistItem = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<ChecklistRetiroFormData> }) => {
-      const { data: response } = await api.patch<ChecklistRetiro>(`${BASE_URL}/checklist/${id}/`, data);
+      const { data: response } = await api.patch<ChecklistRetiro>(
+        `${BASE_URL}/checklist/${id}/`,
+        data
+      );
       return response;
     },
     onSuccess: (_, { id }) => {
@@ -315,7 +337,10 @@ export const useCompletarChecklistItem = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data?: CompletarItemData }) => {
-      const { data: response } = await api.post<ChecklistRetiro>(`${BASE_URL}/checklist/${id}/completar/`, data || {});
+      const { data: response } = await api.post<ChecklistRetiro>(
+        `${BASE_URL}/checklist/${id}/completar/`,
+        data || {}
+      );
       return response;
     },
     onSuccess: (_, { id }) => {
@@ -400,7 +425,10 @@ export const useAprobarPazSalvo = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: AprobarPazSalvoData }) => {
-      const { data: response } = await api.post<PazSalvo>(`${BASE_URL}/paz-salvos/${id}/aprobar/`, data);
+      const { data: response } = await api.post<PazSalvo>(
+        `${BASE_URL}/paz-salvos/${id}/aprobar/`,
+        data
+      );
       return response;
     },
     onSuccess: (_, { id }) => {
@@ -416,7 +444,10 @@ export const useRechazarPazSalvo = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, observaciones }: { id: number; observaciones: string }) => {
-      const { data: response } = await api.post<PazSalvo>(`${BASE_URL}/paz-salvos/${id}/rechazar/`, { observaciones });
+      const { data: response } = await api.post<PazSalvo>(
+        `${BASE_URL}/paz-salvos/${id}/rechazar/`,
+        { observaciones }
+      );
       return response;
     },
     onSuccess: (_, { id }) => {
@@ -434,7 +465,9 @@ export const useExamenesEgreso = (filters?: ExamenEgresoFilter) => {
   return useQuery({
     queryKey: offBoardingKeys.examenes.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<ExamenEgreso[]>(`${BASE_URL}/examenes/`, { params: filters });
+      const { data } = await api.get<ExamenEgreso[]>(`${BASE_URL}/examenes-egreso/`, {
+        params: filters,
+      });
       return data;
     },
   });
@@ -455,7 +488,7 @@ export const useCreateExamenEgreso = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: ExamenEgresoFormData) => {
-      const { data: response } = await api.post<ExamenEgreso>(`${BASE_URL}/examenes/`, data);
+      const { data: response } = await api.post<ExamenEgreso>(`${BASE_URL}/examenes-egreso/`, data);
       return response;
     },
     onSuccess: () => {
@@ -500,7 +533,10 @@ export const useRegistrarResultadoExamen = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: RegistrarResultadoExamenData }) => {
-      const { data: response } = await api.post<ExamenEgreso>(`${BASE_URL}/examenes/${id}/registrar_resultado/`, data);
+      const { data: response } = await api.post<ExamenEgreso>(
+        `${BASE_URL}/examenes/${id}/registrar_resultado/`,
+        data
+      );
       return response;
     },
     onSuccess: (_, { id }) => {
@@ -518,7 +554,9 @@ export const useEntrevistasRetiro = (filters?: EntrevistaRetiroFilter) => {
   return useQuery({
     queryKey: offBoardingKeys.entrevistas.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<EntrevistaRetiro[]>(`${BASE_URL}/entrevistas/`, { params: filters });
+      const { data } = await api.get<EntrevistaRetiro[]>(`${BASE_URL}/entrevistas/`, {
+        params: filters,
+      });
       return data;
     },
   });
@@ -554,7 +592,10 @@ export const useUpdateEntrevistaRetiro = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<EntrevistaRetiroFormData> }) => {
-      const { data: response } = await api.patch<EntrevistaRetiro>(`${BASE_URL}/entrevistas/${id}/`, data);
+      const { data: response } = await api.patch<EntrevistaRetiro>(
+        `${BASE_URL}/entrevistas/${id}/`,
+        data
+      );
       return response;
     },
     onSuccess: (_, { id }) => {
@@ -586,7 +627,9 @@ export const useLiquidacionesFinales = (filters?: LiquidacionFinalFilter) => {
   return useQuery({
     queryKey: offBoardingKeys.liquidaciones.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<LiquidacionFinal[]>(`${BASE_URL}/liquidaciones/`, { params: filters });
+      const { data } = await api.get<LiquidacionFinal[]>(`${BASE_URL}/liquidaciones/`, {
+        params: filters,
+      });
       return data;
     },
   });
@@ -607,7 +650,10 @@ export const useCalcularLiquidacionFinal = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: CalcularLiquidacionFinalData) => {
-      const { data: response } = await api.post<LiquidacionFinal>(`${BASE_URL}/liquidaciones/calcular/`, data);
+      const { data: response } = await api.post<LiquidacionFinal>(
+        `${BASE_URL}/liquidaciones/calcular/`,
+        data
+      );
       return response;
     },
     onSuccess: () => {
@@ -623,7 +669,9 @@ export const useAprobarLiquidacionFinal = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const { data: response } = await api.post<LiquidacionFinal>(`${BASE_URL}/liquidaciones/${id}/aprobar/`);
+      const { data: response } = await api.post<LiquidacionFinal>(
+        `${BASE_URL}/liquidaciones/${id}/aprobar/`
+      );
       return response;
     },
     onSuccess: (_, id) => {
@@ -639,7 +687,9 @@ export const usePagarLiquidacionFinal = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const { data: response } = await api.post<LiquidacionFinal>(`${BASE_URL}/liquidaciones/${id}/pagar/`);
+      const { data: response } = await api.post<LiquidacionFinal>(
+        `${BASE_URL}/liquidaciones/${id}/pagar/`
+      );
       return response;
     },
     onSuccess: (_, id) => {

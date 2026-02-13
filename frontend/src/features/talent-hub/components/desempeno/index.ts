@@ -1,0 +1,1 @@
+export { DesempenoSection } from './DesempenoSection';

@@ -5,7 +5,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import api from '@/lib/api-client';
+import { api } from '@/lib/api-client';
 import type {
   Turno,
   TurnoFormData,
@@ -26,7 +26,7 @@ import type {
   GenerarConsolidadoData,
 } from '../types';
 
-const BASE_URL = '/api/v1/talent-hub/control-tiempo';
+const BASE_URL = '/talent-hub/control-tiempo';
 
 // ============== QUERY KEYS ==============
 
@@ -39,22 +39,26 @@ export const controlTiempoKeys = {
   },
   asignaciones: {
     all: () => [...controlTiempoKeys.all, 'asignaciones'] as const,
-    list: (filters?: AsignacionTurnoFilter) => [...controlTiempoKeys.asignaciones.all(), 'list', filters] as const,
+    list: (filters?: AsignacionTurnoFilter) =>
+      [...controlTiempoKeys.asignaciones.all(), 'list', filters] as const,
     detail: (id: number) => [...controlTiempoKeys.asignaciones.all(), 'detail', id] as const,
   },
   asistencias: {
     all: () => [...controlTiempoKeys.all, 'asistencias'] as const,
-    list: (filters?: RegistroAsistenciaFilter) => [...controlTiempoKeys.asistencias.all(), 'list', filters] as const,
+    list: (filters?: RegistroAsistenciaFilter) =>
+      [...controlTiempoKeys.asistencias.all(), 'list', filters] as const,
     detail: (id: number) => [...controlTiempoKeys.asistencias.all(), 'detail', id] as const,
   },
   horasExtras: {
     all: () => [...controlTiempoKeys.all, 'horas-extras'] as const,
-    list: (filters?: HoraExtraFilter) => [...controlTiempoKeys.horasExtras.all(), 'list', filters] as const,
+    list: (filters?: HoraExtraFilter) =>
+      [...controlTiempoKeys.horasExtras.all(), 'list', filters] as const,
     detail: (id: number) => [...controlTiempoKeys.horasExtras.all(), 'detail', id] as const,
   },
   consolidados: {
     all: () => [...controlTiempoKeys.all, 'consolidados'] as const,
-    list: (filters?: ConsolidadoAsistenciaFilter) => [...controlTiempoKeys.consolidados.all(), 'list', filters] as const,
+    list: (filters?: ConsolidadoAsistenciaFilter) =>
+      [...controlTiempoKeys.consolidados.all(), 'list', filters] as const,
     detail: (id: number) => [...controlTiempoKeys.consolidados.all(), 'detail', id] as const,
   },
 };
@@ -133,7 +137,9 @@ export const useAsignacionesTurno = (filters?: AsignacionTurnoFilter) => {
   return useQuery({
     queryKey: controlTiempoKeys.asignaciones.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<AsignacionTurno[]>(`${BASE_URL}/asignaciones-turno/`, { params: filters });
+      const { data } = await api.get<AsignacionTurno[]>(`${BASE_URL}/asignaciones/`, {
+        params: filters,
+      });
       return data;
     },
   });
@@ -143,7 +149,7 @@ export const useAsignacionTurno = (id: number, enabled = true) => {
   return useQuery({
     queryKey: controlTiempoKeys.asignaciones.detail(id),
     queryFn: async () => {
-      const { data } = await api.get<AsignacionTurno>(`${BASE_URL}/asignaciones-turno/${id}/`);
+      const { data } = await api.get<AsignacionTurno>(`${BASE_URL}/asignaciones/${id}/`);
       return data;
     },
     enabled: enabled && !!id,
@@ -154,7 +160,7 @@ export const useCreateAsignacionTurno = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: AsignacionTurnoFormData) => {
-      const { data: response } = await api.post<AsignacionTurno>(`${BASE_URL}/asignaciones-turno/`, data);
+      const { data: response } = await api.post<AsignacionTurno>(`${BASE_URL}/asignaciones/`, data);
       return response;
     },
     onSuccess: () => {
@@ -169,7 +175,10 @@ export const useUpdateAsignacionTurno = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<AsignacionTurnoFormData> }) => {
-      const { data: response } = await api.patch<AsignacionTurno>(`${BASE_URL}/asignaciones-turno/${id}/`, data);
+      const { data: response } = await api.patch<AsignacionTurno>(
+        `${BASE_URL}/asignaciones/${id}/`,
+        data
+      );
       return response;
     },
     onSuccess: (_, { id }) => {
@@ -185,7 +194,7 @@ export const useDeleteAsignacionTurno = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      await api.delete(`${BASE_URL}/asignaciones-turno/${id}/`);
+      await api.delete(`${BASE_URL}/asignaciones/${id}/`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: controlTiempoKeys.asignaciones.all() });
@@ -201,7 +210,9 @@ export const useRegistrosAsistencia = (filters?: RegistroAsistenciaFilter) => {
   return useQuery({
     queryKey: controlTiempoKeys.asistencias.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<RegistroAsistencia[]>(`${BASE_URL}/asistencias/`, { params: filters });
+      const { data } = await api.get<RegistroAsistencia[]>(`${BASE_URL}/asistencias/`, {
+        params: filters,
+      });
       return data;
     },
   });
@@ -222,7 +233,10 @@ export const useCreateRegistroAsistencia = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: RegistroAsistenciaFormData) => {
-      const { data: response } = await api.post<RegistroAsistencia>(`${BASE_URL}/asistencias/`, data);
+      const { data: response } = await api.post<RegistroAsistencia>(
+        `${BASE_URL}/asistencias/`,
+        data
+      );
       return response;
     },
     onSuccess: () => {
@@ -237,7 +251,10 @@ export const useUpdateRegistroAsistencia = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<RegistroAsistenciaFormData> }) => {
-      const { data: response } = await api.patch<RegistroAsistencia>(`${BASE_URL}/asistencias/${id}/`, data);
+      const { data: response } = await api.patch<RegistroAsistencia>(
+        `${BASE_URL}/asistencias/${id}/`,
+        data
+      );
       return response;
     },
     onSuccess: (_, { id }) => {
@@ -253,7 +270,10 @@ export const useRegistrarMarcaje = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: MarcajeData) => {
-      const { data: response } = await api.post<RegistroAsistencia>(`${BASE_URL}/asistencias/registrar_marcaje/`, data);
+      const { data: response } = await api.post<RegistroAsistencia>(
+        `${BASE_URL}/asistencias/registrar_marcaje/`,
+        data
+      );
       return response;
     },
     onSuccess: () => {
@@ -268,7 +288,10 @@ export const useJustificarAsistencia = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, justificacion }: { id: number; justificacion: string }) => {
-      const { data: response } = await api.post<RegistroAsistencia>(`${BASE_URL}/asistencias/${id}/justificar/`, { justificacion });
+      const { data: response } = await api.post<RegistroAsistencia>(
+        `${BASE_URL}/asistencias/${id}/justificar/`,
+        { justificacion }
+      );
       return response;
     },
     onSuccess: (_, { id }) => {
@@ -322,7 +345,10 @@ export const useUpdateHoraExtra = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<HoraExtraFormData> }) => {
-      const { data: response } = await api.patch<HoraExtra>(`${BASE_URL}/horas-extras/${id}/`, data);
+      const { data: response } = await api.patch<HoraExtra>(
+        `${BASE_URL}/horas-extras/${id}/`,
+        data
+      );
       return response;
     },
     onSuccess: (_, { id }) => {
@@ -352,7 +378,10 @@ export const useAprobarHoraExtra = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: AprobacionHoraExtraData }) => {
-      const { data: response } = await api.post<HoraExtra>(`${BASE_URL}/horas-extras/${id}/aprobar/`, data);
+      const { data: response } = await api.post<HoraExtra>(
+        `${BASE_URL}/horas-extras/${id}/aprobar/`,
+        data
+      );
       return response;
     },
     onSuccess: (_, { id }) => {
@@ -368,7 +397,10 @@ export const useRechazarHoraExtra = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, observaciones }: { id: number; observaciones: string }) => {
-      const { data: response } = await api.post<HoraExtra>(`${BASE_URL}/horas-extras/${id}/rechazar/`, { observaciones_aprobacion: observaciones });
+      const { data: response } = await api.post<HoraExtra>(
+        `${BASE_URL}/horas-extras/${id}/rechazar/`,
+        { observaciones_aprobacion: observaciones }
+      );
       return response;
     },
     onSuccess: (_, { id }) => {
@@ -386,7 +418,9 @@ export const useConsolidadosAsistencia = (filters?: ConsolidadoAsistenciaFilter)
   return useQuery({
     queryKey: controlTiempoKeys.consolidados.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<ConsolidadoAsistencia[]>(`${BASE_URL}/consolidados/`, { params: filters });
+      const { data } = await api.get<ConsolidadoAsistencia[]>(`${BASE_URL}/consolidados/`, {
+        params: filters,
+      });
       return data;
     },
   });
@@ -407,7 +441,10 @@ export const useGenerarConsolidado = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: GenerarConsolidadoData) => {
-      const { data: response } = await api.post<ConsolidadoAsistencia>(`${BASE_URL}/consolidados/generar/`, data);
+      const { data: response } = await api.post<ConsolidadoAsistencia>(
+        `${BASE_URL}/consolidados/generar/`,
+        data
+      );
       return response;
     },
     onSuccess: () => {
@@ -422,7 +459,9 @@ export const useCerrarConsolidado = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const { data: response } = await api.post<ConsolidadoAsistencia>(`${BASE_URL}/consolidados/${id}/cerrar/`);
+      const { data: response } = await api.post<ConsolidadoAsistencia>(
+        `${BASE_URL}/consolidados/${id}/cerrar/`
+      );
       return response;
     },
     onSuccess: (_, id) => {
@@ -438,7 +477,9 @@ export const useAprobarConsolidado = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const { data: response } = await api.post<ConsolidadoAsistencia>(`${BASE_URL}/consolidados/${id}/aprobar/`);
+      const { data: response } = await api.post<ConsolidadoAsistencia>(
+        `${BASE_URL}/consolidados/${id}/aprobar/`
+      );
       return response;
     },
     onSuccess: (_, id) => {

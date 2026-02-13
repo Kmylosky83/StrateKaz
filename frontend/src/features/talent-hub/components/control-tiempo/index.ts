@@ -1,0 +1,1 @@
+export { ControlTiempoSection } from './ControlTiempoSection';

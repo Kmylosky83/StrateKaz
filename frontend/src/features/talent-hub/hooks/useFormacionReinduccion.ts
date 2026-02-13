@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { api } from '@/lib/api-client';
 import type {
   PlanFormacion,
+  PlanFormacionFormData,
   Capacitacion,
   CapacitacionFormData,
   ProgramacionCapacitacion,
@@ -29,72 +30,61 @@ import type {
 export const formacionKeys = {
   all: ['formacion'] as const,
 
-  // Planes de Formacion
   planes: {
     all: ['formacion', 'planes'] as const,
     list: () => [...formacionKeys.planes.all, 'list'] as const,
-    detail: (id: string) => [...formacionKeys.planes.all, 'detail', id] as const,
-    vigente: () => [...formacionKeys.planes.all, 'vigente'] as const,
+    detail: (id: number) => [...formacionKeys.planes.all, 'detail', id] as const,
   },
 
-  // Capacitaciones
   capacitaciones: {
     all: ['formacion', 'capacitaciones'] as const,
     list: () => [...formacionKeys.capacitaciones.all, 'list'] as const,
-    detail: (id: string) => [...formacionKeys.capacitaciones.all, 'detail', id] as const,
+    detail: (id: number) => [...formacionKeys.capacitaciones.all, 'detail', id] as const,
     porTipo: () => [...formacionKeys.capacitaciones.all, 'por-tipo'] as const,
-    porPlan: (planId: string) => [...formacionKeys.capacitaciones.all, 'plan', planId] as const,
   },
 
-  // Programaciones
   programaciones: {
     all: ['formacion', 'programaciones'] as const,
     list: () => [...formacionKeys.programaciones.all, 'list'] as const,
-    detail: (id: string) => [...formacionKeys.programaciones.all, 'detail', id] as const,
+    detail: (id: number) => [...formacionKeys.programaciones.all, 'detail', id] as const,
     calendario: (fechaInicio?: string, fechaFin?: string) =>
       [...formacionKeys.programaciones.all, 'calendario', fechaInicio, fechaFin] as const,
     proximas: (dias?: number) => [...formacionKeys.programaciones.all, 'proximas', dias] as const,
   },
 
-  // Ejecuciones
   ejecuciones: {
     all: ['formacion', 'ejecuciones'] as const,
     list: () => [...formacionKeys.ejecuciones.all, 'list'] as const,
-    detail: (id: string) => [...formacionKeys.ejecuciones.all, 'detail', id] as const,
-    porColaborador: (id: string) => [...formacionKeys.ejecuciones.all, 'colaborador', id] as const,
+    detail: (id: number) => [...formacionKeys.ejecuciones.all, 'detail', id] as const,
+    porColaborador: (id: number) => [...formacionKeys.ejecuciones.all, 'colaborador', id] as const,
   },
 
-  // Gamificacion
   gamificacion: {
     all: ['formacion', 'gamificacion'] as const,
-    leaderboard: (limite?: number) => [...formacionKeys.gamificacion.all, 'leaderboard', limite] as const,
-    miPerfil: (colaboradorId: string) => [...formacionKeys.gamificacion.all, 'perfil', colaboradorId] as const,
-    misBadges: (colaboradorId: string) => [...formacionKeys.gamificacion.all, 'badges', colaboradorId] as const,
+    leaderboard: (limite?: number) =>
+      [...formacionKeys.gamificacion.all, 'leaderboard', limite] as const,
+    miPerfil: (colaboradorId: number) =>
+      [...formacionKeys.gamificacion.all, 'perfil', colaboradorId] as const,
+    misBadges: (colaboradorId: number) =>
+      [...formacionKeys.gamificacion.all, 'badges', colaboradorId] as const,
   },
 
-  // Badges
   badges: {
     all: ['formacion', 'badges'] as const,
     list: () => [...formacionKeys.badges.all, 'list'] as const,
-    detail: (id: string) => [...formacionKeys.badges.all, 'detail', id] as const,
   },
 
-  // Evaluaciones de Eficacia
   evaluacionesEficacia: {
     all: ['formacion', 'evaluaciones-eficacia'] as const,
     list: () => [...formacionKeys.evaluacionesEficacia.all, 'list'] as const,
-    detail: (id: string) => [...formacionKeys.evaluacionesEficacia.all, 'detail', id] as const,
   },
 
-  // Certificados
   certificados: {
     all: ['formacion', 'certificados'] as const,
     list: () => [...formacionKeys.certificados.all, 'list'] as const,
-    detail: (id: string) => [...formacionKeys.certificados.all, 'detail', id] as const,
-    porColaborador: (id: string) => [...formacionKeys.certificados.all, 'colaborador', id] as const,
+    porColaborador: (id: number) => [...formacionKeys.certificados.all, 'colaborador', id] as const,
   },
 
-  // Estadisticas
   estadisticas: () => [...formacionKeys.all, 'estadisticas'] as const,
 };
 
@@ -112,21 +102,65 @@ export function usePlanesFormacion() {
   });
 }
 
-export function usePlanFormacion(id: string) {
+export function usePlanFormacion(id: number) {
   return useQuery({
     queryKey: formacionKeys.planes.detail(id),
     queryFn: async () => {
-      const { data } = await api.get<PlanFormacion>(`/talent-hub/formacion/planes-formacion/${id}/`);
+      const { data } = await api.get<PlanFormacion>(
+        `/talent-hub/formacion/planes-formacion/${id}/`
+      );
       return data;
     },
     enabled: !!id,
   });
 }
 
+export function useCreatePlanFormacion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (formData: PlanFormacionFormData) => {
+      const { data } = await api.post<PlanFormacion>(
+        '/talent-hub/formacion/planes-formacion/',
+        formData
+      );
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: formacionKeys.planes.all });
+      toast.success('Plan creado');
+    },
+    onError: () => toast.error('Error al crear plan'),
+  });
+}
+
+export function useUpdatePlanFormacion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data: formData,
+    }: {
+      id: number;
+      data: Partial<PlanFormacionFormData>;
+    }) => {
+      const { data } = await api.patch<PlanFormacion>(
+        `/talent-hub/formacion/planes-formacion/${id}/`,
+        formData
+      );
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: formacionKeys.planes.all });
+      toast.success('Plan actualizado');
+    },
+    onError: () => toast.error('Error al actualizar plan'),
+  });
+}
+
 export function useAprobarPlan() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async (id: number) => {
       const { data } = await api.post(`/talent-hub/formacion/planes-formacion/${id}/aprobar/`);
       return data;
     },
@@ -135,6 +169,20 @@ export function useAprobarPlan() {
       toast.success('Plan aprobado');
     },
     onError: () => toast.error('Error al aprobar plan'),
+  });
+}
+
+export function useDeletePlanFormacion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await api.delete(`/talent-hub/formacion/planes-formacion/${id}/`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: formacionKeys.planes.all });
+      toast.success('Plan eliminado');
+    },
+    onError: () => toast.error('Error al eliminar plan'),
   });
 }
 
@@ -152,7 +200,7 @@ export function useCapacitaciones() {
   });
 }
 
-export function useCapacitacion(id: string) {
+export function useCapacitacion(id: number) {
   return useQuery({
     queryKey: formacionKeys.capacitaciones.detail(id),
     queryFn: async () => {
@@ -167,7 +215,9 @@ export function useCapacitacionesPorTipo() {
   return useQuery({
     queryKey: formacionKeys.capacitaciones.porTipo(),
     queryFn: async () => {
-      const { data } = await api.get<Record<string, Capacitacion[]>>('/talent-hub/formacion/capacitaciones/por_tipo/');
+      const { data } = await api.get<Record<string, Capacitacion[]>>(
+        '/talent-hub/formacion/capacitaciones/por_tipo/'
+      );
       return data;
     },
   });
@@ -177,7 +227,10 @@ export function useCreateCapacitacion() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (formData: CapacitacionFormData) => {
-      const { data } = await api.post<Capacitacion>('/talent-hub/formacion/capacitaciones/', formData);
+      const { data } = await api.post<Capacitacion>(
+        '/talent-hub/formacion/capacitaciones/',
+        formData
+      );
       return data;
     },
     onSuccess: () => {
@@ -188,10 +241,48 @@ export function useCreateCapacitacion() {
   });
 }
 
+export function useUpdateCapacitacion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data: formData,
+    }: {
+      id: number;
+      data: Partial<CapacitacionFormData>;
+    }) => {
+      const { data } = await api.patch<Capacitacion>(
+        `/talent-hub/formacion/capacitaciones/${id}/`,
+        formData
+      );
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: formacionKeys.capacitaciones.all });
+      toast.success('Capacitacion actualizada');
+    },
+    onError: () => toast.error('Error al actualizar capacitacion'),
+  });
+}
+
+export function useDeleteCapacitacion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await api.delete(`/talent-hub/formacion/capacitaciones/${id}/`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: formacionKeys.capacitaciones.all });
+      toast.success('Capacitacion eliminada');
+    },
+    onError: () => toast.error('Error al eliminar capacitacion'),
+  });
+}
+
 export function usePublicarCapacitacion() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async (id: number) => {
       const { data } = await api.post(`/talent-hub/formacion/capacitaciones/${id}/publicar/`);
       return data;
     },
@@ -211,7 +302,9 @@ export function useProgramaciones() {
   return useQuery({
     queryKey: formacionKeys.programaciones.list(),
     queryFn: async () => {
-      const { data } = await api.get<ProgramacionCapacitacion[]>('/talent-hub/formacion/programaciones/');
+      const { data } = await api.get<ProgramacionCapacitacion[]>(
+        '/talent-hub/formacion/programaciones/'
+      );
       return data;
     },
   });
@@ -248,7 +341,10 @@ export function useCreateProgramacion() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (formData: ProgramacionFormData) => {
-      const { data } = await api.post<ProgramacionCapacitacion>('/talent-hub/formacion/programaciones/', formData);
+      const { data } = await api.post<ProgramacionCapacitacion>(
+        '/talent-hub/formacion/programaciones/',
+        formData
+      );
       return data;
     },
     onSuccess: () => {
@@ -259,11 +355,35 @@ export function useCreateProgramacion() {
   });
 }
 
+export function useDeleteProgramacion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await api.delete(`/talent-hub/formacion/programaciones/${id}/`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: formacionKeys.programaciones.all });
+      toast.success('Sesion eliminada');
+    },
+    onError: () => toast.error('Error al eliminar sesion'),
+  });
+}
+
 // ============================================================================
 // HOOKS - EJECUCIONES
 // ============================================================================
 
-export function useEjecucionesPorColaborador(colaboradorId: string) {
+export function useEjecuciones() {
+  return useQuery({
+    queryKey: formacionKeys.ejecuciones.list(),
+    queryFn: async () => {
+      const { data } = await api.get<EjecucionCapacitacion[]>('/talent-hub/formacion/ejecuciones/');
+      return data;
+    },
+  });
+}
+
+export function useEjecucionesPorColaborador(colaboradorId: number) {
   return useQuery({
     queryKey: formacionKeys.ejecuciones.porColaborador(colaboradorId),
     queryFn: async () => {
@@ -276,6 +396,25 @@ export function useEjecucionesPorColaborador(colaboradorId: string) {
   });
 }
 
+export function useCreateEjecucion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (formData: { programacion: number; colaborador: number }) => {
+      const { data } = await api.post<EjecucionCapacitacion>(
+        '/talent-hub/formacion/ejecuciones/',
+        formData
+      );
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: formacionKeys.ejecuciones.all });
+      queryClient.invalidateQueries({ queryKey: formacionKeys.programaciones.all });
+      toast.success('Inscripcion registrada');
+    },
+    onError: () => toast.error('Error al inscribir'),
+  });
+}
+
 export function useRegistrarAsistencia() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -285,16 +424,19 @@ export function useRegistrarAsistencia() {
       horaEntrada,
       horaSalida,
     }: {
-      id: string;
+      id: number;
       asistio: boolean;
       horaEntrada?: string;
       horaSalida?: string;
     }) => {
-      const { data } = await api.post(`/talent-hub/formacion/ejecuciones/${id}/registrar_asistencia/`, {
-        asistio,
-        hora_entrada: horaEntrada,
-        hora_salida: horaSalida,
-      });
+      const { data } = await api.post(
+        `/talent-hub/formacion/ejecuciones/${id}/registrar_asistencia/`,
+        {
+          asistio,
+          hora_entrada: horaEntrada,
+          hora_salida: horaSalida,
+        }
+      );
       return data;
     },
     onSuccess: () => {
@@ -308,8 +450,11 @@ export function useRegistrarAsistencia() {
 export function useRegistrarEvaluacion() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, nota }: { id: string; nota: number }) => {
-      const { data } = await api.post(`/talent-hub/formacion/ejecuciones/${id}/registrar_evaluacion/`, { nota });
+    mutationFn: async ({ id, nota }: { id: number; nota: number }) => {
+      const { data } = await api.post(
+        `/talent-hub/formacion/ejecuciones/${id}/registrar_evaluacion/`,
+        { nota }
+      );
       return data;
     },
     onSuccess: () => {
@@ -336,7 +481,7 @@ export function useLeaderboard(limite = 10) {
   });
 }
 
-export function useMiPerfilGamificacion(colaboradorId: string) {
+export function useMiPerfilGamificacion(colaboradorId: number) {
   return useQuery({
     queryKey: formacionKeys.gamificacion.miPerfil(colaboradorId),
     queryFn: async () => {
@@ -349,7 +494,7 @@ export function useMiPerfilGamificacion(colaboradorId: string) {
   });
 }
 
-export function useMisBadges(colaboradorId: string) {
+export function useMisBadges(colaboradorId: number) {
   return useQuery({
     queryKey: formacionKeys.gamificacion.misBadges(colaboradorId),
     queryFn: async () => {
@@ -377,10 +522,54 @@ export function useBadges() {
 }
 
 // ============================================================================
+// HOOKS - EVALUACIONES DE EFICACIA
+// ============================================================================
+
+export function useEvaluacionesEficacia() {
+  return useQuery({
+    queryKey: formacionKeys.evaluacionesEficacia.list(),
+    queryFn: async () => {
+      const { data } = await api.get<EvaluacionEficacia[]>(
+        '/talent-hub/formacion/evaluaciones-eficacia/'
+      );
+      return data;
+    },
+  });
+}
+
+export function useCreateEvaluacionEficacia() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (formData: Partial<EvaluacionEficacia>) => {
+      const { data } = await api.post<EvaluacionEficacia>(
+        '/talent-hub/formacion/evaluaciones-eficacia/',
+        formData
+      );
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: formacionKeys.evaluacionesEficacia.all });
+      toast.success('Evaluacion registrada');
+    },
+    onError: () => toast.error('Error al registrar evaluacion'),
+  });
+}
+
+// ============================================================================
 // HOOKS - CERTIFICADOS
 // ============================================================================
 
-export function useCertificadosPorColaborador(colaboradorId: string) {
+export function useCertificados() {
+  return useQuery({
+    queryKey: formacionKeys.certificados.list(),
+    queryFn: async () => {
+      const { data } = await api.get<Certificado[]>('/talent-hub/formacion/certificados/');
+      return data;
+    },
+  });
+}
+
+export function useCertificadosPorColaborador(colaboradorId: number) {
   return useQuery({
     queryKey: formacionKeys.certificados.porColaborador(colaboradorId),
     queryFn: async () => {
@@ -397,7 +586,9 @@ export function useVerificarCertificado(codigo: string) {
   return useQuery({
     queryKey: [...formacionKeys.certificados.all, 'verificar', codigo],
     queryFn: async () => {
-      const { data } = await api.get(`/talent-hub/formacion/certificados/verificar/?codigo=${codigo}`);
+      const { data } = await api.get(
+        `/talent-hub/formacion/certificados/verificar/?codigo=${codigo}`
+      );
       return data;
     },
     enabled: !!codigo,
@@ -407,8 +598,10 @@ export function useVerificarCertificado(codigo: string) {
 export function useAnularCertificado() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, motivo }: { id: string; motivo: string }) => {
-      const { data } = await api.post(`/talent-hub/formacion/certificados/${id}/anular/`, { motivo });
+    mutationFn: async ({ id, motivo }: { id: number; motivo: string }) => {
+      const { data } = await api.post(`/talent-hub/formacion/certificados/${id}/anular/`, {
+        motivo,
+      });
       return data;
     },
     onSuccess: () => {
@@ -427,7 +620,9 @@ export function useFormacionEstadisticas() {
   return useQuery({
     queryKey: formacionKeys.estadisticas(),
     queryFn: async () => {
-      const { data } = await api.get<FormacionEstadisticas>('/talent-hub/formacion/estadisticas/resumen/');
+      const { data } = await api.get<FormacionEstadisticas>(
+        '/talent-hub/formacion/estadisticas/resumen/'
+      );
       return data;
     },
   });

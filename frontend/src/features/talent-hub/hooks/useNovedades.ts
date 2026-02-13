@@ -1,11 +1,13 @@
 /**
  * Hooks para Novedades - Talent Hub
- * Sistema de Gestión StrateKaz
+ * Sistema de Gestion StrateKaz
+ *
+ * Aligned with backend endpoints (2026-02-13)
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import api from '@/lib/api-client';
+import { api } from '@/lib/api-client';
 import type {
   TipoIncapacidad,
   TipoIncapacidadFormData,
@@ -18,19 +20,23 @@ import type {
   LicenciaFormData,
   LicenciaFilter,
   AprobacionLicenciaData,
-  TipoPermiso,
-  TipoPermisoFormData,
   Permiso,
   PermisoFormData,
   PermisoFilter,
   PeriodoVacaciones,
+  PeriodoVacacionesFormData,
   PeriodoVacacionesFilter,
   SolicitudVacaciones,
   SolicitudVacacionesFormData,
   SolicitudVacacionesFilter,
+  ConfiguracionDotacion,
+  ConfiguracionDotacionFormData,
+  EntregaDotacion,
+  EntregaDotacionFormData,
+  EntregaDotacionFilter,
 } from '../types';
 
-const BASE_URL = '/api/v1/talent-hub/novedades';
+const BASE_URL = '/talent-hub/novedades';
 
 // ============== QUERY KEYS ==============
 
@@ -43,8 +49,10 @@ export const novedadesKeys = {
   },
   incapacidades: {
     all: () => [...novedadesKeys.all, 'incapacidades'] as const,
-    list: (filters?: IncapacidadFilter) => [...novedadesKeys.incapacidades.all(), 'list', filters] as const,
+    list: (filters?: IncapacidadFilter) =>
+      [...novedadesKeys.incapacidades.all(), 'list', filters] as const,
     detail: (id: number) => [...novedadesKeys.incapacidades.all(), 'detail', id] as const,
+    estadisticas: () => [...novedadesKeys.incapacidades.all(), 'estadisticas'] as const,
   },
   tiposLicencia: {
     all: () => [...novedadesKeys.all, 'tipos-licencia'] as const,
@@ -53,13 +61,9 @@ export const novedadesKeys = {
   },
   licencias: {
     all: () => [...novedadesKeys.all, 'licencias'] as const,
-    list: (filters?: LicenciaFilter) => [...novedadesKeys.licencias.all(), 'list', filters] as const,
+    list: (filters?: LicenciaFilter) =>
+      [...novedadesKeys.licencias.all(), 'list', filters] as const,
     detail: (id: number) => [...novedadesKeys.licencias.all(), 'detail', id] as const,
-  },
-  tiposPermiso: {
-    all: () => [...novedadesKeys.all, 'tipos-permiso'] as const,
-    list: () => [...novedadesKeys.tiposPermiso.all(), 'list'] as const,
-    detail: (id: number) => [...novedadesKeys.tiposPermiso.all(), 'detail', id] as const,
   },
   permisos: {
     all: () => [...novedadesKeys.all, 'permisos'] as const,
@@ -68,13 +72,25 @@ export const novedadesKeys = {
   },
   periodosVacaciones: {
     all: () => [...novedadesKeys.all, 'periodos-vacaciones'] as const,
-    list: (filters?: PeriodoVacacionesFilter) => [...novedadesKeys.periodosVacaciones.all(), 'list', filters] as const,
+    list: (filters?: PeriodoVacacionesFilter) =>
+      [...novedadesKeys.periodosVacaciones.all(), 'list', filters] as const,
     detail: (id: number) => [...novedadesKeys.periodosVacaciones.all(), 'detail', id] as const,
   },
   solicitudesVacaciones: {
     all: () => [...novedadesKeys.all, 'solicitudes-vacaciones'] as const,
-    list: (filters?: SolicitudVacacionesFilter) => [...novedadesKeys.solicitudesVacaciones.all(), 'list', filters] as const,
+    list: (filters?: SolicitudVacacionesFilter) =>
+      [...novedadesKeys.solicitudesVacaciones.all(), 'list', filters] as const,
     detail: (id: number) => [...novedadesKeys.solicitudesVacaciones.all(), 'detail', id] as const,
+  },
+  dotacionConfig: {
+    all: () => [...novedadesKeys.all, 'dotacion-config'] as const,
+    list: () => [...novedadesKeys.dotacionConfig.all(), 'list'] as const,
+  },
+  entregasDotacion: {
+    all: () => [...novedadesKeys.all, 'entregas-dotacion'] as const,
+    list: (filters?: EntregaDotacionFilter) =>
+      [...novedadesKeys.entregasDotacion.all(), 'list', filters] as const,
+    detail: (id: number) => [...novedadesKeys.entregasDotacion.all(), 'detail', id] as const,
   },
 };
 
@@ -90,22 +106,14 @@ export const useTiposIncapacidad = () => {
   });
 };
 
-export const useTipoIncapacidad = (id: number, enabled = true) => {
-  return useQuery({
-    queryKey: novedadesKeys.tiposIncapacidad.detail(id),
-    queryFn: async () => {
-      const { data } = await api.get<TipoIncapacidad>(`${BASE_URL}/tipos-incapacidad/${id}/`);
-      return data;
-    },
-    enabled: enabled && !!id,
-  });
-};
-
 export const useCreateTipoIncapacidad = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: TipoIncapacidadFormData) => {
-      const { data: response } = await api.post<TipoIncapacidad>(`${BASE_URL}/tipos-incapacidad/`, data);
+      const { data: response } = await api.post<TipoIncapacidad>(
+        `${BASE_URL}/tipos-incapacidad/`,
+        data
+      );
       return response;
     },
     onSuccess: () => {
@@ -120,13 +128,15 @@ export const useUpdateTipoIncapacidad = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<TipoIncapacidadFormData> }) => {
-      const { data: response } = await api.patch<TipoIncapacidad>(`${BASE_URL}/tipos-incapacidad/${id}/`, data);
+      const { data: response } = await api.patch<TipoIncapacidad>(
+        `${BASE_URL}/tipos-incapacidad/${id}/`,
+        data
+      );
       return response;
     },
-    onSuccess: (_, { id }) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: novedadesKeys.tiposIncapacidad.all() });
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.tiposIncapacidad.detail(id) });
-      toast.success('Tipo de incapacidad actualizado exitosamente');
+      toast.success('Tipo de incapacidad actualizado');
     },
     onError: () => toast.error('Error al actualizar el tipo de incapacidad'),
   });
@@ -140,7 +150,7 @@ export const useDeleteTipoIncapacidad = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: novedadesKeys.tiposIncapacidad.all() });
-      toast.success('Tipo de incapacidad eliminado exitosamente');
+      toast.success('Tipo de incapacidad eliminado');
     },
     onError: () => toast.error('Error al eliminar el tipo de incapacidad'),
   });
@@ -152,7 +162,9 @@ export const useIncapacidades = (filters?: IncapacidadFilter) => {
   return useQuery({
     queryKey: novedadesKeys.incapacidades.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<Incapacidad[]>(`${BASE_URL}/incapacidades/`, { params: filters });
+      const { data } = await api.get<Incapacidad[]>(`${BASE_URL}/incapacidades/`, {
+        params: filters,
+      });
       return data;
     },
   });
@@ -188,13 +200,15 @@ export const useUpdateIncapacidad = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<IncapacidadFormData> }) => {
-      const { data: response } = await api.patch<Incapacidad>(`${BASE_URL}/incapacidades/${id}/`, data);
+      const { data: response } = await api.patch<Incapacidad>(
+        `${BASE_URL}/incapacidades/${id}/`,
+        data
+      );
       return response;
     },
-    onSuccess: (_, { id }) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: novedadesKeys.incapacidades.all() });
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.incapacidades.detail(id) });
-      toast.success('Incapacidad actualizada exitosamente');
+      toast.success('Incapacidad actualizada');
     },
     onError: () => toast.error('Error al actualizar la incapacidad'),
   });
@@ -208,9 +222,82 @@ export const useDeleteIncapacidad = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: novedadesKeys.incapacidades.all() });
-      toast.success('Incapacidad eliminada exitosamente');
+      toast.success('Incapacidad eliminada');
     },
     onError: () => toast.error('Error al eliminar la incapacidad'),
+  });
+};
+
+export const useAprobarIncapacidad = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const { data } = await api.post<Incapacidad>(`${BASE_URL}/incapacidades/${id}/aprobar/`);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: novedadesKeys.incapacidades.all() });
+      toast.success('Incapacidad aprobada');
+    },
+    onError: () => toast.error('Error al aprobar la incapacidad'),
+  });
+};
+
+export const useRechazarIncapacidad = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, observaciones }: { id: number; observaciones: string }) => {
+      const { data } = await api.post<Incapacidad>(`${BASE_URL}/incapacidades/${id}/rechazar/`, {
+        observaciones,
+      });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: novedadesKeys.incapacidades.all() });
+      toast.success('Incapacidad rechazada');
+    },
+    onError: () => toast.error('Error al rechazar la incapacidad'),
+  });
+};
+
+export const useRadicarCobroIncapacidad = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      fecha_radicacion_cobro,
+    }: {
+      id: number;
+      fecha_radicacion_cobro: string;
+    }) => {
+      const { data } = await api.post<Incapacidad>(
+        `${BASE_URL}/incapacidades/${id}/radicar_cobro/`,
+        { fecha_radicacion_cobro }
+      );
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: novedadesKeys.incapacidades.all() });
+      toast.success('Cobro radicado exitosamente');
+    },
+    onError: () => toast.error('Error al radicar el cobro'),
+  });
+};
+
+export const useEstadisticasIncapacidades = () => {
+  return useQuery({
+    queryKey: novedadesKeys.incapacidades.estadisticas(),
+    queryFn: async () => {
+      const { data } = await api.get<{
+        total: number;
+        por_estado: Record<string, number>;
+        pendientes: number;
+        aprobadas: number;
+        en_cobro: number;
+        pagadas: number;
+      }>(`${BASE_URL}/incapacidades/estadisticas/`);
+      return data;
+    },
   });
 };
 
@@ -223,17 +310,6 @@ export const useTiposLicencia = () => {
       const { data } = await api.get<TipoLicencia[]>(`${BASE_URL}/tipos-licencia/`);
       return data;
     },
-  });
-};
-
-export const useTipoLicencia = (id: number, enabled = true) => {
-  return useQuery({
-    queryKey: novedadesKeys.tiposLicencia.detail(id),
-    queryFn: async () => {
-      const { data } = await api.get<TipoLicencia>(`${BASE_URL}/tipos-licencia/${id}/`);
-      return data;
-    },
-    enabled: enabled && !!id,
   });
 };
 
@@ -256,13 +332,15 @@ export const useUpdateTipoLicencia = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<TipoLicenciaFormData> }) => {
-      const { data: response } = await api.patch<TipoLicencia>(`${BASE_URL}/tipos-licencia/${id}/`, data);
+      const { data: response } = await api.patch<TipoLicencia>(
+        `${BASE_URL}/tipos-licencia/${id}/`,
+        data
+      );
       return response;
     },
-    onSuccess: (_, { id }) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: novedadesKeys.tiposLicencia.all() });
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.tiposLicencia.detail(id) });
-      toast.success('Tipo de licencia actualizado exitosamente');
+      toast.success('Tipo de licencia actualizado');
     },
     onError: () => toast.error('Error al actualizar el tipo de licencia'),
   });
@@ -276,7 +354,7 @@ export const useDeleteTipoLicencia = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: novedadesKeys.tiposLicencia.all() });
-      toast.success('Tipo de licencia eliminado exitosamente');
+      toast.success('Tipo de licencia eliminado');
     },
     onError: () => toast.error('Error al eliminar el tipo de licencia'),
   });
@@ -291,17 +369,6 @@ export const useLicencias = (filters?: LicenciaFilter) => {
       const { data } = await api.get<Licencia[]>(`${BASE_URL}/licencias/`, { params: filters });
       return data;
     },
-  });
-};
-
-export const useLicencia = (id: number, enabled = true) => {
-  return useQuery({
-    queryKey: novedadesKeys.licencias.detail(id),
-    queryFn: async () => {
-      const { data } = await api.get<Licencia>(`${BASE_URL}/licencias/${id}/`);
-      return data;
-    },
-    enabled: enabled && !!id,
   });
 };
 
@@ -327,10 +394,9 @@ export const useUpdateLicencia = () => {
       const { data: response } = await api.patch<Licencia>(`${BASE_URL}/licencias/${id}/`, data);
       return response;
     },
-    onSuccess: (_, { id }) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: novedadesKeys.licencias.all() });
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.licencias.detail(id) });
-      toast.success('Licencia actualizada exitosamente');
+      toast.success('Licencia actualizada');
     },
     onError: () => toast.error('Error al actualizar la licencia'),
   });
@@ -344,7 +410,7 @@ export const useDeleteLicencia = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: novedadesKeys.licencias.all() });
-      toast.success('Licencia eliminada exitosamente');
+      toast.success('Licencia eliminada');
     },
     onError: () => toast.error('Error al eliminar la licencia'),
   });
@@ -353,14 +419,16 @@ export const useDeleteLicencia = () => {
 export const useAprobarLicencia = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: AprobacionLicenciaData }) => {
-      const { data: response } = await api.post<Licencia>(`${BASE_URL}/licencias/${id}/aprobar/`, data);
+    mutationFn: async ({ id, data }: { id: number; data?: AprobacionLicenciaData }) => {
+      const { data: response } = await api.post<Licencia>(
+        `${BASE_URL}/licencias/${id}/aprobar/`,
+        data
+      );
       return response;
     },
-    onSuccess: (_, { id }) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: novedadesKeys.licencias.all() });
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.licencias.detail(id) });
-      toast.success('Licencia aprobada exitosamente');
+      toast.success('Licencia aprobada');
     },
     onError: () => toast.error('Error al aprobar la licencia'),
   });
@@ -370,83 +438,16 @@ export const useRechazarLicencia = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, observaciones }: { id: number; observaciones: string }) => {
-      const { data: response } = await api.post<Licencia>(`${BASE_URL}/licencias/${id}/rechazar/`, { observaciones_aprobacion: observaciones });
+      const { data: response } = await api.post<Licencia>(`${BASE_URL}/licencias/${id}/rechazar/`, {
+        observaciones,
+      });
       return response;
     },
-    onSuccess: (_, { id }) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: novedadesKeys.licencias.all() });
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.licencias.detail(id) });
       toast.success('Licencia rechazada');
     },
     onError: () => toast.error('Error al rechazar la licencia'),
-  });
-};
-
-// ============== TIPOS PERMISO ==============
-
-export const useTiposPermiso = () => {
-  return useQuery({
-    queryKey: novedadesKeys.tiposPermiso.list(),
-    queryFn: async () => {
-      const { data } = await api.get<TipoPermiso[]>(`${BASE_URL}/tipos-permiso/`);
-      return data;
-    },
-  });
-};
-
-export const useTipoPermiso = (id: number, enabled = true) => {
-  return useQuery({
-    queryKey: novedadesKeys.tiposPermiso.detail(id),
-    queryFn: async () => {
-      const { data } = await api.get<TipoPermiso>(`${BASE_URL}/tipos-permiso/${id}/`);
-      return data;
-    },
-    enabled: enabled && !!id,
-  });
-};
-
-export const useCreateTipoPermiso = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: TipoPermisoFormData) => {
-      const { data: response } = await api.post<TipoPermiso>(`${BASE_URL}/tipos-permiso/`, data);
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.tiposPermiso.all() });
-      toast.success('Tipo de permiso creado exitosamente');
-    },
-    onError: () => toast.error('Error al crear el tipo de permiso'),
-  });
-};
-
-export const useUpdateTipoPermiso = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<TipoPermisoFormData> }) => {
-      const { data: response } = await api.patch<TipoPermiso>(`${BASE_URL}/tipos-permiso/${id}/`, data);
-      return response;
-    },
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.tiposPermiso.all() });
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.tiposPermiso.detail(id) });
-      toast.success('Tipo de permiso actualizado exitosamente');
-    },
-    onError: () => toast.error('Error al actualizar el tipo de permiso'),
-  });
-};
-
-export const useDeleteTipoPermiso = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: number) => {
-      await api.delete(`${BASE_URL}/tipos-permiso/${id}/`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.tiposPermiso.all() });
-      toast.success('Tipo de permiso eliminado exitosamente');
-    },
-    onError: () => toast.error('Error al eliminar el tipo de permiso'),
   });
 };
 
@@ -459,17 +460,6 @@ export const usePermisos = (filters?: PermisoFilter) => {
       const { data } = await api.get<Permiso[]>(`${BASE_URL}/permisos/`, { params: filters });
       return data;
     },
-  });
-};
-
-export const usePermiso = (id: number, enabled = true) => {
-  return useQuery({
-    queryKey: novedadesKeys.permisos.detail(id),
-    queryFn: async () => {
-      const { data } = await api.get<Permiso>(`${BASE_URL}/permisos/${id}/`);
-      return data;
-    },
-    enabled: enabled && !!id,
   });
 };
 
@@ -495,10 +485,9 @@ export const useUpdatePermiso = () => {
       const { data: response } = await api.patch<Permiso>(`${BASE_URL}/permisos/${id}/`, data);
       return response;
     },
-    onSuccess: (_, { id }) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: novedadesKeys.permisos.all() });
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.permisos.detail(id) });
-      toast.success('Permiso actualizado exitosamente');
+      toast.success('Permiso actualizado');
     },
     onError: () => toast.error('Error al actualizar el permiso'),
   });
@@ -512,7 +501,7 @@ export const useDeletePermiso = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: novedadesKeys.permisos.all() });
-      toast.success('Permiso eliminado exitosamente');
+      toast.success('Permiso eliminado');
     },
     onError: () => toast.error('Error al eliminar el permiso'),
   });
@@ -522,13 +511,12 @@ export const useAprobarPermiso = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const { data: response } = await api.post<Permiso>(`${BASE_URL}/permisos/${id}/aprobar/`);
-      return response;
+      const { data } = await api.post<Permiso>(`${BASE_URL}/permisos/${id}/aprobar/`);
+      return data;
     },
-    onSuccess: (_, id) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: novedadesKeys.permisos.all() });
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.permisos.detail(id) });
-      toast.success('Permiso aprobado exitosamente');
+      toast.success('Permiso aprobado');
     },
     onError: () => toast.error('Error al aprobar el permiso'),
   });
@@ -538,12 +526,13 @@ export const useRechazarPermiso = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, observaciones }: { id: number; observaciones: string }) => {
-      const { data: response } = await api.post<Permiso>(`${BASE_URL}/permisos/${id}/rechazar/`, { observaciones });
-      return response;
+      const { data } = await api.post<Permiso>(`${BASE_URL}/permisos/${id}/rechazar/`, {
+        observaciones,
+      });
+      return data;
     },
-    onSuccess: (_, { id }) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: novedadesKeys.permisos.all() });
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.permisos.detail(id) });
       toast.success('Permiso rechazado');
     },
     onError: () => toast.error('Error al rechazar el permiso'),
@@ -556,20 +545,46 @@ export const usePeriodosVacaciones = (filters?: PeriodoVacacionesFilter) => {
   return useQuery({
     queryKey: novedadesKeys.periodosVacaciones.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<PeriodoVacaciones[]>(`${BASE_URL}/periodos-vacaciones/`, { params: filters });
+      const { data } = await api.get<PeriodoVacaciones[]>(`${BASE_URL}/periodos-vacaciones/`, {
+        params: filters,
+      });
       return data;
     },
   });
 };
 
-export const usePeriodoVacaciones = (id: number, enabled = true) => {
-  return useQuery({
-    queryKey: novedadesKeys.periodosVacaciones.detail(id),
-    queryFn: async () => {
-      const { data } = await api.get<PeriodoVacaciones>(`${BASE_URL}/periodos-vacaciones/${id}/`);
+export const useCreatePeriodoVacaciones = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: PeriodoVacacionesFormData) => {
+      const { data: response } = await api.post<PeriodoVacaciones>(
+        `${BASE_URL}/periodos-vacaciones/`,
+        data
+      );
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: novedadesKeys.periodosVacaciones.all() });
+      toast.success('Periodo de vacaciones creado');
+    },
+    onError: () => toast.error('Error al crear el periodo de vacaciones'),
+  });
+};
+
+export const useActualizarAcumulacion = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const { data } = await api.post<PeriodoVacaciones>(
+        `${BASE_URL}/periodos-vacaciones/${id}/actualizar_acumulacion/`
+      );
       return data;
     },
-    enabled: enabled && !!id,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: novedadesKeys.periodosVacaciones.all() });
+      toast.success('Acumulacion actualizada');
+    },
+    onError: () => toast.error('Error al actualizar la acumulacion'),
   });
 };
 
@@ -579,20 +594,11 @@ export const useSolicitudesVacaciones = (filters?: SolicitudVacacionesFilter) =>
   return useQuery({
     queryKey: novedadesKeys.solicitudesVacaciones.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<SolicitudVacaciones[]>(`${BASE_URL}/solicitudes-vacaciones/`, { params: filters });
+      const { data } = await api.get<SolicitudVacaciones[]>(`${BASE_URL}/solicitudes-vacaciones/`, {
+        params: filters,
+      });
       return data;
     },
-  });
-};
-
-export const useSolicitudVacaciones = (id: number, enabled = true) => {
-  return useQuery({
-    queryKey: novedadesKeys.solicitudesVacaciones.detail(id),
-    queryFn: async () => {
-      const { data } = await api.get<SolicitudVacaciones>(`${BASE_URL}/solicitudes-vacaciones/${id}/`);
-      return data;
-    },
-    enabled: enabled && !!id,
   });
 };
 
@@ -600,31 +606,42 @@ export const useCreateSolicitudVacaciones = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: SolicitudVacacionesFormData) => {
-      const { data: response } = await api.post<SolicitudVacaciones>(`${BASE_URL}/solicitudes-vacaciones/`, data);
+      const { data: response } = await api.post<SolicitudVacaciones>(
+        `${BASE_URL}/solicitudes-vacaciones/`,
+        data
+      );
       return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: novedadesKeys.solicitudesVacaciones.all() });
       queryClient.invalidateQueries({ queryKey: novedadesKeys.periodosVacaciones.all() });
-      toast.success('Solicitud de vacaciones creada exitosamente');
+      toast.success('Solicitud de vacaciones creada');
     },
-    onError: () => toast.error('Error al crear la solicitud de vacaciones'),
+    onError: () => toast.error('Error al crear la solicitud'),
   });
 };
 
 export const useUpdateSolicitudVacaciones = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<SolicitudVacacionesFormData> }) => {
-      const { data: response } = await api.patch<SolicitudVacaciones>(`${BASE_URL}/solicitudes-vacaciones/${id}/`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: Partial<SolicitudVacacionesFormData>;
+    }) => {
+      const { data: response } = await api.patch<SolicitudVacaciones>(
+        `${BASE_URL}/solicitudes-vacaciones/${id}/`,
+        data
+      );
       return response;
     },
-    onSuccess: (_, { id }) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: novedadesKeys.solicitudesVacaciones.all() });
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.solicitudesVacaciones.detail(id) });
-      toast.success('Solicitud de vacaciones actualizada exitosamente');
+      toast.success('Solicitud actualizada');
     },
-    onError: () => toast.error('Error al actualizar la solicitud de vacaciones'),
+    onError: () => toast.error('Error al actualizar la solicitud'),
   });
 };
 
@@ -636,9 +653,9 @@ export const useDeleteSolicitudVacaciones = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: novedadesKeys.solicitudesVacaciones.all() });
-      toast.success('Solicitud de vacaciones eliminada exitosamente');
+      toast.success('Solicitud eliminada');
     },
-    onError: () => toast.error('Error al eliminar la solicitud de vacaciones'),
+    onError: () => toast.error('Error al eliminar la solicitud'),
   });
 };
 
@@ -646,32 +663,152 @@ export const useAprobarVacaciones = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const { data: response } = await api.post<SolicitudVacaciones>(`${BASE_URL}/solicitudes-vacaciones/${id}/aprobar/`);
-      return response;
+      const { data } = await api.post<SolicitudVacaciones>(
+        `${BASE_URL}/solicitudes-vacaciones/${id}/aprobar/`
+      );
+      return data;
     },
-    onSuccess: (_, id) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: novedadesKeys.solicitudesVacaciones.all() });
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.solicitudesVacaciones.detail(id) });
       queryClient.invalidateQueries({ queryKey: novedadesKeys.periodosVacaciones.all() });
-      toast.success('Vacaciones aprobadas exitosamente');
+      toast.success('Vacaciones aprobadas');
     },
     onError: () => toast.error('Error al aprobar las vacaciones'),
   });
 };
 
-export const useCancelarVacaciones = () => {
+export const useRechazarVacaciones = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, motivo }: { id: number; motivo: string }) => {
-      const { data: response } = await api.post<SolicitudVacaciones>(`${BASE_URL}/solicitudes-vacaciones/${id}/cancelar/`, { motivo_cancelacion: motivo });
+    mutationFn: async ({ id, observaciones }: { id: number; observaciones: string }) => {
+      const { data } = await api.post<SolicitudVacaciones>(
+        `${BASE_URL}/solicitudes-vacaciones/${id}/rechazar/`,
+        { observaciones }
+      );
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: novedadesKeys.solicitudesVacaciones.all() });
+      toast.success('Vacaciones rechazadas');
+    },
+    onError: () => toast.error('Error al rechazar las vacaciones'),
+  });
+};
+
+// ============== CONFIGURACION DOTACION ==============
+
+export const useConfiguracionDotacion = () => {
+  return useQuery({
+    queryKey: novedadesKeys.dotacionConfig.list(),
+    queryFn: async () => {
+      const { data } = await api.get<ConfiguracionDotacion[]>(`${BASE_URL}/dotacion-config/`);
+      return data;
+    },
+  });
+};
+
+export const useCreateConfiguracionDotacion = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: ConfiguracionDotacionFormData) => {
+      const { data: response } = await api.post<ConfiguracionDotacion>(
+        `${BASE_URL}/dotacion-config/`,
+        data
+      );
       return response;
     },
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.solicitudesVacaciones.all() });
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.solicitudesVacaciones.detail(id) });
-      queryClient.invalidateQueries({ queryKey: novedadesKeys.periodosVacaciones.all() });
-      toast.success('Vacaciones canceladas');
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: novedadesKeys.dotacionConfig.all() });
+      toast.success('Configuracion de dotacion creada');
     },
-    onError: () => toast.error('Error al cancelar las vacaciones'),
+    onError: () => toast.error('Error al crear la configuracion'),
+  });
+};
+
+export const useUpdateConfiguracionDotacion = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: Partial<ConfiguracionDotacionFormData>;
+    }) => {
+      const { data: response } = await api.patch<ConfiguracionDotacion>(
+        `${BASE_URL}/dotacion-config/${id}/`,
+        data
+      );
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: novedadesKeys.dotacionConfig.all() });
+      toast.success('Configuracion actualizada');
+    },
+    onError: () => toast.error('Error al actualizar la configuracion'),
+  });
+};
+
+// ============== ENTREGAS DOTACION ==============
+
+export const useEntregasDotacion = (filters?: EntregaDotacionFilter) => {
+  return useQuery({
+    queryKey: novedadesKeys.entregasDotacion.list(filters),
+    queryFn: async () => {
+      const { data } = await api.get<EntregaDotacion[]>(`${BASE_URL}/entregas-dotacion/`, {
+        params: filters,
+      });
+      return data;
+    },
+  });
+};
+
+export const useCreateEntregaDotacion = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: EntregaDotacionFormData) => {
+      const { data: response } = await api.post<EntregaDotacion>(
+        `${BASE_URL}/entregas-dotacion/`,
+        data
+      );
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: novedadesKeys.entregasDotacion.all() });
+      toast.success('Entrega de dotacion registrada');
+    },
+    onError: () => toast.error('Error al registrar la entrega'),
+  });
+};
+
+export const useUpdateEntregaDotacion = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Partial<EntregaDotacionFormData> }) => {
+      const { data: response } = await api.patch<EntregaDotacion>(
+        `${BASE_URL}/entregas-dotacion/${id}/`,
+        data
+      );
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: novedadesKeys.entregasDotacion.all() });
+      toast.success('Entrega actualizada');
+    },
+    onError: () => toast.error('Error al actualizar la entrega'),
+  });
+};
+
+export const useDeleteEntregaDotacion = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await api.delete(`${BASE_URL}/entregas-dotacion/${id}/`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: novedadesKeys.entregasDotacion.all() });
+      toast.success('Entrega eliminada');
+    },
+    onError: () => toast.error('Error al eliminar la entrega'),
   });
 };

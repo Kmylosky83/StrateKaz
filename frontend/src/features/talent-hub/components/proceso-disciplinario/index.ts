@@ -1,0 +1,1 @@
+export { ProcesoDisciplinarioSection } from './ProcesoDisciplinarioSection';

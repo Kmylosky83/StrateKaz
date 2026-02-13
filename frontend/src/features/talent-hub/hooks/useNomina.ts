@@ -1,13 +1,17 @@
 /**
  * Hooks para Nómina - Talent Hub
  * Sistema de Gestión StrateKaz
+ *
+ * Alineado con backend: apps/talent_hub/nomina/views.py + urls.py
+ * Router: configuraciones, conceptos, periodos, liquidaciones, detalles, prestaciones, pagos
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import api from '@/lib/api-client';
+import { api } from '@/lib/api-client';
 import type {
   ConfiguracionNomina,
+  ConfiguracionNominaList,
   ConfiguracionNominaFormData,
   ConceptoNomina,
   ConceptoNominaFormData,
@@ -16,50 +20,57 @@ import type {
   PeriodoNominaFormData,
   PeriodoNominaFilter,
   LiquidacionNomina,
+  LiquidacionNominaFormData,
   LiquidacionNominaFilter,
-  CalcularLiquidacionData,
   DetalleLiquidacion,
   DetalleLiquidacionFormData,
   Prestacion,
   PrestacionFormData,
   PrestacionFilter,
-  PagarPrestacionData,
   PagoNomina,
   PagoNominaFormData,
   PagoNominaFilter,
-  ProcesarPagoData,
 } from '../types';
 
-const BASE_URL = '/api/v1/talent-hub/nomina';
+const BASE_URL = '/talent-hub/nomina';
 
 // ============== QUERY KEYS ==============
 
 export const nominaKeys = {
   all: ['nomina'] as const,
-  configuracion: {
-    all: () => [...nominaKeys.all, 'configuracion'] as const,
-    current: () => [...nominaKeys.configuracion.all(), 'current'] as const,
-    detail: (id: number) => [...nominaKeys.configuracion.all(), 'detail', id] as const,
+  configuraciones: {
+    all: () => [...nominaKeys.all, 'configuraciones'] as const,
+    list: () => [...nominaKeys.configuraciones.all(), 'list'] as const,
+    detail: (id: number) => [...nominaKeys.configuraciones.all(), 'detail', id] as const,
   },
   conceptos: {
     all: () => [...nominaKeys.all, 'conceptos'] as const,
-    list: (filters?: ConceptoNominaFilter) => [...nominaKeys.conceptos.all(), 'list', filters] as const,
+    list: (filters?: ConceptoNominaFilter) =>
+      [...nominaKeys.conceptos.all(), 'list', filters] as const,
     detail: (id: number) => [...nominaKeys.conceptos.all(), 'detail', id] as const,
   },
   periodos: {
     all: () => [...nominaKeys.all, 'periodos'] as const,
-    list: (filters?: PeriodoNominaFilter) => [...nominaKeys.periodos.all(), 'list', filters] as const,
+    list: (filters?: PeriodoNominaFilter) =>
+      [...nominaKeys.periodos.all(), 'list', filters] as const,
     detail: (id: number) => [...nominaKeys.periodos.all(), 'detail', id] as const,
+    estadisticas: (id: number) => [...nominaKeys.periodos.all(), 'estadisticas', id] as const,
   },
   liquidaciones: {
     all: () => [...nominaKeys.all, 'liquidaciones'] as const,
-    list: (filters?: LiquidacionNominaFilter) => [...nominaKeys.liquidaciones.all(), 'list', filters] as const,
+    list: (filters?: LiquidacionNominaFilter) =>
+      [...nominaKeys.liquidaciones.all(), 'list', filters] as const,
     detail: (id: number) => [...nominaKeys.liquidaciones.all(), 'detail', id] as const,
-    detalles: (liquidacionId: number) => [...nominaKeys.liquidaciones.all(), 'detalles', liquidacionId] as const,
+  },
+  detalles: {
+    all: () => [...nominaKeys.all, 'detalles'] as const,
+    byLiquidacion: (liquidacionId: number) =>
+      [...nominaKeys.detalles.all(), 'liquidacion', liquidacionId] as const,
   },
   prestaciones: {
     all: () => [...nominaKeys.all, 'prestaciones'] as const,
-    list: (filters?: PrestacionFilter) => [...nominaKeys.prestaciones.all(), 'list', filters] as const,
+    list: (filters?: PrestacionFilter) =>
+      [...nominaKeys.prestaciones.all(), 'list', filters] as const,
     detail: (id: number) => [...nominaKeys.prestaciones.all(), 'detail', id] as const,
   },
   pagos: {
@@ -71,52 +82,68 @@ export const nominaKeys = {
 
 // ============== CONFIGURACION NOMINA ==============
 
-export const useConfiguracionNomina = () => {
+/** GET /configuraciones/ — lista todas */
+export const useConfiguracionesNomina = () => {
   return useQuery({
-    queryKey: nominaKeys.configuracion.current(),
+    queryKey: nominaKeys.configuraciones.list(),
     queryFn: async () => {
-      const { data } = await api.get<ConfiguracionNomina>(`${BASE_URL}/configuracion/vigente/`);
+      const { data } = await api.get<ConfiguracionNominaList[]>(`${BASE_URL}/configuraciones/`);
       return data;
     },
   });
 };
 
-export const useConfiguracionNominaDetalle = (id: number, enabled = true) => {
+/** GET /configuraciones/:id/ — detalle */
+export const useConfiguracionNomina = (id: number, enabled = true) => {
   return useQuery({
-    queryKey: nominaKeys.configuracion.detail(id),
+    queryKey: nominaKeys.configuraciones.detail(id),
     queryFn: async () => {
-      const { data } = await api.get<ConfiguracionNomina>(`${BASE_URL}/configuracion/${id}/`);
+      const { data } = await api.get<ConfiguracionNomina>(`${BASE_URL}/configuraciones/${id}/`);
       return data;
     },
     enabled: enabled && !!id,
   });
 };
 
+/** POST /configuraciones/ */
 export const useCreateConfiguracionNomina = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: ConfiguracionNominaFormData) => {
-      const { data: response } = await api.post<ConfiguracionNomina>(`${BASE_URL}/configuracion/`, data);
+      const { data: response } = await api.post<ConfiguracionNomina>(
+        `${BASE_URL}/configuraciones/`,
+        data
+      );
       return response;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: nominaKeys.configuracion.all() });
+      queryClient.invalidateQueries({ queryKey: nominaKeys.configuraciones.all() });
       toast.success('Configuración de nómina creada exitosamente');
     },
     onError: () => toast.error('Error al crear la configuración de nómina'),
   });
 };
 
+/** PATCH /configuraciones/:id/ */
 export const useUpdateConfiguracionNomina = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<ConfiguracionNominaFormData> }) => {
-      const { data: response } = await api.patch<ConfiguracionNomina>(`${BASE_URL}/configuracion/${id}/`, data);
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: Partial<ConfiguracionNominaFormData>;
+    }) => {
+      const { data: response } = await api.patch<ConfiguracionNomina>(
+        `${BASE_URL}/configuraciones/${id}/`,
+        data
+      );
       return response;
     },
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: nominaKeys.configuracion.all() });
-      queryClient.invalidateQueries({ queryKey: nominaKeys.configuracion.detail(id) });
+      queryClient.invalidateQueries({ queryKey: nominaKeys.configuraciones.all() });
+      queryClient.invalidateQueries({ queryKey: nominaKeys.configuraciones.detail(id) });
       toast.success('Configuración de nómina actualizada exitosamente');
     },
     onError: () => toast.error('Error al actualizar la configuración de nómina'),
@@ -125,16 +152,20 @@ export const useUpdateConfiguracionNomina = () => {
 
 // ============== CONCEPTOS NOMINA ==============
 
+/** GET /conceptos/ */
 export const useConceptosNomina = (filters?: ConceptoNominaFilter) => {
   return useQuery({
     queryKey: nominaKeys.conceptos.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<ConceptoNomina[]>(`${BASE_URL}/conceptos/`, { params: filters });
+      const { data } = await api.get<ConceptoNomina[]>(`${BASE_URL}/conceptos/`, {
+        params: filters,
+      });
       return data;
     },
   });
 };
 
+/** GET /conceptos/:id/ */
 export const useConceptoNomina = (id: number, enabled = true) => {
   return useQuery({
     queryKey: nominaKeys.conceptos.detail(id),
@@ -146,6 +177,7 @@ export const useConceptoNomina = (id: number, enabled = true) => {
   });
 };
 
+/** POST /conceptos/ */
 export const useCreateConceptoNomina = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -161,11 +193,15 @@ export const useCreateConceptoNomina = () => {
   });
 };
 
+/** PATCH /conceptos/:id/ */
 export const useUpdateConceptoNomina = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<ConceptoNominaFormData> }) => {
-      const { data: response } = await api.patch<ConceptoNomina>(`${BASE_URL}/conceptos/${id}/`, data);
+      const { data: response } = await api.patch<ConceptoNomina>(
+        `${BASE_URL}/conceptos/${id}/`,
+        data
+      );
       return response;
     },
     onSuccess: (_, { id }) => {
@@ -177,6 +213,7 @@ export const useUpdateConceptoNomina = () => {
   });
 };
 
+/** DELETE /conceptos/:id/ */
 export const useDeleteConceptoNomina = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -191,8 +228,31 @@ export const useDeleteConceptoNomina = () => {
   });
 };
 
+/** GET /conceptos/devengados/ */
+export const useConceptosDevengados = () => {
+  return useQuery({
+    queryKey: [...nominaKeys.conceptos.all(), 'devengados'] as const,
+    queryFn: async () => {
+      const { data } = await api.get<ConceptoNomina[]>(`${BASE_URL}/conceptos/devengados/`);
+      return data;
+    },
+  });
+};
+
+/** GET /conceptos/deducciones/ */
+export const useConceptosDeducciones = () => {
+  return useQuery({
+    queryKey: [...nominaKeys.conceptos.all(), 'deducciones'] as const,
+    queryFn: async () => {
+      const { data } = await api.get<ConceptoNomina[]>(`${BASE_URL}/conceptos/deducciones/`);
+      return data;
+    },
+  });
+};
+
 // ============== PERIODOS NOMINA ==============
 
+/** GET /periodos/ */
 export const usePeriodosNomina = (filters?: PeriodoNominaFilter) => {
   return useQuery({
     queryKey: nominaKeys.periodos.list(filters),
@@ -203,6 +263,7 @@ export const usePeriodosNomina = (filters?: PeriodoNominaFilter) => {
   });
 };
 
+/** GET /periodos/:id/ */
 export const usePeriodoNomina = (id: number, enabled = true) => {
   return useQuery({
     queryKey: nominaKeys.periodos.detail(id),
@@ -214,6 +275,7 @@ export const usePeriodoNomina = (id: number, enabled = true) => {
   });
 };
 
+/** POST /periodos/ */
 export const useCreatePeriodoNomina = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -229,11 +291,15 @@ export const useCreatePeriodoNomina = () => {
   });
 };
 
+/** PATCH /periodos/:id/ */
 export const useUpdatePeriodoNomina = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<PeriodoNominaFormData> }) => {
-      const { data: response } = await api.patch<PeriodoNomina>(`${BASE_URL}/periodos/${id}/`, data);
+      const { data: response } = await api.patch<PeriodoNomina>(
+        `${BASE_URL}/periodos/${id}/`,
+        data
+      );
       return response;
     },
     onSuccess: (_, { id }) => {
@@ -245,12 +311,32 @@ export const useUpdatePeriodoNomina = () => {
   });
 };
 
+/** POST /periodos/:id/preliquidar/ */
+export const usePreliquidarPeriodo = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const { data } = await api.post<PeriodoNomina>(`${BASE_URL}/periodos/${id}/preliquidar/`);
+      return data;
+    },
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: nominaKeys.periodos.all() });
+      queryClient.invalidateQueries({ queryKey: nominaKeys.periodos.detail(id) });
+      toast.success('Período preliquidado exitosamente');
+    },
+    onError: () => toast.error('Error al preliquidar el período'),
+  });
+};
+
+/** POST /periodos/:id/cerrar_periodo/ */
 export const useCerrarPeriodoNomina = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const { data: response } = await api.post<PeriodoNomina>(`${BASE_URL}/periodos/${id}/cerrar/`);
-      return response;
+      const { data } = await api.post<{ message: string; periodo: PeriodoNomina }>(
+        `${BASE_URL}/periodos/${id}/cerrar_periodo/`
+      );
+      return data;
     },
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: nominaKeys.periodos.all() });
@@ -261,18 +347,34 @@ export const useCerrarPeriodoNomina = () => {
   });
 };
 
+/** GET /periodos/:id/estadisticas/ */
+export const useEstadisticasPeriodo = (id: number, enabled = true) => {
+  return useQuery({
+    queryKey: nominaKeys.periodos.estadisticas(id),
+    queryFn: async () => {
+      const { data } = await api.get(`${BASE_URL}/periodos/${id}/estadisticas/`);
+      return data;
+    },
+    enabled: enabled && !!id,
+  });
+};
+
 // ============== LIQUIDACIONES ==============
 
+/** GET /liquidaciones/ */
 export const useLiquidacionesNomina = (filters?: LiquidacionNominaFilter) => {
   return useQuery({
     queryKey: nominaKeys.liquidaciones.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<LiquidacionNomina[]>(`${BASE_URL}/liquidaciones/`, { params: filters });
+      const { data } = await api.get<LiquidacionNomina[]>(`${BASE_URL}/liquidaciones/`, {
+        params: filters,
+      });
       return data;
     },
   });
 };
 
+/** GET /liquidaciones/:id/ (detail with nested detalles) */
 export const useLiquidacionNomina = (id: number, enabled = true) => {
   return useQuery({
     queryKey: nominaKeys.liquidaciones.detail(id),
@@ -284,41 +386,35 @@ export const useLiquidacionNomina = (id: number, enabled = true) => {
   });
 };
 
-export const useDetallesLiquidacion = (liquidacionId: number, enabled = true) => {
-  return useQuery({
-    queryKey: nominaKeys.liquidaciones.detalles(liquidacionId),
-    queryFn: async () => {
-      const { data } = await api.get<DetalleLiquidacion[]>(`${BASE_URL}/detalles-liquidacion/`, {
-        params: { liquidacion: liquidacionId },
-      });
-      return data;
-    },
-    enabled: enabled && !!liquidacionId,
-  });
-};
-
-export const useCalcularLiquidacion = () => {
+/** POST /liquidaciones/ (with nested detalles) */
+export const useCreateLiquidacion = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: CalcularLiquidacionData) => {
-      const { data: response } = await api.post<LiquidacionNomina[]>(`${BASE_URL}/liquidaciones/calcular/`, data);
+    mutationFn: async (data: LiquidacionNominaFormData) => {
+      const { data: response } = await api.post<LiquidacionNomina>(
+        `${BASE_URL}/liquidaciones/`,
+        data
+      );
       return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: nominaKeys.liquidaciones.all() });
       queryClient.invalidateQueries({ queryKey: nominaKeys.periodos.all() });
-      toast.success('Liquidaciones calculadas exitosamente');
+      toast.success('Liquidación creada exitosamente');
     },
-    onError: () => toast.error('Error al calcular las liquidaciones'),
+    onError: () => toast.error('Error al crear la liquidación'),
   });
 };
 
+/** POST /liquidaciones/:id/aprobar/ */
 export const useAprobarLiquidacion = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const { data: response } = await api.post<LiquidacionNomina>(`${BASE_URL}/liquidaciones/${id}/aprobar/`);
-      return response;
+      const { data } = await api.post<{ message: string; liquidacion: LiquidacionNomina }>(
+        `${BASE_URL}/liquidaciones/${id}/aprobar/`
+      );
+      return data;
     },
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: nominaKeys.liquidaciones.all() });
@@ -329,15 +425,82 @@ export const useAprobarLiquidacion = () => {
   });
 };
 
+/** POST /liquidaciones/:id/pagar/ */
+export const usePagarLiquidacion = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const { data } = await api.post<{ message: string; liquidacion: LiquidacionNomina }>(
+        `${BASE_URL}/liquidaciones/${id}/pagar/`
+      );
+      return data;
+    },
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: nominaKeys.liquidaciones.all() });
+      queryClient.invalidateQueries({ queryKey: nominaKeys.liquidaciones.detail(id) });
+      queryClient.invalidateQueries({ queryKey: nominaKeys.periodos.all() });
+      toast.success('Liquidación marcada como pagada');
+    },
+    onError: () => toast.error('Error al marcar la liquidación como pagada'),
+  });
+};
+
+/** POST /liquidaciones/:id/recalcular/ */
+export const useRecalcularLiquidacion = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const { data } = await api.post<{ message: string; liquidacion: LiquidacionNomina }>(
+        `${BASE_URL}/liquidaciones/${id}/recalcular/`
+      );
+      return data;
+    },
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: nominaKeys.liquidaciones.all() });
+      queryClient.invalidateQueries({ queryKey: nominaKeys.liquidaciones.detail(id) });
+      toast.success('Totales recalculados exitosamente');
+    },
+    onError: () => toast.error('Error al recalcular la liquidación'),
+  });
+};
+
+// ============== DETALLES DE LIQUIDACION ==============
+
+/** GET /detalles/?liquidacion=:id */
+export const useDetallesLiquidacion = (liquidacionId: number, enabled = true) => {
+  return useQuery({
+    queryKey: nominaKeys.detalles.byLiquidacion(liquidacionId),
+    queryFn: async () => {
+      const { data } = await api.get<DetalleLiquidacion[]>(`${BASE_URL}/detalles/`, {
+        params: { liquidacion: liquidacionId },
+      });
+      return data;
+    },
+    enabled: enabled && !!liquidacionId,
+  });
+};
+
+/** POST /detalles/ (for adding a line to a liquidacion) */
 export const useCreateDetalleLiquidacion = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: DetalleLiquidacionFormData) => {
-      const { data: response } = await api.post<DetalleLiquidacion>(`${BASE_URL}/detalles-liquidacion/`, data);
+    mutationFn: async ({
+      liquidacionId,
+      data,
+    }: {
+      liquidacionId: number;
+      data: DetalleLiquidacionFormData;
+    }) => {
+      // Backend expects: concepto, cantidad, valor_unitario, observaciones
+      // liquidacion FK is set via URL or form field — we post to /detalles/ endpoint
+      const { data: response } = await api.post<DetalleLiquidacion>(`${BASE_URL}/detalles/`, {
+        ...data,
+        liquidacion: liquidacionId,
+      });
       return response;
     },
-    onSuccess: (_, { liquidacion }) => {
-      queryClient.invalidateQueries({ queryKey: nominaKeys.liquidaciones.detalles(liquidacion) });
+    onSuccess: (_, { liquidacionId }) => {
+      queryClient.invalidateQueries({ queryKey: nominaKeys.detalles.byLiquidacion(liquidacionId) });
       queryClient.invalidateQueries({ queryKey: nominaKeys.liquidaciones.all() });
       toast.success('Detalle agregado exitosamente');
     },
@@ -345,15 +508,16 @@ export const useCreateDetalleLiquidacion = () => {
   });
 };
 
+/** DELETE /detalles/:id/ */
 export const useDeleteDetalleLiquidacion = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, liquidacionId }: { id: number; liquidacionId: number }) => {
-      await api.delete(`${BASE_URL}/detalles-liquidacion/${id}/`);
+      await api.delete(`${BASE_URL}/detalles/${id}/`);
       return liquidacionId;
     },
     onSuccess: (liquidacionId) => {
-      queryClient.invalidateQueries({ queryKey: nominaKeys.liquidaciones.detalles(liquidacionId) });
+      queryClient.invalidateQueries({ queryKey: nominaKeys.detalles.byLiquidacion(liquidacionId) });
       queryClient.invalidateQueries({ queryKey: nominaKeys.liquidaciones.all() });
       toast.success('Detalle eliminado exitosamente');
     },
@@ -363,16 +527,20 @@ export const useDeleteDetalleLiquidacion = () => {
 
 // ============== PRESTACIONES ==============
 
+/** GET /prestaciones/ */
 export const usePrestaciones = (filters?: PrestacionFilter) => {
   return useQuery({
     queryKey: nominaKeys.prestaciones.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<Prestacion[]>(`${BASE_URL}/prestaciones/`, { params: filters });
+      const { data } = await api.get<Prestacion[]>(`${BASE_URL}/prestaciones/`, {
+        params: filters,
+      });
       return data;
     },
   });
 };
 
+/** GET /prestaciones/:id/ */
 export const usePrestacion = (id: number, enabled = true) => {
   return useQuery({
     queryKey: nominaKeys.prestaciones.detail(id),
@@ -384,6 +552,7 @@ export const usePrestacion = (id: number, enabled = true) => {
   });
 };
 
+/** POST /prestaciones/ */
 export const useCreatePrestacion = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -399,11 +568,15 @@ export const useCreatePrestacion = () => {
   });
 };
 
+/** PATCH /prestaciones/:id/ */
 export const useUpdatePrestacion = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<PrestacionFormData> }) => {
-      const { data: response } = await api.patch<Prestacion>(`${BASE_URL}/prestaciones/${id}/`, data);
+      const { data: response } = await api.patch<Prestacion>(
+        `${BASE_URL}/prestaciones/${id}/`,
+        data
+      );
       return response;
     },
     onSuccess: (_, { id }) => {
@@ -415,6 +588,7 @@ export const useUpdatePrestacion = () => {
   });
 };
 
+/** DELETE /prestaciones/:id/ */
 export const useDeletePrestacion = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -429,40 +603,9 @@ export const useDeletePrestacion = () => {
   });
 };
 
-export const usePagarPrestacion = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: PagarPrestacionData }) => {
-      const { data: response } = await api.post<Prestacion>(`${BASE_URL}/prestaciones/${id}/pagar/`, data);
-      return response;
-    },
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: nominaKeys.prestaciones.all() });
-      queryClient.invalidateQueries({ queryKey: nominaKeys.prestaciones.detail(id) });
-      toast.success('Prestación pagada exitosamente');
-    },
-    onError: () => toast.error('Error al pagar la prestación'),
-  });
-};
-
-export const useConsignarPrestacion = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: { entidad_consignacion: string; numero_radicado: string } }) => {
-      const { data: response } = await api.post<Prestacion>(`${BASE_URL}/prestaciones/${id}/consignar/`, data);
-      return response;
-    },
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: nominaKeys.prestaciones.all() });
-      queryClient.invalidateQueries({ queryKey: nominaKeys.prestaciones.detail(id) });
-      toast.success('Prestación consignada exitosamente');
-    },
-    onError: () => toast.error('Error al consignar la prestación'),
-  });
-};
-
 // ============== PAGOS NOMINA ==============
 
+/** GET /pagos/ */
 export const usePagosNomina = (filters?: PagoNominaFilter) => {
   return useQuery({
     queryKey: nominaKeys.pagos.list(filters),
@@ -473,6 +616,7 @@ export const usePagosNomina = (filters?: PagoNominaFilter) => {
   });
 };
 
+/** GET /pagos/:id/ */
 export const usePagoNomina = (id: number, enabled = true) => {
   return useQuery({
     queryKey: nominaKeys.pagos.detail(id),
@@ -484,6 +628,7 @@ export const usePagoNomina = (id: number, enabled = true) => {
   });
 };
 
+/** POST /pagos/ */
 export const useCreatePagoNomina = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -493,73 +638,24 @@ export const useCreatePagoNomina = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: nominaKeys.pagos.all() });
-      toast.success('Pago de nómina creado exitosamente');
-    },
-    onError: () => toast.error('Error al crear el pago de nómina'),
-  });
-};
-
-export const useUpdatePagoNomina = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<PagoNominaFormData> }) => {
-      const { data: response } = await api.patch<PagoNomina>(`${BASE_URL}/pagos/${id}/`, data);
-      return response;
-    },
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: nominaKeys.pagos.all() });
-      queryClient.invalidateQueries({ queryKey: nominaKeys.pagos.detail(id) });
-      toast.success('Pago de nómina actualizado exitosamente');
-    },
-    onError: () => toast.error('Error al actualizar el pago de nómina'),
-  });
-};
-
-export const useProcesarPagoNomina = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data?: ProcesarPagoData }) => {
-      const { data: response } = await api.post<PagoNomina>(`${BASE_URL}/pagos/${id}/procesar/`, data || {});
-      return response;
-    },
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: nominaKeys.pagos.all() });
-      queryClient.invalidateQueries({ queryKey: nominaKeys.pagos.detail(id) });
-      queryClient.invalidateQueries({ queryKey: nominaKeys.periodos.all() });
       queryClient.invalidateQueries({ queryKey: nominaKeys.liquidaciones.all() });
-      toast.success('Pago procesado exitosamente');
+      toast.success('Pago registrado exitosamente');
     },
-    onError: () => toast.error('Error al procesar el pago'),
+    onError: () => toast.error('Error al registrar el pago'),
   });
 };
 
-export const useAnularPagoNomina = () => {
+/** DELETE /pagos/:id/ */
+export const useDeletePagoNomina = () => {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ id, motivo }: { id: number; motivo: string }) => {
-      const { data: response } = await api.post<PagoNomina>(`${BASE_URL}/pagos/${id}/anular/`, { observaciones: motivo });
-      return response;
-    },
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: nominaKeys.pagos.all() });
-      queryClient.invalidateQueries({ queryKey: nominaKeys.pagos.detail(id) });
-      toast.success('Pago anulado exitosamente');
-    },
-    onError: () => toast.error('Error al anular el pago'),
-  });
-};
-
-export const useGenerarArchivoPlano = () => {
   return useMutation({
     mutationFn: async (id: number) => {
-      const { data } = await api.get(`${BASE_URL}/pagos/${id}/archivo_plano/`, {
-        responseType: 'blob',
-      });
-      return data;
+      await api.delete(`${BASE_URL}/pagos/${id}/`);
     },
     onSuccess: () => {
-      toast.success('Archivo plano generado exitosamente');
+      queryClient.invalidateQueries({ queryKey: nominaKeys.pagos.all() });
+      toast.success('Pago eliminado exitosamente');
     },
-    onError: () => toast.error('Error al generar el archivo plano'),
+    onError: () => toast.error('Error al eliminar el pago'),
   });
 };

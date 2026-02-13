@@ -2,7 +2,7 @@
  * React Query Hooks para Seleccion y Contratacion - Talent Hub
  * Sistema de Gestion StrateKaz
  *
- * API Base: /api/talent-hub/seleccion/
+ * API Base: /talent-hub/seleccion/
  * Sincronizado con serializers del backend.
  */
 
@@ -164,7 +164,7 @@ export function useTiposContrato() {
   return useQuery({
     queryKey: seleccionKeys.tiposContrato,
     queryFn: async () => {
-      const response = await api.get<TipoContrato[]>('/api/talent-hub/seleccion/tipos-contrato/');
+      const response = await api.get<TipoContrato[]>('/talent-hub/seleccion/tipos-contrato/');
       return response.data;
     },
     staleTime: 30 * 60 * 1000,
@@ -175,7 +175,7 @@ export function useTiposEntidad() {
   return useQuery({
     queryKey: seleccionKeys.tiposEntidad,
     queryFn: async () => {
-      const response = await api.get<TipoEntidad[]>('/api/talent-hub/seleccion/tipos-entidad/');
+      const response = await api.get<TipoEntidad[]>('/talent-hub/seleccion/tipos-entidad/');
       return response.data;
     },
     staleTime: 30 * 60 * 1000,
@@ -188,7 +188,7 @@ export function useEntidadesSS(tipoCodigo?: string) {
     queryFn: async () => {
       const params = tipoCodigo ? `?tipo_codigo=${tipoCodigo}` : '';
       const response = await api.get<EntidadSeguridadSocial[]>(
-        `/api/talent-hub/seleccion/entidades-ss/${params}`
+        `/talent-hub/seleccion/entidades-ss/${params}`
       );
       return response.data;
     },
@@ -200,7 +200,7 @@ export function useTiposPrueba() {
   return useQuery({
     queryKey: seleccionKeys.tiposPrueba,
     queryFn: async () => {
-      const response = await api.get<TipoPrueba[]>('/api/talent-hub/seleccion/tipos-prueba/');
+      const response = await api.get<TipoPrueba[]>('/talent-hub/seleccion/tipos-prueba/');
       return response.data;
     },
     staleTime: 30 * 60 * 1000,
@@ -224,7 +224,7 @@ export function useVacantesActivas(filters?: VacanteActivaFilters) {
       if (filters?.page_size) params.append('page_size', String(filters.page_size));
 
       const response = await api.get<PaginatedResponse<VacanteActiva>>(
-        `/api/talent-hub/seleccion/vacantes-activas/?${params}`
+        `/talent-hub/seleccion/vacantes-activas/?${params}`
       );
       return response.data;
     },
@@ -237,7 +237,7 @@ export function useVacanteActiva(id: number) {
     queryKey: seleccionKeys.vacantesActivas.detail(id),
     queryFn: async () => {
       const response = await api.get<VacanteActivaDetail>(
-        `/api/talent-hub/seleccion/vacantes-activas/${id}/`
+        `/talent-hub/seleccion/vacantes-activas/${id}/`
       );
       return response.data;
     },
@@ -251,7 +251,7 @@ export function useVacantesActivasAbiertas() {
     queryKey: seleccionKeys.vacantesActivas.abiertas(),
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<VacanteActiva>>(
-        '/api/talent-hub/seleccion/vacantes-activas/abiertas/'
+        '/talent-hub/seleccion/vacantes-activas/abiertas/'
       );
       return response.data;
     },
@@ -264,7 +264,7 @@ export function useCreateVacanteActiva() {
 
   return useMutation({
     mutationFn: async (data: VacanteActivaFormData) => {
-      const response = await api.post('/api/talent-hub/seleccion/vacantes-activas/', data);
+      const response = await api.post('/talent-hub/seleccion/vacantes-activas/', data);
       return response.data;
     },
     onSuccess: () => {
@@ -287,7 +287,7 @@ export function useUpdateVacanteActiva() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<VacanteActivaFormData> }) => {
-      const response = await api.patch(`/api/talent-hub/seleccion/vacantes-activas/${id}/`, data);
+      const response = await api.patch(`/talent-hub/seleccion/vacantes-activas/${id}/`, data);
       return response.data;
     },
     onSuccess: (_, variables) => {
@@ -308,7 +308,7 @@ export function useCerrarVacanteActiva() {
 
   return useMutation({
     mutationFn: async ({ id, motivo_cierre }: { id: number; motivo_cierre?: string }) => {
-      const response = await api.post(`/api/talent-hub/seleccion/vacantes-activas/${id}/cerrar/`, {
+      const response = await api.post(`/talent-hub/seleccion/vacantes-activas/${id}/cerrar/`, {
         motivo_cierre,
       });
       return response.data;
@@ -329,10 +329,9 @@ export function usePublicarVacanteActiva() {
 
   return useMutation({
     mutationFn: async ({ id, url_publicacion }: { id: number; url_publicacion?: string }) => {
-      const response = await api.post(
-        `/api/talent-hub/seleccion/vacantes-activas/${id}/publicar/`,
-        { url_publicacion }
-      );
+      const response = await api.post(`/talent-hub/seleccion/vacantes-activas/${id}/publicar/`, {
+        url_publicacion,
+      });
       return response.data;
     },
     onSuccess: (_, variables) => {
@@ -353,7 +352,7 @@ export function usePerfilamientoVacante(vacanteId: number | null) {
     queryKey: seleccionKeys.vacantesActivas.perfilamiento(vacanteId!),
     queryFn: async () => {
       const response = await api.get<PerfilamientoResponse>(
-        `/api/talent-hub/seleccion/vacantes-activas/${vacanteId}/perfilamiento/`
+        `/talent-hub/seleccion/vacantes-activas/${vacanteId}/perfilamiento/`
       );
       return response.data;
     },
@@ -378,7 +377,7 @@ export function useCandidatos(filters?: CandidatoFilters) {
       if (filters?.page_size) params.append('page_size', String(filters.page_size));
 
       const response = await api.get<PaginatedResponse<Candidato>>(
-        `/api/talent-hub/seleccion/candidatos/?${params}`
+        `/talent-hub/seleccion/candidatos/?${params}`
       );
       return response.data;
     },
@@ -390,9 +389,7 @@ export function useCandidato(id: number) {
   return useQuery({
     queryKey: seleccionKeys.candidatos.detail(id),
     queryFn: async () => {
-      const response = await api.get<CandidatoDetail>(
-        `/api/talent-hub/seleccion/candidatos/${id}/`
-      );
+      const response = await api.get<CandidatoDetail>(`/talent-hub/seleccion/candidatos/${id}/`);
       return response.data;
     },
     enabled: !!id,
@@ -405,7 +402,7 @@ export function useCandidatosPorVacante(vacanteId: number) {
     queryKey: seleccionKeys.candidatos.porVacante(vacanteId),
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<Candidato>>(
-        `/api/talent-hub/seleccion/candidatos/?vacante=${vacanteId}`
+        `/talent-hub/seleccion/candidatos/?vacante=${vacanteId}`
       );
       return response.data;
     },
@@ -431,12 +428,12 @@ export function useCreateCandidato() {
             }
           }
         });
-        const response = await api.post('/api/talent-hub/seleccion/candidatos/', formData, {
+        const response = await api.post('/talent-hub/seleccion/candidatos/', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         return response.data;
       }
-      const response = await api.post('/api/talent-hub/seleccion/candidatos/', data);
+      const response = await api.post('/talent-hub/seleccion/candidatos/', data);
       return response.data;
     },
     onSuccess: () => {
@@ -456,7 +453,7 @@ export function useUpdateCandidato() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<CandidatoFormData> }) => {
-      const response = await api.patch(`/api/talent-hub/seleccion/candidatos/${id}/`, data);
+      const response = await api.patch(`/talent-hub/seleccion/candidatos/${id}/`, data);
       return response.data;
     },
     onSuccess: (_, variables) => {
@@ -485,10 +482,10 @@ export function useCambiarEstadoCandidato() {
       estado: EstadoCandidato;
       motivo?: string;
     }) => {
-      const response = await api.post(
-        `/api/talent-hub/seleccion/candidatos/${id}/cambiar-estado/`,
-        { estado, motivo }
-      );
+      const response = await api.post(`/talent-hub/seleccion/candidatos/${id}/cambiar-estado/`, {
+        estado,
+        motivo,
+      });
       return response.data;
     },
     onSuccess: (_, variables) => {
@@ -518,7 +515,7 @@ export function useContratarCandidato() {
       fecha_contratacion?: string;
       salario_ofrecido?: number;
     }) => {
-      const response = await api.post(`/api/talent-hub/seleccion/candidatos/${id}/contratar/`, {
+      const response = await api.post(`/talent-hub/seleccion/candidatos/${id}/contratar/`, {
         fecha_contratacion,
         salario_ofrecido,
       });
@@ -553,7 +550,7 @@ export function useEntrevistas(filters?: EntrevistaFilters) {
       if (filters?.page_size) params.append('page_size', String(filters.page_size));
 
       const response = await api.get<PaginatedResponse<Entrevista>>(
-        `/api/talent-hub/seleccion/entrevistas/?${params}`
+        `/talent-hub/seleccion/entrevistas/?${params}`
       );
       return response.data;
     },
@@ -566,7 +563,7 @@ export function useEntrevistasPorCandidato(candidatoId: number) {
     queryKey: seleccionKeys.entrevistas.porCandidato(candidatoId),
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<Entrevista>>(
-        `/api/talent-hub/seleccion/entrevistas/por-candidato/${candidatoId}/`
+        `/talent-hub/seleccion/entrevistas/por-candidato/${candidatoId}/`
       );
       return response.data;
     },
@@ -580,7 +577,7 @@ export function useCreateEntrevista() {
 
   return useMutation({
     mutationFn: async (data: EntrevistaFormData) => {
-      const response = await api.post('/api/talent-hub/seleccion/entrevistas/', data);
+      const response = await api.post('/talent-hub/seleccion/entrevistas/', data);
       return response.data;
     },
     onSuccess: () => {
@@ -599,7 +596,7 @@ export function useUpdateEntrevista() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<EntrevistaFormData> }) => {
-      const response = await api.patch(`/api/talent-hub/seleccion/entrevistas/${id}/`, data);
+      const response = await api.patch(`/talent-hub/seleccion/entrevistas/${id}/`, data);
       return response.data;
     },
     onSuccess: (_, variables) => {
@@ -636,10 +633,7 @@ export function useRealizarEntrevista() {
         recomendacion: string;
       };
     }) => {
-      const response = await api.post(
-        `/api/talent-hub/seleccion/entrevistas/${id}/realizar/`,
-        data
-      );
+      const response = await api.post(`/talent-hub/seleccion/entrevistas/${id}/realizar/`, data);
       return response.data;
     },
     onSuccess: (_, variables) => {
@@ -671,7 +665,7 @@ export function useCancelarEntrevista() {
       motivo: string;
       fecha_reprogramada?: string;
     }) => {
-      const response = await api.post(`/api/talent-hub/seleccion/entrevistas/${id}/cancelar/`, {
+      const response = await api.post(`/talent-hub/seleccion/entrevistas/${id}/cancelar/`, {
         estado,
         motivo,
         fecha_reprogramada,
@@ -706,7 +700,7 @@ export function usePruebas(filters?: PruebaFilters) {
       if (filters?.page_size) params.append('page_size', String(filters.page_size));
 
       const response = await api.get<PaginatedResponse<Prueba>>(
-        `/api/talent-hub/seleccion/pruebas/?${params}`
+        `/talent-hub/seleccion/pruebas/?${params}`
       );
       return response.data;
     },
@@ -719,7 +713,7 @@ export function usePruebasPorCandidato(candidatoId: number) {
     queryKey: seleccionKeys.pruebas.porCandidato(candidatoId),
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<Prueba>>(
-        `/api/talent-hub/seleccion/pruebas/por-candidato/${candidatoId}/`
+        `/talent-hub/seleccion/pruebas/por-candidato/${candidatoId}/`
       );
       return response.data;
     },
@@ -733,7 +727,7 @@ export function useCreatePrueba() {
 
   return useMutation({
     mutationFn: async (data: PruebaFormData) => {
-      const response = await api.post('/api/talent-hub/seleccion/pruebas/', data);
+      const response = await api.post('/talent-hub/seleccion/pruebas/', data);
       return response.data;
     },
     onSuccess: () => {
@@ -764,7 +758,7 @@ export function useCalificarPrueba() {
       recomendaciones?: string;
       aprobado?: boolean;
     }) => {
-      const response = await api.post(`/api/talent-hub/seleccion/pruebas/${id}/calificar/`, {
+      const response = await api.post(`/talent-hub/seleccion/pruebas/${id}/calificar/`, {
         calificacion,
         observaciones,
         recomendaciones,
@@ -802,7 +796,7 @@ export function useAfiliaciones(filters?: AfiliacionSSFilters) {
       if (filters?.page_size) params.append('page_size', String(filters.page_size));
 
       const response = await api.get<PaginatedResponse<AfiliacionSS>>(
-        `/api/talent-hub/seleccion/afiliaciones/?${params}`
+        `/talent-hub/seleccion/afiliaciones/?${params}`
       );
       return response.data;
     },
@@ -815,7 +809,7 @@ export function useAfiliacionesPorCandidato(candidatoId: number) {
     queryKey: seleccionKeys.afiliaciones.porCandidato(candidatoId),
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<AfiliacionSS>>(
-        `/api/talent-hub/seleccion/afiliaciones/por-candidato/${candidatoId}/`
+        `/talent-hub/seleccion/afiliaciones/por-candidato/${candidatoId}/`
       );
       return response.data;
     },
@@ -829,7 +823,7 @@ export function useCreateAfiliacion() {
 
   return useMutation({
     mutationFn: async (data: AfiliacionSSFormData) => {
-      const response = await api.post('/api/talent-hub/seleccion/afiliaciones/', data);
+      const response = await api.post('/talent-hub/seleccion/afiliaciones/', data);
       return response.data;
     },
     onSuccess: () => {
@@ -855,7 +849,7 @@ export function useConfirmarAfiliacion() {
       fecha_afiliacion?: string;
       numero_afiliacion?: string;
     }) => {
-      const response = await api.post(`/api/talent-hub/seleccion/afiliaciones/${id}/confirmar/`, {
+      const response = await api.post(`/talent-hub/seleccion/afiliaciones/${id}/confirmar/`, {
         fecha_afiliacion,
         numero_afiliacion,
       });
@@ -882,7 +876,7 @@ export function useUpdateAfiliacion() {
       id: number;
       data: Partial<AfiliacionSSFormData & { estado: string; motivo_rechazo?: string }>;
     }) => {
-      const response = await api.patch(`/api/talent-hub/seleccion/afiliaciones/${id}/`, data);
+      const response = await api.patch(`/talent-hub/seleccion/afiliaciones/${id}/`, data);
       return response.data;
     },
     onSuccess: () => {
@@ -911,7 +905,7 @@ export function useHistorialContratos(filters?: HistorialContratoFilters) {
       if (filters?.page_size) params.append('page_size', String(filters.page_size));
 
       const response = await api.get<PaginatedResponse<HistorialContrato>>(
-        `/api/talent-hub/seleccion/historial-contratos/?${params}`
+        `/talent-hub/seleccion/historial-contratos/?${params}`
       );
       return response.data;
     },
@@ -924,7 +918,7 @@ export function useHistorialContratoDetail(id: number) {
     queryKey: seleccionKeys.historialContratos.detail(id),
     queryFn: async () => {
       const response = await api.get<HistorialContratoDetail>(
-        `/api/talent-hub/seleccion/historial-contratos/${id}/`
+        `/talent-hub/seleccion/historial-contratos/${id}/`
       );
       return response.data;
     },
@@ -938,7 +932,7 @@ export function useContratosPorVencer(dias = 30) {
     queryKey: seleccionKeys.historialContratos.porVencer(dias),
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<HistorialContrato>>(
-        `/api/talent-hub/seleccion/historial-contratos/por-vencer/?dias=${dias}`
+        `/talent-hub/seleccion/historial-contratos/por-vencer/?dias=${dias}`
       );
       return response.data;
     },
@@ -962,14 +956,12 @@ export function useCreateHistorialContrato() {
             }
           }
         });
-        const response = await api.post(
-          '/api/talent-hub/seleccion/historial-contratos/',
-          formData,
-          { headers: { 'Content-Type': 'multipart/form-data' } }
-        );
+        const response = await api.post('/talent-hub/seleccion/historial-contratos/', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
         return response.data;
       }
-      const response = await api.post('/api/talent-hub/seleccion/historial-contratos/', data);
+      const response = await api.post('/talent-hub/seleccion/historial-contratos/', data);
       return response.data;
     },
     onSuccess: () => {
@@ -987,9 +979,7 @@ export function useFirmarContrato() {
 
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await api.post(
-        `/api/talent-hub/seleccion/historial-contratos/${id}/firmar/`
-      );
+      const response = await api.post(`/talent-hub/seleccion/historial-contratos/${id}/firmar/`);
       return response.data;
     },
     onSuccess: (_, id) => {
@@ -1014,7 +1004,7 @@ export function useProcesoSeleccionEstadisticas() {
     queryKey: seleccionKeys.estadisticas(),
     queryFn: async () => {
       const response = await api.get<ProcesoSeleccionEstadisticas>(
-        '/api/talent-hub/seleccion/estadisticas/'
+        '/talent-hub/seleccion/estadisticas/'
       );
       return response.data;
     },
@@ -1031,7 +1021,7 @@ export function usePlantillasPrueba() {
     queryKey: seleccionKeys.plantillasPrueba.list(),
     queryFn: async () => {
       const response = await api.get<PlantillaPruebaList[]>(
-        '/api/talent-hub/seleccion/plantillas-prueba/'
+        '/talent-hub/seleccion/plantillas-prueba/'
       );
       return response.data;
     },
@@ -1044,7 +1034,7 @@ export function usePlantillasPruebaActivas() {
     queryKey: seleccionKeys.plantillasPrueba.activas(),
     queryFn: async () => {
       const response = await api.get<PlantillaPruebaList[]>(
-        '/api/talent-hub/seleccion/plantillas-prueba/activas/'
+        '/talent-hub/seleccion/plantillas-prueba/activas/'
       );
       return response.data;
     },
@@ -1057,7 +1047,7 @@ export function usePlantillaPrueba(id: number) {
     queryKey: seleccionKeys.plantillasPrueba.detail(id),
     queryFn: async () => {
       const response = await api.get<PlantillaPruebaDetail>(
-        `/api/talent-hub/seleccion/plantillas-prueba/${id}/`
+        `/talent-hub/seleccion/plantillas-prueba/${id}/`
       );
       return response.data;
     },
@@ -1071,7 +1061,7 @@ export function useCreatePlantillaPrueba() {
 
   return useMutation({
     mutationFn: async (data: PlantillaPruebaFormData) => {
-      const response = await api.post('/api/talent-hub/seleccion/plantillas-prueba/', data);
+      const response = await api.post('/talent-hub/seleccion/plantillas-prueba/', data);
       return response.data;
     },
     onSuccess: () => {
@@ -1089,7 +1079,7 @@ export function useUpdatePlantillaPrueba() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<PlantillaPruebaFormData> }) => {
-      const response = await api.patch(`/api/talent-hub/seleccion/plantillas-prueba/${id}/`, data);
+      const response = await api.patch(`/talent-hub/seleccion/plantillas-prueba/${id}/`, data);
       return response.data;
     },
     onSuccess: (_, variables) => {
@@ -1110,7 +1100,7 @@ export function useDeletePlantillaPrueba() {
 
   return useMutation({
     mutationFn: async (id: number) => {
-      await api.delete(`/api/talent-hub/seleccion/plantillas-prueba/${id}/`);
+      await api.delete(`/talent-hub/seleccion/plantillas-prueba/${id}/`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: seleccionKeys.plantillasPrueba.all });
@@ -1127,9 +1117,7 @@ export function useDuplicarPlantillaPrueba() {
 
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await api.post(
-        `/api/talent-hub/seleccion/plantillas-prueba/${id}/duplicar/`
-      );
+      const response = await api.post(`/talent-hub/seleccion/plantillas-prueba/${id}/duplicar/`);
       return response.data;
     },
     onSuccess: () => {
@@ -1158,7 +1146,7 @@ export function useAsignacionesPrueba(filters?: AsignacionPruebaFilters) {
       if (filters?.page_size) params.append('page_size', String(filters.page_size));
 
       const response = await api.get<PaginatedResponse<AsignacionPruebaList>>(
-        `/api/talent-hub/seleccion/asignaciones-prueba/?${params}`
+        `/talent-hub/seleccion/asignaciones-prueba/?${params}`
       );
       return response.data;
     },
@@ -1171,7 +1159,7 @@ export function useAsignacionesPruebaPorCandidato(candidatoId: number) {
     queryKey: seleccionKeys.asignacionesPrueba.porCandidato(candidatoId),
     queryFn: async () => {
       const response = await api.get<AsignacionPruebaList[]>(
-        `/api/talent-hub/seleccion/asignaciones-prueba/por_candidato/?candidato=${candidatoId}`
+        `/talent-hub/seleccion/asignaciones-prueba/por_candidato/?candidato=${candidatoId}`
       );
       return response.data;
     },
@@ -1185,7 +1173,7 @@ export function useAsignacionPruebaDetail(id: number | null) {
     queryKey: seleccionKeys.asignacionesPrueba.detail(id!),
     queryFn: async () => {
       const response = await api.get<AsignacionPruebaDetail>(
-        `/api/talent-hub/seleccion/asignaciones-prueba/${id}/`
+        `/talent-hub/seleccion/asignaciones-prueba/${id}/`
       );
       return response.data;
     },
@@ -1199,7 +1187,7 @@ export function useCreateAsignacionPrueba() {
 
   return useMutation({
     mutationFn: async (data: AsignacionPruebaFormData) => {
-      const response = await api.post('/api/talent-hub/seleccion/asignaciones-prueba/', data);
+      const response = await api.post('/talent-hub/seleccion/asignaciones-prueba/', data);
       return response.data;
     },
     onSuccess: () => {
@@ -1217,7 +1205,7 @@ export function useReenviarEmailPrueba() {
   return useMutation({
     mutationFn: async (id: number) => {
       const response = await api.post(
-        `/api/talent-hub/seleccion/asignaciones-prueba/${id}/reenviar_email/`
+        `/talent-hub/seleccion/asignaciones-prueba/${id}/reenviar_email/`
       );
       return response.data;
     },
@@ -1239,7 +1227,7 @@ export function usePruebaPublica(token: string) {
     queryKey: ['prueba-publica', token],
     queryFn: async () => {
       const response = await api.get<PruebaPublicaData>(
-        `/api/talent-hub/seleccion/responder-prueba/${token}/`
+        `/talent-hub/seleccion/responder-prueba/${token}/`
       );
       return response.data;
     },
@@ -1258,7 +1246,7 @@ export function useResponderPrueba() {
       token: string;
       respuestas: Record<string, unknown>;
     }) => {
-      const response = await api.put(`/api/talent-hub/seleccion/responder-prueba/${token}/`, {
+      const response = await api.put(`/talent-hub/seleccion/responder-prueba/${token}/`, {
         respuestas,
       });
       return response.data;
@@ -1288,7 +1276,7 @@ export function useEntrevistasAsync(filters?: EntrevistaAsincronicaFilters) {
       if (filters?.page_size) params.append('page_size', String(filters.page_size));
 
       const response = await api.get<PaginatedResponse<EntrevistaAsincronicaList>>(
-        `/api/talent-hub/seleccion/entrevistas-async/?${params}`
+        `/talent-hub/seleccion/entrevistas-async/?${params}`
       );
       return response.data;
     },
@@ -1301,7 +1289,7 @@ export function useEntrevistaAsyncDetail(id: number) {
     queryKey: seleccionKeys.entrevistasAsync.detail(id),
     queryFn: async () => {
       const response = await api.get<EntrevistaAsincronicaDetail>(
-        `/api/talent-hub/seleccion/entrevistas-async/${id}/`
+        `/talent-hub/seleccion/entrevistas-async/${id}/`
       );
       return response.data;
     },
@@ -1314,7 +1302,7 @@ export function useEntrevistasAsyncPorCandidato(candidatoId: number) {
     queryKey: seleccionKeys.entrevistasAsync.porCandidato(candidatoId),
     queryFn: async () => {
       const response = await api.get<EntrevistaAsincronicaList[]>(
-        `/api/talent-hub/seleccion/entrevistas-async/por-candidato/${candidatoId}/`
+        `/talent-hub/seleccion/entrevistas-async/por-candidato/${candidatoId}/`
       );
       return response.data;
     },
@@ -1327,7 +1315,7 @@ export function useCreateEntrevistaAsync() {
 
   return useMutation({
     mutationFn: async (data: EntrevistaAsincronicaFormData) => {
-      const response = await api.post('/api/talent-hub/seleccion/entrevistas-async/', data);
+      const response = await api.post('/talent-hub/seleccion/entrevistas-async/', data);
       return response.data;
     },
     onSuccess: () => {
@@ -1359,7 +1347,7 @@ export function useEvaluarEntrevistaAsync() {
       };
     }) => {
       const response = await api.post(
-        `/api/talent-hub/seleccion/entrevistas-async/${id}/evaluar/`,
+        `/talent-hub/seleccion/entrevistas-async/${id}/evaluar/`,
         data
       );
       return response.data;
@@ -1384,7 +1372,7 @@ export function useReenviarEmailEntrevistaAsync() {
   return useMutation({
     mutationFn: async (id: number) => {
       const response = await api.post(
-        `/api/talent-hub/seleccion/entrevistas-async/${id}/reenviar-email/`
+        `/talent-hub/seleccion/entrevistas-async/${id}/reenviar-email/`
       );
       return response.data;
     },
@@ -1403,9 +1391,7 @@ export function useCancelarEntrevistaAsync() {
 
   return useMutation({
     mutationFn: async (id: number) => {
-      const response = await api.post(
-        `/api/talent-hub/seleccion/entrevistas-async/${id}/cancelar/`
-      );
+      const response = await api.post(`/talent-hub/seleccion/entrevistas-async/${id}/cancelar/`);
       return response.data;
     },
     onSuccess: () => {
@@ -1428,7 +1414,7 @@ export function useEntrevistaPublica(token: string) {
     queryKey: ['entrevista-publica', token],
     queryFn: async () => {
       const response = await api.get<EntrevistaAsincronicaPublicData>(
-        `/api/talent-hub/seleccion/responder-entrevista/${token}/`
+        `/talent-hub/seleccion/responder-entrevista/${token}/`
       );
       return response.data;
     },
@@ -1447,7 +1433,7 @@ export function useResponderEntrevistaAsync() {
       token: string;
       respuestas: Record<string, string>;
     }) => {
-      const response = await api.put(`/api/talent-hub/seleccion/responder-entrevista/${token}/`, {
+      const response = await api.put(`/talent-hub/seleccion/responder-entrevista/${token}/`, {
         respuestas,
       });
       return response.data;

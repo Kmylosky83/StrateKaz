@@ -1,0 +1,146 @@
+/**
+ * LiquidacionFormModal - Formulario para crear liquidación de nómina
+ */
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { BaseModal } from '@/components/modals/BaseModal';
+import { Button } from '@/components/common/Button';
+import { Input } from '@/components/forms/Input';
+import { Select } from '@/components/forms/Select';
+import { useCreateLiquidacion } from '../../hooks/useNomina';
+import { useColaboradores } from '../../hooks/useColaboradores';
+import type { LiquidacionNominaFormData } from '../../types';
+
+interface LiquidacionFormModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  periodoId: number | null;
+}
+
+export const LiquidacionFormModal = ({ isOpen, onClose, periodoId }: LiquidacionFormModalProps) => {
+  const createMutation = useCreateLiquidacion();
+  const { data: colaboradores } = useColaboradores({ estado: 'activo' });
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    formState: { errors },
+  } = useForm<LiquidacionNominaFormData>({
+    defaultValues: {
+      dias_trabajados: 15,
+    },
+  });
+
+  useEffect(() => {
+    if (isOpen && periodoId) {
+      reset({
+        periodo: periodoId,
+        dias_trabajados: 15,
+      });
+    }
+  }, [isOpen, periodoId, reset]);
+
+  const selectedColaboradorId = watch('colaborador');
+  const selectedColaborador = colaboradores?.find((c) => c.id === Number(selectedColaboradorId));
+
+  const onSubmit = async (data: LiquidacionNominaFormData) => {
+    try {
+      await createMutation.mutateAsync(data);
+      onClose();
+      reset();
+    } catch (error) {
+      console.error('Error creating liquidacion:', error);
+    }
+  };
+
+  const handleClose = () => {
+    onClose();
+    reset();
+  };
+
+  const colaboradoresOptions =
+    colaboradores?.map((c) => ({
+      value: c.id.toString(),
+      label: `${c.usuario_nombre} - ${c.identificacion}`,
+    })) || [];
+
+  return (
+    <BaseModal isOpen={isOpen} onClose={handleClose} title="Nueva Liquidación" size="lg">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        {/* Colaborador */}
+        <div>
+          <Select
+            label="Colaborador"
+            {...register('colaborador', { required: 'El colaborador es requerido' })}
+            options={colaboradoresOptions}
+            error={errors.colaborador?.message}
+          />
+          {selectedColaborador && (
+            <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <p className="text-sm text-blue-800 dark:text-blue-300">
+                <span className="font-medium">Cargo:</span>{' '}
+                {selectedColaborador.cargo_nombre || 'N/A'}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Salario y Días */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Input
+            label="Salario Base"
+            type="number"
+            step="1"
+            {...register('salario_base', { required: 'El salario base es requerido', min: 0 })}
+            error={errors.salario_base?.message}
+            placeholder="0"
+          />
+          <Input
+            label="Días Trabajados"
+            type="number"
+            {...register('dias_trabajados', {
+              required: 'Los días trabajados son requeridos',
+              min: 1,
+              max: 31,
+            })}
+            error={errors.dias_trabajados?.message}
+          />
+        </div>
+
+        {/* Observaciones */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Observaciones
+          </label>
+          <textarea
+            {...register('observaciones')}
+            rows={3}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+            placeholder="Observaciones de la liquidación..."
+          />
+        </div>
+
+        {/* Info */}
+        <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Los devengados y deducciones se calcularán automáticamente según la configuración de
+            nómina y los conceptos configurados. Puedes agregar conceptos adicionales después de
+            crear la liquidación.
+          </p>
+        </div>
+
+        {/* Actions */}
+        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <Button type="button" variant="outline" onClick={handleClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" disabled={createMutation.isPending}>
+            {createMutation.isPending ? 'Creando...' : 'Crear Liquidación'}
+          </Button>
+        </div>
+      </form>
+    </BaseModal>
+  );
+};

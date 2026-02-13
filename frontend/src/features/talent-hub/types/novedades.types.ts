@@ -1,17 +1,20 @@
 /**
  * Types para Novedades - Talent Hub
- * Sistema de Gestión StrateKaz
+ * Sistema de Gestion StrateKaz
+ *
+ * Aligned with backend models + serializers (2026-02-13)
  */
 
 // ============== ENUMS ==============
 
-export type OrigenIncapacidad = 'enfermedad_general' | 'accidente_trabajo' | 'enfermedad_laboral' | 'accidente_transito';
-export type EstadoIncapacidad = 'reportada' | 'en_tramite' | 'pagada' | 'rechazada';
-export type TipoLicenciaCode = 'maternidad' | 'paternidad' | 'luto' | 'matrimonio' | 'calamidad' | 'sindical' | 'estudio' | 'otra';
-export type EstadoLicencia = 'solicitada' | 'aprobada' | 'rechazada' | 'en_curso' | 'finalizada';
-export type TipoPermisoCode = 'personal' | 'medico' | 'familiar' | 'academico' | 'judicial' | 'otro';
+export type OrigenIncapacidad = 'comun' | 'laboral' | 'maternidad' | 'paternidad';
+export type EstadoIncapacidad = 'pendiente' | 'aprobada' | 'en_cobro' | 'pagada' | 'rechazada';
+export type CategoriaLicencia = 'remunerada' | 'no_remunerada' | 'legal';
+export type EstadoLicencia = 'solicitada' | 'aprobada' | 'rechazada' | 'cancelada';
+export type TipoPermiso = 'personal' | 'medico' | 'academico' | 'calamidad' | 'otro';
 export type EstadoPermiso = 'solicitado' | 'aprobado' | 'rechazado';
-export type EstadoVacaciones = 'pendiente' | 'programada' | 'aprobada' | 'en_curso' | 'disfrutada' | 'cancelada';
+export type EstadoVacaciones = 'solicitada' | 'aprobada' | 'rechazada' | 'disfrutada' | 'cancelada';
+export type PeriodoDotacion = 'abril' | 'agosto' | 'diciembre';
 
 // ============== TIPO INCAPACIDAD ==============
 
@@ -20,13 +23,11 @@ export interface TipoIncapacidad {
   empresa: number;
   codigo: string;
   nombre: string;
-  origen: OrigenIncapacidad;
-  dias_empresa: number;
-  porcentaje_pago_empresa: number;
-  porcentaje_pago_eps: number;
-  requiere_prorroga: boolean;
-  dias_maximos: number;
   descripcion: string;
+  origen: OrigenIncapacidad;
+  dias_maximos: number | null;
+  porcentaje_pago: string; // DecimalField comes as string
+  requiere_prorroga: boolean;
   created_at: string;
   updated_at: string;
   is_active: boolean;
@@ -35,13 +36,11 @@ export interface TipoIncapacidad {
 export interface TipoIncapacidadFormData {
   codigo: string;
   nombre: string;
-  origen: OrigenIncapacidad;
-  dias_empresa?: number;
-  porcentaje_pago_empresa?: number;
-  porcentaje_pago_eps?: number;
-  requiere_prorroga?: boolean;
-  dias_maximos?: number;
   descripcion?: string;
+  origen: OrigenIncapacidad;
+  dias_maximos?: number | null;
+  porcentaje_pago?: string;
+  requiere_prorroga?: boolean;
 }
 
 // ============== INCAPACIDAD ==============
@@ -52,25 +51,23 @@ export interface Incapacidad {
   colaborador: number;
   colaborador_nombre: string;
   tipo_incapacidad: number;
-  tipo_incapacidad_nombre: string;
+  tipo_nombre: string;
   fecha_inicio: string;
   fecha_fin: string;
   dias_incapacidad: number;
   diagnostico: string;
-  codigo_diagnostico: string;
-  entidad_salud: string;
+  codigo_cie10: string;
+  eps_arl: string;
   numero_incapacidad: string;
+  prorroga_de: number | null;
   es_prorroga: boolean;
-  incapacidad_original: number | null;
-  fecha_radicacion: string | null;
-  estado: EstadoIncapacidad;
-  valor_reconocido_empresa: number;
-  valor_reconocido_eps: number;
-  fecha_pago_eps: string | null;
+  tiene_prorrogas: boolean;
+  dias_totales_con_prorrogas: number;
   archivo_soporte: string;
+  estado: EstadoIncapacidad;
+  fecha_radicacion_cobro: string | null;
+  valor_cobrado: string | null;
   observaciones: string;
-  registrado_por: number;
-  registrado_por_nombre: string;
   created_at: string;
   updated_at: string;
   is_active: boolean;
@@ -82,22 +79,17 @@ export interface IncapacidadFormData {
   fecha_inicio: string;
   fecha_fin: string;
   diagnostico: string;
-  codigo_diagnostico?: string;
-  entidad_salud: string;
+  codigo_cie10?: string;
+  eps_arl: string;
   numero_incapacidad: string;
-  es_prorroga?: boolean;
-  incapacidad_original?: number | null;
-  fecha_radicacion?: string | null;
+  prorroga_de?: number | null;
   observaciones?: string;
 }
 
 export interface IncapacidadFilter {
   colaborador?: number;
   tipo_incapacidad?: number;
-  fecha_inicio?: string;
-  fecha_fin?: string;
   estado?: EstadoIncapacidad;
-  origen?: OrigenIncapacidad;
 }
 
 // ============== TIPO LICENCIA ==============
@@ -107,11 +99,10 @@ export interface TipoLicencia {
   empresa: number;
   codigo: string;
   nombre: string;
-  tipo: TipoLicenciaCode;
-  dias_legales: number;
-  es_remunerada: boolean;
-  requiere_soporte: boolean;
   descripcion: string;
+  categoria: CategoriaLicencia;
+  dias_permitidos: number | null;
+  requiere_aprobacion: boolean;
   created_at: string;
   updated_at: string;
   is_active: boolean;
@@ -120,11 +111,10 @@ export interface TipoLicencia {
 export interface TipoLicenciaFormData {
   codigo: string;
   nombre: string;
-  tipo: TipoLicenciaCode;
-  dias_legales: number;
-  es_remunerada?: boolean;
-  requiere_soporte?: boolean;
   descripcion?: string;
+  categoria: CategoriaLicencia;
+  dias_permitidos?: number | null;
+  requiere_aprobacion?: boolean;
 }
 
 // ============== LICENCIA ==============
@@ -135,18 +125,20 @@ export interface Licencia {
   colaborador: number;
   colaborador_nombre: string;
   tipo_licencia: number;
-  tipo_licencia_nombre: string;
+  tipo_nombre: string;
+  tipo_categoria: CategoriaLicencia;
   fecha_inicio: string;
   fecha_fin: string;
   dias_solicitados: number;
-  dias_aprobados: number;
   motivo: string;
+  archivo_soporte: string | null;
   estado: EstadoLicencia;
+  esta_aprobada: boolean;
+  esta_vigente: boolean;
   aprobado_por: number | null;
   aprobado_por_nombre: string;
   fecha_aprobacion: string | null;
   observaciones_aprobacion: string;
-  archivo_soporte: string;
   created_at: string;
   updated_at: string;
   is_active: boolean;
@@ -157,48 +149,17 @@ export interface LicenciaFormData {
   tipo_licencia: number;
   fecha_inicio: string;
   fecha_fin: string;
-  dias_solicitados: number;
   motivo: string;
 }
 
 export interface LicenciaFilter {
   colaborador?: number;
   tipo_licencia?: number;
-  fecha_inicio?: string;
-  fecha_fin?: string;
   estado?: EstadoLicencia;
 }
 
 export interface AprobacionLicenciaData {
-  dias_aprobados: number;
-  observaciones_aprobacion?: string;
-}
-
-// ============== TIPO PERMISO ==============
-
-export interface TipoPermiso {
-  id: number;
-  empresa: number;
-  codigo: string;
-  nombre: string;
-  tipo: TipoPermisoCode;
-  requiere_soporte: boolean;
-  requiere_compensacion: boolean;
-  horas_maximas_mes: number;
-  descripcion: string;
-  created_at: string;
-  updated_at: string;
-  is_active: boolean;
-}
-
-export interface TipoPermisoFormData {
-  codigo: string;
-  nombre: string;
-  tipo: TipoPermisoCode;
-  requiere_soporte?: boolean;
-  requiere_compensacion?: boolean;
-  horas_maximas_mes?: number;
-  descripcion?: string;
+  observaciones?: string;
 }
 
 // ============== PERMISO ==============
@@ -208,21 +169,17 @@ export interface Permiso {
   empresa: number;
   colaborador: number;
   colaborador_nombre: string;
-  tipo_permiso: number;
-  tipo_permiso_nombre: string;
   fecha: string;
-  hora_inicio: string;
-  hora_fin: string;
-  horas_solicitadas: number;
+  hora_salida: string;
+  hora_regreso: string;
+  horas_permiso: string; // DecimalField
   motivo: string;
+  tipo: TipoPermiso;
+  compensable: boolean;
   estado: EstadoPermiso;
+  esta_aprobado: boolean;
   aprobado_por: number | null;
   aprobado_por_nombre: string;
-  fecha_aprobacion: string | null;
-  requiere_compensacion: boolean;
-  fecha_compensacion: string | null;
-  horas_compensadas: number;
-  archivo_soporte: string;
   observaciones: string;
   created_at: string;
   updated_at: string;
@@ -231,19 +188,17 @@ export interface Permiso {
 
 export interface PermisoFormData {
   colaborador: number;
-  tipo_permiso: number;
   fecha: string;
-  hora_inicio: string;
-  hora_fin: string;
-  horas_solicitadas: number;
+  hora_salida: string;
+  hora_regreso: string;
   motivo: string;
+  tipo: TipoPermiso;
+  compensable?: boolean;
 }
 
 export interface PermisoFilter {
   colaborador?: number;
-  tipo_permiso?: number;
-  fecha_inicio?: string;
-  fecha_fin?: string;
+  tipo?: TipoPermiso;
   estado?: EstadoPermiso;
 }
 
@@ -254,21 +209,31 @@ export interface PeriodoVacaciones {
   empresa: number;
   colaborador: number;
   colaborador_nombre: string;
-  fecha_inicio_periodo: string;
-  fecha_fin_periodo: string;
-  dias_derecho: number;
-  dias_disfrutados: number;
-  dias_pendientes: number;
-  dias_compensados: number;
-  valor_dia_vacaciones: number;
+  fecha_ingreso: string;
+  dias_derecho_anual: string; // DecimalField
+  dias_acumulados: string;
+  dias_disfrutados: string;
+  dias_pendientes: string;
+  dias_acumulados_actualizados: string;
+  ultimo_corte: string;
+  observaciones: string;
   created_at: string;
   updated_at: string;
   is_active: boolean;
 }
 
+export interface PeriodoVacacionesFormData {
+  colaborador: number;
+  fecha_ingreso: string;
+  dias_derecho_anual?: string;
+  dias_acumulados?: string;
+  dias_disfrutados?: string;
+  ultimo_corte: string;
+  observaciones?: string;
+}
+
 export interface PeriodoVacacionesFilter {
   colaborador?: number;
-  anio?: number;
 }
 
 // ============== SOLICITUD VACACIONES ==============
@@ -278,18 +243,20 @@ export interface SolicitudVacaciones {
   empresa: number;
   colaborador: number;
   colaborador_nombre: string;
-  periodo_vacaciones: number;
+  periodo: number;
   fecha_inicio: string;
   fecha_fin: string;
-  dias_solicitados: number;
   dias_habiles: number;
+  dias_calendario: number;
   incluye_prima: boolean;
   estado: EstadoVacaciones;
+  esta_aprobada: boolean;
+  esta_vigente: boolean;
   aprobado_por: number | null;
   aprobado_por_nombre: string;
   fecha_aprobacion: string | null;
-  observaciones_aprobacion: string;
-  motivo_cancelacion: string;
+  periodo_dias_pendientes: string;
+  observaciones: string;
   created_at: string;
   updated_at: string;
   is_active: boolean;
@@ -297,62 +264,111 @@ export interface SolicitudVacaciones {
 
 export interface SolicitudVacacionesFormData {
   colaborador: number;
-  periodo_vacaciones: number;
+  periodo: number;
   fecha_inicio: string;
   fecha_fin: string;
-  dias_solicitados: number;
   incluye_prima?: boolean;
+  observaciones?: string;
 }
 
 export interface SolicitudVacacionesFilter {
   colaborador?: number;
-  periodo_vacaciones?: number;
-  fecha_inicio?: string;
-  fecha_fin?: string;
+  periodo?: number;
   estado?: EstadoVacaciones;
+}
+
+// ============== CONFIGURACION DOTACION ==============
+
+export interface ConfiguracionDotacion {
+  id: number;
+  empresa: number;
+  periodos_entrega: string[];
+  salario_maximo_smmlv: string;
+  items_obligatorios: string[];
+  politica_devolucion: string;
+  created_at: string;
+  updated_at: string;
+  is_active: boolean;
+}
+
+export interface ConfiguracionDotacionFormData {
+  periodos_entrega?: string[];
+  salario_maximo_smmlv?: string;
+  items_obligatorios?: string[];
+  politica_devolucion?: string;
+}
+
+// ============== ENTREGA DOTACION ==============
+
+export interface EntregaDotacion {
+  id: number;
+  empresa: number;
+  colaborador: number;
+  colaborador_nombre: string;
+  periodo: PeriodoDotacion;
+  periodo_display: string;
+  anio: number;
+  fecha_entrega: string;
+  items_entregados: Array<{ descripcion: string; talla?: string; cantidad?: number }>;
+  acta_entrega: string | null;
+  firma_recibido: boolean;
+  observaciones: string;
+  created_at: string;
+  updated_at: string;
+  is_active: boolean;
+}
+
+export interface EntregaDotacionFormData {
+  colaborador: number;
+  periodo: PeriodoDotacion;
+  anio: number;
+  fecha_entrega: string;
+  items_entregados?: Array<{ descripcion: string; talla?: string; cantidad?: number }>;
+  firma_recibido?: boolean;
+  observaciones?: string;
+}
+
+export interface EntregaDotacionFilter {
+  colaborador?: number;
+  periodo?: PeriodoDotacion;
+  anio?: number;
 }
 
 // ============== OPTIONS ==============
 
 export const origenIncapacidadOptions = [
-  { value: 'enfermedad_general', label: 'Enfermedad General' },
-  { value: 'accidente_trabajo', label: 'Accidente de Trabajo' },
-  { value: 'enfermedad_laboral', label: 'Enfermedad Laboral' },
-  { value: 'accidente_transito', label: 'Accidente de Tránsito' },
+  { value: 'comun', label: 'Enfermedad Comun' },
+  { value: 'laboral', label: 'Origen Laboral' },
+  { value: 'maternidad', label: 'Licencia de Maternidad' },
+  { value: 'paternidad', label: 'Licencia de Paternidad' },
 ];
 
 export const estadoIncapacidadOptions = [
-  { value: 'reportada', label: 'Reportada' },
-  { value: 'en_tramite', label: 'En Trámite' },
+  { value: 'pendiente', label: 'Pendiente' },
+  { value: 'aprobada', label: 'Aprobada' },
+  { value: 'en_cobro', label: 'En Cobro' },
   { value: 'pagada', label: 'Pagada' },
   { value: 'rechazada', label: 'Rechazada' },
 ];
 
-export const tipoLicenciaOptions = [
-  { value: 'maternidad', label: 'Maternidad' },
-  { value: 'paternidad', label: 'Paternidad' },
-  { value: 'luto', label: 'Luto' },
-  { value: 'matrimonio', label: 'Matrimonio' },
-  { value: 'calamidad', label: 'Calamidad Doméstica' },
-  { value: 'sindical', label: 'Sindical' },
-  { value: 'estudio', label: 'Estudio' },
-  { value: 'otra', label: 'Otra' },
+export const categoriaLicenciaOptions = [
+  { value: 'remunerada', label: 'Remunerada' },
+  { value: 'no_remunerada', label: 'No Remunerada' },
+  { value: 'legal', label: 'Legal Remunerada' },
 ];
 
 export const estadoLicenciaOptions = [
   { value: 'solicitada', label: 'Solicitada' },
   { value: 'aprobada', label: 'Aprobada' },
   { value: 'rechazada', label: 'Rechazada' },
-  { value: 'en_curso', label: 'En Curso' },
-  { value: 'finalizada', label: 'Finalizada' },
+  { value: 'cancelada', label: 'Cancelada' },
 ];
 
 export const tipoPermisoOptions = [
   { value: 'personal', label: 'Personal' },
-  { value: 'medico', label: 'Médico' },
-  { value: 'familiar', label: 'Familiar' },
-  { value: 'academico', label: 'Académico' },
-  { value: 'judicial', label: 'Judicial' },
+  { value: 'medico', label: 'Medico' },
+  { value: 'academico', label: 'Academico' },
+  { value: 'calamidad', label: 'Calamidad Domestica' },
   { value: 'otro', label: 'Otro' },
 ];
 
@@ -363,10 +379,15 @@ export const estadoPermisoOptions = [
 ];
 
 export const estadoVacacionesOptions = [
-  { value: 'pendiente', label: 'Pendiente' },
-  { value: 'programada', label: 'Programada' },
+  { value: 'solicitada', label: 'Solicitada' },
   { value: 'aprobada', label: 'Aprobada' },
-  { value: 'en_curso', label: 'En Curso' },
+  { value: 'rechazada', label: 'Rechazada' },
   { value: 'disfrutada', label: 'Disfrutada' },
   { value: 'cancelada', label: 'Cancelada' },
+];
+
+export const periodoDotacionOptions = [
+  { value: 'abril', label: 'Abril (30 de abril)' },
+  { value: 'agosto', label: 'Agosto (31 de agosto)' },
+  { value: 'diciembre', label: 'Diciembre (20 de diciembre)' },
 ];

@@ -1,172 +1,212 @@
 /**
  * Types para Nómina - Talent Hub
  * Sistema de Gestión StrateKaz
+ *
+ * Alineado con backend: apps/talent_hub/nomina/models.py + serializers.py
  */
 
 // ============== ENUMS ==============
 
-export type TipoPeriodoNomina = 'quincenal' | 'mensual';
-export type EstadoPeriodo = 'abierto' | 'en_proceso' | 'cerrado' | 'pagado';
-export type TipoConcepto = 'devengado' | 'deduccion' | 'provision' | 'aporte_empresa';
+/** Backend: TIPO_PERIODO_CHOICES */
+export type TipoPeriodoNomina = 'primera_quincena' | 'segunda_quincena' | 'mensual';
+
+/** Backend: ESTADO_PERIODO_CHOICES */
+export type EstadoPeriodo = 'abierto' | 'preliquidado' | 'liquidado' | 'pagado' | 'cerrado';
+
+/** Backend: TIPO_CONCEPTO_CHOICES — solo 2 valores */
+export type TipoConcepto = 'devengado' | 'deduccion';
+
+/** Backend: CATEGORIA_CONCEPTO_CHOICES */
 export type CategoriaConcepto =
   | 'salario'
-  | 'auxilio_transporte'
-  | 'horas_extras'
-  | 'recargos'
-  | 'comisiones'
-  | 'bonificaciones'
-  | 'incapacidades'
-  | 'licencias'
+  | 'auxilio'
+  | 'bonificacion'
+  | 'comision'
+  | 'hora_extra'
+  | 'recargo_nocturno'
+  | 'incapacidad'
+  | 'licencia'
   | 'vacaciones'
-  | 'salud'
-  | 'pension'
-  | 'arl'
-  | 'caja_compensacion'
-  | 'retencion_fuente'
-  | 'embargos'
-  | 'libranzas'
-  | 'prestamos'
+  | 'prima'
   | 'cesantias'
   | 'intereses_cesantias'
-  | 'prima'
-  | 'otros';
-export type EstadoLiquidacion = 'borrador' | 'calculada' | 'aprobada' | 'pagada';
-export type TipoPrestacion = 'cesantias' | 'intereses_cesantias' | 'prima' | 'vacaciones' | 'dotacion';
-export type EstadoPrestacion = 'provisionada' | 'pagada' | 'consignada';
-export type MetodoPago = 'transferencia' | 'cheque' | 'efectivo' | 'consignacion';
-export type EstadoPago = 'pendiente' | 'procesado' | 'fallido' | 'anulado';
+  | 'salud'
+  | 'pension'
+  | 'fondo_solidaridad'
+  | 'retencion_fuente'
+  | 'libranza'
+  | 'embargo'
+  | 'fondo_empleados'
+  | 'otro';
+
+/** Backend: ESTADO_LIQUIDACION_CHOICES */
+export type EstadoLiquidacion = 'borrador' | 'preliquidado' | 'aprobado' | 'pagado' | 'anulado';
+
+/** Backend: TIPO_PRESTACION_CHOICES */
+export type TipoPrestacion = 'cesantias' | 'intereses_cesantias' | 'prima_servicios' | 'vacaciones';
+
+/** Backend: ESTADO_PRESTACION_CHOICES */
+export type EstadoPrestacion = 'en_provision' | 'liquidada' | 'pagada';
+
+/** Backend: METODO_PAGO_CHOICES */
+export type MetodoPago = 'transferencia' | 'cheque' | 'efectivo';
 
 // ============== CONFIGURACION NOMINA ==============
 
+/** ConfiguracionNominaDetailSerializer — fields='__all__' */
 export interface ConfiguracionNomina {
   id: number;
   empresa: number;
-  salario_minimo_vigente: number;
-  auxilio_transporte_vigente: number;
+  anio: number;
+  salario_minimo: number;
+  auxilio_transporte: number;
+  // Seguridad Social - Empleado
   porcentaje_salud_empleado: number;
-  porcentaje_salud_empleador: number;
   porcentaje_pension_empleado: number;
-  porcentaje_pension_empleador: number;
-  porcentaje_arl_base: number;
+  // Seguridad Social - Empresa
+  porcentaje_salud_empresa: number;
+  porcentaje_pension_empresa: number;
+  // ARL
+  porcentaje_arl: number;
+  // Parafiscales
   porcentaje_caja_compensacion: number;
-  porcentaje_sena: number;
   porcentaje_icbf: number;
-  uvt_vigente: number;
-  tope_horas_extras_mes: number;
-  factor_hora_extra_diurna: number;
-  factor_hora_extra_nocturna: number;
-  factor_hora_extra_dominical: number;
-  factor_hora_extra_festiva: number;
-  factor_recargo_nocturno: number;
-  factor_recargo_dominical: number;
-  factor_recargo_festivo: number;
-  ano_vigencia: number;
+  porcentaje_sena: number;
+  // Prestaciones
+  dias_base_cesantias: number;
+  porcentaje_intereses_cesantias: number;
+  dias_base_prima: number;
+  dias_vacaciones_por_anio: number;
+  // Fondo Solidaridad
+  salario_base_solidaridad: number;
+  porcentaje_solidaridad_empleado: number;
+  // Observaciones
+  observaciones: string;
+  // Computed
+  total_seguridad_social_empleado?: number;
+  total_seguridad_social_empresa?: number;
+  total_parafiscales?: number;
+  // Audit
   created_at: string;
   updated_at: string;
   is_active: boolean;
 }
 
+/** ConfiguracionNominaListSerializer fields */
+export interface ConfiguracionNominaList {
+  id: number;
+  anio: number;
+  salario_minimo: number;
+  auxilio_transporte: number;
+  total_seguridad_social_empleado: number;
+  total_seguridad_social_empresa: number;
+  total_parafiscales: number;
+  created_at: string;
+}
+
+/** ConfiguracionNominaCreateSerializer fields */
 export interface ConfiguracionNominaFormData {
-  salario_minimo_vigente: number;
-  auxilio_transporte_vigente: number;
+  anio: number;
+  salario_minimo: number;
+  auxilio_transporte: number;
   porcentaje_salud_empleado?: number;
-  porcentaje_salud_empleador?: number;
   porcentaje_pension_empleado?: number;
-  porcentaje_pension_empleador?: number;
-  porcentaje_arl_base?: number;
+  porcentaje_salud_empresa?: number;
+  porcentaje_pension_empresa?: number;
+  porcentaje_arl?: number;
   porcentaje_caja_compensacion?: number;
-  porcentaje_sena?: number;
   porcentaje_icbf?: number;
-  uvt_vigente?: number;
-  tope_horas_extras_mes?: number;
-  ano_vigencia: number;
+  porcentaje_sena?: number;
+  dias_base_cesantias?: number;
+  porcentaje_intereses_cesantias?: number;
+  dias_base_prima?: number;
+  dias_vacaciones_por_anio?: number;
+  salario_base_solidaridad?: number;
+  porcentaje_solidaridad_empleado?: number;
+  observaciones?: string;
 }
 
 // ============== CONCEPTO NOMINA ==============
 
+/** ConceptoNominaListSerializer fields */
 export interface ConceptoNomina {
   id: number;
-  empresa: number;
   codigo: string;
   nombre: string;
+  descripcion?: string;
   tipo: TipoConcepto;
+  tipo_display?: string;
   categoria: CategoriaConcepto;
-  afecta_base_salud: boolean;
-  afecta_base_pension: boolean;
-  afecta_base_arl: boolean;
-  afecta_base_parafiscales: boolean;
-  afecta_base_prestaciones: boolean;
-  afecta_base_retencion: boolean;
+  categoria_display?: string;
   es_fijo: boolean;
-  valor_fijo: number;
-  porcentaje: number;
-  formula: string;
-  orden_calculo: number;
-  activo: boolean;
-  created_at: string;
-  updated_at: string;
-  is_active: boolean;
+  es_base_seguridad_social: boolean;
+  es_base_parafiscales: boolean;
+  es_base_prestaciones: boolean;
+  formula?: string;
+  orden: number;
+  // Audit (from detail)
+  empresa?: number;
+  created_at?: string;
+  updated_at?: string;
+  is_active?: boolean;
 }
 
+/** ConceptoNominaCreateSerializer fields */
 export interface ConceptoNominaFormData {
   codigo: string;
   nombre: string;
+  descripcion?: string;
   tipo: TipoConcepto;
   categoria: CategoriaConcepto;
-  afecta_base_salud?: boolean;
-  afecta_base_pension?: boolean;
-  afecta_base_arl?: boolean;
-  afecta_base_parafiscales?: boolean;
-  afecta_base_prestaciones?: boolean;
-  afecta_base_retencion?: boolean;
   es_fijo?: boolean;
-  valor_fijo?: number;
-  porcentaje?: number;
+  es_base_seguridad_social?: boolean;
+  es_base_parafiscales?: boolean;
+  es_base_prestaciones?: boolean;
   formula?: string;
-  orden_calculo?: number;
-  activo?: boolean;
+  orden?: number;
 }
 
 export interface ConceptoNominaFilter {
   tipo?: TipoConcepto;
   categoria?: CategoriaConcepto;
-  activo?: boolean;
   search?: string;
 }
 
 // ============== PERIODO NOMINA ==============
 
+/** PeriodoNominaListSerializer fields */
 export interface PeriodoNomina {
   id: number;
-  empresa: number;
-  tipo: TipoPeriodoNomina;
+  empresa?: number;
   anio: number;
   mes: number;
-  numero_periodo: number;
+  tipo: TipoPeriodoNomina;
+  tipo_display?: string;
+  nombre_periodo?: string;
   fecha_inicio: string;
   fecha_fin: string;
   fecha_pago: string;
   estado: EstadoPeriodo;
-  total_devengados: number;
-  total_deducciones: number;
+  estado_display?: string;
+  esta_abierto?: boolean;
+  total_devengados?: number;
+  total_deducciones?: number;
   total_neto: number;
-  total_aportes_empresa: number;
-  total_provisiones: number;
-  cantidad_empleados: number;
-  cerrado_por: number | null;
-  cerrado_por_nombre: string;
-  fecha_cierre: string | null;
-  observaciones: string;
+  numero_colaboradores: number;
+  cerrado_por?: number | null;
+  cerrado_por_nombre?: string;
+  fecha_cierre?: string | null;
+  observaciones?: string;
   created_at: string;
-  updated_at: string;
-  is_active: boolean;
+  updated_at?: string;
+  is_active?: boolean;
 }
 
+/** PeriodoNominaCreateSerializer fields */
 export interface PeriodoNominaFormData {
-  tipo: TipoPeriodoNomina;
   anio: number;
   mes: number;
-  numero_periodo: number;
+  tipo: TipoPeriodoNomina;
   fecha_inicio: string;
   fecha_fin: string;
   fecha_pago: string;
@@ -174,7 +214,6 @@ export interface PeriodoNominaFormData {
 }
 
 export interface PeriodoNominaFilter {
-  tipo?: TipoPeriodoNomina;
   anio?: number;
   mes?: number;
   estado?: EstadoPeriodo;
@@ -182,38 +221,33 @@ export interface PeriodoNominaFilter {
 
 // ============== LIQUIDACION NOMINA ==============
 
+/** LiquidacionNominaListSerializer fields */
 export interface LiquidacionNomina {
   id: number;
-  empresa: number;
+  empresa?: number;
   periodo: number;
-  periodo_descripcion: string;
+  periodo_nombre?: string;
   colaborador: number;
-  colaborador_nombre: string;
-  colaborador_documento: string;
-  cargo: string;
+  colaborador_nombre?: string;
+  colaborador_identificacion?: string;
   salario_base: number;
   dias_trabajados: number;
-  dias_incapacidad: number;
-  dias_licencia: number;
-  dias_vacaciones: number;
-  dias_ausencia: number;
   total_devengados: number;
   total_deducciones: number;
   neto_pagar: number;
-  base_salud: number;
-  base_pension: number;
-  base_arl: number;
-  base_parafiscales: number;
-  base_prestaciones: number;
-  base_retencion: number;
   estado: EstadoLiquidacion;
-  aprobado_por: number | null;
-  aprobado_por_nombre: string;
-  fecha_aprobacion: string | null;
-  observaciones: string;
+  estado_display?: string;
+  esta_aprobada?: boolean;
+  esta_pagada?: boolean;
+  aprobado_por?: number | null;
+  aprobado_por_nombre?: string;
+  fecha_aprobacion?: string | null;
+  observaciones?: string;
+  // Detail includes detalles array
+  detalles?: DetalleLiquidacion[];
   created_at: string;
-  updated_at: string;
-  is_active: boolean;
+  updated_at?: string;
+  is_active?: boolean;
 }
 
 export interface LiquidacionNominaFilter {
@@ -222,75 +256,86 @@ export interface LiquidacionNominaFilter {
   estado?: EstadoLiquidacion;
 }
 
-export interface CalcularLiquidacionData {
+/** LiquidacionNominaCreateSerializer fields */
+export interface LiquidacionNominaFormData {
   periodo: number;
-  colaborador?: number;
+  colaborador: number;
+  salario_base: number;
+  dias_trabajados: number;
+  observaciones?: string;
+  detalles?: DetalleCreateData[];
+}
+
+export interface DetalleCreateData {
+  concepto: number;
+  cantidad: number;
+  valor_unitario: number;
+  observaciones?: string;
 }
 
 // ============== DETALLE LIQUIDACION ==============
 
+/** DetalleLiquidacionListSerializer fields */
 export interface DetalleLiquidacion {
   id: number;
-  empresa: number;
-  liquidacion: number;
   concepto: number;
-  concepto_codigo: string;
-  concepto_nombre: string;
-  tipo: TipoConcepto;
-  categoria: CategoriaConcepto;
+  concepto_codigo?: string;
+  concepto_nombre?: string;
   cantidad: number;
   valor_unitario: number;
   valor_total: number;
-  base_calculo: number;
-  porcentaje_aplicado: number;
-  observaciones: string;
-  created_at: string;
-  updated_at: string;
-  is_active: boolean;
+  es_devengado: boolean;
+  observaciones?: string;
 }
 
 export interface DetalleLiquidacionFormData {
-  liquidacion: number;
   concepto: number;
-  cantidad?: number;
-  valor_unitario?: number;
-  valor_total: number;
+  cantidad: number;
+  valor_unitario: number;
   observaciones?: string;
 }
 
 // ============== PRESTACION ==============
 
+/** PrestacionListSerializer fields */
 export interface Prestacion {
   id: number;
-  empresa: number;
+  empresa?: number;
   colaborador: number;
-  colaborador_nombre: string;
+  colaborador_nombre?: string;
+  anio: number;
   tipo: TipoPrestacion;
-  periodo_inicio: string;
-  periodo_fin: string;
-  dias_base: number;
-  salario_base: number;
+  tipo_display?: string;
+  valor_base?: number;
+  dias_causados?: number;
   valor_provisionado: number;
   valor_pagado: number;
+  saldo_pendiente?: number;
   estado: EstadoPrestacion;
-  fecha_pago: string | null;
-  fecha_consignacion: string | null;
-  entidad_consignacion: string;
-  numero_radicado: string;
-  observaciones: string;
+  estado_display?: string;
+  fecha_inicio?: string | null;
+  fecha_fin?: string | null;
+  fecha_pago?: string | null;
+  observaciones?: string;
   created_at: string;
-  updated_at: string;
-  is_active: boolean;
+  updated_at?: string;
+  is_active?: boolean;
 }
 
+/** PrestacionCreateSerializer fields */
 export interface PrestacionFormData {
   colaborador: number;
+  anio: number;
   tipo: TipoPrestacion;
-  periodo_inicio: string;
-  periodo_fin: string;
-  dias_base: number;
-  salario_base: number;
+  valor_base: number;
+  dias_causados: number;
   valor_provisionado: number;
+  valor_pagado?: number;
+  estado?: EstadoPrestacion;
+  fecha_inicio?: string | null;
+  fecha_fin?: string | null;
+  fecha_pago?: string | null;
+  observaciones?: string;
 }
 
 export interface PrestacionFilter {
@@ -300,134 +345,115 @@ export interface PrestacionFilter {
   anio?: number;
 }
 
-export interface PagarPrestacionData {
-  valor_pagado: number;
-  entidad_consignacion?: string;
-  numero_radicado?: string;
-  observaciones?: string;
-}
-
 // ============== PAGO NOMINA ==============
 
+/** PagoNominaListSerializer fields */
 export interface PagoNomina {
   id: number;
-  empresa: number;
-  periodo: number;
-  periodo_descripcion: string;
+  empresa?: number;
+  liquidacion: number;
+  liquidacion_colaborador?: string;
+  liquidacion_periodo?: string;
   fecha_pago: string;
   metodo_pago: MetodoPago;
-  banco: string;
-  numero_lote: string;
-  cantidad_pagos: number;
-  valor_total: number;
-  estado: EstadoPago;
-  archivo_plano: string;
-  procesado_por: number;
-  procesado_por_nombre: string;
-  fecha_procesamiento: string | null;
-  error_procesamiento: string;
-  observaciones: string;
+  metodo_pago_display?: string;
+  banco?: string;
+  numero_cuenta?: string;
+  referencia_pago?: string;
+  valor_pagado: number;
+  comprobante?: string | null;
+  observaciones?: string;
   created_at: string;
-  updated_at: string;
-  is_active: boolean;
+  updated_at?: string;
+  is_active?: boolean;
 }
 
+/** PagoNominaCreateSerializer fields */
 export interface PagoNominaFormData {
-  periodo: number;
+  liquidacion: number;
   fecha_pago: string;
   metodo_pago: MetodoPago;
   banco?: string;
+  numero_cuenta?: string;
+  referencia_pago?: string;
+  valor_pagado: number;
+  comprobante?: File | null;
   observaciones?: string;
 }
 
 export interface PagoNominaFilter {
-  periodo?: number;
-  metodo_pago?: MetodoPago;
-  estado?: EstadoPago;
-  fecha_inicio?: string;
-  fecha_fin?: string;
-}
-
-export interface ProcesarPagoData {
-  numero_lote?: string;
+  liquidacion?: number;
+  fecha_desde?: string;
+  fecha_hasta?: string;
 }
 
 // ============== OPTIONS ==============
 
 export const tipoPeriodoNominaOptions = [
-  { value: 'quincenal', label: 'Quincenal' },
+  { value: 'primera_quincena', label: 'Primera Quincena' },
+  { value: 'segunda_quincena', label: 'Segunda Quincena' },
   { value: 'mensual', label: 'Mensual' },
 ];
 
 export const estadoPeriodoOptions = [
   { value: 'abierto', label: 'Abierto' },
-  { value: 'en_proceso', label: 'En Proceso' },
-  { value: 'cerrado', label: 'Cerrado' },
+  { value: 'preliquidado', label: 'Preliquidado' },
+  { value: 'liquidado', label: 'Liquidado' },
   { value: 'pagado', label: 'Pagado' },
+  { value: 'cerrado', label: 'Cerrado' },
 ];
 
 export const tipoConceptoOptions = [
   { value: 'devengado', label: 'Devengado' },
   { value: 'deduccion', label: 'Deducción' },
-  { value: 'provision', label: 'Provisión' },
-  { value: 'aporte_empresa', label: 'Aporte Empresa' },
 ];
 
 export const categoriaConceptoOptions = [
-  { value: 'salario', label: 'Salario' },
-  { value: 'auxilio_transporte', label: 'Auxilio de Transporte' },
-  { value: 'horas_extras', label: 'Horas Extras' },
-  { value: 'recargos', label: 'Recargos' },
-  { value: 'comisiones', label: 'Comisiones' },
-  { value: 'bonificaciones', label: 'Bonificaciones' },
-  { value: 'incapacidades', label: 'Incapacidades' },
-  { value: 'licencias', label: 'Licencias' },
+  { value: 'salario', label: 'Salario Básico' },
+  { value: 'auxilio', label: 'Auxilio' },
+  { value: 'bonificacion', label: 'Bonificación' },
+  { value: 'comision', label: 'Comisión' },
+  { value: 'hora_extra', label: 'Hora Extra' },
+  { value: 'recargo_nocturno', label: 'Recargo Nocturno' },
+  { value: 'incapacidad', label: 'Incapacidad' },
+  { value: 'licencia', label: 'Licencia' },
   { value: 'vacaciones', label: 'Vacaciones' },
+  { value: 'prima', label: 'Prima de Servicios' },
+  { value: 'cesantias', label: 'Cesantías' },
+  { value: 'intereses_cesantias', label: 'Intereses Cesantías' },
   { value: 'salud', label: 'Salud' },
   { value: 'pension', label: 'Pensión' },
-  { value: 'arl', label: 'ARL' },
-  { value: 'caja_compensacion', label: 'Caja de Compensación' },
+  { value: 'fondo_solidaridad', label: 'Fondo Solidaridad Pensional' },
   { value: 'retencion_fuente', label: 'Retención en la Fuente' },
-  { value: 'embargos', label: 'Embargos' },
-  { value: 'libranzas', label: 'Libranzas' },
-  { value: 'prestamos', label: 'Préstamos' },
-  { value: 'cesantias', label: 'Cesantías' },
-  { value: 'intereses_cesantias', label: 'Intereses de Cesantías' },
-  { value: 'prima', label: 'Prima' },
-  { value: 'otros', label: 'Otros' },
+  { value: 'libranza', label: 'Libranza' },
+  { value: 'embargo', label: 'Embargo' },
+  { value: 'fondo_empleados', label: 'Fondo de Empleados' },
+  { value: 'otro', label: 'Otro' },
 ];
 
 export const estadoLiquidacionOptions = [
   { value: 'borrador', label: 'Borrador' },
-  { value: 'calculada', label: 'Calculada' },
-  { value: 'aprobada', label: 'Aprobada' },
-  { value: 'pagada', label: 'Pagada' },
+  { value: 'preliquidado', label: 'Preliquidado' },
+  { value: 'aprobado', label: 'Aprobado' },
+  { value: 'pagado', label: 'Pagado' },
+  { value: 'anulado', label: 'Anulado' },
 ];
 
 export const tipoPrestacionOptions = [
   { value: 'cesantias', label: 'Cesantías' },
-  { value: 'intereses_cesantias', label: 'Intereses de Cesantías' },
-  { value: 'prima', label: 'Prima de Servicios' },
+  { value: 'intereses_cesantias', label: 'Intereses Cesantías' },
+  { value: 'prima_servicios', label: 'Prima de Servicios' },
   { value: 'vacaciones', label: 'Vacaciones' },
-  { value: 'dotacion', label: 'Dotación' },
 ];
 
 export const estadoPrestacionOptions = [
-  { value: 'provisionada', label: 'Provisionada' },
+  { value: 'en_provision', label: 'En Provisión' },
+  { value: 'liquidada', label: 'Liquidada' },
   { value: 'pagada', label: 'Pagada' },
-  { value: 'consignada', label: 'Consignada' },
 ];
 
 export const metodoPagoOptions = [
   { value: 'transferencia', label: 'Transferencia Bancaria' },
   { value: 'cheque', label: 'Cheque' },
   { value: 'efectivo', label: 'Efectivo' },
-  { value: 'consignacion', label: 'Consignación' },
-];
-
-export const estadoPagoOptions = [
-  { value: 'pendiente', label: 'Pendiente' },
-  { value: 'procesado', label: 'Procesado' },
-  { value: 'fallido', label: 'Fallido' },
-  { value: 'anulado', label: 'Anulado' },
 ];

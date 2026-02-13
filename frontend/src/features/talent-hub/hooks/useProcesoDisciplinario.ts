@@ -5,7 +5,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import api from '@/lib/api-client';
+import { api } from '@/lib/api-client';
 import type {
   TipoFalta,
   TipoFaltaFormData,
@@ -27,7 +27,7 @@ import type {
   ResumenDisciplinario,
 } from '../types';
 
-const BASE_URL = '/api/v1/talent-hub/proceso-disciplinario';
+const BASE_URL = '/talent-hub/proceso-disciplinario';
 
 // ============== QUERY KEYS ==============
 
@@ -35,29 +35,35 @@ export const procesoDisciplinarioKeys = {
   all: ['proceso-disciplinario'] as const,
   tiposFalta: {
     all: () => [...procesoDisciplinarioKeys.all, 'tipos-falta'] as const,
-    list: (filters?: TipoFaltaFilter) => [...procesoDisciplinarioKeys.tiposFalta.all(), 'list', filters] as const,
+    list: (filters?: TipoFaltaFilter) =>
+      [...procesoDisciplinarioKeys.tiposFalta.all(), 'list', filters] as const,
     detail: (id: number) => [...procesoDisciplinarioKeys.tiposFalta.all(), 'detail', id] as const,
   },
   llamados: {
     all: () => [...procesoDisciplinarioKeys.all, 'llamados'] as const,
-    list: (filters?: LlamadoAtencionFilter) => [...procesoDisciplinarioKeys.llamados.all(), 'list', filters] as const,
+    list: (filters?: LlamadoAtencionFilter) =>
+      [...procesoDisciplinarioKeys.llamados.all(), 'list', filters] as const,
     detail: (id: number) => [...procesoDisciplinarioKeys.llamados.all(), 'detail', id] as const,
   },
   descargos: {
     all: () => [...procesoDisciplinarioKeys.all, 'descargos'] as const,
-    list: (filters?: DescargoFilter) => [...procesoDisciplinarioKeys.descargos.all(), 'list', filters] as const,
+    list: (filters?: DescargoFilter) =>
+      [...procesoDisciplinarioKeys.descargos.all(), 'list', filters] as const,
     detail: (id: number) => [...procesoDisciplinarioKeys.descargos.all(), 'detail', id] as const,
   },
   memorandos: {
     all: () => [...procesoDisciplinarioKeys.all, 'memorandos'] as const,
-    list: (filters?: MemorandoFilter) => [...procesoDisciplinarioKeys.memorandos.all(), 'list', filters] as const,
+    list: (filters?: MemorandoFilter) =>
+      [...procesoDisciplinarioKeys.memorandos.all(), 'list', filters] as const,
     detail: (id: number) => [...procesoDisciplinarioKeys.memorandos.all(), 'detail', id] as const,
   },
   historial: {
     all: () => [...procesoDisciplinarioKeys.all, 'historial'] as const,
-    list: (filters?: HistorialDisciplinarioFilter) => [...procesoDisciplinarioKeys.historial.all(), 'list', filters] as const,
+    list: (filters?: HistorialDisciplinarioFilter) =>
+      [...procesoDisciplinarioKeys.historial.all(), 'list', filters] as const,
     detail: (id: number) => [...procesoDisciplinarioKeys.historial.all(), 'detail', id] as const,
-    resumen: (colaboradorId: number) => [...procesoDisciplinarioKeys.historial.all(), 'resumen', colaboradorId] as const,
+    resumen: (colaboradorId: number) =>
+      [...procesoDisciplinarioKeys.historial.all(), 'resumen', colaboradorId] as const,
   },
 };
 
@@ -135,7 +141,9 @@ export const useLlamadosAtencion = (filters?: LlamadoAtencionFilter) => {
   return useQuery({
     queryKey: procesoDisciplinarioKeys.llamados.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<LlamadoAtencion[]>(`${BASE_URL}/llamados-atencion/`, { params: filters });
+      const { data } = await api.get<LlamadoAtencion[]>(`${BASE_URL}/llamados-atencion/`, {
+        params: filters,
+      });
       return data;
     },
   });
@@ -156,7 +164,10 @@ export const useCreateLlamadoAtencion = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: LlamadoAtencionFormData) => {
-      const { data: response } = await api.post<LlamadoAtencion>(`${BASE_URL}/llamados-atencion/`, data);
+      const { data: response } = await api.post<LlamadoAtencion>(
+        `${BASE_URL}/llamados-atencion/`,
+        data
+      );
       return response;
     },
     onSuccess: () => {
@@ -172,7 +183,10 @@ export const useUpdateLlamadoAtencion = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<LlamadoAtencionFormData> }) => {
-      const { data: response } = await api.patch<LlamadoAtencion>(`${BASE_URL}/llamados-atencion/${id}/`, data);
+      const { data: response } = await api.patch<LlamadoAtencion>(
+        `${BASE_URL}/llamados-atencion/${id}/`,
+        data
+      );
       return response;
     },
     onSuccess: (_, { id }) => {
@@ -202,7 +216,9 @@ export const useRegistrarFirmaLlamado = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const { data: response } = await api.post<LlamadoAtencion>(`${BASE_URL}/llamados-atencion/${id}/registrar_firma/`);
+      const { data: response } = await api.post<LlamadoAtencion>(
+        `${BASE_URL}/llamados-atencion/${id}/registrar_firma/`
+      );
       return response;
     },
     onSuccess: (_, id) => {
@@ -287,7 +303,10 @@ export const useRegistrarDescargo = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: RegistrarDescargoData }) => {
-      const { data: response } = await api.post<Descargo>(`${BASE_URL}/descargos/${id}/registrar_descargo/`, data);
+      const { data: response } = await api.post<Descargo>(
+        `${BASE_URL}/descargos/${id}/registrar_descargo/`,
+        data
+      );
       return response;
     },
     onSuccess: (_, { id }) => {
@@ -303,7 +322,10 @@ export const useEmitirDecision = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: EmitirDecisionData }) => {
-      const { data: response } = await api.post<Descargo>(`${BASE_URL}/descargos/${id}/emitir_decision/`, data);
+      const { data: response } = await api.post<Descargo>(
+        `${BASE_URL}/descargos/${id}/emitir_decision/`,
+        data
+      );
       return response;
     },
     onSuccess: (_, { id }) => {
@@ -389,7 +411,9 @@ export const useNotificarMemorando = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const { data: response } = await api.post<Memorando>(`${BASE_URL}/memorandos/${id}/notificar/`);
+      const { data: response } = await api.post<Memorando>(
+        `${BASE_URL}/memorandos/${id}/notificar/`
+      );
       return response;
     },
     onSuccess: (_, id) => {
@@ -405,7 +429,10 @@ export const useRegistrarApelacion = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: RegistrarApelacionData }) => {
-      const { data: response } = await api.post<Memorando>(`${BASE_URL}/memorandos/${id}/registrar_apelacion/`, data);
+      const { data: response } = await api.post<Memorando>(
+        `${BASE_URL}/memorandos/${id}/registrar_apelacion/`,
+        data
+      );
       return response;
     },
     onSuccess: (_, { id }) => {
@@ -423,7 +450,9 @@ export const useHistorialDisciplinario = (filters?: HistorialDisciplinarioFilter
   return useQuery({
     queryKey: procesoDisciplinarioKeys.historial.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<HistorialDisciplinario[]>(`${BASE_URL}/historial/`, { params: filters });
+      const { data } = await api.get<HistorialDisciplinario[]>(`${BASE_URL}/historial/`, {
+        params: filters,
+      });
       return data;
     },
   });
@@ -444,9 +473,12 @@ export const useResumenDisciplinario = (colaboradorId: number, enabled = true) =
   return useQuery({
     queryKey: procesoDisciplinarioKeys.historial.resumen(colaboradorId),
     queryFn: async () => {
-      const { data } = await api.get<ResumenDisciplinario>(`${BASE_URL}/historial/resumen_colaborador/`, {
-        params: { colaborador: colaboradorId },
-      });
+      const { data } = await api.get<ResumenDisciplinario>(
+        `${BASE_URL}/historial/resumen_colaborador/`,
+        {
+          params: { colaborador: colaboradorId },
+        }
+      );
       return data;
     },
     enabled: enabled && !!colaboradorId,

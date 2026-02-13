@@ -6,37 +6,44 @@
  */
 
 // =============================================================================
-// ENUMS Y CHOICES
+// ENUMS Y CHOICES (alineados con backend models.py)
 // =============================================================================
 
 export type TipoModuloInduccion =
-  | 'corporativo'
-  | 'seguridad'
-  | 'puesto'
-  | 'sistema'
-  | 'normativo'
-  | 'especifico';
+  | 'induccion_general'
+  | 'induccion_especifica'
+  | 'reinduccion'
+  | 'sst'
+  | 'calidad'
+  | 'ambiente'
+  | 'etica'
+  | 'pesv'
+  | 'otro';
 
 export type FormatoContenido =
   | 'video'
   | 'presentacion'
   | 'documento'
-  | 'interactivo'
+  | 'quiz'
+  | 'actividad'
+  | 'presencial'
   | 'mixto';
 
 export type EstadoEjecucion =
   | 'pendiente'
   | 'en_progreso'
   | 'completado'
-  | 'vencido'
-  | 'omitido';
+  | 'reprobado'
+  | 'cancelado';
+
+export type EstadoChecklist = 'pendiente' | 'cumplido' | 'no_aplica' | 'incompleto';
 
 export type CategoriaChecklist =
-  | 'documentacion'
+  | 'documentos'
   | 'afiliaciones'
-  | 'capacitacion'
-  | 'equipamiento'
+  | 'equipos'
   | 'accesos'
+  | 'capacitacion'
   | 'otros';
 
 export type TipoEPP =
@@ -47,39 +54,37 @@ export type TipoEPP =
   | 'overol'
   | 'protector_auditivo'
   | 'mascarilla'
-  | 'respirador'
   | 'arnes'
   | 'chaleco'
-  | 'otros';
+  | 'otro';
 
 export type TipoActivo =
   | 'computador'
   | 'celular'
-  | 'tablet'
-  | 'herramienta'
+  | 'radio'
   | 'vehiculo'
-  | 'mobiliario'
+  | 'herramienta'
+  | 'uniforme'
+  | 'carnet'
+  | 'llaves'
+  | 'tarjeta_acceso'
   | 'otro';
 
-export type EstadoActivo =
-  | 'nuevo'
-  | 'buen_estado'
-  | 'regular'
-  | 'requiere_mantenimiento';
+export type EstadoEntrega = 'nuevo' | 'buen_estado' | 'uso_normal' | 'desgastado';
+
+export type EstadoDevolucion = 'buen_estado' | 'uso_normal' | 'desgastado' | 'danado' | 'perdido';
 
 export type TipoDocumentoFirma =
   | 'contrato'
-  | 'reglamento'
-  | 'politica'
-  | 'autorizacion'
-  | 'consentimiento'
-  | 'confidencialidad'
+  | 'reglamento_interno'
+  | 'politica_datos'
+  | 'politica_sst'
+  | 'acuerdo_confidencialidad'
+  | 'autorizacion_descuento'
+  | 'compromiso_cumplimiento'
   | 'otro';
 
-export type MetodoFirma =
-  | 'fisica'
-  | 'electronica'
-  | 'digital';
+export type MetodoFirma = 'fisico' | 'digital' | 'electronica';
 
 // =============================================================================
 // INTERFACES DE MODELOS
@@ -91,16 +96,23 @@ export interface ModuloInduccion {
   nombre: string;
   descripcion: string;
   tipo_modulo: TipoModuloInduccion;
-  tipo_display?: string;
+  tipo_modulo_display?: string;
   formato_contenido: FormatoContenido;
   formato_display?: string;
   duracion_minutos: number;
-  es_obligatorio: boolean;
   requiere_evaluacion: boolean;
   nota_minima_aprobacion: number;
+  intentos_permitidos: number;
+  contenido_url?: string;
+  archivo_contenido?: string;
+  preguntas_evaluacion?: unknown[];
+  fecha_vigencia_desde?: string;
+  fecha_vigencia_hasta?: string;
   orden: number;
-  url_contenido?: string;
-  contenido_texto?: string;
+  es_obligatorio: boolean;
+  responsable?: number;
+  responsable_nombre?: string;
+  esta_vigente?: boolean;
   is_active: boolean;
 }
 
@@ -113,6 +125,8 @@ export interface AsignacionPorCargo {
   es_obligatorio: boolean;
   dias_para_completar: number;
   orden_ejecucion: number;
+  observaciones?: string;
+  is_active: boolean;
 }
 
 export interface ItemChecklist {
@@ -121,12 +135,11 @@ export interface ItemChecklist {
   descripcion: string;
   categoria: CategoriaChecklist;
   categoria_display?: string;
-  responsable_area?: string;
+  requiere_adjunto: boolean;
+  requiere_fecha: boolean;
+  orden: number;
   aplica_a_todos: boolean;
   cargos_aplicables: number[];
-  requiere_adjunto: boolean;
-  dias_limite: number;
-  orden: number;
   is_active: boolean;
 }
 
@@ -136,11 +149,12 @@ export interface ChecklistIngreso {
   colaborador_nombre?: string;
   item: number;
   item_descripcion?: string;
-  estado: 'pendiente' | 'cumplido' | 'no_aplica' | 'vencido';
+  item_categoria?: string;
+  estado: EstadoChecklist;
   estado_display?: string;
   fecha_cumplimiento?: string;
+  archivo_adjunto?: string;
   observaciones?: string;
-  adjunto?: string;
   verificado_por?: number;
   verificado_por_nombre?: string;
   fecha_verificacion?: string;
@@ -152,18 +166,25 @@ export interface EjecucionIntegral {
   colaborador_nombre?: string;
   modulo: number;
   modulo_nombre?: string;
+  modulo_tipo?: string;
   modulo_info?: ModuloInduccion;
+  estado: EstadoEjecucion;
+  estado_display?: string;
   fecha_asignacion: string;
   fecha_limite: string;
   fecha_inicio?: string;
-  fecha_completado?: string;
-  estado: EstadoEjecucion;
-  estado_display?: string;
+  fecha_finalizacion?: string;
   progreso_porcentaje: number;
-  nota_obtenida?: number;
-  intentos_evaluacion: number;
   tiempo_dedicado_minutos: number;
+  nota_obtenida?: number;
+  intentos_realizados: number;
+  respuestas_evaluacion?: Record<string, unknown>;
   observaciones?: string;
+  retroalimentacion_colaborador?: string;
+  facilitador?: number;
+  facilitador_nombre?: string;
+  esta_vencido?: boolean;
+  aprobo?: boolean;
 }
 
 export interface EntregaEPP {
@@ -171,7 +192,7 @@ export interface EntregaEPP {
   colaborador: number;
   colaborador_nombre?: string;
   tipo_epp: TipoEPP;
-  tipo_display?: string;
+  tipo_epp_display?: string;
   descripcion: string;
   marca?: string;
   referencia?: string;
@@ -179,12 +200,12 @@ export interface EntregaEPP {
   cantidad: number;
   fecha_entrega: string;
   fecha_vencimiento?: string;
-  esta_vencido?: boolean;
   entregado_por?: number;
   entregado_por_nombre?: string;
   recibido_conforme: boolean;
-  firma_recibido?: string;
   observaciones?: string;
+  acta_entrega?: string;
+  requiere_reposicion?: boolean;
 }
 
 export interface EntregaActivo {
@@ -192,21 +213,27 @@ export interface EntregaActivo {
   colaborador: number;
   colaborador_nombre?: string;
   tipo_activo: TipoActivo;
-  tipo_display?: string;
+  tipo_activo_display?: string;
   descripcion: string;
+  codigo_activo?: string;
+  serial?: string;
   marca?: string;
   modelo?: string;
-  serial?: string;
-  codigo_activo?: string;
-  estado_entrega: EstadoActivo;
+  valor_activo?: number;
   fecha_entrega: string;
+  fecha_devolucion?: string;
+  estado_entrega: EstadoEntrega;
+  estado_devolucion?: EstadoDevolucion;
   entregado_por?: number;
   entregado_por_nombre?: string;
-  acta_entrega?: string;
+  recibido_conforme: boolean;
+  recibido_por?: number;
+  recibido_por_nombre?: string;
   devuelto: boolean;
-  fecha_devolucion?: string;
-  estado_devolucion?: string;
-  observaciones_devolucion?: string;
+  observaciones?: string;
+  acta_entrega?: string;
+  acta_devolucion?: string;
+  esta_pendiente_devolucion?: boolean;
 }
 
 export interface FirmaDocumento {
@@ -214,15 +241,16 @@ export interface FirmaDocumento {
   colaborador: number;
   colaborador_nombre?: string;
   tipo_documento: TipoDocumentoFirma;
-  tipo_display?: string;
+  tipo_documento_display?: string;
   nombre_documento: string;
-  descripcion?: string;
-  documento_url?: string;
-  fecha_firma?: string;
+  version?: string;
+  documento?: string;
+  documento_firmado?: string;
+  fecha_firma: string;
   firmado: boolean;
-  metodo_firma?: MetodoFirma;
-  firma_digital?: string;
-  ip_firma?: string;
+  metodo_firma: MetodoFirma;
+  testigo?: number;
+  testigo_nombre?: string;
   observaciones?: string;
 }
 
@@ -231,26 +259,30 @@ export interface FirmaDocumento {
 // =============================================================================
 
 export interface OnboardingEstadisticas {
-  colaboradores_en_induccion: number;
-  modulos_completados_mes: number;
-  tasa_completitud: number;
-  checklist_pendientes: number;
-  epp_por_entregar: number;
-  documentos_sin_firmar: number;
-  tiempo_promedio_induccion: number;
-  vencimientos_proximos: number;
+  total_modulos: number;
+  modulos_activos: number;
+  inducciones_pendientes: number;
+  inducciones_en_progreso: number;
+  inducciones_completadas_mes: number;
+  tasa_cumplimiento: number;
+  epp_por_vencer: number;
+  activos_pendientes_devolucion: number;
 }
 
-export interface ProgresoColaborador {
-  colaborador_id: number;
-  colaborador_nombre: string;
-  fecha_ingreso: string;
-  modulos_total: number;
-  modulos_completados: number;
+export interface ChecklistResumen {
+  total: number;
+  cumplidos: number;
+  pendientes: number;
   porcentaje_avance: number;
-  checklist_pendientes: number;
-  dias_en_induccion: number;
-  estado: 'en_tiempo' | 'retrasado' | 'completado';
+}
+
+export interface EjecucionResumen {
+  total: number;
+  completadas: number;
+  en_progreso: number;
+  pendientes: number;
+  vencidas: number;
+  porcentaje_avance: number;
 }
 
 // =============================================================================
@@ -267,9 +299,29 @@ export interface ModuloInduccionFormData {
   es_obligatorio: boolean;
   requiere_evaluacion: boolean;
   nota_minima_aprobacion?: number;
+  intentos_permitidos?: number;
+  contenido_url?: string;
   orden?: number;
-  url_contenido?: string;
-  contenido_texto?: string;
+  responsable?: number;
+}
+
+export interface ItemChecklistFormData {
+  codigo: string;
+  descripcion: string;
+  categoria: CategoriaChecklist;
+  requiere_adjunto: boolean;
+  requiere_fecha: boolean;
+  orden: number;
+  aplica_a_todos: boolean;
+  cargos_aplicables?: number[];
+}
+
+export interface EjecucionCreateData {
+  colaborador: number;
+  modulo: number;
+  fecha_limite: string;
+  facilitador?: number;
+  observaciones?: string;
 }
 
 export interface EntregaEPPFormData {
@@ -289,11 +341,22 @@ export interface EntregaActivoFormData {
   colaborador: number;
   tipo_activo: TipoActivo;
   descripcion: string;
+  codigo_activo?: string;
+  serial?: string;
   marca?: string;
   modelo?: string;
-  serial?: string;
-  codigo_activo?: string;
-  estado_entrega: EstadoActivo;
+  valor_activo?: number;
   fecha_entrega: string;
+  estado_entrega: EstadoEntrega;
+  observaciones?: string;
+}
+
+export interface FirmaDocumentoFormData {
+  colaborador: number;
+  tipo_documento: TipoDocumentoFirma;
+  nombre_documento: string;
+  version?: string;
+  fecha_firma: string;
+  metodo_firma: MetodoFirma;
   observaciones?: string;
 }

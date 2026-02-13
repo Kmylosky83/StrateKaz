@@ -2,19 +2,20 @@
 Management command MAESTRO para configurar TODOS los 14 módulos del ERP StrateKaz
 según la Estructura Final 22 (validada 2025-12-22)
 
-ORDEN DEFINITIVO:
+ORDEN DEFINITIVO (Sprint 13.2 - TH sube a posicion 2):
     10. Direccion Estrategica
-    20. Cumplimiento Normativo
-    21. Motor de Riesgos
-    22. Flujos de Trabajo
+    15. Centro de Talento (dato maestro: cargos, colaboradores)
+    20. Sistema de Gestion
+    25. Cumplimiento Normativo
+    26. Motor de Riesgos
+    27. Flujos de Trabajo
     30. Gestion Integral
     40. Cadena de Suministro
     41. Base de Operaciones
     42. Logistica y Flota
     43. Ventas y CRM
-    50. Centro de Talento
-    51. Administracion y Financiero
-    52. Contabilidad
+    50. Administracion y Financiero
+    51. Contabilidad
     60. Inteligencia de Negocios
     61. Sistema de Auditorias
 
@@ -219,7 +220,7 @@ class Command(BaseCommand):
                 'route': '/sistema-gestion',
                 'is_core': False,
                 'is_enabled': True,
-                'orden': 15,
+                'orden': 20,
                 'tabs': [
                     {
                         'code': 'gestion_documental',
@@ -288,7 +289,7 @@ class Command(BaseCommand):
                 'route': '/cumplimiento',
                 'is_core': False,
                 'is_enabled': True,
-                'orden': 20,
+                'orden': 25,
                 'tabs': [
                     {
                         'code': 'matriz_legal',
@@ -316,7 +317,7 @@ class Command(BaseCommand):
                 'route': '/riesgos',
                 'is_core': False,
                 'is_enabled': True,
-                'orden': 21,
+                'orden': 26,
                 'tabs': [
                     # riesgos_oportunidades MOVIDO a gestion_estrategica (Tab 6)
                     {'code': 'ipevr', 'name': 'IPEVR (GTC-45)', 'icon': 'ShieldAlert', 'route': 'ipevr', 'orden': 1},
@@ -336,7 +337,7 @@ class Command(BaseCommand):
                 'route': '/workflows',
                 'is_core': False,
                 'is_enabled': True,
-                'orden': 22,
+                'orden': 27,
                 'tabs': [
                     {'code': 'disenador_flujos', 'name': 'Diseñador de Flujos', 'icon': 'PenTool', 'route': 'disenador', 'orden': 1},
                     {'code': 'ejecucion', 'name': 'Ejecución', 'icon': 'Play', 'route': 'ejecucion', 'orden': 2},
@@ -462,7 +463,7 @@ class Command(BaseCommand):
                 'route': '/talento',
                 'is_core': False,
                 'is_enabled': True,
-                'orden': 50,
+                'orden': 15,
                 'tabs': [
                     {'code': 'estructura_cargos', 'name': 'Estructura de Cargos', 'icon': 'Network', 'route': 'estructura', 'orden': 1},
                     {'code': 'seleccion_contratacion', 'name': 'Selección/Contratación', 'icon': 'UserPlus', 'route': 'seleccion', 'orden': 2},
@@ -487,7 +488,7 @@ class Command(BaseCommand):
                 'route': '/finanzas',
                 'is_core': False,
                 'is_enabled': True,
-                'orden': 51,
+                'orden': 50,
                 'tabs': [
                     {'code': 'tesoreria', 'name': 'Tesorería', 'icon': 'Landmark', 'route': 'tesoreria', 'orden': 1},
                     {'code': 'presupuesto', 'name': 'Presupuesto', 'icon': 'PieChart', 'route': 'presupuesto', 'orden': 2},
@@ -505,7 +506,7 @@ class Command(BaseCommand):
                 'route': '/contabilidad',
                 'is_core': False,
                 'is_enabled': True,
-                'orden': 52,
+                'orden': 51,
                 'tabs': [
                     {'code': 'config_contable', 'name': 'Config. Contable', 'icon': 'Settings', 'route': 'configuracion', 'orden': 1},
                     {'code': 'movimientos', 'name': 'Movimientos', 'icon': 'ArrowLeftRight', 'route': 'movimientos', 'orden': 2},

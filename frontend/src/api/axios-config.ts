@@ -37,7 +37,9 @@ axiosInstance.interceptors.response.use(
     const originalRequest = error.config;
 
     // Si el error es 401 y no hemos reintentado aún
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // IMPORTANTE: No intentar refresh si estamos en /login (evita loops con tokens viejos)
+    const isLoginPage = window.location.pathname.startsWith('/login');
+    if (error.response?.status === 401 && !originalRequest._retry && !isLoginPage) {
       originalRequest._retry = true;
 
       try {
@@ -67,10 +69,13 @@ axiosInstance.interceptors.response.use(
         }
         return axiosInstance(originalRequest);
       } catch (refreshError) {
-        // Si falla el refresh, limpiar tokens y redirigir al login
+        // Si falla el refresh, limpiar tokens
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
-        window.location.href = '/login';
+        // Solo redirigir si NO estamos ya en login (evitar loop)
+        if (!window.location.pathname.startsWith('/login')) {
+          window.location.href = '/login';
+        }
         return Promise.reject(refreshError);
       }
     }

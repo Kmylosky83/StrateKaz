@@ -492,8 +492,16 @@ export const brandingApi = {
           pwa_icon_maskable: tenant.pwa_icon_maskable,
           is_active: true,
         };
-      } catch {
-        // Si falla (401, 403, etc), continuar con el flujo por dominio público
+      } catch (error: unknown) {
+        // Si falla por auth (401/403), limpiar tokens viejos para no reintentar
+        if (error && typeof error === 'object' && 'response' in error) {
+          const axiosError = error as { response?: { status?: number } };
+          if (axiosError.response?.status === 401 || axiosError.response?.status === 403) {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('current_tenant_id');
+          }
+        }
         console.warn('[brandingApi] Failed to get tenant branding, falling back to domain');
       }
     }

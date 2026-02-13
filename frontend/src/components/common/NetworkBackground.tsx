@@ -58,7 +58,7 @@ const NetworkAnimation = ({ brandColor, isVisible, particleCount }: NetworkAnima
     return texture;
   }, []);
 
-  // Initial particles state
+  // Initial particles state - regenerates when brandColor or count changes
   const particles = useMemo<Particle[]>(() => {
     const temp: Particle[] = [];
     const primary = new THREE.Color(brandColor);
@@ -66,7 +66,7 @@ const NetworkAnimation = ({ brandColor, isVisible, particleCount }: NetworkAnima
 
     for (let i = 0; i < particleCount; i++) {
       // Color mix: ~70% Primary, ~30% White for visual variety
-      const isPrimary = Math.random() > (1 - PARTICLE_CONFIG.primaryColorRatio);
+      const isPrimary = Math.random() > 1 - PARTICLE_CONFIG.primaryColorRatio;
       const color = isPrimary ? primary : white;
 
       temp.push({
@@ -81,9 +81,7 @@ const NetworkAnimation = ({ brandColor, isVisible, particleCount }: NetworkAnima
       });
     }
     return temp;
-  // brandColor is intentionally not in deps - we only want to generate particles once
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [particleCount]);
+  }, [particleCount, brandColor]);
 
   // Buffer geometries
   const pointsGeometry = useMemo(() => {
@@ -185,12 +183,7 @@ const NetworkAnimation = ({ brandColor, isVisible, particleCount }: NetworkAnima
         />
       </points>
       <lineSegments ref={linesRef} geometry={linesGeometry}>
-        <lineBasicMaterial
-          color={brandColor}
-          transparent
-          opacity={0.12}
-          depthWrite={false}
-        />
+        <lineBasicMaterial color={brandColor} transparent opacity={0.12} depthWrite={false} />
       </lineSegments>
     </>
   );
@@ -202,7 +195,9 @@ const NetworkAnimation = ({ brandColor, isVisible, particleCount }: NetworkAnima
  *
  * @param brandColor - Primary brand color (defaults to StrateKaz pink)
  */
-export const NetworkBackground = ({ brandColor = PARTICLE_CONFIG.brandColor }: NetworkBackgroundProps) => {
+export const NetworkBackground = ({
+  brandColor = PARTICLE_CONFIG.brandColor,
+}: NetworkBackgroundProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(true);
   const reduceMotion = shouldReduceMotion();
@@ -210,9 +205,7 @@ export const NetworkBackground = ({ brandColor = PARTICLE_CONFIG.brandColor }: N
   // Adaptive particle count based on device performance
   const particleCount = useMemo(() => {
     if (reduceMotion) return 0; // No particles for reduced motion
-    return isLowPerformanceDevice()
-      ? PARTICLE_CONFIG.mobileCount
-      : PARTICLE_CONFIG.desktopCount;
+    return isLowPerformanceDevice() ? PARTICLE_CONFIG.mobileCount : PARTICLE_CONFIG.desktopCount;
   }, [reduceMotion]);
 
   // IntersectionObserver to pause when off-screen

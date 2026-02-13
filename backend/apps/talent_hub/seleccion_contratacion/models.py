@@ -2106,3 +2106,215 @@ class AsignacionPruebaDinamica(BaseCompanyModel):
         scoring_config = self.plantilla.scoring_config or {}
         puntaje_aprobacion = scoring_config.get('puntaje_aprobacion', 60)
         self.aprobado = float(self.porcentaje) >= float(puntaje_aprobacion)
+
+
+# ==============================================================================
+# ENTREVISTA ASINCRONICA (POR EMAIL)
+# ==============================================================================
+
+class EntrevistaAsincronica(BaseCompanyModel):
+    """
+    Entrevista asincronica enviada por email al candidato.
+
+    El reclutador configura preguntas, se envia un link al candidato,
+    el candidato responde a su ritmo, y luego HR evalua las respuestas.
+
+    Similar a AsignacionPruebaDinamica pero enfocado en preguntas
+    de entrevista (texto largo, competencias, situacional).
+    """
+
+    ESTADO_CHOICES = [
+        ('pendiente', 'Pendiente de envio'),
+        ('enviada', 'Enviada al candidato'),
+        ('en_progreso', 'En progreso'),
+        ('completada', 'Completada por candidato'),
+        ('evaluada', 'Evaluada por HR'),
+        ('vencida', 'Vencida'),
+        ('cancelada', 'Cancelada'),
+    ]
+
+    RECOMENDACION_CHOICES = [
+        ('contratar', 'Recomendado para contratar'),
+        ('segunda_entrevista', 'Segunda entrevista'),
+        ('rechazar', 'No recomendado'),
+        ('pendiente', 'Decision pendiente'),
+    ]
+
+    # Relaciones
+    candidato = models.ForeignKey(
+        Candidato,
+        on_delete=models.CASCADE,
+        related_name='entrevistas_asincronicas',
+        verbose_name='Candidato'
+    )
+
+    # Contenido
+    titulo = models.CharField(
+        max_length=200,
+        verbose_name='Titulo de la entrevista',
+        help_text='Ej: Entrevista tecnica, Entrevista de competencias'
+    )
+    instrucciones = models.TextField(
+        blank=True,
+        default='',
+        verbose_name='Instrucciones para el candidato',
+        help_text='Instrucciones que vera el candidato antes de responder'
+    )
+    preguntas = models.JSONField(
+        default=list,
+        verbose_name='Preguntas de la entrevista',
+        help_text='Array de preguntas: [{id, pregunta, descripcion, tipo, obligatoria, opciones, orden}]'
+    )
+
+    # Token de acceso publico
+    token = models.CharField(
+        max_length=64,
+        unique=True,
+        db_index=True,
+        verbose_name='Token de acceso',
+        help_text='Token unico para acceso publico sin autenticacion'
+    )
+
+    # Estado y tracking
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADO_CHOICES,
+        default='pendiente',
+        db_index=True,
+        verbose_name='Estado'
+    )
+    email_enviado = models.BooleanField(
+        default=False,
+        verbose_name='Email enviado'
+    )
+    fecha_envio = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de envio del email'
+    )
+    fecha_vencimiento = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha limite para responder'
+    )
+    fecha_inicio = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha en que el candidato comenzo a responder'
+    )
+    fecha_completado = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha en que el candidato envio sus respuestas'
+    )
+
+    # Respuestas del candidato
+    respuestas = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Respuestas del candidato',
+        help_text='Dict {pregunta_id: respuesta}'
+    )
+
+    # Evaluacion por HR
+    evaluador = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='entrevistas_async_evaluadas',
+        verbose_name='Evaluador'
+    )
+    fecha_evaluacion = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de evaluacion'
+    )
+    calificacion_general = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        verbose_name='Calificacion general (0-100)'
+    )
+    recomendacion = models.CharField(
+        max_length=20,
+        choices=RECOMENDACION_CHOICES,
+        null=True,
+        blank=True,
+        verbose_name='Recomendacion'
+    )
+    fortalezas_identificadas = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Fortalezas identificadas'
+    )
+    aspectos_mejorar = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Aspectos a mejorar'
+    )
+    observaciones_evaluador = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Observaciones del evaluador'
+    )
+
+    # Metadata de acceso
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name='IP del candidato'
+    )
+    user_agent = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='User agent del navegador'
+    )
+
+    class Meta:
+        db_table = 'talent_hub_entrevista_asincronica'
+        verbose_name = 'Entrevista Asincronica'
+        verbose_name_plural = 'Entrevistas Asincronicas'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['candidato', 'estado']),
+            models.Index(fields=['token']),
+            models.Index(fields=['estado', 'is_active']),
+            models.Index(fields=['empresa', 'estado']),
+            models.Index(fields=['fecha_vencimiento']),
+        ]
+
+    def __str__(self):
+        return f"Entrevista Async: {self.titulo} - {self.candidato.nombre_completo}"
+
+    def save(self, *args, **kwargs):
+        # Auto-generar token si es nuevo
+        if not self.token:
+            import secrets
+            self.token = secrets.token_urlsafe(32)
+        super().save(*args, **kwargs)
+
+    def clean(self):
+        super().clean()
+        if self.candidato and self.empresa_id != self.candidato.empresa_id:
+            raise ValidationError({
+                'candidato': 'La entrevista debe pertenecer a la misma empresa que el candidato.'
+            })
+
+    @property
+    def total_preguntas(self):
+        return len(self.preguntas) if self.preguntas else 0
+
+    @property
+    def total_respuestas(self):
+        return len(self.respuestas) if self.respuestas else 0
+
+    @property
+    def esta_vencida(self):
+        if self.fecha_vencimiento and self.estado in ('pendiente', 'enviada', 'en_progreso'):
+            return timezone.now() > self.fecha_vencimiento
+        return False
+
+    @property
+    def vacante_codigo(self):
+        return self.candidato.vacante.codigo_vacante if self.candidato and self.candidato.vacante else ''

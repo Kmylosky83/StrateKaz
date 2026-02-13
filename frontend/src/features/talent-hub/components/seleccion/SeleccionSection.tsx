@@ -2,22 +2,38 @@
  * SeleccionSection - Componente principal del modulo Seleccion y Contratacion
  * Talento Humano > Seleccion y Contratacion
  *
- * Contiene 6 sub-tabs internos para gestionar todo el proceso:
+ * Contiene 8 sub-tabs internos para gestionar todo el proceso:
+ * 0. Dashboard - KPIs y metricas del proceso
  * 1. Vacantes - CRUD de vacantes activas
- * 2. Candidatos - Pipeline de candidatos (pendiente)
- * 3. Entrevistas - Programacion y evaluacion (pendiente)
- * 4. Pruebas - Tests y evaluaciones (pendiente)
- * 5. Afiliaciones - Seguridad social (pendiente)
- * 6. Contratos - Historial contractual (pendiente)
+ * 2. Candidatos - Pipeline de candidatos
+ * 3. Entrevistas - Sincronas + Asincronicas por email
+ * 4. Pruebas - Tests dinamicos, psicometricos y evaluaciones
+ * 5. Perfilamiento - Matching y scoring candidato-vacante
+ * 6. Afiliaciones - Gestion SS (EPS, ARL, AFP, CCF)
+ * 7. Contratos - Historial contractual (Ley 2466/2025)
  */
 import { useState } from 'react';
 import { Card } from '@/components/common/Card';
 import { EmptyState } from '@/components/common/EmptyState';
-import { Briefcase, Users, MessageSquare, ClipboardCheck, Shield, FileText } from 'lucide-react';
+import {
+  BarChart3,
+  Briefcase,
+  Users,
+  MessageSquare,
+  ClipboardCheck,
+  Target,
+  Shield,
+  FileText,
+} from 'lucide-react';
 import { cn } from '@/utils/cn';
+import { DashboardTab } from './DashboardTab';
 import { VacantesTab } from './VacantesTab';
 import { CandidatosTab } from './CandidatosTab';
+import { EntrevistasTab } from './EntrevistasTab';
 import { PruebasDinamicasTab } from './PruebasDinamicasTab';
+import { PerfilamientoTab } from './PerfilamientoTab';
+import { AfiliacionesTab } from './AfiliacionesTab';
+import { ContratosTab } from './ContratosTab';
 
 // ============================================================================
 // Sub-tabs internos
@@ -31,6 +47,12 @@ interface SubTab {
 }
 
 const SUB_TABS: SubTab[] = [
+  {
+    key: 'dashboard',
+    label: 'Dashboard',
+    icon: <BarChart3 size={16} />,
+    component: DashboardTab,
+  },
   {
     key: 'vacantes',
     label: 'Vacantes',
@@ -47,7 +69,7 @@ const SUB_TABS: SubTab[] = [
     key: 'entrevistas',
     label: 'Entrevistas',
     icon: <MessageSquare size={16} />,
-    component: null,
+    component: EntrevistasTab,
   },
   {
     key: 'pruebas',
@@ -56,16 +78,22 @@ const SUB_TABS: SubTab[] = [
     component: PruebasDinamicasTab,
   },
   {
+    key: 'perfilamiento',
+    label: 'Perfilamiento',
+    icon: <Target size={16} />,
+    component: PerfilamientoTab,
+  },
+  {
     key: 'afiliaciones',
     label: 'Afiliaciones SS',
     icon: <Shield size={16} />,
-    component: null,
+    component: AfiliacionesTab,
   },
   {
     key: 'contratos',
     label: 'Contratos',
     icon: <FileText size={16} />,
-    component: null,
+    component: ContratosTab,
   },
 ];
 
@@ -74,7 +102,7 @@ const SUB_TABS: SubTab[] = [
 // ============================================================================
 
 export const SeleccionSection = () => {
-  const [activeTab, setActiveTab] = useState('vacantes');
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   const currentTab = SUB_TABS.find((t) => t.key === activeTab) || SUB_TABS[0];
   const TabComponent = currentTab.component;

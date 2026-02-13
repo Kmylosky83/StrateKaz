@@ -267,6 +267,9 @@ const EncuestaPublicaPage = lazy(
   () => import('@/features/gestion-estrategica/pages/EncuestaPublicaPage')
 );
 const ResponderPruebaPage = lazy(() => import('@/features/talent-hub/pages/ResponderPruebaPage'));
+const ResponderEntrevistaPage = lazy(
+  () => import('@/features/talent-hub/pages/ResponderEntrevistaPage')
+);
 
 // ==================== PORTALES ESS / MSS ====================
 const MiPortalPage = lazy(() =>
@@ -297,6 +300,7 @@ export const AppRoutes = () => {
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
       <Route path="/encuestas/responder/:token" element={withSuspense(EncuestaPublicaPage)} />
       <Route path="/pruebas/responder/:token" element={withSuspense(ResponderPruebaPage)} />
+      <Route path="/entrevistas/responder/:token" element={withSuspense(ResponderEntrevistaPage)} />
 
       {/* ═══════════════════════════════════════════════════════════════ */}
       {/* RUTAS PROTEGIDAS */}

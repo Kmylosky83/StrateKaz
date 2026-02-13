@@ -30,6 +30,7 @@ import type {
   TipoPrueba,
   AfiliacionSS,
   AfiliacionSSFormData,
+  AfiliacionSSFilters,
   HistorialContrato,
   HistorialContratoFormData,
   HistorialContratoDetail,
@@ -41,9 +42,16 @@ import type {
   PlantillaPruebaDetail,
   PlantillaPruebaFormData,
   AsignacionPruebaList,
+  AsignacionPruebaDetail,
   AsignacionPruebaFormData,
   AsignacionPruebaFilters,
   PruebaPublicaData,
+  EntrevistaAsincronicaList,
+  EntrevistaAsincronicaDetail,
+  EntrevistaAsincronicaFormData,
+  EntrevistaAsincronicaFilters,
+  EntrevistaAsincronicaPublicData,
+  PerfilamientoResponse,
 } from '../types';
 
 // ============================================================================
@@ -64,6 +72,8 @@ export const seleccionKeys = {
       [...seleccionKeys.vacantesActivas.all, 'list', filters] as const,
     detail: (id: number) => [...seleccionKeys.vacantesActivas.all, 'detail', id] as const,
     abiertas: () => [...seleccionKeys.vacantesActivas.all, 'abiertas'] as const,
+    perfilamiento: (id: number) =>
+      [...seleccionKeys.vacantesActivas.all, 'perfilamiento', id] as const,
   },
 
   // Candidatos
@@ -98,6 +108,8 @@ export const seleccionKeys = {
   // Afiliaciones
   afiliaciones: {
     all: ['seleccion', 'afiliaciones'] as const,
+    list: (filters?: AfiliacionSSFilters) =>
+      [...seleccionKeys.afiliaciones.all, 'list', filters] as const,
     porCandidato: (candidatoId: number) =>
       [...seleccionKeys.afiliaciones.all, 'candidato', candidatoId] as const,
   },
@@ -128,6 +140,16 @@ export const seleccionKeys = {
     detail: (id: number) => [...seleccionKeys.asignacionesPrueba.all, 'detail', id] as const,
     porCandidato: (candidatoId: number) =>
       [...seleccionKeys.asignacionesPrueba.all, 'candidato', candidatoId] as const,
+  },
+
+  // Entrevistas Asincronicas
+  entrevistasAsync: {
+    all: ['seleccion', 'entrevistas-async'] as const,
+    list: (filters?: EntrevistaAsincronicaFilters) =>
+      [...seleccionKeys.entrevistasAsync.all, 'list', filters] as const,
+    detail: (id: number) => [...seleccionKeys.entrevistasAsync.all, 'detail', id] as const,
+    porCandidato: (candidatoId: number) =>
+      [...seleccionKeys.entrevistasAsync.all, 'candidato', candidatoId] as const,
   },
 
   // Estadisticas
@@ -323,6 +345,20 @@ export function usePublicarVacanteActiva() {
     onError: (error: any) => {
       toast.error(error.response?.data?.detail || 'Error al publicar la vacante');
     },
+  });
+}
+
+export function usePerfilamientoVacante(vacanteId: number | null) {
+  return useQuery({
+    queryKey: seleccionKeys.vacantesActivas.perfilamiento(vacanteId!),
+    queryFn: async () => {
+      const response = await api.get<PerfilamientoResponse>(
+        `/api/talent-hub/seleccion/vacantes-activas/${vacanteId}/perfilamiento/`
+      );
+      return response.data;
+    },
+    enabled: !!vacanteId,
+    staleTime: 2 * 60 * 1000,
   });
 }
 
@@ -753,6 +789,27 @@ export function useCalificarPrueba() {
 // HOOKS - AFILIACIONES SS
 // ============================================================================
 
+export function useAfiliaciones(filters?: AfiliacionSSFilters) {
+  return useQuery({
+    queryKey: seleccionKeys.afiliaciones.list(filters),
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters?.candidato) params.append('candidato', String(filters.candidato));
+      if (filters?.estado) params.append('estado', filters.estado);
+      if (filters?.tipo_entidad) params.append('tipo_entidad', filters.tipo_entidad);
+      if (filters?.search) params.append('search', filters.search);
+      if (filters?.page) params.append('page', String(filters.page));
+      if (filters?.page_size) params.append('page_size', String(filters.page_size));
+
+      const response = await api.get<PaginatedResponse<AfiliacionSS>>(
+        `/api/talent-hub/seleccion/afiliaciones/?${params}`
+      );
+      return response.data;
+    },
+    staleTime: 3 * 60 * 1000,
+  });
+}
+
 export function useAfiliacionesPorCandidato(candidatoId: number) {
   return useQuery({
     queryKey: seleccionKeys.afiliaciones.porCandidato(candidatoId),
@@ -810,6 +867,30 @@ export function useConfirmarAfiliacion() {
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.detail || 'Error al confirmar la afiliacion');
+    },
+  });
+}
+
+export function useUpdateAfiliacion() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: Partial<AfiliacionSSFormData & { estado: string; motivo_rechazo?: string }>;
+    }) => {
+      const response = await api.patch(`/api/talent-hub/seleccion/afiliaciones/${id}/`, data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: seleccionKeys.afiliaciones.all });
+      toast.success('Afiliacion actualizada');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.detail || 'Error al actualizar la afiliacion');
     },
   });
 }
@@ -1099,6 +1180,20 @@ export function useAsignacionesPruebaPorCandidato(candidatoId: number) {
   });
 }
 
+export function useAsignacionPruebaDetail(id: number | null) {
+  return useQuery({
+    queryKey: seleccionKeys.asignacionesPrueba.detail(id!),
+    queryFn: async () => {
+      const response = await api.get<AsignacionPruebaDetail>(
+        `/api/talent-hub/seleccion/asignaciones-prueba/${id}/`
+      );
+      return response.data;
+    },
+    enabled: !!id,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export function useCreateAsignacionPrueba() {
   const queryClient = useQueryClient();
 
@@ -1173,6 +1268,195 @@ export function useResponderPrueba() {
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.detail || 'Error al enviar la prueba');
+    },
+  });
+}
+
+// ============================================================================
+// HOOKS - ENTREVISTAS ASINCRONICAS
+// ============================================================================
+
+export function useEntrevistasAsync(filters?: EntrevistaAsincronicaFilters) {
+  return useQuery({
+    queryKey: seleccionKeys.entrevistasAsync.list(filters),
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters?.candidato) params.append('candidato', filters.candidato);
+      if (filters?.estado) params.append('estado', filters.estado);
+      if (filters?.search) params.append('search', filters.search);
+      if (filters?.page) params.append('page', String(filters.page));
+      if (filters?.page_size) params.append('page_size', String(filters.page_size));
+
+      const response = await api.get<PaginatedResponse<EntrevistaAsincronicaList>>(
+        `/api/talent-hub/seleccion/entrevistas-async/?${params}`
+      );
+      return response.data;
+    },
+    staleTime: 30 * 1000,
+  });
+}
+
+export function useEntrevistaAsyncDetail(id: number) {
+  return useQuery({
+    queryKey: seleccionKeys.entrevistasAsync.detail(id),
+    queryFn: async () => {
+      const response = await api.get<EntrevistaAsincronicaDetail>(
+        `/api/talent-hub/seleccion/entrevistas-async/${id}/`
+      );
+      return response.data;
+    },
+    enabled: !!id,
+  });
+}
+
+export function useEntrevistasAsyncPorCandidato(candidatoId: number) {
+  return useQuery({
+    queryKey: seleccionKeys.entrevistasAsync.porCandidato(candidatoId),
+    queryFn: async () => {
+      const response = await api.get<EntrevistaAsincronicaList[]>(
+        `/api/talent-hub/seleccion/entrevistas-async/por-candidato/${candidatoId}/`
+      );
+      return response.data;
+    },
+    enabled: !!candidatoId,
+  });
+}
+
+export function useCreateEntrevistaAsync() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: EntrevistaAsincronicaFormData) => {
+      const response = await api.post('/api/talent-hub/seleccion/entrevistas-async/', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: seleccionKeys.entrevistasAsync.all });
+      queryClient.invalidateQueries({ queryKey: seleccionKeys.estadisticas() });
+      toast.success('Entrevista asincronica creada exitosamente');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.detail || 'Error al crear la entrevista');
+    },
+  });
+}
+
+export function useEvaluarEntrevistaAsync() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: {
+        calificacion_general?: number;
+        recomendacion?: string;
+        fortalezas_identificadas?: string;
+        aspectos_mejorar?: string;
+        observaciones_evaluador?: string;
+      };
+    }) => {
+      const response = await api.post(
+        `/api/talent-hub/seleccion/entrevistas-async/${id}/evaluar/`,
+        data
+      );
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: seleccionKeys.entrevistasAsync.all });
+      queryClient.invalidateQueries({
+        queryKey: seleccionKeys.entrevistasAsync.detail(variables.id),
+      });
+      queryClient.invalidateQueries({ queryKey: seleccionKeys.estadisticas() });
+      toast.success('Entrevista evaluada exitosamente');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.detail || 'Error al evaluar la entrevista');
+    },
+  });
+}
+
+export function useReenviarEmailEntrevistaAsync() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const response = await api.post(
+        `/api/talent-hub/seleccion/entrevistas-async/${id}/reenviar-email/`
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: seleccionKeys.entrevistasAsync.all });
+      toast.success('Email reenviado exitosamente');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.detail || 'Error al reenviar el email');
+    },
+  });
+}
+
+export function useCancelarEntrevistaAsync() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const response = await api.post(
+        `/api/talent-hub/seleccion/entrevistas-async/${id}/cancelar/`
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: seleccionKeys.entrevistasAsync.all });
+      queryClient.invalidateQueries({ queryKey: seleccionKeys.estadisticas() });
+      toast.success('Entrevista cancelada');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.detail || 'Error al cancelar la entrevista');
+    },
+  });
+}
+
+// ============================================================================
+// HOOKS - ENTREVISTA ASINCRONICA PUBLICA (AllowAny)
+// ============================================================================
+
+export function useEntrevistaPublica(token: string) {
+  return useQuery({
+    queryKey: ['entrevista-publica', token],
+    queryFn: async () => {
+      const response = await api.get<EntrevistaAsincronicaPublicData>(
+        `/api/talent-hub/seleccion/responder-entrevista/${token}/`
+      );
+      return response.data;
+    },
+    enabled: !!token,
+    retry: false,
+    staleTime: Infinity,
+  });
+}
+
+export function useResponderEntrevistaAsync() {
+  return useMutation({
+    mutationFn: async ({
+      token,
+      respuestas,
+    }: {
+      token: string;
+      respuestas: Record<string, string>;
+    }) => {
+      const response = await api.put(`/api/talent-hub/seleccion/responder-entrevista/${token}/`, {
+        respuestas,
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success('Entrevista enviada exitosamente');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.detail || 'Error al enviar las respuestas');
     },
   });
 }

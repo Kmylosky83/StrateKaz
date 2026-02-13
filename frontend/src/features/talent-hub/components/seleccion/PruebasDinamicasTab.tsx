@@ -12,7 +12,6 @@ import { useState, useMemo } from 'react';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
-import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { SectionHeader } from '@/components/common/SectionHeader';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
@@ -26,7 +25,6 @@ import { cn } from '@/utils/cn';
 import {
   ClipboardCheck,
   Plus,
-  Eye,
   Pencil,
   Copy,
   Trash2,
@@ -37,10 +35,12 @@ import {
   Clock,
   CheckCircle,
   BarChart3,
+  Brain,
 } from 'lucide-react';
 import {
   usePlantillasPrueba,
   useAsignacionesPrueba,
+  useAsignacionPruebaDetail,
   useDeletePlantillaPrueba,
   useDuplicarPlantillaPrueba,
   useReenviarEmailPrueba,
@@ -57,6 +57,7 @@ import {
 } from '../../types';
 import { FormBuilderModal } from './FormBuilderModal';
 import { AsignarPruebaModal } from './AsignarPruebaModal';
+import { ResultadosPsicometricosModal } from './ResultadosPsicometricosModal';
 
 // ============================================================================
 // Sub-vista toggle
@@ -70,7 +71,6 @@ type SubView = 'plantillas' | 'asignaciones';
 
 export const PruebasDinamicasTab = () => {
   const [subView, setSubView] = useState<SubView>('plantillas');
-  const [searchTerm, setSearchTerm] = useState('');
   const [estadoFilter, setEstadoFilter] = useState<EstadoAsignacionPrueba | ''>('');
 
   // Plantilla state
@@ -81,6 +81,11 @@ export const PruebasDinamicasTab = () => {
   // Asignacion state
   const [isAsignarOpen, setIsAsignarOpen] = useState(false);
 
+  // Psicometrico modal state
+  const [psicometricoAsignacion, setPsicometricoAsignacion] = useState<AsignacionPruebaList | null>(
+    null
+  );
+
   // Module color
   const { color: moduleColor } = useModuleColor('TALENT_HUB');
   const colorClasses = getModuleColorClasses(moduleColor);
@@ -90,6 +95,11 @@ export const PruebasDinamicasTab = () => {
   const { data: asignacionesData, isLoading: isLoadingAsignaciones } = useAsignacionesPrueba({
     estado: estadoFilter || undefined,
   });
+
+  // Psicometrico detail (lazy, only when modal is open)
+  const { data: psicometricoDetail } = useAsignacionPruebaDetail(
+    psicometricoAsignacion?.id ?? null
+  );
 
   // Mutations
   const deleteMutation = useDeletePlantillaPrueba();
@@ -524,6 +534,18 @@ export const PruebasDinamicasTab = () => {
                               <BarChart3 size={16} />
                             </button>
                           )}
+                          {asignacion.plantilla_categoria === 'psicometrico' &&
+                            (asignacion.estado === 'completada' ||
+                              asignacion.estado === 'calificada') && (
+                              <button
+                                type="button"
+                                onClick={() => setPsicometricoAsignacion(asignacion)}
+                                className="p-1.5 rounded-md text-gray-400 hover:text-violet-600 hover:bg-violet-50 dark:hover:text-violet-400 dark:hover:bg-violet-900/20"
+                                title="Ver perfil psicometrico"
+                              >
+                                <Brain size={16} />
+                              </button>
+                            )}
                         </div>
                       </td>
                     </tr>
@@ -567,6 +589,17 @@ export const PruebasDinamicasTab = () => {
         isLoading={deleteMutation.isPending}
         onConfirm={handleDeletePlantilla}
         onClose={() => setDeleteTarget(null)}
+      />
+
+      {/* Resultados Psicometricos Modal */}
+      <ResultadosPsicometricosModal
+        isOpen={!!psicometricoAsignacion}
+        onClose={() => setPsicometricoAsignacion(null)}
+        asignacion={psicometricoAsignacion}
+        scoringConfig={
+          (psicometricoDetail?.plantilla_scoring_config as Record<string, unknown>) ?? null
+        }
+        respuestas={(psicometricoDetail?.respuestas as Record<string, number>) ?? null}
       />
     </div>
   );

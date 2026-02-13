@@ -25,6 +25,9 @@ from .views import (
     PlantillaPruebaDinamicaViewSet,
     AsignacionPruebaDinamicaViewSet,
     ResponderPruebaDinamicaViewSet,
+    # Entrevistas Asincrónicas
+    EntrevistaAsincronicaViewSet,
+    ResponderEntrevistaAsincronicaViewSet,
 )
 
 app_name = 'seleccion_contratacion'
@@ -51,6 +54,10 @@ router.register(r'historial-contratos', HistorialContratoViewSet, basename='hist
 router.register(r'plantillas-prueba', PlantillaPruebaDinamicaViewSet, basename='plantilla-prueba')
 router.register(r'asignaciones-prueba', AsignacionPruebaDinamicaViewSet, basename='asignacion-prueba')
 router.register(r'responder-prueba', ResponderPruebaDinamicaViewSet, basename='responder-prueba')
+
+# Entrevistas Asincrónicas (por Email)
+router.register(r'entrevistas-async', EntrevistaAsincronicaViewSet, basename='entrevista-async')
+router.register(r'responder-entrevista', ResponderEntrevistaAsincronicaViewSet, basename='responder-entrevista')
 
 # Estadísticas
 router.register(r'estadisticas', ProcesoSeleccionEstadisticasViewSet, basename='estadisticas')

@@ -1,0 +1,44 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Entrevista Asignada - StrateKaz{% endblock %}
+
+{% block content %}
+<h2>Entrevista Asignada</h2>
+
+<p>Hola <strong>{{ candidato_nombre }}</strong>,</p>
+
+<p>Se te ha asignado una entrevista como parte del proceso de seleccion. Por favor responde las preguntas antes de la fecha limite.</p>
+
+<div class="email-card">
+    <p class="email-card-title">Detalles de la Entrevista</p>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="4">
+        <tr>
+            <td style="color: #6b7280; width: 140px;">Entrevista:</td>
+            <td style="color: #1f2937; font-weight: 600;">{{ entrevista_titulo }}</td>
+        </tr>
+        {% if instrucciones %}
+        <tr>
+            <td style="color: #6b7280;">Instrucciones:</td>
+            <td style="color: #1f2937;">{{ instrucciones }}</td>
+        </tr>
+        {% endif %}
+        <tr>
+            <td style="color: #6b7280;">Preguntas:</td>
+            <td style="color: #1f2937;">{{ total_preguntas }} preguntas</td>
+        </tr>
+        <tr>
+            <td style="color: #6b7280;">Fecha limite:</td>
+            <td style="color: #1f2937; font-weight: 600;">{{ fecha_vencimiento }}</td>
+        </tr>
+    </table>
+</div>
+
+<div class="text-center mt-4">
+    <a href="{{ action_url }}" class="email-button">Responder Entrevista</a>
+</div>
+
+<p class="text-muted mt-4">Si el boton no funciona, copia y pega este enlace en tu navegador:<br>
+<a href="{{ action_url }}" style="color: #3b82f6; word-break: break-all;">{{ action_url }}</a></p>
+
+<p class="text-muted" style="font-size: 12px; margin-top: 16px;">Toma tu tiempo para responder cada pregunta con detalle. Tus respuestas seran evaluadas por nuestro equipo de recursos humanos.</p>
+{% endblock %}

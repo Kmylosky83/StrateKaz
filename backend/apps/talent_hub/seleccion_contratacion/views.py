@@ -9,7 +9,8 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from django.db.models import Count, Avg, Q
+from django.db.models import Count, Avg, Q, F, Value, DecimalField
+from decimal import Decimal
 from django.utils import timezone
 
 from .models import (
@@ -25,6 +26,7 @@ from .models import (
     HistorialContrato,
     PlantillaPruebaDinamica,
     AsignacionPruebaDinamica,
+    EntrevistaAsincronica,
 )
 from .serializers import (
     TipoContratoSerializer,
@@ -51,6 +53,11 @@ from .serializers import (
     AsignacionPruebaDinamicaDetailSerializer,
     AsignacionPruebaDinamicaCreateSerializer,
     ResponderPruebaDinamicaSerializer,
+    EntrevistaAsincronicaListSerializer,
+    EntrevistaAsincronicaDetailSerializer,
+    EntrevistaAsincronicaCreateSerializer,
+    EntrevistaAsincronicaPublicSerializer,
+    ResponderEntrevistaAsincronicaSerializer,
 )
 from .serializers_contrato import (
     HistorialContratoListSerializer,
@@ -201,6 +208,157 @@ class VacanteActivaViewSet(viewsets.ModelViewSet):
 
         serializer = VacanteActivaDetailSerializer(vacante)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['get'])
+    def perfilamiento(self, request, pk=None):
+        """
+        Calcula el score de matching de cada candidato para esta vacante.
+
+        Factores (100 puntos total):
+        - Educacion (20pts): nivel_educativo del candidato
+        - Experiencia (20pts): anos_experiencia + anos_experiencia_cargo
+        - Salario (15pts): pretension_salarial dentro del rango
+        - Entrevistas (20pts): promedio calificaciones entrevistas
+        - Pruebas (15pts): promedio porcentaje pruebas dinamicas
+        - Evaluacion HR (10pts): calificacion_general del candidato
+        """
+        vacante = self.get_object()
+        candidatos = Candidato.objects.filter(
+            vacante=vacante,
+            is_active=True,
+        ).exclude(estado='rechazado')
+
+        # Mapa de nivel educativo -> puntaje (0-20)
+        NIVEL_EDUCATIVO_SCORE = {
+            'bachiller': 4,
+            'tecnico': 8,
+            'tecnologo': 12,
+            'profesional': 16,
+            'especializacion': 18,
+            'maestria': 19,
+            'doctorado': 20,
+        }
+
+        results = []
+        for candidato in candidatos:
+            scores = {}
+
+            # 1. Educacion (20pts)
+            scores['educacion'] = NIVEL_EDUCATIVO_SCORE.get(
+                candidato.nivel_educativo, 0
+            )
+
+            # 2. Experiencia (20pts) = 10pts general + 10pts especifica
+            exp_general = min(candidato.anos_experiencia or 0, 10)  # Max 10 anos
+            exp_cargo = min(candidato.anos_experiencia_cargo or 0, 10)
+            scores['experiencia'] = exp_general + exp_cargo
+
+            # 3. Salario (15pts)
+            pretension = candidato.pretension_salarial
+            if pretension and vacante.salario_minimo and vacante.salario_maximo:
+                sal_min = float(vacante.salario_minimo)
+                sal_max = float(vacante.salario_maximo)
+                pret = float(pretension)
+                if sal_min <= pret <= sal_max:
+                    scores['salario'] = 15
+                elif pret < sal_min:
+                    # Candidato pide menos (positivo, pero podria indicar sub-calificacion)
+                    ratio = pret / sal_min if sal_min > 0 else 0
+                    scores['salario'] = round(max(ratio * 12, 5))
+                else:
+                    # Candidato pide mas
+                    ratio = sal_max / pret if pret > 0 else 0
+                    scores['salario'] = round(max(ratio * 10, 0))
+            else:
+                scores['salario'] = 8  # Neutral si no hay datos
+
+            # 4. Entrevistas (20pts) - promedio de calificaciones
+            entrevistas = Entrevista.objects.filter(
+                candidato=candidato,
+                estado='realizada',
+            ).values_list('calificacion_general', flat=True)
+            entrevista_scores = [e for e in entrevistas if e is not None]
+
+            entrevistas_async = EntrevistaAsincronica.objects.filter(
+                candidato=candidato,
+                estado='evaluada',
+            ).values_list('calificacion_general', flat=True)
+            entrevista_scores.extend(
+                [e for e in entrevistas_async if e is not None]
+            )
+
+            if entrevista_scores:
+                avg_entrevista = sum(entrevista_scores) / len(entrevista_scores)
+                scores['entrevistas'] = round(avg_entrevista / 100 * 20)
+            else:
+                scores['entrevistas'] = 0
+
+            # 5. Pruebas (15pts) - promedio porcentaje de pruebas dinamicas
+            pruebas_pct = AsignacionPruebaDinamica.objects.filter(
+                candidato=candidato,
+                estado__in=['completada', 'calificada'],
+                porcentaje__isnull=False,
+            ).values_list('porcentaje', flat=True)
+            pruebas_list = [float(p) for p in pruebas_pct]
+
+            # Tambien considerar Prueba (modelo legacy)
+            pruebas_legacy = Prueba.objects.filter(
+                candidato=candidato,
+                estado='calificada',
+                calificacion__isnull=False,
+            ).values_list('calificacion', flat=True)
+            pruebas_list.extend([float(p) for p in pruebas_legacy])
+
+            if pruebas_list:
+                avg_prueba = sum(pruebas_list) / len(pruebas_list)
+                scores['pruebas'] = round(avg_prueba / 100 * 15)
+            else:
+                scores['pruebas'] = 0
+
+            # 6. Evaluacion HR (10pts) - calificacion_general
+            cal_general = candidato.calificacion_general
+            if cal_general is not None and cal_general > 0:
+                scores['evaluacion_hr'] = round(cal_general / 100 * 10)
+            else:
+                scores['evaluacion_hr'] = 0
+
+            # Total
+            total = sum(scores.values())
+
+            results.append({
+                'candidato_id': candidato.id,
+                'candidato_nombre': candidato.nombre_completo,
+                'estado': candidato.estado,
+                'estado_display': candidato.get_estado_display(),
+                'nivel_educativo': candidato.nivel_educativo,
+                'nivel_educativo_display': candidato.get_nivel_educativo_display(),
+                'anos_experiencia': candidato.anos_experiencia,
+                'pretension_salarial': str(candidato.pretension_salarial) if candidato.pretension_salarial else None,
+                'scores': scores,
+                'total': total,
+                'nivel': (
+                    'excelente' if total >= 75
+                    else 'bueno' if total >= 55
+                    else 'regular' if total >= 35
+                    else 'bajo'
+                ),
+            })
+
+        # Ordenar por total descendente
+        results.sort(key=lambda r: r['total'], reverse=True)
+
+        return Response({
+            'vacante_id': vacante.id,
+            'vacante_titulo': vacante.titulo,
+            'vacante_codigo': vacante.codigo_vacante,
+            'salario_rango': (
+                f"{vacante.salario_minimo or 0:,.0f} - {vacante.salario_maximo or 0:,.0f} COP"
+                if vacante.salario_minimo or vacante.salario_maximo
+                else None
+            ),
+            'total_candidatos': len(results),
+            'candidatos': results,
+        })
 
 
 # =============================================================================
@@ -1078,5 +1236,302 @@ class ResponderPruebaDinamicaViewSet(viewsets.ViewSet):
 
         return Response({
             'detail': 'Prueba completada exitosamente. Gracias por responder.',
+            'completada': True,
+        })
+
+
+# =============================================================================
+# ENTREVISTA ASINCRONICA
+# =============================================================================
+
+class EntrevistaAsincronicaViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestión de Entrevistas Asincrónicas.
+
+    Endpoints:
+    - GET /entrevistas-async/ - Listar entrevistas asincronicas
+    - POST /entrevistas-async/ - Crear entrevista asincronica
+    - GET /entrevistas-async/{id}/ - Detalle
+    - PUT /entrevistas-async/{id}/ - Actualizar
+    - DELETE /entrevistas-async/{id}/ - Eliminar (soft)
+    - GET /entrevistas-async/por-candidato/{id}/ - Filtrar por candidato
+    - POST /entrevistas-async/{id}/evaluar/ - Evaluar respuestas
+    - POST /entrevistas-async/{id}/reenviar-email/ - Reenviar email
+    - POST /entrevistas-async/{id}/cancelar/ - Cancelar
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = EntrevistaAsincronica.objects.filter(is_active=True)
+
+        if hasattr(user, 'empresa_id') and user.empresa_id:
+            queryset = queryset.filter(empresa_id=user.empresa_id)
+
+        candidato_id = self.request.query_params.get('candidato')
+        if candidato_id:
+            queryset = queryset.filter(candidato_id=candidato_id)
+
+        estado = self.request.query_params.get('estado')
+        if estado:
+            queryset = queryset.filter(estado=estado)
+
+        search = self.request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(titulo__icontains=search) |
+                Q(candidato__primer_nombre__icontains=search) |
+                Q(candidato__primer_apellido__icontains=search)
+            )
+
+        return queryset.select_related('candidato', 'candidato__vacante', 'evaluador')
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return EntrevistaAsincronicaCreateSerializer
+        if self.action == 'retrieve':
+            return EntrevistaAsincronicaDetailSerializer
+        return EntrevistaAsincronicaListSerializer
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        candidato = serializer.validated_data.get('candidato')
+        dias_vencimiento = serializer.validated_data.pop('dias_vencimiento', 7)
+        enviar_email = serializer.validated_data.pop('enviar_email', True)
+
+        fecha_vencimiento = timezone.now() + timezone.timedelta(days=dias_vencimiento)
+
+        instance = serializer.save(
+            empresa_id=candidato.empresa_id,
+            fecha_vencimiento=fecha_vencimiento,
+            created_by=user,
+            updated_by=user,
+        )
+
+        # Enviar email al candidato
+        if enviar_email and candidato.email:
+            try:
+                self._enviar_email_entrevista(instance, candidato)
+                instance.email_enviado = True
+                instance.fecha_envio = timezone.now()
+                instance.estado = 'enviada'
+                instance.save(update_fields=['email_enviado', 'fecha_envio', 'estado'])
+            except Exception:
+                pass  # No bloquear si falla email
+
+    def _enviar_email_entrevista(self, entrevista, candidato):
+        """Envia email con link de entrevista asincronica"""
+        from django.core.mail import send_mail
+        from django.conf import settings as django_settings
+        from django.template.loader import render_to_string
+
+        # Construir URL publica
+        domain = self.request.get_host()
+        protocol = 'https' if self.request.is_secure() else 'http'
+        action_url = f"{protocol}://{domain}/entrevistas/responder/{entrevista.token}"
+
+        context = {
+            'candidato_nombre': candidato.nombre_completo,
+            'entrevista_titulo': entrevista.titulo,
+            'instrucciones': entrevista.instrucciones,
+            'total_preguntas': entrevista.total_preguntas,
+            'fecha_vencimiento': entrevista.fecha_vencimiento.strftime('%d/%m/%Y %H:%M') if entrevista.fecha_vencimiento else 'Sin limite',
+            'action_url': action_url,
+        }
+
+        html_content = render_to_string(
+            'emails/entrevista_asincronica_asignada.html', context
+        )
+
+        send_mail(
+            subject=f'Entrevista asignada: {entrevista.titulo}',
+            message='',
+            from_email=django_settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[candidato.email],
+            html_message=html_content,
+            fail_silently=False,
+        )
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
+
+    def perform_destroy(self, instance):
+        instance.soft_delete()
+
+    @action(detail=False, methods=['get'], url_path='por-candidato/(?P<candidato_id>[^/.]+)')
+    def por_candidato(self, request, candidato_id=None):
+        """Listar entrevistas asincronicas por candidato"""
+        queryset = self.get_queryset().filter(candidato_id=candidato_id)
+        serializer = EntrevistaAsincronicaListSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def evaluar(self, request, pk=None):
+        """Evaluar respuestas de la entrevista"""
+        entrevista = self.get_object()
+
+        if entrevista.estado not in ('completada', 'evaluada'):
+            return Response(
+                {'detail': 'Solo se pueden evaluar entrevistas completadas.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        entrevista.evaluador = request.user
+        entrevista.fecha_evaluacion = timezone.now()
+        entrevista.calificacion_general = request.data.get('calificacion_general')
+        entrevista.recomendacion = request.data.get('recomendacion')
+        entrevista.fortalezas_identificadas = request.data.get('fortalezas_identificadas', '')
+        entrevista.aspectos_mejorar = request.data.get('aspectos_mejorar', '')
+        entrevista.observaciones_evaluador = request.data.get('observaciones_evaluador', '')
+        entrevista.estado = 'evaluada'
+        entrevista.updated_by = request.user
+        entrevista.save()
+
+        serializer = EntrevistaAsincronicaDetailSerializer(entrevista)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], url_path='reenviar-email')
+    def reenviar_email(self, request, pk=None):
+        """Reenviar email de entrevista al candidato"""
+        entrevista = self.get_object()
+
+        if entrevista.estado in ('completada', 'evaluada', 'cancelada'):
+            return Response(
+                {'detail': 'No se puede reenviar email para esta entrevista.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            self._enviar_email_entrevista(entrevista, entrevista.candidato)
+            entrevista.email_enviado = True
+            entrevista.fecha_envio = timezone.now()
+            if entrevista.estado == 'pendiente':
+                entrevista.estado = 'enviada'
+            entrevista.save(update_fields=['email_enviado', 'fecha_envio', 'estado'])
+            return Response({'detail': 'Email reenviado exitosamente.'})
+        except Exception as e:
+            return Response(
+                {'detail': f'Error al enviar email: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=True, methods=['post'])
+    def cancelar(self, request, pk=None):
+        """Cancelar entrevista asincronica"""
+        entrevista = self.get_object()
+
+        if entrevista.estado in ('evaluada',):
+            return Response(
+                {'detail': 'No se puede cancelar una entrevista ya evaluada.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        entrevista.estado = 'cancelada'
+        entrevista.updated_by = request.user
+        entrevista.save(update_fields=['estado', 'updated_by', 'updated_at'])
+
+        serializer = EntrevistaAsincronicaListSerializer(entrevista)
+        return Response(serializer.data)
+
+
+class ResponderEntrevistaAsincronicaViewSet(viewsets.ViewSet):
+    """
+    ViewSet publico (AllowAny) para que candidatos respondan entrevistas.
+
+    GET /responder-entrevista/{token}/ - Ver preguntas
+    PUT /responder-entrevista/{token}/ - Enviar respuestas
+    """
+    permission_classes = [AllowAny]
+    lookup_field = 'token'
+
+    def retrieve(self, request, pk=None):
+        """Retorna la entrevista con preguntas para el candidato"""
+        try:
+            entrevista = EntrevistaAsincronica.objects.select_related(
+                'candidato', 'empresa'
+            ).get(token=pk, is_active=True)
+        except EntrevistaAsincronica.DoesNotExist:
+            return Response(
+                {'detail': 'Entrevista no encontrada.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Validar estado
+        if entrevista.estado in ('completada', 'evaluada'):
+            return Response(
+                {'detail': 'Esta entrevista ya fue completada. Gracias por tu participacion.', 'completada': True},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if entrevista.estado in ('cancelada',):
+            return Response(
+                {'detail': 'Esta entrevista fue cancelada.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if entrevista.esta_vencida:
+            entrevista.estado = 'vencida'
+            entrevista.save(update_fields=['estado'])
+            return Response(
+                {'detail': 'Esta entrevista ha expirado.', 'expirada': True},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Marcar como en progreso si esta enviada
+        if entrevista.estado in ('pendiente', 'enviada'):
+            entrevista.estado = 'en_progreso'
+            entrevista.fecha_inicio = timezone.now()
+            entrevista.save(update_fields=['estado', 'fecha_inicio'])
+
+        serializer = EntrevistaAsincronicaPublicSerializer(entrevista)
+        return Response(serializer.data)
+
+    def update(self, request, pk=None):
+        """Recibe las respuestas del candidato"""
+        try:
+            entrevista = EntrevistaAsincronica.objects.select_related(
+                'candidato'
+            ).get(token=pk, is_active=True)
+        except EntrevistaAsincronica.DoesNotExist:
+            return Response(
+                {'detail': 'Entrevista no encontrada.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Validar estado
+        if entrevista.estado in ('completada', 'evaluada'):
+            return Response(
+                {'detail': 'Esta entrevista ya fue completada.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if entrevista.estado in ('vencida', 'cancelada'):
+            return Response(
+                {'detail': 'Esta entrevista ya no esta disponible.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = ResponderEntrevistaAsincronicaSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Validar preguntas obligatorias
+        preguntas = entrevista.preguntas or []
+        respuestas = serializer.validated_data['respuestas']
+        for pregunta in preguntas:
+            if pregunta.get('obligatoria', True):
+                pregunta_id = pregunta.get('id', '')
+                if pregunta_id not in respuestas or not str(respuestas[pregunta_id]).strip():
+                    return Response(
+                        {'detail': f'La pregunta "{pregunta.get("pregunta", "")}" es obligatoria.'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+        # Guardar respuestas
+        entrevista.respuestas = respuestas
+        entrevista.estado = 'completada'
+        entrevista.fecha_completado = timezone.now()
+        entrevista.ip_address = request.META.get('REMOTE_ADDR')
+        entrevista.user_agent = request.META.get('HTTP_USER_AGENT', '')[:500]
+        entrevista.save()
+
+        return Response({
+            'detail': 'Entrevista completada exitosamente. Gracias por tus respuestas.',
             'completada': True,
         })

@@ -708,6 +708,19 @@ export interface AsignacionPruebaList {
   created_at: string;
 }
 
+/** AsignacionPruebaDinamica en vista de detalle (incluye respuestas + scoring_config) */
+export interface AsignacionPruebaDetail extends AsignacionPruebaList {
+  respuestas: Record<string, unknown>;
+  detalle_calificacion: Record<string, unknown>;
+  observaciones: string;
+  ip_address: string | null;
+  user_agent: string;
+  plantilla_campos: CampoPruebaDinamica[];
+  plantilla_instrucciones: string;
+  plantilla_scoring_config: Record<string, unknown>;
+  updated_at: string;
+}
+
 export interface AsignacionPruebaFormData {
   plantilla: number;
   candidato: number;
@@ -759,6 +772,52 @@ export interface ProcesoSeleccionEstadisticas {
 }
 
 // =============================================================================
+// INTERFACES - Perfilamiento / Matching
+// =============================================================================
+
+export type NivelMatching = 'excelente' | 'bueno' | 'regular' | 'bajo';
+
+export interface PerfilamientoScores {
+  educacion: number;
+  experiencia: number;
+  salario: number;
+  entrevistas: number;
+  pruebas: number;
+  evaluacion_hr: number;
+}
+
+export interface PerfilamientoCandidato {
+  candidato_id: number;
+  candidato_nombre: string;
+  estado: EstadoCandidato;
+  estado_display: string;
+  nivel_educativo: string;
+  nivel_educativo_display: string;
+  anos_experiencia: number;
+  pretension_salarial: string | null;
+  scores: PerfilamientoScores;
+  total: number;
+  nivel: NivelMatching;
+}
+
+export interface PerfilamientoResponse {
+  vacante_id: number;
+  vacante_titulo: string;
+  vacante_codigo: string;
+  salario_rango: string | null;
+  total_candidatos: number;
+  candidatos: PerfilamientoCandidato[];
+}
+
+export const NIVEL_MATCHING_BADGE: Record<NivelMatching, 'success' | 'info' | 'warning' | 'gray'> =
+  {
+    excelente: 'success',
+    bueno: 'info',
+    regular: 'warning',
+    bajo: 'gray',
+  };
+
+// =============================================================================
 // INTERFACES - Filtros
 // =============================================================================
 
@@ -787,6 +846,122 @@ export interface EntrevistaFilters {
   page?: number;
   page_size?: number;
 }
+
+// =============================================================================
+// INTERFACES - Entrevista Asincronica (por Email)
+// =============================================================================
+
+export type EstadoEntrevistaAsync =
+  | 'pendiente'
+  | 'enviada'
+  | 'en_progreso'
+  | 'completada'
+  | 'evaluada'
+  | 'vencida'
+  | 'cancelada';
+
+export interface PreguntaEntrevistaAsync {
+  id: string;
+  pregunta: string;
+  descripcion?: string;
+  tipo: 'texto_corto' | 'texto_largo' | 'opcion_multiple' | 'escala';
+  obligatoria: boolean;
+  opciones?: string[];
+  escala_min?: number;
+  escala_max?: number;
+  orden: number;
+}
+
+export interface EntrevistaAsincronicaList {
+  id: number;
+  candidato: number;
+  candidato_nombre: string;
+  vacante_codigo: string;
+  titulo: string;
+  estado: EstadoEntrevistaAsync;
+  estado_display: string;
+  total_preguntas: number;
+  total_respuestas: number;
+  token: string;
+  email_enviado: boolean;
+  fecha_envio: string | null;
+  fecha_vencimiento: string | null;
+  fecha_completado: string | null;
+  fecha_evaluacion: string | null;
+  calificacion_general: number | null;
+  recomendacion: RecomendacionEntrevista | null;
+  recomendacion_display: string | null;
+  esta_vencida: boolean;
+  created_at: string;
+}
+
+export interface EntrevistaAsincronicaDetail extends EntrevistaAsincronicaList {
+  preguntas: PreguntaEntrevistaAsync[];
+  respuestas: Record<string, string>;
+  instrucciones: string;
+  evaluador: number | null;
+  evaluador_nombre: string | null;
+  observaciones_evaluador: string | null;
+  fortalezas_identificadas: string | null;
+  aspectos_mejorar: string | null;
+}
+
+export interface EntrevistaAsincronicaFormData {
+  candidato: number;
+  titulo: string;
+  instrucciones?: string;
+  preguntas: PreguntaEntrevistaAsync[];
+  dias_vencimiento?: number;
+  enviar_email?: boolean;
+}
+
+export interface EntrevistaAsincronicaPublicData {
+  titulo: string;
+  instrucciones: string;
+  candidato_nombre: string;
+  empresa_nombre: string;
+  preguntas: PreguntaEntrevistaAsync[];
+  estado: EstadoEntrevistaAsync;
+  fecha_vencimiento: string | null;
+}
+
+export interface EntrevistaAsincronicaFilters {
+  candidato?: string;
+  estado?: EstadoEntrevistaAsync;
+  search?: string;
+  page?: number;
+  page_size?: number;
+}
+
+export const ESTADO_ENTREVISTA_ASYNC_OPTIONS = [
+  { value: 'pendiente', label: 'Pendiente' },
+  { value: 'enviada', label: 'Enviada' },
+  { value: 'en_progreso', label: 'En Progreso' },
+  { value: 'completada', label: 'Completada' },
+  { value: 'evaluada', label: 'Evaluada' },
+  { value: 'vencida', label: 'Vencida' },
+  { value: 'cancelada', label: 'Cancelada' },
+];
+
+export const ESTADO_ENTREVISTA_ASYNC_BADGE: Record<
+  EstadoEntrevistaAsync,
+  'gray' | 'info' | 'primary' | 'warning' | 'success' | 'danger'
+> = {
+  pendiente: 'gray',
+  enviada: 'info',
+  en_progreso: 'primary',
+  completada: 'warning',
+  evaluada: 'success',
+  vencida: 'danger',
+  cancelada: 'gray',
+};
+
+export const TIPO_PREGUNTA_ASYNC_OPTIONS = [
+  { value: 'texto_corto', label: 'Texto Corto' },
+  { value: 'texto_largo', label: 'Texto Largo' },
+  { value: 'opcion_multiple', label: 'Opcion Multiple' },
+  { value: 'escala', label: 'Escala Numerica' },
+];
 
 export interface PruebaFilters {
   candidato?: string;
@@ -845,3 +1020,72 @@ export const ESTADO_CANDIDATO_BADGE: Record<
   rechazado: 'danger',
   contratado: 'success',
 };
+
+export const ESTADO_ENTREVISTA_BADGE: Record<
+  EstadoEntrevista,
+  'info' | 'success' | 'danger' | 'warning'
+> = {
+  programada: 'info',
+  realizada: 'success',
+  cancelada: 'danger',
+  reprogramada: 'warning',
+};
+
+export const RECOMENDACION_BADGE: Record<
+  RecomendacionEntrevista,
+  'success' | 'info' | 'danger' | 'warning'
+> = {
+  contratar: 'success',
+  segunda_entrevista: 'info',
+  rechazar: 'danger',
+  pendiente: 'warning',
+};
+
+export const TIPO_ENTREVISTA_BADGE: Record<
+  TipoEntrevistaType,
+  'gray' | 'info' | 'primary' | 'warning' | 'success'
+> = {
+  telefonica: 'gray',
+  presencial: 'info',
+  virtual: 'primary',
+  grupal: 'warning',
+  panel: 'success',
+};
+
+export const ESTADO_AFILIACION_OPTIONS = [
+  { value: 'pendiente', label: 'Pendiente' },
+  { value: 'en_proceso', label: 'En Proceso' },
+  { value: 'afiliado', label: 'Afiliado' },
+  { value: 'rechazado', label: 'Rechazado' },
+  { value: 'cancelado', label: 'Cancelado' },
+];
+
+export const ESTADO_AFILIACION_BADGE: Record<
+  EstadoAfiliacion,
+  'gray' | 'info' | 'primary' | 'success' | 'danger'
+> = {
+  pendiente: 'gray',
+  en_proceso: 'info',
+  afiliado: 'success',
+  rechazado: 'danger',
+  cancelado: 'gray',
+};
+
+export const TIPO_MOVIMIENTO_BADGE: Record<
+  TipoMovimientoContrato,
+  'info' | 'primary' | 'warning' | 'success'
+> = {
+  contrato_inicial: 'info',
+  renovacion: 'primary',
+  otrosi: 'warning',
+  prorroga: 'success',
+};
+
+export interface AfiliacionSSFilters {
+  candidato?: number;
+  estado?: EstadoAfiliacion;
+  tipo_entidad?: string;
+  search?: string;
+  page?: number;
+  page_size?: number;
+}

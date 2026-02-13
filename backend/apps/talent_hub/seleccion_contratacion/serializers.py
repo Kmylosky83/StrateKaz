@@ -18,6 +18,7 @@ from .models import (
     AfiliacionSS,
     PlantillaPruebaDinamica,
     AsignacionPruebaDinamica,
+    EntrevistaAsincronica,
 )
 
 
@@ -903,4 +904,163 @@ class ResponderPruebaDinamicaSerializer(serializers.Serializer):
     respuestas = serializers.DictField(
         child=serializers.JSONField(),
         help_text='Respuestas del candidato: {nombre_campo: valor}'
+    )
+
+
+# =============================================================================
+# ENTREVISTA ASINCRONICA
+# =============================================================================
+
+class EntrevistaAsincronicaListSerializer(serializers.ModelSerializer):
+    """Serializer lista para EntrevistaAsincronica"""
+
+    candidato_nombre = serializers.CharField(
+        source='candidato.nombre_completo', read_only=True
+    )
+    vacante_codigo = serializers.CharField(read_only=True)
+    estado_display = serializers.CharField(
+        source='get_estado_display', read_only=True
+    )
+    recomendacion_display = serializers.CharField(
+        source='get_recomendacion_display', read_only=True
+    )
+    total_preguntas = serializers.IntegerField(read_only=True)
+    total_respuestas = serializers.IntegerField(read_only=True)
+    esta_vencida = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = EntrevistaAsincronica
+        fields = [
+            'id',
+            'candidato',
+            'candidato_nombre',
+            'vacante_codigo',
+            'titulo',
+            'estado',
+            'estado_display',
+            'total_preguntas',
+            'total_respuestas',
+            'token',
+            'email_enviado',
+            'fecha_envio',
+            'fecha_vencimiento',
+            'fecha_completado',
+            'fecha_evaluacion',
+            'calificacion_general',
+            'recomendacion',
+            'recomendacion_display',
+            'esta_vencida',
+            'created_at',
+        ]
+
+
+class EntrevistaAsincronicaDetailSerializer(EntrevistaAsincronicaListSerializer):
+    """Serializer detalle para EntrevistaAsincronica"""
+
+    evaluador_nombre = serializers.SerializerMethodField()
+
+    class Meta(EntrevistaAsincronicaListSerializer.Meta):
+        fields = EntrevistaAsincronicaListSerializer.Meta.fields + [
+            'instrucciones',
+            'preguntas',
+            'respuestas',
+            'evaluador',
+            'evaluador_nombre',
+            'observaciones_evaluador',
+            'fortalezas_identificadas',
+            'aspectos_mejorar',
+            'fecha_inicio',
+            'ip_address',
+            'user_agent',
+            'updated_at',
+        ]
+
+    def get_evaluador_nombre(self, obj):
+        if obj.evaluador:
+            return f"{obj.evaluador.first_name} {obj.evaluador.last_name}".strip() or obj.evaluador.email
+        return None
+
+
+class EntrevistaAsincronicaCreateSerializer(serializers.ModelSerializer):
+    """Serializer para crear EntrevistaAsincronica"""
+
+    dias_vencimiento = serializers.IntegerField(
+        write_only=True, required=False, default=7,
+        help_text='Dias hasta el vencimiento (default: 7)'
+    )
+    enviar_email = serializers.BooleanField(
+        write_only=True, required=False, default=True
+    )
+
+    class Meta:
+        model = EntrevistaAsincronica
+        fields = [
+            'candidato',
+            'titulo',
+            'instrucciones',
+            'preguntas',
+            'dias_vencimiento',
+            'enviar_email',
+        ]
+
+    def validate_preguntas(self, value):
+        """Valida estructura de las preguntas"""
+        if not value or not isinstance(value, list):
+            raise serializers.ValidationError('Debe incluir al menos una pregunta.')
+
+        tipos_validos = ('texto_corto', 'texto_largo', 'opcion_multiple', 'escala')
+        for i, pregunta in enumerate(value):
+            if not isinstance(pregunta, dict):
+                raise serializers.ValidationError(f'Pregunta {i + 1}: formato invalido.')
+            if not pregunta.get('pregunta'):
+                raise serializers.ValidationError(f'Pregunta {i + 1}: texto requerido.')
+            tipo = pregunta.get('tipo', 'texto_largo')
+            if tipo not in tipos_validos:
+                raise serializers.ValidationError(
+                    f'Pregunta {i + 1}: tipo "{tipo}" no valido. Usar: {tipos_validos}'
+                )
+            if tipo == 'opcion_multiple' and not pregunta.get('opciones'):
+                raise serializers.ValidationError(
+                    f'Pregunta {i + 1}: opcion_multiple requiere lista de opciones.'
+                )
+            # Asegurar que tenga id y orden
+            if not pregunta.get('id'):
+                pregunta['id'] = f'pregunta_{i + 1}'
+            if 'orden' not in pregunta:
+                pregunta['orden'] = i + 1
+
+        return value
+
+
+class EntrevistaAsincronicaPublicSerializer(serializers.ModelSerializer):
+    """Serializer publico (sin auth) para que el candidato vea la entrevista"""
+
+    candidato_nombre = serializers.CharField(
+        source='candidato.nombre_completo', read_only=True
+    )
+    empresa_nombre = serializers.SerializerMethodField()
+
+    class Meta:
+        model = EntrevistaAsincronica
+        fields = [
+            'titulo',
+            'instrucciones',
+            'candidato_nombre',
+            'empresa_nombre',
+            'preguntas',
+            'estado',
+            'fecha_vencimiento',
+        ]
+
+    def get_empresa_nombre(self, obj):
+        if obj.empresa:
+            return obj.empresa.name if hasattr(obj.empresa, 'name') else str(obj.empresa)
+        return 'StrateKaz'
+
+
+class ResponderEntrevistaAsincronicaSerializer(serializers.Serializer):
+    """Serializer para que el candidato responda la entrevista (publico, sin auth)"""
+    respuestas = serializers.DictField(
+        child=serializers.CharField(allow_blank=True),
+        help_text='Respuestas del candidato: {pregunta_id: respuesta_texto}'
     )

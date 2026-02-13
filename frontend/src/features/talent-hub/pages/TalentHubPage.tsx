@@ -41,6 +41,7 @@ import {
 
 // Secciones implementadas
 import { CargosSection } from '../components/estructura';
+import { SeleccionSection } from '../components/seleccion';
 import { ColaboradoresSection } from '../components/colaboradores';
 
 // ============================================================================
@@ -71,7 +72,7 @@ const SECTION_MAP: Record<string, SectionMeta> = {
     title: 'Seleccion y Contratacion',
     description: 'Reclutamiento, candidatos, entrevistas, pruebas y contratacion de personal',
     icon: <UserPlus className="w-5 h-5" />,
-    component: null,
+    component: SeleccionSection,
   },
   colaboradores: {
     title: 'Colaboradores',

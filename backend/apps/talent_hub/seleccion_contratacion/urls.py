@@ -21,6 +21,10 @@ from .views import (
     HistorialContratoViewSet,
     # Estadísticas
     ProcesoSeleccionEstadisticasViewSet,
+    # Pruebas Dinámicas (Form Builder)
+    PlantillaPruebaDinamicaViewSet,
+    AsignacionPruebaDinamicaViewSet,
+    ResponderPruebaDinamicaViewSet,
 )
 
 app_name = 'seleccion_contratacion'
@@ -42,6 +46,11 @@ router.register(r'afiliaciones', AfiliacionSSViewSet, basename='afiliacion')
 
 # Contratos (Ley 2466/2025)
 router.register(r'historial-contratos', HistorialContratoViewSet, basename='historial-contrato')
+
+# Pruebas Dinámicas (Form Builder)
+router.register(r'plantillas-prueba', PlantillaPruebaDinamicaViewSet, basename='plantilla-prueba')
+router.register(r'asignaciones-prueba', AsignacionPruebaDinamicaViewSet, basename='asignacion-prueba')
+router.register(r'responder-prueba', ResponderPruebaDinamicaViewSet, basename='responder-prueba')
 
 # Estadísticas
 router.register(r'estadisticas', ProcesoSeleccionEstadisticasViewSet, basename='estadisticas')

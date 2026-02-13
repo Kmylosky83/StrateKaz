@@ -1725,3 +1725,384 @@ class HistorialContrato(BaseCompanyModel):
             )
 
         return warnings
+
+
+# ==============================================================================
+# PRUEBAS TÉCNICAS DINÁMICAS (Form Builder)
+# ==============================================================================
+
+class PlantillaPruebaDinamica(BaseCompanyModel):
+    """
+    Plantilla reutilizable de prueba técnica creada con Form Builder.
+
+    Permite a HR crear pruebas personalizadas (conducción, Excel, SST, etc.)
+    con preguntas de múltiple tipo y scoring automático.
+
+    Los campos se almacenan como JSON con la estructura de CampoFormulario.
+    """
+    TIPO_SCORING_CHOICES = [
+        ('manual', 'Calificación Manual'),
+        ('automatico', 'Scoring Automático'),
+        ('mixto', 'Mixto (Auto + Manual)'),
+    ]
+
+    nombre = models.CharField(
+        max_length=200,
+        verbose_name='Nombre de la Plantilla',
+        help_text='Ej: Prueba de Conducción Preventiva, Test Excel Avanzado'
+    )
+    descripcion = models.TextField(
+        blank=True,
+        default='',
+        verbose_name='Descripción',
+        help_text='Instrucciones generales para el candidato'
+    )
+    instrucciones = models.TextField(
+        blank=True,
+        default='',
+        verbose_name='Instrucciones',
+        help_text='Instrucciones detalladas que verá el candidato antes de iniciar'
+    )
+    campos = models.JSONField(
+        default=list,
+        verbose_name='Campos del Formulario',
+        help_text='Array de campos con estructura CampoFormulario: '
+                  '[{nombre_campo, etiqueta, tipo_campo, opciones, es_obligatorio, '
+                  'respuesta_correcta, puntaje, orden, ...}]'
+    )
+    scoring_config = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Configuración de Scoring',
+        help_text='Configuración de calificación automática: '
+                  '{puntaje_maximo, puntaje_aprobacion, penalizar_incorrectas}'
+    )
+    tipo_scoring = models.CharField(
+        max_length=15,
+        choices=TIPO_SCORING_CHOICES,
+        default='manual',
+        verbose_name='Tipo de Scoring'
+    )
+    duracion_estimada_minutos = models.PositiveIntegerField(
+        default=30,
+        verbose_name='Duración Estimada (minutos)',
+        help_text='Tiempo estimado para completar la prueba'
+    )
+    tiempo_limite_minutos = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name='Tiempo Límite (minutos)',
+        help_text='Tiempo máximo (si se aplica). Null = sin límite.'
+    )
+    categoria = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        verbose_name='Categoría',
+        help_text='Ej: Técnica, Conocimiento, Habilidad, Conducción, SST'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='Activa',
+        help_text='Las plantillas inactivas no pueden asignarse'
+    )
+    total_asignaciones = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Total Asignaciones',
+        help_text='Contador de veces que se ha asignado esta plantilla'
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='plantillas_prueba_creadas',
+        verbose_name='Creado por'
+    )
+
+    class Meta:
+        db_table = 'seleccion_plantilla_prueba_dinamica'
+        ordering = ['-created_at']
+        verbose_name = 'Plantilla de Prueba Dinámica'
+        verbose_name_plural = 'Plantillas de Pruebas Dinámicas'
+        indexes = [
+            models.Index(fields=['empresa', 'is_active']),
+            models.Index(fields=['empresa', 'categoria']),
+        ]
+
+    def __str__(self):
+        return f'{self.nombre} ({self.categoria or "Sin categoría"})'
+
+    @property
+    def total_campos(self):
+        """Número de campos/preguntas en la plantilla."""
+        return len(self.campos) if isinstance(self.campos, list) else 0
+
+    @property
+    def puntaje_maximo(self):
+        """Puntaje máximo posible sumando todos los campos con puntaje."""
+        if not isinstance(self.campos, list):
+            return 0
+        return sum(
+            c.get('puntaje', 0) for c in self.campos
+            if isinstance(c, dict) and c.get('puntaje')
+        )
+
+
+class AsignacionPruebaDinamica(BaseCompanyModel):
+    """
+    Asignación de una PlantillaPruebaDinamica a un candidato.
+
+    Genera un token único para que el candidato responda sin autenticación.
+    Almacena respuestas, puntaje y estado de completado.
+    """
+    ESTADO_CHOICES = [
+        ('pendiente', 'Pendiente'),
+        ('en_progreso', 'En Progreso'),
+        ('completada', 'Completada'),
+        ('calificada', 'Calificada'),
+        ('vencida', 'Vencida'),
+        ('cancelada', 'Cancelada'),
+    ]
+
+    plantilla = models.ForeignKey(
+        PlantillaPruebaDinamica,
+        on_delete=models.CASCADE,
+        related_name='asignaciones',
+        verbose_name='Plantilla'
+    )
+    candidato = models.ForeignKey(
+        'Candidato',
+        on_delete=models.CASCADE,
+        related_name='pruebas_dinamicas',
+        verbose_name='Candidato'
+    )
+    vacante = models.ForeignKey(
+        'VacanteActiva',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='pruebas_dinamicas',
+        verbose_name='Vacante'
+    )
+    token = models.CharField(
+        max_length=64,
+        unique=True,
+        db_index=True,
+        verbose_name='Token de Acceso',
+        help_text='Token único para acceso público sin autenticación'
+    )
+    estado = models.CharField(
+        max_length=15,
+        choices=ESTADO_CHOICES,
+        default='pendiente',
+        verbose_name='Estado'
+    )
+
+    # Fechas
+    fecha_asignacion = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Fecha de Asignación'
+    )
+    fecha_vencimiento = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Vencimiento',
+        help_text='Si se pasa esta fecha, la prueba queda vencida'
+    )
+    fecha_inicio = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Inicio',
+        help_text='Momento en que el candidato abrió la prueba'
+    )
+    fecha_completado = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Completado'
+    )
+
+    # Respuestas y scoring
+    respuestas = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Respuestas',
+        help_text='Respuestas del candidato: {nombre_campo: valor}'
+    )
+    puntaje_obtenido = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Puntaje Obtenido'
+    )
+    puntaje_maximo = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Puntaje Máximo'
+    )
+    porcentaje = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name='Porcentaje (%)'
+    )
+    aprobado = models.BooleanField(
+        null=True,
+        blank=True,
+        verbose_name='Aprobado'
+    )
+    detalle_calificacion = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name='Detalle de Calificación',
+        help_text='Detalle por pregunta: {nombre_campo: {correcto, puntaje, respuesta_correcta, respuesta_candidato}}'
+    )
+
+    # Metadata
+    observaciones = models.TextField(
+        blank=True,
+        default='',
+        verbose_name='Observaciones'
+    )
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name='IP del Candidato'
+    )
+    user_agent = models.TextField(
+        blank=True,
+        default='',
+        verbose_name='User Agent'
+    )
+    email_enviado = models.BooleanField(
+        default=False,
+        verbose_name='Email Enviado'
+    )
+    asignado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='pruebas_asignadas',
+        verbose_name='Asignado por'
+    )
+
+    class Meta:
+        db_table = 'seleccion_asignacion_prueba_dinamica'
+        ordering = ['-fecha_asignacion']
+        verbose_name = 'Asignación de Prueba Dinámica'
+        verbose_name_plural = 'Asignaciones de Pruebas Dinámicas'
+        indexes = [
+            models.Index(fields=['empresa', 'estado']),
+            models.Index(fields=['candidato', 'estado']),
+            models.Index(fields=['token']),
+        ]
+
+    def __str__(self):
+        return f'{self.plantilla.nombre} -> {self.candidato.nombre_completo}'
+
+    @property
+    def esta_vencida(self):
+        """Verifica si la prueba ha vencido."""
+        if self.fecha_vencimiento and self.estado == 'pendiente':
+            return timezone.now() > self.fecha_vencimiento
+        return False
+
+    @property
+    def tiempo_transcurrido_minutos(self):
+        """Minutos desde que el candidato inició la prueba."""
+        if self.fecha_inicio:
+            delta = (self.fecha_completado or timezone.now()) - self.fecha_inicio
+            return int(delta.total_seconds() / 60)
+        return None
+
+    def save(self, *args, **kwargs):
+        """Genera token automáticamente si no existe."""
+        if not self.token:
+            import secrets
+            self.token = secrets.token_urlsafe(48)
+        super().save(*args, **kwargs)
+
+    def calcular_scoring(self):
+        """
+        Calcula scoring automático comparando respuestas con respuesta_correcta
+        de cada campo de la plantilla.
+
+        Solo califica campos que tienen 'respuesta_correcta' definida.
+        """
+        if not self.respuestas or not isinstance(self.plantilla.campos, list):
+            return
+
+        total_puntaje = Decimal('0')
+        total_max = Decimal('0')
+        detalle = {}
+
+        for campo in self.plantilla.campos:
+            if not isinstance(campo, dict):
+                continue
+
+            nombre = campo.get('nombre_campo', '')
+            respuesta_correcta = campo.get('respuesta_correcta')
+            puntaje_campo = Decimal(str(campo.get('puntaje', 0)))
+
+            if not nombre or respuesta_correcta is None or puntaje_campo <= 0:
+                continue
+
+            total_max += puntaje_campo
+            respuesta_candidato = self.respuestas.get(nombre)
+
+            # Comparación según tipo de campo
+            tipo = campo.get('tipo_campo', 'TEXT')
+            es_correcto = False
+
+            if tipo in ('SELECT', 'RADIO'):
+                es_correcto = str(respuesta_candidato) == str(respuesta_correcta)
+            elif tipo == 'CHECKBOX':
+                if isinstance(respuesta_correcta, list) and isinstance(respuesta_candidato, list):
+                    es_correcto = set(respuesta_candidato) == set(respuesta_correcta)
+                else:
+                    es_correcto = str(respuesta_candidato) == str(respuesta_correcta)
+            elif tipo == 'NUMBER':
+                try:
+                    es_correcto = float(respuesta_candidato or 0) == float(respuesta_correcta)
+                except (ValueError, TypeError):
+                    es_correcto = False
+            elif tipo in ('TEXT', 'TEXTAREA'):
+                # Para texto, no se califica automáticamente
+                detalle[nombre] = {
+                    'tipo': tipo,
+                    'puntaje_maximo': float(puntaje_campo),
+                    'puntaje_obtenido': None,
+                    'requiere_revision_manual': True,
+                    'respuesta_candidato': respuesta_candidato,
+                }
+                continue
+            else:
+                es_correcto = str(respuesta_candidato) == str(respuesta_correcta)
+
+            puntaje_obtenido = puntaje_campo if es_correcto else Decimal('0')
+            total_puntaje += puntaje_obtenido
+
+            detalle[nombre] = {
+                'tipo': tipo,
+                'correcto': es_correcto,
+                'puntaje_maximo': float(puntaje_campo),
+                'puntaje_obtenido': float(puntaje_obtenido),
+                'respuesta_correcta': respuesta_correcta,
+                'respuesta_candidato': respuesta_candidato,
+            }
+
+        self.puntaje_obtenido = total_puntaje
+        self.puntaje_maximo = total_max
+        self.porcentaje = (
+            (total_puntaje / total_max * 100) if total_max > 0 else Decimal('0')
+        )
+
+        # Verificar aprobación
+        scoring_config = self.plantilla.scoring_config or {}
+        puntaje_aprobacion = scoring_config.get('puntaje_aprobacion', 60)
+        self.aprobado = float(self.porcentaje) >= float(puntaje_aprobacion)

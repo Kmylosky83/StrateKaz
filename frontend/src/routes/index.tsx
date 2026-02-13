@@ -262,10 +262,11 @@ const TareasPage = lazy(() =>
   import('@/features/audit-system').then((m) => ({ default: m.TareasPage }))
 );
 
-// ==================== PAGINA PUBLICA (Sin autenticacion) ====================
+// ==================== PAGINAS PUBLICAS (Sin autenticacion) ====================
 const EncuestaPublicaPage = lazy(
   () => import('@/features/gestion-estrategica/pages/EncuestaPublicaPage')
 );
+const ResponderPruebaPage = lazy(() => import('@/features/talent-hub/pages/ResponderPruebaPage'));
 
 // ==================== PORTALES ESS / MSS ====================
 const MiPortalPage = lazy(() =>
@@ -295,6 +296,7 @@ export const AppRoutes = () => {
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
       <Route path="/encuestas/responder/:token" element={withSuspense(EncuestaPublicaPage)} />
+      <Route path="/pruebas/responder/:token" element={withSuspense(ResponderPruebaPage)} />
 
       {/* ═══════════════════════════════════════════════════════════════ */}
       {/* RUTAS PROTEGIDAS */}

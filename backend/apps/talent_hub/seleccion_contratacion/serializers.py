@@ -16,6 +16,8 @@ from .models import (
     Entrevista,
     Prueba,
     AfiliacionSS,
+    PlantillaPruebaDinamica,
+    AsignacionPruebaDinamica,
 )
 
 
@@ -728,3 +730,177 @@ class ProcesoSeleccionEstadisticasSerializer(serializers.Serializer):
     entrevistas_realizadas = serializers.IntegerField()
     pruebas_pendientes = serializers.IntegerField()
     tiempo_promedio_contratacion = serializers.FloatField()
+
+
+# =============================================================================
+# PRUEBAS TÉCNICAS DINÁMICAS
+# =============================================================================
+
+class PlantillaPruebaDinamicaListSerializer(serializers.ModelSerializer):
+    """Serializer de lista para PlantillaPruebaDinamica"""
+    total_campos = serializers.IntegerField(read_only=True)
+    puntaje_maximo = serializers.IntegerField(read_only=True)
+    created_by_nombre = serializers.CharField(
+        source='created_by.get_full_name', read_only=True, default=''
+    )
+
+    class Meta:
+        model = PlantillaPruebaDinamica
+        fields = [
+            'id', 'nombre', 'descripcion', 'categoria', 'tipo_scoring',
+            'duracion_estimada_minutos', 'tiempo_limite_minutos',
+            'total_campos', 'puntaje_maximo', 'total_asignaciones',
+            'is_active', 'created_by_nombre', 'created_at', 'updated_at',
+        ]
+
+
+class PlantillaPruebaDinamicaDetailSerializer(serializers.ModelSerializer):
+    """Serializer de detalle para PlantillaPruebaDinamica (incluye campos)"""
+    total_campos = serializers.IntegerField(read_only=True)
+    puntaje_maximo = serializers.IntegerField(read_only=True)
+    created_by_nombre = serializers.CharField(
+        source='created_by.get_full_name', read_only=True, default=''
+    )
+
+    class Meta:
+        model = PlantillaPruebaDinamica
+        fields = [
+            'id', 'nombre', 'descripcion', 'instrucciones', 'campos',
+            'scoring_config', 'tipo_scoring', 'categoria',
+            'duracion_estimada_minutos', 'tiempo_limite_minutos',
+            'total_campos', 'puntaje_maximo', 'total_asignaciones',
+            'is_active', 'created_by', 'created_by_nombre',
+            'created_at', 'updated_at',
+        ]
+
+
+class PlantillaPruebaDinamicaCreateSerializer(serializers.ModelSerializer):
+    """Serializer para crear/actualizar PlantillaPruebaDinamica"""
+
+    class Meta:
+        model = PlantillaPruebaDinamica
+        fields = [
+            'nombre', 'descripcion', 'instrucciones', 'campos',
+            'scoring_config', 'tipo_scoring', 'categoria',
+            'duracion_estimada_minutos', 'tiempo_limite_minutos',
+        ]
+
+    def validate_campos(self, value):
+        """Valida la estructura de los campos."""
+        if not isinstance(value, list):
+            raise serializers.ValidationError('Los campos deben ser una lista.')
+        for i, campo in enumerate(value):
+            if not isinstance(campo, dict):
+                raise serializers.ValidationError(
+                    f'El campo en posición {i} debe ser un objeto.'
+                )
+            if not campo.get('nombre_campo'):
+                raise serializers.ValidationError(
+                    f'El campo en posición {i} requiere nombre_campo.'
+                )
+            if not campo.get('etiqueta'):
+                raise serializers.ValidationError(
+                    f'El campo en posición {i} requiere etiqueta.'
+                )
+            if not campo.get('tipo_campo'):
+                raise serializers.ValidationError(
+                    f'El campo en posición {i} requiere tipo_campo.'
+                )
+        return value
+
+
+class AsignacionPruebaDinamicaListSerializer(serializers.ModelSerializer):
+    """Serializer de lista para AsignacionPruebaDinamica"""
+    plantilla_nombre = serializers.CharField(
+        source='plantilla.nombre', read_only=True
+    )
+    plantilla_categoria = serializers.CharField(
+        source='plantilla.categoria', read_only=True
+    )
+    candidato_nombre = serializers.CharField(
+        source='candidato.nombre_completo', read_only=True
+    )
+    vacante_titulo = serializers.CharField(
+        source='vacante.titulo', read_only=True, default=''
+    )
+    vacante_codigo = serializers.CharField(
+        source='vacante.codigo_vacante', read_only=True, default=''
+    )
+    estado_display = serializers.CharField(
+        source='get_estado_display', read_only=True
+    )
+    esta_vencida = serializers.BooleanField(read_only=True)
+    tiempo_transcurrido_minutos = serializers.IntegerField(read_only=True)
+    asignado_por_nombre = serializers.CharField(
+        source='asignado_por.get_full_name', read_only=True, default=''
+    )
+
+    class Meta:
+        model = AsignacionPruebaDinamica
+        fields = [
+            'id', 'plantilla', 'plantilla_nombre', 'plantilla_categoria',
+            'candidato', 'candidato_nombre',
+            'vacante', 'vacante_titulo', 'vacante_codigo',
+            'token', 'estado', 'estado_display',
+            'fecha_asignacion', 'fecha_vencimiento',
+            'fecha_inicio', 'fecha_completado',
+            'puntaje_obtenido', 'puntaje_maximo', 'porcentaje', 'aprobado',
+            'esta_vencida', 'tiempo_transcurrido_minutos',
+            'email_enviado', 'asignado_por_nombre',
+            'created_at',
+        ]
+
+
+class AsignacionPruebaDinamicaDetailSerializer(AsignacionPruebaDinamicaListSerializer):
+    """Serializer de detalle (incluye respuestas y calificación)"""
+    plantilla_campos = serializers.JSONField(
+        source='plantilla.campos', read_only=True
+    )
+    plantilla_instrucciones = serializers.CharField(
+        source='plantilla.instrucciones', read_only=True
+    )
+    plantilla_scoring_config = serializers.JSONField(
+        source='plantilla.scoring_config', read_only=True
+    )
+
+    class Meta(AsignacionPruebaDinamicaListSerializer.Meta):
+        fields = AsignacionPruebaDinamicaListSerializer.Meta.fields + [
+            'respuestas', 'detalle_calificacion', 'observaciones',
+            'ip_address', 'user_agent',
+            'plantilla_campos', 'plantilla_instrucciones', 'plantilla_scoring_config',
+            'updated_at',
+        ]
+
+
+class AsignacionPruebaDinamicaCreateSerializer(serializers.ModelSerializer):
+    """Serializer para crear AsignacionPruebaDinamica"""
+    dias_vencimiento = serializers.IntegerField(
+        write_only=True, required=False, default=7,
+        help_text='Días hasta el vencimiento (default: 7)'
+    )
+    enviar_email = serializers.BooleanField(
+        write_only=True, required=False, default=True
+    )
+
+    class Meta:
+        model = AsignacionPruebaDinamica
+        fields = [
+            'plantilla', 'candidato', 'vacante',
+            'observaciones', 'dias_vencimiento', 'enviar_email',
+        ]
+
+    def validate(self, attrs):
+        plantilla = attrs.get('plantilla')
+        if plantilla and not plantilla.is_active:
+            raise serializers.ValidationError(
+                {'plantilla': 'La plantilla seleccionada no está activa.'}
+            )
+        return attrs
+
+
+class ResponderPruebaDinamicaSerializer(serializers.Serializer):
+    """Serializer para que el candidato responda la prueba (público, sin auth)"""
+    respuestas = serializers.DictField(
+        child=serializers.JSONField(),
+        help_text='Respuestas del candidato: {nombre_campo: valor}'
+    )

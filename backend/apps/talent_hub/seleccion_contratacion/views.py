@@ -8,7 +8,7 @@ pruebas y afiliaciones de seguridad social.
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.db.models import Count, Avg, Q
 from django.utils import timezone
 
@@ -23,6 +23,8 @@ from .models import (
     Prueba,
     AfiliacionSS,
     HistorialContrato,
+    PlantillaPruebaDinamica,
+    AsignacionPruebaDinamica,
 )
 from .serializers import (
     TipoContratoSerializer,
@@ -42,6 +44,13 @@ from .serializers import (
     AfiliacionSSSerializer,
     AfiliacionSSCreateSerializer,
     ProcesoSeleccionEstadisticasSerializer,
+    PlantillaPruebaDinamicaListSerializer,
+    PlantillaPruebaDinamicaDetailSerializer,
+    PlantillaPruebaDinamicaCreateSerializer,
+    AsignacionPruebaDinamicaListSerializer,
+    AsignacionPruebaDinamicaDetailSerializer,
+    AsignacionPruebaDinamicaCreateSerializer,
+    ResponderPruebaDinamicaSerializer,
 )
 from .serializers_contrato import (
     HistorialContratoListSerializer,
@@ -743,3 +752,331 @@ class HistorialContratoViewSet(viewsets.ModelViewSet):
         )
         serializer = HistorialContratoListSerializer(queryset, many=True)
         return Response(serializer.data)
+
+
+# =============================================================================
+# PRUEBAS TÉCNICAS DINÁMICAS
+# =============================================================================
+
+class PlantillaPruebaDinamicaViewSet(viewsets.ModelViewSet):
+    """
+    CRUD de Plantillas de Pruebas Dinámicas (Form Builder).
+    """
+    permission_classes = [IsAuthenticated]
+    filterset_fields = ['categoria', 'tipo_scoring', 'is_active']
+    search_fields = ['nombre', 'descripcion', 'categoria']
+    ordering_fields = ['nombre', 'created_at', 'total_asignaciones']
+    ordering = ['-created_at']
+
+    def get_queryset(self):
+        return PlantillaPruebaDinamica.objects.filter(
+            empresa=self.request.user.empresa
+        )
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return PlantillaPruebaDinamicaListSerializer
+        if self.action in ('create', 'update', 'partial_update'):
+            return PlantillaPruebaDinamicaCreateSerializer
+        return PlantillaPruebaDinamicaDetailSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(
+            empresa=self.request.user.empresa,
+            created_by=self.request.user
+        )
+
+    @action(detail=False, methods=['get'])
+    def activas(self, request):
+        """Lista solo plantillas activas"""
+        queryset = self.get_queryset().filter(is_active=True)
+        serializer = PlantillaPruebaDinamicaListSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def duplicar(self, request, pk=None):
+        """Duplica una plantilla existente"""
+        original = self.get_object()
+        nueva = PlantillaPruebaDinamica.objects.create(
+            empresa=original.empresa,
+            nombre=f'{original.nombre} (copia)',
+            descripcion=original.descripcion,
+            instrucciones=original.instrucciones,
+            campos=original.campos,
+            scoring_config=original.scoring_config,
+            tipo_scoring=original.tipo_scoring,
+            duracion_estimada_minutos=original.duracion_estimada_minutos,
+            tiempo_limite_minutos=original.tiempo_limite_minutos,
+            categoria=original.categoria,
+            created_by=request.user,
+        )
+        serializer = PlantillaPruebaDinamicaDetailSerializer(nueva)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class AsignacionPruebaDinamicaViewSet(viewsets.ModelViewSet):
+    """
+    CRUD de Asignaciones de Pruebas Dinámicas.
+    """
+    permission_classes = [IsAuthenticated]
+    filterset_fields = ['candidato', 'plantilla', 'estado']
+    search_fields = ['candidato__nombres', 'candidato__apellidos', 'plantilla__nombre']
+    ordering = ['-fecha_asignacion']
+
+    def get_queryset(self):
+        return AsignacionPruebaDinamica.objects.filter(
+            empresa=self.request.user.empresa
+        ).select_related('plantilla', 'candidato', 'vacante', 'asignado_por')
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return AsignacionPruebaDinamicaListSerializer
+        if self.action in ('create',):
+            return AsignacionPruebaDinamicaCreateSerializer
+        return AsignacionPruebaDinamicaDetailSerializer
+
+    def perform_create(self, serializer):
+        from datetime import timedelta
+        dias = serializer.validated_data.pop('dias_vencimiento', 7)
+        enviar_email = serializer.validated_data.pop('enviar_email', True)
+
+        asignacion = serializer.save(
+            empresa=self.request.user.empresa,
+            asignado_por=self.request.user,
+            fecha_vencimiento=timezone.now() + timedelta(days=dias),
+        )
+
+        # Incrementar contador de la plantilla
+        asignacion.plantilla.total_asignaciones += 1
+        asignacion.plantilla.save(update_fields=['total_asignaciones'])
+
+        # Enviar email al candidato
+        if enviar_email and asignacion.candidato.email:
+            try:
+                from apps.audit_system.centro_notificaciones.email_service import EmailService
+                frontend_url = 'https://app.stratekaz.com'
+                EmailService.send_email(
+                    to_email=asignacion.candidato.email,
+                    subject=f'Prueba asignada: {asignacion.plantilla.nombre}',
+                    template_name='prueba_dinamica_asignada',
+                    context={
+                        'candidato_nombre': asignacion.candidato.nombre_completo,
+                        'prueba_nombre': asignacion.plantilla.nombre,
+                        'prueba_descripcion': asignacion.plantilla.descripcion,
+                        'duracion': asignacion.plantilla.duracion_estimada_minutos,
+                        'fecha_vencimiento': asignacion.fecha_vencimiento.strftime('%d/%m/%Y %H:%M') if asignacion.fecha_vencimiento else 'Sin límite',
+                        'action_url': f'{frontend_url}/pruebas/responder/{asignacion.token}',
+                    }
+                )
+                asignacion.email_enviado = True
+                asignacion.save(update_fields=['email_enviado'])
+            except Exception:
+                pass  # Email failure should not block assignment
+
+    @action(detail=False, methods=['get'])
+    def por_candidato(self, request):
+        """Lista asignaciones de un candidato"""
+        candidato_id = request.query_params.get('candidato')
+        if not candidato_id:
+            return Response(
+                {'detail': 'Se requiere el parámetro candidato.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        queryset = self.get_queryset().filter(candidato_id=candidato_id)
+        serializer = AsignacionPruebaDinamicaListSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def calificar_manual(self, request, pk=None):
+        """Calificación manual por HR (para campos de texto libre)"""
+        asignacion = self.get_object()
+        puntajes = request.data.get('puntajes', {})
+        observaciones = request.data.get('observaciones', '')
+
+        if asignacion.estado not in ('completada', 'calificada'):
+            return Response(
+                {'detail': 'Solo se pueden calificar pruebas completadas.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Actualizar detalle_calificacion con puntajes manuales
+        detalle = asignacion.detalle_calificacion or {}
+        from decimal import Decimal
+        total_manual = Decimal('0')
+
+        for campo_nombre, puntaje in puntajes.items():
+            if campo_nombre in detalle and detalle[campo_nombre].get('requiere_revision_manual'):
+                detalle[campo_nombre]['puntaje_obtenido'] = float(puntaje)
+                detalle[campo_nombre]['requiere_revision_manual'] = False
+                total_manual += Decimal(str(puntaje))
+
+        # Recalcular totales
+        total = sum(
+            Decimal(str(d.get('puntaje_obtenido', 0) or 0))
+            for d in detalle.values()
+            if not d.get('requiere_revision_manual')
+        )
+        total_max = asignacion.puntaje_maximo or Decimal('0')
+
+        asignacion.puntaje_obtenido = total
+        asignacion.porcentaje = (total / total_max * 100) if total_max > 0 else Decimal('0')
+        scoring_config = asignacion.plantilla.scoring_config or {}
+        puntaje_aprobacion = scoring_config.get('puntaje_aprobacion', 60)
+        asignacion.aprobado = float(asignacion.porcentaje) >= float(puntaje_aprobacion)
+        asignacion.detalle_calificacion = detalle
+        asignacion.estado = 'calificada'
+        if observaciones:
+            asignacion.observaciones = observaciones
+        asignacion.save()
+
+        serializer = AsignacionPruebaDinamicaDetailSerializer(asignacion)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def reenviar_email(self, request, pk=None):
+        """Reenvía el email de invitación al candidato"""
+        asignacion = self.get_object()
+        if asignacion.estado not in ('pendiente',):
+            return Response(
+                {'detail': 'Solo se pueden reenviar pruebas pendientes.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        try:
+            from apps.audit_system.centro_notificaciones.email_service import EmailService
+            frontend_url = 'https://app.stratekaz.com'
+            EmailService.send_email(
+                to_email=asignacion.candidato.email,
+                subject=f'Recordatorio - Prueba: {asignacion.plantilla.nombre}',
+                template_name='prueba_dinamica_asignada',
+                context={
+                    'candidato_nombre': asignacion.candidato.nombre_completo,
+                    'prueba_nombre': asignacion.plantilla.nombre,
+                    'prueba_descripcion': asignacion.plantilla.descripcion,
+                    'duracion': asignacion.plantilla.duracion_estimada_minutos,
+                    'fecha_vencimiento': asignacion.fecha_vencimiento.strftime('%d/%m/%Y %H:%M') if asignacion.fecha_vencimiento else 'Sin límite',
+                    'action_url': f'{frontend_url}/pruebas/responder/{asignacion.token}',
+                }
+            )
+            return Response({'detail': 'Email reenviado exitosamente.'})
+        except Exception as e:
+            return Response(
+                {'detail': f'Error al enviar email: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class ResponderPruebaDinamicaViewSet(viewsets.ViewSet):
+    """
+    Endpoint público (sin autenticación) para que el candidato responda la prueba.
+
+    GET  /responder-prueba/{token}/ → Obtener datos de la prueba
+    POST /responder-prueba/{token}/ → Enviar respuestas
+    """
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def retrieve(self, request, pk=None):
+        """Obtiene los datos de la prueba para el candidato (sin respuestas correctas)"""
+        try:
+            asignacion = AsignacionPruebaDinamica.objects.select_related(
+                'plantilla', 'candidato', 'vacante'
+            ).get(token=pk)
+        except AsignacionPruebaDinamica.DoesNotExist:
+            return Response(
+                {'detail': 'Prueba no encontrada o enlace inválido.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Verificar estado
+        if asignacion.estado in ('completada', 'calificada'):
+            return Response(
+                {'detail': 'Esta prueba ya fue completada.', 'completada': True},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if asignacion.estado in ('vencida', 'cancelada'):
+            return Response(
+                {'detail': 'Esta prueba ya no está disponible.', 'expirada': True},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if asignacion.esta_vencida:
+            asignacion.estado = 'vencida'
+            asignacion.save(update_fields=['estado'])
+            return Response(
+                {'detail': 'Esta prueba ha expirado.', 'expirada': True},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Marcar como en progreso si es pendiente
+        if asignacion.estado == 'pendiente':
+            asignacion.estado = 'en_progreso'
+            asignacion.fecha_inicio = timezone.now()
+            asignacion.save(update_fields=['estado', 'fecha_inicio'])
+
+        # Preparar campos SIN respuestas correctas
+        campos_publicos = []
+        for campo in (asignacion.plantilla.campos or []):
+            campo_limpio = {k: v for k, v in campo.items() if k != 'respuesta_correcta'}
+            # También remover puntaje para no dar pistas
+            campo_limpio.pop('puntaje', None)
+            campos_publicos.append(campo_limpio)
+
+        return Response({
+            'token': asignacion.token,
+            'prueba_nombre': asignacion.plantilla.nombre,
+            'prueba_descripcion': asignacion.plantilla.descripcion,
+            'instrucciones': asignacion.plantilla.instrucciones,
+            'duracion_estimada_minutos': asignacion.plantilla.duracion_estimada_minutos,
+            'tiempo_limite_minutos': asignacion.plantilla.tiempo_limite_minutos,
+            'candidato_nombre': asignacion.candidato.nombre_completo,
+            'vacante_titulo': asignacion.vacante.titulo if asignacion.vacante else '',
+            'campos': campos_publicos,
+            'fecha_inicio': asignacion.fecha_inicio,
+            'fecha_vencimiento': asignacion.fecha_vencimiento,
+        })
+
+    def update(self, request, pk=None):
+        """Recibe las respuestas del candidato"""
+        try:
+            asignacion = AsignacionPruebaDinamica.objects.select_related(
+                'plantilla'
+            ).get(token=pk)
+        except AsignacionPruebaDinamica.DoesNotExist:
+            return Response(
+                {'detail': 'Prueba no encontrada.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Validar estado
+        if asignacion.estado in ('completada', 'calificada'):
+            return Response(
+                {'detail': 'Esta prueba ya fue completada.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if asignacion.estado in ('vencida', 'cancelada'):
+            return Response(
+                {'detail': 'Esta prueba ya no está disponible.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = ResponderPruebaDinamicaSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Guardar respuestas
+        asignacion.respuestas = serializer.validated_data['respuestas']
+        asignacion.estado = 'completada'
+        asignacion.fecha_completado = timezone.now()
+        asignacion.ip_address = request.META.get('REMOTE_ADDR')
+        asignacion.user_agent = request.META.get('HTTP_USER_AGENT', '')[:500]
+
+        # Calcular scoring automático si aplica
+        if asignacion.plantilla.tipo_scoring in ('automatico', 'mixto'):
+            asignacion.calcular_scoring()
+            if asignacion.plantilla.tipo_scoring == 'automatico':
+                asignacion.estado = 'calificada'
+
+        asignacion.save()
+
+        return Response({
+            'detail': 'Prueba completada exitosamente. Gracias por responder.',
+            'completada': True,
+        })

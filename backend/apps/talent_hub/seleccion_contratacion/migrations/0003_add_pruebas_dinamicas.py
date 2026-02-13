@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('configuracion', '0003_add_pruebas_dinamicas'),
+        ('configuracion', '0002_initial'),
         ('seleccion_contratacion', '0002_historial_contrato'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]

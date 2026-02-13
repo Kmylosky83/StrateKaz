@@ -12,11 +12,11 @@ Este comando:
 4. Corre migraciones en el schema del tenant
 5. Crea el User (core) dentro del schema del tenant
 6. Carga seed data (módulos, permisos, cargo admin)
-7. Asocia el dominio app.stratekaz.com al tenant
+7. Asocia el dominio stratekaz.com al tenant
 
 Uso:
     DJANGO_SETTINGS_MODULE=config.settings.production python manage.py bootstrap_production
-    DJANGO_SETTINGS_MODULE=config.settings.production python manage.py bootstrap_production --domain=app.stratekaz.com
+    DJANGO_SETTINGS_MODULE=config.settings.production python manage.py bootstrap_production --domain=stratekaz.com
     DJANGO_SETTINGS_MODULE=config.settings.production python manage.py bootstrap_production --tenant-code=stratekaz
 """
 import logging
@@ -58,7 +58,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '--domain',
             type=str,
-            default='app.stratekaz.com',
+            default='stratekaz.com',
             help='Dominio principal del tenant',
         )
 

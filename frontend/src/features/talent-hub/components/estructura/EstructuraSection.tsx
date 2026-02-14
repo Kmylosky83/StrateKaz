@@ -11,7 +11,8 @@
 import { useState, useEffect } from 'react';
 import { DynamicSections } from '@/components/common';
 import { useTabSections } from '@/features/gestion-estrategica/hooks/useModules';
-import { CargosSection } from './index';
+// Importar directamente de fuentes (NO del barrel index.ts para evitar circular deps)
+import { CargosTab as CargosSection } from '@/features/configuracion/components/CargosTab';
 import { OrganigramaSection } from './OrganigramaSection';
 
 const MODULE_CODE = 'talent_hub';

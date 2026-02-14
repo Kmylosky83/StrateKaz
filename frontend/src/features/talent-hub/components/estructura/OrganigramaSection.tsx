@@ -1,10 +1,11 @@
 /**
- * OrganigramaSection - Organigrama en Talento Humano
+ * OrganigramaSection - Organigrama de Cargos en Talento Humano
  *
- * Re-exporta el OrganigramaView desde gestion-estrategica.
- * El organigrama visualiza la jerarquía de cargos y áreas,
- * por lo que tiene más sentido junto a Estructura de Cargos.
- *
- * El backend endpoint sigue en /api/organizacion/organigrama/ (read-only, compartido).
+ * Muestra solo los modos 'cargos' y 'compact' del OrganigramaCanvas.
+ * El modo 'areas' (Mapa de Procesos) se muestra en Organizacion (GE).
  */
-export { OrganigramaView as OrganigramaSection } from '@/features/gestion-estrategica/components/OrganigramaView';
+import { OrganigramaView } from '@/features/gestion-estrategica/components/OrganigramaView';
+
+export const OrganigramaSection = () => (
+  <OrganigramaView allowedModes={['cargos', 'compact']} defaultMode="cargos" />
+);

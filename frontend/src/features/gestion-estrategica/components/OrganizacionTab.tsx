@@ -3,15 +3,17 @@
  *
  * Secciones (orden desde BD):
  * 1. Procesos (Areas) - Gestion de areas/departamentos (Vista 7: Tree Cards)
- * 2. Consecutivos - Configuracion de consecutivos automaticos (Vista 2: Lista CRUD)
- * 3. Unidades - Catalogo de unidades de medida (Vista 2: Lista CRUD)
+ * 2. Mapa de Procesos - Visualizacion interactiva de areas (modo 'areas' del canvas)
+ * 3. Consecutivos - Configuracion de consecutivos automaticos (Vista 2: Lista CRUD)
+ * 4. Unidades - Catalogo de unidades de medida (Vista 2: Lista CRUD)
  *
  * NOTA: 'Cargos' y 'Colaboradores' migrados a Talento Humano (Sprint 13).
- * NOTA: 'Organigrama' migrado a Talento Humano > Estructura (Sprint 13).
+ * NOTA: 'Organigrama de Cargos' migrado a TH > Estructura de Cargos (Sprint 13).
  */
 
 // Importar componentes internos
 import { AreasTab } from './AreasTab';
+import { MapaProcesosSection } from './MapaProcesosSection';
 
 // Consecutivos y Unidades de Medida migrados desde Configuracion
 import { ConsecutivosSection } from './ConsecutivosSection';
@@ -33,6 +35,7 @@ interface OrganizacionTabProps {
  */
 const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
   areas: AreasTab,
+  mapa_procesos: MapaProcesosSection,
   consecutivos: ConsecutivosSection,
   unidades_medida: UnidadesMedidaSection,
 };

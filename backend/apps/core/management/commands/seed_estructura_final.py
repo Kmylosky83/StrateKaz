@@ -123,12 +123,12 @@ class Command(BaseCommand):
                         'route': 'organizacion',
                         'orden': 2,
                         'sections': [
-                            {'code': 'areas', 'name': 'Procesos', 'icon': 'FolderTree', 'orden': 1, 'description': 'Mapa de procesos organizacionales'},
-                            {'code': 'organigrama', 'name': 'Organigrama', 'icon': 'Network', 'orden': 2, 'description': 'Vista gráfica de la estructura'},
+                            {'code': 'areas', 'name': 'Procesos', 'icon': 'FolderTree', 'orden': 1, 'description': 'Gestión de áreas y departamentos'},
+                            {'code': 'mapa_procesos', 'name': 'Mapa de Procesos', 'icon': 'Grid3x3', 'orden': 2, 'description': 'Visualización interactiva de la estructura de procesos'},
                             {'code': 'consecutivos', 'name': 'Consecutivos', 'icon': 'Hash', 'orden': 3, 'description': 'Numeración automática de documentos'},
                             {'code': 'unidades_medida', 'name': 'Unidades', 'icon': 'Ruler', 'orden': 4, 'description': 'Catálogo de unidades de medida'},
                             # NOTA: 'cargos' y 'colaboradores' migrados a Talento Humano (Sprint 13)
-                            # NOTA: 'roles' (Control de Acceso) removido - los permisos se configuran en CargoFormModal
+                            # NOTA: 'organigrama de cargos' migrado a TH > Estructura de Cargos (Sprint 13)
                         ]
                     },
                     {
@@ -466,16 +466,17 @@ class Command(BaseCommand):
                 'orden': 15,
                 'tabs': [
                     {'code': 'estructura_cargos', 'name': 'Estructura de Cargos', 'icon': 'Network', 'route': 'estructura', 'orden': 1},
-                    {'code': 'seleccion_contratacion', 'name': 'Selección/Contratación', 'icon': 'UserPlus', 'route': 'seleccion', 'orden': 2},
-                    {'code': 'colaboradores', 'name': 'Colaboradores', 'icon': 'Users', 'route': 'colaboradores', 'orden': 3},
-                    {'code': 'onboarding_induccion', 'name': 'Onboarding/Inducción', 'icon': 'Rocket', 'route': 'onboarding', 'orden': 4},
-                    {'code': 'formacion_reinduccion', 'name': 'Formación/Reinducción', 'icon': 'BookOpen', 'route': 'formacion', 'orden': 5},
-                    {'code': 'desempeno', 'name': 'Desempeño', 'icon': 'Award', 'route': 'desempeno', 'orden': 6},
-                    {'code': 'control_tiempo', 'name': 'Control de Tiempo', 'icon': 'Clock', 'route': 'control-tiempo', 'orden': 7},
-                    {'code': 'novedades', 'name': 'Novedades', 'icon': 'Bell', 'route': 'novedades', 'orden': 8},
-                    {'code': 'proceso_disciplinario', 'name': 'Proceso Disciplinario', 'icon': 'Gavel', 'route': 'disciplinario', 'orden': 9},
-                    {'code': 'nomina', 'name': 'Nómina', 'icon': 'DollarSign', 'route': 'nomina', 'orden': 10},
-                    {'code': 'off_boarding', 'name': 'Off Boarding', 'icon': 'LogOut', 'route': 'off-boarding', 'orden': 11},
+                    {'code': 'organigrama', 'name': 'Organigrama', 'icon': 'GitBranch', 'route': 'organigrama', 'orden': 2},
+                    {'code': 'seleccion_contratacion', 'name': 'Selección/Contratación', 'icon': 'UserPlus', 'route': 'seleccion', 'orden': 3},
+                    {'code': 'colaboradores', 'name': 'Colaboradores', 'icon': 'Users', 'route': 'colaboradores', 'orden': 4},
+                    {'code': 'onboarding_induccion', 'name': 'Onboarding/Inducción', 'icon': 'Rocket', 'route': 'onboarding', 'orden': 5},
+                    {'code': 'formacion_reinduccion', 'name': 'Formación/Reinducción', 'icon': 'BookOpen', 'route': 'formacion', 'orden': 6},
+                    {'code': 'desempeno', 'name': 'Desempeño', 'icon': 'Award', 'route': 'desempeno', 'orden': 7},
+                    {'code': 'control_tiempo', 'name': 'Control de Tiempo', 'icon': 'Clock', 'route': 'control-tiempo', 'orden': 8},
+                    {'code': 'novedades', 'name': 'Novedades', 'icon': 'Bell', 'route': 'novedades', 'orden': 9},
+                    {'code': 'proceso_disciplinario', 'name': 'Proceso Disciplinario', 'icon': 'Gavel', 'route': 'disciplinario', 'orden': 10},
+                    {'code': 'nomina', 'name': 'Nómina', 'icon': 'DollarSign', 'route': 'nomina', 'orden': 11},
+                    {'code': 'off_boarding', 'name': 'Off Boarding', 'icon': 'LogOut', 'route': 'off-boarding', 'orden': 12},
                 ]
             },
             {

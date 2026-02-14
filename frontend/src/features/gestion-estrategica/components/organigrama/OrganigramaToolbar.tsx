@@ -67,6 +67,8 @@ interface OrganigramaToolbarProps {
   isLoading?: boolean;
   /** Exportando */
   isExporting?: boolean;
+  /** Modos de vista permitidos (si no se pasa, muestra todos) */
+  allowedModes?: ViewMode[];
 }
 
 export const OrganigramaToolbar = ({
@@ -86,6 +88,7 @@ export const OrganigramaToolbar = ({
   stats,
   isLoading,
   isExporting = false,
+  allowedModes,
 }: OrganigramaToolbarProps) => {
   const [searchValue, setSearchValue] = useState(filters.search);
 
@@ -103,12 +106,15 @@ export const OrganigramaToolbar = ({
     onFiltersChange({ search: searchValue });
   };
 
-  // Opciones de modo de vista
-  const viewModeOptions = [
+  // Opciones de modo de vista (filtradas por allowedModes si se proporciona)
+  const allViewModes = [
     { value: 'areas' as ViewMode, label: 'Por Procesos', icon: <Grid3X3 className="h-4 w-4" /> },
     { value: 'cargos' as ViewMode, label: 'Por Cargos', icon: <Network className="h-4 w-4" /> },
     { value: 'compact' as ViewMode, label: 'Compacto', icon: <LayoutList className="h-4 w-4" /> },
   ];
+  const viewModeOptions = allowedModes
+    ? allViewModes.filter((o) => allowedModes.includes(o.value))
+    : allViewModes;
 
   // Opciones de filtro por nivel
   const nivelOptions = [

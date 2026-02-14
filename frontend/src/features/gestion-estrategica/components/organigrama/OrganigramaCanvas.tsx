@@ -40,7 +40,11 @@ import type {
   CanvasConfig,
   ExportFormat,
 } from '../../types/organigrama.types';
-import { DEFAULT_FILTERS, DEFAULT_CANVAS_CONFIG, DEFAULT_EXPORT_OPTIONS } from '../../types/organigrama.types';
+import {
+  DEFAULT_FILTERS,
+  DEFAULT_CANVAS_CONFIG,
+  DEFAULT_EXPORT_OPTIONS,
+} from '../../types/organigrama.types';
 
 // Tipos de nodos personalizados
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -59,17 +63,22 @@ const useOrganigramaData = (includeUsuarios = false, soloActivos = true) => {
       if (includeUsuarios) params.append('include_usuarios', 'true');
       if (!soloActivos) params.append('solo_activos', 'false');
 
-      const response = await axiosInstance.get(
-        `/organizacion/organigrama/?${params.toString()}`
-      );
+      const response = await axiosInstance.get(`/organizacion/organigrama/?${params.toString()}`);
       return response.data;
     },
     staleTime: 30000,
   });
 };
 
+interface OrganigramaCanvasProps {
+  /** Modos de vista permitidos. Si no se pasa, muestra todos (areas, cargos, compact) */
+  allowedModes?: ViewMode[];
+  /** Modo de vista inicial. Por defecto 'cargos' */
+  defaultMode?: ViewMode;
+}
+
 // Componente interno del canvas
-const OrganigramaCanvasInner = () => {
+const OrganigramaCanvasInner = ({ allowedModes, defaultMode }: OrganigramaCanvasProps) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const { fitView, zoomIn, zoomOut } = useReactFlow();
 
@@ -77,7 +86,7 @@ const OrganigramaCanvasInner = () => {
   const empresaNombre = useAuthStore((state) => state.currentTenant?.name);
 
   // Estado
-  const [viewMode, setViewMode] = useState<ViewMode>('cargos');
+  const [viewMode, setViewMode] = useState<ViewMode>(defaultMode ?? 'cargos');
   const [filters, setFilters] = useState<OrganigramaFilters>(DEFAULT_FILTERS);
   const [config, setConfig] = useState<CanvasConfig>(DEFAULT_CANVAS_CONFIG);
   const [isExporting, setIsExporting] = useState(false);
@@ -99,14 +108,10 @@ const OrganigramaCanvasInner = () => {
     if (filters.search.trim()) {
       const term = filters.search.toLowerCase();
       areas = areas.filter(
-        (a) =>
-          a.name.toLowerCase().includes(term) ||
-          a.code.toLowerCase().includes(term)
+        (a) => a.name.toLowerCase().includes(term) || a.code.toLowerCase().includes(term)
       );
       cargos = cargos.filter(
-        (c) =>
-          c.name.toLowerCase().includes(term) ||
-          c.code.toLowerCase().includes(term)
+        (c) => c.name.toLowerCase().includes(term) || c.code.toLowerCase().includes(term)
       );
     }
 
@@ -181,12 +186,9 @@ const OrganigramaCanvasInner = () => {
       setIsExporting(true);
 
       // Mostrar toast de loading
-      const loadingToast = toast.loading(
-        `Exportando organigrama como ${format.toUpperCase()}...`,
-        {
-          duration: Infinity,
-        }
-      );
+      const loadingToast = toast.loading(`Exportando organigrama como ${format.toUpperCase()}...`, {
+        duration: Infinity,
+      });
 
       try {
         await exportOrganigrama(
@@ -198,13 +200,10 @@ const OrganigramaCanvasInner = () => {
         );
 
         // Éxito
-        toast.success(
-          `Organigrama exportado exitosamente como ${format.toUpperCase()}`,
-          {
-            id: loadingToast,
-            duration: 3000,
-          }
-        );
+        toast.success(`Organigrama exportado exitosamente como ${format.toUpperCase()}`, {
+          id: loadingToast,
+          duration: 3000,
+        });
       } catch (error) {
         console.error('Error al exportar:', error);
 
@@ -298,6 +297,7 @@ const OrganigramaCanvasInner = () => {
         stats={data?.stats}
         isLoading={isLoading}
         isExporting={isExporting}
+        allowedModes={allowedModes}
       />
 
       {/* Canvas */}
@@ -358,10 +358,10 @@ const OrganigramaCanvasInner = () => {
 };
 
 // Componente principal con Provider
-export const OrganigramaCanvas = () => {
+export const OrganigramaCanvas = (props: OrganigramaCanvasProps) => {
   return (
     <ReactFlowProvider>
-      <OrganigramaCanvasInner />
+      <OrganigramaCanvasInner {...props} />
     </ReactFlowProvider>
   );
 };

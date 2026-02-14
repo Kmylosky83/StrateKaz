@@ -4,17 +4,10 @@
  * Componente principal que muestra el organigrama interactivo de la empresa
  * usando React Flow para visualización y dagre para layout automático.
  *
- * Modos de vista:
- * - Por Áreas: Muestra áreas con sus cargos agrupados
- * - Por Cargos: Muestra jerarquía de cargos (por nivel jerárquico)
- * - Compacto: Vista resumida para impresión
- *
- * Funcionalidades:
- * - Zoom y pan interactivo
- * - Búsqueda de áreas y cargos
- * - Filtros por nivel jerárquico
- * - Exportación a PNG y PDF
- * - Layout automático vertical/horizontal
+ * Props opcionales permiten filtrar modos de vista:
+ * - allowedModes: ['areas'] para Mapa de Procesos
+ * - allowedModes: ['cargos', 'compact'] para Organigrama de Cargos
+ * - Sin props: muestra todos los modos (areas, cargos, compact)
  */
 
 import { OrganigramaCanvas } from './organigrama';
@@ -22,8 +15,16 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { Modules, Sections } from '@/constants/permissions';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Lock } from 'lucide-react';
+import type { ViewMode } from '../types/organigrama.types';
 
-export const OrganigramaView = () => {
+interface OrganigramaViewProps {
+  /** Modos de vista permitidos */
+  allowedModes?: ViewMode[];
+  /** Modo de vista inicial */
+  defaultMode?: ViewMode;
+}
+
+export const OrganigramaView = ({ allowedModes, defaultMode }: OrganigramaViewProps) => {
   const { canDo } = usePermissions();
   const canView = canDo(Modules.GESTION_ESTRATEGICA, Sections.ORGANIGRAMA, 'view');
 
@@ -39,7 +40,7 @@ export const OrganigramaView = () => {
     );
   }
 
-  return <OrganigramaCanvas />;
+  return <OrganigramaCanvas allowedModes={allowedModes} defaultMode={defaultMode} />;
 };
 
 export default OrganigramaView;

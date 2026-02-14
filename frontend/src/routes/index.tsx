@@ -417,10 +417,6 @@ export const AppRoutes = () => {
             path="/talento/estructura"
             element={withModuleGuard(TalentHubPage, 'talent_hub')}
           />
-          <Route
-            path="/talento/organigrama"
-            element={withModuleGuard(TalentHubPage, 'talent_hub')}
-          />
           <Route path="/talento/seleccion" element={withModuleGuard(TalentHubPage, 'talent_hub')} />
           <Route
             path="/talento/colaboradores"

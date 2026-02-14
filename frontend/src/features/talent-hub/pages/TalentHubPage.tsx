@@ -27,7 +27,6 @@ import { Card } from '@/components/common/Card';
 import { EmptyState } from '@/components/common/EmptyState';
 import {
   Network,
-  GitBranch,
   UserPlus,
   Users,
   Rocket,
@@ -41,7 +40,7 @@ import {
 } from 'lucide-react';
 
 // Secciones implementadas
-import { CargosSection, OrganigramaSection } from '../components/estructura';
+import { EstructuraSection } from '../components/estructura';
 import { SeleccionSection } from '../components/seleccion';
 import { ColaboradoresSection } from '../components/colaboradores';
 import { OnboardingSection } from '../components/onboarding';
@@ -73,16 +72,9 @@ interface SectionMeta {
 const SECTION_MAP: Record<string, SectionMeta> = {
   estructura: {
     title: 'Estructura de Cargos',
-    description: 'Profesiogramas, manual de funciones, requisitos, riesgos GTC-45 y permisos RBAC',
+    description: 'Cargos, profesiogramas, organigrama y permisos RBAC',
     icon: <Network className="w-5 h-5" />,
-    component: CargosSection,
-  },
-  organigrama: {
-    title: 'Organigrama',
-    description:
-      'Visualizacion interactiva de la estructura organizacional, jerarquia de cargos y areas',
-    icon: <GitBranch className="w-5 h-5" />,
-    component: OrganigramaSection,
+    component: EstructuraSection,
   },
   seleccion: {
     title: 'Seleccion y Contratacion',

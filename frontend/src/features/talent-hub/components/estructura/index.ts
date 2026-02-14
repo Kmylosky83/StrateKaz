@@ -1,17 +1,18 @@
 /**
  * Estructura de Cargos - Componentes
  *
- * CargosSection y CargoFormModal son el CRUD principal de cargos,
- * ahora ubicado en Talento Humano (antes en Configuracion/Organizacion).
- *
- * OrganigramaSection visualiza la jerarquía de cargos y áreas.
- * Movido desde Organizacion (GE) a TH porque los cargos se gestionan aquí.
+ * EstructuraSection es el componente principal con DynamicSections:
+ * - Sub-tab Cargos: CRUD de cargos (CargosSection)
+ * - Sub-tab Organigrama: Visualizacion jerarquica (OrganigramaSection)
  *
  * Los componentes originales siguen en features/configuracion/components/
  * y se re-exportan aqui hasta completar la migracion completa.
  */
 
-// Re-exports desde configuracion (migracion gradual)
+// Componente principal con sub-navegacion
+export { EstructuraSection } from './EstructuraSection';
+
+// Sub-componentes (usados internamente por EstructuraSection)
 export { CargosTab as CargosSection } from '@/features/configuracion/components/CargosTab';
 export { CargoFormModal } from '@/features/configuracion/components/CargoFormModal';
 export { CargoLevelBadge } from './CargoLevelBadge';

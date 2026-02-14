@@ -370,21 +370,30 @@ def _create_default_accesses(cargo):
 def _log_propagation(section, count: int):
     """
     Registra la propagación en el historial de cambios.
+
+    IMPORTANTE: Usa savepoint (transaction.atomic) para que un error aquí
+    NO contamine la transacción padre (post_save de TabSection).
+    Sin savepoint, PostgreSQL marca la transacción como 'aborted' y
+    el get_or_create padre hace rollback silencioso.
     """
     try:
+        from django.contrib.contenttypes.models import ContentType
         from apps.core.models.models_permission_history import PermissionChangeLog
 
-        PermissionChangeLog.objects.create(
-            changed_by=None,
-            content_type_id=None,  # Se llenará con GenericFK
-            object_id=section.id,
-            action='PROPAGATED',
-            affected_entity_type='section',
-            affected_entity_id=section.id,
-            affected_entity_name=section.name,
-            new_value={'cargos_affected': count},
-            is_automatic=True,
-            notes=f'Propagación automática al crear sección "{section.code}"',
-        )
+        ct = ContentType.objects.get_for_model(section)
+
+        with transaction.atomic():
+            PermissionChangeLog.objects.create(
+                changed_by=None,
+                content_type=ct,
+                object_id=section.id,
+                action='PROPAGATED',
+                affected_entity_type='section',
+                affected_entity_id=section.id,
+                affected_entity_name=section.name,
+                new_value={'cargos_affected': count},
+                is_automatic=True,
+                notes=f'Propagación automática al crear sección "{section.code}"',
+            )
     except Exception as e:
         logger.error(f"ERROR_LOGGING_PROPAGATION: {e}")

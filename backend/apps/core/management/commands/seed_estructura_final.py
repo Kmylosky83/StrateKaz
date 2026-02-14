@@ -465,18 +465,23 @@ class Command(BaseCommand):
                 'is_enabled': True,
                 'orden': 15,
                 'tabs': [
-                    {'code': 'estructura_cargos', 'name': 'Estructura de Cargos', 'icon': 'Network', 'route': 'estructura', 'orden': 1},
-                    {'code': 'organigrama', 'name': 'Organigrama', 'icon': 'GitBranch', 'route': 'organigrama', 'orden': 2},
-                    {'code': 'seleccion_contratacion', 'name': 'Selección/Contratación', 'icon': 'UserPlus', 'route': 'seleccion', 'orden': 3},
-                    {'code': 'colaboradores', 'name': 'Colaboradores', 'icon': 'Users', 'route': 'colaboradores', 'orden': 4},
-                    {'code': 'onboarding_induccion', 'name': 'Onboarding/Inducción', 'icon': 'Rocket', 'route': 'onboarding', 'orden': 5},
-                    {'code': 'formacion_reinduccion', 'name': 'Formación/Reinducción', 'icon': 'BookOpen', 'route': 'formacion', 'orden': 6},
-                    {'code': 'desempeno', 'name': 'Desempeño', 'icon': 'Award', 'route': 'desempeno', 'orden': 7},
-                    {'code': 'control_tiempo', 'name': 'Control de Tiempo', 'icon': 'Clock', 'route': 'control-tiempo', 'orden': 8},
-                    {'code': 'novedades', 'name': 'Novedades', 'icon': 'Bell', 'route': 'novedades', 'orden': 9},
-                    {'code': 'proceso_disciplinario', 'name': 'Proceso Disciplinario', 'icon': 'Gavel', 'route': 'disciplinario', 'orden': 10},
-                    {'code': 'nomina', 'name': 'Nómina', 'icon': 'DollarSign', 'route': 'nomina', 'orden': 11},
-                    {'code': 'off_boarding', 'name': 'Off Boarding', 'icon': 'LogOut', 'route': 'off-boarding', 'orden': 12},
+                    {
+                        'code': 'estructura_cargos', 'name': 'Estructura de Cargos', 'icon': 'Network', 'route': 'estructura', 'orden': 1,
+                        'sections': [
+                            {'code': 'cargos', 'name': 'Cargos', 'icon': 'Network', 'orden': 1, 'description': 'Gestión de cargos y niveles jerárquicos'},
+                            {'code': 'organigrama', 'name': 'Organigrama', 'icon': 'GitBranch', 'orden': 2, 'description': 'Visualización interactiva de la jerarquía de cargos'},
+                        ]
+                    },
+                    {'code': 'seleccion_contratacion', 'name': 'Selección/Contratación', 'icon': 'UserPlus', 'route': 'seleccion', 'orden': 2},
+                    {'code': 'colaboradores', 'name': 'Colaboradores', 'icon': 'Users', 'route': 'colaboradores', 'orden': 3},
+                    {'code': 'onboarding_induccion', 'name': 'Onboarding/Inducción', 'icon': 'Rocket', 'route': 'onboarding', 'orden': 4},
+                    {'code': 'formacion_reinduccion', 'name': 'Formación/Reinducción', 'icon': 'BookOpen', 'route': 'formacion', 'orden': 5},
+                    {'code': 'desempeno', 'name': 'Desempeño', 'icon': 'Award', 'route': 'desempeno', 'orden': 6},
+                    {'code': 'control_tiempo', 'name': 'Control de Tiempo', 'icon': 'Clock', 'route': 'control-tiempo', 'orden': 7},
+                    {'code': 'novedades', 'name': 'Novedades', 'icon': 'Bell', 'route': 'novedades', 'orden': 8},
+                    {'code': 'proceso_disciplinario', 'name': 'Proceso Disciplinario', 'icon': 'Gavel', 'route': 'disciplinario', 'orden': 9},
+                    {'code': 'nomina', 'name': 'Nómina', 'icon': 'DollarSign', 'route': 'nomina', 'orden': 10},
+                    {'code': 'off_boarding', 'name': 'Off Boarding', 'icon': 'LogOut', 'route': 'off-boarding', 'orden': 11},
                 ]
             },
             {

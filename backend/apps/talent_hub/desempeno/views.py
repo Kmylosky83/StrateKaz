@@ -39,7 +39,6 @@ class CicloEvaluacionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return CicloEvaluacion.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         )
 
@@ -49,7 +48,7 @@ class CicloEvaluacionViewSet(viewsets.ModelViewSet):
         return CicloEvaluacionDetailSerializer
 
     def perform_create(self, serializer):
-        serializer.save(empresa=self.request.user.empresa, created_by=self.request.user)
+        serializer.save(created_by=self.request.user)
 
     @action(detail=False, methods=['get'])
     def activo(self, request):
@@ -106,7 +105,6 @@ class CompetenciaEvaluacionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return CompetenciaEvaluacion.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).prefetch_related('criterios')
 
@@ -116,7 +114,7 @@ class CompetenciaEvaluacionViewSet(viewsets.ModelViewSet):
         return CompetenciaEvaluacionDetailSerializer
 
     def perform_create(self, serializer):
-        serializer.save(empresa=self.request.user.empresa, created_by=self.request.user)
+        serializer.save(created_by=self.request.user)
 
     @action(detail=False, methods=['get'])
     def por_tipo(self, request):
@@ -138,12 +136,11 @@ class CriterioEvaluacionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return CriterioEvaluacion.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         )
 
     def perform_create(self, serializer):
-        serializer.save(empresa=self.request.user.empresa, created_by=self.request.user)
+        serializer.save(created_by=self.request.user)
 
 
 class EvaluacionDesempenoViewSet(viewsets.ModelViewSet):
@@ -155,7 +152,6 @@ class EvaluacionDesempenoViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return EvaluacionDesempeno.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).select_related('ciclo', 'colaborador', 'jefe_evaluador')
 
@@ -167,7 +163,7 @@ class EvaluacionDesempenoViewSet(viewsets.ModelViewSet):
         return EvaluacionDesempenoDetailSerializer
 
     def perform_create(self, serializer):
-        serializer.save(empresa=self.request.user.empresa, created_by=self.request.user)
+        serializer.save(created_by=self.request.user)
 
     @action(detail=True, methods=['post'])
     def iniciar_autoevaluacion(self, request, pk=None):
@@ -240,7 +236,6 @@ class EvaluacionDesempenoViewSet(viewsets.ModelViewSet):
         """Asigna un evaluador par."""
         evaluacion = self.get_object()
         EvaluadorPar.objects.create(
-            empresa=self.request.user.empresa,
             evaluacion=evaluacion,
             evaluador_id=request.data.get('evaluador_id'),
             es_subordinado=request.data.get('es_subordinado', False),
@@ -260,7 +255,6 @@ class EvaluacionDesempenoViewSet(viewsets.ModelViewSet):
     def pendientes_pares(self, request):
         """Evaluaciones pendientes como par."""
         asignaciones = EvaluadorPar.objects.filter(
-            empresa=self.request.user.empresa,
             evaluador=request.user,
             estado='pendiente'
         ).select_related('evaluacion__colaborador')
@@ -285,13 +279,11 @@ class DetalleEvaluacionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return DetalleEvaluacion.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).select_related('competencia', 'criterio', 'evaluador')
 
     def perform_create(self, serializer):
         serializer.save(
-            empresa=self.request.user.empresa,
             created_by=self.request.user,
             evaluador=self.request.user
         )
@@ -306,7 +298,6 @@ class PlanMejoraViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return PlanMejora.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).select_related('colaborador', 'responsable', 'evaluacion')
 
@@ -318,7 +309,7 @@ class PlanMejoraViewSet(viewsets.ModelViewSet):
         return PlanMejoraDetailSerializer
 
     def perform_create(self, serializer):
-        serializer.save(empresa=self.request.user.empresa, created_by=self.request.user)
+        serializer.save(created_by=self.request.user)
 
     @action(detail=True, methods=['post'])
     def aprobar(self, request, pk=None):
@@ -352,7 +343,6 @@ class PlanMejoraViewSet(viewsets.ModelViewSet):
         """Agrega un registro de seguimiento."""
         plan = self.get_object()
         seguimiento = SeguimientoPlanMejora.objects.create(
-            empresa=self.request.user.empresa,
             plan=plan,
             fecha_seguimiento=request.data.get('fecha_seguimiento', timezone.now().date()),
             realizado_por=request.user,
@@ -388,12 +378,11 @@ class ActividadPlanMejoraViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return ActividadPlanMejora.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).select_related('plan', 'responsable')
 
     def perform_create(self, serializer):
-        serializer.save(empresa=self.request.user.empresa, created_by=self.request.user)
+        serializer.save(created_by=self.request.user)
 
     @action(detail=True, methods=['post'])
     def completar(self, request, pk=None):
@@ -415,12 +404,11 @@ class TipoReconocimientoViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return TipoReconocimiento.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         )
 
     def perform_create(self, serializer):
-        serializer.save(empresa=self.request.user.empresa, created_by=self.request.user)
+        serializer.save(created_by=self.request.user)
 
 
 class ReconocimientoViewSet(viewsets.ModelViewSet):
@@ -432,7 +420,6 @@ class ReconocimientoViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Reconocimiento.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).select_related('colaborador', 'tipo_reconocimiento', 'nominado_por')
 
@@ -445,7 +432,6 @@ class ReconocimientoViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
-            empresa=self.request.user.empresa,
             created_by=self.request.user,
             nominado_por=self.request.user
         )
@@ -478,7 +464,6 @@ class ReconocimientoViewSet(viewsets.ModelViewSet):
         """Publica en el muro de reconocimientos."""
         reconocimiento = self.get_object()
         MuroReconocimientos.objects.create(
-            empresa=self.request.user.empresa,
             reconocimiento=reconocimiento,
             titulo=request.data.get('titulo', reconocimiento.tipo_reconocimiento.nombre),
             mensaje=request.data.get('mensaje', reconocimiento.motivo),
@@ -517,7 +502,6 @@ class MuroReconocimientosViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return MuroReconocimientos.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).select_related('reconocimiento__colaborador', 'reconocimiento__tipo_reconocimiento')
 
@@ -544,17 +528,16 @@ class DesempenoEstadisticasViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['get'])
     def resumen(self, request):
         """Resumen general de desempeño."""
-        empresa = self.request.user.empresa
         hoy = timezone.now().date()
         inicio_mes = hoy.replace(day=1)
 
         # Ciclo activo
         ciclo_activo = CicloEvaluacion.objects.filter(
-            empresa=empresa, is_active=True, estado__in=['activo', 'en_evaluacion']
+            is_active=True, estado__in=['activo', 'en_evaluacion']
         ).first()
 
         # Evaluaciones
-        evaluaciones = EvaluacionDesempeno.objects.filter(empresa=empresa, is_active=True)
+        evaluaciones = EvaluacionDesempeno.objects.filter(is_active=True)
         if ciclo_activo:
             evaluaciones = evaluaciones.filter(ciclo=ciclo_activo)
 
@@ -570,12 +553,12 @@ class DesempenoEstadisticasViewSet(viewsets.ViewSet):
 
         # Planes de mejora activos
         planes_activos = PlanMejora.objects.filter(
-            empresa=empresa, is_active=True, estado__in=['aprobado', 'en_ejecucion', 'seguimiento']
+            is_active=True, estado__in=['aprobado', 'en_ejecucion', 'seguimiento']
         ).count()
 
         # Reconocimientos del mes
         reconocimientos_mes = Reconocimiento.objects.filter(
-            empresa=empresa, is_active=True, fecha_reconocimiento__gte=inicio_mes
+            is_active=True, fecha_reconocimiento__gte=inicio_mes
         ).count()
 
         # Tasa de completitud
@@ -597,11 +580,10 @@ class DesempenoEstadisticasViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['get'])
     def distribucion_calificaciones(self, request):
         """Distribución de calificaciones del ciclo actual."""
-        empresa = self.request.user.empresa
         ciclo_id = request.query_params.get('ciclo_id')
 
         evaluaciones = EvaluacionDesempeno.objects.filter(
-            empresa=empresa, is_active=True, estado='completada'
+            is_active=True, estado='completada'
         )
         if ciclo_id:
             evaluaciones = evaluaciones.filter(ciclo_id=ciclo_id)
@@ -627,11 +609,10 @@ class DesempenoEstadisticasViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['get'])
     def top_reconocidos(self, request):
         """Colaboradores más reconocidos."""
-        empresa = self.request.user.empresa
         limite = int(request.query_params.get('limite', 10))
 
         top = Reconocimiento.objects.filter(
-            empresa=empresa, is_active=True, estado='entregado'
+            is_active=True, estado='entregado'
         ).values('colaborador', 'colaborador__primer_nombre', 'colaborador__primer_apellido').annotate(
             total=Count('id')
         ).order_by('-total')[:limite]

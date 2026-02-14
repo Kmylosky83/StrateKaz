@@ -133,11 +133,7 @@ class VacanteActivaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        user = self.request.user
         queryset = VacanteActiva.objects.filter(is_active=True)
-
-        if hasattr(user, 'empresa_id') and user.empresa_id:
-            queryset = queryset.filter(empresa_id=user.empresa_id)
 
         # Filtros
         estado = self.request.query_params.get('estado')
@@ -163,9 +159,7 @@ class VacanteActivaViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         user = self.request.user
-        empresa_id = getattr(user, 'empresa_id', None)
         serializer.save(
-            empresa_id=empresa_id,
             created_by=user,
             updated_by=user
         )
@@ -382,11 +376,7 @@ class CandidatoViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        user = self.request.user
         queryset = Candidato.objects.filter(is_active=True)
-
-        if hasattr(user, 'empresa_id') and user.empresa_id:
-            queryset = queryset.filter(empresa_id=user.empresa_id)
 
         # Filtros
         vacante_id = self.request.query_params.get('vacante')
@@ -408,10 +398,7 @@ class CandidatoViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         user = self.request.user
-        # La empresa se hereda de la vacante
-        vacante = serializer.validated_data.get('vacante')
         serializer.save(
-            empresa_id=vacante.empresa_id,
             created_by=user,
             updated_by=user
         )
@@ -497,11 +484,7 @@ class EntrevistaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        user = self.request.user
         queryset = Entrevista.objects.filter(is_active=True)
-
-        if hasattr(user, 'empresa_id') and user.empresa_id:
-            queryset = queryset.filter(empresa_id=user.empresa_id)
 
         candidato_id = self.request.query_params.get('candidato')
         if candidato_id:
@@ -524,9 +507,7 @@ class EntrevistaViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         user = self.request.user
-        candidato = serializer.validated_data.get('candidato')
         serializer.save(
-            empresa_id=candidato.empresa_id,
             created_by=user,
             updated_by=user
         )
@@ -599,11 +580,7 @@ class PruebaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        user = self.request.user
         queryset = Prueba.objects.filter(is_active=True)
-
-        if hasattr(user, 'empresa_id') and user.empresa_id:
-            queryset = queryset.filter(empresa_id=user.empresa_id)
 
         candidato_id = self.request.query_params.get('candidato')
         if candidato_id:
@@ -626,9 +603,7 @@ class PruebaViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         user = self.request.user
-        candidato = serializer.validated_data.get('candidato')
         serializer.save(
-            empresa_id=candidato.empresa_id,
             created_by=user,
             updated_by=user
         )
@@ -688,11 +663,7 @@ class AfiliacionSSViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        user = self.request.user
         queryset = AfiliacionSS.objects.filter(is_active=True)
-
-        if hasattr(user, 'empresa_id') and user.empresa_id:
-            queryset = queryset.filter(empresa_id=user.empresa_id)
 
         candidato_id = self.request.query_params.get('candidato')
         if candidato_id:
@@ -715,9 +686,7 @@ class AfiliacionSSViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         user = self.request.user
-        candidato = serializer.validated_data.get('candidato')
         serializer.save(
-            empresa_id=candidato.empresa_id,
             created_by=user,
             updated_by=user
         )
@@ -758,17 +727,12 @@ class ProcesoSeleccionEstadisticasViewSet(viewsets.ViewSet):
 
     def list(self, request):
         """Retorna estadísticas generales del proceso de selección"""
-        user = request.user
-        empresa_filter = {}
-        if hasattr(user, 'empresa_id') and user.empresa_id:
-            empresa_filter = {'empresa_id': user.empresa_id}
-
         # Vacantes
-        vacantes = VacanteActiva.objects.filter(is_active=True, **empresa_filter)
+        vacantes = VacanteActiva.objects.filter(is_active=True)
         vacantes_abiertas = vacantes.filter(estado__in=['abierta', 'en_proceso']).count()
 
         # Candidatos
-        candidatos = Candidato.objects.filter(is_active=True, **empresa_filter)
+        candidatos = Candidato.objects.filter(is_active=True)
         candidatos_en_proceso = candidatos.filter(
             estado__in=['postulado', 'preseleccionado', 'en_evaluacion']
         ).count()
@@ -777,7 +741,7 @@ class ProcesoSeleccionEstadisticasViewSet(viewsets.ViewSet):
         candidatos_rechazados = candidatos.filter(estado='rechazado').count()
 
         # Entrevistas
-        entrevistas = Entrevista.objects.filter(is_active=True, **empresa_filter)
+        entrevistas = Entrevista.objects.filter(is_active=True)
         entrevistas_programadas = entrevistas.filter(estado='programada').count()
         entrevistas_realizadas = entrevistas.filter(estado='realizada').count()
 
@@ -785,7 +749,6 @@ class ProcesoSeleccionEstadisticasViewSet(viewsets.ViewSet):
         pruebas_pendientes = Prueba.objects.filter(
             is_active=True,
             estado='programada',
-            **empresa_filter
         ).count()
 
         # Tiempo promedio de contratación
@@ -836,11 +799,7 @@ class HistorialContratoViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        user = self.request.user
         queryset = HistorialContrato.objects.filter(is_active=True)
-
-        if hasattr(user, 'empresa_id') and user.empresa_id:
-            queryset = queryset.filter(empresa_id=user.empresa_id)
 
         colaborador_id = self.request.query_params.get('colaborador')
         if colaborador_id:
@@ -869,7 +828,6 @@ class HistorialContratoViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
-            empresa=self.request.user.empresa,
             created_by=self.request.user,
             updated_by=self.request.user
         )
@@ -927,9 +885,7 @@ class PlantillaPruebaDinamicaViewSet(viewsets.ModelViewSet):
     ordering = ['-created_at']
 
     def get_queryset(self):
-        return PlantillaPruebaDinamica.objects.filter(
-            empresa=self.request.user.empresa
-        )
+        return PlantillaPruebaDinamica.objects.all()
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -940,7 +896,6 @@ class PlantillaPruebaDinamicaViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
-            empresa=self.request.user.empresa,
             created_by=self.request.user
         )
 
@@ -982,8 +937,7 @@ class AsignacionPruebaDinamicaViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha_asignacion']
 
     def get_queryset(self):
-        return AsignacionPruebaDinamica.objects.filter(
-            empresa=self.request.user.empresa
+        return AsignacionPruebaDinamica.objects.all(
         ).select_related('plantilla', 'candidato', 'vacante', 'asignado_por')
 
     def get_serializer_class(self):
@@ -999,7 +953,6 @@ class AsignacionPruebaDinamicaViewSet(viewsets.ModelViewSet):
         enviar_email = serializer.validated_data.pop('enviar_email', True)
 
         asignacion = serializer.save(
-            empresa=self.request.user.empresa,
             asignado_por=self.request.user,
             fecha_vencimiento=timezone.now() + timedelta(days=dias),
         )
@@ -1262,11 +1215,7 @@ class EntrevistaAsincronicaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        user = self.request.user
         queryset = EntrevistaAsincronica.objects.filter(is_active=True)
-
-        if hasattr(user, 'empresa_id') and user.empresa_id:
-            queryset = queryset.filter(empresa_id=user.empresa_id)
 
         candidato_id = self.request.query_params.get('candidato')
         if candidato_id:
@@ -1302,7 +1251,6 @@ class EntrevistaAsincronicaViewSet(viewsets.ModelViewSet):
         fecha_vencimiento = timezone.now() + timezone.timedelta(days=dias_vencimiento)
 
         instance = serializer.save(
-            empresa_id=candidato.empresa_id,
             fecha_vencimiento=fecha_vencimiento,
             created_by=user,
             updated_by=user,

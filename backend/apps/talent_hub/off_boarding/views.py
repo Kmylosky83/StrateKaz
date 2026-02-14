@@ -69,9 +69,8 @@ class TipoRetiroViewSet(viewsets.ModelViewSet):
     queryset = TipoRetiro.objects.all()
 
     def get_queryset(self):
-        """Filtrar por empresa del usuario autenticado."""
+        """Filtrar tipos activos del tenant."""
         queryset = TipoRetiro.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         )
 
@@ -91,8 +90,7 @@ class TipoRetiroViewSet(viewsets.ModelViewSet):
         return TipoRetiroDetailSerializer
 
     def perform_create(self, serializer):
-        """Asignar empresa automáticamente."""
-        serializer.save(empresa=self.request.user.empresa)
+        serializer.save()
 
     def perform_destroy(self, instance):
         """Soft delete."""
@@ -122,9 +120,8 @@ class ProcesoRetiroViewSet(viewsets.ModelViewSet):
     queryset = ProcesoRetiro.objects.all()
 
     def get_queryset(self):
-        """Filtrar por empresa del usuario autenticado."""
+        """Filtrar procesos activos del tenant."""
         queryset = ProcesoRetiro.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).select_related('colaborador', 'tipo_retiro', 'responsable_proceso')
 
@@ -148,8 +145,8 @@ class ProcesoRetiroViewSet(viewsets.ModelViewSet):
         return ProcesoRetiroDetailSerializer
 
     def perform_create(self, serializer):
-        """Asignar empresa automáticamente y calcular preaviso."""
-        proceso = serializer.save(empresa=self.request.user.empresa)
+        """Calcular preaviso al crear proceso."""
+        proceso = serializer.save()
 
         # Calcular cumplimiento de preaviso
         dias_notificados = (proceso.fecha_ultimo_dia_trabajo - proceso.fecha_notificacion).days
@@ -417,9 +414,8 @@ class ChecklistRetiroViewSet(viewsets.ModelViewSet):
     queryset = ChecklistRetiro.objects.all()
 
     def get_queryset(self):
-        """Filtrar por empresa del usuario autenticado."""
+        """Filtrar checklist activos del tenant."""
         queryset = ChecklistRetiro.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).select_related('proceso_retiro', 'validado_por')
 
@@ -439,8 +435,7 @@ class ChecklistRetiroViewSet(viewsets.ModelViewSet):
         return ChecklistRetiroDetailSerializer
 
     def perform_create(self, serializer):
-        """Asignar empresa automáticamente."""
-        serializer.save(empresa=self.request.user.empresa)
+        serializer.save()
 
     def perform_destroy(self, instance):
         """Soft delete."""
@@ -498,9 +493,8 @@ class PazSalvoViewSet(viewsets.ModelViewSet):
     queryset = PazSalvo.objects.all()
 
     def get_queryset(self):
-        """Filtrar por empresa del usuario autenticado."""
+        """Filtrar paz y salvos activos del tenant."""
         queryset = PazSalvo.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).select_related('proceso_retiro', 'responsable', 'aprobado_por')
 
@@ -525,8 +519,7 @@ class PazSalvoViewSet(viewsets.ModelViewSet):
         return PazSalvoDetailSerializer
 
     def perform_create(self, serializer):
-        """Asignar empresa automáticamente."""
-        serializer.save(empresa=self.request.user.empresa)
+        serializer.save()
 
     def perform_destroy(self, instance):
         """Soft delete."""
@@ -589,9 +582,8 @@ class ExamenEgresoViewSet(viewsets.ModelViewSet):
     queryset = ExamenEgreso.objects.all()
 
     def get_queryset(self):
-        """Filtrar por empresa del usuario autenticado."""
+        """Filtrar examenes activos del tenant."""
         queryset = ExamenEgreso.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).select_related('proceso_retiro')
 
@@ -611,8 +603,7 @@ class ExamenEgresoViewSet(viewsets.ModelViewSet):
         return ExamenEgresoDetailSerializer
 
     def perform_create(self, serializer):
-        """Asignar empresa automáticamente."""
-        serializer.save(empresa=self.request.user.empresa)
+        serializer.save()
 
     def perform_destroy(self, instance):
         """Soft delete."""
@@ -634,9 +625,8 @@ class EntrevistaRetiroViewSet(viewsets.ModelViewSet):
     queryset = EntrevistaRetiro.objects.all()
 
     def get_queryset(self):
-        """Filtrar por empresa del usuario autenticado."""
+        """Filtrar entrevistas activas del tenant."""
         queryset = EntrevistaRetiro.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).select_related('proceso_retiro', 'entrevistador')
 
@@ -656,8 +646,7 @@ class EntrevistaRetiroViewSet(viewsets.ModelViewSet):
         return EntrevistaRetiroDetailSerializer
 
     def perform_create(self, serializer):
-        """Asignar empresa automáticamente."""
-        serializer.save(empresa=self.request.user.empresa)
+        serializer.save()
 
     def perform_destroy(self, instance):
         """Soft delete."""
@@ -709,9 +698,8 @@ class LiquidacionFinalViewSet(viewsets.ModelViewSet):
     queryset = LiquidacionFinal.objects.all()
 
     def get_queryset(self):
-        """Filtrar por empresa del usuario autenticado."""
+        """Filtrar liquidaciones activas del tenant."""
         queryset = LiquidacionFinal.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).select_related('proceso_retiro', 'aprobado_por')
 
@@ -726,8 +714,8 @@ class LiquidacionFinalViewSet(viewsets.ModelViewSet):
         return LiquidacionFinalDetailSerializer
 
     def perform_create(self, serializer):
-        """Asignar empresa automáticamente y calcular liquidación."""
-        liquidacion = serializer.save(empresa=self.request.user.empresa)
+        """Calcular liquidación al crear."""
+        liquidacion = serializer.save()
         liquidacion.calcular_liquidacion_completa()
 
     def perform_destroy(self, instance):
@@ -829,7 +817,6 @@ class CertificadoTrabajoViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = CertificadoTrabajo.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).select_related('colaborador', 'generado_por')
 
@@ -856,7 +843,7 @@ class CertificadoTrabajoViewSet(viewsets.ModelViewSet):
         return CertificadoTrabajoDetailSerializer
 
     def perform_create(self, serializer):
-        serializer.save(empresa=self.request.user.empresa)
+        serializer.save()
 
     def perform_destroy(self, instance):
         instance.soft_delete()

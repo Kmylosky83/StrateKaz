@@ -63,9 +63,8 @@ class ConfiguracionNominaViewSet(viewsets.ModelViewSet):
     queryset = ConfiguracionNomina.objects.all()
 
     def get_queryset(self):
-        """Filtrar por empresa del usuario autenticado."""
+        """Filtrar configuraciones activas del tenant."""
         return ConfiguracionNomina.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).order_by('-anio')
 
@@ -78,8 +77,7 @@ class ConfiguracionNominaViewSet(viewsets.ModelViewSet):
         return ConfiguracionNominaDetailSerializer
 
     def perform_create(self, serializer):
-        """Asignar empresa automáticamente."""
-        serializer.save(empresa=self.request.user.empresa)
+        serializer.save()
 
     def perform_destroy(self, instance):
         """Soft delete."""
@@ -108,9 +106,8 @@ class ConceptoNominaViewSet(viewsets.ModelViewSet):
     queryset = ConceptoNomina.objects.all()
 
     def get_queryset(self):
-        """Filtrar por empresa del usuario autenticado."""
+        """Filtrar conceptos activos del tenant."""
         queryset = ConceptoNomina.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         )
 
@@ -134,8 +131,7 @@ class ConceptoNominaViewSet(viewsets.ModelViewSet):
         return ConceptoNominaDetailSerializer
 
     def perform_create(self, serializer):
-        """Asignar empresa automáticamente."""
-        serializer.save(empresa=self.request.user.empresa)
+        serializer.save()
 
     def perform_destroy(self, instance):
         """Soft delete."""
@@ -173,9 +169,8 @@ class PeriodoNominaViewSet(viewsets.ModelViewSet):
     queryset = PeriodoNomina.objects.all()
 
     def get_queryset(self):
-        """Filtrar por empresa del usuario autenticado."""
+        """Filtrar periodos activos del tenant."""
         queryset = PeriodoNomina.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         )
 
@@ -199,8 +194,7 @@ class PeriodoNominaViewSet(viewsets.ModelViewSet):
         return PeriodoNominaDetailSerializer
 
     def perform_create(self, serializer):
-        """Asignar empresa automáticamente."""
-        serializer.save(empresa=self.request.user.empresa)
+        serializer.save()
 
     def perform_destroy(self, instance):
         """Soft delete solo si está abierto."""
@@ -315,9 +309,8 @@ class LiquidacionNominaViewSet(viewsets.ModelViewSet):
     queryset = LiquidacionNomina.objects.all()
 
     def get_queryset(self):
-        """Filtrar por empresa del usuario autenticado."""
+        """Filtrar liquidaciones activas del tenant."""
         queryset = LiquidacionNomina.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).select_related('periodo', 'colaborador', 'aprobado_por')
 
@@ -345,8 +338,7 @@ class LiquidacionNominaViewSet(viewsets.ModelViewSet):
         return LiquidacionNominaDetailSerializer
 
     def perform_create(self, serializer):
-        """Asignar empresa automáticamente."""
-        serializer.save(empresa=self.request.user.empresa)
+        serializer.save()
 
     def perform_destroy(self, instance):
         """Soft delete solo si está en borrador."""
@@ -429,9 +421,8 @@ class DetalleLiquidacionViewSet(viewsets.ModelViewSet):
     serializer_class = DetalleLiquidacionListSerializer
 
     def get_queryset(self):
-        """Filtrar por empresa del usuario autenticado."""
+        """Filtrar detalles activos del tenant."""
         queryset = DetalleLiquidacion.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).select_related('liquidacion', 'concepto')
 
@@ -443,8 +434,7 @@ class DetalleLiquidacionViewSet(viewsets.ModelViewSet):
         return queryset.order_by('liquidacion', '-es_devengado', 'concepto__orden')
 
     def perform_create(self, serializer):
-        """Asignar empresa automáticamente."""
-        serializer.save(empresa=self.request.user.empresa)
+        serializer.save()
 
         # Recalcular totales de liquidación
         detalle = serializer.instance
@@ -475,9 +465,8 @@ class PrestacionViewSet(viewsets.ModelViewSet):
     queryset = Prestacion.objects.all()
 
     def get_queryset(self):
-        """Filtrar por empresa del usuario autenticado."""
+        """Filtrar prestaciones activas del tenant."""
         queryset = Prestacion.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).select_related('colaborador')
 
@@ -505,8 +494,7 @@ class PrestacionViewSet(viewsets.ModelViewSet):
         return PrestacionDetailSerializer
 
     def perform_create(self, serializer):
-        """Asignar empresa automáticamente."""
-        serializer.save(empresa=self.request.user.empresa)
+        serializer.save()
 
     def perform_destroy(self, instance):
         """Soft delete."""
@@ -525,9 +513,8 @@ class PagoNominaViewSet(viewsets.ModelViewSet):
     queryset = PagoNomina.objects.all()
 
     def get_queryset(self):
-        """Filtrar por empresa del usuario autenticado."""
+        """Filtrar pagos activos del tenant."""
         queryset = PagoNomina.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).select_related('liquidacion', 'liquidacion__colaborador')
 
@@ -555,8 +542,8 @@ class PagoNominaViewSet(viewsets.ModelViewSet):
         return PagoNominaDetailSerializer
 
     def perform_create(self, serializer):
-        """Asignar empresa automáticamente y actualizar estado de liquidación."""
-        pago = serializer.save(empresa=self.request.user.empresa)
+        """Actualizar estado de liquidación al crear pago."""
+        pago = serializer.save()
 
         # Marcar liquidación como pagada
         liquidacion = pago.liquidacion

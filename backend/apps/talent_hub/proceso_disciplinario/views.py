@@ -32,10 +32,7 @@ class TipoFaltaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        user = self.request.user
         queryset = TipoFalta.objects.filter(is_active=True)
-        if hasattr(user, 'empresa'):
-            queryset = queryset.filter(empresa=user.empresa)
         gravedad = self.request.query_params.get('gravedad')
         if gravedad:
             queryset = queryset.filter(gravedad=gravedad)
@@ -48,7 +45,6 @@ class TipoFaltaViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
-            empresa=self.request.user.empresa,
             created_by=self.request.user,
             updated_by=self.request.user
         )
@@ -65,10 +61,7 @@ class LlamadoAtencionViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        user = self.request.user
         queryset = LlamadoAtencion.objects.filter(is_active=True)
-        if hasattr(user, 'empresa'):
-            queryset = queryset.filter(empresa=user.empresa)
         colaborador_id = self.request.query_params.get('colaborador')
         if colaborador_id:
             queryset = queryset.filter(colaborador_id=colaborador_id)
@@ -86,7 +79,6 @@ class LlamadoAtencionViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
-            empresa=self.request.user.empresa,
             created_by=self.request.user,
             updated_by=self.request.user
         )
@@ -113,10 +105,7 @@ class DescargoViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        user = self.request.user
         queryset = Descargo.objects.filter(is_active=True)
-        if hasattr(user, 'empresa'):
-            queryset = queryset.filter(empresa=user.empresa)
         colaborador_id = self.request.query_params.get('colaborador')
         if colaborador_id:
             queryset = queryset.filter(colaborador_id=colaborador_id)
@@ -137,7 +126,6 @@ class DescargoViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
-            empresa=self.request.user.empresa,
             created_by=self.request.user,
             updated_by=self.request.user
         )
@@ -208,10 +196,7 @@ class MemorandoViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        user = self.request.user
         queryset = Memorando.objects.filter(is_active=True)
-        if hasattr(user, 'empresa'):
-            queryset = queryset.filter(empresa=user.empresa)
         colaborador_id = self.request.query_params.get('colaborador')
         if colaborador_id:
             queryset = queryset.filter(colaborador_id=colaborador_id)
@@ -229,7 +214,6 @@ class MemorandoViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
-            empresa=self.request.user.empresa,
             elaborado_por=self.request.user,
             created_by=self.request.user,
             updated_by=self.request.user
@@ -268,10 +252,7 @@ class HistorialDisciplinarioViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = HistorialDisciplinarioSerializer
 
     def get_queryset(self):
-        user = self.request.user
         queryset = HistorialDisciplinario.objects.filter(is_active=True)
-        if hasattr(user, 'empresa'):
-            queryset = queryset.filter(empresa=user.empresa)
         colaborador_id = self.request.query_params.get('colaborador')
         if colaborador_id:
             queryset = queryset.filter(colaborador_id=colaborador_id)
@@ -303,10 +284,7 @@ class NotificacionDisciplinariaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        user = self.request.user
         queryset = NotificacionDisciplinaria.objects.filter(is_active=True)
-        if hasattr(user, 'empresa'):
-            queryset = queryset.filter(empresa=user.empresa)
         colaborador_id = self.request.query_params.get('colaborador')
         if colaborador_id:
             queryset = queryset.filter(colaborador_id=colaborador_id)
@@ -328,7 +306,6 @@ class NotificacionDisciplinariaViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
-            empresa=self.request.user.empresa,
             created_by=self.request.user,
             updated_by=self.request.user
         )
@@ -354,10 +331,7 @@ class PruebaDisciplinariaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        user = self.request.user
         queryset = PruebaDisciplinaria.objects.filter(is_active=True)
-        if hasattr(user, 'empresa'):
-            queryset = queryset.filter(empresa=user.empresa)
         descargo_id = self.request.query_params.get('descargo')
         if descargo_id:
             queryset = queryset.filter(descargo_id=descargo_id)
@@ -373,7 +347,6 @@ class PruebaDisciplinariaViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
-            empresa=self.request.user.empresa,
             created_by=self.request.user,
             updated_by=self.request.user
         )
@@ -415,10 +388,7 @@ class DenunciaAcosoLaboralViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        user = self.request.user
         queryset = DenunciaAcosoLaboral.objects.filter(is_active=True)
-        if hasattr(user, 'empresa'):
-            queryset = queryset.filter(empresa=user.empresa)
 
         # Filtros
         estado = self.request.query_params.get('estado')
@@ -440,7 +410,6 @@ class DenunciaAcosoLaboralViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
-            empresa=self.request.user.empresa,
             created_by=self.request.user,
             updated_by=self.request.user
         )

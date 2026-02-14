@@ -22,17 +22,16 @@ class TurnoViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         return Turno.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).order_by('codigo')
-    
+
     def get_serializer_class(self):
         if self.action == 'list':
             return TurnoListSerializer
         return TurnoDetailSerializer
-    
+
     def perform_create(self, serializer):
-        serializer.save(empresa=self.request.user.empresa, created_by=self.request.user)
+        serializer.save(created_by=self.request.user)
     
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
@@ -45,18 +44,17 @@ class AsignacionTurnoViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         qs = AsignacionTurno.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).select_related('colaborador', 'turno')
-        
+
         colaborador_id = self.request.query_params.get('colaborador')
         if colaborador_id:
             qs = qs.filter(colaborador_id=colaborador_id)
-        
+
         return qs.order_by('-fecha_inicio')
-    
+
     def perform_create(self, serializer):
-        serializer.save(empresa=self.request.user.empresa, created_by=self.request.user)
+        serializer.save(created_by=self.request.user)
     
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
@@ -68,19 +66,17 @@ class RegistroAsistenciaViewSet(viewsets.ModelViewSet):
     serializer_class = RegistroAsistenciaSerializer
     
     def get_queryset(self):
-        qs = RegistroAsistencia.objects.filter(
-            empresa=self.request.user.empresa
+        qs = RegistroAsistencia.objects.all(
         ).select_related('colaborador', 'turno')
-        
+
         fecha_desde = self.request.query_params.get('fecha_desde')
         if fecha_desde:
             qs = qs.filter(fecha__gte=fecha_desde)
-        
+
         return qs.order_by('-fecha')
-    
+
     def perform_create(self, serializer):
         serializer.save(
-            empresa=self.request.user.empresa,
             registrado_por=self.request.user,
             created_by=self.request.user
         )
@@ -107,12 +103,11 @@ class HoraExtraViewSet(viewsets.ModelViewSet):
     serializer_class = HoraExtraSerializer
     
     def get_queryset(self):
-        return HoraExtra.objects.filter(
-            empresa=self.request.user.empresa
+        return HoraExtra.objects.all(
         ).select_related('colaborador')
-    
+
     def perform_create(self, serializer):
-        serializer.save(empresa=self.request.user.empresa, created_by=self.request.user)
+        serializer.save(created_by=self.request.user)
     
     @action(detail=True, methods=['post'])
     def aprobar(self, request, pk=None):
@@ -135,12 +130,11 @@ class ConsolidadoAsistenciaViewSet(viewsets.ModelViewSet):
     serializer_class = ConsolidadoAsistenciaSerializer
     
     def get_queryset(self):
-        return ConsolidadoAsistencia.objects.filter(
-            empresa=self.request.user.empresa
+        return ConsolidadoAsistencia.objects.all(
         ).select_related('colaborador')
-    
+
     def perform_create(self, serializer):
-        serializer.save(empresa=self.request.user.empresa, created_by=self.request.user)
+        serializer.save(created_by=self.request.user)
     
     @action(detail=True, methods=['post'])
     def cerrar_mes(self, request, pk=None):

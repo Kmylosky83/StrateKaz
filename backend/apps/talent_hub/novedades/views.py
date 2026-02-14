@@ -2,7 +2,7 @@
 Views de Novedades - Talent Hub
 
 ViewSets para gestión de incapacidades, licencias, permisos y vacaciones.
-Sistema dinámico multi-tenant usando self.request.user.empresa
+Multi-tenant: data isolation is automatic via django-tenants schema separation.
 """
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -68,9 +68,8 @@ class TipoIncapacidadViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Filtrar por empresa del usuario autenticado"""
+        """Filtrar tipos activos del tenant."""
         return TipoIncapacidad.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).order_by('nombre')
 
@@ -81,9 +80,7 @@ class TipoIncapacidadViewSet(viewsets.ModelViewSet):
         return TipoIncapacidadDetailSerializer
 
     def perform_create(self, serializer):
-        """Asignar empresa automáticamente"""
         serializer.save(
-            empresa=self.request.user.empresa,
             created_by=self.request.user
         )
 
@@ -101,9 +98,8 @@ class TipoLicenciaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Filtrar por empresa del usuario autenticado"""
+        """Filtrar tipos activos del tenant."""
         return TipoLicencia.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).order_by('nombre')
 
@@ -114,9 +110,7 @@ class TipoLicenciaViewSet(viewsets.ModelViewSet):
         return TipoLicenciaDetailSerializer
 
     def perform_create(self, serializer):
-        """Asignar empresa automáticamente"""
         serializer.save(
-            empresa=self.request.user.empresa,
             created_by=self.request.user
         )
 
@@ -138,9 +132,8 @@ class IncapacidadViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Filtrar por empresa del usuario autenticado"""
+        """Filtrar incapacidades activas del tenant."""
         return Incapacidad.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).select_related(
             'colaborador',
@@ -157,9 +150,7 @@ class IncapacidadViewSet(viewsets.ModelViewSet):
         return IncapacidadDetailSerializer
 
     def perform_create(self, serializer):
-        """Asignar empresa automáticamente"""
         serializer.save(
-            empresa=self.request.user.empresa,
             created_by=self.request.user
         )
 
@@ -272,9 +263,8 @@ class LicenciaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Filtrar por empresa del usuario autenticado"""
+        """Filtrar licencias activas del tenant."""
         return Licencia.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).select_related(
             'colaborador',
@@ -291,9 +281,7 @@ class LicenciaViewSet(viewsets.ModelViewSet):
         return LicenciaDetailSerializer
 
     def perform_create(self, serializer):
-        """Asignar empresa automáticamente"""
         serializer.save(
-            empresa=self.request.user.empresa,
             created_by=self.request.user
         )
 
@@ -369,9 +357,8 @@ class PermisoViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Filtrar por empresa del usuario autenticado"""
+        """Filtrar permisos activos del tenant."""
         return Permiso.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).select_related(
             'colaborador',
@@ -387,9 +374,7 @@ class PermisoViewSet(viewsets.ModelViewSet):
         return PermisoDetailSerializer
 
     def perform_create(self, serializer):
-        """Asignar empresa automáticamente"""
         serializer.save(
-            empresa=self.request.user.empresa,
             created_by=self.request.user
         )
 
@@ -462,9 +447,8 @@ class PeriodoVacacionesViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Filtrar por empresa del usuario autenticado"""
+        """Filtrar periodos activos del tenant."""
         return PeriodoVacaciones.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).select_related('colaborador').order_by('-ultimo_corte')
 
@@ -477,9 +461,7 @@ class PeriodoVacacionesViewSet(viewsets.ModelViewSet):
         return PeriodoVacacionesDetailSerializer
 
     def perform_create(self, serializer):
-        """Asignar empresa automáticamente"""
         serializer.save(
-            empresa=self.request.user.empresa,
             created_by=self.request.user
         )
 
@@ -526,9 +508,8 @@ class SolicitudVacacionesViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Filtrar por empresa del usuario autenticado"""
+        """Filtrar solicitudes activas del tenant."""
         return SolicitudVacaciones.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).select_related(
             'colaborador',
@@ -545,9 +526,7 @@ class SolicitudVacacionesViewSet(viewsets.ModelViewSet):
         return SolicitudVacacionesDetailSerializer
 
     def perform_create(self, serializer):
-        """Asignar empresa automáticamente"""
         serializer.save(
-            empresa=self.request.user.empresa,
             created_by=self.request.user
         )
 
@@ -641,7 +620,6 @@ class ConfiguracionDotacionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return ConfiguracionDotacion.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         )
 
@@ -650,7 +628,6 @@ class ConfiguracionDotacionViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
-            empresa=self.request.user.empresa,
             created_by=self.request.user
         )
 
@@ -668,7 +645,6 @@ class EntregaDotacionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = EntregaDotacion.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).select_related('colaborador').order_by('-anio', '-fecha_entrega')
 
@@ -696,7 +672,6 @@ class EntregaDotacionViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
-            empresa=self.request.user.empresa,
             created_by=self.request.user
         )
 

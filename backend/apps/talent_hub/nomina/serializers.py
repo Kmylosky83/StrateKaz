@@ -82,8 +82,7 @@ class ConfiguracionNominaCreateSerializer(serializers.ModelSerializer):
 
     def validate_anio(self, value):
         """Validar que no exista configuración para el mismo año."""
-        empresa = self.context['request'].user.empresa
-        if ConfiguracionNomina.objects.filter(empresa=empresa, anio=value, is_active=True).exists():
+        if ConfiguracionNomina.objects.filter(anio=value, is_active=True).exists():
             raise serializers.ValidationError(
                 f"Ya existe una configuración de nómina para el año {value}."
             )
@@ -136,8 +135,7 @@ class ConceptoNominaCreateSerializer(serializers.ModelSerializer):
 
     def validate_codigo(self, value):
         """Validar que el código sea único por empresa."""
-        empresa = self.context['request'].user.empresa
-        if ConceptoNomina.objects.filter(empresa=empresa, codigo=value, is_active=True).exists():
+        if ConceptoNomina.objects.filter(codigo=value, is_active=True).exists():
             raise serializers.ValidationError(
                 f"Ya existe un concepto con el código '{value}'."
             )
@@ -196,9 +194,7 @@ class PeriodoNominaCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """Validar que no exista periodo duplicado."""
-        empresa = self.context['request'].user.empresa
         if PeriodoNomina.objects.filter(
-            empresa=empresa,
             anio=data['anio'],
             mes=data['mes'],
             tipo=data['tipo'],
@@ -294,9 +290,7 @@ class LiquidacionNominaCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """Validar que no exista liquidación duplicada."""
-        empresa = self.context['request'].user.empresa
         if LiquidacionNomina.objects.filter(
-            empresa=empresa,
             periodo=data['periodo'],
             colaborador=data['colaborador'],
             is_active=True

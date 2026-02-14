@@ -86,8 +86,7 @@ class TipoFaltaCreateSerializer(serializers.ModelSerializer):
 
     def validate_codigo(self, value):
         """Validar que el código sea único para la empresa."""
-        empresa = self.context['request'].user.empresa
-        if TipoFalta.objects.filter(empresa=empresa, codigo=value, is_active=True).exists():
+        if TipoFalta.objects.filter(codigo=value, is_active=True).exists():
             raise serializers.ValidationError("Ya existe un tipo de falta con este código.")
         return value.upper()
 
@@ -452,8 +451,7 @@ class MemorandoCreateSerializer(serializers.ModelSerializer):
 
     def validate_numero_memorando(self, value):
         """Validar que el número de memorando sea único para la empresa."""
-        empresa = self.context['request'].user.empresa
-        if Memorando.objects.filter(empresa=empresa, numero_memorando=value, is_active=True).exists():
+        if Memorando.objects.filter(numero_memorando=value, is_active=True).exists():
             raise serializers.ValidationError("Ya existe un memorando con este número.")
         return value
 

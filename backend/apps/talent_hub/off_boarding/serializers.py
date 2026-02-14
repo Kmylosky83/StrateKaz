@@ -69,8 +69,7 @@ class TipoRetiroCreateSerializer(serializers.ModelSerializer):
 
     def validate_codigo(self, value):
         """Validar que el código sea único por empresa."""
-        empresa = self.context['request'].user.empresa
-        if TipoRetiro.objects.filter(empresa=empresa, codigo=value, is_active=True).exists():
+        if TipoRetiro.objects.filter(codigo=value, is_active=True).exists():
             raise serializers.ValidationError(
                 f"Ya existe un tipo de retiro con el código '{value}'."
             )
@@ -164,12 +163,10 @@ class ProcesoRetiroCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """Validar que no exista proceso activo para el mismo colaborador."""
-        empresa = self.context['request'].user.empresa
         colaborador = data.get('colaborador')
 
         # Verificar que no haya proceso activo
         if ProcesoRetiro.objects.filter(
-            empresa=empresa,
             colaborador=colaborador,
             estado__in=['iniciado', 'checklist_pendiente', 'paz_salvo_pendiente',
                        'examen_pendiente', 'entrevista_pendiente', 'liquidacion_pendiente'],

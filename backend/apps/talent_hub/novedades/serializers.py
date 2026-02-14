@@ -447,9 +447,7 @@ class EntregaDotacionCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """Validar entrega unica por colaborador/periodo/anio."""
-        empresa = self.context['request'].user.empresa
         if EntregaDotacion.objects.filter(
-            empresa=empresa,
             colaborador=data['colaborador'],
             periodo=data['periodo'],
             anio=data['anio'],

@@ -92,9 +92,8 @@ class HistorialContratoCreateSerializer(serializers.ModelSerializer):
         ]
 
     def validate_numero_contrato(self, value):
-        empresa = self.context['request'].user.empresa
         qs = HistorialContrato.objects.filter(
-            empresa=empresa, numero_contrato=value, is_active=True
+            numero_contrato=value, is_active=True
         )
         if self.instance:
             qs = qs.exclude(pk=self.instance.pk)

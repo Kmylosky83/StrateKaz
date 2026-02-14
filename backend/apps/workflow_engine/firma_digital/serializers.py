@@ -353,6 +353,29 @@ class DelegarFirmaSerializer(serializers.Serializer):
         return data
 
 
+class FirmarFirmaActionSerializer(serializers.Serializer):
+    """Serializer para la accion firmar sobre una FirmaDigital existente (detail action)"""
+
+    firma_base64 = serializers.CharField(required=True, help_text='Imagen de firma en base64/DataURL')
+    firma_hash = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    observaciones = serializers.CharField(required=False, allow_blank=True, default='')
+    ip_address = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    user_agent = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+
+
+class RechazarFirmaActionSerializer(serializers.Serializer):
+    """Serializer para rechazar una FirmaDigital existente (detail action)"""
+
+    motivo = serializers.CharField(required=True, min_length=5)
+
+
+class DelegarFirmaActionSerializer(serializers.Serializer):
+    """Serializer para delegar una FirmaDigital existente a otro usuario (detail action)"""
+
+    nuevo_firmante_id = serializers.IntegerField(required=True)
+    motivo = serializers.CharField(required=True, min_length=5)
+
+
 class RevocarDelegacionSerializer(serializers.Serializer):
     """Serializer para revocar delegación"""
 

@@ -11,4 +11,4 @@ class FirmaDigitalConfig(AppConfig):
 
     def ready(self):
         """Importar signals cuando la app esté lista"""
-        pass
+        import apps.workflow_engine.firma_digital.signals  # noqa: F401

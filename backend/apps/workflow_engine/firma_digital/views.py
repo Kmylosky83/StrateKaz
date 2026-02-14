@@ -45,7 +45,15 @@ from .serializers import (
     ConfigurarRevisionSerializer,
     RenovarPoliticaSerializer,
     VerificarIntegridadSerializer,
+    FirmarFirmaActionSerializer,
+    RechazarFirmaActionSerializer,
+    DelegarFirmaActionSerializer,
 )
+
+import logging
+from django.contrib.auth import get_user_model
+
+logger = logging.getLogger(__name__)
 
 
 # ==============================================================================
@@ -332,27 +340,302 @@ class FirmaDigitalViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=True, methods=['post'])
+    def firmar(self, request, pk=None):
+        """
+        Firma una FirmaDigital existente con datos del canvas de firma.
+
+        Valida que:
+        - La firma esté en estado PENDIENTE
+        - El usuario sea el firmante asignado
+        - Sea su turno (en flujos secuenciales)
+        """
+        firma = self.get_object()
+        serializer = FirmarFirmaActionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Validar estado
+        if firma.estado != 'PENDIENTE':
+            return Response(
+                {'error': f'La firma no está pendiente (estado actual: {firma.estado})'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validar que el usuario sea el firmante
+        if firma.usuario != request.user:
+            return Response(
+                {'error': 'No eres el firmante asignado para esta firma'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Validar turno en flujo secuencial
+        if firma.configuracion_flujo and firma.configuracion_flujo.tipo_flujo == 'SECUENCIAL':
+            firmas_anteriores_pendientes = FirmaDigital.objects.filter(
+                content_type=firma.content_type,
+                object_id=firma.object_id,
+                orden__lt=firma.orden,
+                estado='PENDIENTE'
+            ).exists()
+            if firmas_anteriores_pendientes:
+                return Response(
+                    {'error': 'No es tu turno. Hay firmas anteriores pendientes.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        data = serializer.validated_data
+
+        with transaction.atomic():
+            # Actualizar firma
+            firma.estado = 'FIRMADO'
+            firma.firma_imagen = data['firma_base64']
+            firma.fecha_firma = timezone.now()
+            firma.ip_address = data.get('ip_address') or request.META.get('REMOTE_ADDR')
+            firma.user_agent = data.get('user_agent') or request.META.get('HTTP_USER_AGENT', '')
+            firma.comentarios = data.get('observaciones', '')
+
+            # Calcular hashes
+            documento = firma.content_type.get_object_for_this_type(pk=firma.object_id)
+            contenido = getattr(documento, 'content', getattr(documento, 'contenido', ''))
+            firma.documento_hash = firma.calcular_documento_hash(contenido)
+
+            firma.save()
+
+            # Recalcular firma_hash (usa save() override)
+            firma.firma_hash = firma.calcular_firma_hash()
+            firma.save(update_fields=['firma_hash'])
+
+            # Historial
+            HistorialFirma.objects.create(
+                firma=firma,
+                accion='FIRMA_VALIDADA',
+                usuario=request.user,
+                descripcion=f"Firma {firma.get_rol_firma_display()} completada",
+                metadatos={
+                    'ip': firma.ip_address,
+                    'user_agent': firma.user_agent[:200] if firma.user_agent else '',
+                },
+                ip_address=firma.ip_address,
+            )
+
+            # Auto-transicion del documento si todas las firmas completadas
+            self._verificar_firmas_completas(firma)
+
+        return Response(FirmaDigitalSerializer(firma).data)
+
+    @action(detail=True, methods=['post'])
+    def rechazar(self, request, pk=None):
+        """
+        Rechaza una firma pendiente con motivo obligatorio.
+        """
+        firma = self.get_object()
+        serializer = RechazarFirmaActionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        if firma.estado != 'PENDIENTE':
+            return Response(
+                {'error': f'La firma no está pendiente (estado actual: {firma.estado})'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if firma.usuario != request.user:
+            return Response(
+                {'error': 'No eres el firmante asignado'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        with transaction.atomic():
+            firma.estado = 'RECHAZADO'
+            firma.comentarios = serializer.validated_data['motivo']
+            firma.fecha_firma = timezone.now()
+            firma.save(update_fields=['estado', 'comentarios', 'fecha_firma', 'updated_at'])
+
+            HistorialFirma.objects.create(
+                firma=firma,
+                accion='FIRMA_RECHAZADA',
+                usuario=request.user,
+                descripcion=f"Firma rechazada: {firma.comentarios[:100]}",
+                metadatos={'motivo': firma.comentarios},
+                ip_address=request.META.get('REMOTE_ADDR'),
+            )
+
+            # Marcar documento como rechazado si tiene status
+            documento = firma.content_type.get_object_for_this_type(pk=firma.object_id)
+            if hasattr(documento, 'estado'):
+                documento.estado = 'RECHAZADO'
+                documento.save(update_fields=['estado', 'updated_at'])
+
+        return Response(FirmaDigitalSerializer(firma).data)
+
+    @action(detail=True, methods=['post'])
+    def delegar(self, request, pk=None):
+        """
+        Delega una firma pendiente a otro usuario.
+        """
+        firma = self.get_object()
+        serializer = DelegarFirmaActionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        if firma.estado != 'PENDIENTE':
+            return Response(
+                {'error': f'La firma no está pendiente (estado actual: {firma.estado})'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if firma.usuario != request.user:
+            return Response(
+                {'error': 'Solo puedes delegar tus propias firmas'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        User = get_user_model()
+        try:
+            nuevo_firmante = User.objects.get(id=serializer.validated_data['nuevo_firmante_id'])
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'El usuario delegado no existe'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        with transaction.atomic():
+            # Marcar firma actual como delegada
+            firma.estado = 'DELEGADO'
+            firma.comentarios = serializer.validated_data['motivo']
+            firma.save(update_fields=['estado', 'comentarios', 'updated_at'])
+
+            # Crear nueva firma para el delegado
+            nueva_firma = FirmaDigital.objects.create(
+                content_type=firma.content_type,
+                object_id=firma.object_id,
+                usuario=nuevo_firmante,
+                cargo=firma.cargo,
+                rol_firma=firma.rol_firma,
+                estado='PENDIENTE',
+                orden=firma.orden,
+                configuracion_flujo=firma.configuracion_flujo,
+                nodo_flujo=firma.nodo_flujo,
+                delegante=request.user,
+                empresa=firma.empresa,
+            )
+
+            HistorialFirma.objects.create(
+                firma=firma,
+                accion='FIRMA_DELEGADA',
+                usuario=request.user,
+                descripcion=f"Delegada a {nuevo_firmante.get_full_name()}",
+                metadatos={
+                    'delegado_a_id': nuevo_firmante.id,
+                    'nueva_firma_id': str(nueva_firma.id),
+                    'motivo': serializer.validated_data['motivo'],
+                },
+                ip_address=request.META.get('REMOTE_ADDR'),
+            )
+
+        return Response(FirmaDigitalSerializer(nueva_firma).data, status=status.HTTP_201_CREATED)
+
+    def _verificar_firmas_completas(self, firma):
+        """
+        Verifica si todas las firmas de un documento están completadas.
+        Si es así, transiciona el documento al estado apropiado.
+        """
+        total_pendientes = FirmaDigital.objects.filter(
+            content_type=firma.content_type,
+            object_id=firma.object_id,
+            estado='PENDIENTE'
+        ).count()
+
+        if total_pendientes > 0:
+            return
+
+        # Todas las firmas completadas (no quedan PENDIENTES)
+        alguna_rechazada = FirmaDigital.objects.filter(
+            content_type=firma.content_type,
+            object_id=firma.object_id,
+            estado='RECHAZADO'
+        ).exists()
+
+        if alguna_rechazada:
+            return  # No transicionar si hay rechazos
+
+        documento = firma.content_type.get_object_for_this_type(pk=firma.object_id)
+
+        if hasattr(documento, 'estado'):
+            # Documento de Gestion Documental
+            documento.estado = 'APROBADO'
+            documento.fecha_aprobacion = timezone.now().date()
+            documento.save(update_fields=['estado', 'fecha_aprobacion', 'updated_at'])
+            logger.info(f"Documento {documento.pk} transicionado a APROBADO (todas las firmas completadas)")
+        elif hasattr(documento, 'status'):
+            # PoliticaEspecifica
+            documento.status = 'VIGENTE'
+            if hasattr(documento, 'effective_date'):
+                documento.effective_date = timezone.now().date()
+                documento.save(update_fields=['status', 'effective_date', 'updated_at'])
+            else:
+                documento.save(update_fields=['status', 'updated_at'])
+            logger.info(f"Politica {documento.pk} transicionada a VIGENTE (todas las firmas completadas)")
+
     @action(detail=False, methods=['get'])
     def mis_firmas_pendientes(self, request):
-        """Obtiene las firmas pendientes del usuario actual"""
+        """
+        Obtiene las firmas pendientes del usuario actual.
+        Incluye firmas directas y delegadas.
+
+        Query params:
+        - es_mi_turno: true/false (filtra solo las que son su turno en flujo secuencial)
+        """
         user = request.user
 
-        # Obtener delegaciones vigentes
-        delegaciones = DelegacionFirma.objects.filter(
-            delegado=user,
-            esta_activa=True,
-            fecha_inicio__lte=timezone.now(),
-            fecha_fin__gte=timezone.now()
-        )
+        # Firmas directas del usuario
+        firmas_directas = FirmaDigital.objects.filter(
+            usuario=user,
+            estado='PENDIENTE'
+        ).select_related('content_type', 'cargo', 'configuracion_flujo')
 
-        # TODO: Implementar lógica para obtener documentos pendientes de firma
-        # basado en el cargo del usuario y delegaciones
+        # Construir respuesta con info del documento
+        resultado = []
+        for firma in firmas_directas:
+            # Obtener documento para titulo/tipo
+            try:
+                documento = firma.content_type.get_object_for_this_type(pk=firma.object_id)
+                doc_titulo = getattr(documento, 'titulo', getattr(documento, 'title', str(documento)))
+                doc_tipo = firma.content_type.model
+            except Exception:
+                doc_titulo = f'Documento #{firma.object_id}'
+                doc_tipo = firma.content_type.model if firma.content_type else 'desconocido'
 
-        return Response({
-            'total': 0,
-            'firmas_directas': [],
-            'firmas_delegadas': []
-        })
+            # Determinar si es su turno
+            es_mi_turno = True
+            if firma.configuracion_flujo and firma.configuracion_flujo.tipo_flujo == 'SECUENCIAL':
+                firmas_anteriores_pendientes = FirmaDigital.objects.filter(
+                    content_type=firma.content_type,
+                    object_id=firma.object_id,
+                    orden__lt=firma.orden,
+                    estado='PENDIENTE'
+                ).exists()
+                es_mi_turno = not firmas_anteriores_pendientes
+
+            # Filtrar por es_mi_turno si se pide
+            es_mi_turno_param = request.query_params.get('es_mi_turno')
+            if es_mi_turno_param is not None:
+                if es_mi_turno_param.lower() == 'true' and not es_mi_turno:
+                    continue
+
+            dias_pendiente = (timezone.now() - firma.created_at).days if firma.created_at else 0
+
+            resultado.append({
+                'id': firma.id,
+                'documento_tipo': doc_tipo,
+                'documento_id': firma.object_id,
+                'documento_titulo': doc_titulo,
+                'rol_firma': firma.rol_firma,
+                'rol_firma_display': firma.get_rol_firma_display(),
+                'orden': firma.orden,
+                'es_mi_turno': es_mi_turno,
+                'fecha_limite': None,
+                'dias_pendiente': dias_pendiente,
+            })
+
+        return Response(resultado)
 
 
 class HistorialFirmaViewSet(viewsets.ReadOnlyModelViewSet):
@@ -389,23 +672,34 @@ class DelegacionFirmaViewSet(viewsets.ModelViewSet):
     ordering_fields = ['fecha_inicio', 'fecha_fin']
 
     def get_queryset(self):
-        user = self.request.user
+        from apps.core.base_models.mixins import get_tenant_empresa
 
-        return DelegacionFirma.objects.filter(
+        user = self.request.user
+        empresa = get_tenant_empresa(auto_create=False)
+
+        qs = DelegacionFirma.objects.filter(
             Q(delegante=user) | Q(delegado=user),
-            empresa=user.empresa,
             is_active=True
         ).select_related('delegante', 'delegado', 'cargo')
 
+        if empresa:
+            qs = qs.filter(empresa=empresa)
+
+        return qs
+
     def perform_create(self, serializer):
         """Crea delegación validando permisos"""
+        from apps.core.base_models.mixins import get_tenant_empresa
+
         user = self.request.user
+        empresa = get_tenant_empresa()
 
         # Validar que el usuario sea el delegante
         if serializer.validated_data['delegante'] != user:
-            raise serializers.ValidationError("Solo puede delegar su propia autoridad")
+            from rest_framework import serializers as drf_serializers
+            raise drf_serializers.ValidationError("Solo puede delegar su propia autoridad")
 
-        serializer.save(empresa=user.empresa, created_by=user)
+        serializer.save(empresa=empresa, created_by=user)
 
     @action(detail=True, methods=['post'])
     def revocar(self, request, pk=None):

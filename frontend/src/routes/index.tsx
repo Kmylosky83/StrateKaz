@@ -105,6 +105,20 @@ const SeguridadInformacionPage = lazy(() =>
   import('@/features/riesgos').then((m) => ({ default: m.SeguridadInformacionPage }))
 );
 
+// Sistema de Gestion
+const SGGestionDocumentalPage = lazy(() =>
+  import('@/features/sistema-gestion').then((m) => ({ default: m.GestionDocumentalPage }))
+);
+const SGPlanificacionPage = lazy(() =>
+  import('@/features/sistema-gestion').then((m) => ({ default: m.PlanificacionSistemaPage }))
+);
+const SGAuditoriasPage = lazy(() =>
+  import('@/features/sistema-gestion').then((m) => ({ default: m.AuditoriasInternasPage }))
+);
+const SGAccionesMejoraPage = lazy(() =>
+  import('@/features/sistema-gestion').then((m) => ({ default: m.AccionesMejoraPage }))
+);
+
 // Workflows Engine
 const DisenadorFlujosPage = lazy(() =>
   import('@/features/workflows').then((m) => ({ default: m.DisenadorFlujosPage }))
@@ -393,19 +407,18 @@ export const AppRoutes = () => {
             element={withModuleGuard(RevisionDireccionPage, 'gestion_estrategica')}
           />
 
-          {/* Soporte Estrategico: Gestion Documental y Planificacion Sistema */}
-          {/* Redirige a HSEQ donde estan las implementaciones completas */}
+          {/* Soporte Estrategico: Redirige a Sistema de Gestion */}
           <Route
             path="/soporte-estrategico"
-            element={<Navigate to="/hseq/sistema-documental" replace />}
+            element={<Navigate to="/sistema-gestion/documentos" replace />}
           />
           <Route
             path="/soporte-estrategico/gestion-documental"
-            element={<Navigate to="/hseq/sistema-documental" replace />}
+            element={<Navigate to="/sistema-gestion/documentos" replace />}
           />
           <Route
             path="/soporte-estrategico/planificacion-sistema"
-            element={<Navigate to="/hseq/planificacion" replace />}
+            element={<Navigate to="/sistema-gestion/planificacion" replace />}
           />
 
           {/* ═══════════════════════════════════════════════════════════════ */}
@@ -441,6 +454,32 @@ export const AppRoutes = () => {
           <Route
             path="/talento/off-boarding"
             element={withModuleGuard(TalentHubPage, 'talent_hub')}
+          />
+
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          {/* SISTEMA DE GESTION (orden 20) */}
+          {/* Modulo: sistema_gestion */}
+          {/* Control documental ISO, planificación, auditorías, mejora */}
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          <Route
+            path="/sistema-gestion"
+            element={<Navigate to="/sistema-gestion/documentos" replace />}
+          />
+          <Route
+            path="/sistema-gestion/documentos"
+            element={withModuleGuard(SGGestionDocumentalPage, 'sistema_gestion')}
+          />
+          <Route
+            path="/sistema-gestion/planificacion"
+            element={withModuleGuard(SGPlanificacionPage, 'sistema_gestion')}
+          />
+          <Route
+            path="/sistema-gestion/auditorias"
+            element={withModuleGuard(SGAuditoriasPage, 'sistema_gestion')}
+          />
+          <Route
+            path="/sistema-gestion/acciones"
+            element={withModuleGuard(SGAccionesMejoraPage, 'sistema_gestion')}
           />
 
           {/* ═══════════════════════════════════════════════════════════════ */}
@@ -512,13 +551,13 @@ export const AppRoutes = () => {
           {/* NIVEL 6: GESTION INTEGRAL HSEQ */}
           {/* Modulo: hseq_management */}
           {/* ═══════════════════════════════════════════════════════════════ */}
-          <Route path="/hseq" element={<Navigate to="/hseq/sistema-documental" replace />} />
+          <Route path="/hseq" element={<Navigate to="/hseq/dashboard" replace />} />
           <Route path="/hseq/dashboard" element={withModuleGuard(HSEQPage, 'hseq_management')} />
 
-          {/* Tab 1: Sistema Documental (Gestion Documental centralizada) */}
+          {/* Sistema Documental: redirige a Sistema de Gestion */}
           <Route
             path="/hseq/sistema-documental"
-            element={withModuleGuard(SistemaDocumentalPage, 'hseq_management')}
+            element={<Navigate to="/sistema-gestion/documentos" replace />}
           />
 
           {/* Tab 2: Planificacion del Sistema (Plan de Trabajo Anual, Programas) */}

@@ -163,7 +163,7 @@ export function useWorkflowFirmas() {
       queryFn: async () => {
         const params = esMiTurno !== undefined ? { es_mi_turno: esMiTurno } : {};
         const response = await api.get<FirmaPendiente[]>(
-          '/api/gestion-estrategica/identidad/workflow/firmas-digitales/mis-firmas-pendientes/',
+          '/api/workflows/firma-digital/firmas/mis_firmas_pendientes/',
           { params }
         );
         return response.data;
@@ -179,7 +179,7 @@ export function useWorkflowFirmas() {
       queryKey: ['firma-digital', firmaId],
       queryFn: async () => {
         const response = await api.get<FirmaDigital>(
-          `/api/gestion-estrategica/identidad/workflow/firmas-digitales/${firmaId}/`
+          `/api/workflows/firma-digital/firmas/${firmaId}/`
         );
         return response.data;
       },
@@ -194,10 +194,11 @@ export function useWorkflowFirmas() {
     return useQuery<FirmaDigital[]>({
       queryKey: ['firmas-documento', contentType, objectId],
       queryFn: async () => {
-        const response = await api.get<FirmaDigital[]>(
-          `/api/gestion-estrategica/identidad/workflow/firmas-digitales/documento/${contentType}/${objectId}/`
-        );
-        return response.data;
+        const response = await api.get<FirmaDigital[]>('/api/workflows/firma-digital/firmas/', {
+          params: { content_type: contentType, object_id: objectId },
+        });
+        const data = response.data;
+        return Array.isArray(data) ? data : ((data as { results?: FirmaDigital[] })?.results ?? []);
       },
       enabled: !!contentType && !!objectId,
     });
@@ -215,7 +216,7 @@ export function useWorkflowFirmas() {
         if (fechaHasta) params.fecha_hasta = fechaHasta;
 
         const response = await api.get<FirmaEstadisticas>(
-          '/api/gestion-estrategica/identidad/workflow/firmas-digitales/estadisticas/',
+          '/api/workflows/firma-digital/firmas/estadisticas/',
           { params }
         );
         return response.data;
@@ -231,7 +232,7 @@ export function useWorkflowFirmas() {
   const crearProcesoFirmaMutation = useMutation({
     mutationFn: async (data: CreateProcesoFirmaDTO) => {
       const response = await api.post<ConfiguracionWorkflowFirma>(
-        '/api/gestion-estrategica/identidad/workflow/workflow-firmas/',
+        '/api/workflows/firma-digital/firmas/',
         data
       );
       return response.data;
@@ -266,7 +267,7 @@ export function useWorkflowFirmas() {
       };
 
       const response = await api.post<FirmaDigital>(
-        `/api/gestion-estrategica/identidad/workflow/firmas-digitales/${firmaId}/firmar/`,
+        `/api/workflows/firma-digital/firmas/${firmaId}/firmar/`,
         dto
       );
       return response.data;
@@ -291,7 +292,7 @@ export function useWorkflowFirmas() {
   const rechazarFirmaMutation = useMutation({
     mutationFn: async ({ firmaId, motivo }: { firmaId: number; motivo: string }) => {
       const response = await api.post<FirmaDigital>(
-        `/api/gestion-estrategica/identidad/workflow/firmas-digitales/${firmaId}/rechazar/`,
+        `/api/workflows/firma-digital/firmas/${firmaId}/rechazar/`,
         { motivo }
       );
       return response.data;
@@ -320,7 +321,7 @@ export function useWorkflowFirmas() {
       motivo: string;
     }) => {
       const response = await api.post<FirmaDigital>(
-        `/api/gestion-estrategica/identidad/workflow/firmas-digitales/${firmaId}/delegar/`,
+        `/api/workflows/firma-digital/firmas/${firmaId}/delegar/`,
         {
           nuevo_firmante_id: nuevoFirmanteId,
           motivo,
@@ -343,7 +344,7 @@ export function useWorkflowFirmas() {
   const verificarIntegridadMutation = useMutation({
     mutationFn: async (firmaId: number) => {
       const response = await api.get<{ is_valid: boolean; message: string }>(
-        `/api/gestion-estrategica/identidad/workflow/firmas-digitales/${firmaId}/verificar-integridad/`
+        `/api/workflows/firma-digital/firmas/${firmaId}/validar_integridad/`
       );
       return response.data;
     },
@@ -390,13 +391,8 @@ export function useWorkflowFirmas() {
  * Hook simplificado para firmas de un documento específico
  */
 export function useDocumentoFirmas(contentType: number, objectId: number) {
-  const {
-    useFirmasDocumento,
-    firmarDocumento,
-    crearProcesoFirma,
-    isFirmando,
-    firmarError,
-  } = useWorkflowFirmas();
+  const { useFirmasDocumento, firmarDocumento, crearProcesoFirma, isFirmando, firmarError } =
+    useWorkflowFirmas();
 
   const { data: firmas, isLoading: isLoadingFirmas } = useFirmasDocumento(contentType, objectId);
 

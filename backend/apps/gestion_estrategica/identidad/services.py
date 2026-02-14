@@ -49,21 +49,23 @@ class GestorDocumentalService:
     def enviar_politica_a_documental(
         cls,
         politica,
-        firmas_digitales: List,
         request_user,
+        firmas_digitales: Optional[List] = None,
         clasificacion: str = 'INTERNO',
         areas_aplicacion: list = None,
         observaciones: str = ''
     ) -> Dict[str, Any]:
         """
-        Envía una política firmada al Gestor Documental.
+        Envía una política al Gestor Documental.
 
-        Fase 0.3.4: Usa FirmaDigital directamente.
+        Flujo v4.0 simplificado:
+        - Sin firmas previas: crea Documento en BORRADOR (firma se gestiona en GD)
+        - Con firmas (legacy): crea Documento en APROBADO -> PUBLICADO
 
         Args:
             politica: Instancia de PoliticaEspecifica
-            firmas_digitales: Lista de FirmaDigital completadas
             request_user: Usuario que solicita el envío
+            firmas_digitales: Lista de FirmaDigital completadas (opcional en v4.0)
             clasificacion: Nivel de clasificación del documento
             areas_aplicacion: Lista de IDs de áreas donde aplica
             observaciones: Observaciones adicionales
@@ -81,21 +83,20 @@ class GestorDocumentalService:
                 "Verifique que esté instalado en INSTALLED_APPS."
             )
 
-        # Validar estado de la política
-        if politica.status not in ['FIRMADO', 'EN_REVISION', 'POR_CODIFICAR']:
+        # Validar estado de la política (v4.0: EN_GESTION es válido)
+        estados_validos = ['EN_GESTION', 'FIRMADO', 'EN_REVISION', 'POR_CODIFICAR']
+        if politica.status not in estados_validos:
             raise ValueError(
-                f"La política debe estar en estado FIRMADO, EN_REVISION o POR_CODIFICAR, "
+                f"La política debe estar en estado {', '.join(estados_validos)}, "
                 f"estado actual: {politica.status}"
             )
 
-        # Validar que hay firmas
-        if not firmas_digitales:
-            raise ValueError("Debe haber al menos una firma digital completada")
+        tiene_firmas = bool(firmas_digitales)
 
         # Preparar datos para el Gestor Documental
         datos_documental = cls._preparar_datos_documental(
             politica=politica,
-            firmas_digitales=firmas_digitales,
+            firmas_digitales=firmas_digitales or [],
             request_user=request_user,
             clasificacion=clasificacion,
             areas_aplicacion=areas_aplicacion or [],
@@ -183,6 +184,10 @@ class GestorDocumentalService:
         elif es_actualizacion:
             numero_revision = 1
 
+        # v4.0: Sin firmas -> BORRADOR (firma se gestiona en GD)
+        # Con firmas (legacy) -> APROBADO
+        estado_inicial = 'APROBADO' if tiene_firmas else 'BORRADOR'
+
         documento = Documento.objects.create(
             codigo=codigo_documento,
             titulo=datos_documental['titulo'],
@@ -192,11 +197,11 @@ class GestorDocumentalService:
             palabras_clave=datos_documental.get('palabras_clave', []),
             version_actual=datos_documental.get('version', '1.0'),
             numero_revision=numero_revision,
-            estado='APROBADO',
+            estado=estado_inicial,
             clasificacion=clasificacion,
-            fecha_aprobacion=timezone.now().date(),
+            fecha_aprobacion=timezone.now().date() if tiene_firmas else None,
             elaborado_por=elaborado_por,
-            aprobado_por=elaborado_por,
+            aprobado_por=elaborado_por if tiene_firmas else None,
             areas_aplicacion=areas_aplicacion or [],
             observaciones=observaciones,
             empresa_id=empresa_id,
@@ -209,48 +214,15 @@ class GestorDocumentalService:
         firmas_info = datos_documental.get('firmas', [])
         firmas_digitales = datos_documental.get('firmas_digitales', [])
 
-        # Si ya tenemos FirmaDigital, las referenciamos directamente
-        if firmas_digitales:
-            # Las firmas ya están vinculadas al documento a través de GenericForeignKey
+        # Vincular FirmaDigital existentes al documento (si las hay)
+        if tiene_firmas:
             logger.info(
                 f"Documento {documento.id} vinculado con {len(firmas_digitales)} firmas digitales existentes"
             )
         else:
-            # Fallback: crear FirmaDocumento legacy solo si no hay FirmaDigital
-            # Esto mantiene compatibilidad durante la migración
-            for firma_data in firmas_info:
-                try:
-                    firmante = User.objects.get(id=firma_data['usuario_id']) if firma_data.get('usuario_id') else elaborado_por
-                except User.DoesNotExist:
-                    firmante = elaborado_por
-
-                # Mapear rol de Identidad a tipo de firma de Documental
-                tipo_firma_map = {
-                    'ELABORO': 'ELABORACION',
-                    'REVISO': 'REVISION',
-                    'REVISO_TECNICO': 'REVISION',
-                    'REVISO_JURIDICO': 'REVISION',
-                    'APROBO': 'APROBACION',
-                    'APROBO_DIRECTOR': 'APROBACION',
-                    'APROBO_GERENTE': 'APROBACION',
-                    'APROBO_REPRESENTANTE_LEGAL': 'APROBACION',
-                    'VALIDO': 'VALIDACION',
-                    'AUTORIZO': 'APROBACION',
-                }
-                tipo_firma = tipo_firma_map.get(firma_data.get('rol', ''), 'VALIDACION')
-
-                FirmaDocumento.objects.create(
-                    documento=documento,
-                    tipo_firma=tipo_firma,
-                    firmante=firmante,
-                    cargo_firmante=firma_data.get('cargo_nombre', ''),
-                    estado='FIRMADO',
-                    fecha_firma=timezone.now(),
-                    comentarios=f"Firma importada desde Identidad - Proceso #{proceso_firma.id}",
-                    orden_firma=firma_data.get('orden', 1),
-                    checksum_documento=firma_data.get('firma_hash', ''),
-                    empresa_id=empresa_id,
-                )
+            logger.info(
+                f"Documento {documento.id} creado sin firmas (v4.0 - firma en GD)"
+            )
 
         # 7. Crear versión del documento
         tipo_cambio = 'CREACION' if not es_actualizacion else 'ACTUALIZACION'
@@ -272,34 +244,40 @@ class GestorDocumentalService:
             empresa_id=empresa_id,
         )
 
-        # 8. Publicar documento
-        documento.estado = 'PUBLICADO'
-        documento.fecha_publicacion = timezone.now().date()
-        documento.fecha_vigencia = timezone.now().date()
-        documento.save()
+        # 8. Publicar documento (solo si tiene firmas - flujo legacy)
+        if tiene_firmas:
+            documento.estado = 'PUBLICADO'
+            documento.fecha_publicacion = timezone.now().date()
+            documento.fecha_vigencia = timezone.now().date()
+            documento.save()
 
-        # 9. Crear control de distribución
-        observaciones_control = f"Distribución automática desde Identidad Corporativa. Política ID: {politica.id}"
-        if es_actualizacion:
-            observaciones_control = f"Nueva versión de política. {observaciones_control}"
+            # 9. Crear control de distribución
+            observaciones_control = f"Distribución automática desde Identidad Corporativa. Política ID: {politica.id}"
+            if es_actualizacion:
+                observaciones_control = f"Nueva versión de política. {observaciones_control}"
 
-        ControlDocumental.objects.create(
-            documento=documento,
-            tipo_control='DISTRIBUCION',
-            fecha_distribucion=timezone.now().date(),
-            medio_distribucion='DIGITAL',
-            areas_distribucion=areas_aplicacion or [],
-            observaciones=observaciones_control,
-            empresa_id=empresa_id,
-        )
+            ControlDocumental.objects.create(
+                documento=documento,
+                tipo_control='DISTRIBUCION',
+                fecha_distribucion=timezone.now().date(),
+                medio_distribucion='DIGITAL',
+                areas_distribucion=areas_aplicacion or [],
+                observaciones=observaciones_control,
+                empresa_id=empresa_id,
+            )
 
-        # 10. Actualizar estado de política en Identidad (callback)
-        cls._actualizar_politica_identidad(
-            politica=politica,
-            documento_id=documento.id,
-            codigo_documento=codigo_documento,
-            es_actualizacion=es_actualizacion,
-        )
+            # 10. Actualizar estado de política en Identidad (callback)
+            cls._actualizar_politica_identidad(
+                politica=politica,
+                documento_id=documento.id,
+                codigo_documento=codigo_documento,
+                es_actualizacion=es_actualizacion,
+            )
+        else:
+            # v4.0: Solo vincular documento_id (firma se hará desde GD)
+            politica.documento_id = documento.id
+            politica.code = codigo_documento
+            politica.save(update_fields=['documento_id', 'code', 'updated_at'])
 
         logger.info(
             f"Política {politica.id} enviada exitosamente al Gestor Documental. "
@@ -308,21 +286,15 @@ class GestorDocumentalService:
 
         return {
             'success': True,
-            'detail': 'Política enviada y publicada exitosamente',
+            'detail': 'Política enviada exitosamente al Gestor Documental',
             'documento_id': documento.id,
             'codigo': documento.codigo,
             'titulo': documento.titulo,
             'estado': documento.estado,
             'version': documento.version_actual,
-            'fecha_publicacion': documento.fecha_publicacion,
-            'total_firmas_registradas': len(firmas_info),
-            'url_documento': f"/api/hseq/documentos/{documento.id}/",
+            'fecha_publicacion': str(documento.fecha_publicacion) if documento.fecha_publicacion else None,
+            'requiere_firmas': not tiene_firmas,
             'es_actualizacion': es_actualizacion,
-            'origen': {
-                'modulo': 'IDENTIDAD_CORPORATIVA',
-                'tipo': datos_documental['tipo_origen'],
-                'politica_id': politica.id,
-            }
         }
 
     @staticmethod
@@ -413,7 +385,7 @@ class GestorDocumentalService:
             'version': politica.version,
             'norma_iso_code': norma_code,
             'area_id': getattr(politica, 'area_id', None),
-            'area_nombre': politica.area.nombre if hasattr(politica, 'area') and politica.area else None,
+            'area_nombre': politica.area.name if hasattr(politica, 'area') and politica.area else None,
             'palabras_clave': getattr(politica, 'keywords', []) or [],
             'clasificacion': clasificacion,
             'areas_aplicacion': areas_aplicacion,

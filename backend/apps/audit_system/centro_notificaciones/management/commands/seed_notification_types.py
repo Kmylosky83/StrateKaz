@@ -473,4 +473,73 @@ TIPOS_NOTIFICACION = [
         'es_email': False,
         'es_push': True,
     },
+
+    # =========================================================================
+    # FIRMA DIGITAL (Workflow de Firmas)
+    # =========================================================================
+    {
+        'codigo': 'FIRMA_PENDIENTE',
+        'nombre': 'Firma Pendiente',
+        'descripcion': 'Notifica al usuario que tiene una firma digital pendiente',
+        'categoria': 'aprobacion',
+        'color': '#8B5CF6',  # Purple
+        'icono': 'edit-3',
+        'plantilla_titulo': 'Firma pendiente: {documento_titulo}',
+        'plantilla_mensaje': 'Tienes una firma ({rol_firma}) pendiente para el documento "{documento_titulo}".',
+        'url_template': '/sistema-gestion/documentos',
+        'es_email': True,
+        'es_push': True,
+    },
+    {
+        'codigo': 'FIRMA_COMPLETADA',
+        'nombre': 'Firma Completada',
+        'descripcion': 'Notifica al creador del documento que alguien firmo',
+        'categoria': 'aprobacion',
+        'color': '#10B981',  # Green
+        'icono': 'check-circle',
+        'plantilla_titulo': 'Firma completada: {documento_titulo}',
+        'plantilla_mensaje': '{firmante_nombre} ha firmado ({rol_firma}) el documento "{documento_titulo}".',
+        'url_template': '/sistema-gestion/documentos',
+        'es_email': False,
+        'es_push': True,
+    },
+    {
+        'codigo': 'FIRMA_RECHAZADA',
+        'nombre': 'Firma Rechazada',
+        'descripcion': 'Notifica al creador que una firma fue rechazada',
+        'categoria': 'alerta',
+        'color': '#EF4444',  # Red
+        'icono': 'x-circle',
+        'plantilla_titulo': 'Firma rechazada: {documento_titulo}',
+        'plantilla_mensaje': '{firmante_nombre} ha rechazado la firma del documento "{documento_titulo}". Motivo: {motivo}',
+        'url_template': '/sistema-gestion/documentos',
+        'es_email': True,
+        'es_push': True,
+    },
+    {
+        'codigo': 'FIRMA_DELEGADA',
+        'nombre': 'Firma Delegada',
+        'descripcion': 'Notifica al nuevo firmante que le delegaron una firma',
+        'categoria': 'sistema',
+        'color': '#F59E0B',  # Amber
+        'icono': 'user-check',
+        'plantilla_titulo': 'Firma delegada: {documento_titulo}',
+        'plantilla_mensaje': '{delegante} te ha delegado la firma ({rol_firma}) del documento "{documento_titulo}".',
+        'url_template': '/sistema-gestion/documentos',
+        'es_email': True,
+        'es_push': True,
+    },
+    {
+        'codigo': 'DOCUMENTO_TODAS_FIRMAS',
+        'nombre': 'Documento con Todas las Firmas',
+        'descripcion': 'Notifica cuando un documento recibe todas las firmas requeridas',
+        'categoria': 'sistema',
+        'color': '#10B981',  # Green
+        'icono': 'award',
+        'plantilla_titulo': 'Documento aprobado: {documento_titulo}',
+        'plantilla_mensaje': 'El documento "{documento_titulo}" ha sido aprobado con todas las firmas completadas.',
+        'url_template': '/sistema-gestion/documentos',
+        'es_email': True,
+        'es_push': True,
+    },
 ]

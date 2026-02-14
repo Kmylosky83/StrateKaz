@@ -974,14 +974,34 @@ class AlertaRevision(TimestampedModel):
             )
             self.tarea = tarea
 
-        # Crear notificación
+        # Crear notificación para cada destinatario
+        from apps.audit_system.centro_notificaciones.services import NotificationService
+
+        doc_titulo = str(self.documento) if self.documento else f'Documento #{self.object_id}'
+        prioridad = 'alta' if self.tipo_alerta in ['ALERTA_3', 'DIA_VENCIMIENTO', 'POST_VENCIMIENTO'] else 'normal'
+        ultima_notificacion = None
+
         for destinatario in self.destinatarios.all():
-            # Implementar creación de notificación
-            pass
+            ultima_notificacion = NotificationService.send_notification(
+                tipo_codigo='DOCUMENTO_REVISION',
+                usuario=destinatario,
+                titulo=f'Revision requerida: {doc_titulo}',
+                mensaje=f'El documento "{doc_titulo}" requiere revision. Vence el {self.fecha_vencimiento}. Alerta: {self.tipo_alerta}.',
+                url='/sistema-gestion/documentos',
+                prioridad=prioridad,
+                datos_extra={
+                    'tipo_alerta': self.tipo_alerta,
+                    'fecha_vencimiento': str(self.fecha_vencimiento),
+                    'documento_titulo': doc_titulo,
+                },
+            )
+
+        if ultima_notificacion:
+            self.notificacion = ultima_notificacion
 
         self.estado = 'ENVIADA'
         self.fecha_envio = timezone.now()
-        self.save(update_fields=['estado', 'fecha_envio', 'tarea'])
+        self.save(update_fields=['estado', 'fecha_envio', 'tarea', 'notificacion'])
 
         return True
 

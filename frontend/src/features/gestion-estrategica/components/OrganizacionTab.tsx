@@ -3,17 +3,14 @@
  *
  * Secciones (orden desde BD):
  * 1. Procesos (Areas) - Gestion de areas/departamentos (Vista 7: Tree Cards)
- * 2. Organigrama - Vista interactiva del organigrama (Vista 8: Organigrama)
- * 3. Consecutivos - Configuracion de consecutivos automaticos (Vista 2: Lista CRUD)
- * 4. Unidades - Catalogo de unidades de medida (Vista 2: Lista CRUD)
+ * 2. Consecutivos - Configuracion de consecutivos automaticos (Vista 2: Lista CRUD)
+ * 3. Unidades - Catalogo de unidades de medida (Vista 2: Lista CRUD)
  *
  * NOTA: 'Cargos' y 'Colaboradores' migrados a Talento Humano (Sprint 13).
- * El Organigrama sigue leyendo cargos (read-only) desde la API /core/cargos-rbac/.
- * Los permisos RBAC se configuran en CargoFormModal > TabAccesoSecciones.
+ * NOTA: 'Organigrama' migrado a Talento Humano > Estructura (Sprint 13).
  */
 
 // Importar componentes internos
-import { OrganigramaView } from './OrganigramaView';
 import { AreasTab } from './AreasTab';
 
 // Consecutivos y Unidades de Medida migrados desde Configuracion
@@ -36,7 +33,6 @@ interface OrganizacionTabProps {
  */
 const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
   areas: AreasTab,
-  organigrama: OrganigramaView,
   consecutivos: ConsecutivosSection,
   unidades_medida: UnidadesMedidaSection,
 };

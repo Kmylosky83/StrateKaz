@@ -5,7 +5,7 @@ Funciones auxiliares para resolver EmpresaConfig en contexto multi-tenant.
 """
 
 
-def get_tenant_empresa():
+def get_tenant_empresa(auto_create=True):
     """
     Get the EmpresaConfig instance for the current tenant schema.
 
@@ -15,9 +15,17 @@ def get_tenant_empresa():
 
     Uses apps.get_model() to avoid circular imports.
 
+    Args:
+        auto_create: If True and no EmpresaConfig exists, creates one
+                     with default values. This prevents 400 errors on
+                     first use of a new tenant.
+
     Returns:
-        EmpresaConfig instance or None if not found.
+        EmpresaConfig instance or None if not found and auto_create=False.
     """
     from django.apps import apps
     EmpresaConfig = apps.get_model('configuracion', 'EmpresaConfig')
-    return EmpresaConfig.objects.first()
+    instance = EmpresaConfig.objects.first()
+    if instance is None and auto_create:
+        instance, _ = EmpresaConfig.get_or_create_default()
+    return instance

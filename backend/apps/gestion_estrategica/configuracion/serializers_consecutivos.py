@@ -126,16 +126,15 @@ class ConsecutivoConfigSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        """Asigna empresa_id del request."""
+        """Asigna empresa del tenant actual."""
+        from apps.core.base_models.mixins import get_tenant_empresa
         request = self.context.get('request')
         if request and hasattr(request, 'user'):
             validated_data['created_by'] = request.user
-            # Asignar empresa_id (debe venir del tenant o request)
-            if hasattr(request.user, 'empresa_id'):
-                validated_data['empresa_id'] = request.user.empresa_id
-            elif not validated_data.get('empresa_id'):
-                # Fallback: usar empresa_id=1 para desarrollo
-                validated_data['empresa_id'] = 1
+            if not validated_data.get('empresa_id'):
+                empresa = get_tenant_empresa()
+                if empresa:
+                    validated_data['empresa_id'] = empresa.id
         return super().create(validated_data)
 
 

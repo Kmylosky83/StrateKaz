@@ -67,28 +67,8 @@ class Command(BaseCommand):
             existing.delete()
 
         empresa = EmpresaConfig(
-            # Datos fiscales de StrateKaz
-            nit='901000000-0',  # NIT de ejemplo - actualizar con el real
+            nit='901000000-0',
             razon_social='StrateKaz S.A.S.',
-            nombre_comercial='StrateKaz',
-            representante_legal='Por Definir',
-            tipo_sociedad='SAS',
-            regimen_tributario='COMUN',
-            actividad_economica='6201',  # Desarrollo de software
-            descripcion_actividad='Desarrollo de sistemas de gestión empresarial',
-
-            # Ubicación (Bogotá como sede principal)
-            direccion_fiscal='Por definir',
-            ciudad='Bogotá',
-            departamento='CUNDINAMARCA',
-            telefono_principal='6011234567',
-            email_corporativo='info@stratekaz.com',
-
-            # Configuración regional Colombia
-            zona_horaria='America/Bogota',
-            formato_fecha='DD/MM/YYYY',
-            moneda='COP',
-            simbolo_moneda='$',
             separador_miles='.',
             separador_decimales=',',
         )

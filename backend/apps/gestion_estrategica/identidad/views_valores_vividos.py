@@ -88,15 +88,8 @@ class ValorVividoViewSet(viewsets.ModelViewSet):
         return ValorVividoDetailSerializer
 
     def get_queryset(self):
-        """Filtrar por empresa del usuario autenticado"""
-        qs = super().get_queryset()
-
-        # Filtrar por empresa del usuario (multi-tenant)
-        if hasattr(self.request, 'user') and self.request.user.is_authenticated:
-            if hasattr(self.request.user, 'empresa') and self.request.user.empresa:
-                qs = qs.filter(valor__identity__empresa=self.request.user.empresa)
-
-        return qs
+        """Tenant schema isolation handles data separation."""
+        return super().get_queryset()
 
     # =========================================================================
     # ACCIONES DE VINCULACIÓN

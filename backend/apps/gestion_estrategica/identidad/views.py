@@ -74,16 +74,10 @@ class CorporateIdentityViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Filtrado multi-tenant: Solo retorna identidades de la empresa del usuario.
-        Superusuarios pueden ver todas las identidades.
+        Filtrado multi-tenant: Tenant schema isolation handles data separation.
+        No need to filter by empresa - each tenant has its own schema.
         """
-        qs = super().get_queryset()
-        user = self.request.user
-        if user.is_superuser:
-            return qs
-        if not hasattr(user, 'empresa') or user.empresa is None:
-            return qs.none()
-        return qs.filter(empresa=user.empresa)
+        return super().get_queryset()
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
@@ -93,30 +87,13 @@ class CorporateIdentityViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """
         Asigna automáticamente la empresa al crear una identidad.
-
-        Para superusuarios o usuarios sin empresa asignada, se usa la primera
-        EmpresaConfig disponible (single-tenant). Para multi-tenant futuro,
-        el usuario debería tener empresa asignada vía sede_asignada.
+        Usa get_tenant_empresa() para resolver la empresa del tenant actual.
+        auto_create=True ensures EmpresaConfig is created if missing.
         """
-        from apps.gestion_estrategica.configuracion.models import EmpresaConfig
+        from apps.core.base_models.mixins import get_tenant_empresa
         from rest_framework.exceptions import ValidationError
 
-        user = self.request.user
-        empresa = None
-
-        # Intentar obtener empresa del usuario (vía sede_asignada)
-        if hasattr(user, 'sede_asignada') and user.sede_asignada:
-            empresa = getattr(user.sede_asignada, 'empresa', None)
-
-        # Si no tiene empresa y es superusuario, usar la primera EmpresaConfig
-        if empresa is None and user.is_superuser:
-            empresa = EmpresaConfig.objects.first()
-
-        if empresa is None:
-            raise ValidationError({
-                'empresa': 'No se pudo determinar la empresa. '
-                           'Asegúrese de tener una sede asignada o que exista una EmpresaConfig.'
-            })
+        empresa = get_tenant_empresa()
 
         # Verificar que no exista ya una identidad para esta empresa
         if CorporateIdentity.objects.filter(empresa=empresa).exists():
@@ -124,7 +101,7 @@ class CorporateIdentityViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
                 'empresa': 'Ya existe una identidad corporativa para esta empresa. '
                            'Solo puede existir una identidad por empresa.'
             })
-        serializer.save(empresa=empresa, created_by=user)
+        serializer.save(empresa=empresa, created_by=self.request.user)
 
     def update(self, request, *args, **kwargs):
         """
@@ -310,16 +287,9 @@ class CorporateValueViewSet(StandardViewSetMixin, OrderingMixin, viewsets.ModelV
 
     def get_queryset(self):
         """
-        Filtrado multi-tenant: Solo retorna valores de la empresa del usuario.
-        Superusuarios pueden ver todos los valores.
+        Filtrado multi-tenant: Tenant schema isolation handles data separation.
         """
-        qs = super().get_queryset()
-        user = self.request.user
-        if user.is_superuser:
-            return qs
-        if not hasattr(user, 'empresa') or user.empresa is None:
-            return qs.none()
-        return qs.filter(identity__empresa=user.empresa)
+        return super().get_queryset()
 
 
 class AlcanceSistemaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
@@ -350,16 +320,9 @@ class AlcanceSistemaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Filtrado multi-tenant: Solo retorna alcances de la empresa del usuario.
-        Superusuarios pueden ver todos los alcances.
+        Filtrado multi-tenant: Tenant schema isolation handles data separation.
         """
-        qs = super().get_queryset()
-        user = self.request.user
-        if user.is_superuser:
-            return qs
-        if not hasattr(user, 'empresa') or user.empresa is None:
-            return qs.none()
-        return qs.filter(identity__empresa=user.empresa)
+        return super().get_queryset()
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
@@ -471,16 +434,9 @@ class PoliticaEspecificaViewSet(
 
     def get_queryset(self):
         """
-        Filtrado multi-tenant: Solo retorna políticas de la empresa del usuario.
-        Superusuarios pueden ver todas las políticas.
+        Filtrado multi-tenant: Tenant schema isolation handles data separation.
         """
-        qs = super().get_queryset()
-        user = self.request.user
-        if user.is_superuser:
-            return qs
-        if not hasattr(user, 'empresa') or user.empresa is None:
-            return qs.none()
-        return qs.filter(identity__empresa=user.empresa)
+        return super().get_queryset()
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
@@ -709,16 +665,7 @@ class PoliticaEspecificaViewSet(
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # Verificar acceso multi-tenant
-        user = request.user
-        if not user.is_superuser:
-            if hasattr(user, 'empresa') and user.empresa:
-                if identity.empresa_id != user.empresa_id:
-                    return Response(
-                        {'detail': 'No tiene acceso a esta identidad corporativa'},
-                        status=status.HTTP_403_FORBIDDEN
-                    )
-
+        # Tenant schema isolation handles access control
         politica = PoliticaEspecifica.get_integral_vigente(identity)
         if politica:
             serializer = PoliticaEspecificaSerializer(politica)

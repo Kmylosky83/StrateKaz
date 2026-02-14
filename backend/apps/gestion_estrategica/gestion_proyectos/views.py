@@ -242,11 +242,10 @@ class ProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        from apps.core.base_models.mixins import get_tenant_empresa
+
         try:
-            cambio = GestionCambio.objects.get(
-                id=cambio_id,
-                empresa=request.user.empresa
-            )
+            cambio = GestionCambio.objects.get(id=cambio_id)
         except GestionCambio.DoesNotExist:
             return Response(
                 {'detail': 'Cambio no encontrado'},
@@ -280,13 +279,13 @@ class ProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         }
 
         # Generar código del proyecto
-        empresa_id = request.user.empresa.id
-        count = Proyecto.objects.filter(empresa_id=empresa_id).count() + 1
+        empresa = get_tenant_empresa()
+        count = Proyecto.objects.count() + 1
         codigo = f"PRY-{count:04d}"
 
         # Crear el proyecto
         proyecto = Proyecto.objects.create(
-            empresa=request.user.empresa,
+            empresa=empresa,
             codigo=codigo,
             nombre=f"Proyecto: {cambio.titulo}",
             descripcion=cambio.descripcion or '',

@@ -11,6 +11,7 @@
 import { useState, useEffect } from 'react';
 import { DynamicSections } from '@/components/common';
 import { useTabSections } from '@/features/gestion-estrategica/hooks/useModules';
+import { useModuleColor } from '@/hooks/useModuleColor';
 // Importar directamente de fuentes (NO del barrel index.ts para evitar circular deps)
 import { CargosTab as CargosSection } from '@/features/configuracion/components/CargosTab';
 import { OrganigramaSection } from './OrganigramaSection';
@@ -28,6 +29,7 @@ const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
 
 export const EstructuraSection = () => {
   const { sections, isLoading } = useTabSections(MODULE_CODE, TAB_CODE);
+  const { color: moduleColor } = useModuleColor('TALENT_HUB');
   const [activeSection, setActiveSection] = useState<string>('');
 
   // Inicializar con la primera seccion habilitada
@@ -49,7 +51,7 @@ export const EstructuraSection = () => {
           onChange={setActiveSection}
           isLoading={isLoading}
           variant="underline"
-          moduleColor="purple"
+          moduleColor={moduleColor}
         />
       )}
 

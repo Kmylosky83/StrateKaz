@@ -18,6 +18,7 @@ from .models_unidades import UnidadMedida, CATEGORIA_UNIDAD_CHOICES
 
 __all__ = [
     'Area',
+    'OrganigramaNodePosition',
     'ConsecutivoConfig',
     'CONSECUTIVOS_SISTEMA',
     'UnidadMedida',
@@ -153,3 +154,31 @@ class Area(AuditModel, SoftDeleteModel, OrderedModel):
                 if parent.id == self.id:
                     raise ValidationError({'parent': 'Se detectó un ciclo en la jerarquía de áreas.'})
                 parent = parent.parent
+
+
+class OrganigramaNodePosition(models.Model):
+    """
+    Posiciones personalizadas de nodos en el organigrama.
+    Permite persistir la ubicación de cada nodo cuando el usuario lo arrastra.
+    """
+    NODE_TYPE_CHOICES = [
+        ('cargo', 'Cargo'),
+        ('area', 'Área'),
+    ]
+
+    node_type = models.CharField(max_length=10, choices=NODE_TYPE_CHOICES)
+    node_id = models.IntegerField()
+    view_mode = models.CharField(max_length=10)
+    direction = models.CharField(max_length=2, default='TB')
+    x = models.FloatField()
+    y = models.FloatField()
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'organizacion_node_position'
+        verbose_name = 'Posición de Nodo'
+        verbose_name_plural = 'Posiciones de Nodos'
+        unique_together = ['node_type', 'node_id', 'view_mode', 'direction']
+
+    def __str__(self):
+        return f"{self.node_type}-{self.node_id} ({self.view_mode}/{self.direction})"

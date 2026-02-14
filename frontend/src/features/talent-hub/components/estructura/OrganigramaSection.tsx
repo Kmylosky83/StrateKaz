@@ -7,5 +7,5 @@
 import { OrganigramaView } from '@/features/gestion-estrategica/components/OrganigramaView';
 
 export const OrganigramaSection = () => (
-  <OrganigramaView allowedModes={['cargos', 'compact']} defaultMode="cargos" />
+  <OrganigramaView allowedModes={['cargos', 'compact']} defaultMode="cargos" showToolbar={false} />
 );

@@ -51,13 +51,17 @@ const createDagreGraph = (config: CanvasConfig) => {
 // GENERAR NODOS Y EDGES POR MODO DE VISTA
 // =============================================================================
 
+/** Map de nodeId -> {x, y} con posiciones guardadas */
+export type SavedPositionMap = Record<string, { x: number; y: number }>;
+
 /**
  * Genera nodos y edges para vista de áreas
  */
 export const generateAreasLayout = (
   areas: AreaData[],
   cargos: CargoData[],
-  config: CanvasConfig
+  config: CanvasConfig,
+  savedPositions?: SavedPositionMap
 ): { nodes: Node<OrganigramaNodeData>[]; edges: Edge[] } => {
   const g = createDagreGraph(config);
   const nodes: Node<OrganigramaNodeData>[] = [];
@@ -99,17 +103,22 @@ export const generateAreasLayout = (
     }
   });
 
-  // Calcular layout
+  // Calcular layout con Dagre
   dagre.layout(g);
 
-  // Aplicar posiciones calculadas
+  // Aplicar posiciones: usar guardadas si existen, sino Dagre
   nodes.forEach((node) => {
-    const dagreNode = g.node(node.id);
-    if (dagreNode) {
-      node.position = {
-        x: dagreNode.x - NODE_DIMENSIONS.area.width / 2,
-        y: dagreNode.y - NODE_DIMENSIONS.area.height / 2,
-      };
+    const saved = savedPositions?.[node.id];
+    if (saved) {
+      node.position = { x: saved.x, y: saved.y };
+    } else {
+      const dagreNode = g.node(node.id);
+      if (dagreNode) {
+        node.position = {
+          x: dagreNode.x - NODE_DIMENSIONS.area.width / 2,
+          y: dagreNode.y - NODE_DIMENSIONS.area.height / 2,
+        };
+      }
     }
   });
 
@@ -121,7 +130,8 @@ export const generateAreasLayout = (
  */
 export const generateCargosLayout = (
   cargos: CargoData[],
-  config: CanvasConfig
+  config: CanvasConfig,
+  savedPositions?: SavedPositionMap
 ): { nodes: Node<OrganigramaNodeData>[]; edges: Edge[] } => {
   const g = createDagreGraph(config);
   const nodes: Node<OrganigramaNodeData>[] = [];
@@ -175,17 +185,22 @@ export const generateCargosLayout = (
     }
   });
 
-  // Calcular layout
+  // Calcular layout con Dagre
   dagre.layout(g);
 
-  // Aplicar posiciones calculadas
+  // Aplicar posiciones: usar guardadas si existen, sino Dagre
   nodes.forEach((node) => {
-    const dagreNode = g.node(node.id);
-    if (dagreNode) {
-      node.position = {
-        x: dagreNode.x - NODE_DIMENSIONS.cargo.width / 2,
-        y: dagreNode.y - NODE_DIMENSIONS.cargo.height / 2,
-      };
+    const saved = savedPositions?.[node.id];
+    if (saved) {
+      node.position = { x: saved.x, y: saved.y };
+    } else {
+      const dagreNode = g.node(node.id);
+      if (dagreNode) {
+        node.position = {
+          x: dagreNode.x - NODE_DIMENSIONS.cargo.width / 2,
+          y: dagreNode.y - NODE_DIMENSIONS.cargo.height / 2,
+        };
+      }
     }
   });
 
@@ -198,7 +213,8 @@ export const generateCargosLayout = (
 export const generateCompactLayout = (
   areas: AreaData[],
   cargos: CargoData[],
-  config: CanvasConfig
+  config: CanvasConfig,
+  savedPositions?: SavedPositionMap
 ): { nodes: Node<OrganigramaNodeData>[]; edges: Edge[] } => {
   const g = createDagreGraph(config);
   const nodes: Node<OrganigramaNodeData>[] = [];
@@ -242,17 +258,22 @@ export const generateCompactLayout = (
     }
   });
 
-  // Calcular layout
+  // Calcular layout con Dagre
   dagre.layout(g);
 
-  // Aplicar posiciones calculadas
+  // Aplicar posiciones: usar guardadas si existen, sino Dagre
   nodes.forEach((node) => {
-    const dagreNode = g.node(node.id);
-    if (dagreNode) {
-      node.position = {
-        x: dagreNode.x - NODE_DIMENSIONS.compact.width / 2,
-        y: dagreNode.y - NODE_DIMENSIONS.compact.height / 2,
-      };
+    const saved = savedPositions?.[node.id];
+    if (saved) {
+      node.position = { x: saved.x, y: saved.y };
+    } else {
+      const dagreNode = g.node(node.id);
+      if (dagreNode) {
+        node.position = {
+          x: dagreNode.x - NODE_DIMENSIONS.compact.width / 2,
+          y: dagreNode.y - NODE_DIMENSIONS.compact.height / 2,
+        };
+      }
     }
   });
 
@@ -264,21 +285,23 @@ export const generateCompactLayout = (
 // =============================================================================
 
 /**
- * Genera el layout completo según el modo de vista
+ * Genera el layout completo según el modo de vista.
+ * Si se pasan savedPositions, usa posiciones guardadas en lugar de Dagre.
  */
 export const generateLayout = (
   areas: AreaData[],
   cargos: CargoData[],
   viewMode: ViewMode,
-  config: CanvasConfig
+  config: CanvasConfig,
+  savedPositions?: SavedPositionMap
 ): { nodes: Node<OrganigramaNodeData>[]; edges: Edge[] } => {
   switch (viewMode) {
     case 'areas':
-      return generateAreasLayout(areas, cargos, config);
+      return generateAreasLayout(areas, cargos, config, savedPositions);
     case 'cargos':
-      return generateCargosLayout(cargos, config);
+      return generateCargosLayout(cargos, config, savedPositions);
     case 'compact':
-      return generateCompactLayout(areas, cargos, config);
+      return generateCompactLayout(areas, cargos, config, savedPositions);
     default:
       return { nodes: [], edges: [] };
   }
@@ -320,9 +343,7 @@ export const filterNodesBySearch = (
         (cargo.description?.toLowerCase().includes(term) ?? false);
     } else if (data.type === 'compact') {
       const item = data.item;
-      matches =
-        item.name.toLowerCase().includes(term) ||
-        item.code.toLowerCase().includes(term);
+      matches = item.name.toLowerCase().includes(term) || item.code.toLowerCase().includes(term);
     }
 
     if (matches) {
@@ -353,9 +374,7 @@ export const highlightNode = (
 /**
  * Restaura opacidad de todos los nodos
  */
-export const resetHighlight = (
-  nodes: Node<OrganigramaNodeData>[]
-): Node<OrganigramaNodeData>[] => {
+export const resetHighlight = (nodes: Node<OrganigramaNodeData>[]): Node<OrganigramaNodeData>[] => {
   return nodes.map((node) => ({
     ...node,
     style: {

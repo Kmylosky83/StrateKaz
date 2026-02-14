@@ -1,22 +1,21 @@
 /**
  * Página de Organización - Tab 2 de Dirección Estratégica
  *
- * Layout según Catálogo de Vistas UI:
- * - PageHeader con título y secciones inline (alineadas a la derecha)
- * - Contenido de la sección activa (cada sección maneja su propio StatsGrid)
- *
- * Sin hardcoding - secciones cargadas desde API
+ * Layout estandarizado:
+ * 1. PageHeader (solo titulo y descripcion)
+ * 2. DynamicSections (sub-tabs debajo del header, variante underline)
+ * 3. Contenido de la sección activa
  */
 import { PageHeader } from '@/components/layout';
+import { DynamicSections } from '@/components/common';
+import { useModuleColor } from '@/hooks/useModuleColor';
 import { OrganizacionTab } from '../components/OrganizacionTab';
 import { usePageSections } from '@/hooks/usePageSections';
 
-// Códigos del módulo y tab en la BD (lowercase para coincidir con BD)
 const MODULE_CODE = 'gestion_estrategica';
 const TAB_CODE = 'organizacion';
 
 export const OrganizacionPage = () => {
-  // Hook que maneja secciones localmente (igual que ConfiguracionPage)
   const {
     sections,
     activeSection,
@@ -28,7 +27,8 @@ export const OrganizacionPage = () => {
     tabCode: TAB_CODE,
   });
 
-  // Si no hay sección activa aún (cargando), mostrar skeleton básico
+  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
+
   if (!activeSection && sectionsLoading) {
     return (
       <div className="space-y-4">
@@ -40,20 +40,18 @@ export const OrganizacionPage = () => {
 
   return (
     <div className="space-y-4">
-      {/* PageHeader con título y secciones inline (alineadas a la derecha) */}
-      <PageHeader
-        title="Organización"
-        description={activeSectionData.description}
+      <PageHeader title="Organización" description={activeSectionData.description} />
+
+      <DynamicSections
         sections={sections}
         activeSection={activeSection}
-        onSectionChange={setActiveSection}
-        moduleColor="purple"
+        onChange={setActiveSection}
+        isLoading={sectionsLoading}
+        variant="underline"
+        moduleColor={moduleColor}
       />
 
-      {/* Contenido de la sección activa - cada sección maneja su propio StatsGrid */}
-      {activeSection && (
-        <OrganizacionTab activeSection={activeSection} />
-      )}
+      {activeSection && <OrganizacionTab activeSection={activeSection} />}
     </div>
   );
 };

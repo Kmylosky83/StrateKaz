@@ -2,7 +2,7 @@
 Serializers para el módulo de Organización
 """
 from rest_framework import serializers
-from .models import Area
+from .models import Area, OrganigramaNodePosition
 
 
 class AreaSerializer(serializers.ModelSerializer):
@@ -82,3 +82,11 @@ class AreaListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Area
         fields = ['id', 'code', 'name', 'parent', 'parent_name', 'manager', 'manager_name', 'icon', 'color', 'is_active']
+
+
+class OrganigramaNodePositionSerializer(serializers.ModelSerializer):
+    """Serializer para posiciones de nodos del organigrama"""
+
+    class Meta:
+        model = OrganigramaNodePosition
+        fields = ['node_type', 'node_id', 'view_mode', 'direction', 'x', 'y']

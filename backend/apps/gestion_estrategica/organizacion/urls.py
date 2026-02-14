@@ -12,6 +12,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     AreaViewSet,
     OrganigramaView,
+    OrganigramaNodePositionView,
 )
 from .viewsets_consecutivos import ConsecutivoConfigViewSet
 from .viewsets_unidades import UnidadMedidaViewSet
@@ -25,4 +26,5 @@ urlpatterns = [
     path('', include(router.urls)),
     # Endpoint especial para el organigrama visual
     path('organigrama/', OrganigramaView.as_view(), name='organigrama'),
+    path('organigrama/positions/', OrganigramaNodePositionView.as_view(), name='organigrama-positions'),
 ]

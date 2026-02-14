@@ -8,5 +8,5 @@
 import { OrganigramaView } from './OrganigramaView';
 
 export const MapaProcesosSection = () => (
-  <OrganigramaView allowedModes={['areas']} defaultMode="areas" />
+  <OrganigramaView allowedModes={['areas']} defaultMode="areas" showToolbar={false} />
 );

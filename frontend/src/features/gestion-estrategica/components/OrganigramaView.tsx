@@ -22,9 +22,15 @@ interface OrganigramaViewProps {
   allowedModes?: ViewMode[];
   /** Modo de vista inicial */
   defaultMode?: ViewMode;
+  /** Mostrar toolbar completo (true) o mini-toolbar con solo export + fit (false) */
+  showToolbar?: boolean;
 }
 
-export const OrganigramaView = ({ allowedModes, defaultMode }: OrganigramaViewProps) => {
+export const OrganigramaView = ({
+  allowedModes,
+  defaultMode,
+  showToolbar,
+}: OrganigramaViewProps) => {
   const { canDo } = usePermissions();
   const canView = canDo(Modules.GESTION_ESTRATEGICA, Sections.ORGANIGRAMA, 'view');
 
@@ -40,7 +46,13 @@ export const OrganigramaView = ({ allowedModes, defaultMode }: OrganigramaViewPr
     );
   }
 
-  return <OrganigramaCanvas allowedModes={allowedModes} defaultMode={defaultMode} />;
+  return (
+    <OrganigramaCanvas
+      allowedModes={allowedModes}
+      defaultMode={defaultMode}
+      showToolbar={showToolbar}
+    />
+  );
 };
 
 export default OrganigramaView;

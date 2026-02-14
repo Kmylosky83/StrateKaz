@@ -1,10 +1,11 @@
 /**
  * Pagina de Configuracion - Tab 1 de Direccion Estrategica
  *
- * Layout estandar:
- * - PageHeader con titulo y tabs de secciones inline
- * - StatsGrid dinamico por seccion
- * - Contenido de la seccion activa
+ * Layout estandarizado:
+ * 1. PageHeader (solo titulo y descripcion)
+ * 2. DynamicSections (sub-tabs debajo del header, variante underline)
+ * 3. StatsGrid dinamico por seccion
+ * 4. Contenido de la seccion activa
  */
 import { useMemo, useState } from 'react';
 import {
@@ -29,6 +30,8 @@ import {
 } from 'lucide-react';
 import { PageHeader, StatsGrid, StatsGridSkeleton } from '@/components/layout';
 import type { StatItem } from '@/components/layout';
+import { DynamicSections } from '@/components/common';
+import { useModuleColor } from '@/hooks/useModuleColor';
 import { useConfiguracionStats } from '../hooks/useStrategic';
 import { ConfiguracionTab } from '../components/ConfiguracionTab';
 import { usePageSections } from '@/hooks/usePageSections';
@@ -69,6 +72,8 @@ export const ConfiguracionPage = () => {
     moduleCode: MODULE_CODE,
     tabCode: TAB_CODE,
   });
+
+  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
 
   // Buscador local
   const [searchQuery, setSearchQuery] = useState('');
@@ -115,14 +120,17 @@ export const ConfiguracionPage = () => {
 
   return (
     <div className="space-y-4">
-      {/* PageHeader con titulo y tabs inline */}
-      <PageHeader
-        title="Configuracion"
-        description={activeSectionData.description}
+      {/* PageHeader solo titulo y descripcion */}
+      <PageHeader title="Configuracion" description={activeSectionData.description} />
+
+      {/* Sub-tabs debajo del header (underline, color dinamico) */}
+      <DynamicSections
         sections={sections}
         activeSection={activeSection}
-        onSectionChange={setActiveSection}
-        moduleColor="purple"
+        onChange={setActiveSection}
+        isLoading={sectionsLoading}
+        variant="underline"
+        moduleColor={moduleColor}
       />
 
       {/* StatsGrid - solo si hay stats y la sección lo soporta */}
@@ -131,7 +139,7 @@ export const ConfiguracionPage = () => {
         (statsLoading ? (
           <StatsGridSkeleton count={4} />
         ) : statsItems.length > 0 ? (
-          <StatsGrid stats={statsItems} columns={statsColumns} moduleColor="purple" />
+          <StatsGrid stats={statsItems} columns={statsColumns} moduleColor={moduleColor} />
         ) : null)}
 
       {/* Contenido de la seccion activa */}

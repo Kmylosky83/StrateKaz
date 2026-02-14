@@ -203,7 +203,18 @@ class Command(BaseCommand):
                             {'code': 'cierre', 'name': 'Cierre', 'icon': 'CheckCircle2', 'orden': 5, 'description': 'Lecciones aprendidas, acta de cierre y liberación de recursos'},
                         ]
                     },
-                    {'code': 'revision_direccion', 'name': 'Revisión por Dirección', 'icon': 'ClipboardCheck', 'route': 'revision-direccion', 'orden': 8},
+                    {
+                        'code': 'revision_direccion',
+                        'name': 'Revisión por Dirección',
+                        'icon': 'ClipboardCheck',
+                        'route': 'revision-direccion',
+                        'orden': 8,
+                        'sections': [
+                            {'code': 'programacion', 'name': 'Programación', 'icon': 'Calendar', 'orden': 1, 'description': 'Calendario y listado de revisiones gerenciales programadas'},
+                            {'code': 'actas', 'name': 'Actas', 'icon': 'FileText', 'orden': 2, 'description': 'Gestión de actas generadas en las revisiones por la dirección'},
+                            {'code': 'compromisos', 'name': 'Compromisos', 'icon': 'ClipboardList', 'orden': 3, 'description': 'Seguimiento de compromisos derivados de las revisiones'},
+                        ]
+                    },
                 ]
             },
 

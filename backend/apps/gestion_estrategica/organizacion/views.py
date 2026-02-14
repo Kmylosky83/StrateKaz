@@ -20,9 +20,10 @@ from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 
-from .models import Area
+from .models import Area, OrganigramaNodePosition
 from .serializers import (
     AreaSerializer, AreaTreeSerializer, AreaListSerializer,
+    OrganigramaNodePositionSerializer,
 )
 from apps.core.models import Cargo, User
 from apps.core.permissions import GranularActionPermission
@@ -326,3 +327,59 @@ class OrganigramaView(APIView):
             response_data['usuarios'] = usuarios_data
 
         return Response(response_data)
+
+
+# =============================================================================
+# POSICIONES DE NODOS DEL ORGANIGRAMA
+# =============================================================================
+
+class OrganigramaNodePositionView(APIView):
+    """
+    Gestión de posiciones personalizadas de nodos del organigrama.
+
+    GET  /api/organizacion/organigrama/positions/?view_mode=X&direction=Y
+    POST /api/organizacion/organigrama/positions/ (bulk upsert)
+    DELETE /api/organizacion/organigrama/positions/?view_mode=X&direction=Y (reset)
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        """Cargar posiciones guardadas para un view_mode y direction"""
+        view_mode = request.query_params.get('view_mode', 'cargos')
+        direction = request.query_params.get('direction', 'TB')
+
+        positions = OrganigramaNodePosition.objects.filter(
+            view_mode=view_mode,
+            direction=direction,
+        )
+        serializer = OrganigramaNodePositionSerializer(positions, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        """Bulk upsert de posiciones de nodos"""
+        positions = request.data if isinstance(request.data, list) else [request.data]
+
+        for pos_data in positions:
+            OrganigramaNodePosition.objects.update_or_create(
+                node_type=pos_data['node_type'],
+                node_id=pos_data['node_id'],
+                view_mode=pos_data['view_mode'],
+                direction=pos_data['direction'],
+                defaults={'x': pos_data['x'], 'y': pos_data['y']},
+            )
+
+        return Response({'saved': len(positions)}, status=status.HTTP_200_OK)
+
+    def delete(self, request):
+        """Reset posiciones para un view_mode y direction"""
+        view_mode = request.query_params.get('view_mode')
+        direction = request.query_params.get('direction')
+
+        qs = OrganigramaNodePosition.objects.all()
+        if view_mode:
+            qs = qs.filter(view_mode=view_mode)
+        if direction:
+            qs = qs.filter(direction=direction)
+
+        count, _ = qs.delete()
+        return Response({'deleted': count}, status=status.HTTP_200_OK)

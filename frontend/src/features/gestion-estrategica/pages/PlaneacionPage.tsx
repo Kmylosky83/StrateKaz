@@ -1,13 +1,16 @@
 /**
  * Página de Planeación - Tab 4 de Dirección Estratégica
  *
- * Layout según Catálogo de Vistas UI:
- * - PageHeader con título y secciones inline (alineadas a la derecha)
- * - Contenido de la sección activa (cada sección maneja su propio StatsGrid)
+ * Layout estandarizado:
+ * 1. PageHeader (solo titulo y descripcion)
+ * 2. DynamicSections (sub-tabs debajo del header, variante underline)
+ * 3. Contenido de la sección activa (cada sección maneja su propio StatsGrid)
  *
  * Sin hardcoding - secciones cargadas desde API
  */
 import { PageHeader } from '@/components/layout';
+import { DynamicSections } from '@/components/common';
+import { useModuleColor } from '@/hooks/useModuleColor';
 import { PlaneacionTab } from '../components/PlaneacionTab';
 import { usePageSections } from '@/hooks/usePageSections';
 
@@ -28,6 +31,8 @@ export const PlaneacionPage = () => {
     tabCode: TAB_CODE,
   });
 
+  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
+
   // Si no hay sección activa aún (cargando), mostrar skeleton básico
   if (!activeSection && sectionsLoading) {
     return (
@@ -40,20 +45,21 @@ export const PlaneacionPage = () => {
 
   return (
     <div className="space-y-4">
-      {/* PageHeader con título y secciones inline (alineadas a la derecha) */}
-      <PageHeader
-        title="Planeación Estratégica"
-        description={activeSectionData.description}
+      {/* PageHeader solo titulo y descripcion */}
+      <PageHeader title="Planeación Estratégica" description={activeSectionData.description} />
+
+      {/* Sub-tabs debajo del header (underline, color dinamico) */}
+      <DynamicSections
         sections={sections}
         activeSection={activeSection}
-        onSectionChange={setActiveSection}
-        moduleColor="purple"
+        onChange={setActiveSection}
+        isLoading={sectionsLoading}
+        variant="underline"
+        moduleColor={moduleColor}
       />
 
       {/* Contenido de la sección activa - cada sección maneja su propio StatsGrid */}
-      {activeSection && (
-        <PlaneacionTab activeSection={activeSection} />
-      )}
+      {activeSection && <PlaneacionTab activeSection={activeSection} />}
     </div>
   );
 };

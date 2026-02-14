@@ -1,21 +1,16 @@
 /**
  * Página de Contexto Organizacional - Tab de Dirección Estratégica
  *
- * Layout según Catálogo de Vistas UI:
- * 1. PageHeader con secciones alineadas a la derecha
- * 2. Contenido de la sección activa (cada sección maneja su propio StatsGrid)
- *
- * Secciones (desde BD):
- * - stakeholders: Partes interesadas (ISO 9001:2015 Cláusula 4.2)
- * - analisis_dofa: Análisis DOFA (Fortalezas, Debilidades, Oportunidades, Amenazas)
- * - encuestas_dofa: Encuestas colaborativas para identificar F/D
- * - analisis_pestel: Análisis PESTEL (Político, Económico, Social, etc.)
- * - fuerzas_porter: 5 Fuerzas de Porter
- * - estrategias_tows: Matriz TOWS (estrategias cruzadas)
+ * Layout estandarizado:
+ * 1. PageHeader (solo titulo y descripcion)
+ * 2. DynamicSections (sub-tabs debajo del header, variante underline)
+ * 3. Contenido de la sección activa (cada sección maneja su propio StatsGrid)
  *
  * Sin hardcoding - secciones cargadas desde API
  */
 import { PageHeader } from '@/components/layout';
+import { DynamicSections } from '@/components/common';
+import { useModuleColor } from '@/hooks/useModuleColor';
 import { usePageSections } from '@/hooks/usePageSections';
 import { ContextoTab } from '../components/ContextoTab';
 
@@ -36,6 +31,8 @@ export const ContextoPage = () => {
     tabCode: TAB_CODE,
   });
 
+  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
+
   // Si no hay sección activa aún (cargando), mostrar skeleton básico
   if (!activeSection && sectionsLoading) {
     return (
@@ -47,18 +44,27 @@ export const ContextoPage = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* PageHeader con secciones alineadas a la derecha */}
+    <div className="space-y-4">
+      {/* PageHeader solo titulo y descripcion */}
       <PageHeader
         title="Contexto Organizacional"
-        description={activeSectionData.description || 'Análisis del contexto interno y externo de la organización (ISO 9001:2015 Cláusula 4.1)'}
-        sections={sections}
-        activeSection={activeSection}
-        onSectionChange={setActiveSection}
-        moduleColor="purple"
+        description={
+          activeSectionData.description ||
+          'Análisis del contexto interno y externo de la organización (ISO 9001:2015 Cláusula 4.1)'
+        }
       />
 
-      {/* Contenido - cada sección maneja su propio StatsGrid según Vista 2B */}
+      {/* Sub-tabs debajo del header (underline, color dinamico) */}
+      <DynamicSections
+        sections={sections}
+        activeSection={activeSection}
+        onChange={setActiveSection}
+        isLoading={sectionsLoading}
+        variant="underline"
+        moduleColor={moduleColor}
+      />
+
+      {/* Contenido - cada sección maneja su propio StatsGrid */}
       {activeSection && <ContextoTab activeSection={activeSection} />}
     </div>
   );

@@ -1,16 +1,19 @@
 /**
  * Página de Gestión de Proyectos PMI - Tab 6 de Dirección Estratégica
  *
- * Layout según Catálogo de Vistas UI:
- * - PageHeader con título y secciones inline (alineadas a la derecha)
- * - StatsGrid con KPIs del portafolio
- * - Contenido de la sección activa (GestionProyectosTab)
+ * Layout estandarizado:
+ * 1. PageHeader (solo titulo y descripcion)
+ * 2. DynamicSections (sub-tabs debajo del header, variante underline)
+ * 3. StatsGrid con KPIs del portafolio
+ * 4. Contenido de la sección activa (GestionProyectosTab)
  *
  * Sin hardcoding - secciones cargadas desde API
  */
 import { FolderKanban, TrendingUp, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { PageHeader, StatsGrid, StatsGridSkeleton } from '@/components/layout';
 import type { StatItem } from '@/components/layout';
+import { DynamicSections } from '@/components/common';
+import { useModuleColor } from '@/hooks/useModuleColor';
 import { usePageSections } from '@/hooks/usePageSections';
 import { GestionProyectosTab } from '../components/proyectos';
 import { useProyectosDashboard } from '../hooks/useProyectos';
@@ -33,6 +36,8 @@ export const ProyectosPage = () => {
     moduleCode: MODULE_CODE,
     tabCode: TAB_CODE,
   });
+
+  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
 
   // Calcular proyectos activos (en ejecución + monitoreo)
   const proyectosActivos = (dashboard?.en_ejecucion ?? 0) + (dashboard?.en_monitoreo ?? 0);
@@ -81,21 +86,24 @@ export const ProyectosPage = () => {
 
   return (
     <div className="space-y-4">
-      {/* PageHeader con título y secciones inline (alineadas a la derecha) */}
-      <PageHeader
-        title="Gestión de Proyectos"
-        description={activeSectionData.description}
+      {/* PageHeader solo titulo y descripcion */}
+      <PageHeader title="Gestión de Proyectos" description={activeSectionData.description} />
+
+      {/* Sub-tabs debajo del header (underline, color dinamico) */}
+      <DynamicSections
         sections={sections}
         activeSection={activeSection}
-        onSectionChange={setActiveSection}
-        moduleColor="purple"
+        onChange={setActiveSection}
+        isLoading={sectionsLoading}
+        variant="underline"
+        moduleColor={moduleColor}
       />
 
       {/* StatsGrid con KPIs del portafolio */}
       {dashboardLoading ? (
         <StatsGridSkeleton count={4} />
       ) : (
-        <StatsGrid stats={statsItems} columns={4} moduleColor="purple" />
+        <StatsGrid stats={statsItems} columns={4} moduleColor={moduleColor} />
       )}
 
       {/* Contenido de la sección activa */}

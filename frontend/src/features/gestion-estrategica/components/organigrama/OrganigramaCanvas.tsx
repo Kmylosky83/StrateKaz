@@ -1,7 +1,12 @@
-﻿/**
+/**
  * OrganigramaCanvas - Canvas principal con React Flow
  *
- * Renderiza el organigrama interactivo con nodos personalizados
+ * Renderiza el organigrama interactivo con nodos personalizados.
+ *
+ * Props:
+ * - allowedModes: Modos de vista permitidos
+ * - defaultMode: Modo de vista inicial
+ * - showToolbar: true = toolbar completo, false = mini-toolbar (export + fit)
  */
 
 import { useCallback, useRef, useState, useMemo, useEffect } from 'react';
@@ -16,6 +21,7 @@ import {
   useReactFlow,
   ReactFlowProvider,
   Panel,
+  type NodeDragHandler,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -23,8 +29,9 @@ import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import axiosInstance from '@/api/axios-config';
 import { Card, EmptyState, Spinner } from '@/components/common';
-import { Building2, Network } from 'lucide-react';
+import { Building2, Network, Download, Maximize2, RotateCcw, ChevronDown } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
+import { cn } from '@/utils/cn';
 
 import AreaNode from './AreaNode';
 import CargoNode from './CargoNode';
@@ -33,6 +40,7 @@ import OrganigramaToolbar from './OrganigramaToolbar';
 
 import { generateLayout } from '../../utils/organigramaLayout';
 import { exportOrganigrama, ExportError } from '../../utils/organigramaExport';
+import { useOrganigramaPositions } from '../../hooks/useOrganigramaPositions';
 import type {
   OrganigramaResponse,
   ViewMode,
@@ -75,14 +83,20 @@ interface OrganigramaCanvasProps {
   allowedModes?: ViewMode[];
   /** Modo de vista inicial. Por defecto 'cargos' */
   defaultMode?: ViewMode;
+  /** Mostrar toolbar completo (true) o mini-toolbar con solo export + fit (false) */
+  showToolbar?: boolean;
 }
 
 // Componente interno del canvas
-const OrganigramaCanvasInner = ({ allowedModes, defaultMode }: OrganigramaCanvasProps) => {
+const OrganigramaCanvasInner = ({
+  allowedModes,
+  defaultMode,
+  showToolbar = true,
+}: OrganigramaCanvasProps) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const { fitView, zoomIn, zoomOut } = useReactFlow();
 
-  // Obtener nombre de la empresa para exportación (desde el tenant actual)
+  // Obtener nombre de la empresa para exportacion
   const empresaNombre = useAuthStore((state) => state.currentTenant?.name);
 
   // Estado
@@ -90,6 +104,7 @@ const OrganigramaCanvasInner = ({ allowedModes, defaultMode }: OrganigramaCanvas
   const [filters, setFilters] = useState<OrganigramaFilters>(DEFAULT_FILTERS);
   const [config, setConfig] = useState<CanvasConfig>(DEFAULT_CANVAS_CONFIG);
   const [isExporting, setIsExporting] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [nodes, setNodes, onNodesChange] = useNodesState<any>([]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -98,55 +113,83 @@ const OrganigramaCanvasInner = ({ allowedModes, defaultMode }: OrganigramaCanvas
   // Datos
   const { data, isLoading, error, refetch } = useOrganigramaData(false, filters.soloActivos);
 
-  // Filtrar datos según filtros
+  // Posiciones persistentes
+  const {
+    savedPositions,
+    isLoading: positionsLoading,
+    saveNodePosition,
+    resetPositions,
+  } = useOrganigramaPositions(viewMode, config.direction);
+
+  // Filtrar datos segun filtros (solo cuando showToolbar=true)
   const filteredData = useMemo(() => {
     if (!data) return { areas: [], cargos: [] };
 
     let { areas, cargos } = data;
 
-    // Filtrar por término de búsqueda
-    if (filters.search.trim()) {
-      const term = filters.search.toLowerCase();
-      areas = areas.filter(
-        (a) => a.name.toLowerCase().includes(term) || a.code.toLowerCase().includes(term)
-      );
-      cargos = cargos.filter(
-        (c) => c.name.toLowerCase().includes(term) || c.code.toLowerCase().includes(term)
-      );
-    }
+    if (showToolbar) {
+      // Filtrar por termino de busqueda
+      if (filters.search.trim()) {
+        const term = filters.search.toLowerCase();
+        areas = areas.filter(
+          (a) => a.name.toLowerCase().includes(term) || a.code.toLowerCase().includes(term)
+        );
+        cargos = cargos.filter(
+          (c) => c.name.toLowerCase().includes(term) || c.code.toLowerCase().includes(term)
+        );
+      }
 
-    // Filtrar cargos por nivel jerárquico
-    if (filters.nivelJerarquico !== 'all' && viewMode === 'cargos') {
-      cargos = cargos.filter((c) => c.nivel_jerarquico === filters.nivelJerarquico);
-    }
+      // Filtrar cargos por nivel jerarquico
+      if (filters.nivelJerarquico !== 'all' && viewMode === 'cargos') {
+        cargos = cargos.filter((c) => c.nivel_jerarquico === filters.nivelJerarquico);
+      }
 
-    // Filtrar por área
-    if (filters.areaId !== null) {
-      cargos = cargos.filter((c) => c.area === filters.areaId);
+      // Filtrar por area
+      if (filters.areaId !== null) {
+        cargos = cargos.filter((c) => c.area === filters.areaId);
+      }
     }
 
     return { areas, cargos };
-  }, [data, filters, viewMode]);
+  }, [data, filters, viewMode, showToolbar]);
 
-  // Generar layout cuando cambian los datos o el modo
+  // Generar layout cuando cambian los datos, modo o posiciones
   useEffect(() => {
-    if (!data) return;
+    if (!data || positionsLoading) return;
 
     const { nodes: newNodes, edges: newEdges } = generateLayout(
       filteredData.areas,
       filteredData.cargos,
       viewMode,
-      config
+      config,
+      savedPositions
     );
 
     setNodes(newNodes);
     setEdges(newEdges);
 
-    // Ajustar vista después de generar layout
+    // Ajustar vista despues de generar layout
     setTimeout(() => {
       fitView({ padding: 0.2, duration: 300 });
     }, 100);
-  }, [filteredData, viewMode, config, setNodes, setEdges, fitView]);
+  }, [
+    filteredData,
+    viewMode,
+    config,
+    savedPositions,
+    positionsLoading,
+    setNodes,
+    setEdges,
+    fitView,
+  ]);
+
+  // Handler para guardar posicion cuando el usuario arrastra un nodo
+  const handleNodeDragStop: NodeDragHandler = useCallback(
+    (_event, node) => {
+      saveNodePosition(node.id, node.position.x, node.position.y);
+    },
+    [saveNodePosition]
+  );
 
   // Handlers
   const handleViewModeChange = useCallback((mode: ViewMode) => {
@@ -165,10 +208,11 @@ const OrganigramaCanvasInner = ({ allowedModes, defaultMode }: OrganigramaCanvas
   }, []);
 
   const handleResetLayout = useCallback(() => {
+    resetPositions();
     setConfig(DEFAULT_CANVAS_CONFIG);
     setFilters(DEFAULT_FILTERS);
     refetch();
-  }, [refetch]);
+  }, [refetch, resetPositions]);
 
   const handleExport = useCallback(
     async (format: ExportFormat) => {
@@ -184,8 +228,8 @@ const OrganigramaCanvasInner = ({ allowedModes, defaultMode }: OrganigramaCanvas
       }
 
       setIsExporting(true);
+      setShowExportMenu(false);
 
-      // Mostrar toast de loading
       const loadingToast = toast.loading(`Exportando organigrama como ${format.toUpperCase()}...`, {
         duration: Infinity,
       });
@@ -199,24 +243,20 @@ const OrganigramaCanvasInner = ({ allowedModes, defaultMode }: OrganigramaCanvas
           empresaNombre || undefined
         );
 
-        // Éxito
         toast.success(`Organigrama exportado exitosamente como ${format.toUpperCase()}`, {
           id: loadingToast,
           duration: 3000,
         });
-      } catch (error) {
-        console.error('Error al exportar:', error);
+      } catch (err) {
+        console.error('Error al exportar:', err);
 
-        // Determinar mensaje de error específico
         let errorMessage = 'No se pudo exportar el organigrama';
-
-        if (error instanceof ExportError) {
-          errorMessage = error.message;
-        } else if (error instanceof Error) {
-          errorMessage = error.message;
+        if (err instanceof ExportError) {
+          errorMessage = err.message;
+        } else if (err instanceof Error) {
+          errorMessage = err.message;
         }
 
-        // Mostrar error
         toast.error(errorMessage, {
           id: loadingToast,
           duration: 5000,
@@ -229,7 +269,6 @@ const OrganigramaCanvasInner = ({ allowedModes, defaultMode }: OrganigramaCanvas
   );
 
   const handleExpandAll = useCallback(() => {
-    // En una implementación más completa, esto actualizaría el estado de expansión de cada nodo
     fitView({ padding: 0.1, duration: 300 });
   }, [fitView]);
 
@@ -238,7 +277,7 @@ const OrganigramaCanvasInner = ({ allowedModes, defaultMode }: OrganigramaCanvas
   }, [fitView]);
 
   // Estados de loading y error
-  if (isLoading) {
+  if (isLoading || positionsLoading) {
     return (
       <Card className="h-[600px] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
@@ -271,42 +310,50 @@ const OrganigramaCanvasInner = ({ allowedModes, defaultMode }: OrganigramaCanvas
         <EmptyState
           icon={<Building2 className="h-12 w-12" />}
           title="Sin estructura organizacional"
-          description="No hay áreas ni cargos configurados. Crea la estructura desde las secciones de Áreas y Cargos."
+          description="No hay areas ni cargos configurados. Crea la estructura desde las secciones de Areas y Cargos."
         />
       </Card>
     );
   }
 
   return (
-    <div className="h-[calc(100vh-280px)] min-h-[600px] border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden bg-gray-50 dark:bg-gray-950">
-      {/* Toolbar */}
-      <OrganigramaToolbar
-        viewMode={viewMode}
-        onViewModeChange={handleViewModeChange}
-        direction={config.direction}
-        onDirectionChange={handleDirectionChange}
-        filters={filters}
-        onFiltersChange={handleFiltersChange}
-        onZoomIn={() => zoomIn({ duration: 200 })}
-        onZoomOut={() => zoomOut({ duration: 200 })}
-        onFitView={() => fitView({ padding: 0.2, duration: 300 })}
-        onResetLayout={handleResetLayout}
-        onExport={handleExport}
-        onExpandAll={handleExpandAll}
-        onCollapseAll={handleCollapseAll}
-        stats={data?.stats}
-        isLoading={isLoading}
-        isExporting={isExporting}
-        allowedModes={allowedModes}
-      />
+    <div
+      className={cn(
+        'h-[calc(100vh-280px)] min-h-[600px] border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden bg-gray-50 dark:bg-gray-950',
+        !showToolbar && 'relative'
+      )}
+    >
+      {/* Toolbar completo */}
+      {showToolbar && (
+        <OrganigramaToolbar
+          viewMode={viewMode}
+          onViewModeChange={handleViewModeChange}
+          direction={config.direction}
+          onDirectionChange={handleDirectionChange}
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+          onZoomIn={() => zoomIn({ duration: 200 })}
+          onZoomOut={() => zoomOut({ duration: 200 })}
+          onFitView={() => fitView({ padding: 0.2, duration: 300 })}
+          onResetLayout={handleResetLayout}
+          onExport={handleExport}
+          onExpandAll={handleExpandAll}
+          onCollapseAll={handleCollapseAll}
+          stats={data?.stats}
+          isLoading={isLoading}
+          isExporting={isExporting}
+          allowedModes={allowedModes}
+        />
+      )}
 
       {/* Canvas */}
-      <div ref={canvasRef} className="h-[calc(100%-60px)]">
+      <div ref={canvasRef} className={showToolbar ? 'h-[calc(100%-60px)]' : 'h-full'}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
+          onNodeDragStop={handleNodeDragStop}
           nodeTypes={nodeTypes}
           fitView
           minZoom={config.minZoom}
@@ -345,12 +392,84 @@ const OrganigramaCanvasInner = ({ allowedModes, defaultMode }: OrganigramaCanvas
             />
           )}
 
-          {/* Panel de información */}
-          <Panel position="top-right" className="!m-0">
-            <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-2 text-xs text-gray-500 dark:text-gray-400">
-              <span>Arrastrar para mover • Scroll para zoom</span>
-            </div>
-          </Panel>
+          {/* Mini-toolbar flotante (cuando showToolbar=false) */}
+          {!showToolbar && (
+            <Panel position="top-right" className="!m-2">
+              <div className="flex items-center gap-1 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-1">
+                {/* Fit view */}
+                <button
+                  onClick={() => fitView({ padding: 0.2, duration: 300 })}
+                  className="p-2 rounded-md text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  title="Ajustar vista"
+                >
+                  <Maximize2 className="h-4 w-4" />
+                </button>
+
+                {/* Reset layout */}
+                <button
+                  onClick={handleResetLayout}
+                  className="p-2 rounded-md text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  title="Restablecer posiciones"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </button>
+
+                {/* Separador */}
+                <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-0.5" />
+
+                {/* Export dropdown */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowExportMenu((prev) => !prev)}
+                    disabled={isExporting}
+                    className={cn(
+                      'flex items-center gap-1 p-2 rounded-md transition-colors',
+                      isExporting
+                        ? 'text-gray-400 cursor-not-allowed'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    )}
+                    title="Exportar"
+                  >
+                    <Download className="h-4 w-4" />
+                    <ChevronDown className="h-3 w-3" />
+                  </button>
+
+                  {showExportMenu && (
+                    <>
+                      {/* Backdrop para cerrar */}
+                      <div
+                        className="fixed inset-0 z-10"
+                        onClick={() => setShowExportMenu(false)}
+                      />
+                      <div className="absolute right-0 top-full mt-1 z-20 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-1 min-w-[120px]">
+                        <button
+                          onClick={() => handleExport('png')}
+                          className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                        >
+                          Exportar PNG
+                        </button>
+                        <button
+                          onClick={() => handleExport('pdf')}
+                          className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                        >
+                          Exportar PDF
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </Panel>
+          )}
+
+          {/* Panel de info (solo en toolbar completo) */}
+          {showToolbar && (
+            <Panel position="top-right" className="!m-0">
+              <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-2 text-xs text-gray-500 dark:text-gray-400">
+                <span>Arrastrar para mover - Scroll para zoom</span>
+              </div>
+            </Panel>
+          )}
         </ReactFlow>
       </div>
     </div>

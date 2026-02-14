@@ -1,20 +1,16 @@
 /**
  * Página de Riesgos y Oportunidades - Tab de Dirección Estratégica
  *
- * Layout según Catálogo de Vistas UI:
- * 1. PageHeader con secciones alineadas a la derecha
- * 2. Contenido de la sección activa (cada sección maneja su propio StatsGrid)
- *
- * Secciones (desde BD):
- * - resumen: Vista general de indicadores de riesgos y oportunidades
- * - mapa_calor: Visualización matricial de probabilidad vs impacto
- * - riesgos: Identificación y gestión de riesgos organizacionales
- * - oportunidades: Identificación y aprovechamiento de oportunidades
- * - tratamientos: Planes de tratamiento y controles
+ * Layout estandarizado:
+ * 1. PageHeader (solo titulo y descripcion)
+ * 2. DynamicSections (sub-tabs debajo del header, variante underline)
+ * 3. Contenido de la sección activa (cada sección maneja su propio StatsGrid)
  *
  * Sin hardcoding - secciones cargadas desde API
  */
 import { PageHeader } from '@/components/layout';
+import { DynamicSections } from '@/components/common';
+import { useModuleColor } from '@/hooks/useModuleColor';
 import { usePageSections } from '@/hooks/usePageSections';
 import { RiesgosOportunidadesTab } from '../components/RiesgosOportunidadesTab';
 
@@ -35,6 +31,8 @@ export const RiesgosOportunidadesPage = () => {
     tabCode: TAB_CODE,
   });
 
+  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
+
   // Si no hay sección activa aún (cargando), mostrar skeleton básico
   if (!activeSection && sectionsLoading) {
     return (
@@ -46,18 +44,27 @@ export const RiesgosOportunidadesPage = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* PageHeader con secciones alineadas a la derecha */}
+    <div className="space-y-4">
+      {/* PageHeader solo titulo y descripcion */}
       <PageHeader
         title="Riesgos y Oportunidades"
-        description={activeSectionData.description || 'Gestión integral de riesgos y oportunidades organizacionales (ISO 31000 / ISO 9001:2015 Cláusula 6.1)'}
-        sections={sections}
-        activeSection={activeSection}
-        onSectionChange={setActiveSection}
-        moduleColor="purple"
+        description={
+          activeSectionData.description ||
+          'Gestión integral de riesgos y oportunidades organizacionales (ISO 31000 / ISO 9001:2015 Cláusula 6.1)'
+        }
       />
 
-      {/* Contenido - cada sección maneja su propio StatsGrid según Vista 2B */}
+      {/* Sub-tabs debajo del header (underline, color dinamico) */}
+      <DynamicSections
+        sections={sections}
+        activeSection={activeSection}
+        onChange={setActiveSection}
+        isLoading={sectionsLoading}
+        variant="underline"
+        moduleColor={moduleColor}
+      />
+
+      {/* Contenido - cada sección maneja su propio StatsGrid */}
       {activeSection && <RiesgosOportunidadesTab activeSection={activeSection} />}
     </div>
   );

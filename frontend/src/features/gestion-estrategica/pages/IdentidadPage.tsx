@@ -1,21 +1,16 @@
 /**
  * Página de Identidad - Tab 3 de Dirección Estratégica
  *
- * Vista 1B: Cards de Información con secciones en PageHeader
- * - PageHeader con título y secciones inline (alineadas a la derecha)
- * - Contenido de la sección activa
+ * Layout estandarizado:
+ * 1. PageHeader (solo titulo y descripcion)
+ * 2. DynamicSections (sub-tabs debajo del header, variante underline)
+ * 3. Contenido de la sección activa
  *
  * Sin hardcoding - secciones cargadas desde API
- *
- * Secciones:
- * - mision_vision: Vista 1B Glassmorphism + DataSection
- * - valores: Vista 2B Especial - DataSection + Card con Drag & Drop
- * - politicas: Vista 2B - DataSection + Lista
- *
- * v3.1: Migrado a Vista 1B con secciones en PageHeader
- * v3.2: Valores refactorizado a Vista 2B Especial con DataSection externo
  */
 import { PageHeader } from '@/components/layout';
+import { DynamicSections } from '@/components/common';
+import { useModuleColor } from '@/hooks/useModuleColor';
 import { IdentidadTab } from '../components/IdentidadTab';
 import { usePageSections } from '@/hooks/usePageSections';
 
@@ -36,6 +31,8 @@ export const IdentidadPage = () => {
     tabCode: TAB_CODE,
   });
 
+  const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
+
   // Si no hay sección activa aún (cargando), mostrar skeleton básico
   if (!activeSection && sectionsLoading) {
     return (
@@ -48,20 +45,21 @@ export const IdentidadPage = () => {
 
   return (
     <div className="space-y-4">
-      {/* PageHeader con título y secciones inline (alineadas a la derecha) */}
-      <PageHeader
-        title="Identidad Corporativa"
-        description={activeSectionData.description}
+      {/* PageHeader solo titulo y descripcion */}
+      <PageHeader title="Identidad Corporativa" description={activeSectionData.description} />
+
+      {/* Sub-tabs debajo del header (underline, color dinamico) */}
+      <DynamicSections
         sections={sections}
         activeSection={activeSection}
-        onSectionChange={setActiveSection}
-        moduleColor="purple"
+        onChange={setActiveSection}
+        isLoading={sectionsLoading}
+        variant="underline"
+        moduleColor={moduleColor}
       />
 
       {/* Contenido de la sección activa */}
-      {activeSection && (
-        <IdentidadTab activeSection={activeSection} />
-      )}
+      {activeSection && <IdentidadTab activeSection={activeSection} />}
     </div>
   );
 };

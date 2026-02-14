@@ -241,7 +241,7 @@ export const ConceptosTab = () => {
         onConfirm={confirmDelete}
         title="Eliminar Concepto"
         message={`¿Está seguro de eliminar el concepto "${deleteTarget?.nombre}"? Esta acción no se puede deshacer.`}
-        confirmLabel="Eliminar"
+        confirmText="Eliminar"
         isLoading={deleteMutation.isPending}
       />
     </div>

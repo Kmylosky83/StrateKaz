@@ -356,8 +356,8 @@ export const AfiliacionesTab = () => {
         onClose={() => setShowRechazarDialog(false)}
         onConfirm={confirmRechazar}
         title="Rechazar Afiliacion"
-        description="Esta seguro de rechazar esta afiliacion? Esta accion cambiara el estado a 'Rechazado'."
-        confirmLabel="Rechazar"
+        message="Esta seguro de rechazar esta afiliacion? Esta accion cambiara el estado a 'Rechazado'."
+        confirmText="Rechazar"
         variant="danger"
         isLoading={updateMutation.isPending}
       />

@@ -250,7 +250,7 @@ export const PrestacionesTab = () => {
         onConfirm={confirmDelete}
         title="Eliminar Prestación"
         message={`¿Está seguro de eliminar esta prestación? Esta acción no se puede deshacer.`}
-        confirmLabel="Eliminar"
+        confirmText="Eliminar"
         isLoading={deleteMutation.isPending}
       />
     </div>

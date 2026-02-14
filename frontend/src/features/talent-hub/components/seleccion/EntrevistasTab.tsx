@@ -161,29 +161,29 @@ export const EntrevistasTab = () => {
       {
         label: 'Programadas',
         value: syncProgramadas,
-        icon: <Calendar size={20} className={colorClasses.statIcon} />,
-        color: colorClasses.statBg,
+        icon: Calendar,
+        iconColor: 'info' as const,
       },
       {
         label: 'Realizadas',
         value: syncRealizadas,
-        icon: <CheckCircle size={20} className={colorClasses.statIcon} />,
-        color: colorClasses.statBg,
+        icon: CheckCircle,
+        iconColor: 'success' as const,
       },
       {
         label: 'Async Pendientes',
         value: asyncPendientes,
-        icon: <Mail size={20} className={colorClasses.statIcon} />,
-        color: colorClasses.statBg,
+        icon: Mail,
+        iconColor: 'warning' as const,
       },
       {
         label: 'Async Completadas',
         value: asyncCompletadas,
-        icon: <Star size={20} className={colorClasses.statIcon} />,
-        color: colorClasses.statBg,
+        icon: Star,
+        iconColor: 'primary' as const,
       },
     ];
-  }, [entrevistas, entrevistasAsync, colorClasses]);
+  }, [entrevistas, entrevistasAsync]);
 
   // Handlers
   const handleRealizarEntrevista = (entrevista: Entrevista) => {
@@ -219,7 +219,7 @@ export const EntrevistasTab = () => {
   return (
     <div className="space-y-4">
       {/* Stats */}
-      <StatsGrid stats={stats} />
+      <StatsGrid stats={stats} columns={4} moduleColor={moduleColor} />
 
       {/* Sub-view toggle */}
       <div className="flex items-center gap-2">
@@ -304,7 +304,7 @@ export const EntrevistasTab = () => {
         onConfirm={handleCancelSync}
         title="Cancelar entrevista"
         message={`Cancelar la entrevista #${cancelTarget?.numero_entrevista} de ${cancelTarget?.candidato_nombre}?`}
-        confirmLabel="Cancelar entrevista"
+        confirmText="Cancelar entrevista"
         variant="danger"
         isLoading={cancelarSync.isPending}
       />
@@ -334,7 +334,7 @@ export const EntrevistasTab = () => {
         onConfirm={handleCancelAsync}
         title="Cancelar entrevista asincronica"
         message={`Cancelar "${cancelAsyncTarget?.titulo}" de ${cancelAsyncTarget?.candidato_nombre}?`}
-        confirmLabel="Cancelar entrevista"
+        confirmText="Cancelar entrevista"
         variant="danger"
         isLoading={cancelarAsync.isPending}
       />

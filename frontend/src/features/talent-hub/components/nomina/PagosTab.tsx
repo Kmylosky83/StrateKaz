@@ -200,7 +200,7 @@ export const PagosTab = () => {
         onConfirm={confirmDelete}
         title="Eliminar Pago"
         message="¿Está seguro de eliminar este registro de pago? Esta acción no se puede deshacer."
-        confirmLabel="Eliminar"
+        confirmText="Eliminar"
         isLoading={deleteMutation.isPending}
       />
     </div>

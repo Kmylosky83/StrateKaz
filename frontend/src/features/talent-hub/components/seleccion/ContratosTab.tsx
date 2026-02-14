@@ -424,9 +424,9 @@ export const ContratosTab = () => {
         onClose={() => setShowFirmarDialog(false)}
         onConfirm={confirmFirmar}
         title="Firmar Contrato"
-        description="Confirma que el contrato ha sido firmado por ambas partes? Se registrara la fecha de firma actual."
-        confirmLabel="Confirmar Firma"
-        variant="default"
+        message="Confirma que el contrato ha sido firmado por ambas partes? Se registrara la fecha de firma actual."
+        confirmText="Confirmar Firma"
+        variant="info"
         isLoading={firmarMutation.isPending}
       />
     </div>

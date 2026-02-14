@@ -164,8 +164,9 @@ export function useTiposContrato() {
   return useQuery({
     queryKey: seleccionKeys.tiposContrato,
     queryFn: async () => {
-      const response = await api.get<TipoContrato[]>('/talent-hub/seleccion/tipos-contrato/');
-      return response.data;
+      const response = await api.get('/talent-hub/seleccion/tipos-contrato/');
+      const data = response.data;
+      return Array.isArray(data) ? data : ((data?.results ?? []) as TipoContrato[]);
     },
     staleTime: 30 * 60 * 1000,
   });
@@ -175,8 +176,9 @@ export function useTiposEntidad() {
   return useQuery({
     queryKey: seleccionKeys.tiposEntidad,
     queryFn: async () => {
-      const response = await api.get<TipoEntidad[]>('/talent-hub/seleccion/tipos-entidad/');
-      return response.data;
+      const response = await api.get('/talent-hub/seleccion/tipos-entidad/');
+      const data = response.data;
+      return Array.isArray(data) ? data : ((data?.results ?? []) as TipoEntidad[]);
     },
     staleTime: 30 * 60 * 1000,
   });
@@ -187,10 +189,9 @@ export function useEntidadesSS(tipoCodigo?: string) {
     queryKey: seleccionKeys.entidadesSS(tipoCodigo),
     queryFn: async () => {
       const params = tipoCodigo ? `?tipo_codigo=${tipoCodigo}` : '';
-      const response = await api.get<EntidadSeguridadSocial[]>(
-        `/talent-hub/seleccion/entidades-ss/${params}`
-      );
-      return response.data;
+      const response = await api.get(`/talent-hub/seleccion/entidades-ss/${params}`);
+      const data = response.data;
+      return Array.isArray(data) ? data : ((data?.results ?? []) as EntidadSeguridadSocial[]);
     },
     staleTime: 30 * 60 * 1000,
   });
@@ -482,7 +483,7 @@ export function useCambiarEstadoCandidato() {
       estado: EstadoCandidato;
       motivo?: string;
     }) => {
-      const response = await api.post(`/talent-hub/seleccion/candidatos/${id}/cambiar-estado/`, {
+      const response = await api.post(`/talent-hub/seleccion/candidatos/${id}/cambiar_estado/`, {
         estado,
         motivo,
       });
@@ -932,7 +933,7 @@ export function useContratosPorVencer(dias = 30) {
     queryKey: seleccionKeys.historialContratos.porVencer(dias),
     queryFn: async () => {
       const response = await api.get<PaginatedResponse<HistorialContrato>>(
-        `/talent-hub/seleccion/historial-contratos/por-vencer/?dias=${dias}`
+        `/talent-hub/seleccion/historial-contratos/por_vencer/?dias=${dias}`
       );
       return response.data;
     },

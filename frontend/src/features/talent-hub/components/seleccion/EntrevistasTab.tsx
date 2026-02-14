@@ -219,7 +219,7 @@ export const EntrevistasTab = () => {
   return (
     <div className="space-y-4">
       {/* Stats */}
-      <StatsGrid items={stats} />
+      <StatsGrid stats={stats} />
 
       {/* Sub-view toggle */}
       <div className="flex items-center gap-2">

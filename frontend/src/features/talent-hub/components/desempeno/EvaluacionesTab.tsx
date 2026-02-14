@@ -294,18 +294,18 @@ export const EvaluacionesTab = () => {
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
                       {ev.calificacion_autoevaluacion != null
-                        ? ev.calificacion_autoevaluacion.toFixed(1)
+                        ? Number(ev.calificacion_autoevaluacion).toFixed(1)
                         : '-'}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
-                      {ev.calificacion_jefe != null ? ev.calificacion_jefe.toFixed(1) : '-'}
+                      {ev.calificacion_jefe != null ? Number(ev.calificacion_jefe).toFixed(1) : '-'}
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                         {ev.calificacion_final != null
-                          ? ev.calificacion_final.toFixed(1)
+                          ? Number(ev.calificacion_final).toFixed(1)
                           : ev.calificacion_calibrada != null
-                            ? `${ev.calificacion_calibrada.toFixed(1)}*`
+                            ? `${Number(ev.calificacion_calibrada).toFixed(1)}*`
                             : '-'}
                       </span>
                     </td>

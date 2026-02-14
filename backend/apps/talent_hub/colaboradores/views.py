@@ -12,6 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models import Count, Q
 from django.utils import timezone
 
+from apps.core.base_models import get_tenant_empresa
 from .models import Colaborador, HojaVida, InfoPersonal, HistorialLaboral
 from .serializers import (
     ColaboradorListSerializer,
@@ -49,11 +50,7 @@ class ColaboradorViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        user = self.request.user
         queryset = Colaborador.objects.filter(is_active=True)
-
-        if hasattr(user, 'empresa_id') and user.empresa_id:
-            queryset = queryset.filter(empresa_id=user.empresa_id)
 
         # Filtros
         estado = self.request.query_params.get('estado')
@@ -92,12 +89,10 @@ class ColaboradorViewSet(viewsets.ModelViewSet):
         return ColaboradorDetailSerializer
 
     def perform_create(self, serializer):
-        user = self.request.user
-        empresa_id = getattr(user, 'empresa_id', None)
         serializer.save(
-            empresa_id=empresa_id,
-            created_by=user,
-            updated_by=user
+            empresa=get_tenant_empresa(),
+            created_by=self.request.user,
+            updated_by=self.request.user
         )
 
     def perform_update(self, serializer):
@@ -119,7 +114,7 @@ class ColaboradorViewSet(viewsets.ModelViewSet):
 
         # Contar por área
         por_area = dict(
-            queryset.values_list('area__nombre').annotate(count=Count('id'))
+            queryset.values_list('area__name').annotate(count=Count('id'))
         )
 
         # Activos
@@ -172,7 +167,7 @@ class ColaboradorViewSet(viewsets.ModelViewSet):
 
         # Crear registro en historial
         HistorialLaboral.objects.create(
-            empresa_id=colaborador.empresa_id,
+            empresa=get_tenant_empresa(),
             colaborador=colaborador,
             tipo_movimiento='retiro',
             fecha_movimiento=colaborador.fecha_retiro,
@@ -210,11 +205,7 @@ class HojaVidaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        user = self.request.user
         queryset = HojaVida.objects.filter(is_active=True)
-
-        if hasattr(user, 'empresa_id') and user.empresa_id:
-            queryset = queryset.filter(empresa_id=user.empresa_id)
 
         colaborador_id = self.request.query_params.get('colaborador')
         if colaborador_id:
@@ -232,12 +223,10 @@ class HojaVidaViewSet(viewsets.ModelViewSet):
         return HojaVidaSerializer
 
     def perform_create(self, serializer):
-        user = self.request.user
-        colaborador = serializer.validated_data.get('colaborador')
         serializer.save(
-            empresa_id=colaborador.empresa_id,
-            created_by=user,
-            updated_by=user
+            empresa=get_tenant_empresa(),
+            created_by=self.request.user,
+            updated_by=self.request.user
         )
 
     def perform_update(self, serializer):
@@ -280,11 +269,7 @@ class InfoPersonalViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        user = self.request.user
         queryset = InfoPersonal.objects.filter(is_active=True)
-
-        if hasattr(user, 'empresa_id') and user.empresa_id:
-            queryset = queryset.filter(empresa_id=user.empresa_id)
 
         colaborador_id = self.request.query_params.get('colaborador')
         if colaborador_id:
@@ -300,12 +285,10 @@ class InfoPersonalViewSet(viewsets.ModelViewSet):
         return InfoPersonalSerializer
 
     def perform_create(self, serializer):
-        user = self.request.user
-        colaborador = serializer.validated_data.get('colaborador')
         serializer.save(
-            empresa_id=colaborador.empresa_id,
-            created_by=user,
-            updated_by=user
+            empresa=get_tenant_empresa(),
+            created_by=self.request.user,
+            updated_by=self.request.user
         )
 
     def perform_update(self, serializer):
@@ -348,11 +331,7 @@ class HistorialLaboralViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        user = self.request.user
         queryset = HistorialLaboral.objects.filter(is_active=True)
-
-        if hasattr(user, 'empresa_id') and user.empresa_id:
-            queryset = queryset.filter(empresa_id=user.empresa_id)
 
         colaborador_id = self.request.query_params.get('colaborador')
         if colaborador_id:
@@ -383,12 +362,10 @@ class HistorialLaboralViewSet(viewsets.ModelViewSet):
         return HistorialLaboralSerializer
 
     def perform_create(self, serializer):
-        user = self.request.user
-        colaborador = serializer.validated_data.get('colaborador')
         serializer.save(
-            empresa_id=colaborador.empresa_id,
-            created_by=user,
-            updated_by=user
+            empresa=get_tenant_empresa(),
+            created_by=self.request.user,
+            updated_by=self.request.user
         )
 
     def perform_update(self, serializer):

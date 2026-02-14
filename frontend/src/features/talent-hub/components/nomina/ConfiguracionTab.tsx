@@ -21,9 +21,9 @@ const formatCurrency = (value: number | undefined) => {
   }).format(value);
 };
 
-const formatPercentage = (value: number | undefined) => {
+const formatPercentage = (value: number | string | undefined) => {
   if (!value && value !== 0) return '-';
-  return `${value.toFixed(2)}%`;
+  return `${Number(value).toFixed(2)}%`;
 };
 
 export const ConfiguracionTab = () => {

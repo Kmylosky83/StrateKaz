@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Count, Q
 
+from apps.core.base_models import get_tenant_empresa
 from .models import Profesiograma, MatrizCompetencia, RequisitoEspecial, Vacante
 from .serializers import (
     # Profesiograma
@@ -49,12 +50,7 @@ class ProfesiogramaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Filtra por empresa del usuario"""
-        user = self.request.user
         queryset = Profesiograma.objects.filter(is_active=True)
-
-        if hasattr(user, 'empresa_id') and user.empresa_id:
-            queryset = queryset.filter(empresa_id=user.empresa_id)
 
         # Filtros opcionales
         estado = self.request.query_params.get('estado')
@@ -83,13 +79,10 @@ class ProfesiogramaViewSet(viewsets.ModelViewSet):
         return ProfesiogramaDetailSerializer
 
     def perform_create(self, serializer):
-        """Asigna empresa y usuario al crear"""
-        user = self.request.user
-        empresa_id = getattr(user, 'empresa_id', None)
         serializer.save(
-            empresa_id=empresa_id,
-            created_by=user,
-            updated_by=user
+            empresa=get_tenant_empresa(),
+            created_by=self.request.user,
+            updated_by=self.request.user
         )
 
     def perform_update(self, serializer):
@@ -156,12 +149,7 @@ class MatrizCompetenciaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Filtra por empresa del usuario"""
-        user = self.request.user
         queryset = MatrizCompetencia.objects.filter(is_active=True)
-
-        if hasattr(user, 'empresa_id') and user.empresa_id:
-            queryset = queryset.filter(empresa_id=user.empresa_id)
 
         # Filtros opcionales
         profesiograma_id = self.request.query_params.get('profesiograma')
@@ -184,12 +172,10 @@ class MatrizCompetenciaViewSet(viewsets.ModelViewSet):
         return MatrizCompetenciaSerializer
 
     def perform_create(self, serializer):
-        user = self.request.user
-        empresa_id = getattr(user, 'empresa_id', None)
         serializer.save(
-            empresa_id=empresa_id,
-            created_by=user,
-            updated_by=user
+            empresa=get_tenant_empresa(),
+            created_by=self.request.user,
+            updated_by=self.request.user
         )
 
     def perform_update(self, serializer):
@@ -221,11 +207,7 @@ class RequisitoEspecialViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        user = self.request.user
         queryset = RequisitoEspecial.objects.filter(is_active=True)
-
-        if hasattr(user, 'empresa_id') and user.empresa_id:
-            queryset = queryset.filter(empresa_id=user.empresa_id)
 
         profesiograma_id = self.request.query_params.get('profesiograma')
         if profesiograma_id:
@@ -243,12 +225,10 @@ class RequisitoEspecialViewSet(viewsets.ModelViewSet):
         return RequisitoEspecialSerializer
 
     def perform_create(self, serializer):
-        user = self.request.user
-        empresa_id = getattr(user, 'empresa_id', None)
         serializer.save(
-            empresa_id=empresa_id,
-            created_by=user,
-            updated_by=user
+            empresa=get_tenant_empresa(),
+            created_by=self.request.user,
+            updated_by=self.request.user
         )
 
     def perform_update(self, serializer):
@@ -281,11 +261,7 @@ class VacanteViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        user = self.request.user
         queryset = Vacante.objects.filter(is_active=True)
-
-        if hasattr(user, 'empresa_id') and user.empresa_id:
-            queryset = queryset.filter(empresa_id=user.empresa_id)
 
         # Filtros
         estado = self.request.query_params.get('estado')
@@ -317,12 +293,10 @@ class VacanteViewSet(viewsets.ModelViewSet):
         return VacanteDetailSerializer
 
     def perform_create(self, serializer):
-        user = self.request.user
-        empresa_id = getattr(user, 'empresa_id', None)
         serializer.save(
-            empresa_id=empresa_id,
-            created_by=user,
-            updated_by=user
+            empresa=get_tenant_empresa(),
+            created_by=self.request.user,
+            updated_by=self.request.user
         )
 
     def perform_update(self, serializer):

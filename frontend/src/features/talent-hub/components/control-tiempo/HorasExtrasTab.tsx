@@ -198,7 +198,7 @@ export const HorasExtrasTab = () => {
                     </td>
                     <td className="px-4 py-3">
                       <Badge variant="warning" size="sm">
-                        {(hora.factor_recargo * 100).toFixed(0)}%
+                        {(Number(hora.factor_recargo) * 100).toFixed(0)}%
                       </Badge>
                     </td>
                     <td className="px-4 py-3">

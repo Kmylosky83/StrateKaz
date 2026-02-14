@@ -110,7 +110,7 @@ export const EvaluacionDetailModal = ({ evaluacion, isOpen, onClose }: Props) =>
               <p
                 className={`text-xl ${cal.bold ? 'font-bold text-primary-600 dark:text-primary-400' : 'font-semibold text-gray-900 dark:text-gray-100'}`}
               >
-                {cal.value != null ? cal.value.toFixed(1) : '-'}
+                {cal.value != null ? Number(cal.value).toFixed(1) : '-'}
               </p>
             </div>
           ))}

@@ -186,8 +186,8 @@ export const AsistenciaTab = () => {
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
-                      {registro.horas_trabajadas > 0
-                        ? `${registro.horas_trabajadas.toFixed(1)}h`
+                      {Number(registro.horas_trabajadas) > 0
+                        ? `${Number(registro.horas_trabajadas).toFixed(1)}h`
                         : '-'}
                     </td>
                     <td className="px-4 py-3">

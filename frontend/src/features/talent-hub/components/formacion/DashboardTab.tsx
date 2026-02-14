@@ -119,7 +119,7 @@ export const DashboardTab = () => {
             <div>
               <p className="text-xs text-gray-500">Presupuesto Ejecutado</p>
               <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                ${((stats?.presupuesto_ejecutado_anio ?? 0) / 1_000_000).toFixed(1)}M
+                ${(Number(stats?.presupuesto_ejecutado_anio ?? 0) / 1_000_000).toFixed(1)}M
               </p>
             </div>
           </div>

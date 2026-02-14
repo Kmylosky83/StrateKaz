@@ -135,7 +135,9 @@ export const DashboardTab = () => {
             <div>
               <p className="text-xs text-gray-500">Promedio Calificacion</p>
               <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                {stats?.promedio_calificacion?.toFixed(1) ?? '-'}
+                {stats?.promedio_calificacion
+                  ? Number(stats.promedio_calificacion).toFixed(1)
+                  : '-'}
               </p>
             </div>
           </div>

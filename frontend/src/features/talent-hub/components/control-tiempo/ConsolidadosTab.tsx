@@ -193,24 +193,24 @@ export const ConsolidadosTab = () => {
                         )}
                       </td>
                       <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {consolidado.total_horas_trabajadas.toFixed(1)}h
+                        {Number(consolidado.total_horas_trabajadas).toFixed(1)}h
                       </td>
                       <td className="px-4 py-3">
                         <div className="text-sm">
                           <div className="text-gray-900 dark:text-gray-100">
                             <span className="font-medium">
                               {(
-                                consolidado.total_horas_extras_diurnas +
-                                consolidado.total_horas_extras_nocturnas +
-                                consolidado.total_horas_extras_dominicales +
-                                consolidado.total_horas_extras_festivas
+                                Number(consolidado.total_horas_extras_diurnas) +
+                                Number(consolidado.total_horas_extras_nocturnas) +
+                                Number(consolidado.total_horas_extras_dominicales) +
+                                Number(consolidado.total_horas_extras_festivas)
                               ).toFixed(1)}
                               h
                             </span>
                           </div>
                           {consolidado.total_horas_extras_diurnas > 0 && (
                             <div className="text-xs text-gray-500">
-                              {consolidado.total_horas_extras_diurnas.toFixed(1)}h diurnas
+                              {Number(consolidado.total_horas_extras_diurnas).toFixed(1)}h diurnas
                             </div>
                           )}
                         </div>

@@ -100,8 +100,9 @@ export const useTiposIncapacidad = () => {
   return useQuery({
     queryKey: novedadesKeys.tiposIncapacidad.list(),
     queryFn: async () => {
-      const { data } = await api.get<TipoIncapacidad[]>(`${BASE_URL}/tipos-incapacidad/`);
-      return data;
+      const response = await api.get(`${BASE_URL}/tipos-incapacidad/`);
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as TipoIncapacidad[];
     },
   });
 };
@@ -162,10 +163,9 @@ export const useIncapacidades = (filters?: IncapacidadFilter) => {
   return useQuery({
     queryKey: novedadesKeys.incapacidades.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<Incapacidad[]>(`${BASE_URL}/incapacidades/`, {
-        params: filters,
-      });
-      return data;
+      const response = await api.get(`${BASE_URL}/incapacidades/`, { params: filters });
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as Incapacidad[];
     },
   });
 };
@@ -307,8 +307,9 @@ export const useTiposLicencia = () => {
   return useQuery({
     queryKey: novedadesKeys.tiposLicencia.list(),
     queryFn: async () => {
-      const { data } = await api.get<TipoLicencia[]>(`${BASE_URL}/tipos-licencia/`);
-      return data;
+      const response = await api.get(`${BASE_URL}/tipos-licencia/`);
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as TipoLicencia[];
     },
   });
 };
@@ -366,8 +367,9 @@ export const useLicencias = (filters?: LicenciaFilter) => {
   return useQuery({
     queryKey: novedadesKeys.licencias.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<Licencia[]>(`${BASE_URL}/licencias/`, { params: filters });
-      return data;
+      const response = await api.get(`${BASE_URL}/licencias/`, { params: filters });
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as Licencia[];
     },
   });
 };
@@ -457,8 +459,9 @@ export const usePermisos = (filters?: PermisoFilter) => {
   return useQuery({
     queryKey: novedadesKeys.permisos.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<Permiso[]>(`${BASE_URL}/permisos/`, { params: filters });
-      return data;
+      const response = await api.get(`${BASE_URL}/permisos/`, { params: filters });
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as Permiso[];
     },
   });
 };
@@ -545,10 +548,9 @@ export const usePeriodosVacaciones = (filters?: PeriodoVacacionesFilter) => {
   return useQuery({
     queryKey: novedadesKeys.periodosVacaciones.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<PeriodoVacaciones[]>(`${BASE_URL}/periodos-vacaciones/`, {
-        params: filters,
-      });
-      return data;
+      const response = await api.get(`${BASE_URL}/periodos-vacaciones/`, { params: filters });
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as PeriodoVacaciones[];
     },
   });
 };
@@ -594,10 +596,9 @@ export const useSolicitudesVacaciones = (filters?: SolicitudVacacionesFilter) =>
   return useQuery({
     queryKey: novedadesKeys.solicitudesVacaciones.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<SolicitudVacaciones[]>(`${BASE_URL}/solicitudes-vacaciones/`, {
-        params: filters,
-      });
-      return data;
+      const response = await api.get(`${BASE_URL}/solicitudes-vacaciones/`, { params: filters });
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as SolicitudVacaciones[];
     },
   });
 };
@@ -701,8 +702,9 @@ export const useConfiguracionDotacion = () => {
   return useQuery({
     queryKey: novedadesKeys.dotacionConfig.list(),
     queryFn: async () => {
-      const { data } = await api.get<ConfiguracionDotacion[]>(`${BASE_URL}/dotacion-config/`);
-      return data;
+      const response = await api.get(`${BASE_URL}/dotacion-config/`);
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as ConfiguracionDotacion[];
     },
   });
 };
@@ -755,10 +757,9 @@ export const useEntregasDotacion = (filters?: EntregaDotacionFilter) => {
   return useQuery({
     queryKey: novedadesKeys.entregasDotacion.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<EntregaDotacion[]>(`${BASE_URL}/entregas-dotacion/`, {
-        params: filters,
-      });
-      return data;
+      const response = await api.get(`${BASE_URL}/entregas-dotacion/`, { params: filters });
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as EntregaDotacion[];
     },
   });
 };

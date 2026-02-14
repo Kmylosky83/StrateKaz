@@ -87,8 +87,9 @@ export const useConfiguracionesNomina = () => {
   return useQuery({
     queryKey: nominaKeys.configuraciones.list(),
     queryFn: async () => {
-      const { data } = await api.get<ConfiguracionNominaList[]>(`${BASE_URL}/configuraciones/`);
-      return data;
+      const response = await api.get(`${BASE_URL}/configuraciones/`);
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as ConfiguracionNominaList[];
     },
   });
 };
@@ -157,10 +158,9 @@ export const useConceptosNomina = (filters?: ConceptoNominaFilter) => {
   return useQuery({
     queryKey: nominaKeys.conceptos.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<ConceptoNomina[]>(`${BASE_URL}/conceptos/`, {
-        params: filters,
-      });
-      return data;
+      const response = await api.get(`${BASE_URL}/conceptos/`, { params: filters });
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as ConceptoNomina[];
     },
   });
 };
@@ -233,8 +233,9 @@ export const useConceptosDevengados = () => {
   return useQuery({
     queryKey: [...nominaKeys.conceptos.all(), 'devengados'] as const,
     queryFn: async () => {
-      const { data } = await api.get<ConceptoNomina[]>(`${BASE_URL}/conceptos/devengados/`);
-      return data;
+      const response = await api.get(`${BASE_URL}/conceptos/devengados/`);
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as ConceptoNomina[];
     },
   });
 };
@@ -244,8 +245,9 @@ export const useConceptosDeducciones = () => {
   return useQuery({
     queryKey: [...nominaKeys.conceptos.all(), 'deducciones'] as const,
     queryFn: async () => {
-      const { data } = await api.get<ConceptoNomina[]>(`${BASE_URL}/conceptos/deducciones/`);
-      return data;
+      const response = await api.get(`${BASE_URL}/conceptos/deducciones/`);
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as ConceptoNomina[];
     },
   });
 };
@@ -257,8 +259,9 @@ export const usePeriodosNomina = (filters?: PeriodoNominaFilter) => {
   return useQuery({
     queryKey: nominaKeys.periodos.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<PeriodoNomina[]>(`${BASE_URL}/periodos/`, { params: filters });
-      return data;
+      const response = await api.get(`${BASE_URL}/periodos/`, { params: filters });
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as PeriodoNomina[];
     },
   });
 };
@@ -366,10 +369,9 @@ export const useLiquidacionesNomina = (filters?: LiquidacionNominaFilter) => {
   return useQuery({
     queryKey: nominaKeys.liquidaciones.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<LiquidacionNomina[]>(`${BASE_URL}/liquidaciones/`, {
-        params: filters,
-      });
-      return data;
+      const response = await api.get(`${BASE_URL}/liquidaciones/`, { params: filters });
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as LiquidacionNomina[];
     },
   });
 };
@@ -471,10 +473,11 @@ export const useDetallesLiquidacion = (liquidacionId: number, enabled = true) =>
   return useQuery({
     queryKey: nominaKeys.detalles.byLiquidacion(liquidacionId),
     queryFn: async () => {
-      const { data } = await api.get<DetalleLiquidacion[]>(`${BASE_URL}/detalles/`, {
+      const response = await api.get(`${BASE_URL}/detalles/`, {
         params: { liquidacion: liquidacionId },
       });
-      return data;
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as DetalleLiquidacion[];
     },
     enabled: enabled && !!liquidacionId,
   });
@@ -532,10 +535,9 @@ export const usePrestaciones = (filters?: PrestacionFilter) => {
   return useQuery({
     queryKey: nominaKeys.prestaciones.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<Prestacion[]>(`${BASE_URL}/prestaciones/`, {
-        params: filters,
-      });
-      return data;
+      const response = await api.get(`${BASE_URL}/prestaciones/`, { params: filters });
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as Prestacion[];
     },
   });
 };
@@ -610,8 +612,9 @@ export const usePagosNomina = (filters?: PagoNominaFilter) => {
   return useQuery({
     queryKey: nominaKeys.pagos.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<PagoNomina[]>(`${BASE_URL}/pagos/`, { params: filters });
-      return data;
+      const response = await api.get(`${BASE_URL}/pagos/`, { params: filters });
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as PagoNomina[];
     },
   });
 };

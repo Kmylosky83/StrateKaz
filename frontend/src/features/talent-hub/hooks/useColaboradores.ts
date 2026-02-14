@@ -40,7 +40,8 @@ export const colaboradoresKeys = {
     all: ['hojas-vida'] as const,
     list: () => [...colaboradoresKeys.hojasVida.all, 'list'] as const,
     detail: (id: string) => [...colaboradoresKeys.hojasVida.all, 'detail', id] as const,
-    porColaborador: (colaboradorId: string) => [...colaboradoresKeys.hojasVida.all, 'colaborador', colaboradorId] as const,
+    porColaborador: (colaboradorId: string) =>
+      [...colaboradoresKeys.hojasVida.all, 'colaborador', colaboradorId] as const,
   },
 
   // Info Personal
@@ -48,15 +49,18 @@ export const colaboradoresKeys = {
     all: ['info-personal'] as const,
     list: () => [...colaboradoresKeys.infoPersonal.all, 'list'] as const,
     detail: (id: string) => [...colaboradoresKeys.infoPersonal.all, 'detail', id] as const,
-    porColaborador: (colaboradorId: string) => [...colaboradoresKeys.infoPersonal.all, 'colaborador', colaboradorId] as const,
+    porColaborador: (colaboradorId: string) =>
+      [...colaboradoresKeys.infoPersonal.all, 'colaborador', colaboradorId] as const,
   },
 
   // Historial Laboral
   historialLaboral: {
     all: ['historial-laboral'] as const,
-    list: (filters?: HistorialLaboralFilters) => [...colaboradoresKeys.historialLaboral.all, 'list', filters] as const,
+    list: (filters?: HistorialLaboralFilters) =>
+      [...colaboradoresKeys.historialLaboral.all, 'list', filters] as const,
     detail: (id: string) => [...colaboradoresKeys.historialLaboral.all, 'detail', id] as const,
-    porColaborador: (colaboradorId: string) => [...colaboradoresKeys.historialLaboral.all, 'colaborador', colaboradorId] as const,
+    porColaborador: (colaboradorId: string) =>
+      [...colaboradoresKeys.historialLaboral.all, 'colaborador', colaboradorId] as const,
     ascensos: () => [...colaboradoresKeys.historialLaboral.all, 'ascensos'] as const,
     traslados: () => [...colaboradoresKeys.historialLaboral.all, 'traslados'] as const,
   },
@@ -83,7 +87,8 @@ export function useColaboradores(filters?: ColaboradorFilters) {
       if (filters?.page_size) params.append('page_size', String(filters.page_size));
 
       const response = await api.get(`/talent-hub/empleados/colaboradores/?${params}`);
-      return response.data;
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as Colaborador[];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -112,7 +117,9 @@ export function useColaboradorCompleto(id: string) {
   return useQuery({
     queryKey: colaboradoresKeys.completo(id),
     queryFn: async () => {
-      const response = await api.get<ColaboradorCompleto>(`/talent-hub/empleados/colaboradores/${id}/completo/`);
+      const response = await api.get<ColaboradorCompleto>(
+        `/talent-hub/empleados/colaboradores/${id}/completo/`
+      );
       return response.data;
     },
     enabled: !!id,
@@ -128,7 +135,8 @@ export function useColaboradoresActivos() {
     queryKey: colaboradoresKeys.activos(),
     queryFn: async () => {
       const response = await api.get('/talent-hub/empleados/colaboradores/activos/');
-      return response.data;
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as Colaborador[];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -142,7 +150,8 @@ export function useColaboradoresPorArea(areaId: string) {
     queryKey: colaboradoresKeys.porArea(areaId),
     queryFn: async () => {
       const response = await api.get(`/talent-hub/empleados/colaboradores/por-area/${areaId}/`);
-      return response.data;
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as Colaborador[];
     },
     enabled: !!areaId,
     staleTime: 5 * 60 * 1000,
@@ -157,7 +166,8 @@ export function useColaboradoresPorCargo(cargoId: string) {
     queryKey: colaboradoresKeys.porCargo(cargoId),
     queryFn: async () => {
       const response = await api.get(`/talent-hub/empleados/colaboradores/por-cargo/${cargoId}/`);
-      return response.data;
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as Colaborador[];
     },
     enabled: !!cargoId,
     staleTime: 5 * 60 * 1000,
@@ -171,7 +181,9 @@ export function useColaboradoresEstadisticas() {
   return useQuery({
     queryKey: colaboradoresKeys.estadisticas(),
     queryFn: async () => {
-      const response = await api.get<ColaboradorEstadisticas>('/talent-hub/empleados/colaboradores/estadisticas/');
+      const response = await api.get<ColaboradorEstadisticas>(
+        '/talent-hub/empleados/colaboradores/estadisticas/'
+      );
       return response.data;
     },
     staleTime: 5 * 60 * 1000,
@@ -195,7 +207,8 @@ export function useCreateColaborador() {
       toast.success('Colaborador creado exitosamente');
     },
     onError: (error: any) => {
-      const message = error.response?.data?.detail ||
+      const message =
+        error.response?.data?.detail ||
         error.response?.data?.numero_identificacion?.[0] ||
         'Error al crear el colaborador';
       toast.error(message);
@@ -233,7 +246,11 @@ export function useRetirarColaborador() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, fecha_retiro, motivo_retiro }: {
+    mutationFn: async ({
+      id,
+      fecha_retiro,
+      motivo_retiro,
+    }: {
       id: string;
       fecha_retiro?: string;
       motivo_retiro?: string;
@@ -248,7 +265,9 @@ export function useRetirarColaborador() {
       queryClient.invalidateQueries({ queryKey: colaboradoresKeys.all });
       queryClient.invalidateQueries({ queryKey: colaboradoresKeys.detail(variables.id) });
       queryClient.invalidateQueries({ queryKey: colaboradoresKeys.estadisticas() });
-      queryClient.invalidateQueries({ queryKey: colaboradoresKeys.historialLaboral.porColaborador(variables.id) });
+      queryClient.invalidateQueries({
+        queryKey: colaboradoresKeys.historialLaboral.porColaborador(variables.id),
+      });
       toast.success('Colaborador retirado exitosamente');
     },
     onError: (error: any) => {
@@ -268,7 +287,9 @@ export function useHojaVidaColaborador(colaboradorId: string) {
   return useQuery({
     queryKey: colaboradoresKeys.hojasVida.porColaborador(colaboradorId),
     queryFn: async () => {
-      const response = await api.get<HojaVida>(`/talent-hub/empleados/hojas-vida/por-colaborador/${colaboradorId}/`);
+      const response = await api.get<HojaVida>(
+        `/talent-hub/empleados/hojas-vida/por-colaborador/${colaboradorId}/`
+      );
       return response.data;
     },
     enabled: !!colaboradorId,
@@ -289,8 +310,12 @@ export function useCreateHojaVida() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: colaboradoresKeys.hojasVida.all });
-      queryClient.invalidateQueries({ queryKey: colaboradoresKeys.hojasVida.porColaborador(variables.colaborador) });
-      queryClient.invalidateQueries({ queryKey: colaboradoresKeys.completo(variables.colaborador) });
+      queryClient.invalidateQueries({
+        queryKey: colaboradoresKeys.hojasVida.porColaborador(variables.colaborador),
+      });
+      queryClient.invalidateQueries({
+        queryKey: colaboradoresKeys.completo(variables.colaborador),
+      });
       toast.success('Hoja de vida creada exitosamente');
     },
     onError: (error: any) => {
@@ -313,7 +338,9 @@ export function useUpdateHojaVida() {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: colaboradoresKeys.hojasVida.all });
       if (result.colaborador) {
-        queryClient.invalidateQueries({ queryKey: colaboradoresKeys.completo(result.colaborador.id || result.colaborador) });
+        queryClient.invalidateQueries({
+          queryKey: colaboradoresKeys.completo(result.colaborador.id || result.colaborador),
+        });
       }
       toast.success('Hoja de vida actualizada exitosamente');
     },
@@ -334,7 +361,9 @@ export function useInfoPersonalColaborador(colaboradorId: string) {
   return useQuery({
     queryKey: colaboradoresKeys.infoPersonal.porColaborador(colaboradorId),
     queryFn: async () => {
-      const response = await api.get<InfoPersonal>(`/talent-hub/empleados/info-personal/por-colaborador/${colaboradorId}/`);
+      const response = await api.get<InfoPersonal>(
+        `/talent-hub/empleados/info-personal/por-colaborador/${colaboradorId}/`
+      );
       return response.data;
     },
     enabled: !!colaboradorId,
@@ -355,8 +384,12 @@ export function useCreateInfoPersonal() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: colaboradoresKeys.infoPersonal.all });
-      queryClient.invalidateQueries({ queryKey: colaboradoresKeys.infoPersonal.porColaborador(variables.colaborador) });
-      queryClient.invalidateQueries({ queryKey: colaboradoresKeys.completo(variables.colaborador) });
+      queryClient.invalidateQueries({
+        queryKey: colaboradoresKeys.infoPersonal.porColaborador(variables.colaborador),
+      });
+      queryClient.invalidateQueries({
+        queryKey: colaboradoresKeys.completo(variables.colaborador),
+      });
       toast.success('Información personal registrada exitosamente');
     },
     onError: (error: any) => {
@@ -379,7 +412,9 @@ export function useUpdateInfoPersonal() {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: colaboradoresKeys.infoPersonal.all });
       if (result.colaborador) {
-        queryClient.invalidateQueries({ queryKey: colaboradoresKeys.completo(result.colaborador.id || result.colaborador) });
+        queryClient.invalidateQueries({
+          queryKey: colaboradoresKeys.completo(result.colaborador.id || result.colaborador),
+        });
       }
       toast.success('Información personal actualizada exitosamente');
     },
@@ -410,7 +445,8 @@ export function useHistorialLaboral(filters?: HistorialLaboralFilters) {
       if (filters?.page_size) params.append('page_size', String(filters.page_size));
 
       const response = await api.get(`/talent-hub/empleados/historial-laboral/?${params}`);
-      return response.data;
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as HistorialLaboral[];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -423,8 +459,11 @@ export function useHistorialLaboralColaborador(colaboradorId: string) {
   return useQuery({
     queryKey: colaboradoresKeys.historialLaboral.porColaborador(colaboradorId),
     queryFn: async () => {
-      const response = await api.get<HistorialLaboral[]>(`/talent-hub/empleados/historial-laboral/por-colaborador/${colaboradorId}/`);
-      return response.data;
+      const response = await api.get(
+        `/talent-hub/empleados/historial-laboral/por-colaborador/${colaboradorId}/`
+      );
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as HistorialLaboral[];
     },
     enabled: !!colaboradorId,
     staleTime: 5 * 60 * 1000,
@@ -439,7 +478,8 @@ export function useAscensos() {
     queryKey: colaboradoresKeys.historialLaboral.ascensos(),
     queryFn: async () => {
       const response = await api.get('/talent-hub/empleados/historial-laboral/ascensos/');
-      return response.data;
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as HistorialLaboral[];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -453,7 +493,8 @@ export function useTraslados() {
     queryKey: colaboradoresKeys.historialLaboral.traslados(),
     queryFn: async () => {
       const response = await api.get('/talent-hub/empleados/historial-laboral/traslados/');
-      return response.data;
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as HistorialLaboral[];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -472,8 +513,12 @@ export function useCreateHistorialLaboral() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: colaboradoresKeys.historialLaboral.all });
-      queryClient.invalidateQueries({ queryKey: colaboradoresKeys.historialLaboral.porColaborador(variables.colaborador) });
-      queryClient.invalidateQueries({ queryKey: colaboradoresKeys.completo(variables.colaborador) });
+      queryClient.invalidateQueries({
+        queryKey: colaboradoresKeys.historialLaboral.porColaborador(variables.colaborador),
+      });
+      queryClient.invalidateQueries({
+        queryKey: colaboradoresKeys.completo(variables.colaborador),
+      });
       toast.success('Movimiento registrado exitosamente');
     },
     onError: (error: any) => {

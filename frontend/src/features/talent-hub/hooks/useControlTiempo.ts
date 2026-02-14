@@ -69,8 +69,9 @@ export const useTurnos = (filters?: TurnoFilter) => {
   return useQuery({
     queryKey: controlTiempoKeys.turnos.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<Turno[]>(`${BASE_URL}/turnos/`, { params: filters });
-      return data;
+      const response = await api.get(`${BASE_URL}/turnos/`, { params: filters });
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as Turno[];
     },
   });
 };
@@ -137,10 +138,9 @@ export const useAsignacionesTurno = (filters?: AsignacionTurnoFilter) => {
   return useQuery({
     queryKey: controlTiempoKeys.asignaciones.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<AsignacionTurno[]>(`${BASE_URL}/asignaciones/`, {
-        params: filters,
-      });
-      return data;
+      const response = await api.get(`${BASE_URL}/asignaciones/`, { params: filters });
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as AsignacionTurno[];
     },
   });
 };
@@ -210,10 +210,9 @@ export const useRegistrosAsistencia = (filters?: RegistroAsistenciaFilter) => {
   return useQuery({
     queryKey: controlTiempoKeys.asistencias.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<RegistroAsistencia[]>(`${BASE_URL}/asistencias/`, {
-        params: filters,
-      });
-      return data;
+      const response = await api.get(`${BASE_URL}/asistencias/`, { params: filters });
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as RegistroAsistencia[];
     },
   });
 };
@@ -309,8 +308,9 @@ export const useHorasExtras = (filters?: HoraExtraFilter) => {
   return useQuery({
     queryKey: controlTiempoKeys.horasExtras.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<HoraExtra[]>(`${BASE_URL}/horas-extras/`, { params: filters });
-      return data;
+      const response = await api.get(`${BASE_URL}/horas-extras/`, { params: filters });
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as HoraExtra[];
     },
   });
 };
@@ -418,10 +418,9 @@ export const useConsolidadosAsistencia = (filters?: ConsolidadoAsistenciaFilter)
   return useQuery({
     queryKey: controlTiempoKeys.consolidados.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<ConsolidadoAsistencia[]>(`${BASE_URL}/consolidados/`, {
-        params: filters,
-      });
-      return data;
+      const response = await api.get(`${BASE_URL}/consolidados/`, { params: filters });
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as ConsolidadoAsistencia[];
     },
   });
 };

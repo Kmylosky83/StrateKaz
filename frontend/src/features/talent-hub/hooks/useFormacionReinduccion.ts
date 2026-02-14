@@ -96,8 +96,9 @@ export function usePlanesFormacion() {
   return useQuery({
     queryKey: formacionKeys.planes.list(),
     queryFn: async () => {
-      const { data } = await api.get<PlanFormacion[]>('/talent-hub/formacion/planes-formacion/');
-      return data;
+      const response = await api.get('/talent-hub/formacion/planes-formacion/');
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as PlanFormacion[];
     },
   });
 }
@@ -194,8 +195,9 @@ export function useCapacitaciones() {
   return useQuery({
     queryKey: formacionKeys.capacitaciones.list(),
     queryFn: async () => {
-      const { data } = await api.get<Capacitacion[]>('/talent-hub/formacion/capacitaciones/');
-      return data;
+      const response = await api.get('/talent-hub/formacion/capacitaciones/');
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as Capacitacion[];
     },
   });
 }
@@ -302,10 +304,9 @@ export function useProgramaciones() {
   return useQuery({
     queryKey: formacionKeys.programaciones.list(),
     queryFn: async () => {
-      const { data } = await api.get<ProgramacionCapacitacion[]>(
-        '/talent-hub/formacion/programaciones/'
-      );
-      return data;
+      const response = await api.get('/talent-hub/formacion/programaciones/');
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as ProgramacionCapacitacion[];
     },
   });
 }
@@ -317,10 +318,9 @@ export function useCalendarioCapacitaciones(fechaInicio?: string, fechaFin?: str
       const params = new URLSearchParams();
       if (fechaInicio) params.append('fecha_inicio', fechaInicio);
       if (fechaFin) params.append('fecha_fin', fechaFin);
-      const { data } = await api.get<ProgramacionCapacitacion[]>(
-        `/talent-hub/formacion/programaciones/calendario/?${params}`
-      );
-      return data;
+      const response = await api.get(`/talent-hub/formacion/programaciones/calendario/?${params}`);
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as ProgramacionCapacitacion[];
     },
   });
 }
@@ -329,10 +329,9 @@ export function useProximasSesiones(dias = 7) {
   return useQuery({
     queryKey: formacionKeys.programaciones.proximas(dias),
     queryFn: async () => {
-      const { data } = await api.get<ProgramacionCapacitacion[]>(
-        `/talent-hub/formacion/programaciones/proximas/?dias=${dias}`
-      );
-      return data;
+      const response = await api.get(`/talent-hub/formacion/programaciones/proximas/?dias=${dias}`);
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as ProgramacionCapacitacion[];
     },
   });
 }
@@ -377,8 +376,9 @@ export function useEjecuciones() {
   return useQuery({
     queryKey: formacionKeys.ejecuciones.list(),
     queryFn: async () => {
-      const { data } = await api.get<EjecucionCapacitacion[]>('/talent-hub/formacion/ejecuciones/');
-      return data;
+      const response = await api.get('/talent-hub/formacion/ejecuciones/');
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as EjecucionCapacitacion[];
     },
   });
 }
@@ -387,10 +387,11 @@ export function useEjecucionesPorColaborador(colaboradorId: number) {
   return useQuery({
     queryKey: formacionKeys.ejecuciones.porColaborador(colaboradorId),
     queryFn: async () => {
-      const { data } = await api.get<EjecucionCapacitacion[]>(
+      const response = await api.get(
         `/talent-hub/formacion/ejecuciones/por_colaborador/?colaborador_id=${colaboradorId}`
       );
-      return data;
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as EjecucionCapacitacion[];
     },
     enabled: !!colaboradorId,
   });
@@ -473,10 +474,11 @@ export function useLeaderboard(limite = 10) {
   return useQuery({
     queryKey: formacionKeys.gamificacion.leaderboard(limite),
     queryFn: async () => {
-      const { data } = await api.get<LeaderboardEntry[]>(
+      const response = await api.get(
         `/talent-hub/formacion/gamificacion/leaderboard/?limite=${limite}`
       );
-      return data;
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as LeaderboardEntry[];
     },
   });
 }
@@ -498,10 +500,11 @@ export function useMisBadges(colaboradorId: number) {
   return useQuery({
     queryKey: formacionKeys.gamificacion.misBadges(colaboradorId),
     queryFn: async () => {
-      const { data } = await api.get<BadgeColaborador[]>(
+      const response = await api.get(
         `/talent-hub/formacion/gamificacion/mis_badges/?colaborador_id=${colaboradorId}`
       );
-      return data;
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as BadgeColaborador[];
     },
     enabled: !!colaboradorId,
   });
@@ -515,8 +518,9 @@ export function useBadges() {
   return useQuery({
     queryKey: formacionKeys.badges.list(),
     queryFn: async () => {
-      const { data } = await api.get<Badge[]>('/talent-hub/formacion/badges/');
-      return data;
+      const response = await api.get('/talent-hub/formacion/badges/');
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as Badge[];
     },
   });
 }
@@ -529,10 +533,9 @@ export function useEvaluacionesEficacia() {
   return useQuery({
     queryKey: formacionKeys.evaluacionesEficacia.list(),
     queryFn: async () => {
-      const { data } = await api.get<EvaluacionEficacia[]>(
-        '/talent-hub/formacion/evaluaciones-eficacia/'
-      );
-      return data;
+      const response = await api.get('/talent-hub/formacion/evaluaciones-eficacia/');
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as EvaluacionEficacia[];
     },
   });
 }
@@ -563,8 +566,9 @@ export function useCertificados() {
   return useQuery({
     queryKey: formacionKeys.certificados.list(),
     queryFn: async () => {
-      const { data } = await api.get<Certificado[]>('/talent-hub/formacion/certificados/');
-      return data;
+      const response = await api.get('/talent-hub/formacion/certificados/');
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as Certificado[];
     },
   });
 }
@@ -573,10 +577,11 @@ export function useCertificadosPorColaborador(colaboradorId: number) {
   return useQuery({
     queryKey: formacionKeys.certificados.porColaborador(colaboradorId),
     queryFn: async () => {
-      const { data } = await api.get<Certificado[]>(
+      const response = await api.get(
         `/talent-hub/formacion/certificados/por_colaborador/?colaborador_id=${colaboradorId}`
       );
-      return data;
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as Certificado[];
     },
     enabled: !!colaboradorId,
   });

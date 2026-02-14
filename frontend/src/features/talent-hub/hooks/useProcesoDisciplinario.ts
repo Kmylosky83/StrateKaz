@@ -73,8 +73,9 @@ export const useTiposFalta = (filters?: TipoFaltaFilter) => {
   return useQuery({
     queryKey: procesoDisciplinarioKeys.tiposFalta.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<TipoFalta[]>(`${BASE_URL}/tipos-falta/`, { params: filters });
-      return data;
+      const response = await api.get(`${BASE_URL}/tipos-falta/`, { params: filters });
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as TipoFalta[];
     },
   });
 };
@@ -141,10 +142,9 @@ export const useLlamadosAtencion = (filters?: LlamadoAtencionFilter) => {
   return useQuery({
     queryKey: procesoDisciplinarioKeys.llamados.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<LlamadoAtencion[]>(`${BASE_URL}/llamados-atencion/`, {
-        params: filters,
-      });
-      return data;
+      const response = await api.get(`${BASE_URL}/llamados-atencion/`, { params: filters });
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as LlamadoAtencion[];
     },
   });
 };
@@ -236,8 +236,9 @@ export const useDescargos = (filters?: DescargoFilter) => {
   return useQuery({
     queryKey: procesoDisciplinarioKeys.descargos.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<Descargo[]>(`${BASE_URL}/descargos/`, { params: filters });
-      return data;
+      const response = await api.get(`${BASE_URL}/descargos/`, { params: filters });
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as Descargo[];
     },
   });
 };
@@ -344,8 +345,9 @@ export const useMemorandos = (filters?: MemorandoFilter) => {
   return useQuery({
     queryKey: procesoDisciplinarioKeys.memorandos.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<Memorando[]>(`${BASE_URL}/memorandos/`, { params: filters });
-      return data;
+      const response = await api.get(`${BASE_URL}/memorandos/`, { params: filters });
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as Memorando[];
     },
   });
 };
@@ -450,10 +452,9 @@ export const useHistorialDisciplinario = (filters?: HistorialDisciplinarioFilter
   return useQuery({
     queryKey: procesoDisciplinarioKeys.historial.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<HistorialDisciplinario[]>(`${BASE_URL}/historial/`, {
-        params: filters,
-      });
-      return data;
+      const response = await api.get(`${BASE_URL}/historial/`, { params: filters });
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as HistorialDisciplinario[];
     },
   });
 };

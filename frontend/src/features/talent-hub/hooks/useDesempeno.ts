@@ -88,7 +88,8 @@ export const desempenoKeys = {
     all: ['desempeno', 'reconocimientos'] as const,
     list: () => [...desempenoKeys.reconocimientos.all, 'list'] as const,
     detail: (id: string) => [...desempenoKeys.reconocimientos.all, 'detail', id] as const,
-    porColaborador: (id: string) => [...desempenoKeys.reconocimientos.all, 'colaborador', id] as const,
+    porColaborador: (id: string) =>
+      [...desempenoKeys.reconocimientos.all, 'colaborador', id] as const,
     pendientes: () => [...desempenoKeys.reconocimientos.all, 'pendientes'] as const,
   },
 
@@ -113,8 +114,9 @@ export function useCiclosEvaluacion() {
   return useQuery({
     queryKey: desempenoKeys.ciclos.list(),
     queryFn: async () => {
-      const { data } = await api.get<CicloEvaluacion[]>('/talent-hub/desempeno/ciclos/');
-      return data;
+      const response = await api.get('/talent-hub/desempeno/ciclos/');
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as CicloEvaluacion[];
     },
   });
 }
@@ -144,8 +146,9 @@ export function useEscalaCiclo(cicloId: string) {
   return useQuery({
     queryKey: desempenoKeys.ciclos.escala(cicloId),
     queryFn: async () => {
-      const { data } = await api.get<EscalaCalificacion[]>(`/talent-hub/desempeno/ciclos/${cicloId}/escala/`);
-      return data;
+      const response = await api.get(`/talent-hub/desempeno/ciclos/${cicloId}/escala/`);
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as EscalaCalificacion[];
     },
     enabled: !!cicloId,
   });
@@ -219,8 +222,9 @@ export function useCompetenciasEvaluacion() {
   return useQuery({
     queryKey: desempenoKeys.competencias.list(),
     queryFn: async () => {
-      const { data } = await api.get<CompetenciaEvaluacion[]>('/talent-hub/desempeno/competencias/');
-      return data;
+      const response = await api.get('/talent-hub/desempeno/competencias/');
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as CompetenciaEvaluacion[];
     },
   });
 }
@@ -245,8 +249,9 @@ export function useEvaluacionesDesempeno() {
   return useQuery({
     queryKey: desempenoKeys.evaluaciones.list(),
     queryFn: async () => {
-      const { data } = await api.get<EvaluacionDesempeno[]>('/talent-hub/desempeno/evaluaciones/');
-      return data;
+      const response = await api.get('/talent-hub/desempeno/evaluaciones/');
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as EvaluacionDesempeno[];
     },
   });
 }
@@ -255,7 +260,9 @@ export function useEvaluacionDesempeno(id: string) {
   return useQuery({
     queryKey: desempenoKeys.evaluaciones.detail(id),
     queryFn: async () => {
-      const { data } = await api.get<EvaluacionDesempeno>(`/talent-hub/desempeno/evaluaciones/${id}/`);
+      const { data } = await api.get<EvaluacionDesempeno>(
+        `/talent-hub/desempeno/evaluaciones/${id}/`
+      );
       return data;
     },
     enabled: !!id,
@@ -266,8 +273,9 @@ export function useMisEvaluaciones() {
   return useQuery({
     queryKey: desempenoKeys.evaluaciones.misEvaluaciones(),
     queryFn: async () => {
-      const { data } = await api.get<EvaluacionDesempeno[]>('/talent-hub/desempeno/evaluaciones/mis_evaluaciones/');
-      return data;
+      const response = await api.get('/talent-hub/desempeno/evaluaciones/mis_evaluaciones/');
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as EvaluacionDesempeno[];
     },
   });
 }
@@ -286,7 +294,10 @@ export function useCreateEvaluacion() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (formData: EvaluacionCreateFormData) => {
-      const { data } = await api.post<EvaluacionDesempeno>('/talent-hub/desempeno/evaluaciones/', formData);
+      const { data } = await api.post<EvaluacionDesempeno>(
+        '/talent-hub/desempeno/evaluaciones/',
+        formData
+      );
       return data;
     },
     onSuccess: () => {
@@ -301,7 +312,9 @@ export function useIniciarAutoevaluacion() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data } = await api.post(`/talent-hub/desempeno/evaluaciones/${id}/iniciar_autoevaluacion/`);
+      const { data } = await api.post(
+        `/talent-hub/desempeno/evaluaciones/${id}/iniciar_autoevaluacion/`
+      );
       return data;
     },
     onSuccess: () => {
@@ -316,9 +329,12 @@ export function useCompletarAutoevaluacion() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, calificacion }: { id: string; calificacion: number }) => {
-      const { data } = await api.post(`/talent-hub/desempeno/evaluaciones/${id}/completar_autoevaluacion/`, {
-        calificacion,
-      });
+      const { data } = await api.post(
+        `/talent-hub/desempeno/evaluaciones/${id}/completar_autoevaluacion/`,
+        {
+          calificacion,
+        }
+      );
       return data;
     },
     onSuccess: () => {
@@ -361,8 +377,19 @@ export function useEvaluarJefe() {
 export function useCalibrar() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, calificacion, motivo }: { id: string; calificacion: number; motivo: string }) => {
-      const { data } = await api.post(`/talent-hub/desempeno/evaluaciones/${id}/calibrar/`, { calificacion, motivo });
+    mutationFn: async ({
+      id,
+      calificacion,
+      motivo,
+    }: {
+      id: string;
+      calificacion: number;
+      motivo: string;
+    }) => {
+      const { data } = await api.post(`/talent-hub/desempeno/evaluaciones/${id}/calibrar/`, {
+        calificacion,
+        motivo,
+      });
       return data;
     },
     onSuccess: () => {
@@ -377,7 +404,9 @@ export function useFirmarEvaluacion() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, comentarios }: { id: string; comentarios?: string }) => {
-      const { data } = await api.post(`/talent-hub/desempeno/evaluaciones/${id}/firmar/`, { comentarios });
+      const { data } = await api.post(`/talent-hub/desempeno/evaluaciones/${id}/firmar/`, {
+        comentarios,
+      });
       return data;
     },
     onSuccess: () => {
@@ -396,8 +425,9 @@ export function usePlanesMejora() {
   return useQuery({
     queryKey: desempenoKeys.planesMejora.list(),
     queryFn: async () => {
-      const { data } = await api.get<PlanMejora[]>('/talent-hub/desempeno/planes-mejora/');
-      return data;
+      const response = await api.get('/talent-hub/desempeno/planes-mejora/');
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as PlanMejora[];
     },
   });
 }
@@ -417,10 +447,11 @@ export function usePlanesMejoraPorColaborador(colaboradorId: string) {
   return useQuery({
     queryKey: desempenoKeys.planesMejora.porColaborador(colaboradorId),
     queryFn: async () => {
-      const { data } = await api.get<PlanMejora[]>(
+      const response = await api.get(
         `/talent-hub/desempeno/planes-mejora/por_colaborador/?colaborador_id=${colaboradorId}`
       );
-      return data;
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as PlanMejora[];
     },
     enabled: !!colaboradorId,
   });
@@ -475,7 +506,10 @@ export function useAgregarSeguimiento() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, formData }: { id: string; formData: SeguimientoFormData }) => {
-      const { data } = await api.post(`/talent-hub/desempeno/planes-mejora/${id}/agregar_seguimiento/`, formData);
+      const { data } = await api.post(
+        `/talent-hub/desempeno/planes-mejora/${id}/agregar_seguimiento/`,
+        formData
+      );
       return data;
     },
     onSuccess: () => {
@@ -494,8 +528,9 @@ export function useActividadesPorPlan(planId: string) {
   return useQuery({
     queryKey: desempenoKeys.actividades.porPlan(planId),
     queryFn: async () => {
-      const { data } = await api.get<ActividadPlanMejora[]>(`/talent-hub/desempeno/actividades-plan/?plan=${planId}`);
-      return data;
+      const response = await api.get(`/talent-hub/desempeno/actividades-plan/?plan=${planId}`);
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as ActividadPlanMejora[];
     },
     enabled: !!planId,
   });
@@ -505,7 +540,10 @@ export function useCreateActividad() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (formData: ActividadMejoraFormData) => {
-      const { data } = await api.post<ActividadPlanMejora>('/talent-hub/desempeno/actividades-plan/', formData);
+      const { data } = await api.post<ActividadPlanMejora>(
+        '/talent-hub/desempeno/actividades-plan/',
+        formData
+      );
       return data;
     },
     onSuccess: () => {
@@ -541,8 +579,9 @@ export function useTiposReconocimiento() {
   return useQuery({
     queryKey: desempenoKeys.tiposReconocimiento.list(),
     queryFn: async () => {
-      const { data } = await api.get<TipoReconocimiento[]>('/talent-hub/desempeno/tipos-reconocimiento/');
-      return data;
+      const response = await api.get('/talent-hub/desempeno/tipos-reconocimiento/');
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as TipoReconocimiento[];
     },
   });
 }
@@ -551,8 +590,9 @@ export function useReconocimientos() {
   return useQuery({
     queryKey: desempenoKeys.reconocimientos.list(),
     queryFn: async () => {
-      const { data } = await api.get<Reconocimiento[]>('/talent-hub/desempeno/reconocimientos/');
-      return data;
+      const response = await api.get('/talent-hub/desempeno/reconocimientos/');
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as Reconocimiento[];
     },
   });
 }
@@ -561,10 +601,11 @@ export function useReconocimientosPorColaborador(colaboradorId: string) {
   return useQuery({
     queryKey: desempenoKeys.reconocimientos.porColaborador(colaboradorId),
     queryFn: async () => {
-      const { data } = await api.get<Reconocimiento[]>(
+      const response = await api.get(
         `/talent-hub/desempeno/reconocimientos/mis_reconocimientos/?colaborador_id=${colaboradorId}`
       );
-      return data;
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as Reconocimiento[];
     },
     enabled: !!colaboradorId,
   });
@@ -574,8 +615,11 @@ export function useReconocimientosPendientes() {
   return useQuery({
     queryKey: desempenoKeys.reconocimientos.pendientes(),
     queryFn: async () => {
-      const { data } = await api.get<Reconocimiento[]>('/talent-hub/desempeno/reconocimientos/pendientes_aprobacion/');
-      return data;
+      const response = await api.get(
+        '/talent-hub/desempeno/reconocimientos/pendientes_aprobacion/'
+      );
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as Reconocimiento[];
     },
   });
 }
@@ -584,7 +628,10 @@ export function useCreateReconocimiento() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (formData: ReconocimientoFormData) => {
-      const { data } = await api.post<Reconocimiento>('/talent-hub/desempeno/reconocimientos/', formData);
+      const { data } = await api.post<Reconocimiento>(
+        '/talent-hub/desempeno/reconocimientos/',
+        formData
+      );
       return data;
     },
     onSuccess: () => {
@@ -614,7 +661,9 @@ export function useRechazarReconocimiento() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, motivo }: { id: string; motivo: string }) => {
-      const { data } = await api.post(`/talent-hub/desempeno/reconocimientos/${id}/rechazar/`, { motivo });
+      const { data } = await api.post(`/talent-hub/desempeno/reconocimientos/${id}/rechazar/`, {
+        motivo,
+      });
       return data;
     },
     onSuccess: () => {
@@ -644,7 +693,10 @@ export function usePublicarEnMuro() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, formData }: { id: string; formData?: PublicarMuroFormData }) => {
-      const { data } = await api.post(`/talent-hub/desempeno/reconocimientos/${id}/publicar_muro/`, formData || {});
+      const { data } = await api.post(
+        `/talent-hub/desempeno/reconocimientos/${id}/publicar_muro/`,
+        formData || {}
+      );
       return data;
     },
     onSuccess: () => {
@@ -664,8 +716,9 @@ export function useMuroReconocimientos() {
   return useQuery({
     queryKey: desempenoKeys.muro.list(),
     queryFn: async () => {
-      const { data } = await api.get<MuroReconocimiento[]>('/talent-hub/desempeno/muro/');
-      return data;
+      const response = await api.get('/talent-hub/desempeno/muro/');
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as MuroReconocimiento[];
     },
   });
 }
@@ -674,8 +727,9 @@ export function useMuroDestacados() {
   return useQuery({
     queryKey: desempenoKeys.muro.destacados(),
     queryFn: async () => {
-      const { data } = await api.get<MuroReconocimiento[]>('/talent-hub/desempeno/muro/destacados/');
-      return data;
+      const response = await api.get('/talent-hub/desempeno/muro/destacados/');
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as MuroReconocimiento[];
     },
   });
 }
@@ -701,7 +755,9 @@ export function useDesempenoEstadisticas() {
   return useQuery({
     queryKey: desempenoKeys.estadisticas(),
     queryFn: async () => {
-      const { data } = await api.get<DesempenoEstadisticas>('/talent-hub/desempeno/estadisticas/resumen/');
+      const { data } = await api.get<DesempenoEstadisticas>(
+        '/talent-hub/desempeno/estadisticas/resumen/'
+      );
       return data;
     },
   });
@@ -724,10 +780,11 @@ export function useTopReconocidos(limite = 10) {
   return useQuery({
     queryKey: desempenoKeys.topReconocidos(limite),
     queryFn: async () => {
-      const { data } = await api.get<TopReconocido[]>(
+      const response = await api.get(
         `/talent-hub/desempeno/estadisticas/top_reconocidos/?limite=${limite}`
       );
-      return data;
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as TopReconocido[];
     },
   });
 }

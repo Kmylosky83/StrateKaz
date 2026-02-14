@@ -92,8 +92,9 @@ export function useModulosInduccion() {
   return useQuery({
     queryKey: onboardingKeys.modulos.list(),
     queryFn: async () => {
-      const { data } = await api.get<ModuloInduccion[]>('/talent-hub/onboarding/modulos/');
-      return data;
+      const response = await api.get('/talent-hub/onboarding/modulos/');
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as ModuloInduccion[];
     },
   });
 }
@@ -113,8 +114,9 @@ export function useModulosVigentes() {
   return useQuery({
     queryKey: onboardingKeys.modulos.vigentes(),
     queryFn: async () => {
-      const { data } = await api.get<ModuloInduccion[]>('/talent-hub/onboarding/modulos/vigentes/');
-      return data;
+      const response = await api.get('/talent-hub/onboarding/modulos/vigentes/');
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as ModuloInduccion[];
     },
   });
 }
@@ -182,8 +184,9 @@ export function useItemsChecklist() {
   return useQuery({
     queryKey: onboardingKeys.itemsChecklist.list(),
     queryFn: async () => {
-      const { data } = await api.get<ItemChecklist[]>('/talent-hub/onboarding/items-checklist/');
-      return data;
+      const response = await api.get('/talent-hub/onboarding/items-checklist/');
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as ItemChecklist[];
     },
   });
 }
@@ -246,8 +249,9 @@ export function useEjecuciones() {
   return useQuery({
     queryKey: onboardingKeys.ejecuciones.list(),
     queryFn: async () => {
-      const { data } = await api.get<EjecucionIntegral[]>('/talent-hub/onboarding/ejecuciones/');
-      return data;
+      const response = await api.get('/talent-hub/onboarding/ejecuciones/');
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as EjecucionIntegral[];
     },
   });
 }
@@ -270,10 +274,9 @@ export function useEjecucionesVencidas() {
   return useQuery({
     queryKey: onboardingKeys.ejecuciones.vencidas(),
     queryFn: async () => {
-      const { data } = await api.get<EjecucionIntegral[]>(
-        '/talent-hub/onboarding/ejecuciones/vencidas/'
-      );
-      return data;
+      const response = await api.get('/talent-hub/onboarding/ejecuciones/vencidas/');
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as EjecucionIntegral[];
     },
   });
 }
@@ -338,8 +341,9 @@ export function useEntregasEpp() {
   return useQuery({
     queryKey: onboardingKeys.entregasEpp.list(),
     queryFn: async () => {
-      const { data } = await api.get<EntregaEPP[]>('/talent-hub/onboarding/entregas-epp/');
-      return data;
+      const response = await api.get('/talent-hub/onboarding/entregas-epp/');
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as EntregaEPP[];
     },
   });
 }
@@ -348,10 +352,11 @@ export function useEntregasEppPorColaborador(colaboradorId: number) {
   return useQuery({
     queryKey: onboardingKeys.entregasEpp.porColaborador(colaboradorId),
     queryFn: async () => {
-      const { data } = await api.get<EntregaEPP[]>(
+      const response = await api.get(
         `/talent-hub/onboarding/entregas-epp/por_colaborador/?colaborador_id=${colaboradorId}`
       );
-      return data;
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as EntregaEPP[];
     },
     enabled: !!colaboradorId,
   });
@@ -361,10 +366,9 @@ export function useEppPorVencer() {
   return useQuery({
     queryKey: onboardingKeys.entregasEpp.porVencer(),
     queryFn: async () => {
-      const { data } = await api.get<EntregaEPP[]>(
-        '/talent-hub/onboarding/entregas-epp/por_vencer/'
-      );
-      return data;
+      const response = await api.get('/talent-hub/onboarding/entregas-epp/por_vencer/');
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as EntregaEPP[];
     },
   });
 }
@@ -393,8 +397,9 @@ export function useEntregasActivos() {
   return useQuery({
     queryKey: onboardingKeys.entregasActivos.list(),
     queryFn: async () => {
-      const { data } = await api.get<EntregaActivo[]>('/talent-hub/onboarding/entregas-activos/');
-      return data;
+      const response = await api.get('/talent-hub/onboarding/entregas-activos/');
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as EntregaActivo[];
     },
   });
 }
@@ -403,10 +408,11 @@ export function useEntregasActivosPorColaborador(colaboradorId: number) {
   return useQuery({
     queryKey: onboardingKeys.entregasActivos.porColaborador(colaboradorId),
     queryFn: async () => {
-      const { data } = await api.get<EntregaActivo[]>(
+      const response = await api.get(
         `/talent-hub/onboarding/entregas-activos/por_colaborador/?colaborador_id=${colaboradorId}`
       );
-      return data;
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as EntregaActivo[];
     },
     enabled: !!colaboradorId,
   });
@@ -416,10 +422,11 @@ export function useActivosPendientesDevolucion() {
   return useQuery({
     queryKey: onboardingKeys.entregasActivos.pendientesDevolucion(),
     queryFn: async () => {
-      const { data } = await api.get<EntregaActivo[]>(
+      const response = await api.get(
         '/talent-hub/onboarding/entregas-activos/pendientes_devolucion/'
       );
-      return data;
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as EntregaActivo[];
     },
   });
 }
@@ -477,8 +484,9 @@ export function useFirmasDocumentos() {
   return useQuery({
     queryKey: onboardingKeys.firmasDocumentos.list(),
     queryFn: async () => {
-      const { data } = await api.get<FirmaDocumento[]>('/talent-hub/onboarding/firmas-documentos/');
-      return data;
+      const response = await api.get('/talent-hub/onboarding/firmas-documentos/');
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as FirmaDocumento[];
     },
   });
 }
@@ -503,10 +511,9 @@ export function useFirmasPendientes() {
   return useQuery({
     queryKey: onboardingKeys.firmasDocumentos.pendientes(),
     queryFn: async () => {
-      const { data } = await api.get<FirmaDocumento[]>(
-        '/talent-hub/onboarding/firmas-documentos/pendientes/'
-      );
-      return data;
+      const response = await api.get('/talent-hub/onboarding/firmas-documentos/pendientes/');
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as FirmaDocumento[];
     },
   });
 }

@@ -87,8 +87,9 @@ export const useTiposRetiro = () => {
   return useQuery({
     queryKey: offBoardingKeys.tiposRetiro.list(),
     queryFn: async () => {
-      const { data } = await api.get<TipoRetiro[]>(`${BASE_URL}/tipos-retiro/`);
-      return data;
+      const response = await api.get(`${BASE_URL}/tipos-retiro/`);
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as TipoRetiro[];
     },
   });
 };
@@ -158,8 +159,9 @@ export const useProcesosRetiro = (filters?: ProcesoRetiroFilter) => {
   return useQuery({
     queryKey: offBoardingKeys.procesos.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<ProcesoRetiro[]>(`${BASE_URL}/procesos/`, { params: filters });
-      return data;
+      const response = await api.get(`${BASE_URL}/procesos/`, { params: filters });
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as ProcesoRetiro[];
     },
   });
 };
@@ -266,10 +268,9 @@ export const useChecklistRetiro = (filters?: ChecklistRetiroFilter) => {
   return useQuery({
     queryKey: offBoardingKeys.checklist.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<ChecklistRetiro[]>(`${BASE_URL}/checklist/`, {
-        params: filters,
-      });
-      return data;
+      const response = await api.get(`${BASE_URL}/checklist/`, { params: filters });
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as ChecklistRetiro[];
     },
   });
 };
@@ -359,8 +360,9 @@ export const usePazSalvos = (filters?: PazSalvoFilter) => {
   return useQuery({
     queryKey: offBoardingKeys.pazSalvos.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<PazSalvo[]>(`${BASE_URL}/paz-salvos/`, { params: filters });
-      return data;
+      const response = await api.get(`${BASE_URL}/paz-salvos/`, { params: filters });
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as PazSalvo[];
     },
   });
 };
@@ -465,10 +467,9 @@ export const useExamenesEgreso = (filters?: ExamenEgresoFilter) => {
   return useQuery({
     queryKey: offBoardingKeys.examenes.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<ExamenEgreso[]>(`${BASE_URL}/examenes-egreso/`, {
-        params: filters,
-      });
-      return data;
+      const response = await api.get(`${BASE_URL}/examenes-egreso/`, { params: filters });
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as ExamenEgreso[];
     },
   });
 };
@@ -554,10 +555,9 @@ export const useEntrevistasRetiro = (filters?: EntrevistaRetiroFilter) => {
   return useQuery({
     queryKey: offBoardingKeys.entrevistas.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<EntrevistaRetiro[]>(`${BASE_URL}/entrevistas/`, {
-        params: filters,
-      });
-      return data;
+      const response = await api.get(`${BASE_URL}/entrevistas/`, { params: filters });
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as EntrevistaRetiro[];
     },
   });
 };
@@ -627,10 +627,9 @@ export const useLiquidacionesFinales = (filters?: LiquidacionFinalFilter) => {
   return useQuery({
     queryKey: offBoardingKeys.liquidaciones.list(filters),
     queryFn: async () => {
-      const { data } = await api.get<LiquidacionFinal[]>(`${BASE_URL}/liquidaciones/`, {
-        params: filters,
-      });
-      return data;
+      const response = await api.get(`${BASE_URL}/liquidaciones/`, { params: filters });
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as LiquidacionFinal[];
     },
   });
 };

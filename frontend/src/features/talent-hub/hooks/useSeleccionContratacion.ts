@@ -201,8 +201,9 @@ export function useTiposPrueba() {
   return useQuery({
     queryKey: seleccionKeys.tiposPrueba,
     queryFn: async () => {
-      const response = await api.get<TipoPrueba[]>('/talent-hub/seleccion/tipos-prueba/');
-      return response.data;
+      const response = await api.get('/talent-hub/seleccion/tipos-prueba/');
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as TipoPrueba[];
     },
     staleTime: 30 * 60 * 1000,
   });
@@ -1021,10 +1022,9 @@ export function usePlantillasPrueba() {
   return useQuery({
     queryKey: seleccionKeys.plantillasPrueba.list(),
     queryFn: async () => {
-      const response = await api.get<PlantillaPruebaList[]>(
-        '/talent-hub/seleccion/plantillas-prueba/'
-      );
-      return response.data;
+      const response = await api.get('/talent-hub/seleccion/plantillas-prueba/');
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as PlantillaPruebaList[];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -1034,10 +1034,9 @@ export function usePlantillasPruebaActivas() {
   return useQuery({
     queryKey: seleccionKeys.plantillasPrueba.activas(),
     queryFn: async () => {
-      const response = await api.get<PlantillaPruebaList[]>(
-        '/talent-hub/seleccion/plantillas-prueba/activas/'
-      );
-      return response.data;
+      const response = await api.get('/talent-hub/seleccion/plantillas-prueba/activas/');
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as PlantillaPruebaList[];
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -1159,10 +1158,11 @@ export function useAsignacionesPruebaPorCandidato(candidatoId: number) {
   return useQuery({
     queryKey: seleccionKeys.asignacionesPrueba.porCandidato(candidatoId),
     queryFn: async () => {
-      const response = await api.get<AsignacionPruebaList[]>(
+      const response = await api.get(
         `/talent-hub/seleccion/asignaciones-prueba/por_candidato/?candidato=${candidatoId}`
       );
-      return response.data;
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as AsignacionPruebaList[];
     },
     enabled: !!candidatoId,
     staleTime: 2 * 60 * 1000,
@@ -1302,10 +1302,11 @@ export function useEntrevistasAsyncPorCandidato(candidatoId: number) {
   return useQuery({
     queryKey: seleccionKeys.entrevistasAsync.porCandidato(candidatoId),
     queryFn: async () => {
-      const response = await api.get<EntrevistaAsincronicaList[]>(
+      const response = await api.get(
         `/talent-hub/seleccion/entrevistas-async/por-candidato/${candidatoId}/`
       );
-      return response.data;
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as EntrevistaAsincronicaList[];
     },
     enabled: !!candidatoId,
   });

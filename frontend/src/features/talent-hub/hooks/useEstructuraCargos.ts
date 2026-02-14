@@ -284,7 +284,8 @@ export function useProfesiogramas(filters?: ProfesiogramaFilters) {
       if (filters?.page_size) params.append('page_size', String(filters.page_size));
 
       const response = await api.get(`/talent-hub/estructura-cargos/profesiogramas/?${params}`);
-      return response.data;
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as Profesiograma[];
     },
     staleTime: 5 * 60 * 1000, // 5 minutos
   });
@@ -398,7 +399,8 @@ export function useCompetencias(profesiogramaId: string) {
       const response = await api.get(
         `/talent-hub/estructura-cargos/profesiogramas/${profesiogramaId}/competencias/`
       );
-      return response.data;
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as MatrizCompetencia[];
     },
     enabled: !!profesiogramaId,
     staleTime: 5 * 60 * 1000,
@@ -422,7 +424,8 @@ export function useRequisitos(profesiogramaId: string) {
       const response = await api.get(
         `/talent-hub/estructura-cargos/profesiogramas/${profesiogramaId}/requisitos-especiales/`
       );
-      return response.data;
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as RequisitoEspecial[];
     },
     enabled: !!profesiogramaId,
     staleTime: 5 * 60 * 1000,
@@ -462,7 +465,8 @@ export function useVacantes(filters?: VacanteFilters) {
       if (filters?.page_size) params.append('page_size', String(filters.page_size));
 
       const response = await api.get(`/talent-hub/estructura-cargos/vacantes/?${params}`);
-      return response.data;
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as Vacante[];
     },
     staleTime: 3 * 60 * 1000, // 3 minutos (datos más dinámicos)
   });
@@ -483,7 +487,8 @@ export function useVacantesAbiertas() {
     queryKey: vacanteKeys.abiertas(),
     queryFn: async () => {
       const response = await api.get('/talent-hub/estructura-cargos/vacantes/?abierta=true');
-      return response.data;
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as Vacante[];
     },
     staleTime: 2 * 60 * 1000, // 2 minutos
   });

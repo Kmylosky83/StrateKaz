@@ -10,6 +10,8 @@ from django.utils import timezone
 from django.db.models import Count, Avg, Q
 from datetime import timedelta
 
+from apps.core.base_models.mixins import get_tenant_empresa
+
 from .models import (
     CicloEvaluacion, CompetenciaEvaluacion, CriterioEvaluacion, EscalaCalificacion,
     EvaluacionDesempeno, DetalleEvaluacion, EvaluadorPar,
@@ -48,7 +50,7 @@ class CicloEvaluacionViewSet(viewsets.ModelViewSet):
         return CicloEvaluacionDetailSerializer
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
 
     @action(detail=False, methods=['get'])
     def activo(self, request):
@@ -114,7 +116,7 @@ class CompetenciaEvaluacionViewSet(viewsets.ModelViewSet):
         return CompetenciaEvaluacionDetailSerializer
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
 
     @action(detail=False, methods=['get'])
     def por_tipo(self, request):
@@ -140,7 +142,7 @@ class CriterioEvaluacionViewSet(viewsets.ModelViewSet):
         )
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
 
 
 class EvaluacionDesempenoViewSet(viewsets.ModelViewSet):
@@ -163,7 +165,7 @@ class EvaluacionDesempenoViewSet(viewsets.ModelViewSet):
         return EvaluacionDesempenoDetailSerializer
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
 
     @action(detail=True, methods=['post'])
     def iniciar_autoevaluacion(self, request, pk=None):
@@ -284,6 +286,7 @@ class DetalleEvaluacionViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
+            empresa=get_tenant_empresa(),
             created_by=self.request.user,
             evaluador=self.request.user
         )
@@ -309,7 +312,7 @@ class PlanMejoraViewSet(viewsets.ModelViewSet):
         return PlanMejoraDetailSerializer
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
 
     @action(detail=True, methods=['post'])
     def aprobar(self, request, pk=None):
@@ -382,7 +385,7 @@ class ActividadPlanMejoraViewSet(viewsets.ModelViewSet):
         ).select_related('plan', 'responsable')
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
 
     @action(detail=True, methods=['post'])
     def completar(self, request, pk=None):
@@ -408,7 +411,7 @@ class TipoReconocimientoViewSet(viewsets.ModelViewSet):
         )
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
 
 
 class ReconocimientoViewSet(viewsets.ModelViewSet):
@@ -432,6 +435,7 @@ class ReconocimientoViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
+            empresa=get_tenant_empresa(),
             created_by=self.request.user,
             nominado_por=self.request.user
         )

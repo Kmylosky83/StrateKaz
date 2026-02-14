@@ -10,6 +10,8 @@ from django.utils import timezone
 from django.db.models import Count, Q
 from datetime import timedelta
 
+from apps.core.base_models.mixins import get_tenant_empresa
+
 from .models import (
     ModuloInduccion,
     AsignacionPorCargo,
@@ -56,7 +58,6 @@ class ModuloInduccionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return ModuloInduccion.objects.filter(
-            empresa_id=1,  # TODO: Obtener de request.user
             is_active=True
         ).select_related('responsable')
 
@@ -69,7 +70,7 @@ class ModuloInduccionViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
-            empresa_id=1,  # TODO: Obtener de request.user
+            empresa=get_tenant_empresa(),
             created_by=self.request.user
         )
 
@@ -107,12 +108,11 @@ class AsignacionPorCargoViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return AsignacionPorCargo.objects.filter(
-            empresa_id=1,
             is_active=True
         ).select_related('cargo', 'modulo')
 
     def perform_create(self, serializer):
-        serializer.save(empresa_id=1, created_by=self.request.user)
+        serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
 
     @action(detail=False, methods=['get'])
     def por_cargo(self, request):
@@ -136,12 +136,11 @@ class ItemChecklistViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return ItemChecklist.objects.filter(
-            empresa_id=1,
             is_active=True
         ).prefetch_related('cargos_aplicables')
 
     def perform_create(self, serializer):
-        serializer.save(empresa_id=1, created_by=self.request.user)
+        serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
 
 
 class ChecklistIngresoViewSet(viewsets.ModelViewSet):
@@ -152,7 +151,6 @@ class ChecklistIngresoViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return ChecklistIngreso.objects.filter(
-            empresa_id=1,
             is_active=True
         ).select_related('colaborador', 'item', 'verificado_por')
 
@@ -162,7 +160,7 @@ class ChecklistIngresoViewSet(viewsets.ModelViewSet):
         return ChecklistIngresoDetailSerializer
 
     def perform_create(self, serializer):
-        serializer.save(empresa_id=1, created_by=self.request.user)
+        serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
 
     @action(detail=True, methods=['post'])
     def verificar(self, request, pk=None):
@@ -209,7 +207,6 @@ class EjecucionIntegralViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return EjecucionIntegral.objects.filter(
-            empresa_id=1,
             is_active=True
         ).select_related('colaborador', 'modulo', 'facilitador')
 
@@ -223,7 +220,7 @@ class EjecucionIntegralViewSet(viewsets.ModelViewSet):
         return EjecucionIntegralDetailSerializer
 
     def perform_create(self, serializer):
-        serializer.save(empresa_id=1, created_by=self.request.user)
+        serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
 
     @action(detail=True, methods=['post'])
     def iniciar(self, request, pk=None):
@@ -302,7 +299,6 @@ class EntregaEPPViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return EntregaEPP.objects.filter(
-            empresa_id=1,
             is_active=True
         ).select_related('colaborador', 'entregado_por')
 
@@ -315,7 +311,7 @@ class EntregaEPPViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
-            empresa_id=1,
+            empresa=get_tenant_empresa(),
             created_by=self.request.user,
             entregado_por=self.request.user
         )
@@ -354,7 +350,6 @@ class EntregaActivoViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return EntregaActivo.objects.filter(
-            empresa_id=1,
             is_active=True
         ).select_related('colaborador', 'entregado_por', 'recibido_por')
 
@@ -369,7 +364,7 @@ class EntregaActivoViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
-            empresa_id=1,
+            empresa=get_tenant_empresa(),
             created_by=self.request.user,
             entregado_por=self.request.user
         )
@@ -417,7 +412,6 @@ class FirmaDocumentoViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return FirmaDocumento.objects.filter(
-            empresa_id=1,
             is_active=True
         ).select_related('colaborador', 'testigo')
 
@@ -429,7 +423,7 @@ class FirmaDocumentoViewSet(viewsets.ModelViewSet):
         return FirmaDocumentoDetailSerializer
 
     def perform_create(self, serializer):
-        serializer.save(empresa_id=1, created_by=self.request.user)
+        serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
 
     @action(detail=True, methods=['post'])
     def marcar_firmado(self, request, pk=None):
@@ -479,14 +473,12 @@ class OnboardingEstadisticasViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['get'])
     def resumen(self, request):
         """Retorna estadísticas generales de onboarding."""
-        empresa_id = 1  # TODO: Obtener de request.user
         hoy = timezone.now().date()
         inicio_mes = hoy.replace(day=1)
 
         # Módulos
-        total_modulos = ModuloInduccion.objects.filter(empresa_id=empresa_id, is_active=True).count()
+        total_modulos = ModuloInduccion.objects.filter(is_active=True).count()
         modulos_activos = ModuloInduccion.objects.filter(
-            empresa_id=empresa_id,
             is_active=True
         ).filter(
             Q(fecha_vigencia_desde__isnull=True) | Q(fecha_vigencia_desde__lte=hoy),
@@ -494,7 +486,7 @@ class OnboardingEstadisticasViewSet(viewsets.ViewSet):
         ).count()
 
         # Inducciones
-        inducciones = EjecucionIntegral.objects.filter(empresa_id=empresa_id, is_active=True)
+        inducciones = EjecucionIntegral.objects.filter(is_active=True)
         inducciones_pendientes = inducciones.filter(estado='pendiente').count()
         inducciones_en_progreso = inducciones.filter(estado='en_progreso').count()
         inducciones_completadas_mes = inducciones.filter(
@@ -509,7 +501,6 @@ class OnboardingEstadisticasViewSet(viewsets.ViewSet):
         # EPP por vencer (próximos 30 días)
         fecha_limite = hoy + timedelta(days=30)
         epp_por_vencer = EntregaEPP.objects.filter(
-            empresa_id=empresa_id,
             is_active=True,
             fecha_vencimiento__isnull=False,
             fecha_vencimiento__lte=fecha_limite,
@@ -518,7 +509,6 @@ class OnboardingEstadisticasViewSet(viewsets.ViewSet):
 
         # Activos pendientes de devolución
         activos_pendientes = EntregaActivo.objects.filter(
-            empresa_id=empresa_id,
             is_active=True,
             devuelto=False,
             colaborador__estado='retirado'

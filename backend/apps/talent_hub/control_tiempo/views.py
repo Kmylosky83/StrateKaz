@@ -8,6 +8,8 @@ from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from django.db.models import Sum, Avg, Count, Q
 
+from apps.core.base_models.mixins import get_tenant_empresa
+
 from .models import Turno, AsignacionTurno, RegistroAsistencia, HoraExtra, ConsolidadoAsistencia
 from .serializers import (
     TurnoListSerializer, TurnoDetailSerializer,
@@ -31,8 +33,8 @@ class TurnoViewSet(viewsets.ModelViewSet):
         return TurnoDetailSerializer
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
-    
+        serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
+
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
 
@@ -54,8 +56,8 @@ class AsignacionTurnoViewSet(viewsets.ModelViewSet):
         return qs.order_by('-fecha_inicio')
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
-    
+        serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
+
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
 
@@ -77,6 +79,7 @@ class RegistroAsistenciaViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
+            empresa=get_tenant_empresa(),
             registrado_por=self.request.user,
             created_by=self.request.user
         )
@@ -107,8 +110,8 @@ class HoraExtraViewSet(viewsets.ModelViewSet):
         ).select_related('colaborador')
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
-    
+        serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
+
     @action(detail=True, methods=['post'])
     def aprobar(self, request, pk=None):
         """Aprueba una hora extra"""
@@ -134,8 +137,8 @@ class ConsolidadoAsistenciaViewSet(viewsets.ModelViewSet):
         ).select_related('colaborador')
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
-    
+        serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
+
     @action(detail=True, methods=['post'])
     def cerrar_mes(self, request, pk=None):
         """Cierra el consolidado del mes"""

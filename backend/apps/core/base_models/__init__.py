@@ -37,6 +37,9 @@ from .base import (
     OrderedModel,
 )
 
+# Importar utilidades multi-tenant
+from .mixins import get_tenant_empresa
+
 # Importar managers personalizados
 from .managers import (
     ActiveManager,
@@ -53,6 +56,8 @@ __all__ = [
     'BaseCompanyModel',
     'HierarchicalModel',
     'OrderedModel',
+    # Utilities
+    'get_tenant_empresa',
     # Managers
     'ActiveManager',
     'AllObjectsManager',

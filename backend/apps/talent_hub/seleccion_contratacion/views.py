@@ -13,6 +13,8 @@ from django.db.models import Count, Avg, Q, F, Value, DecimalField
 from decimal import Decimal
 from django.utils import timezone
 
+from apps.core.base_models.mixins import get_tenant_empresa
+
 from .models import (
     TipoContrato,
     TipoEntidad,
@@ -160,6 +162,7 @@ class VacanteActivaViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         user = self.request.user
         serializer.save(
+            empresa=get_tenant_empresa(),
             created_by=user,
             updated_by=user
         )
@@ -399,6 +402,7 @@ class CandidatoViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         user = self.request.user
         serializer.save(
+            empresa=get_tenant_empresa(),
             created_by=user,
             updated_by=user
         )
@@ -508,6 +512,7 @@ class EntrevistaViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         user = self.request.user
         serializer.save(
+            empresa=get_tenant_empresa(),
             created_by=user,
             updated_by=user
         )
@@ -604,6 +609,7 @@ class PruebaViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         user = self.request.user
         serializer.save(
+            empresa=get_tenant_empresa(),
             created_by=user,
             updated_by=user
         )
@@ -687,6 +693,7 @@ class AfiliacionSSViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         user = self.request.user
         serializer.save(
+            empresa=get_tenant_empresa(),
             created_by=user,
             updated_by=user
         )
@@ -828,6 +835,7 @@ class HistorialContratoViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
+            empresa=get_tenant_empresa(),
             created_by=self.request.user,
             updated_by=self.request.user
         )
@@ -896,6 +904,7 @@ class PlantillaPruebaDinamicaViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
+            empresa=get_tenant_empresa(),
             created_by=self.request.user
         )
 
@@ -953,6 +962,7 @@ class AsignacionPruebaDinamicaViewSet(viewsets.ModelViewSet):
         enviar_email = serializer.validated_data.pop('enviar_email', True)
 
         asignacion = serializer.save(
+            empresa=get_tenant_empresa(),
             asignado_por=self.request.user,
             fecha_vencimiento=timezone.now() + timedelta(days=dias),
         )
@@ -1251,6 +1261,7 @@ class EntrevistaAsincronicaViewSet(viewsets.ModelViewSet):
         fecha_vencimiento = timezone.now() + timezone.timedelta(days=dias_vencimiento)
 
         instance = serializer.save(
+            empresa=get_tenant_empresa(),
             fecha_vencimiento=fecha_vencimiento,
             created_by=user,
             updated_by=user,

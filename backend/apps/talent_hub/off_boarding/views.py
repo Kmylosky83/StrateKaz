@@ -11,6 +11,8 @@ from django.utils import timezone
 from django.db.models import Count, Q, Avg
 from decimal import Decimal
 
+from apps.core.base_models.mixins import get_tenant_empresa
+
 from .models import (
     TipoRetiro,
     ProcesoRetiro,
@@ -90,7 +92,7 @@ class TipoRetiroViewSet(viewsets.ModelViewSet):
         return TipoRetiroDetailSerializer
 
     def perform_create(self, serializer):
-        serializer.save()
+        serializer.save(empresa=get_tenant_empresa())
 
     def perform_destroy(self, instance):
         """Soft delete."""
@@ -146,7 +148,7 @@ class ProcesoRetiroViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """Calcular preaviso al crear proceso."""
-        proceso = serializer.save()
+        proceso = serializer.save(empresa=get_tenant_empresa())
 
         # Calcular cumplimiento de preaviso
         dias_notificados = (proceso.fecha_ultimo_dia_trabajo - proceso.fecha_notificacion).days
@@ -435,7 +437,7 @@ class ChecklistRetiroViewSet(viewsets.ModelViewSet):
         return ChecklistRetiroDetailSerializer
 
     def perform_create(self, serializer):
-        serializer.save()
+        serializer.save(empresa=get_tenant_empresa())
 
     def perform_destroy(self, instance):
         """Soft delete."""
@@ -519,7 +521,7 @@ class PazSalvoViewSet(viewsets.ModelViewSet):
         return PazSalvoDetailSerializer
 
     def perform_create(self, serializer):
-        serializer.save()
+        serializer.save(empresa=get_tenant_empresa())
 
     def perform_destroy(self, instance):
         """Soft delete."""
@@ -603,7 +605,7 @@ class ExamenEgresoViewSet(viewsets.ModelViewSet):
         return ExamenEgresoDetailSerializer
 
     def perform_create(self, serializer):
-        serializer.save()
+        serializer.save(empresa=get_tenant_empresa())
 
     def perform_destroy(self, instance):
         """Soft delete."""
@@ -646,7 +648,7 @@ class EntrevistaRetiroViewSet(viewsets.ModelViewSet):
         return EntrevistaRetiroDetailSerializer
 
     def perform_create(self, serializer):
-        serializer.save()
+        serializer.save(empresa=get_tenant_empresa())
 
     def perform_destroy(self, instance):
         """Soft delete."""
@@ -715,7 +717,7 @@ class LiquidacionFinalViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """Calcular liquidación al crear."""
-        liquidacion = serializer.save()
+        liquidacion = serializer.save(empresa=get_tenant_empresa())
         liquidacion.calcular_liquidacion_completa()
 
     def perform_destroy(self, instance):
@@ -843,7 +845,7 @@ class CertificadoTrabajoViewSet(viewsets.ModelViewSet):
         return CertificadoTrabajoDetailSerializer
 
     def perform_create(self, serializer):
-        serializer.save()
+        serializer.save(empresa=get_tenant_empresa())
 
     def perform_destroy(self, instance):
         instance.soft_delete()

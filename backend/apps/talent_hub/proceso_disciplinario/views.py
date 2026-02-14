@@ -9,6 +9,8 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models import Count, Q
 from django.utils import timezone
 
+from apps.core.base_models.mixins import get_tenant_empresa
+
 from .models import (
     TipoFalta, LlamadoAtencion, Descargo, Memorando, HistorialDisciplinario,
     NotificacionDisciplinaria, PruebaDisciplinaria, DenunciaAcosoLaboral
@@ -45,6 +47,7 @@ class TipoFaltaViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
+            empresa=get_tenant_empresa(),
             created_by=self.request.user,
             updated_by=self.request.user
         )
@@ -79,6 +82,7 @@ class LlamadoAtencionViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
+            empresa=get_tenant_empresa(),
             created_by=self.request.user,
             updated_by=self.request.user
         )
@@ -126,6 +130,7 @@ class DescargoViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
+            empresa=get_tenant_empresa(),
             created_by=self.request.user,
             updated_by=self.request.user
         )
@@ -214,6 +219,7 @@ class MemorandoViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
+            empresa=get_tenant_empresa(),
             elaborado_por=self.request.user,
             created_by=self.request.user,
             updated_by=self.request.user
@@ -306,6 +312,7 @@ class NotificacionDisciplinariaViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
+            empresa=get_tenant_empresa(),
             created_by=self.request.user,
             updated_by=self.request.user
         )
@@ -347,6 +354,7 @@ class PruebaDisciplinariaViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
+            empresa=get_tenant_empresa(),
             created_by=self.request.user,
             updated_by=self.request.user
         )
@@ -410,6 +418,7 @@ class DenunciaAcosoLaboralViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
+            empresa=get_tenant_empresa(),
             created_by=self.request.user,
             updated_by=self.request.user
         )

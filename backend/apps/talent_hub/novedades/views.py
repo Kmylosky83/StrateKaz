@@ -11,6 +11,8 @@ from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from django.db.models import Q
 
+from apps.core.base_models.mixins import get_tenant_empresa
+
 from .models import (
     TipoIncapacidad,
     Incapacidad,
@@ -81,6 +83,7 @@ class TipoIncapacidadViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
+            empresa=get_tenant_empresa(),
             created_by=self.request.user
         )
 
@@ -111,6 +114,7 @@ class TipoLicenciaViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
+            empresa=get_tenant_empresa(),
             created_by=self.request.user
         )
 
@@ -151,6 +155,7 @@ class IncapacidadViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
+            empresa=get_tenant_empresa(),
             created_by=self.request.user
         )
 
@@ -282,6 +287,7 @@ class LicenciaViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
+            empresa=get_tenant_empresa(),
             created_by=self.request.user
         )
 
@@ -375,6 +381,7 @@ class PermisoViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
+            empresa=get_tenant_empresa(),
             created_by=self.request.user
         )
 
@@ -462,6 +469,7 @@ class PeriodoVacacionesViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
+            empresa=get_tenant_empresa(),
             created_by=self.request.user
         )
 
@@ -527,6 +535,7 @@ class SolicitudVacacionesViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
+            empresa=get_tenant_empresa(),
             created_by=self.request.user
         )
 
@@ -628,6 +637,7 @@ class ConfiguracionDotacionViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
+            empresa=get_tenant_empresa(),
             created_by=self.request.user
         )
 
@@ -672,6 +682,7 @@ class EntregaDotacionViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
+            empresa=get_tenant_empresa(),
             created_by=self.request.user
         )
 

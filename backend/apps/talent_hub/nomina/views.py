@@ -11,6 +11,8 @@ from django.utils import timezone
 from django.db.models import Sum, Count, Q
 from decimal import Decimal
 
+from apps.core.base_models.mixins import get_tenant_empresa
+
 from .models import (
     ConfiguracionNomina,
     ConceptoNomina,
@@ -77,7 +79,7 @@ class ConfiguracionNominaViewSet(viewsets.ModelViewSet):
         return ConfiguracionNominaDetailSerializer
 
     def perform_create(self, serializer):
-        serializer.save()
+        serializer.save(empresa=get_tenant_empresa())
 
     def perform_destroy(self, instance):
         """Soft delete."""
@@ -131,7 +133,7 @@ class ConceptoNominaViewSet(viewsets.ModelViewSet):
         return ConceptoNominaDetailSerializer
 
     def perform_create(self, serializer):
-        serializer.save()
+        serializer.save(empresa=get_tenant_empresa())
 
     def perform_destroy(self, instance):
         """Soft delete."""
@@ -194,7 +196,7 @@ class PeriodoNominaViewSet(viewsets.ModelViewSet):
         return PeriodoNominaDetailSerializer
 
     def perform_create(self, serializer):
-        serializer.save()
+        serializer.save(empresa=get_tenant_empresa())
 
     def perform_destroy(self, instance):
         """Soft delete solo si está abierto."""
@@ -338,7 +340,7 @@ class LiquidacionNominaViewSet(viewsets.ModelViewSet):
         return LiquidacionNominaDetailSerializer
 
     def perform_create(self, serializer):
-        serializer.save()
+        serializer.save(empresa=get_tenant_empresa())
 
     def perform_destroy(self, instance):
         """Soft delete solo si está en borrador."""
@@ -434,7 +436,7 @@ class DetalleLiquidacionViewSet(viewsets.ModelViewSet):
         return queryset.order_by('liquidacion', '-es_devengado', 'concepto__orden')
 
     def perform_create(self, serializer):
-        serializer.save()
+        serializer.save(empresa=get_tenant_empresa())
 
         # Recalcular totales de liquidación
         detalle = serializer.instance
@@ -494,7 +496,7 @@ class PrestacionViewSet(viewsets.ModelViewSet):
         return PrestacionDetailSerializer
 
     def perform_create(self, serializer):
-        serializer.save()
+        serializer.save(empresa=get_tenant_empresa())
 
     def perform_destroy(self, instance):
         """Soft delete."""
@@ -543,7 +545,7 @@ class PagoNominaViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """Actualizar estado de liquidación al crear pago."""
-        pago = serializer.save()
+        pago = serializer.save(empresa=get_tenant_empresa())
 
         # Marcar liquidación como pagada
         liquidacion = pago.liquidacion

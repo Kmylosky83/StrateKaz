@@ -10,6 +10,8 @@ from django.utils import timezone
 from django.db.models import Count, Sum, Avg, Q
 from datetime import timedelta
 
+from apps.core.base_models.mixins import get_tenant_empresa
+
 from .models import (
     PlanFormacion, Capacitacion, ProgramacionCapacitacion,
     EjecucionCapacitacion, Badge, GamificacionColaborador,
@@ -34,7 +36,7 @@ class PlanFormacionViewSet(viewsets.ModelViewSet):
     ordering = ['-anio', '-fecha_inicio']
 
     def get_queryset(self):
-        return PlanFormacion.objects.filter(empresa_id=1, is_active=True).select_related('responsable')
+        return PlanFormacion.objects.filter(is_active=True).select_related('responsable')
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -42,7 +44,7 @@ class PlanFormacionViewSet(viewsets.ModelViewSet):
         return PlanFormacionDetailSerializer
 
     def perform_create(self, serializer):
-        serializer.save(empresa_id=1, created_by=self.request.user)
+        serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
 
     @action(detail=True, methods=['post'])
     def aprobar(self, request, pk=None):
@@ -62,7 +64,7 @@ class CapacitacionViewSet(viewsets.ModelViewSet):
     ordering = ['-created_at']
 
     def get_queryset(self):
-        return Capacitacion.objects.filter(empresa_id=1, is_active=True).select_related('plan_formacion', 'instructor_interno')
+        return Capacitacion.objects.filter(is_active=True).select_related('plan_formacion', 'instructor_interno')
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -72,7 +74,7 @@ class CapacitacionViewSet(viewsets.ModelViewSet):
         return CapacitacionDetailSerializer
 
     def perform_create(self, serializer):
-        serializer.save(empresa_id=1, created_by=self.request.user)
+        serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
 
     @action(detail=True, methods=['post'])
     def publicar(self, request, pk=None):
@@ -98,7 +100,7 @@ class ProgramacionCapacitacionViewSet(viewsets.ModelViewSet):
     ordering = ['fecha', 'hora_inicio']
 
     def get_queryset(self):
-        return ProgramacionCapacitacion.objects.filter(empresa_id=1, is_active=True).select_related('capacitacion', 'instructor')
+        return ProgramacionCapacitacion.objects.filter(is_active=True).select_related('capacitacion', 'instructor')
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -106,7 +108,7 @@ class ProgramacionCapacitacionViewSet(viewsets.ModelViewSet):
         return ProgramacionCapacitacionDetailSerializer
 
     def perform_create(self, serializer):
-        serializer.save(empresa_id=1, created_by=self.request.user)
+        serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
 
     @action(detail=False, methods=['get'])
     def calendario(self, request):
@@ -142,7 +144,7 @@ class EjecucionCapacitacionViewSet(viewsets.ModelViewSet):
     ordering = ['programacion__fecha']
 
     def get_queryset(self):
-        return EjecucionCapacitacion.objects.filter(empresa_id=1, is_active=True).select_related('colaborador', 'programacion__capacitacion')
+        return EjecucionCapacitacion.objects.filter(is_active=True).select_related('colaborador', 'programacion__capacitacion')
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -150,7 +152,7 @@ class EjecucionCapacitacionViewSet(viewsets.ModelViewSet):
         return EjecucionCapacitacionDetailSerializer
 
     def perform_create(self, serializer):
-        ejecucion = serializer.save(empresa_id=1, created_by=self.request.user)
+        ejecucion = serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
         # Incrementar inscritos
         ejecucion.programacion.inscritos += 1
         ejecucion.programacion.save(update_fields=['inscritos'])
@@ -199,10 +201,10 @@ class BadgeViewSet(viewsets.ModelViewSet):
     ordering = ['orden', 'nombre']
 
     def get_queryset(self):
-        return Badge.objects.filter(empresa_id=1, is_active=True)
+        return Badge.objects.filter(is_active=True)
 
     def perform_create(self, serializer):
-        serializer.save(empresa_id=1, created_by=self.request.user)
+        serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
 
 
 class GamificacionViewSet(viewsets.ViewSet):
@@ -214,7 +216,7 @@ class GamificacionViewSet(viewsets.ViewSet):
         """Retorna el leaderboard de gamificación."""
         limite = int(request.query_params.get('limite', 10))
         gamificaciones = GamificacionColaborador.objects.filter(
-            empresa_id=1, is_active=True
+            is_active=True
         ).select_related('colaborador').order_by('-puntos_totales')[:limite]
 
         data = []
@@ -240,7 +242,7 @@ class GamificacionViewSet(viewsets.ViewSet):
             return Response({'error': 'Se requiere colaborador_id'}, status=400)
         try:
             gamificacion = GamificacionColaborador.objects.get(
-                empresa_id=1, colaborador_id=colaborador_id
+                colaborador_id=colaborador_id
             )
             serializer = GamificacionColaboradorSerializer(gamificacion)
             return Response(serializer.data)
@@ -254,7 +256,7 @@ class GamificacionViewSet(viewsets.ViewSet):
         if not colaborador_id:
             return Response({'error': 'Se requiere colaborador_id'}, status=400)
         badges = BadgeColaborador.objects.filter(
-            empresa_id=1, colaborador_id=colaborador_id
+            colaborador_id=colaborador_id
         ).select_related('badge')
         serializer = BadgeColaboradorSerializer(badges, many=True)
         return Response(serializer.data)
@@ -268,10 +270,10 @@ class EvaluacionEficaciaViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha_evaluacion']
 
     def get_queryset(self):
-        return EvaluacionEficacia.objects.filter(empresa_id=1, is_active=True).select_related('ejecucion__colaborador', 'evaluador')
+        return EvaluacionEficacia.objects.filter(is_active=True).select_related('ejecucion__colaborador', 'evaluador')
 
     def perform_create(self, serializer):
-        serializer.save(empresa_id=1, created_by=self.request.user, evaluador=self.request.user)
+        serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user, evaluador=self.request.user)
 
 
 class CertificadoViewSet(viewsets.ModelViewSet):
@@ -282,7 +284,7 @@ class CertificadoViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha_emision']
 
     def get_queryset(self):
-        return Certificado.objects.filter(empresa_id=1, is_active=True).select_related('ejecucion__colaborador')
+        return Certificado.objects.filter(is_active=True).select_related('ejecucion__colaborador')
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -290,7 +292,7 @@ class CertificadoViewSet(viewsets.ModelViewSet):
         return CertificadoDetailSerializer
 
     def perform_create(self, serializer):
-        serializer.save(empresa_id=1, created_by=self.request.user)
+        serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
 
     @action(detail=True, methods=['post'])
     def anular(self, request, pk=None):
@@ -334,22 +336,21 @@ class FormacionEstadisticasViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['get'])
     def resumen(self, request):
-        empresa_id = 1
         hoy = timezone.now().date()
         inicio_mes = hoy.replace(day=1)
         inicio_anio = hoy.replace(month=1, day=1)
 
         capacitaciones_activas = Capacitacion.objects.filter(
-            empresa_id=empresa_id, is_active=True, estado__in=['publicada', 'en_ejecucion']
+            is_active=True, estado__in=['publicada', 'en_ejecucion']
         ).count()
 
         sesiones_mes = ProgramacionCapacitacion.objects.filter(
-            empresa_id=empresa_id, is_active=True, fecha__gte=inicio_mes, fecha__lte=hoy
+            is_active=True, fecha__gte=inicio_mes, fecha__lte=hoy
         )
         sesiones_programadas_mes = sesiones_mes.count()
 
         ejecuciones_mes = EjecucionCapacitacion.objects.filter(
-            empresa_id=empresa_id, is_active=True, programacion__fecha__gte=inicio_mes
+            is_active=True, programacion__fecha__gte=inicio_mes
         )
         participantes_mes = ejecuciones_mes.values('colaborador').distinct().count()
         total_ejecuciones = ejecuciones_mes.count()
@@ -363,11 +364,11 @@ class FormacionEstadisticasViewSet(viewsets.ViewSet):
         horas_mes = sesiones_mes.aggregate(total=Sum('capacitacion__duracion_horas'))['total'] or 0
 
         certificados_mes = Certificado.objects.filter(
-            empresa_id=empresa_id, is_active=True, fecha_emision__gte=inicio_mes
+            is_active=True, fecha_emision__gte=inicio_mes
         ).count()
 
         presupuesto_anio = PlanFormacion.objects.filter(
-            empresa_id=empresa_id, is_active=True, anio=hoy.year
+            is_active=True, anio=hoy.year
         ).aggregate(total=Sum('presupuesto_ejecutado'))['total'] or 0
 
         data = {

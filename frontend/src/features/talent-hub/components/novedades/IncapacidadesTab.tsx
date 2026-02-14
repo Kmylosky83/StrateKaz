@@ -326,7 +326,7 @@ export const IncapacidadesTab = () => {
         title="Aprobar Incapacidad"
         message={`¿Estas seguro de aprobar la incapacidad "${approveTarget?.numero_incapacidad}"?`}
         confirmText="Aprobar"
-        variant="success"
+        variant="info"
         isLoading={aprobarMutation.isPending}
         onConfirm={confirmApprove}
         onClose={() => setApproveTarget(null)}

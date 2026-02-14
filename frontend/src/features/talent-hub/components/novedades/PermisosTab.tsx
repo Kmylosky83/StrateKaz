@@ -306,7 +306,7 @@ export const PermisosTab = () => {
         title="Aprobar Permiso"
         message={`¿Estas seguro de aprobar el permiso de "${approveTarget?.colaborador_nombre}"?`}
         confirmText="Aprobar"
-        variant="success"
+        variant="info"
         isLoading={aprobarMutation.isPending}
         onConfirm={confirmApprove}
         onClose={() => setApproveTarget(null)}

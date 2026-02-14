@@ -306,7 +306,7 @@ export const LicenciasTab = () => {
         title="Aprobar Licencia"
         message={`¿Estas seguro de aprobar la licencia de "${approveTarget?.colaborador_nombre}"?`}
         confirmText="Aprobar"
-        variant="success"
+        variant="info"
         isLoading={aprobarMutation.isPending}
         onConfirm={confirmApprove}
         onClose={() => setApproveTarget(null)}

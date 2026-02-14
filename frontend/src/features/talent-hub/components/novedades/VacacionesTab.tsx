@@ -409,7 +409,7 @@ export const VacacionesTab = () => {
         title="Aprobar Vacaciones"
         message={`¿Estas seguro de aprobar las vacaciones de "${approveTarget?.colaborador_nombre}"? Se descontaran ${approveTarget?.dias_habiles} dias del periodo.`}
         confirmText="Aprobar"
-        variant="success"
+        variant="info"
         isLoading={aprobarMutation.isPending}
         onConfirm={confirmApprove}
         onClose={() => setApproveTarget(null)}

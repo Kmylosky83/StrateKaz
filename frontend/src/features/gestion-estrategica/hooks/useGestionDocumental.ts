@@ -219,6 +219,7 @@ export function useActivarPlantilla() {
 
 export function useDocumentos(filters?: {
   tipo_documento?: number;
+  tipo_documento_codigo?: string;
   estado?: string;
   search?: string;
 }) {

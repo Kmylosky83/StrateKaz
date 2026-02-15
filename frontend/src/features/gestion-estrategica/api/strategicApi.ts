@@ -785,10 +785,6 @@ import type {
   CreateAlcanceSistemaDTO,
   UpdateAlcanceSistemaDTO,
   AlcanceSistemaFilters,
-  PoliticaEspecifica,
-  CreatePoliticaEspecificaDTO,
-  UpdatePoliticaEspecificaDTO,
-  PoliticaEspecificaFilters,
 } from '../types/strategic.types';
 
 export const alcancesApi = {
@@ -838,84 +834,8 @@ export const alcancesApi = {
   },
 };
 
-// ==================== POLÍTICAS ESPECÍFICAS ====================
-// @deprecated - Usar usePoliticas.ts (Sistema Unificado v3.0) en su lugar.
-// Estos endpoints legacy serán eliminados en una futura versión.
-// Ver: ../hooks/usePoliticas.ts para el nuevo sistema de políticas.
-
-export const politicasEspecificasApi = {
-  getAll: async (
-    filters?: PoliticaEspecificaFilters
-  ): Promise<PaginatedResponse<PoliticaEspecifica>> => {
-    const response = await axiosInstance.get(`${IDENTIDAD_URL}/politicas-especificas/`, {
-      params: filters,
-    });
-    return response.data;
-  },
-
-  getByStandard: async (): Promise<
-    Record<string, { label: string; total: number; vigentes: number; borradores: number }>
-  > => {
-    const response = await axiosInstance.get(`${IDENTIDAD_URL}/politicas-especificas/by-standard/`);
-    return response.data;
-  },
-
-  getPendingReview: async (): Promise<{ count: number; policies: PoliticaEspecifica[] }> => {
-    const response = await axiosInstance.get(
-      `${IDENTIDAD_URL}/politicas-especificas/pending-review/`
-    );
-    return response.data;
-  },
-
-  getStats: async (): Promise<{
-    total: number;
-    by_status: Record<string, number>;
-    pending_review: number;
-  }> => {
-    const response = await axiosInstance.get(`${IDENTIDAD_URL}/politicas-especificas/stats/`);
-    return response.data;
-  },
-
-  getById: async (id: number): Promise<PoliticaEspecifica> => {
-    const response = await axiosInstance.get(`${IDENTIDAD_URL}/politicas-especificas/${id}/`);
-    return response.data;
-  },
-
-  create: async (data: CreatePoliticaEspecificaDTO): Promise<PoliticaEspecifica> => {
-    const response = await axiosInstance.post(`${IDENTIDAD_URL}/politicas-especificas/`, data);
-    return response.data;
-  },
-
-  update: async (id: number, data: UpdatePoliticaEspecificaDTO): Promise<PoliticaEspecifica> => {
-    const response = await axiosInstance.patch(
-      `${IDENTIDAD_URL}/politicas-especificas/${id}/`,
-      data
-    );
-    return response.data;
-  },
-
-  delete: async (id: number): Promise<void> => {
-    await axiosInstance.delete(`${IDENTIDAD_URL}/politicas-especificas/${id}/`);
-  },
-
-  approve: async (
-    id: number
-  ): Promise<{ detail: string; approved_by: string; approved_at: string; status: string }> => {
-    const response = await axiosInstance.post(
-      `${IDENTIDAD_URL}/politicas-especificas/${id}/approve/`,
-      {
-        confirm: true,
-      }
-    );
-    return response.data;
-  },
-
-  reorder: async (newOrder: { id: number; orden: number }[]): Promise<void> => {
-    await axiosInstance.post(`${IDENTIDAD_URL}/politicas-especificas/reorder/`, {
-      items: newOrder,
-    });
-  },
-};
+// NOTA v4.0: politicasEspecificasApi ELIMINADA.
+// Las políticas se gestionan desde Gestión Documental (tipo_documento=POL).
 
 // ==================== UNIDADES DE MEDIDA (MC-001) ====================
 

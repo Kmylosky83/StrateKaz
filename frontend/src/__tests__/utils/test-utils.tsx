@@ -64,18 +64,13 @@ interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
   queryClient?: QueryClient;
 }
 
-export function renderWithProviders(
-  ui: ReactElement,
-  options?: CustomRenderOptions
-) {
+export function renderWithProviders(ui: ReactElement, options?: CustomRenderOptions) {
   const { queryClient, ...renderOptions } = options || {};
   const client = queryClient || createTestQueryClient();
 
   return {
     ...render(ui, {
-      wrapper: ({ children }) => (
-        <AllProviders queryClient={client}>{children}</AllProviders>
-      ),
+      wrapper: ({ children }) => <AllProviders queryClient={client}>{children}</AllProviders>,
       ...renderOptions,
     }),
     queryClient: client,
@@ -157,7 +152,7 @@ export const createMockEmpresa = (overrides = {}) => ({
 
 /**
  * Mock de CorporateIdentity - v4.0
- * Las políticas integrales se gestionan como categoría INTEGRAL en PoliticaEspecifica
+ * Las políticas se gestionan desde Gestión Documental (tipo_documento=POL)
  */
 export const createMockIdentity = (overrides = {}) => ({
   id: 1,
@@ -234,10 +229,7 @@ export const createMockAreaList = (overrides = {}) => ({
 /**
  * Crea una respuesta paginada mock
  */
-export const createMockPaginatedResponse = <T,>(
-  results: T[],
-  overrides = {}
-) => ({
+export const createMockPaginatedResponse = <T,>(results: T[], overrides = {}) => ({
   count: results.length,
   next: null,
   previous: null,

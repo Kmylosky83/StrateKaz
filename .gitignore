@@ -107,6 +107,13 @@ redis_data/
 # Archived docs (keep in repo but mark as legacy)
 # docs/archived/
 
+# Dev/test scripts (NEVER commit)
+_test_token.txt
+create_superuser.py
+
+# Claude Code local settings
+.claude/settings.local.json
+
 # OS specific
 Thumbs.db
 Desktop.ini

@@ -157,6 +157,15 @@ export interface Documento {
   observaciones: string;
   motivo_cambio_version: string;
   versiones?: VersionDocumento[];
+  // Campos de política (cuando tipo_documento=POL)
+  norma_iso: number | null;
+  norma_iso_nombre?: string;
+  norma_iso_codigo?: string;
+  responsable_cargo: number | null;
+  responsable_cargo_nombre?: string;
+  fecha_expiracion: string | null;
+  motivo_cambio: string;
+  es_politica_integral: boolean;
   // Firmas ahora vienen de workflow_engine.firma_digital
   firmas_digitales?: any[];
   controles?: ControlDocumental[];
@@ -333,6 +342,12 @@ export interface CreateDocumentoDTO {
   areas_aplicacion?: string[];
   puestos_aplicacion?: string[];
   observaciones?: string;
+  // Campos de política (cuando tipo_documento=POL)
+  norma_iso?: number;
+  responsable_cargo?: number;
+  fecha_expiracion?: string;
+  motivo_cambio?: string;
+  es_politica_integral?: boolean;
 }
 
 export interface CreateCampoFormularioDTO {

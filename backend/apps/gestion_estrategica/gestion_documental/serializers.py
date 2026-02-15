@@ -146,6 +146,9 @@ class DocumentoListSerializer(serializers.ModelSerializer):
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     clasificacion_display = serializers.CharField(source='get_clasificacion_display', read_only=True)
     elaborado_por_nombre = serializers.CharField(source='elaborado_por.get_full_name', read_only=True)
+    norma_iso_nombre = serializers.CharField(source='norma_iso.nombre', read_only=True, allow_null=True)
+    norma_iso_codigo = serializers.CharField(source='norma_iso.codigo', read_only=True, allow_null=True)
+    responsable_cargo_nombre = serializers.CharField(source='responsable_cargo.name', read_only=True, allow_null=True)
     total_firmas = serializers.SerializerMethodField()
     firmas_pendientes = serializers.SerializerMethodField()
 
@@ -156,6 +159,9 @@ class DocumentoListSerializer(serializers.ModelSerializer):
             'tipo_documento_codigo', 'version_actual', 'estado', 'estado_display',
             'clasificacion', 'clasificacion_display', 'fecha_creacion', 'fecha_publicacion',
             'fecha_revision_programada', 'elaborado_por', 'elaborado_por_nombre',
+            'norma_iso', 'norma_iso_nombre', 'norma_iso_codigo',
+            'responsable_cargo', 'responsable_cargo_nombre',
+            'es_politica_integral',
             'total_firmas', 'firmas_pendientes'
         ]
 
@@ -178,6 +184,9 @@ class DocumentoDetailSerializer(serializers.ModelSerializer):
     revisado_por_nombre = serializers.CharField(source='revisado_por.get_full_name', read_only=True, allow_null=True)
     aprobado_por_nombre = serializers.CharField(source='aprobado_por.get_full_name', read_only=True, allow_null=True)
     documento_padre_codigo = serializers.CharField(source='documento_padre.codigo', read_only=True, allow_null=True)
+    norma_iso_nombre = serializers.CharField(source='norma_iso.nombre', read_only=True, allow_null=True)
+    norma_iso_codigo = serializers.CharField(source='norma_iso.codigo', read_only=True, allow_null=True)
+    responsable_cargo_nombre = serializers.CharField(source='responsable_cargo.name', read_only=True, allow_null=True)
     firmas_digitales = serializers.SerializerMethodField()
 
     class Meta:
@@ -197,6 +206,9 @@ class DocumentoDetailSerializer(serializers.ModelSerializer):
             'documento_padre', 'documento_padre_codigo',
             'numero_descargas', 'numero_impresiones',
             'observaciones', 'motivo_cambio_version',
+            'norma_iso', 'norma_iso_nombre', 'norma_iso_codigo',
+            'responsable_cargo', 'responsable_cargo_nombre',
+            'fecha_expiracion', 'motivo_cambio', 'es_politica_integral',
             'empresa_id', 'created_at', 'updated_at',
             'firmas_digitales'
         ]
@@ -207,9 +219,9 @@ class DocumentoDetailSerializer(serializers.ModelSerializer):
 
     def get_firmas_digitales(self, obj):
         """Obtiene firmas usando FirmaDigital de workflow_engine"""
-        from apps.workflow_engine.firma_digital.serializers import FirmaDigitalListSerializer
+        from apps.workflow_engine.firma_digital.serializers import FirmaDigitalSerializer
         firmas = obj.get_firmas_digitales()
-        return FirmaDigitalListSerializer(firmas, many=True).data
+        return FirmaDigitalSerializer(firmas, many=True).data
 
 
 # =============================================================================
@@ -305,167 +317,3 @@ class ControlDocumentalDetailSerializer(serializers.ModelSerializer):
             'empresa_id', 'created_by', 'created_by_nombre', 'created_at', 'updated_at'
         ]
         read_only_fields = ['empresa_id', 'created_by', 'created_at', 'updated_at']
-
-
-# =============================================================================
-# INTEGRACIÓN CON MÓDULO DE IDENTIDAD CORPORATIVA
-# =============================================================================
-
-class FirmaInfoSerializer(serializers.Serializer):
-    """Serializer para información de firma recibida desde Identidad"""
-    orden = serializers.IntegerField()
-    rol = serializers.CharField()
-    rol_display = serializers.CharField()
-    cargo_id = serializers.IntegerField()
-    cargo_nombre = serializers.CharField()
-    usuario_id = serializers.IntegerField(allow_null=True)
-    usuario_nombre = serializers.CharField(allow_null=True)
-    fecha_firma = serializers.CharField(allow_null=True)
-    firma_hash = serializers.CharField(allow_null=True)
-
-
-class RecibirPoliticaSerializer(serializers.Serializer):
-    """
-    Serializer para recibir políticas desde el módulo de Identidad Corporativa.
-
-    Este serializer procesa los datos enviados por el endpoint
-    /identidad/politicas-especificas/{id}/enviar-a-documental/
-
-    El Gestor Documental se encarga de:
-    1. Crear/obtener TipoDocumento "POLITICA"
-    2. Generar código único (POL-SST-001, etc.)
-    3. Crear el Documento con estado APROBADO (ya viene firmado)
-    4. Registrar las firmas usando FirmaDigital de workflow_engine
-    5. Publicar el documento automáticamente
-    """
-    # Origen e identificación
-    origen = serializers.CharField(
-        help_text="Módulo de origen (ej: IDENTIDAD_CORPORATIVA)"
-    )
-    tipo_origen = serializers.CharField(
-        help_text="Tipo de documento de origen (ej: POLITICA_ESPECIFICA)"
-    )
-    politica_id = serializers.IntegerField(
-        help_text="ID de la política en el módulo de origen"
-    )
-    empresa_id = serializers.IntegerField(
-        help_text="ID de la empresa (multi-tenant)"
-    )
-
-    # Contenido del documento
-    titulo = serializers.CharField(
-        max_length=255,
-        help_text="Título de la política"
-    )
-    contenido = serializers.CharField(
-        help_text="Contenido completo de la política en HTML"
-    )
-    version = serializers.CharField(
-        max_length=20,
-        default='1.0',
-        help_text="Versión de la política"
-    )
-
-    # Clasificación y metadatos
-    norma_iso_code = serializers.CharField(
-        max_length=20,
-        default='GEN',
-        help_text="Código de la norma ISO aplicable (SST, CA, QMS, etc.)"
-    )
-    area_id = serializers.IntegerField(
-        allow_null=True,
-        required=False,
-        help_text="ID del área responsable"
-    )
-    area_nombre = serializers.CharField(
-        allow_null=True,
-        required=False,
-        help_text="Nombre del área responsable"
-    )
-    palabras_clave = serializers.ListField(
-        child=serializers.CharField(),
-        required=False,
-        default=list,
-        help_text="Palabras clave para búsqueda"
-    )
-    clasificacion = serializers.ChoiceField(
-        choices=[
-            ('PUBLICO', 'Público'),
-            ('INTERNO', 'Interno'),
-            ('CONFIDENCIAL', 'Confidencial'),
-            ('RESTRINGIDO', 'Restringido'),
-        ],
-        default='INTERNO',
-        help_text="Clasificación de seguridad"
-    )
-    areas_aplicacion = serializers.ListField(
-        child=serializers.IntegerField(),
-        required=False,
-        default=list,
-        help_text="IDs de áreas donde aplica"
-    )
-    observaciones = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        default='',
-        help_text="Observaciones adicionales"
-    )
-
-    # Información de firmas
-    firmas = FirmaInfoSerializer(
-        many=True,
-        required=False,
-        default=list,
-        help_text="Lista de firmas completadas"
-    )
-    proceso_firma_id = serializers.IntegerField(
-        allow_null=True,
-        required=False,
-        help_text="ID del proceso de firma en Identidad"
-    )
-    fecha_firma_completada = serializers.CharField(
-        allow_null=True,
-        required=False,
-        help_text="Fecha de completado del proceso de firma"
-    )
-
-    # Usuario solicitante
-    solicitado_por = serializers.IntegerField(
-        help_text="ID del usuario que envía la política"
-    )
-    solicitado_por_nombre = serializers.CharField(
-        help_text="Nombre del usuario que envía la política"
-    )
-    fecha_solicitud = serializers.CharField(
-        help_text="Fecha/hora de la solicitud ISO 8601"
-    )
-
-    # Versionamiento - Para actualizaciones de políticas existentes
-    es_actualizacion = serializers.BooleanField(
-        required=False,
-        default=False,
-        help_text="True si es una nueva versión de una política existente"
-    )
-    documento_anterior_id = serializers.IntegerField(
-        required=False,
-        allow_null=True,
-        help_text="ID del documento anterior (si es actualización)"
-    )
-    codigo_existente = serializers.CharField(
-        required=False,
-        allow_null=True,
-        allow_blank=True,
-        help_text="Código existente del documento (si es actualización, se mantiene)"
-    )
-    version_anterior = serializers.CharField(
-        required=False,
-        allow_null=True,
-        allow_blank=True,
-        help_text="Versión anterior de la política"
-    )
-    motivo_cambio = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        default='',
-        help_text="Motivo del cambio de versión"
-    )

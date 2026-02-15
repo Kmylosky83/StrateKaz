@@ -29,8 +29,7 @@ export * from './contexto.types';
 // Mapa Estratégico
 export * from './mapa-estrategico.types';
 
-// Políticas
-export * from './policies.types';
+// NOTA v4.0: policies.types eliminado. Políticas se gestionan como Documento (tipo_documento=POL).
 
 // Organigrama
 export * from './organigrama.types';

@@ -460,6 +460,43 @@ class Documento(models.Model):
         verbose_name='Motivo del Cambio de Versión'
     )
 
+    # Campos de Política (cuando tipo_documento.codigo == 'POL')
+    norma_iso = models.ForeignKey(
+        'configuracion.NormaISO',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='documentos',
+        verbose_name='Norma ISO',
+        help_text='Norma/Sistema de gestión asociado (solo para políticas)'
+    )
+    responsable_cargo = models.ForeignKey(
+        'core.Cargo',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='documentos_responsable',
+        verbose_name='Cargo Responsable',
+        help_text='Cargo responsable del documento'
+    )
+    fecha_expiracion = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name='Fecha de Expiración',
+        help_text='Fecha en que el documento expira'
+    )
+    motivo_cambio = models.TextField(
+        blank=True,
+        default='',
+        verbose_name='Motivo del Cambio',
+        help_text='Razón del cambio de versión'
+    )
+    es_politica_integral = models.BooleanField(
+        default=False,
+        verbose_name='Es Política Integral',
+        help_text='Indica si es una política integral del sistema de gestión'
+    )
+
     # Multi-tenancy
     empresa_id = models.PositiveBigIntegerField(
         db_index=True,
@@ -499,7 +536,6 @@ class Documento(models.Model):
         return FirmaDigital.objects.filter(
             content_type=content_type,
             object_id=self.pk,
-            empresa_id=self.empresa_id
         )
 
 

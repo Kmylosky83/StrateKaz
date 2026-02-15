@@ -48,6 +48,7 @@ from .serializers import (
     FirmarFirmaActionSerializer,
     RechazarFirmaActionSerializer,
     DelegarFirmaActionSerializer,
+    AsignarFirmantesSerializer,
 )
 
 import logging
@@ -565,7 +566,7 @@ class FirmaDigitalViewSet(viewsets.ModelViewSet):
             documento.save(update_fields=['estado', 'fecha_aprobacion', 'updated_at'])
             logger.info(f"Documento {documento.pk} transicionado a APROBADO (todas las firmas completadas)")
         elif hasattr(documento, 'status'):
-            # PoliticaEspecifica
+            # Modelo genérico con campo status
             documento.status = 'VIGENTE'
             if hasattr(documento, 'effective_date'):
                 documento.effective_date = timezone.now().date()
@@ -573,6 +574,118 @@ class FirmaDigitalViewSet(viewsets.ModelViewSet):
             else:
                 documento.save(update_fields=['status', 'updated_at'])
             logger.info(f"Politica {documento.pk} transicionada a VIGENTE (todas las firmas completadas)")
+
+    @action(detail=False, methods=['post'])
+    def asignar_firmantes(self, request):
+        """
+        Asigna firmantes a un documento en estado BORRADOR/EN_REVISION.
+        Crea batch de FirmaDigital en estado PENDIENTE.
+
+        POST /api/workflows/firma-digital/firmas/asignar_firmantes/
+        Body: {
+            "content_type": <int>,
+            "object_id": "<uuid>",
+            "firmantes": [
+                {"usuario_id": 1, "cargo_id": "<uuid>", "rol_firma": "REVISO", "orden": 1},
+                {"usuario_id": 2, "cargo_id": "<uuid>", "rol_firma": "APROBO", "orden": 2}
+            ]
+        }
+        """
+        serializer = AsignarFirmantesSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        User = get_user_model()
+        data = serializer.validated_data
+        content_type_id = data['content_type']
+        object_id = data['object_id']
+        firmantes_data = data['firmantes']
+
+        # 1. Validar documento existe y estado
+        try:
+            content_type = ContentType.objects.get(pk=content_type_id)
+        except ContentType.DoesNotExist:
+            return Response(
+                {'error': f'ContentType con ID {content_type_id} no existe'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            documento = content_type.get_object_for_this_type(pk=object_id)
+        except Exception:
+            return Response(
+                {'error': f'Documento con ID {object_id} no encontrado'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        estado_doc = getattr(documento, 'estado', None)
+        if estado_doc and estado_doc not in ['BORRADOR', 'EN_REVISION']:
+            return Response(
+                {'error': f'El documento debe estar en BORRADOR o EN_REVISION (actual: {estado_doc})'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 2. Validar usuarios y cargos existen
+        from django.apps import apps
+        Cargo = apps.get_model('core', 'Cargo')
+
+        for idx, f_data in enumerate(firmantes_data):
+            if not User.objects.filter(pk=f_data['usuario_id']).exists():
+                return Response(
+                    {'error': f'Firmante {idx + 1}: usuario ID {f_data["usuario_id"]} no existe'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            if not Cargo.objects.filter(pk=f_data['cargo_id']).exists():
+                return Response(
+                    {'error': f'Firmante {idx + 1}: cargo ID {f_data["cargo_id"]} no existe'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        # 3. Crear FirmaDigital records en batch
+        firmas_creadas = []
+        with transaction.atomic():
+            for f_data in firmantes_data:
+                usuario = User.objects.get(pk=f_data['usuario_id'])
+                firma = FirmaDigital.objects.create(
+                    content_type=content_type,
+                    object_id=object_id,
+                    usuario=usuario,
+                    cargo_id=f_data['cargo_id'],
+                    rol_firma=f_data['rol_firma'],
+                    orden=f_data['orden'],
+                    estado='PENDIENTE',
+                    firma_imagen='',
+                    documento_hash='pending',
+                    ip_address='0.0.0.0',
+                    user_agent='',
+                )
+                firmas_creadas.append(firma)
+
+                # Historial de auditoria
+                HistorialFirma.objects.create(
+                    firma=firma,
+                    accion='FIRMA_CREADA',
+                    usuario=request.user,
+                    descripcion=f'Firma {f_data["rol_firma"]} asignada a {usuario.get_full_name() or usuario.email}',
+                    metadatos={
+                        'asignado_por': request.user.id,
+                        'orden': f_data['orden'],
+                    },
+                    ip_address=request.META.get('REMOTE_ADDR', '0.0.0.0'),
+                )
+
+            # 4. Transicionar documento a EN_REVISION
+            if hasattr(documento, 'estado') and documento.estado == 'BORRADOR':
+                documento.estado = 'EN_REVISION'
+                documento.save(update_fields=['estado', 'updated_at'])
+                logger.info(f'Documento {documento.pk} transicionado a EN_REVISION')
+
+        logger.info(f'{len(firmas_creadas)} firmantes asignados a documento {object_id}')
+
+        return Response({
+            'mensaje': f'{len(firmas_creadas)} firmantes asignados exitosamente',
+            'firmas_creadas': FirmaDigitalSerializer(firmas_creadas, many=True).data,
+            'documento_nuevo_estado': getattr(documento, 'estado', ''),
+        }, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=['get'])
     def mis_firmas_pendientes(self, request):

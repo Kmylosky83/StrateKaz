@@ -78,10 +78,7 @@ export {
 } from './hooks/useProyectos';
 
 // Hooks - Portafolios
-export {
-  usePortafolios,
-  usePortafolio,
-} from './hooks/usePortafolios';
+export { usePortafolios, usePortafolio } from './hooks/usePortafolios';
 
 // Hooks - Revisión por Dirección
 export {
@@ -90,32 +87,5 @@ export {
   useActasRevision,
 } from './hooks/useRevisionDireccion';
 
-// Hooks - Políticas (Sistema Unificado v4.0 - simplificado)
-export {
-  politicaKeys,
-  useTiposPolitica,
-  useNormasISO,
-  usePoliticas,
-  usePolitica,
-  usePoliticasVigentes,
-  useCreatePolitica,
-  useUpdatePolitica,
-  useDeletePolitica,
-  useEnviarAGestion,
-  useCrearNuevaVersion,
-  usePuedeEditarPolitica,
-} from './hooks/usePoliticas';
-
-// Componentes - Políticas
-export { UnifiedPolicyModal, PoliciesList, PolicyDetailModal } from './components/politicas';
-
-// Types - Políticas
-export type {
-  Politica,
-  TipoPolitica,
-  NormaISO,
-  PoliticaFilters,
-  CreatePoliticaDTO,
-  UpdatePoliticaDTO,
-  PoliticaStatus,
-} from './types/policies.types';
+// NOTA v4.0: Políticas eliminadas de Identidad.
+// Se gestionan desde Gestión Documental (tipo_documento=POL).

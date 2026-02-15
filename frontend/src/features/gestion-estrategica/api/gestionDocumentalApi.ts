@@ -28,7 +28,7 @@ import type {
 import type { PaginatedResponse } from '@/types';
 
 // Nueva ruta base en Gestion Estrategica (N1)
-const BASE_URL = '/api/gestion-estrategica/gestion-documental';
+const BASE_URL = '/gestion-estrategica/gestion-documental';
 
 // ==================== TIPO DOCUMENTO ====================
 
@@ -126,6 +126,7 @@ export const documentoApi = {
     page_size?: number;
     search?: string;
     tipo_documento?: number;
+    tipo_documento_codigo?: string;
     estado?: string;
     clasificacion?: string;
     fecha_creacion_desde?: string;

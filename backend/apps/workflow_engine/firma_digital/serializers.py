@@ -410,3 +410,55 @@ class VerificarIntegridadSerializer(serializers.Serializer):
 
     firma_id = serializers.UUIDField(required=True)
     contenido_actual = serializers.CharField(required=True)
+
+
+class AsignarFirmantesSerializer(serializers.Serializer):
+    """
+    Serializer para asignar firmantes a un documento en estado BORRADOR.
+
+    Crea batch de FirmaDigital registros en estado PENDIENTE.
+    """
+
+    content_type = serializers.IntegerField(
+        required=True,
+        help_text='ContentType ID del modelo Documento'
+    )
+    object_id = serializers.UUIDField(
+        required=True,
+        help_text='UUID del documento'
+    )
+    firmantes = serializers.ListField(
+        child=serializers.DictField(),
+        required=True,
+        min_length=1,
+        help_text='Lista de firmantes: [{usuario_id, cargo_id, rol_firma, orden}]'
+    )
+
+    def validate_firmantes(self, value):
+        """Validar estructura de cada firmante."""
+        from .models import ROL_FIRMA_CHOICES
+
+        roles_validos = [r[0] for r in ROL_FIRMA_CHOICES]
+        required_fields = ['usuario_id', 'cargo_id', 'rol_firma', 'orden']
+
+        for idx, firmante in enumerate(value):
+            for field in required_fields:
+                if field not in firmante:
+                    raise serializers.ValidationError(
+                        f'Firmante {idx + 1}: campo "{field}" es requerido'
+                    )
+
+            if firmante['rol_firma'] not in roles_validos:
+                raise serializers.ValidationError(
+                    f'Firmante {idx + 1}: rol_firma inválido "{firmante["rol_firma"]}". '
+                    f'Opciones: {roles_validos}'
+                )
+
+        # Validar orden único
+        ordenes = [f['orden'] for f in value]
+        if len(ordenes) != len(set(ordenes)):
+            raise serializers.ValidationError(
+                'Los valores de "orden" deben ser únicos entre firmantes'
+            )
+
+        return value

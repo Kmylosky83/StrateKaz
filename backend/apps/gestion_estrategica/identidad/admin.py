@@ -1,11 +1,8 @@
 """
 Admin del módulo Identidad Corporativa - Dirección Estratégica
-
-v4.0: Campos legacy de política integral eliminados.
-Las políticas integrales se gestionan en PoliticaEspecifica con is_integral_policy=True.
 """
 from django.contrib import admin
-from .models import CorporateIdentity, CorporateValue, AlcanceSistema, PoliticaEspecifica
+from .models import CorporateIdentity, CorporateValue, AlcanceSistema
 
 
 class CorporateValueInline(admin.TabularInline):
@@ -109,59 +106,4 @@ class AlcanceSistemaAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         if not change:
             obj.created_by = request.user
-        super().save_model(request, obj, form, change)
-
-
-@admin.register(PoliticaEspecifica)
-class PoliticaEspecificaAdmin(admin.ModelAdmin):
-    """Admin para Políticas (Específicas e Integrales)"""
-
-    list_display = [
-        'title', 'identity', 'norma_iso', 'status',
-        'is_integral_policy', 'version', 'is_active'
-    ]
-    list_filter = ['status', 'is_integral_policy', 'is_active', 'norma_iso']
-    search_fields = ['title', 'content', 'code']
-    readonly_fields = [
-        'code', 'documento_id', 'signature_hash',
-        'approved_by', 'approved_at',
-        'created_by', 'created_at', 'updated_at'
-    ]
-
-    fieldsets = (
-        ('Identificación', {
-            'fields': (
-                'identity', 'norma_iso', 'title', 'is_integral_policy',
-                'code', 'documento_id'
-            )
-        }),
-        ('Contenido', {
-            'fields': ('content', 'keywords')
-        }),
-        ('Responsables', {
-            'fields': ('area', 'responsible', 'responsible_cargo')
-        }),
-        ('Estado y Versión', {
-            'fields': (
-                'status', 'version', 'effective_date',
-                'expiry_date', 'review_date', 'change_reason'
-            )
-        }),
-        ('Firma Digital', {
-            'fields': ('approved_by', 'approved_at', 'signature_hash'),
-            'classes': ('collapse',)
-        }),
-        ('Documento', {
-            'fields': ('document_file', 'orden', 'is_active')
-        }),
-        ('Auditoría', {
-            'fields': ('created_by', 'created_at', 'updated_at'),
-            'classes': ('collapse',)
-        }),
-    )
-
-    def save_model(self, request, obj, form, change):
-        if not change:
-            obj.created_by = request.user
-        obj.updated_by = request.user
         super().save_model(request, obj, form, change)

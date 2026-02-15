@@ -50,8 +50,7 @@ export * from './useRevisionDireccion';
 // ============================================================================
 // IDENTIDAD CORPORATIVA
 // ============================================================================
-// Politicas (Sistema Unificado v3.0)
-export * from './usePoliticas';
+// NOTA v4.0: usePoliticas eliminado. Políticas se gestionan desde Gestión Documental.
 
 // Workflow de Firmas Digitales
 export * from './useWorkflowFirmas';

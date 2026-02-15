@@ -92,8 +92,8 @@ export interface ProcesoArea {
   id: number;
   code: string;
   name: string;
-  full_path: string;  // "Gerencia > Operaciones > Logística"
-  level: number;      // Nivel de profundidad en jerarquía
+  full_path: string; // "Gerencia > Operaciones > Logística"
+  level: number; // Nivel de profundidad en jerarquía
   icon?: string;
   color?: string;
 }
@@ -103,8 +103,7 @@ export interface ProcesoArea {
 /**
  * Identidad Corporativa - Misión y Visión
  *
- * v4.0: Las políticas integrales se gestionan como categoría INTEGRAL
- * dentro del sistema unificado de PoliticaEspecifica.
+ * v4.0: Las políticas se gestionan desde Gestión Documental (tipo_documento=POL).
  *
  * v4.1: Campos de alcance del sistema integrado de gestión (SIG).
  * El toggle declara_alcance controla la visibilidad de la sección.
@@ -123,7 +122,7 @@ export interface CorporateIdentity {
   declara_alcance: boolean;
   alcance_general?: string | null;
   alcance_geografico?: string | null;
-  alcance_procesos?: string | null;  // LEGACY: texto libre
+  alcance_procesos?: string | null; // LEGACY: texto libre
   alcance_exclusiones?: string | null;
   // Procesos cubiertos - ManyToMany con Area (v4.2)
   procesos_cubiertos?: ProcesoArea[];
@@ -148,7 +147,7 @@ export interface CreateCorporateIdentityDTO {
   declara_alcance?: boolean;
   alcance_general?: string;
   alcance_geografico?: string;
-  alcance_procesos?: string;  // LEGACY: texto libre
+  alcance_procesos?: string; // LEGACY: texto libre
   alcance_exclusiones?: string;
   // Procesos cubiertos - IDs de áreas (v4.2)
   procesos_cubiertos_ids?: number[];
@@ -164,7 +163,7 @@ export interface UpdateCorporateIdentityDTO {
   declara_alcance?: boolean;
   alcance_general?: string;
   alcance_geografico?: string;
-  alcance_procesos?: string;  // LEGACY: texto libre
+  alcance_procesos?: string; // LEGACY: texto libre
   alcance_exclusiones?: string;
   // Procesos cubiertos - IDs de áreas (v4.2)
   procesos_cubiertos_ids?: number[];
@@ -1015,9 +1014,6 @@ export type ChangeStatus =
   | 'COMPLETADO'
   | 'CANCELADO';
 
-// --- Tipos de Política ---
-export type PoliticaStatus = 'BORRADOR' | 'EN_REVISION' | 'FIRMADO' | 'VIGENTE' | 'OBSOLETO';
-
 // ==================== MAPA ESTRATÉGICO ====================
 
 export interface MapaEstrategico {
@@ -1353,91 +1349,8 @@ export interface AlcanceSistemaFilters {
 // @deprecated - Usar types/policies.types.ts (Sistema Unificado v3.0) en su lugar.
 // Estos tipos legacy serán eliminados en una futura versión.
 
-/**
- * @deprecated Usar Politica de policies.types.ts
- *
- * Políticas específicas asociadas a normas y sistemas de gestión
- * (ISO, PESV, SG-SST, etc.)
- */
-export interface PoliticaEspecifica {
-  id: number;
-  identity: number;
-  norma_iso: number | null; // FK a NormaISO (dinámico desde BD - incluye ISO, PESV, SG-SST, etc.)
-  norma_iso_code?: string | null;
-  norma_iso_name?: string | null;
-  code: string; // Código único (POL-SST-001)
-  title: string; // Título de la política
-  content: string;
-  version: string;
-  status: PoliticaStatus;
-  status_display?: string;
-  effective_date: string;
-  review_date?: string | null;
-  needs_review?: boolean;
-  // Responsables
-  area?: number | null;
-  area_name?: string | null;
-  responsible?: number | null;
-  responsible_name?: string | null;
-  responsible_cargo?: number | null;
-  responsible_cargo_name?: string | null;
-  // Aprobación
-  approved_by?: number | null;
-  approved_by_name?: string | null;
-  approved_at?: string | null;
-  // Extras
-  document_file?: string | null;
-  keywords?: string | null;
-  orden: number;
-  is_active: boolean;
-  created_by?: number | null;
-  created_by_name?: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CreatePoliticaEspecificaDTO {
-  identity: number;
-  norma_iso?: number | null; // FK a NormaISO (dinámico desde BD - incluye ISO, PESV, SG-SST, etc.)
-  code: string; // Requerido
-  title: string; // Requerido
-  content: string;
-  version: string;
-  status?: PoliticaStatus;
-  effective_date?: string;
-  review_date?: string;
-  area?: number | null;
-  responsible?: number | null;
-  responsible_cargo?: number | null;
-  keywords?: string;
-  orden?: number;
-  is_active?: boolean;
-}
-
-export interface UpdatePoliticaEspecificaDTO {
-  norma_iso?: number | null;
-  code?: string;
-  title?: string;
-  content?: string;
-  version?: string;
-  status?: PoliticaStatus;
-  effective_date?: string;
-  review_date?: string;
-  area?: number | null;
-  responsible?: number | null;
-  responsible_cargo?: number | null;
-  keywords?: string;
-  orden?: number;
-  is_active?: boolean;
-}
-
-export interface PoliticaEspecificaFilters {
-  identity?: number;
-  norma_iso?: number; // FK a NormaISO (incluye ISO, PESV, SG-SST, etc.)
-  status?: PoliticaStatus;
-  is_signed?: boolean;
-  is_active?: boolean;
-}
+// NOTA v4.0: PoliticaEspecifica eliminada.
+// Las políticas se gestionan como Documento en Gestión Documental (tipo_documento=POL).
 
 // ==================== REVISIÓN POR LA DIRECCIÓN ====================
 

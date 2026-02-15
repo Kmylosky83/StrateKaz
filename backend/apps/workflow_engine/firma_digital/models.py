@@ -271,9 +271,7 @@ class FirmaDigital(TimestampedModel):
     con verificación de integridad mediante hash criptográfico.
 
     Uso GenericForeignKey para poder firmar cualquier tipo de documento:
-    - PoliticaIntegral
-    - PoliticaEspecifica
-    - Documentos del sistema documental
+    - Documentos del sistema documental (gestion_documental.Documento)
     - Procedimientos
     - etc.
     """

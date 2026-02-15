@@ -10,14 +10,9 @@ Uso:
     from apps.gestion_estrategica.identidad.exporters import (
         IdentidadPDFGenerator,
         IdentidadDOCXGenerator,
-        generar_pdf_politica_integral,
-        generar_docx_politica_integral,
         generar_pdf_identidad_completa,
         generar_docx_identidad_completa,
     )
-
-    # Generar PDF de política integral
-    pdf_buffer = generar_pdf_politica_integral(politica, empresa, firmas)
 
     # Generar DOCX de identidad completa
     docx_buffer = generar_docx_identidad_completa(
@@ -33,13 +28,11 @@ Dependencias:
 
 from .pdf_generator import (
     IdentidadPDFGenerator,
-    generar_pdf_politica_integral,
     generar_pdf_identidad_completa,
 )
 
 from .docx_generator import (
     IdentidadDOCXGenerator,
-    generar_docx_politica_integral,
     generar_docx_identidad_completa,
 )
 
@@ -48,9 +41,7 @@ __all__ = [
     'IdentidadPDFGenerator',
     'IdentidadDOCXGenerator',
     # Funciones de conveniencia PDF
-    'generar_pdf_politica_integral',
     'generar_pdf_identidad_completa',
     # Funciones de conveniencia DOCX
-    'generar_docx_politica_integral',
     'generar_docx_identidad_completa',
 ]

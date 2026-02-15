@@ -58,11 +58,15 @@ import {
   useDistribucionesActivas,
   useEstadisticasDocumentales,
 } from '@/features/gestion-estrategica/hooks/useGestionDocumental';
-import { useMisFirmasPendientes } from '@/features/gestion-estrategica/hooks/useWorkflowFirmas';
+import {
+  useMisFirmasPendientes,
+  useDocumentoContentType,
+} from '@/features/gestion-estrategica/hooks/useWorkflowFirmas';
 import type {
   TipoDocumento,
   PlantillaDocumento,
 } from '@/features/gestion-estrategica/types/gestion-documental.types';
+import { AsignarFirmantesModal } from './AsignarFirmantesModal';
 
 // =============================================================================
 // SECTION KEYS (match BD TabSection.code)
@@ -463,8 +467,13 @@ function DocumentosSection({
   const { data: documentos, isLoading } = useDocumentos();
   const { data: listadoMaestro } = useListadoMaestro();
   const deleteDocumentoMutation = useDeleteDocumento();
+  const { data: contentTypeData } = useDocumentoContentType();
   const [confirmDelete, setConfirmDelete] = useState<{ id: number; titulo: string } | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [asignarFirmantesModal, setAsignarFirmantesModal] = useState<{
+    documentoId: string;
+    titulo: string;
+  } | null>(null);
 
   if (isLoading) {
     return (
@@ -637,6 +646,19 @@ function DocumentosSection({
                       {documento.estado === 'BORRADOR' && (
                         <>
                           <Button
+                            variant="primary"
+                            size="sm"
+                            leftIcon={<PenTool className="w-4 h-4" />}
+                            onClick={() =>
+                              setAsignarFirmantesModal({
+                                documentoId: String(documento.id),
+                                titulo: documento.titulo,
+                              })
+                            }
+                          >
+                            Solicitar Firmas
+                          </Button>
+                          <Button
                             variant="ghost"
                             size="sm"
                             leftIcon={<Edit className="w-4 h-4" />}
@@ -678,6 +700,17 @@ function DocumentosSection({
         variant="danger"
         isLoading={deleteDocumentoMutation.isPending}
       />
+
+      {/* Modal Asignar Firmantes */}
+      {contentTypeData && (
+        <AsignarFirmantesModal
+          isOpen={!!asignarFirmantesModal}
+          onClose={() => setAsignarFirmantesModal(null)}
+          contentTypeId={contentTypeData.content_type_id}
+          documentoId={asignarFirmantesModal?.documentoId ?? ''}
+          documentoTitulo={asignarFirmantesModal?.titulo ?? ''}
+        />
+      )}
     </>
   );
 }

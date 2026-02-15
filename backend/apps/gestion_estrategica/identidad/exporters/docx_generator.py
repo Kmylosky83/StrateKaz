@@ -1,34 +1,30 @@
 """
-Generador de DOCX para Identidad Corporativa
-=============================================
+Generador de DOCX para Identidad Corporativa v4.0
+==================================================
 
 Genera documentos Word editables con la identidad corporativa
-usando python-docx para máxima compatibilidad.
+usando python-docx para maxima compatibilidad.
 
-Características:
+Caracteristicas:
 - Documento editable Microsoft Word
 - Estilos profesionales predefinidos
-- Colores dinámicos desde TenantBranding
+- Colores dinamicos desde TenantBranding
 - Tablas formateadas
-- Incluye imágenes de firmas
 - Header/footer con branding
 
-CUMPLIMIENTO:
-- ISO 9001: Control de documentos (7.5)
-- ISO 45001: Documentación del SGSST
-- Decreto 1072: Trazabilidad de políticas SST
+NOTA v4.0: Metodos de politica eliminados.
+Las politicas se gestionan desde Gestion Documental (tipo_documento=POL).
 """
 
 import os
-import base64
 from io import BytesIO
 from datetime import datetime
 
-# python-docx para generación de documentos Word
+# python-docx para generacion de documentos Word
 try:
     from docx import Document
-    from docx.shared import Inches, Pt, RGBColor, Cm
-    from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TAB_ALIGNMENT
+    from docx.shared import Inches, Pt, RGBColor
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
     from docx.enum.style import WD_STYLE_TYPE
     from docx.enum.table import WD_TABLE_ALIGNMENT
     from docx.oxml.ns import qn
@@ -70,12 +66,13 @@ class IdentidadDOCXGenerator:
     Generador de documentos DOCX para Identidad Corporativa.
 
     Soporta:
-    - Política Integral con firmas
-    - Políticas Específicas
     - Documento completo de identidad corporativa
     - Valores Corporativos
+    - Alcances del Sistema
 
-    Los colores se obtienen dinámicamente desde TenantBranding.
+    Los colores se obtienen dinamicamente desde TenantBranding.
+
+    NOTA v4.0: Las politicas se gestionan desde Gestion Documental.
     """
 
     def __init__(self, empresa=None):
@@ -86,7 +83,7 @@ class IdentidadDOCXGenerator:
             empresa: Instancia de EmpresaConfig (opcional)
         """
         if not DOCX_AVAILABLE:
-            raise ImportError("python-docx no está instalado. Ejecute: pip install python-docx")
+            raise ImportError("python-docx no esta instalado. Ejecute: pip install python-docx")
 
         self.empresa = empresa
         self.logo_path = None
@@ -97,7 +94,7 @@ class IdentidadDOCXGenerator:
 
     def _load_colors(self):
         """
-        Carga colores dinámicos desde TenantBranding o usa defaults.
+        Carga colores dinamicos desde TenantBranding o usa defaults.
 
         Returns:
             dict: Diccionario con colores RGBColor
@@ -145,7 +142,7 @@ class IdentidadDOCXGenerator:
             pass
 
     def _get_empresa_info(self):
-        """Obtiene información de la empresa"""
+        """Obtiene informacion de la empresa"""
         if self.empresa:
             return {
                 'razon_social': self.empresa.razon_social,
@@ -162,7 +159,7 @@ class IdentidadDOCXGenerator:
         """Configura estilos del documento"""
         styles = document.styles
 
-        # Estilo para títulos principales
+        # Estilo para titulos principales
         if 'CustomHeading1' not in [s.name for s in styles]:
             style = styles.add_style('CustomHeading1', WD_STYLE_TYPE.PARAGRAPH)
             style.font.name = 'Arial'
@@ -172,7 +169,7 @@ class IdentidadDOCXGenerator:
             style.paragraph_format.space_after = Pt(12)
             style.paragraph_format.space_before = Pt(18)
 
-        # Estilo para subtítulos
+        # Estilo para subtitulos
         if 'CustomHeading2' not in [s.name for s in styles]:
             style = styles.add_style('CustomHeading2', WD_STYLE_TYPE.PARAGRAPH)
             style.font.name = 'Arial'
@@ -214,7 +211,7 @@ class IdentidadDOCXGenerator:
             run.add_picture(self.logo_path, width=Inches(1.5))
             header_para.add_run('\t\t')
 
-        # Agregar información de empresa
+        # Agregar informacion de empresa
         run = header_para.add_run(f"{empresa_info['razon_social']}\n")
         run.bold = True
         run.font.size = Pt(10)
@@ -233,16 +230,16 @@ class IdentidadDOCXGenerator:
         footer_para = footer.paragraphs[0]
         footer_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-        run = footer_para.add_run(f"Versión {version} | Generado: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+        run = footer_para.add_run(f"Version {version} | Generado: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
         run.font.size = Pt(8)
         run.font.color.rgb = self.colors['muted']
 
-        # Agregar número de página
+        # Agregar numero de pagina
         self._add_page_number(footer_para)
 
     def _add_page_number(self, paragraph):
-        """Agrega número de página al párrafo"""
-        paragraph.add_run(' | Página ')
+        """Agrega numero de pagina al parrafo"""
+        paragraph.add_run(' | Pagina ')
 
         fldSimple = OxmlElement('w:fldSimple')
         fldSimple.set(qn('w:instr'), 'PAGE')
@@ -301,90 +298,6 @@ class IdentidadDOCXGenerator:
 
         document.add_paragraph()
 
-    def _add_signature_table(self, document, firmas):
-        """
-        Agrega tabla de firmas.
-
-        Args:
-            document: Documento Word
-            firmas: Lista de FirmaDigital
-        """
-        if not firmas:
-            para = document.add_paragraph()
-            run = para.add_run('No hay firmas registradas')
-            run.italic = True
-            run.font.color.rgb = self.colors['muted']
-            return
-
-        # Determinar número de columnas (máximo 3)
-        num_cols = min(len(firmas), 3)
-        num_rows = (len(firmas) + num_cols - 1) // num_cols
-
-        table = document.add_table(rows=num_rows * 3, cols=num_cols)
-        table.alignment = WD_TABLE_ALIGNMENT.CENTER
-
-        for idx, firma in enumerate(firmas):
-            col = idx % num_cols
-            row_base = (idx // num_cols) * 3
-
-            # Fila 1: Imagen de firma o "Pendiente"
-            cell_firma = table.rows[row_base].cells[col]
-            para = cell_firma.paragraphs[0]
-            para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-
-            if firma.status == 'FIRMADO' and firma.firma_manuscrita:
-                # Intentar agregar imagen de firma
-                try:
-                    # Decodificar base64
-                    if firma.firma_manuscrita.startswith('data:image'):
-                        img_data = firma.firma_manuscrita.split(',')[1]
-                    else:
-                        img_data = firma.firma_manuscrita
-
-                    img_bytes = base64.b64decode(img_data)
-                    img_stream = BytesIO(img_bytes)
-
-                    run = para.add_run()
-                    run.add_picture(img_stream, width=Inches(1.5))
-                except Exception:
-                    run = para.add_run('[Firma]')
-                    run.font.size = Pt(10)
-            else:
-                run = para.add_run('Pendiente')
-                run.italic = True
-                run.font.color.rgb = self.colors['warning']
-                run.font.size = Pt(10)
-
-            # Fila 2: Nombre del firmante
-            cell_nombre = table.rows[row_base + 1].cells[col]
-            para = cell_nombre.paragraphs[0]
-            para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-
-            # Línea de firma
-            run = para.add_run('_' * 25)
-            run.font.size = Pt(8)
-            para.add_run('\n')
-
-            run = para.add_run(firma.firmante.get_full_name())
-            run.bold = True
-            run.font.size = Pt(10)
-            run.font.color.rgb = self.colors['text']
-
-            # Fila 3: Rol y fecha
-            cell_rol = table.rows[row_base + 2].cells[col]
-            para = cell_rol.paragraphs[0]
-            para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-
-            run = para.add_run(firma.get_rol_firma_display())
-            run.font.size = Pt(9)
-            run.font.color.rgb = self.colors['secondary']
-
-            if firma.fecha_firma:
-                para.add_run('\n')
-                run = para.add_run(firma.fecha_firma.strftime('%d/%m/%Y'))
-                run.font.size = Pt(8)
-                run.font.color.rgb = self.colors['muted']
-
     def _get_header_color_hex(self):
         """Obtiene el color primario en formato hex para headers de tabla"""
         if self.empresa:
@@ -400,184 +313,12 @@ class IdentidadDOCXGenerator:
                 pass
         return '2C5282'  # Default azul oscuro
 
-    def generate_politica_integral_docx(self, politica, firmas=None, historial=None):
-        """
-        Genera DOCX de Política Integral con firmas.
-
-        Args:
-            politica: Instancia de PoliticaEspecifica con is_integral_policy=True (v3.1)
-            firmas: QuerySet de FirmaDigital (opcional)
-            historial: QuerySet de HistorialVersion (opcional)
-
-        Returns:
-            BytesIO: Buffer con el DOCX generado
-        """
-        document = Document()
-        self._setup_styles(document)
-        self._add_header(document)
-        self._add_footer(document, version=politica.version)
-
-        # Título
-        para = document.add_paragraph(politica.title, style='CustomHeading1')
-        para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-
-        # Metadatos
-        metadata = {
-            'Versión': politica.version,
-            'Estado': politica.get_status_display(),
-            'Fecha de Vigencia': politica.effective_date.strftime('%d/%m/%Y') if politica.effective_date else 'N/A',
-            'Normas Aplicables': ', '.join(politica.applicable_standards or []) or 'N/A',
-        }
-        self._add_metadata_table(document, metadata)
-
-        # Contenido
-        document.add_paragraph('Contenido de la Política', style='CustomHeading2')
-
-        for paragraph_text in politica.content.split('\n'):
-            if paragraph_text.strip():
-                para = document.add_paragraph(paragraph_text, style='CustomNormal')
-                para.paragraph_format.first_line_indent = Inches(0.5)
-
-        # Firmas
-        document.add_paragraph()
-        document.add_paragraph('Firmas de Aprobación', style='CustomHeading2')
-
-        if firmas:
-            self._add_signature_table(document, list(firmas))
-        else:
-            para = document.add_paragraph()
-            run = para.add_run('No hay firmas registradas')
-            run.italic = True
-            run.font.color.rgb = self.colors['muted']
-
-        # Historial de cambios (si existe)
-        if historial:
-            document.add_page_break()
-            document.add_paragraph('Historial de Cambios', style='CustomHeading2')
-
-            table = document.add_table(rows=1, cols=4)
-            table.style = 'Table Grid'
-
-            # Headers
-            header_color = self._get_header_color_hex()
-            headers = ['Versión', 'Fecha', 'Tipo de Cambio', 'Descripción']
-            header_row = table.rows[0]
-            for idx, header in enumerate(headers):
-                cell = header_row.cells[idx]
-                para = cell.paragraphs[0]
-                run = para.add_run(header)
-                run.bold = True
-                run.font.size = Pt(9)
-
-                # Shading con color dinámico
-                shading = OxmlElement('w:shd')
-                shading.set(qn('w:fill'), header_color)
-                cell._tc.get_or_add_tcPr().append(shading)
-                run.font.color.rgb = RGBColor(0xFF, 0xFF, 0xFF)
-
-            # Datos
-            for h in historial[:10]:  # Máximo 10 registros
-                row = table.add_row()
-                row.cells[0].text = h.version_numero
-                row.cells[1].text = h.created_at.strftime('%d/%m/%Y')
-                row.cells[2].text = h.tipo_cambio
-                row.cells[3].text = h.descripcion_cambio[:50] + '...' if len(h.descripcion_cambio) > 50 else h.descripcion_cambio
-
-        # Guardar a buffer
-        docx_buffer = BytesIO()
-        document.save(docx_buffer)
-        docx_buffer.seek(0)
-
-        return docx_buffer
-
-    def generate_politica_especifica_docx(self, politica, firmas=None):
-        """
-        Genera DOCX de Política Específica.
-
-        Args:
-            politica: Instancia de PoliticaEspecifica
-            firmas: QuerySet de FirmaDigital (opcional)
-
-        Returns:
-            BytesIO: Buffer con el DOCX generado
-        """
-        document = Document()
-        self._setup_styles(document)
-        self._add_header(document)
-        self._add_footer(document, version=politica.version)
-
-        # Título
-        para = document.add_paragraph(politica.title, style='CustomHeading1')
-        para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-
-        # Código
-        para = document.add_paragraph()
-        para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        run = para.add_run(f'Código: {politica.code}')
-        run.font.size = Pt(12)
-        run.font.color.rgb = self.colors['secondary']
-
-        # Metadatos
-        norma_display = politica.norma_iso.short_name if politica.norma_iso else 'General'
-        metadata = {
-            'Código': politica.code,
-            'Versión': politica.version,
-            'Norma ISO': norma_display,
-            'Estado': politica.get_status_display(),
-            'Área Responsable': politica.area.name if politica.area else 'N/A',
-            'Fecha de Vigencia': politica.effective_date.strftime('%d/%m/%Y') if politica.effective_date else 'N/A',
-            'Próxima Revisión': politica.review_date.strftime('%d/%m/%Y') if politica.review_date else 'N/A',
-        }
-        self._add_metadata_table(document, metadata)
-
-        # Contenido
-        document.add_paragraph('Contenido', style='CustomHeading2')
-
-        for paragraph_text in politica.content.split('\n'):
-            if paragraph_text.strip():
-                para = document.add_paragraph(paragraph_text, style='CustomNormal')
-                para.paragraph_format.first_line_indent = Inches(0.5)
-
-        # Aprobación
-        document.add_paragraph()
-        document.add_paragraph('Aprobación', style='CustomHeading2')
-
-        if politica.approved_by:
-            para = document.add_paragraph()
-            run = para.add_run('Aprobada por: ')
-            run.bold = True
-            para.add_run(politica.approved_by.get_full_name())
-
-            para = document.add_paragraph()
-            run = para.add_run('Fecha de aprobación: ')
-            run.bold = True
-            para.add_run(politica.approved_at.strftime('%d/%m/%Y %H:%M') if politica.approved_at else 'N/A')
-        else:
-            para = document.add_paragraph()
-            run = para.add_run('Pendiente de aprobación')
-            run.italic = True
-            run.font.color.rgb = self.colors['warning']
-
-        # Firmas (si existen)
-        if firmas:
-            document.add_paragraph()
-            document.add_paragraph('Firmas', style='CustomHeading2')
-            self._add_signature_table(document, list(firmas))
-
-        # Guardar a buffer
-        docx_buffer = BytesIO()
-        document.save(docx_buffer)
-        docx_buffer.seek(0)
-
-        return docx_buffer
-
-    def generate_identidad_completa_docx(self, identity, include_politicas=True, include_valores=True, include_alcances=True):
+    def generate_identidad_completa_docx(self, identity, include_valores=True, include_alcances=True):
         """
         Genera DOCX completo de Identidad Corporativa.
 
         Args:
             identity: Instancia de CorporateIdentity
-            include_politicas: Incluir políticas
             include_valores: Incluir valores
             include_alcances: Incluir alcances
 
@@ -608,23 +349,23 @@ class IdentidadDOCXGenerator:
 
         para = document.add_paragraph()
         para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        run = para.add_run(f"Versión {identity.version}\n")
+        run = para.add_run(f"Version {identity.version}\n")
         run.font.size = Pt(12)
         run = para.add_run(f"Vigente desde: {identity.effective_date.strftime('%d/%m/%Y')}")
         run.font.size = Pt(10)
         run.font.color.rgb = self.colors['muted']
 
-        # Nueva página - Misión
+        # Nueva pagina - Mision
         document.add_page_break()
-        document.add_paragraph('Misión', style='CustomHeading1')
+        document.add_paragraph('Mision', style='CustomHeading1')
 
         for paragraph_text in identity.mission.split('\n'):
             if paragraph_text.strip():
                 para = document.add_paragraph(paragraph_text, style='CustomNormal')
                 para.paragraph_format.first_line_indent = Inches(0.5)
 
-        # Visión
-        document.add_paragraph('Visión', style='CustomHeading1')
+        # Vision
+        document.add_paragraph('Vision', style='CustomHeading1')
 
         for paragraph_text in identity.vision.split('\n'):
             if paragraph_text.strip():
@@ -641,43 +382,21 @@ class IdentidadDOCXGenerator:
                 for valor in valores:
                     # Nombre del valor
                     para = document.add_paragraph()
-                    run = para.add_run(f'• {valor.name}')
+                    run = para.add_run(f'\u2022 {valor.name}')
                     run.bold = True
                     run.font.size = Pt(12)
                     run.font.color.rgb = self.colors['secondary']
 
-                    # Descripción
+                    # Descripcion
                     para = document.add_paragraph(valor.description, style='CustomNormal')
                     para.paragraph_format.left_indent = Inches(0.3)
-
-        # Política Integral (v3.1: usando PoliticaEspecifica con is_integral_policy=True)
-        if include_politicas:
-            politica_vigente = identity.politicas_especificas.filter(
-                status='VIGENTE', is_active=True, is_integral_policy=True
-            ).first()
-            if politica_vigente:
-                document.add_page_break()
-                document.add_paragraph('Política Integral del Sistema de Gestión', style='CustomHeading1')
-
-                for paragraph_text in politica_vigente.content.split('\n'):
-                    if paragraph_text.strip():
-                        para = document.add_paragraph(paragraph_text, style='CustomNormal')
-                        para.paragraph_format.first_line_indent = Inches(0.5)
-
-                para = document.add_paragraph()
-                run = para.add_run(f'\nVersión: {politica_vigente.version}')
-                run.font.size = Pt(9)
-                run.font.color.rgb = self.colors['muted']
-
-                if politica_vigente.effective_date:
-                    para.add_run(f' | Vigente desde: {politica_vigente.effective_date.strftime("%d/%m/%Y")}')
 
         # Alcances del Sistema
         if include_alcances:
             alcances = identity.alcances.filter(is_active=True)
             if alcances.exists():
                 document.add_page_break()
-                document.add_paragraph('Alcance del Sistema de Gestión', style='CustomHeading1')
+                document.add_paragraph('Alcance del Sistema de Gestion', style='CustomHeading1')
 
                 # Tabla de alcances
                 table = document.add_table(rows=1, cols=4)
@@ -712,10 +431,10 @@ class IdentidadDOCXGenerator:
         document.add_paragraph('Control de Documento', style='CustomHeading1')
 
         control_metadata = {
-            'Fecha de generación': datetime.now().strftime('%d/%m/%Y %H:%M'),
+            'Fecha de generacion': datetime.now().strftime('%d/%m/%Y %H:%M'),
             'Creado por': identity.created_by.get_full_name() if identity.created_by else 'Sistema',
-            'Última actualización': identity.updated_at.strftime('%d/%m/%Y %H:%M') if identity.updated_at else 'N/A',
-            'Versión del documento': identity.version,
+            'Ultima actualizacion': identity.updated_at.strftime('%d/%m/%Y %H:%M') if identity.updated_at else 'N/A',
+            'Version del documento': identity.version,
         }
         self._add_metadata_table(document, control_metadata)
 
@@ -727,24 +446,7 @@ class IdentidadDOCXGenerator:
         return docx_buffer
 
 
-# Funciones de conveniencia
-def generar_docx_politica_integral(politica, empresa=None, firmas=None, historial=None):
-    """
-    Genera DOCX de política integral.
-
-    Args:
-        politica: Instancia de PoliticaEspecifica con is_integral_policy=True (v3.1)
-        empresa: Instancia de EmpresaConfig (opcional)
-        firmas: QuerySet de FirmaDigital (opcional)
-        historial: QuerySet de HistorialVersion (opcional)
-
-    Returns:
-        BytesIO: Buffer con DOCX
-    """
-    generator = IdentidadDOCXGenerator(empresa=empresa)
-    return generator.generate_politica_integral_docx(politica, firmas, historial)
-
-
+# Funcion de conveniencia
 def generar_docx_identidad_completa(identity, empresa=None, **options):
     """
     Genera DOCX de identidad corporativa completa.
@@ -752,7 +454,7 @@ def generar_docx_identidad_completa(identity, empresa=None, **options):
     Args:
         identity: Instancia de CorporateIdentity
         empresa: Instancia de EmpresaConfig (opcional)
-        **options: include_politicas, include_valores, include_alcances
+        **options: include_valores, include_alcances
 
     Returns:
         BytesIO: Buffer con DOCX

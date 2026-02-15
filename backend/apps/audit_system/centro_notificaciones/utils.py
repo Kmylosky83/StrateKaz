@@ -757,7 +757,7 @@ def notificar_politica_revision_pendiente(politica, cargo_revisor, usuario_solic
     pendiente de revisión técnica.
 
     Args:
-        politica: Instancia de PoliticaEspecifica
+        politica: Instancia del documento
         cargo_revisor: Cargo que debe revisar (instancia o ID)
         usuario_solicitante: Usuario que envió a revisión (opcional)
 
@@ -794,7 +794,7 @@ def notificar_politica_aprobacion_pendiente(politica, cargo_aprobador, usuario_r
     pendiente de aprobación final.
 
     Args:
-        politica: Instancia de PoliticaEspecifica
+        politica: Instancia del documento
         cargo_aprobador: Cargo que debe aprobar (instancia o ID)
         usuario_revisor: Usuario que aprobó la revisión técnica (opcional)
 
@@ -830,7 +830,7 @@ def notificar_politica_rechazada(politica, usuario_que_rechazo, motivo_rechazo, 
     Notifica al creador de la política que fue rechazada.
 
     Args:
-        politica: Instancia de PoliticaEspecifica
+        politica: Instancia del documento
         usuario_que_rechazo: Usuario que rechazó la política
         motivo_rechazo: Motivo del rechazo
         usuario_creador: Usuario que creó la política (si no se pasa, se usa created_by)
@@ -873,7 +873,7 @@ def notificar_politica_aprobada(politica, usuario_aprobador, notificar_creador=T
     Notifica que una política ha sido aprobada y está lista para codificación.
 
     Args:
-        politica: Instancia de PoliticaEspecifica
+        politica: Instancia del documento
         usuario_aprobador: Usuario que aprobó la política
         notificar_creador: Si debe notificar al creador original
         cargo_codificador: Cargo responsable de codificar en Gestor Documental
@@ -933,7 +933,7 @@ def notificar_politica_publicada(politica, codigo_documento, usuarios_a_notifica
     Notifica que una política ha sido publicada en el Gestor Documental.
 
     Args:
-        politica: Instancia de PoliticaEspecifica
+        politica: Instancia del documento
         codigo_documento: Código asignado en el Gestor Documental
         usuarios_a_notificar: Lista de usuarios a notificar (opcional, por defecto el creador)
 

@@ -908,9 +908,7 @@ export const useIntegracionLogs = (id: number, filters?: IntegracionLogsFilters)
   });
 };
 
-// ==================== POLÍTICAS ====================
-// NOTA: Los hooks de políticas fueron migrados a usePoliticas.ts (Sistema Unificado v3.0)
-// Ver: ./usePoliticas.ts para el nuevo sistema de políticas
+// NOTA v4.0: Políticas eliminadas de Identidad. Se gestionan desde Gestión Documental.
 
 // --- Reorder Values (for Drag & Drop) ---
 

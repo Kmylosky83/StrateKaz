@@ -8,8 +8,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from datetime import timedelta
 from apps.gestion_estrategica.identidad.models import (
-    CorporateIdentity, CorporateValue, AlcanceSistema,
-    PoliticaEspecifica  # v3.1: PoliticaIntegral consolidada en PoliticaEspecifica con is_integral_policy=True
+    CorporateIdentity, CorporateValue, AlcanceSistema
 )
 from apps.gestion_estrategica.configuracion.models import NormaISO
 from apps.core.models import User
@@ -56,38 +55,6 @@ class Command(BaseCommand):
 <li><strong>Expansión regional</strong> con presencia en toda la Costa Caribe</li>
 </ol>
 <p><em>Transformando el presente, cuidando el futuro.</em></p>''',
-
-                'integral_policy': '''<h2>Política Integral de Gestión</h2>
-<p><strong>Grasas y Huesos del Norte S.A.S.</strong> se compromete con la excelencia en todos sus procesos mediante:</p>
-
-<h3>Calidad (ISO 9001)</h3>
-<ul>
-<li>Garantizar productos que cumplan los requisitos de nuestros clientes</li>
-<li>Mejorar continuamente nuestros procesos y servicios</li>
-</ul>
-
-<h3>Seguridad y Salud en el Trabajo (SG-SST / ISO 45001)</h3>
-<ul>
-<li>Prevenir lesiones y enfermedades laborales</li>
-<li>Proporcionar condiciones de trabajo seguras y saludables</li>
-<li>Consultar y promover la participación de los trabajadores</li>
-</ul>
-
-<h3>Medio Ambiente (ISO 14001)</h3>
-<ul>
-<li>Minimizar el impacto ambiental de nuestras operaciones</li>
-<li>Usar eficientemente los recursos naturales</li>
-<li>Prevenir la contaminación en origen</li>
-</ul>
-
-<h3>Seguridad Vial (PESV)</h3>
-<ul>
-<li>Proteger la vida de conductores, pasajeros y peatones</li>
-<li>Mantener una flota vehicular en óptimas condiciones</li>
-<li>Promover una cultura de conducción responsable</li>
-</ul>
-
-<p><em>Firmada por la Alta Dirección</em></p>''',
 
                 'effective_date': timezone.now().date(),
                 'version': '1.0',
@@ -301,155 +268,6 @@ class Command(BaseCommand):
                 self.stdout.write(f'  [+] Alcance "{alcance_data["norma_code"]}" creado')
 
         # =====================================================================
-        # 4. POLÍTICAS INTEGRALES (v3.1: usando PoliticaEspecifica con is_integral_policy=True)
-        # =====================================================================
-        politica_integral, created = PoliticaEspecifica.objects.get_or_create(
-            identity=identity,
-            code='POL-INT-001',
-            defaults={
-                'title': 'Política Integral de Gestión',
-                'content': identity.integral_policy,
-                'status': 'VIGENTE',
-                'version': '1.0',
-                'effective_date': timezone.now().date(),
-                'expiry_date': (timezone.now() + timedelta(days=365)).date(),
-                'change_reason': 'Versión inicial de la política integral',
-                'is_integral_policy': True,  # v3.1: Flag para políticas integrales
-                'is_active': True,
-                'created_by': user,
-            }
-        )
-        if created:
-            # Firmar la política
-            politica_integral.sign(user)
-            self.stdout.write(self.style.SUCCESS('  [OK] Politica Integral v1.0 creada y firmada'))
-
-        # Crear borrador de nueva versión
-        borrador, created = PoliticaEspecifica.objects.get_or_create(
-            identity=identity,
-            code='POL-INT-002',
-            defaults={
-                'title': 'Política Integral de Gestión - Actualización',
-                'content': '''<h2>Política Integral de Gestión v2.0</h2>
-<p><strong>Grasas y Huesos del Norte S.A.S.</strong> reafirma su compromiso con:</p>
-<ul>
-<li><strong>Calidad:</strong> Productos que superan las expectativas del cliente</li>
-<li><strong>Seguridad:</strong> Cero accidentes es nuestra meta</li>
-<li><strong>Ambiente:</strong> Operaciones eco-eficientes</li>
-<li><strong>Vialidad:</strong> Movilidad segura siempre</li>
-</ul>
-<p><em>Esta versión incorpora los nuevos requisitos de ISO 45001:2018</em></p>''',
-                'status': 'BORRADOR',
-                'version': '2.0',
-                'effective_date': (timezone.now() + timedelta(days=30)).date(),
-                'change_reason': 'Actualización para alineación con ISO 45001:2018',
-                'is_integral_policy': True,  # v3.1: Flag para políticas integrales
-                'is_active': True,
-                'created_by': user,
-            }
-        )
-        if created:
-            self.stdout.write('  [+] Politica Integral v2.0 (Borrador) creada')
-
-        # =====================================================================
-        # 6. POLITICAS ESPECIFICAS
-        # =====================================================================
-        politicas_especificas_data = [
-            {
-                'norma_code': 'SG_SST',
-                'code': 'POL-SST-001',
-                'title': 'Politica de Seguridad y Salud en el Trabajo',
-                'content': '''<h2>Politica de Seguridad y Salud en el Trabajo</h2>
-<p><strong>Grasas y Huesos del Norte S.A.S.</strong> considera que su capital mas importante son sus trabajadores, por lo cual se compromete a:</p>
-<ol>
-<li>Identificar los peligros, evaluar y valorar los riesgos</li>
-<li>Proteger la seguridad y salud de todos los trabajadores</li>
-<li>Cumplir la normatividad nacional vigente en SST</li>
-<li>Promover la participacion de todos los trabajadores</li>
-<li>Disponer de los recursos necesarios</li>
-<li>Garantizar la consulta y participacion de los trabajadores</li>
-</ol>
-<p>Esta politica aplica a todos los trabajadores, contratistas y visitantes.</p>''',
-                'status': 'VIGENTE',
-                'version': '3.0',
-                'review_date': (timezone.now() + timedelta(days=15)).date(),
-            },
-            {
-                'norma_code': 'PESV',
-                'code': 'POL-PESV-001',
-                'title': 'Politica de Seguridad Vial',
-                'content': '''<h2>Politica de Seguridad Vial</h2>
-<p>Comprometidos con la <strong>prevencion de accidentes de transito</strong>, establecemos:</p>
-<ul>
-<li><strong>Cero tolerancia</strong> al consumo de alcohol y sustancias psicoactivas</li>
-<li>Respeto estricto a los <strong>limites de velocidad</strong></li>
-<li>Uso obligatorio del <strong>cinturon de seguridad</strong></li>
-<li>Prohibicion del uso del <strong>celular mientras se conduce</strong></li>
-<li><strong>Mantenimiento preventivo</strong> de toda la flota vehicular</li>
-</ul>
-<p><em>La vida no tiene precio, maneja con responsabilidad.</em></p>''',
-                'status': 'VIGENTE',
-                'version': '2.0',
-                'review_date': (timezone.now() + timedelta(days=90)).date(),
-            },
-            {
-                'norma_code': 'ISO_14001',
-                'code': 'POL-AMB-001',
-                'title': 'Politica Ambiental',
-                'content': '''<h2>Politica Ambiental</h2>
-<p>Comprometidos con el <strong>desarrollo sostenible</strong>, nos comprometemos a:</p>
-<ul>
-<li>Prevenir la contaminacion en todas nuestras operaciones</li>
-<li>Minimizar la generacion de residuos y emisiones</li>
-<li>Usar eficientemente el agua y la energia</li>
-<li>Cumplir con la legislacion ambiental aplicable</li>
-<li>Mejorar continuamente nuestro desempeno ambiental</li>
-</ul>
-<p><strong>Objetivo 2025:</strong> Reducir nuestra huella de carbono en 20%</p>''',
-                'status': 'EN_REVISION',
-                'version': '1.1',
-                'review_date': (timezone.now() - timedelta(days=5)).date(),
-            },
-            {
-                'norma_code': 'ISO_9001',
-                'code': 'POL-CAL-001',
-                'title': 'Politica de Calidad',
-                'content': '''<h2>Politica de Calidad</h2>
-<p>Nuestro compromiso con la <strong>excelencia</strong>:</p>
-<ul>
-<li>Productos que cumplen especificaciones tecnicas</li>
-<li>Trazabilidad completa desde el origen</li>
-<li>Control de calidad en cada etapa del proceso</li>
-<li>Atencion oportuna a los requerimientos del cliente</li>
-<li>Mejora continua de procesos y productos</li>
-</ul>''',
-                'status': 'BORRADOR',
-                'version': '1.0',
-            },
-        ]
-
-        for pol_data in politicas_especificas_data:
-            norma = normas_map.get(pol_data['norma_code'])
-            politica, created = PoliticaEspecifica.objects.get_or_create(
-                identity=identity,
-                code=pol_data['code'],
-                defaults={
-                    'norma_iso': norma,
-                    'title': pol_data['title'],
-                    'content': pol_data['content'],
-                    'status': pol_data['status'],
-                    'version': pol_data['version'],
-                    'effective_date': timezone.now().date(),
-                    'review_date': pol_data.get('review_date'),
-                    'is_active': True,
-                    'created_by': user,
-                }
-            )
-            if created:
-                status_mark = '[OK]' if pol_data['status'] == 'VIGENTE' else '[+]'
-                self.stdout.write(f'  {status_mark} Politica "{pol_data["title"]}" ({pol_data["status"]}) creada')
-
-        # =====================================================================
         # RESUMEN
         # =====================================================================
         self.stdout.write('')
@@ -457,24 +275,15 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS('SEED DE IDENTIDAD CORPORATIVA COMPLETADO'))
         self.stdout.write(self.style.SUCCESS('=' * 60))
 
-        # Estadísticas (v3.1: políticas integrales consolidadas en PoliticaEspecifica)
-        total_politicas = PoliticaEspecifica.objects.filter(identity=identity).count()
-        politicas_integrales = PoliticaEspecifica.objects.filter(identity=identity, is_integral_policy=True).count()
-        politicas_especificas = PoliticaEspecifica.objects.filter(identity=identity, is_integral_policy=False).count()
-
         self.stdout.write(f'''
 Datos creados:
   - 1 Identidad Corporativa
   - {CorporateValue.objects.filter(identity=identity).count()} Valores Corporativos
   - {AlcanceSistema.objects.filter(identity=identity).count()} Alcances del Sistema
-  - {total_politicas} Politicas totales:
-    - {politicas_integrales} Politicas Integrales (is_integral_policy=True)
-    - {politicas_especificas} Politicas Especificas (is_integral_policy=False)
 
 Para probar:
   1. Ir a Direccion Estrategica > Identidad Corporativa
-  2. Verificar las secciones: Mision/Vision, Valores, Politicas
+  2. Verificar las secciones: Mision/Vision, Valores
   3. Probar el Drag & Drop de valores
   4. Probar el editor de texto enriquecido
-  5. Revisar el workflow de politicas
         ''')

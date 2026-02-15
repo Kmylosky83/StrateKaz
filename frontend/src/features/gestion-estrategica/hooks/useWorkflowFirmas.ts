@@ -144,6 +144,17 @@ export interface DelegarFirmaDTO {
   motivo: string;
 }
 
+export interface AsignarFirmantesDTO {
+  content_type: number;
+  object_id: string;
+  firmantes: Array<{
+    usuario_id: number;
+    cargo_id: string;
+    rol_firma: 'ELABORO' | 'REVISO' | 'APROBO' | 'VALIDO' | 'AUTORIZO';
+    orden: number;
+  }>;
+}
+
 // ==================== HOOK ====================
 
 /**
@@ -163,7 +174,7 @@ export function useWorkflowFirmas() {
       queryFn: async () => {
         const params = esMiTurno !== undefined ? { es_mi_turno: esMiTurno } : {};
         const response = await api.get<FirmaPendiente[]>(
-          '/api/workflows/firma-digital/firmas/mis_firmas_pendientes/',
+          '/workflows/firma-digital/firmas/mis_firmas_pendientes/',
           { params }
         );
         return response.data;
@@ -178,9 +189,7 @@ export function useWorkflowFirmas() {
     return useQuery<FirmaDigital>({
       queryKey: ['firma-digital', firmaId],
       queryFn: async () => {
-        const response = await api.get<FirmaDigital>(
-          `/api/workflows/firma-digital/firmas/${firmaId}/`
-        );
+        const response = await api.get<FirmaDigital>(`/workflows/firma-digital/firmas/${firmaId}/`);
         return response.data;
       },
       enabled: !!firmaId,
@@ -194,7 +203,7 @@ export function useWorkflowFirmas() {
     return useQuery<FirmaDigital[]>({
       queryKey: ['firmas-documento', contentType, objectId],
       queryFn: async () => {
-        const response = await api.get<FirmaDigital[]>('/api/workflows/firma-digital/firmas/', {
+        const response = await api.get<FirmaDigital[]>('/workflows/firma-digital/firmas/', {
           params: { content_type: contentType, object_id: objectId },
         });
         const data = response.data;
@@ -216,7 +225,7 @@ export function useWorkflowFirmas() {
         if (fechaHasta) params.fecha_hasta = fechaHasta;
 
         const response = await api.get<FirmaEstadisticas>(
-          '/api/workflows/firma-digital/firmas/estadisticas/',
+          '/workflows/firma-digital/firmas/estadisticas/',
           { params }
         );
         return response.data;
@@ -232,7 +241,7 @@ export function useWorkflowFirmas() {
   const crearProcesoFirmaMutation = useMutation({
     mutationFn: async (data: CreateProcesoFirmaDTO) => {
       const response = await api.post<ConfiguracionWorkflowFirma>(
-        '/api/workflows/firma-digital/firmas/',
+        '/workflows/firma-digital/firmas/',
         data
       );
       return response.data;
@@ -267,7 +276,7 @@ export function useWorkflowFirmas() {
       };
 
       const response = await api.post<FirmaDigital>(
-        `/api/workflows/firma-digital/firmas/${firmaId}/firmar/`,
+        `/workflows/firma-digital/firmas/${firmaId}/firmar/`,
         dto
       );
       return response.data;
@@ -292,7 +301,7 @@ export function useWorkflowFirmas() {
   const rechazarFirmaMutation = useMutation({
     mutationFn: async ({ firmaId, motivo }: { firmaId: number; motivo: string }) => {
       const response = await api.post<FirmaDigital>(
-        `/api/workflows/firma-digital/firmas/${firmaId}/rechazar/`,
+        `/workflows/firma-digital/firmas/${firmaId}/rechazar/`,
         { motivo }
       );
       return response.data;
@@ -321,7 +330,7 @@ export function useWorkflowFirmas() {
       motivo: string;
     }) => {
       const response = await api.post<FirmaDigital>(
-        `/api/workflows/firma-digital/firmas/${firmaId}/delegar/`,
+        `/workflows/firma-digital/firmas/${firmaId}/delegar/`,
         {
           nuevo_firmante_id: nuevoFirmanteId,
           motivo,
@@ -339,12 +348,34 @@ export function useWorkflowFirmas() {
   });
 
   /**
+   * Asignar firmantes a un documento (crea FirmaDigital PENDIENTE)
+   */
+  const asignarFirmantesMutation = useMutation({
+    mutationFn: async (data: AsignarFirmantesDTO) => {
+      const response = await api.post<{
+        mensaje: string;
+        firmas_creadas: FirmaDigital[];
+        documento_nuevo_estado: string;
+      }>('/workflows/firma-digital/firmas/asignar_firmantes/', data);
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['firmas-documento', variables.content_type, variables.object_id],
+      });
+      queryClient.invalidateQueries({ queryKey: ['firmas-pendientes'] });
+      queryClient.invalidateQueries({ queryKey: ['documentos'] });
+      queryClient.invalidateQueries({ queryKey: ['gestion-documental'] });
+    },
+  });
+
+  /**
    * Verificar integridad de firma
    */
   const verificarIntegridadMutation = useMutation({
     mutationFn: async (firmaId: number) => {
       const response = await api.get<{ is_valid: boolean; message: string }>(
-        `/api/workflows/firma-digital/firmas/${firmaId}/validar_integridad/`
+        `/workflows/firma-digital/firmas/${firmaId}/validar_integridad/`
       );
       return response.data;
     },
@@ -364,6 +395,7 @@ export function useWorkflowFirmas() {
     firmarDocumento: firmarDocumentoMutation.mutateAsync,
     rechazarFirma: rechazarFirmaMutation.mutateAsync,
     delegarFirma: delegarFirmaMutation.mutateAsync,
+    asignarFirmantes: asignarFirmantesMutation.mutateAsync,
     verificarIntegridad: verificarIntegridadMutation.mutateAsync,
 
     // Estados
@@ -372,11 +404,13 @@ export function useWorkflowFirmas() {
       firmarDocumentoMutation.isPending ||
       rechazarFirmaMutation.isPending ||
       delegarFirmaMutation.isPending ||
+      asignarFirmantesMutation.isPending ||
       verificarIntegridadMutation.isPending,
 
     isFirmando: firmarDocumentoMutation.isPending,
     isRechazando: rechazarFirmaMutation.isPending,
     isDelegando: delegarFirmaMutation.isPending,
+    isAsignandoFirmantes: asignarFirmantesMutation.isPending,
     isVerificando: verificarIntegridadMutation.isPending,
 
     // Errores
@@ -432,4 +466,20 @@ export function useMisFirmasPendientes(soloMiTurno = true) {
     firmarDocumento,
     isLoading: isLoading || isFirmando,
   };
+}
+
+/**
+ * Hook para obtener ContentType ID del modelo Documento (gestion documental)
+ */
+export function useDocumentoContentType() {
+  return useQuery<{ content_type_id: number; app_label: string; model: string }>({
+    queryKey: ['documento-content-type'],
+    queryFn: async () => {
+      const response = await api.get(
+        '/gestion-estrategica/gestion-documental/documentos/content_type_id/'
+      );
+      return response.data;
+    },
+    staleTime: Infinity, // ContentType IDs never change
+  });
 }

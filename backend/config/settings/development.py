@@ -67,6 +67,10 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:3010',
     'http://localhost:5173',
 ]
+# Regex para subdominios de tenant en desarrollo (demo.localhost:3010, etc.)
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r'^http://[\w-]+\.localhost:\d+$',
+]
 CORS_ALLOW_CREDENTIALS = True
 # Headers adicionales para multi-tenant
 CORS_ALLOW_HEADERS = (

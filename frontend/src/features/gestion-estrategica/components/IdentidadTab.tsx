@@ -4,12 +4,13 @@
  * Secciones dinámicas desde BD (TabSection.code):
  * - mision_vision: Misión y Visión (con glassmorphism y branding dinámico)
  * - valores: Valores Corporativos (con Drag & Drop)
- * - politicas: Sistema Unificado de Políticas
+ * - politicas: Políticas vigentes (read-only desde Gestión Documental)
  *
- * v3.0 - Mejoras:
+ * v4.0 - Mejoras:
  * - Diseño glassmorphism con colores del branding de la empresa
  * - Sistema unificado de políticas (modal único para todos los tipos)
  * - Eliminado código legacy de políticas integrales/específicas separadas
+ * - Políticas ahora son read-only desde Gestión Documental
  */
 import { useState, useEffect, useMemo } from 'react';
 import {
@@ -44,8 +45,8 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { Modules, Sections } from '@/constants/permissions';
 import { IdentityFormModal } from './modals/IdentityFormModal';
 import { ValoresDragDrop, type ViewMode } from './ValoresDragDrop';
-import { PoliciesList } from './politicas';
-import { useNormasISOActivas, usePoliticas } from '../hooks/usePoliticas';
+import { useDocumentos } from '../hooks/useGestionDocumental';
+import type { Documento } from '../types/gestion-documental.types';
 import type { CorporateIdentity } from '../types/strategic.types';
 import { cn } from '@/lib/utils';
 
@@ -100,7 +101,9 @@ const MisionVisionSection = ({ identity, onEdit, canEdit }: MisionVisionSectionP
         iconBgClass={colorClasses.badge}
         iconClass={colorClasses.icon}
         title="Misión y Visión"
-        description={`Versión ${identity.version} • Vigente desde ${parseLocalDate(identity.effective_date).toLocaleDateString('es-CO', {
+        description={`Versión ${identity.version} • Vigente desde ${parseLocalDate(
+          identity.effective_date
+        ).toLocaleDateString('es-CO', {
           year: 'numeric',
           month: 'long',
           day: 'numeric',
@@ -147,9 +150,7 @@ const MisionVisionSection = ({ identity, onEdit, canEdit }: MisionVisionSectionP
                 <DynamicIcon name="Compass" size={28} className="text-white" />
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Nuestra Misión
-                </h3>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Nuestra Misión</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   Razón de ser de {companyName}
                 </p>
@@ -157,10 +158,7 @@ const MisionVisionSection = ({ identity, onEdit, canEdit }: MisionVisionSectionP
             </div>
 
             {/* Divider */}
-            <div
-              className="h-1 w-16 rounded-full mb-6"
-              style={{ backgroundColor: primaryColor }}
-            />
+            <div className="h-1 w-16 rounded-full mb-6" style={{ backgroundColor: primaryColor }} />
 
             {/* Content */}
             <div
@@ -213,9 +211,7 @@ const MisionVisionSection = ({ identity, onEdit, canEdit }: MisionVisionSectionP
                 <DynamicIcon name="Eye" size={28} className="text-white" />
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Nuestra Visión
-                </h3>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Nuestra Visión</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   Hacia dónde nos dirigimos
                 </p>
@@ -291,10 +287,7 @@ const MisionVisionSection = ({ identity, onEdit, canEdit }: MisionVisionSectionP
             </div>
 
             {/* Divider */}
-            <div
-              className="h-1 w-16 rounded-full mb-6"
-              style={{ backgroundColor: '#10b981' }}
-            />
+            <div className="h-1 w-16 rounded-full mb-6" style={{ backgroundColor: '#10b981' }} />
 
             {/* Alcance General */}
             <div className="mb-6">
@@ -323,7 +316,7 @@ const MisionVisionSection = ({ identity, onEdit, canEdit }: MisionVisionSectionP
               )}
 
               {/* Procesos Cubiertos - Badges dinámicos desde ManyToMany */}
-              {(identity.procesos_cubiertos && identity.procesos_cubiertos.length > 0) && (
+              {identity.procesos_cubiertos && identity.procesos_cubiertos.length > 0 && (
                 <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-4 md:col-span-2 lg:col-span-1">
                   <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300 mb-3">
                     <Workflow className="w-4 h-4 text-purple-600" />
@@ -510,85 +503,111 @@ const ValoresSection = ({ identity, canEdit }: ValoresSectionProps) => {
 };
 
 // =============================================================================
-// SECCIÓN: POLÍTICAS (Sistema Unificado v3.0) - Vista 2B con Agrupación
+// SECCIÓN: POLÍTICAS (v4.0 - Read-only desde Gestión Documental)
 // =============================================================================
-interface PoliticasSectionProps {
-  identity: CorporateIdentity;
-  canEdit: boolean;
-}
 
-const PoliticasSection = ({ identity, canEdit }: PoliticasSectionProps) => {
+const PoliticasSection = ({ identity }: { identity: CorporateIdentity }) => {
   const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
   const colorClasses = getModuleColorClasses(moduleColor as ModuleColor);
 
-  // Estado controlado para búsqueda, filtros y creación
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterNormaId, setFilterNormaId] = useState<number | undefined>();
-  const [triggerCreate, setTriggerCreate] = useState(0);
+  // Obtener documentos tipo POL (políticas) vigentes desde Gestion Documental
+  const { data: documentosData, isLoading } = useDocumentos({ tipo_documento_codigo: 'POL' });
+  const documentos: Documento[] = Array.isArray(documentosData)
+    ? documentosData
+    : (documentosData?.results ?? []);
 
-  // Obtener normas/sistemas para el select (dinámico desde configuración)
-  const { data: normasISO = [] } = useNormasISOActivas();
-  const { data: politicasData } = usePoliticas({ identity: identity.id });
-  const politicasCount = politicasData?.results?.length || 0;
+  // Agrupar por norma ISO
+  const grouped = useMemo(() => {
+    const groups: Record<string, Documento[]> = {};
+    for (const doc of documentos) {
+      const key = doc.norma_iso_nombre || 'General';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(doc);
+    }
+    return groups;
+  }, [documentos]);
+
+  const totalPolicies = documentos.length;
 
   return (
     <div className="space-y-6">
-      {/* DataSection Header - Vista 2B con Agrupación */}
       <DataSection
         icon={Shield}
         iconBgClass={colorClasses.badge}
         iconClass={colorClasses.icon}
         title="Políticas"
-        description={`${politicasCount} política${politicasCount !== 1 ? 's' : ''} definida${politicasCount !== 1 ? 's' : ''}`}
-        action={
-          <div className="flex items-center gap-3">
-            {/* Búsqueda */}
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Buscar..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-40 pl-3 pr-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-opacity-50"
-              />
+        description={`${totalPolicies} política${totalPolicies !== 1 ? 's' : ''} registrada${totalPolicies !== 1 ? 's' : ''} en Gestión Documental`}
+      />
+
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i}>
+              <div className="p-4 animate-pulse-subtle">
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2" />
+                <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : totalPolicies === 0 ? (
+        <EmptyState
+          icon={<Shield className="w-12 h-12 text-gray-400" />}
+          title="Sin políticas registradas"
+          description="Las políticas se crean y gestionan desde el módulo Sistema de Gestión > Documentos. Crea un documento de tipo 'Política' para verlo aquí."
+        />
+      ) : (
+        <div className="space-y-6">
+          {Object.entries(grouped).map(([norma, docs]) => (
+            <div key={norma}>
+              <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+                {norma}
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {docs.map((doc) => (
+                  <Card key={doc.id} className="hover:shadow-md transition-shadow">
+                    <div className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-mono text-gray-500">{doc.codigo}</span>
+                            <Badge
+                              variant={
+                                doc.estado === 'PUBLICADO' || doc.estado === 'APROBADO'
+                                  ? 'success'
+                                  : doc.estado === 'BORRADOR'
+                                    ? 'default'
+                                    : 'warning'
+                              }
+                              size="sm"
+                            >
+                              {doc.estado}
+                            </Badge>
+                            {doc.es_politica_integral && (
+                              <Badge variant="info" size="sm">
+                                Integral
+                              </Badge>
+                            )}
+                          </div>
+                          <h5 className="font-medium text-gray-900 dark:text-white truncate">
+                            {doc.titulo}
+                          </h5>
+                          <p className="text-xs text-gray-500 mt-1">
+                            v{doc.version_actual} &middot;{' '}
+                            {doc.fecha_publicacion
+                              ? new Date(doc.fecha_publicacion).toLocaleDateString('es-CO')
+                              : 'Sin publicar'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
             </div>
-
-            {/* Filtro por norma/sistema */}
-            <select
-              value={filterNormaId || ''}
-              onChange={(e) => setFilterNormaId(e.target.value ? Number(e.target.value) : undefined)}
-              className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-opacity-50"
-            >
-              <option value="">Todas las normas</option>
-              {normasISO.map((n: { id: number; short_name?: string; name: string }) => (
-                <option key={n.id} value={n.id}>{n.short_name || n.name}</option>
-              ))}
-            </select>
-
-            {/* Botón Nueva Política */}
-            {canEdit && (
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => setTriggerCreate(prev => prev + 1)}
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Nueva Política
-              </Button>
-            )}
-          </div>
-        }
-      />
-
-      {/* Lista de políticas agrupadas por norma/sistema */}
-      <PoliciesList
-        identityId={identity.id}
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        filterNormaId={filterNormaId}
-        onFilterNormaChange={setFilterNormaId}
-        triggerCreate={triggerCreate}
-      />
+          ))}
+        </div>
+      )}
     </div>
   );
 };
@@ -614,9 +633,17 @@ export const IdentidadTab = ({ activeSection, triggerNewForm }: IdentidadTabProp
   const { data: identity, isLoading } = useActiveIdentity();
   const { canDo } = usePermissions();
 
-  const canEditIdentity = canDo(Modules.GESTION_ESTRATEGICA, Sections.IDENTIDAD_CORPORATIVA, 'edit');
+  const canEditIdentity = canDo(
+    Modules.GESTION_ESTRATEGICA,
+    Sections.IDENTIDAD_CORPORATIVA,
+    'edit'
+  );
   const canEditValues = canDo(Modules.GESTION_ESTRATEGICA, Sections.VALORES, 'edit');
-  const canCreateIdentity = canDo(Modules.GESTION_ESTRATEGICA, Sections.IDENTIDAD_CORPORATIVA, 'create');
+  const canCreateIdentity = canDo(
+    Modules.GESTION_ESTRATEGICA,
+    Sections.IDENTIDAD_CORPORATIVA,
+    'create'
+  );
 
   const [showIdentityModal, setShowIdentityModal] = useState(false);
   const [editingIdentity, setEditingIdentity] = useState<CorporateIdentity | null>(null);
@@ -662,11 +689,15 @@ export const IdentidadTab = ({ activeSection, triggerNewForm }: IdentidadTabProp
           icon={<DynamicIcon name="Compass" size={48} />}
           title="Sin Identidad Corporativa"
           description="No hay una identidad corporativa configurada. Crea una para definir la misión, visión y valores de la organización."
-          action={canCreateIdentity ? {
-            label: 'Crear Identidad Corporativa',
-            onClick: () => setShowIdentityModal(true),
-            icon: <Plus className="h-4 w-4" />,
-          } : undefined}
+          action={
+            canCreateIdentity
+              ? {
+                  label: 'Crear Identidad Corporativa',
+                  onClick: () => setShowIdentityModal(true),
+                  icon: <Plus className="h-4 w-4" />,
+                }
+              : undefined
+          }
         />
         <IdentityFormModal
           identity={null}
@@ -693,15 +724,14 @@ export const IdentidadTab = ({ activeSection, triggerNewForm }: IdentidadTabProp
         return <ValoresSection identity={identity} canEdit={canEditValues} />;
 
       case SECTION_KEYS.POLITICAS:
-        const canEditPoliticas = canDo(Modules.GESTION_ESTRATEGICA, Sections.POLITICAS, 'create');
-        return <PoliticasSection identity={identity} canEdit={canEditPoliticas} />;
+        return <PoliticasSection identity={identity} />;
 
       default:
         // Si no hay sección activa, mostrar Misión y Visión por defecto
         if (activeSection) {
           console.warn(
             `[IdentidadTab] Sección "${activeSection}" no encontrada en SECTION_KEYS. ` +
-            `Secciones disponibles: ${Object.values(SECTION_KEYS).join(', ')}`
+              `Secciones disponibles: ${Object.values(SECTION_KEYS).join(', ')}`
           );
         }
         return (

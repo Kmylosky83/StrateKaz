@@ -1,9 +1,15 @@
 /**
  * DocumentoFormModal - Modal principal para crear/editar Documentos.
+ *
+ * Cuando la plantilla seleccionada es tipo FORMULARIO:
+ * - Oculta textarea de contenido
+ * - Muestra DynamicFormRenderer con los campos de la plantilla
+ * - Guarda los valores en datos_formulario
  */
-import { useEffect } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { Modal, Button, Spinner } from '@/components/common';
+import { DynamicFormRenderer, validateDynamicForm } from '@/components/common/DynamicFormRenderer';
 import {
   useCreateDocumento,
   useUpdateDocumento,
@@ -11,11 +17,14 @@ import {
   useTiposDocumento,
   usePlantillasDocumento,
   usePlantillaDocumento,
+  useCamposFormulario,
 } from '@/features/gestion-estrategica/hooks/useGestionDocumental';
+import { camposToDynamicFields } from '@/features/gestion-estrategica/utils/campoMapper';
 import { useAuthStore } from '@/store/authStore';
 import type {
   CreateDocumentoDTO,
   ClasificacionDocumento,
+  CampoFormulario,
 } from '@/features/gestion-estrategica/types/gestion-documental.types';
 
 interface DocumentoFormModalProps {
@@ -25,7 +34,7 @@ interface DocumentoFormModalProps {
 }
 
 const CLASIFICACION_OPTIONS: { value: ClasificacionDocumento; label: string }[] = [
-  { value: 'PUBLICO', label: 'Público' },
+  { value: 'PUBLICO', label: 'Publico' },
   { value: 'INTERNO', label: 'Interno' },
   { value: 'CONFIDENCIAL', label: 'Confidencial' },
   { value: 'RESTRINGIDO', label: 'Restringido' },
@@ -39,6 +48,9 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
   const createMutation = useCreateDocumento();
   const updateMutation = useUpdateDocumento();
   const user = useAuthStore((s) => s.user);
+
+  // Form values for dynamic form
+  const [formValues, setFormValues] = useState<Record<string, unknown>>({});
 
   const {
     register,
@@ -82,6 +94,14 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
         observaciones: existing.observaciones || '',
         elaborado_por: existing.elaborado_por?.id || user?.id || 0,
       });
+      // Load existing form data
+      if (existing.datos_formulario) {
+        const parsed =
+          typeof existing.datos_formulario === 'string'
+            ? JSON.parse(existing.datos_formulario)
+            : existing.datos_formulario;
+        setFormValues(parsed);
+      }
     } else if (!isEdit) {
       reset({
         titulo: '',
@@ -96,6 +116,7 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
         observaciones: '',
         elaborado_por: user?.id || 0,
       });
+      setFormValues({});
     }
   }, [isEdit, existing, reset, user?.id]);
 
@@ -105,18 +126,64 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
     selectedPlantillaId ? Number(selectedPlantillaId) : 0
   );
 
+  // Detect FORMULARIO plantilla
+  const isFormulario = plantillaDetail?.tipo_plantilla === 'FORMULARIO';
+
+  // Load campos for FORMULARIO plantilla
+  const { data: camposRaw } = useCamposFormulario(
+    isFormulario && plantillaDetail?.id ? plantillaDetail.id : 0
+  );
+  const dynamicFields = useMemo(
+    () => (camposRaw ? camposToDynamicFields(camposRaw as CampoFormulario[]) : []),
+    [camposRaw]
+  );
+
+  // Auto-load plantilla content for non-FORMULARIO
   useEffect(() => {
-    if (plantillaDetail?.contenido_plantilla && !isEdit) {
+    if (plantillaDetail?.contenido_plantilla && !isEdit && !isFormulario) {
       setValue('contenido', plantillaDetail.contenido_plantilla);
     }
-  }, [plantillaDetail, setValue, isEdit]);
+  }, [plantillaDetail, setValue, isEdit, isFormulario]);
+
+  // Reset form values when switching away from FORMULARIO
+  useEffect(() => {
+    if (!isFormulario) {
+      setFormValues({});
+    }
+  }, [isFormulario]);
+
+  const handleFormValueChange = useCallback((fieldName: string, value: unknown) => {
+    setFormValues((prev) => ({ ...prev, [fieldName]: value }));
+  }, []);
+
+  // Validate dynamic form
+  const dynamicErrors = useMemo(() => {
+    if (!isFormulario || dynamicFields.length === 0) return {};
+    return validateDynamicForm(dynamicFields, formValues);
+  }, [isFormulario, dynamicFields, formValues]);
 
   const onSubmit = async (data: CreateDocumentoDTO) => {
-    const payload = {
+    // Validate dynamic form before submit
+    if (isFormulario && dynamicFields.length > 0) {
+      const validationErrors = validateDynamicForm(dynamicFields, formValues);
+      if (Object.keys(validationErrors).length > 0) {
+        return; // Show validation errors in the form
+      }
+    }
+
+    const payload: CreateDocumentoDTO = {
       ...data,
       tipo_documento: Number(data.tipo_documento),
       elaborado_por: user?.id || 0,
     };
+
+    // For FORMULARIO, save form data and clear contenido
+    if (isFormulario) {
+      payload.datos_formulario = formValues;
+      if (!payload.contenido) {
+        payload.contenido = '';
+      }
+    }
 
     if (isEdit && documentoId) {
       await updateMutation.mutateAsync({ id: documentoId, data: payload });
@@ -131,7 +198,12 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
 
   // Filter plantillas by selected tipo
   const filteredPlantillas = (
-    (plantillas as { id: number; nombre: string; tipo_documento?: { id: number } | number }[]) || []
+    (plantillas as {
+      id: number;
+      nombre: string;
+      tipo_documento?: { id: number } | number;
+      tipo_plantilla?: string;
+    }[]) || []
   ).filter((p) => {
     const tipoId = typeof p.tipo_documento === 'object' ? p.tipo_documento?.id : p.tipo_documento;
     return !selectedTipo || tipoId === Number(selectedTipo);
@@ -152,7 +224,7 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
       isOpen={isOpen}
       onClose={onClose}
       title={isEdit ? 'Editar Documento' : 'Crear Documento'}
-      size="3xl"
+      size={isFormulario ? '5xl' : '3xl'}
     >
       <form
         onSubmit={handleSubmit(onSubmit)}
@@ -160,10 +232,10 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
       >
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Título *
+            Titulo *
           </label>
           <input
-            {...register('titulo', { required: 'Título es requerido' })}
+            {...register('titulo', { required: 'Titulo es requerido' })}
             className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="Procedimiento de Control de Documentos"
           />
@@ -206,6 +278,7 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
               {filteredPlantillas.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.nombre}
+                  {p.tipo_plantilla === 'FORMULARIO' ? ' (Formulario)' : ''}
                 </option>
               ))}
             </select>
@@ -213,7 +286,7 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Clasificación
+              Clasificacion
             </label>
             <select
               {...register('clasificacion')}
@@ -240,20 +313,40 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Contenido *
-          </label>
-          <textarea
-            {...register('contenido', { required: 'Contenido es requerido' })}
-            rows={10}
-            className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Contenido del documento en formato HTML o Markdown..."
-          />
-          {errors.contenido && (
-            <p className="text-xs text-red-500 mt-1">{errors.contenido.message}</p>
-          )}
-        </div>
+        {/* Content: DynamicFormRenderer for FORMULARIO, textarea otherwise */}
+        {isFormulario && dynamicFields.length > 0 ? (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Formulario
+            </label>
+            <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800/50">
+              <DynamicFormRenderer
+                fields={dynamicFields}
+                values={formValues}
+                onChange={handleFormValueChange}
+                errors={dynamicErrors}
+                useGridLayout
+              />
+            </div>
+          </div>
+        ) : (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Contenido {!isFormulario && '*'}
+            </label>
+            <textarea
+              {...register('contenido', {
+                required: !isFormulario ? 'Contenido es requerido' : false,
+              })}
+              rows={10}
+              className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Contenido del documento en formato HTML o Markdown..."
+            />
+            {errors.contenido && (
+              <p className="text-xs text-red-500 mt-1">{errors.contenido.message}</p>
+            )}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -269,7 +362,7 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Revisión Programada
+              Revision Programada
             </label>
             <input
               type="date"

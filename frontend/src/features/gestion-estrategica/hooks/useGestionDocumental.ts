@@ -295,6 +295,27 @@ export function useDeleteCampoFormulario() {
   });
 }
 
+export function useReorderCampos() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      plantillaId,
+      data,
+    }: {
+      plantillaId: number;
+      data: Array<{ id: number; orden: number }>;
+    }) => campoFormularioApi.reordenar(data).then(() => plantillaId),
+    onSuccess: (plantillaId) => {
+      queryClient.invalidateQueries({
+        queryKey: gestionDocumentalKeys.camposFormulario(plantillaId),
+      });
+    },
+    onError: () => {
+      toast.error('Error al reordenar campos');
+    },
+  });
+}
+
 // ==================== FIRMAS (usa workflow_engine) ====================
 
 export function useFirmasDocumento(documentoId: number) {

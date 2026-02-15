@@ -271,6 +271,10 @@ export type { DataGridProps } from './DataGrid';
 export { DynamicFormRenderer, validateDynamicForm } from './DynamicFormRenderer';
 export type { DynamicFieldDefinition, DynamicFormRendererProps } from './DynamicFormRenderer';
 
+// FormBuilder (visual form builder for CampoFormulario)
+export { FormBuilder } from './FormBuilder';
+export type { FormBuilderProps } from './FormBuilder';
+
 // Export Button (CSV/Excel download from ViewSets with ExportMixin)
 export { ExportButton } from './ExportButton';
 export type { ExportButtonProps } from './ExportButton';

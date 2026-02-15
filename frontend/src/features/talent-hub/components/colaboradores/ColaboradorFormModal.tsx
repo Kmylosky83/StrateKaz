@@ -143,8 +143,12 @@ export const ColaboradorFormModal = ({
         segundo_nombre: colaborador.segundo_nombre || '',
         primer_apellido: colaborador.primer_apellido,
         segundo_apellido: colaborador.segundo_apellido || '',
-        cargo: String(colaborador.cargo?.id || ''),
-        area: String(colaborador.area?.id || ''),
+        cargo: String(
+          typeof colaborador.cargo === 'object' ? colaborador.cargo?.id : colaborador.cargo || ''
+        ),
+        area: String(
+          typeof colaborador.area === 'object' ? colaborador.area?.id : colaborador.area || ''
+        ),
         fecha_ingreso: colaborador.fecha_ingreso,
         fecha_retiro: colaborador.fecha_retiro,
         estado: colaborador.estado,

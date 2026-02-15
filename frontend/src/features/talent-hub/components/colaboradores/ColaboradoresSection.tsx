@@ -118,12 +118,12 @@ export const ColaboradoresSection = () => {
   const { data: areasData } = useAreas();
   const retirarMutation = useRetirarColaborador();
 
-  // Stats
+  // Stats — backend estadisticas retorna { total, activos, por_estado, por_tipo_contrato, por_area }
   const stats: StatItem[] = useMemo(
     () => [
       {
         label: 'Total Colaboradores',
-        value: statsData?.total || colaboradoresData?.count || 0,
+        value: statsData?.total || colaboradoresData?.length || 0,
         icon: Users,
         iconColor: 'info' as const,
       },
@@ -134,14 +134,14 @@ export const ColaboradoresSection = () => {
         iconColor: 'success' as const,
       },
       {
-        label: 'Ingresos del Mes',
-        value: statsData?.ingresos_mes || 0,
+        label: 'Inactivos',
+        value: statsData?.por_estado?.inactivo || 0,
         icon: UserPlus,
         iconColor: 'primary' as const,
       },
       {
-        label: 'Retiros del Mes',
-        value: statsData?.retiros_mes || 0,
+        label: 'Retirados',
+        value: statsData?.por_estado?.retirado || 0,
         icon: UserMinus,
         iconColor: 'danger' as const,
       },
@@ -190,17 +190,16 @@ export const ColaboradoresSection = () => {
   const confirmRetire = async () => {
     if (!retireTarget) return;
     await retirarMutation.mutateAsync({
-      id: retireTarget.id,
-      data: {
-        fecha_retiro: new Date().toISOString().split('T')[0],
-        motivo_retiro: 'Retiro voluntario',
-      },
+      id: String(retireTarget.id),
+      fecha_retiro: new Date().toISOString().split('T')[0],
+      motivo_retiro: 'Retiro voluntario',
     });
     setIsRetireOpen(false);
     setRetireTarget(null);
   };
 
-  const colaboradores = colaboradoresData?.results || [];
+  // useColaboradores ya devuelve Colaborador[] (hook desempaqueta .results)
+  const colaboradores = colaboradoresData || [];
 
   return (
     <div className="space-y-6">
@@ -350,14 +349,14 @@ export const ColaboradoresSection = () => {
                       <div className="flex items-center gap-1.5">
                         <Briefcase size={14} className="text-gray-400 shrink-0" />
                         <span className="text-sm text-gray-700 dark:text-gray-300 truncate max-w-[160px]">
-                          {colab.cargo?.nombre || '-'}
+                          {colab.cargo_nombre || '-'}
                         </span>
                       </div>
                     </td>
 
                     {/* Proceso (Area) */}
                     <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
-                      {colab.area?.nombre || '-'}
+                      {colab.area_nombre || '-'}
                     </td>
 
                     {/* Tipo contrato */}
@@ -422,9 +421,7 @@ export const ColaboradoresSection = () => {
         {/* Pagination info */}
         {!isLoading && colaboradores.length > 0 && (
           <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-            <span>
-              Mostrando {colaboradores.length} de {colaboradoresData?.count || 0} colaboradores
-            </span>
+            <span>Mostrando {colaboradores.length} colaboradores</span>
           </div>
         )}
       </Card>

@@ -9,19 +9,9 @@
 // ENUMS Y CHOICES
 // =============================================================================
 
-export type TipoDocumento =
-  | 'CC'
-  | 'CE'
-  | 'TI'
-  | 'PA'
-  | 'PEP'
-  | 'PPT';
+export type TipoDocumento = 'CC' | 'CE' | 'TI' | 'PA' | 'PEP' | 'PPT';
 
-export type EstadoColaborador =
-  | 'activo'
-  | 'inactivo'
-  | 'suspendido'
-  | 'retirado';
+export type EstadoColaborador = 'activo' | 'inactivo' | 'suspendido' | 'retirado';
 
 export type TipoContratoColaborador =
   | 'indefinido'
@@ -40,11 +30,7 @@ export type NivelEstudio =
   | 'maestria'
   | 'doctorado';
 
-export type NivelIdioma =
-  | 'basico'
-  | 'intermedio'
-  | 'avanzado'
-  | 'nativo';
+export type NivelIdioma = 'basico' | 'intermedio' | 'avanzado' | 'nativo';
 
 export type TipoMovimiento =
   | 'contratacion'
@@ -57,15 +43,7 @@ export type TipoMovimiento =
   | 'reactivacion'
   | 'retiro';
 
-export type TipoSangre =
-  | 'O+'
-  | 'O-'
-  | 'A+'
-  | 'A-'
-  | 'B+'
-  | 'B-'
-  | 'AB+'
-  | 'AB-';
+export type TipoSangre = 'O+' | 'O-' | 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-';
 
 export type TipoBanco =
   | 'bancolombia'
@@ -81,22 +59,11 @@ export type TipoBanco =
   | 'daviplata'
   | 'otro';
 
-export type TipoCuenta =
-  | 'ahorros'
-  | 'corriente';
+export type TipoCuenta = 'ahorros' | 'corriente';
 
-export type Genero =
-  | 'M'
-  | 'F'
-  | 'O'
-  | 'N';
+export type Genero = 'M' | 'F' | 'O' | 'N';
 
-export type EstadoCivil =
-  | 'soltero'
-  | 'casado'
-  | 'union_libre'
-  | 'divorciado'
-  | 'viudo';
+export type EstadoCivil = 'soltero' | 'casado' | 'union_libre' | 'divorciado' | 'viudo';
 
 // =============================================================================
 // INTERFACES - Colaborador
@@ -125,15 +92,12 @@ export interface Colaborador {
   };
 
   // Estructura organizacional
-  cargo: {
-    id: string;
-    nombre: string;
-    codigo?: string;
-  };
-  area: {
-    id: string;
-    nombre: string;
-  };
+  // List serializer: cargo/area son IDs (number), con _nombre como campo plano
+  // Detail serializer: cargo_data/area_data son objetos anidados
+  cargo: number | { id: string; nombre: string; codigo?: string };
+  cargo_nombre?: string;
+  area: number | { id: string; nombre: string };
+  area_nombre?: string;
 
   // Información laboral
   fecha_ingreso: string;
@@ -561,12 +525,9 @@ export interface HistorialLaboralFilters {
 export interface ColaboradorEstadisticas {
   total: number;
   activos: number;
-  por_estado: Record<EstadoColaborador, number>;
-  por_tipo_contrato: Record<TipoContratoColaborador, number>;
+  por_estado: Record<string, number>;
+  por_tipo_contrato: Record<string, number>;
   por_area: Record<string, number>;
-  ingresos_mes: number;
-  retiros_mes: number;
-  antiguedad_promedio: number;
 }
 
 // =============================================================================

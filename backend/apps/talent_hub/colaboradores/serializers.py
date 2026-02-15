@@ -545,13 +545,10 @@ class ColaboradorCompleteSerializer(serializers.ModelSerializer):
 class ColaboradorEstadisticasSerializer(serializers.Serializer):
     """
     Serializer para estadísticas de colaboradores.
+    Campos deben coincidir con lo que retorna ColaboradorViewSet.estadisticas()
     """
-    total_colaboradores = serializers.IntegerField()
+    total = serializers.IntegerField()
     activos = serializers.IntegerField()
-    inactivos = serializers.IntegerField()
-    suspendidos = serializers.IntegerField()
-    retirados = serializers.IntegerField()
-    por_area = serializers.ListField()
-    por_cargo = serializers.ListField()
-    por_tipo_contrato = serializers.ListField()
-    antiguedad_promedio = serializers.FloatField()
+    por_estado = serializers.DictField(child=serializers.IntegerField(), required=False)
+    por_tipo_contrato = serializers.DictField(child=serializers.IntegerField(), required=False)
+    por_area = serializers.DictField(child=serializers.IntegerField(), required=False)

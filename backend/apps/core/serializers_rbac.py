@@ -599,9 +599,14 @@ class CargoCreateSerializer(serializers.ModelSerializer):
         ]
 
     def validate_code(self, value):
-        if Cargo.objects.filter(code=value).exists():
-            raise serializers.ValidationError('Este código de cargo ya existe')
-        return value.upper()
+        value = value.upper()
+        existing = Cargo.objects.filter(code=value).first()
+        if existing:
+            if existing.is_active:
+                raise serializers.ValidationError('Este codigo de cargo ya existe')
+            # Cargo inactivo: se reactivara en create()
+            self._reactivate_cargo = existing
+        return value
 
     def validate_funciones_responsabilidades(self, value):
         return normalize_funciones(value)
@@ -622,7 +627,16 @@ class CargoCreateSerializer(serializers.ModelSerializer):
         user = self.context['request'].user if 'request' in self.context else None
         validated_data['created_by'] = user
 
-        cargo = Cargo.objects.create(**validated_data)
+        # Reactivar cargo soft-deleted si existe
+        reactivate = getattr(self, '_reactivate_cargo', None)
+        if reactivate:
+            validated_data['is_active'] = True
+            for key, value in validated_data.items():
+                setattr(reactivate, key, value)
+            reactivate.save()
+            cargo = reactivate
+        else:
+            cargo = Cargo.objects.create(**validated_data)
 
         # Asignar riesgos ocupacionales (M2M)
         if riesgo_ids:

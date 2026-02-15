@@ -50,6 +50,7 @@ export function useMiPerfil() {
       }
     },
     staleTime: 10 * 60 * 1000,
+    retry: false,
   });
 }
 

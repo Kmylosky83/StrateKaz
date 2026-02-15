@@ -10,6 +10,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { Circle, MoreHorizontal, Check } from 'lucide-react';
 import { getIconComponent as getDynamicIcon } from '@/components/common/DynamicIcon';
+import { useIsMobile } from '@/hooks/useResponsive';
 import { cn } from '@/utils/cn';
 import type { TabSection } from '@/features/gestion-estrategica/types/modules.types';
 
@@ -130,6 +131,7 @@ export const HeaderTabs = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const colors = colorStyles[moduleColor];
+  const isMobile = useIsMobile(); // ✅ Hook centralizado
 
   // Calcular cuantos tabs caben en el contenedor
   const calculateVisibleTabs = useCallback(() => {
@@ -137,14 +139,13 @@ export const HeaderTabs = ({
 
     const containerWidth = containerRef.current.offsetWidth;
     // Cada tab ocupa aproximadamente 120px en desktop, 44px en mobile (solo icono)
-    const isMobile = window.innerWidth < 768;
     const tabWidth = isMobile ? 44 : 120;
     const moreButtonWidth = 44;
 
     // Calcular cuantos caben
     const maxTabs = Math.floor((containerWidth - moreButtonWidth) / tabWidth);
     setVisibleCount(Math.max(2, Math.min(maxTabs, sections.length)));
-  }, [sections.length]);
+  }, [sections.length, isMobile]);
 
   useEffect(() => {
     calculateVisibleTabs();
@@ -195,7 +196,10 @@ export const HeaderTabs = ({
     return (
       <div className={cn('flex items-center justify-center gap-1', className)}>
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-8 w-20 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse-subtle" />
+          <div
+            key={i}
+            className="h-8 w-20 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse-subtle"
+          />
         ))}
       </div>
     );

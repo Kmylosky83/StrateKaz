@@ -46,7 +46,8 @@ export default function UsersPage() {
   const [userToDelete, setUserToDelete] = useState<User | undefined>();
 
   const { data: usersData, isLoading: isLoadingUsers } = useUsers(filters);
-  const { data: cargos = [] } = useCargos();
+  const { data: cargosData } = useCargos();
+  const cargos = cargosData?.results || [];
   const { data: rolesData } = useRoles({ is_active: true });
   const createUserMutation = useCreateUser();
   const updateUserMutation = useUpdateUser();
@@ -136,9 +137,10 @@ export default function UsersPage() {
     });
   };
 
-  const activeFiltersCount = [filters.cargo, filters.is_active !== undefined ? 'active' : ''].filter(
-    Boolean
-  ).length;
+  const activeFiltersCount = [
+    filters.cargo,
+    filters.is_active !== undefined ? 'active' : '',
+  ].filter(Boolean).length;
 
   const hasActiveFilters = activeFiltersCount > 0;
 

@@ -3,6 +3,7 @@ ViewSets del módulo Core - API REST
 Sistema de Gestión StrateKaz
 """
 from rest_framework import viewsets, status, filters
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -28,19 +29,32 @@ from .serializers import (
 from .permissions import CanManageUsers, GranularActionPermission
 
 
+class CargoCatalogoPagination(PageNumberPagination):
+    """Paginacion para catalogo de cargos: 100 por defecto, max 200"""
+    page_size = 100
+    page_size_query_param = 'page_size'
+    max_page_size = 200
+
+
 class CargoViewSet(viewsets.ReadOnlyModelViewSet):
     """
     ViewSet de solo lectura para Cargos
-    
+
     Endpoints:
     - GET /api/core/cargos/ - Lista de cargos activos
     - GET /api/core/cargos/{id}/ - Detalle de cargo
+
+    Filtros:
+    - is_system=false (excluir cargos del sistema ADMIN/USUARIO)
+    - is_active=true/false
+    - level, parent_cargo
     """
     queryset = Cargo.objects.all()
     serializer_class = CargoSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = CargoCatalogoPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['level', 'is_active', 'parent_cargo']
+    filterset_fields = ['level', 'is_active', 'is_system', 'parent_cargo']
     search_fields = ['code', 'name', 'description']
     ordering_fields = ['level', 'name', 'created_at']
     ordering = ['level', 'name']
@@ -48,12 +62,12 @@ class CargoViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         """Filtrar solo cargos activos por defecto"""
         queryset = super().get_queryset()
-        
+
         # Si se especifica include_inactive=true, mostrar todos
         include_inactive = self.request.query_params.get('include_inactive', 'false')
         if include_inactive.lower() != 'true':
             queryset = queryset.filter(is_active=True)
-        
+
         return queryset.select_related('parent_cargo')
 
 

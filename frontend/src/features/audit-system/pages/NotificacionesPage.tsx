@@ -951,7 +951,8 @@ function PreferenciasTab() {
  */
 function MasivasTab() {
   const createMasiva = useCreateNotificacionMasiva();
-  const { data: cargos = [] } = useCargos();
+  const { data: cargosData } = useCargos();
+  const cargos = cargosData?.results || [];
   const { data: areasData } = useAreas();
   const { data: usersData } = useUsers({ is_active: true });
 

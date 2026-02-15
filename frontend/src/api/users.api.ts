@@ -30,7 +30,7 @@ export const usersAPI = {
 
     const queryString = params.toString();
     const url = queryString ? `/core/users/?${queryString}` : '/core/users/';
-    
+
     const response = await axiosInstance.get<PaginatedUsersResponse>(url);
     return response.data;
   },
@@ -77,11 +77,13 @@ export const usersAPI = {
   },
 
   /**
-   * Obtener lista de cargos
+   * Obtener lista de cargos (sin system cargos, page_size=100)
    */
-  getCargos: async (): Promise<Cargo[]> => {
-    const response = await axiosInstance.get<{ results: Cargo[] }>('/core/cargos/');
-    return response.data.results || response.data;
+  getCargos: async (): Promise<{ count: number; results: Cargo[] }> => {
+    const response = await axiosInstance.get<{ count: number; results: Cargo[] }>(
+      '/core/cargos/?is_system=false&page_size=100'
+    );
+    return response.data;
   },
 
   /**

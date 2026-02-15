@@ -487,6 +487,17 @@ class ColaboradorCreateUpdateSerializer(serializers.ModelSerializer):
                 'fecha_fin_contrato': 'Los contratos a término fijo deben tener fecha de finalización.'
             })
 
+        # Validar auxilio de transporte vs SMMLV (Colombia: aplica hasta 2x SMMLV)
+        salario = attrs.get('salario', getattr(self.instance, 'salario', None))
+        auxilio_transporte = attrs.get('auxilio_transporte', getattr(self.instance, 'auxilio_transporte', None))
+        if salario and auxilio_transporte:
+            from decimal import Decimal
+            # SMMLV 2026 Colombia: $1.423.500
+            SMMLV = Decimal('1423500')
+            TOPE_AUXILIO = SMMLV * 2
+            if salario > TOPE_AUXILIO:
+                attrs['auxilio_transporte'] = False
+
         return attrs
 
 

@@ -334,8 +334,15 @@ class VacanteActiva(BaseCompanyModel):
     ]
 
     # Relación con estructura organizacional
-    # NOTA: El modelo Vacante debe existir en estructura_cargos
-    # En caso de que aún no exista, se puede usar CharField temporal
+    cargo = models.ForeignKey(
+        'core.Cargo',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='vacantes_activas',
+        verbose_name='Cargo',
+        help_text='Cargo del organigrama asociado a la vacante'
+    )
     codigo_vacante = models.CharField(
         max_length=50,
         unique=True,
@@ -350,13 +357,17 @@ class VacanteActiva(BaseCompanyModel):
     )
     cargo_requerido = models.CharField(
         max_length=200,
+        blank=True,
+        default='',
         verbose_name='Cargo requerido',
-        help_text='Nombre del cargo a cubrir'
+        help_text='Nombre del cargo (auto-poblado desde FK cargo)'
     )
     area = models.CharField(
         max_length=100,
+        blank=True,
+        default='',
         verbose_name='Área',
-        help_text='Área o departamento donde se encuentra la vacante'
+        help_text='Área organizacional (auto-poblada desde cargo.area)'
     )
 
     # Detalles de la vacante
@@ -444,6 +455,11 @@ class VacanteActiva(BaseCompanyModel):
         validators=[MinValueValidator(1)],
         verbose_name='Número de posiciones',
         help_text='Cantidad de personas a contratar para esta vacante'
+    )
+    posiciones_cubiertas = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Posiciones cubiertas',
+        help_text='Número de posiciones ya cubiertas por contratación'
     )
     estado = models.CharField(
         max_length=20,
@@ -536,9 +552,27 @@ class VacanteActiva(BaseCompanyModel):
     def __str__(self):
         return f"{self.codigo_vacante} - {self.titulo}"
 
+    @property
+    def posiciones_pendientes(self):
+        """Posiciones que faltan por cubrir"""
+        return max(0, self.numero_posiciones - self.posiciones_cubiertas)
+
     def clean(self):
         """Validaciones del modelo"""
         super().clean()
+
+        # Auto-poblar cargo_requerido y area desde FK cargo
+        if self.cargo:
+            if not self.cargo_requerido:
+                self.cargo_requerido = self.cargo.name
+            if not self.area and self.cargo.area:
+                self.area = self.cargo.area.name
+
+        # Validar posiciones cubiertas
+        if self.posiciones_cubiertas > self.numero_posiciones:
+            raise ValidationError({
+                'posiciones_cubiertas': 'No puede exceder el número de posiciones.'
+            })
 
         # Validar rango salarial
         if self.salario_minimo and self.salario_maximo:

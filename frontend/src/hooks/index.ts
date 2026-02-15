@@ -30,15 +30,12 @@ export {
 } from './useIcons';
 export {
   useMediaQuery,
-  useIsMobile,
   useIsTablet,
   useIsDesktop,
   useBreakpoint,
-  useOrientation,
   usePrefersReducedMotion,
   useHasTouch,
   BREAKPOINTS,
-  type Breakpoint,
   type BreakpointState,
 } from './useMediaQuery';
 export {

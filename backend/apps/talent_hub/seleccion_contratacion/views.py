@@ -150,7 +150,7 @@ class VacanteActivaViewSet(viewsets.ModelViewSet):
         if area:
             queryset = queryset.filter(area__icontains=area)
 
-        return queryset.select_related('tipo_contrato', 'responsable_proceso', 'reclutador')
+        return queryset.select_related('cargo', 'cargo__area', 'tipo_contrato', 'responsable_proceso', 'reclutador')
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -444,24 +444,28 @@ class CandidatoViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def contratar(self, request, pk=None):
-        """Marca al candidato como contratado"""
-        candidato = self.get_object()
-        candidato.estado = 'contratado'
-        candidato.fecha_contratacion = request.data.get(
-            'fecha_contratacion',
-            timezone.now().date()
-        )
-        candidato.salario_ofrecido = request.data.get('salario_ofrecido')
-        candidato.updated_by = request.user
-        candidato.save()
+        """Marca al candidato como contratado y actualiza posiciones de la vacante"""
+        from django.db import transaction
 
-        # Actualizar posiciones cubiertas de la vacante
-        vacante = candidato.vacante
-        vacante.posiciones_cubiertas = (vacante.posiciones_cubiertas or 0) + 1
-        if vacante.posiciones_cubiertas >= vacante.numero_posiciones:
-            vacante.estado = 'cerrada'
-            vacante.fecha_cierre_real = timezone.now().date()
-        vacante.save()
+        candidato = self.get_object()
+
+        with transaction.atomic():
+            candidato.estado = 'contratado'
+            candidato.fecha_contratacion = request.data.get(
+                'fecha_contratacion',
+                timezone.now().date()
+            )
+            candidato.salario_ofrecido = request.data.get('salario_ofrecido')
+            candidato.updated_by = request.user
+            candidato.save()
+
+            # Actualizar posiciones cubiertas (thread-safe)
+            vacante = VacanteActiva.objects.select_for_update().get(pk=candidato.vacante_id)
+            vacante.posiciones_cubiertas = (vacante.posiciones_cubiertas or 0) + 1
+            if vacante.posiciones_cubiertas >= vacante.numero_posiciones:
+                vacante.estado = 'cerrada'
+                vacante.fecha_cierre_real = timezone.now().date()
+            vacante.save()
 
         serializer = CandidatoDetailSerializer(candidato)
         return Response(serializer.data)

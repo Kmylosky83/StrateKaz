@@ -118,6 +118,7 @@ class TipoPruebaSerializer(serializers.ModelSerializer):
 class VacanteActivaListSerializer(serializers.ModelSerializer):
     """Serializer para listado de VacanteActiva"""
 
+    cargo_nombre = serializers.CharField(source='cargo.name', read_only=True, default='')
     tipo_contrato_nombre = serializers.CharField(
         source='tipo_contrato.nombre',
         read_only=True
@@ -142,6 +143,8 @@ class VacanteActivaListSerializer(serializers.ModelSerializer):
         model = VacanteActiva
         fields = [
             'id',
+            'cargo',
+            'cargo_nombre',
             'codigo_vacante',
             'titulo',
             'cargo_requerido',
@@ -155,6 +158,7 @@ class VacanteActivaListSerializer(serializers.ModelSerializer):
             'modalidad',
             'modalidad_display',
             'numero_posiciones',
+            'posiciones_cubiertas',
             'fecha_apertura',
             'fecha_cierre_esperada',
             'dias_abierta',
@@ -169,6 +173,7 @@ class VacanteActivaListSerializer(serializers.ModelSerializer):
 class VacanteActivaDetailSerializer(serializers.ModelSerializer):
     """Serializer detallado para VacanteActiva"""
 
+    cargo_nombre = serializers.CharField(source='cargo.name', read_only=True, default='')
     tipo_contrato = TipoContratoSerializer(read_only=True)
     estado_display = serializers.CharField(
         source='get_estado_display',
@@ -193,6 +198,8 @@ class VacanteActivaDetailSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'empresa',
+            'cargo',
+            'cargo_nombre',
             'codigo_vacante',
             'titulo',
             'cargo_requerido',
@@ -214,6 +221,7 @@ class VacanteActivaDetailSerializer(serializers.ModelSerializer):
             'ubicacion',
             # Gestión
             'numero_posiciones',
+            'posiciones_cubiertas',
             'estado',
             'estado_display',
             'prioridad',
@@ -250,6 +258,7 @@ class VacanteActivaCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = VacanteActiva
         fields = [
+            'cargo',
             'codigo_vacante',
             'titulo',
             'cargo_requerido',

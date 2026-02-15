@@ -95,13 +95,10 @@ export function DataTableCard<T extends Record<string, unknown>>({
   isEmpty,
   className,
 }: DataTableCardProps<T>) {
-  const showPagination =
-    pagination && pagination.totalItems > pagination.pageSize;
+  const showPagination = pagination && pagination.totalItems > pagination.pageSize;
 
   // Calcular rango de items mostrados
-  const startItem = pagination
-    ? (pagination.currentPage - 1) * pagination.pageSize + 1
-    : 0;
+  const startItem = pagination ? (pagination.currentPage - 1) * pagination.pageSize + 1 : 0;
   const endItem = pagination
     ? Math.min(pagination.currentPage * pagination.pageSize, pagination.totalItems)
     : 0;
@@ -114,7 +111,7 @@ export function DataTableCard<T extends Record<string, unknown>>({
     if (!columns || !data) return null;
 
     return (
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto -mx-6 md:mx-0 md:rounded-lg">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
@@ -149,9 +146,7 @@ export function DataTableCard<T extends Record<string, unknown>>({
                       col.className
                     )}
                   >
-                    {col.render
-                      ? col.render(item)
-                      : (item[col.key] as ReactNode)}
+                    {col.render ? col.render(item) : (item[col.key] as ReactNode)}
                   </td>
                 ))}
               </tr>
@@ -168,9 +163,7 @@ export function DataTableCard<T extends Record<string, unknown>>({
       {(title || headerActions) && (
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
           {title && (
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              {title}
-            </h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
           )}
           {headerActions && (
             <div className={cn('flex items-center gap-2', !title && 'ml-auto')}>
@@ -192,26 +185,28 @@ export function DataTableCard<T extends Record<string, unknown>>({
           children
         )}
 
-        {/* Paginación */}
+        {/* Paginación - Touch-friendly en móvil */}
         {showPagination && (
           <div className="flex flex-col sm:flex-row items-center justify-between mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 gap-4">
-            <div className="text-sm text-gray-500 dark:text-gray-400">
+            <div className="text-sm text-gray-500 dark:text-gray-400 order-2 sm:order-1">
               Mostrando {startItem} - {endItem} de {pagination.totalItems}
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-3 w-full sm:w-auto order-1 sm:order-2">
               <Button
                 variant="outline"
-                size="sm"
+                size="md"
                 onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
                 disabled={pagination.hasPrevious === false || pagination.currentPage <= 1}
+                className="flex-1 sm:flex-initial"
               >
                 Anterior
               </Button>
               <Button
                 variant="outline"
-                size="sm"
+                size="md"
                 onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
                 disabled={pagination.hasNext === false}
+                className="flex-1 sm:flex-initial"
               >
                 Siguiente
               </Button>

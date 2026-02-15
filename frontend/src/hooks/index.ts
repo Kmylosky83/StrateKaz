@@ -69,3 +69,12 @@ export {
   type UseResponsiveViewOptions,
   type UseResponsiveViewReturn,
 } from './useResponsiveView';
+
+// Responsive (centralized responsive breakpoints)
+export {
+  useResponsive,
+  useIsMobile,
+  useOrientation,
+  type Breakpoint,
+  type ResponsiveState,
+} from './useResponsive';

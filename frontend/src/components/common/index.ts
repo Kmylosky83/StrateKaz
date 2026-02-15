@@ -233,6 +233,14 @@ export type { ViewToggleProps, ViewToggleOption } from './ViewToggle';
 export { Table } from './Table';
 export type { TableProps } from './Table';
 
+// Responsive Table (Mobile-first adaptive table with card view)
+export { ResponsiveTable } from './ResponsiveTable';
+export type { ResponsiveTableProps, ResponsiveTableColumn } from './ResponsiveTable';
+
+// Mobile Card List (Card view for mobile tables)
+export { MobileCardList, MobileCardListItem } from './MobileCardList';
+export type { MobileCardListProps } from './MobileCardList';
+
 // Pagination
 export { Pagination } from './Pagination';
 export type { PaginationProps } from './Pagination';

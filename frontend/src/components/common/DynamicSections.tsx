@@ -28,7 +28,17 @@ export interface DynamicSectionsProps {
   /** Variante visual */
   variant?: 'pills' | 'underline';
   /** Color del módulo para estilizado */
-  moduleColor?: 'purple' | 'blue' | 'green' | 'orange' | 'gray' | 'teal' | 'red' | 'yellow' | 'pink' | 'indigo';
+  moduleColor?:
+    | 'purple'
+    | 'blue'
+    | 'green'
+    | 'orange'
+    | 'gray'
+    | 'teal'
+    | 'red'
+    | 'yellow'
+    | 'pink'
+    | 'indigo';
   /** Clases adicionales */
   className?: string;
 }
@@ -145,7 +155,9 @@ export const DynamicSections = ({
   // Variante Pills
   if (variant === 'pills') {
     return (
-      <div className={cn('inline-flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg', className)}>
+      <div
+        className={cn('inline-flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg', className)}
+      >
         {tabs.map((tab) => {
           const isActive = activeSection === tab.id;
 
@@ -153,16 +165,18 @@ export const DynamicSections = ({
             <button
               key={tab.id}
               onClick={() => onChange(tab.id)}
+              title={tab.label}
               className={cn(
                 'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all',
                 'focus:outline-none focus:ring-2 focus:ring-offset-2',
-                isActive
-                  ? cn(colors.active, 'shadow-sm')
-                  : colors.inactive
+                // Mobile: min touch target 44px
+                'min-h-[44px] min-w-[44px]',
+                isActive ? cn(colors.active, 'shadow-sm') : colors.inactive
               )}
             >
               {tab.icon && <span className="flex-shrink-0">{tab.icon}</span>}
-              <span>{tab.label}</span>
+              {/* Icon-only en móvil, texto en desktop */}
+              <span className="hidden sm:inline">{tab.label}</span>
             </button>
           );
         })}
@@ -181,16 +195,20 @@ export const DynamicSections = ({
             <button
               key={tab.id}
               onClick={() => onChange(tab.id)}
+              title={tab.label}
               className={cn(
                 'inline-flex items-center gap-2 px-1 py-3 text-sm font-medium border-b-2 transition-all',
                 'focus:outline-none',
+                // Mobile: min touch target 44px
+                'min-h-[44px] min-w-[44px]',
                 isActive
                   ? colors.border
                   : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600'
               )}
             >
               {tab.icon && <span className="flex-shrink-0">{tab.icon}</span>}
-              <span>{tab.label}</span>
+              {/* Icon-only en móvil, texto en desktop */}
+              <span className="hidden sm:inline">{tab.label}</span>
             </button>
           );
         })}

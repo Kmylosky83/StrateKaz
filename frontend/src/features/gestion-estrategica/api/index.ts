@@ -40,3 +40,9 @@ export * from './kpisApi';
 
 // Gestión del Cambio
 export * from './gestionCambioApi';
+
+// Organización (Areas)
+export * from './organizacionApi';
+
+// Roles Adicionales
+export * from './rolesAdicionalesApi';

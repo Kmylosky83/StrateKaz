@@ -81,7 +81,7 @@ export const usersAPI = {
    */
   getCargos: async (): Promise<{ count: number; results: Cargo[] }> => {
     const response = await axiosInstance.get<{ count: number; results: Cargo[] }>(
-      '/core/cargos/?is_system=false&page_size=100'
+      '/core/cargos-rbac/?page_size=100'
     );
     return response.data;
   },

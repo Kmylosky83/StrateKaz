@@ -26,5 +26,8 @@ export { default as gestionAmbientalApi } from './gestionAmbientalApi';
 // Mejora Continua
 export { default as mejoraContinuaApi } from './mejoraContinuaApi';
 
+// Higiene Industrial
+export * from './higieneIndustrialApi';
+
 // Gestión de Comités
 export { default as comitesApi } from './comitesApi';

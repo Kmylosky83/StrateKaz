@@ -29,7 +29,10 @@ export type StatusPreset =
   | 'prioridad'
   | 'cumplimiento'
   | 'proceso'
-  | 'documento';
+  | 'documento'
+  | 'firma'
+  | 'plantilla'
+  | 'control';
 
 export interface StatusBadgeProps {
   /** Estado a mostrar (string o número para cumplimiento) */
@@ -137,6 +140,30 @@ const DOCUMENTO_MAP: Record<string, BadgeVariant> = {
   ARCHIVADO: 'gray',
 };
 
+/** Preset: firma (estados de firma digital) */
+const FIRMA_MAP: Record<string, BadgeVariant> = {
+  PENDIENTE: 'warning',
+  FIRMADO: 'success',
+  RECHAZADO: 'danger',
+  DELEGADO: 'info',
+};
+
+/** Preset: plantilla (estados de plantilla de documento) */
+const PLANTILLA_MAP: Record<string, BadgeVariant> = {
+  BORRADOR: 'gray',
+  ACTIVA: 'success',
+  OBSOLETA: 'danger',
+};
+
+/** Preset: control (tipos de control documental) */
+const CONTROL_MAP: Record<string, BadgeVariant> = {
+  DISTRIBUCION: 'info',
+  ACTUALIZACION: 'warning',
+  RETIRO: 'danger',
+  DESTRUCCION: 'danger',
+  ARCHIVO: 'gray',
+};
+
 function getCumplimientoVariant(value: number): BadgeVariant {
   if (value >= 90) return 'success';
   if (value >= 70) return 'primary';
@@ -160,14 +187,22 @@ function getVariantForPreset(preset: StatusPreset, status: string | number): Bad
       return PROCESO_MAP[statusStr] || 'gray';
     case 'documento':
       return DOCUMENTO_MAP[statusStr] || 'gray';
+    case 'firma':
+      return FIRMA_MAP[statusStr] || 'gray';
+    case 'plantilla':
+      return PLANTILLA_MAP[statusStr] || 'gray';
+    case 'control':
+      return CONTROL_MAP[statusStr] || 'gray';
     case 'default':
     default:
       // Try all maps in order of specificity
-      return PROCESO_MAP[statusStr]
-        || GRAVEDAD_MAP[statusStr]
-        || PRIORIDAD_MAP[statusStr]
-        || DOCUMENTO_MAP[statusStr]
-        || 'gray';
+      return (
+        PROCESO_MAP[statusStr] ||
+        GRAVEDAD_MAP[statusStr] ||
+        PRIORIDAD_MAP[statusStr] ||
+        DOCUMENTO_MAP[statusStr] ||
+        'gray'
+      );
   }
 }
 
@@ -187,10 +222,7 @@ export function StatusBadge({
   const resolvedVariant = variantOverride || getVariantForPreset(preset, status);
 
   const displayLabel =
-    label ||
-    (typeof status === 'number'
-      ? `${status}%`
-      : formatStatusLabel(String(status)));
+    label || (typeof status === 'number' ? `${status}%` : formatStatusLabel(String(status)));
 
   return (
     <Badge variant={resolvedVariant} size={size} className={className}>

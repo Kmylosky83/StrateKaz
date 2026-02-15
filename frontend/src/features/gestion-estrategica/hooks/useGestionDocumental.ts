@@ -2,11 +2,13 @@
  * Hooks React Query para Gestion Documental - Gestion Estrategica (N1)
  * Sistema de gestion documental con control de versiones
  *
- * Migrado desde: features/hseq/hooks/useSistemaDocumental.ts
- * NOTA: Firmas digitales ahora usan workflow_engine.firma_digital
+ * Usa createCrudHooks factory para CRUD basico.
+ * Hooks custom (aprobar, publicar, etc.) se mantienen manuales.
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { createQueryKeys } from '@/lib/query-keys';
+import { createCrudHooks } from '@/lib/crud-hooks-factory';
 import {
   tipoDocumentoApi,
   plantillaDocumentoApi,
@@ -16,6 +18,9 @@ import {
   controlDocumentalApi,
 } from '../api/gestionDocumentalApi';
 import type {
+  TipoDocumento,
+  PlantillaDocumento,
+  Documento,
   CreateTipoDocumentoDTO,
   UpdateTipoDocumentoDTO,
   CreatePlantillaDocumentoDTO,
@@ -29,184 +34,70 @@ import type {
 
 // ==================== QUERY KEYS ====================
 
+const gdTiposKeys = createQueryKeys('gd-tipos-documento');
+const gdPlantillasKeys = createQueryKeys('gd-plantillas');
+const gdDocumentosKeys = createQueryKeys('gd-documentos');
+
+// Legacy keys for custom hooks that need specific patterns
 export const gestionDocumentalKeys = {
   all: ['gestion-estrategica', 'gestion-documental'] as const,
-
-  // Tipos de Documento
-  tiposDocumento: () => [...gestionDocumentalKeys.all, 'tipos'] as const,
-  tipoDocumento: (id: number) => [...gestionDocumentalKeys.tiposDocumento(), id] as const,
-
-  // Plantillas
-  plantillas: () => [...gestionDocumentalKeys.all, 'plantillas'] as const,
-  plantilla: (id: number) => [...gestionDocumentalKeys.plantillas(), id] as const,
   plantillasByTipo: (tipoId: number) =>
-    [...gestionDocumentalKeys.plantillas(), 'tipo', tipoId] as const,
-
-  // Documentos
-  documentos: () => [...gestionDocumentalKeys.all, 'documentos'] as const,
-  documento: (id: number) => [...gestionDocumentalKeys.documentos(), id] as const,
-  documentosByTipo: (tipoId: number) =>
-    [...gestionDocumentalKeys.documentos(), 'tipo', tipoId] as const,
-  documentosByEstado: (estado: string) =>
-    [...gestionDocumentalKeys.documentos(), 'estado', estado] as const,
-
-  // Versiones
-  versiones: (documentoId: number) =>
-    [...gestionDocumentalKeys.all, 'versiones', documentoId] as const,
-
-  // Campos Formulario
-  camposFormulario: (plantillaId: number) =>
-    [...gestionDocumentalKeys.all, 'campos', plantillaId] as const,
-
-  // Firmas (ahora usa workflow_engine.firma_digital)
-  firmas: (documentoId: number) => [...gestionDocumentalKeys.all, 'firmas', documentoId] as const,
-
-  // Control Documental
-  controles: (documentoId: number) =>
-    [...gestionDocumentalKeys.all, 'controles', documentoId] as const,
-
-  // Listado Maestro
-  listadoMaestro: () => [...gestionDocumentalKeys.all, 'listado-maestro'] as const,
+    ['gd-plantillas', 'list', { tipo_documento: tipoId }] as const,
+  versiones: (documentoId: number) => ['gd-versiones', documentoId] as const,
+  camposFormulario: (plantillaId: number) => ['gd-campos', plantillaId] as const,
+  firmas: (documentoId: number) => ['gd-firmas', documentoId] as const,
+  controles: (documentoId: number) => ['gd-controles', documentoId] as const,
+  listadoMaestro: () => ['gd-listado-maestro'] as const,
 };
 
-// ==================== TIPOS DE DOCUMENTO HOOKS ====================
+// ==================== TIPOS DE DOCUMENTO (via factory) ====================
 
-export function useTiposDocumento(params?: { is_active?: boolean; search?: string }) {
+const tipoDocHooks = createCrudHooks<TipoDocumento, CreateTipoDocumentoDTO, UpdateTipoDocumentoDTO>(
+  tipoDocumentoApi,
+  gdTiposKeys,
+  'Tipo de documento'
+);
+
+export const useTiposDocumento = tipoDocHooks.useList;
+export const useTipoDocumento = tipoDocHooks.useDetail;
+export const useCreateTipoDocumento = tipoDocHooks.useCreate;
+export const useUpdateTipoDocumento = tipoDocHooks.useUpdate;
+export const useDeleteTipoDocumento = tipoDocHooks.useDelete;
+
+// ==================== PLANTILLAS (via factory + custom) ====================
+
+const plantillaHooks = createCrudHooks<
+  PlantillaDocumento,
+  CreatePlantillaDocumentoDTO,
+  UpdatePlantillaDocumentoDTO
+>(plantillaDocumentoApi, gdPlantillasKeys, 'Plantilla', { isFeminine: true });
+
+// Override useList to support backward-compatible signature (number | params object)
+export function usePlantillasDocumento(
+  params?: { tipo_documento?: number; estado?: string } | number
+) {
+  const normalizedParams = typeof params === 'number' ? { tipo_documento: params } : params;
+
   return useQuery({
-    queryKey: [...gestionDocumentalKeys.tiposDocumento(), params],
+    queryKey: gdPlantillasKeys.list(normalizedParams),
     queryFn: async () => {
-      const response = await tipoDocumentoApi.getAll(params);
-      return response.results || response;
+      const response = await plantillaDocumentoApi.getAll(normalizedParams || {});
+      return Array.isArray(response) ? response : (response?.results ?? []);
     },
   });
 }
 
-export function useTipoDocumento(id: number) {
-  return useQuery({
-    queryKey: gestionDocumentalKeys.tipoDocumento(id),
-    queryFn: () => tipoDocumentoApi.getById(id),
-    enabled: !!id,
-  });
-}
-
-export function useCreateTipoDocumento() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreateTipoDocumentoDTO) => tipoDocumentoApi.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: gestionDocumentalKeys.tiposDocumento() });
-      toast.success('Tipo de documento creado exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al crear tipo de documento');
-    },
-  });
-}
-
-export function useUpdateTipoDocumento() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateTipoDocumentoDTO }) =>
-      tipoDocumentoApi.update(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: gestionDocumentalKeys.tiposDocumento() });
-      queryClient.invalidateQueries({ queryKey: gestionDocumentalKeys.tipoDocumento(id) });
-      toast.success('Tipo de documento actualizado exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al actualizar tipo de documento');
-    },
-  });
-}
-
-export function useDeleteTipoDocumento() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => tipoDocumentoApi.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: gestionDocumentalKeys.tiposDocumento() });
-      toast.success('Tipo de documento eliminado exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al eliminar tipo de documento');
-    },
-  });
-}
-
-// ==================== PLANTILLAS HOOKS ====================
-
-export function usePlantillasDocumento(tipoDocumentoId?: number) {
-  return useQuery({
-    queryKey: tipoDocumentoId
-      ? gestionDocumentalKeys.plantillasByTipo(tipoDocumentoId)
-      : gestionDocumentalKeys.plantillas(),
-    queryFn: async () => {
-      const params = tipoDocumentoId ? { tipo_documento: tipoDocumentoId } : {};
-      const response = await plantillaDocumentoApi.getAll(params);
-      return response.results || response;
-    },
-  });
-}
-
-export function usePlantillaDocumento(id: number) {
-  return useQuery({
-    queryKey: gestionDocumentalKeys.plantilla(id),
-    queryFn: () => plantillaDocumentoApi.getById(id),
-    enabled: !!id,
-  });
-}
-
-export function useCreatePlantillaDocumento() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreatePlantillaDocumentoDTO) => plantillaDocumentoApi.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: gestionDocumentalKeys.plantillas() });
-      toast.success('Plantilla creada exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al crear plantilla');
-    },
-  });
-}
-
-export function useUpdatePlantillaDocumento() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdatePlantillaDocumentoDTO }) =>
-      plantillaDocumentoApi.update(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: gestionDocumentalKeys.plantillas() });
-      queryClient.invalidateQueries({ queryKey: gestionDocumentalKeys.plantilla(id) });
-      toast.success('Plantilla actualizada exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al actualizar plantilla');
-    },
-  });
-}
-
-export function useDeletePlantillaDocumento() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => plantillaDocumentoApi.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: gestionDocumentalKeys.plantillas() });
-      toast.success('Plantilla eliminada exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al eliminar plantilla');
-    },
-  });
-}
+export const usePlantillaDocumento = plantillaHooks.useDetail;
+export const useCreatePlantillaDocumento = plantillaHooks.useCreate;
+export const useUpdatePlantillaDocumento = plantillaHooks.useUpdate;
+export const useDeletePlantillaDocumento = plantillaHooks.useDelete;
 
 export function useActivarPlantilla() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => plantillaDocumentoApi.activar(id),
-    onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: gestionDocumentalKeys.plantillas() });
-      queryClient.invalidateQueries({ queryKey: gestionDocumentalKeys.plantilla(id) });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: gdPlantillasKeys.lists() });
       toast.success('Plantilla activada exitosamente');
     },
     onError: () => {
@@ -215,8 +106,15 @@ export function useActivarPlantilla() {
   });
 }
 
-// ==================== DOCUMENTOS HOOKS ====================
+// ==================== DOCUMENTOS (via factory + custom) ====================
 
+const documentoHooks = createCrudHooks<Documento, CreateDocumentoDTO, UpdateDocumentoDTO>(
+  documentoApi,
+  gdDocumentosKeys,
+  'Documento'
+);
+
+// Override useList to support typed filters
 export function useDocumentos(filters?: {
   tipo_documento?: number;
   tipo_documento_codigo?: string;
@@ -224,74 +122,26 @@ export function useDocumentos(filters?: {
   search?: string;
 }) {
   return useQuery({
-    queryKey: [...gestionDocumentalKeys.documentos(), filters],
+    queryKey: gdDocumentosKeys.list(filters),
     queryFn: async () => {
       const response = await documentoApi.getAll(filters);
-      return response.results || response;
+      return Array.isArray(response) ? response : (response?.results ?? []);
     },
   });
 }
 
-export function useDocumento(id: number) {
-  return useQuery({
-    queryKey: gestionDocumentalKeys.documento(id),
-    queryFn: () => documentoApi.getById(id),
-    enabled: !!id,
-  });
-}
-
-export function useCreateDocumento() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreateDocumentoDTO) => documentoApi.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: gestionDocumentalKeys.documentos() });
-      toast.success('Documento creado exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al crear documento');
-    },
-  });
-}
-
-export function useUpdateDocumento() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateDocumentoDTO }) =>
-      documentoApi.update(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: gestionDocumentalKeys.documentos() });
-      queryClient.invalidateQueries({ queryKey: gestionDocumentalKeys.documento(id) });
-      toast.success('Documento actualizado exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al actualizar documento');
-    },
-  });
-}
-
-export function useDeleteDocumento() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => documentoApi.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: gestionDocumentalKeys.documentos() });
-      toast.success('Documento eliminado exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al eliminar documento');
-    },
-  });
-}
+export const useDocumento = documentoHooks.useDetail;
+export const useCreateDocumento = documentoHooks.useCreate;
+export const useUpdateDocumento = documentoHooks.useUpdate;
+export const useDeleteDocumento = documentoHooks.useDelete;
 
 export function useAprobarDocumento() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, observaciones }: { id: number; observaciones?: string }) =>
       documentoApi.aprobar(id, observaciones),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: gestionDocumentalKeys.documento(id) });
-      queryClient.invalidateQueries({ queryKey: gestionDocumentalKeys.documentos() });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: gdDocumentosKeys.lists() });
       toast.success('Documento aprobado exitosamente');
     },
     onError: () => {
@@ -305,9 +155,8 @@ export function usePublicarDocumento() {
   return useMutation({
     mutationFn: ({ id, fecha_vigencia }: { id: number; fecha_vigencia?: string }) =>
       documentoApi.publicar(id, fecha_vigencia),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: gestionDocumentalKeys.documento(id) });
-      queryClient.invalidateQueries({ queryKey: gestionDocumentalKeys.documentos() });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: gdDocumentosKeys.lists() });
       queryClient.invalidateQueries({ queryKey: gestionDocumentalKeys.listadoMaestro() });
       toast.success('Documento publicado exitosamente');
     },
@@ -329,8 +178,8 @@ export function useEnviarRevision() {
       revisores: number[];
       mensaje?: string;
     }) => documentoApi.enviarRevision(id, { revisores, mensaje }),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: gestionDocumentalKeys.documento(id) });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: gdDocumentosKeys.lists() });
       toast.success('Documento enviado a revision');
     },
     onError: () => {
@@ -351,9 +200,8 @@ export function useMarcarObsoleto() {
       motivo: string;
       documento_sustituto_id?: number;
     }) => documentoApi.marcarObsoleto(id, { motivo, documento_sustituto_id }),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: gestionDocumentalKeys.documento(id) });
-      queryClient.invalidateQueries({ queryKey: gestionDocumentalKeys.documentos() });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: gdDocumentosKeys.lists() });
       queryClient.invalidateQueries({ queryKey: gestionDocumentalKeys.listadoMaestro() });
       toast.success('Documento marcado como obsoleto');
     },
@@ -370,7 +218,7 @@ export function useListadoMaestro() {
   });
 }
 
-// ==================== VERSIONES HOOKS ====================
+// ==================== VERSIONES ====================
 
 export function useVersionesDocumento(documentoId: number) {
   return useQuery({
@@ -380,14 +228,14 @@ export function useVersionesDocumento(documentoId: number) {
   });
 }
 
-// ==================== CAMPOS FORMULARIO HOOKS ====================
+// ==================== CAMPOS FORMULARIO ====================
 
 export function useCamposFormulario(plantillaId: number) {
   return useQuery({
     queryKey: gestionDocumentalKeys.camposFormulario(plantillaId),
     queryFn: async () => {
       const response = await campoFormularioApi.getAll({ plantilla: plantillaId });
-      return response.results || response;
+      return Array.isArray(response) ? response : (response?.results ?? []);
     },
     enabled: !!plantillaId,
   });
@@ -447,7 +295,7 @@ export function useDeleteCampoFormulario() {
   });
 }
 
-// ==================== FIRMAS HOOKS (usa workflow_engine) ====================
+// ==================== FIRMAS (usa workflow_engine) ====================
 
 export function useFirmasDocumento(documentoId: number) {
   return useQuery({
@@ -457,14 +305,14 @@ export function useFirmasDocumento(documentoId: number) {
   });
 }
 
-// ==================== CONTROL DOCUMENTAL HOOKS ====================
+// ==================== CONTROL DOCUMENTAL ====================
 
 export function useControlDocumental(documentoId: number) {
   return useQuery({
     queryKey: gestionDocumentalKeys.controles(documentoId),
     queryFn: async () => {
       const response = await controlDocumentalApi.getAll({ documento: documentoId });
-      return response.results || response;
+      return Array.isArray(response) ? response : (response?.results ?? []);
     },
     enabled: !!documentoId,
   });
@@ -511,11 +359,70 @@ export function useDistribucionesActivas() {
   });
 }
 
-// ==================== ESTADISTICAS HOOK ====================
+// ==================== ESTADISTICAS ====================
 
 export function useEstadisticasDocumentales() {
   return useQuery({
     queryKey: [...gestionDocumentalKeys.all, 'estadisticas'],
     queryFn: () => documentoApi.estadisticas(),
+  });
+}
+
+// ==================== EXPORT ====================
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+export function useExportDocumentoPdf() {
+  return useMutation({
+    mutationFn: async ({
+      id,
+      codigo,
+      version,
+    }: {
+      id: number;
+      codigo: string;
+      version: string;
+    }) => {
+      const blob = await documentoApi.exportPdf(id);
+      downloadBlob(blob, `${codigo}-v${version}.pdf`);
+    },
+    onSuccess: () => {
+      toast.success('PDF descargado exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al exportar PDF');
+    },
+  });
+}
+
+export function useExportDocumentoDocx() {
+  return useMutation({
+    mutationFn: async ({
+      id,
+      codigo,
+      version,
+    }: {
+      id: number;
+      codigo: string;
+      version: string;
+    }) => {
+      const blob = await documentoApi.exportDocx(id);
+      downloadBlob(blob, `${codigo}-v${version}.docx`);
+    },
+    onSuccess: () => {
+      toast.success('DOCX descargado exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al exportar DOCX');
+    },
   });
 }

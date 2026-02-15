@@ -10,6 +10,7 @@ import {
   useDocumento,
   useTiposDocumento,
   usePlantillasDocumento,
+  usePlantillaDocumento,
 } from '@/features/gestion-estrategica/hooks/useGestionDocumental';
 import { useAuthStore } from '@/store/authStore';
 import type {
@@ -44,6 +45,7 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<CreateDocumentoDTO>({
     defaultValues: {
@@ -65,7 +67,10 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
     if (isEdit && existing) {
       reset({
         titulo: existing.titulo,
-        tipo_documento: existing.tipo_documento?.id || (existing as { tipo_documento_id?: number }).tipo_documento_id || 0,
+        tipo_documento:
+          existing.tipo_documento?.id ||
+          (existing as { tipo_documento_id?: number }).tipo_documento_id ||
+          0,
         plantilla: existing.plantilla?.id || undefined,
         contenido: existing.contenido || '',
         resumen: existing.resumen || '',
@@ -94,6 +99,18 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
     }
   }, [isEdit, existing, reset, user?.id]);
 
+  // Auto-load plantilla content when selected
+  const selectedPlantillaId = watch('plantilla');
+  const { data: plantillaDetail } = usePlantillaDocumento(
+    selectedPlantillaId ? Number(selectedPlantillaId) : 0
+  );
+
+  useEffect(() => {
+    if (plantillaDetail?.contenido_plantilla && !isEdit) {
+      setValue('contenido', plantillaDetail.contenido_plantilla);
+    }
+  }, [plantillaDetail, setValue, isEdit]);
+
   const onSubmit = async (data: CreateDocumentoDTO) => {
     const payload = {
       ...data,
@@ -113,11 +130,12 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
   const selectedTipo = watch('tipo_documento');
 
   // Filter plantillas by selected tipo
-  const filteredPlantillas = (plantillas as { id: number; nombre: string; tipo_documento?: { id: number } | number }[] || [])
-    .filter((p) => {
-      const tipoId = typeof p.tipo_documento === 'object' ? p.tipo_documento?.id : p.tipo_documento;
-      return !selectedTipo || tipoId === Number(selectedTipo);
-    });
+  const filteredPlantillas = (
+    (plantillas as { id: number; nombre: string; tipo_documento?: { id: number } | number }[]) || []
+  ).filter((p) => {
+    const tipoId = typeof p.tipo_documento === 'object' ? p.tipo_documento?.id : p.tipo_documento;
+    return !selectedTipo || tipoId === Number(selectedTipo);
+  });
 
   if (isEdit && isLoadingExisting) {
     return (
@@ -130,8 +148,16 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={isEdit ? 'Editar Documento' : 'Crear Documento'} size="3xl">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={isEdit ? 'Editar Documento' : 'Crear Documento'}
+      size="3xl"
+    >
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="space-y-4 max-h-[70vh] overflow-y-auto pr-1"
+      >
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Título *
@@ -157,11 +183,15 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
               className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value={0}>Seleccionar...</option>
-              {(tipos as { id: number; nombre: string; codigo: string }[] || []).map((t) => (
-                <option key={t.id} value={t.id}>{t.codigo} - {t.nombre}</option>
+              {((tipos as { id: number; nombre: string; codigo: string }[]) || []).map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.codigo} - {t.nombre}
+                </option>
               ))}
             </select>
-            {errors.tipo_documento && <p className="text-xs text-red-500 mt-1">{errors.tipo_documento.message}</p>}
+            {errors.tipo_documento && (
+              <p className="text-xs text-red-500 mt-1">{errors.tipo_documento.message}</p>
+            )}
           </div>
 
           <div>
@@ -174,7 +204,9 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
             >
               <option value="">Sin plantilla</option>
               {filteredPlantillas.map((p) => (
-                <option key={p.id} value={p.id}>{p.nombre}</option>
+                <option key={p.id} value={p.id}>
+                  {p.nombre}
+                </option>
               ))}
             </select>
           </div>
@@ -188,7 +220,9 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
               className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               {CLASIFICACION_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
               ))}
             </select>
           </div>
@@ -216,7 +250,9 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
             className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="Contenido del documento en formato HTML o Markdown..."
           />
-          {errors.contenido && <p className="text-xs text-red-500 mt-1">{errors.contenido.message}</p>}
+          {errors.contenido && (
+            <p className="text-xs text-red-500 mt-1">{errors.contenido.message}</p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -246,7 +246,21 @@ class DocumentoViewSet(ExportMixin, viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         empresa = get_tenant_empresa()
-        serializer.save(empresa_id=empresa.id if empresa else None, elaborado_por=self.request.user)
+        empresa_id = empresa.id if empresa else None
+
+        # Auto-generar codigo si no viene en el request
+        codigo = serializer.validated_data.get('codigo')
+        if not codigo:
+            tipo_documento = serializer.validated_data.get('tipo_documento')
+            if tipo_documento:
+                from .services import DocumentoService
+                codigo = DocumentoService.generar_codigo(tipo_documento, empresa_id)
+
+        serializer.save(
+            empresa_id=empresa_id,
+            elaborado_por=self.request.user,
+            codigo=codigo,
+        )
 
     @action(detail=True, methods=['get'])
     def firmas(self, request, pk=None):

@@ -3,6 +3,7 @@ DocumentoService - Servicio de lógica de negocio para Gestión Documental.
 Patron @classmethod consistente con EvidenciaService, WorkflowExecutionService.
 """
 import logging
+from django.apps import apps
 from django.utils import timezone
 from django.db.models import Count, Q
 
@@ -15,13 +16,44 @@ from .models import (
 
 logger = logging.getLogger(__name__)
 
+# Mapping: TipoDocumento.codigo -> ConsecutivoConfig.codigo
+TIPO_DOC_TO_CONSECUTIVO = {
+    'PR': 'PROCEDIMIENTO',
+    'IN': 'INSTRUCTIVO',
+    'FT': 'FORMATO',
+}
+# Cualquier otro tipo → fallback 'DOCUMENTO'
+CONSECUTIVO_FALLBACK = 'DOCUMENTO'
+
 
 class DocumentoService:
     """Servicio central para gestión documental."""
 
     @classmethod
     def generar_codigo(cls, tipo_documento, empresa_id):
-        """Genera código único: {prefijo}{secuencial:04d}."""
+        """
+        Genera código único usando ConsecutivoConfig (thread-safe, select_for_update).
+        Fallback a generación artesanal si no existe ConsecutivoConfig.
+        """
+        consecutivo_codigo = TIPO_DOC_TO_CONSECUTIVO.get(
+            tipo_documento.codigo, CONSECUTIVO_FALLBACK
+        )
+        try:
+            ConsecutivoConfig = apps.get_model('organizacion', 'ConsecutivoConfig')
+            return ConsecutivoConfig.obtener_siguiente_consecutivo(
+                consecutivo_codigo, empresa_id=empresa_id
+            )
+        except Exception as e:
+            logger.warning(
+                'ConsecutivoConfig no disponible para %s (empresa=%s): %s. '
+                'Usando generación artesanal.',
+                consecutivo_codigo, empresa_id, e
+            )
+            return cls._generar_codigo_artesanal(tipo_documento, empresa_id)
+
+    @classmethod
+    def _generar_codigo_artesanal(cls, tipo_documento, empresa_id):
+        """Fallback: genera código con contador simple (NO thread-safe)."""
         prefijo = tipo_documento.prefijo_codigo or f'{tipo_documento.codigo}-'
         ultimo = Documento.objects.filter(
             empresa_id=empresa_id,

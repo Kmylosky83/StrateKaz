@@ -16,6 +16,7 @@ import {
   Calendar,
   User,
   Shield,
+  FileDown,
 } from 'lucide-react';
 import {
   Modal,
@@ -34,6 +35,8 @@ import {
   useEnviarRevision,
   useMarcarObsoleto,
   useVersionesDocumento,
+  useExportDocumentoPdf,
+  useExportDocumentoDocx,
 } from '@/features/gestion-estrategica/hooks/useGestionDocumental';
 
 interface DocumentoDetailModalProps {
@@ -42,7 +45,10 @@ interface DocumentoDetailModalProps {
   documentoId: number | null;
 }
 
-const ESTADO_VARIANT: Record<string, 'success' | 'warning' | 'info' | 'danger' | 'secondary' | 'primary'> = {
+const ESTADO_VARIANT: Record<
+  string,
+  'success' | 'warning' | 'info' | 'danger' | 'secondary' | 'primary'
+> = {
   BORRADOR: 'secondary',
   EN_REVISION: 'warning',
   APROBADO: 'primary',
@@ -65,6 +71,8 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
   const publicarMutation = usePublicarDocumento();
   const enviarRevisionMutation = useEnviarRevision();
   const marcarObsoletoMutation = useMarcarObsoleto();
+  const exportPdfMutation = useExportDocumentoPdf();
+  const exportDocxMutation = useExportDocumentoDocx();
 
   const [activeTab, setActiveTab] = useState('info');
   const [confirmAction, setConfirmAction] = useState<
@@ -131,7 +139,10 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
                   <Badge variant={ESTADO_VARIANT[documento.estado] || 'secondary'}>
                     {documento.estado}
                   </Badge>
-                  <Badge variant={CLASIFICACION_VARIANT[documento.clasificacion] || 'info'} size="sm">
+                  <Badge
+                    variant={CLASIFICACION_VARIANT[documento.clasificacion] || 'info'}
+                    size="sm"
+                  >
                     <Shield className="w-3 h-3 mr-1 inline" />
                     {documento.clasificacion}
                   </Badge>
@@ -140,6 +151,37 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
 
               {/* Contextual Actions */}
               <div className="flex items-center gap-2 flex-shrink-0">
+                {/* Export buttons */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leftIcon={<FileDown className="w-4 h-4" />}
+                  onClick={() =>
+                    exportPdfMutation.mutate({
+                      id: documentoId!,
+                      codigo: documento.codigo,
+                      version: documento.version_actual,
+                    })
+                  }
+                  disabled={exportPdfMutation.isPending}
+                >
+                  {exportPdfMutation.isPending ? '...' : 'PDF'}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leftIcon={<FileDown className="w-4 h-4" />}
+                  onClick={() =>
+                    exportDocxMutation.mutate({
+                      id: documentoId!,
+                      codigo: documento.codigo,
+                      version: documento.version_actual,
+                    })
+                  }
+                  disabled={exportDocxMutation.isPending}
+                >
+                  {exportDocxMutation.isPending ? '...' : 'DOCX'}
+                </Button>
                 {documento.estado === 'BORRADOR' && (
                   <Button
                     variant="primary"
@@ -192,26 +234,72 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
                 <div className="space-y-4">
                   {documento.resumen && (
                     <div>
-                      <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Resumen</h4>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{documento.resumen}</p>
+                      <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Resumen
+                      </h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {documento.resumen}
+                      </p>
                     </div>
                   )}
 
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    <InfoItem icon={<Calendar className="w-4 h-4" />} label="Creado" value={documento.fecha_creacion ? new Date(documento.fecha_creacion).toLocaleDateString('es-CO') : '-'} />
-                    <InfoItem icon={<Calendar className="w-4 h-4" />} label="Vigencia" value={documento.fecha_vigencia ? new Date(documento.fecha_vigencia).toLocaleDateString('es-CO') : '-'} />
-                    <InfoItem icon={<Clock className="w-4 h-4" />} label="Revisión Programada" value={documento.fecha_revision_programada ? new Date(documento.fecha_revision_programada).toLocaleDateString('es-CO') : '-'} />
-                    <InfoItem icon={<User className="w-4 h-4" />} label="Elaborado por" value={documento.elaborado_por_nombre || '-'} />
-                    <InfoItem icon={<User className="w-4 h-4" />} label="Revisado por" value={documento.revisado_por_nombre || '-'} />
-                    <InfoItem icon={<User className="w-4 h-4" />} label="Aprobado por" value={documento.aprobado_por_nombre || '-'} />
+                    <InfoItem
+                      icon={<Calendar className="w-4 h-4" />}
+                      label="Creado"
+                      value={
+                        documento.fecha_creacion
+                          ? new Date(documento.fecha_creacion).toLocaleDateString('es-CO')
+                          : '-'
+                      }
+                    />
+                    <InfoItem
+                      icon={<Calendar className="w-4 h-4" />}
+                      label="Vigencia"
+                      value={
+                        documento.fecha_vigencia
+                          ? new Date(documento.fecha_vigencia).toLocaleDateString('es-CO')
+                          : '-'
+                      }
+                    />
+                    <InfoItem
+                      icon={<Clock className="w-4 h-4" />}
+                      label="Revisión Programada"
+                      value={
+                        documento.fecha_revision_programada
+                          ? new Date(documento.fecha_revision_programada).toLocaleDateString(
+                              'es-CO'
+                            )
+                          : '-'
+                      }
+                    />
+                    <InfoItem
+                      icon={<User className="w-4 h-4" />}
+                      label="Elaborado por"
+                      value={documento.elaborado_por_nombre || '-'}
+                    />
+                    <InfoItem
+                      icon={<User className="w-4 h-4" />}
+                      label="Revisado por"
+                      value={documento.revisado_por_nombre || '-'}
+                    />
+                    <InfoItem
+                      icon={<User className="w-4 h-4" />}
+                      label="Aprobado por"
+                      value={documento.aprobado_por_nombre || '-'}
+                    />
                   </div>
 
-                  {(documento.palabras_clave?.length > 0) && (
+                  {documento.palabras_clave?.length > 0 && (
                     <div>
-                      <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Palabras Clave</h4>
+                      <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Palabras Clave
+                      </h4>
                       <div className="flex flex-wrap gap-1">
                         {documento.palabras_clave.map((kw: string) => (
-                          <Badge key={kw} variant="secondary" size="sm">{kw}</Badge>
+                          <Badge key={kw} variant="secondary" size="sm">
+                            {kw}
+                          </Badge>
                         ))}
                       </div>
                     </div>
@@ -235,28 +323,59 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
 
               {activeTab === 'contenido' && (
                 <div className="prose dark:prose-invert max-w-none p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
-                  <div dangerouslySetInnerHTML={{ __html: documento.contenido || '<p><em>Sin contenido</em></p>' }} />
+                  <div
+                    dangerouslySetInnerHTML={{
+                      __html: documento.contenido || '<p><em>Sin contenido</em></p>',
+                    }}
+                  />
                 </div>
               )}
 
               {activeTab === 'versiones' && (
                 <div className="space-y-3">
                   {!versiones || (versiones as unknown[]).length === 0 ? (
-                    <p className="text-sm text-gray-500 text-center py-4">Sin versiones registradas</p>
+                    <p className="text-sm text-gray-500 text-center py-4">
+                      Sin versiones registradas
+                    </p>
                   ) : (
-                    (versiones as { id: number; numero_version: string; tipo_cambio: string; descripcion_cambios: string; fecha_version: string; is_version_actual: boolean; creado_por_nombre?: string }[]).map((v) => (
-                      <div key={v.id} className="flex items-start gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${v.is_version_actual ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-gray-100 dark:bg-gray-700'}`}>
-                          <GitBranch className={`w-4 h-4 ${v.is_version_actual ? 'text-blue-600' : 'text-gray-500'}`} />
+                    (
+                      versiones as {
+                        id: number;
+                        numero_version: string;
+                        tipo_cambio: string;
+                        descripcion_cambios: string;
+                        fecha_version: string;
+                        is_version_actual: boolean;
+                        creado_por_nombre?: string;
+                      }[]
+                    ).map((v) => (
+                      <div
+                        key={v.id}
+                        className="flex items-start gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg"
+                      >
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${v.is_version_actual ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-gray-100 dark:bg-gray-700'}`}
+                        >
+                          <GitBranch
+                            className={`w-4 h-4 ${v.is_version_actual ? 'text-blue-600' : 'text-gray-500'}`}
+                          />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-sm font-medium">v{v.numero_version}</span>
-                            {v.is_version_actual && <Badge variant="primary" size="sm">Actual</Badge>}
-                            <Badge variant="secondary" size="sm">{v.tipo_cambio}</Badge>
+                            {v.is_version_actual && (
+                              <Badge variant="primary" size="sm">
+                                Actual
+                              </Badge>
+                            )}
+                            <Badge variant="secondary" size="sm">
+                              {v.tipo_cambio}
+                            </Badge>
                           </div>
                           <p className="text-xs text-gray-500">{v.descripcion_cambios}</p>
-                          <p className="text-xs text-gray-400 mt-1">{new Date(v.fecha_version).toLocaleDateString('es-CO')}</p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            {new Date(v.fecha_version).toLocaleDateString('es-CO')}
+                          </p>
                         </div>
                       </div>
                     ))
@@ -317,7 +436,10 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
 
       <ConfirmDialog
         isOpen={confirmAction === 'marcar_obsoleto'}
-        onClose={() => { setConfirmAction(null); setMotivoObsoleto(''); }}
+        onClose={() => {
+          setConfirmAction(null);
+          setMotivoObsoleto('');
+        }}
         onConfirm={handleAction}
         title="Marcar como Obsoleto"
         message={

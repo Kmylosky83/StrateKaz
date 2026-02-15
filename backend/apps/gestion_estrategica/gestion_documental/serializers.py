@@ -213,7 +213,7 @@ class DocumentoDetailSerializer(serializers.ModelSerializer):
             'firmas_digitales'
         ]
         read_only_fields = [
-            'numero_descargas', 'numero_impresiones',
+            'codigo', 'numero_descargas', 'numero_impresiones',
             'empresa_id', 'created_at', 'updated_at'
         ]
 

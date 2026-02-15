@@ -22,6 +22,7 @@ from .views import (
     VersionDocumentoViewSet,
     ControlDocumentalViewSet,
 )
+from .views_export import export_documento_pdf, export_documento_docx
 
 app_name = 'gestion_documental'
 
@@ -40,5 +41,9 @@ router.register(r'versiones', VersionDocumentoViewSet, basename='version')
 router.register(r'controles', ControlDocumentalViewSet, basename='control')
 
 urlpatterns = [
+    # Export endpoints
+    path('export/documento/<int:pk>/pdf/', export_documento_pdf, name='export-documento-pdf'),
+    path('export/documento/<int:pk>/docx/', export_documento_docx, name='export-documento-docx'),
+    # Router
     path('', include(router.urls)),
 ]

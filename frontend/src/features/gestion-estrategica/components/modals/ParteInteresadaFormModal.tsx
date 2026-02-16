@@ -370,6 +370,79 @@ const ParteInteresadaFormModalComponent = ({
     setFormData((prev) => ({ ...prev, [field]: value }));
   }, []);
 
+  // FIX Sprint 17: Handlers memoizados para inputs de texto (evita re-crear funciones)
+  const createTextInputHandler = useCallback(
+    (field: keyof FormData) => {
+      return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        handleFieldChange(field, e.target.value);
+      };
+    },
+    [handleFieldChange]
+  );
+
+  const createSelectHandler = useCallback(
+    (field: keyof FormData) => {
+      return (e: React.ChangeEvent<HTMLSelectElement>) => {
+        handleFieldChange(field, e.target.value);
+      };
+    },
+    [handleFieldChange]
+  );
+
+  // Handlers individuales memoizados
+  const handleNombreChange = useMemo(
+    () => createTextInputHandler('nombre'),
+    [createTextInputHandler]
+  );
+  const handleDescripcionChange = useMemo(
+    () => createTextInputHandler('descripcion'),
+    [createTextInputHandler]
+  );
+  const handleEmailChange = useMemo(
+    () => createTextInputHandler('email_contacto'),
+    [createTextInputHandler]
+  );
+  const handleTelefonoChange = useMemo(
+    () => createTextInputHandler('telefono_contacto'),
+    [createTextInputHandler]
+  );
+  const handleDireccionChange = useMemo(
+    () => createTextInputHandler('direccion'),
+    [createTextInputHandler]
+  );
+  const handleSitioWebChange = useMemo(
+    () => createTextInputHandler('sitio_web'),
+    [createTextInputHandler]
+  );
+  const handleRepresentanteChange = useMemo(
+    () => createTextInputHandler('representante'),
+    [createTextInputHandler]
+  );
+  const handleCargoRepresentanteChange = useMemo(
+    () => createTextInputHandler('cargo_representante'),
+    [createTextInputHandler]
+  );
+  const handleTemasInteresPiChange = useMemo(
+    () => createTextInputHandler('temas_interes_pi'),
+    [createTextInputHandler]
+  );
+  const handleTemasInteresEmpresaChange = useMemo(
+    () => createTextInputHandler('temas_interes_empresa'),
+    [createTextInputHandler]
+  );
+  const handleNecesidadesChange = useMemo(
+    () => createTextInputHandler('necesidades'),
+    [createTextInputHandler]
+  );
+  const handleExpectativasChange = useMemo(
+    () => createTextInputHandler('expectativas'),
+    [createTextInputHandler]
+  );
+  const handleRequisitosChange = useMemo(
+    () => createTextInputHandler('requisitos_pertinentes'),
+    [createTextInputHandler]
+  );
+
   const isLoading = isCreating || isUpdating;
 
   // Opciones de tipo - memoizadas
@@ -472,15 +545,8 @@ const ParteInteresadaFormModalComponent = ({
     </>
   );
 
-  // FIX Sprint 17: Key único por modal instance para forzar remount limpio al abrir/cerrar
-  const modalKey = useMemo(
-    () => `modal-${isEditing ? parteInteresada?.id : 'new'}-${isOpen}`,
-    [isEditing, parteInteresada?.id, isOpen]
-  );
-
   return (
     <BaseModal
-      key={modalKey}
       isOpen={isOpen}
       onClose={handleClose}
       title={isEditing ? 'Editar Parte Interesada' : 'Nueva Parte Interesada'}
@@ -532,7 +598,7 @@ const ParteInteresadaFormModalComponent = ({
           <Input
             label="Nombre *"
             value={formData.nombre}
-            onChange={(e) => handleFieldChange('nombre', e.target.value)}
+            onChange={handleNombreChange}
             placeholder="Ej: Ministerio de Trabajo, Clientes Corporativos, Sindicato"
             required
           />
@@ -540,7 +606,7 @@ const ParteInteresadaFormModalComponent = ({
           <Textarea
             label="Descripcion"
             value={formData.descripcion}
-            onChange={(e) => handleFieldChange('descripcion', e.target.value)}
+            onChange={handleDescripcionChange}
             placeholder="Descripcion de esta parte interesada y su rol en relacion con la organizacion..."
             rows={2}
           />
@@ -582,7 +648,7 @@ const ParteInteresadaFormModalComponent = ({
               type="email"
               label="Email de Contacto"
               value={formData.email_contacto}
-              onChange={(e) => handleFieldChange('email_contacto', e.target.value)}
+              onChange={handleEmailChange}
               placeholder="contacto@stakeholder.com"
               leftIcon={<Mail className="h-4 w-4" />}
             />
@@ -590,7 +656,7 @@ const ParteInteresadaFormModalComponent = ({
               type="tel"
               label="Telefono de Contacto"
               value={formData.telefono_contacto}
-              onChange={(e) => handleFieldChange('telefono_contacto', e.target.value)}
+              onChange={handleTelefonoChange}
               placeholder="+57 300 123 4567"
               leftIcon={<Phone className="h-4 w-4" />}
             />
@@ -600,14 +666,14 @@ const ParteInteresadaFormModalComponent = ({
             <Input
               label="Direccion"
               value={formData.direccion}
-              onChange={(e) => handleFieldChange('direccion', e.target.value)}
+              onChange={handleDireccionChange}
               placeholder="Direccion fisica"
               leftIcon={<MapPin className="h-4 w-4" />}
             />
             <Input
               label="Sitio Web / Portal"
               value={formData.sitio_web}
-              onChange={(e) => handleFieldChange('sitio_web', e.target.value)}
+              onChange={handleSitioWebChange}
               placeholder="https://..."
               leftIcon={<Globe className="h-4 w-4" />}
             />
@@ -622,13 +688,13 @@ const ParteInteresadaFormModalComponent = ({
               <Input
                 label="Nombre del Contacto"
                 value={formData.representante}
-                onChange={(e) => handleFieldChange('representante', e.target.value)}
+                onChange={handleRepresentanteChange}
                 placeholder="Nombre de persona de contacto"
               />
               <Input
                 label="Cargo / Rol"
                 value={formData.cargo_representante}
-                onChange={(e) => handleFieldChange('cargo_representante', e.target.value)}
+                onChange={handleCargoRepresentanteChange}
                 placeholder="Cargo o rol del contacto"
               />
             </div>
@@ -729,7 +795,7 @@ const ParteInteresadaFormModalComponent = ({
           <Textarea
             label="Temas de Interés PARA la PI"
             value={formData.temas_interes_pi}
-            onChange={(e) => handleFieldChange('temas_interes_pi', e.target.value)}
+            onChange={handleTemasInteresPiChange}
             placeholder="¿Qué le interesa a esta PI de la empresa? Ej: Estabilidad laboral, oportunidades de crecimiento, condiciones de trabajo..."
             rows={2}
             helperText="Lo que espera o busca la PI de la organización"
@@ -738,7 +804,7 @@ const ParteInteresadaFormModalComponent = ({
           <Textarea
             label="Temas de Interés PARA la Empresa"
             value={formData.temas_interes_empresa}
-            onChange={(e) => handleFieldChange('temas_interes_empresa', e.target.value)}
+            onChange={handleTemasInteresEmpresaChange}
             placeholder="¿Qué le interesa a la empresa de esta PI? Ej: Productividad, compromiso, cumplimiento normativo..."
             rows={2}
             helperText="Lo que espera o busca la empresa de esta PI"
@@ -813,7 +879,7 @@ const ParteInteresadaFormModalComponent = ({
           <Textarea
             label="Necesidades"
             value={formData.necesidades}
-            onChange={(e) => handleFieldChange('necesidades', e.target.value)}
+            onChange={handleNecesidadesChange}
             placeholder="¿Que necesita esta parte interesada de la organizacion? Ej: Productos de calidad, cumplimiento normativo, informacion oportuna..."
             rows={2}
             helperText="Lo que requieren para cumplir sus objetivos"
@@ -822,7 +888,7 @@ const ParteInteresadaFormModalComponent = ({
           <Textarea
             label="Expectativas"
             value={formData.expectativas}
-            onChange={(e) => handleFieldChange('expectativas', e.target.value)}
+            onChange={handleExpectativasChange}
             placeholder="¿Que espera obtener de la organizacion? Ej: Servicio confiable, comunicacion proactiva, mejora continua..."
             rows={2}
             helperText="Lo que esperan recibir mas alla de lo minimo"
@@ -831,7 +897,7 @@ const ParteInteresadaFormModalComponent = ({
           <Textarea
             label="Requisitos Pertinentes"
             value={formData.requisitos_pertinentes}
-            onChange={(e) => handleFieldChange('requisitos_pertinentes', e.target.value)}
+            onChange={handleRequisitosChange}
             placeholder="¿Cuales necesidades/expectativas se convierten en requisitos del SGC? Ej: Certificacion ISO, tiempos de entrega..."
             rows={2}
             helperText="Requisitos que la organizacion debe cumplir"

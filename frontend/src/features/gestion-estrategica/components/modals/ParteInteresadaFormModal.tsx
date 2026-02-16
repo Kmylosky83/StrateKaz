@@ -54,7 +54,7 @@ import { useAreas } from '../../hooks/useAreas'; // Sprint 17
 import { useColaboradores } from '@/features/talent-hub/hooks'; // Sprint 17
 import { useCargos } from '@/features/configuracion/hooks'; // Sprint 17
 import { DynamicIcon } from '@/components/common';
-import { Badge } from '@/components/ui/badge'; // Sprint 17
+import { Badge } from '@/components/common/Badge'; // Sprint 17
 
 // =============================================================================
 // INTERFACES

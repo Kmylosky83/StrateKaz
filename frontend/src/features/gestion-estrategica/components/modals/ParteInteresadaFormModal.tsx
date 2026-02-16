@@ -13,7 +13,7 @@
  *
  * Usa Design System dinamico sin colores hardcoded
  */
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import {
   Users,
   Building2,
@@ -222,7 +222,8 @@ const CUADRANTE_INFO: Record<
 // COMPONENTE PRINCIPAL
 // =============================================================================
 
-export const ParteInteresadaFormModal = ({
+// FIX Sprint 17: Wrapper memo para evitar re-renders del form en cada keystroke
+const ParteInteresadaFormModalComponent = ({
   parteInteresada,
   isOpen,
   onClose,
@@ -471,8 +472,15 @@ export const ParteInteresadaFormModal = ({
     </>
   );
 
+  // FIX Sprint 17: Key único por modal instance para forzar remount limpio al abrir/cerrar
+  const modalKey = useMemo(
+    () => `modal-${isEditing ? parteInteresada?.id : 'new'}-${isOpen}`,
+    [isEditing, parteInteresada?.id, isOpen]
+  );
+
   return (
     <BaseModal
+      key={modalKey}
       isOpen={isOpen}
       onClose={handleClose}
       title={isEditing ? 'Editar Parte Interesada' : 'Nueva Parte Interesada'}
@@ -941,4 +949,6 @@ export const ParteInteresadaFormModal = ({
   );
 };
 
+// FIX Sprint 17: Export con React.memo para evitar re-renders innecesarios
+export const ParteInteresadaFormModal = memo(ParteInteresadaFormModalComponent);
 export default ParteInteresadaFormModal;

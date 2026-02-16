@@ -162,6 +162,30 @@ export default function EncuestaPublicaPage() {
   const empresaNombre = enc?.empresa_nombre || 'Organización';
   const brand = getBrandColors(enc?.branding);
 
+  // Update browser tab title & favicon with tenant branding
+  useEffect(() => {
+    if (!enc) return;
+    const nombre = enc.empresa_nombre || enc.branding?.empresa_nombre;
+    if (nombre) {
+      document.title = `${enc.titulo} — ${nombre}`;
+    }
+    // Update favicon if tenant has one
+    const faviconUrl = enc.branding?.favicon_url;
+    if (faviconUrl) {
+      let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.head.appendChild(link);
+      }
+      link.href = faviconUrl;
+    }
+    // Cleanup: restore defaults on unmount
+    return () => {
+      document.title = 'StrateKaz';
+    };
+  }, [enc]);
+
   // Check for saved progress on load
   useEffect(() => {
     if (!token || !enc) return;

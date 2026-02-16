@@ -498,6 +498,7 @@ class EncuestaPublicaSerializer(serializers.ModelSerializer):
                     'secondary_color': bd.get('secondary_color', '#6366f1'),
                     'accent_color': bd.get('accent_color', '#ec4899'),
                     'logo_url': bd.get('logo') or '',
+                    'favicon_url': bd.get('favicon') or '',
                     'empresa_nombre': bd.get('company_name', ''),
                 }
         except Exception:

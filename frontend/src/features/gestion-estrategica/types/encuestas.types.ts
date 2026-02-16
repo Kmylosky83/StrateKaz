@@ -235,6 +235,7 @@ export interface EncuestaBranding {
   secondary_color: string;
   accent_color: string;
   logo_url?: string;
+  favicon_url?: string;
   empresa_nombre?: string;
 }
 

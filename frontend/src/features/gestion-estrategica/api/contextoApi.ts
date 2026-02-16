@@ -777,6 +777,126 @@ export interface GenerarMatrizResponse {
 }
 
 /**
+ * Matriz de Comunicación (Sprint 17)
+ * ISO 9001:2015 Cláusula 7.4 — Comunicación con Partes Interesadas
+ */
+export interface MatrizComunicacion {
+  id: number;
+  parte_interesada: number;
+  parte_interesada_nombre: string;
+  que_comunicar: string;
+  cuando_comunicar:
+    | 'diaria'
+    | 'semanal'
+    | 'quincenal'
+    | 'mensual'
+    | 'bimestral'
+    | 'trimestral'
+    | 'semestral'
+    | 'anual'
+    | 'segun_necesidad';
+  cuando_display: string;
+  como_comunicar:
+    | 'email'
+    | 'reunion'
+    | 'videoconferencia'
+    | 'informe'
+    | 'cartelera'
+    | 'intranet'
+    | 'telefono'
+    | 'whatsapp'
+    | 'redes'
+    | 'capacitacion'
+    | 'otro';
+  como_display: string;
+  responsable: number | null;
+  responsable_nombre: string;
+  registro_evidencia: string;
+  normas_aplicables: number[];
+  normas_aplicables_lista: Array<{ id: number; code: string; name: string }>;
+  es_obligatoria: boolean;
+  observaciones: string;
+  empresa: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MatrizComunicacionFilters {
+  parte_interesada?: number;
+  cuando_comunicar?: string;
+  como_comunicar?: string;
+  is_active?: boolean;
+  search?: string;
+  page?: number;
+  page_size?: number;
+}
+
+export type CreateMatrizComunicacionDTO = Pick<
+  MatrizComunicacion,
+  'parte_interesada' | 'que_comunicar' | 'cuando_comunicar' | 'como_comunicar' | 'es_obligatoria'
+> &
+  Partial<
+    Pick<
+      MatrizComunicacion,
+      'responsable' | 'registro_evidencia' | 'normas_aplicables' | 'observaciones'
+    >
+  >;
+
+/**
+ * API para Matriz de Comunicación (Sprint 17)
+ */
+export const matrizComunicacionApi = {
+  list: async (
+    filters?: MatrizComunicacionFilters
+  ): Promise<PaginatedResponse<MatrizComunicacion>> => {
+    const params = new URLSearchParams();
+    if (filters?.page) params.append('page', filters.page.toString());
+    if (filters?.page_size) params.append('page_size', filters.page_size.toString());
+    if (filters?.parte_interesada)
+      params.append('parte_interesada', filters.parte_interesada.toString());
+    if (filters?.cuando_comunicar) params.append('cuando_comunicar', filters.cuando_comunicar);
+    if (filters?.como_comunicar) params.append('como_comunicar', filters.como_comunicar);
+    if (filters?.search) params.append('search', filters.search);
+
+    const response = await apiClient.get<PaginatedResponse<MatrizComunicacion>>(
+      `${BASE_URL}/matriz-comunicacion/?${params.toString()}`
+    );
+    return response.data;
+  },
+
+  get: async (id: number): Promise<MatrizComunicacion> => {
+    const response = await apiClient.get<MatrizComunicacion>(
+      `${BASE_URL}/matriz-comunicacion/${id}/`
+    );
+    return response.data;
+  },
+
+  create: async (data: CreateMatrizComunicacionDTO): Promise<MatrizComunicacion> => {
+    const response = await apiClient.post<MatrizComunicacion>(
+      `${BASE_URL}/matriz-comunicacion/`,
+      data
+    );
+    return response.data;
+  },
+
+  update: async (
+    id: number,
+    data: Partial<CreateMatrizComunicacionDTO>
+  ): Promise<MatrizComunicacion> => {
+    const response = await apiClient.patch<MatrizComunicacion>(
+      `${BASE_URL}/matriz-comunicacion/${id}/`,
+      data
+    );
+    return response.data;
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await apiClient.delete(`${BASE_URL}/matriz-comunicacion/${id}/`);
+  },
+};
+
+/**
  * API para Grupos de Partes Interesadas (NUEVO - Sprint 17)
  */
 export const gruposParteInteresadaApi = {
@@ -899,8 +1019,16 @@ export const partesInteresadasApi = {
     if (filters?.page) params.append('page', filters.page.toString());
     if (filters?.page_size) params.append('page_size', filters.page_size.toString());
     if (filters?.tipo) params.append('tipo', filters.tipo.toString());
-    if (filters?.nivel_influencia) params.append('nivel_influencia', filters.nivel_influencia);
+    if (filters?.tipo__grupo) params.append('tipo__grupo', filters.tipo__grupo.toString());
+    if (filters?.nivel_influencia_pi)
+      params.append('nivel_influencia_pi', filters.nivel_influencia_pi);
+    if (filters?.nivel_influencia_empresa)
+      params.append('nivel_influencia_empresa', filters.nivel_influencia_empresa);
     if (filters?.nivel_interes) params.append('nivel_interes', filters.nivel_interes);
+    if (filters?.responsable_empresa)
+      params.append('responsable_empresa', filters.responsable_empresa.toString());
+    if (filters?.area_responsable)
+      params.append('area_responsable', filters.area_responsable.toString());
     if (filters?.search) params.append('search', filters.search);
 
     const response = await apiClient.get<PaginatedResponse<ParteInteresada>>(
@@ -1048,7 +1176,8 @@ export default {
   factoresPestel: factoresPestelApi,
   fuerzasPorter: fuerzasPorterApi,
   estrategiasTows: estrategiasTowsApi,
-  gruposParteInteresada: gruposParteInteresadaApi, // NUEVO - Sprint 17
+  gruposParteInteresada: gruposParteInteresadaApi,
   tiposParteInteresada: tiposParteInteresadaApi,
   partesInteresadas: partesInteresadasApi,
+  matrizComunicacion: matrizComunicacionApi,
 };

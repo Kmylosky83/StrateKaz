@@ -77,6 +77,7 @@ export const BaseModal = ({
   const modalRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
+  const hasInitialFocus = useRef(false);
 
   // MS-002: Estado para indicadores de scroll
   const [scrollState, setScrollState] = useState({ canScrollUp: false, canScrollDown: false });
@@ -97,17 +98,13 @@ export const BaseModal = ({
     });
   }, []);
 
-  // Manejar tecla Escape
-  const handleKeyDown = useCallback(
-    (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && closeOnEscape) {
-        onClose();
-      }
-    },
-    [closeOnEscape, onClose]
-  );
+  // Refs estables para callbacks (evita re-ejecutar effects en cada render)
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  const closeOnEscapeRef = useRef(closeOnEscape);
+  closeOnEscapeRef.current = closeOnEscape;
 
-  // Focus trap y scroll lock
+  // Focus trap y scroll lock — SOLO depende de isOpen
   useEffect(() => {
     if (isOpen) {
       // Guardar elemento activo actual
@@ -116,15 +113,22 @@ export const BaseModal = ({
       // Bloquear scroll del body
       document.body.style.overflow = 'hidden';
 
-      // Agregar listener de Escape
+      // Agregar listener de Escape (usa refs para evitar recrear el handler)
+      const handleKeyDown = (event: KeyboardEvent) => {
+        if (event.key === 'Escape' && closeOnEscapeRef.current) {
+          onCloseRef.current();
+        }
+      };
       document.addEventListener('keydown', handleKeyDown);
 
-      // Focus al modal
-      setTimeout(() => {
-        modalRef.current?.focus();
-        // MS-002: Verificar scroll inicial después de render
-        updateScrollIndicators();
-      }, 100);
+      // Focus al modal SOLO en la primera apertura
+      if (!hasInitialFocus.current) {
+        setTimeout(() => {
+          modalRef.current?.focus();
+          updateScrollIndicators();
+        }, 100);
+        hasInitialFocus.current = true;
+      }
 
       return () => {
         // Restaurar scroll
@@ -135,9 +139,13 @@ export const BaseModal = ({
 
         // Restaurar focus
         previousActiveElement.current?.focus();
+
+        // Reset para próxima apertura
+        hasInitialFocus.current = false;
       };
     }
-  }, [isOpen, handleKeyDown, updateScrollIndicators]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   // MS-002: Observer para detectar cambios de contenido
   useEffect(() => {

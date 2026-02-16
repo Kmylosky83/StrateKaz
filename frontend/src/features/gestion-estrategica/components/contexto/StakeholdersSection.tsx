@@ -37,6 +37,7 @@ import {
   Leaf,
   UserCircle,
   ArrowRightLeft,
+  MessageSquare,
 } from 'lucide-react';
 import { Badge } from '@/components/common/Badge';
 import { Button } from '@/components/common/Button';
@@ -73,6 +74,7 @@ import {
 // Componentes locales
 import { ParteInteresadaFormModal } from '../modals/ParteInteresadaFormModal';
 import { StakeholderMatrix } from './StakeholderMatrix';
+import { MatrizComunicacionSection } from './MatrizComunicacionSection';
 
 // =============================================================================
 // TIPOS
@@ -80,7 +82,7 @@ import { StakeholderMatrix } from './StakeholderMatrix';
 
 type NivelInfluencia = 'alta' | 'media' | 'baja';
 type NivelInteres = 'alto' | 'medio' | 'bajo';
-type ViewMode = 'table' | 'matrix';
+type ViewMode = 'table' | 'matrix' | 'comunicacion';
 type CuadranteKey = 'gestionar_cerca' | 'mantener_satisfecho' | 'mantener_informado' | 'monitorear';
 
 // =============================================================================
@@ -122,6 +124,7 @@ const CUADRANTE_CONFIG: Record<
 const VIEW_OPTIONS = [
   { value: 'table' as ViewMode, label: 'Tabla', icon: Table },
   { value: 'matrix' as ViewMode, label: 'Matriz', icon: LayoutGrid },
+  { value: 'comunicacion' as ViewMode, label: 'Comunicación', icon: MessageSquare },
 ];
 
 // =============================================================================
@@ -351,7 +354,7 @@ export const StakeholdersSection = ({ triggerNewForm }: StakeholdersSectionProps
 
   const handleGenerateMatrices = async () => {
     try {
-      const grupoId = filters.grupo ? parseInt(filters.grupo.toString()) : undefined;
+      const grupoId = filters.tipo__grupo ? filters.tipo__grupo : undefined;
       await generarMatrices(grupoId);
       setAlertMessage({
         type: 'success',
@@ -394,8 +397,26 @@ export const StakeholdersSection = ({ triggerNewForm }: StakeholdersSectionProps
     );
   };
 
-  // Renderizar sistemas relacionados
+  // Renderizar sistemas de gestion relacionados (dinámico desde NormaISO)
   const renderSistemas = (stakeholder: ParteInteresada) => {
+    const normas = stakeholder.normas_relacionadas_detail;
+
+    // Si tiene normas dinámicas, mostrarlas
+    if (normas && normas.length > 0) {
+      return (
+        <div className="flex flex-wrap gap-1">
+          {normas.map((n) => (
+            <Tooltip key={n.id} content={n.name}>
+              <Badge variant="outline" size="sm" style={{ borderColor: n.color, color: n.color }}>
+                {n.short_name || n.code}
+              </Badge>
+            </Tooltip>
+          ))}
+        </div>
+      );
+    }
+
+    // Fallback: campos legacy (compatibilidad mientras se migran datos)
     const sistemas = [];
     if (stakeholder.relacionado_sst) sistemas.push('SST');
     if (stakeholder.relacionado_ambiental) sistemas.push('AMB');
@@ -504,11 +525,11 @@ export const StakeholdersSection = ({ triggerNewForm }: StakeholdersSectionProps
             />
             {/* Sprint 17: Filtro por Grupo */}
             <Select
-              value={filters.grupo?.toString() || ''}
+              value={filters.tipo__grupo?.toString() || ''}
               onChange={(e) =>
                 setFilters({
                   ...filters,
-                  grupo: e.target.value ? parseInt(e.target.value) : undefined,
+                  tipo__grupo: e.target.value ? parseInt(e.target.value) : undefined,
                   page: 1,
                 })
               }
@@ -528,13 +549,13 @@ export const StakeholdersSection = ({ triggerNewForm }: StakeholdersSectionProps
               options={tipoOptions}
               className="w-40"
             />
-            {/* Filtro: Influencia */}
+            {/* Filtro: Influencia PI */}
             <Select
-              value={filters.nivel_influencia || ''}
+              value={filters.nivel_influencia_pi || ''}
               onChange={(e) =>
                 setFilters({
                   ...filters,
-                  nivel_influencia: e.target.value
+                  nivel_influencia_pi: e.target.value
                     ? (e.target.value as NivelInfluencia)
                     : undefined,
                   page: 1,
@@ -564,8 +585,11 @@ export const StakeholdersSection = ({ triggerNewForm }: StakeholdersSectionProps
         }
       />
 
-      {/* 3. Contenido: Tabla o Matriz */}
-      {isLoading ? (
+      {/* 3. Contenido: Tabla, Matriz o Comunicación */}
+      {viewMode === 'comunicacion' ? (
+        /* Vista Matriz de Comunicación */
+        <MatrizComunicacionSection />
+      ) : isLoading ? (
         <TableSkeleton rows={5} columns={6} />
       ) : isEmpty ? (
         <EmptyState

@@ -12,7 +12,8 @@ from .views import (
     TemaEncuestaViewSet,
     ParticipanteEncuestaViewSet,
     RespuestaEncuestaViewSet,
-    EncuestaPublicaView
+    EncuestaPublicaView,
+    EncuestaLookupView,
 )
 
 app_name = 'encuestas'
@@ -25,6 +26,13 @@ router.register(r'participantes', ParticipanteEncuestaViewSet, basename='partici
 router.register(r'respuestas', RespuestaEncuestaViewSet, basename='respuesta')
 
 urlpatterns = [
+    # Lookup cross-tenant: resuelve el tenant de una encuesta por token
+    path(
+        'lookup/<uuid:token>/',
+        EncuestaLookupView.as_view(),
+        name='encuesta-lookup'
+    ),
+
     # Endpoint público para diligenciamiento (sin autenticación)
     path(
         'publica/<uuid:token>/',

@@ -284,14 +284,11 @@ class EncuestaDofa(BaseCompanyModel):
 
     @property
     def enlace_publico(self):
-        """Genera el enlace público completo para la encuesta, incluyendo dominio del tenant."""
-        from django.db import connection
-        tenant = getattr(connection, 'tenant', None)
-        if tenant and hasattr(tenant, 'primary_domain') and tenant.primary_domain:
-            domain = tenant.primary_domain
-            protocol = 'https'
-            return f"{protocol}://{domain}/encuestas/responder/{self.token_publico}/"
-        # Fallback: ruta relativa (dev local)
+        """Genera el enlace público para la encuesta (ruta relativa).
+
+        El frontend (app.stratekaz.com) construye la URL completa.
+        El tenant se resuelve vía endpoint lookup /api/encuestas-dofa/lookup/{token}/
+        """
         return f"/encuestas/responder/{self.token_publico}/"
 
     def activar(self):

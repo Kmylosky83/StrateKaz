@@ -390,8 +390,8 @@ export const respuestasApi = {
  *
  * - Si hay JWT en localStorage → lo envía (encuestas privadas, usuario identificado)
  * - Si NO hay JWT → no envía auth (encuestas públicas, acceso anónimo)
- * - El tenant se resuelve por dominio (TenantMainMiddleware)
- * - Para dev local, agrega X-Tenant-ID si está disponible
+ * - El tenant se resuelve vía lookup cross-tenant → X-Tenant-ID header
+ * - JWT opcional para encuestas privadas
  */
 const publicClient = axios.create({
   baseURL: API_URL,
@@ -399,7 +399,7 @@ const publicClient = axios.create({
   timeout: 30000,
 });
 
-// Interceptor: agregar JWT (si existe) + X-Tenant-ID (dev local)
+// Interceptor: agregar JWT (si existe) + X-Tenant-ID
 publicClient.interceptors.request.use((config) => {
   // JWT opcional — soporta encuestas privadas (usuario autenticado)
   const accessToken = localStorage.getItem('access_token');
@@ -407,17 +407,46 @@ publicClient.interceptors.request.use((config) => {
     config.headers['Authorization'] = `Bearer ${accessToken}`;
   }
 
-  // Tenant ID para dev local (en producción se resuelve por dominio)
-  const tenantId = localStorage.getItem('current_tenant_id');
+  // Tenant ID — resuelto por lookup o por sesión actual
+  const encuestaTenantId = localStorage.getItem('encuesta_tenant_id');
+  const currentTenantId = localStorage.getItem('current_tenant_id');
+  const tenantId = encuestaTenantId || currentTenantId;
   if (tenantId && config.headers) {
     config.headers['X-Tenant-ID'] = tenantId;
   }
   return config;
 });
 
+/**
+ * Respuesta del endpoint lookup cross-tenant
+ */
+interface EncuestaLookupResult {
+  tenant_id: number;
+  tenant_name: string;
+  encuesta_id: number;
+  titulo: string;
+  estado: string;
+  es_publica: boolean;
+}
+
 export const encuestaPublicaApi = {
   /**
-   * Obtener encuesta por token (auth opcional — pública o privada)
+   * Lookup cross-tenant: busca en qué tenant está la encuesta.
+   * NO requiere X-Tenant-ID — busca en todos los schemas.
+   * Guarda el tenant_id en localStorage para las llamadas posteriores.
+   */
+  lookup: async (token: string): Promise<EncuestaLookupResult> => {
+    const response = await axios.get<EncuestaLookupResult>(
+      `${API_URL}${BASE_URL}/lookup/${token}/`
+    );
+    // Guardar tenant_id para las llamadas posteriores (get, responder)
+    localStorage.setItem('encuesta_tenant_id', response.data.tenant_id.toString());
+    return response.data;
+  },
+
+  /**
+   * Obtener encuesta por token (auth opcional — pública o privada).
+   * REQUIERE lookup previo para resolver el tenant.
    */
   get: async (token: string): Promise<EncuestaPublica> => {
     const response = await publicClient.get<EncuestaPublica>(`${BASE_URL}/publica/${token}/`);
@@ -425,7 +454,8 @@ export const encuestaPublicaApi = {
   },
 
   /**
-   * Enviar respuestas (auth opcional — anónimo o autenticado)
+   * Enviar respuestas (auth opcional — anónimo o autenticado).
+   * REQUIERE lookup previo para resolver el tenant.
    */
   responder: async (
     token: string,
@@ -436,6 +466,13 @@ export const encuestaPublicaApi = {
       respuestas_creadas: number;
     }>(`${BASE_URL}/publica/${token}/`, data);
     return response.data;
+  },
+
+  /**
+   * Limpiar tenant de encuesta del localStorage
+   */
+  clearTenant: () => {
+    localStorage.removeItem('encuesta_tenant_id');
   },
 };
 

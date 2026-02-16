@@ -377,6 +377,53 @@ class RespuestaEncuestaViewSet(viewsets.ModelViewSet):
 # ENDPOINTS PÚBLICOS (SIN AUTENTICACIÓN)
 # ==============================================================================
 
+
+class EncuestaLookupView(APIView):
+    """
+    Endpoint público cross-tenant para resolver el tenant de una encuesta.
+
+    GET /api/encuestas-dofa/lookup/{token}/
+    Busca en todos los schemas de tenants activos cuál tiene la encuesta
+    con ese token_publico y retorna el tenant_id para que el frontend
+    envíe X-Tenant-ID en las llamadas posteriores.
+    """
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def get(self, request, token):
+        from django_tenants.utils import get_tenant_model
+        from django.db import connection
+
+        Tenant = get_tenant_model()
+        tenants = Tenant.objects.filter(is_active=True).exclude(
+            schema_name='public'
+        )
+
+        for tenant in tenants:
+            connection.set_tenant(tenant)
+            try:
+                encuesta = EncuestaDofa.objects.filter(
+                    token_publico=token
+                ).only('id', 'titulo', 'estado', 'es_publica').first()
+
+                if encuesta:
+                    return Response({
+                        'tenant_id': tenant.id,
+                        'tenant_name': tenant.name,
+                        'encuesta_id': encuesta.id,
+                        'titulo': encuesta.titulo,
+                        'estado': encuesta.estado,
+                        'es_publica': encuesta.es_publica,
+                    })
+            except Exception:
+                continue
+
+        return Response(
+            {'detail': 'Encuesta no encontrada'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+
 class EncuestaPublicaView(APIView):
     """
     Vista pública para acceder a encuestas mediante token.

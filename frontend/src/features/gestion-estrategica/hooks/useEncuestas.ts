@@ -481,12 +481,22 @@ export function useQrCode(id: number | undefined) {
 // ==============================================================================
 
 /**
- * Hook para obtener encuesta pública por token
+ * Hook para obtener encuesta pública por token.
+ *
+ * Flujo multi-tenant:
+ * 1. Llama al endpoint lookup (cross-tenant) para resolver el tenant_id
+ * 2. Guarda tenant_id en localStorage (encuesta_tenant_id)
+ * 3. Llama al endpoint de la encuesta con X-Tenant-ID header
  */
 export function useEncuestaPublica(token: string | undefined) {
   return useQuery({
     queryKey: encuestasKeys.publica(token!),
-    queryFn: () => encuestaPublicaApi.get(token!),
+    queryFn: async () => {
+      // Paso 1: Lookup cross-tenant para resolver el tenant
+      await encuestaPublicaApi.lookup(token!);
+      // Paso 2: Obtener la encuesta (ahora con X-Tenant-ID en el header)
+      return encuestaPublicaApi.get(token!);
+    },
     enabled: !!token,
     retry: false,
   });

@@ -46,6 +46,7 @@ class TenantAuthenticationMiddleware:
             '/api/tenant/auth/',  # Auth endpoints multi-tenant
             '/api/tenant/public/',
             '/api/tenant/plans/',
+            '/api/encuestas-dofa/lookup/',  # Lookup cross-tenant de encuestas
             '/api/health/',
             '/api/schema/',
             '/api/docs/',

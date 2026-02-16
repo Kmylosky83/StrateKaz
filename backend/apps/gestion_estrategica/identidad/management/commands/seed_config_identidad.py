@@ -1,7 +1,7 @@
 """
-Seed de configuracion dinamica para Identidad Corporativa
+Seed de configuración dinámica para Identidad Corporativa
 
-Pobla las tablas de configuracion con los valores por defecto
+Pobla las tablas de configuración con los valores por defecto
 que anteriormente estaban hardcodeados como CHOICES.
 
 Uso:
@@ -42,7 +42,7 @@ class Command(BaseCommand):
             self._seed_flujos_firma(force)
 
         self.stdout.write(self.style.SUCCESS(
-            'Configuracion de Identidad Corporativa poblada exitosamente'
+            'Configuración de Identidad Corporativa poblada exitosamente'
         ))
 
     def _seed_estados_politica(self, force: bool):
@@ -65,8 +65,8 @@ class Command(BaseCommand):
             },
             {
                 'code': 'EN_REVISION',
-                'label': 'En Revision',
-                'description': 'En proceso de revision tecnica por el cargo revisor',
+                'label': 'En Revisión',
+                'description': 'En proceso de revisión técnica por el cargo revisor',
                 'color': 'yellow',
                 'bg_color': 'bg-yellow-100',
                 'icon': 'Eye',
@@ -80,8 +80,8 @@ class Command(BaseCommand):
             },
             {
                 'code': 'EN_APROBACION',
-                'label': 'En Aprobacion',
-                'description': 'Revisada, pendiente de aprobacion final por el cargo aprobador',
+                'label': 'En Aprobación',
+                'description': 'Revisada, pendiente de aprobación final por el cargo aprobador',
                 'color': 'amber',
                 'bg_color': 'bg-amber-100',
                 'icon': 'ClipboardCheck',
@@ -96,7 +96,7 @@ class Command(BaseCommand):
             {
                 'code': 'POR_CODIFICAR',
                 'label': 'Por Codificar',
-                'description': 'Aprobada, pendiente de codificacion y publicacion en Gestor Documental',
+                'description': 'Aprobada, pendiente de codificación y publicación en Gestor Documental',
                 'color': 'purple',
                 'bg_color': 'bg-purple-100',
                 'icon': 'FileCode',
@@ -111,7 +111,7 @@ class Command(BaseCommand):
             {
                 'code': 'VIGENTE',
                 'label': 'Vigente',
-                'description': 'Politica activa y publicada en el Gestor Documental',
+                'description': 'Política activa y publicada en el Gestor Documental',
                 'color': 'green',
                 'bg_color': 'bg-green-100',
                 'icon': 'CheckCircle',
@@ -126,7 +126,7 @@ class Command(BaseCommand):
             {
                 'code': 'OBSOLETO',
                 'label': 'Obsoleto',
-                'description': 'Politica reemplazada por una version mas reciente',
+                'description': 'Política reemplazada por una versión más reciente',
                 'color': 'slate',
                 'bg_color': 'bg-slate-100',
                 'icon': 'Archive',
@@ -141,7 +141,7 @@ class Command(BaseCommand):
             {
                 'code': 'RECHAZADO',
                 'label': 'Rechazado',
-                'description': 'Politica rechazada en revision o aprobacion, requiere correcciones',
+                'description': 'Política rechazada en revisión o aprobación, requiere correcciones',
                 'color': 'red',
                 'bg_color': 'bg-red-100',
                 'icon': 'XCircle',
@@ -235,8 +235,8 @@ class Command(BaseCommand):
             },
             {
                 'code': 'ANTISOBORNO',
-                'name': 'Politica Antisoborno',
-                'description': 'Politica del Sistema de Gestion Antisoborno',
+                'name': 'Política Antisoborno',
+                'description': 'Política del Sistema de Gestión Antisoborno',
                 'prefijo_codigo': 'POL-ASB',
                 'requiere_firma': True,
                 'icon': 'Scale',
@@ -245,8 +245,8 @@ class Command(BaseCommand):
             },
             {
                 'code': 'CONTABLE',
-                'name': 'Politica Contable',
-                'description': 'Politicas contables y financieras de la organizacion',
+                'name': 'Política Contable',
+                'description': 'Políticas contables y financieras de la organización',
                 'prefijo_codigo': 'POL-CON',
                 'requiere_firma': True,
                 'icon': 'Calculator',
@@ -255,8 +255,8 @@ class Command(BaseCommand):
             },
             {
                 'code': 'ADMINISTRATIVA',
-                'name': 'Politica Administrativa',
-                'description': 'Politicas administrativas y de gestion organizacional',
+                'name': 'Política Administrativa',
+                'description': 'Políticas administrativas y de gestión organizacional',
                 'prefijo_codigo': 'POL-ADM',
                 'requiere_firma': True,
                 'icon': 'Briefcase',
@@ -265,8 +265,8 @@ class Command(BaseCommand):
             },
             {
                 'code': 'OTRAS',
-                'name': 'Otras Politicas',
-                'description': 'Otras politicas organizacionales no categorizadas',
+                'name': 'Otras Políticas',
+                'description': 'Otras políticas organizacionales no categorizadas',
                 'prefijo_codigo': 'POL-OTR',
                 'requiere_firma': True,
                 'icon': 'FileText',

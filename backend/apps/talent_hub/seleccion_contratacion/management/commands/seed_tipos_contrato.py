@@ -1,12 +1,12 @@
 """
-Management command para cargar catalogo de Tipos de Contrato Laboral.
-Basado en legislacion laboral colombiana (Codigo Sustantivo del Trabajo).
+Management command para cargar catálogo de Tipos de Contrato Laboral.
+Basado en legislación laboral colombiana (Código Sustantivo del Trabajo).
 
 Tipos:
-1. Termino Indefinido (CST Art. 47)
-2. Termino Fijo (CST Art. 46) - max 3 anos
+1. Término Indefinido (CST Art. 47)
+2. Término Fijo (CST Art. 46) - máx 3 años
 3. Obra o Labor (CST Art. 45)
-4. Prestacion de Servicios (contrato civil, no laboral)
+4. Prestación de Servicios (contrato civil, no laboral)
 5. Aprendizaje SENA (Ley 789/2002)
 6. Temporal (Ley 50/1990)
 
@@ -17,7 +17,7 @@ from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
-    help = 'Carga catalogo de Tipos de Contrato Laboral (legislacion colombiana)'
+    help = 'Carga catálogo de Tipos de Contrato Laboral (legislación colombiana)'
 
     def handle(self, *args, **kwargs):
         from apps.talent_hub.seleccion_contratacion.models import TipoContrato
@@ -29,8 +29,8 @@ class Command(BaseCommand):
         tipos = [
             {
                 'codigo': 'TI',
-                'nombre': 'Termino Indefinido',
-                'descripcion': 'Contrato sin fecha de terminacion definida. '
+                'nombre': 'Término Indefinido',
+                'descripcion': 'Contrato sin fecha de terminación definida. '
                                'Se mantiene vigente mientras subsistan las causas '
                                'que le dieron origen (CST Art. 47).',
                 'requiere_duracion': False,
@@ -40,10 +40,10 @@ class Command(BaseCommand):
             },
             {
                 'codigo': 'TF',
-                'nombre': 'Termino Fijo',
-                'descripcion': 'Contrato con duracion determinada, maximo 3 anos. '
-                               'Debe constar por escrito. Prorrogable automaticamente '
-                               'si no hay preaviso de 30 dias (CST Art. 46).',
+                'nombre': 'Término Fijo',
+                'descripcion': 'Contrato con duración determinada, máximo 3 años. '
+                               'Debe constar por escrito. Prorrogable automáticamente '
+                               'si no hay preaviso de 30 días (CST Art. 46).',
                 'requiere_duracion': True,
                 'requiere_objeto': False,
                 'color_badge': 'blue',
@@ -61,9 +61,9 @@ class Command(BaseCommand):
             },
             {
                 'codigo': 'PS',
-                'nombre': 'Prestacion de Servicios',
-                'descripcion': 'Contrato civil de prestacion de servicios profesionales. '
-                               'No genera relacion laboral. El contratista asume sus '
+                'nombre': 'Prestación de Servicios',
+                'descripcion': 'Contrato civil de prestación de servicios profesionales. '
+                               'No genera relación laboral. El contratista asume sus '
                                'propias obligaciones de seguridad social.',
                 'requiere_duracion': True,
                 'requiere_objeto': True,
@@ -74,7 +74,7 @@ class Command(BaseCommand):
                 'codigo': 'AP',
                 'nombre': 'Aprendizaje',
                 'descripcion': 'Contrato especial de aprendizaje SENA. '
-                               'Fase lectiva: 75% SMMLV. Fase practica: 100% SMMLV. '
+                               'Fase lectiva: 75% SMMLV. Fase práctica: 100% SMMLV. '
                                'No constituye contrato de trabajo (Ley 789/2002).',
                 'requiere_duracion': True,
                 'requiere_objeto': False,
@@ -84,8 +84,8 @@ class Command(BaseCommand):
             {
                 'codigo': 'TE',
                 'nombre': 'Temporal',
-                'descripcion': 'Contrato a traves de empresa de servicios temporales. '
-                               'Para atender picos de produccion, licencias o vacaciones '
+                'descripcion': 'Contrato a través de empresa de servicios temporales. '
+                               'Para atender picos de producción, licencias o vacaciones '
                                'del personal (Ley 50/1990).',
                 'requiere_duracion': True,
                 'requiere_objeto': False,

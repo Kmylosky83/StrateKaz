@@ -118,7 +118,7 @@ def calculate_empresa_stats():
         months = (dias % 365) // 30
 
         if years > 0:
-            antiguedad_text = f"{years} ano{'s' if years > 1 else ''}"
+            antiguedad_text = f"{years} año{'s' if years > 1 else ''}"
             if months > 0:
                 antiguedad_text += f", {months} mes{'es' if months > 1 else ''}"
         else:
@@ -126,7 +126,7 @@ def calculate_empresa_stats():
 
         stats.append({
             'key': 'antiguedad',
-            'label': 'Antiguedad',
+            'label': 'Antigüedad',
             'value': antiguedad_text,
             'icon': 'Calendar',
             'iconColor': 'primary',

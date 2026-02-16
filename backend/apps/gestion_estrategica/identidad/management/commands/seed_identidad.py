@@ -124,12 +124,12 @@ class Command(BaseCommand):
                 self.stdout.write(f'  [+] Valor "{valor.name}" creado')
 
         # =====================================================================
-        # 3. NORMAS ISO (para alcances y politicas)
+        # 3. NORMAS ISO (para alcances y políticas)
         # =====================================================================
         normas_data = [
             {
                 'code': 'ISO_9001',
-                'name': 'ISO 9001:2015 Sistema de Gestion de la Calidad',
+                'name': 'ISO 9001:2015 Sistema de Gestión de la Calidad',
                 'short_name': 'Calidad',
                 'category': 'Calidad',
                 'version': '2015',
@@ -138,7 +138,7 @@ class Command(BaseCommand):
             },
             {
                 'code': 'ISO_45001',
-                'name': 'ISO 45001:2018 Sistema de Gestion de SST',
+                'name': 'ISO 45001:2018 Sistema de Gestión de SST',
                 'short_name': 'SST',
                 'category': 'Seguridad',
                 'version': '2018',
@@ -147,7 +147,7 @@ class Command(BaseCommand):
             },
             {
                 'code': 'ISO_14001',
-                'name': 'ISO 14001:2015 Sistema de Gestion Ambiental',
+                'name': 'ISO 14001:2015 Sistema de Gestión Ambiental',
                 'short_name': 'Ambiental',
                 'category': 'Ambiente',
                 'version': '2015',
@@ -165,7 +165,7 @@ class Command(BaseCommand):
             },
             {
                 'code': 'PESV',
-                'name': 'PESV Resolucion 40595/2022',
+                'name': 'PESV Resolución 40595/2022',
                 'short_name': 'PESV',
                 'category': 'Vial',
                 'version': '2022',
@@ -199,11 +199,11 @@ class Command(BaseCommand):
         alcances_data = [
             {
                 'norma_code': 'ISO_9001',
-                'scope': '''Diseno, produccion y comercializacion de harinas y aceites de origen animal para uso en alimentacion animal, incluyendo:
-- Recoleccion de subproductos de plantas de beneficio
-- Procesamiento mediante coccion, prensado y secado
+                'scope': '''Diseño, producción y comercialización de harinas y aceites de origen animal para uso en alimentación animal, incluyendo:
+- Recolección de subproductos de plantas de beneficio
+- Procesamiento mediante cocción, prensado y secado
 - Control de calidad en laboratorio propio
-- Distribucion a clientes industriales''',
+- Distribución a clientes industriales''',
                 'is_certified': True,
                 'certification_body': 'ICONTEC',
                 'certificate_number': 'CO-SC 007321',
@@ -212,9 +212,9 @@ class Command(BaseCommand):
             },
             {
                 'norma_code': 'ISO_45001',
-                'scope': '''Sistema de Gestion de Seguridad y Salud en el Trabajo aplicable a todas las actividades de la organizacion:
+                'scope': '''Sistema de Gestión de Seguridad y Salud en el Trabajo aplicable a todas las actividades de la organización:
 - Operaciones de planta de rendering
-- Recoleccion y transporte de materias primas
+- Recolección y transporte de materias primas
 - Almacenamiento y despacho de productos
 - Actividades administrativas''',
                 'is_certified': False,
@@ -222,10 +222,10 @@ class Command(BaseCommand):
             },
             {
                 'norma_code': 'SG_SST',
-                'scope': '''Sistema de Gestion de Seguridad y Salud en el Trabajo segun Decreto 1072 de 2015 y Resolucion 0312 de 2019:
-- Identificacion de peligros y evaluacion de riesgos
-- Prevencion de accidentes y enfermedades laborales
-- Preparacion y respuesta ante emergencias
+                'scope': '''Sistema de Gestión de Seguridad y Salud en el Trabajo según Decreto 1072 de 2015 y Resolución 0312 de 2019:
+- Identificación de peligros y evaluación de riesgos
+- Prevención de accidentes y enfermedades laborales
+- Preparación y respuesta ante emergencias
 - Vigilancia de la salud de los trabajadores''',
                 'is_certified': True,
                 'certification_body': 'ARL Sura',
@@ -235,10 +235,10 @@ class Command(BaseCommand):
             },
             {
                 'norma_code': 'PESV',
-                'scope': '''Plan Estrategico de Seguridad Vial segun Resolucion 40595 de 2022:
-- Flota de 15 vehiculos de recoleccion
+                'scope': '''Plan Estratégico de Seguridad Vial según Resolución 40595 de 2022:
+- Flota de 15 vehículos de recolección
 - 20 conductores certificados
-- Rutas de recoleccion en 5 departamentos
+- Rutas de recolección en 5 departamentos
 - Programa de mantenimiento preventivo''',
                 'is_certified': True,
                 'certification_body': 'Ministerio de Transporte',
@@ -282,8 +282,8 @@ Datos creados:
   - {AlcanceSistema.objects.filter(identity=identity).count()} Alcances del Sistema
 
 Para probar:
-  1. Ir a Direccion Estrategica > Identidad Corporativa
-  2. Verificar las secciones: Mision/Vision, Valores
+  1. Ir a Dirección Estratégica > Identidad Corporativa
+  2. Verificar las secciones: Misión/Visión, Valores
   3. Probar el Drag & Drop de valores
   4. Probar el editor de texto enriquecido
         ''')

@@ -493,7 +493,7 @@ TIPOS_NOTIFICACION = [
     {
         'codigo': 'FIRMA_COMPLETADA',
         'nombre': 'Firma Completada',
-        'descripcion': 'Notifica al creador del documento que alguien firmo',
+        'descripcion': 'Notifica al creador del documento que alguien firmó',
         'categoria': 'aprobacion',
         'color': '#10B981',  # Green
         'icono': 'check-circle',

@@ -2,22 +2,22 @@
 Management command MAESTRO para configurar TODOS los 14 módulos del ERP StrateKaz
 según la Estructura Final 22 (validada 2025-12-22)
 
-ORDEN DEFINITIVO (Sprint 13.2 - TH sube a posicion 2):
-    10. Direccion Estrategica
+ORDEN DEFINITIVO (Sprint 13.2 - TH sube a posición 2):
+    10. Dirección Estratégica
     15. Centro de Talento (dato maestro: cargos, colaboradores)
-    20. Sistema de Gestion
+    20. Sistema de Gestión
     25. Cumplimiento Normativo
     26. Motor de Riesgos
     27. Flujos de Trabajo
-    30. Gestion Integral
+    30. Gestión Integral
     40. Cadena de Suministro
     41. Base de Operaciones
-    42. Logistica y Flota
+    42. Logística y Flota
     43. Ventas y CRM
-    50. Administracion y Financiero
+    50. Administración y Financiero
     51. Contabilidad
     60. Inteligencia de Negocios
-    61. Sistema de Auditorias
+    61. Sistema de Auditorías
 
 Uso:
     docker exec -it backend python manage.py seed_estructura_final
@@ -92,7 +92,7 @@ class Command(BaseCommand):
             # =====================================================================
             {
                 'code': 'gestion_estrategica',
-                'name': 'Direccion Estrategica',
+                'name': 'Dirección Estratégica',
                 'description': 'Base del sistema, configuración empresarial y planificación estratégica',
                 'category': 'STRATEGIC',
                 'color': 'blue',
@@ -335,7 +335,7 @@ class Command(BaseCommand):
                     {'code': 'aspectos_ambientales', 'name': 'Aspectos Ambientales', 'icon': 'Leaf', 'route': 'ambientales', 'orden': 2},
                     {'code': 'riesgos_viales', 'name': 'Riesgos Viales', 'icon': 'Car', 'route': 'viales', 'orden': 3},
                     {'code': 'sagrilaft_ptee', 'name': 'SAGRILAFT/PTEE', 'icon': 'ShieldCheck', 'route': 'sagrilaft', 'orden': 4},
-                    {'code': 'seguridad_informacion', 'name': 'Seguridad Información', 'icon': 'Lock', 'route': 'seguridad-info', 'orden': 5},
+                    {'code': 'seguridad_informacion', 'name': 'Seguridad de la Información', 'icon': 'Lock', 'route': 'seguridad-info', 'orden': 5},
                 ]
             },
             {
@@ -361,7 +361,7 @@ class Command(BaseCommand):
             # =====================================================================
             {
                 'code': 'hseq_management',
-                'name': 'Gestion Integral',
+                'name': 'Gestión Integral',
                 'description': 'Sistema integrado HSEQ - Calidad, SST, Ambiental, Seguridad Vial',
                 'category': 'INTEGRATED',
                 'color': 'teal',
@@ -426,7 +426,7 @@ class Command(BaseCommand):
             },
             {
                 'code': 'logistics_fleet',
-                'name': 'Logistica y Flota',
+                'name': 'Logística y Flota',
                 'description': 'Gestión de transporte, rutas y vehículos',
                 'category': 'OPERATIONAL',
                 'color': 'cyan',
@@ -483,10 +483,10 @@ class Command(BaseCommand):
                             {'code': 'organigrama', 'name': 'Organigrama', 'icon': 'GitBranch', 'orden': 2, 'description': 'Visualización interactiva de la jerarquía de cargos'},
                         ]
                     },
-                    {'code': 'seleccion_contratacion', 'name': 'Selección/Contratación', 'icon': 'UserPlus', 'route': 'seleccion', 'orden': 2},
+                    {'code': 'seleccion_contratacion', 'name': 'Selección y Contratación', 'icon': 'UserPlus', 'route': 'seleccion', 'orden': 2},
                     {'code': 'colaboradores', 'name': 'Colaboradores', 'icon': 'Users', 'route': 'colaboradores', 'orden': 3},
-                    {'code': 'onboarding_induccion', 'name': 'Onboarding/Inducción', 'icon': 'Rocket', 'route': 'onboarding', 'orden': 4},
-                    {'code': 'formacion_reinduccion', 'name': 'Formación/Reinducción', 'icon': 'BookOpen', 'route': 'formacion', 'orden': 5},
+                    {'code': 'onboarding_induccion', 'name': 'Onboarding e Inducción', 'icon': 'Rocket', 'route': 'onboarding', 'orden': 4},
+                    {'code': 'formacion_reinduccion', 'name': 'Formación y Reinducción', 'icon': 'BookOpen', 'route': 'formacion', 'orden': 5},
                     {'code': 'desempeno', 'name': 'Desempeño', 'icon': 'Award', 'route': 'desempeno', 'orden': 6},
                     {'code': 'control_tiempo', 'name': 'Control de Tiempo', 'icon': 'Clock', 'route': 'control-tiempo', 'orden': 7},
                     {'code': 'novedades', 'name': 'Novedades', 'icon': 'Bell', 'route': 'novedades', 'orden': 8},
@@ -497,7 +497,7 @@ class Command(BaseCommand):
             },
             {
                 'code': 'admin_finance',
-                'name': 'Administracion y Financiero',
+                'name': 'Administración y Financiero',
                 'description': 'Gestión financiera, tesorería y activos',
                 'category': 'SUPPORT',
                 'color': 'emerald',
@@ -558,7 +558,7 @@ class Command(BaseCommand):
             },
             {
                 'code': 'audit_system',
-                'name': 'Sistema de Auditorias',
+                'name': 'Sistema de Auditorías',
                 'description': 'Logs, notificaciones, alertas y trazabilidad del sistema',
                 'category': 'INTELLIGENCE',
                 'color': 'slate',
@@ -714,5 +714,5 @@ class Command(BaseCommand):
 
         self.stdout.write('\n  VERIFICAR EN:')
         self.stdout.write('  GET /api/core/system-modules/sidebar/')
-        self.stdout.write('  Frontend: El sidebar deberia reflejar el nuevo orden')
+        self.stdout.write('  Frontend: El sidebar debería reflejar el nuevo orden')
         self.stdout.write('')

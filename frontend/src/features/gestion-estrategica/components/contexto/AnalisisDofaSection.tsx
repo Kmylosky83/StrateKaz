@@ -567,29 +567,29 @@ export const AnalisisDofaSection = ({
         />
       )}
 
-      {/* Dialogo de confirmacion para eliminar */}
+      {/* Diálogo de confirmación para eliminar */}
       <ConfirmDialog
         isOpen={!!deleteConfirm}
-        title="Eliminar Analisis DOFA"
-        message={`Esta seguro de eliminar el analisis "${deleteConfirm?.nombre}"? Se eliminaran todos los factores asociados.`}
-        confirmLabel="Eliminar"
-        cancelLabel="Cancelar"
+        title="Eliminar Análisis DOFA"
+        message={`¿Está seguro de eliminar el análisis "${deleteConfirm?.nombre}"? Se eliminarán todos los factores asociados.`}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
         variant="danger"
         onConfirm={handleDeleteConfirm}
-        onCancel={() => setDeleteConfirm(null)}
+        onClose={() => setDeleteConfirm(null)}
         isLoading={deleteMutation.isPending}
       />
 
-      {/* Dialogo de confirmacion para aprobar */}
+      {/* Diálogo de confirmación para aprobar */}
       <ConfirmDialog
         isOpen={!!aprobarConfirm}
-        title="Aprobar Analisis DOFA"
-        message={`Al aprobar el analisis "${aprobarConfirm?.nombre}", quedara disponible para generar estrategias TOWS. Desea continuar?`}
-        confirmLabel="Aprobar"
-        cancelLabel="Cancelar"
+        title="Aprobar Análisis DOFA"
+        message={`Al aprobar el análisis "${aprobarConfirm?.nombre}", quedará disponible para generar estrategias TOWS. ¿Desea continuar?`}
+        confirmText="Aprobar"
+        cancelText="Cancelar"
         variant="info"
         onConfirm={handleAprobarConfirm}
-        onCancel={() => setAprobarConfirm(null)}
+        onClose={() => setAprobarConfirm(null)}
         isLoading={aprobarMutation.isPending}
       />
 

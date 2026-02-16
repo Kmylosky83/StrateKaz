@@ -9,7 +9,9 @@
  * - /encuestas-dofa/publica/<token>/ - Acceso público
  */
 
+import axios from 'axios';
 import { apiClient } from '@/lib/api-client';
+import { API_URL } from '@/utils/constants';
 import type { PaginatedResponse } from '@/types';
 import type {
   PreguntaContexto,
@@ -370,25 +372,36 @@ export const respuestasApi = {
 
 // ==============================================================================
 // ACCESO PÚBLICO (SIN AUTENTICACIÓN)
+// Usa axios directo sin interceptor de auth para evitar 401 en páginas públicas
 // ==============================================================================
+
+/**
+ * Cliente axios sin autenticación para endpoints públicos.
+ * No envía JWT ni X-Tenant-ID headers.
+ */
+const publicClient = axios.create({
+  baseURL: API_URL,
+  headers: { 'Content-Type': 'application/json' },
+  timeout: 30000,
+});
 
 export const encuestaPublicaApi = {
   /**
-   * Obtener encuesta pública por token
+   * Obtener encuesta pública por token (SIN auth)
    */
   get: async (token: string): Promise<EncuestaPublica> => {
-    const response = await apiClient.get<EncuestaPublica>(`${BASE_URL}/publica/${token}/`);
+    const response = await publicClient.get<EncuestaPublica>(`${BASE_URL}/publica/${token}/`);
     return response.data;
   },
 
   /**
-   * Enviar respuestas (puede ser anónimo)
+   * Enviar respuestas (puede ser anónimo, SIN auth)
    */
   responder: async (
     token: string,
     data: RespuestasLoteDTO
   ): Promise<{ detail: string; respuestas_creadas: number }> => {
-    const response = await apiClient.post<{
+    const response = await publicClient.post<{
       detail: string;
       respuestas_creadas: number;
     }>(`${BASE_URL}/publica/${token}/`, data);

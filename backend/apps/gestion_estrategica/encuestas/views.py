@@ -219,13 +219,16 @@ class EncuestaDofaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         serializer = CompartirEmailSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        # Construir base_url del frontend desde el request
+        base_url = f"{request.scheme}://{request.get_host()}"
+
         resultado = EncuestaService.compartir_por_email(
             encuesta=encuesta,
             emails=serializer.validated_data['emails'],
             mensaje_personalizado=serializer.validated_data.get(
                 'mensaje_personalizado', ''
             ),
-            request=request
+            base_url=base_url
         )
 
         if resultado['success']:
@@ -237,9 +240,12 @@ class EncuestaDofaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         """Genera QR code PNG con el enlace público de la encuesta"""
         encuesta = self.get_object()
 
+        # Construir base_url del frontend desde el request
+        base_url = f"{request.scheme}://{request.get_host()}"
+
         qr_buffer = EncuestaService.generar_qr_code(
             encuesta=encuesta,
-            request=request
+            base_url=base_url
         )
 
         if qr_buffer is None:
@@ -249,7 +255,7 @@ class EncuestaDofaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             )
 
         response = HttpResponse(
-            qr_buffer.getvalue(),
+            qr_buffer,
             content_type='image/png'
         )
         response['Content-Disposition'] = (
@@ -276,9 +282,11 @@ class TemaEncuestaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         return TemaEncuestaSerializer
 
 
-class ParticipanteEncuestaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+class ParticipanteEncuestaViewSet(viewsets.ModelViewSet):
     """
     ViewSet para gestionar Participantes de Encuesta.
+    Nota: No usa StandardViewSetMixin porque ParticipanteEncuesta
+    hereda TimestampedModel (sin is_active).
     """
 
     queryset = ParticipanteEncuesta.objects.select_related(
@@ -296,9 +304,11 @@ class ParticipanteEncuestaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         return ParticipanteEncuestaSerializer
 
 
-class RespuestaEncuestaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+class RespuestaEncuestaViewSet(viewsets.ModelViewSet):
     """
     ViewSet para gestionar Respuestas de Encuesta.
+    Nota: No usa StandardViewSetMixin porque RespuestaEncuesta
+    hereda TimestampedModel (sin is_active).
     """
 
     queryset = RespuestaEncuesta.objects.select_related(

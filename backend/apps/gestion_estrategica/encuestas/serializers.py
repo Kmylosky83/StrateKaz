@@ -109,7 +109,7 @@ class ParticipanteEncuestaSerializer(serializers.ModelSerializer):
         source='usuario.get_full_name', read_only=True
     )
     area_nombre = serializers.CharField(source='area.name', read_only=True)
-    cargo_nombre = serializers.CharField(source='cargo.nombre', read_only=True)
+    cargo_nombre = serializers.CharField(source='cargo.name', read_only=True)
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
 
@@ -271,6 +271,9 @@ class EncuestaDofaListSerializer(serializers.ModelSerializer):
     porcentaje_participacion = serializers.FloatField(read_only=True)
     esta_vigente = serializers.BooleanField(read_only=True)
 
+    enlace_publico = serializers.CharField(read_only=True)
+    token_publico = serializers.UUIDField(read_only=True)
+
     class Meta:
         model = EncuestaDofa
         fields = [
@@ -284,6 +287,7 @@ class EncuestaDofaListSerializer(serializers.ModelSerializer):
             'total_invitados', 'total_respondidos',
             'porcentaje_participacion', 'esta_vigente',
             'total_temas', 'notificacion_enviada',
+            'enlace_publico', 'token_publico',
             'created_at'
         ]
 
@@ -439,6 +443,10 @@ class EncuestaPublicaSerializer(serializers.ModelSerializer):
     temas = TemaEncuestaPublicoSerializer(many=True, read_only=True)
     esta_vigente = serializers.BooleanField(read_only=True)
     tipo_encuesta = serializers.CharField(read_only=True)
+    empresa_nombre = serializers.SerializerMethodField()
+    responsable_nombre = serializers.CharField(
+        source='responsable.get_full_name', read_only=True
+    )
 
     class Meta:
         model = EncuestaDofa
@@ -447,8 +455,20 @@ class EncuestaPublicaSerializer(serializers.ModelSerializer):
             'tipo_encuesta',
             'requiere_justificacion',
             'fecha_inicio', 'fecha_cierre',
-            'esta_vigente', 'temas'
+            'esta_vigente', 'temas',
+            'empresa_nombre', 'responsable_nombre',
         ]
+
+    def get_empresa_nombre(self, obj):
+        """Obtiene el nombre de la empresa del tenant."""
+        try:
+            from apps.gestion_estrategica.configuracion.models import EmpresaConfig
+            config = EmpresaConfig.objects.first()
+            if config:
+                return config.razon_social
+        except Exception:
+            pass
+        return 'Organización'
 
 
 class EstadisticasEncuestaSerializer(serializers.Serializer):

@@ -1,0 +1,64 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Encuesta {{ tipo_label }} - {{ empresa_nombre }}{% endblock %}
+
+{% block header %}
+<h1>{{ empresa_nombre }}</h1>
+<p style="color: #94a3b8; font-size: 14px; margin: 8px 0 0 0;">Diagnóstico Organizacional</p>
+{% endblock %}
+
+{% block content %}
+<h2>Has sido invitado/a a participar</h2>
+
+<p>La empresa <strong>{{ empresa_nombre }}</strong> te invita a completar la siguiente encuesta de <strong>{{ tipo_label }}</strong>.</p>
+
+<div class="email-card">
+    <p class="email-card-title">Detalles de la Encuesta</p>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="6">
+        <tr>
+            <td style="color: #6b7280; width: 130px;">Encuesta:</td>
+            <td style="color: #1f2937; font-weight: 600;">{{ encuesta_titulo }}</td>
+        </tr>
+        {% if encuesta_descripcion %}
+        <tr>
+            <td style="color: #6b7280;">Descripción:</td>
+            <td style="color: #1f2937;">{{ encuesta_descripcion }}</td>
+        </tr>
+        {% endif %}
+        {% if responsable_nombre %}
+        <tr>
+            <td style="color: #6b7280;">Responsable:</td>
+            <td style="color: #1f2937;">{{ responsable_nombre }}</td>
+        </tr>
+        {% endif %}
+        <tr>
+            <td style="color: #6b7280;">Fecha límite:</td>
+            <td style="color: #1f2937; font-weight: 600;">{{ fecha_cierre }}</td>
+        </tr>
+    </table>
+</div>
+
+{% if mensaje_personalizado %}
+<div style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 0 8px 8px 0; margin: 16px 0;">
+    <p style="color: #1e40af; font-size: 14px; font-weight: 600; margin: 0 0 8px 0;">Mensaje del responsable:</p>
+    <p style="color: #1e3a5f; margin: 0;">{{ mensaje_personalizado }}</p>
+</div>
+{% endif %}
+
+<p>Tu participación es fundamental para identificar fortalezas, debilidades, oportunidades y amenazas de la organización.</p>
+
+<div class="text-center mt-4">
+    <a href="{{ action_url }}" class="email-button">Responder Encuesta</a>
+</div>
+
+<p class="text-muted mt-4">Si el botón no funciona, copia y pega este enlace en tu navegador:<br>
+<a href="{{ action_url }}" style="color: #3b82f6; word-break: break-all;">{{ action_url }}</a></p>
+{% endblock %}
+
+{% block footer %}
+<p>Este es un mensaje automático enviado por <strong>{{ empresa_nombre }}</strong> a través del sistema StrateKaz.</p>
+<p>La encuesta es anónima y confidencial.</p>
+<p class="text-muted mt-4">
+    &copy; {{ current_year|default:"2026" }} StrateKaz - Sistema de Gestión Integral
+</p>
+{% endblock %}

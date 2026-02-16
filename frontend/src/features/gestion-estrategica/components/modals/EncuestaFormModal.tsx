@@ -230,6 +230,9 @@ export const EncuestaFormModal = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Prevent double submission
+    if (createMutation.isPending || updateMutation.isPending || createdEncuesta) return;
+
     if (isEditing && currentEncuesta) {
       const updateData: UpdateEncuestaDTO = {
         titulo: formData.titulo,

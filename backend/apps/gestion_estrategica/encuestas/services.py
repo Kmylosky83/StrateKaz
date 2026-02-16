@@ -374,7 +374,7 @@ class EncuestaService:
         mensaje_personalizado: str = '',
         base_url: str = ''
     ) -> Dict[str, Any]:
-        """Envía enlace de encuesta a emails externos."""
+        """Envía enlace de encuesta a emails externos usando template HTML."""
         from apps.audit_system.centro_notificaciones.email_service import EmailService
 
         if not encuesta.es_publica:
@@ -383,24 +383,31 @@ class EncuestaService:
                 'mensaje': 'La encuesta debe ser pública para compartir por email'
             }
 
-        enlace = f"{base_url}/encuestas/publica/{encuesta.token_publico}"
+        enlace = f"{base_url}/encuestas/responder/{encuesta.token_publico}/"
         tipo_label = 'PCI-POAM' if encuesta.tipo_encuesta == 'pci_poam' else 'Contexto Organizacional'
 
+        # Obtener nombre de la empresa
+        empresa_nombre = 'Organización'
+        try:
+            from apps.gestion_estrategica.configuracion.models import EmpresaConfig
+            config = EmpresaConfig.objects.first()
+            if config:
+                empresa_nombre = config.razon_social
+        except Exception:
+            pass
+
         asunto = f"Encuesta {tipo_label}: {encuesta.titulo}"
-        cuerpo = (
-            f"Has sido invitado/a a participar en la encuesta de {tipo_label}:\n\n"
-            f"{encuesta.titulo}\n\n"
-        )
-        if encuesta.descripcion:
-            cuerpo += f"{encuesta.descripcion}\n\n"
-        if mensaje_personalizado:
-            cuerpo += f"{mensaje_personalizado}\n\n"
-        cuerpo += (
-            f"Accede al siguiente enlace para responder:\n"
-            f"{enlace}\n\n"
-            f"Fecha límite: {encuesta.fecha_cierre.strftime('%d/%m/%Y %H:%M')}\n\n"
-            f"Tu participación es importante para el diagnóstico organizacional."
-        )
+
+        context = {
+            'encuesta_titulo': encuesta.titulo,
+            'encuesta_descripcion': encuesta.descripcion or '',
+            'tipo_label': tipo_label,
+            'empresa_nombre': empresa_nombre,
+            'responsable_nombre': encuesta.responsable.get_full_name() if encuesta.responsable else '',
+            'fecha_cierre': encuesta.fecha_cierre.strftime('%d/%m/%Y %H:%M'),
+            'mensaje_personalizado': mensaje_personalizado,
+            'action_url': enlace,
+        }
 
         enviados = 0
         errores = []
@@ -410,7 +417,8 @@ class EncuestaService:
                 EmailService.send_email(
                     to_email=email,
                     subject=asunto,
-                    body=cuerpo,
+                    template_name='encuesta_compartida',
+                    context=context,
                 )
                 enviados += 1
             except Exception as e:
@@ -432,7 +440,7 @@ class EncuestaService:
         """Genera QR code PNG con el enlace público de la encuesta."""
         import qrcode
 
-        enlace = f"{base_url}/encuestas/publica/{encuesta.token_publico}"
+        enlace = f"{base_url}/encuestas/responder/{encuesta.token_publico}/"
 
         qr = qrcode.QRCode(
             version=1,

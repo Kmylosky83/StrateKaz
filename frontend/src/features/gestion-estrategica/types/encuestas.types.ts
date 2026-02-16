@@ -189,6 +189,8 @@ export interface EncuestaListItem {
   estado: EstadoEncuesta;
   estado_display?: string;
   es_publica: boolean;
+  enlace_publico?: string;
+  token_publico?: string;
   fecha_inicio: string;
   fecha_cierre: string;
   responsable?: number | null;
@@ -240,6 +242,8 @@ export interface EncuestaPublica {
   temas: TemaPublico[];
   puede_responder?: boolean;
   razon?: string;
+  empresa_nombre?: string;
+  responsable_nombre?: string;
 }
 
 export interface TemaPublico {

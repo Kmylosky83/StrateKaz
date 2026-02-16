@@ -3,10 +3,20 @@
  *
  * Accesible SIN autenticación via token UUID.
  * Ruta: /encuestas/responder/:token
+ *
+ * Muestra header con nombre de la empresa (no StrateKaz).
  */
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { CheckCircle, AlertCircle, Clock, Send, ChevronRight } from 'lucide-react';
+import {
+  CheckCircle,
+  AlertCircle,
+  Clock,
+  Send,
+  ChevronRight,
+  Building2,
+  Shield,
+} from 'lucide-react';
 import { Button, Badge, Spinner, Alert, Card } from '@/components/common';
 import {
   useEncuestaPublica,
@@ -15,7 +25,6 @@ import {
 import type {
   NivelImpacto,
   Clasificacion,
-  TemaPublico,
   EncuestaPublica as EncuestaPublicaType,
 } from '@/features/gestion-estrategica/types/encuestas.types';
 
@@ -58,7 +67,7 @@ export default function EncuestaPublicaPage() {
     if (errorMsg.includes('cerrada') || errorMsg.includes('closed')) {
       return (
         <ErrorLayout
-          message="Esta encuesta ya fue cerrada y no acepta más respuestas."
+          message="Esta encuesta ya fue cerrada y no acepta ms respuestas."
           icon={<Clock className="w-12 h-12 text-amber-400" />}
         />
       );
@@ -69,10 +78,26 @@ export default function EncuestaPublicaPage() {
   const enc = encuesta as EncuestaPublicaType;
   const temas = enc.temas || [];
   const isPciPoam = enc.tipo_encuesta === 'pci_poam';
+  const empresaNombre = enc.empresa_nombre || 'Organizacion';
+
+  // Si no puede responder (ya respondio o no vigente)
+  if (enc.puede_responder === false && enc.razon) {
+    return (
+      <PublicLayout empresaNombre={empresaNombre}>
+        <div className="max-w-md mx-auto text-center py-16">
+          <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-8 h-8 text-amber-500" />
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{enc.titulo}</h2>
+          <p className="text-gray-600 dark:text-gray-400">{enc.razon}</p>
+        </div>
+      </PublicLayout>
+    );
+  }
 
   if (enviado) {
     return (
-      <PublicLayout>
+      <PublicLayout empresaNombre={empresaNombre}>
         <div className="max-w-lg mx-auto text-center py-16">
           <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-10 h-10 text-green-600" />
@@ -81,7 +106,8 @@ export default function EncuestaPublicaPage() {
             Respuestas enviadas
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Gracias por participar en la encuesta. Sus respuestas han sido registradas exitosamente.
+            Gracias por participar en la encuesta de <strong>{empresaNombre}</strong>. Sus
+            respuestas han sido registradas exitosamente.
           </p>
           <Badge variant="success" size="lg">
             Completado
@@ -102,10 +128,10 @@ export default function EncuestaPublicaPage() {
     }));
   };
 
-  const allAnswered = temas.every((t) => {
-    const r = respuestas[t.id];
-    return r?.clasificacion && r?.impacto_percibido;
-  });
+  const answeredCount = Object.keys(respuestas).filter(
+    (k) => respuestas[Number(k)]?.clasificacion && respuestas[Number(k)]?.impacto_percibido
+  ).length;
+  const allAnswered = temas.length > 0 && answeredCount === temas.length;
 
   const handleSubmit = async () => {
     if (!allAnswered) return;
@@ -124,41 +150,52 @@ export default function EncuestaPublicaPage() {
   };
 
   return (
-    <PublicLayout>
+    <PublicLayout empresaNombre={empresaNombre}>
       <div className="max-w-2xl mx-auto">
-        {/* Header */}
+        {/* Encuesta Header */}
         <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 dark:bg-blue-900/20 rounded-full text-xs font-medium text-blue-700 dark:text-blue-300 mb-3">
+            <Shield className="w-3 h-3" />
+            {isPciPoam ? 'Diagnostico PCI-POAM' : 'Encuesta de Contexto'}
+          </div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
             {enc.titulo || 'Encuesta'}
           </h1>
           {enc.descripcion && (
             <p className="text-gray-600 dark:text-gray-400 mb-3">{enc.descripcion}</p>
           )}
-          {enc.fecha_cierre && (
-            <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
-              <Clock className="w-4 h-4" />
-              <span>Cierre: {new Date(enc.fecha_cierre).toLocaleDateString('es-CO')}</span>
-            </div>
-          )}
+          <div className="flex items-center justify-center gap-4 text-sm text-gray-500">
+            {enc.responsable_nombre && <span>Responsable: {enc.responsable_nombre}</span>}
+            {enc.fecha_cierre && (
+              <div className="flex items-center gap-1">
+                <Clock className="w-4 h-4" />
+                <span>Cierre: {new Date(enc.fecha_cierre).toLocaleDateString('es-CO')}</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Progress */}
-        <div className="mb-6">
-          <div className="flex justify-between text-sm text-gray-500 mb-1">
-            <span>Progreso</span>
-            <span>
-              {Object.keys(respuestas).filter((k) => respuestas[Number(k)]?.clasificacion).length} /{' '}
-              {temas.length}
+        <div className="mb-6 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-100 dark:border-gray-700">
+          <div className="flex justify-between text-sm mb-2">
+            <span className="font-medium text-gray-700 dark:text-gray-300">Progreso</span>
+            <span className="font-semibold text-blue-600 dark:text-blue-400">
+              {answeredCount} / {temas.length}
             </span>
           </div>
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
             <div
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              className="bg-blue-600 h-2.5 rounded-full transition-all duration-500"
               style={{
-                width: `${temas.length > 0 ? (Object.keys(respuestas).filter((k) => respuestas[Number(k)]?.clasificacion).length / temas.length) * 100 : 0}%`,
+                width: `${temas.length > 0 ? (answeredCount / temas.length) * 100 : 0}%`,
               }}
             />
           </div>
+          {temas.length === 0 && (
+            <p className="text-sm text-amber-600 dark:text-amber-400 mt-2">
+              No se encontraron preguntas para esta encuesta.
+            </p>
+          )}
         </div>
 
         {/* Temas */}
@@ -170,12 +207,12 @@ export default function EncuestaPublicaPage() {
             return (
               <Card
                 key={tema.id}
-                className={`transition-all ${isActive ? 'ring-2 ring-blue-500 shadow-lg' : 'opacity-90'}`}
+                className={`transition-all cursor-pointer ${isActive ? 'ring-2 ring-blue-500 shadow-lg' : 'opacity-90 hover:opacity-100'}`}
                 onClick={() => setCurrentStep(index)}
               >
                 <div className="p-4 space-y-3">
                   <div className="flex items-start justify-between">
-                    <div>
+                    <div className="flex-1">
                       <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
                         {isPciPoam
                           ? `Pregunta ${index + 1} de ${temas.length}`
@@ -185,8 +222,8 @@ export default function EncuestaPublicaPage() {
                         {tema.titulo}
                       </h3>
                     </div>
-                    {r?.clasificacion && (
-                      <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                    {r?.clasificacion && r?.impacto_percibido && (
+                      <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 ml-2" />
                     )}
                   </div>
 
@@ -194,10 +231,10 @@ export default function EncuestaPublicaPage() {
                     <p className="text-sm text-gray-600 dark:text-gray-400">{tema.descripcion}</p>
                   )}
 
-                  {/* Clasificación - F/D para PCI, O/A para POAM */}
+                  {/* Clasificacion - F/D para PCI, O/A para POAM */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Clasificación *
+                      Clasificacion *
                     </label>
                     <div className="flex gap-3">
                       {(tema.clasificacion_esperada === 'oa'
@@ -228,7 +265,7 @@ export default function EncuestaPublicaPage() {
                               e.stopPropagation();
                               updateRespuesta(tema.id, 'clasificacion', c);
                             }}
-                            className={`flex-1 py-2 px-4 rounded-lg border-2 text-sm font-medium transition-all ${
+                            className={`flex-1 py-2.5 px-4 rounded-lg border-2 text-sm font-medium transition-all min-h-[44px] ${
                               r?.clasificacion === c
                                 ? activeColors[c]
                                 : 'border-gray-200 dark:border-gray-600 text-gray-500 hover:border-gray-400'
@@ -255,7 +292,7 @@ export default function EncuestaPublicaPage() {
                             e.stopPropagation();
                             updateRespuesta(tema.id, 'impacto_percibido', nivel);
                           }}
-                          className={`flex-1 py-1.5 px-3 rounded-md border text-sm transition-all ${
+                          className={`flex-1 py-2 px-3 rounded-md border text-sm transition-all min-h-[44px] ${
                             r?.impacto_percibido === nivel
                               ? nivel === 'alto'
                                 ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20 text-orange-700'
@@ -271,11 +308,11 @@ export default function EncuestaPublicaPage() {
                     </div>
                   </div>
 
-                  {/* Justificación */}
+                  {/* Justificacion */}
                   {enc.requiere_justificacion && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Justificación
+                        Justificacion
                       </label>
                       <textarea
                         value={r?.justificacion || ''}
@@ -314,20 +351,22 @@ export default function EncuestaPublicaPage() {
         </div>
 
         {/* Submit */}
-        <div className="mt-8 flex justify-center">
-          <Button
-            size="lg"
-            disabled={!allAnswered || responderMutation.isPending}
-            onClick={handleSubmit}
-            leftIcon={<Send className="w-5 h-5" />}
-          >
-            {responderMutation.isPending ? 'Enviando...' : 'Enviar Respuestas'}
-          </Button>
-        </div>
+        {temas.length > 0 && (
+          <div className="mt-8 flex justify-center">
+            <Button
+              size="lg"
+              disabled={!allAnswered || responderMutation.isPending}
+              onClick={handleSubmit}
+              leftIcon={<Send className="w-5 h-5" />}
+            >
+              {responderMutation.isPending ? 'Enviando...' : 'Enviar Respuestas'}
+            </Button>
+          </div>
+        )}
 
         {responderMutation.isError && (
           <Alert variant="error" className="mt-4">
-            {(responderMutation.error as Error)?.message?.includes('ya respondió')
+            {(responderMutation.error as Error)?.message?.includes('ya respondido')
               ? 'Ya ha respondido esta encuesta anteriormente.'
               : 'Error al enviar las respuestas. Intente nuevamente.'}
           </Alert>
@@ -337,18 +376,55 @@ export default function EncuestaPublicaPage() {
   );
 }
 
-function PublicLayout({ children }: { children: React.ReactNode }) {
+// ============================================================================
+// LAYOUT COMPONENTS
+// ============================================================================
+
+function PublicLayout({
+  children,
+  empresaNombre,
+}: {
+  children: React.ReactNode;
+  empresaNombre?: string;
+}) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
-      <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-3">
-          <img src="/logo-light.png" alt="StrateKaz" className="h-8" />
-          <span className="text-lg font-semibold text-gray-800 dark:text-white">StrateKaz</span>
+      {/* Header profesional con nombre de empresa */}
+      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="max-w-3xl mx-auto px-4 py-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                <Building2 className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">
+                  {empresaNombre || 'Organizacion'}
+                </h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Diagnostico Organizacional
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+              <Shield className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Encuesta anonima y confidencial</span>
+            </div>
+          </div>
         </div>
       </header>
+
       <main className="max-w-3xl mx-auto px-4 py-8">{children}</main>
-      <footer className="text-center py-6 text-xs text-gray-400">
-        StrateKaz ERP &middot; Encuesta anónima y confidencial
+
+      <footer className="border-t border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-900/50">
+        <div className="max-w-3xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <p className="text-xs text-gray-400">
+            {empresaNombre || 'Organizacion'} &middot; Encuesta anonima y confidencial
+          </p>
+          <p className="text-xs text-gray-300">
+            Powered by <span className="font-medium text-gray-400">StrateKaz</span>
+          </p>
+        </div>
       </footer>
     </div>
   );

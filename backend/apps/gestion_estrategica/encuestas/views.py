@@ -211,6 +211,53 @@ class EncuestaDofaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             return Response(resultado)
         return Response(resultado, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=True, methods=['post'], url_path='regenerar-temas')
+    def regenerar_temas(self, request, pk=None):
+        """
+        Regenera los temas PCI-POAM desde el banco de preguntas.
+        Útil si la encuesta se creó antes de cargar el seed o con error.
+        Solo funciona para encuestas PCI-POAM en borrador con 0 temas.
+        """
+        encuesta = self.get_object()
+
+        if encuesta.tipo_encuesta != EncuestaDofa.TipoEncuesta.PCI_POAM:
+            return Response(
+                {'detail': 'Solo aplica para encuestas PCI-POAM'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if encuesta.temas.exists():
+            return Response(
+                {'detail': 'Esta encuesta ya tiene temas. Elimínelos primero si desea regenerar.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        from .models import PreguntaContexto as PC
+        preguntas = PC.objects.filter(is_active=True).order_by('orden')
+
+        if not preguntas.exists():
+            return Response(
+                {'detail': 'No hay preguntas PCI-POAM en el sistema. Ejecute el seed primero.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        with transaction.atomic():
+            temas_creados = 0
+            for pregunta in preguntas:
+                TemaEncuesta.objects.create(
+                    encuesta=encuesta,
+                    empresa=encuesta.empresa,
+                    pregunta_contexto=pregunta,
+                    titulo=pregunta.texto[:500],
+                    orden=pregunta.orden,
+                )
+                temas_creados += 1
+
+        return Response({
+            'detail': f'{temas_creados} temas generados desde banco PCI-POAM',
+            'temas_creados': temas_creados,
+        })
+
     @action(detail=True, methods=['post'], url_path='compartir-email')
     def compartir_email(self, request, pk=None):
         """Envía enlace de encuesta a emails externos"""
@@ -345,7 +392,11 @@ class EncuestaPublicaView(APIView):
     def get(self, request, token):
         """Obtiene la encuesta pública por token"""
         encuesta = get_object_or_404(
-            EncuestaDofa.objects.prefetch_related('temas'),
+            EncuestaDofa.objects.prefetch_related(
+                'temas',
+                'temas__pregunta_contexto',
+                'temas__area',
+            ),
             token_publico=token
         )
 

@@ -43,6 +43,7 @@ import {
   useAddParticipante,
   useDeleteParticipante,
   usePreguntasContexto,
+  useRegenerarTemas,
 } from '../../hooks/useEncuestas';
 import {
   useAnalisisDofa,
@@ -194,6 +195,7 @@ export const EncuestaFormModal = ({
   const deleteParticipanteMutation = useDeleteParticipante();
   const createAnalisisDofaMutation = useCreateAnalisisDofa();
   const createAnalisisPestelMutation = useCreateAnalisisPestel();
+  const regenerarTemasMutation = useRegenerarTemas();
 
   // Cargar datos al editar
   useEffect(() => {
@@ -769,10 +771,29 @@ export const EncuestaFormModal = ({
           </>
         ) : showPciPoamCreated ? (
           <>
-            <Alert
-              variant="success"
-              message={`${temas.length} temas auto-generados desde el banco PCI-POAM. Estos temas no se pueden modificar.`}
-            />
+            {temas.length === 0 ? (
+              <Alert
+                variant="warning"
+                message="Los temas PCI-POAM no se generaron correctamente. Use el boton para regenerar."
+              />
+            ) : (
+              <Alert
+                variant="success"
+                message={`${temas.length} temas auto-generados desde el banco PCI-POAM. Estos temas no se pueden modificar.`}
+              />
+            )}
+            {temas.length === 0 && currentEncuesta?.id && (
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                onClick={() => regenerarTemasMutation.mutate(currentEncuesta.id)}
+                isLoading={regenerarTemasMutation.isPending}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Regenerar Temas PCI-POAM
+              </Button>
+            )}
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {temas.map((tema, index) => (
                 <div

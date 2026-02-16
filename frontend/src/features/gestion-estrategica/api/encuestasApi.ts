@@ -191,6 +191,16 @@ export const encuestasApi = {
     });
     return URL.createObjectURL(response.data);
   },
+
+  /**
+   * Regenerar temas PCI-POAM (si se crearon con error)
+   */
+  regenerarTemas: async (id: number): Promise<{ detail: string; temas_creados: number }> => {
+    const response = await apiClient.post<{ detail: string; temas_creados: number }>(
+      `${BASE_URL}/encuestas/${id}/regenerar-temas/`
+    );
+    return response.data;
+  },
 };
 
 // ==============================================================================
@@ -377,12 +387,24 @@ export const respuestasApi = {
 
 /**
  * Cliente axios sin autenticación para endpoints públicos.
- * No envía JWT ni X-Tenant-ID headers.
+ * No envía JWT (permite acceso anónimo).
+ * El tenant se resuelve por dominio (TenantMainMiddleware).
+ * Para dev local, agrega X-Tenant-ID si está disponible.
  */
 const publicClient = axios.create({
   baseURL: API_URL,
   headers: { 'Content-Type': 'application/json' },
   timeout: 30000,
+});
+
+// Interceptor: agregar X-Tenant-ID si existe (para dev local con localhost)
+// En producción, el tenant se resuelve por dominio ({tenant}.stratekaz.com)
+publicClient.interceptors.request.use((config) => {
+  const tenantId = localStorage.getItem('current_tenant_id');
+  if (tenantId && config.headers) {
+    config.headers['X-Tenant-ID'] = tenantId;
+  }
+  return config;
 });
 
 export const encuestaPublicaApi = {

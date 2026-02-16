@@ -244,6 +244,26 @@ export function useConsolidarEncuesta() {
   });
 }
 
+/**
+ * Hook para regenerar temas PCI-POAM (si se crearon con error)
+ */
+export function useRegenerarTemas() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => encuestasApi.regenerarTemas(id),
+    onSuccess: (result, id) => {
+      queryClient.invalidateQueries({ queryKey: encuestasKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: encuestasKeys.temas(id) });
+      queryClient.invalidateQueries({ queryKey: encuestasKeys.lists() });
+      toast.success(result.detail);
+    },
+    onError: (error: Error) => {
+      toast.error(`Error al regenerar temas: ${error.message}`);
+    },
+  });
+}
+
 // ==============================================================================
 // TEMAS
 // ==============================================================================

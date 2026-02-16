@@ -342,7 +342,7 @@ class TemaEncuesta(BaseCompanyModel):
 
     # Contenido del tema
     titulo = models.CharField(
-        max_length=200,
+        max_length=500,
         verbose_name='Título del Tema',
         help_text='Aspecto a evaluar (ej: Gestión del conocimiento)'
     )

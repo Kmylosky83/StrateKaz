@@ -355,9 +355,22 @@ class EncuestaDofaCreateSerializer(serializers.ModelSerializer):
                 'fecha_cierre': 'La fecha de cierre debe ser posterior a la fecha de inicio'
             })
 
+        # Para PCI-POAM: verificar que existen preguntas en el banco
+        tipo = attrs.get('tipo_encuesta', 'libre')
+        if tipo == 'pci_poam':
+            count = PreguntaContexto.objects.filter(is_active=True).count()
+            if count == 0:
+                raise serializers.ValidationError({
+                    'tipo_encuesta': (
+                        'No hay preguntas PCI-POAM cargadas en el sistema. '
+                        'Contacte al administrador para ejecutar el seed de preguntas.'
+                    )
+                })
+
         return attrs
 
     def create(self, validated_data):
+        from django.db import transaction
         from apps.core.base_models.mixins import get_tenant_empresa
 
         temas_data = validated_data.pop('temas', [])
@@ -371,38 +384,39 @@ class EncuestaDofaCreateSerializer(serializers.ModelSerializer):
         if empresa:
             validated_data['empresa'] = empresa
 
-        encuesta = EncuestaDofa.objects.create(**validated_data)
+        with transaction.atomic():
+            encuesta = EncuestaDofa.objects.create(**validated_data)
 
-        # Para PCI-POAM: auto-generar temas desde banco de preguntas
-        if encuesta.tipo_encuesta == EncuestaDofa.TipoEncuesta.PCI_POAM:
-            preguntas = PreguntaContexto.objects.filter(
-                is_active=True
-            ).order_by('orden')
+            # Para PCI-POAM: auto-generar temas desde banco de preguntas
+            if encuesta.tipo_encuesta == EncuestaDofa.TipoEncuesta.PCI_POAM:
+                preguntas = PreguntaContexto.objects.filter(
+                    is_active=True
+                ).order_by('orden')
 
-            for pregunta in preguntas:
-                TemaEncuesta.objects.create(
+                for pregunta in preguntas:
+                    TemaEncuesta.objects.create(
+                        encuesta=encuesta,
+                        empresa=encuesta.empresa,
+                        pregunta_contexto=pregunta,
+                        titulo=pregunta.texto[:500],
+                        orden=pregunta.orden,
+                    )
+            else:
+                # Para libre: crear temas manuales
+                for i, tema_data in enumerate(temas_data):
+                    TemaEncuesta.objects.create(
+                        encuesta=encuesta,
+                        empresa=encuesta.empresa,
+                        orden=tema_data.get('orden', i),
+                        **tema_data
+                    )
+
+            # Crear participantes
+            for participante_data in participantes_data:
+                ParticipanteEncuesta.objects.create(
                     encuesta=encuesta,
-                    empresa=encuesta.empresa,
-                    pregunta_contexto=pregunta,
-                    titulo=pregunta.texto,
-                    orden=pregunta.orden,
+                    **participante_data
                 )
-        else:
-            # Para libre: crear temas manuales
-            for i, tema_data in enumerate(temas_data):
-                TemaEncuesta.objects.create(
-                    encuesta=encuesta,
-                    empresa=encuesta.empresa,
-                    orden=tema_data.get('orden', i),
-                    **tema_data
-                )
-
-        # Crear participantes
-        for participante_data in participantes_data:
-            ParticipanteEncuesta.objects.create(
-                encuesta=encuesta,
-                **participante_data
-            )
 
         return encuesta
 

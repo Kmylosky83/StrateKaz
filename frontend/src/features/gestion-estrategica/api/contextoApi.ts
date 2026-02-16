@@ -141,9 +141,7 @@ export const analisisDofaApi = {
    * Obtener detalle de analisis DOFA
    */
   get: async (id: number): Promise<AnalisisDOFA> => {
-    const response = await apiClient.get<AnalisisDOFA>(
-      `${BASE_URL}/analisis-dofa/${id}/`
-    );
+    const response = await apiClient.get<AnalisisDOFA>(`${BASE_URL}/analisis-dofa/${id}/`);
     return response.data;
   },
 
@@ -151,24 +149,15 @@ export const analisisDofaApi = {
    * Crear analisis DOFA
    */
   create: async (data: CreateAnalisisDOFADTO): Promise<AnalisisDOFA> => {
-    const response = await apiClient.post<AnalisisDOFA>(
-      `${BASE_URL}/analisis-dofa/`,
-      data
-    );
+    const response = await apiClient.post<AnalisisDOFA>(`${BASE_URL}/analisis-dofa/`, data);
     return response.data;
   },
 
   /**
    * Actualizar analisis DOFA
    */
-  update: async (
-    id: number,
-    data: UpdateAnalisisDOFADTO
-  ): Promise<AnalisisDOFA> => {
-    const response = await apiClient.patch<AnalisisDOFA>(
-      `${BASE_URL}/analisis-dofa/${id}/`,
-      data
-    );
+  update: async (id: number, data: UpdateAnalisisDOFADTO): Promise<AnalisisDOFA> => {
+    const response = await apiClient.patch<AnalisisDOFA>(`${BASE_URL}/analisis-dofa/${id}/`, data);
     return response.data;
   },
 
@@ -230,9 +219,7 @@ export const factoresDofaApi = {
    * Obtener factor DOFA
    */
   get: async (id: number): Promise<FactorDOFA> => {
-    const response = await apiClient.get<FactorDOFA>(
-      `${BASE_URL}/factores-dofa/${id}/`
-    );
+    const response = await apiClient.get<FactorDOFA>(`${BASE_URL}/factores-dofa/${id}/`);
     return response.data;
   },
 
@@ -240,24 +227,15 @@ export const factoresDofaApi = {
    * Crear factor DOFA
    */
   create: async (data: CreateFactorDOFADTO): Promise<FactorDOFA> => {
-    const response = await apiClient.post<FactorDOFA>(
-      `${BASE_URL}/factores-dofa/`,
-      data
-    );
+    const response = await apiClient.post<FactorDOFA>(`${BASE_URL}/factores-dofa/`, data);
     return response.data;
   },
 
   /**
    * Actualizar factor DOFA
    */
-  update: async (
-    id: number,
-    data: UpdateFactorDOFADTO
-  ): Promise<FactorDOFA> => {
-    const response = await apiClient.patch<FactorDOFA>(
-      `${BASE_URL}/factores-dofa/${id}/`,
-      data
-    );
+  update: async (id: number, data: UpdateFactorDOFADTO): Promise<FactorDOFA> => {
+    const response = await apiClient.patch<FactorDOFA>(`${BASE_URL}/factores-dofa/${id}/`, data);
     return response.data;
   },
 
@@ -306,9 +284,7 @@ export const analisisPestelApi = {
    * Obtener detalle de analisis PESTEL
    */
   get: async (id: number): Promise<AnalisisPESTEL> => {
-    const response = await apiClient.get<AnalisisPESTEL>(
-      `${BASE_URL}/analisis-pestel/${id}/`
-    );
+    const response = await apiClient.get<AnalisisPESTEL>(`${BASE_URL}/analisis-pestel/${id}/`);
     return response.data;
   },
 
@@ -316,20 +292,14 @@ export const analisisPestelApi = {
    * Crear analisis PESTEL
    */
   create: async (data: CreateAnalisisPESTELDTO): Promise<AnalisisPESTEL> => {
-    const response = await apiClient.post<AnalisisPESTEL>(
-      `${BASE_URL}/analisis-pestel/`,
-      data
-    );
+    const response = await apiClient.post<AnalisisPESTEL>(`${BASE_URL}/analisis-pestel/`, data);
     return response.data;
   },
 
   /**
    * Actualizar analisis PESTEL
    */
-  update: async (
-    id: number,
-    data: UpdateAnalisisPESTELDTO
-  ): Promise<AnalisisPESTEL> => {
+  update: async (id: number, data: UpdateAnalisisPESTELDTO): Promise<AnalisisPESTEL> => {
     const response = await apiClient.patch<AnalisisPESTEL>(
       `${BASE_URL}/analisis-pestel/${id}/`,
       data
@@ -385,9 +355,7 @@ export const factoresPestelApi = {
    * Obtener factor PESTEL
    */
   get: async (id: number): Promise<FactorPESTEL> => {
-    const response = await apiClient.get<FactorPESTEL>(
-      `${BASE_URL}/factores-pestel/${id}/`
-    );
+    const response = await apiClient.get<FactorPESTEL>(`${BASE_URL}/factores-pestel/${id}/`);
     return response.data;
   },
 
@@ -395,20 +363,14 @@ export const factoresPestelApi = {
    * Crear factor PESTEL
    */
   create: async (data: CreateFactorPESTELDTO): Promise<FactorPESTEL> => {
-    const response = await apiClient.post<FactorPESTEL>(
-      `${BASE_URL}/factores-pestel/`,
-      data
-    );
+    const response = await apiClient.post<FactorPESTEL>(`${BASE_URL}/factores-pestel/`, data);
     return response.data;
   },
 
   /**
    * Actualizar factor PESTEL
    */
-  update: async (
-    id: number,
-    data: UpdateFactorPESTELDTO
-  ): Promise<FactorPESTEL> => {
+  update: async (id: number, data: UpdateFactorPESTELDTO): Promise<FactorPESTEL> => {
     const response = await apiClient.patch<FactorPESTEL>(
       `${BASE_URL}/factores-pestel/${id}/`,
       data
@@ -461,9 +423,7 @@ export const fuerzasPorterApi = {
    * Obtener fuerza de Porter
    */
   get: async (id: number): Promise<FuerzaPorter> => {
-    const response = await apiClient.get<FuerzaPorter>(
-      `${BASE_URL}/fuerzas-porter/${id}/`
-    );
+    const response = await apiClient.get<FuerzaPorter>(`${BASE_URL}/fuerzas-porter/${id}/`);
     return response.data;
   },
 
@@ -471,24 +431,15 @@ export const fuerzasPorterApi = {
    * Crear fuerza de Porter
    */
   create: async (data: CreateFuerzaPorterDTO): Promise<FuerzaPorter> => {
-    const response = await apiClient.post<FuerzaPorter>(
-      `${BASE_URL}/fuerzas-porter/`,
-      data
-    );
+    const response = await apiClient.post<FuerzaPorter>(`${BASE_URL}/fuerzas-porter/`, data);
     return response.data;
   },
 
   /**
    * Actualizar fuerza de Porter
    */
-  update: async (
-    id: number,
-    data: UpdateFuerzaPorterDTO
-  ): Promise<FuerzaPorter> => {
-    const response = await apiClient.patch<FuerzaPorter>(
-      `${BASE_URL}/fuerzas-porter/${id}/`,
-      data
-    );
+  update: async (id: number, data: UpdateFuerzaPorterDTO): Promise<FuerzaPorter> => {
+    const response = await apiClient.patch<FuerzaPorter>(`${BASE_URL}/fuerzas-porter/${id}/`, data);
     return response.data;
   },
 
@@ -543,9 +494,7 @@ export const estrategiasTowsApi = {
    * Obtener estrategia TOWS
    */
   get: async (id: number): Promise<EstrategiaTOWS> => {
-    const response = await apiClient.get<EstrategiaTOWS>(
-      `${BASE_URL}/estrategias-tows/${id}/`
-    );
+    const response = await apiClient.get<EstrategiaTOWS>(`${BASE_URL}/estrategias-tows/${id}/`);
     return response.data;
   },
 
@@ -553,20 +502,14 @@ export const estrategiasTowsApi = {
    * Crear estrategia TOWS
    */
   create: async (data: CreateEstrategiaTOWSDTO): Promise<EstrategiaTOWS> => {
-    const response = await apiClient.post<EstrategiaTOWS>(
-      `${BASE_URL}/estrategias-tows/`,
-      data
-    );
+    const response = await apiClient.post<EstrategiaTOWS>(`${BASE_URL}/estrategias-tows/`, data);
     return response.data;
   },
 
   /**
    * Actualizar estrategia TOWS
    */
-  update: async (
-    id: number,
-    data: UpdateEstrategiaTOWSDTO
-  ): Promise<EstrategiaTOWS> => {
+  update: async (id: number, data: UpdateEstrategiaTOWSDTO): Promise<EstrategiaTOWS> => {
     const response = await apiClient.patch<EstrategiaTOWS>(
       `${BASE_URL}/estrategias-tows/${id}/`,
       data
@@ -623,16 +566,16 @@ export const estrategiasTowsApi = {
   convertirObjetivo: async (
     id: number,
     data: {
-      code: string
-      name?: string
-      bsc_perspective: 'FINANCIERA' | 'CLIENTES' | 'PROCESOS' | 'APRENDIZAJE'
-      target_value?: number
-      unit?: string
+      code: string;
+      name?: string;
+      bsc_perspective: 'FINANCIERA' | 'CLIENTES' | 'PROCESOS' | 'APRENDIZAJE';
+      target_value?: number;
+      unit?: string;
     }
   ): Promise<{
-    message: string
-    objetivo: any // Tipo del objetivo estratégico
-    estrategia: EstrategiaTOWS
+    message: string;
+    objetivo: any; // Tipo del objetivo estratégico
+    estrategia: EstrategiaTOWS;
   }> => {
     const response = await apiClient.post(
       `${BASE_URL}/estrategias-tows/${id}/convertir_objetivo/`,
@@ -643,17 +586,46 @@ export const estrategiasTowsApi = {
 };
 
 // ==============================================================================
-// PARTES INTERESADAS (Stakeholders)
+// PARTES INTERESADAS (Stakeholders) - SPRINT 17
 // ==============================================================================
 
+/**
+ * Grupo de Partes Interesadas (NUEVO - Sprint 17)
+ * Nivel superior de taxonomía: GRUPO → TIPO/SUBGRUPO → PARTE INTERESADA
+ */
+export interface GrupoParteInteresada {
+  id: number;
+  codigo: string;
+  nombre: string;
+  descripcion: string;
+  icono: string;
+  color: string;
+  orden: number;
+  es_sistema: boolean; // true = pre-seeded (no eliminable), false = custom
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Tipo de Parte Interesada (ACTUALIZADO - Sprint 17)
+ * Ahora incluye FK grupo + campos read-only de grupo
+ */
 export interface TipoParteInteresada {
   id: number;
   codigo: string;
   nombre: string;
-  categoria: 'interna' | 'externa';
+  categoria: 'interno' | 'externo';
   categoria_display: string;
   descripcion: string;
   orden: number;
+  // NUEVOS CAMPOS - Sprint 17
+  grupo: number | null;
+  grupo_nombre: string;
+  grupo_codigo: string;
+  grupo_icono: string;
+  grupo_color: string;
+  es_sistema: boolean;
   is_active: boolean;
 }
 
@@ -669,11 +641,20 @@ export interface NormaRelacionadaDetail {
   color: string;
 }
 
+/**
+ * Parte Interesada (ACTUALIZADO - Sprint 17)
+ * Nuevos campos bidireccionales + responsables
+ */
 export interface ParteInteresada {
   id: number;
   tipo: number;
   tipo_nombre: string;
   tipo_categoria: string;
+  // NUEVOS CAMPOS - Jerarquía grupo (Sprint 17)
+  grupo_nombre: string;
+  grupo_codigo: string;
+  grupo_icono: string;
+  grupo_color: string;
   nombre: string;
   descripcion: string;
   representante: string;
@@ -682,16 +663,46 @@ export interface ParteInteresada {
   email: string;
   direccion: string;
   sitio_web: string;
-  // Matriz poder-interés
-  nivel_influencia: 'alta' | 'media' | 'baja';
-  nivel_influencia_display: string;
+  // Matriz poder-interés (ACTUALIZADO - Sprint 17)
+  nivel_influencia_pi: 'alta' | 'media' | 'baja'; // Renombrado (antes nivel_influencia)
+  nivel_influencia_pi_display: string;
+  nivel_influencia_empresa: 'alta' | 'media' | 'baja'; // NUEVO - Sprint 17
+  nivel_influencia_empresa_display: string;
   nivel_interes: 'alto' | 'medio' | 'bajo';
   nivel_interes_display: string;
   cuadrante_matriz: string;
+  // NUEVOS CAMPOS - Temas bidireccionales (Sprint 17)
+  temas_interes_pi: string; // Renombrado conceptual
+  temas_interes_empresa: string; // NUEVO - Sprint 17
+  // NUEVOS CAMPOS - Responsables (Sprint 17)
+  responsable_empresa: number | null;
+  responsable_empresa_nombre: string;
+  cargo_responsable: number | null;
+  cargo_responsable_nombre: string;
+  area_responsable: number | null;
+  area_responsable_nombre: string;
   // Comunicación
-  canal_principal: 'email' | 'telefono' | 'reunion' | 'videoconferencia' | 'whatsapp' | 'portal_web' | 'redes_sociales' | 'correspondencia' | 'otro';
+  canal_principal:
+    | 'email'
+    | 'telefono'
+    | 'reunion'
+    | 'videoconferencia'
+    | 'whatsapp'
+    | 'portal_web'
+    | 'redes_sociales'
+    | 'correspondencia'
+    | 'otro';
   canal_principal_display: string;
-  frecuencia_comunicacion: 'diaria' | 'semanal' | 'quincenal' | 'mensual' | 'bimestral' | 'trimestral' | 'semestral' | 'anual' | 'segun_necesidad';
+  frecuencia_comunicacion:
+    | 'diaria'
+    | 'semanal'
+    | 'quincenal'
+    | 'mensual'
+    | 'bimestral'
+    | 'trimestral'
+    | 'semestral'
+    | 'anual'
+    | 'segun_necesidad';
   frecuencia_comunicacion_display: string;
   // ISO 9001:2015 Cláusula 4.2
   necesidades: string;
@@ -713,19 +724,143 @@ export interface ParteInteresada {
   updated_at: string;
 }
 
+/**
+ * Filtros para Partes Interesadas (ACTUALIZADO - Sprint 17)
+ */
 export interface ParteInteresadaFilters {
   tipo?: number;
-  nivel_influencia?: 'alta' | 'media' | 'baja';
+  tipo__grupo?: number; // NUEVO - Filtrar por grupo
+  nivel_influencia_pi?: 'alta' | 'media' | 'baja'; // Renombrado
+  nivel_influencia_empresa?: 'alta' | 'media' | 'baja'; // NUEVO
   nivel_interes?: 'alto' | 'medio' | 'bajo';
+  responsable_empresa?: number; // NUEVO
+  cargo_responsable?: number; // NUEVO
+  area_responsable?: number; // NUEVO
   search?: string;
   page?: number;
   page_size?: number;
 }
 
+/**
+ * Response de estadísticas (ACTUALIZADO - Sprint 17)
+ */
+export interface EstadisticasPartesInteresadas {
+  total: number;
+  por_grupo: Record<string, number>; // NUEVO
+  por_tipo: Record<string, number>;
+  por_influencia_pi: Record<string, number>; // Renombrado
+  por_influencia_empresa: Record<string, number>; // NUEVO
+  por_interes: Record<string, number>;
+  por_sistema: {
+    sst: number;
+    ambiental: number;
+    calidad: number;
+    pesv: number;
+  };
+}
+
+/**
+ * Response de generación de matriz (NUEVO - Sprint 17)
+ */
+export interface GenerarMatrizResponse {
+  message: string;
+  created: number;
+  updated: number;
+  errors: Array<{
+    parte_interesada_id?: number;
+    parte_interesada_nombre?: string;
+    fila?: number;
+    error: string;
+  }>;
+  total_procesadas: number;
+  total_errores: number;
+}
+
+/**
+ * API para Grupos de Partes Interesadas (NUEVO - Sprint 17)
+ */
+export const gruposParteInteresadaApi = {
+  /**
+   * Listar grupos
+   */
+  list: async (filters?: {
+    es_sistema?: boolean;
+    is_active?: boolean;
+  }): Promise<PaginatedResponse<GrupoParteInteresada>> => {
+    const params = new URLSearchParams();
+    if (filters?.es_sistema !== undefined)
+      params.append('es_sistema', filters.es_sistema.toString());
+    if (filters?.is_active !== undefined) params.append('is_active', filters.is_active.toString());
+
+    const response = await apiClient.get<PaginatedResponse<GrupoParteInteresada>>(
+      `${BASE_URL}/grupos-parte-interesada/?${params.toString()}`
+    );
+    return response.data;
+  },
+
+  /**
+   * Obtener grupo por ID
+   */
+  get: async (id: number): Promise<GrupoParteInteresada> => {
+    const response = await apiClient.get<GrupoParteInteresada>(
+      `${BASE_URL}/grupos-parte-interesada/${id}/`
+    );
+    return response.data;
+  },
+
+  /**
+   * Crear grupo custom
+   */
+  create: async (data: Partial<GrupoParteInteresada>): Promise<GrupoParteInteresada> => {
+    const response = await apiClient.post<GrupoParteInteresada>(
+      `${BASE_URL}/grupos-parte-interesada/`,
+      data
+    );
+    return response.data;
+  },
+
+  /**
+   * Actualizar grupo
+   */
+  update: async (
+    id: number,
+    data: Partial<GrupoParteInteresada>
+  ): Promise<GrupoParteInteresada> => {
+    const response = await apiClient.patch<GrupoParteInteresada>(
+      `${BASE_URL}/grupos-parte-interesada/${id}/`,
+      data
+    );
+    return response.data;
+  },
+
+  /**
+   * Eliminar grupo (soft-delete para sistema, hard-delete para custom)
+   */
+  delete: async (id: number): Promise<void> => {
+    await apiClient.delete(`${BASE_URL}/grupos-parte-interesada/${id}/`);
+  },
+};
+
+/**
+ * API para Tipos de Partes Interesadas (ACTUALIZADO - Sprint 17)
+ */
 export const tiposParteInteresadaApi = {
-  list: async (): Promise<PaginatedResponse<TipoParteInteresada>> => {
+  /**
+   * Listar tipos con filtro opcional por grupo
+   */
+  list: async (filters?: {
+    grupo?: number;
+    es_sistema?: boolean;
+    is_active?: boolean;
+  }): Promise<PaginatedResponse<TipoParteInteresada>> => {
+    const params = new URLSearchParams();
+    if (filters?.grupo) params.append('grupo', filters.grupo.toString());
+    if (filters?.es_sistema !== undefined)
+      params.append('es_sistema', filters.es_sistema.toString());
+    if (filters?.is_active !== undefined) params.append('is_active', filters.is_active.toString());
+
     const response = await apiClient.get<PaginatedResponse<TipoParteInteresada>>(
-      `${BASE_URL}/tipos-parte-interesada/`
+      `${BASE_URL}/tipos-parte-interesada/?${params.toString()}`
     );
     return response.data;
   },
@@ -775,17 +910,12 @@ export const partesInteresadasApi = {
   },
 
   get: async (id: number): Promise<ParteInteresada> => {
-    const response = await apiClient.get<ParteInteresada>(
-      `${BASE_URL}/partes-interesadas/${id}/`
-    );
+    const response = await apiClient.get<ParteInteresada>(`${BASE_URL}/partes-interesadas/${id}/`);
     return response.data;
   },
 
   create: async (data: Partial<ParteInteresada>): Promise<ParteInteresada> => {
-    const response = await apiClient.post<ParteInteresada>(
-      `${BASE_URL}/partes-interesadas/`,
-      data
-    );
+    const response = await apiClient.post<ParteInteresada>(`${BASE_URL}/partes-interesadas/`, data);
     return response.data;
   },
 
@@ -810,35 +940,107 @@ export const partesInteresadasApi = {
     mantener_informado: ParteInteresada[];
     monitorear: ParteInteresada[];
   }> => {
-    const response = await apiClient.get(
-      `${BASE_URL}/partes-interesadas/matriz-poder-interes/`
+    const response = await apiClient.get(`${BASE_URL}/partes-interesadas/matriz-poder-interes/`);
+    return response.data;
+  },
+
+  /**
+   * Obtener estadísticas de partes interesadas (ACTUALIZADO - Sprint 17)
+   */
+  estadisticas: async (): Promise<EstadisticasPartesInteresadas> => {
+    const response = await apiClient.get<EstadisticasPartesInteresadas>(
+      `${BASE_URL}/partes-interesadas/estadisticas/`
     );
     return response.data;
   },
 
   /**
-   * Obtener estadísticas de partes interesadas
+   * 🆕 SPRINT 17: Exportar partes interesadas a Excel (4 hojas)
+   *
+   * Genera archivo Excel formato F-GD-04:
+   * - Hoja 1: Identificación (GRUPO → SUBGRUPO → PI)
+   * - Hoja 2: Caracterización (Temas + Impacto bidireccional)
+   * - Hoja 3: Modelos de Relación (Responsable + Canal)
+   * - Hoja 4: Matriz Consolidada
+   *
+   * @returns Blob del archivo Excel
    */
-  estadisticas: async (): Promise<{
-    total: number;
-    por_tipo: Record<string, number>;
-    por_influencia: Record<string, number>;
-    por_interes: Record<string, number>;
-    por_sistema: {
-      sst: number;
-      ambiental: number;
-      calidad: number;
-      pesv: number;
-    };
+  exportExcel: async (): Promise<Blob> => {
+    const response = await apiClient.get(`${BASE_URL}/partes-interesadas/export_excel/`, {
+      responseType: 'blob',
+      headers: {
+        Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      },
+    });
+    return response.data;
+  },
+
+  /**
+   * 🆕 SPRINT 17: Importar partes interesadas desde Excel
+   *
+   * @param file - Archivo Excel formato F-GD-04
+   * @returns Resultado de la importación (created, updated, errors)
+   */
+  importExcel: async (file: File): Promise<GenerarMatrizResponse> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await apiClient.post<GenerarMatrizResponse>(
+      `${BASE_URL}/partes-interesadas/import_excel/`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    return response.data;
+  },
+
+  /**
+   * 🆕 SPRINT 17: Generar matriz de comunicación individual
+   *
+   * Genera matriz para una parte interesada específica.
+   * Usa lógica cuadrante → frecuencia:
+   * - gestionar_cerca → mensual
+   * - mantener_satisfecho → trimestral
+   * - mantener_informado → bimestral
+   * - monitorear → semestral
+   *
+   * @param parteInteresadaId - ID de la parte interesada
+   */
+  generarMatrizComunicacion: async (
+    parteInteresadaId: number
+  ): Promise<{
+    message: string;
+    created: boolean;
+    data: any; // MatrizComunicacion
   }> => {
-    const response = await apiClient.get(
-      `${BASE_URL}/partes-interesadas/estadisticas/`
+    const response = await apiClient.post(
+      `${BASE_URL}/partes-interesadas/generar_matriz_comunicacion/`,
+      { parte_interesada_id: parteInteresadaId }
+    );
+    return response.data;
+  },
+
+  /**
+   * 🆕 SPRINT 17: Generar matrices de comunicación masivamente
+   *
+   * Genera matrices para todas las partes interesadas activas.
+   *
+   * @param grupoId - Opcional: filtrar por grupo específico
+   * @returns Estadísticas del proceso (created, updated, errors)
+   */
+  generarMatrizComunicacionMasiva: async (grupoId?: number): Promise<GenerarMatrizResponse> => {
+    const params = grupoId ? `?grupo=${grupoId}` : '';
+    const response = await apiClient.post<GenerarMatrizResponse>(
+      `${BASE_URL}/partes-interesadas/generar_matriz_comunicacion_masiva/${params}`
     );
     return response.data;
   },
 };
 
-// Export default con todos los metodos
+// Export default con todos los metodos (ACTUALIZADO - Sprint 17)
 export default {
   analisisDofa: analisisDofaApi,
   factoresDofa: factoresDofaApi,
@@ -846,6 +1048,7 @@ export default {
   factoresPestel: factoresPestelApi,
   fuerzasPorter: fuerzasPorterApi,
   estrategiasTows: estrategiasTowsApi,
+  gruposParteInteresada: gruposParteInteresadaApi, // NUEVO - Sprint 17
   tiposParteInteresada: tiposParteInteresadaApi,
   partesInteresadas: partesInteresadasApi,
 };

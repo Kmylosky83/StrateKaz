@@ -640,16 +640,103 @@ class FuerzaPorter(BaseCompanyModel):
 # PARTES INTERESADAS (Stakeholders) - ISO 9001:2015 Cláusula 4.2
 # ============================================================================
 
+class GrupoParteInteresada(TimestampedModel, SoftDeleteModel, OrderedModel):
+    """
+    Catálogo de GRUPOS macro de partes interesadas.
+    Nivel superior de clasificación jerárquica (Sprint 17).
+
+    Ejemplos: Personal, Propiedad, Clientes, Proveedores, Competidores,
+    Comunidad Local, Administraciones Públicas, Agentes Sociales,
+    Sociedad, Medio Ambiente.
+
+    Gestión:
+    - 10 grupos pre-seeded en seed_grupos_partes_interesadas.py
+    - CRUD COMPLETO: Empresas pueden agregar/editar/eliminar grupos personalizados
+    - SoftDelete: No se eliminan físicamente, solo se marcan como deleted
+    - Ordenables: Campo 'orden' para organización visual
+    - es_sistema: Flag para proteger los 10 grupos predefinidos
+    """
+    codigo = models.CharField(
+        max_length=30,
+        unique=True,
+        verbose_name='Código',
+        help_text='Código único del grupo (ej: PERSONAL, CLIENTES)'
+    )
+    nombre = models.CharField(
+        max_length=100,
+        verbose_name='Nombre del Grupo'
+    )
+    descripcion = models.TextField(
+        blank=True,
+        verbose_name='Descripción',
+        help_text='Descripción del grupo y su propósito'
+    )
+    icono = models.CharField(
+        max_length=50,
+        blank=True,
+        default='Users',
+        verbose_name='Ícono',
+        help_text='Nombre del ícono de Lucide React'
+    )
+    color = models.CharField(
+        max_length=20,
+        blank=True,
+        default='blue',
+        verbose_name='Color',
+        help_text='Color semántico (blue, green, purple, orange, etc.)'
+    )
+    es_sistema = models.BooleanField(
+        default=False,
+        verbose_name='Es del Sistema',
+        help_text='Grupos del sistema no pueden ser eliminados (solo los 10 pre-seeded)'
+    )
+
+    class Meta:
+        db_table = 'contexto_grupo_parte_interesada'
+        verbose_name = 'Grupo de Parte Interesada'
+        verbose_name_plural = 'Grupos de Partes Interesadas'
+        ordering = ['orden', 'nombre']
+        indexes = [
+            models.Index(fields=['codigo']),
+            models.Index(fields=['es_sistema', 'is_active']),
+        ]
+
+    def __str__(self):
+        return self.nombre
+
+
 class TipoParteInteresada(TimestampedModel, SoftDeleteModel, OrderedModel):
     """
-    Catálogo de tipos de partes interesadas.
-    Modelo global (no depende de empresa específica).
+    Catálogo de TIPOS (SUBGRUPOS) de partes interesadas.
+    Nivel inferior - se crean dinámicamente por las empresas (Sprint 17).
+
+    Ejemplos dentro de PERSONAL:
+    - Alta Dirección
+    - Personal de Oficina
+    - Nuevos Empleados
+
+    Gestión:
+    - NO pre-seeded (excepto ejemplos opcionales)
+    - CRUD COMPLETO: Empresas crean sus propios tipos
+    - Relacionados con GRUPO mediante FK
+    - SoftDelete habilitado
     """
     class Categoria(models.TextChoices):
         INTERNA = "interna", "Interna"
         EXTERNA = "externa", "Externa"
 
-    codigo = models.CharField(max_length=20, unique=True)
+    # NUEVO: Relación con GRUPO (Sprint 17)
+    grupo = models.ForeignKey(
+        GrupoParteInteresada,
+        on_delete=models.PROTECT,
+        related_name='tipos',
+        null=True,  # Temporal para migración - luego NOT NULL
+        blank=True,
+        verbose_name='Grupo',
+        help_text='Grupo macro al que pertenece este tipo'
+    )
+
+    codigo = models.CharField(max_length=30, unique=True)
     nombre = models.CharField(max_length=100)
     categoria = models.CharField(
         max_length=10,
@@ -658,13 +745,26 @@ class TipoParteInteresada(TimestampedModel, SoftDeleteModel, OrderedModel):
     )
     descripcion = models.TextField(blank=True)
 
+    # NUEVO: Flag sistema (para tipos ejemplo) (Sprint 17)
+    es_sistema = models.BooleanField(
+        default=False,
+        verbose_name='Es del Sistema',
+        help_text='Tipos del sistema son ejemplos predefinidos (eliminables)'
+    )
+
     class Meta:
         db_table = 'contexto_tipo_parte_interesada'
         verbose_name = "Tipo de Parte Interesada"
         verbose_name_plural = "Tipos de Partes Interesadas"
-        ordering = ["orden", "categoria", "nombre"]
+        ordering = ["grupo__orden", "orden", "nombre"]  # Ordenar por grupo primero
+        indexes = [
+            models.Index(fields=['grupo', 'categoria']),
+            models.Index(fields=['codigo']),
+        ]
 
     def __str__(self):
+        if self.grupo:
+            return f"{self.grupo.nombre} → {self.nombre}"
         return f"{self.nombre} ({self.get_categoria_display()})"
 
 
@@ -672,6 +772,11 @@ class ParteInteresada(BaseCompanyModel):
     """
     Identificación de partes interesadas de la organización.
     Cumple con ISO 9001:2015 Cláusula 4.2.
+
+    CAMBIOS SPRINT 17:
+    - Responsable en la empresa (Colaborador/Cargo/Área)
+    - Impacto bidireccional (PI→Empresa + Empresa→PI)
+    - Temas de interés bidireccionales
 
     Incluye:
     - Información básica y de contacto
@@ -733,18 +838,65 @@ class ParteInteresada(BaseCompanyModel):
         help_text="URL del sitio web de la parte interesada"
     )
 
-    # Matriz poder-interés
-    nivel_influencia = models.CharField(
+    # ========================================================================
+    # RESPONSABLE EN LA EMPRESA (NUEVO - Sprint 17) ⭐
+    # ========================================================================
+    responsable_empresa = models.ForeignKey(
+        'colaboradores.Colaborador',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='partes_interesadas_asignadas',
+        verbose_name='Responsable en la Empresa',
+        help_text='Persona responsable de gestionar la relación con esta PI'
+    )
+    cargo_responsable = models.ForeignKey(
+        'core.Cargo',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='partes_interesadas_cargo',
+        verbose_name='Cargo Responsable',
+        help_text='Cargo responsable (alternativa si no hay colaborador específico)'
+    )
+    area_responsable = models.ForeignKey(
+        'organizacion.Area',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='partes_interesadas_area',
+        verbose_name='Área Responsable'
+    )
+
+    # ========================================================================
+    # MATRIZ PODER-INTERÉS (MEJORADA - Sprint 17) ⭐
+    # ========================================================================
+
+    # Influencia/Impacto PI → Empresa (RENOMBRADO para claridad)
+    nivel_influencia_pi = models.CharField(
         max_length=10,
         choices=NivelInfluencia.choices,
         default=NivelInfluencia.MEDIA,
-        verbose_name="Nivel de Influencia (Poder)"
+        verbose_name='Impacto PI sobre Empresa',
+        help_text='Grado de impacto que la parte interesada tiene sobre la empresa (PODER)'
     )
+
+    # NUEVO: Influencia/Impacto Empresa → PI ⭐
+    nivel_influencia_empresa = models.CharField(
+        max_length=10,
+        choices=NivelInfluencia.choices,
+        default=NivelInfluencia.MEDIA,
+        verbose_name='Impacto Empresa sobre PI',
+        help_text='Grado de impacto que la empresa tiene sobre la parte interesada'
+    )
+
+    # Interés de la PI en la empresa (sin cambio conceptual)
     nivel_interes = models.CharField(
         max_length=10,
         choices=NivelInteres.choices,
         default=NivelInteres.MEDIO,
-        verbose_name="Nivel de Interés"
+        verbose_name='Nivel de Interés de la PI',
+        help_text='Qué tan interesada está la PI en las actividades de la empresa'
     )
 
     # Comunicación - para automatización de matriz de comunicaciones
@@ -763,7 +915,27 @@ class ParteInteresada(BaseCompanyModel):
         help_text="Frecuencia recomendada de comunicación según matriz poder-interés"
     )
 
+    # ========================================================================
+    # TEMAS DE INTERÉS (BIDIRECCIONALES - Sprint 17) ⭐
+    # ========================================================================
+
+    # Temas de interés PARA la PI (qué le importa a la PI de nosotros)
+    temas_interes_pi = models.TextField(
+        blank=True,
+        verbose_name='Temas de Interés Principal para la PI',
+        help_text='Qué temas, aspectos o resultados le interesan a esta PI de la empresa'
+    )
+
+    # NUEVO: Temas de interés PARA la empresa (qué nos importa de la PI) ⭐
+    temas_interes_empresa = models.TextField(
+        blank=True,
+        verbose_name='Temas de Interés Principal para la Empresa',
+        help_text='Qué espera o necesita la empresa de esta PI'
+    )
+
+    # ========================================================================
     # ISO 9001:2015 Cláusula 4.2 - Necesidades, Expectativas y Requisitos
+    # ========================================================================
     necesidades = models.TextField(
         blank=True,
         verbose_name="Necesidades",
@@ -804,10 +976,12 @@ class ParteInteresada(BaseCompanyModel):
         db_table = 'contexto_parte_interesada'
         verbose_name = "Parte Interesada"
         verbose_name_plural = "Partes Interesadas"
-        ordering = ["-nivel_influencia", "-nivel_interes", "nombre"]
+        ordering = ["-nivel_influencia_pi", "-nivel_interes", "nombre"]  # Actualizado a nivel_influencia_pi
         indexes = [
             models.Index(fields=["empresa", "tipo"]),
-            models.Index(fields=["empresa", "nivel_influencia", "nivel_interes"])
+            models.Index(fields=["empresa", "nivel_influencia_pi", "nivel_interes"]),  # Actualizado
+            models.Index(fields=["empresa", "responsable_empresa"]),  # NUEVO
+            models.Index(fields=["empresa", "area_responsable"]),  # NUEVO
         ]
 
     def __str__(self):
@@ -815,14 +989,53 @@ class ParteInteresada(BaseCompanyModel):
 
     @property
     def cuadrante_matriz(self) -> str:
-        """Retorna el cuadrante de la matriz poder-interés."""
-        if self.nivel_influencia == 'alta' and self.nivel_interes == 'alto':
+        """Retorna el cuadrante de la matriz poder-interés (basado en influencia_pi)."""
+        if self.nivel_influencia_pi == 'alta' and self.nivel_interes == 'alto':
             return 'gestionar_cerca'
-        elif self.nivel_influencia == 'alta':
+        elif self.nivel_influencia_pi == 'alta':
             return 'mantener_satisfecho'
         elif self.nivel_interes == 'alto':
             return 'mantener_informado'
         return 'monitorear'
+
+    @property
+    def grupo_nombre(self) -> str:
+        """Retorna el nombre del grupo (para serializers/frontend)."""
+        return self.tipo.grupo.nombre if self.tipo and self.tipo.grupo else ''
+
+    def generar_comunicacion_automatica(self):
+        """
+        Genera una entrada en MatrizComunicacion basada en los datos de esta PI.
+
+        Lógica inteligente según cuadrante:
+        - Gestionar de cerca → Frecuencia alta (mensual/quincenal)
+        - Mantener satisfecho → Frecuencia media (trimestral)
+        - Mantener informado → Frecuencia media (bimestral)
+        - Monitorear → Frecuencia baja (semestral/anual)
+        """
+        # Determinar frecuencia según cuadrante
+        frecuencia_map = {
+            'gestionar_cerca': 'mensual',
+            'mantener_satisfecho': 'trimestral',
+            'mantener_informado': 'bimestral',
+            'monitorear': 'semestral',
+        }
+
+        frecuencia = frecuencia_map.get(self.cuadrante_matriz, 'trimestral')
+
+        # Crear comunicación si no existe
+        comunicacion, created = MatrizComunicacion.objects.get_or_create(
+            parte_interesada=self,
+            defaults={
+                'que_comunicar': self.temas_interes_pi or 'Información relevante',
+                'cuando_comunicar': frecuencia,
+                'como_comunicar': self.canal_principal,
+                'responsable': self.cargo_responsable,
+                'empresa': self.empresa,
+            }
+        )
+
+        return comunicacion, created
 
 
 class RequisitoParteInteresada(BaseCompanyModel):

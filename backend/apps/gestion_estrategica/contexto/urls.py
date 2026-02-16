@@ -34,6 +34,7 @@ from .views import (
     AnalisisPESTELViewSet,
     FactorPESTELViewSet,
     FuerzaPorterViewSet,
+    GrupoParteInteresadaViewSet,
     TipoParteInteresadaViewSet,
     ParteInteresadaViewSet,
     RequisitoParteInteresadaViewSet,
@@ -56,6 +57,7 @@ router.register(r'factores-pestel', FactorPESTELViewSet, basename='factor-pestel
 router.register(r'fuerzas-porter', FuerzaPorterViewSet, basename='fuerza-porter')
 
 # Partes Interesadas (Stakeholders) - ISO 9001:2015 Cláusula 4.2
+router.register(r'grupos-parte-interesada', GrupoParteInteresadaViewSet, basename='grupo-parte-interesada')
 router.register(r'tipos-parte-interesada', TipoParteInteresadaViewSet, basename='tipo-parte-interesada')
 router.register(r'partes-interesadas', ParteInteresadaViewSet, basename='parte-interesada')
 router.register(r'requisitos-pi', RequisitoParteInteresadaViewSet, basename='requisito-pi')

@@ -13,7 +13,7 @@
  * Cumple ISO 9001:2015 Clausula 4.2 - Comprension de las necesidades
  * y expectativas de las partes interesadas.
  */
-import { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   Plus,
   Pencil,
@@ -26,6 +26,17 @@ import {
   Target,
   Table,
   LayoutGrid,
+  Upload,
+  Download,
+  Send,
+  ShoppingCart,
+  Truck,
+  TrendingUp,
+  MapPin,
+  Landmark,
+  Leaf,
+  UserCircle,
+  ArrowRightLeft,
 } from 'lucide-react';
 import { Badge } from '@/components/common/Badge';
 import { Button } from '@/components/common/Button';
@@ -50,6 +61,11 @@ import type { ModuleColor } from '@/utils/moduleColors';
 import {
   usePartesInteresadas,
   useTiposParteInteresada,
+  useGruposParteInteresada, // Sprint 17
+  useExportPartesInteresadasExcel, // Sprint 17
+  useImportPartesInteresadasExcel, // Sprint 17
+  useGenerarMatrizComunicacionMasiva, // Sprint 17
+  usePartesInteresadasEstadisticas, // Sprint 17
   type ParteInteresada,
   type ParteInteresadaFilters,
 } from '../../hooks/usePartesInteresadas';
@@ -77,19 +93,26 @@ const NIVELES_INFLUENCIA = [
   { value: 'baja', label: 'Baja' },
 ];
 
-const INFLUENCIA_BADGE: Record<NivelInfluencia, { variant: 'danger' | 'warning' | 'gray'; label: string }> = {
+const INFLUENCIA_BADGE: Record<
+  NivelInfluencia,
+  { variant: 'danger' | 'warning' | 'gray'; label: string }
+> = {
   alta: { variant: 'danger', label: 'Alta' },
   media: { variant: 'warning', label: 'Media' },
   baja: { variant: 'gray', label: 'Baja' },
 };
 
-const INTERES_BADGE: Record<NivelInteres, { variant: 'success' | 'info' | 'gray'; label: string }> = {
-  alto: { variant: 'success', label: 'Alto' },
-  medio: { variant: 'info', label: 'Medio' },
-  bajo: { variant: 'gray', label: 'Bajo' },
-};
+const INTERES_BADGE: Record<NivelInteres, { variant: 'success' | 'info' | 'gray'; label: string }> =
+  {
+    alto: { variant: 'success', label: 'Alto' },
+    medio: { variant: 'info', label: 'Medio' },
+    bajo: { variant: 'gray', label: 'Bajo' },
+  };
 
-const CUADRANTE_CONFIG: Record<CuadranteKey, { label: string; variant: 'danger' | 'warning' | 'info' | 'gray' }> = {
+const CUADRANTE_CONFIG: Record<
+  CuadranteKey,
+  { label: string; variant: 'danger' | 'warning' | 'info' | 'gray' }
+> = {
   gestionar_cerca: { label: 'Gestionar', variant: 'danger' },
   mantener_satisfecho: { label: 'Satisfecho', variant: 'warning' },
   mantener_informado: { label: 'Informado', variant: 'info' },
@@ -107,9 +130,10 @@ const VIEW_OPTIONS = [
 
 /**
  * Calcula el cuadrante de la matriz poder-interes
+ * Sprint 17: Actualizado para usar nivel_influencia_pi
  */
 const getCuadrante = (stakeholder: ParteInteresada): CuadranteKey => {
-  const influenciaAlta = stakeholder.nivel_influencia === 'alta';
+  const influenciaAlta = stakeholder.nivel_influencia_pi === 'alta';
   const interesAlto = stakeholder.nivel_interes === 'alto';
 
   if (influenciaAlta && interesAlto) return 'gestionar_cerca';
@@ -151,6 +175,9 @@ export const StakeholdersSection = ({ triggerNewForm }: StakeholdersSectionProps
   const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
   const colorClasses = getModuleColorClasses(moduleColor as ModuleColor);
 
+  // Sprint 17: Ref para input de archivo
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // Queries - Hook de partes interesadas
   const {
     data: stakeholders,
@@ -163,6 +190,13 @@ export const StakeholdersSection = ({ triggerNewForm }: StakeholdersSectionProps
 
   const { data: tipos } = useTiposParteInteresada();
 
+  // Sprint 17: Queries nuevas
+  const { data: grupos } = useGruposParteInteresada();
+  const { data: stats } = usePartesInteresadasEstadisticas();
+  const { exportar, isExporting } = useExportPartesInteresadasExcel();
+  const { importar, isImporting } = useImportPartesInteresadasExcel();
+  const { generar: generarMatrices, isGenerating } = useGenerarMatrizComunicacionMasiva();
+
   // Opciones de filtro para tipos
   const tipoOptions = useMemo(() => {
     const tiposList = tipos || [];
@@ -172,46 +206,71 @@ export const StakeholdersSection = ({ triggerNewForm }: StakeholdersSectionProps
     ];
   }, [tipos]);
 
-  // Calcular estadisticas para StatsGrid
+  // Sprint 17: Opciones de filtro para grupos
+  const grupoOptions = useMemo(() => {
+    const gruposList = Array.isArray(grupos) ? grupos : grupos?.results || [];
+    return [
+      { value: '', label: 'Todos los grupos' },
+      ...gruposList.map((g) => ({ value: g.id.toString(), label: g.nombre })),
+    ];
+  }, [grupos]);
+
+  // Sprint 17: Mapeo de iconos de grupos
+  const GRUPO_ICONS: Record<string, React.ElementType> = {
+    Users,
+    Building2,
+    ShoppingCart,
+    Truck,
+    TrendingUp,
+    MapPin,
+    Landmark,
+    Globe,
+    Leaf,
+  };
+
+  // Sprint 17: Calcular estadisticas para StatsGrid (usa stats del backend)
   const stakeholderStats: StatItem[] = useMemo(() => {
-    const internos = stakeholders.filter((s) =>
-      s.tipo_categoria === 'interna'
-    ).length;
-    const externos = stakeholders.length - internos;
-    const altaInfluencia = stakeholders.filter((s) => s.nivel_influencia === 'alta').length;
-    const gestionarCerca = stakeholders.filter((s) => getCuadrante(s) === 'gestionar_cerca').length;
+    if (!stats) return [];
+
+    // Top 3 grupos por cantidad
+    const topGrupos = Object.entries(stats.por_grupo || {})
+      .sort(([, a], [, b]) => (b as number) - (a as number))
+      .slice(0, 3);
+
+    const altaInfluenciaPI = stats.por_influencia_pi?.alta || 0;
+    const altaInfluenciaEmpresa = stats.por_influencia_empresa?.alta || 0;
 
     return [
       {
         label: 'Total',
-        value: totalCount,
+        value: stats.total,
         icon: Users,
         iconColor: 'info',
         description: 'Partes interesadas',
       },
       {
-        label: 'Internos',
-        value: internos,
-        icon: Building2,
+        label: 'Grupo Principal',
+        value: topGrupos[0]?.[1] || 0,
+        icon: LayoutGrid,
         iconColor: 'primary',
-        description: 'Empleados, directivos',
+        description: topGrupos[0]?.[0] || 'Sin datos',
       },
       {
-        label: 'Externos',
-        value: externos,
-        icon: Globe,
-        iconColor: 'success',
-        description: 'Clientes, proveedores',
-      },
-      {
-        label: 'Gestionar de Cerca',
-        value: gestionarCerca,
-        icon: Zap,
+        label: 'Alto Impacto → Empresa',
+        value: altaInfluenciaPI,
+        icon: ArrowRightLeft,
         iconColor: 'danger',
-        description: 'Atencion prioritaria',
+        description: 'PI con poder sobre empresa',
+      },
+      {
+        label: 'Alto Impacto → PI',
+        value: altaInfluenciaEmpresa,
+        icon: Zap,
+        iconColor: 'warning',
+        description: 'Empresa con poder sobre PI',
       },
     ];
-  }, [stakeholders, totalCount]);
+  }, [stats]);
 
   // Efecto para abrir modal cuando se dispara desde el padre
   useEffect(() => {
@@ -258,6 +317,49 @@ export const StakeholdersSection = ({ triggerNewForm }: StakeholdersSectionProps
 
   const handleStakeholderClickFromMatrix = (stakeholder: ParteInteresada) => {
     handleEdit(stakeholder);
+  };
+
+  // Sprint 17: Handlers para Import/Export/Generate Matrix
+  const handleExport = async () => {
+    try {
+      await exportar();
+      setAlertMessage({ type: 'success', message: 'Archivo Excel exportado correctamente' });
+    } catch {
+      setAlertMessage({ type: 'error', message: 'Error al exportar archivo Excel' });
+    }
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      await importar(file);
+      setAlertMessage({ type: 'success', message: 'Archivo Excel importado correctamente' });
+      // Reset input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch {
+      setAlertMessage({ type: 'error', message: 'Error al importar archivo Excel' });
+    }
+  };
+
+  const handleGenerateMatrices = async () => {
+    try {
+      const grupoId = filters.grupo ? parseInt(filters.grupo.toString()) : undefined;
+      await generarMatrices(grupoId);
+      setAlertMessage({
+        type: 'success',
+        message: 'Matrices de comunicación generadas correctamente',
+      });
+    } catch {
+      setAlertMessage({ type: 'error', message: 'Error al generar matrices de comunicación' });
+    }
   };
 
   // Renderizar badges
@@ -344,6 +446,42 @@ export const StakeholdersSection = ({ triggerNewForm }: StakeholdersSectionProps
         <StatsGrid stats={stakeholderStats} columns={4} moduleColor={moduleColor} />
       )}
 
+      {/* Sprint 17: Toolbar con Import/Export/Generate Matrix */}
+      <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={handleImportClick}
+            variant="outline"
+            size="sm"
+            disabled={isImporting || !canCreate}
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            {isImporting ? 'Importando...' : 'Importar Excel'}
+          </Button>
+          <Button onClick={handleExport} variant="outline" size="sm" disabled={isExporting}>
+            <Download className="h-4 w-4 mr-2" />
+            {isExporting ? 'Exportando...' : 'Exportar Excel'}
+          </Button>
+        </div>
+        <Button
+          onClick={handleGenerateMatrices}
+          variant="outline"
+          size="sm"
+          disabled={isGenerating || !canCreate}
+        >
+          <Send className="h-4 w-4 mr-2" />
+          {isGenerating ? 'Generando...' : 'Generar Matriz Comunicaciones'}
+        </Button>
+        {/* Input oculto para importar archivo */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".xlsx,.xls"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+      </div>
+
       {/* 2. SectionHeader con filtros en linea y ViewToggle */}
       <SectionHeader
         icon={
@@ -364,6 +502,19 @@ export const StakeholdersSection = ({ triggerNewForm }: StakeholdersSectionProps
               leftIcon={<Search className="h-4 w-4" />}
               className="w-48"
             />
+            {/* Sprint 17: Filtro por Grupo */}
+            <Select
+              value={filters.grupo?.toString() || ''}
+              onChange={(e) =>
+                setFilters({
+                  ...filters,
+                  grupo: e.target.value ? parseInt(e.target.value) : undefined,
+                  page: 1,
+                })
+              }
+              options={grupoOptions}
+              className="w-40"
+            />
             {/* Filtro: Tipo */}
             <Select
               value={filters.tipo?.toString() || ''}
@@ -383,7 +534,9 @@ export const StakeholdersSection = ({ triggerNewForm }: StakeholdersSectionProps
               onChange={(e) =>
                 setFilters({
                   ...filters,
-                  nivel_influencia: e.target.value ? (e.target.value as NivelInfluencia) : undefined,
+                  nivel_influencia: e.target.value
+                    ? (e.target.value as NivelInfluencia)
+                    : undefined,
                   page: 1,
                 })
               }
@@ -438,7 +591,7 @@ export const StakeholdersSection = ({ triggerNewForm }: StakeholdersSectionProps
           showLegend
         />
       ) : (
-        /* Vista Tabla */
+        /* Vista Tabla - Sprint 17: Columnas actualizadas */
         <DataTableCard
           columns={[
             {
@@ -456,36 +609,72 @@ export const StakeholdersSection = ({ triggerNewForm }: StakeholdersSectionProps
               ),
             },
             {
-              key: 'contacto',
-              header: 'Contacto',
+              key: 'grupo',
+              header: 'Grupo',
+              render: (stakeholder: ParteInteresada) => {
+                if (!stakeholder.grupo_nombre) return <span className="text-gray-400">-</span>;
+                const IconComponent = GRUPO_ICONS[stakeholder.grupo_icono || 'Users'] || Users;
+                return (
+                  <Badge
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-1.5 w-fit"
+                    style={{
+                      borderColor: stakeholder.grupo_color || '#6B7280',
+                      color: stakeholder.grupo_color || '#6B7280',
+                    }}
+                  >
+                    <IconComponent className="h-3.5 w-3.5" />
+                    <span>{stakeholder.grupo_nombre}</span>
+                  </Badge>
+                );
+              },
+            },
+            {
+              key: 'responsable',
+              header: 'Responsable',
               render: (stakeholder: ParteInteresada) => (
                 <div className="text-sm">
-                  {stakeholder.representante ? (
+                  {stakeholder.responsable_empresa_nombre ? (
                     <>
                       <div className="text-gray-900 dark:text-gray-100">
-                        {stakeholder.representante}
+                        {stakeholder.responsable_empresa_nombre}
                       </div>
-                      {stakeholder.cargo_representante && (
+                      {stakeholder.area_responsable_nombre && (
                         <div className="text-xs text-gray-500 dark:text-gray-400">
-                          {stakeholder.cargo_representante}
+                          {stakeholder.area_responsable_nombre}
                         </div>
                       )}
                     </>
                   ) : (
-                    <span className="text-gray-400">-</span>
+                    <span className="text-gray-400">Sin asignar</span>
                   )}
                 </div>
               ),
             },
             {
-              key: 'influencia',
-              header: 'Influencia',
-              render: (stakeholder: ParteInteresada) =>
-                renderInfluenciaBadge(stakeholder.nivel_influencia),
+              key: 'impactos',
+              header: 'Impactos',
+              render: (stakeholder: ParteInteresada) => (
+                <div className="flex flex-col gap-1">
+                  <Tooltip content="Poder de la PI sobre la Empresa">
+                    <div className="flex items-center gap-1.5">
+                      <ArrowRightLeft className="h-3.5 w-3.5 text-red-500" />
+                      {renderInfluenciaBadge(stakeholder.nivel_influencia_pi)}
+                    </div>
+                  </Tooltip>
+                  <Tooltip content="Poder de la Empresa sobre la PI">
+                    <div className="flex items-center gap-1.5">
+                      <Zap className="h-3.5 w-3.5 text-amber-500" />
+                      {renderInfluenciaBadge(stakeholder.nivel_influencia_empresa)}
+                    </div>
+                  </Tooltip>
+                </div>
+              ),
             },
             {
               key: 'interes',
-              header: 'Interes',
+              header: 'Interés',
               render: (stakeholder: ParteInteresada) =>
                 renderInteresBadge(stakeholder.nivel_interes),
             },
@@ -508,11 +697,7 @@ export const StakeholdersSection = ({ triggerNewForm }: StakeholdersSectionProps
                   {/* Editar */}
                   {canEdit && (
                     <Tooltip content="Editar">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(stakeholder)}
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(stakeholder)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
                     </Tooltip>

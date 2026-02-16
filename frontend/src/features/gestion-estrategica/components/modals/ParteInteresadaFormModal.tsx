@@ -13,7 +13,7 @@
  *
  * Usa Design System dinamico sin colores hardcoded
  */
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Users,
   Building2,
@@ -28,6 +28,14 @@ import {
   FileText,
   ClipboardCheck,
   Globe,
+  ShoppingCart,
+  Truck,
+  TrendingUp,
+  Landmark,
+  Leaf,
+  UserCircle,
+  Briefcase,
+  LayoutGrid,
 } from 'lucide-react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
@@ -42,7 +50,11 @@ import {
   type ParteInteresada,
 } from '../../hooks/usePartesInteresadas';
 import { useNormasISO } from '../../hooks/useNormasISO';
+import { useAreas } from '../../hooks/useAreas'; // Sprint 17
+import { useColaboradores } from '@/features/talent-hub/hooks'; // Sprint 17
+import { useCargos } from '@/features/configuracion/hooks'; // Sprint 17
 import { DynamicIcon } from '@/components/common';
+import { Badge } from '@/components/ui/badge'; // Sprint 17
 
 // =============================================================================
 // INTERFACES
@@ -60,7 +72,16 @@ interface FormData {
   nombre: string;
   descripcion: string;
   // Canales de comunicacion (alineados con backend Django)
-  canal_principal: 'email' | 'telefono' | 'reunion' | 'videoconferencia' | 'whatsapp' | 'portal_web' | 'redes_sociales' | 'correspondencia' | 'otro';
+  canal_principal:
+    | 'email'
+    | 'telefono'
+    | 'reunion'
+    | 'videoconferencia'
+    | 'whatsapp'
+    | 'portal_web'
+    | 'redes_sociales'
+    | 'correspondencia'
+    | 'otro';
   email_contacto: string;
   telefono_contacto: string;
   direccion: string;
@@ -68,16 +89,33 @@ interface FormData {
   // Datos de contacto opcionales (representante general, no obligatorio)
   representante: string;
   cargo_representante: string;
-  // Matriz Poder-Interes
-  nivel_influencia: 'alta' | 'media' | 'baja';
+  // Matriz Poder-Interes (ACTUALIZADO Sprint 17 - Bidireccional)
+  nivel_influencia_pi: 'alta' | 'media' | 'baja'; // Renombrado: PI → Empresa (PODER)
+  nivel_influencia_empresa: 'alta' | 'media' | 'baja'; // NUEVO: Empresa → PI
   nivel_interes: 'alto' | 'medio' | 'bajo';
+  // Temas de Interés (NUEVO Sprint 17 - Bidireccional)
+  temas_interes_pi: string; // Qué le interesa a la PI de la empresa
+  temas_interes_empresa: string; // Qué le interesa a la empresa de la PI
+  // Responsables en la Empresa (NUEVO Sprint 17)
+  responsable_empresa: number | null; // FK Colaborador
+  cargo_responsable: number | null; // FK Cargo
+  area_responsable: number | null; // FK Area
   // ISO 9001:2015 Clausula 4.2 - Campos requeridos
   necesidades: string;
   expectativas: string;
   requisitos_pertinentes: string;
   es_requisito_legal: boolean;
   // Frecuencia de comunicacion (alineados con backend Django)
-  frecuencia_comunicacion: 'diaria' | 'semanal' | 'quincenal' | 'mensual' | 'bimestral' | 'trimestral' | 'semestral' | 'anual' | 'segun_necesidad';
+  frecuencia_comunicacion:
+    | 'diaria'
+    | 'semanal'
+    | 'quincenal'
+    | 'mensual'
+    | 'bimestral'
+    | 'trimestral'
+    | 'semestral'
+    | 'anual'
+    | 'segun_necesidad';
   // Sistemas de gestión relacionados (dinámico)
   normas_relacionadas: number[];
 }
@@ -97,8 +135,14 @@ const defaultFormData: FormData = {
   sitio_web: '',
   representante: '',
   cargo_representante: '',
-  nivel_influencia: 'media',
+  nivel_influencia_pi: 'media',
+  nivel_influencia_empresa: 'media',
   nivel_interes: 'medio',
+  temas_interes_pi: '',
+  temas_interes_empresa: '',
+  responsable_empresa: null,
+  cargo_responsable: null,
+  area_responsable: null,
   necesidades: '',
   expectativas: '',
   requisitos_pertinentes: '',
@@ -144,7 +188,10 @@ const NIVELES_INTERES = [
 ];
 
 // Configuracion de cuadrantes para visualizacion
-const CUADRANTE_INFO: Record<string, { label: string; color: string; icon: React.ElementType; description: string }> = {
+const CUADRANTE_INFO: Record<
+  string,
+  { label: string; color: string; icon: React.ElementType; description: string }
+> = {
   gestionar_cerca: {
     label: 'Gestionar de Cerca',
     color: 'text-red-600',
@@ -190,6 +237,10 @@ export const ParteInteresadaFormModal = ({
   // Queries
   const { data: tipos, isLoading: isLoadingTipos } = useTiposParteInteresada();
   const { data: normasData, isLoading: isLoadingNormas } = useNormasISO();
+  // Sprint 17: Queries para responsables
+  const { data: areasData } = useAreas();
+  const { data: colaboradoresData } = useColaboradores();
+  const { data: cargosData } = useCargos();
 
   // Lista de normas disponibles - memoizada para evitar re-renders
   const normasDisponibles = useMemo(() => normasData?.results || [], [normasData?.results]);
@@ -211,8 +262,17 @@ export const ParteInteresadaFormModal = ({
         sitio_web: parteInteresada.sitio_web || '',
         representante: parteInteresada.representante || '',
         cargo_representante: parteInteresada.cargo_representante || '',
-        nivel_influencia: parteInteresada.nivel_influencia,
+        // Sprint 17: Campos bidireccionales
+        nivel_influencia_pi: parteInteresada.nivel_influencia_pi,
+        nivel_influencia_empresa: parteInteresada.nivel_influencia_empresa,
         nivel_interes: parteInteresada.nivel_interes,
+        temas_interes_pi: parteInteresada.temas_interes_pi || '',
+        temas_interes_empresa: parteInteresada.temas_interes_empresa || '',
+        // Sprint 17: Responsables
+        responsable_empresa: parteInteresada.responsable_empresa,
+        cargo_responsable: parteInteresada.cargo_responsable,
+        area_responsable: parteInteresada.area_responsable,
+        // ISO
         necesidades: parteInteresada.necesidades || '',
         expectativas: parteInteresada.expectativas || '',
         requisitos_pertinentes: parteInteresada.requisitos_pertinentes || '',
@@ -261,8 +321,17 @@ export const ParteInteresadaFormModal = ({
         requisitos_pertinentes: formData.requisitos_pertinentes.trim() || undefined,
         es_requisito_legal: formData.es_requisito_legal,
         frecuencia_comunicacion: formData.frecuencia_comunicacion,
-        nivel_influencia: formData.nivel_influencia,
+        // Sprint 17: Impacto bidireccional
+        nivel_influencia_pi: formData.nivel_influencia_pi,
+        nivel_influencia_empresa: formData.nivel_influencia_empresa,
         nivel_interes: formData.nivel_interes,
+        // Sprint 17: Temas bidireccionales
+        temas_interes_pi: formData.temas_interes_pi.trim() || undefined,
+        temas_interes_empresa: formData.temas_interes_empresa.trim() || undefined,
+        // Sprint 17: Responsables
+        responsable_empresa: formData.responsable_empresa || undefined,
+        cargo_responsable: formData.cargo_responsable || undefined,
+        area_responsable: formData.area_responsable || undefined,
         // Sistemas de gestión relacionados (dinámico)
         normas_relacionadas: formData.normas_relacionadas,
       };
@@ -303,17 +372,62 @@ export const ParteInteresadaFormModal = ({
   const isLoading = isCreating || isUpdating;
 
   // Opciones de tipo - memoizadas
-  const tipoOptions = useMemo(() => [
-    { value: '', label: 'Seleccione un tipo' },
-    ...(tipos?.map((t) => ({
-      value: t.id.toString(),
-      label: `${t.nombre} (${t.categoria_display})`,
-    })) || []),
-  ], [tipos]);
+  const tipoOptions = useMemo(
+    () => [
+      { value: '', label: 'Seleccione un tipo' },
+      ...(tipos?.map((t) => ({
+        value: t.id.toString(),
+        label: `${t.nombre} (${t.categoria_display})`,
+      })) || []),
+    ],
+    [tipos]
+  );
+
+  // Sprint 17: Tipo seleccionado (para mostrar badge de grupo)
+  const tipoSeleccionado = useMemo(() => {
+    return tipos?.find((t) => t.id.toString() === formData.tipo);
+  }, [tipos, formData.tipo]);
+
+  // Sprint 17: Opciones de responsables - memoizadas
+  const colaboradorOptions = useMemo(
+    () => [
+      { value: '', label: 'Sin asignar' },
+      ...(Array.isArray(colaboradoresData)
+        ? colaboradoresData
+        : colaboradoresData?.results || []
+      ).map((c) => ({
+        value: c.id.toString(),
+        label: `${c.nombre_completo} - ${c.cargo_nombre || 'Sin cargo'}`,
+      })),
+    ],
+    [colaboradoresData]
+  );
+
+  const cargoOptions = useMemo(
+    () => [
+      { value: '', label: 'Sin asignar' },
+      ...(Array.isArray(cargosData) ? cargosData : cargosData?.results || []).map((c) => ({
+        value: c.id.toString(),
+        label: c.nombre,
+      })),
+    ],
+    [cargosData]
+  );
+
+  const areaOptions = useMemo(
+    () => [
+      { value: '', label: 'Sin asignar' },
+      ...(Array.isArray(areasData) ? areasData : areasData?.results || []).map((a) => ({
+        value: a.id.toString(),
+        label: a.nombre,
+      })),
+    ],
+    [areasData]
+  );
 
   // Calcular cuadrante basado en influencia e interes - memoizado
   const { cuadrante, cuadranteInfo, CuadranteIcon } = useMemo(() => {
-    const influenciaAlta = formData.nivel_influencia === 'alta';
+    const influenciaAlta = formData.nivel_influencia_pi === 'alta'; // Sprint 17: Renombrado
     const interesAlto = formData.nivel_interes === 'alto';
 
     let cuad: string;
@@ -324,7 +438,20 @@ export const ParteInteresadaFormModal = ({
 
     const info = CUADRANTE_INFO[cuad];
     return { cuadrante: cuad, cuadranteInfo: info, CuadranteIcon: info.icon };
-  }, [formData.nivel_influencia, formData.nivel_interes]);
+  }, [formData.nivel_influencia_pi, formData.nivel_interes]);
+
+  // Sprint 17: Mapeo de iconos de grupos (Lucide)
+  const GRUPO_ICONS: Record<string, React.ElementType> = {
+    Users,
+    Building2,
+    ShoppingCart,
+    Truck,
+    TrendingUp,
+    MapPin,
+    Landmark,
+    Globe,
+    Leaf,
+  };
 
   // Footer con botones
   const footer = (
@@ -355,9 +482,7 @@ export const ParteInteresadaFormModal = ({
     >
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Alerta de error */}
-        {error && (
-          <Alert variant="error" message={error} closable onClose={() => setError(null)} />
-        )}
+        {error && <Alert variant="error" message={error} closable onClose={() => setError(null)} />}
 
         {/* Seccion: Identificacion */}
         <div className="space-y-4">
@@ -374,6 +499,27 @@ export const ParteInteresadaFormModal = ({
             disabled={isLoadingTipos}
             helperText="Categoria segun relacion con la organizacion"
           />
+
+          {/* Sprint 17: Badge de grupo (read-only) */}
+          {tipoSeleccionado?.grupo_nombre && (
+            <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+              <span className="text-sm text-gray-600 dark:text-gray-400">Grupo:</span>
+              <Badge
+                variant="outline"
+                className="flex items-center gap-1.5"
+                style={{
+                  borderColor: tipoSeleccionado.grupo_color,
+                  color: tipoSeleccionado.grupo_color,
+                }}
+              >
+                {GRUPO_ICONS[tipoSeleccionado.grupo_icono] &&
+                  React.createElement(GRUPO_ICONS[tipoSeleccionado.grupo_icono], {
+                    className: 'h-3.5 w-3.5',
+                  })}
+                <span>{tipoSeleccionado.grupo_nombre}</span>
+              </Badge>
+            </div>
+          )}
 
           <Input
             label="Nombre *"
@@ -481,61 +627,166 @@ export const ParteInteresadaFormModal = ({
           </details>
         </div>
 
-        {/* Seccion: Clasificacion Poder-Interes */}
+        {/* Seccion: Impacto Bidireccional (Sprint 17) */}
         <div className="space-y-4">
           <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide flex items-center gap-2">
             <Target className="h-4 w-4" />
-            Matriz Poder-Interes
+            Impacto Bidireccional (Poder)
           </h4>
+
+          <Alert
+            variant="info"
+            message="Evalúa el impacto en AMBAS direcciones: ¿Cuánto poder tiene la PI sobre la empresa? ¿Cuánto poder tiene la empresa sobre la PI?"
+          />
 
           <div className="grid grid-cols-2 gap-4">
             <Select
-              label="Nivel de Influencia (Poder) *"
-              value={formData.nivel_influencia}
-              onChange={(e) => handleFieldChange('nivel_influencia', e.target.value)}
+              label="Impacto PI → Empresa (PODER de la PI) *"
+              value={formData.nivel_influencia_pi}
+              onChange={(e) => handleFieldChange('nivel_influencia_pi', e.target.value)}
               options={NIVELES_INFLUENCIA.map((n) => ({
                 value: n.value,
                 label: n.label,
               }))}
-              helperText="Capacidad de afectar las decisiones"
+              helperText="¿Cuánto puede afectar la PI a la empresa?"
             />
             <Select
-              label="Nivel de Interes *"
+              label="Impacto Empresa → PI (PODER de la Empresa) *"
+              value={formData.nivel_influencia_empresa}
+              onChange={(e) => handleFieldChange('nivel_influencia_empresa', e.target.value)}
+              options={NIVELES_INFLUENCIA.map((n) => ({
+                value: n.value,
+                label: n.label,
+              }))}
+              helperText="¿Cuánto puede afectar la empresa a la PI?"
+            />
+          </div>
+
+          <div className="col-span-2">
+            <Select
+              label="Nivel de Interés de la PI *"
               value={formData.nivel_interes}
               onChange={(e) => handleFieldChange('nivel_interes', e.target.value)}
               options={NIVELES_INTERES.map((n) => ({
                 value: n.value,
                 label: n.label,
               }))}
-              helperText="Grado de interes en los resultados"
+              helperText="¿Qué tan interesada está la PI en las actividades de la empresa?"
             />
           </div>
 
           {/* Indicador visual del cuadrante */}
-          <div className={`p-4 rounded-lg border-2 ${
-            cuadrante === 'gestionar_cerca' ? 'border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800' :
-            cuadrante === 'mantener_satisfecho' ? 'border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800' :
-            cuadrante === 'mantener_informado' ? 'border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800' :
-            'border-gray-200 bg-gray-50 dark:bg-gray-800 dark:border-gray-700'
-          }`}>
+          <div
+            className={`p-4 rounded-lg border-2 ${
+              cuadrante === 'gestionar_cerca'
+                ? 'border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800'
+                : cuadrante === 'mantener_satisfecho'
+                  ? 'border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800'
+                  : cuadrante === 'mantener_informado'
+                    ? 'border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800'
+                    : 'border-gray-200 bg-gray-50 dark:bg-gray-800 dark:border-gray-700'
+            }`}
+          >
             <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${
-                cuadrante === 'gestionar_cerca' ? 'bg-red-100 dark:bg-red-900/40' :
-                cuadrante === 'mantener_satisfecho' ? 'bg-amber-100 dark:bg-amber-900/40' :
-                cuadrante === 'mantener_informado' ? 'bg-blue-100 dark:bg-blue-900/40' :
-                'bg-gray-100 dark:bg-gray-700'
-              }`}>
+              <div
+                className={`p-2 rounded-lg ${
+                  cuadrante === 'gestionar_cerca'
+                    ? 'bg-red-100 dark:bg-red-900/40'
+                    : cuadrante === 'mantener_satisfecho'
+                      ? 'bg-amber-100 dark:bg-amber-900/40'
+                      : cuadrante === 'mantener_informado'
+                        ? 'bg-blue-100 dark:bg-blue-900/40'
+                        : 'bg-gray-100 dark:bg-gray-700'
+                }`}
+              >
                 <CuadranteIcon className={`h-5 w-5 ${cuadranteInfo.color}`} />
               </div>
               <div>
-                <p className={`font-medium ${cuadranteInfo.color}`}>
-                  {cuadranteInfo.label}
-                </p>
+                <p className={`font-medium ${cuadranteInfo.color}`}>{cuadranteInfo.label}</p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   {cuadranteInfo.description}
                 </p>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Seccion: Temas de Interés Bidireccionales (Sprint 17 - NUEVO) */}
+        <div className="space-y-4">
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide flex items-center gap-2">
+            <LayoutGrid className="h-4 w-4" />
+            Temas de Interés
+          </h4>
+
+          <Textarea
+            label="Temas de Interés PARA la PI"
+            value={formData.temas_interes_pi}
+            onChange={(e) => handleFieldChange('temas_interes_pi', e.target.value)}
+            placeholder="¿Qué le interesa a esta PI de la empresa? Ej: Estabilidad laboral, oportunidades de crecimiento, condiciones de trabajo..."
+            rows={2}
+            helperText="Lo que espera o busca la PI de la organización"
+          />
+
+          <Textarea
+            label="Temas de Interés PARA la Empresa"
+            value={formData.temas_interes_empresa}
+            onChange={(e) => handleFieldChange('temas_interes_empresa', e.target.value)}
+            placeholder="¿Qué le interesa a la empresa de esta PI? Ej: Productividad, compromiso, cumplimiento normativo..."
+            rows={2}
+            helperText="Lo que espera o busca la empresa de esta PI"
+          />
+        </div>
+
+        {/* Seccion: Responsables en la Empresa (Sprint 17 - NUEVO) */}
+        <div className="space-y-4">
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide flex items-center gap-2">
+            <UserCircle className="h-4 w-4" />
+            Responsable en la Empresa
+          </h4>
+
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Asigne el colaborador, cargo y/o área responsable de gestionar la relación con esta
+            parte interesada
+          </p>
+
+          <Select
+            label="Colaborador Responsable"
+            value={formData.responsable_empresa?.toString() || ''}
+            onChange={(e) =>
+              handleFieldChange(
+                'responsable_empresa',
+                e.target.value ? parseInt(e.target.value) : null
+              )
+            }
+            options={colaboradorOptions}
+            helperText="Persona asignada para gestionar esta PI"
+          />
+
+          <div className="grid grid-cols-2 gap-4">
+            <Select
+              label="Cargo Responsable"
+              value={formData.cargo_responsable?.toString() || ''}
+              onChange={(e) =>
+                handleFieldChange(
+                  'cargo_responsable',
+                  e.target.value ? parseInt(e.target.value) : null
+                )
+              }
+              options={cargoOptions}
+              helperText="Alternativa si no hay colaborador específico"
+            />
+            <Select
+              label="Área Responsable"
+              value={formData.area_responsable?.toString() || ''}
+              onChange={(e) =>
+                handleFieldChange(
+                  'area_responsable',
+                  e.target.value ? parseInt(e.target.value) : null
+                )
+              }
+              options={areaOptions}
+              helperText="Área que gestiona esta relación"
+            />
           </div>
         </div>
 
@@ -617,18 +868,20 @@ export const ParteInteresadaFormModal = ({
                     onClick={() => handleNormaToggle(norma.id)}
                     className={`
                       flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left
-                      ${isSelected
-                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                      ${
+                        isSelected
+                          ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                       }
                     `}
                   >
                     <div
                       className={`
                         flex items-center justify-center w-10 h-10 rounded-lg
-                        ${isSelected
-                          ? 'bg-primary-100 dark:bg-primary-800/40'
-                          : 'bg-gray-100 dark:bg-gray-800'
+                        ${
+                          isSelected
+                            ? 'bg-primary-100 dark:bg-primary-800/40'
+                            : 'bg-gray-100 dark:bg-gray-800'
                         }
                       `}
                       style={{ backgroundColor: isSelected ? `${norma.color}20` : undefined }}
@@ -636,31 +889,44 @@ export const ParteInteresadaFormModal = ({
                       <DynamicIcon
                         name={norma.icon || 'FileCheck'}
                         className="h-5 w-5"
-                        style={{ color: norma.color || (isSelected ? 'var(--color-primary-600)' : 'currentColor') }}
+                        style={{
+                          color:
+                            norma.color ||
+                            (isSelected ? 'var(--color-primary-600)' : 'currentColor'),
+                        }}
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium truncate ${
-                        isSelected
-                          ? 'text-primary-700 dark:text-primary-300'
-                          : 'text-gray-900 dark:text-gray-100'
-                      }`}>
+                      <p
+                        className={`text-sm font-medium truncate ${
+                          isSelected
+                            ? 'text-primary-700 dark:text-primary-300'
+                            : 'text-gray-900 dark:text-gray-100'
+                        }`}
+                      >
                         {norma.short_name || norma.code}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                         {norma.name}
                       </p>
                     </div>
-                    <div className={`
+                    <div
+                      className={`
                       w-5 h-5 rounded-full border-2 flex items-center justify-center
-                      ${isSelected
-                        ? 'border-primary-500 bg-primary-500'
-                        : 'border-gray-300 dark:border-gray-600'
+                      ${
+                        isSelected
+                          ? 'border-primary-500 bg-primary-500'
+                          : 'border-gray-300 dark:border-gray-600'
                       }
-                    `}>
+                    `}
+                    >
                       {isSelected && (
                         <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
                         </svg>
                       )}
                     </div>

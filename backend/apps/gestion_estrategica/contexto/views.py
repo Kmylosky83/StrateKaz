@@ -30,10 +30,17 @@ Actualizado: 2026-01-24 - Migrado a app independiente
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, FormParser
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django.db.models import Count
+from django.db import transaction
+from django.http import HttpResponse
 from datetime import date
+import openpyxl
+from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+from openpyxl.utils import get_column_letter
+from io import BytesIO
 
 from apps.core.mixins import StandardViewSetMixin
 from .models import (
@@ -45,6 +52,7 @@ from .models import (
     AnalisisPESTEL,
     FactorPESTEL,
     FuerzaPorter,
+    GrupoParteInteresada,
     TipoParteInteresada,
     ParteInteresada,
     RequisitoParteInteresada,
@@ -59,6 +67,7 @@ from .serializers import (
     AnalisisPESTELSerializer,
     FactorPESTELSerializer,
     FuerzaPorterSerializer,
+    GrupoParteInteresadaSerializer,
     TipoParteInteresadaSerializer,
     ParteInteresadaSerializer,
     RequisitoParteInteresadaSerializer,
@@ -582,36 +591,102 @@ class FuerzaPorterViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 # VIEWSETS PARTES INTERESADAS (Stakeholders) - ISO 9001:2015 Cláusula 4.2
 # ============================================================================
 
-class TipoParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
-    """ViewSet para gestión de Tipos de Parte Interesada."""
+class GrupoParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+    """
+    ViewSet para gestión de Grupos de Partes Interesadas.
 
-    queryset = TipoParteInteresada.objects.all()
+    Funcionalidad:
+    - CRUD completo de grupos
+    - 10 grupos pre-seeded del sistema (es_sistema=True)
+    - Grupos custom creados por la empresa (es_sistema=False)
+    - Los grupos del sistema no pueden eliminarse (soft-delete protegido)
+    - Filtros por estado, es_sistema
+    - Ordenamiento por orden, nombre
+    """
+
+    queryset = GrupoParteInteresada.objects.all()
+    serializer_class = GrupoParteInteresadaSerializer
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['is_active', 'es_sistema']
+    search_fields = ['codigo', 'nombre', 'descripcion']
+    ordering_fields = ['orden', 'nombre', 'codigo']
+    ordering = ['orden', 'nombre']
+
+    def perform_destroy(self, instance):
+        """Proteger grupos del sistema de eliminación física."""
+        if instance.es_sistema:
+            # Soft delete only para grupos del sistema
+            instance.is_active = False
+            instance.save(update_fields=['is_active', 'updated_at'])
+        else:
+            # Permitir eliminación física de grupos custom
+            super().perform_destroy(instance)
+
+
+class TipoParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
+    """
+    ViewSet para gestión de Tipos de Parte Interesada (Subgrupos).
+
+    Funcionalidad:
+    - CRUD completo de tipos/subgrupos
+    - Filtros por grupo, categoria, es_sistema, estado
+    - Búsqueda por código, nombre, descripción
+    - Ordenamiento jerárquico: grupo.orden → tipo.orden → nombre
+    """
+
+    queryset = TipoParteInteresada.objects.select_related('grupo').all()
     serializer_class = TipoParteInteresadaSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['categoria', 'is_active']
+    filterset_fields = ['grupo', 'categoria', 'es_sistema', 'is_active']
     search_fields = ['codigo', 'nombre', 'descripcion']
     ordering_fields = ['orden', 'nombre', 'categoria']
-    ordering = ['orden', 'categoria', 'nombre']
+    ordering = ['grupo__orden', 'orden', 'nombre']
 
 
 class ParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
-    """ViewSet para gestión de Partes Interesadas (Stakeholders)."""
+    """
+    ViewSet para gestión de Partes Interesadas (Stakeholders).
 
-    queryset = ParteInteresada.objects.select_related('tipo').all()
+    Funcionalidad:
+    - CRUD completo de partes interesadas
+    - Filtros por grupo, tipo, nivel_influencia_pi, nivel_influencia_empresa, responsable, área
+    - Export Excel (4 hojas): Identificación, Caracterización, Modelos Relación, Matriz
+    - Import Excel: Importar desde formato F-GD-04
+    - Generación automática de Matriz de Comunicaciones
+    - Matriz Poder-Interés (4 cuadrantes)
+    - Estadísticas por grupo, tipo, sistema
+    """
+
+    queryset = ParteInteresada.objects.select_related(
+        'tipo', 'tipo__grupo', 'responsable_empresa', 'cargo_responsable', 'area_responsable'
+    ).all()
     serializer_class = ParteInteresadaSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = [
-        'empresa', 'tipo', 'nivel_influencia', 'nivel_interes',
-        'relacionado_sst', 'relacionado_ambiental',
-        'relacionado_calidad', 'relacionado_pesv', 'is_active'
+        'empresa', 'tipo', 'tipo__grupo', 'nivel_influencia_pi', 'nivel_influencia_empresa',
+        'nivel_interes', 'responsable_empresa', 'cargo_responsable', 'area_responsable',
+        'relacionado_sst', 'relacionado_ambiental', 'relacionado_calidad', 'relacionado_pesv',
+        'is_active'
     ]
-    search_fields = ['nombre', 'descripcion', 'representante']
-    ordering_fields = ['nombre', 'nivel_influencia', 'nivel_interes', 'created_at']
-    ordering = ['-nivel_influencia', '-nivel_interes', 'nombre']
+    search_fields = ['nombre', 'descripcion', 'representante', 'temas_interes_pi', 'temas_interes_empresa']
+    ordering_fields = ['nombre', 'nivel_influencia_pi', 'nivel_influencia_empresa', 'nivel_interes', 'created_at']
+    ordering = ['tipo__grupo__orden', 'tipo__orden', 'nombre']
 
     @action(detail=False, methods=['get'])
     def matriz_poder_interes(self, request) -> Response:
-        """Retorna las partes interesadas organizadas por cuadrante."""
+        """
+        Retorna las partes interesadas organizadas por cuadrante.
+
+        Cuadrantes basados en:
+        - nivel_influencia_pi (PODER de la PI sobre la empresa): alta/media/baja
+        - nivel_interes (INTERÉS de la PI en la empresa): alto/medio/bajo
+
+        Cuadrantes:
+        - gestionar_cerca: Alta influencia PI + Alto interés
+        - mantener_satisfecho: Alta influencia PI + Medio/Bajo interés
+        - mantener_informado: Media/Baja influencia PI + Alto interés
+        - monitorear: Media/Baja influencia PI + Medio/Bajo interés
+        """
         queryset = self.filter_queryset(self.get_queryset()).filter(is_active=True)
 
         cuadrantes = {
@@ -623,9 +698,10 @@ class ParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
         for parte in queryset:
             data = self.get_serializer(parte).data
-            if parte.nivel_influencia == 'alta' and parte.nivel_interes == 'alto':
+            # nivel_influencia_pi: el PODER que la PI tiene sobre la empresa
+            if parte.nivel_influencia_pi == 'alta' and parte.nivel_interes == 'alto':
                 cuadrantes['gestionar_cerca'].append(data)
-            elif parte.nivel_influencia == 'alta':
+            elif parte.nivel_influencia_pi == 'alta':
                 cuadrantes['mantener_satisfecho'].append(data)
             elif parte.nivel_interes == 'alto':
                 cuadrantes['mantener_informado'].append(data)
@@ -641,15 +717,25 @@ class ParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
         stats = {
             'total': queryset.count(),
+            'por_grupo': dict(
+                queryset.values('tipo__grupo__nombre').annotate(
+                    total=Count('id')
+                ).values_list('tipo__grupo__nombre', 'total')
+            ),
             'por_tipo': dict(
                 queryset.values('tipo__nombre').annotate(
                     total=Count('id')
                 ).values_list('tipo__nombre', 'total')
             ),
-            'por_influencia': dict(
-                queryset.values('nivel_influencia').annotate(
+            'por_influencia_pi': dict(
+                queryset.values('nivel_influencia_pi').annotate(
                     total=Count('id')
-                ).values_list('nivel_influencia', 'total')
+                ).values_list('nivel_influencia_pi', 'total')
+            ),
+            'por_influencia_empresa': dict(
+                queryset.values('nivel_influencia_empresa').annotate(
+                    total=Count('id')
+                ).values_list('nivel_influencia_empresa', 'total')
             ),
             'por_interes': dict(
                 queryset.values('nivel_interes').annotate(
@@ -665,6 +751,445 @@ class ParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         }
 
         return Response(stats)
+
+    @action(detail=False, methods=['post'])
+    def generar_matriz_comunicacion(self, request) -> Response:
+        """
+        Genera la matriz de comunicaciones para una parte interesada específica.
+
+        Body: { "parte_interesada_id": <int> }
+
+        Lógica:
+        - Usa el cuadrante de la matriz poder-interés para determinar frecuencia
+        - Cuadrante → Frecuencia:
+          - gestionar_cerca → mensual
+          - mantener_satisfecho → trimestral
+          - mantener_informado → bimestral
+          - monitorear → semestral
+        """
+        parte_interesada_id = request.data.get('parte_interesada_id')
+
+        if not parte_interesada_id:
+            return Response(
+                {'error': 'El campo parte_interesada_id es requerido'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            parte = ParteInteresada.objects.get(id=parte_interesada_id)
+        except ParteInteresada.DoesNotExist:
+            return Response(
+                {'error': 'Parte interesada no encontrada'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Llamar al método del modelo
+        comunicacion, created = parte.generar_comunicacion_automatica()
+
+        return Response({
+            'message': 'Matriz de comunicación generada exitosamente' if created else 'Matriz de comunicación ya existía',
+            'created': created,
+            'data': MatrizComunicacionSerializer(comunicacion).data
+        }, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'])
+    def generar_matriz_comunicacion_masiva(self, request) -> Response:
+        """
+        Genera matrices de comunicación para todas las partes interesadas activas.
+
+        Filtro opcional: ?grupo=<id> para generar solo para un grupo específico
+        """
+        grupo_id = request.query_params.get('grupo')
+
+        queryset = ParteInteresada.objects.filter(is_active=True)
+        if grupo_id:
+            queryset = queryset.filter(tipo__grupo_id=grupo_id)
+
+        created_count = 0
+        updated_count = 0
+        errors = []
+
+        for parte in queryset:
+            try:
+                _, created = parte.generar_comunicacion_automatica()
+                if created:
+                    created_count += 1
+                else:
+                    updated_count += 1
+            except Exception as e:
+                errors.append({
+                    'parte_interesada_id': parte.id,
+                    'parte_interesada_nombre': parte.nombre,
+                    'error': str(e)
+                })
+
+        return Response({
+            'message': f'Proceso completado: {created_count} creadas, {updated_count} actualizadas',
+            'created': created_count,
+            'updated': updated_count,
+            'errors': errors,
+            'total_procesadas': created_count + updated_count,
+            'total_errores': len(errors)
+        })
+
+    @action(detail=False, methods=['get'])
+    def export_excel(self, request) -> Response:
+        """
+        Exporta las partes interesadas a formato Excel F-GD-04.
+
+        4 hojas:
+        1. Identificación (GRUPO → SUBGRUPO → PI)
+        2. Caracterización (Temas de interés bidireccionales + Impacto bidireccional)
+        3. Modelos de Relación (Responsable + Canal comunicación)
+        4. Matriz Consolidada (resumen completo)
+
+        Formato compatible con F-GD-04 MATRIZ PARTES INTERESADAS.xlsx
+        """
+        queryset = self.filter_queryset(self.get_queryset()).select_related(
+            'tipo', 'tipo__grupo', 'responsable_empresa', 'cargo_responsable', 'area_responsable'
+        ).order_by('tipo__grupo__orden', 'tipo__orden', 'nombre')
+
+        # Crear workbook
+        wb = openpyxl.Workbook()
+        wb.remove(wb.active)  # Remover sheet default
+
+        # Estilos comunes
+        header_font = Font(bold=True, color='FFFFFF', size=11)
+        header_fill = PatternFill(start_color='4472C4', end_color='4472C4', fill_type='solid')
+        header_alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+
+        # ====================================================================
+        # HOJA 1: IDENTIFICACIÓN
+        # ====================================================================
+        ws1 = wb.create_sheet('Identificación')
+        ws1.append(['GRUPO', 'SUBGRUPO (TIPO)', 'NOMBRE PARTE INTERESADA', 'DESCRIPCIÓN', 'REPRESENTANTE'])
+
+        # Aplicar estilos a headers
+        for cell in ws1[1]:
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+            cell.border = border
+
+        for parte in queryset:
+            ws1.append([
+                parte.tipo.grupo.nombre if parte.tipo and parte.tipo.grupo else '',
+                parte.tipo.nombre if parte.tipo else '',
+                parte.nombre,
+                parte.descripcion or '',
+                parte.representante or ''
+            ])
+
+        # Ajustar anchos
+        ws1.column_dimensions['A'].width = 25
+        ws1.column_dimensions['B'].width = 30
+        ws1.column_dimensions['C'].width = 35
+        ws1.column_dimensions['D'].width = 50
+        ws1.column_dimensions['E'].width = 30
+
+        # ====================================================================
+        # HOJA 2: CARACTERIZACIÓN
+        # ====================================================================
+        ws2 = wb.create_sheet('Caracterización')
+        ws2.append([
+            'PARTE INTERESADA',
+            'TEMAS DE INTERÉS PARA LA PI',
+            'TEMAS DE INTERÉS PARA LA EMPRESA',
+            'IMPACTO PI → EMPRESA (PODER)',
+            'IMPACTO EMPRESA → PI',
+            'NIVEL DE INTERÉS DE LA PI'
+        ])
+
+        for cell in ws2[1]:
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+            cell.border = border
+
+        for parte in queryset:
+            ws2.append([
+                parte.nombre,
+                parte.temas_interes_pi or '',
+                parte.temas_interes_empresa or '',
+                parte.get_nivel_influencia_pi_display(),
+                parte.get_nivel_influencia_empresa_display(),
+                parte.get_nivel_interes_display()
+            ])
+
+        ws2.column_dimensions['A'].width = 35
+        ws2.column_dimensions['B'].width = 45
+        ws2.column_dimensions['C'].width = 45
+        ws2.column_dimensions['D'].width = 25
+        ws2.column_dimensions['E'].width = 25
+        ws2.column_dimensions['F'].width = 25
+
+        # ====================================================================
+        # HOJA 3: MODELOS DE RELACIÓN
+        # ====================================================================
+        ws3 = wb.create_sheet('Modelos de Relación')
+        ws3.append([
+            'PARTE INTERESADA',
+            'RESPONSABLE EN LA EMPRESA',
+            'CARGO RESPONSABLE',
+            'ÁREA RESPONSABLE',
+            'CANAL PRINCIPAL DE COMUNICACIÓN'
+        ])
+
+        for cell in ws3[1]:
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+            cell.border = border
+
+        for parte in queryset:
+            ws3.append([
+                parte.nombre,
+                parte.responsable_empresa.usuario.get_full_name() if parte.responsable_empresa else '',
+                parte.cargo_responsable.name if parte.cargo_responsable else '',
+                parte.area_responsable.nombre if parte.area_responsable else '',
+                parte.get_canal_principal_display() if parte.canal_principal else ''
+            ])
+
+        ws3.column_dimensions['A'].width = 35
+        ws3.column_dimensions['B'].width = 30
+        ws3.column_dimensions['C'].width = 30
+        ws3.column_dimensions['D'].width = 30
+        ws3.column_dimensions['E'].width = 30
+
+        # ====================================================================
+        # HOJA 4: MATRIZ CONSOLIDADA
+        # ====================================================================
+        ws4 = wb.create_sheet('Matriz Consolidada')
+        ws4.append([
+            'GRUPO',
+            'SUBGRUPO',
+            'PARTE INTERESADA',
+            'TEMAS INTERÉS PI',
+            'TEMAS INTERÉS EMPRESA',
+            'IMPACTO PI→EMPRESA',
+            'IMPACTO EMPRESA→PI',
+            'NIVEL INTERÉS',
+            'RESPONSABLE',
+            'CARGO',
+            'ÁREA',
+            'CANAL',
+            'SST',
+            'AMBIENTAL',
+            'CALIDAD',
+            'PESV'
+        ])
+
+        for cell in ws4[1]:
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+            cell.border = border
+
+        for parte in queryset:
+            ws4.append([
+                parte.tipo.grupo.nombre if parte.tipo and parte.tipo.grupo else '',
+                parte.tipo.nombre if parte.tipo else '',
+                parte.nombre,
+                parte.temas_interes_pi or '',
+                parte.temas_interes_empresa or '',
+                parte.get_nivel_influencia_pi_display(),
+                parte.get_nivel_influencia_empresa_display(),
+                parte.get_nivel_interes_display(),
+                parte.responsable_empresa.usuario.get_full_name() if parte.responsable_empresa else '',
+                parte.cargo_responsable.name if parte.cargo_responsable else '',
+                parte.area_responsable.nombre if parte.area_responsable else '',
+                parte.get_canal_principal_display() if parte.canal_principal else '',
+                'Sí' if parte.relacionado_sst else 'No',
+                'Sí' if parte.relacionado_ambiental else 'No',
+                'Sí' if parte.relacionado_calidad else 'No',
+                'Sí' if parte.relacionado_pesv else 'No'
+            ])
+
+        # Anchos
+        for col in range(1, 17):
+            ws4.column_dimensions[get_column_letter(col)].width = 20
+
+        # ====================================================================
+        # GUARDAR Y RETORNAR
+        # ====================================================================
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        response = HttpResponse(
+            output.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="Matriz_Partes_Interesadas.xlsx"'
+
+        return response
+
+    @action(detail=False, methods=['post'], parser_classes=[MultiPartParser, FormParser])
+    def import_excel(self, request) -> Response:
+        """
+        Importa partes interesadas desde Excel formato F-GD-04.
+
+        Esperado:
+        - Archivo Excel con mínimo hoja "Identificación" o "Matriz Consolidada"
+        - Columnas: GRUPO, SUBGRUPO, NOMBRE PARTE INTERESADA, DESCRIPCIÓN (mínimo)
+
+        Opcionales (si están en el Excel):
+        - TEMAS DE INTERÉS PARA LA PI
+        - TEMAS DE INTERÉS PARA LA EMPRESA
+        - IMPACTO PI → EMPRESA
+        - IMPACTO EMPRESA → PI
+        - NIVEL DE INTERÉS
+        - RESPONSABLE, CARGO, ÁREA
+
+        Lógica:
+        1. Buscar grupo por nombre (debe existir pre-seeded o creado)
+        2. Buscar o crear tipo (subgrupo) dentro del grupo
+        3. Crear parte interesada
+        """
+        file_obj = request.FILES.get('file')
+
+        if not file_obj:
+            return Response(
+                {'error': 'No se recibió ningún archivo. Use el campo "file"'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            wb = openpyxl.load_workbook(file_obj, data_only=True)
+        except Exception as e:
+            return Response(
+                {'error': f'Error al leer el archivo Excel: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Intentar leer de "Identificación" primero, sino de "Matriz Consolidada"
+        if 'Identificación' in wb.sheetnames:
+            ws = wb['Identificación']
+        elif 'Matriz Consolidada' in wb.sheetnames:
+            ws = wb['Matriz Consolidada']
+        else:
+            return Response(
+                {'error': 'El archivo debe contener una hoja "Identificación" o "Matriz Consolidada"'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Leer headers (fila 1)
+        headers = [cell.value for cell in ws[1]]
+
+        # Mapeo de columnas (case-insensitive)
+        col_map = {}
+        for idx, header in enumerate(headers, start=1):
+            if header:
+                header_lower = str(header).strip().lower()
+                col_map[header_lower] = idx
+
+        # Validar columnas requeridas
+        required = ['grupo', 'nombre parte interesada']
+        missing = [col for col in required if col not in col_map and not any(col in h for h in col_map.keys())]
+
+        if missing:
+            return Response(
+                {'error': f'Columnas requeridas faltantes: {missing}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Procesar filas
+        created_count = 0
+        updated_count = 0
+        errors = []
+
+        with transaction.atomic():
+            for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+                try:
+                    # Obtener valores por columna
+                    def get_col(name_variants):
+                        """Obtiene valor de columna por múltiples nombres posibles."""
+                        for variant in name_variants:
+                            if variant in col_map:
+                                idx = col_map[variant] - 1
+                                if idx < len(row):
+                                    val = row[idx]
+                                    return str(val).strip() if val else None
+                        return None
+
+                    grupo_nombre = get_col(['grupo'])
+                    subgrupo_nombre = get_col(['subgrupo', 'subgrupo (tipo)', 'tipo'])
+                    nombre = get_col(['nombre parte interesada', 'parte interesada', 'nombre'])
+                    descripcion = get_col(['descripción', 'descripcion'])
+                    representante = get_col(['representante'])
+                    temas_pi = get_col(['temas de interés para la pi', 'temas interes pi'])
+                    temas_empresa = get_col(['temas de interés para la empresa', 'temas interes empresa'])
+
+                    # Validar nombre (campo mínimo)
+                    if not nombre:
+                        continue  # Fila vacía, skip
+
+                    # Buscar o crear grupo
+                    if grupo_nombre:
+                        grupo, _ = GrupoParteInteresada.objects.get_or_create(
+                            nombre=grupo_nombre,
+                            defaults={
+                                'codigo': grupo_nombre.upper().replace(' ', '_')[:30],
+                                'es_sistema': False
+                            }
+                        )
+                    else:
+                        # Si no hay grupo, usar el primero disponible
+                        grupo = GrupoParteInteresada.objects.first()
+
+                    # Buscar o crear tipo (subgrupo)
+                    if subgrupo_nombre and grupo:
+                        tipo, _ = TipoParteInteresada.objects.get_or_create(
+                            nombre=subgrupo_nombre,
+                            grupo=grupo,
+                            defaults={
+                                'codigo': f"{grupo.codigo}_{subgrupo_nombre.upper().replace(' ', '_')[:20]}"[:30],
+                                'categoria': 'externo',
+                                'es_sistema': False
+                            }
+                        )
+                    else:
+                        # Si no hay subgrupo, buscar primer tipo del grupo
+                        tipo = TipoParteInteresada.objects.filter(grupo=grupo).first()
+
+                    # Crear o actualizar parte interesada
+                    parte, created = ParteInteresada.objects.update_or_create(
+                        nombre=nombre,
+                        empresa=request.user.empresa if hasattr(request.user, 'empresa') else None,
+                        defaults={
+                            'tipo': tipo,
+                            'descripcion': descripcion or '',
+                            'representante': representante or '',
+                            'temas_interes_pi': temas_pi or '',
+                            'temas_interes_empresa': temas_empresa or '',
+                        }
+                    )
+
+                    if created:
+                        created_count += 1
+                    else:
+                        updated_count += 1
+
+                except Exception as e:
+                    errors.append({
+                        'fila': row_idx,
+                        'error': str(e)
+                    })
+
+        return Response({
+            'message': f'Importación completada: {created_count} creadas, {updated_count} actualizadas',
+            'created': created_count,
+            'updated': updated_count,
+            'errors': errors,
+            'total_procesadas': created_count + updated_count,
+            'total_errores': len(errors)
+        })
 
 
 class RequisitoParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):

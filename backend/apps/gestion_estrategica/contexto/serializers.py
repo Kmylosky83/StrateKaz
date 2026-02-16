@@ -33,6 +33,7 @@ from .models import (
     AnalisisPESTEL,
     FactorPESTEL,
     FuerzaPorter,
+    GrupoParteInteresada,  # NUEVO (Sprint 17)
     TipoParteInteresada,
     ParteInteresada,
     RequisitoParteInteresada,
@@ -305,43 +306,101 @@ class FuerzaPorterSerializer(serializers.ModelSerializer):
 # SERIALIZERS PARTES INTERESADAS (Stakeholders)
 # ============================================================================
 
+class GrupoParteInteresadaSerializer(serializers.ModelSerializer):
+    """
+    Serializer para GrupoParteInteresada (Sprint 17).
+
+    Catálogo de grupos macro de partes interesadas.
+    """
+
+    class Meta:
+        model = GrupoParteInteresada
+        fields = [
+            'id', 'codigo', 'nombre', 'descripcion',
+            'icono', 'color', 'orden', 'es_sistema',
+            'is_active', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['created_at', 'updated_at']
+
+
 class TipoParteInteresadaSerializer(serializers.ModelSerializer):
-    """Serializer para TipoParteInteresada."""
+    """
+    Serializer para TipoParteInteresada (actualizado Sprint 17).
+
+    Ahora incluye relación con GrupoParteInteresada.
+    """
 
     categoria_display = serializers.CharField(source='get_categoria_display', read_only=True)
+
+    # NUEVO: Grupo relacionado (Sprint 17)
+    grupo_nombre = serializers.CharField(source='grupo.nombre', read_only=True)
+    grupo_codigo = serializers.CharField(source='grupo.codigo', read_only=True)
+    grupo_icono = serializers.CharField(source='grupo.icono', read_only=True)
+    grupo_color = serializers.CharField(source='grupo.color', read_only=True)
 
     class Meta:
         model = TipoParteInteresada
         fields = [
-            'id', 'codigo', 'nombre', 'categoria', 'categoria_display',
-            'descripcion', 'orden', 'is_active', 'created_at', 'updated_at'
+            'id', 'codigo', 'nombre',
+            'grupo', 'grupo_nombre', 'grupo_codigo', 'grupo_icono', 'grupo_color',
+            'categoria', 'categoria_display',
+            'descripcion', 'orden', 'es_sistema',
+            'is_active', 'created_at', 'updated_at'
         ]
         read_only_fields = ['created_at', 'updated_at']
 
 
 class ParteInteresadaSerializer(serializers.ModelSerializer):
     """
-    Serializer para ParteInteresada.
+    Serializer para ParteInteresada (actualizado Sprint 17).
+
+    CAMBIOS SPRINT 17:
+    - Responsable en la empresa (Colaborador/Cargo/Área)
+    - Impacto bidireccional (PI→Empresa + Empresa→PI)
+    - Temas de interés bidireccionales
+    - Grupo del tipo (jerarquía)
 
     Incluye campos de:
     - Información básica y de contacto
-    - Matriz poder-interés
+    - Matriz poder-interés (MEJORADA)
     - Comunicación (canal y frecuencia)
     - ISO 9001:2015 Cláusula 4.2 (necesidades, expectativas, requisitos)
     - Sistemas de gestión relacionados (dinámico desde NormaISO)
     """
 
-    # Tipo relacionado
+    # Tipo y Grupo relacionados (Sprint 17 - jerarquía)
     tipo_nombre = serializers.CharField(source='tipo.nombre', read_only=True)
     tipo_categoria = serializers.CharField(source='tipo.categoria', read_only=True)
+    grupo_nombre = serializers.CharField(source='tipo.grupo.nombre', read_only=True, allow_null=True)
+    grupo_codigo = serializers.CharField(source='tipo.grupo.codigo', read_only=True, allow_null=True)
+    grupo_icono = serializers.CharField(source='tipo.grupo.icono', read_only=True, allow_null=True)
+    grupo_color = serializers.CharField(source='tipo.grupo.color', read_only=True, allow_null=True)
 
-    # Display fields
-    nivel_influencia_display = serializers.CharField(source='get_nivel_influencia_display', read_only=True)
+    # Display fields (Sprint 17 - actualizados)
+    nivel_influencia_pi_display = serializers.CharField(source='get_nivel_influencia_pi_display', read_only=True)
+    nivel_influencia_empresa_display = serializers.CharField(source='get_nivel_influencia_empresa_display', read_only=True)
     nivel_interes_display = serializers.CharField(source='get_nivel_interes_display', read_only=True)
     canal_principal_display = serializers.CharField(source='get_canal_principal_display', read_only=True)
     frecuencia_comunicacion_display = serializers.CharField(source='get_frecuencia_comunicacion_display', read_only=True)
 
-    # Computed field
+    # Responsables en la empresa (Sprint 17 - NUEVO)
+    responsable_empresa_nombre = serializers.CharField(
+        source='responsable_empresa.usuario.get_full_name',
+        read_only=True,
+        allow_null=True
+    )
+    cargo_responsable_nombre = serializers.CharField(
+        source='cargo_responsable.name',
+        read_only=True,
+        allow_null=True
+    )
+    area_responsable_nombre = serializers.CharField(
+        source='area_responsable.nombre',
+        read_only=True,
+        allow_null=True
+    )
+
+    # Computed fields
     cuadrante_matriz = serializers.CharField(read_only=True)
 
     # Normas relacionadas (M2M dinámico)
@@ -353,13 +412,24 @@ class ParteInteresadaSerializer(serializers.ModelSerializer):
     class Meta:
         model = ParteInteresada
         fields = [
+            # Identificación
             'id', 'tipo', 'tipo_nombre', 'tipo_categoria',
-            'nombre', 'descripcion', 'representante', 'cargo_representante',
+            'grupo_nombre', 'grupo_codigo', 'grupo_icono', 'grupo_color',  # NUEVO (Sprint 17)
+            'nombre', 'descripcion',
+            # Contacto PI
+            'representante', 'cargo_representante',
             'telefono', 'email', 'direccion', 'sitio_web',
-            # Matriz poder-interés
-            'nivel_influencia', 'nivel_influencia_display',
+            # Responsables en la Empresa (NUEVO - Sprint 17)
+            'responsable_empresa', 'responsable_empresa_nombre',
+            'cargo_responsable', 'cargo_responsable_nombre',
+            'area_responsable', 'area_responsable_nombre',
+            # Matriz poder-interés (MEJORADO - Sprint 17)
+            'nivel_influencia_pi', 'nivel_influencia_pi_display',  # Renombrado
+            'nivel_influencia_empresa', 'nivel_influencia_empresa_display',  # NUEVO
             'nivel_interes', 'nivel_interes_display',
             'cuadrante_matriz',
+            # Temas de Interés (NUEVO - Sprint 17)
+            'temas_interes_pi', 'temas_interes_empresa',
             # Comunicación
             'canal_principal', 'canal_principal_display',
             'frecuencia_comunicacion', 'frecuencia_comunicacion_display',

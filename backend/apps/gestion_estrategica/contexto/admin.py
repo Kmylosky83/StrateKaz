@@ -78,8 +78,8 @@ class TipoParteInteresadaAdmin(admin.ModelAdmin):
 
 @admin.register(ParteInteresada)
 class ParteInteresadaAdmin(admin.ModelAdmin):
-    list_display = ['nombre', 'tipo', 'nivel_influencia', 'nivel_interes', 'empresa', 'is_active']
-    list_filter = ['tipo', 'nivel_influencia', 'nivel_interes', 'empresa', 'is_active']
+    list_display = ['nombre', 'tipo', 'nivel_influencia_pi', 'nivel_interes', 'empresa', 'is_active']
+    list_filter = ['tipo', 'nivel_influencia_pi', 'nivel_interes', 'empresa', 'is_active']
     search_fields = ['nombre', 'descripcion', 'representante']
 
 

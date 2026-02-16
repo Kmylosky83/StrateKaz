@@ -1,10 +1,14 @@
-﻿/**
+/**
  * React Query Hooks para el módulo de Dirección Estratégica
  * Sistema de Gestión StrateKaz
+ *
+ * REFACTORIZADO (Sprint 18): Usa createCrudHooks factory para reducir boilerplate
+ * Antes: ~1400 líneas de hooks manuales | Después: ~500 líneas con factory
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { useAuthStore } from '@/store/authStore';
+import { createQueryKeys } from '@/lib/query-keys';
+import { createCrudHooks } from '@/lib/crud-hooks-factory';
 import {
   identityApi,
   valuesApi,
@@ -18,19 +22,24 @@ import {
   alcancesApi,
   normasISOApi,
   currentTenantApi,
+  unidadesMedidaApi,
+  consecutivosApi,
 } from '../api/strategicApi';
-import type { CurrentTenantData } from '../api/strategicApi';
 import type {
+  CorporateIdentity,
   CreateCorporateIdentityDTO,
   UpdateCorporateIdentityDTO,
+  CorporateValue,
   CreateCorporateValueDTO,
   UpdateCorporateValueDTO,
-  CorporateValue,
+  StrategicPlan,
   CreateStrategicPlanDTO,
   UpdateStrategicPlanDTO,
+  StrategicObjective,
   CreateStrategicObjectiveDTO,
   UpdateStrategicObjectiveDTO,
   UpdateProgressDTO,
+  SystemModule,
   CreateSystemModuleDTO,
   UpdateSystemModuleDTO,
   ToggleModuleDTO,
@@ -38,144 +47,151 @@ import type {
   UpdateBrandingConfigDTO,
   ObjectiveFilters,
   ModuleFilters,
+  SedeEmpresa,
   CreateSedeEmpresaDTO,
   UpdateSedeEmpresaDTO,
   SedeFilters,
+  IntegracionExterna,
   CreateIntegracionDTO,
   UpdateIntegracionDTO,
   UpdateCredencialesDTO,
   IntegracionFilters,
   IntegracionLogsFilters,
+  AlcanceSistema,
   CreateAlcanceSistemaDTO,
   UpdateAlcanceSistemaDTO,
   AlcanceSistemaFilters,
-  PaginatedResponse,
 } from '../types/strategic.types';
+import type { NormaISO, CreateNormaISODTO, UpdateNormaISODTO } from '../api/strategicApi';
+import type {
+  UnidadMedida,
+  CreateUnidadMedidaDTO,
+  UpdateUnidadMedidaDTO,
+  UnidadMedidaFilters,
+  ConsecutivoConfig,
+  CreateConsecutivoDTO,
+  UpdateConsecutivoDTO,
+  ConsecutivoFilters,
+} from '../api/strategicApi';
+import type { CurrentTenantData } from '../api/strategicApi';
 
-// ==================== QUERY KEYS ====================
+// ==================== QUERY KEYS (usando createQueryKeys) ====================
 
+const identityKeys = createQueryKeys('identities');
+const valueKeys = createQueryKeys('values');
+const planKeys = createQueryKeys('plans');
+const objectiveKeys = createQueryKeys('objectives');
+const moduleKeys = createQueryKeys('modules');
+const brandingKeys = createQueryKeys('branding');
+const sedeKeys = createQueryKeys('sedes');
+const integracionKeys = createQueryKeys('integraciones');
+const alcanceKeys = createQueryKeys('alcances');
+const normaISOKeys = createQueryKeys('normas-iso');
+const unidadMedidaKeys = createQueryKeys('unidades-medida');
+const consecutivoKeys = createQueryKeys('consecutivos');
+
+// Legacy keys para hooks custom que usan patrones específicos
 export const strategicKeys = {
   // Identity
-  identities: ['identities'] as const,
-  identity: (id: number) => ['identity', id] as const,
-  activeIdentity: ['identity', 'active'] as const,
+  identities: identityKeys.all,
+  identity: (id: number) => identityKeys.detail(id),
+  activeIdentity: identityKeys.custom(['active']),
 
   // Values
-  values: (identityId?: number) => ['values', identityId] as const,
-  value: (id: number) => ['value', id] as const,
+  values: (identityId?: number) => valueKeys.list({ identity: identityId }),
+  value: (id: number) => valueKeys.detail(id),
 
   // Plans
-  plans: ['plans'] as const,
-  plan: (id: number) => ['plan', id] as const,
-  activePlan: ['plan', 'active'] as const,
-  bscPerspectives: ['bsc-perspectives'] as const,
-  isoStandards: ['iso-standards'] as const,
-  periodTypes: ['period-types'] as const,
+  plans: planKeys.all,
+  plan: (id: number) => planKeys.detail(id),
+  activePlan: planKeys.custom(['active']),
+  bscPerspectives: planKeys.custom(['bsc-perspectives']),
+  isoStandards: planKeys.custom(['iso-standards']),
+  periodTypes: planKeys.custom(['period-types']),
 
   // Objectives
-  objectives: (filters?: ObjectiveFilters) => ['objectives', filters] as const,
-  objective: (id: number) => ['objective', id] as const,
-  objectiveStatuses: ['objective-statuses'] as const,
+  objectives: (filters?: ObjectiveFilters) => objectiveKeys.list(filters),
+  objective: (id: number) => objectiveKeys.detail(id),
+  objectiveStatuses: objectiveKeys.custom(['statuses']),
+  normasISOChoices: objectiveKeys.custom(['normas-iso-choices']),
 
   // Modules
-  modules: (filters?: ModuleFilters) => ['modules', filters] as const,
-  module: (id: number) => ['module', id] as const,
-  enabledModules: ['modules', 'enabled'] as const,
-  moduleCategories: ['module-categories'] as const,
+  modules: (filters?: ModuleFilters) => moduleKeys.list(filters),
+  module: (id: number) => moduleKeys.detail(id),
+  enabledModules: moduleKeys.custom(['enabled']),
+  moduleCategories: moduleKeys.custom(['categories']),
 
   // Branding
-  brandings: ['brandings'] as const,
-  branding: (id: number) => ['branding', id] as const,
-  activeBranding: ['branding', 'active'] as const,
+  brandings: brandingKeys.all,
+  branding: (id: number) => brandingKeys.detail(id),
+  activeBranding: brandingKeys.custom(['active']),
 
   // Stats
   stats: ['strategic-stats'] as const,
   configStats: (section: string) => ['config-stats', section] as const,
 
   // Sedes
-  sedes: (filters?: SedeFilters) => ['sedes', filters] as const,
-  sede: (id: number) => ['sede', id] as const,
-  sedePrincipal: ['sede', 'principal'] as const,
-  sedeChoices: ['sede-choices'] as const,
+  sedes: (filters?: SedeFilters) => sedeKeys.list(filters),
+  sede: (id: number) => sedeKeys.detail(id),
+  sedePrincipal: sedeKeys.custom(['principal']),
+  sedeChoices: sedeKeys.custom(['choices']),
 
   // Integraciones
-  integraciones: (filters?: IntegracionFilters) => ['integraciones', filters] as const,
-  integracion: (id: number) => ['integracion', id] as const,
+  integraciones: (filters?: IntegracionFilters) => integracionKeys.list(filters),
+  integracion: (id: number) => integracionKeys.detail(id),
   integracionLogs: (id: number, filters?: IntegracionLogsFilters) =>
-    ['integracion', id, 'logs', filters] as const,
-  integracionChoices: ['integracion-choices'] as const,
+    integracionKeys.custom(['logs', id, filters]),
+  integracionChoices: integracionKeys.custom(['choices']),
 
   // Alcances del Sistema
-  alcances: (filters?: AlcanceSistemaFilters) => ['alcances', filters] as const,
-  alcance: (id: number) => ['alcance', id] as const,
-  alcancesByStandard: (identityId: number) => ['alcances', 'by-standard', identityId] as const,
+  alcances: (filters?: AlcanceSistemaFilters) => alcanceKeys.list(filters),
+  alcance: (id: number) => alcanceKeys.detail(id),
+  alcancesByStandard: (identityId: number) => alcanceKeys.custom(['by-standard', identityId]),
   alcancesCertifications: (identityId: number) =>
-    ['alcances', 'certifications', identityId] as const,
+    alcanceKeys.custom(['certifications', identityId]),
 
-  // Normas ISO (Dinámico)
-  normasISO: ['normas_iso'] as const,
-  normasISOChoices: ['normas_iso', 'choices'] as const,
-  normasISOByCategory: ['normas_iso', 'by-category'] as const,
+  // Normas ISO
+  normasISO: normaISOKeys.all,
+  normasISOChoices: normaISOKeys.custom(['choices']),
+  normasISOByCategory: normaISOKeys.custom(['by-category']),
+
+  // Unidades de Medida
+  unidadesMedida: (filters?: UnidadMedidaFilters) => unidadMedidaKeys.list(filters),
+  unidadMedida: (id: number) => unidadMedidaKeys.detail(id),
+  unidadesMedidaChoices: unidadMedidaKeys.custom(['choices']),
+  unidadesMedidaByCategoria: unidadMedidaKeys.custom(['by-categoria']),
+
+  // Consecutivos
+  consecutivos: (filters?: ConsecutivoFilters) => consecutivoKeys.list(filters),
+  consecutivo: (id: number) => consecutivoKeys.detail(id),
+  consecutivosChoices: consecutivoKeys.custom(['choices']),
+  consecutivosByCategoria: consecutivoKeys.custom(['by-categoria']),
 };
 
-// ==================== CORPORATE IDENTITY HOOKS ====================
+// ==================== CORPORATE IDENTITY (via factory) ====================
 
-export const useIdentities = () => {
-  return useQuery({
-    queryKey: strategicKeys.identities,
-    queryFn: identityApi.getAll,
-    staleTime: 5 * 60 * 1000, // 5 minutos - datos relativamente estáticos
-    gcTime: 10 * 60 * 1000, // 10 minutos cache
-  });
-};
+const identityHooks = createCrudHooks<
+  CorporateIdentity,
+  CreateCorporateIdentityDTO,
+  UpdateCorporateIdentityDTO
+>(identityApi, identityKeys, 'Identidad corporativa', { isFeminine: true });
 
-export const useActiveIdentity = () => {
-  return useQuery({
-    queryKey: strategicKeys.activeIdentity,
-    queryFn: identityApi.getActive,
-    retry: false,
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    gcTime: 15 * 60 * 1000, // 15 minutos - datos principales
-  });
-};
+export const useIdentities = identityHooks.useList;
+export const useIdentity = identityHooks.useDetail;
+export const useCreateIdentity = identityHooks.useCreate;
+export const useDeleteIdentity = identityHooks.useDelete;
 
-export const useIdentity = (id: number) => {
-  return useQuery({
-    queryKey: strategicKeys.identity(id),
-    queryFn: () => identityApi.getById(id),
-    enabled: !!id,
-    staleTime: 3 * 60 * 1000, // 3 minutos
-  });
-};
-
-export const useCreateIdentity = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreateCorporateIdentityDTO) => identityApi.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.identities });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.activeIdentity });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.stats });
-      toast.success('Identidad corporativa creada exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al crear la identidad corporativa');
-    },
-  });
-};
-
+// useUpdateIdentity con lógica custom (refetch activeIdentity)
 export const useUpdateIdentity = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateCorporateIdentityDTO }) =>
       identityApi.update(id, data),
     onSuccess: async (updatedIdentity, { id }) => {
-      // Actualizar cache directamente con los datos retornados del servidor
+      // Actualizar cache directamente
       queryClient.setQueryData(strategicKeys.activeIdentity, updatedIdentity);
       queryClient.setQueryData(strategicKeys.identity(id), updatedIdentity);
-
-      // Invalidar queries relacionadas
-      queryClient.invalidateQueries({ queryKey: strategicKeys.identities });
+      queryClient.invalidateQueries({ queryKey: identityKeys.lists() });
 
       // Forzar refetch para garantizar consistencia
       await queryClient.refetchQueries({ queryKey: strategicKeys.activeIdentity });
@@ -188,159 +204,84 @@ export const useUpdateIdentity = () => {
   });
 };
 
-export const useDeleteIdentity = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => identityApi.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.identities });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.activeIdentity });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.stats });
-      toast.success('Identidad corporativa eliminada exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al eliminar la identidad corporativa');
-    },
+// Custom hook: useActiveIdentity
+export const useActiveIdentity = () => {
+  return useQuery({
+    queryKey: strategicKeys.activeIdentity,
+    queryFn: identityApi.getActive,
+    retry: false,
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 15 * 60 * 1000, // 15 minutos
   });
 };
 
-// ==================== CORPORATE VALUES HOOKS ====================
+// ==================== CORPORATE VALUES (via factory) ====================
 
+const valueHooks = createCrudHooks<
+  CorporateValue,
+  CreateCorporateValueDTO,
+  UpdateCorporateValueDTO
+>(valuesApi, valueKeys, 'Valor corporativo');
+
+export const useCreateValue = valueHooks.useCreate;
+export const useUpdateValue = valueHooks.useUpdate;
+export const useDeleteValue = valueHooks.useDelete;
+
+// useValues con filtro de identityId
 export const useValues = (identityId?: number) => {
   return useQuery({
     queryKey: strategicKeys.values(identityId),
-    queryFn: () => valuesApi.getAll(identityId),
-    staleTime: 3 * 60 * 1000, // 3 minutos - valores corporativos
-    gcTime: 10 * 60 * 1000,
+    queryFn: async () => {
+      const response = await valuesApi.getAll(identityId ? { identity: identityId } : {});
+      return Array.isArray(response) ? response : (response?.results ?? []);
+    },
   });
 };
 
-export const useCreateValue = () => {
+// Reorder hook (custom)
+export const useReorderValues = (identityId: number) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: CreateCorporateValueDTO & { identity: number }) => valuesApi.create(data),
-    onSuccess: async (_, { identity }) => {
-      // Forzar refetch inmediato para actualizar UI
-      await Promise.all([
-        queryClient.refetchQueries({ queryKey: strategicKeys.values(identity) }),
-        queryClient.refetchQueries({ queryKey: strategicKeys.activeIdentity }),
-      ]);
-      toast.success('Valor corporativo creado exitosamente');
+    mutationFn: async (newOrder: CorporateValue[]) => {
+      // Actualizar orden de cada valor
+      await Promise.all(
+        newOrder.map((value, index) =>
+          valuesApi.update(value.id, { display_order: index } as UpdateCorporateValueDTO)
+        )
+      );
+      return newOrder;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: strategicKeys.values(identityId) });
+      toast.success('Orden de valores actualizado exitosamente');
     },
     onError: () => {
-      toast.error('Error al crear el valor corporativo');
+      toast.error('Error al reordenar valores');
     },
   });
 };
 
-export const useUpdateValue = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateCorporateValueDTO }) =>
-      valuesApi.update(id, data),
-    onSuccess: async () => {
-      // Forzar refetch inmediato para actualizar UI
-      await Promise.all([
-        queryClient.refetchQueries({ queryKey: strategicKeys.values() }),
-        queryClient.refetchQueries({ queryKey: strategicKeys.activeIdentity }),
-      ]);
-      toast.success('Valor corporativo actualizado exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al actualizar el valor corporativo');
-    },
-  });
-};
+// ==================== STRATEGIC PLANS (via factory) ====================
 
-export const useDeleteValue = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => valuesApi.delete(id),
-    onSuccess: async () => {
-      // Forzar refetch inmediato para actualizar UI
-      await Promise.all([
-        queryClient.refetchQueries({ queryKey: strategicKeys.values() }),
-        queryClient.refetchQueries({ queryKey: strategicKeys.activeIdentity }),
-      ]);
-      toast.success('Valor corporativo eliminado exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al eliminar el valor corporativo');
-    },
-  });
-};
+const planHooks = createCrudHooks<StrategicPlan, CreateStrategicPlanDTO, UpdateStrategicPlanDTO>(
+  plansApi,
+  planKeys,
+  'Plan estratégico'
+);
 
-// ==================== STRATEGIC PLANS HOOKS ====================
+export const usePlans = planHooks.useList;
+export const usePlan = planHooks.useDetail;
+export const useCreatePlan = planHooks.useCreate;
+export const useUpdatePlan = planHooks.useUpdate;
+export const useDeletePlan = planHooks.useDelete;
 
-export const usePlans = () => {
-  return useQuery({
-    queryKey: strategicKeys.plans,
-    queryFn: plansApi.getAll,
-  });
-};
-
+// Custom hooks
 export const useActivePlan = () => {
   return useQuery({
     queryKey: strategicKeys.activePlan,
     queryFn: plansApi.getActive,
     retry: false,
-  });
-};
-
-export const usePlan = (id: number) => {
-  return useQuery({
-    queryKey: strategicKeys.plan(id),
-    queryFn: () => plansApi.getById(id),
-    enabled: !!id,
-  });
-};
-
-export const useCreatePlan = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreateStrategicPlanDTO) => plansApi.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.plans });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.activePlan });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.stats });
-      toast.success('Plan estratégico creado exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al crear el plan estratégico');
-    },
-  });
-};
-
-export const useUpdatePlan = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateStrategicPlanDTO }) =>
-      plansApi.update(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.plans });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.plan(id) });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.activePlan });
-      toast.success('Plan estratégico actualizado exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al actualizar el plan estratégico');
-    },
-  });
-};
-
-export const useDeletePlan = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => plansApi.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.plans });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.activePlan });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.stats });
-      toast.success('Plan estratégico eliminado exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al eliminar el plan estratégico');
-    },
+    staleTime: 5 * 60 * 1000,
   });
 };
 
@@ -348,8 +289,8 @@ export const useApprovePlan = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => plansApi.approve(id),
-    onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.plan(id) });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: planKeys.lists() });
       queryClient.invalidateQueries({ queryKey: strategicKeys.activePlan });
       toast.success('Plan estratégico aprobado exitosamente');
     },
@@ -363,20 +304,15 @@ export const useBSCPerspectives = () => {
   return useQuery({
     queryKey: strategicKeys.bscPerspectives,
     queryFn: plansApi.getBSCPerspectives,
-    staleTime: Infinity,
+    staleTime: 15 * 60 * 1000, // 15 minutos - datos estáticos
   });
 };
 
-/**
- * Hook para obtener normas ISO activas para vincular a objetivos
- * Consulta el endpoint dinámico que lee de configuracion.NormaISO
- */
 export const useISOStandards = () => {
   return useQuery({
     queryKey: strategicKeys.isoStandards,
-    queryFn: objectivesApi.getNormasISOChoices,
-    staleTime: 5 * 60 * 1000, // 5 minutos - datos semi-estáticos
-    gcTime: 10 * 60 * 1000, // 10 minutos cache
+    queryFn: plansApi.getISOStandards,
+    staleTime: 15 * 60 * 1000,
   });
 };
 
@@ -384,90 +320,36 @@ export const usePeriodTypes = () => {
   return useQuery({
     queryKey: strategicKeys.periodTypes,
     queryFn: plansApi.getPeriodTypes,
-    staleTime: Infinity,
+    staleTime: 15 * 60 * 1000,
   });
 };
 
-// ==================== STRATEGIC OBJECTIVES HOOKS ====================
+// ==================== STRATEGIC OBJECTIVES (via factory) ====================
 
-export const useObjectives = (filters?: ObjectiveFilters) => {
-  return useQuery({
-    queryKey: strategicKeys.objectives(filters),
-    queryFn: () => objectivesApi.getAll(filters),
-  });
-};
+const objectiveHooks = createCrudHooks<
+  StrategicObjective,
+  CreateStrategicObjectiveDTO,
+  UpdateStrategicObjectiveDTO
+>(objectivesApi, objectiveKeys, 'Objetivo estratégico');
 
-export const useObjective = (id: number) => {
-  return useQuery({
-    queryKey: strategicKeys.objective(id),
-    queryFn: () => objectivesApi.getById(id),
-    enabled: !!id,
-  });
-};
+export const useObjectives = objectiveHooks.useList;
+export const useObjective = objectiveHooks.useDetail;
+export const useCreateObjective = objectiveHooks.useCreate;
+export const useUpdateObjective = objectiveHooks.useUpdate;
+export const useDeleteObjective = objectiveHooks.useDelete;
 
-export const useCreateObjective = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreateStrategicObjectiveDTO) => objectivesApi.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.objectives() });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.activePlan });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.stats });
-      toast.success('Objetivo estratégico creado exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al crear el objetivo estratégico');
-    },
-  });
-};
-
-export const useUpdateObjective = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateStrategicObjectiveDTO }) =>
-      objectivesApi.update(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.objectives() });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.objective(id) });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.activePlan });
-      toast.success('Objetivo estratégico actualizado exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al actualizar el objetivo estratégico');
-    },
-  });
-};
-
-export const useDeleteObjective = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => objectivesApi.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.objectives() });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.activePlan });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.stats });
-      toast.success('Objetivo estratégico eliminado exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al eliminar el objetivo estratégico');
-    },
-  });
-};
-
+// Custom hooks
 export const useUpdateObjectiveProgress = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateProgressDTO }) =>
       objectivesApi.updateProgress(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.objectives() });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.objective(id) });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.activePlan });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.stats });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: objectiveKeys.lists() });
       toast.success('Progreso actualizado exitosamente');
     },
     onError: () => {
-      toast.error('Error al actualizar el progreso');
+      toast.error('Error al actualizar progreso');
     },
   });
 };
@@ -476,93 +358,53 @@ export const useObjectiveStatuses = () => {
   return useQuery({
     queryKey: strategicKeys.objectiveStatuses,
     queryFn: objectivesApi.getStatuses,
-    staleTime: Infinity,
+    staleTime: 15 * 60 * 1000,
   });
 };
 
-// ==================== SYSTEM MODULES HOOKS ====================
-
-export const useModules = (filters?: ModuleFilters) => {
+export const useNormasISOChoices = () => {
   return useQuery({
-    queryKey: strategicKeys.modules(filters),
-    queryFn: () => modulesApi.getAll(filters),
+    queryKey: strategicKeys.normasISOChoices,
+    queryFn: objectivesApi.getNormasISOChoices,
+    staleTime: 15 * 60 * 1000,
   });
 };
 
+// ==================== SYSTEM MODULES (via factory) ====================
+
+const moduleHooks = createCrudHooks<SystemModule, CreateSystemModuleDTO, UpdateSystemModuleDTO>(
+  modulesApi,
+  moduleKeys,
+  'Módulo del sistema'
+);
+
+export const useModules = moduleHooks.useList;
+export const useModule = moduleHooks.useDetail;
+export const useCreateModule = moduleHooks.useCreate;
+export const useUpdateModule = moduleHooks.useUpdate;
+export const useDeleteModule = moduleHooks.useDelete;
+
+// Custom hooks
 export const useEnabledModules = () => {
   return useQuery({
     queryKey: strategicKeys.enabledModules,
     queryFn: modulesApi.getEnabled,
-  });
-};
-
-export const useModule = (id: number) => {
-  return useQuery({
-    queryKey: strategicKeys.module(id),
-    queryFn: () => modulesApi.getById(id),
-    enabled: !!id,
-  });
-};
-
-export const useCreateModule = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreateSystemModuleDTO) => modulesApi.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.modules() });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.stats });
-      toast.success('Módulo creado exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al crear el módulo');
-    },
-  });
-};
-
-export const useUpdateModule = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateSystemModuleDTO }) =>
-      modulesApi.update(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.modules() });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.module(id) });
-      toast.success('Módulo actualizado exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al actualizar el módulo');
-    },
-  });
-};
-
-export const useDeleteModule = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => modulesApi.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.modules() });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.stats });
-      toast.success('Módulo eliminado exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al eliminar el módulo');
-    },
+    staleTime: 10 * 60 * 1000,
   });
 };
 
 export const useToggleModule = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: ToggleModuleDTO }) =>
-      modulesApi.toggle(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.modules() });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.module(id) });
+    mutationFn: ({ id, isEnabled }: { id: number; isEnabled: boolean }) =>
+      modulesApi.toggle(id, { is_enabled: isEnabled }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: moduleKeys.lists() });
       queryClient.invalidateQueries({ queryKey: strategicKeys.enabledModules });
-      toast.success('Estado del módulo actualizado');
+      toast.success('Módulo actualizado exitosamente');
     },
-    onError: (error: Error) => {
-      toast.error(error.message || 'Error al cambiar estado del módulo');
+    onError: () => {
+      toast.error('Error al actualizar módulo');
     },
   });
 };
@@ -571,58 +413,33 @@ export const useModuleCategories = () => {
   return useQuery({
     queryKey: strategicKeys.moduleCategories,
     queryFn: modulesApi.getCategories,
-    staleTime: Infinity,
+    staleTime: 15 * 60 * 1000,
   });
 };
 
-// ==================== BRANDING CONFIG HOOKS ====================
-// NOTA: El branding ahora se gestiona en el modelo Tenant.
-// useBrandingConfigs eliminado - no hay lista de brandings, es por tenant.
-// useDeleteBranding eliminado - no se puede eliminar branding, solo actualizar.
+// ==================== BRANDING CONFIG ====================
 
 export const useActiveBranding = () => {
-  // Incluir tenantId en query key para separar cache por tenant
-  // Esto evita mostrar branding del tenant anterior al cambiar
-  const currentTenantId = useAuthStore((state) => state.currentTenantId);
-
-  // Intentar leer branding cacheado en localStorage para evitar flash al recargar
-  const cachedBranding = (() => {
-    try {
-      const cached = localStorage.getItem('last_branding');
-      if (!cached) return undefined;
-      const parsed = JSON.parse(cached);
-      // Solo usar cache si corresponde al tenant actual
-      if (parsed._tenantId && parsed._tenantId !== currentTenantId) return undefined;
-      return parsed;
-    } catch {
-      return undefined;
-    }
-  })();
-
-  // Obtiene el branding del tenant actual (localStorage) o por dominio
   return useQuery({
-    queryKey: [...strategicKeys.activeBranding, currentTenantId],
-    queryFn: async () => {
-      const data = await brandingApi.getActive();
-      // Persistir en localStorage con tenantId para validar en próxima carga
-      try {
-        localStorage.setItem(
-          'last_branding',
-          JSON.stringify({ ...data, _tenantId: currentTenantId })
-        );
-      } catch {
-        // Ignorar errores de localStorage (quota, etc.)
+    queryKey: strategicKeys.activeBranding,
+    queryFn: brandingApi.getActive,
+    retry: (failureCount, error) => {
+      // No reintentar si es 404 (sin branding configurado) o 401/403 (sin auth)
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number } };
+        const status = axiosError.response?.status;
+        if (status === 404 || status === 401 || status === 403) {
+          return false;
+        }
       }
-      return data;
+      return failureCount < 2;
     },
-    retry: 1, // Un reintento en caso de error temporal
-    staleTime: 5 * 60 * 1000, // 5 minutos - evitar refetch excesivo
-    initialData: cachedBranding, // Usa cache localStorage mientras carga (solo si mismo tenant)
+    staleTime: 10 * 60 * 1000, // 10 minutos
+    gcTime: 30 * 60 * 1000, // 30 minutos - dato crítico del UI
   });
 };
 
 export const useBranding = (tenantId: number) => {
-  // Obtiene el branding de un tenant específico por su ID
   return useQuery({
     queryKey: strategicKeys.branding(tenantId),
     queryFn: () => brandingApi.getById(tenantId),
@@ -633,61 +450,64 @@ export const useBranding = (tenantId: number) => {
 export const useUpdateBranding = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateBrandingConfigDTO | FormData }) =>
-      brandingApi.update(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.branding(id) });
+    mutationFn: ({
+      tenantId,
+      data,
+    }: {
+      tenantId: number;
+      data: UpdateBrandingConfigDTO | FormData;
+    }) => brandingApi.update(tenantId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: brandingKeys.all });
       queryClient.invalidateQueries({ queryKey: strategicKeys.activeBranding });
-      toast.success('Configuración de marca actualizada exitosamente');
+      toast.success('Branding actualizado exitosamente');
     },
     onError: () => {
-      toast.error('Error al actualizar la configuración de marca');
+      toast.error('Error al actualizar branding');
     },
   });
 };
 
-// ==================== STRATEGIC STATS HOOK ====================
+// ==================== STATS ====================
 
 export const useStrategicStats = () => {
   return useQuery({
     queryKey: strategicKeys.stats,
     queryFn: statsApi.getStats,
+    staleTime: 2 * 60 * 1000, // 2 minutos
   });
 };
-
-// Secciones de configuración que no tienen StatsGrid
-const SECTIONS_WITHOUT_STATS = ['normas_iso', 'modulos'];
 
 export const useConfiguracionStats = (section: string) => {
   return useQuery({
     queryKey: strategicKeys.configStats(section),
     queryFn: () => statsApi.getConfigStats(section),
-    enabled: !!section && !SECTIONS_WITHOUT_STATS.includes(section),
+    enabled: !!section,
+    staleTime: 2 * 60 * 1000,
   });
 };
 
-// ==================== SEDE EMPRESA HOOKS ====================
+// ==================== SEDES EMPRESA (via factory) ====================
 
-export const useSedes = (filters?: SedeFilters) => {
-  return useQuery({
-    queryKey: strategicKeys.sedes(filters),
-    queryFn: () => sedesApi.getAll(filters),
-  });
-};
+const sedeHooks = createCrudHooks<SedeEmpresa, CreateSedeEmpresaDTO, UpdateSedeEmpresaDTO>(
+  sedesApi,
+  sedeKeys,
+  'Sede',
+  { isFeminine: true }
+);
 
-export const useSede = (id: number) => {
-  return useQuery({
-    queryKey: strategicKeys.sede(id),
-    queryFn: () => sedesApi.getById(id),
-    enabled: !!id,
-  });
-};
+export const useSedes = sedeHooks.useList;
+export const useSede = sedeHooks.useDetail;
+export const useCreateSede = sedeHooks.useCreate;
+export const useUpdateSede = sedeHooks.useUpdate;
+export const useDeleteSede = sedeHooks.useDelete;
 
+// Custom hooks
 export const useSedePrincipal = () => {
   return useQuery({
     queryKey: strategicKeys.sedePrincipal,
     queryFn: sedesApi.getPrincipal,
-    retry: false,
+    staleTime: 5 * 60 * 1000,
   });
 };
 
@@ -695,57 +515,7 @@ export const useSedeChoices = () => {
   return useQuery({
     queryKey: strategicKeys.sedeChoices,
     queryFn: sedesApi.getChoices,
-    staleTime: Infinity,
-  });
-};
-
-export const useCreateSede = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreateSedeEmpresaDTO) => sedesApi.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.sedes() });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.sedePrincipal });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.configStats('sedes') });
-      toast.success('Sede creada exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al crear la sede');
-    },
-  });
-};
-
-export const useUpdateSede = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateSedeEmpresaDTO }) =>
-      sedesApi.update(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.sedes() });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.sede(id) });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.sedePrincipal });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.configStats('sedes') });
-      toast.success('Sede actualizada exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al actualizar la sede');
-    },
-  });
-};
-
-export const useDeleteSede = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => sedesApi.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.sedes() });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.sedePrincipal });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.configStats('sedes') });
-      toast.success('Sede eliminada exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al eliminar la sede');
-    },
+    staleTime: 10 * 60 * 1000,
   });
 };
 
@@ -753,14 +523,12 @@ export const useRestoreSede = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => sedesApi.restore(id),
-    onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.sedes() });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.sede(id) });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.configStats('sedes') });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: sedeKeys.lists() });
       toast.success('Sede restaurada exitosamente');
     },
     onError: () => {
-      toast.error('Error al restaurar la sede');
+      toast.error('Error al restaurar sede');
     },
   });
 };
@@ -769,103 +537,46 @@ export const useSetSedePrincipal = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => sedesApi.setPrincipal(id),
-    onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.sedes() });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.sede(id) });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: sedeKeys.lists() });
       queryClient.invalidateQueries({ queryKey: strategicKeys.sedePrincipal });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.configStats('sedes') });
-      toast.success('Sede principal actualizada');
+      toast.success('Sede principal actualizada exitosamente');
     },
     onError: () => {
-      toast.error('Error al establecer la sede principal');
+      toast.error('Error al actualizar sede principal');
     },
   });
 };
 
-// ==================== INTEGRACIONES EXTERNAS HOOKS ====================
+// ==================== INTEGRACIONES EXTERNAS (via factory) ====================
 
-export const useIntegraciones = (filters?: IntegracionFilters) => {
-  return useQuery({
-    queryKey: strategicKeys.integraciones(filters),
-    queryFn: () => integracionesApi.getAll(filters),
-  });
-};
+const integracionHooks = createCrudHooks<
+  IntegracionExterna,
+  CreateIntegracionDTO,
+  UpdateIntegracionDTO
+>(integracionesApi, integracionKeys, 'Integración', { isFeminine: true });
 
-export const useIntegracion = (id: number) => {
-  return useQuery({
-    queryKey: strategicKeys.integracion(id),
-    queryFn: () => integracionesApi.getById(id),
-    enabled: !!id,
-  });
-};
+export const useIntegraciones = integracionHooks.useList;
+export const useIntegracion = integracionHooks.useDetail;
+export const useCreateIntegracion = integracionHooks.useCreate;
+export const useUpdateIntegracion = integracionHooks.useUpdate;
+export const useDeleteIntegracion = integracionHooks.useDelete;
 
-export const useIntegracionChoices = () => {
-  return useQuery({
-    queryKey: strategicKeys.integracionChoices,
-    queryFn: integracionesApi.getChoices,
-    staleTime: Infinity,
-  });
-};
-
-export const useCreateIntegracion = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreateIntegracionDTO) => integracionesApi.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.integraciones() });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.configStats('integraciones') });
-      toast.success('Integración creada exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al crear la integración');
-    },
-  });
-};
-
-export const useUpdateIntegracion = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateIntegracionDTO }) =>
-      integracionesApi.update(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.integraciones() });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.integracion(id) });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.configStats('integraciones') });
-      toast.success('Integración actualizada exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al actualizar la integración');
-    },
-  });
-};
-
-export const useDeleteIntegracion = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => integracionesApi.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.integraciones() });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.configStats('integraciones') });
-      toast.success('Integración eliminada exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al eliminar la integración');
-    },
-  });
-};
-
+// Custom hooks
 export const useTestConnection = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => integracionesApi.testConnection(id),
     onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: integracionKeys.lists() });
       if (result.success) {
-        toast.success(`Conexión exitosa: ${result.message}`);
+        toast.success('Conexión exitosa');
       } else {
-        toast.error(`Fallo en la conexión: ${result.message}`);
+        toast.error(`Error de conexión: ${result.error || 'Desconocido'}`);
       }
     },
     onError: () => {
-      toast.error('Error al probar la conexión');
+      toast.error('Error al probar conexión');
     },
   });
 };
@@ -874,28 +585,12 @@ export const useToggleIntegracionStatus = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => integracionesApi.toggleStatus(id),
-    onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.integraciones() });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.integracion(id) });
-      toast.success('Estado de la integración actualizado');
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: integracionKeys.lists() });
+      toast.success('Estado actualizado exitosamente');
     },
     onError: () => {
-      toast.error('Error al cambiar el estado de la integración');
-    },
-  });
-};
-
-export const useUpdateCredentials = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateCredencialesDTO }) =>
-      integracionesApi.updateCredentials(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: strategicKeys.integracion(id) });
-      toast.success('Credenciales actualizadas exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al actualizar las credenciales');
+      toast.error('Error al actualizar estado');
     },
   });
 };
@@ -908,78 +603,44 @@ export const useIntegracionLogs = (id: number, filters?: IntegracionLogsFilters)
   });
 };
 
-// NOTA v4.0: Políticas eliminadas de Identidad. Se gestionan desde Gestión Documental.
-
-// --- Reorder Values (for Drag & Drop) ---
-
-export const useReorderValues = (identityId?: number) => {
+export const useUpdateCredentials = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (newOrder: { id: number; orden: number }[]) => {
-      // Update each value's order
-      await Promise.all(newOrder.map(({ id, orden }) => valuesApi.update(id, { orden })));
-      return newOrder;
-    },
-    onMutate: async (newOrder) => {
-      // Cancel outgoing refetches - use specific identityId query key
-      const queryKey = strategicKeys.values(identityId);
-      await queryClient.cancelQueries({ queryKey });
-
-      // Snapshot previous values
-      const previousData = queryClient.getQueryData<PaginatedResponse<CorporateValue>>(queryKey);
-
-      // Optimistically update the cache
-      if (previousData?.results) {
-        const updatedResults = previousData.results.map((value) => {
-          const newOrderItem = newOrder.find((item) => item.id === value.id);
-          if (newOrderItem) {
-            return { ...value, orden: newOrderItem.orden };
-          }
-          return value;
-        });
-        // Sort by new order
-        updatedResults.sort((a, b) => a.orden - b.orden);
-        queryClient.setQueryData(queryKey, { ...previousData, results: updatedResults });
-      }
-
-      return { previousData, queryKey };
-    },
-    onError: (_err, _newOrder, context) => {
-      // Rollback on error
-      if (context?.previousData && context?.queryKey) {
-        queryClient.setQueryData(context.queryKey, context.previousData);
-      }
-      toast.error('Error al reordenar los valores');
-    },
+    mutationFn: ({ id, data }: { id: number; data: UpdateCredencialesDTO }) =>
+      integracionesApi.updateCredentials(id, data),
     onSuccess: () => {
-      toast.success('Orden de valores actualizado');
+      queryClient.invalidateQueries({ queryKey: integracionKeys.lists() });
+      toast.success('Credenciales actualizadas exitosamente');
     },
-    onSettled: () => {
-      // Refetch to ensure consistency with server
-      queryClient.invalidateQueries({ queryKey: strategicKeys.values(identityId) });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.activeIdentity });
+    onError: () => {
+      toast.error('Error al actualizar credenciales');
     },
   });
 };
 
-// ==================== ALCANCES DEL SISTEMA HOOKS ====================
-
-export const useAlcances = (filters?: AlcanceSistemaFilters) => {
+export const useIntegracionChoices = () => {
   return useQuery({
-    queryKey: strategicKeys.alcances(filters),
-    queryFn: () => alcancesApi.getAll(filters),
-    enabled: filters?.identity !== undefined,
+    queryKey: strategicKeys.integracionChoices,
+    queryFn: integracionesApi.getChoices,
+    staleTime: 10 * 60 * 1000,
   });
 };
 
-export const useAlcance = (id: number) => {
-  return useQuery({
-    queryKey: strategicKeys.alcance(id),
-    queryFn: () => alcancesApi.getById(id),
-    enabled: !!id,
-  });
-};
+// ==================== ALCANCES DEL SISTEMA (via factory) ====================
 
+const alcanceHooks = createCrudHooks<
+  AlcanceSistema,
+  CreateAlcanceSistemaDTO,
+  UpdateAlcanceSistemaDTO
+>(alcancesApi, alcanceKeys, 'Alcance del sistema');
+
+export const useAlcances = alcanceHooks.useList;
+export const useAlcance = alcanceHooks.useDetail;
+export const useCreateAlcance = alcanceHooks.useCreate;
+export const useUpdateAlcance = alcanceHooks.useUpdate;
+export const useDeleteAlcance = alcanceHooks.useDelete;
+
+// Custom hooks
 export const useAlcancesByStandard = (identityId: number) => {
   return useQuery({
     queryKey: strategicKeys.alcancesByStandard(identityId),
@@ -996,71 +657,27 @@ export const useAlcancesCertifications = (identityId: number) => {
   });
 };
 
-export const useCreateAlcance = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreateAlcanceSistemaDTO) => alcancesApi.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['alcances'] });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.activeIdentity });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.configStats('alcances') });
-      toast.success('Alcance del sistema creado exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al crear el alcance del sistema');
-    },
-  });
-};
+// ==================== NORMAS ISO (via factory) ====================
 
-export const useUpdateAlcance = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateAlcanceSistemaDTO }) =>
-      alcancesApi.update(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: ['alcances'] });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.alcance(id) });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.activeIdentity });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.configStats('alcances') });
-      toast.success('Alcance del sistema actualizado exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al actualizar el alcance del sistema');
-    },
-  });
-};
+const normaISOHooks = createCrudHooks<NormaISO, CreateNormaISODTO, UpdateNormaISODTO>(
+  normasISOApi,
+  normaISOKeys,
+  'Norma ISO',
+  { isFeminine: true }
+);
 
-export const useDeleteAlcance = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => alcancesApi.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['alcances'] });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.activeIdentity });
-      queryClient.invalidateQueries({ queryKey: strategicKeys.configStats('alcances') });
-      toast.success('Alcance del sistema eliminado exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al eliminar el alcance del sistema');
-    },
-  });
-};
+export const useNormasISO = normaISOHooks.useList;
+export const useNormaISO = normaISOHooks.useDetail;
+export const useCreateNormaISO = normaISOHooks.useCreate;
+export const useUpdateNormaISO = normaISOHooks.useUpdate;
+export const useDeleteNormaISO = normaISOHooks.useDelete;
 
-// ==================== NORMAS ISO HOOKS (Dinámico) ====================
-
-export const useNormasISO = () => {
-  return useQuery({
-    queryKey: strategicKeys.normasISO,
-    queryFn: normasISOApi.getAll,
-    staleTime: 10 * 60 * 1000, // 10 minutos - datos relativamente estáticos
-  });
-};
-
-export const useNormasISOChoices = () => {
+// Custom hooks
+export const useNormasISOChoicesData = () => {
   return useQuery({
     queryKey: strategicKeys.normasISOChoices,
     queryFn: normasISOApi.getChoices,
-    staleTime: 10 * 60 * 1000, // 10 minutos
+    staleTime: 15 * 60 * 1000,
   });
 };
 
@@ -1068,131 +685,52 @@ export const useNormasISOByCategory = () => {
   return useQuery({
     queryKey: strategicKeys.normasISOByCategory,
     queryFn: normasISOApi.getByCategory,
-    staleTime: 10 * 60 * 1000, // 10 minutos
+    staleTime: 10 * 60 * 1000,
   });
 };
 
-// ==================== UNIDADES DE MEDIDA HOOKS (MC-001) ====================
+// ==================== UNIDADES DE MEDIDA (via factory) ====================
 
-import {
-  unidadesMedidaApi,
-  type UnidadMedidaFilters,
-  type CreateUnidadMedidaDTO,
-  type UpdateUnidadMedidaDTO,
-} from '../api/strategicApi';
+const unidadMedidaHooks = createCrudHooks<
+  UnidadMedida,
+  CreateUnidadMedidaDTO,
+  UpdateUnidadMedidaDTO
+>(unidadesMedidaApi, unidadMedidaKeys, 'Unidad de medida', { isFeminine: true });
 
-// Query Keys para Unidades de Medida
-export const unidadesMedidaKeys = {
-  all: ['unidades-medida'] as const,
-  lists: () => [...unidadesMedidaKeys.all, 'list'] as const,
-  list: (filters?: UnidadMedidaFilters) => [...unidadesMedidaKeys.lists(), filters] as const,
-  details: () => [...unidadesMedidaKeys.all, 'detail'] as const,
-  detail: (id: number) => [...unidadesMedidaKeys.details(), id] as const,
-  choices: () => [...unidadesMedidaKeys.all, 'choices'] as const,
-  byCategoria: () => [...unidadesMedidaKeys.all, 'by-categoria'] as const,
-};
+export const useUnidadesMedida = unidadMedidaHooks.useList;
+export const useUnidadMedida = unidadMedidaHooks.useDetail;
+export const useCreateUnidadMedida = unidadMedidaHooks.useCreate;
+export const useUpdateUnidadMedida = unidadMedidaHooks.useUpdate;
+export const useDeleteUnidadMedida = unidadMedidaHooks.useDelete;
 
-export const useUnidadesMedida = (filters?: UnidadMedidaFilters) => {
-  return useQuery({
-    queryKey: unidadesMedidaKeys.list(filters),
-    queryFn: () => unidadesMedidaApi.getAll(filters),
-    staleTime: 5 * 60 * 1000, // 5 minutos - catálogo relativamente estático
-  });
-};
-
-export const useUnidadMedida = (id: number) => {
-  return useQuery({
-    queryKey: unidadesMedidaKeys.detail(id),
-    queryFn: () => unidadesMedidaApi.getById(id),
-    enabled: !!id,
-  });
-};
-
-export const useUnidadesMedidaChoices = () => {
-  return useQuery({
-    queryKey: unidadesMedidaKeys.choices(),
-    queryFn: unidadesMedidaApi.getChoices,
-    staleTime: 10 * 60 * 1000, // 10 minutos
-  });
-};
-
-export const useUnidadesMedidaByCategoria = () => {
-  return useQuery({
-    queryKey: unidadesMedidaKeys.byCategoria(),
-    queryFn: unidadesMedidaApi.getByCategoria,
-    staleTime: 5 * 60 * 1000, // 5 minutos
-  });
-};
-
-export const useCreateUnidadMedida = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: CreateUnidadMedidaDTO) => unidadesMedidaApi.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: unidadesMedidaKeys.all });
-      toast.success('Unidad de medida creada exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al crear la unidad de medida');
-    },
-  });
-};
-
-export const useUpdateUnidadMedida = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateUnidadMedidaDTO }) =>
-      unidadesMedidaApi.update(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: unidadesMedidaKeys.all });
-      queryClient.invalidateQueries({ queryKey: unidadesMedidaKeys.detail(id) });
-      toast.success('Unidad de medida actualizada exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al actualizar la unidad de medida');
-    },
-  });
-};
-
-export const useDeleteUnidadMedida = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => unidadesMedidaApi.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: unidadesMedidaKeys.all });
-      toast.success('Unidad de medida eliminada exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al eliminar la unidad de medida');
-    },
-  });
-};
-
+// Custom hooks
 export const useRestoreUnidadMedida = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => unidadesMedidaApi.restore(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: unidadesMedidaKeys.all });
+      queryClient.invalidateQueries({ queryKey: unidadMedidaKeys.lists() });
       toast.success('Unidad de medida restaurada exitosamente');
     },
     onError: () => {
-      toast.error('Error al restaurar la unidad de medida');
+      toast.error('Error al restaurar unidad de medida');
     },
   });
 };
 
-export const useCargarUnidadesSistema = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: () => unidadesMedidaApi.cargarSistema(),
-    onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: unidadesMedidaKeys.all });
-      toast.success(`${result.message} (${result.unidades_creadas} nuevas)`);
-    },
-    onError: () => {
-      toast.error('Error al cargar las unidades del sistema');
-    },
+export const useUnidadesMedidaChoices = () => {
+  return useQuery({
+    queryKey: strategicKeys.unidadesMedidaChoices,
+    queryFn: unidadesMedidaApi.getChoices,
+    staleTime: 15 * 60 * 1000,
+  });
+};
+
+export const useUnidadesMedidaByCategoria = () => {
+  return useQuery({
+    queryKey: strategicKeys.unidadesMedidaByCategoria,
+    queryFn: unidadesMedidaApi.getByCategoria,
+    staleTime: 10 * 60 * 1000,
   });
 };
 
@@ -1207,9 +745,6 @@ export const useConvertirUnidad = () => {
       unidadOrigen: string;
       unidadDestino: string;
     }) => unidadesMedidaApi.convertir(valor, unidadOrigen, unidadDestino),
-    onError: () => {
-      toast.error('Error al convertir la unidad');
-    },
   });
 };
 
@@ -1224,205 +759,150 @@ export const useFormatearUnidad = () => {
       unidad: string;
       incluirSimbolo?: boolean;
     }) => unidadesMedidaApi.formatear(valor, unidad, incluirSimbolo),
+  });
+};
+
+export const useCargarUnidadesSistema = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: unidadesMedidaApi.cargarSistema,
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: unidadMedidaKeys.all });
+      toast.success(result.message);
+    },
     onError: () => {
-      toast.error('Error al formatear el valor');
+      toast.error('Error al cargar unidades del sistema');
     },
   });
 };
 
-// ==============================================================================
-// MC-002: CONSECUTIVOS CONFIG HOOKS
-// ==============================================================================
+// ==================== CONSECUTIVOS (via factory) ====================
 
-import {
-  consecutivosApi,
-  type ConsecutivoFilters,
-  type CreateConsecutivoDTO,
-  type UpdateConsecutivoDTO,
-  type PreviewConsecutivoParams,
-} from '../api/strategicApi';
+const consecutivoHooks = createCrudHooks<
+  ConsecutivoConfig,
+  CreateConsecutivoDTO,
+  UpdateConsecutivoDTO
+>(consecutivosApi, consecutivoKeys, 'Consecutivo');
 
-export const consecutivosKeys = {
-  all: ['consecutivos'] as const,
-  lists: () => [...consecutivosKeys.all, 'list'] as const,
-  list: (filters?: ConsecutivoFilters) => [...consecutivosKeys.lists(), filters] as const,
-  details: () => [...consecutivosKeys.all, 'detail'] as const,
-  detail: (id: number) => [...consecutivosKeys.details(), id] as const,
-  choices: () => [...consecutivosKeys.all, 'choices'] as const,
-  byCategoria: () => [...consecutivosKeys.all, 'by-categoria'] as const,
-};
+export const useConsecutivos = consecutivoHooks.useList;
+export const useConsecutivo = consecutivoHooks.useDetail;
+export const useCreateConsecutivo = consecutivoHooks.useCreate;
+export const useUpdateConsecutivo = consecutivoHooks.useUpdate;
+export const useDeleteConsecutivo = consecutivoHooks.useDelete;
 
-export const useConsecutivos = (filters?: ConsecutivoFilters) => {
-  return useQuery({
-    queryKey: consecutivosKeys.list(filters),
-    queryFn: () => consecutivosApi.getAll(filters),
-    staleTime: 5 * 60 * 1000, // 5 minutos
-  });
-};
-
-export const useConsecutivo = (id: number) => {
-  return useQuery({
-    queryKey: consecutivosKeys.detail(id),
-    queryFn: () => consecutivosApi.getById(id),
-    enabled: id > 0,
+// Custom hooks
+export const useRestoreConsecutivo = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => consecutivosApi.restore(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: consecutivoKeys.lists() });
+      toast.success('Consecutivo restaurado exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al restaurar consecutivo');
+    },
   });
 };
 
 export const useConsecutivosChoices = () => {
   return useQuery({
-    queryKey: consecutivosKeys.choices(),
-    queryFn: () => consecutivosApi.getChoices(),
-    staleTime: 10 * 60 * 1000, // 10 minutos
+    queryKey: strategicKeys.consecutivosChoices,
+    queryFn: consecutivosApi.getChoices,
+    staleTime: 15 * 60 * 1000,
   });
 };
 
 export const useConsecutivosByCategoria = () => {
   return useQuery({
-    queryKey: consecutivosKeys.byCategoria(),
-    queryFn: () => consecutivosApi.getByCategoria(),
-    staleTime: 5 * 60 * 1000,
-  });
-};
-
-export const useCreateConsecutivo = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (data: CreateConsecutivoDTO) => consecutivosApi.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: consecutivosKeys.all });
-      toast.success('Consecutivo creado exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al crear el consecutivo');
-    },
-  });
-};
-
-export const useUpdateConsecutivo = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: UpdateConsecutivoDTO }) =>
-      consecutivosApi.update(id, data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: consecutivosKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: consecutivosKeys.detail(variables.id) });
-      toast.success('Consecutivo actualizado exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al actualizar el consecutivo');
-    },
-  });
-};
-
-export const useDeleteConsecutivo = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (id: number) => consecutivosApi.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: consecutivosKeys.lists() });
-      toast.success('Consecutivo eliminado exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al eliminar el consecutivo');
-    },
-  });
-};
-
-export const useRestoreConsecutivo = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (id: number) => consecutivosApi.restore(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: consecutivosKeys.all });
-      toast.success('Consecutivo restaurado exitosamente');
-    },
-    onError: () => {
-      toast.error('Error al restaurar el consecutivo');
-    },
+    queryKey: strategicKeys.consecutivosByCategoria,
+    queryFn: consecutivosApi.getByCategoria,
+    staleTime: 10 * 60 * 1000,
   });
 };
 
 export const useGenerarConsecutivo = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (codigo: string) => consecutivosApi.generar(codigo),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: consecutivoKeys.lists() });
+    },
     onError: () => {
-      toast.error('Error al generar el consecutivo');
+      toast.error('Error al generar consecutivo');
+    },
+  });
+};
+
+export const useGenerarConsecutivoPorId = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (consecutivoId: number) => consecutivosApi.generarPorId(consecutivoId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: consecutivoKeys.lists() });
+    },
+    onError: () => {
+      toast.error('Error al generar consecutivo');
     },
   });
 };
 
 export const usePreviewConsecutivo = () => {
   return useMutation({
-    mutationFn: (params: PreviewConsecutivoParams) => consecutivosApi.preview(params),
+    mutationFn: consecutivosApi.preview,
   });
 };
 
 export const useReiniciarConsecutivo = () => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: ({ id, confirmar }: { id: number; confirmar: boolean }) =>
+    mutationFn: ({ id, confirmar = false }: { id: number; confirmar?: boolean }) =>
       consecutivosApi.reiniciar(id, confirmar),
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: consecutivosKeys.all });
+      queryClient.invalidateQueries({ queryKey: consecutivoKeys.lists() });
       toast.success(result.message);
     },
     onError: () => {
-      toast.error('Error al reiniciar el consecutivo');
+      toast.error('Error al reiniciar consecutivo');
     },
   });
 };
 
 export const useCargarConsecutivosSistema = () => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: () => consecutivosApi.cargarSistema(),
+    mutationFn: consecutivosApi.cargarSistema,
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: consecutivosKeys.all });
-      toast.success(
-        `${result.message} (${result.creados} nuevos, ${result.actualizados} actualizados)`
-      );
+      queryClient.invalidateQueries({ queryKey: consecutivoKeys.all });
+      toast.success(result.message);
     },
     onError: () => {
-      toast.error('Error al cargar los consecutivos del sistema');
+      toast.error('Error al cargar consecutivos del sistema');
     },
   });
 };
 
-// ==================== CURRENT TENANT (Admin Tenant Self-Edit) ====================
-
-const currentTenantKeys = {
-  all: ['current-tenant'] as const,
-  detail: () => ['current-tenant', 'detail'] as const,
-};
+// ==================== CURRENT TENANT ====================
 
 export const useCurrentTenant = () => {
-  return useQuery<CurrentTenantData>({
-    queryKey: currentTenantKeys.detail(),
+  return useQuery({
+    queryKey: ['current-tenant'] as const,
     queryFn: currentTenantApi.get,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 10 * 60 * 1000,
   });
 };
 
 export const useUpdateCurrentTenant = () => {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: (data: FormData | Partial<CurrentTenantData>) => currentTenantApi.update(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: currentTenantKeys.all });
-      queryClient.invalidateQueries({ queryKey: ['branding'] });
-      // Invalidar stats de empresa para que la card "Estado" se actualice
-      queryClient.invalidateQueries({ queryKey: strategicKeys.configStats('empresa') });
-      toast.success('Datos de la empresa actualizados correctamente');
+      queryClient.invalidateQueries({ queryKey: ['current-tenant'] });
+      queryClient.invalidateQueries({ queryKey: strategicKeys.activeBranding });
+      toast.success('Información de la empresa actualizada exitosamente');
     },
-    onError: (error: { response?: { data?: { detail?: string } }; message?: string }) => {
-      toast.error(error.response?.data?.detail || error.message || 'Error al actualizar los datos');
+    onError: () => {
+      toast.error('Error al actualizar información de la empresa');
     },
   });
 };

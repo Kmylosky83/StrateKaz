@@ -339,7 +339,11 @@ export const EncuestaFormModal = ({
 
   const handleCopyLink = () => {
     if (encuestaDetail?.enlace_publico) {
-      navigator.clipboard.writeText(window.location.origin + encuestaDetail.enlace_publico);
+      // Si el backend ya retorna URL absoluta (https://...), usarla directamente
+      const url = encuestaDetail.enlace_publico.startsWith('http')
+        ? encuestaDetail.enlace_publico
+        : window.location.origin + encuestaDetail.enlace_publico;
+      navigator.clipboard.writeText(url);
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
     }
@@ -692,7 +696,11 @@ export const EncuestaFormModal = ({
             </div>
             <div className="flex items-center gap-2">
               <Input
-                value={window.location.origin + encuestaDetail.enlace_publico}
+                value={
+                  encuestaDetail.enlace_publico.startsWith('http')
+                    ? encuestaDetail.enlace_publico
+                    : window.location.origin + encuestaDetail.enlace_publico
+                }
                 readOnly
                 className="flex-1 text-xs font-mono"
               />

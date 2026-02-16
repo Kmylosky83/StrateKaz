@@ -246,7 +246,11 @@ export const EncuestasDofaSection = ({ triggerNewForm }: EncuestasDofaSectionPro
 
   const handleCopyLink = (encuesta: EncuestaDofa) => {
     if (encuesta.enlace_publico) {
-      navigator.clipboard.writeText(window.location.origin + encuesta.enlace_publico);
+      // Si el backend ya retorna URL absoluta (https://...), usarla directamente
+      const url = encuesta.enlace_publico.startsWith('http')
+        ? encuesta.enlace_publico
+        : window.location.origin + encuesta.enlace_publico;
+      navigator.clipboard.writeText(url);
       toast.success('Enlace copiado al portapapeles');
     }
   };

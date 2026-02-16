@@ -383,7 +383,10 @@ class EncuestaService:
                 'message': 'La encuesta debe ser pública para compartir por email'
             }
 
-        enlace = f"{base_url}/encuestas/responder/{encuesta.token_publico}/"
+        # Usar el enlace_publico del modelo (ya incluye dominio del tenant)
+        enlace = encuesta.enlace_publico
+        if not enlace.startswith('http') and base_url:
+            enlace = f"{base_url}{enlace}"
         tipo_label = 'PCI-POAM' if encuesta.tipo_encuesta == 'pci_poam' else 'Contexto Organizacional'
 
         # Obtener nombre de la empresa
@@ -440,7 +443,10 @@ class EncuestaService:
         """Genera QR code PNG con el enlace público de la encuesta."""
         import qrcode
 
-        enlace = f"{base_url}/encuestas/responder/{encuesta.token_publico}/"
+        # Usar el enlace_publico del modelo (ya incluye dominio del tenant)
+        enlace = encuesta.enlace_publico
+        if not enlace.startswith('http') and base_url:
+            enlace = f"{base_url}{enlace}"
 
         qr = qrcode.QRCode(
             version=1,

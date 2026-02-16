@@ -284,7 +284,14 @@ class EncuestaDofa(BaseCompanyModel):
 
     @property
     def enlace_publico(self):
-        """Genera el enlace público para la encuesta"""
+        """Genera el enlace público completo para la encuesta, incluyendo dominio del tenant."""
+        from django.db import connection
+        tenant = getattr(connection, 'tenant', None)
+        if tenant and hasattr(tenant, 'primary_domain') and tenant.primary_domain:
+            domain = tenant.primary_domain
+            protocol = 'https'
+            return f"{protocol}://{domain}/encuestas/responder/{self.token_publico}/"
+        # Fallback: ruta relativa (dev local)
         return f"/encuestas/responder/{self.token_publico}/"
 
     def activar(self):

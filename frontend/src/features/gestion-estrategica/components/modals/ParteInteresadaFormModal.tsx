@@ -596,6 +596,7 @@ const ParteInteresadaFormModalComponent = ({
           )}
 
           <Input
+            id="pi-nombre"
             label="Nombre *"
             value={formData.nombre}
             onChange={handleNombreChange}
@@ -604,6 +605,7 @@ const ParteInteresadaFormModalComponent = ({
           />
 
           <Textarea
+            id="pi-descripcion"
             label="Descripcion"
             value={formData.descripcion}
             onChange={handleDescripcionChange}
@@ -645,6 +647,7 @@ const ParteInteresadaFormModalComponent = ({
 
           <div className="grid grid-cols-2 gap-4">
             <Input
+              id="pi-email"
               type="email"
               label="Email de Contacto"
               value={formData.email_contacto}
@@ -653,6 +656,7 @@ const ParteInteresadaFormModalComponent = ({
               leftIcon={<Mail className="h-4 w-4" />}
             />
             <Input
+              id="pi-telefono"
               type="tel"
               label="Telefono de Contacto"
               value={formData.telefono_contacto}
@@ -664,6 +668,7 @@ const ParteInteresadaFormModalComponent = ({
 
           <div className="grid grid-cols-2 gap-4">
             <Input
+              id="pi-direccion"
               label="Direccion"
               value={formData.direccion}
               onChange={handleDireccionChange}
@@ -671,6 +676,7 @@ const ParteInteresadaFormModalComponent = ({
               leftIcon={<MapPin className="h-4 w-4" />}
             />
             <Input
+              id="pi-sitio-web"
               label="Sitio Web / Portal"
               value={formData.sitio_web}
               onChange={handleSitioWebChange}
@@ -686,12 +692,14 @@ const ParteInteresadaFormModalComponent = ({
             </summary>
             <div className="grid grid-cols-2 gap-4 mt-3 pl-4 border-l-2 border-gray-200 dark:border-gray-700">
               <Input
+                id="pi-representante"
                 label="Nombre del Contacto"
                 value={formData.representante}
                 onChange={handleRepresentanteChange}
                 placeholder="Nombre de persona de contacto"
               />
               <Input
+                id="pi-cargo-representante"
                 label="Cargo / Rol"
                 value={formData.cargo_representante}
                 onChange={handleCargoRepresentanteChange}
@@ -793,6 +801,7 @@ const ParteInteresadaFormModalComponent = ({
           </h4>
 
           <Textarea
+            id="pi-temas-interes-pi"
             label="Temas de Interés PARA la PI"
             value={formData.temas_interes_pi}
             onChange={handleTemasInteresPiChange}
@@ -802,6 +811,7 @@ const ParteInteresadaFormModalComponent = ({
           />
 
           <Textarea
+            id="pi-temas-interes-empresa"
             label="Temas de Interés PARA la Empresa"
             value={formData.temas_interes_empresa}
             onChange={handleTemasInteresEmpresaChange}
@@ -877,6 +887,7 @@ const ParteInteresadaFormModalComponent = ({
           />
 
           <Textarea
+            id="pi-necesidades"
             label="Necesidades"
             value={formData.necesidades}
             onChange={handleNecesidadesChange}
@@ -886,6 +897,7 @@ const ParteInteresadaFormModalComponent = ({
           />
 
           <Textarea
+            id="pi-expectativas"
             label="Expectativas"
             value={formData.expectativas}
             onChange={handleExpectativasChange}
@@ -895,6 +907,7 @@ const ParteInteresadaFormModalComponent = ({
           />
 
           <Textarea
+            id="pi-requisitos"
             label="Requisitos Pertinentes"
             value={formData.requisitos_pertinentes}
             onChange={handleRequisitosChange}

@@ -59,7 +59,7 @@ pluggy==1.6.0
 prometheus_client==0.24.1
 prompt_toolkit==3.0.52
 psycopg2-binary==2.9.11
-pycparser==2.23
+pycparser==3.0
 pydyf==0.12.1
 Pygments==2.19.2
 PyJWT==2.10.1

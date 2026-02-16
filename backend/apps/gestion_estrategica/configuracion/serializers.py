@@ -315,53 +315,62 @@ class SedeEmpresaChoicesSerializer(serializers.Serializer):
 
     def get_tipos_sede(self, obj):
         """Retorna tipos de sede desde modelo dinámico"""
-        tipos = TipoSede.objects.filter(
-            is_active=True,
-            deleted_at__isnull=True
-        ).order_by('orden', 'name')
-        return [
-            {
-                'value': t.id,
-                'label': t.name,
-                'code': t.code,
-                'icon': t.icon,
-                'color': t.color,
-            }
-            for t in tipos
-        ]
+        try:
+            tipos = TipoSede.objects.filter(
+                is_active=True,
+                deleted_at__isnull=True
+            ).order_by('orden', 'name')
+            return [
+                {
+                    'value': t.id,
+                    'label': t.name,
+                    'code': t.code,
+                    'icon': t.icon,
+                    'color': t.color,
+                }
+                for t in tipos
+            ]
+        except Exception:
+            return []
 
     def get_departamentos(self, obj):
         return [{'value': code, 'label': name} for code, name in DEPARTAMENTOS_COLOMBIA]
 
     def get_unidades_capacidad(self, obj):
         """Retorna las unidades de medida disponibles para capacidad (MASA, VOLUMEN, CONTENEDOR)"""
-        categorias_capacidad = ['MASA', 'VOLUMEN', 'CONTENEDOR']
-        unidades = UnidadMedida.objects.filter(
-            categoria__in=categorias_capacidad,
-            is_active=True,
-            deleted_at__isnull=True
-        ).order_by('categoria', 'orden_display', 'nombre')
+        try:
+            categorias_capacidad = ['MASA', 'VOLUMEN', 'CONTENEDOR']
+            unidades = UnidadMedida.objects.filter(
+                categoria__in=categorias_capacidad,
+                is_active=True,
+                deleted_at__isnull=True
+            ).order_by('categoria', 'orden_display', 'nombre')
 
-        return [
-            {
-                'value': u.id,
-                'label': f"{u.nombre} ({u.simbolo})",
-                'simbolo': u.simbolo,
-                'categoria': u.categoria,
-            }
-            for u in unidades
-        ]
+            return [
+                {
+                    'value': u.id,
+                    'label': f"{u.nombre} ({u.simbolo})",
+                    'simbolo': u.simbolo,
+                    'categoria': u.categoria,
+                }
+                for u in unidades
+            ]
+        except Exception:
+            return []
 
     def get_unidad_capacidad_default(self, obj):
         """Retorna la unidad de capacidad por defecto de la empresa"""
-        empresa_config = EmpresaConfig.get_instance()
-        if empresa_config and empresa_config.unidad_capacidad_default:
-            u = empresa_config.unidad_capacidad_default
-            return {
-                'value': u.id,
-                'label': f"{u.nombre} ({u.simbolo})",
-                'simbolo': u.simbolo,
-            }
+        try:
+            empresa_config = EmpresaConfig.get_instance()
+            if empresa_config and hasattr(empresa_config, 'unidad_capacidad_default') and empresa_config.unidad_capacidad_default:
+                u = empresa_config.unidad_capacidad_default
+                return {
+                    'value': u.id,
+                    'label': f"{u.nombre} ({u.simbolo})",
+                    'simbolo': u.simbolo,
+                }
+        except Exception:
+            pass
         return None
 
 

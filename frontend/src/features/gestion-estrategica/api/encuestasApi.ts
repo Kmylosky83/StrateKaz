@@ -381,15 +381,17 @@ export const respuestasApi = {
 };
 
 // ==============================================================================
-// ACCESO PÚBLICO (SIN AUTENTICACIÓN)
-// Usa axios directo sin interceptor de auth para evitar 401 en páginas públicas
+// ACCESO PÚBLICO/PRIVADO (AUTENTICACIÓN OPCIONAL)
+// Envía JWT si el usuario ya está logueado; permite acceso anónimo si no.
 // ==============================================================================
 
 /**
- * Cliente axios sin autenticación para endpoints públicos.
- * No envía JWT (permite acceso anónimo).
- * El tenant se resuelve por dominio (TenantMainMiddleware).
- * Para dev local, agrega X-Tenant-ID si está disponible.
+ * Cliente axios con autenticación OPCIONAL para endpoints de encuestas.
+ *
+ * - Si hay JWT en localStorage → lo envía (encuestas privadas, usuario identificado)
+ * - Si NO hay JWT → no envía auth (encuestas públicas, acceso anónimo)
+ * - El tenant se resuelve por dominio (TenantMainMiddleware)
+ * - Para dev local, agrega X-Tenant-ID si está disponible
  */
 const publicClient = axios.create({
   baseURL: API_URL,
@@ -397,9 +399,15 @@ const publicClient = axios.create({
   timeout: 30000,
 });
 
-// Interceptor: agregar X-Tenant-ID si existe (para dev local con localhost)
-// En producción, el tenant se resuelve por dominio ({tenant}.stratekaz.com)
+// Interceptor: agregar JWT (si existe) + X-Tenant-ID (dev local)
 publicClient.interceptors.request.use((config) => {
+  // JWT opcional — soporta encuestas privadas (usuario autenticado)
+  const accessToken = localStorage.getItem('access_token');
+  if (accessToken && config.headers) {
+    config.headers['Authorization'] = `Bearer ${accessToken}`;
+  }
+
+  // Tenant ID para dev local (en producción se resuelve por dominio)
   const tenantId = localStorage.getItem('current_tenant_id');
   if (tenantId && config.headers) {
     config.headers['X-Tenant-ID'] = tenantId;
@@ -409,7 +417,7 @@ publicClient.interceptors.request.use((config) => {
 
 export const encuestaPublicaApi = {
   /**
-   * Obtener encuesta pública por token (SIN auth)
+   * Obtener encuesta por token (auth opcional — pública o privada)
    */
   get: async (token: string): Promise<EncuestaPublica> => {
     const response = await publicClient.get<EncuestaPublica>(`${BASE_URL}/publica/${token}/`);
@@ -417,7 +425,7 @@ export const encuestaPublicaApi = {
   },
 
   /**
-   * Enviar respuestas (puede ser anónimo, SIN auth)
+   * Enviar respuestas (auth opcional — anónimo o autenticado)
    */
   responder: async (
     token: string,

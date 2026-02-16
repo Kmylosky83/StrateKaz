@@ -2,42 +2,41 @@
  * Tab de Organizacion - Modulo Direccion Estrategica
  *
  * Secciones (orden desde BD):
- * 1. Procesos (Areas) - Gestion de areas/departamentos (Vista 7: Tree Cards)
- * 2. Mapa de Procesos - Visualizacion interactiva de areas (modo 'areas' del canvas)
- * 3. Consecutivos - Configuracion de consecutivos automaticos (Vista 2: Lista CRUD)
- * 4. Unidades - Catalogo de unidades de medida (Vista 2: Lista CRUD)
+ * 1. Procesos (Areas) - Gestión de áreas/departamentos (Vista 7: Tree Cards)
+ * 2. Mapa de Procesos - Visualización interactiva de áreas (modo 'areas' del canvas)
+ * 3. Consecutivos - Configuración de consecutivos automáticos (Vista 2: Lista CRUD)
  *
  * NOTA: 'Cargos' y 'Colaboradores' migrados a Talento Humano (Sprint 13).
  * NOTA: 'Organigrama de Cargos' migrado a TH > Estructura de Cargos (Sprint 13).
+ * NOTA: 'Unidades de Medida' eliminado — catálogo del sistema cargado vía seeds,
+ *        se consume desde modal de Sedes (choices endpoint), no requiere vista propia.
  */
 
 // Importar componentes internos
 import { AreasTab } from './AreasTab';
 import { MapaProcesosSection } from './MapaProcesosSection';
 
-// Consecutivos y Unidades de Medida migrados desde Configuracion
+// Consecutivos migrados desde Configuración
 import { ConsecutivosSection } from './ConsecutivosSection';
-import { UnidadesMedidaSection } from './UnidadesMedidaSection';
 
 /**
  * Props del OrganizacionTab
- * activeSection viene desde DynamicSections en la pagina padre
+ * activeSection viene desde DynamicSections en la página padre
  */
 interface OrganizacionTabProps {
-  /** Codigo de la seccion activa (desde API) */
+  /** Código de la sección activa (desde API) */
   activeSection?: string;
 }
 
 /**
- * Mapeo de codigos de seccion a componentes
- * Los codigos deben coincidir con los de la BD (TabSection.code)
- * IMPORTANTE: Los codigos en BD estan en minusculas
+ * Mapeo de códigos de sección a componentes
+ * Los códigos deben coincidir con los de la BD (TabSection.code)
+ * IMPORTANTE: Los códigos en BD están en minúsculas
  */
 const SECTION_COMPONENTS: Record<string, React.ComponentType> = {
   areas: AreasTab,
   mapa_procesos: MapaProcesosSection,
   consecutivos: ConsecutivosSection,
-  unidades_medida: UnidadesMedidaSection,
 };
 
 export const OrganizacionTab = ({ activeSection }: OrganizacionTabProps) => {

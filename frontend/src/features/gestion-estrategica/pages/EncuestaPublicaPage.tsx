@@ -734,7 +734,7 @@ export default function EncuestaPublicaPage() {
                         : undefined
                     }
                   >
-                    {getClasificacionEmoji(c)} {getClasificacionLabel(c)}
+                    {getClasificacionLabel(c)}
                   </button>
                 );
               })}
@@ -896,15 +896,7 @@ function getClasificacionColor(c: Clasificacion): string {
   return colors[c] || '#6b7280';
 }
 
-function getClasificacionEmoji(c: Clasificacion): string {
-  const emojis: Record<Clasificacion, string> = {
-    fortaleza: '💪',
-    debilidad: '⚠️',
-    oportunidad: '🌟',
-    amenaza: '🔴',
-  };
-  return emojis[c] || '';
-}
+// Emojis eliminados — usamos solo Design System (colores + íconos Lucide)
 
 // ============================================================================
 // LAYOUT COMPONENTS

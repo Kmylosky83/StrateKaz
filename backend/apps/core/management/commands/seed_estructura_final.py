@@ -126,7 +126,7 @@ class Command(BaseCommand):
                             {'code': 'areas', 'name': 'Procesos', 'icon': 'FolderTree', 'orden': 1, 'description': 'Gestión de áreas y departamentos'},
                             {'code': 'mapa_procesos', 'name': 'Mapa de Procesos', 'icon': 'Grid3x3', 'orden': 2, 'description': 'Visualización interactiva de la estructura de procesos'},
                             {'code': 'consecutivos', 'name': 'Consecutivos', 'icon': 'Hash', 'orden': 3, 'description': 'Numeración automática de documentos'},
-                            {'code': 'unidades_medida', 'name': 'Unidades', 'icon': 'Ruler', 'orden': 4, 'description': 'Catálogo de unidades de medida'},
+                            # NOTA: 'unidades_medida' eliminado — catálogo del sistema vía seeds, se consume desde choices endpoint
                             # NOTA: 'cargos' y 'colaboradores' migrados a Talento Humano (Sprint 13)
                             # NOTA: 'organigrama de cargos' migrado a TH > Estructura de Cargos (Sprint 13)
                         ]

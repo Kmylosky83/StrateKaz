@@ -298,8 +298,27 @@ class EncuestaDofa(BaseCompanyModel):
         self.save(update_fields=['estado', 'updated_at'])
 
     def actualizar_estadisticas(self):
-        """Actualiza las estadísticas de participación"""
-        self.total_respondidos = self.respuestas.values('respondente').distinct().count()
+        """Actualiza las estadísticas de participación.
+
+        Cuenta respondentes únicos (autenticados + anónimos) vía
+        EncuestaDofa → temas → respuestas (relación indirecta).
+        """
+        respondentes_autenticados = (
+            RespuestaEncuesta.objects.filter(tema__encuesta=self)
+            .exclude(respondente__isnull=True)
+            .values('respondente')
+            .distinct()
+            .count()
+        )
+        respondentes_anonimos = (
+            RespuestaEncuesta.objects.filter(tema__encuesta=self)
+            .filter(respondente__isnull=True)
+            .exclude(token_anonimo='')
+            .values('token_anonimo')
+            .distinct()
+            .count()
+        )
+        self.total_respondidos = respondentes_autenticados + respondentes_anonimos
         self.save(update_fields=['total_respondidos', 'updated_at'])
 
 

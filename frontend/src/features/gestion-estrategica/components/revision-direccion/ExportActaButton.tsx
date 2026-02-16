@@ -79,27 +79,18 @@ export function ExportActaButton({
 
       // Validar que el acta tenga datos mínimos
       if (!acta.numero_acta) {
-        throw new ExportActaError(
-          'El acta debe tener un número de acta asignado',
-          'VALIDATION'
-        );
+        throw new ExportActaError('El acta debe tener un número de acta asignado', 'VALIDATION');
       }
 
       if (!acta.fecha) {
-        throw new ExportActaError(
-          'El acta debe tener una fecha asignada',
-          'VALIDATION'
-        );
+        throw new ExportActaError('El acta debe tener una fecha asignada', 'VALIDATION');
       }
 
       // Exportar a PDF
       await exportActaToPDF(acta, exportOptions);
 
       // Notificar éxito
-      toast.success('Acta exportada a PDF exitosamente', {
-        duration: 3000,
-        icon: '📄',
-      });
+      toast.success('Acta exportada a PDF exitosamente', { duration: 3000 });
 
       onExportSuccess?.();
     } catch (error) {
@@ -107,30 +98,13 @@ export function ExportActaButton({
 
       // Determinar mensaje de error
       let errorMessage = 'No se pudo exportar el acta a PDF';
-      let errorIcon = '❌';
 
       if (error instanceof ExportActaError) {
         errorMessage = error.message;
-
-        switch (error.type) {
-          case 'VALIDATION':
-            errorIcon = '⚠️';
-            break;
-          case 'GENERATION':
-            errorIcon = '🔧';
-            break;
-          case 'DOWNLOAD':
-            errorIcon = '💾';
-            break;
-        }
-
         onExportError?.(error);
       }
 
-      toast.error(errorMessage, {
-        duration: 5000,
-        icon: errorIcon,
-      });
+      toast.error(errorMessage, { duration: 5000 });
     } finally {
       setIsExporting(false);
     }
@@ -153,7 +127,8 @@ export function ExportActaButton({
   // ESTILOS
   // ===========================================================================
 
-  const baseClasses = 'inline-flex items-center justify-center gap-2 font-medium rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
+  const baseClasses =
+    'inline-flex items-center justify-center gap-2 font-medium rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
 
   const variantClasses = {
     primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500',
@@ -252,9 +227,7 @@ function ExportOptionsModal({
               <Eye className="text-blue-600" size={20} />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-slate-900">
-                Opciones de Exportación
-              </h3>
+              <h3 className="text-lg font-semibold text-slate-900">Opciones de Exportación</h3>
               <p className="text-sm text-slate-500">Acta {actaNumero}</p>
             </div>
           </div>
@@ -279,9 +252,7 @@ function ExportOptionsModal({
                 <div className="font-medium text-slate-900 group-hover:text-blue-600 transition-colors">
                   Participantes
                 </div>
-                <div className="text-xs text-slate-500">
-                  Lista de participantes con asistencia
-                </div>
+                <div className="text-xs text-slate-500">Lista de participantes con asistencia</div>
               </div>
             </label>
 
@@ -340,8 +311,8 @@ function ExportOptionsModal({
           {/* Info */}
           <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-xs text-blue-800">
-              💡 El PDF incluirá encabezado con logo, pie de página con
-              paginación, y formato profesional según normas ISO.
+              💡 El PDF incluirá encabezado con logo, pie de página con paginación, y formato
+              profesional según normas ISO.
             </p>
           </div>
         </div>
@@ -416,11 +387,7 @@ export function ExportActaButtonCompact({
       className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
       title="Exportar a PDF"
     >
-      {isExporting ? (
-        <Loader2 size={18} className="animate-spin" />
-      ) : (
-        <FileDown size={18} />
-      )}
+      {isExporting ? <Loader2 size={18} className="animate-spin" /> : <FileDown size={18} />}
     </button>
   );
 }
@@ -494,11 +461,7 @@ export function ExportActaButtonWithMenu({
         disabled={isExporting}
         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center gap-2 disabled:opacity-50"
       >
-        {isExporting ? (
-          <Loader2 size={18} className="animate-spin" />
-        ) : (
-          <FileDown size={18} />
-        )}
+        {isExporting ? <Loader2 size={18} className="animate-spin" /> : <FileDown size={18} />}
         <span>Exportar</span>
         <svg
           className={`w-4 h-4 transition-transform ${showMenu ? 'rotate-180' : ''}`}
@@ -512,10 +475,7 @@ export function ExportActaButtonWithMenu({
 
       {showMenu && (
         <>
-          <div
-            className="fixed inset-0 z-10"
-            onClick={() => setShowMenu(false)}
-          />
+          <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
           <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-slate-200 z-20">
             <div className="py-1">
               <button

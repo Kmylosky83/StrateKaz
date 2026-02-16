@@ -236,7 +236,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
 
   // Opciones para selects - tipos de sede vienen como IDs numéricos del backend
   // Incluye opción "Otro tipo..." para crear nuevos tipos
-   
+
   const tipoSedeOptions = [
     ...(choices?.tipos_sede?.map((t: any) => ({
       value: t.value.toString(),
@@ -252,7 +252,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
   const departamentoOptions = choices?.departamentos || [];
 
   // Unidades de capacidad dinámicas (multi-industria)
-   
+
   const unidadesCapacidadOptions =
     (choices as any)?.unidades_capacidad?.map((u: any) => ({
       value: u.value.toString(),
@@ -260,11 +260,19 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
     })) || [];
 
   const userOptions =
-    usersData?.results?.map((user) => ({
-      value: user.id.toString(),
-      label:
-        user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : user.username,
-    })) || [];
+    usersData?.results
+      ?.filter((user) => !user.is_superuser && user.is_active)
+      .map((user) => {
+        const nombre =
+          user.first_name && user.last_name
+            ? `${user.first_name} ${user.last_name}`
+            : user.username;
+        const cargo = user.cargo?.name || user.cargo_name;
+        return {
+          value: user.id.toString(),
+          label: cargo ? `${nombre} — ${cargo}` : nombre,
+        };
+      }) || [];
 
   const footer = (
     <>

@@ -387,6 +387,8 @@ class EncuestaPublicaView(APIView):
     POST /encuestas/publica/{token}/
     - Envía las respuestas de la encuesta
     """
+    # Autenticación opcional: si hay JWT válido identifica al usuario,
+    # si no hay JWT permite acceso anónimo (encuesta pública).
     permission_classes = [AllowAny]
 
     def get(self, request, token):

@@ -167,9 +167,8 @@ export default function EncuestaPublicaPage() {
     if (!enc) return;
     const nombre = enc.empresa_nombre || enc.branding?.empresa_nombre;
     if (nombre) {
-      document.title = `${enc.titulo} — ${nombre}`;
+      document.title = nombre;
     }
-    // Update favicon if tenant has one
     const faviconUrl = enc.branding?.favicon_url;
     if (faviconUrl) {
       let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
@@ -180,7 +179,6 @@ export default function EncuestaPublicaPage() {
       }
       link.href = faviconUrl;
     }
-    // Cleanup: restore defaults on unmount
     return () => {
       document.title = 'StrateKaz';
     };

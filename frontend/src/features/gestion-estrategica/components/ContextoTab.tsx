@@ -1,17 +1,15 @@
 /**
  * Tab de Contexto Organizacional
  *
- * Secciones dinamicas desde BD (TabSection.code):
- * - analisis_dofa: Analisis DOFA (Fortalezas, Debilidades, Oportunidades, Amenazas)
- * - encuestas_dofa: Encuestas colaborativas para identificar F/D
- * - analisis_pestel: Analisis PESTEL (Politico, Economico, Social, etc.)
- * - fuerzas_porter: 5 Fuerzas de Porter
- * - estrategias_tows: Matriz TOWS (estrategias cruzadas)
+ * Secciones dinámicas desde BD (TabSection.code) - Orden lógico:
+ * 1. stakeholders: Identificación de partes interesadas
+ * 2. encuestas_dofa: Encuestas PCI-POAM (fuente principal de datos DOFA+PESTEL)
+ * 3. analisis_dofa: Visor de Matriz DOFA (solo lectura, alimentada desde Encuestas)
+ * 4. analisis_pestel: Visor de Matriz PESTEL (solo lectura, alimentada desde Encuestas)
+ * 5. fuerzas_porter: 5 Fuerzas de Porter
+ * 6. estrategias_tows: Matriz TOWS (estrategias cruzadas)
  *
- * Usa Design System:
- * - GenericSectionFallback para secciones no implementadas
- * - DataSection, DataGrid, DataCard para visualizacion
- * - Vista 2B para listas con filtros
+ * Flujo: Encuestas → Consolidar → DOFA + PESTEL automáticos → Porter → TOWS
  */
 import { GenericSectionFallback } from '@/components/common';
 import {

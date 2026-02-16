@@ -151,11 +151,11 @@ class Command(BaseCommand):
                         'orden': 4,
                         'sections': [
                             # Análisis del contexto interno y externo (ISO 9001:2015 Cláusula 4.1)
-                            # Orden lógico: Stakeholders → DOFA → Encuestas (requiere DOFA) → PESTEL → Porter → TOWS (requiere DOFA)
+                            # Flujo: Stakeholders → Encuestas (PCI-POAM) → DOFA (visor matriz) → PESTEL (visor matriz) → Porter → TOWS
                             {'code': 'stakeholders', 'name': 'Stakeholders', 'icon': 'Users', 'orden': 1, 'description': 'Identificación y análisis de partes interesadas'},
-                            {'code': 'analisis_dofa', 'name': 'DOFA', 'icon': 'Grid3X3', 'orden': 2, 'description': 'Identifica Fortalezas, Oportunidades, Debilidades y Amenazas'},
-                            {'code': 'encuestas_dofa', 'name': 'Encuestas', 'icon': 'ClipboardList', 'orden': 3, 'description': 'Recopila opiniones de colaboradores sobre fortalezas y debilidades'},
-                            {'code': 'analisis_pestel', 'name': 'PESTEL', 'icon': 'Globe', 'orden': 4, 'description': 'Analiza factores Políticos, Económicos, Sociales, Tecnológicos, Ecológicos y Legales'},
+                            {'code': 'encuestas_dofa', 'name': 'Encuestas', 'icon': 'ClipboardList', 'orden': 2, 'description': 'Encuestas PCI-POAM para recopilar factores internos y externos del contexto organizacional'},
+                            {'code': 'analisis_dofa', 'name': 'DOFA', 'icon': 'Grid3X3', 'orden': 3, 'description': 'Matriz de Fortalezas, Oportunidades, Debilidades y Amenazas (alimentada desde Encuestas)'},
+                            {'code': 'analisis_pestel', 'name': 'PESTEL', 'icon': 'Globe', 'orden': 4, 'description': 'Matriz de factores Políticos, Económicos, Sociales, Tecnológicos, Ecológicos y Legales (alimentada desde Encuestas)'},
                             {'code': 'fuerzas_porter', 'name': 'Porter', 'icon': 'Layers', 'orden': 5, 'description': 'Evalúa las 5 fuerzas competitivas que determinan la intensidad de la competencia'},
                             {'code': 'estrategias_tows', 'name': 'TOWS', 'icon': 'Lightbulb', 'orden': 6, 'description': 'Define estrategias cruzando Fortalezas, Oportunidades, Debilidades y Amenazas'},
                         ]

@@ -356,6 +356,16 @@ export const useGenerarMatrizComunicacionMasiva = () => {
   };
 };
 
+/**
+ * 🆕 SPRINT 17: Hook para obtener estadísticas de partes interesadas
+ */
+export const usePartesInteresadasEstadisticas = () => {
+  return useQuery({
+    queryKey: [QUERY_KEYS.estadisticas],
+    queryFn: partesInteresadasApi.estadisticas,
+  });
+};
+
 // Re-exportar tipos para conveniencia (ACTUALIZADO - Sprint 17)
 export type {
   GrupoParteInteresada,

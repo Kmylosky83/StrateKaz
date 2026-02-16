@@ -12,7 +12,12 @@ import {
   useEncuestaPublica,
   useResponderEncuestaPublica,
 } from '@/features/gestion-estrategica/hooks/useEncuestas';
-import type { NivelImpacto, Clasificacion } from '@/features/gestion-estrategica/types/encuestas.types';
+import type {
+  NivelImpacto,
+  Clasificacion,
+  TemaPublico,
+  EncuestaPublica as EncuestaPublicaType,
+} from '@/features/gestion-estrategica/types/encuestas.types';
 
 interface RespuestaTema {
   tema_id: number;
@@ -51,12 +56,19 @@ export default function EncuestaPublicaPage() {
       return <ErrorLayout message="Esta encuesta no existe o el enlace ha expirado." />;
     }
     if (errorMsg.includes('cerrada') || errorMsg.includes('closed')) {
-      return <ErrorLayout message="Esta encuesta ya fue cerrada y no acepta más respuestas." icon={<Clock className="w-12 h-12 text-amber-400" />} />;
+      return (
+        <ErrorLayout
+          message="Esta encuesta ya fue cerrada y no acepta más respuestas."
+          icon={<Clock className="w-12 h-12 text-amber-400" />}
+        />
+      );
     }
     return <ErrorLayout message="No se pudo cargar la encuesta. Intente nuevamente." />;
   }
 
-  const temas = (encuesta as { temas?: { id: number; titulo: string; descripcion: string; requiere_justificacion?: boolean }[] }).temas || [];
+  const enc = encuesta as EncuestaPublicaType;
+  const temas = enc.temas || [];
+  const isPciPoam = enc.tipo_encuesta === 'pci_poam';
 
   if (enviado) {
     return (
@@ -71,14 +83,16 @@ export default function EncuestaPublicaPage() {
           <p className="text-gray-600 dark:text-gray-400 mb-6">
             Gracias por participar en la encuesta. Sus respuestas han sido registradas exitosamente.
           </p>
-          <Badge variant="success" size="lg">Completado</Badge>
+          <Badge variant="success" size="lg">
+            Completado
+          </Badge>
         </div>
       </PublicLayout>
     );
   }
 
   const updateRespuesta = (temaId: number, field: keyof RespuestaTema, value: string) => {
-    setRespuestas(prev => ({
+    setRespuestas((prev) => ({
       ...prev,
       [temaId]: {
         ...prev[temaId],
@@ -97,7 +111,7 @@ export default function EncuestaPublicaPage() {
     if (!allAnswered) return;
 
     const payload = {
-      respuestas: Object.values(respuestas).map(r => ({
+      respuestas: Object.values(respuestas).map((r) => ({
         tema_id: r.tema_id,
         clasificacion: r.clasificacion,
         justificacion: r.justificacion || '',
@@ -109,8 +123,6 @@ export default function EncuestaPublicaPage() {
     setEnviado(true);
   };
 
-  const enc = encuesta as { titulo?: string; descripcion?: string; fecha_cierre?: string };
-
   return (
     <PublicLayout>
       <div className="max-w-2xl mx-auto">
@@ -120,9 +132,7 @@ export default function EncuestaPublicaPage() {
             {enc.titulo || 'Encuesta'}
           </h1>
           {enc.descripcion && (
-            <p className="text-gray-600 dark:text-gray-400 mb-3">
-              {enc.descripcion}
-            </p>
+            <p className="text-gray-600 dark:text-gray-400 mb-3">{enc.descripcion}</p>
           )}
           {enc.fecha_cierre && (
             <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
@@ -136,12 +146,17 @@ export default function EncuestaPublicaPage() {
         <div className="mb-6">
           <div className="flex justify-between text-sm text-gray-500 mb-1">
             <span>Progreso</span>
-            <span>{Object.keys(respuestas).filter(k => respuestas[Number(k)]?.clasificacion).length} / {temas.length}</span>
+            <span>
+              {Object.keys(respuestas).filter((k) => respuestas[Number(k)]?.clasificacion).length} /{' '}
+              {temas.length}
+            </span>
           </div>
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
             <div
               className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${temas.length > 0 ? (Object.keys(respuestas).filter(k => respuestas[Number(k)]?.clasificacion).length / temas.length) * 100 : 0}%` }}
+              style={{
+                width: `${temas.length > 0 ? (Object.keys(respuestas).filter((k) => respuestas[Number(k)]?.clasificacion).length / temas.length) * 100 : 0}%`,
+              }}
             />
           </div>
         </div>
@@ -162,7 +177,9 @@ export default function EncuestaPublicaPage() {
                   <div className="flex items-start justify-between">
                     <div>
                       <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                        Tema {index + 1} de {temas.length}
+                        {isPciPoam
+                          ? `Pregunta ${index + 1} de ${temas.length}`
+                          : `Tema ${index + 1} de ${temas.length}`}
                       </span>
                       <h3 className="text-base font-semibold text-gray-900 dark:text-white mt-1">
                         {tema.titulo}
@@ -177,28 +194,50 @@ export default function EncuestaPublicaPage() {
                     <p className="text-sm text-gray-600 dark:text-gray-400">{tema.descripcion}</p>
                   )}
 
-                  {/* Clasificación */}
+                  {/* Clasificación - F/D para PCI, O/A para POAM */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Clasificación *
                     </label>
                     <div className="flex gap-3">
-                      {(['fortaleza', 'debilidad'] as const).map((c) => (
-                        <button
-                          key={c}
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); updateRespuesta(tema.id, 'clasificacion', c); }}
-                          className={`flex-1 py-2 px-4 rounded-lg border-2 text-sm font-medium transition-all ${
-                            r?.clasificacion === c
-                              ? c === 'fortaleza'
-                                ? 'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
-                                : 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
-                              : 'border-gray-200 dark:border-gray-600 text-gray-500 hover:border-gray-400'
-                          }`}
-                        >
-                          {c === 'fortaleza' ? 'Fortaleza' : 'Debilidad'}
-                        </button>
-                      ))}
+                      {(tema.clasificacion_esperada === 'oa'
+                        ? (['oportunidad', 'amenaza'] as const)
+                        : (['fortaleza', 'debilidad'] as const)
+                      ).map((c) => {
+                        const labels: Record<string, string> = {
+                          fortaleza: 'Fortaleza',
+                          debilidad: 'Debilidad',
+                          oportunidad: 'Oportunidad',
+                          amenaza: 'Amenaza',
+                        };
+                        const activeColors: Record<string, string> = {
+                          fortaleza:
+                            'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400',
+                          debilidad:
+                            'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400',
+                          oportunidad:
+                            'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400',
+                          amenaza:
+                            'border-amber-500 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400',
+                        };
+                        return (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateRespuesta(tema.id, 'clasificacion', c);
+                            }}
+                            className={`flex-1 py-2 px-4 rounded-lg border-2 text-sm font-medium transition-all ${
+                              r?.clasificacion === c
+                                ? activeColors[c]
+                                : 'border-gray-200 dark:border-gray-600 text-gray-500 hover:border-gray-400'
+                            }`}
+                          >
+                            {labels[c]}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -212,7 +251,10 @@ export default function EncuestaPublicaPage() {
                         <button
                           key={nivel}
                           type="button"
-                          onClick={(e) => { e.stopPropagation(); updateRespuesta(tema.id, 'impacto_percibido', nivel); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateRespuesta(tema.id, 'impacto_percibido', nivel);
+                          }}
                           className={`flex-1 py-1.5 px-3 rounded-md border text-sm transition-all ${
                             r?.impacto_percibido === nivel
                               ? nivel === 'alto'
@@ -230,7 +272,7 @@ export default function EncuestaPublicaPage() {
                   </div>
 
                   {/* Justificación */}
-                  {tema.requiere_justificacion && (
+                  {enc.requiere_justificacion && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Justificación
@@ -247,18 +289,24 @@ export default function EncuestaPublicaPage() {
                   )}
 
                   {/* Next button */}
-                  {isActive && index < temas.length - 1 && r?.clasificacion && r?.impacto_percibido && (
-                    <div className="flex justify-end">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => { e.stopPropagation(); setCurrentStep(index + 1); }}
-                        rightIcon={<ChevronRight className="w-4 h-4" />}
-                      >
-                        Siguiente
-                      </Button>
-                    </div>
-                  )}
+                  {isActive &&
+                    index < temas.length - 1 &&
+                    r?.clasificacion &&
+                    r?.impacto_percibido && (
+                      <div className="flex justify-end">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCurrentStep(index + 1);
+                          }}
+                          rightIcon={<ChevronRight className="w-4 h-4" />}
+                        >
+                          Siguiente
+                        </Button>
+                      </div>
+                    )}
                 </div>
               </Card>
             );
@@ -298,9 +346,7 @@ function PublicLayout({ children }: { children: React.ReactNode }) {
           <span className="text-lg font-semibold text-gray-800 dark:text-white">StrateKaz</span>
         </div>
       </header>
-      <main className="max-w-3xl mx-auto px-4 py-8">
-        {children}
-      </main>
+      <main className="max-w-3xl mx-auto px-4 py-8">{children}</main>
       <footer className="text-center py-6 text-xs text-gray-400">
         StrateKaz ERP &middot; Encuesta anónima y confidencial
       </footer>

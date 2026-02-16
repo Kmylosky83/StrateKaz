@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   encuestasApi,
+  preguntasContextoApi,
   temasApi,
   participantesApi,
   respuestasApi,
@@ -21,26 +22,25 @@ import type {
   RespuestaFilters,
   CreateRespuestaDTO,
   RespuestasLoteDTO,
+  CompartirEmailDTO,
 } from '../types/encuestas.types';
 
 // Query keys
 export const encuestasKeys = {
   all: ['encuestas-dofa'] as const,
   lists: () => [...encuestasKeys.all, 'list'] as const,
-  list: (filters?: EncuestaFilters) =>
-    [...encuestasKeys.lists(), filters] as const,
+  list: (filters?: EncuestaFilters) => [...encuestasKeys.lists(), filters] as const,
   details: () => [...encuestasKeys.all, 'detail'] as const,
   detail: (id: number) => [...encuestasKeys.details(), id] as const,
-  estadisticas: (id: number) =>
-    [...encuestasKeys.all, 'estadisticas', id] as const,
-  temas: (encuestaId: number) =>
-    [...encuestasKeys.all, 'temas', encuestaId] as const,
+  estadisticas: (id: number) => [...encuestasKeys.all, 'estadisticas', id] as const,
+  temas: (encuestaId: number) => [...encuestasKeys.all, 'temas', encuestaId] as const,
   participantes: (encuestaId: number) =>
     [...encuestasKeys.all, 'participantes', encuestaId] as const,
   respuestas: (filters?: RespuestaFilters) =>
     [...encuestasKeys.all, 'respuestas', filters] as const,
-  publica: (token: string) =>
-    [...encuestasKeys.all, 'publica', token] as const,
+  publica: (token: string) => [...encuestasKeys.all, 'publica', token] as const,
+  preguntasContexto: () => [...encuestasKeys.all, 'preguntas-contexto'] as const,
+  qrCode: (id: number) => [...encuestasKeys.all, 'qr-code', id] as const,
 };
 
 // ==============================================================================
@@ -50,11 +50,7 @@ export const encuestasKeys = {
 /**
  * Hook para listar encuestas
  */
-export function useEncuestas(
-  filters?: EncuestaFilters,
-  page = 1,
-  pageSize = 20
-) {
+export function useEncuestas(filters?: EncuestaFilters, page = 1, pageSize = 20) {
   return useQuery({
     queryKey: [...encuestasKeys.list(filters), page, pageSize],
     queryFn: () => encuestasApi.list(filters, page, pageSize),
@@ -189,9 +185,7 @@ export function useEnviarNotificacionesEncuesta() {
     onSuccess: (result, id) => {
       queryClient.invalidateQueries({ queryKey: encuestasKeys.detail(id) });
       if (result.success) {
-        toast.success(
-          `Notificaciones enviadas: ${result.total_notificados} participantes`
-        );
+        toast.success(`Notificaciones enviadas: ${result.total_notificados} participantes`);
       } else {
         toast.warning(result.message);
       }
@@ -239,9 +233,7 @@ export function useConsolidarEncuesta() {
         queryKey: encuestasKeys.estadisticas(id),
       });
       if (result.success) {
-        toast.success(
-          `Consolidación exitosa: ${result.factores_creados} factores creados`
-        );
+        toast.success(`Consolidación exitosa: ${result.factores_creados} factores creados`);
       } else {
         toast.warning(result.message);
       }
@@ -274,13 +266,8 @@ export function useCreateTema() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      encuestaId,
-      data,
-    }: {
-      encuestaId: number;
-      data: CreateTemaDTO;
-    }) => temasApi.create(encuestaId, data),
+    mutationFn: ({ encuestaId, data }: { encuestaId: number; data: CreateTemaDTO }) =>
+      temasApi.create(encuestaId, data),
     onSuccess: (_, { encuestaId }) => {
       queryClient.invalidateQueries({
         queryKey: encuestasKeys.temas(encuestaId),
@@ -303,8 +290,7 @@ export function useDeleteTema() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, encuestaId }: { id: number; encuestaId: number }) =>
-      temasApi.delete(id),
+    mutationFn: ({ id, encuestaId }: { id: number; encuestaId: number }) => temasApi.delete(id),
     onSuccess: (_, { encuestaId }) => {
       queryClient.invalidateQueries({
         queryKey: encuestasKeys.temas(encuestaId),
@@ -342,13 +328,8 @@ export function useAddParticipante() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      encuestaId,
-      data,
-    }: {
-      encuestaId: number;
-      data: CreateParticipanteDTO;
-    }) => participantesApi.create(encuestaId, data),
+    mutationFn: ({ encuestaId, data }: { encuestaId: number; data: CreateParticipanteDTO }) =>
+      participantesApi.create(encuestaId, data),
     onSuccess: (_, { encuestaId }) => {
       queryClient.invalidateQueries({
         queryKey: encuestasKeys.participantes(encuestaId),
@@ -422,6 +403,60 @@ export function useCreateRespuesta() {
 }
 
 // ==============================================================================
+// PREGUNTAS CONTEXTO PCI-POAM
+// ==============================================================================
+
+/**
+ * Hook para listar banco de preguntas PCI-POAM
+ */
+export function usePreguntasContexto(filters?: {
+  perfil?: string;
+  capacidad_pci?: string;
+  factor_poam?: string;
+}) {
+  return useQuery({
+    queryKey: [...encuestasKeys.preguntasContexto(), filters],
+    queryFn: () => preguntasContextoApi.list(filters),
+  });
+}
+
+// ==============================================================================
+// COMPARTIR & QR
+// ==============================================================================
+
+/**
+ * Hook para compartir encuesta por email
+ */
+export function useCompartirEmail() {
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: CompartirEmailDTO }) =>
+      encuestasApi.compartirEmail(id, data),
+    onSuccess: (result) => {
+      if (result.success) {
+        toast.success(result.message);
+      } else {
+        toast.warning(result.message);
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(`Error al compartir: ${error.message}`);
+    },
+  });
+}
+
+/**
+ * Hook para obtener QR code de encuesta
+ */
+export function useQrCode(id: number | undefined) {
+  return useQuery({
+    queryKey: encuestasKeys.qrCode(id!),
+    queryFn: () => encuestasApi.getQrCode(id!),
+    enabled: !!id,
+    staleTime: Infinity,
+  });
+}
+
+// ==============================================================================
 // ENCUESTA PÚBLICA
 // ==============================================================================
 
@@ -445,9 +480,7 @@ export function useResponderEncuestaPublica() {
     mutationFn: ({ token, data }: { token: string; data: RespuestasLoteDTO }) =>
       encuestaPublicaApi.responder(token, data),
     onSuccess: (result) => {
-      toast.success(
-        `¡Gracias por participar! ${result.respuestas_creadas} respuestas registradas`
-      );
+      toast.success(`¡Gracias por participar! ${result.respuestas_creadas} respuestas registradas`);
     },
     onError: (error: Error) => {
       toast.error(`Error al enviar respuestas: ${error.message}`);

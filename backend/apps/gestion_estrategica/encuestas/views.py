@@ -1,9 +1,10 @@
 """
-Views para Encuestas Colaborativas DOFA
-========================================
+Views para Encuestas Colaborativas DOFA + PCI-POAM
+===================================================
 
 ViewSets para gestión de encuestas, temas, participantes y respuestas.
-Incluye endpoints públicos para diligenciamiento anónimo.
+Incluye endpoints públicos para diligenciamiento anónimo,
+banco de preguntas PCI-POAM, compartir y QR.
 """
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -14,16 +15,19 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django.shortcuts import get_object_or_404
 from django.db import transaction
+from django.http import HttpResponse
 from django.utils import timezone
 
 from apps.core.mixins import StandardViewSetMixin
 from .models import (
+    PreguntaContexto,
     EncuestaDofa,
     TemaEncuesta,
     ParticipanteEncuesta,
     RespuestaEncuesta
 )
 from .serializers import (
+    PreguntaContextoSerializer,
     EncuestaDofaListSerializer,
     EncuestaDofaDetailSerializer,
     EncuestaDofaCreateSerializer,
@@ -36,18 +40,39 @@ from .serializers import (
     RespuestaEncuestaSerializer,
     RespuestaEncuestaCreateSerializer,
     RespuestasLoteSerializer,
-    EstadisticasEncuestaSerializer
+    EstadisticasEncuestaSerializer,
+    CompartirEmailSerializer
 )
 from .services import EncuestaService
 
 
+class PreguntaContextoViewSet(StandardViewSetMixin, viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet de solo lectura para banco de preguntas PCI-POAM.
+
+    Endpoints:
+    - GET /preguntas-contexto/ - Listar todas las preguntas
+    - GET /preguntas-contexto/{id}/ - Detalle de pregunta
+    """
+
+    queryset = PreguntaContexto.objects.filter(
+        is_active=True
+    ).order_by('orden')
+    serializer_class = PreguntaContextoSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = None
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ['perfil', 'capacidad_pci', 'factor_poam', 'clasificacion_esperada']
+    search_fields = ['texto', 'codigo']
+
+
 class EncuestaDofaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     """
-    ViewSet para gestionar Encuestas DOFA.
+    ViewSet para gestionar Encuestas DOFA + PCI-POAM.
 
     Endpoints:
     - GET /encuestas/ - Listar encuestas
-    - POST /encuestas/ - Crear encuesta
+    - POST /encuestas/ - Crear encuesta (libre o PCI-POAM)
     - GET /encuestas/{id}/ - Detalle de encuesta
     - PUT/PATCH /encuestas/{id}/ - Actualizar encuesta
     - DELETE /encuestas/{id}/ - Eliminar encuesta
@@ -56,15 +81,17 @@ class EncuestaDofaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     - POST /encuestas/{id}/enviar-notificaciones/ - Enviar invitaciones
     - POST /encuestas/{id}/enviar-recordatorio/ - Enviar recordatorio
     - GET /encuestas/{id}/estadisticas/ - Ver estadísticas
-    - POST /encuestas/{id}/consolidar/ - Consolidar en DOFA
+    - POST /encuestas/{id}/consolidar/ - Consolidar en DOFA + PESTEL
+    - POST /encuestas/{id}/compartir-email/ - Compartir por email
+    - GET /encuestas/{id}/qr-code/ - Generar QR code PNG
     """
 
     queryset = EncuestaDofa.objects.select_related(
-        'analisis_dofa', 'responsable'
+        'analisis_dofa', 'analisis_pestel', 'responsable'
     ).prefetch_related('temas', 'participantes').all()
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ['estado', 'es_publica', 'analisis_dofa']
+    filterset_fields = ['estado', 'es_publica', 'analisis_dofa', 'tipo_encuesta']
     search_fields = ['titulo', 'descripcion']
     ordering_fields = ['fecha_inicio', 'fecha_cierre', 'created_at']
     ordering = ['-created_at']
@@ -163,7 +190,7 @@ class EncuestaDofaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def consolidar(self, request, pk=None):
-        """Consolida las respuestas en factores DOFA"""
+        """Consolida las respuestas en factores DOFA (y PESTEL para PCI-POAM)"""
         encuesta = self.get_object()
 
         umbral = request.data.get('umbral_consenso', 0.6)
@@ -178,11 +205,57 @@ class EncuestaDofaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        resultado = EncuestaService.consolidar_en_dofa(encuesta, umbral)
+        resultado = EncuestaService.consolidar(encuesta, umbral)
 
         if resultado['success']:
             return Response(resultado)
         return Response(resultado, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'], url_path='compartir-email')
+    def compartir_email(self, request, pk=None):
+        """Envía enlace de encuesta a emails externos"""
+        encuesta = self.get_object()
+
+        serializer = CompartirEmailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        resultado = EncuestaService.compartir_por_email(
+            encuesta=encuesta,
+            emails=serializer.validated_data['emails'],
+            mensaje_personalizado=serializer.validated_data.get(
+                'mensaje_personalizado', ''
+            ),
+            request=request
+        )
+
+        if resultado['success']:
+            return Response(resultado)
+        return Response(resultado, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['get'], url_path='qr-code')
+    def qr_code(self, request, pk=None):
+        """Genera QR code PNG con el enlace público de la encuesta"""
+        encuesta = self.get_object()
+
+        qr_buffer = EncuestaService.generar_qr_code(
+            encuesta=encuesta,
+            request=request
+        )
+
+        if qr_buffer is None:
+            return Response(
+                {'detail': 'No se pudo generar el QR code'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        response = HttpResponse(
+            qr_buffer.getvalue(),
+            content_type='image/png'
+        )
+        response['Content-Disposition'] = (
+            f'inline; filename="encuesta-{encuesta.pk}-qr.png"'
+        )
+        return response
 
 
 class TemaEncuestaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):

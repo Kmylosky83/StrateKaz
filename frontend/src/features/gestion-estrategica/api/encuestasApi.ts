@@ -12,6 +12,7 @@
 import { apiClient } from '@/lib/api-client';
 import type { PaginatedResponse } from '@/types';
 import type {
+  PreguntaContexto,
   EncuestaDofa,
   EncuestaListItem,
   CreateEncuestaDTO,
@@ -30,6 +31,8 @@ import type {
   EstadisticasEncuesta,
   ConsolidarResultado,
   EnviarNotificacionesResultado,
+  CompartirEmailDTO,
+  CompartirEmailResultado,
 } from '../types/encuestas.types';
 
 // BASE_URL sin prefijo /api porque apiClient.baseURL ya lo incluye
@@ -61,6 +64,9 @@ export const encuestasApi = {
     if (filters?.es_publica !== undefined) {
       params.append('es_publica', filters.es_publica.toString());
     }
+    if (filters?.tipo_encuesta) {
+      params.append('tipo_encuesta', filters.tipo_encuesta);
+    }
     if (filters?.search) {
       params.append('search', filters.search);
     }
@@ -75,9 +81,7 @@ export const encuestasApi = {
    * Obtener detalle de encuesta
    */
   get: async (id: number): Promise<EncuestaDofa> => {
-    const response = await apiClient.get<EncuestaDofa>(
-      `${BASE_URL}/encuestas/${id}/`
-    );
+    const response = await apiClient.get<EncuestaDofa>(`${BASE_URL}/encuestas/${id}/`);
     return response.data;
   },
 
@@ -85,24 +89,15 @@ export const encuestasApi = {
    * Crear encuesta
    */
   create: async (data: CreateEncuestaDTO): Promise<EncuestaDofa> => {
-    const response = await apiClient.post<EncuestaDofa>(
-      `${BASE_URL}/encuestas/`,
-      data
-    );
+    const response = await apiClient.post<EncuestaDofa>(`${BASE_URL}/encuestas/`, data);
     return response.data;
   },
 
   /**
    * Actualizar encuesta
    */
-  update: async (
-    id: number,
-    data: UpdateEncuestaDTO
-  ): Promise<EncuestaDofa> => {
-    const response = await apiClient.patch<EncuestaDofa>(
-      `${BASE_URL}/encuestas/${id}/`,
-      data
-    );
+  update: async (id: number, data: UpdateEncuestaDTO): Promise<EncuestaDofa> => {
+    const response = await apiClient.patch<EncuestaDofa>(`${BASE_URL}/encuestas/${id}/`, data);
     return response.data;
   },
 
@@ -136,9 +131,7 @@ export const encuestasApi = {
   /**
    * Enviar notificaciones a participantes
    */
-  enviarNotificaciones: async (
-    id: number
-  ): Promise<EnviarNotificacionesResultado> => {
+  enviarNotificaciones: async (id: number): Promise<EnviarNotificacionesResultado> => {
     const response = await apiClient.post<EnviarNotificacionesResultado>(
       `${BASE_URL}/encuestas/${id}/enviar-notificaciones/`
     );
@@ -148,9 +141,7 @@ export const encuestasApi = {
   /**
    * Enviar recordatorio a participantes que no han respondido
    */
-  enviarRecordatorio: async (
-    id: number
-  ): Promise<EnviarNotificacionesResultado> => {
+  enviarRecordatorio: async (id: number): Promise<EnviarNotificacionesResultado> => {
     const response = await apiClient.post<EnviarNotificacionesResultado>(
       `${BASE_URL}/encuestas/${id}/enviar-recordatorio/`
     );
@@ -168,17 +159,61 @@ export const encuestasApi = {
   },
 
   /**
-   * Consolidar respuestas en factores DOFA
+   * Consolidar respuestas en factores DOFA (y PESTEL para PCI-POAM)
    */
-  consolidar: async (
-    id: number,
-    umbralConsenso = 0.6
-  ): Promise<ConsolidarResultado> => {
+  consolidar: async (id: number, umbralConsenso = 0.6): Promise<ConsolidarResultado> => {
     const response = await apiClient.post<ConsolidarResultado>(
       `${BASE_URL}/encuestas/${id}/consolidar/`,
       { umbral_consenso: umbralConsenso }
     );
     return response.data;
+  },
+
+  /**
+   * Compartir encuesta por email
+   */
+  compartirEmail: async (id: number, data: CompartirEmailDTO): Promise<CompartirEmailResultado> => {
+    const response = await apiClient.post<CompartirEmailResultado>(
+      `${BASE_URL}/encuestas/${id}/compartir-email/`,
+      data
+    );
+    return response.data;
+  },
+
+  /**
+   * Obtener QR code como blob URL
+   */
+  getQrCode: async (id: number): Promise<string> => {
+    const response = await apiClient.get(`${BASE_URL}/encuestas/${id}/qr-code/`, {
+      responseType: 'blob',
+    });
+    return URL.createObjectURL(response.data);
+  },
+};
+
+// ==============================================================================
+// PREGUNTAS CONTEXTO PCI-POAM
+// ==============================================================================
+
+export const preguntasContextoApi = {
+  /**
+   * Listar banco de preguntas PCI-POAM (sin paginación)
+   */
+  list: async (filters?: {
+    perfil?: string;
+    capacidad_pci?: string;
+    factor_poam?: string;
+  }): Promise<PreguntaContexto[]> => {
+    const params = new URLSearchParams();
+    if (filters?.perfil) params.append('perfil', filters.perfil);
+    if (filters?.capacidad_pci) params.append('capacidad_pci', filters.capacidad_pci);
+    if (filters?.factor_poam) params.append('factor_poam', filters.factor_poam);
+
+    const query = params.toString();
+    const response = await apiClient.get<PreguntaContexto[]>(
+      `${BASE_URL}/preguntas-contexto/${query ? `?${query}` : ''}`
+    );
+    return Array.isArray(response.data) ? response.data : ((response.data as any)?.results ?? []);
   },
 };
 
@@ -209,28 +244,19 @@ export const temasApi = {
   /**
    * Crear tema
    */
-  create: async (
-    encuestaId: number,
-    data: CreateTemaDTO
-  ): Promise<TemaEncuesta> => {
-    const response = await apiClient.post<TemaEncuesta>(
-      `${BASE_URL}/temas/`,
-      { ...data, encuesta: encuestaId }
-    );
+  create: async (encuestaId: number, data: CreateTemaDTO): Promise<TemaEncuesta> => {
+    const response = await apiClient.post<TemaEncuesta>(`${BASE_URL}/temas/`, {
+      ...data,
+      encuesta: encuestaId,
+    });
     return response.data;
   },
 
   /**
    * Actualizar tema
    */
-  update: async (
-    id: number,
-    data: Partial<CreateTemaDTO>
-  ): Promise<TemaEncuesta> => {
-    const response = await apiClient.patch<TemaEncuesta>(
-      `${BASE_URL}/temas/${id}/`,
-      data
-    );
+  update: async (id: number, data: Partial<CreateTemaDTO>): Promise<TemaEncuesta> => {
+    const response = await apiClient.patch<TemaEncuesta>(`${BASE_URL}/temas/${id}/`, data);
     return response.data;
   },
 
@@ -282,10 +308,10 @@ export const participantesApi = {
     encuestaId: number,
     data: CreateParticipanteDTO
   ): Promise<ParticipanteEncuesta> => {
-    const response = await apiClient.post<ParticipanteEncuesta>(
-      `${BASE_URL}/participantes/`,
-      { ...data, encuesta: encuestaId }
-    );
+    const response = await apiClient.post<ParticipanteEncuesta>(`${BASE_URL}/participantes/`, {
+      ...data,
+      encuesta: encuestaId,
+    });
     return response.data;
   },
 
@@ -337,10 +363,7 @@ export const respuestasApi = {
    * Crear respuesta (usuario autenticado)
    */
   create: async (data: CreateRespuestaDTO): Promise<RespuestaEncuesta> => {
-    const response = await apiClient.post<RespuestaEncuesta>(
-      `${BASE_URL}/respuestas/`,
-      data
-    );
+    const response = await apiClient.post<RespuestaEncuesta>(`${BASE_URL}/respuestas/`, data);
     return response.data;
   },
 };
@@ -354,9 +377,7 @@ export const encuestaPublicaApi = {
    * Obtener encuesta pública por token
    */
   get: async (token: string): Promise<EncuestaPublica> => {
-    const response = await apiClient.get<EncuestaPublica>(
-      `${BASE_URL}/publica/${token}/`
-    );
+    const response = await apiClient.get<EncuestaPublica>(`${BASE_URL}/publica/${token}/`);
     return response.data;
   },
 
@@ -378,6 +399,7 @@ export const encuestaPublicaApi = {
 // Export default con todos los métodos
 export default {
   encuestas: encuestasApi,
+  preguntasContexto: preguntasContextoApi,
   temas: temasApi,
   participantes: participantesApi,
   respuestas: respuestasApi,

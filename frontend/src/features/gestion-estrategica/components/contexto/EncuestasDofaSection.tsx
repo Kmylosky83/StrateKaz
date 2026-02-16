@@ -25,8 +25,12 @@ import {
   Link2,
   Play,
   Square,
-  Eye,
+  FileText,
+  Mail,
+  QrCode,
+  Merge,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Badge } from '@/components/common/Badge';
 import { Button } from '@/components/common/Button';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -45,9 +49,17 @@ import {
   useActivarEncuesta,
   useCerrarEncuesta,
   useEnviarNotificacionesEncuesta,
+  useConsolidarEncuesta,
+  useCompartirEmail,
 } from '../../hooks/useEncuestas';
-import type { EncuestaDofa, EncuestaFilters, EstadoEncuesta } from '../../types/encuestas.types';
-import { ESTADO_ENCUESTA_CONFIG } from '../../types/encuestas.types';
+import { encuestasApi } from '../../api/encuestasApi';
+import type {
+  EncuestaDofa,
+  EncuestaFilters,
+  EstadoEncuesta,
+  TipoEncuesta,
+} from '../../types/encuestas.types';
+import { ESTADO_ENCUESTA_CONFIG, TIPO_ENCUESTA_CONFIG } from '../../types/encuestas.types';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { Modules, Sections } from '@/constants/permissions';
@@ -84,7 +96,14 @@ export const EncuestasDofaSection = ({ triggerNewForm }: EncuestasDofaSectionPro
   const [deleteConfirm, setDeleteConfirm] = useState<EncuestaDofa | null>(null);
   const [activarConfirm, setActivarConfirm] = useState<EncuestaDofa | null>(null);
   const [cerrarConfirm, setCerrarConfirm] = useState<EncuestaDofa | null>(null);
-  const [alertMessage, setAlertMessage] = useState<{ type: 'success' | 'warning' | 'error'; message: string } | null>(null);
+  const [alertMessage, setAlertMessage] = useState<{
+    type: 'success' | 'warning' | 'error';
+    message: string;
+  } | null>(null);
+  const [consolidarConfirm, setConsolidarConfirm] = useState<EncuestaDofa | null>(null);
+  const [emailModalOpen, setEmailModalOpen] = useState<EncuestaDofa | null>(null);
+  const [emailInput, setEmailInput] = useState('');
+  const [defaultTipoEncuesta, setDefaultTipoEncuesta] = useState<TipoEncuesta | undefined>();
 
   // RBAC: Verificar permisos del usuario
   const { canDo } = usePermissions();
@@ -97,11 +116,13 @@ export const EncuestasDofaSection = ({ triggerNewForm }: EncuestasDofaSectionPro
   const colorClasses = getModuleColorClasses(moduleColor as ModuleColor);
 
   // Queries y mutations
-  const { data, isLoading, error } = useEncuestas({ ...filters, page_size: 50 });
+  const { data, isLoading, error } = useEncuestas({ ...filters } as any);
   const deleteMutation = useDeleteEncuesta();
   const activarMutation = useActivarEncuesta();
   const cerrarMutation = useCerrarEncuesta();
   const enviarNotificacionesMutation = useEnviarNotificacionesEncuesta();
+  const consolidarMutation = useConsolidarEncuesta();
+  const compartirEmailMutation = useCompartirEmail();
 
   // Calcular estadisticas para StatsGrid
   const encuestaStats: StatItem[] = useMemo(() => {
@@ -140,9 +161,10 @@ export const EncuestasDofaSection = ({ triggerNewForm }: EncuestasDofaSectionPro
   }, [data]);
 
   // Handlers
-  const handleCreate = () => {
+  const handleCreate = (tipo?: TipoEncuesta) => {
     setSelectedEncuesta(null);
     setIsCreating(true);
+    setDefaultTipoEncuesta(tipo);
     setIsModalOpen(true);
   };
 
@@ -191,7 +213,10 @@ export const EncuestasDofaSection = ({ triggerNewForm }: EncuestasDofaSectionPro
     if (activarConfirm) {
       await activarMutation.mutateAsync(activarConfirm.id);
       setActivarConfirm(null);
-      setAlertMessage({ type: 'success', message: 'Encuesta activada. Los participantes pueden responder.' });
+      setAlertMessage({
+        type: 'success',
+        message: 'Encuesta activada. Los participantes pueden responder.',
+      });
     }
   };
 
@@ -203,7 +228,10 @@ export const EncuestasDofaSection = ({ triggerNewForm }: EncuestasDofaSectionPro
     if (cerrarConfirm) {
       await cerrarMutation.mutateAsync(cerrarConfirm.id);
       setCerrarConfirm(null);
-      setAlertMessage({ type: 'success', message: 'Encuesta cerrada. Ya no se aceptan respuestas.' });
+      setAlertMessage({
+        type: 'success',
+        message: 'Encuesta cerrada. Ya no se aceptan respuestas.',
+      });
     }
   };
 
@@ -219,7 +247,53 @@ export const EncuestasDofaSection = ({ triggerNewForm }: EncuestasDofaSectionPro
   const handleCopyLink = (encuesta: EncuestaDofa) => {
     if (encuesta.enlace_publico) {
       navigator.clipboard.writeText(window.location.origin + encuesta.enlace_publico);
-      setAlertMessage({ type: 'success', message: 'Enlace copiado al portapapeles.' });
+      toast.success('Enlace copiado al portapapeles');
+    }
+  };
+
+  const handleConsolidar = (encuesta: EncuestaDofa) => {
+    setConsolidarConfirm(encuesta);
+  };
+
+  const handleConsolidarConfirm = async () => {
+    if (consolidarConfirm) {
+      await consolidarMutation.mutateAsync({ id: consolidarConfirm.id });
+      setConsolidarConfirm(null);
+    }
+  };
+
+  const handleCompartirEmail = (encuesta: EncuestaDofa) => {
+    setEmailModalOpen(encuesta);
+    setEmailInput('');
+  };
+
+  const handleEnviarEmails = async () => {
+    if (!emailModalOpen || !emailInput.trim()) return;
+    const emails = emailInput
+      .split(',')
+      .map((e) => e.trim())
+      .filter(Boolean);
+    if (emails.length === 0) return;
+
+    await compartirEmailMutation.mutateAsync({
+      id: emailModalOpen.id,
+      data: { emails },
+    });
+    setEmailModalOpen(null);
+    setEmailInput('');
+  };
+
+  const handleDescargarQr = async (encuesta: EncuestaDofa) => {
+    try {
+      const blobUrl = await encuestasApi.getQrCode(encuesta.id);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `encuesta-${encuesta.id}-qr.png`;
+      a.click();
+      URL.revokeObjectURL(blobUrl);
+      toast.success('QR descargado');
+    } catch {
+      toast.error('Error al generar QR');
     }
   };
 
@@ -227,6 +301,7 @@ export const EncuestasDofaSection = ({ triggerNewForm }: EncuestasDofaSectionPro
     setIsModalOpen(false);
     setSelectedEncuesta(null);
     setIsCreating(false);
+    setDefaultTipoEncuesta(undefined);
   };
 
   // Renderizar badge de estado
@@ -319,10 +394,16 @@ export const EncuestasDofaSection = ({ triggerNewForm }: EncuestasDofaSectionPro
               className="w-40"
             />
             {canCreate && (
-              <Button onClick={handleCreate} variant="primary" size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Nueva Encuesta
-              </Button>
+              <>
+                <Button onClick={() => handleCreate('pci_poam')} variant="primary" size="sm">
+                  <FileText className="h-4 w-4 mr-2" />
+                  PCI-POAM
+                </Button>
+                <Button onClick={() => handleCreate('libre')} variant="outline" size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Libre
+                </Button>
+              </>
             )}
           </div>
         }
@@ -338,10 +419,16 @@ export const EncuestasDofaSection = ({ triggerNewForm }: EncuestasDofaSectionPro
           description="Cree una encuesta para recopilar opiniones de colaboradores sobre el contexto organizacional."
           action={
             canCreate && (
-              <Button onClick={handleCreate} variant="primary">
-                <Plus className="h-4 w-4 mr-2" />
-                Crear Primera Encuesta
-              </Button>
+              <div className="flex gap-3">
+                <Button onClick={() => handleCreate('pci_poam')} variant="primary">
+                  <FileText className="h-4 w-4 mr-2" />
+                  Crear PCI-POAM
+                </Button>
+                <Button onClick={() => handleCreate('libre')} variant="outline">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Encuesta Libre
+                </Button>
+              </div>
             )
           }
         />
@@ -353,8 +440,15 @@ export const EncuestasDofaSection = ({ triggerNewForm }: EncuestasDofaSectionPro
               header: 'Encuesta',
               render: (encuesta: EncuestaDofa) => (
                 <div>
-                  <div className="font-medium text-gray-900 dark:text-gray-100">
-                    {encuesta.titulo}
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-gray-900 dark:text-gray-100">
+                      {encuesta.titulo}
+                    </span>
+                    {encuesta.tipo_encuesta === 'pci_poam' && (
+                      <Badge variant="info" size="sm">
+                        PCI-POAM
+                      </Badge>
+                    )}
                   </div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">
                     {encuesta.analisis_dofa_nombre || `DOFA #${encuesta.analisis_dofa}`}
@@ -404,24 +498,48 @@ export const EncuestasDofaSection = ({ triggerNewForm }: EncuestasDofaSectionPro
                 <div className="flex items-center justify-end gap-1">
                   {/* Ver resultados */}
                   <Tooltip content="Ver resultados">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleView(encuesta)}
-                    >
+                    <Button variant="ghost" size="sm" onClick={() => handleView(encuesta)}>
                       <BarChart3 className="h-4 w-4" />
                     </Button>
                   </Tooltip>
 
-                  {/* Copiar enlace publico */}
+                  {/* Compartir: Copiar enlace */}
+                  {encuesta.es_publica &&
+                    (encuesta.estado === 'activa' || encuesta.estado === 'borrador') && (
+                      <Tooltip content="Copiar enlace">
+                        <Button variant="ghost" size="sm" onClick={() => handleCopyLink(encuesta)}>
+                          <Link2 className="h-4 w-4" />
+                        </Button>
+                      </Tooltip>
+                    )}
+
+                  {/* Compartir: Email */}
                   {encuesta.es_publica && encuesta.estado === 'activa' && (
-                    <Tooltip content="Copiar enlace">
+                    <Tooltip content="Compartir por email">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleCopyLink(encuesta)}
+                        onClick={() => handleCompartirEmail(encuesta)}
                       >
-                        <Link2 className="h-4 w-4" />
+                        <Mail className="h-4 w-4" />
+                      </Button>
+                    </Tooltip>
+                  )}
+
+                  {/* Compartir: QR */}
+                  {encuesta.es_publica && encuesta.estado === 'activa' && (
+                    <Tooltip content="Descargar QR">
+                      <Button variant="ghost" size="sm" onClick={() => handleDescargarQr(encuesta)}>
+                        <QrCode className="h-4 w-4" />
+                      </Button>
+                    </Tooltip>
+                  )}
+
+                  {/* Consolidar en DOFA/PESTEL */}
+                  {encuesta.estado === 'cerrada' && canEdit && (
+                    <Tooltip content="Consolidar en DOFA">
+                      <Button variant="ghost" size="sm" onClick={() => handleConsolidar(encuesta)}>
+                        <Merge className="h-4 w-4 text-purple-600" />
                       </Button>
                     </Tooltip>
                   )}
@@ -429,11 +547,7 @@ export const EncuestasDofaSection = ({ triggerNewForm }: EncuestasDofaSectionPro
                   {/* Activar encuesta */}
                   {encuesta.estado === 'borrador' && canEdit && (
                     <Tooltip content="Activar encuesta">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleActivar(encuesta)}
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => handleActivar(encuesta)}>
                         <Play className="h-4 w-4 text-green-600" />
                       </Button>
                     </Tooltip>
@@ -442,11 +556,7 @@ export const EncuestasDofaSection = ({ triggerNewForm }: EncuestasDofaSectionPro
                   {/* Cerrar encuesta */}
                   {encuesta.estado === 'activa' && canEdit && (
                     <Tooltip content="Cerrar encuesta">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleCerrar(encuesta)}
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => handleCerrar(encuesta)}>
                         <Square className="h-4 w-4 text-orange-600" />
                       </Button>
                     </Tooltip>
@@ -469,11 +579,7 @@ export const EncuestasDofaSection = ({ triggerNewForm }: EncuestasDofaSectionPro
                   {/* Editar */}
                   {(encuesta.estado === 'borrador' || encuesta.estado === 'activa') && canEdit && (
                     <Tooltip content="Editar">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(encuesta)}
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(encuesta)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
                     </Tooltip>
@@ -538,11 +644,51 @@ export const EncuestasDofaSection = ({ triggerNewForm }: EncuestasDofaSectionPro
         isLoading={cerrarMutation.isPending}
       />
 
+      {/* Dialogo de confirmacion para consolidar */}
+      <ConfirmDialog
+        isOpen={!!consolidarConfirm}
+        title="Consolidar Encuesta"
+        message={`Se consolidaran las respuestas de "${consolidarConfirm?.titulo}" en factores DOFA${consolidarConfirm?.tipo_encuesta === 'pci_poam' ? ' y PESTEL' : ''}. Desea continuar?`}
+        confirmText="Consolidar"
+        cancelText="Cancelar"
+        variant="info"
+        onConfirm={handleConsolidarConfirm}
+        onClose={() => setConsolidarConfirm(null)}
+        isLoading={consolidarMutation.isPending}
+      />
+
+      {/* Modal para compartir por email */}
+      {emailModalOpen && (
+        <ConfirmDialog
+          isOpen={!!emailModalOpen}
+          title="Compartir por Email"
+          message={
+            <div className="space-y-3">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Ingrese los emails separados por coma:
+              </p>
+              <Input
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                placeholder="email1@ejemplo.com, email2@ejemplo.com"
+              />
+            </div>
+          }
+          confirmText="Enviar"
+          cancelText="Cancelar"
+          variant="info"
+          onConfirm={handleEnviarEmails}
+          onClose={() => setEmailModalOpen(null)}
+          isLoading={compartirEmailMutation.isPending}
+        />
+      )}
+
       {/* Modal de formulario */}
       <EncuestaFormModal
         encuesta={isCreating ? null : selectedEncuesta}
         isOpen={isModalOpen}
         onClose={handleCloseModal}
+        defaultTipoEncuesta={defaultTipoEncuesta}
       />
     </div>
   );

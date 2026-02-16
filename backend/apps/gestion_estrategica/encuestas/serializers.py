@@ -1,17 +1,43 @@
 """
-Serializers para Encuestas Colaborativas DOFA
-==============================================
+Serializers para Encuestas de Contexto Organizacional
+======================================================
 
-Serializers para CRUD de encuestas y respuestas,
+Serializers para CRUD de encuestas PCI-POAM y libres,
 incluyendo serializers públicos para acceso anónimo.
 """
 from rest_framework import serializers
 from .models import (
+    PreguntaContexto,
     EncuestaDofa,
     TemaEncuesta,
     ParticipanteEncuesta,
     RespuestaEncuesta
 )
+
+
+# ==============================================================================
+# SERIALIZERS PARA PREGUNTAS PCI-POAM
+# ==============================================================================
+
+class PreguntaContextoSerializer(serializers.ModelSerializer):
+    """Serializer completo para preguntas del banco PCI-POAM"""
+    perfil_display = serializers.CharField(source='get_perfil_display', read_only=True)
+    capacidad_pci_display = serializers.CharField(source='get_capacidad_pci_display', read_only=True)
+    factor_poam_display = serializers.CharField(source='get_factor_poam_display', read_only=True)
+    clasificacion_esperada_display = serializers.CharField(
+        source='get_clasificacion_esperada_display', read_only=True
+    )
+
+    class Meta:
+        model = PreguntaContexto
+        fields = [
+            'id', 'codigo', 'texto', 'perfil', 'perfil_display',
+            'capacidad_pci', 'capacidad_pci_display',
+            'factor_poam', 'factor_poam_display',
+            'clasificacion_esperada', 'clasificacion_esperada_display',
+            'dimension_pestel', 'orden', 'es_sistema', 'is_active',
+        ]
+        read_only_fields = ['id']
 
 
 # ==============================================================================
@@ -24,11 +50,18 @@ class TemaEncuestaSerializer(serializers.ModelSerializer):
     total_votos_fortaleza = serializers.IntegerField(read_only=True)
     total_votos_debilidad = serializers.IntegerField(read_only=True)
     clasificacion_consenso = serializers.CharField(read_only=True)
+    pregunta_codigo = serializers.CharField(
+        source='pregunta_contexto.codigo', read_only=True
+    )
+    clasificacion_esperada = serializers.CharField(
+        source='pregunta_contexto.clasificacion_esperada', read_only=True
+    )
 
     class Meta:
         model = TemaEncuesta
         fields = [
             'id', 'encuesta', 'area', 'area_name',
+            'pregunta_contexto', 'pregunta_codigo', 'clasificacion_esperada',
             'titulo', 'descripcion', 'orden',
             'total_votos_fortaleza', 'total_votos_debilidad',
             'clasificacion_consenso',
@@ -48,10 +81,22 @@ class TemaEncuestaCreateSerializer(serializers.ModelSerializer):
 class TemaEncuestaPublicoSerializer(serializers.ModelSerializer):
     """Serializer público para mostrar temas (sin datos sensibles)"""
     area_name = serializers.CharField(source='area.name', read_only=True)
+    clasificacion_esperada = serializers.CharField(
+        source='pregunta_contexto.clasificacion_esperada', read_only=True
+    )
+    capacidad_pci = serializers.CharField(
+        source='pregunta_contexto.capacidad_pci', read_only=True
+    )
+    factor_poam = serializers.CharField(
+        source='pregunta_contexto.factor_poam', read_only=True
+    )
 
     class Meta:
         model = TemaEncuesta
-        fields = ['id', 'titulo', 'descripcion', 'area_name', 'orden']
+        fields = [
+            'id', 'titulo', 'descripcion', 'area_name', 'orden',
+            'clasificacion_esperada', 'capacidad_pci', 'factor_poam',
+        ]
 
 
 # ==============================================================================
@@ -162,7 +207,6 @@ class RespuestaEncuestaCreateSerializer(serializers.ModelSerializer):
             )
 
         if request and request.user.is_authenticated:
-            # Verificar si ya respondió
             existe = RespuestaEncuesta.objects.filter(
                 tema=tema,
                 respondente=request.user
@@ -219,6 +263,7 @@ class EncuestaDofaListSerializer(serializers.ModelSerializer):
         source='responsable.get_full_name', read_only=True
     )
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
+    tipo_encuesta_display = serializers.CharField(source='get_tipo_encuesta_display', read_only=True)
     analisis_dofa_nombre = serializers.CharField(
         source='analisis_dofa.nombre', read_only=True
     )
@@ -230,7 +275,9 @@ class EncuestaDofaListSerializer(serializers.ModelSerializer):
         model = EncuestaDofa
         fields = [
             'id', 'titulo', 'descripcion',
+            'tipo_encuesta', 'tipo_encuesta_display',
             'analisis_dofa', 'analisis_dofa_nombre',
+            'analisis_pestel',
             'estado', 'estado_display',
             'es_publica', 'fecha_inicio', 'fecha_cierre',
             'responsable', 'responsable_nombre',
@@ -250,6 +297,7 @@ class EncuestaDofaDetailSerializer(serializers.ModelSerializer):
         source='responsable.get_full_name', read_only=True
     )
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
+    tipo_encuesta_display = serializers.CharField(source='get_tipo_encuesta_display', read_only=True)
     analisis_dofa_nombre = serializers.CharField(
         source='analisis_dofa.nombre', read_only=True
     )
@@ -263,7 +311,9 @@ class EncuestaDofaDetailSerializer(serializers.ModelSerializer):
         model = EncuestaDofa
         fields = [
             'id', 'titulo', 'descripcion',
+            'tipo_encuesta', 'tipo_encuesta_display',
             'analisis_dofa', 'analisis_dofa_nombre',
+            'analisis_pestel',
             'token_publico', 'es_publica', 'enlace_publico',
             'requiere_justificacion',
             'fecha_inicio', 'fecha_cierre',
@@ -278,14 +328,15 @@ class EncuestaDofaDetailSerializer(serializers.ModelSerializer):
 
 
 class EncuestaDofaCreateSerializer(serializers.ModelSerializer):
-    """Serializer para crear encuesta"""
+    """Serializer para crear encuesta (libre o PCI-POAM)"""
     temas = TemaEncuestaCreateSerializer(many=True, required=False)
     participantes = ParticipanteEncuestaCreateSerializer(many=True, required=False)
 
     class Meta:
         model = EncuestaDofa
         fields = [
-            'analisis_dofa', 'titulo', 'descripcion',
+            'tipo_encuesta', 'analisis_dofa', 'analisis_pestel',
+            'titulo', 'descripcion',
             'es_publica', 'requiere_justificacion',
             'fecha_inicio', 'fecha_cierre',
             'temas', 'participantes'
@@ -303,7 +354,7 @@ class EncuestaDofaCreateSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        from apps.gestion_estrategica.configuracion.models import EmpresaConfig
+        from apps.core.base_models.mixins import get_tenant_empresa
 
         temas_data = validated_data.pop('temas', [])
         participantes_data = validated_data.pop('participantes', [])
@@ -311,21 +362,36 @@ class EncuestaDofaCreateSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             validated_data['responsable'] = request.user
-            # Obtener la empresa del sistema (single-tenant)
-            empresa = EmpresaConfig.objects.first()
-            if empresa:
-                validated_data['empresa'] = empresa
+
+        empresa = get_tenant_empresa()
+        if empresa:
+            validated_data['empresa'] = empresa
 
         encuesta = EncuestaDofa.objects.create(**validated_data)
 
-        # Crear temas
-        for i, tema_data in enumerate(temas_data):
-            TemaEncuesta.objects.create(
-                encuesta=encuesta,
-                empresa=encuesta.empresa,
-                orden=tema_data.get('orden', i),
-                **tema_data
-            )
+        # Para PCI-POAM: auto-generar temas desde banco de preguntas
+        if encuesta.tipo_encuesta == EncuestaDofa.TipoEncuesta.PCI_POAM:
+            preguntas = PreguntaContexto.objects.filter(
+                is_active=True
+            ).order_by('orden')
+
+            for pregunta in preguntas:
+                TemaEncuesta.objects.create(
+                    encuesta=encuesta,
+                    empresa=encuesta.empresa,
+                    pregunta_contexto=pregunta,
+                    titulo=pregunta.texto,
+                    orden=pregunta.orden,
+                )
+        else:
+            # Para libre: crear temas manuales
+            for i, tema_data in enumerate(temas_data):
+                TemaEncuesta.objects.create(
+                    encuesta=encuesta,
+                    empresa=encuesta.empresa,
+                    orden=tema_data.get('orden', i),
+                    **tema_data
+                )
 
         # Crear participantes
         for participante_data in participantes_data:
@@ -345,8 +411,23 @@ class EncuestaDofaUpdateSerializer(serializers.ModelSerializer):
         fields = [
             'titulo', 'descripcion',
             'es_publica', 'requiere_justificacion',
-            'fecha_inicio', 'fecha_cierre'
+            'fecha_inicio', 'fecha_cierre',
+            'analisis_pestel',
         ]
+
+
+# ==============================================================================
+# SERIALIZERS PARA COMPARTIR
+# ==============================================================================
+
+class CompartirEmailSerializer(serializers.Serializer):
+    """Serializer para compartir encuesta por email"""
+    emails = serializers.ListField(
+        child=serializers.EmailField(),
+        min_length=1,
+        max_length=50,
+    )
+    mensaje_personalizado = serializers.CharField(required=False, allow_blank=True)
 
 
 # ==============================================================================
@@ -357,11 +438,13 @@ class EncuestaPublicaSerializer(serializers.ModelSerializer):
     """Serializer para mostrar encuesta pública (sin datos sensibles)"""
     temas = TemaEncuestaPublicoSerializer(many=True, read_only=True)
     esta_vigente = serializers.BooleanField(read_only=True)
+    tipo_encuesta = serializers.CharField(read_only=True)
 
     class Meta:
         model = EncuestaDofa
         fields = [
             'id', 'titulo', 'descripcion',
+            'tipo_encuesta',
             'requiere_justificacion',
             'fecha_inicio', 'fecha_cierre',
             'esta_vigente', 'temas'
@@ -373,6 +456,7 @@ class EstadisticasEncuestaSerializer(serializers.Serializer):
     encuesta_id = serializers.IntegerField()
     titulo = serializers.CharField()
     estado = serializers.CharField()
+    tipo_encuesta = serializers.CharField()
     fecha_inicio = serializers.DateTimeField()
     fecha_cierre = serializers.DateTimeField()
     total_invitados = serializers.IntegerField()

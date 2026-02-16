@@ -1,23 +1,16 @@
 /**
- * Modal para crear/editar Encuestas DOFA Colaborativas
+ * Modal para crear/editar Encuestas DOFA + PCI-POAM
  *
- * Formulario completo para gestion de encuestas:
- * - Datos basicos (titulo, descripcion, fechas)
- * - Configuracion (publica/privada, requiere justificacion)
- * - Temas a evaluar (dinamicos)
- * - Participantes (usuarios, areas o cargos)
+ * Soporta dos modos:
+ * - Libre: preguntas manuales (F/D)
+ * - PCI-POAM: 75 preguntas estandar auto-cargadas (F/D + O/A)
  *
- * Usa Design System:
- * - BaseModal para el contenedor
- * - Input, Select, Textarea, Switch para formulario
- * - Button, Badge para acciones y estados
- * - Tabs para organizar secciones
- *
- * Enlace publico:
- * - Cuando es_publica=true, se genera token_publico automatico
- * - El enlace se muestra y puede copiarse
+ * Para PCI-POAM:
+ * - Tab "Temas" muestra preview agrupado por capacidad/factor (read-only)
+ * - Temas se auto-generan al crear
+ * - Permite vincular analisis PESTEL ademas de DOFA
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   ClipboardList,
   Plus,
@@ -29,6 +22,7 @@ import {
   Link2,
   Copy,
   Check,
+  FileText,
 } from 'lucide-react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
@@ -48,8 +42,9 @@ import {
   useParticipantes,
   useAddParticipante,
   useDeleteParticipante,
+  usePreguntasContexto,
 } from '../../hooks/useEncuestas';
-import { useAnalisisDofa } from '../../hooks/useContexto';
+import { useAnalisisDofa, useAnalisisPestel } from '../../hooks/useContexto';
 import { useAreas } from '../../hooks/useAreas';
 import { useColaboradoresActivos } from '@/features/talent-hub/hooks/useColaboradores';
 import { useCargos } from '@/features/configuracion/hooks/useCargos';
@@ -62,6 +57,8 @@ import type {
   ParticipanteEncuesta,
   CreateParticipanteDTO,
   TipoParticipante,
+  TipoEncuesta,
+  PreguntaContexto,
 } from '../../types/encuestas.types';
 
 // =============================================================================
@@ -72,10 +69,13 @@ interface EncuestaFormModalProps {
   encuesta: EncuestaDofa | null;
   isOpen: boolean;
   onClose: () => void;
+  defaultTipoEncuesta?: TipoEncuesta;
 }
 
 interface FormData {
+  tipo_encuesta: TipoEncuesta;
   analisis_dofa: string;
+  analisis_pestel: string;
   titulo: string;
   descripcion: string;
   es_publica: boolean;
@@ -89,18 +89,22 @@ interface FormData {
 // =============================================================================
 
 const defaultFormData: FormData = {
+  tipo_encuesta: 'libre',
   analisis_dofa: '',
+  analisis_pestel: '',
   titulo: '',
   descripcion: '',
   es_publica: false,
   requiere_justificacion: true,
   fecha_inicio: new Date().toISOString().split('T')[0],
-  fecha_cierre: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .split('T')[0],
+  fecha_cierre: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
 };
 
-const TIPO_PARTICIPANTE_OPTIONS: { value: TipoParticipante; label: string; icon: React.ElementType }[] = [
+const TIPO_PARTICIPANTE_OPTIONS: {
+  value: TipoParticipante;
+  label: string;
+  icon: React.ElementType;
+}[] = [
   { value: 'usuario', label: 'Usuario Especifico', icon: Users },
   { value: 'area', label: 'Todos del Area', icon: Building2 },
   { value: 'cargo', label: 'Todos del Cargo', icon: Briefcase },
@@ -114,6 +118,7 @@ export const EncuestaFormModal = ({
   encuesta,
   isOpen,
   onClose,
+  defaultTipoEncuesta,
 }: EncuestaFormModalProps) => {
   // Estado local para encuesta recién creada (permite agregar temas sin cerrar modal)
   const [createdEncuesta, setCreatedEncuesta] = useState<EncuestaDofa | null>(null);
@@ -122,9 +127,14 @@ export const EncuestaFormModal = ({
   const currentEncuesta = encuesta || createdEncuesta;
   const isEditing = currentEncuesta !== null;
 
-  const [formData, setFormData] = useState<FormData>(defaultFormData);
+  const [formData, setFormData] = useState<FormData>({
+    ...defaultFormData,
+    tipo_encuesta: defaultTipoEncuesta || 'libre',
+  });
   const [activeTab, setActiveTab] = useState<'datos' | 'temas' | 'participantes'>('datos');
   const [copiedLink, setCopiedLink] = useState(false);
+
+  const isPciPoam = formData.tipo_encuesta === 'pci_poam';
 
   // Estado para nuevo tema
   const [newTema, setNewTema] = useState<CreateTemaDTO>({
@@ -146,8 +156,9 @@ export const EncuestaFormModal = ({
 
   // Queries
   const { data: encuestaDetail } = useEncuesta(currentEncuesta?.id);
-  // Obtener análisis DOFA disponibles (vigentes o en preparación)
   const { data: analisisData } = useAnalisisDofa({}, 1, 100);
+  const { data: pestelData } = useAnalisisPestel({}, 1, 100);
+  const { data: preguntasData } = usePreguntasContexto();
   const { data: areasData } = useAreas();
   const { data: colaboradoresData } = useColaboradoresActivos();
   const { data: cargosData } = useCargos();
@@ -155,6 +166,19 @@ export const EncuestaFormModal = ({
   const { data: participantesData } = useParticipantes(
     currentEncuesta?.id ? { encuesta: currentEncuesta.id } : undefined
   );
+
+  // Agrupar preguntas PCI-POAM por categoría para preview
+  const preguntasAgrupadas = useMemo(() => {
+    if (!preguntasData) return {};
+    const grupos: Record<string, PreguntaContexto[]> = {};
+    for (const p of preguntasData) {
+      const key =
+        p.perfil === 'pci' ? p.capacidad_pci_display || 'PCI' : p.factor_poam_display || 'POAM';
+      if (!grupos[key]) grupos[key] = [];
+      grupos[key].push(p);
+    }
+    return grupos;
+  }, [preguntasData]);
 
   // Mutations
   const createMutation = useCreateEncuesta();
@@ -168,7 +192,9 @@ export const EncuestaFormModal = ({
   useEffect(() => {
     if (isEditing && encuestaDetail) {
       setFormData({
+        tipo_encuesta: encuestaDetail.tipo_encuesta || 'libre',
         analisis_dofa: encuestaDetail.analisis_dofa.toString(),
+        analisis_pestel: encuestaDetail.analisis_pestel?.toString() || '',
         titulo: encuestaDetail.titulo,
         descripcion: encuestaDetail.descripcion || '',
         es_publica: encuestaDetail.es_publica,
@@ -177,10 +203,13 @@ export const EncuestaFormModal = ({
         fecha_cierre: encuestaDetail.fecha_cierre.split('T')[0],
       });
     } else if (!isEditing) {
-      setFormData(defaultFormData);
+      setFormData({
+        ...defaultFormData,
+        tipo_encuesta: defaultTipoEncuesta || 'libre',
+      });
       setActiveTab('datos');
     }
-  }, [encuestaDetail, isEditing, isOpen]);
+  }, [encuestaDetail, isEditing, isOpen, defaultTipoEncuesta]);
 
   // Reset estado al cerrar modal
   useEffect(() => {
@@ -202,12 +231,15 @@ export const EncuestaFormModal = ({
         requiere_justificacion: formData.requiere_justificacion,
         fecha_inicio: formData.fecha_inicio,
         fecha_cierre: formData.fecha_cierre,
+        analisis_pestel: formData.analisis_pestel ? parseInt(formData.analisis_pestel) : null,
       };
       await updateMutation.mutateAsync({ id: currentEncuesta.id, data: updateData });
       onClose();
     } else {
       const createData: CreateEncuestaDTO = {
+        tipo_encuesta: formData.tipo_encuesta,
         analisis_dofa: parseInt(formData.analisis_dofa),
+        analisis_pestel: formData.analisis_pestel ? parseInt(formData.analisis_pestel) : null,
         titulo: formData.titulo,
         descripcion: formData.descripcion || undefined,
         es_publica: formData.es_publica,
@@ -215,11 +247,10 @@ export const EncuestaFormModal = ({
         fecha_inicio: formData.fecha_inicio,
         fecha_cierre: formData.fecha_cierre,
       };
-      // Guardar la encuesta creada para permitir agregar temas/participantes
       const newEncuesta = await createMutation.mutateAsync(createData);
       setCreatedEncuesta(newEncuesta);
-      // Cambiar al tab de temas para que el usuario pueda agregar
-      setActiveTab('temas');
+      // PCI-POAM: temas auto-generados, ir a participantes. Libre: ir a temas
+      setActiveTab(formData.tipo_encuesta === 'pci_poam' ? 'participantes' : 'temas');
     }
   };
 
@@ -286,9 +317,15 @@ export const EncuestaFormModal = ({
 
   // Options
   const analisisOptions =
-    analisisData?.results?.map((a) => ({
+    analisisData?.results?.map((a: any) => ({
       value: a.id.toString(),
       label: a.nombre,
+    })) || [];
+
+  const pestelOptions =
+    pestelData?.results?.map((a: any) => ({
+      value: a.id.toString(),
+      label: a.nombre || a.titulo || `PESTEL #${a.id}`,
     })) || [];
 
   const areaOptions =
@@ -301,7 +338,10 @@ export const EncuestaFormModal = ({
   const colaboradorOptions =
     (colaboradoresData as any)?.results?.map((c: any) => ({
       value: c.user?.id?.toString() || c.id?.toString(),
-      label: c.nombre_completo || `${c.nombres || ''} ${c.apellidos || ''}`.trim() || c.numero_identificacion,
+      label:
+        c.nombre_completo ||
+        `${c.nombres || ''} ${c.apellidos || ''}`.trim() ||
+        c.numero_identificacion,
     })) || [];
 
   // Options para cargos
@@ -340,8 +380,18 @@ export const EncuestaFormModal = ({
     <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6">
       {[
         { key: 'datos', label: 'Datos Basicos', disabled: false },
-        { key: 'temas', label: `Temas (${temas.length})`, disabled: !isEditing },
-        { key: 'participantes', label: `Participantes (${participantes.length})`, disabled: !isEditing },
+        {
+          key: 'temas',
+          label: isPciPoam
+            ? `Preguntas (${temas.length || preguntasData?.length || 75})`
+            : `Temas (${temas.length})`,
+          disabled: false,
+        },
+        {
+          key: 'participantes',
+          label: `Participantes (${participantes.length})`,
+          disabled: !isEditing,
+        },
       ].map((tab) => (
         <button
           key={tab.key}
@@ -379,11 +429,74 @@ export const EncuestaFormModal = ({
   // Tab: Datos Basicos
   const renderDatosTab = () => (
     <div className="space-y-6">
-      {/* Seccion: Analisis DOFA asociado */}
+      {/* Seccion: Tipo de Encuesta */}
       {!isEditing && (
         <div className="space-y-4">
           <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-            Analisis DOFA Asociado
+            Tipo de Encuesta
+          </h4>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              {
+                value: 'libre' as TipoEncuesta,
+                label: 'Encuesta Libre',
+                desc: 'Preguntas personalizadas (F/D)',
+                icon: ClipboardList,
+              },
+              {
+                value: 'pci_poam' as TipoEncuesta,
+                label: 'PCI-POAM',
+                desc: '75 preguntas estandar (F/D/O/A)',
+                icon: FileText,
+              },
+            ].map((opt) => {
+              const Icon = opt.icon;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() =>
+                    setFormData({
+                      ...formData,
+                      tipo_encuesta: opt.value,
+                      titulo:
+                        opt.value === 'pci_poam' && !formData.titulo
+                          ? 'Diagnostico PCI-POAM'
+                          : formData.titulo,
+                      es_publica: opt.value === 'pci_poam' ? true : formData.es_publica,
+                    })
+                  }
+                  className={`flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left ${
+                    formData.tipo_encuesta === opt.value
+                      ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <Icon
+                    className={`h-5 w-5 mt-0.5 ${
+                      formData.tipo_encuesta === opt.value
+                        ? 'text-purple-600 dark:text-purple-400'
+                        : 'text-gray-400'
+                    }`}
+                  />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      {opt.label}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{opt.desc}</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Seccion: Analisis DOFA + PESTEL asociados */}
+      {!isEditing && (
+        <div className="space-y-4">
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+            Analisis Asociados
           </h4>
           <Select
             label="Analisis DOFA *"
@@ -391,8 +504,17 @@ export const EncuestaFormModal = ({
             onChange={(e) => setFormData({ ...formData, analisis_dofa: e.target.value })}
             options={[{ value: '', label: 'Seleccione un analisis...' }, ...analisisOptions]}
             required
-            helperText="La encuesta alimentara este analisis DOFA con fortalezas y debilidades"
+            helperText="La encuesta alimentara este analisis DOFA"
           />
+          {isPciPoam && (
+            <Select
+              label="Analisis PESTEL (opcional)"
+              value={formData.analisis_pestel}
+              onChange={(e) => setFormData({ ...formData, analisis_pestel: e.target.value })}
+              options={[{ value: '', label: 'Sin PESTEL asociado' }, ...pestelOptions]}
+              helperText="Las preguntas POAM (O/A) tambien alimentaran este analisis PESTEL"
+            />
+          )}
         </div>
       )}
 
@@ -406,7 +528,11 @@ export const EncuestaFormModal = ({
           label="Titulo de la Encuesta *"
           value={formData.titulo}
           onChange={(e) => setFormData({ ...formData, titulo: e.target.value })}
-          placeholder="Ej: Encuesta de Contexto Organizacional Q1 2026"
+          placeholder={
+            isPciPoam
+              ? 'Ej: Diagnostico PCI-POAM 2026'
+              : 'Ej: Encuesta de Contexto Organizacional Q1 2026'
+          }
           required
         />
 
@@ -453,9 +579,7 @@ export const EncuestaFormModal = ({
 
         <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
           <div>
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Encuesta Publica
-            </p>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Encuesta Publica</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">
               Cualquiera con el enlace puede responder (anonimo)
             </p>
@@ -481,12 +605,7 @@ export const EncuestaFormModal = ({
                 readOnly
                 className="flex-1 text-xs font-mono"
               />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleCopyLink}
-              >
+              <Button type="button" variant="outline" size="sm" onClick={handleCopyLink}>
                 {copiedLink ? (
                   <Check className="h-4 w-4 text-green-500" />
                 ) : (
@@ -508,9 +627,7 @@ export const EncuestaFormModal = ({
           </div>
           <Switch
             checked={formData.requiere_justificacion}
-            onChange={(e) =>
-              setFormData({ ...formData, requiere_justificacion: e.target.checked })
-            }
+            onChange={(e) => setFormData({ ...formData, requiere_justificacion: e.target.checked })}
           />
         </div>
       </div>
@@ -518,107 +635,183 @@ export const EncuestaFormModal = ({
   );
 
   // Tab: Temas
-  const renderTemasTab = () => (
-    <div className="space-y-6">
-      <Alert
-        variant="info"
-        message="Los temas son los aspectos organizacionales que los participantes evaluaran como fortaleza o debilidad."
-      />
+  const renderTemasTab = () => {
+    // PCI-POAM: mostrar preview de preguntas agrupadas (si no es edición con temas ya creados)
+    const showPciPoamPreview = isPciPoam && !isEditing;
+    const showPciPoamCreated = isPciPoam && isEditing;
 
-      {/* Lista de temas */}
-      <div className="space-y-2">
-        {temas.length === 0 ? (
-          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-            <ClipboardList className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p>No hay temas agregados</p>
-          </div>
-        ) : (
-          temas.map((tema, index) => (
-            <div
-              key={tema.id}
-              className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-gray-400">#{index + 1}</span>
-                <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+    return (
+      <div className="space-y-6">
+        {showPciPoamPreview ? (
+          <>
+            <Alert
+              variant="info"
+              message={`Se auto-generaran ${preguntasData?.length || 75} temas desde el banco de preguntas PCI-POAM al crear la encuesta.`}
+            />
+            {/* Preview agrupado por capacidad/factor */}
+            <div className="space-y-4 max-h-96 overflow-y-auto">
+              {Object.entries(preguntasAgrupadas).map(([grupo, preguntas]) => (
+                <div key={grupo}>
+                  <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                    <Badge variant={preguntas[0]?.perfil === 'pci' ? 'info' : 'warning'} size="sm">
+                      {preguntas[0]?.perfil === 'pci' ? 'PCI' : 'POAM'}
+                    </Badge>
+                    {grupo}
+                    <span className="text-xs text-gray-400 font-normal">
+                      ({preguntas.length} preguntas)
+                    </span>
+                  </h5>
+                  <div className="space-y-1 ml-4">
+                    {preguntas.map((p) => (
+                      <div
+                        key={p.id}
+                        className="flex items-start gap-2 py-1.5 text-sm text-gray-600 dark:text-gray-400"
+                      >
+                        <span className="text-xs font-mono text-gray-400 mt-0.5 min-w-[50px]">
+                          {p.codigo}
+                        </span>
+                        <span>{p.texto}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : showPciPoamCreated ? (
+          <>
+            <Alert
+              variant="success"
+              message={`${temas.length} temas auto-generados desde el banco PCI-POAM. Estos temas no se pueden modificar.`}
+            />
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {temas.map((tema, index) => (
+                <div
+                  key={tema.id}
+                  className="flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                >
+                  <span className="text-xs font-mono text-gray-400 min-w-[50px]">
+                    {tema.pregunta_codigo || `#${index + 1}`}
+                  </span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300 flex-1">
                     {tema.titulo}
-                  </p>
-                  {tema.area_name && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Area: {tema.area_name}
-                    </p>
+                  </span>
+                  {tema.clasificacion_esperada && (
+                    <Badge
+                      variant={tema.clasificacion_esperada === 'fd' ? 'info' : 'warning'}
+                      size="sm"
+                    >
+                      {tema.clasificacion_esperada === 'fd' ? 'F/D' : 'O/A'}
+                    </Badge>
                   )}
                 </div>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => handleDeleteTema(tema)}
-                disabled={currentEncuesta?.estado !== 'borrador'}
-              >
-                <Trash2 className="h-4 w-4 text-red-500" />
-              </Button>
+              ))}
             </div>
-          ))
+          </>
+        ) : (
+          <>
+            <Alert
+              variant="info"
+              message="Los temas son los aspectos organizacionales que los participantes evaluaran como fortaleza o debilidad."
+            />
+
+            {/* Lista de temas */}
+            <div className="space-y-2">
+              {temas.length === 0 ? (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <ClipboardList className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>No hay temas agregados</p>
+                </div>
+              ) : (
+                temas.map((tema, index) => (
+                  <div
+                    key={tema.id}
+                    className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium text-gray-400">#{index + 1}</span>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {tema.titulo}
+                        </p>
+                        {tema.area_name && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Area: {tema.area_name}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteTema(tema)}
+                      disabled={currentEncuesta?.estado !== 'borrador'}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Agregar nuevo tema */}
+            {currentEncuesta?.estado === 'borrador' && (
+              <div className="p-4 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg space-y-4">
+                <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Agregar Nuevo Tema
+                </h5>
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="Titulo del Tema"
+                    value={newTema.titulo}
+                    onChange={(e) => setNewTema({ ...newTema, titulo: e.target.value })}
+                    placeholder="Ej: Comunicacion Interna"
+                  />
+                  <Select
+                    label="Area (opcional)"
+                    value={newTema.area?.toString() || ''}
+                    onChange={(e) =>
+                      setNewTema({
+                        ...newTema,
+                        area: e.target.value ? parseInt(e.target.value) : undefined,
+                      })
+                    }
+                    options={[{ value: '', label: 'General' }, ...areaOptions]}
+                  />
+                </div>
+                <Textarea
+                  label="Descripcion (opcional)"
+                  value={newTema.descripcion || ''}
+                  onChange={(e) => setNewTema({ ...newTema, descripcion: e.target.value })}
+                  placeholder="Descripcion para ayudar a los participantes..."
+                  rows={2}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddTema}
+                  disabled={!newTema.titulo.trim() || createTemaMutation.isPending}
+                  isLoading={createTemaMutation.isPending}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Agregar Tema
+                </Button>
+              </div>
+            )}
+
+            {currentEncuesta?.estado !== 'borrador' && (
+              <Alert
+                variant="warning"
+                message="Los temas solo pueden modificarse mientras la encuesta esta en borrador."
+              />
+            )}
+          </>
         )}
       </div>
-
-      {/* Agregar nuevo tema */}
-      {currentEncuesta?.estado === 'borrador' && (
-        <div className="p-4 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg space-y-4">
-          <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            Agregar Nuevo Tema
-          </h5>
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Titulo del Tema"
-              value={newTema.titulo}
-              onChange={(e) => setNewTema({ ...newTema, titulo: e.target.value })}
-              placeholder="Ej: Comunicacion Interna"
-            />
-            <Select
-              label="Area (opcional)"
-              value={newTema.area?.toString() || ''}
-              onChange={(e) =>
-                setNewTema({
-                  ...newTema,
-                  area: e.target.value ? parseInt(e.target.value) : undefined,
-                })
-              }
-              options={[{ value: '', label: 'General' }, ...areaOptions]}
-            />
-          </div>
-          <Textarea
-            label="Descripcion (opcional)"
-            value={newTema.descripcion || ''}
-            onChange={(e) => setNewTema({ ...newTema, descripcion: e.target.value })}
-            placeholder="Descripcion para ayudar a los participantes..."
-            rows={2}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleAddTema}
-            disabled={!newTema.titulo.trim() || createTemaMutation.isPending}
-            isLoading={createTemaMutation.isPending}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Agregar Tema
-          </Button>
-        </div>
-      )}
-
-      {currentEncuesta?.estado !== 'borrador' && (
-        <Alert
-          variant="warning"
-          message="Los temas solo pueden modificarse mientras la encuesta esta en borrador."
-        />
-      )}
-    </div>
-  );
+    );
+  };
 
   // Tab: Participantes
   const renderParticipantesTab = () => (
@@ -653,9 +846,7 @@ export const EncuestaFormModal = ({
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                     {p.usuario_nombre || p.area_nombre || p.cargo_nombre || 'Sin nombre'}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {p.tipo_display}
-                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{p.tipo_display}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -739,8 +930,15 @@ export const EncuestaFormModal = ({
                   usuario: e.target.value ? parseInt(e.target.value) : undefined,
                 })
               }
-              options={[{ value: '', label: 'Seleccione un colaborador...' }, ...colaboradorOptions]}
-              helperText={colaboradorOptions.length === 0 ? 'No hay colaboradores activos disponibles' : undefined}
+              options={[
+                { value: '', label: 'Seleccione un colaborador...' },
+                ...colaboradorOptions,
+              ]}
+              helperText={
+                colaboradorOptions.length === 0
+                  ? 'No hay colaboradores activos disponibles'
+                  : undefined
+              }
             />
           )}
 
@@ -791,8 +989,18 @@ export const EncuestaFormModal = ({
     <BaseModal
       isOpen={isOpen}
       onClose={onClose}
-      title={isEditing ? 'Editar Encuesta DOFA' : 'Nueva Encuesta DOFA'}
-      subtitle="Recopila opiniones de colaboradores sobre fortalezas y debilidades"
+      title={
+        isEditing
+          ? `Editar Encuesta ${currentEncuesta?.tipo_encuesta === 'pci_poam' ? 'PCI-POAM' : 'DOFA'}`
+          : isPciPoam
+            ? 'Nueva Encuesta PCI-POAM'
+            : 'Nueva Encuesta DOFA'
+      }
+      subtitle={
+        isPciPoam
+          ? 'Diagnostico de contexto con 75 preguntas estandar PCI-POAM'
+          : 'Recopila opiniones de colaboradores sobre fortalezas y debilidades'
+      }
       size="3xl"
       footer={footer}
     >

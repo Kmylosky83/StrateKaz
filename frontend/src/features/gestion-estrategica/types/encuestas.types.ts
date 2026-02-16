@@ -8,24 +8,50 @@
 
 // ==================== ENUMS ====================
 
-export type EstadoEncuesta =
-  | 'borrador'
-  | 'activa'
-  | 'cerrada'
-  | 'procesada'
-  | 'cancelada';
+export type EstadoEncuesta = 'borrador' | 'activa' | 'cerrada' | 'procesada' | 'cancelada';
+
+export type TipoEncuesta = 'libre' | 'pci_poam';
 
 export type TipoParticipante = 'usuario' | 'area' | 'cargo';
 
-export type EstadoParticipacion =
-  | 'pendiente'
-  | 'notificado'
-  | 'en_progreso'
-  | 'completado';
+export type EstadoParticipacion = 'pendiente' | 'notificado' | 'en_progreso' | 'completado';
 
-export type Clasificacion = 'fortaleza' | 'debilidad';
+export type Clasificacion = 'fortaleza' | 'debilidad' | 'oportunidad' | 'amenaza';
 
 export type NivelImpacto = 'alto' | 'medio' | 'bajo';
+
+export type PerfilPregunta = 'pci' | 'poam';
+
+export type CapacidadPCI =
+  | 'directiva'
+  | 'talento_humano'
+  | 'tecnologica'
+  | 'competitiva'
+  | 'financiera';
+
+export type FactorPOAM = 'economico' | 'politico' | 'social' | 'tecnologico' | 'geografico';
+
+export type ClasificacionEsperada = 'fd' | 'oa';
+
+// ==================== PREGUNTA CONTEXTO PCI-POAM ====================
+
+export interface PreguntaContexto {
+  id: number;
+  codigo: string;
+  texto: string;
+  perfil: PerfilPregunta;
+  perfil_display: string;
+  capacidad_pci: CapacidadPCI | '';
+  capacidad_pci_display: string;
+  factor_poam: FactorPOAM | '';
+  factor_poam_display: string;
+  clasificacion_esperada: ClasificacionEsperada;
+  clasificacion_esperada_display: string;
+  dimension_pestel: string;
+  orden: number;
+  es_sistema: boolean;
+  is_active: boolean;
+}
 
 // ==================== TEMA ENCUESTA ====================
 
@@ -34,12 +60,15 @@ export interface TemaEncuesta {
   encuesta: number;
   area?: number | null;
   area_name?: string | null;
+  pregunta_contexto?: number | null;
+  pregunta_codigo?: string | null;
+  clasificacion_esperada?: ClasificacionEsperada | null;
   titulo: string;
   descripcion?: string;
   orden: number;
   total_votos_fortaleza?: number;
   total_votos_debilidad?: number;
-  clasificacion_consenso?: 'fortaleza' | 'debilidad' | 'empate';
+  clasificacion_consenso?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -120,8 +149,11 @@ export interface EncuestaDofa {
   id: number;
   titulo: string;
   descripcion?: string | null;
+  tipo_encuesta: TipoEncuesta;
+  tipo_encuesta_display?: string;
   analisis_dofa: number;
   analisis_dofa_nombre?: string;
+  analisis_pestel?: number | null;
   token_publico?: string;
   es_publica: boolean;
   enlace_publico?: string;
@@ -149,8 +181,11 @@ export interface EncuestaListItem {
   id: number;
   titulo: string;
   descripcion?: string | null;
+  tipo_encuesta: TipoEncuesta;
+  tipo_encuesta_display?: string;
   analisis_dofa: number;
   analisis_dofa_nombre?: string;
+  analisis_pestel?: number | null;
   estado: EstadoEncuesta;
   estado_display?: string;
   es_publica: boolean;
@@ -168,7 +203,9 @@ export interface EncuestaListItem {
 }
 
 export interface CreateEncuestaDTO {
+  tipo_encuesta?: TipoEncuesta;
   analisis_dofa: number;
+  analisis_pestel?: number | null;
   titulo: string;
   descripcion?: string;
   es_publica?: boolean;
@@ -186,6 +223,7 @@ export interface UpdateEncuestaDTO {
   requiere_justificacion?: boolean;
   fecha_inicio?: string;
   fecha_cierre?: string;
+  analisis_pestel?: number | null;
 }
 
 // ==================== ENCUESTA PÚBLICA ====================
@@ -194,6 +232,7 @@ export interface EncuestaPublica {
   id: number;
   titulo: string;
   descripcion?: string | null;
+  tipo_encuesta: TipoEncuesta;
   requiere_justificacion: boolean;
   fecha_inicio: string;
   fecha_cierre: string;
@@ -209,6 +248,9 @@ export interface TemaPublico {
   descripcion?: string;
   area_name?: string | null;
   orden: number;
+  clasificacion_esperada?: ClasificacionEsperada | null;
+  capacidad_pci?: CapacidadPCI | '';
+  factor_poam?: FactorPOAM | '';
 }
 
 // ==================== ESTADÍSTICAS ====================
@@ -246,6 +288,7 @@ export interface EncuestaFilters {
   analisis_dofa?: number;
   estado?: EstadoEncuesta;
   es_publica?: boolean;
+  tipo_encuesta?: TipoEncuesta;
   search?: string;
 }
 
@@ -268,11 +311,26 @@ export interface ConsolidarResultado {
   success: boolean;
   message: string;
   factores_creados?: number;
+  factores_pestel_creados?: number;
   detalles?: {
     fortalezas: number;
     debilidades: number;
+    oportunidades?: number;
+    amenazas?: number;
     empates: number;
   };
+}
+
+export interface CompartirEmailDTO {
+  emails: string[];
+  mensaje_personalizado?: string;
+}
+
+export interface CompartirEmailResultado {
+  success: boolean;
+  message: string;
+  total_enviados?: number;
+  errores?: string[];
 }
 
 export interface EnviarNotificacionesResultado {
@@ -283,6 +341,19 @@ export interface EnviarNotificacionesResultado {
 }
 
 // ==================== UI CONFIG ====================
+
+export const TIPO_ENCUESTA_CONFIG = {
+  libre: {
+    label: 'Libre',
+    color: 'gray' as const,
+    description: 'Encuesta con preguntas personalizadas',
+  },
+  pci_poam: {
+    label: 'PCI-POAM',
+    color: 'info' as const,
+    description: 'Perfil de Capacidad Interna y Oportunidades/Amenazas',
+  },
+} as const;
 
 export const ESTADO_ENCUESTA_CONFIG = {
   borrador: {

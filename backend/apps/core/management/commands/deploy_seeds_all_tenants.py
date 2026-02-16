@@ -52,7 +52,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        from apps.tenants.models import Tenant
+        from apps.tenant.models import Tenant
 
         only = options.get('only')
         tenant_filter = options.get('tenant')

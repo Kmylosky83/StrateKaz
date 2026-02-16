@@ -380,7 +380,7 @@ export const EncuestaFormModal = ({
   const cargoOptions =
     cargosData?.results?.map((c: any) => ({
       value: c.id.toString(),
-      label: c.nombre,
+      label: c.name,
     })) || [];
 
   // Temas y participantes

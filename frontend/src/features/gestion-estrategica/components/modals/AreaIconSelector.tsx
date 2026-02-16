@@ -110,15 +110,15 @@ const AREA_ICON_CATEGORIES: IconCategory[] = [
   },
   {
     code: 'TI',
-    name: 'Tecnologia',
+    name: 'Tecnología',
     icons: [
       { name: 'Monitor', label: 'Monitor', keywords: 'computadora pantalla' },
-      { name: 'Laptop', label: 'Portatil', keywords: 'computadora laptop' },
+      { name: 'Laptop', label: 'Portátil', keywords: 'computadora laptop' },
       { name: 'Server', label: 'Servidor', keywords: 'infraestructura datos' },
-      { name: 'Database', label: 'Base datos', keywords: 'almacenamiento informacion' },
-      { name: 'Code', label: 'Codigo', keywords: 'programacion desarrollo' },
+      { name: 'Database', label: 'Base datos', keywords: 'almacenamiento información' },
+      { name: 'Code', label: 'Código', keywords: 'programación desarrollo' },
       { name: 'Globe', label: 'Globo', keywords: 'web internet mundo' },
-      { name: 'Wifi', label: 'Wifi', keywords: 'red conexion internet' },
+      { name: 'Wifi', label: 'Wifi', keywords: 'red conexión internet' },
       { name: 'Cloud', label: 'Nube', keywords: 'almacenamiento servicios' },
     ],
   },
@@ -235,10 +235,7 @@ export function AreaIconSelector({
   }, []);
 
   // Obtener info del icono seleccionado
-  const selectedIconInfo = useMemo(
-    () => ALL_ICONS.find((icon) => icon.name === value),
-    [value]
-  );
+  const selectedIconInfo = useMemo(() => ALL_ICONS.find((icon) => icon.name === value), [value]);
 
   return (
     <div className={cn('space-y-2', className)}>
@@ -350,9 +347,16 @@ export function AreaIconSelector({
         {value && selectedIconInfo && (
           <div className="px-3 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
             <div className="flex items-center gap-2 text-sm">
-              <DynamicIcon name={value} size={16} className="text-purple-600 dark:text-purple-400" />
+              <DynamicIcon
+                name={value}
+                size={16}
+                className="text-purple-600 dark:text-purple-400"
+              />
               <span className="text-gray-600 dark:text-gray-400">
-                Seleccionado: <strong className="text-gray-900 dark:text-gray-100">{selectedIconInfo.label}</strong>
+                Seleccionado:{' '}
+                <strong className="text-gray-900 dark:text-gray-100">
+                  {selectedIconInfo.label}
+                </strong>
                 <span className="text-xs ml-1 opacity-60">({selectedIconInfo.categoryName})</span>
               </span>
             </div>

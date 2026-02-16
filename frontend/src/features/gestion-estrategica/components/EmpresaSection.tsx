@@ -514,7 +514,7 @@ export const EmpresaSection = () => {
           <div className="flex items-center gap-2 mb-4">
             <Smartphone className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
             <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
-              Aplicacion Movil (PWA)
+              Aplicación Móvil (PWA)
             </h3>
           </div>
 
@@ -523,8 +523,8 @@ export const EmpresaSection = () => {
             <div className="flex items-start gap-2">
               <Info className="h-4 w-4 text-indigo-600 dark:text-indigo-400 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-indigo-700 dark:text-indigo-300">
-                Configura como se vera tu aplicacion cuando los usuarios la instalen en sus
-                dispositivos moviles. Si no se configuran, se usaran los valores de branding de la
+                Configura cómo se verá tu aplicación cuando los usuarios la instalen en sus
+                dispositivos móviles. Si no se configuran, se usarán los valores de branding de la
                 empresa.
               </p>
             </div>
@@ -538,7 +538,7 @@ export const EmpresaSection = () => {
                   value={val('pwa_name')}
                   onChange={(e) => handleChange('pwa_name', e.target.value)}
                   disabled={!isEditing}
-                  placeholder="Nombre completo de la aplicacion"
+                  placeholder="Nombre completo de la aplicación"
                 />
               </FieldGroup>
               <FieldGroup label="Nombre Corto">
@@ -551,12 +551,12 @@ export const EmpresaSection = () => {
               </FieldGroup>
             </div>
 
-            <FieldGroup label="Descripcion">
+            <FieldGroup label="Descripción">
               <textarea
                 value={val('pwa_description')}
                 onChange={(e) => handleChange('pwa_description', e.target.value)}
                 disabled={!isEditing}
-                placeholder="Breve descripcion de la aplicacion"
+                placeholder="Breve descripción de la aplicación"
                 rows={2}
                 className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 disabled:opacity-50 resize-none"
               />

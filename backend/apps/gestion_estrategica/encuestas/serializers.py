@@ -461,6 +461,7 @@ class EncuestaPublicaSerializer(serializers.ModelSerializer):
     responsable_nombre = serializers.CharField(
         source='responsable.get_full_name', read_only=True
     )
+    branding = serializers.SerializerMethodField()
 
     class Meta:
         model = EncuestaDofa
@@ -471,6 +472,7 @@ class EncuestaPublicaSerializer(serializers.ModelSerializer):
             'fecha_inicio', 'fecha_cierre',
             'esta_vigente', 'temas',
             'empresa_nombre', 'responsable_nombre',
+            'branding',
         ]
 
     def get_empresa_nombre(self, obj):
@@ -483,6 +485,24 @@ class EncuestaPublicaSerializer(serializers.ModelSerializer):
         except Exception:
             pass
         return 'Organización'
+
+    def get_branding(self, obj):
+        """Retorna colores de branding del tenant para la página pública."""
+        try:
+            from django.db import connection
+            tenant = connection.tenant
+            if hasattr(tenant, 'get_branding_dict'):
+                bd = tenant.get_branding_dict()
+                return {
+                    'primary_color': bd.get('primary_color', '#3b82f6'),
+                    'secondary_color': bd.get('secondary_color', '#6366f1'),
+                    'accent_color': bd.get('accent_color', '#ec4899'),
+                    'logo_url': bd.get('logo') or '',
+                    'empresa_nombre': bd.get('company_name', ''),
+                }
+        except Exception:
+            pass
+        return None
 
 
 class EstadisticasEncuestaSerializer(serializers.Serializer):

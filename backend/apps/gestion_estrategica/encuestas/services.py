@@ -380,7 +380,7 @@ class EncuestaService:
         if not encuesta.es_publica:
             return {
                 'success': False,
-                'mensaje': 'La encuesta debe ser pública para compartir por email'
+                'message': 'La encuesta debe ser pública para compartir por email'
             }
 
         enlace = f"{base_url}/encuestas/responder/{encuesta.token_publico}/"
@@ -426,8 +426,8 @@ class EncuestaService:
 
         return {
             'success': enviados > 0,
-            'mensaje': f'{enviados} emails enviados' + (f', {len(errores)} errores' if errores else ''),
-            'enviados': enviados,
+            'message': f'{enviados} email(s) enviado(s) exitosamente' + (f', {len(errores)} error(es)' if errores else ''),
+            'total_enviados': enviados,
             'errores': errores,
         }
 

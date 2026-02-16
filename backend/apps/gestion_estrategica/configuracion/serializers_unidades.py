@@ -116,12 +116,17 @@ class UnidadMedidaSerializer(serializers.ModelSerializer):
 
 class UnidadMedidaListSerializer(serializers.ModelSerializer):
     """
-    Serializer simplificado para listados (menos campos, más rápido)
+    Serializer para listados — incluye info de conversión para el catálogo.
     """
 
     categoria_display = serializers.CharField(
         source='get_categoria_display',
         read_only=True
+    )
+    unidad_base_nombre = serializers.CharField(
+        source='unidad_base.simbolo',
+        read_only=True,
+        allow_null=True
     )
 
     class Meta:
@@ -134,6 +139,8 @@ class UnidadMedidaListSerializer(serializers.ModelSerializer):
             'categoria',
             'categoria_display',
             'decimales_display',
+            'factor_conversion',
+            'unidad_base_nombre',
             'es_sistema',
             'is_active',
         ]

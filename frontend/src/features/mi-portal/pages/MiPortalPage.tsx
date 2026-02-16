@@ -37,7 +37,7 @@ const ALL_PORTAL_TABS = [
     label: 'Capacitaciones',
     icon: <GraduationCap className="w-4 h-4" />,
   },
-  { id: 'evaluacion' as const, label: 'Evaluacion', icon: <BarChart3 className="w-4 h-4" /> },
+  { id: 'evaluacion' as const, label: 'Evaluación', icon: <BarChart3 className="w-4 h-4" /> },
 ];
 
 export default function MiPortalPage() {
@@ -63,8 +63,8 @@ export default function MiPortalPage() {
           title="Mi Portal"
           description={
             isExterno
-              ? 'Consulte su informacion, capacitaciones y evaluaciones.'
-              : 'Consulte su informacion, solicite vacaciones y permisos, y revise sus recibos de nomina.'
+              ? 'Consulte su información, capacitaciones y evaluaciones.'
+              : 'Consulte su información, solicite vacaciones y permisos, y revise sus recibos de nómina.'
           }
         />
 

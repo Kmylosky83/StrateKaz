@@ -134,6 +134,8 @@ export interface UnidadMedidaList {
   categoria: CategoriaUnidad;
   categoria_display: string;
   decimales_display: number;
+  factor_conversion?: string | null;
+  unidad_base_nombre?: string | null;
   es_sistema: boolean;
   is_active: boolean;
 }

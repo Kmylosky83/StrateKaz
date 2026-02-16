@@ -114,12 +114,12 @@ const NORMA_ICON_CATEGORIES: IconCategory[] = [
     name: 'Seguridad Información (ISO 27001)',
     icons: [
       { name: 'Lock', label: 'Candado', keywords: 'seguridad privacidad cifrado' },
-      { name: 'KeyRound', label: 'Llave', keywords: 'acceso autenticacion credencial' },
+      { name: 'KeyRound', label: 'Llave', keywords: 'acceso autenticación credencial' },
       { name: 'ShieldAlert', label: 'Escudo Alerta', keywords: 'amenaza vulnerabilidad' },
-      { name: 'Database', label: 'Base Datos', keywords: 'informacion almacenamiento' },
-      { name: 'Server', label: 'Servidor', keywords: 'infraestructura ti tecnologia' },
+      { name: 'Database', label: 'Base Datos', keywords: 'información almacenamiento' },
+      { name: 'Server', label: 'Servidor', keywords: 'infraestructura ti tecnología' },
       { name: 'Fingerprint', label: 'Huella', keywords: 'biometria identidad acceso' },
-      { name: 'Eye', label: 'Ojo', keywords: 'vigilancia monitoreo supervision' },
+      { name: 'Eye', label: 'Ojo', keywords: 'vigilancia monitoreo supervisión' },
       { name: 'FileKey', label: 'Archivo Llave', keywords: 'documento seguro cifrado' },
     ],
   },
@@ -208,10 +208,7 @@ export function NormaIconSelector({
   }, []);
 
   // Obtener info del icono seleccionado
-  const selectedIconInfo = useMemo(
-    () => ALL_ICONS.find((icon) => icon.name === value),
-    [value]
-  );
+  const selectedIconInfo = useMemo(() => ALL_ICONS.find((icon) => icon.name === value), [value]);
 
   return (
     <div className={cn('space-y-2', className)}>
@@ -323,9 +320,16 @@ export function NormaIconSelector({
         {value && selectedIconInfo && (
           <div className="px-3 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
             <div className="flex items-center gap-2 text-sm">
-              <DynamicIcon name={value} size={16} className="text-primary-600 dark:text-primary-400" />
+              <DynamicIcon
+                name={value}
+                size={16}
+                className="text-primary-600 dark:text-primary-400"
+              />
               <span className="text-gray-600 dark:text-gray-400">
-                Seleccionado: <strong className="text-gray-900 dark:text-gray-100">{selectedIconInfo.label}</strong>
+                Seleccionado:{' '}
+                <strong className="text-gray-900 dark:text-gray-100">
+                  {selectedIconInfo.label}
+                </strong>
                 <span className="text-xs ml-1 opacity-60">({selectedIconInfo.categoryName})</span>
               </span>
             </div>

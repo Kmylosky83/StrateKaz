@@ -589,13 +589,13 @@ class FileUrlMixin:
 
         Args:
             file_field: Campo FileField o ImageField
-            include_size: Si incluir el tamano del archivo
+            include_size: Si incluir el tamaño del archivo
 
         Returns:
             dict o None: {
                 'url': URL absoluta,
                 'name': nombre del archivo,
-                'size': tamano en bytes (opcional)
+                'size': tamaño en bytes (opcional)
             }
         """
         if not file_field:

@@ -4,9 +4,13 @@
  * Accesible SIN autenticación via token UUID.
  * Ruta: /encuestas/responder/:token
  *
- * Muestra header con nombre de la empresa (no StrateKaz).
+ * Wizard single-question con:
+ * - Branding dinámico del tenant
+ * - Persistencia localStorage
+ * - Navegación swipe + botones
+ * - Responsive mobile-first
  */
-import { useState } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   CheckCircle,
@@ -14,10 +18,13 @@ import {
   Clock,
   Send,
   ChevronRight,
+  ChevronLeft,
   Building2,
   Shield,
+  RotateCcw,
+  ListChecks,
 } from 'lucide-react';
-import { Button, Badge, Spinner, Alert, Card } from '@/components/common';
+import { Button, Badge, Spinner, Alert } from '@/components/common';
 import {
   useEncuestaPublica,
   useResponderEncuestaPublica,
@@ -26,7 +33,13 @@ import type {
   NivelImpacto,
   Clasificacion,
   EncuestaPublica as EncuestaPublicaType,
+  EncuestaBranding,
+  TemaPublico,
 } from '@/features/gestion-estrategica/types/encuestas.types';
+
+// ============================================================================
+// TYPES
+// ============================================================================
 
 interface RespuestaTema {
   tema_id: number;
@@ -35,14 +48,259 @@ interface RespuestaTema {
   impacto_percibido: NivelImpacto;
 }
 
+interface SavedProgress {
+  respuestas: Record<number, RespuestaTema>;
+  currentStep: number;
+  lastSaved: number;
+}
+
+type WizardScreen = 'welcome' | 'question' | 'summary' | 'thanks';
+
+// ============================================================================
+// HELPERS
+// ============================================================================
+
+const STORAGE_KEY_PREFIX = 'encuesta_progress_';
+
+function getSavedProgress(token: string): SavedProgress | null {
+  try {
+    const raw = localStorage.getItem(`${STORAGE_KEY_PREFIX}${token}`);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as SavedProgress;
+    // Expire after 7 days
+    if (Date.now() - parsed.lastSaved > 7 * 24 * 60 * 60 * 1000) {
+      localStorage.removeItem(`${STORAGE_KEY_PREFIX}${token}`);
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function saveProgress(token: string, data: SavedProgress) {
+  try {
+    localStorage.setItem(`${STORAGE_KEY_PREFIX}${token}`, JSON.stringify(data));
+  } catch {
+    // localStorage full or unavailable
+  }
+}
+
+function clearProgress(token: string) {
+  try {
+    localStorage.removeItem(`${STORAGE_KEY_PREFIX}${token}`);
+  } catch {
+    // ignore
+  }
+}
+
+/** Derive CSS color values from branding, with fallbacks */
+function getBrandColors(branding?: EncuestaBranding | null) {
+  return {
+    primary: branding?.primary_color || '#3b82f6',
+    secondary: branding?.secondary_color || '#6366f1',
+    accent: branding?.accent_color || '#ec4899',
+  };
+}
+
+/** Get section label for PCI-POAM grouping */
+function getSectionLabel(tema: TemaPublico): string {
+  if (tema.capacidad_pci) {
+    const labels: Record<string, string> = {
+      directiva: 'Capacidad Directiva',
+      talento_humano: 'Capacidad del Talento Humano',
+      tecnologica: 'Capacidad Tecnológica',
+      competitiva: 'Capacidad Competitiva',
+      financiera: 'Capacidad Financiera',
+    };
+    return labels[tema.capacidad_pci] || 'PCI';
+  }
+  if (tema.factor_poam) {
+    const labels: Record<string, string> = {
+      economico: 'Factores Económicos',
+      politico: 'Factores Políticos',
+      social: 'Factores Sociales',
+      tecnologico: 'Factores Tecnológicos',
+      geografico: 'Factores Geográficos',
+    };
+    return labels[tema.factor_poam] || 'POAM';
+  }
+  return '';
+}
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
+
 export default function EncuestaPublicaPage() {
   const { token } = useParams<{ token: string }>();
   const { data: encuesta, isLoading, error } = useEncuestaPublica(token || '');
   const responderMutation = useResponderEncuestaPublica();
 
   const [respuestas, setRespuestas] = useState<Record<number, RespuestaTema>>({});
-  const [enviado, setEnviado] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
+  const [screen, setScreen] = useState<WizardScreen>('welcome');
+  const [questionIndex, setQuestionIndex] = useState(0);
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right');
+  const [showResumePrompt, setShowResumePrompt] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Swipe tracking
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+
+  // Detect mobile
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
+  const enc = encuesta as EncuestaPublicaType | undefined;
+  const temas = enc?.temas || [];
+  const isPciPoam = enc?.tipo_encuesta === 'pci_poam';
+  const empresaNombre = enc?.empresa_nombre || 'Organización';
+  const brand = getBrandColors(enc?.branding);
+
+  // Check for saved progress on load
+  useEffect(() => {
+    if (!token || !enc) return;
+    const saved = getSavedProgress(token);
+    if (saved && Object.keys(saved.respuestas).length > 0) {
+      setShowResumePrompt(true);
+    }
+  }, [token, enc]);
+
+  // Auto-save progress on changes
+  useEffect(() => {
+    if (!token || screen === 'thanks' || screen === 'welcome') return;
+    if (Object.keys(respuestas).length === 0) return;
+    saveProgress(token, {
+      respuestas,
+      currentStep: questionIndex,
+      lastSaved: Date.now(),
+    });
+  }, [respuestas, questionIndex, token, screen]);
+
+  // Answered count
+  const answeredCount = useMemo(
+    () => Object.values(respuestas).filter((r) => r?.clasificacion && r?.impacto_percibido).length,
+    [respuestas]
+  );
+
+  const allAnswered = temas.length > 0 && answeredCount === temas.length;
+  const currentTema = temas[questionIndex] as TemaPublico | undefined;
+  const currentRespuesta = currentTema ? respuestas[currentTema.id] : undefined;
+  const currentAnswered = !!(
+    currentRespuesta?.clasificacion && currentRespuesta?.impacto_percibido
+  );
+
+  // ============================================================================
+  // HANDLERS
+  // ============================================================================
+
+  const updateRespuesta = useCallback(
+    (temaId: number, field: keyof RespuestaTema, value: string) => {
+      setRespuestas((prev) => ({
+        ...prev,
+        [temaId]: {
+          ...prev[temaId],
+          tema_id: temaId,
+          [field]: value,
+        } as RespuestaTema,
+      }));
+    },
+    []
+  );
+
+  const goNext = useCallback(() => {
+    if (questionIndex < temas.length - 1) {
+      setSlideDirection('right');
+      setQuestionIndex((i) => i + 1);
+    } else {
+      setScreen('summary');
+    }
+  }, [questionIndex, temas.length]);
+
+  const goPrev = useCallback(() => {
+    if (questionIndex > 0) {
+      setSlideDirection('left');
+      setQuestionIndex((i) => i - 1);
+    } else {
+      setScreen('welcome');
+    }
+  }, [questionIndex]);
+
+  const handleStart = useCallback(() => {
+    setScreen('question');
+    setQuestionIndex(0);
+  }, []);
+
+  const handleResume = useCallback(() => {
+    if (!token) return;
+    const saved = getSavedProgress(token);
+    if (saved) {
+      setRespuestas(saved.respuestas);
+      setQuestionIndex(Math.min(saved.currentStep, temas.length - 1));
+    }
+    setShowResumePrompt(false);
+    setScreen('question');
+  }, [token, temas.length]);
+
+  const handleStartFresh = useCallback(() => {
+    if (token) clearProgress(token);
+    setRespuestas({});
+    setShowResumePrompt(false);
+    setScreen('question');
+    setQuestionIndex(0);
+  }, [token]);
+
+  const handleSubmit = useCallback(async () => {
+    if (!allAnswered || !token) return;
+
+    const payload = {
+      respuestas: Object.values(respuestas).map((r) => ({
+        tema_id: r.tema_id,
+        clasificacion: r.clasificacion,
+        justificacion: r.justificacion || '',
+        impacto_percibido: r.impacto_percibido,
+      })),
+    };
+
+    await responderMutation.mutateAsync({ token, data: payload });
+    clearProgress(token);
+    setScreen('thanks');
+  }, [allAnswered, token, respuestas, responderMutation]);
+
+  // Swipe handlers
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  }, []);
+
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      if (screen !== 'question') return;
+      const dx = e.changedTouches[0].clientX - touchStartX.current;
+      const dy = e.changedTouches[0].clientY - touchStartY.current;
+
+      // Only count horizontal swipes (ignore vertical scrolling)
+      if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx)) return;
+
+      if (dx < -60 && currentAnswered) {
+        // Swipe left → next
+        goNext();
+      } else if (dx > 60) {
+        // Swipe right → prev
+        goPrev();
+      }
+    },
+    [screen, currentAnswered, goNext, goPrev]
+  );
+
+  // ============================================================================
+  // LOADING / ERROR STATES
+  // ============================================================================
 
   if (!token) {
     return <ErrorLayout message="Token de encuesta no proporcionado." />;
@@ -50,7 +308,7 @@ export default function EncuestaPublicaPage() {
 
   if (isLoading) {
     return (
-      <PublicLayout>
+      <PublicLayout brand={brand}>
         <div className="flex flex-col items-center justify-center py-20">
           <Spinner size="lg" />
           <p className="mt-4 text-gray-500">Cargando encuesta...</p>
@@ -59,7 +317,7 @@ export default function EncuestaPublicaPage() {
     );
   }
 
-  if (error || !encuesta) {
+  if (error || !enc) {
     const errorMsg = (error as Error)?.message || '';
     if (errorMsg.includes('404') || errorMsg.includes('no encontrada')) {
       return <ErrorLayout message="Esta encuesta no existe o el enlace ha expirado." />;
@@ -67,7 +325,7 @@ export default function EncuestaPublicaPage() {
     if (errorMsg.includes('cerrada') || errorMsg.includes('closed')) {
       return (
         <ErrorLayout
-          message="Esta encuesta ya fue cerrada y no acepta ms respuestas."
+          message="Esta encuesta ya fue cerrada y no acepta más respuestas."
           icon={<Clock className="w-12 h-12 text-amber-400" />}
         />
       );
@@ -75,15 +333,10 @@ export default function EncuestaPublicaPage() {
     return <ErrorLayout message="No se pudo cargar la encuesta. Intente nuevamente." />;
   }
 
-  const enc = encuesta as EncuestaPublicaType;
-  const temas = enc.temas || [];
-  const isPciPoam = enc.tipo_encuesta === 'pci_poam';
-  const empresaNombre = enc.empresa_nombre || 'Organizacion';
-
-  // Si no puede responder (ya respondio o no vigente)
+  // Can't respond
   if (enc.puede_responder === false && enc.razon) {
     return (
-      <PublicLayout empresaNombre={empresaNombre}>
+      <PublicLayout empresaNombre={empresaNombre} brand={brand} logoUrl={enc.branding?.logo_url}>
         <div className="max-w-md mx-auto text-center py-16">
           <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-8 h-8 text-amber-500" />
@@ -95,285 +348,562 @@ export default function EncuestaPublicaPage() {
     );
   }
 
-  if (enviado) {
+  // ============================================================================
+  // SCREEN: THANKS
+  // ============================================================================
+
+  if (screen === 'thanks') {
     return (
-      <PublicLayout empresaNombre={empresaNombre}>
-        <div className="max-w-lg mx-auto text-center py-16">
-          <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-10 h-10 text-green-600" />
+      <PublicLayout empresaNombre={empresaNombre} brand={brand} logoUrl={enc.branding?.logo_url}>
+        <div className="max-w-lg mx-auto text-center py-16 px-4">
+          <div
+            className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
+            style={{ backgroundColor: `${brand.primary}15` }}
+          >
+            <CheckCircle className="w-10 h-10" style={{ color: brand.primary }} />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
-            Respuestas enviadas
+            ¡Gracias por participar!
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Gracias por participar en la encuesta de <strong>{empresaNombre}</strong>. Sus
-            respuestas han sido registradas exitosamente.
+            Sus respuestas han sido registradas exitosamente para <strong>{empresaNombre}</strong>.
           </p>
           <Badge variant="success" size="lg">
-            Completado
+            {answeredCount} respuestas enviadas
           </Badge>
         </div>
       </PublicLayout>
     );
   }
 
-  const updateRespuesta = (temaId: number, field: keyof RespuestaTema, value: string) => {
-    setRespuestas((prev) => ({
-      ...prev,
-      [temaId]: {
-        ...prev[temaId],
-        tema_id: temaId,
-        [field]: value,
-      } as RespuestaTema,
-    }));
-  };
+  // ============================================================================
+  // SCREEN: WELCOME
+  // ============================================================================
 
-  const answeredCount = Object.keys(respuestas).filter(
-    (k) => respuestas[Number(k)]?.clasificacion && respuestas[Number(k)]?.impacto_percibido
-  ).length;
-  const allAnswered = temas.length > 0 && answeredCount === temas.length;
+  if (screen === 'welcome') {
+    const sectionLabel = isPciPoam ? 'Diagnóstico PCI-POAM' : 'Encuesta de Contexto';
 
-  const handleSubmit = async () => {
-    if (!allAnswered) return;
-
-    const payload = {
-      respuestas: Object.values(respuestas).map((r) => ({
-        tema_id: r.tema_id,
-        clasificacion: r.clasificacion,
-        justificacion: r.justificacion || '',
-        impacto_percibido: r.impacto_percibido,
-      })),
-    };
-
-    await responderMutation.mutateAsync({ token: token!, data: payload });
-    setEnviado(true);
-  };
-
-  return (
-    <PublicLayout empresaNombre={empresaNombre}>
-      <div className="max-w-2xl mx-auto">
-        {/* Encuesta Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 dark:bg-blue-900/20 rounded-full text-xs font-medium text-blue-700 dark:text-blue-300 mb-3">
-            <Shield className="w-3 h-3" />
-            {isPciPoam ? 'Diagnostico PCI-POAM' : 'Encuesta de Contexto'}
+    return (
+      <PublicLayout empresaNombre={empresaNombre} brand={brand} logoUrl={enc.branding?.logo_url}>
+        <div className="max-w-lg mx-auto text-center py-8 sm:py-16 px-4">
+          {/* Badge */}
+          <div
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium mb-6"
+            style={{
+              backgroundColor: `${brand.primary}12`,
+              color: brand.primary,
+            }}
+          >
+            <Shield className="w-3.5 h-3.5" />
+            {sectionLabel}
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+
+          {/* Title */}
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
             {enc.titulo || 'Encuesta'}
           </h1>
+
           {enc.descripcion && (
-            <p className="text-gray-600 dark:text-gray-400 mb-3">{enc.descripcion}</p>
+            <p className="text-gray-600 dark:text-gray-400 mb-6 text-sm sm:text-base leading-relaxed">
+              {enc.descripcion}
+            </p>
           )}
-          <div className="flex items-center justify-center gap-4 text-sm text-gray-500">
-            {enc.responsable_nombre && <span>Responsable: {enc.responsable_nombre}</span>}
+
+          {/* Meta info */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-sm text-gray-500 mb-8">
+            {enc.responsable_nombre && (
+              <span className="truncate max-w-[200px] sm:max-w-none">
+                Responsable: {enc.responsable_nombre}
+              </span>
+            )}
             {enc.fecha_cierre && (
               <div className="flex items-center gap-1">
-                <Clock className="w-4 h-4" />
+                <Clock className="w-4 h-4 flex-shrink-0" />
                 <span>Cierre: {new Date(enc.fecha_cierre).toLocaleDateString('es-CO')}</span>
               </div>
             )}
           </div>
-        </div>
 
-        {/* Progress */}
-        <div className="mb-6 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-100 dark:border-gray-700">
-          <div className="flex justify-between text-sm mb-2">
-            <span className="font-medium text-gray-700 dark:text-gray-300">Progreso</span>
-            <span className="font-semibold text-blue-600 dark:text-blue-400">
-              {answeredCount} / {temas.length}
-            </span>
+          {/* Stats */}
+          <div
+            className="rounded-xl p-4 mb-8 border"
+            style={{
+              backgroundColor: `${brand.primary}06`,
+              borderColor: `${brand.primary}20`,
+            }}
+          >
+            <div className="flex items-center justify-center gap-6 text-sm">
+              <div className="text-center">
+                <div className="text-2xl font-bold" style={{ color: brand.primary }}>
+                  {temas.length}
+                </div>
+                <div className="text-gray-500">Preguntas</div>
+              </div>
+              <div className="w-px h-10 bg-gray-200 dark:bg-gray-700" />
+              <div className="text-center">
+                <div className="text-2xl font-bold" style={{ color: brand.primary }}>
+                  ~{Math.ceil(temas.length * 0.4)}
+                </div>
+                <div className="text-gray-500">Min. aprox.</div>
+              </div>
+            </div>
           </div>
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-            <div
-              className="bg-blue-600 h-2.5 rounded-full transition-all duration-500"
-              style={{
-                width: `${temas.length > 0 ? (answeredCount / temas.length) * 100 : 0}%`,
-              }}
-            />
-          </div>
+
+          {/* No login needed */}
+          <p className="text-xs text-gray-400 mb-6 flex items-center justify-center gap-1.5">
+            <Shield className="w-3.5 h-3.5" />
+            Anónima y confidencial — No necesita cuenta para responder
+          </p>
+
+          {/* Resume prompt */}
+          {showResumePrompt ? (
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Tiene progreso guardado de una sesión anterior
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                <Button
+                  size="lg"
+                  onClick={handleResume}
+                  leftIcon={<RotateCcw className="w-5 h-5" />}
+                  style={{ backgroundColor: brand.primary }}
+                  className="text-white min-h-[48px]"
+                >
+                  Continuar ({answeredCount || '...'})
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={handleStartFresh}
+                  className="min-h-[48px]"
+                >
+                  Empezar de nuevo
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button
+              size="lg"
+              onClick={handleStart}
+              rightIcon={<ChevronRight className="w-5 h-5" />}
+              style={{ backgroundColor: brand.primary }}
+              className="text-white min-h-[48px] w-full sm:w-auto px-8"
+            >
+              Comenzar Encuesta
+            </Button>
+          )}
+
           {temas.length === 0 && (
-            <p className="text-sm text-amber-600 dark:text-amber-400 mt-2">
+            <Alert variant="warning" className="mt-6">
               No se encontraron preguntas para esta encuesta.
-            </p>
+            </Alert>
           )}
         </div>
+      </PublicLayout>
+    );
+  }
 
-        {/* Temas */}
-        <div className="space-y-4">
-          {temas.map((tema, index) => {
-            const r = respuestas[tema.id];
-            const isActive = currentStep === index;
+  // ============================================================================
+  // SCREEN: SUMMARY
+  // ============================================================================
 
-            return (
-              <Card
-                key={tema.id}
-                className={`transition-all cursor-pointer ${isActive ? 'ring-2 ring-blue-500 shadow-lg' : 'opacity-90 hover:opacity-100'}`}
-                onClick={() => setCurrentStep(index)}
-              >
-                <div className="p-4 space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                        {isPciPoam
-                          ? `Pregunta ${index + 1} de ${temas.length}`
-                          : `Tema ${index + 1} de ${temas.length}`}
-                      </span>
-                      <h3 className="text-base font-semibold text-gray-900 dark:text-white mt-1">
-                        {tema.titulo}
-                      </h3>
-                    </div>
-                    {r?.clasificacion && r?.impacto_percibido && (
-                      <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 ml-2" />
+  if (screen === 'summary') {
+    const unanswered = temas.filter(
+      (t) => !respuestas[t.id]?.clasificacion || !respuestas[t.id]?.impacto_percibido
+    );
+
+    return (
+      <PublicLayout empresaNombre={empresaNombre} brand={brand} logoUrl={enc.branding?.logo_url}>
+        <div className="max-w-2xl mx-auto px-4 py-6">
+          <div className="text-center mb-6">
+            <ListChecks className="w-10 h-10 mx-auto mb-3" style={{ color: brand.primary }} />
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+              Resumen de respuestas
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">
+              {answeredCount} de {temas.length} preguntas respondidas
+            </p>
+          </div>
+
+          {unanswered.length > 0 && (
+            <Alert variant="warning" className="mb-4">
+              Faltan {unanswered.length} pregunta(s) por responder.
+            </Alert>
+          )}
+
+          {/* Compact summary list */}
+          <div className="space-y-2 mb-6 max-h-[50vh] overflow-y-auto">
+            {temas.map((tema, i) => {
+              const r = respuestas[tema.id];
+              const answered = !!(r?.clasificacion && r?.impacto_percibido);
+              return (
+                <button
+                  key={tema.id}
+                  type="button"
+                  onClick={() => {
+                    setQuestionIndex(i);
+                    setScreen('question');
+                  }}
+                  className={`w-full text-left p-3 rounded-lg border transition-all min-h-[44px] flex items-center gap-3 ${
+                    answered
+                      ? 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
+                      : 'border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20'
+                  }`}
+                >
+                  <span className="flex-shrink-0">
+                    {answered ? (
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                    ) : (
+                      <AlertCircle className="w-5 h-5 text-amber-500" />
+                    )}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                      {i + 1}. {tema.titulo}
+                    </p>
+                    {answered && (
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {getClasificacionLabel(r.clasificacion)} · Impacto {r.impacto_percibido}
+                      </p>
                     )}
                   </div>
+                  <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                </button>
+              );
+            })}
+          </div>
 
-                  {tema.descripcion && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{tema.descripcion}</p>
-                  )}
-
-                  {/* Clasificacion - F/D para PCI, O/A para POAM */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Clasificacion *
-                    </label>
-                    <div className="flex gap-3">
-                      {(tema.clasificacion_esperada === 'oa'
-                        ? (['oportunidad', 'amenaza'] as const)
-                        : (['fortaleza', 'debilidad'] as const)
-                      ).map((c) => {
-                        const labels: Record<string, string> = {
-                          fortaleza: 'Fortaleza',
-                          debilidad: 'Debilidad',
-                          oportunidad: 'Oportunidad',
-                          amenaza: 'Amenaza',
-                        };
-                        const activeColors: Record<string, string> = {
-                          fortaleza:
-                            'border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400',
-                          debilidad:
-                            'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400',
-                          oportunidad:
-                            'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400',
-                          amenaza:
-                            'border-amber-500 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400',
-                        };
-                        return (
-                          <button
-                            key={c}
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              updateRespuesta(tema.id, 'clasificacion', c);
-                            }}
-                            className={`flex-1 py-2.5 px-4 rounded-lg border-2 text-sm font-medium transition-all min-h-[44px] ${
-                              r?.clasificacion === c
-                                ? activeColors[c]
-                                : 'border-gray-200 dark:border-gray-600 text-gray-500 hover:border-gray-400'
-                            }`}
-                          >
-                            {labels[c]}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Impacto */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Nivel de Impacto *
-                    </label>
-                    <div className="flex gap-2">
-                      {(['alto', 'medio', 'bajo'] as const).map((nivel) => (
-                        <button
-                          key={nivel}
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            updateRespuesta(tema.id, 'impacto_percibido', nivel);
-                          }}
-                          className={`flex-1 py-2 px-3 rounded-md border text-sm transition-all min-h-[44px] ${
-                            r?.impacto_percibido === nivel
-                              ? nivel === 'alto'
-                                ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20 text-orange-700'
-                                : nivel === 'medio'
-                                  ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700'
-                                  : 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700'
-                              : 'border-gray-200 dark:border-gray-600 text-gray-500 hover:border-gray-400'
-                          }`}
-                        >
-                          {nivel.charAt(0).toUpperCase() + nivel.slice(1)}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Justificacion */}
-                  {enc.requiere_justificacion && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Justificacion
-                      </label>
-                      <textarea
-                        value={r?.justificacion || ''}
-                        onChange={(e) => updateRespuesta(tema.id, 'justificacion', e.target.value)}
-                        onClick={(e) => e.stopPropagation()}
-                        rows={2}
-                        className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Explique su respuesta..."
-                      />
-                    </div>
-                  )}
-
-                  {/* Next button */}
-                  {isActive &&
-                    index < temas.length - 1 &&
-                    r?.clasificacion &&
-                    r?.impacto_percibido && (
-                      <div className="flex justify-end">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setCurrentStep(index + 1);
-                          }}
-                          rightIcon={<ChevronRight className="w-4 h-4" />}
-                        >
-                          Siguiente
-                        </Button>
-                      </div>
-                    )}
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-
-        {/* Submit */}
-        {temas.length > 0 && (
-          <div className="mt-8 flex justify-center">
+          {/* Actions */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setScreen('question');
+                setQuestionIndex(temas.length - 1);
+              }}
+              leftIcon={<ChevronLeft className="w-4 h-4" />}
+              className="min-h-[48px]"
+            >
+              Volver a preguntas
+            </Button>
             <Button
               size="lg"
               disabled={!allAnswered || responderMutation.isPending}
               onClick={handleSubmit}
               leftIcon={<Send className="w-5 h-5" />}
+              style={allAnswered ? { backgroundColor: brand.primary } : undefined}
+              className={allAnswered ? 'text-white min-h-[48px]' : 'min-h-[48px]'}
             >
               {responderMutation.isPending ? 'Enviando...' : 'Enviar Respuestas'}
             </Button>
           </div>
+
+          {responderMutation.isError && (
+            <Alert variant="error" className="mt-4">
+              {(responderMutation.error as Error)?.message?.includes('ya respondido')
+                ? 'Ya ha respondido esta encuesta anteriormente.'
+                : 'Error al enviar las respuestas. Intente nuevamente.'}
+            </Alert>
+          )}
+        </div>
+      </PublicLayout>
+    );
+  }
+
+  // ============================================================================
+  // SCREEN: QUESTION (wizard single-question)
+  // ============================================================================
+
+  if (!currentTema) {
+    return (
+      <PublicLayout empresaNombre={empresaNombre} brand={brand} logoUrl={enc.branding?.logo_url}>
+        <ErrorLayout message="No se encontraron preguntas." />
+      </PublicLayout>
+    );
+  }
+
+  const sectionLabel = isPciPoam ? getSectionLabel(currentTema) : '';
+  const isFirstQuestion = questionIndex === 0;
+  const isLastQuestion = questionIndex === temas.length - 1;
+
+  // Check if we're entering a new section
+  const prevTema = questionIndex > 0 ? temas[questionIndex - 1] : null;
+  const showSectionHeader = isPciPoam && (!prevTema || getSectionLabel(prevTema) !== sectionLabel);
+
+  return (
+    <PublicLayout empresaNombre={empresaNombre} brand={brand} logoUrl={enc.branding?.logo_url}>
+      <div
+        className="max-w-lg mx-auto px-4 py-4 sm:py-6"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        {/* Progress bar */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between text-xs text-gray-500 mb-1.5">
+            <span className="font-medium">
+              Pregunta {questionIndex + 1} de {temas.length}
+            </span>
+            <span className="font-semibold" style={{ color: brand.primary }}>
+              {Math.round(((questionIndex + 1) / temas.length) * 100)}%
+            </span>
+          </div>
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+            <div
+              className="h-2 rounded-full transition-all duration-500 ease-out"
+              style={{
+                width: `${((questionIndex + 1) / temas.length) * 100}%`,
+                backgroundColor: brand.primary,
+              }}
+            />
+          </div>
+          {sectionLabel && (
+            <div
+              className="mt-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+              style={{
+                backgroundColor: `${brand.primary}12`,
+                color: brand.primary,
+              }}
+            >
+              {sectionLabel}
+            </div>
+          )}
+        </div>
+
+        {/* Section transition header */}
+        {showSectionHeader && (
+          <div
+            className="rounded-lg p-3 mb-4 border text-center"
+            style={{
+              backgroundColor: `${brand.primary}08`,
+              borderColor: `${brand.primary}25`,
+            }}
+          >
+            <p className="text-sm font-semibold" style={{ color: brand.primary }}>
+              {sectionLabel}
+            </p>
+          </div>
         )}
 
-        {responderMutation.isError && (
-          <Alert variant="error" className="mt-4">
-            {(responderMutation.error as Error)?.message?.includes('ya respondido')
-              ? 'Ya ha respondido esta encuesta anteriormente.'
-              : 'Error al enviar las respuestas. Intente nuevamente.'}
-          </Alert>
-        )}
+        {/* Question card */}
+        <div
+          className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 sm:p-6 transition-transform duration-300 ease-in-out"
+          key={currentTema.id}
+          style={{
+            animation: `slideIn${slideDirection === 'right' ? 'Right' : 'Left'} 0.3s ease-out`,
+          }}
+        >
+          {/* Question title */}
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white leading-relaxed mb-5">
+            {currentTema.titulo}
+          </h3>
+
+          {currentTema.descripcion && (
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-5 leading-relaxed">
+              {currentTema.descripcion}
+            </p>
+          )}
+
+          {/* Clasificación */}
+          <div className="mb-5">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2.5">
+              Clasificación *
+            </label>
+            <div className={`grid gap-2.5 ${isMobile ? 'grid-cols-1' : 'grid-cols-2'}`}>
+              {(currentTema.clasificacion_esperada === 'oa'
+                ? (['oportunidad', 'amenaza'] as const)
+                : (['fortaleza', 'debilidad'] as const)
+              ).map((c) => {
+                const isSelected = currentRespuesta?.clasificacion === c;
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => updateRespuesta(currentTema.id, 'clasificacion', c)}
+                    className={`py-3 px-4 rounded-xl border-2 text-sm font-semibold transition-all min-h-[48px] ${
+                      isSelected
+                        ? 'shadow-md scale-[1.02]'
+                        : 'border-gray-200 dark:border-gray-600 text-gray-500 hover:border-gray-400 active:scale-[0.98]'
+                    }`}
+                    style={
+                      isSelected
+                        ? {
+                            borderColor: getClasificacionColor(c),
+                            backgroundColor: `${getClasificacionColor(c)}12`,
+                            color: getClasificacionColor(c),
+                          }
+                        : undefined
+                    }
+                  >
+                    {getClasificacionEmoji(c)} {getClasificacionLabel(c)}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Impacto */}
+          <div className="mb-5">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2.5">
+              Nivel de Impacto *
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {(['alto', 'medio', 'bajo'] as const).map((nivel) => {
+                const isSelected = currentRespuesta?.impacto_percibido === nivel;
+                const impactoColor =
+                  nivel === 'alto' ? '#ef4444' : nivel === 'medio' ? '#f59e0b' : '#3b82f6';
+                return (
+                  <button
+                    key={nivel}
+                    type="button"
+                    onClick={() => updateRespuesta(currentTema.id, 'impacto_percibido', nivel)}
+                    className={`py-2.5 px-3 rounded-lg border-2 text-sm font-medium transition-all min-h-[48px] ${
+                      isSelected
+                        ? 'shadow-sm'
+                        : 'border-gray-200 dark:border-gray-600 text-gray-500 hover:border-gray-400 active:scale-[0.98]'
+                    }`}
+                    style={
+                      isSelected
+                        ? {
+                            borderColor: impactoColor,
+                            backgroundColor: `${impactoColor}12`,
+                            color: impactoColor,
+                          }
+                        : undefined
+                    }
+                  >
+                    {nivel.charAt(0).toUpperCase() + nivel.slice(1)}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Justificación */}
+          {enc.requiere_justificacion && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                Justificación (opcional)
+              </label>
+              <textarea
+                value={currentRespuesta?.justificacion || ''}
+                onChange={(e) => updateRespuesta(currentTema.id, 'justificacion', e.target.value)}
+                rows={2}
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2.5 text-sm bg-transparent focus:ring-2 focus:border-transparent transition-shadow"
+                style={{ '--tw-ring-color': `${brand.primary}40` } as React.CSSProperties}
+                placeholder="Explique brevemente su respuesta..."
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Navigation */}
+        <div className="flex items-center justify-between mt-6 gap-3">
+          <Button
+            variant="outline"
+            onClick={goPrev}
+            leftIcon={<ChevronLeft className="w-4 h-4" />}
+            className="min-h-[48px]"
+          >
+            {isFirstQuestion ? 'Inicio' : 'Anterior'}
+          </Button>
+
+          {/* Dots indicator (compact, only on desktop) */}
+          {!isMobile && temas.length <= 20 && (
+            <div className="flex items-center gap-1 overflow-hidden">
+              {temas.map((_, i) => {
+                const t = temas[i];
+                const answered = !!(
+                  respuestas[t.id]?.clasificacion && respuestas[t.id]?.impacto_percibido
+                );
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => {
+                      setSlideDirection(i > questionIndex ? 'right' : 'left');
+                      setQuestionIndex(i);
+                    }}
+                    className="w-2 h-2 rounded-full transition-all"
+                    style={{
+                      backgroundColor:
+                        i === questionIndex
+                          ? brand.primary
+                          : answered
+                            ? `${brand.primary}60`
+                            : '#d1d5db',
+                      transform: i === questionIndex ? 'scale(1.5)' : 'scale(1)',
+                    }}
+                  />
+                );
+              })}
+            </div>
+          )}
+
+          <Button
+            onClick={isLastQuestion ? () => setScreen('summary') : goNext}
+            disabled={!currentAnswered}
+            rightIcon={<ChevronRight className="w-4 h-4" />}
+            style={currentAnswered ? { backgroundColor: brand.primary } : undefined}
+            className={currentAnswered ? 'text-white min-h-[48px]' : 'min-h-[48px]'}
+          >
+            {isLastQuestion ? 'Revisar' : 'Siguiente'}
+          </Button>
+        </div>
+
+        {/* Answered counter */}
+        <p className="text-center text-xs text-gray-400 mt-3">
+          {answeredCount} de {temas.length} respondidas
+          {isMobile && ' · Deslice para navegar'}
+        </p>
       </div>
+
+      {/* CSS animations */}
+      <style>{`
+        @keyframes slideInRight {
+          from { opacity: 0; transform: translateX(30px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes slideInLeft {
+          from { opacity: 0; transform: translateX(-30px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+      `}</style>
     </PublicLayout>
   );
+}
+
+// ============================================================================
+// CLASIFICACIÓN HELPERS
+// ============================================================================
+
+function getClasificacionLabel(c: Clasificacion): string {
+  const labels: Record<Clasificacion, string> = {
+    fortaleza: 'Fortaleza',
+    debilidad: 'Debilidad',
+    oportunidad: 'Oportunidad',
+    amenaza: 'Amenaza',
+  };
+  return labels[c] || c;
+}
+
+function getClasificacionColor(c: Clasificacion): string {
+  const colors: Record<Clasificacion, string> = {
+    fortaleza: '#22c55e',
+    debilidad: '#ef4444',
+    oportunidad: '#3b82f6',
+    amenaza: '#f59e0b',
+  };
+  return colors[c] || '#6b7280';
+}
+
+function getClasificacionEmoji(c: Clasificacion): string {
+  const emojis: Record<Clasificacion, string> = {
+    fortaleza: '💪',
+    debilidad: '⚠️',
+    oportunidad: '🌟',
+    amenaza: '🔴',
+  };
+  return emojis[c] || '';
 }
 
 // ============================================================================
@@ -383,43 +913,73 @@ export default function EncuestaPublicaPage() {
 function PublicLayout({
   children,
   empresaNombre,
+  brand,
+  logoUrl,
 }: {
   children: React.ReactNode;
   empresaNombre?: string;
+  brand?: ReturnType<typeof getBrandColors>;
+  logoUrl?: string;
 }) {
+  const primaryColor = brand?.primary || '#3b82f6';
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
-      {/* Header profesional con nombre de empresa */}
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-slate-100 dark:from-gray-900 dark:to-gray-800">
+      {/* Header */}
       <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
-        <div className="max-w-3xl mx-auto px-4 py-5">
+        <div className="max-w-3xl mx-auto px-4 py-4 sm:py-5">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                <Building2 className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">
-                  {empresaNombre || 'Organizacion'}
+            <div className="flex items-center gap-3 min-w-0">
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt={empresaNombre || 'Logo'}
+                  className="w-10 h-10 rounded-lg object-contain flex-shrink-0"
+                  onError={(e) => {
+                    // Fallback to icon if image fails
+                    (e.target as HTMLImageElement).style.display = 'none';
+                    const parent = (e.target as HTMLImageElement).parentElement;
+                    if (parent) {
+                      const fallback = document.createElement('div');
+                      fallback.className =
+                        'w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0';
+                      fallback.style.backgroundColor = primaryColor;
+                      fallback.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/></svg>`;
+                      parent.insertBefore(fallback, e.target as HTMLImageElement);
+                    }
+                  }}
+                />
+              ) : (
+                <div
+                  className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: primaryColor }}
+                >
+                  <Building2 className="w-5 h-5 text-white" />
+                </div>
+              )}
+              <div className="min-w-0">
+                <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white leading-tight truncate">
+                  {empresaNombre || 'Organización'}
                 </h2>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Diagnostico Organizacional
+                  Diagnóstico Organizacional
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 text-xs text-gray-400">
+            <div className="flex items-center gap-2 text-xs text-gray-400 flex-shrink-0">
               <Shield className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Encuesta anonima y confidencial</span>
+              <span className="hidden sm:inline">Anónima y confidencial</span>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-8">{children}</main>
+      <main className="max-w-3xl mx-auto">{children}</main>
 
-      <footer className="border-t border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-900/50">
+      <footer className="border-t border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-900/50 mt-auto">
         <div className="max-w-3xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <p className="text-xs text-gray-400">
-            {empresaNombre || 'Organizacion'} &middot; Encuesta anonima y confidencial
+            {empresaNombre || 'Organización'} &middot; Encuesta anónima y confidencial
           </p>
           <p className="text-xs text-gray-300">
             Powered by <span className="font-medium text-gray-400">StrateKaz</span>
@@ -433,7 +993,7 @@ function PublicLayout({
 function ErrorLayout({ message, icon }: { message: string; icon?: React.ReactNode }) {
   return (
     <PublicLayout>
-      <div className="max-w-md mx-auto text-center py-16">
+      <div className="max-w-md mx-auto text-center py-16 px-4">
         <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
           {icon || <AlertCircle className="w-8 h-8 text-red-500" />}
         </div>

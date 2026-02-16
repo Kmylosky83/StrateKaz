@@ -228,6 +228,16 @@ export interface UpdateEncuestaDTO {
   analisis_pestel?: number | null;
 }
 
+// ==================== BRANDING ====================
+
+export interface EncuestaBranding {
+  primary_color: string;
+  secondary_color: string;
+  accent_color: string;
+  logo_url?: string;
+  empresa_nombre?: string;
+}
+
 // ==================== ENCUESTA PÚBLICA ====================
 
 export interface EncuestaPublica {
@@ -244,6 +254,7 @@ export interface EncuestaPublica {
   razon?: string;
   empresa_nombre?: string;
   responsable_nombre?: string;
+  branding?: EncuestaBranding | null;
 }
 
 export interface TemaPublico {

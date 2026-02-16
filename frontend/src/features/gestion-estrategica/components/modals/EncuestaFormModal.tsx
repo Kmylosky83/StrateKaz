@@ -44,7 +44,12 @@ import {
   useDeleteParticipante,
   usePreguntasContexto,
 } from '../../hooks/useEncuestas';
-import { useAnalisisDofa, useAnalisisPestel } from '../../hooks/useContexto';
+import {
+  useAnalisisDofa,
+  useAnalisisPestel,
+  useCreateAnalisisDofa,
+  useCreateAnalisisPestel,
+} from '../../hooks/useContexto';
 import { useAreas } from '../../hooks/useAreas';
 import { useColaboradoresActivos } from '@/features/talent-hub/hooks/useColaboradores';
 import { useCargos } from '@/features/configuracion/hooks/useCargos';
@@ -187,6 +192,8 @@ export const EncuestaFormModal = ({
   const deleteTemaMutation = useDeleteTema();
   const addParticipanteMutation = useAddParticipante();
   const deleteParticipanteMutation = useDeleteParticipante();
+  const createAnalisisDofaMutation = useCreateAnalisisDofa();
+  const createAnalisisPestelMutation = useCreateAnalisisPestel();
 
   // Cargar datos al editar
   useEffect(() => {
@@ -303,6 +310,26 @@ export const EncuestaFormModal = ({
       id: participante.id,
       encuestaId: currentEncuesta.id,
     });
+  };
+
+  const handleQuickCreateDofa = async () => {
+    const year = new Date().getFullYear();
+    const result = await createAnalisisDofaMutation.mutateAsync({
+      nombre: `Análisis DOFA ${year}`,
+      fecha_analisis: new Date().toISOString().split('T')[0],
+      periodo: `${year}`,
+    });
+    setFormData((prev) => ({ ...prev, analisis_dofa: result.id.toString() }));
+  };
+
+  const handleQuickCreatePestel = async () => {
+    const year = new Date().getFullYear();
+    const result = await createAnalisisPestelMutation.mutateAsync({
+      nombre: `Análisis PESTEL ${year}`,
+      fecha_analisis: new Date().toISOString().split('T')[0],
+      periodo: `${year}`,
+    });
+    setFormData((prev) => ({ ...prev, analisis_pestel: result.id.toString() }));
   };
 
   const handleCopyLink = () => {
@@ -498,22 +525,81 @@ export const EncuestaFormModal = ({
           <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
             Analisis Asociados
           </h4>
-          <Select
-            label="Analisis DOFA *"
-            value={formData.analisis_dofa}
-            onChange={(e) => setFormData({ ...formData, analisis_dofa: e.target.value })}
-            options={[{ value: '', label: 'Seleccione un analisis...' }, ...analisisOptions]}
-            required
-            helperText="La encuesta alimentara este analisis DOFA"
-          />
+
+          {/* DOFA selector con creación rápida */}
+          <div>
+            {analisisOptions.length > 0 ? (
+              <Select
+                label="Analisis DOFA *"
+                value={formData.analisis_dofa}
+                onChange={(e) => setFormData({ ...formData, analisis_dofa: e.target.value })}
+                options={[{ value: '', label: 'Seleccione un analisis...' }, ...analisisOptions]}
+                required
+              />
+            ) : (
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Analisis DOFA *
+                </label>
+                <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                  <p className="text-sm text-amber-700 dark:text-amber-300 mb-2">
+                    No hay analisis DOFA creados. Necesitas al menos uno para vincular la encuesta.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="sm"
+                    onClick={handleQuickCreateDofa}
+                    isLoading={createAnalisisDofaMutation.isPending}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Crear Analisis DOFA {new Date().getFullYear()}
+                  </Button>
+                </div>
+              </div>
+            )}
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              La encuesta alimentara este analisis DOFA
+            </p>
+          </div>
+
+          {/* PESTEL selector con creación rápida (solo PCI-POAM) */}
           {isPciPoam && (
-            <Select
-              label="Analisis PESTEL (opcional)"
-              value={formData.analisis_pestel}
-              onChange={(e) => setFormData({ ...formData, analisis_pestel: e.target.value })}
-              options={[{ value: '', label: 'Sin PESTEL asociado' }, ...pestelOptions]}
-              helperText="Las preguntas POAM (O/A) tambien alimentaran este analisis PESTEL"
-            />
+            <div>
+              {pestelOptions.length > 0 ? (
+                <Select
+                  label="Analisis PESTEL (opcional)"
+                  value={formData.analisis_pestel}
+                  onChange={(e) => setFormData({ ...formData, analisis_pestel: e.target.value })}
+                  options={[{ value: '', label: 'Sin PESTEL asociado' }, ...pestelOptions]}
+                />
+              ) : (
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Analisis PESTEL (opcional)
+                  </label>
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <p className="text-sm text-blue-700 dark:text-blue-300 mb-2">
+                      No hay analisis PESTEL. Crea uno para que las preguntas POAM alimenten ambos
+                      analisis.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleQuickCreatePestel}
+                      isLoading={createAnalisisPestelMutation.isPending}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Crear Analisis PESTEL {new Date().getFullYear()}
+                    </Button>
+                  </div>
+                </div>
+              )}
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Las preguntas POAM (O/A) tambien alimentaran este analisis PESTEL
+              </p>
+            </div>
           )}
         </div>
       )}

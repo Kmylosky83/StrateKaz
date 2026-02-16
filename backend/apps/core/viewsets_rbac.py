@@ -27,6 +27,7 @@ class CatalogoPagination(PageNumberPagination):
     max_page_size = 200
 
 
+from django.apps import apps
 from django.db import transaction
 from django.db.models import Count, Q
 from collections import defaultdict
@@ -395,7 +396,7 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
         )
 
     def perform_destroy(self, instance):
-        """Soft delete - valida que no tenga usuarios"""
+        """Soft delete - valida que no tenga usuarios, desactiva vacantes vinculadas"""
         if instance.is_system:
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied('No se puede eliminar un cargo del sistema')
@@ -410,6 +411,23 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
 
         instance.is_active = False
         instance.save()
+
+        # Cascade: desactivar vacantes vinculadas sin candidatos
+        try:
+            VacanteActiva = apps.get_model('seleccion_contratacion', 'VacanteActiva')
+            vacantes = VacanteActiva.objects.filter(cargo=instance, is_active=True)
+            for vacante in vacantes:
+                # Solo cerrar vacantes sin candidatos activos
+                candidatos_count = vacante.candidatos.filter(is_active=True).exclude(
+                    estado__in=['rechazado', 'descartado']
+                ).count()
+                if candidatos_count == 0:
+                    vacante.estado = 'cancelada'
+                    vacante.is_active = False
+                    vacante.motivo_cierre = 'Cargo eliminado del sistema'
+                    vacante.save(update_fields=['estado', 'is_active', 'motivo_cierre'])
+        except Exception:
+            pass  # Si el modelo no existe aún, no bloquear
 
     @action(detail=True, methods=['post'])
     def assign_permissions(self, request, pk=None):

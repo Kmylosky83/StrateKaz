@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Script para ejecutar migraciones en cPanel
+Script para ejecutar migraciones
 Sistema de Gestión Integral - StrateKaz
 
 USO:
@@ -13,12 +13,8 @@ OPCIONES:
     --database DB Especificar base de datos (default: default)
 
 DESCRIPCIÓN:
-    Este script ejecuta las migraciones de Django en cPanel donde
-    no hay acceso SSH directo. Se puede ejecutar desde:
-
-    1. Terminal Web de cPanel (Setup Python App > Terminal)
-    2. Cron Job (para migraciones automatizadas)
-    3. File Manager > Terminal (algunas versiones de cPanel)
+    Este script ejecuta las migraciones de Django en el VPS Hostinger.
+    Se puede ejecutar via SSH o como parte del proceso de deploy.
 
 IMPORTANTE:
     - Siempre haz un backup de la base de datos antes de migrar
@@ -35,8 +31,7 @@ from datetime import datetime
 # Configurar Django
 BASE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(BASE_DIR))
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
-os.environ.setdefault('USE_CPANEL', 'True')  # Modo cPanel
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.production')
 
 # Cargar .env si existe
 ENV_FILE = BASE_DIR / '.env'
@@ -69,7 +64,7 @@ def check_database_connection():
         with connection.cursor() as cursor:
             cursor.execute("SELECT VERSION()")
             version = cursor.fetchone()[0]
-            print(f"  ✓ Conectado a MySQL: {version}")
+            print(f"  ✓ Conectado a PostgreSQL: {version}")
 
             # Obtener información de la base de datos
             cursor.execute("SELECT DATABASE()")
@@ -195,7 +190,7 @@ def run_migrations(fake=False, database='default'):
         return False
 
 def create_cache_table():
-    """Crear tabla de cache para cPanel (database cache)."""
+    """Crear tabla de cache (solo si se usa DatabaseCache como fallback)."""
     print("🔍 Verificando tabla de cache...")
 
     try:
@@ -211,7 +206,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description='Ejecutar migraciones de Django en cPanel',
+        description='Ejecutar migraciones de Django en VPS Hostinger',
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument('--check', action='store_true',
@@ -229,7 +224,7 @@ def main():
 
     print()
     print("=" * 80)
-    print("SISTEMA DE MIGRACIONES - cPanel")
+    print("SISTEMA DE MIGRACIONES - VPS Hostinger")
     print("Sistema de Gestión Integral - StrateKaz")
     print("=" * 80)
     print()
@@ -239,7 +234,7 @@ def main():
     print(f"⚙️  Django: {django.get_version()}")
     print(f"📁 BASE_DIR: {BASE_DIR}")
     print(f"🗄️  Database: {args.database}")
-    print(f"🔧 USE_CPANEL: {os.environ.get('USE_CPANEL', 'False')}")
+    print(f"🔧 Settings: {os.environ.get('DJANGO_SETTINGS_MODULE', 'N/A')}")
     print()
 
     # Verificar conexión a BD
@@ -276,8 +271,7 @@ def main():
         print("  Asegúrate de haber hecho un backup antes de continuar")
         print()
 
-        # En cPanel no podemos pedir confirmación interactiva, así que ejecutamos directamente
-        # Si quieres confirmación manual, ejecuta primero con --check
+        # Ejecuta primero con --check si quieres verificar antes de aplicar
         success = run_migrations(fake=args.fake, database=args.database)
 
         if success:
@@ -288,7 +282,7 @@ def main():
             print("Próximos pasos:")
             print("1. Verifica que la aplicación funcione correctamente")
             print("2. Ejecuta python prepare_static.py si hay nuevos archivos estáticos")
-            print("3. En cPanel > Setup Python App > Reinicia la aplicación")
+            print("3. Reinicia Gunicorn: sudo systemctl restart gunicorn")
             print()
         else:
             print("=" * 80)

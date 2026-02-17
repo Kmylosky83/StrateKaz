@@ -1,9 +1,11 @@
 """
 URL Configuration for StrateKaz
-Sistema Integrado de Gestión para Recolección de ACU
+Sistema de Gestión Integral (SGI)
 
 SISTEMA MODULAR: Las URLs se registran condicionalmente según las apps
-que estén activas en INSTALLED_APPS (ver config/settings.py)
+que estén activas en INSTALLED_APPS (ver config/settings/base.py)
+
+Hosting: VPS Hostinger | Producción: Nginx + Gunicorn
 """
 import os
 from django.contrib import admin
@@ -243,17 +245,18 @@ if settings.DEBUG:
     except ImportError:
         pass
 
-# En cPanel, Django debe servir los archivos estáticos (admin, DRF, etc.)
-# ya que Passenger maneja todo el tráfico
-if os.environ.get('USE_CPANEL', 'False').lower() == 'true' or settings.DEBUG:
+# En desarrollo, Django sirve archivos estáticos y media directamente
+if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 # ═══════════════════════════════════════════════════════════════
-# Catch-all para servir el frontend SPA en producción (cPanel)
+# Catch-all para servir el frontend SPA en producción (VPS)
 # IMPORTANTE: Esta ruta debe ir AL FINAL para no interferir con API
+# En producción (VPS Hostinger), Nginx sirve el frontend directamente.
+# Este catch-all solo se usa como fallback si SERVE_FRONTEND=True.
 # ═══════════════════════════════════════════════════════════════
-if os.environ.get('USE_CPANEL', 'False').lower() == 'true':
+if os.environ.get('SERVE_FRONTEND', 'False').lower() == 'true':
     urlpatterns += [
         re_path(r'^(?P<path>.*)$', serve_frontend, name='frontend'),
     ]

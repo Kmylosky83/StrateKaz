@@ -2,20 +2,20 @@
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║                    ⚠  ARCHIVO LEGACY - NO USAR  ⚠                         ║
 ║                                                                            ║
-║  Este archivo es el settings LEGACY para modo cPanel/MySQL.                ║
+║  Este archivo es el settings LEGACY del antiguo entorno MySQL.             ║
 ║  NO tiene aislamiento multi-tenant real (sin django-tenants).              ║
+║  NO usa PostgreSQL (requerido por django-tenants).                         ║
 ║                                                                            ║
 ║  USAR EN SU LUGAR:                                                         ║
 ║  - Desarrollo:  config.settings.development                               ║
-║  - Produccion:  config.settings.production                                 ║
+║  - Produccion:  config.settings.production  (VPS Hostinger)                ║
 ║  - Testing:     config.settings.testing                                    ║
 ║                                                                            ║
 ║  NOTA: Este archivo esta SHADOWED por el paquete config/settings/          ║
 ║  Python prioriza directorios con __init__.py sobre archivos .py            ║
 ║  import config.settings → carga config/settings/__init__.py                ║
 ║                                                                            ║
-║  Si necesita modo cPanel sincrono, use config.settings.production          ║
-║  con USE_CPANEL=True en .env                                               ║
+║  Produccion actual: VPS Hostinger con PostgreSQL + Redis + Celery          ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 """
 import warnings
@@ -545,27 +545,11 @@ EMAIL_SUBJECT_PREFIX = config('EMAIL_SUBJECT_PREFIX', default='[StrateKaz] ')
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')
 
 # ═══════════════════════════════════════════════════
-# ENVIRONMENT DETECTION (cPanel vs Docker/VPS)
+# CELERY CONFIGURATION (VPS Hostinger: Redis disponible)
 # ═══════════════════════════════════════════════════
-# En cPanel no hay Redis ni Celery workers disponibles
-# USE_CPANEL=True activa alternativas basadas en base de datos
-USE_CPANEL = config('USE_CPANEL', default=False, cast=bool)
-
-# ═══════════════════════════════════════════════════
-# CELERY CONFIGURATION
-# ═══════════════════════════════════════════════════
-if USE_CPANEL:
-    # cPanel: Ejecutar tareas de forma síncrona (sin worker)
-    CELERY_TASK_ALWAYS_EAGER = True
-    CELERY_TASK_EAGER_PROPAGATES = True
-    # No necesita broker ni backend en modo eager
-    CELERY_BROKER_URL = None
-    CELERY_RESULT_BACKEND = None
-else:
-    # Docker/VPS: Usar Redis como broker
-    CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://localhost:6379/0')
-    CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://localhost:6379/1')
-    CELERY_TASK_ALWAYS_EAGER = False
+CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://localhost:6379/1')
+CELERY_TASK_ALWAYS_EAGER = False
 
 # Configuración de serialización y formatos (común)
 CELERY_TASK_SERIALIZER = 'json'
@@ -625,32 +609,18 @@ if DEBUG and not REDIS_URL:
             'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
         }
     }
-elif USE_CPANEL:
-    # cPanel: Usar cache basado en base de datos
-    # Requiere ejecutar: python manage.py createcachetable
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-            'LOCATION': 'django_cache_table',
-            'TIMEOUT': 300,  # 5 minutos por defecto
-            'OPTIONS': {
-                'MAX_ENTRIES': 1000,
-                'CULL_FREQUENCY': 3,
-            }
-        }
-    }
 else:
-    # Docker/VPS: Usar Redis para cache
+    # VPS Hostinger: Usar Redis para cache
     CACHES = {
         'default': {
             'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-            'LOCATION': REDIS_URL or 'redis://redis:6379/2',
+            'LOCATION': REDIS_URL or 'redis://localhost:6379/2',
             'KEY_PREFIX': 'stratekaz',
             'TIMEOUT': 300,  # 5 minutos por defecto
         },
         'sessions': {
             'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-            'LOCATION': REDIS_URL or 'redis://redis:6379/3',
+            'LOCATION': REDIS_URL or 'redis://localhost:6379/3',
             'KEY_PREFIX': 'session',
             'TIMEOUT': 86400,  # 24 horas
         }

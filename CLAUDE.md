@@ -5,6 +5,7 @@
 StrateKaz es un **Sistema de Gestion Integral (SGI)** multi-tenant tipo SaaS para empresas colombianas. Integra gestion estrategica, cumplimiento normativo (ISO 9001/14001/45001/27001), riesgos, HSEQ, cadena de valor, talento humano, finanzas y analitica en una sola plataforma.
 
 **Dominio:** stratekaz.com | **App:** app.stratekaz.com
+**Hosting:** VPS Hostinger (Nginx + Gunicorn + PostgreSQL + Redis + Celery)
 **Versiones:** 5.1.0 (frontend) | 3.7.1 (root package) | API 4.0.0 (drf-spectacular)
 **Idioma del sistema:** Espanol (es-co)
 
@@ -626,19 +627,21 @@ refactor(core): simplify middleware chain
 **Volumes:** postgres_data, redis_data, static_volume, media_volume, pgadmin_data
 **Network:** stratekaz_network (bridge)
 
-### Produccion (`docker-compose.prod.yml`)
+### Produccion - VPS Hostinger (sin Docker actualmente)
 
-| Servicio | Puerto | Descripcion |
-|----------|--------|-------------|
-| db | 5432 | PostgreSQL 15 |
-| redis | - | Cache + broker (password + AOF) |
-| nginx | 80/443 | Reverse proxy (SSL/TLS) |
-| backend | 8000 | Gunicorn workers |
-| celery | - | Worker asincrono |
-| celerybeat | - | Scheduler |
-| flower* | 5555 | Monitor Celery (opcional) |
+El entorno de produccion corre directamente en **VPS Hostinger** sin Docker:
 
-**Resource Limits:** db (512M), redis (256M), nginx (128M), backend (1G)
+| Componente | Descripcion |
+|------------|-------------|
+| Nginx | Reverse proxy + SSL/TLS + static files |
+| Gunicorn | WSGI server para Django |
+| PostgreSQL 15 | Base de datos con schemas por tenant |
+| Redis 7 | Cache + Celery broker |
+| Celery Worker | Procesamiento asincrono |
+| Celery Beat | Tareas programadas |
+
+**Nota:** Existe `docker-compose.prod.yml` listo para migrar a Docker si se decide en el futuro.
+
 **Features:** Health checks, centralized logging (/var/log/stratekaz)
 
 ---
@@ -831,6 +834,7 @@ Toda la documentacion detallada esta en `/docs/`:
 5. **Settings:** Usar el paquete modular `config/settings/` (base + development/production/testing). El archivo `config/settings.py` esta deprecated.
 6. **Database:** PostgreSQL con `django_tenants.postgresql_backend`. No usar MySQL directamente.
 7. **Cache:** Redis con aislamiento por tenant via `make_tenant_cache_key`.
-8. **Frontend SPA:** En produccion, Django sirve el build del frontend via `serve_frontend` catch-all.
+8. **Frontend SPA:** En produccion (VPS Hostinger), Nginx sirve el frontend directamente. Django solo maneja `/api/`.
 9. **PWA:** El frontend soporta Progressive Web App con service worker y cache strategies.
 10. **Celery:** 11 colas especializadas + 24 tareas programadas. En testing se ejecuta en modo sincrono (eager).
+11. **Hosting:** El proyecto corre en **VPS Hostinger** con Nginx + Gunicorn. NO se usa cPanel. El archivo `config/settings.py` (legacy MySQL/cPanel) esta deprecated.

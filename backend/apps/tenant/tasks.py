@@ -155,9 +155,12 @@ def create_tenant_schema_task(
         })
 
         # Crear el schema si no existe
+        from psycopg2 import sql
         with connection.cursor() as cursor:
             cursor.execute(
-                f'CREATE SCHEMA IF NOT EXISTS "{schema_name}"'
+                sql.SQL('CREATE SCHEMA IF NOT EXISTS {}').format(
+                    sql.Identifier(schema_name)
+                )
             )
 
         logger.info(f"[Task {task_id}] Schema {schema_name} created successfully")
@@ -429,9 +432,12 @@ def cleanup_failed_tenant_task(tenant_id: int) -> Dict[str, Any]:
         Domain.objects.filter(tenant=tenant).delete()
 
         # Eliminar schema si existe
+        from psycopg2 import sql
         with connection.cursor() as cursor:
             cursor.execute(
-                f'DROP SCHEMA IF EXISTS "{schema_name}" CASCADE'
+                sql.SQL('DROP SCHEMA IF EXISTS {} CASCADE').format(
+                    sql.Identifier(schema_name)
+                )
             )
 
         # Eliminar registro del tenant

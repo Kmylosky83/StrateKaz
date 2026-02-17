@@ -161,10 +161,14 @@ class TenantMinimalSerializer(serializers.ModelSerializer):
         """Contar usuarios del tenant via query cross-schema."""
         try:
             from django.db import connection
+            from psycopg2 import sql
             if obj.schema_name and obj.schema_status == 'ready':
                 with connection.cursor() as cursor:
                     cursor.execute(
-                        'SELECT COUNT(*) FROM "%s".core_user' % obj.schema_name
+                        sql.SQL('SELECT COUNT(*) FROM {}.{}').format(
+                            sql.Identifier(obj.schema_name),
+                            sql.Identifier('core_user')
+                        )
                     )
                     return cursor.fetchone()[0]
         except Exception:

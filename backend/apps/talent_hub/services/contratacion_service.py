@@ -64,6 +64,7 @@ class ContratacionService:
                 justificacion_tipo_contrato: str,
                 generar_documento: bool (default False),
                 plantilla_id: int|None,
+                proveedor_origen_id: int|None (firma que envía al contratista),
             }
             usuario_contratante: User que ejecuta la acción
             empresa: EmpresaConfig (auto-resuelve si None)
@@ -482,6 +483,16 @@ class ContratacionService:
         TOPE_AUXILIO = SMMLV * 2
         auxilio_transporte = salario <= TOPE_AUXILIO
 
+        # Resolver proveedor de origen (para contratistas externos)
+        proveedor_origen = None
+        proveedor_id = datos_contrato.get('proveedor_origen_id')
+        if proveedor_id:
+            try:
+                Proveedor = apps.get_model('gestion_proveedores', 'Proveedor')
+                proveedor_origen = Proveedor.objects.get(pk=proveedor_id)
+            except Exception:
+                logger.warning(f"Proveedor #{proveedor_id} no encontrado, se omite")
+
         colaborador = Colaborador.objects.create(
             empresa=empresa,
             numero_identificacion=candidato.numero_documento,
@@ -492,6 +503,7 @@ class ContratacionService:
             segundo_apellido=segundo_apellido,
             cargo=cargo,
             area=area,
+            proveedor_origen=proveedor_origen,
             fecha_ingreso=datos_contrato['fecha_inicio'],
             estado='activo',
             tipo_contrato=tipo_contrato_choice,

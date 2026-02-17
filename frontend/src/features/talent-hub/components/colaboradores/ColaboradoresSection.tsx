@@ -2,12 +2,14 @@
  * ColaboradoresSection - CRUD principal de colaboradores
  * Talento Humano > Colaboradores
  *
+ * Sprint 20: Migrado a ResponsiveTable (card view < 768px)
+ *
  * Vista enterprise con:
- * - StatsGrid (4 metricas)
- * - SectionHeader con filtros inline (busqueda, cargo, area, estado, contrato)
- * - Tabla de colaboradores con acciones CRUD
- * - Modal de creacion/edicion (ColaboradorFormModal)
- * - Confirmacion de retiro
+ * - StatsGrid (4 métricas)
+ * - SectionHeader con filtros inline (búsqueda, cargo, área, estado, contrato)
+ * - ResponsiveTable con card view móvil
+ * - Modal de creación/edición (ColaboradorFormModal)
+ * - Confirmación de retiro
  *
  * Usa hooks de Talent Hub (useColaboradores, etc.) NO los de Users.
  */
@@ -20,9 +22,10 @@ import { Select } from '@/components/forms/Select';
 import { SectionHeader } from '@/components/common/SectionHeader';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { EmptyState } from '@/components/common/EmptyState';
-import { Spinner } from '@/components/common/Spinner';
 import { StatsGrid } from '@/components/layout/StatsGrid';
 import type { StatItem } from '@/components/layout/StatsGrid';
+import { ResponsiveTable } from '@/components/common/ResponsiveTable';
+import type { ResponsiveTableColumn } from '@/components/common/ResponsiveTable';
 import { Avatar } from '@/components/common/Avatar';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { getModuleColorClasses } from '@/utils/moduleColors';
@@ -64,10 +67,10 @@ const ESTADO_OPTIONS = [
 const CONTRATO_OPTIONS = [
   { value: '', label: 'Todos los contratos' },
   { value: 'indefinido', label: 'Indefinido' },
-  { value: 'fijo', label: 'Termino Fijo' },
+  { value: 'fijo', label: 'Término Fijo' },
   { value: 'obra_labor', label: 'Obra o Labor' },
   { value: 'aprendizaje', label: 'Aprendizaje' },
-  { value: 'prestacion_servicios', label: 'Prestacion de Servicios' },
+  { value: 'prestacion_servicios', label: 'Prestación de Servicios' },
 ];
 
 /** Colores de badge por estado */
@@ -89,7 +92,7 @@ const ESTADO_LABELS: Record<EstadoColaborador, string> = {
 /** Labels de contrato */
 const CONTRATO_LABELS: Record<TipoContratoColaborador, string> = {
   indefinido: 'Indefinido',
-  fijo: 'Termino Fijo',
+  fijo: 'Término Fijo',
   obra_labor: 'Obra/Labor',
   aprendizaje: 'Aprendizaje',
   prestacion_servicios: 'Prest. Servicios',
@@ -118,7 +121,7 @@ export const ColaboradoresSection = () => {
   const { data: areasData } = useAreas();
   const retirarMutation = useRetirarColaborador();
 
-  // Stats — backend estadisticas retorna { total, activos, por_estado, por_tipo_contrato, por_area }
+  // Stats
   const stats: StatItem[] = useMemo(
     () => [
       {
@@ -201,6 +204,103 @@ export const ColaboradoresSection = () => {
   // useColaboradores ya devuelve Colaborador[] (hook desempaqueta .results)
   const colaboradores = colaboradoresData || [];
 
+  // ============================================================================
+  // ResponsiveTable columns
+  // ============================================================================
+
+  const columns: ResponsiveTableColumn<Colaborador & Record<string, unknown>>[] = useMemo(
+    () => [
+      {
+        key: 'colaborador',
+        header: 'Colaborador',
+        priority: 1 as const,
+        render: (c) => (
+          <div className="flex items-center gap-3">
+            <Avatar
+              src={c.foto as string | null}
+              alt={String(c.nombre_completo) || `${c.primer_nombre} ${c.primer_apellido}`}
+              size="sm"
+            />
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                {String(c.nombre_completo) || `${c.primer_nombre} ${c.primer_apellido}`}
+              </p>
+              {c.email_personal && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                  {String(c.email_personal)}
+                </p>
+              )}
+            </div>
+          </div>
+        ),
+      },
+      {
+        key: 'documento',
+        header: 'Documento',
+        priority: 2 as const,
+        render: (c) => (
+          <span className="text-sm text-gray-600 dark:text-gray-300">
+            <span className="text-xs text-gray-400 mr-1">{String(c.tipo_documento)}</span>
+            {String(c.numero_identificacion)}
+          </span>
+        ),
+      },
+      {
+        key: 'cargo',
+        header: 'Cargo',
+        render: (c) => (
+          <div className="flex items-center gap-1.5">
+            <Briefcase size={14} className="text-gray-400 shrink-0" />
+            <span className="text-sm text-gray-700 dark:text-gray-300 truncate max-w-[160px]">
+              {String(c.cargo_nombre || '-')}
+            </span>
+          </div>
+        ),
+      },
+      {
+        key: 'area',
+        header: 'Proceso',
+        hideOnTablet: true,
+        render: (c) => (
+          <span className="text-sm text-gray-600 dark:text-gray-300">
+            {String(c.area_nombre || '-')}
+          </span>
+        ),
+      },
+      {
+        key: 'contrato',
+        header: 'Contrato',
+        hideOnTablet: true,
+        render: (c) => (
+          <Badge variant="gray" size="sm">
+            {CONTRATO_LABELS[c.tipo_contrato as TipoContratoColaborador] || String(c.tipo_contrato)}
+          </Badge>
+        ),
+      },
+      {
+        key: 'estado',
+        header: 'Estado',
+        priority: 2 as const,
+        render: (c) => (
+          <Badge variant={ESTADO_BADGE[c.estado as EstadoColaborador]} size="sm">
+            {ESTADO_LABELS[c.estado as EstadoColaborador] || String(c.estado)}
+          </Badge>
+        ),
+      },
+      {
+        key: 'ingreso',
+        header: 'Ingreso',
+        hideOnTablet: true,
+        render: (c) => (
+          <span className="text-sm text-gray-600 dark:text-gray-300">
+            {c.fecha_ingreso ? new Date(String(c.fecha_ingreso)).toLocaleDateString('es-CO') : '-'}
+          </span>
+        ),
+      },
+    ],
+    []
+  );
+
   return (
     <div className="space-y-6">
       {/* Stats */}
@@ -214,7 +314,7 @@ export const ColaboradoresSection = () => {
           </div>
         }
         title="Colaboradores"
-        description="Directorio de empleados, informacion personal e historial laboral"
+        description="Directorio de empleados, información personal e historial laboral"
         variant="compact"
         actions={
           <div className="flex items-center gap-3 flex-nowrap">
@@ -257,14 +357,7 @@ export const ColaboradoresSection = () => {
 
       {/* Table */}
       <Card variant="bordered" padding="none">
-        {isLoading ? (
-          <div className="py-16 text-center">
-            <Spinner size="lg" className="mx-auto" />
-            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
-              Cargando colaboradores...
-            </p>
-          </div>
-        ) : colaboradores.length === 0 ? (
+        {colaboradores.length === 0 && !isLoading ? (
           <div className="py-16">
             <EmptyState
               icon={<Users className="h-12 w-12 text-gray-300" />}
@@ -277,145 +370,59 @@ export const ColaboradoresSection = () => {
             />
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-800">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Colaborador
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Documento
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Cargo
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Proceso
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Contrato
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Estado
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Ingreso
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
-                {colaboradores.map((colab) => (
-                  <tr
-                    key={colab.id}
-                    className="group transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
+          <ResponsiveTable<Colaborador & Record<string, unknown>>
+            data={colaboradores as (Colaborador & Record<string, unknown>)[]}
+            columns={columns}
+            keyExtractor={(c) => String(c.id)}
+            isLoading={isLoading}
+            emptyMessage="Sin colaboradores"
+            hoverable
+            mobileCardTitle={(c) =>
+              String(c.nombre_completo) || `${c.primer_nombre} ${c.primer_apellido}`
+            }
+            mobileCardSubtitle={(c) => (
+              <span className="text-xs text-gray-500">
+                {String(c.cargo_nombre || '-')} • {ESTADO_LABELS[c.estado as EstadoColaborador]}
+              </span>
+            )}
+            mobileCardAvatar={(c) => (
+              <Avatar
+                src={c.foto as string | null}
+                alt={String(c.nombre_completo || c.primer_nombre)}
+                size="sm"
+              />
+            )}
+            renderActions={(c) => (
+              <>
+                <button
+                  type="button"
+                  onClick={() => handleEdit(c as unknown as Colaborador)}
+                  className="p-1.5 rounded-md text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:text-primary-400 dark:hover:bg-primary-900/20"
+                  title="Ver / Editar"
+                >
+                  <Eye size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleEdit(c as unknown as Colaborador)}
+                  className="p-1.5 rounded-md text-gray-400 hover:text-info-600 hover:bg-info-50 dark:hover:text-info-400 dark:hover:bg-info-900/20"
+                  title="Editar"
+                >
+                  <Pencil size={16} />
+                </button>
+                {c.estado === 'activo' && (
+                  <button
+                    type="button"
+                    onClick={() => handleRetire(c as unknown as Colaborador)}
+                    className="p-1.5 rounded-md text-gray-400 hover:text-danger-600 hover:bg-danger-50 dark:hover:text-danger-400 dark:hover:bg-danger-900/20"
+                    title="Retirar"
                   >
-                    {/* Colaborador (foto + nombre) */}
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <Avatar
-                          src={colab.foto}
-                          alt={
-                            colab.nombre_completo ||
-                            `${colab.primer_nombre} ${colab.primer_apellido}`
-                          }
-                          size="sm"
-                        />
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                            {colab.nombre_completo ||
-                              `${colab.primer_nombre} ${colab.primer_apellido}`}
-                          </p>
-                          {colab.email_personal && (
-                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                              {colab.email_personal}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Documento */}
-                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
-                      <span className="text-xs text-gray-400 mr-1">{colab.tipo_documento}</span>
-                      {colab.numero_identificacion}
-                    </td>
-
-                    {/* Cargo */}
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <Briefcase size={14} className="text-gray-400 shrink-0" />
-                        <span className="text-sm text-gray-700 dark:text-gray-300 truncate max-w-[160px]">
-                          {colab.cargo_nombre || '-'}
-                        </span>
-                      </div>
-                    </td>
-
-                    {/* Proceso (Area) */}
-                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
-                      {colab.area_nombre || '-'}
-                    </td>
-
-                    {/* Tipo contrato */}
-                    <td className="px-4 py-3">
-                      <Badge variant="gray" size="sm">
-                        {CONTRATO_LABELS[colab.tipo_contrato] || colab.tipo_contrato}
-                      </Badge>
-                    </td>
-
-                    {/* Estado */}
-                    <td className="px-4 py-3">
-                      <Badge variant={ESTADO_BADGE[colab.estado]} size="sm">
-                        {ESTADO_LABELS[colab.estado] || colab.estado}
-                      </Badge>
-                    </td>
-
-                    {/* Fecha ingreso */}
-                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
-                      {colab.fecha_ingreso
-                        ? new Date(colab.fecha_ingreso).toLocaleDateString('es-CO')
-                        : '-'}
-                    </td>
-
-                    {/* Acciones */}
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          type="button"
-                          onClick={() => handleEdit(colab)}
-                          className="p-1.5 rounded-md text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:text-primary-400 dark:hover:bg-primary-900/20"
-                          title="Ver / Editar"
-                        >
-                          <Eye size={16} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleEdit(colab)}
-                          className="p-1.5 rounded-md text-gray-400 hover:text-info-600 hover:bg-info-50 dark:hover:text-info-400 dark:hover:bg-info-900/20"
-                          title="Editar"
-                        >
-                          <Pencil size={16} />
-                        </button>
-                        {colab.estado === 'activo' && (
-                          <button
-                            type="button"
-                            onClick={() => handleRetire(colab)}
-                            className="p-1.5 rounded-md text-gray-400 hover:text-danger-600 hover:bg-danger-50 dark:hover:text-danger-400 dark:hover:bg-danger-900/20"
-                            title="Retirar"
-                          >
-                            <LogOut size={16} />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    <LogOut size={16} />
+                  </button>
+                )}
+              </>
+            )}
+          />
         )}
 
         {/* Pagination info */}
@@ -440,7 +447,7 @@ export const ColaboradoresSection = () => {
       <ConfirmDialog
         isOpen={isRetireOpen}
         title="Retirar Colaborador"
-        message={`¿Estas seguro de retirar a ${retireTarget?.nombre_completo || retireTarget?.primer_nombre || ''}? Esta accion registrara la fecha de retiro y cambiara su estado.`}
+        message={`¿Estás seguro de retirar a ${retireTarget?.nombre_completo || retireTarget?.primer_nombre || ''}? Esta acción registrará la fecha de retiro y cambiará su estado.`}
         confirmText="Confirmar Retiro"
         variant="danger"
         isLoading={retirarMutation.isPending}

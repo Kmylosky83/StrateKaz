@@ -444,31 +444,62 @@ class CandidatoViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def contratar(self, request, pk=None):
-        """Marca al candidato como contratado y actualiza posiciones de la vacante"""
-        from django.db import transaction
+        """
+        Flujo completo de contratación: Candidato → Colaborador + Contrato + Onboarding.
 
-        candidato = self.get_object()
+        Request body:
+        {
+            "datos_contrato": {
+                "numero_contrato": "CTR-2026-001",
+                "tipo_contrato_id": 1,
+                "fecha_inicio": "2026-03-01",
+                "fecha_fin": null,
+                "salario_pactado": 3500000,
+                "objeto_contrato": "Prestación de servicios profesionales...",
+                "justificacion_tipo_contrato": "Cargo permanente en la organización",
+                "generar_documento": false,
+                "plantilla_id": null
+            }
+        }
+        """
+        from apps.talent_hub.services.contratacion_service import ContratacionService
 
-        with transaction.atomic():
-            candidato.estado = 'contratado'
-            candidato.fecha_contratacion = request.data.get(
-                'fecha_contratacion',
-                timezone.now().date()
-            )
-            candidato.salario_ofrecido = request.data.get('salario_ofrecido')
-            candidato.updated_by = request.user
-            candidato.save()
+        datos_contrato = request.data.get('datos_contrato', {})
 
-            # Actualizar posiciones cubiertas (thread-safe)
-            vacante = VacanteActiva.objects.select_for_update().get(pk=candidato.vacante_id)
-            vacante.posiciones_cubiertas = (vacante.posiciones_cubiertas or 0) + 1
-            if vacante.posiciones_cubiertas >= vacante.numero_posiciones:
-                vacante.estado = 'cerrada'
-                vacante.fecha_cierre_real = timezone.now().date()
-            vacante.save()
+        # Soporte legacy: si no viene datos_contrato, armar desde campos planos
+        if not datos_contrato:
+            datos_contrato = {
+                'numero_contrato': request.data.get('numero_contrato', ''),
+                'tipo_contrato_id': request.data.get('tipo_contrato_id'),
+                'fecha_inicio': request.data.get(
+                    'fecha_contratacion',
+                    str(timezone.now().date())
+                ),
+                'fecha_fin': request.data.get('fecha_fin'),
+                'salario_pactado': request.data.get('salario_ofrecido'),
+                'objeto_contrato': request.data.get('objeto_contrato', ''),
+                'justificacion_tipo_contrato': request.data.get(
+                    'justificacion_tipo_contrato', ''
+                ),
+            }
 
-        serializer = CandidatoDetailSerializer(candidato)
-        return Response(serializer.data)
+        resultado = ContratacionService.contratar_candidato(
+            candidato_id=pk,
+            datos_contrato=datos_contrato,
+            usuario_contratante=request.user,
+        )
+
+        return Response({
+            'message': 'Candidato contratado exitosamente',
+            'colaborador_id': resultado['colaborador'].id,
+            'colaborador_nombre': resultado['colaborador'].get_nombre_completo(),
+            'contrato_id': resultado['contrato'].id,
+            'contrato_numero': resultado['contrato'].numero_contrato,
+            'onboarding': resultado['onboarding'],
+            'documento_id': (
+                resultado['documento'].id if resultado.get('documento') else None
+            ),
+        })
 
 
 # =============================================================================
@@ -880,6 +911,63 @@ class HistorialContratoViewSet(viewsets.ModelViewSet):
         )
         serializer = HistorialContratoListSerializer(queryset, many=True)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def renovar(self, request, pk=None):
+        """
+        Renueva un contrato existente (Ley 2466/2025 compliance).
+
+        Request body:
+        {
+            "fecha_inicio": "2026-04-01",
+            "fecha_fin": "2027-03-31",
+            "salario_pactado": 3800000,
+            "objeto_contrato": "Renovación...",
+            "justificacion_tipo_contrato": "..."
+        }
+        """
+        from apps.talent_hub.services.contratacion_service import ContratacionService
+
+        nuevo_contrato = ContratacionService.renovar_contrato(
+            historial_contrato_id=pk,
+            datos_renovacion=request.data,
+            usuario=request.user,
+        )
+
+        serializer = HistorialContratoDetailSerializer(nuevo_contrato)
+        return Response({
+            'message': 'Contrato renovado exitosamente',
+            'contrato': serializer.data,
+            'warnings': nuevo_contrato.get_warnings(),
+        })
+
+    @action(detail=True, methods=['post'])
+    def otrosi(self, request, pk=None):
+        """
+        Crea un otrosí (modificación) al contrato.
+
+        Request body:
+        {
+            "numero_contrato": "OTR-CTR-2026-001",
+            "salario_pactado": 4000000,
+            "objeto_contrato": "Descripción de las modificaciones...",
+            "justificacion_tipo_contrato": "...",
+            "fecha_fin": "2027-06-30"
+        }
+        """
+        from apps.talent_hub.services.contratacion_service import ContratacionService
+
+        otrosi = ContratacionService.crear_otrosi(
+            historial_contrato_id=pk,
+            datos_otrosi=request.data,
+            usuario=request.user,
+        )
+
+        serializer = HistorialContratoDetailSerializer(otrosi)
+        return Response({
+            'message': 'Otrosí creado exitosamente',
+            'contrato': serializer.data,
+        })
 
 
 # =============================================================================

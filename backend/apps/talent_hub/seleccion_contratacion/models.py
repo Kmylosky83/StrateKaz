@@ -1664,6 +1664,17 @@ class HistorialContrato(BaseCompanyModel):
         verbose_name='Archivo del Contrato'
     )
 
+    # Integración Gestor Documental (Sprint 20)
+    contrato_documento = models.ForeignKey(
+        'gestion_documental.Documento',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='contratos_laborales',
+        verbose_name='Documento del Contrato',
+        help_text='Documento de contrato generado en el Gestor Documental'
+    )
+
     class Meta:
         db_table = 'talent_hub_historial_contrato'
         verbose_name = 'Historial de Contrato'

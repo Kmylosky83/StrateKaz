@@ -23,14 +23,14 @@ logger = logging.getLogger(__name__)
 )
 def check_contratos_por_vencer(self):
     """
-    Verifica contratos que vencen en 30, 15 o 7 días.
+    Verifica contratos que vencen en 90, 60, 30, 15 o 7 días.
     Se ejecuta diariamente.
     """
     from apps.talent_hub.seleccion_contratacion.models import HistorialContrato
     from apps.talent_hub.services import NotificadorTH
 
     hoy = timezone.now().date()
-    alertas = [30, 15, 7]
+    alertas = [90, 60, 30, 15, 7]
     total_notificados = 0
 
     for dias in alertas:

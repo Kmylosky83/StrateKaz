@@ -2,159 +2,140 @@
  * React Query Hooks para Seleccion y Contratacion - Talent Hub
  * Sistema de Gestion StrateKaz
  *
+ * Sprint 20: Refactorizado con factories (talentHubApi + thKeys).
+ * Mantiene TODOS los exports existentes para compatibilidad.
+ *
  * API Base: /talent-hub/seleccion/
- * Sincronizado con serializers del backend.
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { api } from '@/lib/api-client';
+import { AxiosError } from 'axios';
+import { thKeys } from '../api/queryKeys';
+import {
+  vacanteActivaApi,
+  candidatoApi,
+  entrevistaApi,
+  pruebaApi,
+  afiliacionSSApi,
+  historialContratoApi,
+  tipoContratoApi,
+  tipoEntidadApi,
+  entidadSSApi,
+  tipoPruebaApi,
+  plantillaPruebaApi,
+  asignacionPruebaApi,
+  entrevistaAsincronicaApi,
+  procesoSeleccionEstadisticasApi,
+} from '../api/talentHubApi';
+import { apiClient as api } from '@/lib/api-client';
 import type {
-  VacanteActiva,
-  VacanteActivaFormData,
   VacanteActivaFilters,
-  VacanteActivaDetail,
-  Candidato,
-  CandidatoFormData,
   CandidatoFilters,
-  CandidatoDetail,
-  Entrevista,
-  EntrevistaFormData,
   EntrevistaFilters,
-  Prueba,
-  PruebaFormData,
   PruebaFilters,
+  AfiliacionSSFilters,
+  HistorialContratoFilters,
+  AsignacionPruebaFilters,
+  EntrevistaAsincronicaFilters,
+  EstadoCandidato,
+  ContratarCandidatoDTO,
+  ContratarCandidatoResponse,
+  RenovarContratoDTO,
+  OtrosiDTO,
   TipoContrato,
   TipoEntidad,
   EntidadSeguridadSocial,
   TipoPrueba,
-  AfiliacionSS,
-  AfiliacionSSFormData,
-  AfiliacionSSFilters,
-  HistorialContrato,
-  HistorialContratoFormData,
-  HistorialContratoDetail,
-  HistorialContratoFilters,
-  EstadoCandidato,
-  ProcesoSeleccionEstadisticas,
-  PaginatedResponse,
   PlantillaPruebaList,
-  PlantillaPruebaDetail,
-  PlantillaPruebaFormData,
-  AsignacionPruebaList,
-  AsignacionPruebaDetail,
-  AsignacionPruebaFormData,
-  AsignacionPruebaFilters,
   PruebaPublicaData,
-  EntrevistaAsincronicaList,
-  EntrevistaAsincronicaDetail,
-  EntrevistaAsincronicaFormData,
-  EntrevistaAsincronicaFilters,
   EntrevistaAsincronicaPublicData,
-  PerfilamientoResponse,
 } from '../types';
 
 // ============================================================================
-// QUERY KEYS
+// BACKWARD-COMPAT: Legacy query keys (re-export for existing consumers)
 // ============================================================================
 
 export const seleccionKeys = {
-  // Catalogos
-  tiposContrato: ['seleccion', 'tipos-contrato'] as const,
-  tiposEntidad: ['seleccion', 'tipos-entidad'] as const,
-  entidadesSS: (tipoCodigo?: string) => ['seleccion', 'entidades-ss', tipoCodigo] as const,
-  tiposPrueba: ['seleccion', 'tipos-prueba'] as const,
-
-  // Vacantes Activas
+  tiposContrato: thKeys.tiposContrato.all,
+  tiposEntidad: thKeys.tiposEntidad.all,
+  entidadesSS: (tipoCodigo?: string) => thKeys.entidadesSS.list({ tipo_codigo: tipoCodigo }),
+  tiposPrueba: thKeys.tiposPrueba.all,
   vacantesActivas: {
-    all: ['seleccion', 'vacantes-activas'] as const,
-    list: (filters?: VacanteActivaFilters) =>
-      [...seleccionKeys.vacantesActivas.all, 'list', filters] as const,
-    detail: (id: number) => [...seleccionKeys.vacantesActivas.all, 'detail', id] as const,
-    abiertas: () => [...seleccionKeys.vacantesActivas.all, 'abiertas'] as const,
-    perfilamiento: (id: number) =>
-      [...seleccionKeys.vacantesActivas.all, 'perfilamiento', id] as const,
+    all: thKeys.vacantes.all,
+    list: (filters?: VacanteActivaFilters) => thKeys.vacantes.list(filters),
+    detail: (id: number) => thKeys.vacantes.detail(id),
+    abiertas: () => thKeys.vacantes.custom('abiertas'),
+    perfilamiento: (id: number) => thKeys.vacantes.custom('perfilamiento', id),
   },
-
-  // Candidatos
   candidatos: {
-    all: ['seleccion', 'candidatos'] as const,
-    list: (filters?: CandidatoFilters) =>
-      [...seleccionKeys.candidatos.all, 'list', filters] as const,
-    detail: (id: number) => [...seleccionKeys.candidatos.all, 'detail', id] as const,
-    porVacante: (vacanteId: number) =>
-      [...seleccionKeys.candidatos.all, 'vacante', vacanteId] as const,
+    all: thKeys.candidatos.all,
+    list: (filters?: CandidatoFilters) => thKeys.candidatos.list(filters),
+    detail: (id: number) => thKeys.candidatos.detail(id),
+    porVacante: (vacanteId: number) => thKeys.candidatos.custom('vacante', vacanteId),
   },
-
-  // Entrevistas
   entrevistas: {
-    all: ['seleccion', 'entrevistas'] as const,
-    list: (filters?: EntrevistaFilters) =>
-      [...seleccionKeys.entrevistas.all, 'list', filters] as const,
-    detail: (id: number) => [...seleccionKeys.entrevistas.all, 'detail', id] as const,
-    porCandidato: (candidatoId: number) =>
-      [...seleccionKeys.entrevistas.all, 'candidato', candidatoId] as const,
+    all: thKeys.entrevistas.all,
+    list: (filters?: EntrevistaFilters) => thKeys.entrevistas.list(filters),
+    detail: (id: number) => thKeys.entrevistas.detail(id),
+    porCandidato: (candidatoId: number) => thKeys.entrevistas.custom('candidato', candidatoId),
   },
-
-  // Pruebas
   pruebas: {
-    all: ['seleccion', 'pruebas'] as const,
-    list: (filters?: PruebaFilters) => [...seleccionKeys.pruebas.all, 'list', filters] as const,
-    detail: (id: number) => [...seleccionKeys.pruebas.all, 'detail', id] as const,
-    porCandidato: (candidatoId: number) =>
-      [...seleccionKeys.pruebas.all, 'candidato', candidatoId] as const,
+    all: thKeys.pruebas.all,
+    list: (filters?: PruebaFilters) => thKeys.pruebas.list(filters),
+    detail: (id: number) => thKeys.pruebas.detail(id),
+    porCandidato: (candidatoId: number) => thKeys.pruebas.custom('candidato', candidatoId),
   },
-
-  // Afiliaciones
   afiliaciones: {
-    all: ['seleccion', 'afiliaciones'] as const,
-    list: (filters?: AfiliacionSSFilters) =>
-      [...seleccionKeys.afiliaciones.all, 'list', filters] as const,
-    porCandidato: (candidatoId: number) =>
-      [...seleccionKeys.afiliaciones.all, 'candidato', candidatoId] as const,
+    all: thKeys.afiliaciones.all,
+    list: (filters?: AfiliacionSSFilters) => thKeys.afiliaciones.list(filters),
+    porCandidato: (candidatoId: number) => thKeys.afiliaciones.custom('candidato', candidatoId),
   },
-
-  // Historial Contratos
   historialContratos: {
-    all: ['seleccion', 'historial-contratos'] as const,
-    list: (filters?: HistorialContratoFilters) =>
-      [...seleccionKeys.historialContratos.all, 'list', filters] as const,
-    detail: (id: number) => [...seleccionKeys.historialContratos.all, 'detail', id] as const,
-    porVencer: (dias?: number) =>
-      [...seleccionKeys.historialContratos.all, 'por-vencer', dias] as const,
+    all: thKeys.contratos.all,
+    list: (filters?: HistorialContratoFilters) => thKeys.contratos.list(filters),
+    detail: (id: number) => thKeys.contratos.detail(id),
+    porVencer: (dias?: number) => thKeys.contratos.custom('por-vencer', dias),
   },
-
-  // Plantillas Prueba Dinámica
   plantillasPrueba: {
-    all: ['seleccion', 'plantillas-prueba'] as const,
-    list: () => [...seleccionKeys.plantillasPrueba.all, 'list'] as const,
-    detail: (id: number) => [...seleccionKeys.plantillasPrueba.all, 'detail', id] as const,
-    activas: () => [...seleccionKeys.plantillasPrueba.all, 'activas'] as const,
+    all: thKeys.plantillasPrueba.all,
+    list: () => thKeys.plantillasPrueba.lists(),
+    detail: (id: number) => thKeys.plantillasPrueba.detail(id),
+    activas: () => thKeys.plantillasPrueba.custom('activas'),
   },
-
-  // Asignaciones Prueba Dinámica
   asignacionesPrueba: {
-    all: ['seleccion', 'asignaciones-prueba'] as const,
-    list: (filters?: AsignacionPruebaFilters) =>
-      [...seleccionKeys.asignacionesPrueba.all, 'list', filters] as const,
-    detail: (id: number) => [...seleccionKeys.asignacionesPrueba.all, 'detail', id] as const,
+    all: thKeys.asignacionesPrueba.all,
+    list: (filters?: AsignacionPruebaFilters) => thKeys.asignacionesPrueba.list(filters),
+    detail: (id: number) => thKeys.asignacionesPrueba.detail(id),
     porCandidato: (candidatoId: number) =>
-      [...seleccionKeys.asignacionesPrueba.all, 'candidato', candidatoId] as const,
+      thKeys.asignacionesPrueba.custom('candidato', candidatoId),
   },
-
-  // Entrevistas Asincronicas
   entrevistasAsync: {
-    all: ['seleccion', 'entrevistas-async'] as const,
-    list: (filters?: EntrevistaAsincronicaFilters) =>
-      [...seleccionKeys.entrevistasAsync.all, 'list', filters] as const,
-    detail: (id: number) => [...seleccionKeys.entrevistasAsync.all, 'detail', id] as const,
-    porCandidato: (candidatoId: number) =>
-      [...seleccionKeys.entrevistasAsync.all, 'candidato', candidatoId] as const,
+    all: thKeys.entrevistasAsync.all,
+    list: (filters?: EntrevistaAsincronicaFilters) => thKeys.entrevistasAsync.list(filters),
+    detail: (id: number) => thKeys.entrevistasAsync.detail(id),
+    porCandidato: (candidatoId: number) => thKeys.entrevistasAsync.custom('candidato', candidatoId),
   },
-
-  // Estadisticas
-  estadisticas: () => ['seleccion', 'estadisticas'] as const,
+  estadisticas: () => thKeys.estadisticasSeleccion.all,
 };
+
+// ============================================================================
+// ERROR HELPER
+// ============================================================================
+
+function getMsg(error: unknown, fallback: string): string {
+  if (error instanceof AxiosError && error.response?.data) {
+    const d = error.response.data;
+    if (typeof d === 'string') return d;
+    if (d.detail) return String(d.detail);
+    if (d.message) return String(d.message);
+    const first = Object.values(d)[0];
+    if (Array.isArray(first)) return String(first[0]);
+    if (typeof first === 'string') return first;
+  }
+  if (error instanceof Error) return error.message;
+  return fallback;
+}
 
 // ============================================================================
 // HOOKS - CATALOGOS
@@ -162,11 +143,10 @@ export const seleccionKeys = {
 
 export function useTiposContrato() {
   return useQuery({
-    queryKey: seleccionKeys.tiposContrato,
+    queryKey: thKeys.tiposContrato.lists(),
     queryFn: async () => {
-      const response = await api.get('/talent-hub/seleccion/tipos-contrato/');
-      const data = response.data;
-      return Array.isArray(data) ? data : ((data?.results ?? []) as TipoContrato[]);
+      const res = await tipoContratoApi.getAll();
+      return Array.isArray(res) ? res : ((res?.results ?? []) as TipoContrato[]);
     },
     staleTime: 30 * 60 * 1000,
   });
@@ -174,11 +154,10 @@ export function useTiposContrato() {
 
 export function useTiposEntidad() {
   return useQuery({
-    queryKey: seleccionKeys.tiposEntidad,
+    queryKey: thKeys.tiposEntidad.lists(),
     queryFn: async () => {
-      const response = await api.get('/talent-hub/seleccion/tipos-entidad/');
-      const data = response.data;
-      return Array.isArray(data) ? data : ((data?.results ?? []) as TipoEntidad[]);
+      const res = await tipoEntidadApi.getAll();
+      return Array.isArray(res) ? res : ((res?.results ?? []) as TipoEntidad[]);
     },
     staleTime: 30 * 60 * 1000,
   });
@@ -186,12 +165,11 @@ export function useTiposEntidad() {
 
 export function useEntidadesSS(tipoCodigo?: string) {
   return useQuery({
-    queryKey: seleccionKeys.entidadesSS(tipoCodigo),
+    queryKey: thKeys.entidadesSS.list({ tipo_codigo: tipoCodigo }),
     queryFn: async () => {
-      const params = tipoCodigo ? `?tipo_codigo=${tipoCodigo}` : '';
-      const response = await api.get(`/talent-hub/seleccion/entidades-ss/${params}`);
-      const data = response.data;
-      return Array.isArray(data) ? data : ((data?.results ?? []) as EntidadSeguridadSocial[]);
+      if (tipoCodigo) return entidadSSApi.porTipo(tipoCodigo);
+      const res = await entidadSSApi.getAll();
+      return Array.isArray(res) ? res : ((res?.results ?? []) as EntidadSeguridadSocial[]);
     },
     staleTime: 30 * 60 * 1000,
   });
@@ -199,11 +177,10 @@ export function useEntidadesSS(tipoCodigo?: string) {
 
 export function useTiposPrueba() {
   return useQuery({
-    queryKey: seleccionKeys.tiposPrueba,
+    queryKey: thKeys.tiposPrueba.lists(),
     queryFn: async () => {
-      const response = await api.get('/talent-hub/seleccion/tipos-prueba/');
-      const data = response.data;
-      return (Array.isArray(data) ? data : (data?.results ?? [])) as TipoPrueba[];
+      const res = await tipoPruebaApi.getAll();
+      return Array.isArray(res) ? res : ((res?.results ?? []) as TipoPrueba[]);
     },
     staleTime: 30 * 60 * 1000,
   });
@@ -215,34 +192,16 @@ export function useTiposPrueba() {
 
 export function useVacantesActivas(filters?: VacanteActivaFilters) {
   return useQuery({
-    queryKey: seleccionKeys.vacantesActivas.list(filters),
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters?.estado) params.append('estado', filters.estado);
-      if (filters?.prioridad) params.append('prioridad', filters.prioridad);
-      if (filters?.area) params.append('area', filters.area);
-      if (filters?.search) params.append('search', filters.search);
-      if (filters?.page) params.append('page', String(filters.page));
-      if (filters?.page_size) params.append('page_size', String(filters.page_size));
-
-      const response = await api.get<PaginatedResponse<VacanteActiva>>(
-        `/talent-hub/seleccion/vacantes-activas/?${params}`
-      );
-      return response.data;
-    },
+    queryKey: thKeys.vacantes.list(filters),
+    queryFn: () => vacanteActivaApi.getAll(filters as Record<string, unknown>),
     staleTime: 3 * 60 * 1000,
   });
 }
 
 export function useVacanteActiva(id: number) {
   return useQuery({
-    queryKey: seleccionKeys.vacantesActivas.detail(id),
-    queryFn: async () => {
-      const response = await api.get<VacanteActivaDetail>(
-        `/talent-hub/seleccion/vacantes-activas/${id}/`
-      );
-      return response.data;
-    },
+    queryKey: thKeys.vacantes.detail(id),
+    queryFn: () => vacanteActivaApi.getDetail(id),
     enabled: !!id,
     staleTime: 3 * 60 * 1000,
   });
@@ -250,85 +209,54 @@ export function useVacanteActiva(id: number) {
 
 export function useVacantesActivasAbiertas() {
   return useQuery({
-    queryKey: seleccionKeys.vacantesActivas.abiertas(),
-    queryFn: async () => {
-      const response = await api.get<PaginatedResponse<VacanteActiva>>(
-        '/talent-hub/seleccion/vacantes-activas/abiertas/'
-      );
-      return response.data;
-    },
+    queryKey: thKeys.vacantes.custom('abiertas'),
+    queryFn: () => vacanteActivaApi.abiertas(),
     staleTime: 2 * 60 * 1000,
   });
 }
 
 export function useCreateVacanteActiva() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async (data: VacanteActivaFormData) => {
-      const response = await api.post('/talent-hub/seleccion/vacantes-activas/', data);
-      return response.data;
-    },
+    mutationFn: vacanteActivaApi.create,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.vacantesActivas.all });
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.estadisticas() });
+      queryClient.invalidateQueries({ queryKey: thKeys.vacantes.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.estadisticasSeleccion.all });
       toast.success('Vacante creada exitosamente');
     },
-    onError: (error: any) => {
-      const msg =
-        error.response?.data?.detail ||
-        error.response?.data?.codigo_vacante?.[0] ||
-        'Error al crear la vacante';
-      toast.error(msg);
-    },
+    onError: (e) => toast.error(getMsg(e, 'Error al crear la vacante')),
   });
 }
 
 export function useUpdateVacanteActiva() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<VacanteActivaFormData> }) => {
-      const response = await api.patch(`/talent-hub/seleccion/vacantes-activas/${id}/`, data);
-      return response.data;
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.vacantesActivas.all });
-      queryClient.invalidateQueries({
-        queryKey: seleccionKeys.vacantesActivas.detail(variables.id),
-      });
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
+      vacanteActivaApi.update(id, data as any),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: thKeys.vacantes.all });
       toast.success('Vacante actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Error al actualizar la vacante');
-    },
+    onError: (e) => toast.error(getMsg(e, 'Error al actualizar la vacante')),
   });
 }
 
 export function useCerrarVacanteActiva() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({ id, motivo_cierre }: { id: number; motivo_cierre?: string }) => {
-      const response = await api.post(`/talent-hub/seleccion/vacantes-activas/${id}/cerrar/`, {
-        motivo_cierre,
-      });
-      return response.data;
-    },
+    mutationFn: ({ id, motivo_cierre }: { id: number; motivo_cierre?: string }) =>
+      vacanteActivaApi.cerrar(id, motivo_cierre),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.vacantesActivas.all });
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.estadisticas() });
+      queryClient.invalidateQueries({ queryKey: thKeys.vacantes.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.estadisticasSeleccion.all });
       toast.success('Vacante cerrada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Error al cerrar la vacante');
-    },
+    onError: (e) => toast.error(getMsg(e, 'Error al cerrar la vacante')),
   });
 }
 
 export function usePublicarVacanteActiva() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async ({ id, url_publicacion }: { id: number; url_publicacion?: string }) => {
       const response = await api.post(`/talent-hub/seleccion/vacantes-activas/${id}/publicar/`, {
@@ -336,28 +264,18 @@ export function usePublicarVacanteActiva() {
       });
       return response.data;
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.vacantesActivas.all });
-      queryClient.invalidateQueries({
-        queryKey: seleccionKeys.vacantesActivas.detail(variables.id),
-      });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: thKeys.vacantes.all });
       toast.success('Estado de publicacion actualizado');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Error al publicar la vacante');
-    },
+    onError: (e) => toast.error(getMsg(e, 'Error al publicar la vacante')),
   });
 }
 
 export function usePerfilamientoVacante(vacanteId: number | null) {
   return useQuery({
-    queryKey: seleccionKeys.vacantesActivas.perfilamiento(vacanteId!),
-    queryFn: async () => {
-      const response = await api.get<PerfilamientoResponse>(
-        `/talent-hub/seleccion/vacantes-activas/${vacanteId}/perfilamiento/`
-      );
-      return response.data;
-    },
+    queryKey: thKeys.vacantes.custom('perfilamiento', vacanteId),
+    queryFn: () => vacanteActivaApi.perfilamiento(vacanteId!),
     enabled: !!vacanteId,
     staleTime: 2 * 60 * 1000,
   });
@@ -369,31 +287,16 @@ export function usePerfilamientoVacante(vacanteId: number | null) {
 
 export function useCandidatos(filters?: CandidatoFilters) {
   return useQuery({
-    queryKey: seleccionKeys.candidatos.list(filters),
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters?.vacante) params.append('vacante', filters.vacante);
-      if (filters?.estado) params.append('estado', filters.estado);
-      if (filters?.search) params.append('search', filters.search);
-      if (filters?.page) params.append('page', String(filters.page));
-      if (filters?.page_size) params.append('page_size', String(filters.page_size));
-
-      const response = await api.get<PaginatedResponse<Candidato>>(
-        `/talent-hub/seleccion/candidatos/?${params}`
-      );
-      return response.data;
-    },
+    queryKey: thKeys.candidatos.list(filters),
+    queryFn: () => candidatoApi.getAll(filters as Record<string, unknown>),
     staleTime: 2 * 60 * 1000,
   });
 }
 
 export function useCandidato(id: number) {
   return useQuery({
-    queryKey: seleccionKeys.candidatos.detail(id),
-    queryFn: async () => {
-      const response = await api.get<CandidatoDetail>(`/talent-hub/seleccion/candidatos/${id}/`);
-      return response.data;
-    },
+    queryKey: thKeys.candidatos.detail(id),
+    queryFn: () => candidatoApi.getDetail(id),
     enabled: !!id,
     staleTime: 2 * 60 * 1000,
   });
@@ -401,13 +304,8 @@ export function useCandidato(id: number) {
 
 export function useCandidatosPorVacante(vacanteId: number) {
   return useQuery({
-    queryKey: seleccionKeys.candidatos.porVacante(vacanteId),
-    queryFn: async () => {
-      const response = await api.get<PaginatedResponse<Candidato>>(
-        `/talent-hub/seleccion/candidatos/?vacante=${vacanteId}`
-      );
-      return response.data;
-    },
+    queryKey: thKeys.candidatos.custom('vacante', vacanteId),
+    queryFn: () => candidatoApi.porVacante(vacanteId),
     enabled: !!vacanteId,
     staleTime: 2 * 60 * 1000,
   });
@@ -415,19 +313,14 @@ export function useCandidatosPorVacante(vacanteId: number) {
 
 export function useCreateCandidato() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async (data: CandidatoFormData) => {
-      // Si hay archivos, usar FormData
+    mutationFn: async (data: any) => {
       if (data.hoja_vida || data.carta_presentacion) {
         const formData = new FormData();
         Object.entries(data).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
-            if (value instanceof File) {
-              formData.append(key, value);
-            } else {
-              formData.append(key, String(value));
-            }
+            if (value instanceof File) formData.append(key, value);
+            else formData.append(key, String(value));
           }
         });
         const response = await api.post('/talent-hub/seleccion/candidatos/', formData, {
@@ -435,47 +328,35 @@ export function useCreateCandidato() {
         });
         return response.data;
       }
-      const response = await api.post('/talent-hub/seleccion/candidatos/', data);
-      return response.data;
+      return candidatoApi.create(data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.candidatos.all });
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.vacantesActivas.all });
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.estadisticas() });
+      queryClient.invalidateQueries({ queryKey: thKeys.candidatos.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.vacantes.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.estadisticasSeleccion.all });
       toast.success('Candidato registrado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Error al registrar el candidato');
-    },
+    onError: (e) => toast.error(getMsg(e, 'Error al registrar el candidato')),
   });
 }
 
 export function useUpdateCandidato() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<CandidatoFormData> }) => {
-      const response = await api.patch(`/talent-hub/seleccion/candidatos/${id}/`, data);
-      return response.data;
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.candidatos.all });
-      queryClient.invalidateQueries({
-        queryKey: seleccionKeys.candidatos.detail(variables.id),
-      });
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
+      candidatoApi.update(id, data as any),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: thKeys.candidatos.all });
       toast.success('Candidato actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Error al actualizar el candidato');
-    },
+    onError: (e) => toast.error(getMsg(e, 'Error al actualizar el candidato')),
   });
 }
 
 export function useCambiarEstadoCandidato() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({
+    mutationFn: ({
       id,
       estado,
       motivo,
@@ -483,55 +364,31 @@ export function useCambiarEstadoCandidato() {
       id: number;
       estado: EstadoCandidato;
       motivo?: string;
-    }) => {
-      const response = await api.post(`/talent-hub/seleccion/candidatos/${id}/cambiar_estado/`, {
-        estado,
-        motivo,
-      });
-      return response.data;
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.candidatos.all });
-      queryClient.invalidateQueries({
-        queryKey: seleccionKeys.candidatos.detail(variables.id),
-      });
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.estadisticas() });
+    }) => candidatoApi.cambiarEstado(id, estado, motivo),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: thKeys.candidatos.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.estadisticasSeleccion.all });
       toast.success('Estado del candidato actualizado');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Error al cambiar el estado');
-    },
+    onError: (e) => toast.error(getMsg(e, 'Error al cambiar el estado')),
   });
 }
 
+/** Sprint 20: Contratar candidato con datos de contrato completos */
 export function useContratarCandidato() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({
-      id,
-      fecha_contratacion,
-      salario_ofrecido,
-    }: {
-      id: number;
-      fecha_contratacion?: string;
-      salario_ofrecido?: number;
-    }) => {
-      const response = await api.post(`/talent-hub/seleccion/candidatos/${id}/contratar/`, {
-        fecha_contratacion,
-        salario_ofrecido,
-      });
-      return response.data;
+    mutationFn: ({ id, ...data }: { id: number } & ContratarCandidatoDTO) =>
+      candidatoApi.contratar(id, data),
+    onSuccess: (res: ContratarCandidatoResponse) => {
+      queryClient.invalidateQueries({ queryKey: thKeys.candidatos.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.vacantes.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.estadisticasSeleccion.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.colaboradores.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.contratos.all });
+      toast.success(res.message || 'Candidato contratado exitosamente');
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.candidatos.all });
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.vacantesActivas.all });
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.estadisticas() });
-      toast.success('Candidato contratado exitosamente');
-    },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Error al contratar el candidato');
-    },
+    onError: (e) => toast.error(getMsg(e, 'Error al contratar el candidato'), { duration: 5000 }),
   });
 }
 
@@ -541,34 +398,16 @@ export function useContratarCandidato() {
 
 export function useEntrevistas(filters?: EntrevistaFilters) {
   return useQuery({
-    queryKey: seleccionKeys.entrevistas.list(filters),
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters?.candidato) params.append('candidato', filters.candidato);
-      if (filters?.estado) params.append('estado', filters.estado);
-      if (filters?.entrevistador) params.append('entrevistador', filters.entrevistador);
-      if (filters?.search) params.append('search', filters.search);
-      if (filters?.page) params.append('page', String(filters.page));
-      if (filters?.page_size) params.append('page_size', String(filters.page_size));
-
-      const response = await api.get<PaginatedResponse<Entrevista>>(
-        `/talent-hub/seleccion/entrevistas/?${params}`
-      );
-      return response.data;
-    },
+    queryKey: thKeys.entrevistas.list(filters),
+    queryFn: () => entrevistaApi.getAll(filters as Record<string, unknown>),
     staleTime: 2 * 60 * 1000,
   });
 }
 
 export function useEntrevistasPorCandidato(candidatoId: number) {
   return useQuery({
-    queryKey: seleccionKeys.entrevistas.porCandidato(candidatoId),
-    queryFn: async () => {
-      const response = await api.get<PaginatedResponse<Entrevista>>(
-        `/talent-hub/seleccion/entrevistas/por-candidato/${candidatoId}/`
-      );
-      return response.data;
-    },
+    queryKey: thKeys.entrevistas.custom('candidato', candidatoId),
+    queryFn: () => entrevistaApi.porCandidato(candidatoId),
     enabled: !!candidatoId,
     staleTime: 2 * 60 * 1000,
   });
@@ -576,112 +415,64 @@ export function useEntrevistasPorCandidato(candidatoId: number) {
 
 export function useCreateEntrevista() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async (data: EntrevistaFormData) => {
-      const response = await api.post('/talent-hub/seleccion/entrevistas/', data);
-      return response.data;
-    },
+    mutationFn: entrevistaApi.create,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.entrevistas.all });
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.estadisticas() });
+      queryClient.invalidateQueries({ queryKey: thKeys.entrevistas.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.estadisticasSeleccion.all });
       toast.success('Entrevista programada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Error al programar la entrevista');
-    },
+    onError: (e) => toast.error(getMsg(e, 'Error al programar la entrevista')),
   });
 }
 
 export function useUpdateEntrevista() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<EntrevistaFormData> }) => {
-      const response = await api.patch(`/talent-hub/seleccion/entrevistas/${id}/`, data);
-      return response.data;
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.entrevistas.all });
-      queryClient.invalidateQueries({
-        queryKey: seleccionKeys.entrevistas.detail(variables.id),
-      });
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
+      entrevistaApi.update(id, data as any),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: thKeys.entrevistas.all });
       toast.success('Entrevista actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Error al actualizar la entrevista');
-    },
+    onError: (e) => toast.error(getMsg(e, 'Error al actualizar la entrevista')),
   });
 }
 
 export function useRealizarEntrevista() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({
-      id,
-      data,
-    }: {
-      id: number;
-      data: {
-        duracion_real_minutos: number;
-        asistio_candidato: boolean;
-        calificacion_tecnica?: number;
-        calificacion_competencias?: number;
-        calificacion_general?: number;
-        fortalezas_identificadas?: string;
-        aspectos_mejorar?: string;
-        observaciones?: string;
-        recomendacion: string;
-      };
-    }) => {
-      const response = await api.post(`/talent-hub/seleccion/entrevistas/${id}/realizar/`, data);
-      return response.data;
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.entrevistas.all });
-      queryClient.invalidateQueries({
-        queryKey: seleccionKeys.entrevistas.detail(variables.id),
-      });
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.estadisticas() });
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
+      entrevistaApi.realizar(id, data as any),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: thKeys.entrevistas.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.estadisticasSeleccion.all });
       toast.success('Entrevista registrada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Error al registrar la entrevista');
-    },
+    onError: (e) => toast.error(getMsg(e, 'Error al registrar la entrevista')),
   });
 }
 
 export function useCancelarEntrevista() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({
+    mutationFn: ({
       id,
       estado,
       motivo,
       fecha_reprogramada,
     }: {
       id: number;
-      estado: 'cancelada' | 'reprogramada';
+      estado: string;
       motivo: string;
       fecha_reprogramada?: string;
-    }) => {
-      const response = await api.post(`/talent-hub/seleccion/entrevistas/${id}/cancelar/`, {
-        estado,
-        motivo,
-        fecha_reprogramada,
-      });
-      return response.data;
-    },
+    }) => entrevistaApi.cancelar(id, motivo),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.entrevistas.all });
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.estadisticas() });
+      queryClient.invalidateQueries({ queryKey: thKeys.entrevistas.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.estadisticasSeleccion.all });
       toast.success('Entrevista actualizada');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Error al actualizar la entrevista');
-    },
+    onError: (e) => toast.error(getMsg(e, 'Error al actualizar la entrevista')),
   });
 }
 
@@ -691,34 +482,16 @@ export function useCancelarEntrevista() {
 
 export function usePruebas(filters?: PruebaFilters) {
   return useQuery({
-    queryKey: seleccionKeys.pruebas.list(filters),
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters?.candidato) params.append('candidato', filters.candidato);
-      if (filters?.tipo_prueba) params.append('tipo_prueba', filters.tipo_prueba);
-      if (filters?.estado) params.append('estado', filters.estado);
-      if (filters?.search) params.append('search', filters.search);
-      if (filters?.page) params.append('page', String(filters.page));
-      if (filters?.page_size) params.append('page_size', String(filters.page_size));
-
-      const response = await api.get<PaginatedResponse<Prueba>>(
-        `/talent-hub/seleccion/pruebas/?${params}`
-      );
-      return response.data;
-    },
+    queryKey: thKeys.pruebas.list(filters),
+    queryFn: () => pruebaApi.getAll(filters as Record<string, unknown>),
     staleTime: 2 * 60 * 1000,
   });
 }
 
 export function usePruebasPorCandidato(candidatoId: number) {
   return useQuery({
-    queryKey: seleccionKeys.pruebas.porCandidato(candidatoId),
-    queryFn: async () => {
-      const response = await api.get<PaginatedResponse<Prueba>>(
-        `/talent-hub/seleccion/pruebas/por-candidato/${candidatoId}/`
-      );
-      return response.data;
-    },
+    queryKey: thKeys.pruebas.custom('candidato', candidatoId),
+    queryFn: () => pruebaApi.porCandidato(candidatoId),
     enabled: !!candidatoId,
     staleTime: 2 * 60 * 1000,
   });
@@ -726,26 +499,19 @@ export function usePruebasPorCandidato(candidatoId: number) {
 
 export function useCreatePrueba() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async (data: PruebaFormData) => {
-      const response = await api.post('/talent-hub/seleccion/pruebas/', data);
-      return response.data;
-    },
+    mutationFn: pruebaApi.create,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.pruebas.all });
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.estadisticas() });
+      queryClient.invalidateQueries({ queryKey: thKeys.pruebas.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.estadisticasSeleccion.all });
       toast.success('Prueba programada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Error al programar la prueba');
-    },
+    onError: (e) => toast.error(getMsg(e, 'Error al programar la prueba')),
   });
 }
 
 export function useCalificarPrueba() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async ({
       id,
@@ -768,16 +534,11 @@ export function useCalificarPrueba() {
       });
       return response.data;
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.pruebas.all });
-      queryClient.invalidateQueries({
-        queryKey: seleccionKeys.pruebas.detail(variables.id),
-      });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: thKeys.pruebas.all });
       toast.success('Prueba calificada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Error al calificar la prueba');
-    },
+    onError: (e) => toast.error(getMsg(e, 'Error al calificar la prueba')),
   });
 }
 
@@ -787,34 +548,16 @@ export function useCalificarPrueba() {
 
 export function useAfiliaciones(filters?: AfiliacionSSFilters) {
   return useQuery({
-    queryKey: seleccionKeys.afiliaciones.list(filters),
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters?.candidato) params.append('candidato', String(filters.candidato));
-      if (filters?.estado) params.append('estado', filters.estado);
-      if (filters?.tipo_entidad) params.append('tipo_entidad', filters.tipo_entidad);
-      if (filters?.search) params.append('search', filters.search);
-      if (filters?.page) params.append('page', String(filters.page));
-      if (filters?.page_size) params.append('page_size', String(filters.page_size));
-
-      const response = await api.get<PaginatedResponse<AfiliacionSS>>(
-        `/talent-hub/seleccion/afiliaciones/?${params}`
-      );
-      return response.data;
-    },
+    queryKey: thKeys.afiliaciones.list(filters),
+    queryFn: () => afiliacionSSApi.getAll(filters as Record<string, unknown>),
     staleTime: 3 * 60 * 1000,
   });
 }
 
 export function useAfiliacionesPorCandidato(candidatoId: number) {
   return useQuery({
-    queryKey: seleccionKeys.afiliaciones.porCandidato(candidatoId),
-    queryFn: async () => {
-      const response = await api.get<PaginatedResponse<AfiliacionSS>>(
-        `/talent-hub/seleccion/afiliaciones/por-candidato/${candidatoId}/`
-      );
-      return response.data;
-    },
+    queryKey: thKeys.afiliaciones.custom('candidato', candidatoId),
+    queryFn: () => afiliacionSSApi.porCandidato(candidatoId),
     enabled: !!candidatoId,
     staleTime: 3 * 60 * 1000,
   });
@@ -822,25 +565,18 @@ export function useAfiliacionesPorCandidato(candidatoId: number) {
 
 export function useCreateAfiliacion() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async (data: AfiliacionSSFormData) => {
-      const response = await api.post('/talent-hub/seleccion/afiliaciones/', data);
-      return response.data;
-    },
+    mutationFn: afiliacionSSApi.create,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.afiliaciones.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.afiliaciones.all });
       toast.success('Afiliacion registrada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Error al registrar la afiliacion');
-    },
+    onError: (e) => toast.error(getMsg(e, 'Error al registrar la afiliacion')),
   });
 }
 
 export function useConfirmarAfiliacion() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async ({
       id,
@@ -858,36 +594,23 @@ export function useConfirmarAfiliacion() {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.afiliaciones.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.afiliaciones.all });
       toast.success('Afiliacion confirmada');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Error al confirmar la afiliacion');
-    },
+    onError: (e) => toast.error(getMsg(e, 'Error al confirmar la afiliacion')),
   });
 }
 
 export function useUpdateAfiliacion() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({
-      id,
-      data,
-    }: {
-      id: number;
-      data: Partial<AfiliacionSSFormData & { estado: string; motivo_rechazo?: string }>;
-    }) => {
-      const response = await api.patch(`/talent-hub/seleccion/afiliaciones/${id}/`, data);
-      return response.data;
-    },
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
+      afiliacionSSApi.update(id, data as any),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.afiliaciones.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.afiliaciones.all });
       toast.success('Afiliacion actualizada');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Error al actualizar la afiliacion');
-    },
+    onError: (e) => toast.error(getMsg(e, 'Error al actualizar la afiliacion')),
   });
 }
 
@@ -897,33 +620,16 @@ export function useUpdateAfiliacion() {
 
 export function useHistorialContratos(filters?: HistorialContratoFilters) {
   return useQuery({
-    queryKey: seleccionKeys.historialContratos.list(filters),
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters?.colaborador) params.append('colaborador', String(filters.colaborador));
-      if (filters?.tipo_movimiento) params.append('tipo_movimiento', filters.tipo_movimiento);
-      if (filters?.vigentes !== undefined) params.append('vigentes', String(filters.vigentes));
-      if (filters?.page) params.append('page', String(filters.page));
-      if (filters?.page_size) params.append('page_size', String(filters.page_size));
-
-      const response = await api.get<PaginatedResponse<HistorialContrato>>(
-        `/talent-hub/seleccion/historial-contratos/?${params}`
-      );
-      return response.data;
-    },
+    queryKey: thKeys.contratos.list(filters),
+    queryFn: () => historialContratoApi.getAll(filters as Record<string, unknown>),
     staleTime: 5 * 60 * 1000,
   });
 }
 
 export function useHistorialContratoDetail(id: number) {
   return useQuery({
-    queryKey: seleccionKeys.historialContratos.detail(id),
-    queryFn: async () => {
-      const response = await api.get<HistorialContratoDetail>(
-        `/talent-hub/seleccion/historial-contratos/${id}/`
-      );
-      return response.data;
-    },
+    queryKey: thKeys.contratos.detail(id),
+    queryFn: () => historialContratoApi.getDetail(id),
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
   });
@@ -931,31 +637,22 @@ export function useHistorialContratoDetail(id: number) {
 
 export function useContratosPorVencer(dias = 30) {
   return useQuery({
-    queryKey: seleccionKeys.historialContratos.porVencer(dias),
-    queryFn: async () => {
-      const response = await api.get<PaginatedResponse<HistorialContrato>>(
-        `/talent-hub/seleccion/historial-contratos/por_vencer/?dias=${dias}`
-      );
-      return response.data;
-    },
+    queryKey: thKeys.contratos.custom('por-vencer', dias),
+    queryFn: () => historialContratoApi.porVencer(dias),
     staleTime: 5 * 60 * 1000,
   });
 }
 
 export function useCreateHistorialContrato() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async (data: HistorialContratoFormData) => {
+    mutationFn: async (data: any) => {
       if (data.archivo_contrato) {
         const formData = new FormData();
         Object.entries(data).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
-            if (value instanceof File) {
-              formData.append(key, value);
-            } else {
-              formData.append(key, String(value));
-            }
+            if (value instanceof File) formData.append(key, value);
+            else formData.append(key, String(value));
           }
         });
         const response = await api.post('/talent-hub/seleccion/historial-contratos/', formData, {
@@ -963,37 +660,68 @@ export function useCreateHistorialContrato() {
         });
         return response.data;
       }
-      const response = await api.post('/talent-hub/seleccion/historial-contratos/', data);
-      return response.data;
+      return historialContratoApi.create(data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.historialContratos.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.contratos.all });
       toast.success('Contrato registrado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Error al registrar el contrato');
-    },
+    onError: (e) => toast.error(getMsg(e, 'Error al registrar el contrato')),
   });
 }
 
 export function useFirmarContrato() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (id: number) => {
       const response = await api.post(`/talent-hub/seleccion/historial-contratos/${id}/firmar/`);
       return response.data;
     },
     onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.historialContratos.all });
-      queryClient.invalidateQueries({
-        queryKey: seleccionKeys.historialContratos.detail(id),
-      });
+      queryClient.invalidateQueries({ queryKey: thKeys.contratos.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.contratos.detail(id) });
       toast.success('Contrato firmado');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Error al firmar el contrato');
+    onError: (e) => toast.error(getMsg(e, 'Error al firmar el contrato')),
+  });
+}
+
+/** Sprint 20: Renovar contrato (Ley 2466/2025) */
+export function useRenovarContrato() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: RenovarContratoDTO }) =>
+      historialContratoApi.renovar(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: thKeys.contratos.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.colaboradores.all });
+      toast.success('Contrato renovado exitosamente');
     },
+    onError: (e) => toast.error(getMsg(e, 'Error al renovar el contrato'), { duration: 5000 }),
+  });
+}
+
+/** Sprint 20: Crear otrosi */
+export function useCrearOtrosi() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: OtrosiDTO }) =>
+      historialContratoApi.otrosi(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: thKeys.contratos.all });
+      toast.success('Otrosi creado exitosamente');
+    },
+    onError: (e) => toast.error(getMsg(e, 'Error al crear el otrosi'), { duration: 5000 }),
+  });
+}
+
+/** Sprint 20: Obtener warnings Ley 2466 */
+export function useContratoWarnings(id: number | null) {
+  return useQuery({
+    queryKey: thKeys.contratos.custom('warnings', id),
+    queryFn: () => historialContratoApi.warnings(id!),
+    enabled: !!id,
+    staleTime: 10 * 60 * 1000,
   });
 }
 
@@ -1003,28 +731,22 @@ export function useFirmarContrato() {
 
 export function useProcesoSeleccionEstadisticas() {
   return useQuery({
-    queryKey: seleccionKeys.estadisticas(),
-    queryFn: async () => {
-      const response = await api.get<ProcesoSeleccionEstadisticas>(
-        '/talent-hub/seleccion/estadisticas/'
-      );
-      return response.data;
-    },
+    queryKey: thKeys.estadisticasSeleccion.all,
+    queryFn: () => procesoSeleccionEstadisticasApi.get(),
     staleTime: 5 * 60 * 1000,
   });
 }
 
 // ============================================================================
-// HOOKS - PLANTILLAS PRUEBA DINÁMICA
+// HOOKS - PLANTILLAS PRUEBA DINAMICA
 // ============================================================================
 
 export function usePlantillasPrueba() {
   return useQuery({
-    queryKey: seleccionKeys.plantillasPrueba.list(),
+    queryKey: thKeys.plantillasPrueba.lists(),
     queryFn: async () => {
-      const response = await api.get('/talent-hub/seleccion/plantillas-prueba/');
-      const data = response.data;
-      return (Array.isArray(data) ? data : (data?.results ?? [])) as PlantillaPruebaList[];
+      const res = await plantillaPruebaApi.getAll();
+      return Array.isArray(res) ? res : ((res?.results ?? []) as PlantillaPruebaList[]);
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -1032,25 +754,16 @@ export function usePlantillasPrueba() {
 
 export function usePlantillasPruebaActivas() {
   return useQuery({
-    queryKey: seleccionKeys.plantillasPrueba.activas(),
-    queryFn: async () => {
-      const response = await api.get('/talent-hub/seleccion/plantillas-prueba/activas/');
-      const data = response.data;
-      return (Array.isArray(data) ? data : (data?.results ?? [])) as PlantillaPruebaList[];
-    },
+    queryKey: thKeys.plantillasPrueba.custom('activas'),
+    queryFn: () => plantillaPruebaApi.activas(),
     staleTime: 5 * 60 * 1000,
   });
 }
 
 export function usePlantillaPrueba(id: number) {
   return useQuery({
-    queryKey: seleccionKeys.plantillasPrueba.detail(id),
-    queryFn: async () => {
-      const response = await api.get<PlantillaPruebaDetail>(
-        `/talent-hub/seleccion/plantillas-prueba/${id}/`
-      );
-      return response.data;
-    },
+    queryKey: thKeys.plantillasPrueba.detail(id),
+    queryFn: () => plantillaPruebaApi.getDetail(id),
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
   });
@@ -1058,112 +771,72 @@ export function usePlantillaPrueba(id: number) {
 
 export function useCreatePlantillaPrueba() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async (data: PlantillaPruebaFormData) => {
-      const response = await api.post('/talent-hub/seleccion/plantillas-prueba/', data);
-      return response.data;
-    },
+    mutationFn: plantillaPruebaApi.create,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.plantillasPrueba.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.plantillasPrueba.all });
       toast.success('Plantilla de prueba creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Error al crear la plantilla');
-    },
+    onError: (e) => toast.error(getMsg(e, 'Error al crear la plantilla')),
   });
 }
 
 export function useUpdatePlantillaPrueba() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: Partial<PlantillaPruebaFormData> }) => {
-      const response = await api.patch(`/talent-hub/seleccion/plantillas-prueba/${id}/`, data);
-      return response.data;
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.plantillasPrueba.all });
-      queryClient.invalidateQueries({
-        queryKey: seleccionKeys.plantillasPrueba.detail(variables.id),
-      });
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
+      plantillaPruebaApi.update(id, data as any),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: thKeys.plantillasPrueba.all });
       toast.success('Plantilla actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Error al actualizar la plantilla');
-    },
+    onError: (e) => toast.error(getMsg(e, 'Error al actualizar la plantilla')),
   });
 }
 
 export function useDeletePlantillaPrueba() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async (id: number) => {
-      await api.delete(`/talent-hub/seleccion/plantillas-prueba/${id}/`);
-    },
+    mutationFn: (id: number) => plantillaPruebaApi.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.plantillasPrueba.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.plantillasPrueba.all });
       toast.success('Plantilla eliminada');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Error al eliminar la plantilla');
-    },
+    onError: (e) => toast.error(getMsg(e, 'Error al eliminar la plantilla')),
   });
 }
 
 export function useDuplicarPlantillaPrueba() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (id: number) => {
       const response = await api.post(`/talent-hub/seleccion/plantillas-prueba/${id}/duplicar/`);
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.plantillasPrueba.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.plantillasPrueba.all });
       toast.success('Plantilla duplicada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Error al duplicar');
-    },
+    onError: (e) => toast.error(getMsg(e, 'Error al duplicar')),
   });
 }
 
 // ============================================================================
-// HOOKS - ASIGNACIONES PRUEBA DINÁMICA
+// HOOKS - ASIGNACIONES PRUEBA DINAMICA
 // ============================================================================
 
 export function useAsignacionesPrueba(filters?: AsignacionPruebaFilters) {
   return useQuery({
-    queryKey: seleccionKeys.asignacionesPrueba.list(filters),
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters?.candidato) params.append('candidato', String(filters.candidato));
-      if (filters?.plantilla) params.append('plantilla', String(filters.plantilla));
-      if (filters?.estado) params.append('estado', filters.estado);
-      if (filters?.page) params.append('page', String(filters.page));
-      if (filters?.page_size) params.append('page_size', String(filters.page_size));
-
-      const response = await api.get<PaginatedResponse<AsignacionPruebaList>>(
-        `/talent-hub/seleccion/asignaciones-prueba/?${params}`
-      );
-      return response.data;
-    },
+    queryKey: thKeys.asignacionesPrueba.list(filters),
+    queryFn: () => asignacionPruebaApi.getAll(filters as Record<string, unknown>),
     staleTime: 2 * 60 * 1000,
   });
 }
 
 export function useAsignacionesPruebaPorCandidato(candidatoId: number) {
   return useQuery({
-    queryKey: seleccionKeys.asignacionesPrueba.porCandidato(candidatoId),
-    queryFn: async () => {
-      const response = await api.get(
-        `/talent-hub/seleccion/asignaciones-prueba/por_candidato/?candidato=${candidatoId}`
-      );
-      const data = response.data;
-      return (Array.isArray(data) ? data : (data?.results ?? [])) as AsignacionPruebaList[];
-    },
+    queryKey: thKeys.asignacionesPrueba.custom('candidato', candidatoId),
+    queryFn: () => asignacionPruebaApi.porCandidato(candidatoId),
     enabled: !!candidatoId,
     staleTime: 2 * 60 * 1000,
   });
@@ -1171,13 +844,8 @@ export function useAsignacionesPruebaPorCandidato(candidatoId: number) {
 
 export function useAsignacionPruebaDetail(id: number | null) {
   return useQuery({
-    queryKey: seleccionKeys.asignacionesPrueba.detail(id!),
-    queryFn: async () => {
-      const response = await api.get<AsignacionPruebaDetail>(
-        `/talent-hub/seleccion/asignaciones-prueba/${id}/`
-      );
-      return response.data;
-    },
+    queryKey: thKeys.asignacionesPrueba.detail(id!),
+    queryFn: () => asignacionPruebaApi.getDetail(id!),
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
   });
@@ -1185,42 +853,27 @@ export function useAsignacionPruebaDetail(id: number | null) {
 
 export function useCreateAsignacionPrueba() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async (data: AsignacionPruebaFormData) => {
-      const response = await api.post('/talent-hub/seleccion/asignaciones-prueba/', data);
-      return response.data;
-    },
+    mutationFn: asignacionPruebaApi.create,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.asignacionesPrueba.all });
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.plantillasPrueba.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.asignacionesPrueba.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.plantillasPrueba.all });
       toast.success('Prueba asignada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Error al asignar la prueba');
-    },
+    onError: (e) => toast.error(getMsg(e, 'Error al asignar la prueba')),
   });
 }
 
 export function useReenviarEmailPrueba() {
   return useMutation({
-    mutationFn: async (id: number) => {
-      const response = await api.post(
-        `/talent-hub/seleccion/asignaciones-prueba/${id}/reenviar_email/`
-      );
-      return response.data;
-    },
-    onSuccess: () => {
-      toast.success('Email reenviado exitosamente');
-    },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Error al reenviar el email');
-    },
+    mutationFn: (id: number) => asignacionPruebaApi.reenviarEmail(id),
+    onSuccess: () => toast.success('Email reenviado exitosamente'),
+    onError: (e) => toast.error(getMsg(e, 'Error al reenviar el email')),
   });
 }
 
 // ============================================================================
-// HOOKS - RESPONDER PRUEBA (PÚBLICO, SIN AUTH)
+// HOOKS - RESPONDER PRUEBA (PUBLICO, SIN AUTH)
 // ============================================================================
 
 export function usePruebaPublica(token: string) {
@@ -1252,12 +905,8 @@ export function useResponderPrueba() {
       });
       return response.data;
     },
-    onSuccess: () => {
-      toast.success('Prueba enviada exitosamente');
-    },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Error al enviar la prueba');
-    },
+    onSuccess: () => toast.success('Prueba enviada exitosamente'),
+    onError: (e) => toast.error(getMsg(e, 'Error al enviar la prueba')),
   });
 }
 
@@ -1267,143 +916,80 @@ export function useResponderPrueba() {
 
 export function useEntrevistasAsync(filters?: EntrevistaAsincronicaFilters) {
   return useQuery({
-    queryKey: seleccionKeys.entrevistasAsync.list(filters),
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters?.candidato) params.append('candidato', filters.candidato);
-      if (filters?.estado) params.append('estado', filters.estado);
-      if (filters?.search) params.append('search', filters.search);
-      if (filters?.page) params.append('page', String(filters.page));
-      if (filters?.page_size) params.append('page_size', String(filters.page_size));
-
-      const response = await api.get<PaginatedResponse<EntrevistaAsincronicaList>>(
-        `/talent-hub/seleccion/entrevistas-async/?${params}`
-      );
-      return response.data;
-    },
+    queryKey: thKeys.entrevistasAsync.list(filters),
+    queryFn: () => entrevistaAsincronicaApi.getAll(filters as Record<string, unknown>),
     staleTime: 30 * 1000,
   });
 }
 
 export function useEntrevistaAsyncDetail(id: number) {
   return useQuery({
-    queryKey: seleccionKeys.entrevistasAsync.detail(id),
-    queryFn: async () => {
-      const response = await api.get<EntrevistaAsincronicaDetail>(
-        `/talent-hub/seleccion/entrevistas-async/${id}/`
-      );
-      return response.data;
-    },
+    queryKey: thKeys.entrevistasAsync.detail(id),
+    queryFn: () => entrevistaAsincronicaApi.getDetail(id),
     enabled: !!id,
   });
 }
 
 export function useEntrevistasAsyncPorCandidato(candidatoId: number) {
   return useQuery({
-    queryKey: seleccionKeys.entrevistasAsync.porCandidato(candidatoId),
-    queryFn: async () => {
-      const response = await api.get(
-        `/talent-hub/seleccion/entrevistas-async/por-candidato/${candidatoId}/`
-      );
-      const data = response.data;
-      return (Array.isArray(data) ? data : (data?.results ?? [])) as EntrevistaAsincronicaList[];
-    },
+    queryKey: thKeys.entrevistasAsync.custom('candidato', candidatoId),
+    queryFn: () => entrevistaAsincronicaApi.porCandidato(candidatoId),
     enabled: !!candidatoId,
   });
 }
 
 export function useCreateEntrevistaAsync() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async (data: EntrevistaAsincronicaFormData) => {
-      const response = await api.post('/talent-hub/seleccion/entrevistas-async/', data);
-      return response.data;
-    },
+    mutationFn: entrevistaAsincronicaApi.create,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.entrevistasAsync.all });
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.estadisticas() });
+      queryClient.invalidateQueries({ queryKey: thKeys.entrevistasAsync.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.estadisticasSeleccion.all });
       toast.success('Entrevista asincronica creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Error al crear la entrevista');
-    },
+    onError: (e) => toast.error(getMsg(e, 'Error al crear la entrevista')),
   });
 }
 
 export function useEvaluarEntrevistaAsync() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({
-      id,
-      data,
-    }: {
-      id: number;
-      data: {
-        calificacion_general?: number;
-        recomendacion?: string;
-        fortalezas_identificadas?: string;
-        aspectos_mejorar?: string;
-        observaciones_evaluador?: string;
-      };
-    }) => {
-      const response = await api.post(
-        `/talent-hub/seleccion/entrevistas-async/${id}/evaluar/`,
-        data
-      );
-      return response.data;
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.entrevistasAsync.all });
-      queryClient.invalidateQueries({
-        queryKey: seleccionKeys.entrevistasAsync.detail(variables.id),
-      });
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.estadisticas() });
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
+      entrevistaAsincronicaApi.evaluar(id, data as any),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: thKeys.entrevistasAsync.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.estadisticasSeleccion.all });
       toast.success('Entrevista evaluada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Error al evaluar la entrevista');
-    },
+    onError: (e) => toast.error(getMsg(e, 'Error al evaluar la entrevista')),
   });
 }
 
 export function useReenviarEmailEntrevistaAsync() {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async (id: number) => {
-      const response = await api.post(
-        `/talent-hub/seleccion/entrevistas-async/${id}/reenviar-email/`
-      );
-      return response.data;
-    },
+    mutationFn: (id: number) => entrevistaAsincronicaApi.reenviarEmail(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.entrevistasAsync.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.entrevistasAsync.all });
       toast.success('Email reenviado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Error al reenviar el email');
-    },
+    onError: (e) => toast.error(getMsg(e, 'Error al reenviar el email')),
   });
 }
 
 export function useCancelarEntrevistaAsync() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (id: number) => {
       const response = await api.post(`/talent-hub/seleccion/entrevistas-async/${id}/cancelar/`);
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.entrevistasAsync.all });
-      queryClient.invalidateQueries({ queryKey: seleccionKeys.estadisticas() });
+      queryClient.invalidateQueries({ queryKey: thKeys.entrevistasAsync.all });
+      queryClient.invalidateQueries({ queryKey: thKeys.estadisticasSeleccion.all });
       toast.success('Entrevista cancelada');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Error al cancelar la entrevista');
-    },
+    onError: (e) => toast.error(getMsg(e, 'Error al cancelar la entrevista')),
   });
 }
 
@@ -1440,11 +1026,7 @@ export function useResponderEntrevistaAsync() {
       });
       return response.data;
     },
-    onSuccess: () => {
-      toast.success('Entrevista enviada exitosamente');
-    },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.detail || 'Error al enviar las respuestas');
-    },
+    onSuccess: () => toast.success('Entrevista enviada exitosamente'),
+    onError: (e) => toast.error(getMsg(e, 'Error al enviar las respuestas')),
   });
 }

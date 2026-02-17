@@ -1,14 +1,17 @@
 /**
  * CandidatosTab - Pipeline de Candidatos
- * Seleccion y Contratacion > Candidatos
+ * Selección y Contratación > Candidatos
+ *
+ * Sprint 20: ResponsiveTable + botón Contratar + HireFromCandidateModal
  *
  * Vista enterprise con:
- * - StatsGrid (4 metricas de candidatos)
- * - SectionHeader con filtros inline (busqueda, vacante, estado)
- * - Tabla de candidatos con acciones
- * - Modal de creacion/edicion
+ * - StatsGrid (4 métricas de candidatos)
+ * - SectionHeader con filtros inline (búsqueda, vacante, estado)
+ * - ResponsiveTable con card view móvil
+ * - Modal de creación/edición
  * - Drawer lateral de detalle con timeline
  * - Cambiar estado (dialog)
+ * - Contratar candidato aprobado (HireFromCandidateModal)
  */
 import { useState, useMemo } from 'react';
 import { Card } from '@/components/common/Card';
@@ -18,16 +21,16 @@ import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { SectionHeader } from '@/components/common/SectionHeader';
 import { EmptyState } from '@/components/common/EmptyState';
-import { Spinner } from '@/components/common/Spinner';
 import { StatsGrid } from '@/components/layout/StatsGrid';
 import type { StatItem } from '@/components/layout/StatsGrid';
+import { ResponsiveTable } from '@/components/common/ResponsiveTable';
+import type { ResponsiveTableColumn } from '@/components/common/ResponsiveTable';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { getModuleColorClasses } from '@/utils/moduleColors';
 import {
   Users,
   UserPlus,
   UserCheck,
-  UserX,
   Eye,
   Pencil,
   ArrowRightLeft,
@@ -35,6 +38,7 @@ import {
   Mail,
   Phone,
   MapPin,
+  Briefcase,
 } from 'lucide-react';
 import {
   useCandidatos,
@@ -46,6 +50,7 @@ import { ESTADO_CANDIDATO_OPTIONS, ESTADO_CANDIDATO_BADGE } from '../../types';
 import { CandidatoFormModal } from './CandidatoFormModal';
 import { CandidatoDetailDrawer } from './CandidatoDetailDrawer';
 import { CambiarEstadoDialog } from './CambiarEstadoDialog';
+import { HireFromCandidateModal } from './HireFromCandidateModal';
 
 // ============================================================================
 // Componente
@@ -61,6 +66,8 @@ export const CandidatosTab = () => {
   const [detailCandidato, setDetailCandidato] = useState<Candidato | null>(null);
   const [isEstadoOpen, setIsEstadoOpen] = useState(false);
   const [estadoTarget, setEstadoTarget] = useState<Candidato | null>(null);
+  const [isHireOpen, setIsHireOpen] = useState(false);
+  const [hireTarget, setHireTarget] = useState<Candidato | null>(null);
 
   // Module color
   const { color: moduleColor } = useModuleColor('TALENT_HUB');
@@ -142,7 +149,134 @@ export const CandidatosTab = () => {
     setIsEstadoOpen(true);
   };
 
+  const handleContratar = (candidato: Candidato) => {
+    setHireTarget(candidato);
+    setIsHireOpen(true);
+  };
+
   const candidatos = candidatosData?.results || [];
+
+  // ============================================================================
+  // ResponsiveTable columns
+  // ============================================================================
+
+  const columns: ResponsiveTableColumn<Candidato & Record<string, unknown>>[] = useMemo(
+    () => [
+      {
+        key: 'candidato',
+        header: 'Candidato',
+        priority: 1 as const,
+        render: (c) => (
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate max-w-[180px]">
+              {c.nombre_completo}
+            </p>
+            <div className="flex items-center gap-1 mt-0.5">
+              <span className="text-xs text-gray-400">{c.tipo_documento}</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">{c.numero_documento}</span>
+            </div>
+          </div>
+        ),
+      },
+      {
+        key: 'vacante',
+        header: 'Vacante',
+        priority: 2 as const,
+        render: (c) => (
+          <div>
+            <p className="text-sm text-gray-700 dark:text-gray-300 truncate max-w-[150px]">
+              {c.vacante_titulo}
+            </p>
+            <p className="text-xs text-gray-400 font-mono">{c.vacante_codigo}</p>
+          </div>
+        ),
+      },
+      {
+        key: 'contacto',
+        header: 'Contacto',
+        hideOnTablet: true,
+        render: (c) => (
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+              <Mail size={11} className="shrink-0" />
+              <span className="truncate max-w-[140px]">{c.email}</span>
+            </div>
+            <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+              <Phone size={11} className="shrink-0" />
+              <span>{c.telefono}</span>
+            </div>
+            {c.ciudad && (
+              <div className="flex items-center gap-1 text-xs text-gray-400">
+                <MapPin size={11} className="shrink-0" />
+                <span>{String(c.ciudad)}</span>
+              </div>
+            )}
+          </div>
+        ),
+      },
+      {
+        key: 'origen',
+        header: 'Origen',
+        hideOnTablet: true,
+        render: (c) => (
+          <Badge variant="gray" size="sm">
+            {String(c.origen_display)}
+          </Badge>
+        ),
+      },
+      {
+        key: 'estado',
+        header: 'Estado',
+        priority: 2 as const,
+        render: (c) => (
+          <Badge variant={ESTADO_CANDIDATO_BADGE[c.estado as EstadoCandidato]} size="sm">
+            {String(c.estado_display)}
+          </Badge>
+        ),
+      },
+      {
+        key: 'dias',
+        header: 'Días',
+        align: 'center' as const,
+        render: (c) => (
+          <span
+            className={`text-sm font-medium ${
+              Number(c.dias_en_proceso) > 30
+                ? 'text-danger-600 dark:text-danger-400'
+                : Number(c.dias_en_proceso) > 15
+                  ? 'text-warning-600 dark:text-warning-400'
+                  : 'text-gray-600 dark:text-gray-300'
+            }`}
+          >
+            {String(c.dias_en_proceso)}
+          </span>
+        ),
+      },
+      {
+        key: 'score',
+        header: 'Score',
+        align: 'center' as const,
+        hideOnTablet: true,
+        render: (c) =>
+          c.calificacion_general !== null && c.calificacion_general !== undefined ? (
+            <span
+              className={`text-sm font-bold ${
+                Number(c.calificacion_general) >= 80
+                  ? 'text-green-600 dark:text-green-400'
+                  : Number(c.calificacion_general) >= 60
+                    ? 'text-yellow-600 dark:text-yellow-400'
+                    : 'text-red-600 dark:text-red-400'
+              }`}
+            >
+              {c.calificacion_general}%
+            </span>
+          ) : (
+            <span className="text-xs text-gray-400">-</span>
+          ),
+      },
+    ],
+    []
+  );
 
   return (
     <div className="space-y-6">
@@ -157,7 +291,7 @@ export const CandidatosTab = () => {
           </div>
         }
         title="Pipeline de Candidatos"
-        description="Gestiona los candidatos en el proceso de seleccion"
+        description="Gestiona los candidatos en el proceso de selección"
         variant="compact"
         actions={
           <div className="flex items-center gap-3 flex-nowrap">
@@ -194,12 +328,7 @@ export const CandidatosTab = () => {
 
       {/* Table */}
       <Card variant="bordered" padding="none">
-        {isLoading ? (
-          <div className="py-16 text-center">
-            <Spinner size="lg" className="mx-auto" />
-            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Cargando candidatos...</p>
-          </div>
-        ) : candidatos.length === 0 ? (
+        {candidatos.length === 0 && !isLoading ? (
           <div className="py-16">
             <EmptyState
               icon={<Users className="h-12 w-12 text-gray-300" />}
@@ -212,170 +341,78 @@ export const CandidatosTab = () => {
             />
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-800">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Candidato
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Vacante
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Contacto
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Origen
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Estado
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Dias
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Score
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
-                {candidatos.map((candidato) => (
-                  <tr
-                    key={candidato.id}
-                    className="group transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
-                    onClick={() => handleViewDetail(candidato)}
+          <ResponsiveTable<Candidato & Record<string, unknown>>
+            data={candidatos as (Candidato & Record<string, unknown>)[]}
+            columns={columns}
+            keyExtractor={(c) => String(c.id)}
+            isLoading={isLoading}
+            emptyMessage="Sin candidatos"
+            hoverable
+            onRowClick={(c) => handleViewDetail(c as unknown as Candidato)}
+            mobileCardTitle={(c) => String(c.nombre_completo)}
+            mobileCardSubtitle={(c) => (
+              <span className="text-xs text-gray-500">
+                {String(c.vacante_titulo)} • {String(c.estado_display)}
+              </span>
+            )}
+            mobileCardAvatar={(c) => (
+              <Badge variant={ESTADO_CANDIDATO_BADGE[c.estado as EstadoCandidato]} size="sm">
+                {String(c.estado_display)}
+              </Badge>
+            )}
+            renderActions={(c) => (
+              <>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleViewDetail(c as unknown as Candidato);
+                  }}
+                  className="p-1.5 rounded-md text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:text-primary-400 dark:hover:bg-primary-900/20"
+                  title="Ver detalle"
+                >
+                  <Eye size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEdit(c as unknown as Candidato);
+                  }}
+                  className="p-1.5 rounded-md text-gray-400 hover:text-info-600 hover:bg-info-50 dark:hover:text-info-400 dark:hover:bg-info-900/20"
+                  title="Editar"
+                >
+                  <Pencil size={16} />
+                </button>
+                {c.estado === 'aprobado' && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleContratar(c as unknown as Candidato);
+                    }}
+                    className="p-1.5 rounded-md text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:text-green-400 dark:hover:bg-green-900/20"
+                    title="Contratar"
                   >
-                    {/* Candidato */}
-                    <td className="px-4 py-3">
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate max-w-[180px]">
-                          {candidato.nombre_completo}
-                        </p>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <span className="text-xs text-gray-400">{candidato.tipo_documento}</span>
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {candidato.numero_documento}
-                          </span>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Vacante */}
-                    <td className="px-4 py-3">
-                      <p className="text-sm text-gray-700 dark:text-gray-300 truncate max-w-[150px]">
-                        {candidato.vacante_titulo}
-                      </p>
-                      <p className="text-xs text-gray-400 font-mono">{candidato.vacante_codigo}</p>
-                    </td>
-
-                    {/* Contacto */}
-                    <td className="px-4 py-3">
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                          <Mail size={11} className="shrink-0" />
-                          <span className="truncate max-w-[140px]">{candidato.email}</span>
-                        </div>
-                        <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                          <Phone size={11} className="shrink-0" />
-                          <span>{candidato.telefono}</span>
-                        </div>
-                        {candidato.ciudad && (
-                          <div className="flex items-center gap-1 text-xs text-gray-400">
-                            <MapPin size={11} className="shrink-0" />
-                            <span>{candidato.ciudad}</span>
-                          </div>
-                        )}
-                      </div>
-                    </td>
-
-                    {/* Origen */}
-                    <td className="px-4 py-3">
-                      <Badge variant="gray" size="sm">
-                        {candidato.origen_display}
-                      </Badge>
-                    </td>
-
-                    {/* Estado */}
-                    <td className="px-4 py-3">
-                      <Badge variant={ESTADO_CANDIDATO_BADGE[candidato.estado]} size="sm">
-                        {candidato.estado_display}
-                      </Badge>
-                    </td>
-
-                    {/* Dias en proceso */}
-                    <td className="px-4 py-3 text-center">
-                      <span
-                        className={`text-sm font-medium ${
-                          candidato.dias_en_proceso > 30
-                            ? 'text-danger-600 dark:text-danger-400'
-                            : candidato.dias_en_proceso > 15
-                              ? 'text-warning-600 dark:text-warning-400'
-                              : 'text-gray-600 dark:text-gray-300'
-                        }`}
-                      >
-                        {candidato.dias_en_proceso}
-                      </span>
-                    </td>
-
-                    {/* Score */}
-                    <td className="px-4 py-3 text-center">
-                      {candidato.calificacion_general !== null ? (
-                        <span
-                          className={`text-sm font-bold ${
-                            candidato.calificacion_general >= 80
-                              ? 'text-green-600 dark:text-green-400'
-                              : candidato.calificacion_general >= 60
-                                ? 'text-yellow-600 dark:text-yellow-400'
-                                : 'text-red-600 dark:text-red-400'
-                          }`}
-                        >
-                          {candidato.calificacion_general}%
-                        </span>
-                      ) : (
-                        <span className="text-xs text-gray-400">-</span>
-                      )}
-                    </td>
-
-                    {/* Acciones */}
-                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          type="button"
-                          onClick={() => handleViewDetail(candidato)}
-                          className="p-1.5 rounded-md text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:text-primary-400 dark:hover:bg-primary-900/20"
-                          title="Ver detalle"
-                        >
-                          <Eye size={16} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleEdit(candidato)}
-                          className="p-1.5 rounded-md text-gray-400 hover:text-info-600 hover:bg-info-50 dark:hover:text-info-400 dark:hover:bg-info-900/20"
-                          title="Editar"
-                        >
-                          <Pencil size={16} />
-                        </button>
-                        {candidato.estado !== 'contratado' && candidato.estado !== 'rechazado' && (
-                          <button
-                            type="button"
-                            onClick={() => handleCambiarEstado(candidato)}
-                            className="p-1.5 rounded-md text-gray-400 hover:text-warning-600 hover:bg-warning-50 dark:hover:text-warning-400 dark:hover:bg-warning-900/20"
-                            title="Cambiar estado"
-                          >
-                            <ArrowRightLeft size={16} />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    <Briefcase size={16} />
+                  </button>
+                )}
+                {c.estado !== 'contratado' && c.estado !== 'rechazado' && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCambiarEstado(c as unknown as Candidato);
+                    }}
+                    className="p-1.5 rounded-md text-gray-400 hover:text-warning-600 hover:bg-warning-50 dark:hover:text-warning-400 dark:hover:bg-warning-900/20"
+                    title="Cambiar estado"
+                  >
+                    <ArrowRightLeft size={16} />
+                  </button>
+                )}
+              </>
+            )}
+          />
         )}
 
         {/* Pagination info */}
@@ -423,6 +460,16 @@ export const CandidatosTab = () => {
         onClose={() => {
           setIsEstadoOpen(false);
           setEstadoTarget(null);
+        }}
+      />
+
+      {/* Hire Modal — Sprint 20 */}
+      <HireFromCandidateModal
+        candidato={hireTarget}
+        isOpen={isHireOpen}
+        onClose={() => {
+          setIsHireOpen(false);
+          setHireTarget(null);
         }}
       />
     </div>

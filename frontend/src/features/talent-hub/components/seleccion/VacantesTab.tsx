@@ -1,12 +1,14 @@
 /**
  * VacantesTab - CRUD de Vacantes Activas
- * Seleccion y Contratacion > Vacantes
+ * Selección y Contratación > Vacantes
+ *
+ * Sprint 20: Migrado a ResponsiveTable (card view < 768px)
  *
  * Vista enterprise con:
- * - StatsGrid (4 metricas del proceso de seleccion)
- * - SectionHeader con filtros inline (busqueda, estado, prioridad)
- * - Tabla de vacantes con acciones
- * - Modal de creacion/edicion (VacanteFormModal)
+ * - StatsGrid (4 métricas del proceso de selección)
+ * - SectionHeader con filtros inline (búsqueda, estado, prioridad)
+ * - ResponsiveTable con card view móvil
+ * - Modal de creación/edición (VacanteFormModal)
  * - Cerrar vacante (ConfirmDialog)
  */
 import { useState, useMemo } from 'react';
@@ -18,9 +20,10 @@ import { Select } from '@/components/forms/Select';
 import { SectionHeader } from '@/components/common/SectionHeader';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { EmptyState } from '@/components/common/EmptyState';
-import { Spinner } from '@/components/common/Spinner';
 import { StatsGrid } from '@/components/layout/StatsGrid';
 import type { StatItem } from '@/components/layout/StatsGrid';
+import { ResponsiveTable } from '@/components/common/ResponsiveTable';
+import type { ResponsiveTableColumn } from '@/components/common/ResponsiveTable';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { getModuleColorClasses } from '@/utils/moduleColors';
 import {
@@ -100,7 +103,7 @@ export const VacantesTab = () => {
         iconColor: 'success' as const,
       },
       {
-        label: 'Tiempo Prom. (dias)',
+        label: 'Tiempo Prom. (días)',
         value: statsData?.tiempo_promedio_contratacion
           ? Math.round(statsData.tiempo_promedio_contratacion)
           : '-',
@@ -147,6 +150,114 @@ export const VacantesTab = () => {
 
   const vacantes = vacantesData?.results || [];
 
+  // ============================================================================
+  // ResponsiveTable columns
+  // ============================================================================
+
+  const columns: ResponsiveTableColumn<VacanteActiva & Record<string, unknown>>[] = useMemo(
+    () => [
+      {
+        key: 'vacante',
+        header: 'Vacante',
+        priority: 1 as const,
+        render: (v) => (
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate max-w-[200px]">
+              {v.titulo}
+            </p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="text-xs text-gray-400 font-mono">{v.codigo_vacante}</span>
+              {v.publicada_externamente && (
+                <Globe size={12} className="text-green-500" title="Publicada" />
+              )}
+            </div>
+          </div>
+        ),
+      },
+      {
+        key: 'cargo',
+        header: 'Cargo / Área',
+        priority: 2 as const,
+        render: (v) => (
+          <div>
+            <p className="text-sm text-gray-700 dark:text-gray-300 truncate max-w-[160px]">
+              {v.cargo_requerido}
+            </p>
+            <p className="text-xs text-gray-400 truncate max-w-[160px]">{String(v.area || '-')}</p>
+          </div>
+        ),
+      },
+      {
+        key: 'posiciones',
+        header: 'Posiciones',
+        align: 'center' as const,
+        render: (v) => (
+          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            {String(v.numero_posiciones)}
+          </span>
+        ),
+      },
+      {
+        key: 'candidatos',
+        header: 'Candidatos',
+        align: 'center' as const,
+        render: (v) => (
+          <div className="flex items-center justify-center gap-1">
+            <Users size={14} className="text-gray-400" />
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {String(v.total_candidatos)}
+            </span>
+            {Number(v.candidatos_activos) > 0 && (
+              <span className="text-xs text-green-600 dark:text-green-400">
+                ({v.candidatos_activos})
+              </span>
+            )}
+          </div>
+        ),
+      },
+      {
+        key: 'prioridad',
+        header: 'Prioridad',
+        hideOnTablet: true,
+        render: (v) => (
+          <Badge variant={PRIORIDAD_BADGE[v.prioridad as PrioridadVacante]} size="sm">
+            {String(v.prioridad_display)}
+          </Badge>
+        ),
+      },
+      {
+        key: 'estado',
+        header: 'Estado',
+        priority: 2 as const,
+        render: (v) => (
+          <Badge variant={ESTADO_VACANTE_BADGE[v.estado as EstadoVacante]} size="sm">
+            {String(v.estado_display)}
+          </Badge>
+        ),
+      },
+      {
+        key: 'dias',
+        header: 'Días',
+        align: 'center' as const,
+        hideOnTablet: true,
+        render: (v) => (
+          <span
+            className={`text-sm font-medium ${
+              Number(v.dias_abierta) > 30
+                ? 'text-danger-600 dark:text-danger-400'
+                : Number(v.dias_abierta) > 15
+                  ? 'text-warning-600 dark:text-warning-400'
+                  : 'text-gray-600 dark:text-gray-300'
+            }`}
+          >
+            {String(v.dias_abierta)}
+          </span>
+        ),
+      },
+    ],
+    []
+  );
+
   return (
     <div className="space-y-6">
       {/* Stats */}
@@ -165,7 +276,7 @@ export const VacantesTab = () => {
         actions={
           <div className="flex items-center gap-3 flex-nowrap">
             <Input
-              placeholder="Buscar por titulo, cargo..."
+              placeholder="Buscar por título, cargo..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-56"
@@ -202,12 +313,7 @@ export const VacantesTab = () => {
 
       {/* Table */}
       <Card variant="bordered" padding="none">
-        {isLoading ? (
-          <div className="py-16 text-center">
-            <Spinner size="lg" className="mx-auto" />
-            <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">Cargando vacantes...</p>
-          </div>
-        ) : vacantes.length === 0 ? (
+        {vacantes.length === 0 && !isLoading ? (
           <div className="py-16">
             <EmptyState
               icon={<Briefcase className="h-12 w-12 text-gray-300" />}
@@ -215,161 +321,60 @@ export const VacantesTab = () => {
               description={
                 searchTerm || Object.values(filters).some(Boolean)
                   ? 'No se encontraron vacantes con los filtros aplicados.'
-                  : 'Crea la primera vacante para iniciar el proceso de seleccion.'
+                  : 'Crea la primera vacante para iniciar el proceso de selección.'
               }
             />
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-800">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Vacante
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Cargo / Area
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Posiciones
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Candidatos
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Prioridad
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Estado
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Dias
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
-                {vacantes.map((vacante) => (
-                  <tr
-                    key={vacante.id}
-                    className="group transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
+          <ResponsiveTable<VacanteActiva & Record<string, unknown>>
+            data={vacantes as (VacanteActiva & Record<string, unknown>)[]}
+            columns={columns}
+            keyExtractor={(v) => String(v.id)}
+            isLoading={isLoading}
+            emptyMessage="Sin vacantes"
+            hoverable
+            mobileCardTitle={(v) => String(v.titulo)}
+            mobileCardSubtitle={(v) => (
+              <span className="text-xs text-gray-500">
+                {String(v.cargo_requerido)} • {String(v.estado_display)}
+              </span>
+            )}
+            mobileCardAvatar={(v) => (
+              <Badge variant={ESTADO_VACANTE_BADGE[v.estado as EstadoVacante]} size="sm">
+                {String(v.estado_display)}
+              </Badge>
+            )}
+            renderActions={(v) => (
+              <>
+                <button
+                  type="button"
+                  onClick={() => handleEdit(v as unknown as VacanteActiva)}
+                  className="p-1.5 rounded-md text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:text-primary-400 dark:hover:bg-primary-900/20"
+                  title="Ver / Editar"
+                >
+                  <Eye size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleEdit(v as unknown as VacanteActiva)}
+                  className="p-1.5 rounded-md text-gray-400 hover:text-info-600 hover:bg-info-50 dark:hover:text-info-400 dark:hover:bg-info-900/20"
+                  title="Editar"
+                >
+                  <Pencil size={16} />
+                </button>
+                {(v.estado === 'abierta' || v.estado === 'en_proceso') && (
+                  <button
+                    type="button"
+                    onClick={() => handleCerrar(v as unknown as VacanteActiva)}
+                    className="p-1.5 rounded-md text-gray-400 hover:text-danger-600 hover:bg-danger-50 dark:hover:text-danger-400 dark:hover:bg-danger-900/20"
+                    title="Cerrar vacante"
                   >
-                    {/* Vacante (codigo + titulo) */}
-                    <td className="px-4 py-3">
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate max-w-[200px]">
-                          {vacante.titulo}
-                        </p>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          <span className="text-xs text-gray-400 font-mono">
-                            {vacante.codigo_vacante}
-                          </span>
-                          {vacante.publicada_externamente && (
-                            <Globe size={12} className="text-green-500" title="Publicada" />
-                          )}
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Cargo / Area */}
-                    <td className="px-4 py-3">
-                      <p className="text-sm text-gray-700 dark:text-gray-300 truncate max-w-[160px]">
-                        {vacante.cargo_requerido}
-                      </p>
-                      <p className="text-xs text-gray-400 truncate max-w-[160px]">
-                        {vacante.area || '-'}
-                      </p>
-                    </td>
-
-                    {/* Posiciones */}
-                    <td className="px-4 py-3 text-center">
-                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {vacante.numero_posiciones}
-                      </span>
-                    </td>
-
-                    {/* Candidatos */}
-                    <td className="px-4 py-3 text-center">
-                      <div className="flex items-center justify-center gap-1">
-                        <Users size={14} className="text-gray-400" />
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          {vacante.total_candidatos}
-                        </span>
-                        {vacante.candidatos_activos > 0 && (
-                          <span className="text-xs text-green-600 dark:text-green-400">
-                            ({vacante.candidatos_activos})
-                          </span>
-                        )}
-                      </div>
-                    </td>
-
-                    {/* Prioridad */}
-                    <td className="px-4 py-3">
-                      <Badge variant={PRIORIDAD_BADGE[vacante.prioridad]} size="sm">
-                        {vacante.prioridad_display}
-                      </Badge>
-                    </td>
-
-                    {/* Estado */}
-                    <td className="px-4 py-3">
-                      <Badge variant={ESTADO_VACANTE_BADGE[vacante.estado]} size="sm">
-                        {vacante.estado_display}
-                      </Badge>
-                    </td>
-
-                    {/* Dias abierta */}
-                    <td className="px-4 py-3 text-center">
-                      <span
-                        className={`text-sm font-medium ${
-                          vacante.dias_abierta > 30
-                            ? 'text-danger-600 dark:text-danger-400'
-                            : vacante.dias_abierta > 15
-                              ? 'text-warning-600 dark:text-warning-400'
-                              : 'text-gray-600 dark:text-gray-300'
-                        }`}
-                      >
-                        {vacante.dias_abierta}
-                      </span>
-                    </td>
-
-                    {/* Acciones */}
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          type="button"
-                          onClick={() => handleEdit(vacante)}
-                          className="p-1.5 rounded-md text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:text-primary-400 dark:hover:bg-primary-900/20"
-                          title="Ver / Editar"
-                        >
-                          <Eye size={16} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleEdit(vacante)}
-                          className="p-1.5 rounded-md text-gray-400 hover:text-info-600 hover:bg-info-50 dark:hover:text-info-400 dark:hover:bg-info-900/20"
-                          title="Editar"
-                        >
-                          <Pencil size={16} />
-                        </button>
-                        {(vacante.estado === 'abierta' || vacante.estado === 'en_proceso') && (
-                          <button
-                            type="button"
-                            onClick={() => handleCerrar(vacante)}
-                            className="p-1.5 rounded-md text-gray-400 hover:text-danger-600 hover:bg-danger-50 dark:hover:text-danger-400 dark:hover:bg-danger-900/20"
-                            title="Cerrar vacante"
-                          >
-                            <XCircle size={16} />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    <XCircle size={16} />
+                  </button>
+                )}
+              </>
+            )}
+          />
         )}
 
         {/* Pagination info */}
@@ -396,7 +401,7 @@ export const VacantesTab = () => {
       <ConfirmDialog
         isOpen={isCerrarOpen}
         title="Cerrar Vacante"
-        message={`¿Estas seguro de cerrar la vacante "${cerrarTarget?.titulo || ''}"? Los candidatos en proceso seran notificados.`}
+        message={`¿Estás seguro de cerrar la vacante "${cerrarTarget?.titulo || ''}"? Los candidatos en proceso serán notificados.`}
         confirmText="Cerrar Vacante"
         variant="danger"
         isLoading={cerrarMutation.isPending}

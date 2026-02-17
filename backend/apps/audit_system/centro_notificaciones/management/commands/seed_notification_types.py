@@ -301,6 +301,58 @@ TIPOS_NOTIFICACION = [
         'es_email': True,
         'es_push': False,
     },
+    {
+        'codigo': 'TH_CONTRATACION_EXITOSA',
+        'nombre': 'Contratación Exitosa',
+        'descripcion': 'Notifica al nuevo colaborador sobre su contratación exitosa y proceso de onboarding',
+        'categoria': 'sistema',
+        'color': '#10B981',  # Green
+        'icono': 'user-check',
+        'plantilla_titulo': '¡Bienvenido! Contratación exitosa',
+        'plantilla_mensaje': 'Hola {colaborador_nombre}, has sido contratado como {cargo}. Tu fecha de ingreso es {fecha_ingreso}. Completa tu proceso de onboarding.',
+        'url_template': '/talento/onboarding',
+        'es_email': True,
+        'es_push': True,
+    },
+    {
+        'codigo': 'TH_ONBOARDING_INICIADO',
+        'nombre': 'Onboarding Iniciado',
+        'descripcion': 'Notifica al colaborador que su proceso de inducción ha iniciado con tareas asignadas',
+        'categoria': 'sistema',
+        'color': '#3B82F6',  # Blue
+        'icono': 'clipboard-check',
+        'plantilla_titulo': 'Tu proceso de inducción ha iniciado',
+        'plantilla_mensaje': 'Hola {colaborador_nombre}, se te han asignado {total_tareas} tareas de onboarding. Revisa tu checklist para completarlas.',
+        'url_template': '/talento/onboarding',
+        'es_email': True,
+        'es_push': True,
+    },
+    {
+        'codigo': 'TH_CONTRATO_GENERADO',
+        'nombre': 'Contrato Generado',
+        'descripcion': 'Notifica que el documento de contrato laboral ha sido generado y está listo para revisión',
+        'categoria': 'tarea',
+        'color': '#8B5CF6',  # Purple
+        'icono': 'file-text',
+        'plantilla_titulo': 'Contrato generado: {numero_contrato}',
+        'plantilla_mensaje': 'Tu contrato {tipo_contrato} #{numero_contrato} ha sido generado. Revisa el documento en Gestión Documental.',
+        'url_template': '/talento/seleccion?tab=contratos',
+        'es_email': True,
+        'es_push': True,
+    },
+    {
+        'codigo': 'TH_RENOVACION_CONTRATO',
+        'nombre': 'Renovación de Contrato',
+        'descripcion': 'Notifica al colaborador sobre la renovación de su contrato laboral',
+        'categoria': 'sistema',
+        'color': '#F59E0B',  # Amber
+        'icono': 'refresh-cw',
+        'plantilla_titulo': 'Contrato renovado: {numero_contrato}',
+        'plantilla_mensaje': 'Tu contrato #{numero_contrato} ha sido renovado (renovación #{renovacion_num}). Nueva fecha de finalización: {fecha_fin}.',
+        'url_template': '/talento/seleccion?tab=contratos',
+        'es_email': True,
+        'es_push': False,
+    },
 
     # =========================================================================
     # SISTEMA GENERAL

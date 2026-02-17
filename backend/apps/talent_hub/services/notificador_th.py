@@ -64,7 +64,100 @@ class NotificadorTH:
             logger.error(f'Error notificando sanción: {e}')
             return None
 
-    # === CONTRATOS ===
+    # === CONTRATACIÓN (Sprint 20) ===
+
+    @staticmethod
+    def notificar_contratacion_exitosa(colaborador):
+        """Notifica al nuevo colaborador sobre su contratación exitosa."""
+        try:
+            usuario = getattr(colaborador, 'usuario', None)
+            if not usuario:
+                return None
+            return NotificationService.send_notification(
+                tipo_codigo='TH_CONTRATACION_EXITOSA',
+                usuario=usuario,
+                datos={
+                    'colaborador_nombre': colaborador.get_nombre_completo(),
+                    'cargo': colaborador.cargo.name,
+                    'fecha_ingreso': str(colaborador.fecha_ingreso),
+                },
+                url='/talento/onboarding',
+                prioridad='alta',
+            )
+        except Exception as e:
+            logger.error(f'Error notificando contratación exitosa: {e}')
+            return None
+
+    @staticmethod
+    def notificar_onboarding_iniciado(colaborador, total_tareas):
+        """Notifica al colaborador que su proceso de inducción ha iniciado."""
+        try:
+            usuario = getattr(colaborador, 'usuario', None)
+            if not usuario:
+                return None
+            return NotificationService.send_notification(
+                tipo_codigo='TH_ONBOARDING_INICIADO',
+                usuario=usuario,
+                datos={
+                    'colaborador_nombre': colaborador.get_nombre_completo(),
+                    'total_tareas': total_tareas,
+                },
+                url='/talento/onboarding',
+                prioridad='normal',
+            )
+        except Exception as e:
+            logger.error(f'Error notificando inicio onboarding: {e}')
+            return None
+
+    @staticmethod
+    def notificar_contrato_generado(historial_contrato):
+        """Notifica que el documento de contrato está listo para revisión."""
+        try:
+            usuario = getattr(historial_contrato.colaborador, 'usuario', None)
+            if not usuario:
+                return None
+            return NotificationService.send_notification(
+                tipo_codigo='TH_CONTRATO_GENERADO',
+                usuario=usuario,
+                datos={
+                    'numero_contrato': historial_contrato.numero_contrato,
+                    'tipo_contrato': str(historial_contrato.tipo_contrato),
+                },
+                url='/talento/seleccion?tab=contratos',
+                prioridad='alta',
+            )
+        except Exception as e:
+            logger.error(f'Error notificando contrato generado: {e}')
+            return None
+
+    @staticmethod
+    def notificar_renovacion_contrato(historial_contrato):
+        """Notifica sobre la renovación de un contrato."""
+        try:
+            usuario = getattr(historial_contrato.colaborador, 'usuario', None)
+            if not usuario:
+                return None
+            fecha_fin_str = (
+                str(historial_contrato.fecha_fin)
+                if historial_contrato.fecha_fin
+                else 'indefinido'
+            )
+            return NotificationService.send_notification(
+                tipo_codigo='TH_RENOVACION_CONTRATO',
+                usuario=usuario,
+                datos={
+                    'numero_contrato': historial_contrato.numero_contrato,
+                    'fecha_fin': fecha_fin_str,
+                    'renovacion_num': historial_contrato.numero_renovacion,
+                },
+                url='/talento/seleccion?tab=contratos',
+                prioridad='normal',
+            )
+        except Exception as e:
+            logger.error(f'Error notificando renovación contrato: {e}')
+            return None
+
+    # === CONTRATOS - VENCIMIENTO ===
 
     @staticmethod
     def notificar_contrato_por_vencer(colaborador, dias):

@@ -537,6 +537,7 @@ export interface HistorialContratoList {
   firmado: boolean;
   esta_vigente: boolean;
   dias_para_vencer: number | null;
+  contrato_documento: number | null;
   created_at: string;
 }
 
@@ -978,6 +979,64 @@ export interface HistorialContratoFilters {
   vigentes?: boolean;
   page?: number;
   page_size?: number;
+}
+
+// =============================================================================
+// INTERFACES - Sprint 20: Contratación completa (DTOs)
+// =============================================================================
+
+/** Request body para contratar un candidato aprobado */
+export interface ContratarCandidatoDTO {
+  fecha_contratacion: string;
+  salario_ofrecido: number;
+  datos_contrato?: {
+    numero_contrato: string;
+    tipo_contrato_id: number;
+    fecha_inicio: string;
+    fecha_fin?: string | null;
+    objeto_contrato?: string;
+    justificacion_tipo_contrato?: string;
+    generar_documento?: boolean;
+  };
+}
+
+/** Response de contratar candidato */
+export interface ContratarCandidatoResponse {
+  message: string;
+  colaborador_id: number;
+  colaborador_nombre: string;
+  contrato_id: number | null;
+  contrato_numero: string | null;
+  onboarding: {
+    checklist_items: number;
+    modulos_asignados: number;
+  } | null;
+  documento_id: number | null;
+}
+
+/** Request body para renovar contrato */
+export interface RenovarContratoDTO {
+  fecha_inicio: string;
+  fecha_fin?: string | null;
+  salario_pactado: number;
+  justificacion_tipo_contrato?: string;
+  objeto_contrato?: string;
+  generar_documento?: boolean;
+}
+
+/** Request body para crear otrosí */
+export interface OtrosiDTO {
+  fecha_inicio: string;
+  fecha_fin?: string | null;
+  salario_pactado?: number;
+  justificacion_tipo_contrato: string;
+  objeto_contrato?: string;
+  generar_documento?: boolean;
+}
+
+/** Warnings de Ley 2466/2025 */
+export interface ContratoWarnings {
+  warnings: string[];
 }
 
 // =============================================================================

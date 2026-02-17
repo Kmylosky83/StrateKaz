@@ -66,6 +66,9 @@ const RevisionDireccionPage = lazy(
   () => import('@/features/gestion-estrategica/pages/RevisionDireccionPage')
 );
 const ContextoPage = lazy(() => import('@/features/gestion-estrategica/pages/ContextoPage'));
+const RiesgosOportunidadesPage = lazy(
+  () => import('@/features/gestion-estrategica/pages/RiesgosOportunidadesPage')
+);
 
 // ==================== NIVEL 4: TALENTO HUMANO ====================
 const TalentHubPage = lazy(() =>
@@ -401,7 +404,13 @@ export const AppRoutes = () => {
             element={withModuleGuard(ProyectosPage, 'gestion_estrategica')}
           />
 
-          {/* Tab 6: Revision por Direccion (ISO 9.3) */}
+          {/* Tab 6: Riesgos y Oportunidades (ISO 6.1) */}
+          <Route
+            path="/gestion-estrategica/riesgos-oportunidades"
+            element={withModuleGuard(RiesgosOportunidadesPage, 'gestion_estrategica')}
+          />
+
+          {/* Tab 7: Revision por Direccion (ISO 9.3) */}
           <Route
             path="/gestion-estrategica/revision-direccion"
             element={withModuleGuard(RevisionDireccionPage, 'gestion_estrategica')}

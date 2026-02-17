@@ -522,7 +522,7 @@ export interface ConfigStatsResponse {
 
 export const statsApi = {
   getStats: async (): Promise<StrategicStats> => {
-    const response = await apiClient.get(`${CORE_URL}/strategic/stats/`);
+    const response = await apiClient.get(`${IDENTIDAD_URL}/stats/`);
     return response.data;
   },
 

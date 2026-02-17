@@ -176,6 +176,17 @@ class Colaborador(BaseCompanyModel):
         help_text='Usuario del sistema vinculado (opcional)'
     )
 
+    # Origen externo (contratistas)
+    proveedor_origen = models.ForeignKey(
+        'gestion_proveedores.Proveedor',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='contratistas',
+        verbose_name='Proveedor / Firma de Origen',
+        help_text='Empresa que envía al contratista (solo aplica para prestación de servicios)'
+    )
+
     # Estructura Organizacional
     cargo = models.ForeignKey(
         'core.Cargo',

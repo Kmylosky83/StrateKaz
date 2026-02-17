@@ -120,6 +120,14 @@ class CorporateIdentity(AuditModel, SoftDeleteModel):
             ).exclude(pk=self.pk).update(is_active=False)
         super().save(*args, **kwargs)
 
+    @property
+    def is_signed(self):
+        """
+        Backward-compat: Siempre False.
+        v4.0: La firma de políticas se gestiona desde Gestión Documental.
+        """
+        return False
+
     @classmethod
     def get_active(cls):
         """Obtiene la identidad corporativa activa"""

@@ -118,13 +118,15 @@ class HybridJWTAuthentication(JWTAuthentication):
             is_superadmin = validated_token.get('is_superadmin', False)
             try:
                 user = User.objects.get(email=email, is_active=True)
-                # Sincronizar is_superuser si el TenantUser es superadmin
-                # pero el User aun no tiene el flag (creado antes de este fix)
-                if is_superadmin and not user.is_superuser:
-                    user.is_superuser = True
-                    user.is_staff = True
-                    user.save(update_fields=['is_superuser', 'is_staff'])
-                    logger.info(f"Upgraded User {email} to superuser (superadmin sync)")
+                # Audit: registrar acceso de superadmin al tenant
+                # NO sincronizar is_superuser automáticamente en cada request
+                # para evitar escalación silenciosa de privilegios.
+                # El is_superuser solo se establece al momento de crear el User.
+                if is_superadmin:
+                    logger.info(
+                        f"Superadmin access: TenantUser {email} accessing tenant "
+                        f"as local User (is_superuser={user.is_superuser})"
+                    )
                 return user
             except User.DoesNotExist:
                 # El User no existe en este tenant, intentar crearlo
@@ -133,6 +135,31 @@ class HybridJWTAuthentication(JWTAuthentication):
                 if tenant_user_id:
                     try:
                         tenant_user = TenantUser.objects.get(id=tenant_user_id, is_active=True)
+
+                        # Verificar que el TenantUser tiene acceso al tenant actual
+                        # antes de auto-crear un User en el schema
+                        from django.db import connection
+                        from django_tenants.utils import schema_context
+                        current_tenant = getattr(connection, 'tenant', None)
+                        if current_tenant:
+                            with schema_context('public'):
+                                from apps.tenant.models import TenantUserAccess
+                                has_access = TenantUserAccess.objects.filter(
+                                    tenant_user=tenant_user,
+                                    tenant=current_tenant,
+                                    is_active=True
+                                ).exists()
+                                # Superadmins siempre tienen acceso implícito
+                                if not has_access and not tenant_user.is_superadmin:
+                                    logger.warning(
+                                        f"TenantUser {tenant_user.email} attempted to access "
+                                        f"tenant '{current_tenant}' without TenantUserAccess"
+                                    )
+                                    raise AuthenticationFailed(
+                                        'No tiene acceso autorizado a esta empresa. '
+                                        'Contacte al administrador.'
+                                    )
+
                         # Crear User sincronizado con TenantUser
                         user = self._create_user_from_tenant_user(tenant_user, is_superadmin)
                         if user:
@@ -153,8 +180,8 @@ class HybridJWTAuthentication(JWTAuthentication):
         """
         Crea un User en el tenant actual basado en los datos del TenantUser.
 
-        Si es superadmin, es el primer usuario, o tiene rol 'admin' en TenantUserAccess,
-        le asigna el cargo ADMIN.
+        Asigna cargo ADMIN por defecto. El admin del tenant puede cambiar
+        el cargo desde Configuración > Usuarios > Editar.
 
         Args:
             tenant_user: El TenantUser fuente
@@ -164,34 +191,15 @@ class HybridJWTAuthentication(JWTAuthentication):
             User creado o None si falla
         """
         from apps.core.models import User, Cargo
-        from apps.tenant.models import TenantUserAccess
-        from django.db import connection
         import uuid
 
         try:
-            # Verificar si es el primer usuario del tenant
-            is_first_user = not User.objects.filter(deleted_at__isnull=True).exists()
-
-            # Verificar si tiene rol 'admin' en TenantUserAccess para el tenant actual
-            current_schema = connection.schema_name
-            has_admin_role = TenantUserAccess.objects.filter(
-                tenant_user=tenant_user,
-                tenant__schema_name=current_schema,
-                role='admin',
-                is_active=True
-            ).exists()
-
-            # Siempre asignar cargo ADMIN por defecto a todo usuario nuevo.
-            # El admin del tenant puede cambiar el cargo después desde
-            # Configuración > Usuarios > Editar > Posición Organizacional.
             admin_cargo = None
             try:
                 admin_cargo = Cargo.objects.get(code='ADMIN', is_active=True)
             except Cargo.DoesNotExist:
                 logger.warning("Cargo ADMIN not found in tenant schema")
 
-            # Crear el User
-            # Generar username único basado en email
             base_username = tenant_user.email.split('@')[0]
             username = base_username
             counter = 1

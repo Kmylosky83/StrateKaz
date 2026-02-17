@@ -33,11 +33,34 @@ class Command(BaseCommand):
             return
 
         # =====================================================================
+        # 0. EMPRESA (Multi-tenant)
+        # =====================================================================
+        try:
+            from apps.core.base_models.mixins import get_tenant_empresa
+            empresa = get_tenant_empresa()
+            self.stdout.write(f'  Empresa: {empresa}')
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f'No se pudo obtener empresa del tenant: {e}'))
+            self.stdout.write('  Intentando con EmpresaConfig existente...')
+            try:
+                from apps.gestion_estrategica.configuracion.models import EmpresaConfig
+                empresa = EmpresaConfig.objects.first()
+                if not empresa:
+                    self.stdout.write(self.style.ERROR(
+                        'No hay EmpresaConfig. Ejecute primero seed_configuracion.'
+                    ))
+                    return
+            except Exception:
+                self.stdout.write(self.style.ERROR('EmpresaConfig no disponible'))
+                return
+
+        # =====================================================================
         # 1. IDENTIDAD CORPORATIVA
         # =====================================================================
         identity, created = CorporateIdentity.objects.get_or_create(
-            is_active=True,
+            empresa=empresa,
             defaults={
+                'is_active': True,
                 'mission': '''<p><strong>Somos una empresa dedicada a la recolección, procesamiento y comercialización de subproductos de origen animal</strong>, comprometida con:</p>
 <ul>
 <li>La <strong>satisfacción de nuestros clientes</strong> a través de productos de alta calidad</li>

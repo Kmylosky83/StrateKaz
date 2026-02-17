@@ -127,10 +127,15 @@ class Command(BaseCommand):
         self.stdout.write(self.style.MIGRATE_HEADING('Ejecutando limpieza...'))
 
         # 7a. Eliminar schemas huérfanos
+        from psycopg2 import sql
         for schema in sorted(orphan_schemas):
             try:
                 with connection.cursor() as cursor:
-                    cursor.execute(f'DROP SCHEMA IF EXISTS "{schema}" CASCADE')
+                    cursor.execute(
+                        sql.SQL('DROP SCHEMA IF EXISTS {} CASCADE').format(
+                            sql.Identifier(schema)
+                        )
+                    )
                 self.stdout.write(self.style.SUCCESS(f'  DROP SCHEMA {schema} CASCADE'))
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f'  Error eliminando {schema}: {e}'))
@@ -156,7 +161,11 @@ class Command(BaseCommand):
                 tenant_name = tenant.name
                 Domain.objects.filter(tenant=tenant).delete()
                 with connection.cursor() as cursor:
-                    cursor.execute(f'DROP SCHEMA IF EXISTS "{schema}" CASCADE')
+                    cursor.execute(
+                        sql.SQL('DROP SCHEMA IF EXISTS {} CASCADE').format(
+                            sql.Identifier(schema)
+                        )
+                    )
                 tenant.delete()
                 self.stdout.write(self.style.SUCCESS(
                     f'  CLEANUP failed Tenant ID={tenant.id} ({tenant_name})'

@@ -161,10 +161,14 @@ class TenantMinimalSerializer(serializers.ModelSerializer):
         """Contar usuarios del tenant via query cross-schema."""
         try:
             from django.db import connection
+            from psycopg2 import sql
             if obj.schema_name and obj.schema_status == 'ready':
                 with connection.cursor() as cursor:
                     cursor.execute(
-                        'SELECT COUNT(*) FROM "%s".core_user' % obj.schema_name
+                        sql.SQL('SELECT COUNT(*) FROM {}.{}').format(
+                            sql.Identifier(obj.schema_name),
+                            sql.Identifier('core_user')
+                        )
                     )
                     return cursor.fetchone()[0]
         except Exception:
@@ -600,7 +604,7 @@ class TenantUserAccessSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TenantUserAccess
-        fields = ['tenant', 'role', 'is_active', 'granted_at']
+        fields = ['tenant', 'is_active', 'granted_at']
 
 
 class TenantUserSerializer(serializers.ModelSerializer):
@@ -656,9 +660,6 @@ class TenantUserCreateSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError(
                         f"Tenant con ID {tenant_id} no existe."
                     )
-            # NOTA: El campo 'role' está DEPRECATED
-            # Los permisos se manejan via User.cargo dentro del tenant
-            # Se acepta cualquier valor por compatibilidad
         return value
 
     @transaction.atomic
@@ -677,14 +678,12 @@ class TenantUserCreateSerializer(serializers.ModelSerializer):
         # Asignar tenants si se proporcionaron
         for assignment in tenant_assignments:
             tenant_id = assignment.get('tenant_id')
-            role = assignment.get('role', 'user')
 
             if tenant_id:
                 tenant = Tenant.objects.get(id=tenant_id)
                 TenantUserAccess.objects.create(
                     tenant_user=user,
                     tenant=tenant,
-                    role=role,
                     is_active=True
                 )
 
@@ -793,7 +792,6 @@ class UserTenantsSerializer(serializers.ModelSerializer):
         return [
             {
                 'tenant': TenantMinimalSerializer(access.tenant, context=self.context).data,
-                'role': access.role,
             }
             for access in accesses
         ]

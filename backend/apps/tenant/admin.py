@@ -48,7 +48,7 @@ class DomainInline(admin.TabularInline):
 class TenantUserAccessInline(admin.TabularInline):
     model = TenantUserAccess
     extra = 0
-    fields = ['tenant_user', 'role', 'is_active', 'granted_at']
+    fields = ['tenant_user', 'is_active', 'granted_at']
     readonly_fields = ['granted_at']
     autocomplete_fields = ['tenant_user']
 
@@ -110,7 +110,7 @@ class TenantUserAccessUserInline(admin.TabularInline):
     model = TenantUserAccess
     fk_name = 'tenant_user'  # Especificar FK porque hay dos FKs a TenantUser
     extra = 0
-    fields = ['tenant', 'role', 'is_active', 'granted_at']
+    fields = ['tenant', 'is_active', 'granted_at']
     readonly_fields = ['granted_at']
     autocomplete_fields = ['tenant']
 
@@ -157,7 +157,7 @@ class TenantUserAdmin(admin.ModelAdmin):
 
 @admin.register(TenantUserAccess)
 class TenantUserAccessAdmin(admin.ModelAdmin):
-    list_display = ['tenant_user', 'tenant', 'role', 'is_active', 'granted_at']
-    list_filter = ['role', 'is_active', 'tenant']
+    list_display = ['tenant_user', 'tenant', 'is_active', 'granted_at']
+    list_filter = ['is_active', 'tenant']
     search_fields = ['tenant_user__email', 'tenant__name']
     autocomplete_fields = ['tenant_user', 'tenant', 'granted_by']

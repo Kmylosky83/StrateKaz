@@ -96,6 +96,24 @@ app.conf.beat_schedule = {
     },
 
     # ═══════════════════════════════════════════════════
+    # TENANT - GESTIÓN DE SUSCRIPCIONES Y SCHEMAS
+    # ═══════════════════════════════════════════════════
+
+    # Desactivar tenants con trials o suscripciones vencidas - Diario a las 12:30 AM
+    'tenant-check-expirations-daily': {
+        'task': 'apps.tenant.tasks.check_tenant_expirations',
+        'schedule': crontab(hour=0, minute=30),
+        'options': {'queue': 'tenant_ops'},
+    },
+
+    # Limpiar tenants atascados en 'creating' - Cada 15 minutos
+    'tenant-cleanup-stale-creating': {
+        'task': 'apps.tenant.tasks.cleanup_stale_creating_tenants',
+        'schedule': crontab(minute='*/15'),
+        'options': {'queue': 'tenant_ops'},
+    },
+
+    # ═══════════════════════════════════════════════════
     # MOTOR DE CUMPLIMIENTO - NORMAS Y REQUISITOS LEGALES
     # ═══════════════════════════════════════════════════
 
@@ -287,10 +305,12 @@ app.conf.task_routes = {
     'apps.core.tasks.backup_*': {'queue': 'maintenance'},
     'apps.core.tasks.*_health_check': {'queue': 'monitoring'},
 
-    # Tenant tasks (operaciones largas de schema)
+    # Tenant tasks (operaciones largas de schema + suscripciones)
     'apps.tenant.tasks.create_tenant_schema': {'queue': 'tenant_ops'},
     'apps.tenant.tasks.retry_tenant_schema': {'queue': 'tenant_ops'},
     'apps.tenant.tasks.cleanup_failed_tenant': {'queue': 'tenant_ops'},
+    'apps.tenant.tasks.cleanup_stale_creating_tenants': {'queue': 'tenant_ops'},
+    'apps.tenant.tasks.check_tenant_expirations': {'queue': 'tenant_ops'},
 
     # Motor de Cumplimiento tasks
     'apps.motor_cumplimiento.tasks.scrape_legal_updates': {'queue': 'scraping'},

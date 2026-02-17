@@ -3,14 +3,25 @@
  * Pagina principal con tabs para cada seccion del autoservicio.
  *
  * INTELIGENTE: Filtra tabs segun tipo de cargo.
- * - Internos: ven todas las secciones (perfil, vacaciones, permisos, recibos, capacitaciones, evaluacion)
- * - Externos (contratistas, consultores): solo ven perfil, capacitaciones, evaluacion
+ * - Internos: todas las secciones (perfil, vacaciones, permisos, recibos, capacitaciones, evaluacion)
+ * - Externos (contratistas, consultores): perfil, documentos, HSEQ, capacitaciones, evaluacion
+ *
+ * Externos NO ven: vacaciones, permisos, recibos (no aplica para prestacion de servicios)
+ * Externos SI ven: documentos (firmar/consultar), HSEQ (SST aplicable), capacitaciones, evaluacion
  */
 
 import { useState, useMemo } from 'react';
-import { User, Calendar, FileText, DollarSign, GraduationCap, BarChart3 } from 'lucide-react';
-import { Tabs, AnimatedPage, Badge } from '@/components/common';
-import { SectionHeader } from '@/components/common';
+import {
+  User,
+  Calendar,
+  FileText,
+  DollarSign,
+  GraduationCap,
+  BarChart3,
+  FolderOpen,
+  ShieldCheck,
+} from 'lucide-react';
+import { Tabs, AnimatedPage, Badge, SectionHeader } from '@/components/common';
 import { useIsExterno } from '@/hooks/useIsExterno';
 import { useMiPerfil } from '../api/miPortalApi';
 import {
@@ -21,14 +32,21 @@ import {
   RecibosNomina,
   CapacitacionesList,
   EvaluacionResumen,
+  MisDocumentos,
+  MiHSEQ,
 } from '../components';
 import type { MiPortalTab } from '../types';
 
-/** Tabs que solo aplican a empleados internos */
+/** Tabs que solo aplican a empleados internos (no contratistas) */
 const INTERNAL_ONLY_TABS = new Set<MiPortalTab>(['vacaciones', 'permisos', 'recibos']);
+
+/** Tabs que solo aplican a externos (contratistas, consultores) */
+const EXTERNAL_ONLY_TABS = new Set<MiPortalTab>(['documentos', 'hseq']);
 
 const ALL_PORTAL_TABS = [
   { id: 'perfil' as const, label: 'Mi perfil', icon: <User className="w-4 h-4" /> },
+  { id: 'documentos' as const, label: 'Documentos', icon: <FolderOpen className="w-4 h-4" /> },
+  { id: 'hseq' as const, label: 'HSEQ', icon: <ShieldCheck className="w-4 h-4" /> },
   { id: 'vacaciones' as const, label: 'Vacaciones', icon: <Calendar className="w-4 h-4" /> },
   { id: 'permisos' as const, label: 'Permisos', icon: <FileText className="w-4 h-4" /> },
   { id: 'recibos' as const, label: 'Recibos', icon: <DollarSign className="w-4 h-4" /> },
@@ -48,8 +66,12 @@ export default function MiPortalPage() {
 
   // Filtrar tabs segun tipo de cargo
   const visibleTabs = useMemo(() => {
-    if (!isExterno) return ALL_PORTAL_TABS;
-    return ALL_PORTAL_TABS.filter((tab) => !INTERNAL_ONLY_TABS.has(tab.id));
+    if (isExterno) {
+      // Externos: ocultar tabs internos (vacaciones, permisos, recibos)
+      return ALL_PORTAL_TABS.filter((tab) => !INTERNAL_ONLY_TABS.has(tab.id));
+    }
+    // Internos: ocultar tabs de externos (documentos, hseq)
+    return ALL_PORTAL_TABS.filter((tab) => !EXTERNAL_ONLY_TABS.has(tab.id));
   }, [isExterno]);
 
   // Si el tab activo fue filtrado, volver a 'perfil'
@@ -63,7 +85,7 @@ export default function MiPortalPage() {
           title="Mi Portal"
           description={
             isExterno
-              ? 'Consulte su información, capacitaciones y evaluaciones.'
+              ? 'Consulte su información, documentos, requisitos HSEQ y capacitaciones.'
               : 'Consulte su información, solicite vacaciones y permisos, y revise sus recibos de nómina.'
           }
         />
@@ -93,6 +115,8 @@ export default function MiPortalPage() {
             />
           )}
 
+          {safeActiveTab === 'documentos' && isExterno && <MisDocumentos />}
+          {safeActiveTab === 'hseq' && isExterno && <MiHSEQ />}
           {safeActiveTab === 'vacaciones' && !isExterno && <VacacionesSaldo />}
           {safeActiveTab === 'permisos' && !isExterno && <PermisoSolicitar />}
           {safeActiveTab === 'recibos' && !isExterno && <RecibosNomina />}

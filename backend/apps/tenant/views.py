@@ -344,8 +344,13 @@ class TenantViewSet(PublicSchemaWriteMixin, viewsets.ModelViewSet):
                 Domain.objects.filter(tenant=tenant).delete()
 
                 # 4. Eliminar schema PostgreSQL
+                from psycopg2 import sql
                 with connection.cursor() as cursor:
-                    cursor.execute(f'DROP SCHEMA IF EXISTS "{schema_name}" CASCADE')
+                    cursor.execute(
+                        sql.SQL('DROP SCHEMA IF EXISTS {} CASCADE').format(
+                            sql.Identifier(schema_name)
+                        )
+                    )
 
                 # 5. Eliminar registro del tenant (DELETE real, no soft-delete)
                 with connection.cursor() as cursor:

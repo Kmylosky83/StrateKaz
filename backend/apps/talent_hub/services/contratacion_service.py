@@ -1,15 +1,20 @@
 """
 Servicio de Contratación - Talent Hub
-Sprint 20: Flujo completo Candidato → Colaborador → Contrato → Onboarding
+Flujo completo Candidato → Colaborador → User → Contrato → Onboarding
 
 Orquesta el proceso de contratación end-to-end:
 1. Validar candidato aprobado
 2. Crear Colaborador desde datos del Candidato
-3. Crear HistorialContrato (Ley 2466/2025 compliance)
-4. Actualizar Candidato y VacanteActiva (thread-safe)
-5. Iniciar onboarding automático
-6. Enviar notificaciones
-7. Generar documento GD (opcional)
+3. Crear User con acceso al portal (password temporal = documento)
+4. Crear HistorialContrato (Ley 2466/2025 compliance)
+5. Actualizar Candidato y VacanteActiva (thread-safe)
+6. Iniciar onboarding automático
+7. Enviar notificaciones
+8. Generar documento GD (opcional)
+
+Al crear el User, los signals auto-crean:
+- TenantUser + TenantUserAccess (acceso global)
+- Email de bienvenida con credenciales temporales
 """
 import logging
 from decimal import Decimal
@@ -59,6 +64,7 @@ class ContratacionService:
                 justificacion_tipo_contrato: str,
                 generar_documento: bool (default False),
                 plantilla_id: int|None,
+                proveedor_origen_id: int|None (firma que envía al contratista),
             }
             usuario_contratante: User que ejecuta la acción
             empresa: EmpresaConfig (auto-resuelve si None)
@@ -66,6 +72,7 @@ class ContratacionService:
         Returns:
             {
                 'colaborador': Colaborador instance,
+                'user': User|None (acceso al portal),
                 'contrato': HistorialContrato instance,
                 'onboarding': {'checklist_items': int, 'modulos_asignados': int},
                 'documento': Documento|None,
@@ -112,7 +119,15 @@ class ContratacionService:
                 usuario=usuario_contratante,
             )
 
-            # 4. Crear HistorialContrato
+            # 4. Crear User con acceso al portal
+            user = cls._crear_user_para_colaborador(
+                candidato=candidato,
+                colaborador=colaborador,
+                cargo=vacante.cargo,
+                usuario_contratante=usuario_contratante,
+            )
+
+            # 5. Crear HistorialContrato
             contrato = cls._crear_historial_contrato(
                 colaborador=colaborador,
                 datos_contrato=datos_contrato,
@@ -120,7 +135,7 @@ class ContratacionService:
                 usuario=usuario_contratante,
             )
 
-            # 5. Actualizar Candidato
+            # 6. Actualizar Candidato
             candidato.estado = 'contratado'
             candidato.fecha_contratacion = datos_contrato.get(
                 'fecha_inicio', timezone.now().date()
@@ -129,7 +144,7 @@ class ContratacionService:
             candidato.updated_by = usuario_contratante
             candidato.save()
 
-            # 6. Actualizar VacanteActiva (thread-safe)
+            # 7. Actualizar VacanteActiva (thread-safe)
             vacante_locked = VacanteActiva.objects.select_for_update().get(
                 pk=vacante.pk
             )
@@ -141,14 +156,14 @@ class ContratacionService:
                 vacante_locked.fecha_cierre_real = timezone.now().date()
             vacante_locked.save()
 
-            # 7. Iniciar onboarding automático
+            # 8. Iniciar onboarding automático
             onboarding_result = cls._iniciar_onboarding(
                 colaborador=colaborador,
                 empresa=empresa,
                 usuario=usuario_contratante,
             )
 
-            # 8. Generar documento GD (opcional)
+            # 9. Generar documento GD (opcional)
             documento = None
             if datos_contrato.get('generar_documento', False):
                 documento = cls._generar_documento_contrato(
@@ -158,7 +173,7 @@ class ContratacionService:
                     plantilla_id=datos_contrato.get('plantilla_id'),
                 )
 
-        # 9. Enviar notificaciones (fuera de transaction para no bloquear)
+        # 10. Enviar notificaciones (fuera de transaction para no bloquear)
         cls._enviar_notificaciones_contratacion(
             colaborador=colaborador,
             contrato=contrato,
@@ -172,6 +187,7 @@ class ContratacionService:
 
         return {
             'colaborador': colaborador,
+            'user': user,
             'contrato': contrato,
             'onboarding': onboarding_result,
             'documento': documento,
@@ -467,6 +483,16 @@ class ContratacionService:
         TOPE_AUXILIO = SMMLV * 2
         auxilio_transporte = salario <= TOPE_AUXILIO
 
+        # Resolver proveedor de origen (para contratistas externos)
+        proveedor_origen = None
+        proveedor_id = datos_contrato.get('proveedor_origen_id')
+        if proveedor_id:
+            try:
+                Proveedor = apps.get_model('gestion_proveedores', 'Proveedor')
+                proveedor_origen = Proveedor.objects.get(pk=proveedor_id)
+            except Exception:
+                logger.warning(f"Proveedor #{proveedor_id} no encontrado, se omite")
+
         colaborador = Colaborador.objects.create(
             empresa=empresa,
             numero_identificacion=candidato.numero_documento,
@@ -477,6 +503,7 @@ class ContratacionService:
             segundo_apellido=segundo_apellido,
             cargo=cargo,
             area=area,
+            proveedor_origen=proveedor_origen,
             fecha_ingreso=datos_contrato['fecha_inicio'],
             estado='activo',
             tipo_contrato=tipo_contrato_choice,
@@ -495,6 +522,101 @@ class ContratacionService:
         )
 
         return colaborador
+
+    @classmethod
+    def _crear_user_para_colaborador(
+        cls, candidato, colaborador, cargo, usuario_contratante
+    ):
+        """
+        Crea un User con acceso al portal para el nuevo colaborador.
+
+        - Password temporal = numero de documento del candidato
+        - El flag _from_contratacion evita que los signals dupliquen
+          el Colaborador y la actualizacion de vacante
+        - El flag _temp_password_hint se pasa al email de bienvenida
+        - Vincula el Colaborador.usuario con el nuevo User
+
+        Returns:
+            User creado o None si falla
+        """
+        from apps.core.models import User
+
+        try:
+            email = getattr(candidato, 'email', '')
+            if not email:
+                logger.warning(
+                    f"No se puede crear User para Colaborador #{colaborador.id}: "
+                    "candidato sin email"
+                )
+                return None
+
+            # Verificar que no exista ya un User con este email
+            if User.objects.filter(email=email).exists():
+                existing = User.objects.get(email=email)
+                # Vincular colaborador al User existente
+                colaborador.usuario = existing
+                colaborador.save(update_fields=['usuario'])
+                logger.info(
+                    f"User existente #{existing.id} vinculado a "
+                    f"Colaborador #{colaborador.id}"
+                )
+                return existing
+
+            # Generar username unico basado en email
+            base_username = email.split('@')[0]
+            username = base_username
+            counter = 1
+            while User.objects.filter(username=username).exists():
+                username = f"{base_username}_{counter}"
+                counter += 1
+
+            # Password temporal = numero de documento
+            temp_password = candidato.numero_documento
+
+            # Parsear nombres del candidato
+            nombres_parts = candidato.nombres.strip().split()
+            first_name = nombres_parts[0] if nombres_parts else candidato.nombres
+            apellidos_parts = candidato.apellidos.strip().split()
+            last_name = apellidos_parts[0] if apellidos_parts else candidato.apellidos
+
+            # Crear User con flags para signals
+            user = User(
+                username=username,
+                email=email,
+                first_name=first_name,
+                last_name=last_name,
+                is_active=True,
+                document_type=candidato.tipo_documento,
+                document_number=candidato.numero_documento,
+                cargo=cargo,
+                created_by=usuario_contratante,
+            )
+
+            # Flags para que los signals no dupliquen trabajo
+            user._from_contratacion = True
+            user._temp_password_hint = 'Tu numero de documento'
+
+            user.set_password(temp_password)
+            user.save()
+
+            # Vincular Colaborador con el User
+            colaborador.usuario = user
+            colaborador.save(update_fields=['usuario'])
+
+            logger.info(
+                f"User #{user.id} ({username}) creado para "
+                f"Colaborador #{colaborador.id} ({colaborador.get_nombre_completo()})"
+            )
+
+            return user
+
+        except Exception as e:
+            # No abortar la contratacion si falla la creacion del User
+            logger.error(
+                f"Error creando User para Colaborador #{colaborador.id}: {e}",
+                exc_info=True
+            )
+            return None
 
     @classmethod
     def _crear_historial_contrato(

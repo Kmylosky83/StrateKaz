@@ -1,3 +1,32 @@
+"""
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    ⚠  ARCHIVO LEGACY - NO USAR  ⚠                         ║
+║                                                                            ║
+║  Este archivo es el settings LEGACY para modo cPanel/MySQL.                ║
+║  NO tiene aislamiento multi-tenant real (sin django-tenants).              ║
+║                                                                            ║
+║  USAR EN SU LUGAR:                                                         ║
+║  - Desarrollo:  config.settings.development                               ║
+║  - Produccion:  config.settings.production                                 ║
+║  - Testing:     config.settings.testing                                    ║
+║                                                                            ║
+║  NOTA: Este archivo esta SHADOWED por el paquete config/settings/          ║
+║  Python prioriza directorios con __init__.py sobre archivos .py            ║
+║  import config.settings → carga config/settings/__init__.py                ║
+║                                                                            ║
+║  Si necesita modo cPanel sincrono, use config.settings.production          ║
+║  con USE_CPANEL=True en .env                                               ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+"""
+import warnings
+warnings.warn(
+    "config/settings.py es un archivo LEGACY sin aislamiento multi-tenant. "
+    "Use config.settings.development, config.settings.production, o "
+    "config.settings.testing en su lugar.",
+    DeprecationWarning,
+    stacklevel=2
+)
+
 from pathlib import Path
 from decouple import config
 from datetime import timedelta

@@ -6,3 +6,5 @@ export { PermisoSolicitar } from './PermisoSolicitar';
 export { RecibosNomina } from './RecibosNomina';
 export { CapacitacionesList } from './CapacitacionesList';
 export { EvaluacionResumen } from './EvaluacionResumen';
+export { MisDocumentos } from './MisDocumentos';
+export { MiHSEQ } from './MiHSEQ';

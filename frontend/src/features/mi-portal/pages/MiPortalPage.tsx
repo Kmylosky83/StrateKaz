@@ -21,8 +21,7 @@ import {
   FolderOpen,
   ShieldCheck,
 } from 'lucide-react';
-import { Tabs, AnimatedPage, Badge } from '@/components/common';
-import { SectionHeader } from '@/components/common';
+import { Tabs, AnimatedPage, Badge, SectionHeader } from '@/components/common';
 import { useIsExterno } from '@/hooks/useIsExterno';
 import { useMiPerfil } from '../api/miPortalApi';
 import {
@@ -33,9 +32,9 @@ import {
   RecibosNomina,
   CapacitacionesList,
   EvaluacionResumen,
+  MisDocumentos,
+  MiHSEQ,
 } from '../components';
-import { MisDocumentos } from '../components/MisDocumentos';
-import { MiHSEQ } from '../components/MiHSEQ';
 import type { MiPortalTab } from '../types';
 
 /** Tabs que solo aplican a empleados internos (no contratistas) */

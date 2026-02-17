@@ -16,33 +16,39 @@ export function MisDocumentos() {
     <div className="space-y-6">
       {/* Resumen */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-4 flex items-center gap-3">
-          <div className="p-2 bg-blue-50 rounded-lg">
-            <FileSignature className="w-5 h-5 text-blue-600" />
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Pendientes de firma</p>
-            <p className="text-lg font-semibold text-gray-900">0</p>
-          </div>
-        </Card>
-
-        <Card className="p-4 flex items-center gap-3">
-          <div className="p-2 bg-green-50 rounded-lg">
-            <Download className="w-5 h-5 text-green-600" />
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Documentos disponibles</p>
-            <p className="text-lg font-semibold text-gray-900">0</p>
+        <Card className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              <FileSignature className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Pendientes de firma</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+            </div>
           </div>
         </Card>
 
-        <Card className="p-4 flex items-center gap-3">
-          <div className="p-2 bg-amber-50 rounded-lg">
-            <Clock className="w-5 h-5 text-amber-600" />
+        <Card className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+              <Download className="w-5 h-5 text-green-600 dark:text-green-400" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Documentos disponibles</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm text-gray-500">Workflows activos</p>
-            <p className="text-lg font-semibold text-gray-900">0</p>
+        </Card>
+
+        <Card className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+              <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Workflows activos</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+            </div>
           </div>
         </Card>
       </div>

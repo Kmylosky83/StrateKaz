@@ -22,10 +22,11 @@ from django.contrib.auth import get_user_model
 from django.db.models import Prefetch
 
 # Modelos de core (RBAC, Configuracion del Sistema)
-# NOTA: BrandingConfig fue ELIMINADO - el branding está ahora en Tenant
+# NOTA: BrandingConfig fue ELIMINADO - el branding está en Tenant
+# NOTA: SystemModule/ModuleTab/TabSection ViewSets MOVIDOS a core.viewsets_config
 from apps.core.models import (
-    SystemModule, ModuleTab, TabSection,
-    Role, Cargo, CargoSectionAccess
+    SystemModule,
+    Role, Cargo
 )
 
 # Modelos locales de gestion_estrategica (imports relativos)
@@ -45,14 +46,7 @@ from .serializers_strategic import (
     ApprovePlanSerializer,
     StrategicObjectiveListSerializer, StrategicObjectiveDetailSerializer,
     StrategicObjectiveCreateSerializer, StrategicObjectiveUpdateSerializer,
-    # Tab 4: Configuracion
-    SystemModuleListSerializer, SystemModuleDetailSerializer,
-    SystemModuleCreateSerializer, SystemModuleUpdateSerializer,
-    SystemModuleTreeSerializer, ToggleModuleSerializer,
-    ModuleTabSerializer, ModuleTabCreateSerializer, ToggleTabSerializer,
-    TabSectionSerializer, TabSectionCreateSerializer, ToggleSectionSerializer,
-    ModulesTreeSerializer, SidebarModuleSerializer,
-    # NOTA: BrandingConfig serializers ELIMINADOS - branding está en Tenant
+    # NOTA: Tab 4 (SystemModule/ModuleTab/TabSection) serializers MOVIDOS a core.viewsets_config
     # Stats
     StrategicStatsSerializer,
 )
@@ -329,11 +323,13 @@ class StrategicPlanViewSet(viewsets.ModelViewSet):
         """
         GET /api/core/strategic-plans/iso-standards/
 
-        Retorna los estandares ISO disponibles
+        Retorna los estandares ISO disponibles (desde NormaISO activas)
         """
+        from .configuracion.models import NormaISO
+        normas = NormaISO.objects.filter(is_active=True).order_by('orden')
         standards = [
-            {'value': code, 'label': label}
-            for code, label in StrategicObjective.ISO_STANDARD_CHOICES
+            {'value': norma.code, 'label': f'{norma.code} - {norma.name}'}
+            for norma in normas
         ]
         return Response(standards)
 
@@ -433,498 +429,21 @@ class StrategicObjectiveViewSet(viewsets.ModelViewSet):
 
 
 # =============================================================================
-# TAB 4: CONFIGURACION
+# NOTA: TAB 4 (SystemModule, ModuleTab, TabSection) ViewSets MOVIDOS a
+# apps.core.viewsets_config para eliminar dependencias circulares.
+# Endpoints activos: /api/core/system-modules/, /api/core/module-tabs/, etc.
 # =============================================================================
-
-class SystemModuleViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet para Modulos del Sistema
-
-    Endpoints:
-    - GET /api/core/system-modules/ - Listar modulos
-    - POST /api/core/system-modules/ - Crear modulo
-    - GET /api/core/system-modules/{id}/ - Detalle de modulo
-    - PATCH /api/core/system-modules/{id}/ - Actualizar modulo
-    - DELETE /api/core/system-modules/{id}/ - Eliminar modulo
-    - PATCH /api/core/system-modules/{id}/toggle/ - Activar/Desactivar (mejorado)
-    - GET /api/core/system-modules/categories/ - Categorias disponibles
-    - GET /api/core/system-modules/enabled/ - Modulos habilitados
-    - GET /api/core/system-modules/tree/ - Arbol completo con tabs y secciones
-    - GET /api/core/system-modules/sidebar/ - Version compacta para sidebar
-    """
-
-    queryset = SystemModule.objects.all()
-    permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['category', 'is_enabled', 'is_core', 'requires_license']
-    search_fields = ['code', 'name', 'description']
-    ordering = ['category', 'orden', 'name']
-
-    def get_serializer_class(self):
-        if self.action == 'list':
-            return SystemModuleListSerializer
-        elif self.action == 'create':
-            return SystemModuleCreateSerializer
-        elif self.action in ['update', 'partial_update']:
-            return SystemModuleUpdateSerializer
-        elif self.action == 'toggle':
-            return ToggleModuleSerializer
-        elif self.action == 'tree':
-            return SystemModuleTreeSerializer
-        elif self.action == 'sidebar':
-            return SidebarModuleSerializer
-        return SystemModuleDetailSerializer
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        if self.action in ['tree', 'sidebar']:
-            return queryset.prefetch_related('tabs__sections').order_by('orden', 'name')
-        return queryset.prefetch_related('dependencies', 'dependents')
-
-    def perform_destroy(self, instance):
-        """Validar antes de eliminar"""
-        if instance.is_core:
-            from rest_framework.exceptions import PermissionDenied
-            raise PermissionDenied('No se puede eliminar un modulo core')
-
-        can_disable, reason = instance.can_disable()
-        if not can_disable:
-            from rest_framework.exceptions import ValidationError
-            raise ValidationError(reason)
-
-        instance.delete()
-
-    @action(detail=True, methods=['patch'])
-    def toggle(self, request, pk=None):
-        """
-        PATCH /api/core/system-modules/{id}/toggle/
-
-        Activa o desactiva un modulo
-        """
-        module = self.get_object()
-        is_enabled = request.data.get('is_enabled', not module.is_enabled)
-
-        if not is_enabled:
-            can_disable, reason = module.can_disable()
-            if not can_disable:
-                return Response(
-                    {'error': reason or 'Este modulo no puede desactivarse'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-        if is_enabled:
-            module.enable()
-        else:
-            # Ya verificamos que puede desactivarse, usar save directo
-            module.is_enabled = False
-            module.save(update_fields=['is_enabled'])
-
-        return Response({
-            'success': True,
-            'message': f'Modulo {"activado" if is_enabled else "desactivado"} correctamente',
-            'is_enabled': module.is_enabled
-        })
-
-    @action(detail=False, methods=['get'])
-    def categories(self, request):
-        """
-        GET /api/core/system-modules/categories/
-
-        Retorna las categorias disponibles
-        """
-        categories = [
-            {'value': code, 'label': label}
-            for code, label in SystemModule.CATEGORY_CHOICES
-        ]
-        return Response(categories)
-
-    @action(detail=False, methods=['get'])
-    def enabled(self, request):
-        """
-        GET /api/core/system-modules/enabled/
-
-        Retorna los modulos habilitados
-        """
-        modules = SystemModule.objects.filter(is_enabled=True)
-        return Response(SystemModuleListSerializer(modules, many=True).data)
-
-    @action(detail=False, methods=['get'])
-    def tree(self, request):
-        """
-        GET /api/core/system-modules/tree/
-
-        Retorna el arbol completo de modulos con tabs y secciones
-        """
-        modules = self.get_queryset()
-
-        # Estadisticas
-        total = modules.count()
-        enabled = modules.filter(is_enabled=True).count()
-
-        # Categorias con conteo
-        categories = []
-        for cat_code, cat_name in SystemModule.CATEGORY_CHOICES:
-            count = modules.filter(category=cat_code).count()
-            categories.append({
-                'code': cat_code,
-                'name': cat_name,
-                'modules_count': count
-            })
-
-        serializer = SystemModuleTreeSerializer(modules, many=True)
-
-        return Response({
-            'modules': serializer.data,
-            'total_modules': total,
-            'enabled_modules': enabled,
-            'categories': categories
-        })
-
-    def _get_tenant_effective_modules(self):
-        """
-        Obtiene los módulos efectivos del tenant actual.
-
-        FLUJO DE CONTROL DE MÓDULOS:
-        1. Admin Global configura Tenant.enabled_modules (o hereda de Plan.features)
-        2. Tenant.effective_modules retorna la lista de códigos de módulos permitidos
-        3. El sidebar filtra SystemModule.code IN effective_modules
-
-        Retorna None si no hay restricción (mostrar todos los módulos habilitados).
-        """
-        from django.db import connection
-
-        # Si estamos en schema 'public', no hay restricción
-        if connection.schema_name == 'public':
-            return None
-
-        # Obtener el tenant actual desde connection
-        tenant = getattr(connection, 'tenant', None)
-        if not tenant:
-            return None
-
-        # Obtener effective_modules (propiedad del modelo Tenant)
-        effective_modules = getattr(tenant, 'effective_modules', None)
-
-        # Si no hay módulos configurados, no hay restricción
-        if not effective_modules:
-            return None
-
-        return effective_modules
-
-    @action(detail=False, methods=['get'])
-    def sidebar(self, request):
-        """
-        GET /api/core/system-modules/sidebar/
-
-        Retorna módulos filtrados según:
-        1. Módulos habilitados en el tenant (Tenant.effective_modules del schema público)
-        2. SystemModule.is_enabled = True (configuración dentro del schema)
-        3. Permisos del usuario (CargoSectionAccess para usuarios normales)
-
-        Super usuario: todos los módulos habilitados Y permitidos por el tenant
-        Usuario normal: solo módulos/tabs/secciones autorizadas por su cargo
-
-        Cada módulo tiene:
-        - code, name, icon, color
-        - route: ruta base del módulo
-        - is_category: False (los módulos son navegables)
-        - children: tabs habilitados del módulo
-        - sections: (opcional) secciones para usuarios normales
-        """
-        user = request.user
-
-        # Super usuario ve todos los módulos permitidos por el tenant
-        if user.is_superuser:
-            return self._get_full_sidebar()
-
-        # Usuario normal: filtrar por CargoSectionAccess
-        cargo = getattr(user, 'cargo', None)
-        if not cargo:
-            # Usuario sin cargo no ve nada (no debería pasar por validación previa)
-            return Response([])
-
-        # Obtener section_ids autorizados para este cargo
-        authorized_section_ids = set(
-            CargoSectionAccess.objects.filter(cargo=cargo)
-            .values_list('section_id', flat=True)
-        )
-
-        if not authorized_section_ids:
-            # Sin secciones autorizadas = sidebar vacío
-            return Response([])
-
-        # Obtener tabs que contienen secciones autorizadas
-        authorized_tab_ids = set(
-            TabSection.objects.filter(
-                id__in=authorized_section_ids,
-                is_enabled=True
-            ).values_list('tab_id', flat=True)
-        )
-
-        if not authorized_tab_ids:
-            return Response([])
-
-        # Obtener módulos que contienen tabs autorizados
-        authorized_module_ids = set(
-            ModuleTab.objects.filter(
-                id__in=authorized_tab_ids,
-                is_enabled=True
-            ).values_list('module_id', flat=True)
-        )
-
-        if not authorized_module_ids:
-            return Response([])
-
-        # Construir sidebar filtrado con secciones incluidas
-        # También aplicar filtro de effective_modules del tenant
-        effective_modules = self._get_tenant_effective_modules()
-
-        queryset = SystemModule.objects.filter(
-            id__in=authorized_module_ids,
-            is_enabled=True
-        )
-
-        # Aplicar filtro de effective_modules si existe
-        if effective_modules:
-            queryset = queryset.filter(code__in=effective_modules)
-
-        modules = queryset.prefetch_related(
-            Prefetch(
-                'tabs',
-                queryset=ModuleTab.objects.filter(
-                    id__in=authorized_tab_ids,
-                    is_enabled=True
-                ).prefetch_related(
-                    Prefetch(
-                        'sections',
-                        queryset=TabSection.objects.filter(
-                            id__in=authorized_section_ids,
-                            is_enabled=True
-                        ).order_by('orden')
-                    )
-                ).order_by('orden')
-            )
-        ).order_by('orden', 'name')
-
-        return self._build_sidebar_response(modules, include_sections=True)
-
-    def _get_full_sidebar(self):
-        """
-        Retorna sidebar completo para super usuarios.
-
-        Filtra por:
-        1. SystemModule.is_enabled = True (configuración del schema)
-        2. SystemModule.code IN Tenant.effective_modules (control desde Admin Global)
-        """
-        # Obtener módulos permitidos por el tenant
-        effective_modules = self._get_tenant_effective_modules()
-
-        # Base queryset: módulos habilitados en el schema
-        queryset = SystemModule.objects.filter(is_enabled=True)
-
-        # Aplicar filtro de effective_modules si existe
-        if effective_modules:
-            queryset = queryset.filter(code__in=effective_modules)
-
-        modules = queryset.prefetch_related(
-            Prefetch(
-                'tabs',
-                queryset=ModuleTab.objects.filter(is_enabled=True).order_by('orden')
-            )
-        ).order_by('orden', 'name')
-
-        return self._build_sidebar_response(modules, include_sections=False)
-
-    def _build_sidebar_response(self, modules, include_sections=False):
-        """Construye la respuesta del sidebar."""
-        result = []
-        for module in modules:
-            enabled_tabs = list(module.tabs.all())
-            children = None
-            module_effective_color = module.get_effective_color()
-
-            if enabled_tabs:
-                children = []
-                for tab in enabled_tabs:
-                    tab_data = {
-                        'code': tab.code,
-                        'name': tab.name,
-                        'icon': tab.icon,
-                        'color': module_effective_color,
-                        'route': f"/{module.code.replace('_', '-')}/{tab.code.replace('_', '-')}",
-                        'is_category': False,
-                        'children': None
-                    }
-
-                    # Incluir secciones si es usuario normal (para filtrado adicional en frontend)
-                    if include_sections and hasattr(tab, 'sections'):
-                        sections = list(tab.sections.all())
-                        if sections:
-                            tab_data['sections'] = [
-                                {
-                                    'id': s.id,
-                                    'code': s.code,
-                                    'name': s.name
-                                }
-                                for s in sections
-                            ]
-
-                    children.append(tab_data)
-
-            module_data = {
-                'code': module.code,
-                'name': module.name,
-                'icon': module.icon,
-                'color': module_effective_color,
-                'route': f"/{module.code.replace('_', '-')}" if not children else None,
-                'is_category': False,
-                'children': children
-            }
-            result.append(module_data)
-
-        return Response(result)
-
-
-class ModuleTabViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet para gestion de tabs de modulos
-
-    Endpoints:
-    - GET /api/core/module-tabs/ - Listar tabs
-    - POST /api/core/module-tabs/ - Crear tab
-    - GET /api/core/module-tabs/{id}/ - Detalle de tab
-    - PATCH /api/core/module-tabs/{id}/ - Actualizar tab
-    - DELETE /api/core/module-tabs/{id}/ - Eliminar tab
-    - PATCH /api/core/module-tabs/{id}/toggle/ - Activar/desactivar tab
-    """
-    queryset = ModuleTab.objects.all()
-    serializer_class = ModuleTabSerializer
-    permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['module', 'is_enabled', 'is_core']
-    search_fields = ['code', 'name', 'description']
-    ordering = ['module__orden', 'orden', 'name']
-
-    def get_queryset(self):
-        queryset = ModuleTab.objects.prefetch_related('sections')
-        module_id = self.request.query_params.get('module')
-        if module_id:
-            queryset = queryset.filter(module_id=module_id)
-        return queryset.order_by('orden', 'name')
-
-    def get_serializer_class(self):
-        if self.action in ['create', 'update', 'partial_update']:
-            return ModuleTabCreateSerializer
-        elif self.action == 'toggle':
-            return ToggleTabSerializer
-        return ModuleTabSerializer
-
-    @action(detail=True, methods=['patch'])
-    def toggle(self, request, pk=None):
-        """
-        PATCH /api/core/module-tabs/{id}/toggle/
-
-        Activa o desactiva un tab
-        """
-        tab = self.get_object()
-        is_enabled = request.data.get('is_enabled', not tab.is_enabled)
-
-        if not is_enabled:
-            can_disable, reason = tab.can_disable()
-            if not can_disable:
-                return Response(
-                    {'error': reason or 'Este tab no puede desactivarse'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-        if is_enabled:
-            tab.enable()
-        else:
-            # Ya verificamos que puede desactivarse, usar save directo
-            tab.is_enabled = False
-            tab.save(update_fields=['is_enabled'])
-
-        return Response({
-            'success': True,
-            'message': f'Tab {"activado" if is_enabled else "desactivado"} correctamente',
-            'is_enabled': tab.is_enabled
-        })
-
-
-class TabSectionViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet para gestion de secciones de tabs
-
-    Endpoints:
-    - GET /api/core/tab-sections/ - Listar secciones
-    - POST /api/core/tab-sections/ - Crear seccion
-    - GET /api/core/tab-sections/{id}/ - Detalle de seccion
-    - PATCH /api/core/tab-sections/{id}/ - Actualizar seccion
-    - DELETE /api/core/tab-sections/{id}/ - Eliminar seccion
-    - PATCH /api/core/tab-sections/{id}/toggle/ - Activar/desactivar seccion
-    """
-    queryset = TabSection.objects.all()
-    serializer_class = TabSectionSerializer
-    permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['tab', 'is_enabled', 'is_core']
-    search_fields = ['code', 'name', 'description']
-    ordering = ['tab__orden', 'orden', 'name']
-
-    def get_queryset(self):
-        queryset = TabSection.objects.all()
-        tab_id = self.request.query_params.get('tab')
-        if tab_id:
-            queryset = queryset.filter(tab_id=tab_id)
-        return queryset.order_by('orden', 'name')
-
-    def get_serializer_class(self):
-        if self.action in ['create', 'update', 'partial_update']:
-            return TabSectionCreateSerializer
-        elif self.action == 'toggle':
-            return ToggleSectionSerializer
-        return TabSectionSerializer
-
-    @action(detail=True, methods=['patch'])
-    def toggle(self, request, pk=None):
-        """
-        PATCH /api/core/tab-sections/{id}/toggle/
-
-        Activa o desactiva una seccion
-        """
-        section = self.get_object()
-        is_enabled = request.data.get('is_enabled', not section.is_enabled)
-
-        if not is_enabled:
-            can_disable, reason = section.can_disable()
-            if not can_disable:
-                return Response(
-                    {'error': reason or 'Esta seccion no puede desactivarse'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-        if is_enabled:
-            section.enable()
-        else:
-            # Ya verificamos que puede desactivarse, usar save directo
-            section.is_enabled = False
-            section.save(update_fields=['is_enabled'])
-
-        return Response({
-            'success': True,
-            'message': f'Seccion {"activada" if is_enabled else "desactivada"} correctamente',
-            'is_enabled': section.is_enabled
-        })
 
 
 # =============================================================================
-# NOTA: BrandingConfigViewSet fue ELIMINADO
-# El branding se gestiona ahora en el modelo Tenant (apps.tenant.models.Tenant)
-# Endpoint: /api/tenant/public/branding/
+# ESTADISTICAS DE GESTION ESTRATEGICA
 # =============================================================================
 
-# NOTA: ConsecutivoConfigViewSet fue migrado a apps.gestion_estrategica.organizacion.views
-# Los consecutivos ahora estan disponibles en /api/organizacion/consecutivos/
+# Dead ViewSet classes removed: SystemModuleViewSet, ModuleTabViewSet, TabSectionViewSet
+# These were moved to apps.core.viewsets_config and registered in core/urls.py
+# Also removed: BrandingConfigViewSet (moved to Tenant), ConsecutivoConfigViewSet (moved to organizacion)
+
+
 
 
 # =============================================================================
@@ -1062,6 +581,15 @@ class StrategicStatsViewSet(viewsets.ViewSet):
             # Configuracion del sistema
             'enabled_modules': enabled_modules,
             'total_modules': total_modules,
+            'configured_consecutivos': self._get_consecutivos_count(),
         }
+
+    def _get_consecutivos_count(self):
+        """Cuenta consecutivos activos configurados"""
+        try:
+            from apps.gestion_estrategica.organizacion.models import ConsecutivoConfig
+            return ConsecutivoConfig.objects.filter(is_active=True).count()
+        except Exception:
+            return 0
 
         return Response(stats)

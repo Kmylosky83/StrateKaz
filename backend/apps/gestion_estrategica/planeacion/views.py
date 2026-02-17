@@ -128,12 +128,13 @@ class StrategicPlanViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
                 'delayed': objs.filter(status='RETRASADO').count(),
             }
 
-        # Estadísticas por norma ISO
+        # Estadísticas por norma ISO (usando M2M normas_iso)
+        from apps.gestion_estrategica.configuracion.models import NormaISO
         by_iso = {}
-        for iso, label in StrategicObjective.ISO_STANDARD_CHOICES:
-            count = objectives.filter(iso_standards__contains=[iso]).count()
+        for norma in NormaISO.objects.filter(is_active=True):
+            count = objectives.filter(normas_iso=norma).count()
             if count > 0:
-                by_iso[iso] = {'label': label, 'count': count}
+                by_iso[norma.code] = {'label': f'{norma.code} - {norma.name}', 'count': count}
 
         return Response({
             'plan_id': plan.id,

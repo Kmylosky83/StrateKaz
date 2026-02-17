@@ -202,7 +202,7 @@ class StrategicObjectiveListSerializer(serializers.ModelSerializer):
         model = StrategicObjective
         fields = [
             'id', 'code', 'name', 'bsc_perspective', 'bsc_perspective_display',
-            'iso_standards', 'iso_standards_display',
+            'normas_iso', 'iso_standards_display',
             'progress', 'status', 'status_display',
             'target_value', 'current_value', 'unit',
             'responsible', 'responsible_name',
@@ -215,10 +215,10 @@ class StrategicObjectiveListSerializer(serializers.ModelSerializer):
         return None
 
     def get_iso_standards_display(self, obj):
-        if not obj.iso_standards:
+        normas = obj.normas_iso.all()
+        if not normas.exists():
             return []
-        choices_dict = dict(StrategicObjective.ISO_STANDARD_CHOICES)
-        return [choices_dict.get(std, std) for std in obj.iso_standards]
+        return [f'{n.code} - {n.name}' for n in normas]
 
 
 class StrategicObjectiveDetailSerializer(serializers.ModelSerializer):
@@ -240,7 +240,7 @@ class StrategicObjectiveDetailSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'plan', 'code', 'name', 'description',
             'bsc_perspective', 'bsc_perspective_display',
-            'iso_standards', 'iso_standards_display',
+            'normas_iso', 'iso_standards_display',
             'responsible', 'responsible_name',
             'responsible_cargo', 'responsible_cargo_name',
             'target_value', 'current_value', 'unit',
@@ -262,10 +262,10 @@ class StrategicObjectiveDetailSerializer(serializers.ModelSerializer):
         return None
 
     def get_iso_standards_display(self, obj):
-        if not obj.iso_standards:
+        normas = obj.normas_iso.all()
+        if not normas.exists():
             return []
-        choices_dict = dict(StrategicObjective.ISO_STANDARD_CHOICES)
-        return [choices_dict.get(std, std) for std in obj.iso_standards]
+        return [f'{n.code} - {n.name}' for n in normas]
 
     def get_created_by_name(self, obj):
         if obj.created_by:
@@ -280,7 +280,7 @@ class StrategicObjectiveCreateSerializer(serializers.ModelSerializer):
         model = StrategicObjective
         fields = [
             'plan', 'code', 'name', 'description',
-            'bsc_perspective', 'iso_standards',
+            'bsc_perspective', 'normas_iso',
             'responsible', 'responsible_cargo',
             'target_value', 'current_value', 'unit',
             'start_date', 'due_date', 'orden', 'is_active'
@@ -303,7 +303,7 @@ class StrategicObjectiveUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = StrategicObjective
         fields = [
-            'name', 'description', 'bsc_perspective', 'iso_standards',
+            'name', 'description', 'bsc_perspective', 'normas_iso',
             'responsible', 'responsible_cargo',
             'target_value', 'current_value', 'unit',
             'progress', 'status',

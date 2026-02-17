@@ -8,7 +8,7 @@ Endpoints:
 - /causa-efecto/ - Relaciones causa-efecto
 - /kpis/ - Indicadores clave de desempeño
 - /mediciones/ - Mediciones de KPI
-- /cambios/ - Gestión de cambios organizacionales
+- /gestion-cambio/ - Gestión de cambios organizacionales
 """
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
@@ -31,7 +31,7 @@ router.register(r'mapas', MapaEstrategicoViewSet, basename='mapa-estrategico')
 router.register(r'causa-efecto', CausaEfectoViewSet, basename='causa-efecto')
 router.register(r'kpis', KPIObjetivoViewSet, basename='kpi-objetivo')
 router.register(r'mediciones', MedicionKPIViewSet, basename='medicion-kpi')
-router.register(r'cambios', GestionCambioViewSet, basename='gestion-cambio')
+router.register(r'gestion-cambio', GestionCambioViewSet, basename='gestion-cambio')
 
 urlpatterns = [
     path('', include(router.urls)),

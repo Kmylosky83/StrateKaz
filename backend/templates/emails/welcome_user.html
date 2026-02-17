@@ -1,0 +1,37 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Bienvenido a {{ tenant_name }}{% endblock %}
+
+{% block content %}
+<h2>Bienvenido/a, {{ user_name }}</h2>
+
+<p>
+    Tu cuenta en <strong>{{ tenant_name }}</strong> ha sido creada exitosamente.
+    Ya puedes ingresar al portal para consultar tu informacion, firmar documentos,
+    ver capacitaciones asignadas y mas.
+</p>
+
+{% if cargo_name %}
+<div class="email-card">
+    <p class="email-card-title">Tu cargo</p>
+    <p class="email-card-content">{{ cargo_name }}</p>
+</div>
+{% endif %}
+
+<div class="email-card">
+    <p class="email-card-title">Datos de acceso</p>
+    <p class="email-card-content">
+        <strong>Email:</strong> {{ user_email }}<br>
+        <strong>Contrasena:</strong> La que te asigno tu administrador
+    </p>
+</div>
+
+<div class="text-center mt-4">
+    <a href="{{ login_url }}" class="email-button">Ingresar al Portal</a>
+</div>
+
+<p class="text-muted mt-4">
+    Si no reconoces esta cuenta o tienes problemas para ingresar,
+    contacta al administrador de tu empresa.
+</p>
+{% endblock %}

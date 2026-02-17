@@ -93,7 +93,6 @@ export interface TenantInfo {
  */
 export interface TenantAccess {
   tenant: TenantInfo;
-  role: string;
 }
 
 /**

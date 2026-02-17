@@ -128,12 +128,7 @@ class UserViewSet(viewsets.ModelViewSet):
             return UserUpdateSerializer
         elif self.action == 'change_password':
             return ChangePasswordSerializer
-        else:
-            return UserDetailSerializer
-
-        if self.action in ['me']:
-             return [IsAuthenticated()]
-        return [permission() for permission in self.permission_classes]
+        return UserDetailSerializer
 
     def perform_update(self, serializer):
         """

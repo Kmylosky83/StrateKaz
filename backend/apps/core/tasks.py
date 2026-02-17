@@ -86,6 +86,64 @@ def send_email_async(self, subject: str, message: str, recipient_list: List[str]
         raise self.retry(exc=exc)
 
 
+@shared_task(
+    bind=True,
+    max_retries=3,
+    default_retry_delay=60,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+)
+def send_welcome_email_task(self, user_email: str, user_name: str,
+                            tenant_name: str, cargo_name: str = '') -> Dict[str, Any]:
+    """
+    Envia email de bienvenida a un nuevo trabajador.
+
+    Args:
+        user_email: Email del trabajador
+        user_name: Nombre completo
+        tenant_name: Nombre de la empresa (tenant)
+        cargo_name: Nombre del cargo asignado
+    """
+    try:
+        logger.info(f"[Task {self.request.id}] Enviando bienvenida a {user_email}")
+
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'https://app.stratekaz.com')
+        login_url = f"{frontend_url}/login"
+
+        html_content = render_to_string('emails/welcome_user.html', {
+            'user_name': user_name,
+            'user_email': user_email,
+            'tenant_name': tenant_name,
+            'cargo_name': cargo_name,
+            'login_url': login_url,
+            'frontend_url': frontend_url,
+        })
+
+        text_content = strip_tags(html_content)
+
+        email = EmailMultiAlternatives(
+            subject=f'Bienvenido/a a {tenant_name} - StrateKaz',
+            body=text_content,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[user_email],
+        )
+        email.attach_alternative(html_content, "text/html")
+        email.send(fail_silently=False)
+
+        logger.info(f"[Task {self.request.id}] Email de bienvenida enviado a {user_email}")
+
+        return {
+            'status': 'success',
+            'email': user_email,
+            'task_id': self.request.id,
+            'timestamp': datetime.now().isoformat(),
+        }
+
+    except Exception as exc:
+        logger.error(f"[Task {self.request.id}] Error enviando bienvenida a {user_email}: {exc}")
+        raise self.retry(exc=exc)
+
+
 @shared_task(bind=True, max_retries=3)
 def send_notification_email(self, user_id: int, template: str, context: Dict[str, Any]) -> Dict[str, Any]:
     """

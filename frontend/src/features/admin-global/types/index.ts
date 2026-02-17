@@ -379,9 +379,8 @@ export interface UpdateTenantUserDTO {
 }
 
 /**
- * DTO para asignar un usuario a un tenant
- * NOTA: El campo 'role' está DEPRECATED - los permisos se manejan
- * via User.cargo dentro del schema del tenant
+ * DTO para asignar un usuario a un tenant.
+ * Los permisos se manejan via User.cargo dentro del schema del tenant.
  */
 export interface AssignTenantDTO {
   tenant_id: number;

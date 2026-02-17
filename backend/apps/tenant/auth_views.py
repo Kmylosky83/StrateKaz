@@ -171,7 +171,6 @@ class TenantLoginView(APIView):
             return [
                 {
                     'tenant': TenantMinimalSerializer(t, context={'request': request}).data,
-                    'role': 'superadmin',
                 }
                 for t in tenants
             ]
@@ -186,7 +185,6 @@ class TenantLoginView(APIView):
         return [
             {
                 'tenant': TenantMinimalSerializer(access.tenant, context={'request': request}).data,
-                'role': access.role,
             }
             for access in accesses
         ]
@@ -412,7 +410,6 @@ class TenantMeView(APIView):
             tenants_data = [
                 {
                     'tenant': TenantMinimalSerializer(t, context={'request': request}).data,
-                    'role': 'superadmin',
                 }
                 for t in tenants
             ]
@@ -426,7 +423,6 @@ class TenantMeView(APIView):
             tenants_data = [
                 {
                     'tenant': TenantMinimalSerializer(access.tenant, context={'request': request}).data,
-                    'role': access.role,
                 }
                 for access in accesses
             ]

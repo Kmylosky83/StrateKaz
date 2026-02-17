@@ -4,8 +4,11 @@ Signals del Ciclo de Vida del Usuario - StrateKaz
 Cuando se crea un User dentro de un tenant schema:
 1. Auto-crea TenantUser en schema public (para login global)
 2. Auto-crea TenantUserAccess (vincula TenantUser con el tenant actual)
-3. Auto-llena VacanteActiva del cargo asignado
+3. Auto-llena VacanteActiva del cargo asignado (solo flujo manual)
 4. Envia email de bienvenida via Celery
+
+Los signals respetan el flag _from_contratacion para evitar duplicados
+cuando ContratacionService ya maneja la vacante y el Colaborador.
 """
 import logging
 
@@ -111,6 +114,9 @@ def auto_fill_vacancy_on_user_created(sender, instance, created, **kwargs):
     en la VacanteActiva correspondiente.
 
     Si todas las posiciones estan cubiertas, cierra la vacante.
+
+    Se omite si _from_contratacion=True porque ContratacionService
+    ya maneja la vacante con select_for_update (thread-safe).
     """
     if not created:
         return
@@ -122,6 +128,10 @@ def auto_fill_vacancy_on_user_created(sender, instance, created, **kwargs):
 
     # Omitir superusers
     if user.is_superuser:
+        return
+
+    # Omitir si viene del flujo de contratacion (ya actualizo la vacante)
+    if getattr(user, '_from_contratacion', False):
         return
 
     try:
@@ -176,6 +186,7 @@ def send_welcome_email_on_user_created(sender, instance, created, **kwargs):
     - Empresa (tenant)
     - Cargo asignado
     - Link para ingresar al portal
+    - Password temporal (si viene del flujo de contratacion)
     """
     if not created:
         return
@@ -193,6 +204,9 @@ def send_welcome_email_on_user_created(sender, instance, created, **kwargs):
     current_tenant = getattr(connection, 'tenant', None)
     tenant_name = getattr(current_tenant, 'name', 'StrateKaz')
 
+    # Si viene de contratacion, incluir indicacion de password temporal
+    temp_password_hint = getattr(user, '_temp_password_hint', '')
+
     try:
         from apps.core.tasks import send_welcome_email_task
 
@@ -201,6 +215,7 @@ def send_welcome_email_on_user_created(sender, instance, created, **kwargs):
             user_name=user.get_full_name() or user.username,
             tenant_name=tenant_name,
             cargo_name=user.cargo.name if user.cargo else '',
+            temp_password_hint=temp_password_hint,
         )
 
         logger.info(

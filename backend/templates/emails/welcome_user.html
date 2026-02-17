@@ -22,7 +22,14 @@
     <p class="email-card-title">Datos de acceso</p>
     <p class="email-card-content">
         <strong>Email:</strong> {{ user_email }}<br>
+        {% if temp_password_hint %}
+        <strong>Contrasena temporal:</strong> {{ temp_password_hint }}<br>
+        <span style="color: #dc2626; font-size: 14px;">
+            Te recomendamos cambiar tu contrasena despues del primer ingreso.
+        </span>
+        {% else %}
         <strong>Contrasena:</strong> La que te asigno tu administrador
+        {% endif %}
     </p>
 </div>
 

@@ -94,7 +94,8 @@ def send_email_async(self, subject: str, message: str, recipient_list: List[str]
     retry_backoff=True,
 )
 def send_welcome_email_task(self, user_email: str, user_name: str,
-                            tenant_name: str, cargo_name: str = '') -> Dict[str, Any]:
+                            tenant_name: str, cargo_name: str = '',
+                            temp_password_hint: str = '') -> Dict[str, Any]:
     """
     Envia email de bienvenida a un nuevo trabajador.
 
@@ -103,6 +104,7 @@ def send_welcome_email_task(self, user_email: str, user_name: str,
         user_name: Nombre completo
         tenant_name: Nombre de la empresa (tenant)
         cargo_name: Nombre del cargo asignado
+        temp_password_hint: Indicacion del password temporal (ej: "Tu numero de documento")
     """
     try:
         logger.info(f"[Task {self.request.id}] Enviando bienvenida a {user_email}")
@@ -117,6 +119,7 @@ def send_welcome_email_task(self, user_email: str, user_name: str,
             'cargo_name': cargo_name,
             'login_url': login_url,
             'frontend_url': frontend_url,
+            'temp_password_hint': temp_password_hint,
         })
 
         text_content = strip_tags(html_content)

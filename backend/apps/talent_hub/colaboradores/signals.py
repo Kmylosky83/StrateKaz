@@ -33,6 +33,10 @@ def auto_create_colaborador(sender, instance, created, **kwargs):
 
     user = instance
 
+    # Omitir si viene del flujo de contratacion (ya creo Colaborador)
+    if getattr(user, '_from_contratacion', False):
+        return
+
     # Requisito: usuario debe tener cargo asignado
     if not user.cargo:
         return

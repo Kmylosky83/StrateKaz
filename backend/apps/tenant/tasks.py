@@ -20,12 +20,13 @@ import logging
 import json
 import threading
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 from celery import shared_task, current_task
 from django.db import connection, close_old_connections
 from django.core.management import call_command
 from django.conf import settings
+from django.utils import timezone
 from django_tenants.utils import schema_context, get_tenant_model
 import redis
 
@@ -271,6 +272,15 @@ def create_tenant_schema_task(
                 logger.info(f"[Task {task_id}] seed_admin_cargo completed")
             except Exception as e:
                 logger.warning(f"[Task {task_id}] seed_admin_cargo failed (non-critical): {e}")
+
+            # 4. Configuracion de identidad corporativa
+            # No critico: estados de politica, tipos, roles de firmante
+            # Sin esto, el modulo de identidad no tiene tablas de config
+            try:
+                call_command('seed_config_identidad', verbosity=0)
+                logger.info(f"[Task {task_id}] seed_config_identidad completed")
+            except Exception as e:
+                logger.warning(f"[Task {task_id}] seed_config_identidad failed (non-critical): {e}")
 
         # Si hubo errores en seeds criticos, marcar como failed
         if seed_errors:
@@ -599,3 +609,83 @@ def cleanup_stale_creating_tenants():
 
         except Exception as e:
             logger.error(f"Error checking stale tenant {tenant.name}: {e}")
+
+
+@shared_task(name='apps.tenant.tasks.check_tenant_expirations')
+def check_tenant_expirations() -> Dict[str, Any]:
+    """
+    Tarea periódica que desactiva tenants con suscripciones o trials vencidos.
+
+    Busca tenants activos donde:
+    - is_trial=True AND trial_ends_at ya pasó → desactivar
+    - is_trial=False AND subscription_ends_at ya pasó → desactivar
+
+    Para cada tenant vencido, establece is_active=False.
+    Todas las escrituras se realizan dentro de schema_context('public')
+    ya que el modelo Tenant vive en el schema público.
+
+    Configurar en Celery Beat para ejecutar diariamente a las 12:30 AM.
+
+    Returns:
+        Dict con conteos de trials y suscripciones desactivadas.
+    """
+    from apps.tenant.models import Tenant
+
+    now = timezone.now()
+    expired_trials: List[str] = []
+    expired_subscriptions: List[str] = []
+
+    logger.info("Starting tenant expiration check...")
+
+    with schema_context('public'):
+        # 1. Trials vencidos: activos, en trial, con fecha de fin pasada
+        expired_trial_tenants = Tenant.objects.filter(
+            is_active=True,
+            is_trial=True,
+            trial_ends_at__isnull=False,
+            trial_ends_at__lt=now,
+        )
+
+        for tenant in expired_trial_tenants:
+            tenant.is_active = False
+            tenant.save(update_fields=['is_active'])
+            expired_trials.append(tenant.name)
+            logger.info(
+                f"Trial expired: deactivated tenant '{tenant.name}' "
+                f"(trial_ends_at={tenant.trial_ends_at})"
+            )
+
+        # 2. Suscripciones vencidas: activos, no trial, con fecha de fin pasada
+        expired_sub_tenants = Tenant.objects.filter(
+            is_active=True,
+            is_trial=False,
+            subscription_ends_at__isnull=False,
+            subscription_ends_at__lt=now,
+        )
+
+        for tenant in expired_sub_tenants:
+            tenant.is_active = False
+            tenant.save(update_fields=['is_active'])
+            expired_subscriptions.append(tenant.name)
+            logger.info(
+                f"Subscription expired: deactivated tenant '{tenant.name}' "
+                f"(subscription_ends_at={tenant.subscription_ends_at})"
+            )
+
+    total = len(expired_trials) + len(expired_subscriptions)
+    summary = {
+        'expired_trials': len(expired_trials),
+        'expired_subscriptions': len(expired_subscriptions),
+        'total_deactivated': total,
+        'trial_names': expired_trials,
+        'subscription_names': expired_subscriptions,
+    }
+
+    logger.info(
+        f"Tenant expiration check complete: "
+        f"{len(expired_trials)} trials expired, "
+        f"{len(expired_subscriptions)} subscriptions expired, "
+        f"{total} total deactivated"
+    )
+
+    return summary

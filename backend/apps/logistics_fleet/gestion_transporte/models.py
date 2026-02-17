@@ -268,7 +268,7 @@ class Conductor(BaseCompanyModel):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='conductor_profile',
+        related_name='+',
         verbose_name='Usuario',
         help_text='Usuario del sistema asociado (opcional)'
     )

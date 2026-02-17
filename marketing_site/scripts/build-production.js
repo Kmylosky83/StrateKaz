@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
 /**
- * Production Build Script for cPanel Deployment
+ * Production Build Script for VPS Hostinger Deployment
  *
  * This script:
  * 1. Runs the production build
- * 2. Creates a .tar.gz file ready for cPanel upload
+ * 2. Creates a .tar.gz file ready for deployment
  * 3. Generates deployment instructions
  */
 
@@ -57,9 +57,9 @@ try {
   process.exit(1);
 }
 
-// Step 2: Create .htaccess for Apache/cPanel
+// Step 2: Create .htaccess for Apache fallback (Nginx is primary in production)
 console.log('');
-console.log('Step 2/4: Creating .htaccess for cPanel...');
+console.log('Step 2/4: Creating .htaccess (Apache fallback)...');
 const htaccessContent = `# StrateKaz Marketing Site - Apache Configuration
 # Generated: ${new Date().toISOString()}
 # Version: ${VERSION}
@@ -157,28 +157,27 @@ const deployInstructions = `# StrateKaz Marketing Site - Deployment Instructions
 # Generated: ${new Date().toISOString()}
 
 ## Pre-requisitos
-- Acceso a cPanel con File Manager o FTP
+- Acceso SSH al VPS Hostinger
 - El dominio debe estar configurado (stratekaz.com)
+- Nginx configurado para servir el SPA
 
 ## Pasos de Deployment
 
 ### 1. Subir el archivo
 1. Descomprimir el archivo .tar.gz
-2. En cPanel, ir a File Manager
-3. Navegar a public_html (o el directorio del dominio)
-4. Subir TODOS los archivos de la carpeta dist/
+2. Copiar archivos al directorio web del VPS via SCP/rsync
+3. Ejemplo: rsync -avz dist/ user@vps:/var/www/stratekaz.com/
 
 ### 2. Verificar archivos
-Asegurar que estos archivos existan en public_html:
+Asegurar que estos archivos existan en el directorio web:
 - index.html
-- .htaccess
 - assets/ (carpeta)
 - version.json
 
-### 3. Configurar SSL (si no está)
-1. En cPanel, ir a SSL/TLS
-2. Instalar certificado Let's Encrypt
-3. Forzar HTTPS (descomentar líneas en .htaccess)
+### 3. Verificar Nginx
+1. Verificar configuracion Nginx para SPA (try_files)
+2. SSL via Let's Encrypt (certbot)
+3. Recargar Nginx: sudo systemctl reload nginx
 
 ### 4. Verificar deployment
 1. Visitar https://stratekaz.com
@@ -273,8 +272,8 @@ console.log('    - version.json');
 console.log('    - DEPLOYMENT.md');
 console.log('');
 console.log('  Next steps:');
-console.log('    1. Upload to cPanel File Manager');
-console.log('    2. Extract in public_html');
+console.log('    1. Upload to VPS via SCP/rsync');
+console.log('    2. Extract in web root directory');
 console.log('    3. Verify at https://stratekaz.com');
 console.log('');
 console.log('========================================');

@@ -837,4 +837,4 @@ Toda la documentacion detallada esta en `/docs/`:
 8. **Frontend SPA:** En produccion (VPS Hostinger), Nginx sirve el frontend directamente. Django solo maneja `/api/`.
 9. **PWA:** El frontend soporta Progressive Web App con service worker y cache strategies.
 10. **Celery:** 11 colas especializadas + 24 tareas programadas. En testing se ejecuta en modo sincrono (eager).
-11. **Hosting:** El proyecto corre en **VPS Hostinger** con Nginx + Gunicorn. NO se usa cPanel. El archivo `config/settings.py` (legacy MySQL/cPanel) esta deprecated.
+11. **Hosting:** El proyecto corre en **VPS Hostinger** con Nginx + Gunicorn + PostgreSQL + Redis + Celery. NO se usa cPanel ni Docker en produccion. El archivo `config/settings.py` (legacy MySQL) esta deprecated.

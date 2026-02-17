@@ -91,7 +91,7 @@ tmp/
 *.tar
 *.tar.gz
 *.zip
-backend-cpanel.tar.gz
+backend-deploy.tar.gz
 StrateKaz_Frontend.tar
 
 # Agent/Analysis scripts (temporary)

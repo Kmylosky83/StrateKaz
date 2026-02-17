@@ -110,11 +110,11 @@ echo "Documentación legacy:"
 find docs/archive -type f -name "*.md" 2>/dev/null | head -10 | sed 's/^/   - /'
 echo ""
 echo "Deployment legacy:"
-find deploy/legacy-cpanel -type f 2>/dev/null | head -10 | sed 's/^/   - /'
+find deploy/legacy -type f 2>/dev/null | head -10 | sed 's/^/   - /'
 echo ""
 echo "Componentes legacy frontend:"
 find frontend/src -type f -name "*LEGACY*" 2>/dev/null | sed 's/^/   - /'
 echo ""
-echo "NOTA: Los archivos legacy se mantienen en docs/archive/ y deploy/legacy-cpanel/"
+echo "NOTA: Los archivos legacy se mantienen en docs/archive/ y deploy/legacy/"
 echo "      para referencia histórica. Revisar antes de eliminar."
 echo ""

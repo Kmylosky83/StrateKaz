@@ -1,10 +1,10 @@
 # ═══════════════════════════════════════════════════════════════════════════
-# .htaccess para React SPA en cPanel
+# .htaccess para React SPA (LEGACY - Solo referencia)
 # Sistema de Gestión Integral - StrateKaz
 # ═══════════════════════════════════════════════════════════════════════════
 #
-# Este archivo configura Apache para servir correctamente una Single Page
-# Application (SPA) de React en cPanel.
+# NOTA: Produccion usa Nginx en VPS Hostinger, NO Apache.
+# Este archivo es solo referencia para entornos Apache.
 #
 # INSTRUCCIONES:
 # 1. Copia este archivo al directorio public_html/ (o el directorio raíz de tu dominio)
@@ -62,7 +62,7 @@
   # RewriteCond %{REQUEST_URI} ^/api/
   # RewriteRule ^api/(.*)$ https://api.tudominio.com/api/$1 [P,L]
   #
-  # Ejemplo: Backend en la misma instancia de cPanel (Setup Python App)
+  # Ejemplo: Backend en el mismo servidor
   # No necesitas proxy, Django manejará /api/ directamente
 </IfModule>
 
@@ -285,7 +285,7 @@ ServerSignature Off
 #    Si tu backend está en el mismo servidor:
 #    - No necesitas configuración adicional aquí
 #    - Django manejará las rutas /api/ automáticamente
-#    - Asegúrate de que tu app Python está configurada en cPanel
+#    - Asegúrate de que tu backend Django está corriendo
 #
 # 4. TESTING:
 #    Después de activar este archivo:
@@ -296,8 +296,8 @@ ServerSignature Off
 #
 # 5. TROUBLESHOOTING:
 #    Si algo no funciona:
-#    - Revisa Error Log en cPanel
+#    - Revisa Error Log del servidor
 #    - Comenta secciones una por una para identificar el problema
-#    - Verifica que mod_rewrite esté habilitado (normalmente sí en cPanel)
+#    - Verifica que mod_rewrite esté habilitado en Apache
 #
 # ═══════════════════════════════════════════════════════════════════════════

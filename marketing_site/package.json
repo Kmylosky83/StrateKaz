@@ -28,7 +28,7 @@
     "clean:install": "npm run clean && npm install",
     "icons:check": "node scripts/check-icons.js",
     "icons:generate": "node scripts/generate-icons.js",
-    "build:cpanel": "node scripts/build-production.js",
+    "build:deploy": "node scripts/build-production.js",
     "release": "node scripts/build-production.js"
   },
   "keywords": [

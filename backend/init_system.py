@@ -1,6 +1,6 @@
 """
-SCRIPT DE INICIALIZACIÓN PARA CPANEL
-Ejecutar después de subir los archivos corregidos
+SCRIPT DE INICIALIZACIÓN DEL SISTEMA
+Ejecutar después de desplegar en el VPS Hostinger.
 
 NOTA: El branding ahora se gestiona en el modelo Tenant (apps.tenant.models.Tenant)
 Para configurar branding, editar el Tenant desde el admin de Django.
@@ -87,7 +87,7 @@ print("\n" + "=" * 60)
 print("INICIALIZACIÓN COMPLETADA")
 print("=" * 60)
 print("\nPróximos pasos:")
-print("1. Restart de la aplicación Python en cPanel")
+print("1. Reiniciar Gunicorn: sudo systemctl restart gunicorn")
 print("2. Cerrar sesión y volver a entrar")
 print("3. Verificar que el dashboard cargue correctamente")
 print("\nNOTA: El branding se configura ahora en el modelo Tenant")

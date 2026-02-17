@@ -108,13 +108,13 @@ Get-ChildItem -Path "docs\archive" -Recurse -Filter "*.md" -File -ErrorAction Si
 
 Write-Host ""
 Write-Host "Deployment legacy:" -ForegroundColor Yellow
-Get-ChildItem -Path "deploy\legacy-cpanel" -Recurse -File -ErrorAction SilentlyContinue | Select-Object -First 10 | ForEach-Object { Write-Host "   - $($_.FullName.Replace($ProjectRoot + '\', ''))" }
+Get-ChildItem -Path "deploy\legacy" -Recurse -File -ErrorAction SilentlyContinue | Select-Object -First 10 | ForEach-Object { Write-Host "   - $($_.FullName.Replace($ProjectRoot + '\', ''))" }
 
 Write-Host ""
 Write-Host "Componentes legacy frontend:" -ForegroundColor Yellow
 Get-ChildItem -Path "frontend\src" -Recurse -Filter "*LEGACY*" -File -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "   - $($_.FullName.Replace($ProjectRoot + '\', ''))" }
 
 Write-Host ""
-Write-Host "NOTA: Los archivos legacy se mantienen en docs\archive\ y deploy\legacy-cpanel\" -ForegroundColor Cyan
+Write-Host "NOTA: Los archivos legacy se mantienen en docs\archive\ y deploy\legacy\" -ForegroundColor Cyan
 Write-Host "      para referencia histórica. Revisar antes de eliminar." -ForegroundColor Cyan
 Write-Host ""

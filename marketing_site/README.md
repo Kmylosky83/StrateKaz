@@ -102,11 +102,11 @@ npm run build
 
 Output: `dist/` directory ready for deployment
 
-### Deploy to cPanel
+### Deploy to VPS Hostinger
 
 1. Build the project
-2. Upload `dist/` contents to web root
-3. Ensure `.htaccess` is present
+2. Upload `dist/` contents to web root on VPS
+3. Verify Nginx config serves the SPA correctly
 4. Verify at `https://stratekaz.com`
 
 ## 🌟 Recent Fixes

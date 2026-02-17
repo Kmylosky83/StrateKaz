@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Script para preparar archivos estáticos para despliegue en cPanel
+Script para preparar archivos estáticos para despliegue
 Sistema de Gestión Integral - StrateKaz
 
 USO:
@@ -9,12 +9,11 @@ USO:
 DESCRIPCIÓN:
     Este script recolecta todos los archivos estáticos de Django
     y los coloca en el directorio staticfiles/ listo para ser
-    servido por Apache en cPanel.
+    servido por Nginx en el VPS Hostinger.
 
 NOTA IMPORTANTE:
-    En cPanel, los archivos estáticos se sirven directamente desde Apache,
-    no desde Django. Por eso es CRÍTICO ejecutar collectstatic antes de
-    desplegar.
+    En producción (VPS Hostinger), Nginx sirve los archivos estáticos
+    directamente. Es CRÍTICO ejecutar collectstatic antes de desplegar.
 """
 
 import os
@@ -25,7 +24,7 @@ from pathlib import Path
 # Configurar Django
 BASE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(BASE_DIR))
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.production')
 
 # Cargar .env si existe
 ENV_FILE = BASE_DIR / '.env'
@@ -45,7 +44,7 @@ def main():
     """Ejecutar collectstatic y preparar archivos estáticos."""
 
     print("=" * 80)
-    print("PREPARACIÓN DE ARCHIVOS ESTÁTICOS PARA cPanel")
+    print("PREPARACIÓN DE ARCHIVOS ESTÁTICOS PARA VPS")
     print("=" * 80)
     print()
 
@@ -110,22 +109,18 @@ def main():
         print(f"  ├─ {subdir.name}/ ({file_count} archivos)")
     print()
 
-    # Instrucciones para cPanel
+    # Instrucciones para VPS Hostinger
     print("=" * 80)
-    print("PRÓXIMOS PASOS EN cPanel")
+    print("PRÓXIMOS PASOS EN VPS HOSTINGER")
     print("=" * 80)
     print()
-    print("1. Sube el directorio 'staticfiles/' completo a tu servidor cPanel")
-    print("2. En cPanel > Setup Python App:")
-    print("   - Configura 'Static files URL' = /static/")
-    print(f"   - Configura 'Static files location' = {static_root.name}")
+    print("1. Verifica que Nginx apunte al directorio de staticfiles:")
+    print(f"   location /static/ {{ alias {static_root}/; }}")
     print()
-    print("3. Para archivos MEDIA (uploads de usuarios):")
-    print("   - Configura 'Static files URL' = /media/")
-    print(f"   - Configura 'Static files location' = {media_root.name}")
+    print("2. Para archivos MEDIA (uploads de usuarios):")
+    print(f"   location /media/ {{ alias {media_root}/; }}")
     print()
-    print("4. Alternativamente, puedes configurar en .htaccess:")
-    print("   - Ver archivo .htaccess.example en el repositorio")
+    print("3. Reinicia Nginx: sudo systemctl reload nginx")
     print()
     print("=" * 80)
     print("✅ PREPARACIÓN COMPLETADA")

@@ -1,6 +1,6 @@
 # ============================================================================
-# StrateKaz Marketing Site - Optimized cPanel Configuration
-# Production-ready .htaccess for React SPA on shared hosting
+# StrateKaz Marketing Site - Apache Configuration (LEGACY)
+# NOTA: Produccion usa Nginx en VPS Hostinger. Este archivo es referencia.
 # ============================================================================
 
 RewriteEngine On

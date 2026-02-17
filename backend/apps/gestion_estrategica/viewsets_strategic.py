@@ -2,448 +2,33 @@
 ViewSets para el Modulo de Direccion Estrategica
 Sistema de Gestion StrateKaz
 
-Este modulo contiene los ViewSets para:
-- Tab 1: Identidad Corporativa (Mision, Vision, Valores, Politica Integral)
-- Tab 2: Planeacion Estrategica (Mapa Estrategico, Objetivos BSC/ISO)
-- Tab 4: Configuracion (Modulos, Branding, Consecutivos)
+Este modulo contiene:
+- StrategicStatsViewSet: Estadisticas de Direccion Estrategica
 
-NOTA: Este archivo fue movido desde apps.core.viewsets_strategic para eliminar
-dependencias circulares. Los imports de gestion_estrategica ahora son locales.
+NOTA LEGACY v4.0:
+- Tab 1 ViewSets (CorporateIdentity, CorporateValue) MOVIDOS a identidad/views.py
+  Endpoints activos: /api/identidad/identidad/, /api/identidad/valores/
+- Tab 2 ViewSets (StrategicPlan, StrategicObjective) MOVIDOS a planeacion/views.py
+  Endpoints activos: /api/planeacion/planes/, /api/planeacion/objetivos/
+- Tab 4 ViewSets (SystemModule, ModuleTab, TabSection) MOVIDOS a core/viewsets_config.py
+  Endpoints activos: /api/core/system-modules/, /api/core/module-tabs/
 """
-from rest_framework import viewsets, status, filters
+from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from django_filters.rest_framework import DjangoFilterBackend
-from django.db import transaction
-from django.utils import timezone
+from rest_framework.permissions import IsAuthenticated
 
 from django.contrib.auth import get_user_model
-from django.db.models import Prefetch
 
 # Modelos de core (RBAC, Configuracion del Sistema)
-# NOTA: BrandingConfig fue ELIMINADO - el branding está en Tenant
-# NOTA: SystemModule/ModuleTab/TabSection ViewSets MOVIDOS a core.viewsets_config
 from apps.core.models import (
     SystemModule,
     Role, Cargo
 )
 
 # Modelos locales de gestion_estrategica (imports relativos)
-from .identidad.models import CorporateIdentity, CorporateValue
+from .identidad.models import CorporateIdentity
 from .planeacion.models import StrategicPlan, StrategicObjective
-
-# Serializers locales de gestion_estrategica (imports relativos)
-from .serializers_strategic import (
-    # Tab 1: Identidad
-    CorporateValueSerializer, CorporateValueCreateSerializer,
-    CorporateIdentityListSerializer, CorporateIdentityDetailSerializer,
-    CorporateIdentityCreateSerializer, CorporateIdentityUpdateSerializer,
-    SignPolicySerializer,
-    # Tab 2: Planeacion
-    StrategicPlanListSerializer, StrategicPlanDetailSerializer,
-    StrategicPlanCreateSerializer, StrategicPlanUpdateSerializer,
-    ApprovePlanSerializer,
-    StrategicObjectiveListSerializer, StrategicObjectiveDetailSerializer,
-    StrategicObjectiveCreateSerializer, StrategicObjectiveUpdateSerializer,
-    # NOTA: Tab 4 (SystemModule/ModuleTab/TabSection) serializers MOVIDOS a core.viewsets_config
-    # Stats
-    StrategicStatsSerializer,
-)
-
-
-# =============================================================================
-# TAB 1: IDENTIDAD CORPORATIVA
-# =============================================================================
-
-class CorporateIdentityViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet para Identidad Corporativa
-
-    Endpoints:
-    - GET /api/core/corporate-identity/ - Listar identidades
-    - POST /api/core/corporate-identity/ - Crear identidad
-    - GET /api/core/corporate-identity/{id}/ - Detalle de identidad
-    - PATCH /api/core/corporate-identity/{id}/ - Actualizar identidad
-    - DELETE /api/core/corporate-identity/{id}/ - Eliminar identidad
-    - GET /api/core/corporate-identity/active/ - Obtener identidad activa
-    - POST /api/core/corporate-identity/{id}/sign-policy/ - Firmar politica
-    - POST /api/core/corporate-identity/{id}/add-value/ - Agregar valor
-    - DELETE /api/core/corporate-identity/{id}/remove-value/{value_id}/ - Quitar valor
-    """
-
-    queryset = CorporateIdentity.objects.all()
-    permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['is_active']
-    ordering = ['-effective_date']
-
-    def get_serializer_class(self):
-        if self.action == 'list':
-            return CorporateIdentityListSerializer
-        elif self.action == 'create':
-            return CorporateIdentityCreateSerializer
-        elif self.action in ['update', 'partial_update']:
-            return CorporateIdentityUpdateSerializer
-        elif self.action == 'sign_policy':
-            return SignPolicySerializer
-        elif self.action == 'add_value':
-            return CorporateValueCreateSerializer
-        return CorporateIdentityDetailSerializer
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        return queryset.prefetch_related('values').select_related(
-            'policy_signed_by', 'created_by'
-        )
-
-    @action(detail=False, methods=['get'])
-    def active(self, request):
-        """
-        GET /api/core/corporate-identity/active/
-
-        Retorna la identidad corporativa activa
-        """
-        identity = CorporateIdentity.objects.filter(is_active=True).first()
-        if not identity:
-            return Response(
-                {'detail': 'No hay identidad corporativa activa'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        return Response(CorporateIdentityDetailSerializer(identity).data)
-
-    @action(detail=True, methods=['post'])
-    def sign_policy(self, request, pk=None):
-        """
-        POST /api/core/corporate-identity/{id}/sign-policy/
-
-        Firma digitalmente la politica integral
-        """
-        identity = self.get_object()
-
-        if identity.is_signed:
-            return Response(
-                {'error': 'La politica ya esta firmada'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        serializer = SignPolicySerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        identity.sign_policy(request.user)
-
-        return Response({
-            'message': 'Politica firmada exitosamente',
-            'identity': CorporateIdentityDetailSerializer(identity).data
-        })
-
-    @action(detail=True, methods=['post'])
-    def add_value(self, request, pk=None):
-        """
-        POST /api/core/corporate-identity/{id}/add-value/
-
-        Agrega un valor corporativo
-        """
-        identity = self.get_object()
-        serializer = CorporateValueCreateSerializer(data=request.data)
-
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        # Obtener el orden maximo actual
-        max_order = identity.values.order_by('-orden').values_list(
-            'orden', flat=True
-        ).first() or 0
-
-        value = CorporateValue.objects.create(
-            identity=identity,
-            orden=max_order + 1,
-            **serializer.validated_data
-        )
-
-        return Response(
-            CorporateValueSerializer(value).data,
-            status=status.HTTP_201_CREATED
-        )
-
-    @action(detail=True, methods=['delete'], url_path='remove-value/(?P<value_id>[^/.]+)')
-    def remove_value(self, request, pk=None, value_id=None):
-        """
-        DELETE /api/core/corporate-identity/{id}/remove-value/{value_id}/
-
-        Elimina un valor corporativo
-        """
-        identity = self.get_object()
-
-        try:
-            value = identity.values.get(id=value_id)
-            value.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except CorporateValue.DoesNotExist:
-            return Response(
-                {'error': 'Valor no encontrado'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-
-class CorporateValueViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet para Valores Corporativos
-
-    Endpoints:
-    - GET /api/core/corporate-values/ - Listar valores
-    - POST /api/core/corporate-values/ - Crear valor
-    - GET /api/core/corporate-values/{id}/ - Detalle de valor
-    - PATCH /api/core/corporate-values/{id}/ - Actualizar valor
-    - DELETE /api/core/corporate-values/{id}/ - Eliminar valor
-    """
-
-    queryset = CorporateValue.objects.all()
-    permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['identity', 'is_active']
-    search_fields = ['name', 'description']
-    ordering = ['orden', 'name']
-
-    def get_serializer_class(self):
-        if self.action in ['create', 'update', 'partial_update']:
-            return CorporateValueCreateSerializer
-        return CorporateValueSerializer
-
-
-# =============================================================================
-# TAB 2: PLANEACION ESTRATEGICA
-# =============================================================================
-
-class StrategicPlanViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet para Planes Estrategicos
-
-    Endpoints:
-    - GET /api/core/strategic-plans/ - Listar planes
-    - POST /api/core/strategic-plans/ - Crear plan
-    - GET /api/core/strategic-plans/{id}/ - Detalle de plan
-    - PATCH /api/core/strategic-plans/{id}/ - Actualizar plan
-    - DELETE /api/core/strategic-plans/{id}/ - Soft delete
-    - GET /api/core/strategic-plans/active/ - Plan activo
-    - POST /api/core/strategic-plans/{id}/approve/ - Aprobar plan
-    - GET /api/core/strategic-plans/bsc-perspectives/ - Perspectivas BSC
-    - GET /api/core/strategic-plans/iso-standards/ - Estandares ISO
-    - GET /api/core/strategic-plans/period-types/ - Tipos de periodo
-    """
-
-    queryset = StrategicPlan.objects.all()
-    permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['is_active', 'period_type']
-    search_fields = ['name', 'description']
-    ordering = ['-start_date']
-
-    def get_serializer_class(self):
-        if self.action == 'list':
-            return StrategicPlanListSerializer
-        elif self.action == 'create':
-            return StrategicPlanCreateSerializer
-        elif self.action in ['update', 'partial_update']:
-            return StrategicPlanUpdateSerializer
-        elif self.action == 'approve':
-            return ApprovePlanSerializer
-        return StrategicPlanDetailSerializer
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        return queryset.prefetch_related('objectives').select_related(
-            'approved_by', 'created_by'
-        )
-
-    def perform_destroy(self, instance):
-        """Soft delete"""
-        instance.is_active = False
-        instance.save()
-
-    @action(detail=False, methods=['get'])
-    def active(self, request):
-        """
-        GET /api/core/strategic-plans/active/
-
-        Retorna el plan estrategico activo
-        """
-        plan = StrategicPlan.objects.filter(is_active=True).first()
-        if not plan:
-            return Response(
-                {'detail': 'No hay plan estrategico activo'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        return Response(StrategicPlanDetailSerializer(plan).data)
-
-    @action(detail=True, methods=['post'])
-    def approve(self, request, pk=None):
-        """
-        POST /api/core/strategic-plans/{id}/approve/
-
-        Aprueba el plan estrategico
-        """
-        plan = self.get_object()
-
-        if plan.approved_by:
-            return Response(
-                {'error': 'El plan ya esta aprobado'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        serializer = ApprovePlanSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        plan.approved_by = request.user
-        plan.approved_at = timezone.now()
-        plan.save(update_fields=['approved_by', 'approved_at'])
-
-        return Response({
-            'message': 'Plan aprobado exitosamente',
-            'plan': StrategicPlanDetailSerializer(plan).data
-        })
-
-    @action(detail=False, methods=['get'])
-    def bsc_perspectives(self, request):
-        """
-        GET /api/core/strategic-plans/bsc-perspectives/
-
-        Retorna las perspectivas BSC disponibles
-        """
-        perspectives = [
-            {'value': code, 'label': label}
-            for code, label in StrategicObjective.BSC_PERSPECTIVE_CHOICES
-        ]
-        return Response(perspectives)
-
-    @action(detail=False, methods=['get'])
-    def iso_standards(self, request):
-        """
-        GET /api/core/strategic-plans/iso-standards/
-
-        Retorna los estandares ISO disponibles (desde NormaISO activas)
-        """
-        from .configuracion.models import NormaISO
-        normas = NormaISO.objects.filter(is_active=True).order_by('orden')
-        standards = [
-            {'value': norma.code, 'label': f'{norma.code} - {norma.name}'}
-            for norma in normas
-        ]
-        return Response(standards)
-
-    @action(detail=False, methods=['get'])
-    def period_types(self, request):
-        """
-        GET /api/core/strategic-plans/period-types/
-
-        Retorna los tipos de periodo disponibles
-        """
-        types = [
-            {'value': code, 'label': label}
-            for code, label in StrategicPlan.PERIOD_CHOICES
-        ]
-        return Response(types)
-
-
-class StrategicObjectiveViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet para Objetivos Estrategicos
-
-    Endpoints:
-    - GET /api/core/strategic-objectives/ - Listar objetivos
-    - POST /api/core/strategic-objectives/ - Crear objetivo
-    - GET /api/core/strategic-objectives/{id}/ - Detalle de objetivo
-    - PATCH /api/core/strategic-objectives/{id}/ - Actualizar objetivo
-    - DELETE /api/core/strategic-objectives/{id}/ - Soft delete
-    - POST /api/core/strategic-objectives/{id}/update-progress/ - Actualizar progreso
-    - GET /api/core/strategic-objectives/statuses/ - Estados disponibles
-    """
-
-    queryset = StrategicObjective.objects.all()
-    permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['plan', 'bsc_perspective', 'status', 'is_active', 'responsible']
-    search_fields = ['code', 'name', 'description']
-    ordering = ['bsc_perspective', 'orden', 'code']
-
-    def get_serializer_class(self):
-        if self.action == 'list':
-            return StrategicObjectiveListSerializer
-        elif self.action == 'create':
-            return StrategicObjectiveCreateSerializer
-        elif self.action in ['update', 'partial_update']:
-            return StrategicObjectiveUpdateSerializer
-        return StrategicObjectiveDetailSerializer
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-
-        include_inactive = self.request.query_params.get('include_inactive', 'false')
-        if include_inactive.lower() != 'true':
-            queryset = queryset.filter(is_active=True)
-
-        return queryset.select_related(
-            'plan', 'responsible', 'responsible_cargo', 'created_by'
-        )
-
-    def perform_destroy(self, instance):
-        """Soft delete"""
-        instance.is_active = False
-        instance.save()
-
-    @action(detail=True, methods=['post'])
-    def update_progress(self, request, pk=None):
-        """
-        POST /api/core/strategic-objectives/{id}/update-progress/
-
-        Actualiza el progreso del objetivo basado en valor actual vs meta
-        """
-        objective = self.get_object()
-
-        current_value = request.data.get('current_value')
-        if current_value is not None:
-            objective.current_value = current_value
-            objective.save(update_fields=['current_value'])
-
-        objective.update_progress()
-
-        return Response({
-            'message': 'Progreso actualizado',
-            'objective': StrategicObjectiveDetailSerializer(objective).data
-        })
-
-    @action(detail=False, methods=['get'])
-    def statuses(self, request):
-        """
-        GET /api/core/strategic-objectives/statuses/
-
-        Retorna los estados disponibles
-        """
-        statuses = [
-            {'value': code, 'label': label}
-            for code, label in StrategicObjective.STATUS_CHOICES
-        ]
-        return Response(statuses)
-
-
-# =============================================================================
-# NOTA: TAB 4 (SystemModule, ModuleTab, TabSection) ViewSets MOVIDOS a
-# apps.core.viewsets_config para eliminar dependencias circulares.
-# Endpoints activos: /api/core/system-modules/, /api/core/module-tabs/, etc.
-# =============================================================================
-
-
-# =============================================================================
-# ESTADISTICAS DE GESTION ESTRATEGICA
-# =============================================================================
-
-# Dead ViewSet classes removed: SystemModuleViewSet, ModuleTabViewSet, TabSectionViewSet
-# These were moved to apps.core.viewsets_config and registered in core/urls.py
-# Also removed: BrandingConfigViewSet (moved to Tenant), ConsecutivoConfigViewSet (moved to organizacion)
-
-
 
 
 # =============================================================================
@@ -455,28 +40,30 @@ class StrategicStatsViewSet(viewsets.ViewSet):
     ViewSet para estadisticas de Direccion Estrategica
 
     Endpoints:
-    - GET /api/core/strategic/ - Estadisticas generales (list)
-    - GET /api/core/strategic/stats/ - Alias para estadisticas
+    - GET /api/gestion-estrategica/strategic-stats/ - Estadisticas generales (list)
+    - GET /api/gestion-estrategica/strategic-stats/stats/ - Alias para estadisticas
+
+    Tambien disponible en: /api/identidad/stats/ (identidad sub-app)
     """
 
     permission_classes = [IsAuthenticated]
 
     def list(self, request):
         """
-        GET /api/core/strategic/
+        GET /api/gestion-estrategica/strategic-stats/
 
         Retorna estadisticas de valor para Direccion Estrategica:
         1. Completitud del Sistema (%)
         2. Objetivos Estrategicos (cumplidos/total, en riesgo)
         3. Control de Acceso RBAC (usuarios con/sin roles)
-        4. Identidad Corporativa (estado de firma)
+        4. Identidad Corporativa (estado)
         """
         return self._get_stats(request)
 
     @action(detail=False, methods=['get'])
     def stats(self, request):
         """
-        GET /api/core/strategic/stats/
+        GET /api/gestion-estrategica/strategic-stats/stats/
 
         Alias para el metodo list
         """
@@ -584,6 +171,8 @@ class StrategicStatsViewSet(viewsets.ViewSet):
             'configured_consecutivos': self._get_consecutivos_count(),
         }
 
+        return Response(stats)
+
     def _get_consecutivos_count(self):
         """Cuenta consecutivos activos configurados"""
         try:
@@ -591,5 +180,3 @@ class StrategicStatsViewSet(viewsets.ViewSet):
             return ConsecutivoConfig.objects.filter(is_active=True).count()
         except Exception:
             return 0
-
-        return Response(stats)

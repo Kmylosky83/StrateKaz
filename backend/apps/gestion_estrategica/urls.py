@@ -22,11 +22,8 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
 # ViewSets locales del módulo Gestión Estratégica
+# NOTA v4.0: Tab 1/Tab 2 ViewSets movidos a sub-apps (identidad/, planeacion/)
 from .viewsets_strategic import (
-    CorporateIdentityViewSet,
-    CorporateValueViewSet,
-    StrategicPlanViewSet,
-    StrategicObjectiveViewSet,
     StrategicStatsViewSet,
 )
 
@@ -35,13 +32,8 @@ app_name = 'gestion_estrategica'
 # Router para ViewSets a nivel de módulo
 router = DefaultRouter()
 
-# Endpoints canónicos de Identidad Corporativa (Tab 1)
-router.register(r'corporate-identity', CorporateIdentityViewSet, basename='corporate-identity')
-router.register(r'corporate-values', CorporateValueViewSet, basename='corporate-values')
-
-# Endpoints canónicos de Planeación Estratégica (Tab 2)
-router.register(r'strategic-plans', StrategicPlanViewSet, basename='strategic-plans')
-router.register(r'strategic-objectives', StrategicObjectiveViewSet, basename='strategic-objectives')
+# NOTA v4.0: Tab 1 endpoints activos en /api/identidad/ (identidad sub-app)
+# NOTA v4.0: Tab 2 endpoints activos en /api/planeacion/ (planeacion sub-app)
 
 # Estadísticas de Gestión Estratégica
 router.register(r'strategic-stats', StrategicStatsViewSet, basename='strategic-stats')

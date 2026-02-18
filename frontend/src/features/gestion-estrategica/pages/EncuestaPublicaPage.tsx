@@ -936,39 +936,30 @@ function PublicLayout({
   logoUrl?: string;
 }) {
   const primaryColor = brand?.primary || '#3b82f6';
+  const [logoError, setLogoError] = useState(false);
+
+  const showLogo = logoUrl && !logoError;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-slate-100 dark:from-gray-900 dark:to-gray-800">
       {/* Header */}
       <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
-        <div className="max-w-3xl mx-auto px-4 py-4 sm:py-5">
+        <div className="max-w-3xl mx-auto px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 min-w-0">
-              {logoUrl ? (
+              {showLogo ? (
                 <img
                   src={logoUrl}
                   alt={empresaNombre || 'Logo'}
-                  className="w-10 h-10 rounded-lg object-contain flex-shrink-0"
-                  onError={(e) => {
-                    // Fallback to icon if image fails
-                    (e.target as HTMLImageElement).style.display = 'none';
-                    const parent = (e.target as HTMLImageElement).parentElement;
-                    if (parent) {
-                      const fallback = document.createElement('div');
-                      fallback.className =
-                        'w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0';
-                      fallback.style.backgroundColor = primaryColor;
-                      fallback.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/></svg>`;
-                      parent.insertBefore(fallback, e.target as HTMLImageElement);
-                    }
-                  }}
+                  className="h-9 sm:h-11 w-auto max-w-[160px] sm:max-w-[200px] object-contain flex-shrink-0"
+                  onError={() => setLogoError(true)}
                 />
               ) : (
                 <div
-                  className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                  className="w-9 h-9 sm:w-11 sm:h-11 rounded-lg flex items-center justify-center flex-shrink-0"
                   style={{ backgroundColor: primaryColor }}
                 >
-                  <Building2 className="w-5 h-5 text-white" />
+                  <Building2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
               )}
               <div className="min-w-0">

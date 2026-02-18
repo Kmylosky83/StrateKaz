@@ -37,8 +37,8 @@ BACKUP_DIR="${BACKUP_DIR:-/var/backups/stratekaz}"
 SETTINGS="config.settings.production"
 
 # PostgreSQL
-PG_USER="${DB_USER:-stratekaz}"
-PG_DB="${DB_NAME:-stratekaz}"
+PG_USER="${DB_USER:-stratekaz_user}"
+PG_DB="${DB_NAME:-stratekaz_db}"
 
 # Frontend env
 VITE_API_URL="${VITE_API_URL:-https://app.stratekaz.com/api}"

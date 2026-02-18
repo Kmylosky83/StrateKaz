@@ -73,7 +73,7 @@ class Command(BaseCommand):
         try:
             user = User.objects.create_user(
                 username='demo',
-                email='demo@grasasyhuesos.com',
+                email='demo@stratekaz.com',
                 password='demo123',
                 first_name='Usuario',
                 last_name='Demo',

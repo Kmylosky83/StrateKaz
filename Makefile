@@ -7,7 +7,7 @@
 
 # Variables
 DOCKER_COMPOSE = docker-compose
-PROJECT_NAME = grasas_huesos
+PROJECT_NAME = stratekaz
 
 # Default target
 help:
@@ -124,13 +124,13 @@ test-coverage:
 db-backup:
 	@echo "💾 Creando backup de base de datos..."
 	@mkdir -p backups
-	$(DOCKER_COMPOSE) exec -T db mysqldump -u root -pGrasasYHuesos2024!RootSecure#MySQL grasas_huesos_db > backups/backup_$$(date +%Y%m%d_%H%M%S).sql
+	$(DOCKER_COMPOSE) exec -T db pg_dump -U $${DB_USER:-stratekaz} $${DB_NAME:-stratekaz} > backups/backup_$$(date +%Y%m%d_%H%M%S).sql
 	@echo "✅ Backup creado en backups/"
 
 db-restore:
 	@echo "⚠️  Restaurar base de datos"
 	@read -p "Ingrese el nombre del archivo de backup: " backup; \
-	$(DOCKER_COMPOSE) exec -T db mysql -u root -pGrasasYHuesos2024!RootSecure#MySQL grasas_huesos_db < backups/$$backup
+	$(DOCKER_COMPOSE) exec -T db psql -U $${DB_USER:-stratekaz} $${DB_NAME:-stratekaz} < backups/$$backup
 
 # Health checks
 health:

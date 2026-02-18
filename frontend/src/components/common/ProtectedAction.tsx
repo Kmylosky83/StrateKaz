@@ -18,7 +18,7 @@
  *
  * @example
  * // Por cargo(s)
- * <ProtectedAction cargos={[CargoCodes.LIDER_COMERCIAL_ECONORTE]}>
+ * <ProtectedAction cargos={[CargoCodes.LIDER_COMERCIAL]}>
  *   <AdminPanel />
  * </ProtectedAction>
  *

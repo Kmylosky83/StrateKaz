@@ -370,10 +370,10 @@ class RequireCargo(permissions.BasePermission):
 
     Uso:
         permission_classes = [RequireCargo]
-        required_cargo = 'lider_com_econorte'
+        required_cargo = 'lider_comercial'
 
-        # O múltiples cargos
-        required_cargos = ['lider_com_econorte', 'gerente_general']
+        # O multiples cargos
+        required_cargos = ['lider_comercial', 'gerente_general']
     """
 
     message = 'No tiene el cargo requerido para esta acción.'

@@ -52,9 +52,9 @@ class TestEmpresaStats:
             ciudad='Bogotá',
             departamento='CUNDINAMARCA',
             telefono_principal='+57 601 1234567',
-            email_corporativo='contacto@grasasyhuesos.com',
+            email_corporativo='contacto@empresa-demo.com',
             actividad_economica='1011',
-            nombre_comercial='Grasas y Huesos'
+            nombre_comercial='Empresa Demo SAS'
         )
 
         stats = calculate_empresa_stats()

@@ -75,12 +75,12 @@ Editar `.env` con tus credenciales:
 ### 4. Crear base de datos MySQL
 
 ```bash
-mysql -u root -p
+psql -U postgres
 ```
 
 ```sql
-CREATE DATABASE grasas_huesos_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-EXIT;
+CREATE DATABASE stratekaz OWNER stratekaz_user;
+\q
 ```
 
 ### 5. Ejecutar migraciones

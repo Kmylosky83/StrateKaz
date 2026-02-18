@@ -953,7 +953,7 @@ class Migration(migrations.Migration):
                     "code",
                     models.CharField(
                         db_index=True,
-                        help_text="Codigo unico del item de menu (ej: menu.econorte)",
+                        help_text="Codigo unico del item de menu (ej: menu.supply_chain)",
                         max_length=50,
                         unique=True,
                         verbose_name="Codigo",
@@ -971,7 +971,7 @@ class Migration(migrations.Migration):
                     "path",
                     models.CharField(
                         blank=True,
-                        help_text="Ruta del frontend (ej: /proveedores/econorte)",
+                        help_text="Ruta del frontend (ej: /supply-chain/proveedores)",
                         max_length=200,
                         null=True,
                         verbose_name="Ruta",

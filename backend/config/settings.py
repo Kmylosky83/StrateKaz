@@ -522,9 +522,8 @@ SESSION_SAVE_EVERY_REQUEST = False
 INTERNAL_IPS = ['127.0.0.1', 'localhost']
 AUDITLOG_INCLUDE_ALL_MODELS = True
 
-PRECIO_COMPRA_ECONORTE = config('PRECIO_COMPRA_ECONORTE', default=3500, cast=int)
-PRECIO_REFERENCIA_COMISION = config('PRECIO_REFERENCIA_COMISION', default=3000, cast=int)
-COMISION_FIJA_POR_KILO = config('COMISION_FIJA_POR_KILO', default=100, cast=int)
+# Business configuration (legacy - deprecated settings.py)
+# These settings are tenant-specific and should be managed via admin
 
 # ═══════════════════════════════════════════════════
 # EMAIL CONFIGURATION

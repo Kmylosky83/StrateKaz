@@ -44,6 +44,10 @@ SHARED_APPS = [
     'django_filters',
     'drf_spectacular',
 
+    # Celery (global - un solo scheduler/backend para toda la plataforma)
+    'django_celery_beat',
+    'django_celery_results',
+
     # Apps compartidas (schema public)
     'apps.tenant',  # Modelos: Tenant, Plan, TenantUser, Domain
 ]
@@ -58,8 +62,6 @@ TENANT_APPS = [
     # Third party por tenant
     'rest_framework_simplejwt.token_blacklist',  # Depende de core.User
     'auditlog',
-    'django_celery_beat',
-    'django_celery_results',
     'csp',
 
     # ═══════════════════════════════════════════════════════════════════════════

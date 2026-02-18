@@ -6,8 +6,8 @@ Este comando:
 2. Mantiene solo los 14 módulos oficiales
 
 Uso:
-    docker exec grasas_huesos_backend python manage.py cleanup_legacy_modules
-    docker exec grasas_huesos_backend python manage.py cleanup_legacy_modules --delete  # Para eliminar
+    docker exec stratekaz_backend python manage.py cleanup_legacy_modules
+    docker exec stratekaz_backend python manage.py cleanup_legacy_modules --delete  # Para eliminar
 """
 from django.core.management.base import BaseCommand
 from apps.core.models import SystemModule, ModuleTab

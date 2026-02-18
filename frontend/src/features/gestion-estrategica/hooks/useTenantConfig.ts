@@ -25,9 +25,9 @@ export const tenantKeys = {
 // Configuración por defecto cuando no hay datos del backend
 const DEFAULT_TENANT_CONFIG: TenantConfig = {
   id: 1,
-  enabled_modules: ['core', 'proveedores', 'planta', 'econorte'],
+  enabled_modules: ['core', 'supply_chain', 'hseq', 'gestion_estrategica'],
   features: {
-    enable_econorte: true,
+    enable_supply_chain: true,
     enable_sst: true,
     enable_pesv: true,
     enable_iso: true,
@@ -220,7 +220,7 @@ export const useModuleVisibility = () => {
 
   return {
     // Mapeo de rutas/módulos a features
-    isEcoNorteVisible: features?.enable_econorte ?? true,
+    isSupplyChainVisible: features?.enable_supply_chain ?? true,
     isSSTVisible: features?.enable_sst ?? true,
     isPESVVisible: features?.enable_pesv ?? true,
     isISOVisible: features?.enable_iso ?? true,

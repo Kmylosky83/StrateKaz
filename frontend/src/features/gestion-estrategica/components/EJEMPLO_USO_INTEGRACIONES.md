@@ -36,7 +36,7 @@ export const ConfiguracionTab = () => {
         api_key: 'SG.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
       },
       configuracion_adicional: {
-        from_email: 'noreply@grasasyhuesos.com',
+        from_email: 'noreply@mi-empresa.com',
         from_name: 'StrateKaz',
       },
       ambiente: 'PRODUCCION',

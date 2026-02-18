@@ -13,7 +13,7 @@ class MenuItem(models.Model):
     Estructura jerarquica:
     - Categorias (nivel 0): Las 6 categorias del sistema (Estrategico, Motor, Integral, Misional, Apoyo, Inteligencia)
     - Modulos (nivel 1): Proveedores, Planta, SST, etc.
-    - Submodulos (nivel 2): EcoNorte, Recepciones, etc.
+    - Submodulos (nivel 2): Supply Chain, Recepciones, etc.
 
     El acceso se controla mediante:
     - allowed_cargos: Cargos que pueden ver el item
@@ -42,7 +42,7 @@ class MenuItem(models.Model):
         unique=True,
         db_index=True,
         verbose_name='Codigo',
-        help_text='Codigo unico del item de menu (ej: menu.econorte)'
+        help_text='Codigo unico del item de menu (ej: menu.supply_chain)'
     )
     name = models.CharField(
         max_length=100,
@@ -54,7 +54,7 @@ class MenuItem(models.Model):
         blank=True,
         null=True,
         verbose_name='Ruta',
-        help_text='Ruta del frontend (ej: /proveedores/econorte)'
+        help_text='Ruta del frontend (ej: /supply-chain/proveedores)'
     )
     icon = models.CharField(
         max_length=50,

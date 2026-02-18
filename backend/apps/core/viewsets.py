@@ -242,10 +242,10 @@ class UserViewSet(viewsets.ModelViewSet):
 
         GET /api/core/users/comerciales/
 
-        Retorna usuarios con cargos: lider_com_econorte, comercial_econorte
+        Retorna usuarios con cargos comerciales asignados
         """
         comerciales = User.objects.filter(
-            Q(cargo__code='lider_com_econorte') | Q(cargo__code='comercial_econorte'),
+            Q(cargo__code='lider_comercial') | Q(cargo__code='comercial'),
             is_active=True,
             deleted_at__isnull=True
         ).select_related('cargo').order_by('first_name', 'last_name')

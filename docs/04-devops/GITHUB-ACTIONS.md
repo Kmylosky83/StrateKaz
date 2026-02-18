@@ -228,7 +228,7 @@ Go to **Settings > Secrets and variables > Actions**
 #### Secrets adicionales (si necesitas deployment):
 ```
 SSH_PRIVATE_KEY       # Clave SSH para deployment
-SERVER_HOST           # ejemplo: app.grasasyhuesos.com
+SERVER_HOST           # ejemplo: app.stratekaz.com
 SERVER_USER           # ejemplo: deploy
 DOCKER_HUB_USERNAME   # Si usas Docker Hub
 DOCKER_HUB_TOKEN      # Token de Docker Hub

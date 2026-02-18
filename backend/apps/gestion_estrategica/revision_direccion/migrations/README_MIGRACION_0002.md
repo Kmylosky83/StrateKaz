@@ -86,16 +86,13 @@ Actualizamos el estado de Django para reflejar que `empresa` es una FK (no `empr
 
 ```bash
 # Ver índices
-docker exec grasas_huesos_db mysql -u grasas_user -pgrasas_pass_2024 grasas_huesos_db \
-  -e "SHOW INDEXES FROM revision_direccion_programarevision WHERE Key_name LIKE '%uniq%';"
-
 # Ver campo en Django
-docker exec grasas_huesos_backend python manage.py shell -c \
+docker exec stratekaz_backend python manage.py shell -c \
   "from apps.gestion_estrategica.revision_direccion.models import ProgramaRevision; \
    print('DB column:', ProgramaRevision._meta.get_field('empresa').column)"
 
 # Ver unique_together
-docker exec grasas_huesos_backend python manage.py shell -c \
+docker exec stratekaz_backend python manage.py shell -c \
   "from apps.gestion_estrategica.revision_direccion.models import ProgramaRevision; \
    print('Unique together:', ProgramaRevision._meta.unique_together)"
 ```

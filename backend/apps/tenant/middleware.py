@@ -51,7 +51,7 @@ class TenantAuthenticationMiddleware:
         self.jwt_auth = JWTAuthentication()
 
     def __call__(self, request):
-        # Rutas que siempre van al schema público
+        # Rutas que siempre van al schema público (no requieren tenant)
         public_paths = [
             '/api/auth/',
             '/api/tenant/auth/',  # Auth endpoints multi-tenant
@@ -69,6 +69,16 @@ class TenantAuthenticationMiddleware:
         if any(request.path.startswith(path) for path in public_paths):
             return self.get_response(request)
 
+        # Rutas públicas que necesitan resolver tenant via X-Tenant-ID
+        # pero NO requieren JWT (acceso anónimo permitido)
+        public_tenant_paths = [
+            '/api/encuestas-dofa/publica/',  # Encuestas públicas (GET + POST)
+        ]
+
+        is_public_tenant_path = any(
+            request.path.startswith(path) for path in public_tenant_paths
+        )
+
         # Verificar si hay un X-Tenant-ID header
         tenant_id = request.headers.get('X-Tenant-ID')
 
@@ -77,10 +87,12 @@ class TenantAuthenticationMiddleware:
                 Tenant = get_tenant_model()
                 tenant = Tenant.objects.get(id=tenant_id, is_active=True)
 
-                # SEGURIDAD: Validar que el usuario tiene acceso a este tenant
-                denial = self._validate_tenant_access(request, tenant)
-                if denial is not None:
-                    return denial
+                # SEGURIDAD: Para rutas públicas con tenant, solo resolver el schema
+                # sin validar JWT (el acceso anónimo lo controla la vista con AllowAny)
+                if not is_public_tenant_path:
+                    denial = self._validate_tenant_access(request, tenant)
+                    if denial is not None:
+                        return denial
 
                 # Cambiar al schema del tenant
                 from django.db import connection

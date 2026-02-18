@@ -18,7 +18,7 @@ Uso:
     python manage.py sync_tenant_seeds --all
 
     # Sincronizar un tenant especifico
-    python manage.py sync_tenant_seeds --tenant-code=grasasyhuesos
+    python manage.py sync_tenant_seeds --tenant-code=mi-empresa
 
     # Ver que se haria sin ejecutar
     python manage.py sync_tenant_seeds --all --dry-run
@@ -46,7 +46,7 @@ class Command(BaseCommand):
         group.add_argument(
             '--tenant-code',
             type=str,
-            help='Codigo del tenant a sincronizar (ej: grasasyhuesos)',
+            help='Codigo del tenant a sincronizar (ej: mi-empresa)',
         )
         group.add_argument(
             '--all',

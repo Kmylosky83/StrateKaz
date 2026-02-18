@@ -597,7 +597,7 @@ export interface TenantConfig {
 
 export interface TenantFeatures {
   // Modulos principales
-  enable_econorte: boolean;
+  enable_supply_chain: boolean;
   enable_sst: boolean;
   enable_pesv: boolean;
   enable_iso: boolean;
@@ -619,7 +619,7 @@ export interface TenantUISettings {
 }
 
 export interface UpdateTenantFeaturesDTO {
-  enable_econorte?: boolean;
+  enable_supply_chain?: boolean;
   enable_sst?: boolean;
   enable_pesv?: boolean;
   enable_iso?: boolean;

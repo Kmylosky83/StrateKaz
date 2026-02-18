@@ -175,7 +175,7 @@ def generate_export_commands():
     print("  proveedores.Proveedor --indent 2 --output=/tmp/proveedores_only.json")
 
     print("\n# Backup de base de datos completa:")
-    print("docker-compose exec db mysqldump -u root -p grasas_huesos_db \\")
+    print("docker-compose exec db pg_dump -U stratekaz stratekaz \\")
     print("  > backup_$(date +%Y%m%d_%H%M%S).sql")
 
 

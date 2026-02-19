@@ -2,7 +2,7 @@
  * ColorLegend - Leyenda de colores para gráficos
  * Design System StrateKaz
  */
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/cn';
 
 export interface LegendItem {
   label: string;

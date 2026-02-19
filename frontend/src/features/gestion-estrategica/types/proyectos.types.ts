@@ -192,6 +192,9 @@ export interface Proyecto {
   origen_cambio_titulo?: string | null;
   origen_objetivo?: number | null;
   origen_objetivo_nombre?: string | null;
+  // Salud del proyecto
+  health_status?: SaludProyecto | null;
+  health_notes?: string | null;
   // Campos calculados desde serializer
   variacion_costo?: number | null;
   indice_desempeno_costo?: number | null;

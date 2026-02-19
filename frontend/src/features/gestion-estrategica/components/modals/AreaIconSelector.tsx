@@ -13,7 +13,7 @@
  */
 import { useState, useMemo, useCallback } from 'react';
 import { Search, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/cn';
 import { DynamicIcon } from '@/components/common/DynamicIcon';
 
 // ==================== TYPES ====================

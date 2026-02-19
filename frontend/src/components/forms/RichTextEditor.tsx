@@ -38,7 +38,7 @@ import {
   Redo,
   Quote,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/cn';
 import { useCallback, useEffect, forwardRef, useImperativeHandle } from 'react';
 
 export interface RichTextEditorProps {

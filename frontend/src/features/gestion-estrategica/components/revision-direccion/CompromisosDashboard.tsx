@@ -2,7 +2,7 @@
  * Dashboard de Compromisos Pendientes - Revisión por la Dirección
  * Muestra estadísticas, tabla de compromisos y alertas de vencimientos
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ClipboardList,
   Clock,
@@ -11,10 +11,15 @@ import {
   TrendingUp,
   Users,
   Filter,
+  StickyNote,
+  ChevronDown,
+  ChevronUp,
+  Trash2,
 } from 'lucide-react';
 import { StatsGrid, type StatItem } from '@/components/layout/StatsGrid';
 import { DataTableCard } from '@/components/layout/DataTableCard';
 import { Card, Badge, Button } from '@/components/common';
+import { Textarea } from '@/components/forms';
 import {
   useRevisionDireccionDashboard,
   useCompromisos,
@@ -175,6 +180,102 @@ const CompromisosTable = ({
         </tbody>
       </table>
     </div>
+  );
+};
+
+// ==================== NOTAS DE SESIÓN ====================
+
+const STORAGE_KEY = 'revision_direccion_notas';
+
+const NotasSesion = () => {
+  const [expanded, setExpanded] = useState(false);
+  const [notas, setNotas] = useState<string>('');
+  const [saved, setSaved] = useState(true);
+
+  // Cargar notas de localStorage al montar
+  useEffect(() => {
+    const guardadas = localStorage.getItem(STORAGE_KEY);
+    if (guardadas) setNotas(guardadas);
+  }, []);
+
+  // Guardar con debounce
+  useEffect(() => {
+    setSaved(false);
+    const timer = setTimeout(() => {
+      localStorage.setItem(STORAGE_KEY, notas);
+      setSaved(true);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [notas]);
+
+  const handleClear = () => {
+    if (window.confirm('¿Borrar todas las notas de esta sesión?')) {
+      setNotas('');
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  };
+
+  return (
+    <Card className="border-amber-200 dark:border-amber-800">
+      <div className="p-4">
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="w-full flex items-center justify-between text-left"
+        >
+          <div className="flex items-center gap-2">
+            <StickyNote className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <span className="text-sm font-semibold text-amber-900 dark:text-amber-100">
+              Notas de Sesión
+            </span>
+            {notas.trim().length > 0 && (
+              <span className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full">
+                {notas.trim().split('\n').filter(Boolean).length} líneas
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {!saved && (
+              <span className="text-xs text-amber-500 animate-pulse">Guardando...</span>
+            )}
+            {saved && notas.length > 0 && (
+              <span className="text-xs text-green-500">Guardado</span>
+            )}
+            {expanded ? (
+              <ChevronUp className="h-4 w-4 text-gray-400" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-gray-400" />
+            )}
+          </div>
+        </button>
+
+        {expanded && (
+          <div className="mt-3 space-y-2">
+            <Textarea
+              resize="none"
+              rows={6}
+              placeholder="Escribe tus apuntes de la sesión aquí... (se guardan automáticamente en este dispositivo)"
+              value={notas}
+              onChange={(e) => setNotas(e.target.value)}
+              className="border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/10 focus:ring-amber-400 placeholder:text-amber-400 dark:placeholder:text-amber-600"
+            />
+            <div className="flex justify-between items-center">
+              <p className="text-xs text-gray-400">
+                Las notas se guardan localmente en este dispositivo.
+              </p>
+              {notas.trim().length > 0 && (
+                <button
+                  onClick={handleClear}
+                  className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 transition-colors"
+                >
+                  <Trash2 className="h-3 w-3" />
+                  Borrar notas
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </Card>
   );
 };
 
@@ -410,6 +511,9 @@ export const CompromisosDashboard = () => {
           onEdit={handleEditCompromiso}
         />
       </DataTableCard>
+
+      {/* Notas de Sesión */}
+      <NotasSesion />
 
       {/* Modal Detalle Compromiso */}
       {selectedCompromisoId && (

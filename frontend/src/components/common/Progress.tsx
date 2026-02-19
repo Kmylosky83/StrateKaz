@@ -10,7 +10,7 @@
  * - Dark mode support
  */
 
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/cn';
 
 export interface ProgressProps {
   value: number; // 0-100

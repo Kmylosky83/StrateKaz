@@ -49,7 +49,7 @@ import {
   NIVEL_IMPACTO_CONFIG,
   TENDENCIA_FACTOR_CONFIG,
 } from '../../types/contexto.types';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/cn';
 
 // ============================================================================
 // ZOD SCHEMA

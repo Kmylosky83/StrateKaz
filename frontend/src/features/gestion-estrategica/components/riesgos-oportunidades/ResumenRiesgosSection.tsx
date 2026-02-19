@@ -1,6 +1,6 @@
 /**
  * Sección Resumen de Riesgos y Oportunidades
- * Vista general con KPIs y estadísticas
+ * Vista general con KPIs y estadísticas desde API (motor_riesgos)
  */
 import { useMemo } from 'react';
 import { Card, Spinner, EmptyState } from '@/components/common';
@@ -10,142 +10,191 @@ import {
   TrendingUp,
   Shield,
   Target,
-  CheckCircle2,
   XCircle,
-  Clock,
   Activity,
 } from 'lucide-react';
+import { useRiesgosResumen, useRiesgosCriticos } from '../../hooks/useRiesgosOportunidades';
 
 interface ResumenRiesgosSectionProps {
   triggerNewForm?: number;
 }
 
-// Datos mock para demostración
-const MOCK_STATS = {
-  totalRiesgos: 24,
-  riesgosAltos: 5,
-  riesgosMedios: 12,
-  riesgosBajos: 7,
-  totalOportunidades: 15,
-  tratamientosActivos: 18,
-  tratamientosCompletados: 32,
-  efectividadPromedio: 78,
+const ESTADO_LABELS: Record<string, string> = {
+  identificado: 'Identificado',
+  en_tratamiento: 'En Tratamiento',
+  controlado: 'Controlado',
+  materializado: 'Materializado',
+  cerrado: 'Cerrado',
 };
 
 export function ResumenRiesgosSection({ triggerNewForm }: ResumenRiesgosSectionProps) {
-  const stats: StatItem[] = useMemo(() => [
-    {
-      label: 'Total Riesgos',
-      value: MOCK_STATS.totalRiesgos,
-      icon: AlertTriangle,
-      iconColor: 'text-orange-500',
-      description: 'Riesgos identificados',
-    },
-    {
-      label: 'Riesgos Altos',
-      value: MOCK_STATS.riesgosAltos,
-      icon: XCircle,
-      iconColor: 'text-red-500',
-      description: 'Requieren atención inmediata',
-    },
-    {
-      label: 'Oportunidades',
-      value: MOCK_STATS.totalOportunidades,
-      icon: TrendingUp,
-      iconColor: 'text-green-500',
-      description: 'Identificadas',
-    },
-    {
-      label: 'Efectividad',
-      value: `${MOCK_STATS.efectividadPromedio}%`,
-      icon: Target,
-      iconColor: 'text-primary-500',
-      description: 'Tratamientos efectivos',
-    },
-  ], []);
+  const { data: resumen, isLoading: resumenLoading } = useRiesgosResumen();
+  const { data: criticos, isLoading: criticosLoading } = useRiesgosCriticos();
+
+  const isLoading = resumenLoading || criticosLoading;
+
+  const stats: StatItem[] = useMemo(() => {
+    if (!resumen) return [];
+    return [
+      {
+        label: 'Total Riesgos',
+        value: resumen.total,
+        icon: AlertTriangle,
+        iconColor: 'text-orange-500',
+        description: 'Riesgos identificados',
+      },
+      {
+        label: 'Riesgos Críticos',
+        value: resumen.criticos,
+        icon: XCircle,
+        iconColor: 'text-red-500',
+        description: 'Requieren atención inmediata',
+      },
+      {
+        label: 'En Tratamiento',
+        value: resumen.en_tratamiento,
+        icon: Shield,
+        iconColor: 'text-blue-500',
+        description: 'Con planes activos',
+      },
+      {
+        label: 'Efectividad',
+        value: resumen.total > 0
+          ? `${Math.round(((resumen.total - resumen.criticos) / resumen.total) * 100)}%`
+          : '0%',
+        icon: Target,
+        iconColor: 'text-primary-500',
+        description: 'Riesgos bajo control',
+      },
+    ];
+  }, [resumen]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (!resumen) {
+    return (
+      <EmptyState
+        icon={<AlertTriangle className="w-12 h-12" />}
+        title="Sin datos de riesgos"
+        description="No se encontraron datos de riesgos. Verifique que el módulo de Gestión de Riesgos esté configurado."
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* KPIs principales */}
       <StatsGrid stats={stats} columns={4} />
 
-      {/* Distribución por nivel */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Distribución por Estado */}
         <Card className="p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-orange-500" />
-            Distribución de Riesgos
+            Distribución por Estado
           </h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-500" />
-                <span className="text-sm text-gray-600 dark:text-gray-300">Alto</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full w-32">
-                  <div className="h-2 bg-red-500 rounded-full" style={{ width: '21%' }} />
-                </div>
-                <span className="text-sm font-medium text-gray-900 dark:text-gray-100 w-8">{MOCK_STATS.riesgosAltos}</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                <span className="text-sm text-gray-600 dark:text-gray-300">Medio</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full w-32">
-                  <div className="h-2 bg-yellow-500 rounded-full" style={{ width: '50%' }} />
-                </div>
-                <span className="text-sm font-medium text-gray-900 dark:text-gray-100 w-8">{MOCK_STATS.riesgosMedios}</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-green-500" />
-                <span className="text-sm text-gray-600 dark:text-gray-300">Bajo</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full w-32">
-                  <div className="h-2 bg-green-500 rounded-full" style={{ width: '29%' }} />
-                </div>
-                <span className="text-sm font-medium text-gray-900 dark:text-gray-100 w-8">{MOCK_STATS.riesgosBajos}</span>
-              </div>
-            </div>
+          <div className="space-y-3">
+            {resumen.por_estado.length > 0 ? (
+              resumen.por_estado.map((item) => {
+                const porcentaje = resumen.total > 0 ? (item.cantidad / resumen.total) * 100 : 0;
+                return (
+                  <div key={item.estado} className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600 dark:text-gray-300 min-w-[120px]">
+                      {ESTADO_LABELS[item.estado] || item.estado}
+                    </span>
+                    <div className="flex items-center gap-2 flex-1 ml-4">
+                      <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full">
+                        <div
+                          className="h-2 bg-primary-500 rounded-full transition-all"
+                          style={{ width: `${porcentaje}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100 w-8 text-right">
+                        {item.cantidad}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="text-sm text-gray-500 text-center py-4">Sin riesgos registrados</p>
+            )}
           </div>
         </Card>
 
+        {/* Distribución por Tipo */}
         <Card className="p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <Shield className="h-5 w-5 text-primary-500" />
-            Estado de Tratamientos
+            <Activity className="h-5 w-5 text-primary-500" />
+            Distribución por Tipo
           </h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-blue-500" />
-                <span className="text-sm text-gray-600 dark:text-gray-300">En progreso</span>
-              </div>
-              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{MOCK_STATS.tratamientosActivos}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                <span className="text-sm text-gray-600 dark:text-gray-300">Completados</span>
-              </div>
-              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{MOCK_STATS.tratamientosCompletados}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Activity className="h-4 w-4 text-primary-500" />
-                <span className="text-sm text-gray-600 dark:text-gray-300">Efectividad promedio</span>
-              </div>
-              <span className="text-sm font-medium text-primary-600 dark:text-primary-400">{MOCK_STATS.efectividadPromedio}%</span>
-            </div>
+          <div className="space-y-3">
+            {resumen.por_tipo.length > 0 ? (
+              resumen.por_tipo.map((item) => {
+                const porcentaje = resumen.total > 0 ? (item.cantidad / resumen.total) * 100 : 0;
+                return (
+                  <div key={item.tipo} className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600 dark:text-gray-300 capitalize min-w-[120px]">
+                      {item.tipo.replace(/_/g, ' ')}
+                    </span>
+                    <div className="flex items-center gap-2 flex-1 ml-4">
+                      <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full">
+                        <div
+                          className="h-2 bg-blue-500 rounded-full transition-all"
+                          style={{ width: `${porcentaje}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100 w-8 text-right">
+                        {item.cantidad}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="text-sm text-gray-500 text-center py-4">Sin datos de tipos</p>
+            )}
           </div>
         </Card>
       </div>
+
+      {/* Riesgos Críticos */}
+      {criticos && criticos.length > 0 && (
+        <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10">
+          <div className="p-6">
+            <h3 className="text-lg font-semibold text-red-900 dark:text-red-100 mb-4 flex items-center gap-2">
+              <XCircle className="h-5 w-5 text-red-500" />
+              Riesgos Críticos ({criticos.length})
+            </h3>
+            <div className="space-y-3">
+              {criticos.slice(0, 5).map((riesgo) => (
+                <div
+                  key={riesgo.id}
+                  className="flex items-center justify-between bg-white dark:bg-gray-800 px-4 py-3 rounded-lg border border-red-200 dark:border-red-800"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-gray-500">{riesgo.codigo}</span>
+                      <span className="font-medium text-gray-900 dark:text-gray-100">{riesgo.nombre}</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {riesgo.tipo.replace(/_/g, ' ')} | Nivel residual: {riesgo.nivel_residual}
+                    </p>
+                  </div>
+                  <span className="text-xs px-2 py-1 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 font-medium">
+                    P:{riesgo.probabilidad_residual} × I:{riesgo.impacto_residual}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Card>
+      )}
     </div>
   );
 }

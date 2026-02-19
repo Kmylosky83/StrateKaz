@@ -79,6 +79,7 @@ export const useProgramacionesProximas = (limit: number = 5) => {
   return useQuery({
     queryKey: revisionDireccionKeys.programacionesProximas(limit),
     queryFn: () => programacionApi.getProximas(limit),
+    refetchInterval: 120_000, // Refresca cada 2 minutos
   });
 };
 
@@ -527,6 +528,7 @@ export const useCompromisos = (filters?: CompromisoFilters) => {
   return useQuery({
     queryKey: revisionDireccionKeys.compromisos(filters),
     queryFn: () => compromisosApi.getAll(filters),
+    refetchInterval: 60_000, // Refresca cada minuto
   });
 };
 
@@ -542,6 +544,7 @@ export const useCompromisosVencidos = () => {
   return useQuery({
     queryKey: revisionDireccionKeys.compromisosVencidos,
     queryFn: compromisosApi.getVencidos,
+    refetchInterval: 60_000, // Refresca cada minuto
   });
 };
 
@@ -549,6 +552,7 @@ export const useCompromisosCriticos = (limit: number = 10) => {
   return useQuery({
     queryKey: revisionDireccionKeys.compromisosCriticos(limit),
     queryFn: () => compromisosApi.getCriticos(limit),
+    refetchInterval: 60_000, // Refresca cada minuto
   });
 };
 
@@ -672,5 +676,6 @@ export const useRevisionDireccionDashboard = () => {
   return useQuery({
     queryKey: revisionDireccionKeys.dashboard,
     queryFn: statsApi.getDashboard,
+    refetchInterval: 60_000, // Refresca cada minuto para tiempo real
   });
 };

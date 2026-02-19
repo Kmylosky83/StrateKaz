@@ -20,6 +20,7 @@ import {
   useAprobarActa,
   useCerrarActa,
 } from '../../../hooks/useRevisionDireccion';
+import { actasApi } from '../../../api/revisionDireccionApi';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { ActaRevision } from '../../../types/revision-direccion.types';
@@ -30,6 +31,7 @@ export const ActasTab = () => {
   const [selectedActa, setSelectedActa] = useState<ActaRevision | null>(null);
   const [aprobarId, setAprobarId] = useState<number | null>(null);
   const [cerrarId, setCerrarId] = useState<number | null>(null);
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
 
   const { data: actasData, isLoading } = useActasRevision({});
   const aprobarMutation = useAprobarActa();
@@ -52,6 +54,26 @@ export const ActasTab = () => {
   const handleCloseModal = () => {
     setShowGeneradorModal(false);
     setSelectedActa(null);
+  };
+
+  const handleDownloadPDF = async (acta: ActaRevision) => {
+    if (downloadingId) return;
+    setDownloadingId(acta.id);
+    try {
+      const blob = await actasApi.generarPDF(acta.id);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Acta-${acta.numero_acta}-Revision-Direccion.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch {
+      // toast is handled by axios interceptor
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
   const getEstadoBadge = (estado: string, display?: string) => {
@@ -222,8 +244,12 @@ export const ActasTab = () => {
                           size="sm"
                           title="Descargar PDF"
                           className="text-gray-600 hover:text-blue-600"
+                          onClick={() => handleDownloadPDF(acta)}
+                          disabled={downloadingId === acta.id}
                         >
-                          <Download className="h-3.5 w-3.5" />
+                          <Download
+                            className={`h-3.5 w-3.5 ${downloadingId === acta.id ? 'animate-pulse' : ''}`}
+                          />
                         </Button>
                       )}
                     </div>

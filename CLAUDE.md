@@ -838,4 +838,4 @@ Toda la documentacion detallada esta en `/docs/`:
 9. **PWA:** El frontend soporta Progressive Web App con service worker y cache strategies.
 10. **Celery:** 11 colas especializadas + 24 tareas programadas. En testing se ejecuta en modo sincrono (eager).
 11. **Hosting:** El proyecto corre en **VPS Hostinger** con Nginx + Gunicorn + PostgreSQL + Redis + Celery. NO se usa cPanel ni Docker en produccion. El archivo `config/settings.py` (legacy MySQL) esta deprecated.
-12. **Git Push:** Siempre hacer push directamente a `origin main`. NO usar ramas intermedias de Claude. Comando: `git push origin main`.
+12. **Git Push:** Usar ramas de feature (`feat/`, `fix/`, `claude/`, etc.) y crear Pull Requests hacia `main`. NO hacer push directo a `main`. Para tareas automatizadas, usar la rama asignada por el sistema.

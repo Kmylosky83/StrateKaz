@@ -10,6 +10,7 @@
 import { useState } from 'react';
 import { Briefcase, LayoutDashboard, KanbanSquare, Plus, User, Calendar, Target, TrendingUp } from 'lucide-react';
 import { SectionHeader, Button, ViewToggle, Modal, Badge, Spinner } from '@/components/common';
+import { Input, Select, Textarea } from '@/components/forms';
 import { PortafolioDashboard } from '../PortafolioDashboard';
 import { ProyectosKanban } from '../ProyectosKanban';
 import { useProyecto, useProyectosDashboard, useCreateProyecto } from '../../../hooks/useProyectos';
@@ -297,133 +298,82 @@ const ProyectoCreateModal = ({ isOpen, onClose }: ProyectoCreateModalProps) => {
     onClose();
   };
 
-  const inputClass = (field: string) =>
-    `w-full px-3 py-2 text-sm border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 ${
-      errors[field]
-        ? 'border-red-400 dark:border-red-500'
-        : 'border-gray-300 dark:border-gray-600'
-    }`;
-
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Nuevo Proyecto" size="xl">
       <div className="space-y-4">
         {/* Código y Nombre */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Código <span className="text-red-500">*</span>
-            </label>
-            <input
-              className={inputClass('codigo')}
-              placeholder="PRY-001"
-              value={form.codigo ?? ''}
-              onChange={(e) => handleChange('codigo', e.target.value)}
-            />
-            {errors.codigo && <p className="mt-1 text-xs text-red-500">{errors.codigo}</p>}
-          </div>
+          <Input
+            label="Código *"
+            placeholder="PRY-001"
+            value={form.codigo ?? ''}
+            onChange={(e) => handleChange('codigo', e.target.value)}
+            error={errors.codigo}
+          />
           <div className="md:col-span-2">
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Nombre del Proyecto <span className="text-red-500">*</span>
-            </label>
-            <input
-              className={inputClass('nombre')}
+            <Input
+              label="Nombre del Proyecto *"
               placeholder="Nombre descriptivo del proyecto"
               value={form.nombre ?? ''}
               onChange={(e) => handleChange('nombre', e.target.value)}
+              error={errors.nombre}
             />
-            {errors.nombre && <p className="mt-1 text-xs text-red-500">{errors.nombre}</p>}
           </div>
         </div>
 
         {/* Tipo y Prioridad */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Tipo <span className="text-red-500">*</span>
-            </label>
-            <select
-              className={inputClass('tipo')}
-              value={form.tipo ?? 'mejora'}
-              onChange={(e) => handleChange('tipo', e.target.value)}
-            >
-              {TIPOS_PROYECTO.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Prioridad <span className="text-red-500">*</span>
-            </label>
-            <select
-              className={inputClass('prioridad')}
-              value={form.prioridad ?? 'media'}
-              onChange={(e) => handleChange('prioridad', e.target.value)}
-            >
-              {PRIORIDADES.map((p) => (
-                <option key={p.value} value={p.value}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          <Select
+            label="Tipo *"
+            value={form.tipo ?? 'mejora'}
+            onChange={(e) => handleChange('tipo', e.target.value)}
+            error={errors.tipo}
+            options={TIPOS_PROYECTO}
+          />
+          <Select
+            label="Prioridad *"
+            value={form.prioridad ?? 'media'}
+            onChange={(e) => handleChange('prioridad', e.target.value)}
+            error={errors.prioridad}
+            options={PRIORIDADES}
+          />
         </div>
 
         {/* Fechas */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Fecha Inicio Planificada
-            </label>
-            <input
-              type="date"
-              className={inputClass('fecha_inicio_plan')}
-              value={form.fecha_inicio_plan ?? ''}
-              onChange={(e) => handleChange('fecha_inicio_plan', e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Fecha Fin Planificada
-            </label>
-            <input
-              type="date"
-              className={inputClass('fecha_fin_plan')}
-              value={form.fecha_fin_plan ?? ''}
-              onChange={(e) => handleChange('fecha_fin_plan', e.target.value)}
-            />
-          </div>
+          <Input
+            label="Fecha Inicio Planificada"
+            type="date"
+            value={form.fecha_inicio_plan ?? ''}
+            onChange={(e) => handleChange('fecha_inicio_plan', e.target.value)}
+          />
+          <Input
+            label="Fecha Fin Planificada"
+            type="date"
+            value={form.fecha_fin_plan ?? ''}
+            onChange={(e) => handleChange('fecha_fin_plan', e.target.value)}
+          />
         </div>
 
         {/* Descripción */}
-        <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Descripción
-          </label>
-          <textarea
-            className={`${inputClass('descripcion')} resize-none`}
-            rows={3}
-            placeholder="Descripción del proyecto..."
-            value={form.descripcion ?? ''}
-            onChange={(e) => handleChange('descripcion', e.target.value)}
-          />
-        </div>
+        <Textarea
+          label="Descripción"
+          resize="none"
+          rows={3}
+          placeholder="Descripción del proyecto..."
+          value={form.descripcion ?? ''}
+          onChange={(e) => handleChange('descripcion', e.target.value)}
+        />
 
         {/* Justificación */}
-        <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Justificación
-          </label>
-          <textarea
-            className={`${inputClass('justificacion')} resize-none`}
-            rows={2}
-            placeholder="¿Por qué es necesario este proyecto?"
-            value={form.justificacion ?? ''}
-            onChange={(e) => handleChange('justificacion', e.target.value)}
-          />
-        </div>
+        <Textarea
+          label="Justificación"
+          resize="none"
+          rows={2}
+          placeholder="¿Por qué es necesario este proyecto?"
+          value={form.justificacion ?? ''}
+          onChange={(e) => handleChange('justificacion', e.target.value)}
+        />
 
         {/* Footer */}
         <div className="flex justify-end gap-3 border-t border-gray-200 dark:border-gray-700 pt-4">

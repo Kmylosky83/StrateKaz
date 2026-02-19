@@ -19,6 +19,7 @@ import {
 import { StatsGrid, type StatItem } from '@/components/layout/StatsGrid';
 import { DataTableCard } from '@/components/layout/DataTableCard';
 import { Card, Badge, Button } from '@/components/common';
+import { Textarea } from '@/components/forms';
 import {
   useRevisionDireccionDashboard,
   useCompromisos,
@@ -249,12 +250,13 @@ const NotasSesion = () => {
 
         {expanded && (
           <div className="mt-3 space-y-2">
-            <textarea
-              className="w-full px-3 py-2 text-sm border border-amber-200 dark:border-amber-700 rounded-lg bg-amber-50 dark:bg-amber-900/10 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none placeholder-amber-400 dark:placeholder-amber-600"
+            <Textarea
+              resize="none"
               rows={6}
               placeholder="Escribe tus apuntes de la sesión aquí... (se guardan automáticamente en este dispositivo)"
               value={notas}
               onChange={(e) => setNotas(e.target.value)}
+              className="border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/10 focus:ring-amber-400 placeholder:text-amber-400 dark:placeholder:text-amber-600"
             />
             <div className="flex justify-between items-center">
               <p className="text-xs text-gray-400">

@@ -2,7 +2,7 @@
  * GaugeProgress - Componente de gauge simple con arco de progreso
  * Design System StrateKaz
  */
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/cn';
 
 export interface GaugeProgressProps {
   value: number; // 0-100

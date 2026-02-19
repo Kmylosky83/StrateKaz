@@ -32,7 +32,7 @@ import {
 import { Alert } from '@/components/common/Alert';
 import { Button } from '@/components/common/Button';
 import { Spinner } from '@/components/common/Spinner';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/cn';
 import { useModulesTree } from '@/features/gestion-estrategica/hooks/useModules';
 import { useCargoSectionAccess, useSaveCargoSectionAccess } from '../../hooks/useCargos';
 import { useAuthStore } from '@/store/authStore';

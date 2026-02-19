@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import { Card, Button, Tooltip } from '@/components/common';
 import type { MapaToolbarActions } from '../../types/mapa-estrategico.types';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/cn';
 
 // ============================================================================
 // TIPOS

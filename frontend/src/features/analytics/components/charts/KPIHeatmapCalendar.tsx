@@ -7,7 +7,7 @@
 import { useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { Card } from '@/components/common';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/cn';
 import { format, parseISO, startOfYear, endOfYear, eachDayOfInterval, getDay, getWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { EChartsOption } from 'echarts';

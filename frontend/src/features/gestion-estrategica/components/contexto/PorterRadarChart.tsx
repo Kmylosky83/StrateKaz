@@ -36,7 +36,7 @@ import {
   type FuerzaPorter,
   type TipoFuerzaPorter,
 } from '../../types/contexto.types';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/cn';
 
 // ============================================================================
 // TIPOS

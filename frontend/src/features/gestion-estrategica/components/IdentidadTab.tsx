@@ -48,7 +48,7 @@ import { ValoresDragDrop, type ViewMode } from './ValoresDragDrop';
 import { useDocumentos } from '../hooks/useGestionDocumental';
 import type { Documento } from '../types/gestion-documental.types';
 import type { CorporateIdentity } from '../types/strategic.types';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/cn';
 
 interface IdentidadTabProps {
   /** Código de la sección activa (desde API/DynamicSections) */

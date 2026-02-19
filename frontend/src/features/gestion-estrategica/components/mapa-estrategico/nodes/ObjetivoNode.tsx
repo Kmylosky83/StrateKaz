@@ -23,7 +23,7 @@ import {
   OBJECTIVE_STATUS_CONFIG,
   type ObjetivoNodeData,
 } from '../../../types/mapa-estrategico.types';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/cn';
 
 // ============================================================================
 // PROGRESS CIRCLE

@@ -7,7 +7,7 @@
 import { useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { Card } from '@/components/common';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/cn';
 import { Workflow } from 'lucide-react';
 import type { EChartsOption } from 'echarts';
 

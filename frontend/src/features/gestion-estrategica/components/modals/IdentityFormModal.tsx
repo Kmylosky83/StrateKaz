@@ -27,7 +27,7 @@ import { Switch } from '@/components/forms/Switch';
 import { useCreateIdentity, useUpdateIdentity } from '../../hooks/useStrategic';
 import { useAreas } from '../../hooks/useAreas';
 import type { CorporateIdentity, CreateCorporateIdentityDTO, UpdateCorporateIdentityDTO } from '../../types/strategic.types';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/cn';
 
 interface IdentityFormModalProps {
   identity: CorporateIdentity | null;

@@ -5,7 +5,7 @@
 import { Card } from './Card';
 import { DynamicIcon } from './DynamicIcon';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/cn';
 
 export interface MetricCardProps {
   value: string | number;

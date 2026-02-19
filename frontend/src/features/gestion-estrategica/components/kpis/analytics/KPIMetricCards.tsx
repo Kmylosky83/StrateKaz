@@ -3,7 +3,7 @@
  * Sistema de Gestion StrateKaz - Analytics Pro
  */
 import { useMemo } from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/cn';
 import type { KPIObjetivo } from '../../../types/kpi.types';
 import { formatValue, calculateDelta, isDeltaPositive, SEMAFORO_COLORS } from '../../../types/kpi.types';
 

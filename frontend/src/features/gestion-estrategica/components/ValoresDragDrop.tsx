@@ -49,7 +49,7 @@ import { Card, Button, DynamicIcon, IconPicker } from '@/components/common';
 import { Input, Textarea } from '@/components/forms';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import type { CorporateValue, CreateCorporateValueDTO, UpdateCorporateValueDTO } from '../types/strategic.types';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/cn';
 
 /**
  * Convierte un color hex a RGB para usar en rgba()

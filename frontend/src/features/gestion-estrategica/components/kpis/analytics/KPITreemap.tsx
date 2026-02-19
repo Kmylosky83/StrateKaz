@@ -5,7 +5,7 @@
 import { useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { Card, Spinner } from '@/components/common';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils/cn';
 import type { StrategicObjective } from '../../../types/strategic.types';
 import type { KPIObjetivo } from '../../../types/kpi.types';
 import { SEMAFORO_COLORS, getBSCColor, formatValue } from '../../../types/kpi.types';

@@ -21,6 +21,8 @@ from datetime import timedelta
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 
+from apps.core.base_models.mixins import get_tenant_empresa
+
 from .models import (
     TipoCliente, EstadoCliente, CanalVenta, Cliente,
     ContactoCliente, SegmentoCliente, ClienteSegmento,
@@ -191,12 +193,10 @@ class ClienteViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Filtrar clientes por empresa del usuario.
+        Filtrar clientes por tenant (schema isolation).
         Optimizado con select_related y prefetch_related.
         """
-        queryset = Cliente.objects.filter(
-            empresa=self.request.user.empresa
-        ).select_related(
+        queryset = Cliente.objects.select_related(
             'tipo_cliente',
             'estado_cliente',
             'canal_venta',
@@ -245,7 +245,7 @@ class ClienteViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """Asignar empresa al crear cliente."""
         serializer.save(
-            empresa=self.request.user.empresa,
+            empresa=get_tenant_empresa(),
             created_by=self.request.user
         )
 
@@ -380,9 +380,7 @@ class ClienteViewSet(viewsets.ModelViewSet):
         ))
 
         # Métricas de scoring
-        scorings = ScoringCliente.objects.filter(
-            cliente__empresa=request.user.empresa
-        ).aggregate(
+        scorings = ScoringCliente.objects.aggregate(
             promedio_scoring=Avg('puntuacion_total'),
             clientes_excelentes=Count('id', filter=Q(puntuacion_total__gte=80)),
             clientes_buenos=Count('id', filter=Q(puntuacion_total__gte=60, puntuacion_total__lt=80)),
@@ -438,10 +436,8 @@ class ContactoClienteViewSet(viewsets.ModelViewSet):
     ordering = ['-es_principal', 'nombre_completo']
 
     def get_queryset(self):
-        """Filtrar contactos por empresa."""
-        queryset = ContactoCliente.objects.filter(
-            empresa=self.request.user.empresa
-        ).select_related('cliente')
+        """Filtrar contactos por tenant (schema isolation)."""
+        queryset = ContactoCliente.objects.select_related('cliente').all()
 
         # Filtrar por cliente si se especifica
         cliente_id = self.request.query_params.get('cliente', None)
@@ -453,7 +449,7 @@ class ContactoClienteViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """Asignar empresa al crear contacto."""
         serializer.save(
-            empresa=self.request.user.empresa,
+            empresa=get_tenant_empresa(),
             created_by=self.request.user
         )
 
@@ -486,16 +482,13 @@ class SegmentoClienteViewSet(viewsets.ModelViewSet):
     ordering = ['nombre']
 
     def get_queryset(self):
-        """Filtrar segmentos por empresa."""
-        queryset = SegmentoCliente.objects.filter(
-            empresa=self.request.user.empresa
-        ).prefetch_related('clientes')
-        return queryset
+        """Filtrar segmentos por tenant (schema isolation)."""
+        return SegmentoCliente.objects.prefetch_related('clientes').all()
 
     def perform_create(self, serializer):
         """Asignar empresa al crear segmento."""
         serializer.save(
-            empresa=self.request.user.empresa,
+            empresa=get_tenant_empresa(),
             created_by=self.request.user
         )
 
@@ -524,16 +517,15 @@ class ClienteSegmentoViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha_asignacion']
 
     def get_queryset(self):
-        """Filtrar asignaciones por empresa."""
-        queryset = ClienteSegmento.objects.filter(
-            empresa=self.request.user.empresa
-        ).select_related('cliente', 'segmento', 'asignado_por')
-        return queryset
+        """Filtrar asignaciones por tenant (schema isolation)."""
+        return ClienteSegmento.objects.select_related(
+            'cliente', 'segmento', 'asignado_por'
+        ).all()
 
     def perform_create(self, serializer):
         """Asignar empresa y usuario al crear asignación."""
         serializer.save(
-            empresa=self.request.user.empresa,
+            empresa=get_tenant_empresa(),
             asignado_por=self.request.user,
             created_by=self.request.user
         )
@@ -571,10 +563,10 @@ class InteraccionClienteViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha']
 
     def get_queryset(self):
-        """Filtrar interacciones por empresa."""
-        queryset = InteraccionCliente.objects.filter(
-            empresa=self.request.user.empresa
-        ).select_related('cliente', 'registrado_por', 'created_by')
+        """Filtrar interacciones por tenant (schema isolation)."""
+        queryset = InteraccionCliente.objects.select_related(
+            'cliente', 'registrado_por', 'created_by'
+        )
 
         # Filtros adicionales
         cliente_id = self.request.query_params.get('cliente', None)
@@ -604,7 +596,7 @@ class InteraccionClienteViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """Asignar empresa y usuario al crear interacción."""
         serializer.save(
-            empresa=self.request.user.empresa,
+            empresa=get_tenant_empresa(),
             registrado_por=self.request.user,
             created_by=self.request.user
         )
@@ -627,7 +619,6 @@ class InteraccionClienteViewSet(viewsets.ModelViewSet):
         proximos_7_dias = hoy + timedelta(days=7)
 
         pendientes = InteraccionCliente.objects.filter(
-            empresa=request.user.empresa,
             is_active=True,
             fecha_proxima_accion__isnull=False,
             fecha_proxima_accion__gte=hoy
@@ -683,10 +674,8 @@ class ScoringClienteViewSet(viewsets.ReadOnlyModelViewSet):
     ordering = ['-puntuacion_total']
 
     def get_queryset(self):
-        """Filtrar scorings por empresa."""
-        queryset = ScoringCliente.objects.filter(
-            cliente__empresa=self.request.user.empresa
-        ).select_related('cliente')
+        """Filtrar scorings por tenant (schema isolation)."""
+        queryset = ScoringCliente.objects.select_related('cliente').all()
 
         # Filtrar por nivel de scoring
         nivel = self.request.query_params.get('nivel', None)

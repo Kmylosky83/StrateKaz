@@ -19,6 +19,8 @@ import { Select } from '@/components/forms/Select';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Spinner } from '@/components/common/Spinner';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { ResponsiveTable } from '@/components/common/ResponsiveTable';
+import type { ResponsiveTableColumn } from '@/components/common/ResponsiveTable';
 import { cn } from '@/utils/cn';
 import {
   FileText,
@@ -158,6 +160,140 @@ const formatCOP = (value: string | number) => {
 };
 
 // ============================================================================
+// Columnas ResponsiveTable
+// ============================================================================
+
+const contratoColumns: ResponsiveTableColumn<HistorialContratoList & Record<string, unknown>>[] = [
+  {
+    key: 'colaborador',
+    header: 'Colaborador',
+    priority: 1,
+    render: (item) => {
+      const c = item as unknown as HistorialContratoList;
+      return (
+        <div className="flex items-center gap-2">
+          <User size={14} className="text-gray-400 shrink-0" />
+          <div>
+            <p className="font-medium text-gray-900 dark:text-white truncate max-w-[180px]">
+              {c.colaborador_nombre}
+            </p>
+            <p className="text-xs text-gray-500">{c.colaborador_identificacion}</p>
+          </div>
+        </div>
+      );
+    },
+  },
+  {
+    key: 'numero_contrato',
+    header: 'No. Contrato',
+    priority: 2,
+    render: (item) => {
+      const c = item as unknown as HistorialContratoList;
+      return (
+        <span className="text-gray-700 dark:text-gray-300 font-mono text-xs">
+          {c.numero_contrato}
+        </span>
+      );
+    },
+  },
+  {
+    key: 'tipo_contrato',
+    header: 'Tipo',
+    hideOnTablet: true,
+    render: (item) => {
+      const c = item as unknown as HistorialContratoList;
+      return (
+        <span className="text-xs text-gray-600 dark:text-gray-400">{c.tipo_contrato_nombre}</span>
+      );
+    },
+  },
+  {
+    key: 'movimiento',
+    header: 'Movimiento',
+    priority: 2,
+    render: (item) => {
+      const c = item as unknown as HistorialContratoList;
+      return (
+        <div className="flex items-center gap-1">
+          <Badge variant={TIPO_MOVIMIENTO_BADGE[c.tipo_movimiento]}>
+            {c.tipo_movimiento_display}
+          </Badge>
+          {c.numero_renovacion > 0 && (
+            <span className="text-[10px] text-gray-400">#{c.numero_renovacion}</span>
+          )}
+        </div>
+      );
+    },
+  },
+  {
+    key: 'vigencia',
+    header: 'Vigencia',
+    render: (item) => {
+      const c = item as unknown as HistorialContratoList;
+      return (
+        <div className="text-xs">
+          <p className="text-gray-700 dark:text-gray-300">
+            {new Date(c.fecha_inicio).toLocaleDateString('es-CO')}
+          </p>
+          {c.fecha_fin ? (
+            <p className="text-gray-500">al {new Date(c.fecha_fin).toLocaleDateString('es-CO')}</p>
+          ) : (
+            <p className="text-green-600 dark:text-green-400 font-medium">Indefinido</p>
+          )}
+          {c.dias_para_vencer != null && c.dias_para_vencer <= 30 && c.dias_para_vencer >= 0 && (
+            <p className="text-amber-600 dark:text-amber-400 flex items-center gap-1 mt-0.5">
+              <CalendarClock size={10} />
+              {c.dias_para_vencer}d
+            </p>
+          )}
+        </div>
+      );
+    },
+  },
+  {
+    key: 'salario',
+    header: 'Salario',
+    align: 'right',
+    hideOnTablet: true,
+    render: (item) => {
+      const c = item as unknown as HistorialContratoList;
+      return (
+        <span className="text-gray-700 dark:text-gray-300 font-medium text-xs">
+          {formatCOP(c.salario_pactado)}
+        </span>
+      );
+    },
+  },
+  {
+    key: 'estado',
+    header: 'Estado',
+    align: 'center',
+    priority: 1,
+    render: (item) => {
+      const c = item as unknown as HistorialContratoList;
+      return (
+        <div className="flex flex-col items-center gap-1">
+          {c.esta_vigente ? (
+            <Badge variant="success">Vigente</Badge>
+          ) : (
+            <Badge variant="gray">Vencido</Badge>
+          )}
+          {c.firmado ? (
+            <span className="text-[10px] text-green-600 flex items-center gap-0.5">
+              <PenTool size={8} /> Firmado
+            </span>
+          ) : (
+            <span className="text-[10px] text-amber-600 flex items-center gap-0.5">
+              <PenTool size={8} /> Sin firmar
+            </span>
+          )}
+        </div>
+      );
+    },
+  },
+];
+
+// ============================================================================
 // Componente Principal
 // ============================================================================
 
@@ -290,127 +426,41 @@ export const ContratosTab = () => {
             description="No se encontraron contratos con los filtros actuales."
           />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-700">
-                  <th className="text-left py-2 px-3 text-gray-500 font-medium">#</th>
-                  <th className="text-left py-2 px-3 text-gray-500 font-medium">Colaborador</th>
-                  <th className="text-left py-2 px-3 text-gray-500 font-medium">No. Contrato</th>
-                  <th className="text-left py-2 px-3 text-gray-500 font-medium">Tipo</th>
-                  <th className="text-left py-2 px-3 text-gray-500 font-medium">Movimiento</th>
-                  <th className="text-left py-2 px-3 text-gray-500 font-medium">Vigencia</th>
-                  <th className="text-right py-2 px-3 text-gray-500 font-medium">Salario</th>
-                  <th className="text-center py-2 px-3 text-gray-500 font-medium">Estado</th>
-                  <th className="text-right py-2 px-3 text-gray-500 font-medium">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredContratos.map((contrato, index) => (
-                  <tr
-                    key={contrato.id}
-                    className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-                  >
-                    <td className="py-2.5 px-3 text-gray-400">{index + 1}</td>
-                    <td className="py-2.5 px-3">
-                      <div className="flex items-center gap-2">
-                        <User size={14} className="text-gray-400 shrink-0" />
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-white truncate max-w-[180px]">
-                            {contrato.colaborador_nombre}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {contrato.colaborador_identificacion}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <span className="text-gray-700 dark:text-gray-300 font-mono text-xs">
-                        {contrato.numero_contrato}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <span className="text-xs text-gray-600 dark:text-gray-400">
-                        {contrato.tipo_contrato_nombre}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <Badge variant={TIPO_MOVIMIENTO_BADGE[contrato.tipo_movimiento]}>
-                        {contrato.tipo_movimiento_display}
-                      </Badge>
-                      {contrato.numero_renovacion > 0 && (
-                        <span className="ml-1 text-[10px] text-gray-400">
-                          #{contrato.numero_renovacion}
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <div className="text-xs">
-                        <p className="text-gray-700 dark:text-gray-300">
-                          {new Date(contrato.fecha_inicio).toLocaleDateString('es-CO')}
-                        </p>
-                        {contrato.fecha_fin ? (
-                          <p className="text-gray-500">
-                            al {new Date(contrato.fecha_fin).toLocaleDateString('es-CO')}
-                          </p>
-                        ) : (
-                          <p className="text-green-600 dark:text-green-400 font-medium">
-                            Indefinido
-                          </p>
-                        )}
-                        {contrato.dias_para_vencer != null &&
-                          contrato.dias_para_vencer <= 30 &&
-                          contrato.dias_para_vencer >= 0 && (
-                            <p className="text-amber-600 dark:text-amber-400 flex items-center gap-1 mt-0.5">
-                              <CalendarClock size={10} />
-                              {contrato.dias_para_vencer}d
-                            </p>
-                          )}
-                      </div>
-                    </td>
-                    <td className="py-2.5 px-3 text-right">
-                      <span className="text-gray-700 dark:text-gray-300 font-medium text-xs">
-                        {formatCOP(contrato.salario_pactado)}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3 text-center">
-                      <div className="flex flex-col items-center gap-1">
-                        {contrato.esta_vigente ? (
-                          <Badge variant="success">Vigente</Badge>
-                        ) : (
-                          <Badge variant="gray">Vencido</Badge>
-                        )}
-                        {contrato.firmado ? (
-                          <span className="text-[10px] text-green-600 flex items-center gap-0.5">
-                            <PenTool size={8} /> Firmado
-                          </span>
-                        ) : (
-                          <span className="text-[10px] text-amber-600 flex items-center gap-0.5">
-                            <PenTool size={8} /> Sin firmar
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="py-2.5 px-3 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        {!contrato.firmado && (
-                          <Button
-                            size="xs"
-                            variant="ghost"
-                            onClick={() => handleFirmar(contrato.id)}
-                            title="Firmar contrato"
-                          >
-                            <PenTool size={14} className="text-green-500" />
-                          </Button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable<HistorialContratoList & Record<string, unknown>>
+            data={filteredContratos as (HistorialContratoList & Record<string, unknown>)[]}
+            columns={contratoColumns}
+            keyExtractor={(item) => item.id}
+            mobileCardTitle={(item) => (
+              <div className="flex items-center gap-2">
+                <User size={14} className="text-gray-400" />
+                <span>{(item as unknown as HistorialContratoList).colaborador_nombre}</span>
+              </div>
+            )}
+            mobileCardSubtitle={(item) => {
+              const c = item as unknown as HistorialContratoList;
+              return (
+                <span className="font-mono text-xs">
+                  {c.numero_contrato} — {c.tipo_contrato_nombre}
+                </span>
+              );
+            }}
+            renderActions={(item) => {
+              const c = item as unknown as HistorialContratoList;
+              if (c.firmado) return null;
+              return (
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  onClick={() => handleFirmar(c.id)}
+                  title="Firmar contrato"
+                >
+                  <PenTool size={14} className="text-green-500" />
+                </Button>
+              );
+            }}
+            hoverable
+            dense
+          />
         )}
       </Card>
 

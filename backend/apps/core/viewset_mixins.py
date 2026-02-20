@@ -52,21 +52,27 @@ class OptimizedQuerySetMixin:
 
 class CompanyFilterMixin:
     """
-    Mixin para filtrar automáticamente por empresa del usuario.
+    Mixin para filtrar automáticamente por empresa del tenant.
 
-    Requiere que el modelo tenga un campo 'empresa'.
+    NOTA: En multi-tenant con django-tenants, el aislamiento por schema
+    ya filtra los datos por tenant. Este mixin solo es necesario si el
+    modelo tiene campo 'empresa' y hay múltiples empresas por schema.
+
+    Usa get_tenant_empresa() en lugar de request.user.empresa
+    (core.User NO tiene atributo empresa).
     """
 
     def get_queryset(self) -> QuerySet:
         """
-        Filtra automáticamente por empresa del usuario autenticado.
+        Filtra automáticamente por empresa del tenant actual.
         """
         queryset = super().get_queryset()
 
-        # Verificar que el usuario esté autenticado y tenga empresa
         if hasattr(self.request, 'user') and self.request.user.is_authenticated:
-            if hasattr(self.request.user, 'empresa'):
-                queryset = queryset.filter(empresa=self.request.user.empresa)
+            from apps.core.base_models.mixins import get_tenant_empresa
+            empresa = get_tenant_empresa(auto_create=False)
+            if empresa:
+                queryset = queryset.filter(empresa=empresa)
 
         return queryset
 

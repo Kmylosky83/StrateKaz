@@ -12,6 +12,7 @@ from datetime import datetime
 from django.utils import timezone
 
 from apps.core.mixins import StandardViewSetMixin
+from apps.core.base_models.mixins import get_tenant_empresa
 from .models import (
     CentroCosto, Rubro, PresupuestoPorArea,
     Aprobacion, Ejecucion
@@ -94,7 +95,7 @@ class RubroViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        empresa = request.user.empresa
+        empresa = get_tenant_empresa()
         rubros = Rubro.objects.filter(
             empresa=empresa,
             tipo=tipo,
@@ -146,7 +147,7 @@ class PresupuestoPorAreaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
         Muestra el porcentaje de ejecución para cada área en el año especificado.
         """
-        empresa = request.user.empresa
+        empresa = get_tenant_empresa()
         anio = request.query_params.get('anio', timezone.now().year)
 
         try:
@@ -213,7 +214,7 @@ class PresupuestoPorAreaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
         Útil para saber cuánto presupuesto queda disponible antes de aprobar ejecuciones.
         """
-        empresa = request.user.empresa
+        empresa = get_tenant_empresa()
         anio = request.query_params.get('anio', timezone.now().year)
         tipo_rubro = request.query_params.get('tipo')  # ingreso o egreso
 
@@ -371,7 +372,7 @@ class AprobacionViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def pendientes(self, request):
         """Listar aprobaciones pendientes asignadas al usuario actual."""
-        empresa = request.user.empresa
+        empresa = get_tenant_empresa()
 
         # Aquí se podría filtrar por rol o asignación específica
         # Por ahora, mostramos todas las pendientes de la empresa

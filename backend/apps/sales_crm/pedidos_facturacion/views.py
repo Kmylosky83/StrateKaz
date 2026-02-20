@@ -12,7 +12,8 @@ from django.db.models.functions import Coalesce
 from django.utils import timezone
 from decimal import Decimal
 
-# Permisos básicos - en producción implementar EmpresaPermission
+from apps.core.base_models.mixins import get_tenant_empresa
+
 from .models import (
     EstadoPedido,
     MetodoPago,
@@ -120,9 +121,7 @@ class PedidoViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha_pedido']
 
     def get_queryset(self):
-        queryset = Pedido.objects.filter(
-            empresa=self.request.user.empresa
-        ).select_related(
+        queryset = Pedido.objects.select_related(
             'cliente',
             'vendedor',
             'estado',
@@ -157,7 +156,7 @@ class PedidoViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
-            empresa=self.request.user.empresa,
+            empresa=get_tenant_empresa(),
             created_by=self.request.user,
             updated_by=self.request.user
         )
@@ -238,13 +237,11 @@ class PedidoViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def dashboard(self, request):
         """Dashboard de métricas de pedidos"""
-        empresa = request.user.empresa
-
         # Filtros de fecha
         fecha_desde = request.query_params.get('fecha_desde')
         fecha_hasta = request.query_params.get('fecha_hasta')
 
-        queryset = Pedido.objects.filter(empresa=empresa)
+        queryset = Pedido.objects.all()
 
         if fecha_desde:
             queryset = queryset.filter(fecha_pedido__gte=fecha_desde)
@@ -303,12 +300,10 @@ class DetallePedidoViewSet(viewsets.ModelViewSet):
     serializer_class = DetallePedidoSerializer
 
     def get_queryset(self):
-        queryset = DetallePedido.objects.filter(
-            empresa=self.request.user.empresa
-        ).select_related(
+        queryset = DetallePedido.objects.select_related(
             'pedido',
             'producto'
-        )
+        ).all()
 
         # Filtrar por pedido
         pedido_id = self.request.query_params.get('pedido')
@@ -319,7 +314,7 @@ class DetallePedidoViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
-            empresa=self.request.user.empresa,
+            empresa=get_tenant_empresa(),
             created_by=self.request.user,
             updated_by=self.request.user
         )
@@ -347,9 +342,7 @@ class FacturaViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha_factura']
 
     def get_queryset(self):
-        queryset = Factura.objects.filter(
-            empresa=self.request.user.empresa
-        ).select_related(
+        queryset = Factura.objects.select_related(
             'pedido',
             'cliente'
         ).prefetch_related(
@@ -453,13 +446,11 @@ class FacturaViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def dashboard(self, request):
         """Dashboard de métricas de facturación"""
-        empresa = request.user.empresa
-
         # Filtros de fecha
         fecha_desde = request.query_params.get('fecha_desde')
         fecha_hasta = request.query_params.get('fecha_hasta')
 
-        queryset = Factura.objects.filter(empresa=empresa)
+        queryset = Factura.objects.all()
 
         if fecha_desde:
             queryset = queryset.filter(fecha_factura__gte=fecha_desde)
@@ -474,12 +465,10 @@ class FacturaViewSet(viewsets.ModelViewSet):
 
         # Total pagado
         total_pagos = PagoFactura.objects.filter(
-            empresa=empresa,
             factura__in=queryset
         ).count()
 
         valor_total_pagado = PagoFactura.objects.filter(
-            empresa=empresa,
             factura__in=queryset
         ).aggregate(
             total=Coalesce(Sum('monto'), Decimal('0.00'))
@@ -517,12 +506,10 @@ class FacturaViewSet(viewsets.ModelViewSet):
 
         # Pedidos correspondientes
         total_pedidos = Pedido.objects.filter(
-            empresa=empresa,
             facturas__in=queryset
         ).distinct().count()
 
         valor_total_pedidos = Pedido.objects.filter(
-            empresa=empresa,
             facturas__in=queryset
         ).distinct().aggregate(
             total=Coalesce(Sum('total'), Decimal('0.00'))
@@ -561,9 +548,7 @@ class PagoFacturaViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha_pago']
 
     def get_queryset(self):
-        queryset = PagoFactura.objects.filter(
-            empresa=self.request.user.empresa
-        ).select_related(
+        queryset = PagoFactura.objects.select_related(
             'factura',
             'metodo_pago',
             'registrado_por'
@@ -587,7 +572,7 @@ class PagoFacturaViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
-            empresa=self.request.user.empresa,
+            empresa=get_tenant_empresa(),
             registrado_por=self.request.user,
             created_by=self.request.user,
             updated_by=self.request.user

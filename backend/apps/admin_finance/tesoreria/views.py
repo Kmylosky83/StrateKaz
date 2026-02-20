@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from django.utils import timezone
 
 from apps.core.mixins import StandardViewSetMixin
+from apps.core.base_models.mixins import get_tenant_empresa
 from .models import (
     Banco, CuentaPorPagar, CuentaPorCobrar,
     FlujoCaja, Pago, Recaudo
@@ -53,7 +54,7 @@ class BancoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def saldos(self, request):
         """Resumen consolidado de saldos."""
-        empresa = request.user.empresa
+        empresa = get_tenant_empresa()
         bancos = Banco.objects.filter(empresa=empresa, estado='activo', is_active=True)
 
         totales = bancos.aggregate(
@@ -104,7 +105,7 @@ class CuentaPorPagarViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def vencidas(self, request):
         """Listar cuentas vencidas."""
-        empresa = request.user.empresa
+        empresa = get_tenant_empresa()
         vencidas = CuentaPorPagar.objects.filter(
             empresa=empresa,
             estado__in=['pendiente', 'parcial'],
@@ -122,7 +123,7 @@ class CuentaPorPagarViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def por_vencer(self, request):
         """Listar cuentas próximas a vencer (próximos 7 días)."""
-        empresa = request.user.empresa
+        empresa = get_tenant_empresa()
         hoy = timezone.now().date()
         fecha_limite = hoy + timedelta(days=7)
 
@@ -143,7 +144,7 @@ class CuentaPorPagarViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def estadisticas(self, request):
         """Estadísticas de cuentas por pagar."""
-        empresa = request.user.empresa
+        empresa = get_tenant_empresa()
         cuentas = CuentaPorPagar.objects.filter(empresa=empresa, is_active=True)
 
         return Response({
@@ -190,7 +191,7 @@ class CuentaPorCobrarViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def vencidas(self, request):
         """Listar cuentas vencidas."""
-        empresa = request.user.empresa
+        empresa = get_tenant_empresa()
         vencidas = CuentaPorCobrar.objects.filter(
             empresa=empresa,
             estado__in=['pendiente', 'parcial'],
@@ -208,7 +209,7 @@ class CuentaPorCobrarViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def por_vencer(self, request):
         """Listar cuentas próximas a vencer (próximos 7 días)."""
-        empresa = request.user.empresa
+        empresa = get_tenant_empresa()
         hoy = timezone.now().date()
         fecha_limite = hoy + timedelta(days=7)
 
@@ -229,7 +230,7 @@ class CuentaPorCobrarViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def estadisticas(self, request):
         """Estadísticas de cuentas por cobrar."""
-        empresa = request.user.empresa
+        empresa = get_tenant_empresa()
         cuentas = CuentaPorCobrar.objects.filter(empresa=empresa, is_active=True)
 
         return Response({
@@ -269,7 +270,7 @@ class FlujoCajaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def resumen_periodo(self, request):
         """Resumen de flujo de caja por período."""
-        empresa = request.user.empresa
+        empresa = get_tenant_empresa()
         fecha_inicio = request.query_params.get('fecha_inicio')
         fecha_fin = request.query_params.get('fecha_fin')
 

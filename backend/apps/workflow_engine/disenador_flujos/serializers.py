@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from apps.core.base_models.mixins import get_tenant_empresa
 from .models import (
     CategoriaFlujo,
     PlantillaFlujo,
@@ -129,15 +130,7 @@ class PlantillaFlujoSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """Validaciones personalizadas"""
-        # Validar que la categoría pertenezca a la misma empresa
-        if 'categoria' in data:
-            request = self.context.get('request')
-            if request and hasattr(request.user, 'empresa_id'):
-                if data['categoria'].empresa_id != request.user.empresa_id:
-                    raise serializers.ValidationError({
-                        'categoria': 'La categoría debe pertenecer a la misma empresa'
-                    })
-
+        # Multi-tenant: schema isolation ensures all data belongs to same tenant
         return data
 
 
@@ -204,14 +197,7 @@ class NodoFlujoSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """Validaciones personalizadas"""
-        # Validar que la plantilla pertenezca a la misma empresa
-        if 'plantilla' in data:
-            request = self.context.get('request')
-            if request and hasattr(request.user, 'empresa_id'):
-                if data['plantilla'].empresa_id != request.user.empresa_id:
-                    raise serializers.ValidationError({
-                        'plantilla': 'La plantilla debe pertenecer a la misma empresa'
-                    })
+        # Multi-tenant: schema isolation ensures plantilla belongs to same tenant
 
         # Validar que nodos tipo TAREA tengan rol asignado
         if data.get('tipo') == 'TAREA' and not data.get('rol_asignado'):
@@ -271,14 +257,7 @@ class TransicionFlujoSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """Validaciones personalizadas"""
-        # Validar que la plantilla pertenezca a la misma empresa
-        if 'plantilla' in data:
-            request = self.context.get('request')
-            if request and hasattr(request.user, 'empresa_id'):
-                if data['plantilla'].empresa_id != request.user.empresa_id:
-                    raise serializers.ValidationError({
-                        'plantilla': 'La plantilla debe pertenecer a la misma empresa'
-                    })
+        # Multi-tenant: schema isolation ensures plantilla belongs to same tenant
 
         # Validar que origen y destino pertenezcan a la misma plantilla
         if 'nodo_origen' in data and 'nodo_destino' in data:
@@ -348,14 +327,7 @@ class CampoFormularioSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """Validaciones personalizadas"""
-        # Validar que el nodo pertenezca a la misma empresa
-        if 'nodo' in data:
-            request = self.context.get('request')
-            if request and hasattr(request.user, 'empresa_id'):
-                if data['nodo'].empresa_id != request.user.empresa_id:
-                    raise serializers.ValidationError({
-                        'nodo': 'El nodo debe pertenecer a la misma empresa'
-                    })
+        # Multi-tenant: schema isolation ensures nodo belongs to same tenant
 
         # Validar que el nodo sea de tipo TAREA
         if 'nodo' in data:
@@ -683,8 +655,10 @@ class FormularioDiligenciadoCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """Crear formulario con datos del contexto"""
         request = self.context.get('request')
-        if request and hasattr(request.user, 'empresa_id'):
-            validated_data['empresa_id'] = request.user.empresa_id
+        empresa = get_tenant_empresa()
+        if empresa:
+            validated_data['empresa'] = empresa
+        if request:
             validated_data['diligenciado_por'] = request.user
             validated_data['created_by'] = request.user
         return super().create(validated_data)
@@ -855,22 +829,15 @@ class AsignacionFormularioCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """Validaciones personalizadas"""
-        request = self.context.get('request')
-
-        # Validar que la plantilla pertenezca a la misma empresa
-        if 'plantilla_flujo' in data:
-            if request and hasattr(request.user, 'empresa_id'):
-                if data['plantilla_flujo'].empresa_id != request.user.empresa_id:
-                    raise serializers.ValidationError({
-                        'plantilla_flujo': 'La plantilla debe pertenecer a la misma empresa'
-                    })
-
+        # Multi-tenant: schema isolation ensures plantilla belongs to same tenant
         return data
 
     def create(self, validated_data):
         """Crear asignación con datos del contexto"""
         request = self.context.get('request')
-        if request and hasattr(request.user, 'empresa_id'):
-            validated_data['empresa_id'] = request.user.empresa_id
+        empresa = get_tenant_empresa()
+        if empresa:
+            validated_data['empresa'] = empresa
+        if request:
             validated_data['asignado_por'] = request.user
         return super().create(validated_data)

@@ -4,11 +4,81 @@
  */
 import { Share2, Eye, Users, AlertCircle, FileCheck } from 'lucide-react';
 import { Card, Button, EmptyState, Badge } from '@/components/common';
+import { ResponsiveTable } from '@/components/common/ResponsiveTable';
+import type { ResponsiveTableColumn } from '@/components/common/ResponsiveTable';
 
 import {
   useDocumentos,
   useEstadisticasDocumentales,
 } from '@/features/gestion-estrategica/hooks/useGestionDocumental';
+import type { Documento } from '@/features/gestion-estrategica/types/gestion-documental.types';
+
+const distribucionColumns: ResponsiveTableColumn<Documento & Record<string, unknown>>[] = [
+  {
+    key: 'documento',
+    header: 'Documento',
+    priority: 1,
+    render: (item) => {
+      const doc = item as unknown as Documento;
+      return (
+        <div>
+          <p className="text-sm font-medium text-gray-900 dark:text-white">{doc.titulo}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{doc.codigo}</p>
+        </div>
+      );
+    },
+  },
+  {
+    key: 'version',
+    header: 'Versión',
+    priority: 2,
+    render: (item) => {
+      const doc = item as unknown as Documento;
+      return <Badge variant="secondary">{doc.version_actual}</Badge>;
+    },
+  },
+  {
+    key: 'areas',
+    header: 'Áreas',
+    hideOnTablet: true,
+    render: (item) => {
+      const doc = item as unknown as Documento;
+      return (
+        <div className="flex flex-wrap gap-1">
+          {doc.areas_aplicacion?.slice(0, 2).map((area: string, idx: number) => (
+            <Badge key={idx} variant="outline" size="sm">
+              {area}
+            </Badge>
+          ))}
+          {(doc.areas_aplicacion?.length || 0) > 2 && (
+            <Badge variant="outline" size="sm">
+              +{doc.areas_aplicacion.length - 2}
+            </Badge>
+          )}
+        </div>
+      );
+    },
+  },
+  {
+    key: 'descargas',
+    header: 'Descargas',
+    hideOnTablet: true,
+    render: (item) => {
+      const doc = item as unknown as Documento;
+      return (
+        <span className="text-sm text-gray-600 dark:text-gray-400">
+          {doc.numero_descargas || 0}
+        </span>
+      );
+    },
+  },
+  {
+    key: 'estado',
+    header: 'Estado',
+    priority: 2,
+    render: () => <Badge variant="success">Distribuido</Badge>,
+  },
+];
 
 interface DistribucionSectionProps {
   onViewDocumento: (id: number) => void;
@@ -89,80 +159,38 @@ export function DistribucionSection({ onViewDocumento }: DistribucionSectionProp
           description="Los documentos publicados aparecerán aquí para su distribución."
         />
       ) : (
-        <Card>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-800/30">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Documento
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Versión
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Áreas
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Descargas
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Estado
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {documentos.map((doc) => (
-                  <tr key={doc.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                    <td className="px-6 py-4">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          {doc.titulo}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{doc.codigo}</p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge variant="secondary">{doc.version_actual}</Badge>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-1">
-                        {doc.areas_aplicacion?.slice(0, 2).map((area: string, idx: number) => (
-                          <Badge key={idx} variant="outline" size="sm">
-                            {area}
-                          </Badge>
-                        ))}
-                        {(doc.areas_aplicacion?.length || 0) > 2 && (
-                          <Badge variant="outline" size="sm">
-                            +{doc.areas_aplicacion.length - 2}
-                          </Badge>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                      {doc.numero_descargas || 0}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge variant="success">Distribuido</Badge>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        leftIcon={<Eye className="w-4 h-4" />}
-                        onClick={() => onViewDocumento(doc.id)}
-                      >
-                        Ver
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <Card className="p-0 overflow-hidden">
+          <ResponsiveTable<Documento & Record<string, unknown>>
+            data={documentos as (Documento & Record<string, unknown>)[]}
+            columns={distribucionColumns}
+            keyExtractor={(item) => item.id as number}
+            mobileCardTitle={(item) => {
+              const doc = item as unknown as Documento;
+              return <span>{doc.titulo}</span>;
+            }}
+            mobileCardSubtitle={(item) => {
+              const doc = item as unknown as Documento;
+              return (
+                <span className="text-xs">
+                  {doc.codigo} — v{doc.version_actual}
+                </span>
+              );
+            }}
+            renderActions={(item) => {
+              const doc = item as unknown as Documento;
+              return (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leftIcon={<Eye className="w-4 h-4" />}
+                  onClick={() => onViewDocumento(doc.id)}
+                >
+                  Ver
+                </Button>
+              );
+            }}
+            hoverable
+          />
         </Card>
       )}
     </div>

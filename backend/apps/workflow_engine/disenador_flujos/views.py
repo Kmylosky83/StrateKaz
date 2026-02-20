@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 
+from apps.core.base_models.mixins import get_tenant_empresa
 from .models import (
     CategoriaFlujo,
     PlantillaFlujo,
@@ -41,10 +42,10 @@ class CategoriaFlujoViewSet(viewsets.ModelViewSet):
     ordering = ['orden', 'nombre']
 
     def get_queryset(self):
-        return CategoriaFlujo.objects.filter(empresa_id=self.request.user.empresa_id).select_related('created_by')
+        return CategoriaFlujo.objects.select_related('created_by')
 
     def perform_create(self, serializer):
-        serializer.save(empresa_id=self.request.user.empresa_id, created_by=self.request.user)
+        serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
 
 
 class PlantillaFlujoViewSet(viewsets.ModelViewSet):
@@ -56,12 +57,10 @@ class PlantillaFlujoViewSet(viewsets.ModelViewSet):
     ordering = ['-created_at']
 
     def get_queryset(self):
-        return PlantillaFlujo.objects.filter(
-            empresa_id=self.request.user.empresa_id
-        ).select_related('categoria', 'created_by', 'activado_por', 'plantilla_origen')
+        return PlantillaFlujo.objects.select_related('categoria', 'created_by', 'activado_por', 'plantilla_origen')
 
     def perform_create(self, serializer):
-        serializer.save(empresa_id=self.request.user.empresa_id, created_by=self.request.user)
+        serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
 
     @action(detail=True, methods=['post'])
     def activar(self, request, pk=None):
@@ -86,7 +85,6 @@ class PlantillaFlujoViewSet(viewsets.ModelViewSet):
 
         # Marcar versiones anteriores como OBSOLETO
         PlantillaFlujo.objects.filter(
-            empresa_id=request.user.empresa_id,
             codigo=plantilla.codigo,
             estado='ACTIVO'
         ).exclude(pk=plantilla.pk).update(
@@ -132,12 +130,10 @@ class NodoFlujoViewSet(viewsets.ModelViewSet):
     ordering = ['plantilla', 'codigo']
 
     def get_queryset(self):
-        return NodoFlujo.objects.filter(
-            empresa_id=self.request.user.empresa_id
-        ).select_related('plantilla', 'rol_asignado', 'created_by')
+        return NodoFlujo.objects.select_related('plantilla', 'rol_asignado', 'created_by')
 
     def perform_create(self, serializer):
-        serializer.save(empresa_id=self.request.user.empresa_id, created_by=self.request.user)
+        serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
 
 
 class TransicionFlujoViewSet(viewsets.ModelViewSet):
@@ -149,12 +145,10 @@ class TransicionFlujoViewSet(viewsets.ModelViewSet):
     ordering = ['plantilla', '-prioridad']
 
     def get_queryset(self):
-        return TransicionFlujo.objects.filter(
-            empresa_id=self.request.user.empresa_id
-        ).select_related('plantilla', 'nodo_origen', 'nodo_destino', 'created_by')
+        return TransicionFlujo.objects.select_related('plantilla', 'nodo_origen', 'nodo_destino', 'created_by')
 
     def perform_create(self, serializer):
-        serializer.save(empresa_id=self.request.user.empresa_id, created_by=self.request.user)
+        serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
 
 
 class CampoFormularioViewSet(viewsets.ModelViewSet):
@@ -166,12 +160,10 @@ class CampoFormularioViewSet(viewsets.ModelViewSet):
     ordering = ['nodo', 'orden']
 
     def get_queryset(self):
-        return CampoFormulario.objects.filter(
-            empresa_id=self.request.user.empresa_id
-        ).select_related('nodo', 'created_by')
+        return CampoFormulario.objects.select_related('nodo', 'created_by')
 
     def perform_create(self, serializer):
-        serializer.save(empresa_id=self.request.user.empresa_id, created_by=self.request.user)
+        serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
 
 
 class RolFlujoViewSet(viewsets.ModelViewSet):
@@ -183,10 +175,10 @@ class RolFlujoViewSet(viewsets.ModelViewSet):
     ordering = ['nombre']
 
     def get_queryset(self):
-        return RolFlujo.objects.filter(empresa_id=self.request.user.empresa_id).select_related('created_by')
+        return RolFlujo.objects.select_related('created_by')
 
     def perform_create(self, serializer):
-        serializer.save(empresa_id=self.request.user.empresa_id, created_by=self.request.user)
+        serializer.save(empresa=get_tenant_empresa(), created_by=self.request.user)
 
 
 # ============================================================================
@@ -213,9 +205,7 @@ class FormularioDiligenciadoViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha_diligenciamiento']
 
     def get_queryset(self):
-        return FormularioDiligenciado.objects.filter(
-            empresa_id=self.request.user.empresa_id
-        ).select_related(
+        return FormularioDiligenciado.objects.select_related(
             'plantilla_flujo',
             'diligenciado_por',
             'created_by'
@@ -230,7 +220,7 @@ class FormularioDiligenciadoViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
-            empresa_id=self.request.user.empresa_id,
+            empresa=get_tenant_empresa(),
             diligenciado_por=self.request.user,
             created_by=self.request.user
         )
@@ -364,9 +354,7 @@ class RespuestaCampoViewSet(viewsets.ModelViewSet):
     ordering = ['campo_formulario__orden']
 
     def get_queryset(self):
-        return RespuestaCampo.objects.filter(
-            formulario_diligenciado__empresa_id=self.request.user.empresa_id
-        ).select_related(
+        return RespuestaCampo.objects.select_related(
             'formulario_diligenciado',
             'campo_formulario',
             'modificado_por'
@@ -399,9 +387,7 @@ class AsignacionFormularioViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha_asignacion']
 
     def get_queryset(self):
-        return AsignacionFormulario.objects.filter(
-            empresa_id=self.request.user.empresa_id
-        ).select_related(
+        return AsignacionFormulario.objects.select_related(
             'plantilla_flujo',
             'asignado_a',
             'asignado_por',
@@ -417,7 +403,7 @@ class AsignacionFormularioViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(
-            empresa_id=self.request.user.empresa_id,
+            empresa=get_tenant_empresa(),
             asignado_por=self.request.user
         )
 

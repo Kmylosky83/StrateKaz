@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from datetime import date, timedelta
 from apps.core.mixins import ExportMixin
+from apps.core.base_models.mixins import get_tenant_empresa
 
 from .models import (
     AccidenteTrabajo,
@@ -53,11 +54,7 @@ class AccidenteTrabajoViewSet(ExportMixin, viewsets.ModelViewSet):
     ordering = ['-fecha_evento']
 
     def get_queryset(self):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
-        if not empresa_id:
-            return AccidenteTrabajo.objects.none()
-
-        queryset = AccidenteTrabajo.objects.filter(empresa_id=empresa_id).select_related(
+        queryset = AccidenteTrabajo.objects.select_related(
             'trabajador',
             'reportado_por',
             'actualizado_por'
@@ -80,9 +77,9 @@ class AccidenteTrabajoViewSet(ExportMixin, viewsets.ModelViewSet):
         return AccidenteTrabajoSerializer
 
     def perform_create(self, serializer):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa()
         serializer.save(
-            empresa_id=empresa_id,
+            empresa=empresa,
             reportado_por=self.request.user
         )
 
@@ -112,10 +109,10 @@ class AccidenteTrabajoViewSet(ExportMixin, viewsets.ModelViewSet):
             )
 
         # Crear investigación
-        empresa_id = request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa()
 
         investigacion = InvestigacionATEL.objects.create(
-            empresa_id=empresa_id,
+            empresa=empresa,
             accidente_trabajo=accidente,
             lider_investigacion_id=request.data.get('lider_investigacion'),
             metodologia=request.data.get('metodologia', 'ARBOL_CAUSAS'),
@@ -139,7 +136,6 @@ class AccidenteTrabajoViewSet(ExportMixin, viewsets.ModelViewSet):
         - fecha_hasta: Fecha fin del período
         - periodo: 'mes', 'trimestre', 'semestre', 'ano' (default: 'ano')
         """
-        empresa_id = request.headers.get('X-Empresa-ID')
         periodo = request.query_params.get('periodo', 'ano')
 
         # Calcular fechas según período
@@ -158,7 +154,6 @@ class AccidenteTrabajoViewSet(ExportMixin, viewsets.ModelViewSet):
         fecha_hasta = request.query_params.get('fecha_hasta', fecha_hasta)
 
         queryset = AccidenteTrabajo.objects.filter(
-            empresa_id=empresa_id,
             fecha_evento__gte=fecha_desde,
             fecha_evento__lte=fecha_hasta
         )
@@ -217,19 +212,15 @@ class EnfermedadLaboralViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha_diagnostico']
 
     def get_queryset(self):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
-        if not empresa_id:
-            return EnfermedadLaboral.objects.none()
-
-        return EnfermedadLaboral.objects.filter(empresa_id=empresa_id).select_related(
+        return EnfermedadLaboral.objects.select_related(
             'trabajador',
             'reportado_por'
         )
 
     def perform_create(self, serializer):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa()
         serializer.save(
-            empresa_id=empresa_id,
+            empresa=empresa,
             reportado_por=self.request.user
         )
 
@@ -247,10 +238,10 @@ class EnfermedadLaboralViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        empresa_id = request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa()
 
         investigacion = InvestigacionATEL.objects.create(
-            empresa_id=empresa_id,
+            empresa=empresa,
             enfermedad_laboral=enfermedad,
             lider_investigacion_id=request.data.get('lider_investigacion'),
             metodologia=request.data.get('metodologia', 'ISHIKAWA'),
@@ -277,18 +268,14 @@ class IncidenteTrabajoViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha_evento']
 
     def get_queryset(self):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
-        if not empresa_id:
-            return IncidenteTrabajo.objects.none()
-
-        return IncidenteTrabajo.objects.filter(empresa_id=empresa_id).select_related(
+        return IncidenteTrabajo.objects.select_related(
             'reportado_por'
         )
 
     def perform_create(self, serializer):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa()
         serializer.save(
-            empresa_id=empresa_id,
+            empresa=empresa,
             reportado_por=self.request.user
         )
 
@@ -306,10 +293,10 @@ class IncidenteTrabajoViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        empresa_id = request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa()
 
         investigacion = InvestigacionATEL.objects.create(
-            empresa_id=empresa_id,
+            empresa=empresa,
             incidente_trabajo=incidente,
             lider_investigacion_id=request.data.get('lider_investigacion'),
             metodologia=request.data.get('metodologia', 'CINCO_PORQUES'),
@@ -340,11 +327,7 @@ class InvestigacionATELViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha_inicio']
 
     def get_queryset(self):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
-        if not empresa_id:
-            return InvestigacionATEL.objects.none()
-
-        queryset = InvestigacionATEL.objects.filter(empresa_id=empresa_id).select_related(
+        queryset = InvestigacionATEL.objects.select_related(
             'lider_investigacion',
             'accidente_trabajo',
             'enfermedad_laboral',
@@ -366,9 +349,9 @@ class InvestigacionATELViewSet(viewsets.ModelViewSet):
         return InvestigacionATELSerializer
 
     def perform_create(self, serializer):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa()
         serializer.save(
-            empresa_id=empresa_id,
+            empresa=empresa,
             creado_por=self.request.user
         )
 
@@ -446,14 +429,14 @@ class InvestigacionATELViewSet(viewsets.ModelViewSet):
         }
         """
         investigacion = self.get_object()
-        empresa_id = request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa()
 
         causas_data = request.data.get('causas', [])
         causas_creadas = []
 
         for causa_data in causas_data:
             causa = CausaRaiz.objects.create(
-                empresa_id=empresa_id,
+                empresa=empresa,
                 investigacion=investigacion,
                 tipo_causa=causa_data.get('tipo_causa'),
                 descripcion=causa_data.get('descripcion'),
@@ -482,19 +465,15 @@ class CausaRaizViewSet(viewsets.ModelViewSet):
     ordering = ['prioridad']
 
     def get_queryset(self):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
-        if not empresa_id:
-            return CausaRaiz.objects.none()
-
-        return CausaRaiz.objects.filter(empresa_id=empresa_id).select_related(
+        return CausaRaiz.objects.select_related(
             'investigacion',
             'creado_por'
         )
 
     def perform_create(self, serializer):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa()
         serializer.save(
-            empresa_id=empresa_id,
+            empresa=empresa,
             creado_por=self.request.user
         )
 
@@ -514,20 +493,16 @@ class LeccionAprendidaViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha_creacion']
 
     def get_queryset(self):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
-        if not empresa_id:
-            return LeccionAprendida.objects.none()
-
-        return LeccionAprendida.objects.filter(empresa_id=empresa_id).select_related(
+        return LeccionAprendida.objects.select_related(
             'investigacion',
             'creado_por',
             'divulgado_por'
         )
 
     def perform_create(self, serializer):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa()
         serializer.save(
-            empresa_id=empresa_id,
+            empresa=empresa,
             creado_por=self.request.user
         )
 
@@ -569,10 +544,7 @@ class LeccionAprendidaViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def pendientes_divulgacion(self, request):
         """Listar lecciones pendientes de divulgación"""
-        empresa_id = request.headers.get('X-Empresa-ID')
-
         lecciones = LeccionAprendida.objects.filter(
-            empresa_id=empresa_id,
             estado_divulgacion__in=['PENDIENTE', 'PROGRAMADA']
         ).select_related('investigacion', 'creado_por')
 
@@ -595,11 +567,7 @@ class PlanAccionATELViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha_creacion']
 
     def get_queryset(self):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
-        if not empresa_id:
-            return PlanAccionATEL.objects.none()
-
-        return PlanAccionATEL.objects.filter(empresa_id=empresa_id).select_related(
+        return PlanAccionATEL.objects.select_related(
             'investigacion',
             'responsable',
             'creado_por',
@@ -612,9 +580,9 @@ class PlanAccionATELViewSet(viewsets.ModelViewSet):
         return PlanAccionATELSerializer
 
     def perform_create(self, serializer):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa()
         serializer.save(
-            empresa_id=empresa_id,
+            empresa=empresa,
             creado_por=self.request.user
         )
 
@@ -669,10 +637,7 @@ class PlanAccionATELViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def vencidos(self, request):
         """Listar planes vencidos"""
-        empresa_id = request.headers.get('X-Empresa-ID')
-
         planes = PlanAccionATEL.objects.filter(
-            empresa_id=empresa_id,
             estado__in=['PLANIFICADO', 'EN_EJECUCION'],
             fecha_compromiso__lt=date.today()
         ).select_related('investigacion', 'responsable')
@@ -693,11 +658,7 @@ class AccionPlanViewSet(viewsets.ModelViewSet):
     ordering = ['plan_accion', 'orden']
 
     def get_queryset(self):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
-        if not empresa_id:
-            return AccionPlan.objects.none()
-
-        return AccionPlan.objects.filter(empresa_id=empresa_id).select_related(
+        return AccionPlan.objects.select_related(
             'plan_accion',
             'responsable',
             'causa_raiz',
@@ -706,9 +667,9 @@ class AccionPlanViewSet(viewsets.ModelViewSet):
         )
 
     def perform_create(self, serializer):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa()
         serializer.save(
-            empresa_id=empresa_id,
+            empresa=empresa,
             creado_por=self.request.user
         )
 
@@ -784,10 +745,7 @@ class AccionPlanViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def mis_acciones(self, request):
         """Listar acciones asignadas al usuario actual"""
-        empresa_id = request.headers.get('X-Empresa-ID')
-
         acciones = AccionPlan.objects.filter(
-            empresa_id=empresa_id,
             responsable=request.user,
             estado__in=['PENDIENTE', 'EN_PROGRESO']
         ).select_related('plan_accion', 'causa_raiz').order_by('fecha_compromiso')

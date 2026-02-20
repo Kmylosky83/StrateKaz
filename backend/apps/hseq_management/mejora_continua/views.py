@@ -10,6 +10,8 @@ from rest_framework.pagination import PageNumberPagination
 from django.utils import timezone
 from django.db.models import Q, Count
 
+from apps.core.base_models.mixins import get_tenant_empresa
+
 from .models import (
     ProgramaAuditoria,
     Auditoria,
@@ -48,11 +50,7 @@ class ProgramaAuditoriaViewSet(viewsets.ModelViewSet):
     ordering = ['-año', '-created_at']
 
     def get_queryset(self):
-        empresa_id = self.request.user.empresa_id
-        queryset = ProgramaAuditoria.objects.filter(
-            empresa_id=empresa_id,
-            is_active=True
-        )
+        queryset = ProgramaAuditoria.objects.filter(is_active=True)
 
         estado = self.request.query_params.get('estado', None)
         if estado:
@@ -72,18 +70,18 @@ class ProgramaAuditoriaViewSet(viewsets.ModelViewSet):
         return ProgramaAuditoriaListSerializer
 
     def perform_create(self, serializer):
-        empresa_id = self.request.user.empresa_id
+        empresa = get_tenant_empresa()
         year = timezone.now().year
 
         last_prog = ProgramaAuditoria.objects.filter(
-            empresa_id=empresa_id, codigo__startswith=f'PAU-{year}-'
+            codigo__startswith=f'PAU-{year}-'
         ).order_by('-codigo').first()
 
         new_num = int(last_prog.codigo.split('-')[-1]) + 1 if last_prog else 1
         codigo = f'PAU-{year}-{new_num:04d}'
 
         serializer.save(
-            empresa_id=empresa_id,
+            empresa=empresa,
             created_by=self.request.user,
             codigo=codigo
         )
@@ -122,12 +120,9 @@ class ProgramaAuditoriaViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def dashboard(self, request):
         """Dashboard de programas de auditoría"""
-        empresa_id = request.user.empresa_id
         year = timezone.now().year
 
-        programas = ProgramaAuditoria.objects.filter(
-            empresa_id=empresa_id, año=year
-        )
+        programas = ProgramaAuditoria.objects.filter(año=year)
 
         stats = {
             'total_programas': programas.count(),
@@ -154,11 +149,7 @@ class AuditoriaViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha_planificada_inicio']
 
     def get_queryset(self):
-        empresa_id = self.request.user.empresa_id
-        queryset = Auditoria.objects.filter(
-            empresa_id=empresa_id,
-            is_active=True
-        )
+        queryset = Auditoria.objects.filter(is_active=True)
 
         estado = self.request.query_params.get('estado', None)
         if estado:
@@ -189,18 +180,18 @@ class AuditoriaViewSet(viewsets.ModelViewSet):
         return AuditoriaListSerializer
 
     def perform_create(self, serializer):
-        empresa_id = self.request.user.empresa_id
+        empresa = get_tenant_empresa()
         year = timezone.now().year
 
         last_aud = Auditoria.objects.filter(
-            empresa_id=empresa_id, codigo__startswith=f'AUD-{year}-'
+            codigo__startswith=f'AUD-{year}-'
         ).order_by('-codigo').first()
 
         new_num = int(last_aud.codigo.split('-')[-1]) + 1 if last_aud else 1
         codigo = f'AUD-{year}-{new_num:04d}'
 
         serializer.save(
-            empresa_id=empresa_id,
+            empresa=empresa,
             created_by=self.request.user,
             codigo=codigo
         )
@@ -227,11 +218,9 @@ class AuditoriaViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def calendario(self, request):
         """Calendario de auditorías"""
-        empresa_id = request.user.empresa_id
         year = request.query_params.get('year', timezone.now().year)
 
         auditorias = Auditoria.objects.filter(
-            empresa_id=empresa_id,
             fecha_planificada_inicio__year=year,
             is_active=True
         ).values(
@@ -243,11 +232,9 @@ class AuditoriaViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def dashboard(self, request):
         """Dashboard de auditorías"""
-        empresa_id = request.user.empresa_id
         year = timezone.now().year
 
         auditorias = Auditoria.objects.filter(
-            empresa_id=empresa_id,
             fecha_planificada_inicio__year=year
         )
 
@@ -282,11 +269,7 @@ class HallazgoViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha_deteccion']
 
     def get_queryset(self):
-        empresa_id = self.request.user.empresa_id
-        queryset = Hallazgo.objects.filter(
-            empresa_id=empresa_id,
-            is_active=True
-        )
+        queryset = Hallazgo.objects.filter(is_active=True)
 
         estado = self.request.query_params.get('estado', None)
         if estado:
@@ -322,18 +305,18 @@ class HallazgoViewSet(viewsets.ModelViewSet):
         return HallazgoListSerializer
 
     def perform_create(self, serializer):
-        empresa_id = self.request.user.empresa_id
+        empresa = get_tenant_empresa()
         year = timezone.now().year
 
         last_hall = Hallazgo.objects.filter(
-            empresa_id=empresa_id, codigo__startswith=f'HAL-{year}-'
+            codigo__startswith=f'HAL-{year}-'
         ).order_by('-codigo').first()
 
         new_num = int(last_hall.codigo.split('-')[-1]) + 1 if last_hall else 1
         codigo = f'HAL-{year}-{new_num:04d}'
 
         serializer.save(
-            empresa_id=empresa_id,
+            empresa=empresa,
             codigo=codigo
         )
 
@@ -374,12 +357,7 @@ class HallazgoViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def dashboard(self, request):
         """Dashboard de hallazgos"""
-        empresa_id = request.user.empresa_id
-
-        hallazgos = Hallazgo.objects.filter(
-            empresa_id=empresa_id,
-            is_active=True
-        )
+        hallazgos = Hallazgo.objects.filter(is_active=True)
 
         abiertos = hallazgos.exclude(estado='CERRADO')
 
@@ -415,11 +393,7 @@ class EvaluacionCumplimientoViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha_evaluacion']
 
     def get_queryset(self):
-        empresa_id = self.request.user.empresa_id
-        queryset = EvaluacionCumplimiento.objects.filter(
-            empresa_id=empresa_id,
-            is_active=True
-        )
+        queryset = EvaluacionCumplimiento.objects.filter(is_active=True)
 
         tipo = self.request.query_params.get('tipo', None)
         if tipo:
@@ -445,18 +419,18 @@ class EvaluacionCumplimientoViewSet(viewsets.ModelViewSet):
         return EvaluacionCumplimientoListSerializer
 
     def perform_create(self, serializer):
-        empresa_id = self.request.user.empresa_id
+        empresa = get_tenant_empresa()
         year = timezone.now().year
 
         last_eval = EvaluacionCumplimiento.objects.filter(
-            empresa_id=empresa_id, codigo__startswith=f'EVC-{year}-'
+            codigo__startswith=f'EVC-{year}-'
         ).order_by('-codigo').first()
 
         new_num = int(last_eval.codigo.split('-')[-1]) + 1 if last_eval else 1
         codigo = f'EVC-{year}-{new_num:04d}'
 
         instance = serializer.save(
-            empresa_id=empresa_id,
+            empresa=empresa,
             created_by=self.request.user,
             codigo=codigo
         )
@@ -476,12 +450,7 @@ class EvaluacionCumplimientoViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def dashboard(self, request):
         """Dashboard de evaluaciones de cumplimiento"""
-        empresa_id = request.user.empresa_id
-
-        evaluaciones = EvaluacionCumplimiento.objects.filter(
-            empresa_id=empresa_id,
-            is_active=True
-        )
+        evaluaciones = EvaluacionCumplimiento.objects.filter(is_active=True)
 
         stats = {
             'total_evaluaciones': evaluaciones.count(),

@@ -3,6 +3,7 @@ Serializers para Accidentalidad (ATEL) - HSEQ Management
 """
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from apps.core.base_models.mixins import get_tenant_empresa
 
 User = get_user_model()
 from .models import (
@@ -50,9 +51,9 @@ class AccidenteTrabajoSerializer(serializers.ModelSerializer):
             })
 
         # Validar que empresa_id venga del request
-        request = self.context.get('request')
-        if request and hasattr(request.user, 'empresa_id'):
-            data['empresa_id'] = request.user.empresa_id
+        empresa = get_tenant_empresa()
+        if empresa:
+            data['empresa_id'] = empresa.id
 
         return data
 
@@ -110,9 +111,9 @@ class EnfermedadLaboralSerializer(serializers.ModelSerializer):
         return hasattr(obj, 'investigacion')
 
     def validate(self, data):
-        request = self.context.get('request')
-        if request and hasattr(request.user, 'empresa_id'):
-            data['empresa_id'] = request.user.empresa_id
+        empresa = get_tenant_empresa()
+        if empresa:
+            data['empresa_id'] = empresa.id
         return data
 
 
@@ -143,9 +144,9 @@ class IncidenteTrabajoSerializer(serializers.ModelSerializer):
                 'descripcion_danos': 'Debe describir los daños materiales'
             })
 
-        request = self.context.get('request')
-        if request and hasattr(request.user, 'empresa_id'):
-            data['empresa_id'] = request.user.empresa_id
+        empresa = get_tenant_empresa()
+        if empresa:
+            data['empresa_id'] = empresa.id
 
         return data
 
@@ -162,9 +163,9 @@ class CausaRaizSerializer(serializers.ModelSerializer):
         read_only_fields = ['fecha_creacion']
 
     def validate(self, data):
-        request = self.context.get('request')
-        if request and hasattr(request.user, 'empresa_id'):
-            data['empresa_id'] = request.user.empresa_id
+        empresa = get_tenant_empresa()
+        if empresa:
+            data['empresa_id'] = empresa.id
         return data
 
 
@@ -241,9 +242,9 @@ class InvestigacionATELSerializer(serializers.ModelSerializer):
                 'Debe relacionar exactamente un evento (AT, EL o Incidente)'
             )
 
-        request = self.context.get('request')
-        if request and hasattr(request.user, 'empresa_id'):
-            data['empresa_id'] = request.user.empresa_id
+        empresa = get_tenant_empresa()
+        if empresa:
+            data['empresa_id'] = empresa.id
 
         return data
 
@@ -267,9 +268,9 @@ class LeccionAprendidaSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, data):
-        request = self.context.get('request')
-        if request and hasattr(request.user, 'empresa_id'):
-            data['empresa_id'] = request.user.empresa_id
+        empresa = get_tenant_empresa()
+        if empresa:
+            data['empresa_id'] = empresa.id
         return data
 
 
@@ -305,9 +306,9 @@ class AccionPlanSerializer(serializers.ModelSerializer):
         return obj.fecha_compromiso < date.today()
 
     def validate(self, data):
-        request = self.context.get('request')
-        if request and hasattr(request.user, 'empresa_id'):
-            data['empresa_id'] = request.user.empresa_id
+        empresa = get_tenant_empresa()
+        if empresa:
+            data['empresa_id'] = empresa.id
         return data
 
 
@@ -369,9 +370,9 @@ class PlanAccionATELSerializer(serializers.ModelSerializer):
         return obj.fecha_compromiso < date.today()
 
     def validate(self, data):
-        request = self.context.get('request')
-        if request and hasattr(request.user, 'empresa_id'):
-            data['empresa_id'] = request.user.empresa_id
+        empresa = get_tenant_empresa()
+        if empresa:
+            data['empresa_id'] = empresa.id
         return data
 
 

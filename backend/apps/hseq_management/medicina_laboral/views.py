@@ -109,12 +109,8 @@ class ExamenMedicoViewSet(viewsets.ModelViewSet):
         return ExamenMedicoSerializer
 
     def get_queryset(self):
-        """Filtrar por empresa del usuario (multi-tenant)"""
-        queryset = super().get_queryset()
-        # TODO: Implementar filtro por empresa según usuario autenticado
-        # empresa_id = self.request.user.empresa_id
-        # queryset = queryset.filter(empresa_id=empresa_id)
-        return queryset
+        """Multi-tenant: schema isolation handles filtering"""
+        return super().get_queryset()
 
     @action(detail=False, methods=['get'])
     def por_colaborador(self, request):

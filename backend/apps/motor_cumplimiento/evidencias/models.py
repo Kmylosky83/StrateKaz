@@ -34,11 +34,12 @@ class Evidencia(models.Model):
 
     Ejemplo de uso desde cualquier módulo:
         from apps.motor_cumplimiento.evidencias.services import EvidenciaService
+        from apps.core.base_models.mixins import get_tenant_empresa
         EvidenciaService.registrar_evidencia(
             archivo=request.FILES['archivo'],
             entidad=no_conformidad,
             usuario=request.user,
-            empresa_id=request.user.empresa_id,
+            empresa_id=get_tenant_empresa().id,
             titulo='Foto evidencia NC-2024-001',
             categoria='FOTOGRAFICA',
             normas_relacionadas=['ISO_9001'],

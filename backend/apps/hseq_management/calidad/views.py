@@ -11,6 +11,7 @@ from django.utils import timezone
 from django.db.models import Q, Count, Avg
 from datetime import timedelta
 from apps.core.mixins import ExportMixin
+from apps.core.base_models.mixins import get_tenant_empresa
 
 
 class StandardResultsSetPagination(PageNumberPagination):
@@ -55,8 +56,7 @@ class NoConformidadViewSet(ExportMixin, viewsets.ModelViewSet):
     ordering = ['-fecha_deteccion']
 
     def get_queryset(self):
-        empresa_id = self.request.user.empresa_id
-        queryset = NoConformidad.objects.filter(empresa_id=empresa_id)
+        queryset = NoConformidad.objects.all()
 
         estado = self.request.query_params.get('estado', None)
         if estado:
@@ -85,17 +85,17 @@ class NoConformidadViewSet(ExportMixin, viewsets.ModelViewSet):
         return NoConformidadListSerializer
 
     def perform_create(self, serializer):
-        empresa_id = self.request.user.empresa_id
+        empresa = get_tenant_empresa()
         year = timezone.now().year
 
         last_nc = NoConformidad.objects.filter(
-            empresa_id=empresa_id, codigo__startswith=f'NC-{year}-'
+            codigo__startswith=f'NC-{year}-'
         ).order_by('-codigo').first()
 
         new_num = int(last_nc.codigo.split('-')[-1]) + 1 if last_nc else 1
         codigo = f'NC-{year}-{new_num:04d}'
 
-        serializer.save(empresa_id=empresa_id, created_by=self.request.user, codigo=codigo)
+        serializer.save(empresa=empresa, created_by=self.request.user, codigo=codigo)
 
     @action(detail=True, methods=['post'], url_path='asignar-responsable')
     def asignar_responsable(self, request, pk=None):
@@ -114,7 +114,7 @@ class NoConformidadViewSet(ExportMixin, viewsets.ModelViewSet):
         User = get_user_model()
 
         try:
-            responsable = User.objects.get(id=responsable_id, empresa_id=request.user.empresa_id)
+            responsable = User.objects.get(id=responsable_id)
         except User.DoesNotExist:
             return Response({'error': 'Usuario no encontrado'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -180,20 +180,17 @@ class NoConformidadViewSet(ExportMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def estadisticas(self, request):
         """Estadísticas de No Conformidades"""
-        empresa_id = request.user.empresa_id
-
-        por_estado = NoConformidad.objects.filter(empresa_id=empresa_id).values('estado').annotate(total=Count('id'))
-        por_origen = NoConformidad.objects.filter(empresa_id=empresa_id).values('origen').annotate(total=Count('id'))
-        por_severidad = NoConformidad.objects.filter(empresa_id=empresa_id).values('severidad').annotate(total=Count('id'))
+        por_estado = NoConformidad.objects.values('estado').annotate(total=Count('id'))
+        por_origen = NoConformidad.objects.values('origen').annotate(total=Count('id'))
+        por_severidad = NoConformidad.objects.values('severidad').annotate(total=Count('id'))
 
         vencidas = NoConformidad.objects.filter(
-            empresa_id=empresa_id,
             estado__in=['ABIERTA', 'EN_ANALISIS', 'EN_TRATAMIENTO'],
             fecha_deteccion__lt=timezone.now().date() - timedelta(days=30)
         ).count()
 
         cerradas = NoConformidad.objects.filter(
-            empresa_id=empresa_id, estado='CERRADA', fecha_cierre__isnull=False
+            estado='CERRADA', fecha_cierre__isnull=False
         )
 
         dias_promedio = 0
@@ -207,7 +204,7 @@ class NoConformidadViewSet(ExportMixin, viewsets.ModelViewSet):
             'por_severidad': list(por_severidad),
             'vencidas': vencidas,
             'dias_promedio_cierre': round(dias_promedio, 1),
-            'total': NoConformidad.objects.filter(empresa_id=empresa_id).count()
+            'total': NoConformidad.objects.count()
         })
 
 
@@ -225,8 +222,7 @@ class AccionCorrectivaViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha_planificada']
 
     def get_queryset(self):
-        empresa_id = self.request.user.empresa_id
-        queryset = AccionCorrectiva.objects.filter(empresa_id=empresa_id)
+        queryset = AccionCorrectiva.objects.all()
 
         nc_id = self.request.query_params.get('no_conformidad', None)
         if nc_id:
@@ -246,19 +242,19 @@ class AccionCorrectivaViewSet(viewsets.ModelViewSet):
         return AccionCorrectivaListSerializer
 
     def perform_create(self, serializer):
-        empresa_id = self.request.user.empresa_id
+        empresa = get_tenant_empresa()
         year = timezone.now().year
         tipo = serializer.validated_data.get('tipo')
         prefix = 'AC' if tipo == 'CORRECTIVA' else 'AP' if tipo == 'PREVENTIVA' else 'AM'
 
         last_accion = AccionCorrectiva.objects.filter(
-            empresa_id=empresa_id, codigo__startswith=f'{prefix}-{year}-'
+            codigo__startswith=f'{prefix}-{year}-'
         ).order_by('-codigo').first()
 
         new_num = int(last_accion.codigo.split('-')[-1]) + 1 if last_accion else 1
         codigo = f'{prefix}-{year}-{new_num:04d}'
 
-        serializer.save(empresa_id=empresa_id, created_by=self.request.user, codigo=codigo)
+        serializer.save(empresa=empresa, created_by=self.request.user, codigo=codigo)
 
     @action(detail=True, methods=['post'])
     def ejecutar(self, request, pk=None):
@@ -325,8 +321,7 @@ class SalidaNoConformeViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha_deteccion']
 
     def get_queryset(self):
-        empresa_id = self.request.user.empresa_id
-        return SalidaNoConforme.objects.filter(empresa_id=empresa_id).select_related(
+        return SalidaNoConforme.objects.select_related(
             'detectado_por', 'responsable_evaluacion', 'responsable_disposicion', 'no_conformidad'
         )
 
@@ -336,17 +331,17 @@ class SalidaNoConformeViewSet(viewsets.ModelViewSet):
         return SalidaNoConformeListSerializer
 
     def perform_create(self, serializer):
-        empresa_id = self.request.user.empresa_id
+        empresa = get_tenant_empresa()
         year = timezone.now().year
 
         last_snc = SalidaNoConforme.objects.filter(
-            empresa_id=empresa_id, codigo__startswith=f'SNC-{year}-'
+            codigo__startswith=f'SNC-{year}-'
         ).order_by('-codigo').first()
 
         new_num = int(last_snc.codigo.split('-')[-1]) + 1 if last_snc else 1
         codigo = f'SNC-{year}-{new_num:04d}'
 
-        serializer.save(empresa_id=empresa_id, created_by=self.request.user, codigo=codigo)
+        serializer.save(empresa=empresa, created_by=self.request.user, codigo=codigo)
 
     @action(detail=True, methods=['post'], url_path='definir-disposicion')
     def definir_disposicion(self, request, pk=None):
@@ -402,8 +397,7 @@ class SolicitudCambioViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha_solicitud']
 
     def get_queryset(self):
-        empresa_id = self.request.user.empresa_id
-        return SolicitudCambio.objects.filter(empresa_id=empresa_id).select_related(
+        return SolicitudCambio.objects.select_related(
             'solicitante', 'revisado_por', 'aprobado_por', 'responsable_implementacion'
         )
 
@@ -413,18 +407,18 @@ class SolicitudCambioViewSet(viewsets.ModelViewSet):
         return SolicitudCambioListSerializer
 
     def perform_create(self, serializer):
-        empresa_id = self.request.user.empresa_id
+        empresa = get_tenant_empresa()
         year = timezone.now().year
 
         last_sc = SolicitudCambio.objects.filter(
-            empresa_id=empresa_id, codigo__startswith=f'SC-{year}-'
+            codigo__startswith=f'SC-{year}-'
         ).order_by('-codigo').first()
 
         new_num = int(last_sc.codigo.split('-')[-1]) + 1 if last_sc else 1
         codigo = f'SC-{year}-{new_num:04d}'
 
         serializer.save(
-            empresa_id=empresa_id,
+            empresa=empresa,
             created_by=self.request.user,
             solicitante=self.request.user,
             codigo=codigo
@@ -483,8 +477,7 @@ class ControlCambioViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha_fin_implementacion']
 
     def get_queryset(self):
-        empresa_id = self.request.user.empresa_id
-        return ControlCambio.objects.filter(empresa_id=empresa_id).select_related('solicitud_cambio')
+        return ControlCambio.objects.select_related('solicitud_cambio')
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -492,5 +485,5 @@ class ControlCambioViewSet(viewsets.ModelViewSet):
         return ControlCambioListSerializer
 
     def perform_create(self, serializer):
-        empresa_id = self.request.user.empresa_id
-        serializer.save(empresa_id=empresa_id, created_by=self.request.user)
+        empresa = get_tenant_empresa()
+        serializer.save(empresa=empresa, created_by=self.request.user)

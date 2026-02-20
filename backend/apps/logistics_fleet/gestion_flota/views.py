@@ -25,6 +25,7 @@ from .serializers import (
     CostoOperacionSerializer, CostoOperacionListSerializer,
     VerificacionTerceroSerializer, VerificacionListSerializer
 )
+from apps.core.base_models.mixins import get_tenant_empresa
 
 
 # ==============================================================================
@@ -99,17 +100,10 @@ class VehiculoViewSet(viewsets.ModelViewSet):
             return VehiculoListSerializer
         return super().get_serializer_class()
 
-    def get_queryset(self):
-        """Filtra por empresa del usuario."""
-        queryset = super().get_queryset()
-        if self.request.user.empresa:
-            queryset = queryset.filter(empresa=self.request.user.empresa)
-        return queryset
-
     def perform_create(self, serializer):
         """Asigna empresa y usuario al crear."""
         serializer.save(
-            empresa=self.request.user.empresa,
+            empresa=get_tenant_empresa(),
             created_by=self.request.user
         )
 
@@ -210,7 +204,7 @@ class VehiculoViewSet(viewsets.ModelViewSet):
         fecha_limite = timezone.now().date() + timedelta(days=dias)
 
         mantenimientos = MantenimientoVehiculo.objects.filter(
-            vehiculo__empresa=self.request.user.empresa,
+            vehiculo__empresa=get_tenant_empresa(),
             vehiculo__is_active=True,
             estado__in=['PROGRAMADO', 'EN_EJECUCION'],
             fecha_programada__lte=fecha_limite
@@ -254,14 +248,14 @@ class VehiculoViewSet(viewsets.ModelViewSet):
 
         # Mantenimientos pendientes
         mantenimientos_pendientes = MantenimientoVehiculo.objects.filter(
-            vehiculo__empresa=self.request.user.empresa,
+            vehiculo__empresa=get_tenant_empresa(),
             vehiculo__is_active=True,
             estado__in=['PROGRAMADO', 'EN_EJECUCION']
         ).count()
 
         # Mantenimientos vencidos
         mantenimientos_vencidos = MantenimientoVehiculo.objects.filter(
-            vehiculo__empresa=self.request.user.empresa,
+            vehiculo__empresa=get_tenant_empresa(),
             vehiculo__is_active=True,
             estado='PROGRAMADO',
             fecha_programada__lt=hoy
@@ -284,7 +278,7 @@ class VehiculoViewSet(viewsets.ModelViewSet):
         # Costos del mes
         primer_dia_mes = timezone.now().date().replace(day=1)
         costos_mes = CostoOperacion.objects.filter(
-            vehiculo__empresa=self.request.user.empresa,
+            vehiculo__empresa=get_tenant_empresa(),
             fecha__gte=primer_dia_mes,
             is_active=True
         ).aggregate(
@@ -295,13 +289,13 @@ class VehiculoViewSet(viewsets.ModelViewSet):
 
         # Verificaciones PESV pendientes
         verificaciones_hoy = VerificacionTercero.objects.filter(
-            vehiculo__empresa=self.request.user.empresa,
+            vehiculo__empresa=get_tenant_empresa(),
             fecha__date=hoy,
             is_active=True
         ).count()
 
         verificaciones_rechazadas = VerificacionTercero.objects.filter(
-            vehiculo__empresa=self.request.user.empresa,
+            vehiculo__empresa=get_tenant_empresa(),
             resultado='RECHAZADO',
             fecha__date__gte=hoy - timedelta(days=7),
             is_active=True
@@ -357,16 +351,9 @@ class DocumentoVehiculoViewSet(viewsets.ModelViewSet):
     ordering_fields = ['fecha_vencimiento', 'created_at']
     ordering = ['-fecha_vencimiento']
 
-    def get_queryset(self):
-        """Filtra por empresa."""
-        queryset = super().get_queryset()
-        if self.request.user.empresa:
-            queryset = queryset.filter(empresa=self.request.user.empresa)
-        return queryset
-
     def perform_create(self, serializer):
         serializer.save(
-            empresa=self.request.user.empresa,
+            empresa=get_tenant_empresa(),
             created_by=self.request.user
         )
 
@@ -385,16 +372,9 @@ class HojaVidaVehiculoViewSet(viewsets.ModelViewSet):
     ordering_fields = ['fecha', 'created_at']
     ordering = ['-fecha', '-created_at']
 
-    def get_queryset(self):
-        """Filtra por empresa."""
-        queryset = super().get_queryset()
-        if self.request.user.empresa:
-            queryset = queryset.filter(empresa=self.request.user.empresa)
-        return queryset
-
     def perform_create(self, serializer):
         serializer.save(
-            empresa=self.request.user.empresa,
+            empresa=get_tenant_empresa(),
             created_by=self.request.user,
             registrado_por=self.request.user
         )
@@ -423,16 +403,9 @@ class MantenimientoVehiculoViewSet(viewsets.ModelViewSet):
             return MantenimientoListSerializer
         return super().get_serializer_class()
 
-    def get_queryset(self):
-        """Filtra por empresa."""
-        queryset = super().get_queryset()
-        if self.request.user.empresa:
-            queryset = queryset.filter(empresa=self.request.user.empresa)
-        return queryset
-
     def perform_create(self, serializer):
         serializer.save(
-            empresa=self.request.user.empresa,
+            empresa=get_tenant_empresa(),
             created_by=self.request.user
         )
 
@@ -463,16 +436,9 @@ class CostoOperacionViewSet(viewsets.ModelViewSet):
             return CostoOperacionListSerializer
         return super().get_serializer_class()
 
-    def get_queryset(self):
-        """Filtra por empresa."""
-        queryset = super().get_queryset()
-        if self.request.user.empresa:
-            queryset = queryset.filter(empresa=self.request.user.empresa)
-        return queryset
-
     def perform_create(self, serializer):
         serializer.save(
-            empresa=self.request.user.empresa,
+            empresa=get_tenant_empresa(),
             created_by=self.request.user,
             registrado_por=self.request.user
         )
@@ -505,16 +471,9 @@ class VerificacionTerceroViewSet(viewsets.ModelViewSet):
             return VerificacionListSerializer
         return super().get_serializer_class()
 
-    def get_queryset(self):
-        """Filtra por empresa."""
-        queryset = super().get_queryset()
-        if self.request.user.empresa:
-            queryset = queryset.filter(empresa=self.request.user.empresa)
-        return queryset
-
     def perform_create(self, serializer):
         serializer.save(
-            empresa=self.request.user.empresa,
+            empresa=get_tenant_empresa(),
             created_by=self.request.user
         )
 
@@ -531,14 +490,14 @@ class VerificacionTerceroViewSet(viewsets.ModelViewSet):
 
         # Obtener vehículos activos
         vehiculos_activos = Vehiculo.objects.filter(
-            empresa=request.user.empresa,
+            empresa=get_tenant_empresa(),
             is_active=True,
             estado__disponible_para_ruta=True
         )
 
         # Obtener vehículos que ya tienen verificación hoy
         con_verificacion = VerificacionTercero.objects.filter(
-            empresa=request.user.empresa,
+            empresa=get_tenant_empresa(),
             fecha__date=hoy,
             tipo='PREOPERACIONAL_DIARIA',
             is_active=True

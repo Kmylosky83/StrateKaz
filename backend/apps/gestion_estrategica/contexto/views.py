@@ -1159,9 +1159,10 @@ class ParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
                         tipo = TipoParteInteresada.objects.filter(grupo=grupo).first()
 
                     # Crear o actualizar parte interesada
+                    from apps.core.base_models.mixins import get_tenant_empresa
                     parte, created = ParteInteresada.objects.update_or_create(
                         nombre=nombre,
-                        empresa=request.user.empresa if hasattr(request.user, 'empresa') else None,
+                        empresa=get_tenant_empresa(),
                         defaults={
                             'tipo': tipo,
                             'descripcion': descripcion or '',

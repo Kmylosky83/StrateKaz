@@ -80,7 +80,6 @@ class ConfiguracionFlujoFirmaViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return ConfiguracionFlujoFirma.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).prefetch_related('nodos', 'nodos__cargo')
 
@@ -144,7 +143,6 @@ class FlowNodeViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return FlowNode.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).select_related('configuracion_flujo', 'cargo')
 
@@ -880,7 +878,6 @@ class ConfiguracionRevisionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return ConfiguracionRevision.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).select_related('responsable_revision', 'responsable_escalamiento', 'flujo_firma_renovacion')
 
@@ -1015,7 +1012,6 @@ class HistorialVersionViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         return HistorialVersion.objects.filter(
-            empresa=self.request.user.empresa,
             is_active=True
         ).select_related('usuario_version').prefetch_related('firmas')
 

@@ -17,6 +17,7 @@ from django.utils import timezone
 from datetime import datetime, timedelta
 from decimal import Decimal
 
+from apps.core.base_models.mixins import get_tenant_empresa
 from apps.supply_chain.catalogos.models import UnidadMedida
 from .models import (
     TipoMovimientoInventario,
@@ -426,8 +427,9 @@ class MovimientoInventarioViewSet(viewsets.ModelViewSet):
         data = serializer.validated_data
         tipo = data['tipo_movimiento']
 
+        empresa = get_tenant_empresa()
         movimiento = MovimientoInventario.objects.create(
-            empresa_id=request.user.empresa_id,
+            empresa=empresa,
             tipo_movimiento=tipo,
             almacen_origen=data.get('almacen_origen'),
             almacen_destino=data.get('almacen_destino'),

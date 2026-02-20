@@ -20,6 +20,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django.contrib.contenttypes.models import ContentType
 
+from apps.core.base_models.mixins import get_tenant_empresa
 from .models import Evidencia, HistorialEvidencia
 from .serializers import (
     EvidenciaListSerializer,
@@ -49,12 +50,9 @@ class EvidenciaViewSet(viewsets.ModelViewSet):
     ordering = ['-created_at']
 
     def get_queryset(self):
-        empresa_id = getattr(self.request.user, 'empresa_id', None)
-        if not empresa_id:
-            return Evidencia.objects.none()
-        qs = Evidencia.objects.filter(
-            empresa_id=empresa_id
-        ).select_related('subido_por', 'aprobado_por', 'content_type')
+        qs = Evidencia.objects.select_related(
+            'subido_por', 'aprobado_por', 'content_type'
+        )
 
         # Filtro por norma
         norma = self.request.query_params.get('norma')
@@ -104,12 +102,7 @@ class EvidenciaViewSet(viewsets.ModelViewSet):
         app_label, model_name = data['entity_type'].split('.')
         ct = ContentType.objects.get_by_natural_key(app_label, model_name)
 
-        empresa_id = getattr(request.user, 'empresa_id', None)
-        if not empresa_id:
-            return Response(
-                {'error': 'Usuario no tiene empresa asignada'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        empresa = get_tenant_empresa()
 
         # Verificar que la entidad existe
         ModelClass = ct.model_class()
@@ -121,7 +114,7 @@ class EvidenciaViewSet(viewsets.ModelViewSet):
                 )
 
         evidencia = Evidencia.objects.create(
-            empresa_id=empresa_id,
+            empresa=empresa,
             content_type=ct,
             object_id=data['entity_id'],
             archivo=archivo,
@@ -139,7 +132,7 @@ class EvidenciaViewSet(viewsets.ModelViewSet):
 
         HistorialEvidencia.objects.create(
             evidencia=evidencia,
-            empresa_id=empresa_id,
+            empresa=empresa,
             accion='CREADA',
             usuario=request.user,
             comentario=f'Evidencia subida: {archivo.name}',
@@ -163,11 +156,11 @@ class EvidenciaViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        empresa_id = getattr(request.user, 'empresa_id', None)
+        empresa = get_tenant_empresa()
         evidencia = EvidenciaService.aprobar_evidencia(
             evidencia_id=evidencia.id,
             usuario=request.user,
-            empresa_id=empresa_id,
+            empresa_id=empresa.id if empresa else None,
         )
         return Response(EvidenciaListSerializer(evidencia).data)
 
@@ -185,11 +178,11 @@ class EvidenciaViewSet(viewsets.ModelViewSet):
         serializer = RechazarEvidenciaSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        empresa_id = getattr(request.user, 'empresa_id', None)
+        empresa = get_tenant_empresa()
         evidencia = EvidenciaService.rechazar_evidencia(
             evidencia_id=evidencia.id,
             usuario=request.user,
-            empresa_id=empresa_id,
+            empresa_id=empresa.id if empresa else None,
             motivo=serializer.validated_data['motivo'],
         )
         return Response(EvidenciaListSerializer(evidencia).data)
@@ -205,11 +198,11 @@ class EvidenciaViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        empresa_id = getattr(request.user, 'empresa_id', None)
+        empresa = get_tenant_empresa()
         evidencia = EvidenciaService.archivar_evidencia(
             evidencia_id=evidencia.id,
             usuario=request.user,
-            empresa_id=empresa_id,
+            empresa_id=empresa.id if empresa else None,
         )
         return Response(EvidenciaListSerializer(evidencia).data)
 
@@ -238,13 +231,13 @@ class EvidenciaViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        empresa_id = getattr(request.user, 'empresa_id', None)
+        empresa = get_tenant_empresa()
         try:
             evidencias = EvidenciaService.obtener_evidencias_por_content_type(
                 app_label=parts[0],
                 model_name=parts[1],
                 object_id=int(entity_id),
-                empresa_id=empresa_id,
+                empresa_id=empresa.id if empresa else None,
             )
         except ContentType.DoesNotExist:
             return Response(
@@ -262,9 +255,11 @@ class EvidenciaViewSet(viewsets.ModelViewSet):
 
         Dashboard de evidencias: totales por estado y categoría.
         """
-        empresa_id = getattr(request.user, 'empresa_id', None)
+        empresa = get_tenant_empresa()
         norma = request.query_params.get('norma')
-        data = EvidenciaService.obtener_resumen(empresa_id, norma=norma)
+        data = EvidenciaService.obtener_resumen(
+            empresa_id=empresa.id if empresa else None, norma=norma
+        )
         return Response(data)
 
     @action(detail=False, methods=['get'])

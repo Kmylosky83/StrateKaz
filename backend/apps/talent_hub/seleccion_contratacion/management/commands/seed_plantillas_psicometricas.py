@@ -25,7 +25,7 @@ DISC_CAMPOS = [
     # Dominancia (D) - preguntas 1-5
     {
         'nombre_campo': 'd1',
-        'etiqueta': 'Me siento comodo tomando decisiones rapidas y asumiendo el control',
+        'etiqueta': 'Me siento cómodo tomando decisiones rápidas y asumiendo el control',
         'tipo_campo': 'NUMBER',
         'descripcion': '1 = Totalmente en desacuerdo, 5 = Totalmente de acuerdo',
         'es_obligatorio': True,
@@ -43,7 +43,7 @@ DISC_CAMPOS = [
     },
     {
         'nombre_campo': 'd3',
-        'etiqueta': 'Me gusta enfrentar desafios y superar obstaculos',
+        'etiqueta': 'Me gusta enfrentar desafíos y superar obstáculos',
         'tipo_campo': 'NUMBER',
         'descripcion': '1 = Totalmente en desacuerdo, 5 = Totalmente de acuerdo',
         'es_obligatorio': True,
@@ -52,7 +52,7 @@ DISC_CAMPOS = [
     },
     {
         'nombre_campo': 'd4',
-        'etiqueta': 'Soy directo y franco al comunicarme con los demas',
+        'etiqueta': 'Soy directo y franco al comunicarme con los demás',
         'tipo_campo': 'NUMBER',
         'descripcion': '1 = Totalmente en desacuerdo, 5 = Totalmente de acuerdo',
         'es_obligatorio': True,
@@ -89,7 +89,7 @@ DISC_CAMPOS = [
     },
     {
         'nombre_campo': 'i3',
-        'etiqueta': 'Me resulta facil iniciar conversaciones con desconocidos',
+        'etiqueta': 'Me resulta fácil iniciar conversaciones con desconocidos',
         'tipo_campo': 'NUMBER',
         'descripcion': '1 = Totalmente en desacuerdo, 5 = Totalmente de acuerdo',
         'es_obligatorio': True,
@@ -107,7 +107,7 @@ DISC_CAMPOS = [
     },
     {
         'nombre_campo': 'i5',
-        'etiqueta': 'Me importa ser aceptado y reconocido por los demas',
+        'etiqueta': 'Me importa ser aceptado y reconocido por los demás',
         'tipo_campo': 'NUMBER',
         'descripcion': '1 = Totalmente en desacuerdo, 5 = Totalmente de acuerdo',
         'es_obligatorio': True,
@@ -153,7 +153,7 @@ DISC_CAMPOS = [
     },
     {
         'nombre_campo': 's5',
-        'etiqueta': 'Evito los conflictos y busco la armonia en el equipo',
+        'etiqueta': 'Evito los conflictos y busco la armonía en el equipo',
         'tipo_campo': 'NUMBER',
         'descripcion': '1 = Totalmente en desacuerdo, 5 = Totalmente de acuerdo',
         'es_obligatorio': True,
@@ -163,7 +163,7 @@ DISC_CAMPOS = [
     # Cumplimiento (C) - preguntas 16-20
     {
         'nombre_campo': 'c1',
-        'etiqueta': 'Soy detallista y me preocupo por la precision',
+        'etiqueta': 'Soy detallista y me preocupo por la precisión',
         'tipo_campo': 'NUMBER',
         'descripcion': '1 = Totalmente en desacuerdo, 5 = Totalmente de acuerdo',
         'es_obligatorio': True,
@@ -181,7 +181,7 @@ DISC_CAMPOS = [
     },
     {
         'nombre_campo': 'c3',
-        'etiqueta': 'Analizo la informacion a fondo antes de tomar decisiones',
+        'etiqueta': 'Analizo la información a fondo antes de tomar decisiones',
         'tipo_campo': 'NUMBER',
         'descripcion': '1 = Totalmente en desacuerdo, 5 = Totalmente de acuerdo',
         'es_obligatorio': True,
@@ -190,7 +190,7 @@ DISC_CAMPOS = [
     },
     {
         'nombre_campo': 'c4',
-        'etiqueta': 'La calidad de mi trabajo es mas importante que la velocidad',
+        'etiqueta': 'La calidad de mi trabajo es más importante que la velocidad',
         'tipo_campo': 'NUMBER',
         'descripcion': '1 = Totalmente en desacuerdo, 5 = Totalmente de acuerdo',
         'es_obligatorio': True,
@@ -199,7 +199,7 @@ DISC_CAMPOS = [
     },
     {
         'nombre_campo': 'c5',
-        'etiqueta': 'Me siento incomodo cuando las cosas no estan bien organizadas',
+        'etiqueta': 'Me siento incómodo cuando las cosas no están bien organizadas',
         'tipo_campo': 'NUMBER',
         'descripcion': '1 = Totalmente en desacuerdo, 5 = Totalmente de acuerdo',
         'es_obligatorio': True,
@@ -220,7 +220,7 @@ DISC_SCORING_CONFIG = {
         },
         'I': {
             'nombre': 'Influencia',
-            'descripcion': 'Comunicacion, persuasion, optimismo, trabajo en equipo',
+            'descripcion': 'Comunicación, persuasión, optimismo, trabajo en equipo',
             'campos': ['i1', 'i2', 'i3', 'i4', 'i5'],
             'color': '#F59E0B',
         },
@@ -232,7 +232,7 @@ DISC_SCORING_CONFIG = {
         },
         'C': {
             'nombre': 'Cumplimiento',
-            'descripcion': 'Precision, analisis, cumplimiento de reglas, calidad',
+            'descripcion': 'Precisión, análisis, cumplimiento de reglas, calidad',
             'campos': ['c1', 'c2', 'c3', 'c4', 'c5'],
             'color': '#3B82F6',
         },
@@ -261,7 +261,7 @@ BIG_FIVE_CAMPOS = [
     },
     {
         'nombre_campo': 'o2',
-        'etiqueta': 'Tengo una imaginacion muy activa',
+        'etiqueta': 'Tengo una imaginación muy activa',
         'tipo_campo': 'NUMBER',
         'descripcion': '1 = Totalmente en desacuerdo, 5 = Totalmente de acuerdo',
         'es_obligatorio': True,
@@ -270,7 +270,7 @@ BIG_FIVE_CAMPOS = [
     },
     {
         'nombre_campo': 'o3',
-        'etiqueta': 'Me interesan temas de arte, cultura o filosofia',
+        'etiqueta': 'Me interesan temas de arte, cultura o filosofía',
         'tipo_campo': 'NUMBER',
         'descripcion': '1 = Totalmente en desacuerdo, 5 = Totalmente de acuerdo',
         'es_obligatorio': True,
@@ -316,7 +316,7 @@ BIG_FIVE_CAMPOS = [
     },
     {
         'nombre_campo': 'co3',
-        'etiqueta': 'Planifico con anticipacion y sigo un plan de trabajo',
+        'etiqueta': 'Planifico con anticipación y sigo un plan de trabajo',
         'tipo_campo': 'NUMBER',
         'descripcion': '1 = Totalmente en desacuerdo, 5 = Totalmente de acuerdo',
         'es_obligatorio': True,
@@ -325,7 +325,7 @@ BIG_FIVE_CAMPOS = [
     },
     {
         'nombre_campo': 'co4',
-        'etiqueta': 'Presto atencion a los detalles en mi trabajo',
+        'etiqueta': 'Presto atención a los detalles en mi trabajo',
         'tipo_campo': 'NUMBER',
         'descripcion': '1 = Totalmente en desacuerdo, 5 = Totalmente de acuerdo',
         'es_obligatorio': True,
@@ -362,7 +362,7 @@ BIG_FIVE_CAMPOS = [
     },
     {
         'nombre_campo': 'e3',
-        'etiqueta': 'Me gusta ser el centro de atencion en reuniones sociales',
+        'etiqueta': 'Me gusta ser el centro de atención en reuniones sociales',
         'tipo_campo': 'NUMBER',
         'descripcion': '1 = Totalmente en desacuerdo, 5 = Totalmente de acuerdo',
         'es_obligatorio': True,
@@ -380,7 +380,7 @@ BIG_FIVE_CAMPOS = [
     },
     {
         'nombre_campo': 'e5',
-        'etiqueta': 'Tengo un alto nivel de energia y actividad',
+        'etiqueta': 'Tengo un alto nivel de energía y actividad',
         'tipo_campo': 'NUMBER',
         'descripcion': '1 = Totalmente en desacuerdo, 5 = Totalmente de acuerdo',
         'es_obligatorio': True,
@@ -390,7 +390,7 @@ BIG_FIVE_CAMPOS = [
     # Amabilidad / Agreeableness (A) - preguntas 16-20
     {
         'nombre_campo': 'a1',
-        'etiqueta': 'Me preocupo por el bienestar de los demas',
+        'etiqueta': 'Me preocupo por el bienestar de los demás',
         'tipo_campo': 'NUMBER',
         'descripcion': '1 = Totalmente en desacuerdo, 5 = Totalmente de acuerdo',
         'es_obligatorio': True,
@@ -399,7 +399,7 @@ BIG_FIVE_CAMPOS = [
     },
     {
         'nombre_campo': 'a2',
-        'etiqueta': 'Soy cooperativo y dispuesto a ayudar a los companieros',
+        'etiqueta': 'Soy cooperativo y dispuesto a ayudar a los compañeros',
         'tipo_campo': 'NUMBER',
         'descripcion': '1 = Totalmente en desacuerdo, 5 = Totalmente de acuerdo',
         'es_obligatorio': True,
@@ -408,7 +408,7 @@ BIG_FIVE_CAMPOS = [
     },
     {
         'nombre_campo': 'a3',
-        'etiqueta': 'Confio en las buenas intenciones de las personas',
+        'etiqueta': 'Confío en las buenas intenciones de las personas',
         'tipo_campo': 'NUMBER',
         'descripcion': '1 = Totalmente en desacuerdo, 5 = Totalmente de acuerdo',
         'es_obligatorio': True,
@@ -426,7 +426,7 @@ BIG_FIVE_CAMPOS = [
     },
     {
         'nombre_campo': 'a5',
-        'etiqueta': 'Me resulta facil perdonar y olvidar',
+        'etiqueta': 'Me resulta fácil perdonar y olvidar',
         'tipo_campo': 'NUMBER',
         'descripcion': '1 = Totalmente en desacuerdo, 5 = Totalmente de acuerdo',
         'es_obligatorio': True,
@@ -436,7 +436,7 @@ BIG_FIVE_CAMPOS = [
     # Neuroticismo / Neuroticism (N) - preguntas 21-25
     {
         'nombre_campo': 'n1',
-        'etiqueta': 'Me estreso con facilidad ante situaciones dificiles',
+        'etiqueta': 'Me estreso con facilidad ante situaciones difíciles',
         'tipo_campo': 'NUMBER',
         'descripcion': '1 = Totalmente en desacuerdo, 5 = Totalmente de acuerdo',
         'es_obligatorio': True,
@@ -445,7 +445,7 @@ BIG_FIVE_CAMPOS = [
     },
     {
         'nombre_campo': 'n2',
-        'etiqueta': 'Mis emociones cambian con frecuencia durante el dia',
+        'etiqueta': 'Mis emociones cambian con frecuencia durante el día',
         'tipo_campo': 'NUMBER',
         'descripcion': '1 = Totalmente en desacuerdo, 5 = Totalmente de acuerdo',
         'es_obligatorio': True,
@@ -454,7 +454,7 @@ BIG_FIVE_CAMPOS = [
     },
     {
         'nombre_campo': 'n3',
-        'etiqueta': 'Me preocupo excesivamente por cosas que podrian salir mal',
+        'etiqueta': 'Me preocupo excesivamente por cosas que podrían salir mal',
         'tipo_campo': 'NUMBER',
         'descripcion': '1 = Totalmente en desacuerdo, 5 = Totalmente de acuerdo',
         'es_obligatorio': True,
@@ -493,7 +493,7 @@ BIG_FIVE_SCORING_CONFIG = {
         },
         'C': {
             'nombre': 'Responsabilidad',
-            'descripcion': 'Organizacion, disciplina, orientacion al logro',
+            'descripcion': 'Organización, disciplina, orientación al logro',
             'campos': ['co1', 'co2', 'co3', 'co4', 'co5'],
             'color': '#3B82F6',
         },
@@ -505,13 +505,13 @@ BIG_FIVE_SCORING_CONFIG = {
         },
         'A': {
             'nombre': 'Amabilidad',
-            'descripcion': 'Cooperacion, confianza, empatia, altruismo',
+            'descripcion': 'Cooperación, confianza, empatía, altruismo',
             'campos': ['a1', 'a2', 'a3', 'a4', 'a5'],
             'color': '#10B981',
         },
         'N': {
             'nombre': 'Neuroticismo',
-            'descripcion': 'Estabilidad emocional, manejo del estres, ansiedad',
+            'descripcion': 'Estabilidad emocional, manejo del estrés, ansiedad',
             'campos': ['n1', 'n2', 'n3', 'n4', 'n5'],
             'color': '#EF4444',
         },
@@ -545,7 +545,7 @@ class Command(BaseCommand):
         try:
             empresa = EmpresaConfig.objects.first()
         except Exception:
-            self.stderr.write(self.style.ERROR('No se encontro EmpresaConfig.'))
+            self.stderr.write(self.style.ERROR('No se encontró EmpresaConfig.'))
             return
 
         if not empresa:
@@ -561,14 +561,14 @@ class Command(BaseCommand):
                 nombre='Test DISC',
                 defaults={
                     'descripcion': (
-                        'Evaluacion del perfil de comportamiento DISC. '
+                        'Evaluación del perfil de comportamiento DISC. '
                         'Mide 4 dimensiones: Dominancia (D), Influencia (I), '
                         'Estabilidad (S) y Cumplimiento (C). '
                         'Responda cada pregunta en escala de 1 a 5.'
                     ),
                     'instrucciones': (
-                        'Lea cada afirmacion y seleccione un valor del 1 al 5 segun '
-                        'que tan identificado se siente:\n\n'
+                        'Lea cada afirmación y seleccione un valor del 1 al 5 según '
+                        'qué tan identificado se siente:\n\n'
                         '1 = Totalmente en desacuerdo\n'
                         '2 = En desacuerdo\n'
                         '3 = Neutral\n'
@@ -590,7 +590,7 @@ class Command(BaseCommand):
                 created_count += 1
                 self.stdout.write(self.style.SUCCESS('  + Test DISC creado'))
             else:
-                self.stdout.write('  ~ Test DISC ya existia (actualizado)')
+                self.stdout.write('  ~ Test DISC ya existía (actualizado)')
 
             # Big Five
             _, created = PlantillaPruebaDinamica.objects.update_or_create(
@@ -598,21 +598,21 @@ class Command(BaseCommand):
                 nombre='Test Big Five (OCEAN)',
                 defaults={
                     'descripcion': (
-                        'Evaluacion de los 5 grandes factores de personalidad (OCEAN). '
-                        'Mide: Apertura (O), Responsabilidad (C), Extraversion (E), '
+                        'Evaluación de los 5 grandes factores de personalidad (OCEAN). '
+                        'Mide: Apertura (O), Responsabilidad (C), Extraversión (E), '
                         'Amabilidad (A) y Neuroticismo (N). '
                         'Responda cada pregunta en escala de 1 a 5.'
                     ),
                     'instrucciones': (
-                        'Lea cada afirmacion y seleccione un valor del 1 al 5 segun '
-                        'que tan identificado se siente:\n\n'
+                        'Lea cada afirmación y seleccione un valor del 1 al 5 según '
+                        'qué tan identificado se siente:\n\n'
                         '1 = Totalmente en desacuerdo\n'
                         '2 = En desacuerdo\n'
                         '3 = Neutral\n'
                         '4 = De acuerdo\n'
                         '5 = Totalmente de acuerdo\n\n'
                         'No hay respuestas correctas o incorrectas. Responda de '
-                        'forma espontanea y honesta.'
+                        'forma espontánea y honesta.'
                     ),
                     'campos': BIG_FIVE_CAMPOS,
                     'scoring_config': BIG_FIVE_SCORING_CONFIG,
@@ -627,7 +627,7 @@ class Command(BaseCommand):
                 created_count += 1
                 self.stdout.write(self.style.SUCCESS('  + Test Big Five (OCEAN) creado'))
             else:
-                self.stdout.write('  ~ Test Big Five (OCEAN) ya existia (actualizado)')
+                self.stdout.write('  ~ Test Big Five (OCEAN) ya existía (actualizado)')
 
         self.stdout.write(self.style.SUCCESS(
             f'\nPlantillas psicometricas: {created_count} creadas'

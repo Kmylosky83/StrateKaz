@@ -13,7 +13,8 @@ from django.db.models.functions import Coalesce
 from django.utils import timezone
 from decimal import Decimal
 
-# Permisos básicos - en producción implementar EmpresaPermission
+from apps.core.base_models.mixins import get_tenant_empresa
+
 from .models import (
     EtapaVenta,
     MotivoPerdida,
@@ -57,9 +58,7 @@ class EtapaVentaViewSet(viewsets.ModelViewSet):
     ordering = ['orden']
 
     def get_queryset(self):
-        return EtapaVenta.objects.filter(
-            empresa=self.request.user.empresa
-        ).annotate(
+        return EtapaVenta.objects.all().annotate(
             oportunidades_count=Count('oportunidades')
         )
 
@@ -67,7 +66,7 @@ class EtapaVentaViewSet(viewsets.ModelViewSet):
         return EtapaVentaSerializer
 
     def perform_create(self, serializer):
-        serializer.save(empresa=self.request.user.empresa)
+        serializer.save(empresa=get_tenant_empresa())
 
 
 class MotivoPerdidaViewSet(viewsets.ModelViewSet):
@@ -82,15 +81,13 @@ class MotivoPerdidaViewSet(viewsets.ModelViewSet):
     ordering = ['orden']
 
     def get_queryset(self):
-        return MotivoPerdida.objects.filter(
-            empresa=self.request.user.empresa
-        )
+        return MotivoPerdida.objects.all()
 
     def get_serializer_class(self):
         return MotivoPerdidaSerializer
 
     def perform_create(self, serializer):
-        serializer.save(empresa=self.request.user.empresa)
+        serializer.save(empresa=get_tenant_empresa())
 
 
 class FuenteOportunidadViewSet(viewsets.ModelViewSet):
@@ -105,15 +102,13 @@ class FuenteOportunidadViewSet(viewsets.ModelViewSet):
     ordering = ['orden']
 
     def get_queryset(self):
-        return FuenteOportunidad.objects.filter(
-            empresa=self.request.user.empresa
-        )
+        return FuenteOportunidad.objects.all()
 
     def get_serializer_class(self):
         return FuenteOportunidadSerializer
 
     def perform_create(self, serializer):
-        serializer.save(empresa=self.request.user.empresa)
+        serializer.save(empresa=get_tenant_empresa())
 
 
 # ==================== OPORTUNIDADES ====================
@@ -137,9 +132,7 @@ class OportunidadViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha_creacion']
 
     def get_queryset(self):
-        queryset = Oportunidad.objects.filter(
-            empresa=self.request.user.empresa
-        ).select_related(
+        queryset = Oportunidad.objects.select_related(
             'cliente',
             'vendedor',
             'etapa_actual',
@@ -176,7 +169,7 @@ class OportunidadViewSet(viewsets.ModelViewSet):
         return OportunidadDetailSerializer
 
     def perform_create(self, serializer):
-        serializer.save(empresa=self.request.user.empresa)
+        serializer.save(empresa=get_tenant_empresa())
 
     @action(detail=True, methods=['post'])
     def cambiar_etapa(self, request, pk=None):
@@ -300,10 +293,8 @@ class OportunidadViewSet(viewsets.ModelViewSet):
         - Tasa de conversión
         - Tiempo promedio en pipeline
         """
-        empresa = request.user.empresa
-
-        # Obtener todas las oportunidades
-        oportunidades = Oportunidad.objects.filter(empresa=empresa)
+        # Obtener todas las oportunidades (schema isolation handles tenant filtering)
+        oportunidades = Oportunidad.objects.all()
         activas = oportunidades.filter(etapa_actual__es_final=False)
         ganadas = oportunidades.filter(etapa_actual__es_ganada=True)
         perdidas = oportunidades.filter(etapa_actual__es_perdida=True)
@@ -421,11 +412,8 @@ class OportunidadViewSet(viewsets.ModelViewSet):
 
         Retorna oportunidades agrupadas por etapa para vista Kanban
         """
-        empresa = request.user.empresa
-
-        # Obtener etapas ordenadas
+        # Obtener etapas ordenadas (schema isolation handles tenant filtering)
         etapas = EtapaVenta.objects.filter(
-            empresa=empresa,
             activo=True
         ).order_by('orden')
 
@@ -433,7 +421,6 @@ class OportunidadViewSet(viewsets.ModelViewSet):
 
         for etapa in etapas:
             oportunidades_etapa = Oportunidad.objects.filter(
-                empresa=empresa,
                 etapa_actual=etapa
             ).select_related(
                 'cliente',
@@ -482,19 +469,17 @@ class SeguimientoOportunidadViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha']
 
     def get_queryset(self):
-        return SeguimientoOportunidad.objects.filter(
-            empresa=self.request.user.empresa
-        ).select_related(
+        return SeguimientoOportunidad.objects.select_related(
             'oportunidad',
             'registrado_por'
-        )
+        ).all()
 
     def get_serializer_class(self):
         return SeguimientoOportunidadSerializer
 
     def perform_create(self, serializer):
         serializer.save(
-            empresa=self.request.user.empresa,
+            empresa=get_tenant_empresa(),
             registrado_por=self.request.user
         )
 
@@ -520,9 +505,7 @@ class CotizacionViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha_cotizacion']
 
     def get_queryset(self):
-        queryset = Cotizacion.objects.filter(
-            empresa=self.request.user.empresa
-        ).select_related(
+        queryset = Cotizacion.objects.select_related(
             'cliente',
             'vendedor',
             'oportunidad'
@@ -549,7 +532,7 @@ class CotizacionViewSet(viewsets.ModelViewSet):
         return CotizacionDetailSerializer
 
     def perform_create(self, serializer):
-        serializer.save(empresa=self.request.user.empresa)
+        serializer.save(empresa=get_tenant_empresa())
 
     @action(detail=True, methods=['post'])
     def aprobar(self, request, pk=None):
@@ -676,9 +659,7 @@ class HistorialEtapaViewSet(viewsets.ReadOnlyModelViewSet):
     ordering = ['-fecha_cambio']
 
     def get_queryset(self):
-        return HistorialEtapa.objects.filter(
-            empresa=self.request.user.empresa
-        ).select_related(
+        return HistorialEtapa.objects.select_related(
             'oportunidad',
             'etapa_anterior',
             'etapa_nueva',

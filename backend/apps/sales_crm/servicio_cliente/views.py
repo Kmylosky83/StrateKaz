@@ -131,17 +131,11 @@ class PQRSViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha_radicacion']
 
     def get_queryset(self):
-        queryset = PQRS.objects.select_related(
+        return PQRS.objects.select_related(
             'tipo', 'estado', 'prioridad', 'canal_recepcion',
             'asignado_a', 'escalado_a', 'cliente',
             'producto_relacionado', 'pedido_relacionado'
         ).prefetch_related('seguimientos').filter(deleted_at__isnull=True)
-
-        # Filtro por empresa del usuario
-        if hasattr(self.request.user, 'empresa'):
-            queryset = queryset.filter(empresa=self.request.user.empresa)
-
-        return queryset
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -391,14 +385,9 @@ class EncuestaSatisfaccionViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha_envio']
 
     def get_queryset(self):
-        queryset = EncuestaSatisfaccion.objects.select_related(
+        return EncuestaSatisfaccion.objects.select_related(
             'cliente', 'pedido', 'factura', 'satisfaccion_general', 'enviada_por'
         ).prefetch_related('respuestas').filter(deleted_at__isnull=True)
-
-        if hasattr(self.request.user, 'empresa'):
-            queryset = queryset.filter(empresa=self.request.user.empresa)
-
-        return queryset
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -556,12 +545,7 @@ class ProgramaFidelizacionViewSet(viewsets.ModelViewSet):
     ordering = ['-created_at']
 
     def get_queryset(self):
-        queryset = ProgramaFidelizacion.objects.select_related('created_by').all()
-
-        if hasattr(self.request.user, 'empresa'):
-            queryset = queryset.filter(empresa=self.request.user.empresa)
-
-        return queryset
+        return ProgramaFidelizacion.objects.select_related('created_by').all()
 
 
 class PuntosFidelizacionViewSet(viewsets.ModelViewSet):

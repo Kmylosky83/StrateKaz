@@ -154,7 +154,7 @@ class RiesgoProcesoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         """
         QuerySet optimizado con prefetch.
 
-        Filtra automáticamente por empresa del usuario.
+        Tenant schema isolation handles empresa filtering automatically.
         """
         queryset = RiesgoProceso.objects.select_related(
             'categoria', 'responsable', 'empresa',
@@ -162,10 +162,6 @@ class RiesgoProcesoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         ).prefetch_related(
             'tratamientos', 'controles'
         )
-
-        # Filtrar por empresa del usuario (asumiendo que está en request.user.empresa)
-        if hasattr(self.request, 'user') and hasattr(self.request.user, 'empresa'):
-            queryset = queryset.filter(empresa=self.request.user.empresa)
 
         return queryset
 

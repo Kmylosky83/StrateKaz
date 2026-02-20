@@ -22,6 +22,8 @@ import { SectionHeader } from '@/components/common/SectionHeader';
 import { Select } from '@/components/forms/Select';
 import { Input } from '@/components/forms/Input';
 import { DataTableCard, TableSkeleton } from '@/components/layout/DataTableCard';
+import { ResponsiveTable } from '@/components/common/ResponsiveTable';
+import type { ResponsiveTableColumn } from '@/components/common/ResponsiveTable';
 import { StatsGrid, StatsGridSkeleton } from '@/components/layout';
 import type { StatItem } from '@/components/layout';
 import { useCargos, useDeleteCargo, useCargoChoices } from '../hooks/useCargos';
@@ -34,6 +36,60 @@ import { useModuleColor } from '@/hooks/useModuleColor';
 import { Modules, Sections } from '@/constants/permissions';
 import { getModuleColorClasses } from '@/utils/moduleColors';
 import type { ModuleColor } from '@/utils/moduleColors';
+
+const cargoColumns: ResponsiveTableColumn<CargoList & Record<string, unknown>>[] = [
+  {
+    key: 'name',
+    header: 'Cargo',
+    priority: 1,
+    render: (item) => {
+      const c = item as unknown as CargoList;
+      return (
+        <div className="flex items-center gap-2">
+          {c.is_system && <Lock className="h-4 w-4 text-gray-400" />}
+          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{c.name}</span>
+          {c.is_system && (
+            <Badge variant="gray" size="sm">
+              Sistema
+            </Badge>
+          )}
+        </div>
+      );
+    },
+  },
+  {
+    key: 'nivel',
+    header: 'Nivel',
+    priority: 2,
+    render: (item) => {
+      const c = item as unknown as CargoList;
+      return <CargoLevelBadge level={c.nivel_jerarquico} />;
+    },
+  },
+  {
+    key: 'proceso',
+    header: 'Proceso',
+    render: (item) => {
+      const c = item as unknown as CargoList;
+      return (
+        <span className="text-sm text-gray-500 dark:text-gray-400">{c.area_nombre || '-'}</span>
+      );
+    },
+  },
+  {
+    key: 'usuarios',
+    header: 'Usuarios',
+    render: (item) => {
+      const c = item as unknown as CargoList;
+      return (
+        <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
+          <Users className="h-4 w-4" />
+          {c.users_count || 0}
+        </div>
+      );
+    },
+  },
+];
 
 export const CargosTab = () => {
   const [filters, setFilters] = useState<CargoFilters>({});
@@ -248,95 +304,68 @@ export const CargosTab = () => {
           />
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-900">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Cargo
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Nivel
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Proceso
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Usuarios
-                    </th>
-                    {(canEdit || canDelete) && (
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Acciones
-                      </th>
+            <ResponsiveTable<CargoList & Record<string, unknown>>
+              data={(data?.results || []) as (CargoList & Record<string, unknown>)[]}
+              columns={cargoColumns}
+              keyExtractor={(item) => item.id as number}
+              mobileCardTitle={(item) => {
+                const c = item as unknown as CargoList;
+                return (
+                  <div className="flex items-center gap-2">
+                    {c.is_system && <Lock className="h-4 w-4 text-gray-400" />}
+                    <span>{c.name}</span>
+                    {c.is_system && (
+                      <Badge variant="gray" size="sm">
+                        Sistema
+                      </Badge>
                     )}
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {data?.results.map((cargo) => (
-                    <tr key={cargo.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                  </div>
+                );
+              }}
+              mobileCardSubtitle={(item) => {
+                const c = item as unknown as CargoList;
+                return <span>{c.area_nombre || 'Sin proceso'}</span>;
+              }}
+              renderActions={
+                canEdit || canDelete
+                  ? (item) => {
+                      const cargo = item as unknown as CargoList;
+                      return (
                         <div className="flex items-center gap-2">
-                          {cargo.is_system && <Lock className="h-4 w-4 text-gray-400" />}
-                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                            {cargo.name}
-                          </span>
-                          {cargo.is_system && (
-                            <Badge variant="gray" size="sm">
-                              Sistema
-                            </Badge>
+                          {canEdit && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEdit(cargo)}
+                              title="Editar"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {canDelete && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteRequest(cargo)}
+                              disabled={cargo.is_system || (cargo.users_count || 0) > 0}
+                              title={
+                                cargo.is_system
+                                  ? 'Cargo del sistema'
+                                  : (cargo.users_count || 0) > 0
+                                    ? 'Tiene usuarios asignados'
+                                    : 'Eliminar'
+                              }
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           )}
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <CargoLevelBadge level={cargo.nivel_jerarquico} />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {cargo.area_nombre || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
-                          <Users className="h-4 w-4" />
-                          {cargo.users_count || 0}
-                        </div>
-                      </td>
-                      {(canEdit || canDelete) && (
-                        <td className="px-6 py-4 whitespace-nowrap text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            {canEdit && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEdit(cargo)}
-                                title="Editar"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                            )}
-                            {canDelete && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteRequest(cargo)}
-                                disabled={cargo.is_system || (cargo.users_count || 0) > 0}
-                                title={
-                                  cargo.is_system
-                                    ? 'Cargo del sistema'
-                                    : (cargo.users_count || 0) > 0
-                                      ? 'Tiene usuarios asignados'
-                                      : 'Eliminar'
-                                }
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      );
+                    }
+                  : undefined
+              }
+              hoverable
+            />
 
             {/* Info de paginación */}
             {data && data.count > 0 && (

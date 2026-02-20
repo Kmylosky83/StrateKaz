@@ -6,6 +6,7 @@ from django.utils import timezone
 from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 
+from apps.core.base_models.mixins import get_tenant_empresa
 from .models import MetricaFlujo, AlertaFlujo, ReglaSLA, DashboardWidget, ReporteAutomatico
 from .serializers import MetricaFlujoSerializer, AlertaFlujoSerializer, ReglaSLASerializer, DashboardWidgetSerializer, ReporteAutomaticoSerializer
 
@@ -17,10 +18,10 @@ class MetricaFlujoViewSet(viewsets.ModelViewSet):
     ordering = ["-fecha_inicio"]
 
     def get_queryset(self):
-        return MetricaFlujo.objects.filter(empresa_id=self.request.user.empresa_id).select_related("plantilla")
+        return MetricaFlujo.objects.select_related("plantilla")
 
     def perform_create(self, serializer):
-        serializer.save(empresa_id=self.request.user.empresa_id)
+        serializer.save(empresa=get_tenant_empresa())
 
     @action(detail=False, methods=["post"])
     def generar_metricas(self, request):
@@ -47,10 +48,10 @@ class AlertaFlujoViewSet(viewsets.ModelViewSet):
     ordering = ["-fecha_generacion"]
 
     def get_queryset(self):
-        return AlertaFlujo.objects.filter(empresa_id=self.request.user.empresa_id)
+        return AlertaFlujo.objects.all()
 
     def perform_create(self, serializer):
-        serializer.save(empresa_id=self.request.user.empresa_id)
+        serializer.save(empresa=get_tenant_empresa())
 
     @action(detail=False, methods=["get"])
     def activas(self, request):
@@ -74,10 +75,10 @@ class ReglaSLAViewSet(viewsets.ModelViewSet):
     ordering = ["plantilla", "nodo"]
 
     def get_queryset(self):
-        return ReglaSLA.objects.filter(empresa_id=self.request.user.empresa_id)
+        return ReglaSLA.objects.all()
 
     def perform_create(self, serializer):
-        serializer.save(empresa_id=self.request.user.empresa_id)
+        serializer.save(empresa=get_tenant_empresa())
 
 
 class DashboardWidgetViewSet(viewsets.ModelViewSet):
@@ -105,10 +106,10 @@ class ReporteAutomaticoViewSet(viewsets.ModelViewSet):
     ordering = ["nombre"]
 
     def get_queryset(self):
-        return ReporteAutomatico.objects.filter(empresa_id=self.request.user.empresa_id)
+        return ReporteAutomatico.objects.all()
 
     def perform_create(self, serializer):
-        serializer.save(empresa_id=self.request.user.empresa_id)
+        serializer.save(empresa=get_tenant_empresa())
 
     @action(detail=True, methods=["post"])
     def ejecutar_ahora(self, request, pk=None):

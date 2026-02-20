@@ -14,6 +14,8 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from django.utils import timezone
 from django.db.models import Q, Count, Sum, Avg
 
+from apps.core.base_models.mixins import get_tenant_empresa
+
 from .models import (
     TipoProceso,
     EstadoProceso,
@@ -130,12 +132,7 @@ class LineaProduccionViewSet(viewsets.ModelViewSet):
         """Filtrar por empresa del usuario."""
         queryset = super().get_queryset()
 
-        # Filtrar por empresa si el usuario no es superadmin
-        if not self.request.user.is_superuser:
-            # Aquí asumimos que el usuario tiene una empresa asignada
-            # Ajustar según tu modelo de Usuario
-            if hasattr(self.request.user, 'empresa'):
-                queryset = queryset.filter(empresa=self.request.user.empresa)
+        # Tenant schema isolation handles empresa filtering
 
         # Filtrar solo activas
         solo_activas = self.request.query_params.get('solo_activas', None)
@@ -146,14 +143,10 @@ class LineaProduccionViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """Asignar empresa y usuario al crear."""
-        # Asignar empresa del usuario si no se especifica
-        if hasattr(self.request.user, 'empresa') and 'empresa' not in serializer.validated_data:
-            serializer.save(
-                created_by=self.request.user,
-                empresa=self.request.user.empresa
-            )
-        else:
-            serializer.save(created_by=self.request.user)
+        serializer.save(
+            created_by=self.request.user,
+            empresa=get_tenant_empresa()
+        )
 
     def perform_update(self, serializer):
         """Registrar usuario que actualiza."""
@@ -214,10 +207,7 @@ class OrdenProduccionViewSet(viewsets.ModelViewSet):
         """Filtrar por empresa del usuario."""
         queryset = super().get_queryset()
 
-        # Filtrar por empresa si el usuario no es superadmin
-        if not self.request.user.is_superuser:
-            if hasattr(self.request.user, 'empresa'):
-                queryset = queryset.filter(empresa=self.request.user.empresa)
+        # Tenant schema isolation handles empresa filtering
 
         # Filtros adicionales
         fecha_desde = self.request.query_params.get('fecha_desde', None)
@@ -232,13 +222,10 @@ class OrdenProduccionViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """Asignar empresa y usuario al crear."""
-        if hasattr(self.request.user, 'empresa') and 'empresa' not in serializer.validated_data:
-            serializer.save(
-                created_by=self.request.user,
-                empresa=self.request.user.empresa
-            )
-        else:
-            serializer.save(created_by=self.request.user)
+        serializer.save(
+            created_by=self.request.user,
+            empresa=get_tenant_empresa()
+        )
 
     def perform_update(self, serializer):
         """Registrar usuario que actualiza."""
@@ -388,12 +375,7 @@ class LoteProduccionViewSet(viewsets.ModelViewSet):
         """Filtrar por empresa del usuario."""
         queryset = super().get_queryset()
 
-        # Filtrar por empresa si el usuario no es superadmin
-        if not self.request.user.is_superuser:
-            if hasattr(self.request.user, 'empresa'):
-                queryset = queryset.filter(
-                    orden_produccion__empresa=self.request.user.empresa
-                )
+        # Tenant schema isolation handles empresa filtering
 
         # Filtros adicionales
         fecha_desde = self.request.query_params.get('fecha_desde', None)
@@ -438,12 +420,7 @@ class ConsumoMateriaPrimaViewSet(viewsets.ModelViewSet):
         """Filtrar por empresa del usuario."""
         queryset = super().get_queryset()
 
-        # Filtrar por empresa si el usuario no es superadmin
-        if not self.request.user.is_superuser:
-            if hasattr(self.request.user, 'empresa'):
-                queryset = queryset.filter(
-                    lote_produccion__orden_produccion__empresa=self.request.user.empresa
-                )
+        # Tenant schema isolation handles empresa filtering
 
         return queryset
 
@@ -479,12 +456,7 @@ class ControlCalidadProcesoViewSet(viewsets.ModelViewSet):
         """Filtrar por empresa del usuario."""
         queryset = super().get_queryset()
 
-        # Filtrar por empresa si el usuario no es superadmin
-        if not self.request.user.is_superuser:
-            if hasattr(self.request.user, 'empresa'):
-                queryset = queryset.filter(
-                    lote_produccion__orden_produccion__empresa=self.request.user.empresa
-                )
+        # Tenant schema isolation handles empresa filtering
 
         return queryset
 

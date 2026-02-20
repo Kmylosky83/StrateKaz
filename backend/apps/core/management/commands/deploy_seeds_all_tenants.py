@@ -28,6 +28,7 @@ class Command(BaseCommand):
         ('unidades', 'seed_configuracion_sistema', [], 'Unidades de medida y configuración base'),
         ('notificaciones', 'seed_notification_types', [], 'Tipos de notificación'),
         ('documentos_th', 'seed_tipos_documento_th', [], 'TipoDocumento + Plantilla para contratos laborales'),
+        ('consecutivos', 'seed_consecutivos_sistema', [], 'Consecutivos del sistema (22 códigos base + módulos)'),
     ]
 
     def add_arguments(self, parser):

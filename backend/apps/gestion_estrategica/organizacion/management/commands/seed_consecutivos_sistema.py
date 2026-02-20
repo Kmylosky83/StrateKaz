@@ -148,11 +148,11 @@ class Command(BaseCommand):
         with transaction.atomic():
             for data in all_consecutivos:
                 codigo = data['codigo']
-                if ConsecutivoConfig.objects.filter(codigo=codigo, empresa=empresa).exists():
+                if ConsecutivoConfig.objects.filter(codigo=codigo, empresa_id=empresa.id).exists():
                     skipped += 1
                     continue
 
-                ConsecutivoConfig.objects.create(empresa=empresa, **data)
+                ConsecutivoConfig.objects.create(empresa_id=empresa.id, **data)
                 self.stdout.write(self.style.SUCCESS(f'  [OK] {codigo}'))
                 created += 1
 

@@ -312,6 +312,7 @@ class Proyecto(BaseCompanyModel):
         MANUAL = 'manual', 'Creación Manual'
         CAMBIO = 'cambio', 'Desde Gestión de Cambios'
         OBJETIVO = 'objetivo', 'Desde Objetivo Estratégico'
+        ESTRATEGIA_TOWS = 'estrategia_tows', 'Desde Estrategia TOWS'
         AUDITORIA = 'auditoria', 'Desde Hallazgo de Auditoría'
         RIESGO = 'riesgo', 'Desde Tratamiento de Riesgo'
         MEJORA = 'mejora', 'Desde Acción de Mejora'
@@ -340,6 +341,15 @@ class Proyecto(BaseCompanyModel):
         related_name='proyectos_vinculados',
         verbose_name='Objetivo Estratégico',
         help_text='Objetivo estratégico al que contribuye este proyecto'
+    )
+    origen_estrategia_tows = models.ForeignKey(
+        'contexto.EstrategiaTOWS',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='proyectos_generados',
+        verbose_name='Estrategia TOWS de Origen',
+        help_text='Estrategia TOWS que originó este proyecto'
     )
 
     class Meta:

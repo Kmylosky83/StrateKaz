@@ -375,7 +375,7 @@ export const ESTADO_ENCUESTA_CONFIG = {
   borrador: {
     label: 'Borrador',
     color: 'gray' as const,
-    description: 'En preparacion',
+    description: 'En preparación',
   },
   activa: {
     label: 'Activa',

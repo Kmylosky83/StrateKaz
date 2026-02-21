@@ -96,7 +96,7 @@ const ESTADO_OPTIONS: { value: EstadoEstrategia | ''; label: string }[] = [
   { value: '', label: 'Todos los estados' },
   { value: 'propuesta', label: 'Propuesta' },
   { value: 'aprobada', label: 'Aprobada' },
-  { value: 'en_ejecucion', label: 'En Ejecucion' },
+  { value: 'en_ejecucion', label: 'En Ejecución' },
   { value: 'completada', label: 'Completada' },
   { value: 'cancelada', label: 'Cancelada' },
   { value: 'suspendida', label: 'Suspendida' },
@@ -121,40 +121,28 @@ interface EstrategiasTowsSectionProps {
   triggerNewForm?: number;
 }
 
-export const EstrategiasTowsSection = ({
-  triggerNewForm,
-}: EstrategiasTowsSectionProps) => {
+export const EstrategiasTowsSection = ({ triggerNewForm }: EstrategiasTowsSectionProps) => {
   const [viewMode, setViewMode] = useState<ViewMode>('lista');
   const [filters, setFilters] = useState<EstrategiaTOWSFilters>({});
-  const [selectedEstrategia, setSelectedEstrategia] =
-    useState<EstrategiaTOWS | null>(null);
+  const [selectedEstrategia, setSelectedEstrategia] = useState<EstrategiaTOWS | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState<EstrategiaTOWS | null>(
-    null
-  );
+  const [deleteConfirm, setDeleteConfirm] = useState<EstrategiaTOWS | null>(null);
   const [alertMessage, setAlertMessage] = useState<{
     type: 'success' | 'warning' | 'error';
     message: string;
   } | null>(null);
 
   // Para vista matriz: seleccionar analisis DOFA
-  const [selectedAnalisisForMatrix, setSelectedAnalisisForMatrix] =
-    useState<AnalisisDOFA | null>(null);
+  const [selectedAnalisisForMatrix, setSelectedAnalisisForMatrix] = useState<AnalisisDOFA | null>(
+    null
+  );
 
   // RBAC: Verificar permisos del usuario
   const { canDo } = usePermissions();
-  const canCreate = canDo(
-    Modules.GESTION_ESTRATEGICA,
-    Sections.CONTEXTO,
-    'create'
-  );
+  const canCreate = canDo(Modules.GESTION_ESTRATEGICA, Sections.CONTEXTO, 'create');
   const canEdit = canDo(Modules.GESTION_ESTRATEGICA, Sections.CONTEXTO, 'edit');
-  const canDelete = canDo(
-    Modules.GESTION_ESTRATEGICA,
-    Sections.CONTEXTO,
-    'delete'
-  );
+  const canDelete = canDo(Modules.GESTION_ESTRATEGICA, Sections.CONTEXTO, 'delete');
 
   // Color del modulo (sin hardcoding)
   const { color: moduleColor } = useModuleColor('GESTION_ESTRATEGICA');
@@ -182,15 +170,9 @@ export const EstrategiasTowsSection = ({
   // Calcular estadisticas para StatsGrid
   const estrategiasStats: StatItem[] = useMemo(() => {
     const estrategias = data?.results || [];
-    const enEjecucion = estrategias.filter(
-      (e) => e.estado === 'en_ejecucion'
-    ).length;
-    const completadas = estrategias.filter(
-      (e) => e.estado === 'completada'
-    ).length;
-    const altaPrioridad = estrategias.filter(
-      (e) => e.prioridad === 'alta'
-    ).length;
+    const enEjecucion = estrategias.filter((e) => e.estado === 'en_ejecucion').length;
+    const completadas = estrategias.filter((e) => e.estado === 'completada').length;
+    const altaPrioridad = estrategias.filter((e) => e.prioridad === 'alta').length;
 
     return [
       {
@@ -200,11 +182,11 @@ export const EstrategiasTowsSection = ({
         iconColor: 'info',
       },
       {
-        label: 'En Ejecucion',
+        label: 'En Ejecución',
         value: enEjecucion,
         icon: Clock,
         iconColor: 'warning',
-        description: 'Implementandose',
+        description: 'Implementándose',
       },
       {
         label: 'Completadas',
@@ -218,7 +200,7 @@ export const EstrategiasTowsSection = ({
         value: altaPrioridad,
         icon: Target,
         iconColor: 'danger',
-        description: 'Requieren atencion',
+        description: 'Requieren atención',
       },
     ];
   }, [data]);
@@ -270,9 +252,7 @@ export const EstrategiasTowsSection = ({
   const handleAnalisisChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const analisisId = e.target.value;
     if (analisisId) {
-      const analisis = analisisData?.results.find(
-        (a) => a.id.toString() === analisisId
-      );
+      const analisis = analisisData?.results.find((a) => a.id.toString() === analisisId);
       setSelectedAnalisisForMatrix(analisis || null);
     } else {
       setSelectedAnalisisForMatrix(null);
@@ -289,7 +269,6 @@ export const EstrategiasTowsSection = ({
     if (triggerNewForm && triggerNewForm > 0) {
       handleCreate();
     }
-     
   }, [triggerNewForm]);
 
   // Renderizar badge de tipo de estrategia
@@ -299,9 +278,7 @@ export const EstrategiasTowsSection = ({
     return (
       <div className="flex items-center gap-1">
         <Icon className={`h-3 w-3 ${config.textClass}`} />
-        <span className={`text-xs font-medium ${config.textClass}`}>
-          {config.label}
-        </span>
+        <span className={`text-xs font-medium ${config.textClass}`}>{config.label}</span>
       </div>
     );
   };
@@ -332,9 +309,7 @@ export const EstrategiasTowsSection = ({
     return (
       <div className="flex items-center gap-2">
         <Progress value={porcentaje} className="w-16 h-2" />
-        <span className="text-xs text-gray-500 dark:text-gray-400">
-          {porcentaje}%
-        </span>
+        <span className="text-xs text-gray-500 dark:text-gray-400">{porcentaje}%</span>
       </div>
     );
   };
@@ -362,8 +337,8 @@ export const EstrategiasTowsSection = ({
               Seleccione un Analisis DOFA
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              Para ver la matriz TOWS, primero seleccione un analisis DOFA del
-              cual se generaron las estrategias.
+              Para ver la matriz TOWS, primero seleccione un analisis DOFA del cual se generaron las
+              estrategias.
             </p>
             <Select
               value=""
@@ -423,11 +398,7 @@ export const EstrategiasTowsSection = ({
       {isLoading ? (
         <StatsGridSkeleton count={4} />
       ) : (
-        <StatsGrid
-          stats={estrategiasStats}
-          columns={4}
-          moduleColor={moduleColor}
-        />
+        <StatsGrid stats={estrategiasStats} columns={4} moduleColor={moduleColor} />
       )}
 
       {/* Section Header con ViewToggle */}
@@ -446,10 +417,7 @@ export const EstrategiasTowsSection = ({
               <>
                 <Input
                   placeholder="Buscar..."
-                  value={
-                    ((filters as Record<string, unknown>).search as string) ||
-                    ''
-                  }
+                  value={((filters as Record<string, unknown>).search as string) || ''}
                   onChange={(e) =>
                     setFilters({
                       ...filters,
@@ -464,9 +432,7 @@ export const EstrategiasTowsSection = ({
                   onChange={(e) =>
                     setFilters({
                       ...filters,
-                      tipo: e.target.value
-                        ? (e.target.value as TipoEstrategiaTOWS)
-                        : undefined,
+                      tipo: e.target.value ? (e.target.value as TipoEstrategiaTOWS) : undefined,
                     })
                   }
                   options={TIPO_OPTIONS}
@@ -477,9 +443,7 @@ export const EstrategiasTowsSection = ({
                   onChange={(e) =>
                     setFilters({
                       ...filters,
-                      estado: e.target.value
-                        ? (e.target.value as EstadoEstrategia)
-                        : undefined,
+                      estado: e.target.value ? (e.target.value as EstadoEstrategia) : undefined,
                     })
                   }
                   options={ESTADO_OPTIONS}
@@ -496,9 +460,7 @@ export const EstrategiasTowsSection = ({
                 { value: 'lista', label: 'Lista', icon: List },
                 { value: 'matriz', label: 'Matriz', icon: LayoutGrid },
               ]}
-              moduleColor={
-                moduleColor as 'purple' | 'blue' | 'green' | 'orange' | 'gray'
-              }
+              moduleColor={moduleColor as 'purple' | 'blue' | 'green' | 'orange' | 'gray'}
             />
 
             {canCreate && viewMode === 'lista' && (
@@ -578,18 +540,10 @@ export const EstrategiasTowsSection = ({
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
-                          {renderTipoBadge(estrategia.tipo)}
-                        </td>
-                        <td className="px-6 py-4">
-                          {renderEstadoBadge(estrategia.estado)}
-                        </td>
-                        <td className="px-6 py-4">
-                          {renderPrioridadBadge(estrategia.prioridad)}
-                        </td>
-                        <td className="px-6 py-4">
-                          {renderProgreso(estrategia)}
-                        </td>
+                        <td className="px-6 py-4">{renderTipoBadge(estrategia.tipo)}</td>
+                        <td className="px-6 py-4">{renderEstadoBadge(estrategia.estado)}</td>
+                        <td className="px-6 py-4">{renderPrioridadBadge(estrategia.prioridad)}</td>
+                        <td className="px-6 py-4">{renderProgreso(estrategia)}</td>
                         <td className="px-6 py-4">
                           <span className="text-sm text-gray-600 dark:text-gray-400">
                             {estrategia.responsable_nombre ||
@@ -626,20 +580,17 @@ export const EstrategiasTowsSection = ({
                               )}
 
                             {/* Eliminar */}
-                            {canDelete &&
-                              estrategia.estado !== 'en_ejecucion' && (
-                                <Tooltip content="Eliminar">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() =>
-                                      handleDeleteRequest(estrategia)
-                                    }
-                                  >
-                                    <Trash2 className="h-4 w-4 text-red-500" />
-                                  </Button>
-                                </Tooltip>
-                              )}
+                            {canDelete && estrategia.estado !== 'en_ejecucion' && (
+                              <Tooltip content="Eliminar">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteRequest(estrategia)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                </Button>
+                              </Tooltip>
+                            )}
                           </div>
                         </td>
                       </tr>

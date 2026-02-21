@@ -34,7 +34,7 @@ export const SedesSection = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [sedeToDelete, setSedeToDelete] = useState<SedeEmpresaList | null>(null);
 
-  const sedes = sedesData?.results || [];
+  const sedes = Array.isArray(sedesData) ? sedesData : (sedesData?.results ?? []);
 
   const handleEdit = (sede: SedeEmpresaList) => {
     setSelectedSede(sede);

@@ -632,10 +632,10 @@ export const EncuestaFormModal = ({
         />
 
         <Textarea
-          label="Descripcion"
+          label="Descripción"
           value={formData.descripcion}
           onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-          placeholder="Descripcion de la encuesta para los participantes..."
+          placeholder="Descripción de la encuesta para los participantes..."
           rows={3}
         />
       </div>
@@ -899,10 +899,10 @@ export const EncuestaFormModal = ({
                   />
                 </div>
                 <Textarea
-                  label="Descripcion (opcional)"
+                  label="Descripción (opcional)"
                   value={newTema.descripcion || ''}
                   onChange={(e) => setNewTema({ ...newTema, descripcion: e.target.value })}
-                  placeholder="Descripcion para ayudar a los participantes..."
+                  placeholder="Descripción para ayudar a los participantes..."
                   rows={2}
                 />
                 <Button

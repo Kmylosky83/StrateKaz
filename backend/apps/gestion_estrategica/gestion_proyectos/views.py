@@ -14,9 +14,11 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
+from django.apps import apps
 from django.db.models import Count, Sum, Avg
 
 from apps.core.mixins import StandardViewSetMixin
+from apps.core.base_models.mixins import get_tenant_empresa
 from .models import (
     Portafolio, Programa, Proyecto, ProjectCharter,
     InteresadoProyecto, FaseProyecto, ActividadProyecto,
@@ -46,7 +48,8 @@ class PortafolioViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     search_fields = ['codigo', 'nombre', 'objetivo_estrategico']
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        empresa = get_tenant_empresa()
+        serializer.save(created_by=self.request.user, empresa=empresa)
 
 
 class ProgramaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
@@ -59,6 +62,10 @@ class ProgramaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = ['empresa_id', 'portafolio', 'is_active']
     search_fields = ['codigo', 'nombre']
+
+    def perform_create(self, serializer):
+        empresa = get_tenant_empresa()
+        serializer.save(empresa=empresa)
 
 
 class ProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
@@ -90,12 +97,14 @@ class ProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         return ProyectoSerializer
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        empresa = get_tenant_empresa()
+        serializer.save(created_by=self.request.user, empresa=empresa)
 
     @action(detail=False, methods=['get'])
     def dashboard(self, request):
         """Retorna estadísticas completas del dashboard de proyectos"""
-        empresa_id = request.query_params.get('empresa', 1)
+        empresa = get_tenant_empresa()
+        empresa_id = request.query_params.get('empresa', empresa.id if empresa else 1)
         queryset = self.get_queryset().filter(empresa_id=empresa_id, is_active=True)
 
         # Proyectos por estado
@@ -306,6 +315,69 @@ class ProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
         return Response({
             'detail': f'Proyecto {codigo} creado exitosamente desde cambio',
+            'proyecto': ProyectoSerializer(proyecto).data
+        }, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['post'])
+    def crear_desde_estrategia_tows(self, request):
+        """
+        Crea un proyecto a partir de una Estrategia TOWS.
+        Mapea automáticamente la estrategia al proyecto.
+        """
+        from apps.core.base_models.mixins import get_tenant_empresa
+
+        estrategia_id = request.data.get('estrategia_id')
+        if not estrategia_id:
+            return Response(
+                {'detail': 'Se requiere estrategia_id'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        EstrategiaTOWS = apps.get_model('contexto', 'EstrategiaTOWS')
+
+        try:
+            estrategia = EstrategiaTOWS.objects.get(id=estrategia_id)
+        except EstrategiaTOWS.DoesNotExist:
+            return Response(
+                {'detail': 'Estrategia TOWS no encontrada'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Verificar si ya existe un proyecto generado desde esta estrategia
+        if Proyecto.objects.filter(origen_estrategia_tows=estrategia).exists():
+            return Response(
+                {'detail': 'Ya existe un proyecto generado desde esta estrategia TOWS'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Mapear tipo TOWS a tipo de proyecto
+        tipo_map = {
+            'FO': 'desarrollo',     # Fortalezas-Oportunidades → Desarrollo
+            'FA': 'mejora',         # Fortalezas-Amenazas → Mejora defensiva
+            'DO': 'mejora',         # Debilidades-Oportunidades → Mejora correctiva
+            'DA': 'normativo',      # Debilidades-Amenazas → Supervivencia
+        }
+
+        empresa = get_tenant_empresa()
+        count = Proyecto.objects.count() + 1
+        codigo = f"PRY-{count:04d}"
+
+        tipo_tows = getattr(estrategia, 'tipo', 'FO')
+        proyecto = Proyecto.objects.create(
+            empresa=empresa,
+            codigo=codigo,
+            nombre=f"Proyecto TOWS ({tipo_tows}): {estrategia.descripcion[:80]}",
+            descripcion=estrategia.objetivo or estrategia.descripcion or '',
+            justificacion=f"Originado desde estrategia TOWS tipo {tipo_tows}",
+            tipo=tipo_map.get(tipo_tows, 'mejora'),
+            prioridad='media',
+            tipo_origen=Proyecto.OrigenProyecto.ESTRATEGIA_TOWS,
+            origen_estrategia_tows=estrategia,
+            created_by=request.user,
+        )
+
+        return Response({
+            'detail': f'Proyecto {codigo} creado exitosamente desde estrategia TOWS',
             'proyecto': ProyectoSerializer(proyecto).data
         }, status=status.HTTP_201_CREATED)
 

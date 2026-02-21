@@ -28,17 +28,7 @@ import {
   ReferenceArea,
   Label,
 } from 'recharts';
-import {
-  Zap,
-  Shield,
-  Bell,
-  Eye,
-  Users,
-  Building2,
-  Globe,
-  AlertTriangle,
-  Info,
-} from 'lucide-react';
+import { Zap, Shield, Bell, Eye, Users, Building2, Globe, AlertTriangle, Info } from 'lucide-react';
 import { Tooltip } from '@/components/common/Tooltip';
 import { Card } from '@/components/common/Card';
 import type { ParteInteresada } from '../../api/contextoApi';
@@ -89,7 +79,7 @@ const CUADRANTES_CONFIG: Record<CuadranteKey, CuadranteConfig> = {
     key: 'gestionar_cerca',
     label: 'Gestionar de Cerca',
     shortLabel: 'Gestionar',
-    description: 'Alta influencia + Alto interes: Maxima atencion',
+    description: 'Alta influencia + Alto interés: Máxima atención',
     icon: Zap,
     color: '#dc2626', // red-600
     bgColor: 'rgba(254, 202, 202, 0.4)', // red-200/40
@@ -203,12 +193,8 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
       <div className="flex items-start gap-2">
         <Icon className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
         <div>
-          <p className="font-semibold text-gray-900 dark:text-gray-100">
-            {stakeholder.nombre}
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            {stakeholder.tipo_nombre}
-          </p>
+          <p className="font-semibold text-gray-900 dark:text-gray-100">{stakeholder.nombre}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{stakeholder.tipo_nombre}</p>
         </div>
       </div>
       <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
@@ -219,8 +205,14 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
           </span>
         </div>
         <div className="grid grid-cols-2 gap-2 mt-1.5 text-xs text-gray-600 dark:text-gray-400">
-          <span>Influencia: <strong>{stakeholder.nivel_influencia_display || stakeholder.nivel_influencia}</strong></span>
-          <span>Interes: <strong>{stakeholder.nivel_interes_display || stakeholder.nivel_interes}</strong></span>
+          <span>
+            Influencia:{' '}
+            <strong>{stakeholder.nivel_influencia_display || stakeholder.nivel_influencia}</strong>
+          </span>
+          <span>
+            Interes:{' '}
+            <strong>{stakeholder.nivel_interes_display || stakeholder.nivel_interes}</strong>
+          </span>
         </div>
       </div>
       {stakeholder.representante && (
@@ -252,13 +244,10 @@ const QuadrantLegend = ({ stats }: QuadrantLegendProps) => {
             className="flex items-center gap-2 p-2.5 rounded-lg border"
             style={{
               backgroundColor: config.bgColor,
-              borderColor: config.color + '40'
+              borderColor: config.color + '40',
             }}
           >
-            <div
-              className="p-1.5 rounded-md"
-              style={{ backgroundColor: config.color + '20' }}
-            >
+            <div className="p-1.5 rounded-md" style={{ backgroundColor: config.color + '20' }}>
               <config.icon className="h-4 w-4" style={{ color: config.color }} />
             </div>
             <div className="min-w-0 flex-1">
@@ -308,25 +297,29 @@ export const StakeholderMatrix = ({
   }, [scatterData]);
 
   // Total stats
-  const totalStats = useMemo(() => ({
-    total: stakeholders.length,
-    criticos: stats.gestionar_cerca,
-  }), [stakeholders.length, stats]);
+  const totalStats = useMemo(
+    () => ({
+      total: stakeholders.length,
+      criticos: stats.gestionar_cerca,
+    }),
+    [stakeholders.length, stats]
+  );
 
   // Handler para click en punto
-  const handlePointClick = useCallback((data: { payload: ScatterDataPoint }) => {
-    if (onStakeholderClick && data?.payload?.stakeholder) {
-      onStakeholderClick(data.payload.stakeholder);
-    }
-  }, [onStakeholderClick]);
+  const handlePointClick = useCallback(
+    (data: { payload: ScatterDataPoint }) => {
+      if (onStakeholderClick && data?.payload?.stakeholder) {
+        onStakeholderClick(data.payload.stakeholder);
+      }
+    },
+    [onStakeholderClick]
+  );
 
   if (stakeholders.length === 0) {
     return (
       <Card className="p-8 text-center">
         <Users className="h-12 w-12 mx-auto text-gray-400 mb-3" />
-        <p className="text-gray-500 dark:text-gray-400">
-          No hay stakeholders para visualizar
-        </p>
+        <p className="text-gray-500 dark:text-gray-400">No hay stakeholders para visualizar</p>
       </Card>
     );
   }
@@ -352,7 +345,9 @@ export const StakeholderMatrix = ({
             content={
               <div className="max-w-xs text-xs">
                 <p className="font-medium mb-1">Matriz Poder-Interes</p>
-                <p>Posicione el cursor sobre cada punto para ver detalles. Haga clic para editar.</p>
+                <p>
+                  Posicione el cursor sobre cada punto para ver detalles. Haga clic para editar.
+                </p>
               </div>
             }
           >
@@ -364,9 +359,7 @@ export const StakeholderMatrix = ({
       {/* Grafico Scatter */}
       <Card className="p-4 overflow-hidden">
         <ResponsiveContainer width="100%" height={height}>
-          <ScatterChart
-            margin={{ top: 20, right: 30, bottom: 50, left: 70 }}
-          >
+          <ScatterChart margin={{ top: 20, right: 30, bottom: 50, left: 70 }}>
             {/* Grid de fondo */}
             <CartesianGrid strokeDasharray="3 3" className="opacity-40" />
 
@@ -433,7 +426,7 @@ export const StakeholderMatrix = ({
                   fontSize: 12,
                   fontWeight: 600,
                   textTransform: 'uppercase',
-                  letterSpacing: '0.05em'
+                  letterSpacing: '0.05em',
                 }}
               />
             </XAxis>
@@ -463,7 +456,7 @@ export const StakeholderMatrix = ({
                   fontSize: 12,
                   fontWeight: 600,
                   textTransform: 'uppercase',
-                  letterSpacing: '0.05em'
+                  letterSpacing: '0.05em',
                 }}
               />
             </YAxis>
@@ -478,11 +471,7 @@ export const StakeholderMatrix = ({
             />
 
             {/* Puntos de scatter */}
-            <Scatter
-              data={scatterData}
-              onClick={handlePointClick}
-              cursor="pointer"
-            >
+            <Scatter data={scatterData} onClick={handlePointClick} cursor="pointer">
               {scatterData.map((entry, index) => (
                 <Cell
                   key={`cell-${index}`}
@@ -491,7 +480,7 @@ export const StakeholderMatrix = ({
                   strokeWidth={2}
                   style={{
                     filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.15))',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.2s ease',
                   }}
                 />
               ))}
@@ -515,7 +504,7 @@ export const StakeholderMatrix = ({
               className="flex items-start gap-2 p-2 rounded-lg border"
               style={{
                 backgroundColor: config.bgColor,
-                borderColor: config.color + '30'
+                borderColor: config.color + '30',
               }}
             >
               <config.icon
@@ -526,9 +515,7 @@ export const StakeholderMatrix = ({
                 <span className="font-medium" style={{ color: config.color }}>
                   {config.label}:
                 </span>{' '}
-                <span className="text-gray-600 dark:text-gray-400">
-                  {config.description}
-                </span>
+                <span className="text-gray-600 dark:text-gray-400">{config.description}</span>
               </div>
             </div>
           ))}

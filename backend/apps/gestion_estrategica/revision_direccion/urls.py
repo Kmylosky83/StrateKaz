@@ -9,6 +9,7 @@ from .views import (
     AnalisisTemaActaViewSet, CompromisoRevisionViewSet,
     SeguimientoCompromisoViewSet, RevisionDireccionStatsViewSet
 )
+from .views_export import export_acta_pdf
 
 router = DefaultRouter()
 
@@ -33,6 +34,9 @@ stats_view = RevisionDireccionStatsViewSet.as_view({'get': 'list'})
 dashboard_view = RevisionDireccionStatsViewSet.as_view({'get': 'dashboard'})
 
 urlpatterns = [
+    # Export endpoints
+    path('export/acta/<int:pk>/pdf/', export_acta_pdf, name='export-acta-pdf'),
+    # Router
     path('', include(router.urls)),
     # URLs adicionales para compatibilidad con frontend
     path('dashboard/', dashboard_view, name='revision-dashboard'),

@@ -291,7 +291,7 @@ export const AreaFormModal = ({ area, isOpen, onClose, onSuccess }: AreaFormModa
           {/* Descripción */}
           <Textarea
             label="Descripción"
-            placeholder="Descripcion del proceso, alcance y responsabilidades..."
+            placeholder="Descripción del proceso, alcance y responsabilidades..."
             rows={3}
             error={errors.description?.message}
             {...register('description', {

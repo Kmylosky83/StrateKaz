@@ -548,13 +548,6 @@ class SedeEmpresa(AuditModel, SoftDeleteModel):
         verbose_name='Tipo de Sede',
         help_text='Tipo de sede o ubicación'
     )
-    # DEPRECATED: Campo legacy para migración
-    tipo_sede_legacy = models.CharField(
-        max_length=20,
-        blank=True,
-        null=True,
-        verbose_name='[DEPRECATED] Tipo Sede (texto)'
-    )
     descripcion = models.TextField(
         blank=True,
         null=True,
@@ -1212,19 +1205,6 @@ class IntegracionExterna(AuditModel, SoftDeleteModel):
         db_index=True,
         verbose_name='Proveedor',
         help_text='Proveedor del servicio'
-    )
-    # DEPRECATED: Campos legacy para migración
-    tipo_servicio_legacy = models.CharField(
-        max_length=30,
-        blank=True,
-        null=True,
-        verbose_name='[DEPRECATED] Tipo Servicio (texto)'
-    )
-    proveedor_legacy = models.CharField(
-        max_length=50,
-        blank=True,
-        null=True,
-        verbose_name='[DEPRECATED] Proveedor (texto)'
     )
     descripcion = models.TextField(
         blank=True,

@@ -50,10 +50,7 @@ import type {
   TipoFactorDOFA,
   NivelImpacto,
 } from '../../types/contexto.types';
-import {
-  TIPO_FACTOR_DOFA_CONFIG,
-  NIVEL_IMPACTO_CONFIG,
-} from '../../types/contexto.types';
+import { TIPO_FACTOR_DOFA_CONFIG, NIVEL_IMPACTO_CONFIG } from '../../types/contexto.types';
 
 // =============================================================================
 // INTERFACES
@@ -279,9 +276,7 @@ export const AnalisisDofaFormModal = ({
 
   // Filtrar factores
   const factores = factoresData?.results || [];
-  const filteredFactores = filterTipo
-    ? factores.filter((f) => f.tipo === filterTipo)
-    : factores;
+  const filteredFactores = filterTipo ? factores.filter((f) => f.tipo === filterTipo) : factores;
 
   // Agrupar por tipo para estadisticas
   const factoresPorTipo = factores.reduce(
@@ -455,9 +450,7 @@ export const AnalisisDofaFormModal = ({
                 </div>
                 <span className={`text-xl font-bold ${config.textClass}`}>{count}</span>
               </div>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 text-left">
-                {label}
-              </p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 text-left">{label}</p>
             </button>
           );
         })}
@@ -468,12 +461,7 @@ export const AnalisisDofaFormModal = ({
           <span className="text-sm text-gray-500">
             Mostrando: {TIPO_FACTOR_DOFA_CONFIG[filterTipo].label}
           </span>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setFilterTipo('')}
-          >
+          <Button type="button" variant="ghost" size="sm" onClick={() => setFilterTipo('')}>
             Ver todos
           </Button>
         </div>
@@ -484,7 +472,10 @@ export const AnalisisDofaFormModal = ({
         {filteredFactores.length === 0 ? (
           <div className="text-center py-8 text-gray-500 dark:text-gray-400">
             <Target className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p>No hay factores {filterTipo ? `de tipo ${TIPO_FACTOR_DOFA_CONFIG[filterTipo].label}` : ''}</p>
+            <p>
+              No hay factores{' '}
+              {filterTipo ? `de tipo ${TIPO_FACTOR_DOFA_CONFIG[filterTipo].label}` : ''}
+            </p>
           </div>
         ) : (
           filteredFactores.map((factor) => {
@@ -512,9 +503,7 @@ export const AnalisisDofaFormModal = ({
                         <span className="text-xs text-gray-500">{factor.area_nombre}</span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-900 dark:text-gray-100">
-                      {factor.descripcion}
-                    </p>
+                    <p className="text-sm text-gray-900 dark:text-gray-100">{factor.descripcion}</p>
                     {factor.evidencias && (
                       <p className="text-xs text-gray-500 mt-1 truncate">
                         Evidencias: {factor.evidencias}
@@ -570,7 +559,9 @@ export const AnalisisDofaFormModal = ({
                       : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
                   }`}
                 >
-                  <Icon className={`h-4 w-4 ${factorForm.tipo === value ? config.textClass : ''}`} />
+                  <Icon
+                    className={`h-4 w-4 ${factorForm.tipo === value ? config.textClass : ''}`}
+                  />
                   <span className={`text-sm ${factorForm.tipo === value ? config.textClass : ''}`}>
                     {label}
                   </span>
@@ -580,7 +571,7 @@ export const AnalisisDofaFormModal = ({
           </div>
 
           <Textarea
-            label="Descripcion del Factor *"
+            label="Descripción del Factor *"
             value={factorForm.descripcion}
             onChange={(e) => setFactorForm({ ...factorForm, descripcion: e.target.value })}
             placeholder="Describa el factor identificado..."
@@ -633,12 +624,7 @@ export const AnalisisDofaFormModal = ({
                   <Save className="h-4 w-4 mr-2" />
                   Guardar Cambios
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleCancelEdit}
-                >
+                <Button type="button" variant="outline" size="sm" onClick={handleCancelEdit}>
                   <X className="h-4 w-4 mr-2" />
                   Cancelar
                 </Button>

@@ -225,12 +225,6 @@ class StrategicObjective(AuditModel, SoftDeleteModel):
         verbose_name='Normas ISO',
         help_text='Normas ISO vinculadas al objetivo'
     )
-    # DEPRECATED: Campo legacy para migración
-    iso_standards_legacy = models.JSONField(
-        default=list,
-        blank=True,
-        verbose_name='[DEPRECATED] Normas ISO (JSON)'
-    )
     responsible = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -726,7 +720,16 @@ class GestionCambio(AuditModel, SoftDeleteModel):
     estructurales, de procesos o tecnológicos de la organización.
     """
 
-    # PRIORITY_CHOICES - Estándar técnico (fijo)
+    CHANGE_TYPE_CHOICES = [
+        ('ESTRATEGICO', 'Estratégico'),
+        ('ORGANIZACIONAL', 'Organizacional'),
+        ('PROCESO', 'Proceso'),
+        ('TECNOLOGICO', 'Tecnológico'),
+        ('CULTURAL', 'Cultural'),
+        ('NORMATIVO', 'Normativo'),
+        ('OTRO', 'Otro'),
+    ]
+
     PRIORITY_CHOICES = [
         ('BAJA', 'Baja'),
         ('MEDIA', 'Media'),
@@ -734,7 +737,6 @@ class GestionCambio(AuditModel, SoftDeleteModel):
         ('CRITICA', 'Crítica'),
     ]
 
-    # STATUS_CHOICES - Estados de workflow (fijo)
     STATUS_CHOICES = [
         ('IDENTIFICADO', 'Identificado'),
         ('ANALISIS', 'En Análisis'),
@@ -756,24 +758,17 @@ class GestionCambio(AuditModel, SoftDeleteModel):
         help_text='Título descriptivo del cambio'
     )
     description = models.TextField(
+        blank=True,
+        default='',
         verbose_name='Descripción',
         help_text='Descripción detallada del cambio'
     )
-    tipo_cambio = models.ForeignKey(
-        'configuracion.TipoCambio',
-        on_delete=models.PROTECT,
-        null=True,
-        blank=True,
-        related_name='gestiones_cambio',
+    change_type = models.CharField(
+        max_length=20,
+        choices=CHANGE_TYPE_CHOICES,
+        default='PROCESO',
         verbose_name='Tipo de Cambio',
         db_index=True
-    )
-    # DEPRECATED: Campo legacy para migración
-    change_type_legacy = models.CharField(
-        max_length=20,
-        blank=True,
-        null=True,
-        verbose_name='[DEPRECATED] Tipo de Cambio (código)'
     )
     priority = models.CharField(
         max_length=20,
@@ -866,8 +861,7 @@ class GestionCambio(AuditModel, SoftDeleteModel):
         ]
 
     def __str__(self):
-        tipo_str = self.tipo_cambio.name if self.tipo_cambio else 'Sin Tipo'
-        return f"{self.code} - {self.title} ({tipo_str})"
+        return f"{self.code} - {self.title} ({self.get_change_type_display()})"
 
     def transition_status(self, new_status, user=None):
         """Cambia el estado con validaciones"""

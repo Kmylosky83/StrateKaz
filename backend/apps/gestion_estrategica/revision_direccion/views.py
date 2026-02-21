@@ -16,6 +16,7 @@ from django.db.models import Count, Q
 from django.utils import timezone
 
 from apps.core.mixins import StandardViewSetMixin
+from apps.core.base_models.mixins import get_tenant_empresa
 from .models import (
     ProgramaRevision, ParticipanteRevision, TemaRevision,
     ActaRevision, AnalisisTemaActa, CompromisoRevision,
@@ -23,6 +24,7 @@ from .models import (
 )
 from .serializers import (
     ProgramaRevisionSerializer, ProgramaRevisionListSerializer,
+    ProgramaRevisionCreateSerializer,
     ParticipanteRevisionSerializer, TemaRevisionSerializer,
     ActaRevisionSerializer, AnalisisTemaActaSerializer,
     CompromisoRevisionSerializer, CompromisoRevisionListSerializer,
@@ -55,15 +57,28 @@ class ProgramaRevisionViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'list':
             return ProgramaRevisionListSerializer
+        if self.action in ['create', 'update', 'partial_update']:
+            return ProgramaRevisionCreateSerializer
         return ProgramaRevisionSerializer
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        empresa = get_tenant_empresa()
+        # Auto-derive anio from fecha_programada if not provided
+        fecha = serializer.validated_data.get('fecha_programada')
+        anio = serializer.validated_data.get('anio')
+        if not anio and fecha:
+            anio = fecha.year
+        serializer.save(
+            created_by=self.request.user,
+            empresa=empresa,
+            anio=anio,
+        )
 
     @action(detail=False, methods=['get'])
     def dashboard(self, request):
         """Retorna estadísticas del dashboard de revisiones"""
-        empresa_id = request.query_params.get('empresa', 1)
+        empresa = get_tenant_empresa()
+        empresa_id = request.query_params.get('empresa', empresa.id if empresa else 1)
         anio = request.query_params.get('anio', timezone.now().year)
 
         programas = self.get_queryset().filter(empresa=empresa_id, anio=anio)
@@ -123,7 +138,8 @@ class ProgramaRevisionViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         Retorna las próximas revisiones programadas.
         GET /api/revision-direccion/programaciones/proximas/?limit=5
         """
-        empresa_id = request.query_params.get('empresa', 1)
+        empresa = get_tenant_empresa()
+        empresa_id = request.query_params.get('empresa', empresa.id if empresa else 1)
         limit = int(request.query_params.get('limit', 5))
 
         proximas = self.get_queryset().filter(
@@ -152,7 +168,8 @@ class ProgramaRevisionViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def calendario(self, request):
         """Retorna revisiones para vista de calendario"""
-        empresa_id = request.query_params.get('empresa', 1)
+        empresa = get_tenant_empresa()
+        empresa_id = request.query_params.get('empresa', empresa.id if empresa else 1)
         anio = request.query_params.get('anio', timezone.now().year)
 
         programas = self.get_queryset().filter(
@@ -301,7 +318,8 @@ class CompromisoRevisionViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def pendientes(self, request):
         """Retorna compromisos pendientes"""
-        empresa_id = request.query_params.get('empresa', 1)
+        _empresa = get_tenant_empresa()
+        empresa_id = request.query_params.get('empresa', _empresa.id if _empresa else 1)
         queryset = self.get_queryset().filter(
             acta__programa__empresa=empresa_id,
             estado__in=['pendiente', 'en_progreso'],
@@ -314,7 +332,8 @@ class CompromisoRevisionViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def vencidos(self, request):
         """Retorna compromisos vencidos"""
-        empresa_id = request.query_params.get('empresa', 1)
+        _empresa = get_tenant_empresa()
+        empresa_id = request.query_params.get('empresa', _empresa.id if _empresa else 1)
         queryset = self.get_queryset().filter(
             acta__programa__empresa=empresa_id,
             estado__in=['pendiente', 'en_progreso'],
@@ -328,7 +347,8 @@ class CompromisoRevisionViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def por_responsable(self, request):
         """Agrupa compromisos por responsable"""
-        empresa_id = request.query_params.get('empresa', 1)
+        _empresa = get_tenant_empresa()
+        empresa_id = request.query_params.get('empresa', _empresa.id if _empresa else 1)
         queryset = self.get_queryset().filter(
             acta__programa__empresa=empresa_id,
             estado__in=['pendiente', 'en_progreso'],
@@ -415,7 +435,8 @@ class RevisionDireccionStatsViewSet(viewsets.ViewSet):
         GET /api/revision-direccion/stats/
         Retorna estadísticas generales de revisión por dirección
         """
-        empresa_id = request.query_params.get('empresa', 1)
+        _empresa = get_tenant_empresa()
+        empresa_id = request.query_params.get('empresa', _empresa.id if _empresa else 1)
         anio = request.query_params.get('anio', timezone.now().year)
 
         programas = ProgramaRevision.objects.filter(empresa=empresa_id, anio=anio)
@@ -467,7 +488,8 @@ class RevisionDireccionStatsViewSet(viewsets.ViewSet):
         GET /api/revision-direccion/stats/dashboard/
         Retorna dashboard completo de revisión por dirección
         """
-        empresa_id = request.query_params.get('empresa', 1)
+        _empresa = get_tenant_empresa()
+        empresa_id = request.query_params.get('empresa', _empresa.id if _empresa else 1)
         anio = request.query_params.get('anio', timezone.now().year)
 
         programas = ProgramaRevision.objects.filter(empresa=empresa_id, anio=anio)

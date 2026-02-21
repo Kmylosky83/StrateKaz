@@ -20,7 +20,7 @@ class PortafolioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Portafolio
         fields = '__all__'
-        read_only_fields = ['created_at', 'updated_at', 'created_by']
+        read_only_fields = ['created_at', 'updated_at', 'created_by', 'empresa']
 
     def get_total_programas(self, obj):
         return obj.programas.filter(is_active=True).count()
@@ -41,7 +41,7 @@ class ProgramaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Programa
         fields = '__all__'
-        read_only_fields = ['created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at', 'empresa']
 
     def get_total_proyectos(self, obj):
         return obj.proyectos.filter(is_active=True).count()
@@ -235,7 +235,7 @@ class ProyectoCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Proyecto
         fields = '__all__'
-        read_only_fields = ['created_at', 'updated_at', 'fecha_propuesta', 'created_by']
+        read_only_fields = ['created_at', 'updated_at', 'fecha_propuesta', 'created_by', 'empresa']
 
 
 class DashboardProyectosSerializer(serializers.Serializer):

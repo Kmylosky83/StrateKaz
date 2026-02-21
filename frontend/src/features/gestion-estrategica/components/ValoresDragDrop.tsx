@@ -36,19 +36,16 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import {
-  GripVertical,
-  Plus,
-  Edit,
-  Trash2,
-  Save,
-  X,
-} from 'lucide-react';
+import { GripVertical, Plus, Edit, Trash2, Save, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, Button, DynamicIcon, IconPicker } from '@/components/common';
 import { Input, Textarea } from '@/components/forms';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
-import type { CorporateValue, CreateCorporateValueDTO, UpdateCorporateValueDTO } from '../types/strategic.types';
+import type {
+  CorporateValue,
+  CreateCorporateValueDTO,
+  UpdateCorporateValueDTO,
+} from '../types/strategic.types';
 import { cn } from '@/utils/cn';
 
 /**
@@ -94,14 +91,9 @@ const SortableValueItem = ({
   accentRgb,
   readOnly,
 }: SortableValueItemProps) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: value.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: value.id,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -130,11 +122,7 @@ const SortableValueItem = ({
                 className="p-3 rounded-xl"
                 style={{ backgroundColor: `rgba(${accentRgb}, 0.15)` }}
               >
-                <DynamicIcon
-                  name={currentIcon}
-                  size={24}
-                  color={accentColor}
-                />
+                <DynamicIcon name={currentIcon} size={24} color={accentColor} />
               </div>
             </div>
             <div className="flex-1 space-y-3">
@@ -145,10 +133,10 @@ const SortableValueItem = ({
                 placeholder="Ej: Integridad"
               />
               <Textarea
-                label="Descripcion"
+                label="Descripción"
                 value={editData.description || ''}
                 onChange={(e) => onEditChange('description', e.target.value)}
-                placeholder="Describe que significa este valor para la organizacion..."
+                placeholder="Describe que significa este valor para la organización..."
                 rows={3}
               />
             </div>
@@ -164,12 +152,7 @@ const SortableValueItem = ({
           />
 
           <div className="flex justify-end gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onCancelEdit}
-              disabled={isLoading}
-            >
+            <Button variant="ghost" size="sm" onClick={onCancelEdit} disabled={isLoading}>
               <X className="w-4 h-4 mr-1" />
               Cancelar
             </Button>
@@ -231,19 +214,13 @@ const SortableValueItem = ({
           className="p-3 rounded-xl transition-colors"
           style={{ backgroundColor: `rgba(${accentRgb}, 0.15)` }}
         >
-          <DynamicIcon
-            name={value.icon}
-            size={24}
-            color={accentColor}
-          />
+          <DynamicIcon name={value.icon} size={24} color={accentColor} />
         </div>
       </div>
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <h4 className="font-semibold text-gray-900 dark:text-gray-100">
-          {value.name}
-        </h4>
+        <h4 className="font-semibold text-gray-900 dark:text-gray-100">{value.name}</h4>
         <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
           {value.description}
         </p>
@@ -252,12 +229,7 @@ const SortableValueItem = ({
       {/* Actions */}
       {!readOnly && (
         <div className="flex-shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onEdit(value)}
-            title="Editar"
-          >
+          <Button variant="ghost" size="sm" onClick={() => onEdit(value)} title="Editar">
             <Edit className="w-4 h-4" />
           </Button>
           <Button
@@ -295,14 +267,9 @@ const SortableValueCard = ({
   accentRgb,
   readOnly,
 }: SortableValueCardProps) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: value.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: value.id,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -345,11 +312,7 @@ const SortableValueCard = ({
           background: `linear-gradient(135deg, rgba(${accentRgb}, 0.2) 0%, rgba(${accentRgb}, 0.1) 100%)`,
         }}
       >
-        <DynamicIcon
-          name={value.icon}
-          size={36}
-          color={accentColor}
-        />
+        <DynamicIcon name={value.icon} size={36} color={accentColor} />
       </div>
 
       {/* Name */}
@@ -455,10 +418,7 @@ export const ValoresDragDrop = ({
     })
   );
 
-  const sortedValues = useMemo(
-    () => [...values].sort((a, b) => a.orden - b.orden),
-    [values]
-  );
+  const sortedValues = useMemo(() => [...values].sort((a, b) => a.orden - b.orden), [values]);
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as number);
@@ -530,13 +490,10 @@ export const ValoresDragDrop = ({
     }
   };
 
-  const activeValue = activeId
-    ? sortedValues.find((v) => v.id === activeId)
-    : null;
+  const activeValue = activeId ? sortedValues.find((v) => v.id === activeId) : null;
 
   return (
     <Card className="p-6">
-
       {/* Create New Value Form */}
       <AnimatePresence>
         {isCreating && (
@@ -553,10 +510,7 @@ export const ValoresDragDrop = ({
                 borderColor: `rgba(${accentRgb}, 0.3)`,
               }}
             >
-              <h4
-                className="font-medium mb-4"
-                style={{ color: accentColor }}
-              >
+              <h4 className="font-medium mb-4" style={{ color: accentColor }}>
                 Nuevo Valor Corporativo
               </h4>
               <div className="space-y-4">
@@ -566,11 +520,7 @@ export const ValoresDragDrop = ({
                       className="p-3 rounded-xl"
                       style={{ backgroundColor: `rgba(${accentRgb}, 0.15)` }}
                     >
-                      <DynamicIcon
-                        name={newValue.icon}
-                        size={24}
-                        color={accentColor}
-                      />
+                      <DynamicIcon name={newValue.icon} size={24} color={accentColor} />
                     </div>
                   </div>
                   <div className="flex-1 space-y-3">
@@ -581,10 +531,10 @@ export const ValoresDragDrop = ({
                       placeholder="Ej: Integridad, Compromiso, Excelencia"
                     />
                     <Textarea
-                      label="Descripcion"
+                      label="Descripción"
                       value={newValue.description || ''}
                       onChange={(e) => setNewValue({ ...newValue, description: e.target.value })}
-                      placeholder="Describe que significa este valor para la organizacion y como se vive en el dia a dia..."
+                      placeholder="Describe que significa este valor para la organización y como se vive en el dia a dia..."
                       rows={3}
                     />
                   </div>
@@ -654,7 +604,7 @@ export const ValoresDragDrop = ({
             {viewMode === 'cards' ? (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 <AnimatePresence>
-                  {sortedValues.map((value) => (
+                  {sortedValues.map((value) =>
                     editingId === value.id ? (
                       <SortableValueItem
                         key={value.id}
@@ -664,7 +614,9 @@ export const ValoresDragDrop = ({
                         isEditing={true}
                         editData={editData}
                         onEditChange={(field, val) => setEditData({ ...editData, [field]: val })}
-                        onEditIconChange={(iconName) => setEditData({ ...editData, icon: iconName })}
+                        onEditIconChange={(iconName) =>
+                          setEditData({ ...editData, icon: iconName })
+                        }
                         onSaveEdit={handleSaveEdit}
                         onCancelEdit={handleCancelEdit}
                         isLoading={isLoading}
@@ -683,7 +635,7 @@ export const ValoresDragDrop = ({
                         readOnly={readOnly}
                       />
                     )
-                  ))}
+                  )}
                 </AnimatePresence>
               </div>
             ) : (
@@ -725,11 +677,7 @@ export const ValoresDragDrop = ({
                     className="p-3 rounded-xl"
                     style={{ backgroundColor: `rgba(${accentRgb}, 0.15)` }}
                   >
-                    <DynamicIcon
-                      name={activeValue.icon}
-                      size={24}
-                      color={accentColor}
-                    />
+                    <DynamicIcon name={activeValue.icon} size={24} color={accentColor} />
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 dark:text-gray-100">

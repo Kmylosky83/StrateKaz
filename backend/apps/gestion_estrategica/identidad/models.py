@@ -204,14 +204,6 @@ class AlcanceSistema(AuditModel, SoftDeleteModel):
         verbose_name='Norma ISO',
         db_index=True
     )
-    # DEPRECATED: Campo legacy para migración
-    iso_standard_legacy = models.CharField(
-        max_length=20,
-        blank=True,
-        null=True,
-        verbose_name='[DEPRECATED] Norma ISO (código)',
-        db_index=True
-    )
     scope = models.TextField(
         verbose_name='Alcance',
         help_text='Descripción del alcance del sistema de gestión'

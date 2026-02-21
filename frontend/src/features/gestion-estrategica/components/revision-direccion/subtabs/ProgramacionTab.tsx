@@ -19,7 +19,9 @@ import { ProgramacionFormModal } from '../ProgramacionFormModal';
 
 export const ProgramacionTab = () => {
   const [showFormModal, setShowFormModal] = useState(false);
-  const [selectedProgramacion, setSelectedProgramacion] = useState<ProgramacionRevision | null>(null);
+  const [selectedProgramacion, setSelectedProgramacion] = useState<ProgramacionRevision | null>(
+    null
+  );
   const [cancelId, setCancelId] = useState<number | null>(null);
 
   const { data: programacionesData, isLoading } = useProgramasRevision({});
@@ -70,7 +72,9 @@ export const ProgramacionTab = () => {
               <Card key={prog.id} className="border-blue-200 dark:border-blue-800">
                 <div className="p-4">
                   <div className="flex items-start justify-between mb-2">
-                    <span className="font-medium text-gray-900 dark:text-gray-100">{prog.nombre || prog.codigo}</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">
+                      {prog.nombre || prog.codigo}
+                    </span>
                     <Badge variant="primary" size="sm">
                       {format(new Date(prog.fecha_programada), 'dd MMM', { locale: es })}
                     </Badge>
@@ -86,7 +90,12 @@ export const ProgramacionTab = () => {
                     </p>
                   </div>
                   <div className="flex gap-2 mt-3">
-                    <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEdit(prog)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleEdit(prog)}
+                    >
                       Ver Detalle
                     </Button>
                     {!prog.notificacion_enviada && prog.estado === 'PROGRAMADA' && (
@@ -169,7 +178,9 @@ export const ProgramacionTab = () => {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-gray-400" />
-                      <span className="text-sm text-gray-900 dark:text-gray-100">{prog.hora_inicio}</span>
+                      <span className="text-sm text-gray-900 dark:text-gray-100">
+                        {prog.hora_inicio}
+                      </span>
                     </div>
                   </td>
                   <td className="px-4 py-3">
@@ -180,7 +191,9 @@ export const ProgramacionTab = () => {
                       </span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-center">{getEstadoBadge(prog.estado, prog.estado_display)}</td>
+                  <td className="px-4 py-3 text-center">
+                    {getEstadoBadge(prog.estado, prog.estado_display)}
+                  </td>
                   <td className="px-4 py-3">
                     {prog.tiene_acta && (
                       <Badge variant="success" size="sm">
@@ -233,8 +246,8 @@ export const ProgramacionTab = () => {
               { onSuccess: () => setCancelId(null) }
             );
           }}
-          title="Cancelar Programacion"
-          message="Esta seguro de cancelar esta revision programada? Esta accion no se puede deshacer."
+          title="Cancelar Programación"
+          message="¿Está seguro de cancelar esta revisión programada? Esta acción no se puede deshacer."
           confirmLabel="Si, Cancelar"
           variant="danger"
           isLoading={cancelarMutation.isPending}

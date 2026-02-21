@@ -4,7 +4,7 @@
  */
 import axiosInstance from '@/api/axios-config';
 
-const BASE_URL = '/api/motor-riesgos/riesgos-procesos';
+const BASE_URL = '/api/riesgos/riesgos-procesos';
 
 // ==================== TIPOS LOCALES ====================
 
@@ -106,7 +106,9 @@ export const riesgosEstrategicosApi = {
     return response.data;
   },
 
-  getRiesgos: async (params?: Record<string, string>): Promise<PaginatedResponse<RiesgoProceso>> => {
+  getRiesgos: async (
+    params?: Record<string, string>
+  ): Promise<PaginatedResponse<RiesgoProceso>> => {
     const response = await axiosInstance.get(`${BASE_URL}/riesgos/`, { params });
     return response.data;
   },
@@ -121,12 +123,16 @@ export const riesgosEstrategicosApi = {
     return response.data;
   },
 
-  getOportunidades: async (params?: Record<string, string>): Promise<PaginatedResponse<Oportunidad>> => {
+  getOportunidades: async (
+    params?: Record<string, string>
+  ): Promise<PaginatedResponse<Oportunidad>> => {
     const response = await axiosInstance.get(`${BASE_URL}/oportunidades/`, { params });
     return response.data;
   },
 
-  getTratamientos: async (params?: Record<string, string>): Promise<PaginatedResponse<TratamientoRiesgo>> => {
+  getTratamientos: async (
+    params?: Record<string, string>
+  ): Promise<PaginatedResponse<TratamientoRiesgo>> => {
     const response = await axiosInstance.get(`${BASE_URL}/tratamientos/`, { params });
     return response.data;
   },

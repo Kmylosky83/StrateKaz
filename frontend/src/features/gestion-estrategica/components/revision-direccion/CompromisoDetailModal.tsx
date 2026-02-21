@@ -158,9 +158,7 @@ export const CompromisoDetailModal = ({
 
         {/* Descripcion */}
         <div>
-          <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-            Descripcion
-          </h4>
+          <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Descripcion</h4>
           <p className="text-gray-900 dark:text-gray-100">{compromiso.descripcion}</p>
           {compromiso.objetivo && (
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -193,7 +191,8 @@ export const CompromisoDetailModal = ({
                 {format(new Date(compromiso.fecha_limite), 'dd/MM/yyyy', { locale: es })}
               </p>
               <p className="text-xs text-gray-500">
-                Creado: {format(new Date(compromiso.fecha_compromiso), 'dd/MM/yyyy', { locale: es })}
+                Creado:{' '}
+                {format(new Date(compromiso.fecha_compromiso), 'dd/MM/yyyy', { locale: es })}
               </p>
             </div>
           </div>
@@ -210,7 +209,9 @@ export const CompromisoDetailModal = ({
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
             <div
               className="h-3 rounded-full transition-all duration-300 bg-purple-600"
-              style={{ width: `${canUpdateProgreso ? progreso || currentProgreso : currentProgreso}%` }}
+              style={{
+                width: `${canUpdateProgreso ? progreso || currentProgreso : currentProgreso}%`,
+              }}
             />
           </div>
 
@@ -229,7 +230,9 @@ export const CompromisoDetailModal = ({
                 variant="outline"
                 size="sm"
                 onClick={handleGuardarProgreso}
-                disabled={progresoMutation.isPending || (progreso || currentProgreso) === currentProgreso}
+                disabled={
+                  progresoMutation.isPending || (progreso || currentProgreso) === currentProgreso
+                }
               >
                 {progresoMutation.isPending ? 'Guardando...' : 'Guardar'}
               </Button>
@@ -248,7 +251,9 @@ export const CompromisoDetailModal = ({
             </div>
             {compromiso.fecha_verificacion && (
               <p className="text-xs text-green-600 dark:text-green-400">
-                {format(new Date(compromiso.fecha_verificacion), "dd/MM/yyyy 'a las' HH:mm", { locale: es })}
+                {format(new Date(compromiso.fecha_verificacion), "dd/MM/yyyy 'a las' HH:mm", {
+                  locale: es,
+                })}
               </p>
             )}
             <p className="text-sm mt-1 text-green-700 dark:text-green-300">
@@ -374,10 +379,10 @@ export const CompromisoDetailModal = ({
               </label>
             </div>
             <Textarea
-              label="Observaciones de Verificacion"
+              label="Observaciones de Verificación"
               value={observaciones}
               onChange={(e) => setObservaciones(e.target.value)}
-              placeholder="Observaciones de la verificacion de eficacia..."
+              placeholder="Observaciones de la verificación de eficacia..."
               rows={2}
             />
             <div className="flex gap-2">
@@ -387,7 +392,7 @@ export const CompromisoDetailModal = ({
                 onClick={handleVerificar}
                 disabled={verificarMutation.isPending}
               >
-                {verificarMutation.isPending ? 'Verificando...' : 'Confirmar Verificacion'}
+                {verificarMutation.isPending ? 'Verificando...' : 'Confirmar Verificación'}
               </Button>
               <Button variant="outline" size="sm" onClick={() => setShowVerificarForm(false)}>
                 Cancelar

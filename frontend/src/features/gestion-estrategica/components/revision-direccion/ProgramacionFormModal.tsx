@@ -1,5 +1,5 @@
 /**
- * Modal para crear/editar Programaciones de Revision por la Direccion
+ * Modal para crear/editar Programaciones de Revisión por la Dirección
  */
 import { useState, useEffect } from 'react';
 import { BaseModal } from '@/components/modals/BaseModal';
@@ -7,15 +7,8 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
-import {
-  useCreateProgramacion,
-  useUpdateProgramacion,
-} from '../../hooks/useRevisionDireccion';
-import type {
-  ProgramacionRevision,
-  CreateProgramacionRevisionDTO,
-  FrecuenciaRevision,
-} from '../../types/revision-direccion.types';
+import { useCreateProgramacion, useUpdateProgramacion } from '../../hooks/useRevisionDireccion';
+import type { ProgramacionRevision } from '../../types/revision-direccion.types';
 
 interface ProgramacionFormModalProps {
   programacion: ProgramacionRevision | null;
@@ -23,53 +16,50 @@ interface ProgramacionFormModalProps {
   onClose: () => void;
 }
 
+/** Form state uses backend model field names */
 interface FormData {
-  nombre: string;
-  frecuencia: FrecuenciaRevision;
+  periodo: string;
+  frecuencia: string;
   fecha_programada: string;
   hora_inicio: string;
   duracion_estimada_horas: number;
-  ubicacion: string;
-  modalidad: 'PRESENCIAL' | 'VIRTUAL' | 'HIBRIDA';
-  enlace_reunion: string;
-  iso_9001: boolean;
-  iso_14001: boolean;
-  iso_45001: boolean;
-  iso_27001: boolean;
-  pesv: boolean;
-  sg_sst: boolean;
-  descripcion: string;
+  lugar: string;
+  modalidad: string;
+  incluye_calidad: boolean;
+  incluye_ambiental: boolean;
+  incluye_sst: boolean;
+  incluye_seguridad_info: boolean;
+  incluye_pesv: boolean;
+  observaciones: string;
 }
 
 const INITIAL_FORM: FormData = {
-  nombre: '',
-  frecuencia: 'SEMESTRAL',
+  periodo: '',
+  frecuencia: 'semestral',
   fecha_programada: '',
   hora_inicio: '08:00',
   duracion_estimada_horas: 2,
-  ubicacion: '',
-  modalidad: 'PRESENCIAL',
-  enlace_reunion: '',
-  iso_9001: true,
-  iso_14001: true,
-  iso_45001: true,
-  iso_27001: false,
-  pesv: false,
-  sg_sst: true,
-  descripcion: '',
+  lugar: '',
+  modalidad: 'presencial',
+  incluye_calidad: true,
+  incluye_ambiental: true,
+  incluye_sst: true,
+  incluye_seguridad_info: false,
+  incluye_pesv: false,
+  observaciones: '',
 };
 
 const FRECUENCIA_OPTIONS = [
-  { value: 'TRIMESTRAL', label: 'Trimestral' },
-  { value: 'CUATRIMESTRAL', label: 'Cuatrimestral' },
-  { value: 'SEMESTRAL', label: 'Semestral' },
-  { value: 'ANUAL', label: 'Anual' },
+  { value: 'trimestral', label: 'Trimestral' },
+  { value: 'cuatrimestral', label: 'Cuatrimestral' },
+  { value: 'semestral', label: 'Semestral' },
+  { value: 'anual', label: 'Anual' },
 ];
 
 const MODALIDAD_OPTIONS = [
-  { value: 'PRESENCIAL', label: 'Presencial' },
-  { value: 'VIRTUAL', label: 'Virtual' },
-  { value: 'HIBRIDA', label: 'Hibrida' },
+  { value: 'presencial', label: 'Presencial' },
+  { value: 'virtual', label: 'Virtual' },
+  { value: 'hibrida', label: 'Híbrida' },
 ];
 
 export const ProgramacionFormModal = ({
@@ -86,22 +76,22 @@ export const ProgramacionFormModal = ({
 
   useEffect(() => {
     if (programacion) {
+      // Map API response to form — supports both old frontend names and backend names
+      const p = programacion as any;
       setForm({
-        nombre: programacion.nombre || '',
-        frecuencia: programacion.frecuencia,
-        fecha_programada: programacion.fecha_programada,
-        hora_inicio: programacion.hora_inicio || '08:00',
-        duracion_estimada_horas: programacion.duracion_estimada_horas ?? 2,
-        ubicacion: programacion.ubicacion ?? '',
-        modalidad: programacion.modalidad,
-        enlace_reunion: programacion.enlace_reunion ?? '',
-        iso_9001: programacion.iso_9001,
-        iso_14001: programacion.iso_14001,
-        iso_45001: programacion.iso_45001,
-        iso_27001: programacion.iso_27001,
-        pesv: programacion.pesv,
-        sg_sst: programacion.sg_sst,
-        descripcion: programacion.descripcion ?? '',
+        periodo: p.periodo || p.nombre || '',
+        frecuencia: (p.frecuencia || 'semestral').toLowerCase(),
+        fecha_programada: p.fecha_programada || '',
+        hora_inicio: p.hora_inicio || '08:00',
+        duracion_estimada_horas: p.duracion_estimada_horas ?? 2,
+        lugar: p.lugar || p.ubicacion || '',
+        modalidad: (p.modalidad || 'presencial').toLowerCase(),
+        incluye_calidad: p.incluye_calidad ?? p.iso_9001 ?? true,
+        incluye_ambiental: p.incluye_ambiental ?? p.iso_14001 ?? true,
+        incluye_sst: p.incluye_sst ?? p.iso_45001 ?? true,
+        incluye_seguridad_info: p.incluye_seguridad_info ?? p.iso_27001 ?? false,
+        incluye_pesv: p.incluye_pesv ?? p.pesv ?? false,
+        observaciones: p.observaciones || p.descripcion || '',
       });
     } else {
       setForm(INITIAL_FORM);
@@ -113,33 +103,34 @@ export const ProgramacionFormModal = ({
   };
 
   const handleSubmit = () => {
-    if (!form.nombre.trim() || !form.fecha_programada) return;
+    if (!form.periodo.trim() || !form.fecha_programada) return;
 
-    const data: CreateProgramacionRevisionDTO = {
-      nombre: form.nombre.trim(),
+    // Build payload matching backend ProgramaRevision model
+    const anio = new Date(form.fecha_programada).getFullYear();
+    const payload: Record<string, unknown> = {
+      periodo: form.periodo.trim(),
+      anio,
       frecuencia: form.frecuencia,
       fecha_programada: form.fecha_programada,
       hora_inicio: form.hora_inicio,
       duracion_estimada_horas: form.duracion_estimada_horas,
-      ubicacion: form.ubicacion,
+      lugar: form.lugar,
       modalidad: form.modalidad,
-      enlace_reunion: form.enlace_reunion || undefined,
-      iso_9001: form.iso_9001,
-      iso_14001: form.iso_14001,
-      iso_45001: form.iso_45001,
-      iso_27001: form.iso_27001,
-      pesv: form.pesv,
-      sg_sst: form.sg_sst,
-      descripcion: form.descripcion || undefined,
+      incluye_calidad: form.incluye_calidad,
+      incluye_ambiental: form.incluye_ambiental,
+      incluye_sst: form.incluye_sst,
+      incluye_seguridad_info: form.incluye_seguridad_info,
+      incluye_pesv: form.incluye_pesv,
+      observaciones: form.observaciones || undefined,
     };
 
     if (isEditing) {
       updateMutation.mutate(
-        { id: programacion.id, data },
+        { id: programacion.id, data: payload as any },
         { onSuccess: () => onClose() }
       );
     } else {
-      createMutation.mutate(data, { onSuccess: () => onClose() });
+      createMutation.mutate(payload as any, { onSuccess: () => onClose() });
     }
   };
 
@@ -147,27 +138,25 @@ export const ProgramacionFormModal = ({
     <BaseModal
       isOpen={isOpen}
       onClose={onClose}
-      title={isEditing ? 'Editar Programacion' : 'Nueva Programacion de Revision'}
+      title={isEditing ? 'Editar Programación' : 'Nueva Programación de Revisión'}
       size="lg"
     >
       <div className="space-y-4">
         <Input
-          label="Nombre de la Revision"
-          value={form.nombre}
-          onChange={(e) => handleChange('nombre', e.target.value)}
-          placeholder="Ej: Revision Primer Semestre 2026"
+          label="Período de la Revisión"
+          value={form.periodo}
+          onChange={(e) => handleChange('periodo', e.target.value)}
+          placeholder="Ej: Revisión Primer Semestre 2026"
           required
         />
 
-        {form.descripcion !== undefined && (
-          <Textarea
-            label="Descripcion"
-            value={form.descripcion}
-            onChange={(e) => handleChange('descripcion', e.target.value)}
-            placeholder="Descripcion opcional de la revision"
-            rows={2}
-          />
-        )}
+        <Textarea
+          label="Observaciones"
+          value={form.observaciones}
+          onChange={(e) => handleChange('observaciones', e.target.value)}
+          placeholder="Observaciones opcionales de la revisión"
+          rows={2}
+        />
 
         <div className="grid grid-cols-2 gap-4">
           <Select
@@ -202,7 +191,7 @@ export const ProgramacionFormModal = ({
 
         <div className="grid grid-cols-2 gap-4">
           <Input
-            label="Duracion Estimada (horas)"
+            label="Duración Estimada (horas)"
             type="number"
             value={String(form.duracion_estimada_horas)}
             onChange={(e) => handleChange('duracion_estimada_horas', Number(e.target.value))}
@@ -210,37 +199,30 @@ export const ProgramacionFormModal = ({
             step="0.5"
           />
           <Input
-            label="Ubicacion / Sala"
-            value={form.ubicacion}
-            onChange={(e) => handleChange('ubicacion', e.target.value)}
+            label="Ubicación / Sala"
+            value={form.lugar}
+            onChange={(e) => handleChange('lugar', e.target.value)}
             placeholder="Sala de Juntas"
           />
         </div>
 
-        {form.modalidad !== 'PRESENCIAL' && (
-          <Input
-            label="Enlace de Reunion"
-            value={form.enlace_reunion}
-            onChange={(e) => handleChange('enlace_reunion', e.target.value)}
-            placeholder="https://meet.google.com/..."
-          />
-        )}
-
-        {/* Sistemas de Gestion */}
+        {/* Sistemas de Gestión */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Sistemas de Gestion a Revisar
+            Sistemas de Gestión a Revisar
           </label>
           <div className="grid grid-cols-3 gap-3">
-            {([
-              { key: 'iso_9001', label: 'ISO 9001 (Calidad)' },
-              { key: 'iso_14001', label: 'ISO 14001 (Ambiental)' },
-              { key: 'iso_45001', label: 'ISO 45001 (SST)' },
-              { key: 'iso_27001', label: 'ISO 27001 (Seguridad Info)' },
-              { key: 'pesv', label: 'PESV (Seguridad Vial)' },
-              { key: 'sg_sst', label: 'SG-SST (Decreto 1072)' },
-            ] as const).map(({ key, label }) => (
-              <label key={key} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            {[
+              { key: 'incluye_calidad' as const, label: 'ISO 9001 (Calidad)' },
+              { key: 'incluye_ambiental' as const, label: 'ISO 14001 (Ambiental)' },
+              { key: 'incluye_sst' as const, label: 'ISO 45001 / SG-SST' },
+              { key: 'incluye_seguridad_info' as const, label: 'ISO 27001 (Seguridad Info)' },
+              { key: 'incluye_pesv' as const, label: 'PESV (Seguridad Vial)' },
+            ].map(({ key, label }) => (
+              <label
+                key={key}
+                className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300"
+              >
                 <input
                   type="checkbox"
                   checked={form[key]}
@@ -262,9 +244,9 @@ export const ProgramacionFormModal = ({
         <Button
           variant="primary"
           onClick={handleSubmit}
-          disabled={isPending || !form.nombre.trim() || !form.fecha_programada}
+          disabled={isPending || !form.periodo.trim() || !form.fecha_programada}
         >
-          {isPending ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear Programacion'}
+          {isPending ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear Programación'}
         </Button>
       </div>
     </BaseModal>

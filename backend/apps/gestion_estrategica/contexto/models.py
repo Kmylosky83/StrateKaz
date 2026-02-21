@@ -907,6 +907,12 @@ class ParteInteresada(BaseCompanyModel):
         verbose_name="Canal de Comunicación Principal",
         help_text="Canal preferido para comunicarse con esta parte interesada"
     )
+    canales_adicionales = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name="Canales Adicionales de Comunicación",
+        help_text="Lista de canales adicionales (ej: ['whatsapp', 'telefono'])"
+    )
     frecuencia_comunicacion = models.CharField(
         max_length=20,
         choices=FrecuenciaComunicacion.choices,
@@ -1005,7 +1011,8 @@ class ParteInteresada(BaseCompanyModel):
 
     def generar_comunicacion_automatica(self):
         """
-        Genera una entrada en MatrizComunicacion basada en los datos de esta PI.
+        Genera entradas en MatrizComunicacion para CADA canal de comunicación
+        (principal + adicionales).
 
         Lógica inteligente según cuadrante:
         - Gestionar de cerca → Frecuencia alta (mensual/quincenal)
@@ -1013,7 +1020,6 @@ class ParteInteresada(BaseCompanyModel):
         - Mantener informado → Frecuencia media (bimestral)
         - Monitorear → Frecuencia baja (semestral/anual)
         """
-        # Determinar frecuencia según cuadrante
         frecuencia_map = {
             'gestionar_cerca': 'mensual',
             'mantener_satisfecho': 'trimestral',
@@ -1023,19 +1029,27 @@ class ParteInteresada(BaseCompanyModel):
 
         frecuencia = frecuencia_map.get(self.cuadrante_matriz, 'trimestral')
 
-        # Crear comunicación si no existe
-        comunicacion, created = MatrizComunicacion.objects.get_or_create(
-            parte_interesada=self,
-            defaults={
-                'que_comunicar': self.temas_interes_pi or 'Información relevante',
-                'cuando_comunicar': frecuencia,
-                'como_comunicar': self.canal_principal,
-                'responsable': self.cargo_responsable,
-                'empresa': self.empresa,
-            }
-        )
+        # Recolectar todos los canales (principal + adicionales), sin duplicados
+        todos_canales = [self.canal_principal]
+        if self.canales_adicionales:
+            todos_canales.extend(self.canales_adicionales)
+        todos_canales = list(dict.fromkeys(todos_canales))
 
-        return comunicacion, created
+        resultados = []
+        for canal in todos_canales:
+            comunicacion, created = MatrizComunicacion.objects.get_or_create(
+                parte_interesada=self,
+                como_comunicar=canal,
+                defaults={
+                    'que_comunicar': self.temas_interes_pi or 'Información relevante',
+                    'cuando_comunicar': frecuencia,
+                    'responsable': self.cargo_responsable,
+                    'empresa': self.empresa,
+                }
+            )
+            resultados.append((comunicacion, created))
+
+        return resultados
 
 
 class RequisitoParteInteresada(BaseCompanyModel):

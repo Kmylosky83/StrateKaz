@@ -65,6 +65,15 @@ class ProgramaRevisionListSerializer(serializers.ModelSerializer):
         return hasattr(obj, 'acta')
 
 
+class ProgramaRevisionCreateSerializer(serializers.ModelSerializer):
+    """Serializer para crear/actualizar programas de revisión"""
+
+    class Meta:
+        model = ProgramaRevision
+        fields = '__all__'
+        read_only_fields = ['created_at', 'updated_at', 'empresa', 'created_by', 'updated_by']
+
+
 class ProgramaRevisionSerializer(serializers.ModelSerializer):
     """Serializer completo con relaciones"""
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
@@ -78,7 +87,7 @@ class ProgramaRevisionSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProgramaRevision
         fields = '__all__'
-        read_only_fields = ['created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at', 'empresa']
 
 
 class AnalisisTemaActaSerializer(serializers.ModelSerializer):

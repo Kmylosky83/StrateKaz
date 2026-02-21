@@ -648,14 +648,17 @@ class GestionCambioViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     ViewSet para gestionar Gestión de Cambios.
 
     Endpoints:
-    - GET /cambios/ - Lista de cambios
-    - POST /cambios/ - Crear nuevo cambio
-    - GET /cambios/{id}/ - Detalle del cambio
-    - PUT/PATCH /cambios/{id}/ - Actualizar cambio
-    - DELETE /cambios/{id}/ - Eliminar cambio
-    - POST /cambios/{id}/transition/ - Transicionar estado
-    - GET /cambios/kanban/ - Vista kanban por estado
-    - GET /cambios/stats/ - Estadísticas
+    - GET /gestion-cambio/ - Lista de cambios
+    - POST /gestion-cambio/ - Crear nuevo cambio
+    - GET /gestion-cambio/{id}/ - Detalle del cambio
+    - PUT/PATCH /gestion-cambio/{id}/ - Actualizar cambio
+    - DELETE /gestion-cambio/{id}/ - Eliminar cambio (soft)
+    - POST /gestion-cambio/{id}/transition_status/ - Transicionar estado
+    - GET /gestion-cambio/kanban/ - Vista kanban por estado
+    - GET /gestion-cambio/stats/ - Estadísticas
+    - GET /gestion-cambio/change-types/ - Tipos de cambio (choices)
+    - GET /gestion-cambio/priorities/ - Prioridades (choices)
+    - GET /gestion-cambio/statuses/ - Estados (choices)
     """
 
     queryset = GestionCambio.objects.select_related(
@@ -673,8 +676,36 @@ class GestionCambioViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             return GestionCambioCreateUpdateSerializer
         return GestionCambioSerializer
 
+    # -- Choices endpoints (para dropdowns del frontend) --
+
+    @action(detail=False, methods=['get'], url_path='change-types')
+    def change_types(self, request):
+        """Retorna tipos de cambio para selects"""
+        return Response([
+            {'value': code, 'label': label}
+            for code, label in GestionCambio.CHANGE_TYPE_CHOICES
+        ])
+
+    @action(detail=False, methods=['get'])
+    def priorities(self, request):
+        """Retorna prioridades para selects"""
+        return Response([
+            {'value': code, 'label': label}
+            for code, label in GestionCambio.PRIORITY_CHOICES
+        ])
+
+    @action(detail=False, methods=['get'])
+    def statuses(self, request):
+        """Retorna estados para selects"""
+        return Response([
+            {'value': code, 'label': label}
+            for code, label in GestionCambio.STATUS_CHOICES
+        ])
+
+    # -- Actions --
+
     @action(detail=True, methods=['post'])
-    def transition(self, request, pk=None):
+    def transition_status(self, request, pk=None):
         """Transiciona el estado del cambio"""
         cambio = self.get_object()
 
@@ -693,9 +724,8 @@ class GestionCambioViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             )
 
         return Response({
-            'detail': 'Estado actualizado exitosamente',
-            'status': cambio.status,
-            'status_display': cambio.get_status_display()
+            'message': 'Estado actualizado exitosamente',
+            'cambio': GestionCambioSerializer(cambio).data,
         })
 
     @action(detail=False, methods=['get'])
@@ -722,15 +752,15 @@ class GestionCambioViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         return Response({
             'total': queryset.count(),
             'by_type': {
-                code: queryset.filter(change_type=code).count()
+                code.lower(): queryset.filter(change_type=code).count()
                 for code, _ in GestionCambio.CHANGE_TYPE_CHOICES
             },
             'by_priority': {
-                code: queryset.filter(priority=code).count()
+                code.lower(): queryset.filter(priority=code).count()
                 for code, _ in GestionCambio.PRIORITY_CHOICES
             },
             'by_status': {
-                code: queryset.filter(status=code).count()
+                code.lower(): queryset.filter(status=code).count()
                 for code, _ in GestionCambio.STATUS_CHOICES
             },
             'overdue': queryset.filter(

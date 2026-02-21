@@ -82,6 +82,7 @@ interface FormData {
     | 'redes_sociales'
     | 'correspondencia'
     | 'otro';
+  canales_adicionales: string[];
   email_contacto: string;
   telefono_contacto: string;
   direccion: string;
@@ -129,6 +130,7 @@ const defaultFormData: FormData = {
   nombre: '',
   descripcion: '',
   canal_principal: 'email',
+  canales_adicionales: [],
   email_contacto: '',
   telefono_contacto: '',
   direccion: '',
@@ -196,7 +198,7 @@ const CUADRANTE_INFO: Record<
     label: 'Gestionar de Cerca',
     color: 'text-red-600',
     icon: Zap,
-    description: 'Alta influencia + Alto interes: Maxima atencion',
+    description: 'Alta influencia + Alto interés: Máxima atención',
   },
   mantener_satisfecho: {
     label: 'Mantener Satisfecho',
@@ -257,6 +259,7 @@ const ParteInteresadaFormModalComponent = ({
         nombre: parteInteresada.nombre || '',
         descripcion: parteInteresada.descripcion || '',
         canal_principal: parteInteresada.canal_principal || 'email',
+        canales_adicionales: parteInteresada.canales_adicionales || [],
         email_contacto: parteInteresada.email || '',
         telefono_contacto: parteInteresada.telefono || '',
         direccion: parteInteresada.direccion || '',
@@ -606,10 +609,10 @@ const ParteInteresadaFormModalComponent = ({
 
           <Textarea
             id="pi-descripcion"
-            label="Descripcion"
+            label="Descripción"
             value={formData.descripcion}
             onChange={handleDescripcionChange}
-            placeholder="Descripcion de esta parte interesada y su rol en relacion con la organizacion..."
+            placeholder="Descripción de esta parte interesada y su rol en relación con la organización..."
             rows={2}
           />
         </div>
@@ -625,25 +628,81 @@ const ParteInteresadaFormModalComponent = ({
             Datos de contacto generales para comunicaciones con esta categoria de stakeholder
           </p>
 
-          <div className="grid grid-cols-2 gap-4">
-            <Select
-              label="Canal Principal"
-              value={formData.canal_principal}
-              onChange={(e) => handleFieldChange('canal_principal', e.target.value)}
-              options={CANALES_COMUNICACION.map((c) => ({
-                value: c.value,
-                label: c.label,
-              }))}
-              helperText="Canal preferido para comunicaciones"
-            />
-            <Select
-              label="Frecuencia de Comunicacion"
-              value={formData.frecuencia_comunicacion}
-              onChange={(e) => handleFieldChange('frecuencia_comunicacion', e.target.value)}
-              options={FRECUENCIAS_COMUNICACION}
-              helperText="Periodicidad recomendada"
-            />
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Canales de Comunicaci&oacute;n
+            </label>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+              Seleccione todos los canales aplicables. El primero seleccionado ser&aacute; el canal
+              principal.
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {CANALES_COMUNICACION.map((canal) => {
+                const Icon = canal.icon;
+                const isSelected =
+                  formData.canal_principal === canal.value ||
+                  formData.canales_adicionales.includes(canal.value);
+                const isPrincipal = formData.canal_principal === canal.value;
+                return (
+                  <label
+                    key={canal.value}
+                    className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-colors ${
+                      isSelected
+                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => {
+                        if (isSelected) {
+                          // Deseleccionar: si es el principal, mover el siguiente adicional
+                          if (isPrincipal) {
+                            const nextCanal = formData.canales_adicionales[0];
+                            if (nextCanal) {
+                              handleFieldChange('canal_principal', nextCanal);
+                              handleFieldChange(
+                                'canales_adicionales',
+                                formData.canales_adicionales.filter((c) => c !== nextCanal)
+                              );
+                            }
+                            // Si no hay adicionales, no deseleccionar (al menos 1 requerido)
+                          } else {
+                            handleFieldChange(
+                              'canales_adicionales',
+                              formData.canales_adicionales.filter((c) => c !== canal.value)
+                            );
+                          }
+                        } else {
+                          // Seleccionar como adicional
+                          handleFieldChange('canales_adicionales', [
+                            ...formData.canales_adicionales,
+                            canal.value,
+                          ]);
+                        }
+                      }}
+                      className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                    />
+                    <Icon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">{canal.label}</span>
+                    {isPrincipal && (
+                      <span className="ml-auto text-[10px] font-semibold uppercase text-primary-600 dark:text-primary-400">
+                        Principal
+                      </span>
+                    )}
+                  </label>
+                );
+              })}
+            </div>
           </div>
+          <Select
+            label="Frecuencia de Comunicaci&oacute;n"
+            value={formData.frecuencia_comunicacion}
+            onChange={(e) => handleFieldChange('frecuencia_comunicacion', e.target.value)}
+            options={FRECUENCIAS_COMUNICACION}
+            helperText="Periodicidad recomendada"
+          />
 
           <div className="grid grid-cols-2 gap-4">
             <Input
@@ -669,7 +728,7 @@ const ParteInteresadaFormModalComponent = ({
           <div className="grid grid-cols-2 gap-4">
             <Input
               id="pi-direccion"
-              label="Direccion"
+              label="Dirección"
               value={formData.direccion}
               onChange={handleDireccionChange}
               placeholder="Direccion fisica"

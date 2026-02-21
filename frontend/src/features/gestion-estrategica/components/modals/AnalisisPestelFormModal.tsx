@@ -172,15 +172,17 @@ export const AnalisisPestelFormModal = ({
   const { data: cargosData } = useCargos();
 
   // Opciones para selects
-  const tipoAnalisisOptions = tiposAnalisisData?.results?.map((t) => ({
-    value: t.id.toString(),
-    label: t.nombre,
-  })) || [];
+  const tipoAnalisisOptions =
+    tiposAnalisisData?.results?.map((t) => ({
+      value: t.id.toString(),
+      label: t.nombre,
+    })) || [];
 
-  const cargoOptions = cargosData?.results?.map((c) => ({
-    value: c.id.toString(),
-    label: c.name,
-  })) || [];
+  const cargoOptions =
+    cargosData?.results?.map((c) => ({
+      value: c.id.toString(),
+      label: c.name,
+    })) || [];
 
   // Mutations
   const createMutation = useCreateAnalisisPestel();
@@ -297,9 +299,7 @@ export const AnalisisPestelFormModal = ({
 
   // Filtrar factores
   const factores = factoresData?.results || [];
-  const filteredFactores = filterTipo
-    ? factores.filter((f) => f.tipo === filterTipo)
-    : factores;
+  const filteredFactores = filterTipo ? factores.filter((f) => f.tipo === filterTipo) : factores;
 
   // Agrupar por tipo para estadisticas
   const factoresPorTipo = factores.reduce(
@@ -484,17 +484,28 @@ export const AnalisisPestelFormModal = ({
               <div
                 key={factor.id}
                 className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800 border-l-4"
-                style={{ borderColor: config.textClass.includes('purple') ? '#9333ea' :
-                         config.textClass.includes('green') ? '#22c55e' :
-                         config.textClass.includes('blue') ? '#3b82f6' :
-                         config.textClass.includes('cyan') ? '#06b6d4' :
-                         config.textClass.includes('emerald') ? '#10b981' :
-                         config.textClass.includes('amber') ? '#f59e0b' : '#6b7280' }}
+                style={{
+                  borderColor: config.textClass.includes('purple')
+                    ? '#9333ea'
+                    : config.textClass.includes('green')
+                      ? '#22c55e'
+                      : config.textClass.includes('blue')
+                        ? '#3b82f6'
+                        : config.textClass.includes('cyan')
+                          ? '#06b6d4'
+                          : config.textClass.includes('emerald')
+                            ? '#10b981'
+                            : config.textClass.includes('amber')
+                              ? '#f59e0b'
+                              : '#6b7280',
+                }}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${config.bgClass} ${config.textClass}`}>
+                      <span
+                        className={`px-2 py-0.5 rounded text-xs font-medium ${config.bgClass} ${config.textClass}`}
+                      >
                         {config.label}
                       </span>
                       <Badge variant={impactoConfig.color} size="sm">
@@ -561,7 +572,9 @@ export const AnalisisPestelFormModal = ({
                       : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
                   }`}
                 >
-                  <Icon className={`h-4 w-4 ${factorForm.tipo === value ? config.textClass : ''}`} />
+                  <Icon
+                    className={`h-4 w-4 ${factorForm.tipo === value ? config.textClass : ''}`}
+                  />
                   <span className={`text-sm ${factorForm.tipo === value ? config.textClass : ''}`}>
                     {label}
                   </span>
@@ -571,7 +584,7 @@ export const AnalisisPestelFormModal = ({
           </div>
 
           <Textarea
-            label="Descripcion del Factor *"
+            label="Descripción del Factor *"
             value={factorForm.descripcion}
             onChange={(e) => setFactorForm({ ...factorForm, descripcion: e.target.value })}
             placeholder="Describa el factor externo identificado..."

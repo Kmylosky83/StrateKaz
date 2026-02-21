@@ -58,7 +58,7 @@ export function KPIDashboardPro({ planId, objectiveId, className }: KPIDashboard
     return [
       { value: stats.verde, name: 'En Meta', itemStyle: { color: SEMAFORO_COLORS.VERDE } },
       { value: stats.amarillo, name: 'En Alerta', itemStyle: { color: SEMAFORO_COLORS.AMARILLO } },
-      { value: stats.rojo, name: 'Critico', itemStyle: { color: SEMAFORO_COLORS.ROJO } },
+      { value: stats.rojo, name: 'Crítico', itemStyle: { color: SEMAFORO_COLORS.ROJO } },
       { value: stats.sinDatos, name: 'Sin Datos', itemStyle: { color: SEMAFORO_COLORS.SIN_DATOS } },
     ].filter((item) => item.value > 0);
   }, [stats]);
@@ -133,7 +133,7 @@ export function KPIDashboardPro({ planId, objectiveId, className }: KPIDashboard
           <StatCard label="Total KPIs" value={stats.total} color="blue" icon={Target} />
           <StatCard label="En Meta" value={stats.verde} color="emerald" icon={TrendingUp} />
           <StatCard label="En Alerta" value={stats.amarillo} color="amber" icon={AlertTriangle} />
-          <StatCard label="Criticos" value={stats.rojo} color="rose" icon={AlertTriangle} />
+          <StatCard label="Críticos" value={stats.rojo} color="rose" icon={AlertTriangle} />
         </div>
 
         {/* Distribution Chart */}
@@ -209,10 +209,26 @@ export function KPIDashboardPro({ planId, objectiveId, className }: KPIDashboard
 // =============================================================================
 
 const COLOR_MAP: Record<string, { border: string; text: string; bg: string }> = {
-  blue: { border: 'border-t-blue-500', text: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/20' },
-  emerald: { border: 'border-t-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
-  amber: { border: 'border-t-amber-500', text: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20' },
-  rose: { border: 'border-t-rose-500', text: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-900/20' },
+  blue: {
+    border: 'border-t-blue-500',
+    text: 'text-blue-600 dark:text-blue-400',
+    bg: 'bg-blue-50 dark:bg-blue-900/20',
+  },
+  emerald: {
+    border: 'border-t-emerald-500',
+    text: 'text-emerald-600 dark:text-emerald-400',
+    bg: 'bg-emerald-50 dark:bg-emerald-900/20',
+  },
+  amber: {
+    border: 'border-t-amber-500',
+    text: 'text-amber-600 dark:text-amber-400',
+    bg: 'bg-amber-50 dark:bg-amber-900/20',
+  },
+  rose: {
+    border: 'border-t-rose-500',
+    text: 'text-rose-600 dark:text-rose-400',
+    bg: 'bg-rose-50 dark:bg-rose-900/20',
+  },
 };
 
 interface StatCardProps {
@@ -225,7 +241,9 @@ interface StatCardProps {
 function StatCard({ label, value, color, icon: Icon }: StatCardProps) {
   const colors = COLOR_MAP[color] || COLOR_MAP.blue;
   return (
-    <div className={`rounded-lg border border-gray-200 dark:border-gray-700 border-t-4 ${colors.border} bg-white dark:bg-gray-800 p-4`}>
+    <div
+      className={`rounded-lg border border-gray-200 dark:border-gray-700 border-t-4 ${colors.border} bg-white dark:bg-gray-800 p-4`}
+    >
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
@@ -262,18 +280,13 @@ function PerformanceItem({ kpi }: PerformanceItemProps) {
         style={{ backgroundColor: statusColor }}
       />
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-          {kpi.name}
-        </p>
+        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{kpi.name}</p>
         <p className="text-xs text-gray-500 dark:text-gray-400">
           {formatValue(kpi.last_value, kpi.unit)} / {formatValue(kpi.target_value, kpi.unit)}
         </p>
       </div>
       <div className="text-right">
-        <p
-          className="text-sm font-bold"
-          style={{ color: statusColor }}
-        >
+        <p className="text-sm font-bold" style={{ color: statusColor }}>
           {progress.toFixed(1)}%
         </p>
       </div>

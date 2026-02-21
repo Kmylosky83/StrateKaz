@@ -101,7 +101,11 @@ const defaultFormData: FormData = {
   progreso_porcentaje: 0,
 };
 
-const TIPO_ESTRATEGIA_OPTIONS: { value: TipoEstrategiaTOWS; label: string; icon: React.ElementType }[] = [
+const TIPO_ESTRATEGIA_OPTIONS: {
+  value: TipoEstrategiaTOWS;
+  label: string;
+  icon: React.ElementType;
+}[] = [
   { value: 'fo', label: 'FO - Ofensiva', icon: TrendingUp },
   { value: 'fa', label: 'FA - Defensiva', icon: Shield },
   { value: 'do', label: 'DO - Adaptativa', icon: Lightbulb },
@@ -180,7 +184,9 @@ export const EstrategiaTowsFormModal = ({
         descripcion: formData.descripcion,
         objetivo: formData.objetivo,
         responsable: formData.responsable ? parseInt(formData.responsable) : undefined,
-        area_responsable: formData.area_responsable ? parseInt(formData.area_responsable) : undefined,
+        area_responsable: formData.area_responsable
+          ? parseInt(formData.area_responsable)
+          : undefined,
         fecha_implementacion: formData.fecha_implementacion || undefined,
         fecha_limite: formData.fecha_limite || undefined,
         prioridad: formData.prioridad,
@@ -197,7 +203,9 @@ export const EstrategiaTowsFormModal = ({
         descripcion: formData.descripcion,
         objetivo: formData.objetivo,
         responsable: formData.responsable ? parseInt(formData.responsable) : undefined,
-        area_responsable: formData.area_responsable ? parseInt(formData.area_responsable) : undefined,
+        area_responsable: formData.area_responsable
+          ? parseInt(formData.area_responsable)
+          : undefined,
         fecha_implementacion: formData.fecha_implementacion || undefined,
         fecha_limite: formData.fecha_limite || undefined,
         prioridad: formData.prioridad,
@@ -285,14 +293,14 @@ export const EstrategiaTowsFormModal = ({
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-2">
-                    <Icon className={`h-5 w-5 ${isSelected ? config.textClass : 'text-gray-500'}`} />
+                    <Icon
+                      className={`h-5 w-5 ${isSelected ? config.textClass : 'text-gray-500'}`}
+                    />
                     <span className={`text-sm font-semibold ${isSelected ? config.textClass : ''}`}>
                       {label}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {config.description}
-                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{config.description}</p>
                 </button>
               );
             })}
@@ -325,7 +333,7 @@ export const EstrategiaTowsFormModal = ({
           </h4>
 
           <Textarea
-            label="Descripcion *"
+            label="Descripción *"
             value={formData.descripcion}
             onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
             placeholder="Describa la estrategia a implementar..."
@@ -368,9 +376,7 @@ export const EstrategiaTowsFormModal = ({
             <Select
               label="Prioridad"
               value={formData.prioridad}
-              onChange={(e) =>
-                setFormData({ ...formData, prioridad: e.target.value as Prioridad })
-              }
+              onChange={(e) => setFormData({ ...formData, prioridad: e.target.value as Prioridad })}
               options={PRIORIDAD_OPTIONS}
             />
           </div>
@@ -454,7 +460,9 @@ export const EstrategiaTowsFormModal = ({
                       Vinculada a Objetivo Estrategico
                     </p>
                     <p className="text-sm text-green-700 dark:text-green-300">
-                      <span className="font-mono">{estrategiaDetail.objetivo_estrategico_code}</span>
+                      <span className="font-mono">
+                        {estrategiaDetail.objetivo_estrategico_code}
+                      </span>
                       {estrategiaDetail.objetivo_estrategico_name && (
                         <span className="ml-2">- {estrategiaDetail.objetivo_estrategico_name}</span>
                       )}
@@ -465,7 +473,10 @@ export const EstrategiaTowsFormModal = ({
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      window.open(`/gestion-estrategica/planeacion?objetivo=${estrategiaDetail.objetivo_estrategico}`, '_blank');
+                      window.open(
+                        `/gestion-estrategica/planeacion?objetivo=${estrategiaDetail.objetivo_estrategico}`,
+                        '_blank'
+                      );
                     }}
                   >
                     <ExternalLink className="h-4 w-4 mr-1" />

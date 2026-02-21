@@ -11,16 +11,7 @@
  * Usa Design System dinamico sin colores hardcoded
  */
 import { useState, useEffect } from 'react';
-import {
-  Swords,
-  UserPlus,
-  Repeat,
-  Truck,
-  Users,
-  Plus,
-  Trash2,
-  FileText,
-} from 'lucide-react';
+import { Swords, UserPlus, Repeat, Truck, Users, Plus, Trash2, FileText } from 'lucide-react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
@@ -39,10 +30,7 @@ import type {
   TipoFuerzaPorter,
   NivelImpacto,
 } from '../../types/contexto.types';
-import {
-  TIPO_FUERZA_PORTER_CONFIG,
-  NIVEL_IMPACTO_CONFIG,
-} from '../../types/contexto.types';
+import { TIPO_FUERZA_PORTER_CONFIG, NIVEL_IMPACTO_CONFIG } from '../../types/contexto.types';
 
 // =============================================================================
 // INTERFACES
@@ -242,10 +230,16 @@ export const FuerzaPorterFormModal = ({
                       : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
                   }`}
                 >
-                  <div className={`p-2 rounded-lg mx-auto w-fit ${isSelected ? 'bg-purple-100 dark:bg-purple-900/40' : 'bg-gray-100 dark:bg-gray-800'}`}>
-                    <Icon className={`h-5 w-5 ${isSelected ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500'}`} />
+                  <div
+                    className={`p-2 rounded-lg mx-auto w-fit ${isSelected ? 'bg-purple-100 dark:bg-purple-900/40' : 'bg-gray-100 dark:bg-gray-800'}`}
+                  >
+                    <Icon
+                      className={`h-5 w-5 ${isSelected ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500'}`}
+                    />
                   </div>
-                  <p className={`text-xs mt-2 font-medium ${isSelected ? 'text-purple-700 dark:text-purple-300' : 'text-gray-600 dark:text-gray-400'}`}>
+                  <p
+                    className={`text-xs mt-2 font-medium ${isSelected ? 'text-purple-700 dark:text-purple-300' : 'text-gray-600 dark:text-gray-400'}`}
+                  >
                     {label}
                   </p>
                 </button>
@@ -319,7 +313,7 @@ export const FuerzaPorterFormModal = ({
           </div>
 
           <Textarea
-            label="Descripcion *"
+            label="Descripción *"
             value={formData.descripcion}
             onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
             placeholder={`Describa el estado actual de ${selectedTipoConfig.label.toLowerCase()}...`}

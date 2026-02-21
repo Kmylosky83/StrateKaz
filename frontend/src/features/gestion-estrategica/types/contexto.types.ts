@@ -514,17 +514,17 @@ export const ESTADO_ANALISIS_CONFIG = {
   borrador: {
     label: 'Borrador',
     color: 'gray' as const,
-    description: 'En preparacion',
+    description: 'En preparación',
   },
   en_revision: {
-    label: 'En Revision',
+    label: 'En Revisión',
     color: 'warning' as const,
-    description: 'Pendiente de aprobacion',
+    description: 'Pendiente de aprobación',
   },
   aprobado: {
     label: 'Aprobado',
     color: 'success' as const,
-    description: 'Aprobado por direccion',
+    description: 'Aprobado por dirección',
   },
   vigente: {
     label: 'Vigente',
@@ -581,17 +581,17 @@ export const ESTADO_ESTRATEGIA_CONFIG = {
   propuesta: {
     label: 'Propuesta',
     color: 'gray' as const,
-    description: 'Pendiente de aprobacion',
+    description: 'Pendiente de aprobación',
   },
   aprobada: {
     label: 'Aprobada',
     color: 'info' as const,
-    description: 'Lista para ejecucion',
+    description: 'Lista para ejecución',
   },
   en_ejecucion: {
-    label: 'En Ejecucion',
+    label: 'En Ejecución',
     color: 'warning' as const,
-    description: 'Implementandose',
+    description: 'Implementándose',
   },
   completada: {
     label: 'Completada',

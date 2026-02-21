@@ -147,7 +147,10 @@ export const proyectosApi = {
     id: number,
     data: { health_status: string; health_notes?: string }
   ): Promise<Proyecto> => {
-    const response = await axiosInstance.post(`${BASE_URL}/proyectos/${id}/actualizar_salud/`, data);
+    const response = await axiosInstance.post(
+      `${BASE_URL}/proyectos/${id}/actualizar_salud/`,
+      data
+    );
     return response.data;
   },
 
@@ -159,8 +162,21 @@ export const proyectosApi = {
     return response.data;
   },
 
+  // Crear proyecto desde Estrategia TOWS
+  crearDesdeEstrategiaTOWS: async (data: {
+    estrategia_id: number;
+  }): Promise<{ detail: string; proyecto: Proyecto }> => {
+    const response = await axiosInstance.post(
+      `${BASE_URL}/proyectos/crear_desde_estrategia_tows/`,
+      data
+    );
+    return response.data;
+  },
+
   // Obtener opciones de origen de proyectos
-  getOrigenesChoices: async (): Promise<{ tipo_origen: Array<{ value: string; label: string }> }> => {
+  getOrigenesChoices: async (): Promise<{
+    tipo_origen: Array<{ value: string; label: string }>;
+  }> => {
     const response = await axiosInstance.get(`${BASE_URL}/proyectos/origenes_choices/`);
     return response.data;
   },

@@ -35,7 +35,9 @@ const BASE_URL = '/revision-direccion';
 // ==================== PROGRAMACIÓN DE REVISIÓN ====================
 
 export const programacionApi = {
-  getAll: async (filters?: ProgramacionFilters): Promise<PaginatedResponse<ProgramacionRevision>> => {
+  getAll: async (
+    filters?: ProgramacionFilters
+  ): Promise<PaginatedResponse<ProgramacionRevision>> => {
     const response = await axiosInstance.get(`${BASE_URL}/programaciones/`, { params: filters });
     return response.data;
   },
@@ -57,7 +59,10 @@ export const programacionApi = {
     return response.data;
   },
 
-  update: async (id: number, data: UpdateProgramacionRevisionDTO): Promise<ProgramacionRevision> => {
+  update: async (
+    id: number,
+    data: UpdateProgramacionRevisionDTO
+  ): Promise<ProgramacionRevision> => {
     const response = await axiosInstance.patch(`${BASE_URL}/programaciones/${id}/`, data);
     return response.data;
   },
@@ -67,7 +72,9 @@ export const programacionApi = {
   },
 
   enviarNotificaciones: async (id: number): Promise<{ message: string; enviados: number }> => {
-    const response = await axiosInstance.post(`${BASE_URL}/programaciones/${id}/enviar-notificaciones/`);
+    const response = await axiosInstance.post(
+      `${BASE_URL}/programaciones/${id}/enviar-notificaciones/`
+    );
     return response.data;
   },
 
@@ -75,7 +82,10 @@ export const programacionApi = {
     id: number,
     data: { nueva_fecha: string; hora_inicio: string; motivo?: string }
   ): Promise<ProgramacionRevision> => {
-    const response = await axiosInstance.post(`${BASE_URL}/programaciones/${id}/reprogramar/`, data);
+    const response = await axiosInstance.post(
+      `${BASE_URL}/programaciones/${id}/reprogramar/`,
+      data
+    );
     return response.data;
   },
 
@@ -155,7 +165,9 @@ export const actasApi = {
 
   getByProgramacion: async (programacionId: number): Promise<ActaRevision | null> => {
     try {
-      const response = await axiosInstance.get(`${BASE_URL}/actas/by-programacion/${programacionId}/`);
+      const response = await axiosInstance.get(
+        `${BASE_URL}/actas/by-programacion/${programacionId}/`
+      );
       return response.data;
     } catch (error: unknown) {
       if (error && typeof error === 'object' && 'response' in error) {
@@ -193,7 +205,7 @@ export const actasApi = {
   },
 
   generarPDF: async (id: number): Promise<Blob> => {
-    const response = await axiosInstance.get(`${BASE_URL}/actas/${id}/generar-pdf/`, {
+    const response = await axiosInstance.get(`${BASE_URL}/export/acta/${id}/pdf/`, {
       responseType: 'blob',
     });
     return response.data;
@@ -219,7 +231,10 @@ export const actasApi = {
 
 export const elementosEntradaApi = {
   add: async (actaId: number, data: CreateElementoEntradaDTO): Promise<ElementoEntrada> => {
-    const response = await axiosInstance.post(`${BASE_URL}/actas/${actaId}/elementos-entrada/`, data);
+    const response = await axiosInstance.post(
+      `${BASE_URL}/actas/${actaId}/elementos-entrada/`,
+      data
+    );
     return response.data;
   },
 
@@ -239,7 +254,10 @@ export const elementosEntradaApi = {
     await axiosInstance.delete(`${BASE_URL}/actas/${actaId}/elementos-entrada/${elementoId}/`);
   },
 
-  reorder: async (actaId: number, data: { elementos: Array<{ id: number; order: number }> }): Promise<void> => {
+  reorder: async (
+    actaId: number,
+    data: { elementos: Array<{ id: number; order: number }> }
+  ): Promise<void> => {
     await axiosInstance.post(`${BASE_URL}/actas/${actaId}/elementos-entrada/reordenar/`, data);
   },
 };
@@ -268,7 +286,10 @@ export const decisionesApi = {
     await axiosInstance.delete(`${BASE_URL}/actas/${actaId}/decisiones/${decisionId}/`);
   },
 
-  reorder: async (actaId: number, data: { decisiones: Array<{ id: number; order: number }> }): Promise<void> => {
+  reorder: async (
+    actaId: number,
+    data: { decisiones: Array<{ id: number; order: number }> }
+  ): Promise<void> => {
     await axiosInstance.post(`${BASE_URL}/actas/${actaId}/decisiones/reordenar/`, data);
   },
 };
@@ -350,7 +371,10 @@ export const compromisosApi = {
   },
 
   updateProgreso: async (id: number, data: { progreso: number }): Promise<CompromisoAccion> => {
-    const response = await axiosInstance.post(`${BASE_URL}/compromisos/${id}/actualizar-progreso/`, data);
+    const response = await axiosInstance.post(
+      `${BASE_URL}/compromisos/${id}/actualizar-progreso/`,
+      data
+    );
     return response.data;
   },
 
@@ -358,7 +382,10 @@ export const compromisosApi = {
     id: number,
     data: { evidencia_cumplimiento?: string; observaciones?: string }
   ): Promise<CompromisoAccion> => {
-    const response = await axiosInstance.post(`${BASE_URL}/compromisos/${id}/marcar-completado/`, data);
+    const response = await axiosInstance.post(
+      `${BASE_URL}/compromisos/${id}/marcar-completado/`,
+      data
+    );
     return response.data;
   },
 

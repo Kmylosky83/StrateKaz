@@ -241,9 +241,6 @@ export interface StrategicObjective {
   description?: string | null;
   bsc_perspective: BSCPerspective;
   bsc_perspective_display?: string;
-  /** @deprecated Use normas_iso instead */
-  iso_standards?: ISOStandard[];
-  iso_standards_display?: string[];
   /** IDs de normas ISO vinculadas (ManyToMany) */
   normas_iso?: number[];
   /** Detalles de normas ISO vinculadas */
@@ -275,8 +272,6 @@ export interface CreateStrategicObjectiveDTO {
   name: string;
   description?: string;
   bsc_perspective: BSCPerspective;
-  /** @deprecated Use normas_iso_ids instead */
-  iso_standards?: ISOStandard[];
   /** IDs de normas ISO a vincular (ManyToMany) */
   normas_iso_ids?: number[];
   responsible?: number;
@@ -294,8 +289,6 @@ export interface UpdateStrategicObjectiveDTO {
   name?: string;
   description?: string;
   bsc_perspective?: BSCPerspective;
-  /** @deprecated Use normas_iso_ids instead */
-  iso_standards?: ISOStandard[];
   /** IDs de normas ISO a vincular (ManyToMany) */
   normas_iso_ids?: number[];
   responsible?: number;
@@ -1345,178 +1338,6 @@ export interface AlcanceSistemaFilters {
   is_active?: boolean;
 }
 
-// ==================== POLÍTICA ESPECÍFICA ====================
-// @deprecated - Usar types/policies.types.ts (Sistema Unificado v3.0) en su lugar.
-// Estos tipos legacy serán eliminados en una futura versión.
-
 // NOTA v4.0: PoliticaEspecifica eliminada.
 // Las políticas se gestionan como Documento en Gestión Documental (tipo_documento=POL).
-
-// ==================== REVISIÓN POR LA DIRECCIÓN ====================
-
-export type EstadoRevision = 'PROGRAMADA' | 'EN_CURSO' | 'COMPLETADA' | 'CANCELADA';
-
-export type EstadoCompromiso = 'PENDIENTE' | 'EN_PROGRESO' | 'COMPLETADO' | 'VENCIDO' | 'CANCELADO';
-
-export type PrioridadCompromiso = 'BAJA' | 'MEDIA' | 'ALTA' | 'CRITICA';
-
-export interface RevisionDireccion {
-  id: number;
-  codigo: string;
-  fecha_programada: string;
-  fecha_realizada?: string | null;
-  estado: EstadoRevision;
-  estado_display?: string;
-  asistentes?: number[];
-  asistentes_nombres?: string[];
-  temas_agenda?: string | null;
-  puntos_tratados?: string | null;
-  decisiones_tomadas?: string | null;
-  recursos_necesarios?: string | null;
-  acta_file?: string | null;
-  acta_firmada?: boolean;
-  is_active: boolean;
-  compromisos_count?: number;
-  compromisos_pendientes?: number;
-  compromisos_vencidos?: number;
-  created_by?: number | null;
-  created_by_name?: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CompromisoRevision {
-  id: number;
-  revision: number;
-  revision_codigo?: string;
-  codigo: string;
-  descripcion: string;
-  responsable: number;
-  responsable_name?: string;
-  responsable_cargo?: number | null;
-  responsable_cargo_name?: string | null;
-  fecha_compromiso: string;
-  fecha_limite: string;
-  fecha_completado?: string | null;
-  estado: EstadoCompromiso;
-  estado_display?: string;
-  prioridad: PrioridadCompromiso;
-  prioridad_display?: string;
-  observaciones?: string | null;
-  evidencia_file?: string | null;
-  dias_vencimiento?: number | null;
-  esta_vencido?: boolean;
-  related_objectives?: number[];
-  related_objectives_details?: Array<{
-    id: number;
-    code: string;
-    name: string;
-  }>;
-  is_active: boolean;
-  created_by?: number | null;
-  created_by_name?: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CreateRevisionDireccionDTO {
-  codigo: string;
-  fecha_programada: string;
-  estado?: EstadoRevision;
-  asistentes?: number[];
-  temas_agenda?: string;
-  is_active?: boolean;
-}
-
-export interface UpdateRevisionDireccionDTO {
-  codigo?: string;
-  fecha_programada?: string;
-  fecha_realizada?: string;
-  estado?: EstadoRevision;
-  asistentes?: number[];
-  temas_agenda?: string;
-  puntos_tratados?: string;
-  decisiones_tomadas?: string;
-  recursos_necesarios?: string;
-  acta_firmada?: boolean;
-  is_active?: boolean;
-}
-
-export interface CreateCompromisoRevisionDTO {
-  revision: number;
-  codigo: string;
-  descripcion: string;
-  responsable: number;
-  responsable_cargo?: number;
-  fecha_compromiso: string;
-  fecha_limite: string;
-  prioridad: PrioridadCompromiso;
-  observaciones?: string;
-  related_objectives?: number[];
-  is_active?: boolean;
-}
-
-export interface UpdateCompromisoRevisionDTO {
-  descripcion?: string;
-  responsable?: number;
-  responsable_cargo?: number;
-  fecha_limite?: string;
-  fecha_completado?: string;
-  estado?: EstadoCompromiso;
-  prioridad?: PrioridadCompromiso;
-  observaciones?: string;
-  related_objectives?: number[];
-  is_active?: boolean;
-}
-
-export interface RevisionDireccionFilters {
-  estado?: EstadoRevision;
-  fecha_desde?: string;
-  fecha_hasta?: string;
-  is_active?: boolean;
-  search?: string;
-}
-
-export interface CompromisoRevisionFilters {
-  revision?: number;
-  estado?: EstadoCompromiso;
-  prioridad?: PrioridadCompromiso;
-  responsable?: number;
-  esta_vencido?: boolean;
-  fecha_desde?: string;
-  fecha_hasta?: string;
-  is_active?: boolean;
-  search?: string;
-}
-
-export interface CompromisosDashboardStats {
-  total_compromisos: number;
-  compromisos_pendientes: number;
-  compromisos_en_progreso: number;
-  compromisos_completados: number;
-  compromisos_vencidos: number;
-  compromisos_proximos_vencer: number;
-  tasa_cumplimiento: number;
-  promedio_dias_cierre: number;
-  compromisos_por_responsable: Array<{
-    responsable_id: number;
-    responsable_nombre: string;
-    total: number;
-    pendientes: number;
-    completados: number;
-    vencidos: number;
-    tasa_cumplimiento: number;
-  }>;
-  compromisos_por_prioridad: {
-    critica: number;
-    alta: number;
-    media: number;
-    baja: number;
-  };
-  tendencia_mensual?: Array<{
-    mes: string;
-    creados: number;
-    completados: number;
-    vencidos: number;
-  }>;
-}
+// Revisión por la Dirección: ver revision-direccion.types.ts

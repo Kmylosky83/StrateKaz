@@ -432,6 +432,7 @@ class ParteInteresadaSerializer(serializers.ModelSerializer):
             'temas_interes_pi', 'temas_interes_empresa',
             # Comunicación
             'canal_principal', 'canal_principal_display',
+            'canales_adicionales',
             'frecuencia_comunicacion', 'frecuencia_comunicacion_display',
             # ISO 9001:2015 Cláusula 4.2
             'necesidades', 'expectativas', 'requisitos_pertinentes', 'es_requisito_legal',

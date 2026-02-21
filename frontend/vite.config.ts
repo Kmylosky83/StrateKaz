@@ -24,6 +24,10 @@ export default defineConfig({
         injectionPoint: undefined // No inyectar manifest
       },
       workbox: {
+        // Forzar activación inmediata del nuevo SW en cada deploy
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
         // Cache de archivos estáticos
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
         // Aumentar límite para vendor chunk grande (15MB)

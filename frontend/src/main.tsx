@@ -17,14 +17,15 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         }}
       >
         <App />
-        <Toaster
-          position="top-right"
-          richColors
-          closeButton
-          duration={4000}
-          theme="system"
-        />
+        <Toaster position="top-right" richColors closeButton duration={4000} theme="system" />
       </BrowserRouter>
     </QueryClientProvider>
   </React.StrictMode>
 );
+
+// PWA: Forzar recarga cuando el Service Worker se actualiza con nuevo build
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    window.location.reload();
+  });
+}

@@ -108,6 +108,8 @@ export default defineConfig({
               id.includes('node_modules/react-dom/') ||
               id.includes('node_modules/react-router-dom/') ||
               id.includes('node_modules/react-router/') ||
+              id.includes('node_modules/@remix-run/') ||
+              id.includes('node_modules/react-reconciler/') ||
               id.includes('node_modules/scheduler/')) {
             return 'vendor-react'
           }
@@ -115,7 +117,8 @@ export default defineConfig({
           // === STATE & DATA (crítico para toda la app) ===
           if (id.includes('node_modules/@tanstack/') ||
               id.includes('node_modules/zustand/') ||
-              id.includes('node_modules/axios/')) {
+              id.includes('node_modules/axios/') ||
+              id.includes('node_modules/use-sync-external-store/')) {
             return 'vendor-state'
           }
 
@@ -174,6 +177,7 @@ export default defineConfig({
               id.includes('node_modules/@dnd-kit/') ||
               id.includes('node_modules/@fontsource/') ||
               id.includes('node_modules/react-signature-canvas') ||
+              id.includes('node_modules/signature_pad') ||
               id.includes('node_modules/qrcode')) {
             return 'vendor-ui'
           }

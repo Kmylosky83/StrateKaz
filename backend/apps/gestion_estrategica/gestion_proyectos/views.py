@@ -333,7 +333,7 @@ class ProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        EstrategiaTOWS = apps.get_model('contexto', 'EstrategiaTOWS')
+        EstrategiaTOWS = apps.get_model('gestion_estrategica_contexto', 'EstrategiaTOWS')
 
         try:
             estrategia = EstrategiaTOWS.objects.get(id=estrategia_id)

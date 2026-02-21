@@ -11,7 +11,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('contexto', '0003_partes_interesadas_v2_sprint17'),
+        ('gestion_estrategica_contexto', '0003_partes_interesadas_v2_sprint17'),
     ]
 
     operations = [

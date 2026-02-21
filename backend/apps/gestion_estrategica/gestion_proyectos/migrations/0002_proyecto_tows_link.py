@@ -3,7 +3,7 @@ Migration: Add TOWS strategy link to Proyecto
 
 Adds:
 - ESTRATEGIA_TOWS choice to OrigenProyecto enum
-- origen_estrategia_tows FK to contexto.EstrategiaTOWS
+- origen_estrategia_tows FK to gestion_estrategica_contexto.EstrategiaTOWS
 """
 import django.db.models.deletion
 from django.db import migrations, models
@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('gestion_proyectos', '0001_initial'),
-        ('contexto', '0004_parteinteresada_canales_adicionales'),
+        ('gestion_estrategica_contexto', '0004_parteinteresada_canales_adicionales'),
     ]
 
     operations = [
@@ -47,7 +47,7 @@ class Migration(migrations.Migration):
                 null=True,
                 on_delete=django.db.models.deletion.SET_NULL,
                 related_name='proyectos_generados',
-                to='contexto.estrategiatows',
+                to='gestion_estrategica_contexto.estrategiatows',
                 verbose_name='Estrategia TOWS de Origen',
             ),
         ),

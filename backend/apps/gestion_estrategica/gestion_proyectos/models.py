@@ -343,7 +343,7 @@ class Proyecto(BaseCompanyModel):
         help_text='Objetivo estratégico al que contribuye este proyecto'
     )
     origen_estrategia_tows = models.ForeignKey(
-        'contexto.EstrategiaTOWS',
+        'gestion_estrategica_contexto.EstrategiaTOWS',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

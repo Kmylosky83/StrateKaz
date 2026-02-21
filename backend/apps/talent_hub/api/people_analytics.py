@@ -114,13 +114,13 @@ class PeopleAnalyticsView(APIView):
 
         # Por area
         area_counts = (
-            activos.values('area__nombre')
+            activos.values('area__name')
             .annotate(total=Count('id'))
             .order_by('-total')
         )
         por_area = [
             {
-                'area': item['area__nombre'] or 'Sin area',
+                'area': item['area__name'] or 'Sin area',
                 'total': item['total'],
             }
             for item in area_counts

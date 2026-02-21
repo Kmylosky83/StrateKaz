@@ -512,7 +512,7 @@ export interface UpdateContratoDTO extends Partial<CreateContratoDTO> {
   estado?: number;
 }
 
-export interface UpdateRecepcionCompraDTO extends Partial<CreateRecepcionCompraDTO> {}
+export type UpdateRecepcionCompraDTO = Partial<CreateRecepcionCompraDTO>;
 
 // ==================== RESPONSE TYPES ====================
 

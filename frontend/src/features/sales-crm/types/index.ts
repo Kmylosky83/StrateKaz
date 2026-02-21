@@ -11,7 +11,13 @@ export type { PaginatedResponse };
 
 // ==================== CLIENTE ====================
 
-export type TipoCliente = 'CARNICERIA' | 'RESTAURANTE' | 'PROCESADORA' | 'INDUSTRIA' | 'EXPORTADOR' | 'OTRO';
+export type TipoCliente =
+  | 'CARNICERIA'
+  | 'RESTAURANTE'
+  | 'PROCESADORA'
+  | 'INDUSTRIA'
+  | 'EXPORTADOR'
+  | 'OTRO';
 export type EstadoCliente = 'PROSPECTO' | 'ACTIVO' | 'INACTIVO' | 'BLOQUEADO';
 export type TipoPersona = 'NATURAL' | 'JURIDICA';
 
@@ -114,7 +120,14 @@ export interface ScoringCliente {
 
 // ==================== OPORTUNIDAD ====================
 
-export type EtapaVenta = 'PROSPECTO' | 'CONTACTADO' | 'CALIFICADO' | 'PROPUESTA' | 'NEGOCIACION' | 'GANADA' | 'PERDIDA';
+export type EtapaVenta =
+  | 'PROSPECTO'
+  | 'CONTACTADO'
+  | 'CALIFICADO'
+  | 'PROPUESTA'
+  | 'NEGOCIACION'
+  | 'GANADA'
+  | 'PERDIDA';
 export type PrioridadOportunidad = 'BAJA' | 'MEDIA' | 'ALTA' | 'CRITICA';
 
 export interface Oportunidad {
@@ -175,7 +188,13 @@ export interface ActividadOportunidad {
 
 // ==================== COTIZACION ====================
 
-export type EstadoCotizacion = 'BORRADOR' | 'ENVIADA' | 'APROBADA' | 'RECHAZADA' | 'VENCIDA' | 'CONVERTIDA';
+export type EstadoCotizacion =
+  | 'BORRADOR'
+  | 'ENVIADA'
+  | 'APROBADA'
+  | 'RECHAZADA'
+  | 'VENCIDA'
+  | 'CONVERTIDA';
 
 export interface Cotizacion {
   id: number;
@@ -248,7 +267,14 @@ export interface DetalleCotizacion {
 
 // ==================== PEDIDO ====================
 
-export type EstadoPedido = 'BORRADOR' | 'CONFIRMADO' | 'EN_PREPARACION' | 'LISTO' | 'ENVIADO' | 'ENTREGADO' | 'CANCELADO';
+export type EstadoPedido =
+  | 'BORRADOR'
+  | 'CONFIRMADO'
+  | 'EN_PREPARACION'
+  | 'LISTO'
+  | 'ENVIADO'
+  | 'ENTREGADO'
+  | 'CANCELADO';
 export type TipoEntrega = 'RETIRO_CLIENTE' | 'DESPACHO_PROPIO' | 'TRANSPORTADORA';
 
 export interface Pedido {
@@ -326,8 +352,20 @@ export interface DetallePedido {
 
 // ==================== FACTURA ====================
 
-export type EstadoFactura = 'BORRADOR' | 'EMITIDA' | 'PAGADA_PARCIAL' | 'PAGADA' | 'VENCIDA' | 'ANULADA';
-export type MetodoPago = 'EFECTIVO' | 'TRANSFERENCIA' | 'CHEQUE' | 'TARJETA_CREDITO' | 'TARJETA_DEBITO' | 'CREDITO';
+export type EstadoFactura =
+  | 'BORRADOR'
+  | 'EMITIDA'
+  | 'PAGADA_PARCIAL'
+  | 'PAGADA'
+  | 'VENCIDA'
+  | 'ANULADA';
+export type MetodoPago =
+  | 'EFECTIVO'
+  | 'TRANSFERENCIA'
+  | 'CHEQUE'
+  | 'TARJETA_CREDITO'
+  | 'TARJETA_DEBITO'
+  | 'CREDITO';
 
 export interface Factura {
   id: number;
@@ -389,7 +427,13 @@ export interface PagoFactura {
 // ==================== PQRS ====================
 
 export type TipoPQRS = 'PETICION' | 'QUEJA' | 'RECLAMO' | 'SUGERENCIA' | 'FELICITACION';
-export type EstadoPQRS = 'ABIERTA' | 'EN_PROCESO' | 'ESCALADA' | 'RESUELTA' | 'CERRADA' | 'CANCELADA';
+export type EstadoPQRS =
+  | 'ABIERTA'
+  | 'EN_PROCESO'
+  | 'ESCALADA'
+  | 'RESUELTA'
+  | 'CERRADA'
+  | 'CANCELADA';
 export type PrioridadPQRS = 'BAJA' | 'MEDIA' | 'ALTA' | 'URGENTE';
 
 export interface PQRS {
@@ -626,7 +670,7 @@ export interface CreateOportunidadDTO {
   observaciones?: string;
 }
 
-export interface UpdateOportunidadDTO extends Partial<CreateOportunidadDTO> {}
+export type UpdateOportunidadDTO = Partial<CreateOportunidadDTO>;
 
 export interface CambiarEtapaOportunidadDTO {
   etapa: EtapaVenta;
@@ -667,7 +711,7 @@ export interface CreateCotizacionDTO {
   }>;
 }
 
-export interface UpdateCotizacionDTO extends Partial<CreateCotizacionDTO> {}
+export type UpdateCotizacionDTO = Partial<CreateCotizacionDTO>;
 
 export interface AprobarCotizacionDTO {
   observaciones?: string;
@@ -702,7 +746,7 @@ export interface CreatePedidoDTO {
   }>;
 }
 
-export interface UpdatePedidoDTO extends Partial<CreatePedidoDTO> {}
+export type UpdatePedidoDTO = Partial<CreatePedidoDTO>;
 
 export interface AprobarPedidoDTO {
   observaciones?: string;
@@ -723,7 +767,7 @@ export interface CreateFacturaDTO {
   observaciones?: string;
 }
 
-export interface UpdateFacturaDTO extends Partial<CreateFacturaDTO> {}
+export type UpdateFacturaDTO = Partial<CreateFacturaDTO>;
 
 export interface RegistrarPagoDTO {
   fecha_pago: string;
@@ -751,7 +795,7 @@ export interface CreatePQRSDTO {
   observaciones?: string;
 }
 
-export interface UpdatePQRSDTO extends Partial<CreatePQRSDTO> {}
+export type UpdatePQRSDTO = Partial<CreatePQRSDTO>;
 
 export interface AsignarPQRSDTO {
   asignado_a: number;
@@ -783,7 +827,7 @@ export interface CreateEncuestaDTO {
   pregunta_nps?: string;
 }
 
-export interface UpdateEncuestaDTO extends Partial<CreateEncuestaDTO> {}
+export type UpdateEncuestaDTO = Partial<CreateEncuestaDTO>;
 
 export interface ResponderEncuestaDTO {
   puntuacion_nps?: number;

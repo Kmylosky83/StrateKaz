@@ -33,19 +33,9 @@ export type TipoCampo =
   | 'FILE'
   | 'SIGNATURE';
 
-export type TipoAsignacion =
-  | 'ROL_SISTEMA'
-  | 'CARGO'
-  | 'GRUPO'
-  | 'USUARIO'
-  | 'DINAMICO';
+export type TipoAsignacion = 'ROL_SISTEMA' | 'CARGO' | 'GRUPO' | 'USUARIO' | 'DINAMICO';
 
-export type EstadoInstancia =
-  | 'INICIADO'
-  | 'EN_PROCESO'
-  | 'PAUSADO'
-  | 'COMPLETADO'
-  | 'CANCELADO';
+export type EstadoInstancia = 'INICIADO' | 'EN_PROCESO' | 'PAUSADO' | 'COMPLETADO' | 'CANCELADO';
 
 export type TipoTarea =
   | 'APROBACION'
@@ -55,28 +45,13 @@ export type TipoTarea =
   | 'FIRMA'
   | 'SISTEMA';
 
-export type EstadoTarea =
-  | 'PENDIENTE'
-  | 'EN_PROGRESO'
-  | 'COMPLETADA'
-  | 'RECHAZADA'
-  | 'ESCALADA';
+export type EstadoTarea = 'PENDIENTE' | 'EN_PROGRESO' | 'COMPLETADA' | 'RECHAZADA' | 'ESCALADA';
 
 export type Prioridad = 'BAJA' | 'NORMAL' | 'ALTA' | 'URGENTE';
 
-export type EstadoFormulario =
-  | 'EN_PROGRESO'
-  | 'COMPLETADO'
-  | 'APROBADO'
-  | 'RECHAZADO'
-  | 'ANULADO';
+export type EstadoFormulario = 'EN_PROGRESO' | 'COMPLETADO' | 'APROBADO' | 'RECHAZADO' | 'ANULADO';
 
-export type EstadoAsignacion =
-  | 'PENDIENTE'
-  | 'EN_PROGRESO'
-  | 'COMPLETADO'
-  | 'VENCIDO'
-  | 'CANCELADO';
+export type EstadoAsignacion = 'PENDIENTE' | 'EN_PROGRESO' | 'COMPLETADO' | 'VENCIDO' | 'CANCELADO';
 
 export type AccionHistorial =
   | 'CREACION'
@@ -459,7 +434,7 @@ export interface CreateNodoDTO {
   configuracion?: Record<string, unknown>;
 }
 
-export interface UpdateNodoDTO extends Partial<CreateNodoDTO> {}
+export type UpdateNodoDTO = Partial<CreateNodoDTO>;
 
 export interface CreateTransicionDTO {
   plantilla: number;
@@ -470,7 +445,7 @@ export interface CreateTransicionDTO {
   prioridad?: number;
 }
 
-export interface UpdateTransicionDTO extends Partial<CreateTransicionDTO> {}
+export type UpdateTransicionDTO = Partial<CreateTransicionDTO>;
 
 export interface CreateCampoFormularioDTO {
   nodo: number;

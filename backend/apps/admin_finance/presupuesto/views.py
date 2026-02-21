@@ -169,7 +169,7 @@ class PresupuestoPorAreaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         resumen_areas = {}
 
         for presupuesto in presupuestos:
-            area_key = presupuesto.area.nombre if presupuesto.area else presupuesto.centro_costo.nombre
+            area_key = presupuesto.area.name if presupuesto.area else presupuesto.centro_costo.nombre
 
             if area_key not in resumen_areas:
                 resumen_areas[area_key] = {
@@ -259,7 +259,7 @@ class PresupuestoPorAreaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             por_rubro[rubro_key]['total_asignado'] += p.monto_asignado
             por_rubro[rubro_key]['total_ejecutado'] += p.monto_ejecutado
             por_rubro[rubro_key]['areas'].append({
-                'area': p.area.nombre if p.area else p.centro_costo.nombre,
+                'area': p.area.name if p.area else p.centro_costo.nombre,
                 'asignado': float(p.monto_asignado),
                 'ejecutado': float(p.monto_ejecutado),
                 'disponible': float(p.saldo_disponible)

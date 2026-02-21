@@ -171,12 +171,7 @@ export type TipoAccionISO =
   | 'EPP';
 
 // Estado de acción
-export type EstadoAccion =
-  | 'PENDIENTE'
-  | 'EN_PROGRESO'
-  | 'COMPLETADA'
-  | 'VERIFICADA'
-  | 'CANCELADA';
+export type EstadoAccion = 'PENDIENTE' | 'EN_PROGRESO' | 'COMPLETADA' | 'VERIFICADA' | 'CANCELADA';
 
 // ==================== ACCIDENTE DE TRABAJO ====================
 
@@ -338,7 +333,7 @@ export interface CreateIncidenteTrabajoDTO {
   requiere_investigacion?: boolean;
 }
 
-export interface UpdateIncidenteTrabajoDTO extends Partial<CreateIncidenteTrabajoDTO> {}
+export type UpdateIncidenteTrabajoDTO = Partial<CreateIncidenteTrabajoDTO>;
 
 // ==================== INVESTIGACION ATEL ====================
 
@@ -432,7 +427,7 @@ export interface CreateCausaRaizDTO {
   prioridad?: number;
 }
 
-export interface UpdateCausaRaizDTO extends Partial<CreateCausaRaizDTO> {}
+export type UpdateCausaRaizDTO = Partial<CreateCausaRaizDTO>;
 
 // ==================== LECCION APRENDIDA ====================
 
@@ -477,7 +472,7 @@ export interface CreateLeccionAprendidaDTO {
   puestos_trabajo_aplicables?: string;
 }
 
-export interface UpdateLeccionAprendidaDTO extends Partial<CreateLeccionAprendidaDTO> {}
+export type UpdateLeccionAprendidaDTO = Partial<CreateLeccionAprendidaDTO>;
 
 export interface DivulgarLeccionDTO {
   metodo_divulgacion: string;

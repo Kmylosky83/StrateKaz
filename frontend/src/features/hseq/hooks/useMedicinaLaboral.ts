@@ -47,7 +47,12 @@ export interface ExamenMedico {
   entidad_prestadora?: string;
   medico_evaluador?: string;
   licencia_medica?: string;
-  concepto_aptitud: 'APTO' | 'APTO_CON_RESTRICCIONES' | 'NO_APTO_TEMPORAL' | 'NO_APTO_PERMANENTE' | 'PENDIENTE';
+  concepto_aptitud:
+    | 'APTO'
+    | 'APTO_CON_RESTRICCIONES'
+    | 'NO_APTO_TEMPORAL'
+    | 'NO_APTO_PERMANENTE'
+    | 'PENDIENTE';
   concepto_aptitud_display?: string;
   hallazgos_relevantes?: string;
   recomendaciones?: string;
@@ -78,7 +83,17 @@ export interface RestriccionMedica {
   cargo_id?: number;
   tipo_restriccion: 'TEMPORAL' | 'PERMANENTE' | 'CONDICIONAL';
   tipo_restriccion_display?: string;
-  categoria: 'CARGA' | 'POSTURA' | 'MOVIMIENTO' | 'ALTURA' | 'ESPACIOS_CONFINADOS' | 'QUIMICOS' | 'RUIDO' | 'TEMPERATURA' | 'JORNADA' | 'OTRAS';
+  categoria:
+    | 'CARGA'
+    | 'POSTURA'
+    | 'MOVIMIENTO'
+    | 'ALTURA'
+    | 'ESPACIOS_CONFINADOS'
+    | 'QUIMICOS'
+    | 'RUIDO'
+    | 'TEMPERATURA'
+    | 'JORNADA'
+    | 'OTRAS';
   categoria_display?: string;
   descripcion: string;
   actividades_restringidas: string;
@@ -108,7 +123,17 @@ export interface ProgramaVigilancia {
   empresa_id: number;
   codigo: string;
   nombre: string;
-  tipo: 'OSTEOMUSCULAR' | 'CARDIOVASCULAR' | 'AUDITIVO' | 'RESPIRATORIO' | 'VISUAL' | 'PSICOSOCIAL' | 'DERMATOLOGICO' | 'BIOLOGICO' | 'QUIMICO' | 'OTRO';
+  tipo:
+    | 'OSTEOMUSCULAR'
+    | 'CARDIOVASCULAR'
+    | 'AUDITIVO'
+    | 'RESPIRATORIO'
+    | 'VISUAL'
+    | 'PSICOSOCIAL'
+    | 'DERMATOLOGICO'
+    | 'BIOLOGICO'
+    | 'QUIMICO'
+    | 'OTRO';
   tipo_display?: string;
   descripcion?: string;
   objetivo: string;
@@ -236,7 +261,7 @@ export interface CreateTipoExamenDTO {
   observaciones?: string;
 }
 
-export interface UpdateTipoExamenDTO extends Partial<CreateTipoExamenDTO> {}
+export type UpdateTipoExamenDTO = Partial<CreateTipoExamenDTO>;
 
 export interface CreateExamenMedicoDTO {
   empresa_id: number;
@@ -262,7 +287,7 @@ export interface CreateExamenMedicoDTO {
   observaciones?: string;
 }
 
-export interface UpdateExamenMedicoDTO extends Partial<CreateExamenMedicoDTO> {}
+export type UpdateExamenMedicoDTO = Partial<CreateExamenMedicoDTO>;
 
 export interface CreateRestriccionMedicaDTO {
   empresa_id: number;
@@ -283,7 +308,7 @@ export interface CreateRestriccionMedicaDTO {
   observaciones?: string;
 }
 
-export interface UpdateRestriccionMedicaDTO extends Partial<CreateRestriccionMedicaDTO> {}
+export type UpdateRestriccionMedicaDTO = Partial<CreateRestriccionMedicaDTO>;
 
 export interface CreateProgramaVigilanciaDTO {
   empresa_id: number;
@@ -303,7 +328,7 @@ export interface CreateProgramaVigilanciaDTO {
   observaciones?: string;
 }
 
-export interface UpdateProgramaVigilanciaDTO extends Partial<CreateProgramaVigilanciaDTO> {}
+export type UpdateProgramaVigilanciaDTO = Partial<CreateProgramaVigilanciaDTO>;
 
 export interface CreateCasoVigilanciaDTO {
   empresa_id: number;
@@ -320,7 +345,7 @@ export interface CreateCasoVigilanciaDTO {
   observaciones?: string;
 }
 
-export interface UpdateCasoVigilanciaDTO extends Partial<CreateCasoVigilanciaDTO> {}
+export type UpdateCasoVigilanciaDTO = Partial<CreateCasoVigilanciaDTO>;
 
 export interface RegistrarSeguimientoDTO {
   descripcion: string;
@@ -349,7 +374,7 @@ export interface CreateDiagnosticoOcupacionalDTO {
   requiere_reporte_secretaria?: boolean;
 }
 
-export interface UpdateDiagnosticoOcupacionalDTO extends Partial<CreateDiagnosticoOcupacionalDTO> {}
+export type UpdateDiagnosticoOcupacionalDTO = Partial<CreateDiagnosticoOcupacionalDTO>;
 
 // ==================== QUERY KEYS ====================
 
@@ -363,46 +388,60 @@ export const medicinaLaboralKeys = {
   // Exámenes Médicos
   examenes: () => [...medicinaLaboralKeys.all, 'examenes'] as const,
   examen: (id: number) => [...medicinaLaboralKeys.examenes(), id] as const,
-  examenesByColaborador: (colaboradorId: number) => [...medicinaLaboralKeys.examenes(), 'colaborador', colaboradorId] as const,
-  examenesVencidos: (dias?: number) => [...medicinaLaboralKeys.examenes(), 'vencidos', dias] as const,
+  examenesByColaborador: (colaboradorId: number) =>
+    [...medicinaLaboralKeys.examenes(), 'colaborador', colaboradorId] as const,
+  examenesVencidos: (dias?: number) =>
+    [...medicinaLaboralKeys.examenes(), 'vencidos', dias] as const,
   estadisticasExamenes: () => [...medicinaLaboralKeys.examenes(), 'estadisticas'] as const,
 
   // Restricciones Médicas
   restricciones: () => [...medicinaLaboralKeys.all, 'restricciones'] as const,
   restriccion: (id: number) => [...medicinaLaboralKeys.restricciones(), id] as const,
-  restriccionesByColaborador: (colaboradorId: number) => [...medicinaLaboralKeys.restricciones(), 'colaborador', colaboradorId] as const,
+  restriccionesByColaborador: (colaboradorId: number) =>
+    [...medicinaLaboralKeys.restricciones(), 'colaborador', colaboradorId] as const,
   restriccionesActivas: () => [...medicinaLaboralKeys.restricciones(), 'activas'] as const,
 
   // Programas de Vigilancia
   programas: () => [...medicinaLaboralKeys.all, 'programas'] as const,
   programa: (id: number) => [...medicinaLaboralKeys.programas(), id] as const,
   programasActivos: () => [...medicinaLaboralKeys.programas(), 'activos'] as const,
-  casosByPrograma: (programaId: number) => [...medicinaLaboralKeys.programas(), programaId, 'casos'] as const,
+  casosByPrograma: (programaId: number) =>
+    [...medicinaLaboralKeys.programas(), programaId, 'casos'] as const,
 
   // Casos en Vigilancia
   casos: () => [...medicinaLaboralKeys.all, 'casos'] as const,
   caso: (id: number) => [...medicinaLaboralKeys.casos(), id] as const,
-  casosByColaborador: (colaboradorId: number) => [...medicinaLaboralKeys.casos(), 'colaborador', colaboradorId] as const,
+  casosByColaborador: (colaboradorId: number) =>
+    [...medicinaLaboralKeys.casos(), 'colaborador', colaboradorId] as const,
   casosActivos: () => [...medicinaLaboralKeys.casos(), 'activos'] as const,
 
   // Diagnósticos Ocupacionales
   diagnosticos: () => [...medicinaLaboralKeys.all, 'diagnosticos'] as const,
   diagnostico: (id: number) => [...medicinaLaboralKeys.diagnosticos(), id] as const,
-  diagnosticosBusqueda: (query: string) => [...medicinaLaboralKeys.diagnosticos(), 'buscar', query] as const,
+  diagnosticosBusqueda: (query: string) =>
+    [...medicinaLaboralKeys.diagnosticos(), 'buscar', query] as const,
 
   // Estadísticas
   estadisticas: () => [...medicinaLaboralKeys.all, 'estadisticas'] as const,
-  estadistica: (anio: number, mes: number) => [...medicinaLaboralKeys.estadisticas(), anio, mes] as const,
+  estadistica: (anio: number, mes: number) =>
+    [...medicinaLaboralKeys.estadisticas(), anio, mes] as const,
   dashboard: (anio: number) => [...medicinaLaboralKeys.all, 'dashboard', anio] as const,
 };
 
 // ==================== TIPOS DE EXAMEN HOOKS ====================
 
-export function useTiposExamen(params?: { tipo?: string; periodicidad?: string; is_active?: boolean }) {
+export function useTiposExamen(params?: {
+  tipo?: string;
+  periodicidad?: string;
+  is_active?: boolean;
+}) {
   return useQuery({
     queryKey: [...medicinaLaboralKeys.tiposExamen(), params],
     queryFn: async () => {
-      const { data } = await apiClient.get<TipoExamen[]>('/api/hseq/medicina-laboral/tipos-examen/', { params });
+      const { data } = await apiClient.get<TipoExamen[]>(
+        '/api/hseq/medicina-laboral/tipos-examen/',
+        { params }
+      );
       return data;
     },
   });
@@ -412,7 +451,9 @@ export function useTipoExamen(id: number) {
   return useQuery({
     queryKey: medicinaLaboralKeys.tipoExamen(id),
     queryFn: async () => {
-      const { data } = await apiClient.get<TipoExamen>(`/api/hseq/medicina-laboral/tipos-examen/${id}/`);
+      const { data } = await apiClient.get<TipoExamen>(
+        `/api/hseq/medicina-laboral/tipos-examen/${id}/`
+      );
       return data;
     },
     enabled: !!id,
@@ -423,7 +464,10 @@ export function useCreateTipoExamen() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (datos: CreateTipoExamenDTO) => {
-      const { data } = await apiClient.post<TipoExamen>('/api/hseq/medicina-laboral/tipos-examen/', datos);
+      const { data } = await apiClient.post<TipoExamen>(
+        '/api/hseq/medicina-laboral/tipos-examen/',
+        datos
+      );
       return data;
     },
     onSuccess: () => {
@@ -440,7 +484,10 @@ export function useUpdateTipoExamen() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, datos }: { id: number; datos: UpdateTipoExamenDTO }) => {
-      const { data } = await apiClient.patch<TipoExamen>(`/api/hseq/medicina-laboral/tipos-examen/${id}/`, datos);
+      const { data } = await apiClient.patch<TipoExamen>(
+        `/api/hseq/medicina-laboral/tipos-examen/${id}/`,
+        datos
+      );
       return data;
     },
     onSuccess: (_, { id }) => {
@@ -482,7 +529,9 @@ export function useExamenesMedicos(params?: {
   return useQuery({
     queryKey: [...medicinaLaboralKeys.examenes(), params],
     queryFn: async () => {
-      const { data } = await apiClient.get<ExamenMedico[]>('/api/hseq/medicina-laboral/examenes/', { params });
+      const { data } = await apiClient.get<ExamenMedico[]>('/api/hseq/medicina-laboral/examenes/', {
+        params,
+      });
       return data;
     },
   });
@@ -492,7 +541,9 @@ export function useExamenMedico(id: number) {
   return useQuery({
     queryKey: medicinaLaboralKeys.examen(id),
     queryFn: async () => {
-      const { data } = await apiClient.get<ExamenMedico>(`/api/hseq/medicina-laboral/examenes/${id}/`);
+      const { data } = await apiClient.get<ExamenMedico>(
+        `/api/hseq/medicina-laboral/examenes/${id}/`
+      );
       return data;
     },
     enabled: !!id,
@@ -503,7 +554,10 @@ export function useCreateExamenMedico() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (datos: CreateExamenMedicoDTO) => {
-      const { data } = await apiClient.post<ExamenMedico>('/api/hseq/medicina-laboral/examenes/', datos);
+      const { data } = await apiClient.post<ExamenMedico>(
+        '/api/hseq/medicina-laboral/examenes/',
+        datos
+      );
       return data;
     },
     onSuccess: () => {
@@ -521,7 +575,10 @@ export function useUpdateExamenMedico() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, datos }: { id: number; datos: UpdateExamenMedicoDTO }) => {
-      const { data } = await apiClient.patch<ExamenMedico>(`/api/hseq/medicina-laboral/examenes/${id}/`, datos);
+      const { data } = await apiClient.patch<ExamenMedico>(
+        `/api/hseq/medicina-laboral/examenes/${id}/`,
+        datos
+      );
       return data;
     },
     onSuccess: (_, { id }) => {
@@ -560,10 +617,13 @@ export function useCompletarExamen() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, datos }: { id: number; datos: UpdateExamenMedicoDTO }) => {
-      const { data } = await apiClient.patch<ExamenMedico>(`/api/hseq/medicina-laboral/examenes/${id}/`, {
-        ...datos,
-        estado: 'COMPLETADO',
-      });
+      const { data } = await apiClient.patch<ExamenMedico>(
+        `/api/hseq/medicina-laboral/examenes/${id}/`,
+        {
+          ...datos,
+          estado: 'COMPLETADO',
+        }
+      );
       return data;
     },
     onSuccess: (_, { id }) => {
@@ -581,10 +641,13 @@ export function useCancelarExamen() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, motivo }: { id: number; motivo?: string }) => {
-      const { data } = await apiClient.patch<ExamenMedico>(`/api/hseq/medicina-laboral/examenes/${id}/`, {
-        estado: 'CANCELADO',
-        observaciones: motivo,
-      });
+      const { data } = await apiClient.patch<ExamenMedico>(
+        `/api/hseq/medicina-laboral/examenes/${id}/`,
+        {
+          estado: 'CANCELADO',
+          observaciones: motivo,
+        }
+      );
       return data;
     },
     onSuccess: (_, { id }) => {
@@ -662,7 +725,10 @@ export function useRestricciones(params?: {
   return useQuery({
     queryKey: [...medicinaLaboralKeys.restricciones(), params],
     queryFn: async () => {
-      const { data } = await apiClient.get<RestriccionMedica[]>('/api/hseq/medicina-laboral/restricciones/', { params });
+      const { data } = await apiClient.get<RestriccionMedica[]>(
+        '/api/hseq/medicina-laboral/restricciones/',
+        { params }
+      );
       return data;
     },
   });
@@ -672,7 +738,9 @@ export function useRestriccion(id: number) {
   return useQuery({
     queryKey: medicinaLaboralKeys.restriccion(id),
     queryFn: async () => {
-      const { data } = await apiClient.get<RestriccionMedica>(`/api/hseq/medicina-laboral/restricciones/${id}/`);
+      const { data } = await apiClient.get<RestriccionMedica>(
+        `/api/hseq/medicina-laboral/restricciones/${id}/`
+      );
       return data;
     },
     enabled: !!id,
@@ -683,7 +751,10 @@ export function useCreateRestriccion() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (datos: CreateRestriccionMedicaDTO) => {
-      const { data } = await apiClient.post<RestriccionMedica>('/api/hseq/medicina-laboral/restricciones/', datos);
+      const { data } = await apiClient.post<RestriccionMedica>(
+        '/api/hseq/medicina-laboral/restricciones/',
+        datos
+      );
       return data;
     },
     onSuccess: () => {
@@ -701,7 +772,10 @@ export function useUpdateRestriccion() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, datos }: { id: number; datos: UpdateRestriccionMedicaDTO }) => {
-      const { data } = await apiClient.patch<RestriccionMedica>(`/api/hseq/medicina-laboral/restricciones/${id}/`, datos);
+      const { data } = await apiClient.patch<RestriccionMedica>(
+        `/api/hseq/medicina-laboral/restricciones/${id}/`,
+        datos
+      );
       return data;
     },
     onSuccess: (_, { id }) => {
@@ -757,7 +831,10 @@ export function useRenovarRestriccion() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, datos }: { id: number; datos: UpdateRestriccionMedicaDTO }) => {
-      const { data } = await apiClient.patch<RestriccionMedica>(`/api/hseq/medicina-laboral/restricciones/${id}/`, datos);
+      const { data } = await apiClient.patch<RestriccionMedica>(
+        `/api/hseq/medicina-laboral/restricciones/${id}/`,
+        datos
+      );
       return data;
     },
     onSuccess: (_, { id }) => {
@@ -806,9 +883,12 @@ export function useRestriccionesPorVencer(dias: number = 30) {
   return useQuery({
     queryKey: [...medicinaLaboralKeys.restriccionesActivas(), 'por-vencer', dias],
     queryFn: async () => {
-      const { data } = await apiClient.get<RestriccionMedica[]>('/api/hseq/medicina-laboral/restricciones/', {
-        params: { estado: 'ACTIVA' },
-      });
+      const { data } = await apiClient.get<RestriccionMedica[]>(
+        '/api/hseq/medicina-laboral/restricciones/',
+        {
+          params: { estado: 'ACTIVA' },
+        }
+      );
       // Filtrar las que vencen en los próximos N días
       const hoy = new Date();
       const fechaLimite = new Date();
@@ -834,7 +914,10 @@ export function useProgramasVigilancia(params?: {
   return useQuery({
     queryKey: [...medicinaLaboralKeys.programas(), params],
     queryFn: async () => {
-      const { data } = await apiClient.get<ProgramaVigilancia[]>('/api/hseq/medicina-laboral/programas/', { params });
+      const { data } = await apiClient.get<ProgramaVigilancia[]>(
+        '/api/hseq/medicina-laboral/programas/',
+        { params }
+      );
       return data;
     },
   });
@@ -844,7 +927,9 @@ export function useProgramaVigilancia(id: number) {
   return useQuery({
     queryKey: medicinaLaboralKeys.programa(id),
     queryFn: async () => {
-      const { data } = await apiClient.get<ProgramaVigilancia>(`/api/hseq/medicina-laboral/programas/${id}/`);
+      const { data } = await apiClient.get<ProgramaVigilancia>(
+        `/api/hseq/medicina-laboral/programas/${id}/`
+      );
       return data;
     },
     enabled: !!id,
@@ -855,7 +940,10 @@ export function useCreateProgramaVigilancia() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (datos: CreateProgramaVigilanciaDTO) => {
-      const { data } = await apiClient.post<ProgramaVigilancia>('/api/hseq/medicina-laboral/programas/', datos);
+      const { data } = await apiClient.post<ProgramaVigilancia>(
+        '/api/hseq/medicina-laboral/programas/',
+        datos
+      );
       return data;
     },
     onSuccess: () => {
@@ -872,7 +960,10 @@ export function useUpdateProgramaVigilancia() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, datos }: { id: number; datos: UpdateProgramaVigilanciaDTO }) => {
-      const { data } = await apiClient.patch<ProgramaVigilancia>(`/api/hseq/medicina-laboral/programas/${id}/`, datos);
+      const { data } = await apiClient.patch<ProgramaVigilancia>(
+        `/api/hseq/medicina-laboral/programas/${id}/`,
+        datos
+      );
       return data;
     },
     onSuccess: (_, { id }) => {
@@ -931,7 +1022,9 @@ export function useCasosVigilancia(params?: {
   return useQuery({
     queryKey: [...medicinaLaboralKeys.casos(), params],
     queryFn: async () => {
-      const { data } = await apiClient.get<CasoVigilancia[]>('/api/hseq/medicina-laboral/casos/', { params });
+      const { data } = await apiClient.get<CasoVigilancia[]>('/api/hseq/medicina-laboral/casos/', {
+        params,
+      });
       return data;
     },
   });
@@ -941,7 +1034,9 @@ export function useCasoVigilancia(id: number) {
   return useQuery({
     queryKey: medicinaLaboralKeys.caso(id),
     queryFn: async () => {
-      const { data } = await apiClient.get<CasoVigilancia>(`/api/hseq/medicina-laboral/casos/${id}/`);
+      const { data } = await apiClient.get<CasoVigilancia>(
+        `/api/hseq/medicina-laboral/casos/${id}/`
+      );
       return data;
     },
     enabled: !!id,
@@ -952,7 +1047,10 @@ export function useCreateCasoVigilancia() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (datos: CreateCasoVigilanciaDTO) => {
-      const { data } = await apiClient.post<CasoVigilancia>('/api/hseq/medicina-laboral/casos/', datos);
+      const { data } = await apiClient.post<CasoVigilancia>(
+        '/api/hseq/medicina-laboral/casos/',
+        datos
+      );
       return data;
     },
     onSuccess: () => {
@@ -970,7 +1068,10 @@ export function useUpdateCasoVigilancia() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, datos }: { id: number; datos: UpdateCasoVigilanciaDTO }) => {
-      const { data } = await apiClient.patch<CasoVigilancia>(`/api/hseq/medicina-laboral/casos/${id}/`, datos);
+      const { data } = await apiClient.patch<CasoVigilancia>(
+        `/api/hseq/medicina-laboral/casos/${id}/`,
+        datos
+      );
       return data;
     },
     onSuccess: (_, { id }) => {
@@ -1084,7 +1185,10 @@ export function useDiagnosticos(params?: {
   return useQuery({
     queryKey: [...medicinaLaboralKeys.diagnosticos(), params],
     queryFn: async () => {
-      const { data } = await apiClient.get<DiagnosticoOcupacional[]>('/api/hseq/medicina-laboral/diagnosticos/', { params });
+      const { data } = await apiClient.get<DiagnosticoOcupacional[]>(
+        '/api/hseq/medicina-laboral/diagnosticos/',
+        { params }
+      );
       return data;
     },
   });
@@ -1094,7 +1198,9 @@ export function useDiagnostico(id: number) {
   return useQuery({
     queryKey: medicinaLaboralKeys.diagnostico(id),
     queryFn: async () => {
-      const { data } = await apiClient.get<DiagnosticoOcupacional>(`/api/hseq/medicina-laboral/diagnosticos/${id}/`);
+      const { data } = await apiClient.get<DiagnosticoOcupacional>(
+        `/api/hseq/medicina-laboral/diagnosticos/${id}/`
+      );
       return data;
     },
     enabled: !!id,
@@ -1105,9 +1211,12 @@ export function useBuscarCIE10(query: string) {
   return useQuery({
     queryKey: medicinaLaboralKeys.diagnosticosBusqueda(query),
     queryFn: async () => {
-      const { data } = await apiClient.get<DiagnosticoOcupacional[]>('/api/hseq/medicina-laboral/diagnosticos/', {
-        params: { search: query },
-      });
+      const { data } = await apiClient.get<DiagnosticoOcupacional[]>(
+        '/api/hseq/medicina-laboral/diagnosticos/',
+        {
+          params: { search: query },
+        }
+      );
       return data;
     },
     enabled: query.length >= 3,
@@ -1119,7 +1228,10 @@ export function useCreateDiagnostico() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (datos: CreateDiagnosticoOcupacionalDTO) => {
-      const { data } = await apiClient.post<DiagnosticoOcupacional>('/api/hseq/medicina-laboral/diagnosticos/', datos);
+      const { data } = await apiClient.post<DiagnosticoOcupacional>(
+        '/api/hseq/medicina-laboral/diagnosticos/',
+        datos
+      );
       return data;
     },
     onSuccess: () => {
@@ -1136,7 +1248,10 @@ export function useUpdateDiagnostico() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, datos }: { id: number; datos: UpdateDiagnosticoOcupacionalDTO }) => {
-      const { data } = await apiClient.patch<DiagnosticoOcupacional>(`/api/hseq/medicina-laboral/diagnosticos/${id}/`, datos);
+      const { data } = await apiClient.patch<DiagnosticoOcupacional>(
+        `/api/hseq/medicina-laboral/diagnosticos/${id}/`,
+        datos
+      );
       return data;
     },
     onSuccess: (_, { id }) => {
@@ -1173,17 +1288,18 @@ export function useEstadisticaMedica(anio: number, mes: number) {
 export function useGenerarEstadistica() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (datos: {
-      empresa_id: number;
-      anio: number;
-      mes: number;
-    }) => {
-      const { data } = await apiClient.post<EstadisticaMedica>('/api/hseq/medicina-laboral/estadisticas/', datos);
+    mutationFn: async (datos: { empresa_id: number; anio: number; mes: number }) => {
+      const { data } = await apiClient.post<EstadisticaMedica>(
+        '/api/hseq/medicina-laboral/estadisticas/',
+        datos
+      );
       return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: medicinaLaboralKeys.estadisticas() });
-      queryClient.invalidateQueries({ queryKey: medicinaLaboralKeys.estadistica(data.anio, data.mes) });
+      queryClient.invalidateQueries({
+        queryKey: medicinaLaboralKeys.estadistica(data.anio, data.mes),
+      });
       toast.success('Estadística médica generada exitosamente');
     },
     onError: () => {

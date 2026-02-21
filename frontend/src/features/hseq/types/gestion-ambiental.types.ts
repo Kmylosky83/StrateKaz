@@ -697,21 +697,21 @@ export interface UpdateGestorAmbientalDTO extends Partial<CreateGestorAmbientalD
   activo?: boolean;
 }
 
-export interface UpdateRegistroResiduoDTO extends Partial<CreateRegistroResiduoDTO> {}
+export type UpdateRegistroResiduoDTO = Partial<CreateRegistroResiduoDTO>;
 
-export interface UpdateVertimientoDTO extends Partial<CreateVertimientoDTO> {}
+export type UpdateVertimientoDTO = Partial<CreateVertimientoDTO>;
 
 export interface UpdateFuenteEmisionDTO extends Partial<CreateFuenteEmisionDTO> {
   activo?: boolean;
 }
 
-export interface UpdateRegistroEmisionDTO extends Partial<CreateRegistroEmisionDTO> {}
+export type UpdateRegistroEmisionDTO = Partial<CreateRegistroEmisionDTO>;
 
 export interface UpdateTipoRecursoDTO extends Partial<CreateTipoRecursoDTO> {
   activo?: boolean;
 }
 
-export interface UpdateConsumoRecursoDTO extends Partial<CreateConsumoRecursoDTO> {}
+export type UpdateConsumoRecursoDTO = Partial<CreateConsumoRecursoDTO>;
 
 export interface UpdateCalculoHuellaCarbonoDTO extends Partial<CreateCalculoHuellaCarbonoDTO> {
   verificado?: boolean;

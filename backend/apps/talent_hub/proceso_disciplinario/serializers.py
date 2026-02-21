@@ -153,8 +153,8 @@ class LlamadoAtencionDetailSerializer(serializers.ModelSerializer):
             'id': obj.colaborador.id,
             'nombre_completo': obj.colaborador.get_nombre_completo(),
             'numero_identificacion': obj.colaborador.numero_identificacion,
-            'cargo': obj.colaborador.cargo.nombre if obj.colaborador.cargo else None,
-            'area': obj.colaborador.area.nombre if obj.colaborador.area else None,
+            'cargo': obj.colaborador.cargo.name if obj.colaborador.cargo else None,
+            'area': obj.colaborador.area.name if obj.colaborador.area else None,
         }
 
     def get_tipo_falta_info(self, obj):
@@ -275,7 +275,7 @@ class DescargoDetailSerializer(serializers.ModelSerializer):
             'id': obj.colaborador.id,
             'nombre_completo': obj.colaborador.get_nombre_completo(),
             'numero_identificacion': obj.colaborador.numero_identificacion,
-            'cargo': obj.colaborador.cargo.nombre if obj.colaborador.cargo else None,
+            'cargo': obj.colaborador.cargo.name if obj.colaborador.cargo else None,
         }
 
     def get_tipo_falta_info(self, obj):
@@ -424,7 +424,7 @@ class MemorandoDetailSerializer(serializers.ModelSerializer):
             'id': obj.colaborador.id,
             'nombre_completo': obj.colaborador.get_nombre_completo(),
             'numero_identificacion': obj.colaborador.numero_identificacion,
-            'cargo': obj.colaborador.cargo.nombre if obj.colaborador.cargo else None,
+            'cargo': obj.colaborador.cargo.name if obj.colaborador.cargo else None,
         }
 
     def get_tipo_falta_info(self, obj):
@@ -507,7 +507,7 @@ class HistorialDisciplinarioSerializer(serializers.ModelSerializer):
         read_only=True
     )
     colaborador_cargo = serializers.CharField(
-        source='colaborador.cargo.nombre',
+        source='colaborador.cargo.name',
         read_only=True
     )
     tiene_antecedentes = serializers.BooleanField(read_only=True)
@@ -554,8 +554,8 @@ class HistorialDisciplinarioDetailSerializer(serializers.ModelSerializer):
             'id': obj.colaborador.id,
             'nombre_completo': obj.colaborador.get_nombre_completo(),
             'numero_identificacion': obj.colaborador.numero_identificacion,
-            'cargo': obj.colaborador.cargo.nombre if obj.colaborador.cargo else None,
-            'area': obj.colaborador.area.nombre if obj.colaborador.area else None,
+            'cargo': obj.colaborador.cargo.name if obj.colaborador.cargo else None,
+            'area': obj.colaborador.area.name if obj.colaborador.area else None,
             'estado': obj.colaborador.estado,
         }
 

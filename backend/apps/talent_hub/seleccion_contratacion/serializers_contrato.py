@@ -65,8 +65,8 @@ class HistorialContratoDetailSerializer(serializers.ModelSerializer):
             'id': obj.colaborador.id,
             'nombre_completo': obj.colaborador.get_nombre_completo(),
             'numero_identificacion': obj.colaborador.numero_identificacion,
-            'cargo': obj.colaborador.cargo.nombre if obj.colaborador.cargo else None,
-            'area': obj.colaborador.area.nombre if obj.colaborador.area else None,
+            'cargo': obj.colaborador.cargo.name if obj.colaborador.cargo else None,
+            'area': obj.colaborador.area.name if obj.colaborador.area else None,
         }
 
     def get_warnings(self, obj):

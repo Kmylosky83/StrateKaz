@@ -42,12 +42,7 @@ export type TipoExamen =
 /**
  * Periodicidad de exámenes
  */
-export type PeriodicidadExamen =
-  | 'UNICO'
-  | 'ANUAL'
-  | 'BIENAL'
-  | 'TRIENAL'
-  | 'PERSONALIZADO';
+export type PeriodicidadExamen = 'UNICO' | 'ANUAL' | 'BIENAL' | 'TRIENAL' | 'PERSONALIZADO';
 
 /**
  * Concepto de aptitud del examen médico
@@ -62,20 +57,12 @@ export type ConceptoAptitud =
 /**
  * Estado del examen médico
  */
-export type EstadoExamen =
-  | 'PROGRAMADO'
-  | 'EN_PROCESO'
-  | 'COMPLETADO'
-  | 'CANCELADO'
-  | 'VENCIDO';
+export type EstadoExamen = 'PROGRAMADO' | 'EN_PROCESO' | 'COMPLETADO' | 'CANCELADO' | 'VENCIDO';
 
 /**
  * Tipo de restricción médica
  */
-export type TipoRestriccion =
-  | 'TEMPORAL'
-  | 'PERMANENTE'
-  | 'CONDICIONAL';
+export type TipoRestriccion = 'TEMPORAL' | 'PERMANENTE' | 'CONDICIONAL';
 
 /**
  * Categoría de restricción médica
@@ -95,11 +82,7 @@ export type CategoriaRestriccion =
 /**
  * Estado de la restricción médica
  */
-export type EstadoRestriccion =
-  | 'ACTIVA'
-  | 'VENCIDA'
-  | 'LEVANTADA'
-  | 'CANCELADA';
+export type EstadoRestriccion = 'ACTIVA' | 'VENCIDA' | 'LEVANTADA' | 'CANCELADA';
 
 /**
  * Tipos de programas de vigilancia epidemiológica
@@ -119,19 +102,12 @@ export type TipoProgramaVigilancia =
 /**
  * Estado del programa de vigilancia
  */
-export type EstadoProgramaVigilancia =
-  | 'ACTIVO'
-  | 'INACTIVO'
-  | 'EN_REVISION';
+export type EstadoProgramaVigilancia = 'ACTIVO' | 'INACTIVO' | 'EN_REVISION';
 
 /**
  * Severidad del caso en vigilancia
  */
-export type SeveridadCaso =
-  | 'LEVE'
-  | 'MODERADA'
-  | 'SEVERA'
-  | 'CRITICA';
+export type SeveridadCaso = 'LEVE' | 'MODERADA' | 'SEVERA' | 'CRITICA';
 
 /**
  * Estado del caso en vigilancia
@@ -146,10 +122,7 @@ export type EstadoCasoVigilancia =
 /**
  * Origen del diagnóstico
  */
-export type OrigenDiagnostico =
-  | 'OCUPACIONAL'
-  | 'COMUN'
-  | 'AMBOS';
+export type OrigenDiagnostico = 'OCUPACIONAL' | 'COMUN' | 'AMBOS';
 
 // ==================== ARRAYS DE OPCIONES PARA FORMULARIOS ====================
 
@@ -192,18 +165,19 @@ export const TIPO_RESTRICCION_OPTIONS: Array<{ value: TipoRestriccion; label: st
   { value: 'CONDICIONAL', label: 'Condicional' },
 ];
 
-export const CATEGORIA_RESTRICCION_OPTIONS: Array<{ value: CategoriaRestriccion; label: string }> = [
-  { value: 'CARGA', label: 'Manipulación de Cargas' },
-  { value: 'POSTURA', label: 'Posturas' },
-  { value: 'MOVIMIENTO', label: 'Movimientos Repetitivos' },
-  { value: 'ALTURA', label: 'Trabajo en Alturas' },
-  { value: 'ESPACIOS_CONFINADOS', label: 'Espacios Confinados' },
-  { value: 'QUIMICOS', label: 'Exposición a Químicos' },
-  { value: 'RUIDO', label: 'Exposición a Ruido' },
-  { value: 'TEMPERATURA', label: 'Temperaturas Extremas' },
-  { value: 'JORNADA', label: 'Jornada Laboral' },
-  { value: 'OTRAS', label: 'Otras' },
-];
+export const CATEGORIA_RESTRICCION_OPTIONS: Array<{ value: CategoriaRestriccion; label: string }> =
+  [
+    { value: 'CARGA', label: 'Manipulación de Cargas' },
+    { value: 'POSTURA', label: 'Posturas' },
+    { value: 'MOVIMIENTO', label: 'Movimientos Repetitivos' },
+    { value: 'ALTURA', label: 'Trabajo en Alturas' },
+    { value: 'ESPACIOS_CONFINADOS', label: 'Espacios Confinados' },
+    { value: 'QUIMICOS', label: 'Exposición a Químicos' },
+    { value: 'RUIDO', label: 'Exposición a Ruido' },
+    { value: 'TEMPERATURA', label: 'Temperaturas Extremas' },
+    { value: 'JORNADA', label: 'Jornada Laboral' },
+    { value: 'OTRAS', label: 'Otras' },
+  ];
 
 export const ESTADO_RESTRICCION_OPTIONS: Array<{ value: EstadoRestriccion; label: string }> = [
   { value: 'ACTIVA', label: 'Activa' },
@@ -212,7 +186,10 @@ export const ESTADO_RESTRICCION_OPTIONS: Array<{ value: EstadoRestriccion; label
   { value: 'CANCELADA', label: 'Cancelada' },
 ];
 
-export const TIPO_PROGRAMA_VIGILANCIA_OPTIONS: Array<{ value: TipoProgramaVigilancia; label: string }> = [
+export const TIPO_PROGRAMA_VIGILANCIA_OPTIONS: Array<{
+  value: TipoProgramaVigilancia;
+  label: string;
+}> = [
   { value: 'OSTEOMUSCULAR', label: 'Desórdenes Osteomusculares' },
   { value: 'CARDIOVASCULAR', label: 'Riesgo Cardiovascular' },
   { value: 'AUDITIVO', label: 'Conservación Auditiva' },
@@ -225,7 +202,10 @@ export const TIPO_PROGRAMA_VIGILANCIA_OPTIONS: Array<{ value: TipoProgramaVigila
   { value: 'OTRO', label: 'Otro' },
 ];
 
-export const ESTADO_PROGRAMA_VIGILANCIA_OPTIONS: Array<{ value: EstadoProgramaVigilancia; label: string }> = [
+export const ESTADO_PROGRAMA_VIGILANCIA_OPTIONS: Array<{
+  value: EstadoProgramaVigilancia;
+  label: string;
+}> = [
   { value: 'ACTIVO', label: 'Activo' },
   { value: 'INACTIVO', label: 'Inactivo' },
   { value: 'EN_REVISION', label: 'En Revisión' },
@@ -238,13 +218,14 @@ export const SEVERIDAD_CASO_OPTIONS: Array<{ value: SeveridadCaso; label: string
   { value: 'CRITICA', label: 'Crítica' },
 ];
 
-export const ESTADO_CASO_VIGILANCIA_OPTIONS: Array<{ value: EstadoCasoVigilancia; label: string }> = [
-  { value: 'ACTIVO', label: 'Activo' },
-  { value: 'EN_SEGUIMIENTO', label: 'En Seguimiento' },
-  { value: 'CONTROLADO', label: 'Controlado' },
-  { value: 'CERRADO', label: 'Cerrado' },
-  { value: 'CANCELADO', label: 'Cancelado' },
-];
+export const ESTADO_CASO_VIGILANCIA_OPTIONS: Array<{ value: EstadoCasoVigilancia; label: string }> =
+  [
+    { value: 'ACTIVO', label: 'Activo' },
+    { value: 'EN_SEGUIMIENTO', label: 'En Seguimiento' },
+    { value: 'CONTROLADO', label: 'Controlado' },
+    { value: 'CERRADO', label: 'Cerrado' },
+    { value: 'CANCELADO', label: 'Cancelado' },
+  ];
 
 export const ORIGEN_DIAGNOSTICO_OPTIONS: Array<{ value: OrigenDiagnostico; label: string }> = [
   { value: 'OCUPACIONAL', label: 'Ocupacional' },
@@ -356,7 +337,7 @@ export interface TipoExamenMedico {
   updated_at: string;
 }
 
-export interface TipoExamenMedicoList extends TipoExamenMedico {}
+export type TipoExamenMedicoList = TipoExamenMedico;
 
 export interface TipoExamenMedicoDetail extends TipoExamenMedico {
   examenes?: ExamenMedicoList[];
@@ -423,7 +404,7 @@ export interface ExamenMedico {
   updated_at: string;
 }
 
-export interface ExamenMedicoList extends ExamenMedico {}
+export type ExamenMedicoList = ExamenMedico;
 
 export interface ExamenMedicoDetail extends ExamenMedico {
   restricciones?: RestriccionMedicaList[];
@@ -489,7 +470,7 @@ export interface RestriccionMedica {
   updated_at: string;
 }
 
-export interface RestriccionMedicaList extends RestriccionMedica {}
+export type RestriccionMedicaList = RestriccionMedica;
 
 export interface RestriccionMedicaDetail extends RestriccionMedica {
   esta_vigente?: boolean;
@@ -549,7 +530,7 @@ export interface ProgramaVigilancia {
   updated_at: string;
 }
 
-export interface ProgramaVigilanciaList extends ProgramaVigilancia {}
+export type ProgramaVigilanciaList = ProgramaVigilancia;
 
 export interface ProgramaVigilanciaDetail extends ProgramaVigilancia {
   casos?: CasoVigilanciaList[];
@@ -619,9 +600,9 @@ export interface CasoVigilancia {
   updated_at: string;
 }
 
-export interface CasoVigilanciaList extends CasoVigilancia {}
+export type CasoVigilanciaList = CasoVigilancia;
 
-export interface CasoVigilanciaDetail extends CasoVigilancia {}
+export type CasoVigilanciaDetail = CasoVigilancia;
 
 // ==================== DIAGNOSTICO OCUPACIONAL ====================
 
@@ -656,9 +637,9 @@ export interface DiagnosticoOcupacional {
   updated_at: string;
 }
 
-export interface DiagnosticoOcupacionalList extends DiagnosticoOcupacional {}
+export type DiagnosticoOcupacionalList = DiagnosticoOcupacional;
 
-export interface DiagnosticoOcupacionalDetail extends DiagnosticoOcupacional {}
+export type DiagnosticoOcupacionalDetail = DiagnosticoOcupacional;
 
 // ==================== ESTADISTICA MEDICA ====================
 
@@ -721,9 +702,9 @@ export interface EstadisticaMedica {
   updated_at: string;
 }
 
-export interface EstadisticaMedicaList extends EstadisticaMedica {}
+export type EstadisticaMedicaList = EstadisticaMedica;
 
-export interface EstadisticaMedicaDetail extends EstadisticaMedica {}
+export type EstadisticaMedicaDetail = EstadisticaMedica;
 
 // ==================== DTOs - CREATE ====================
 

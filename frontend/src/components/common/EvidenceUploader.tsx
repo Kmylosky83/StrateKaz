@@ -26,6 +26,7 @@ import { cn } from '@/utils/cn';
 import { Button } from './Button';
 import { Badge } from './Badge';
 import { Spinner } from './Spinner';
+// Direct file import to avoid circular dependency via barrel (common/index.ts -> useEvidencias -> common/index.ts)
 import { useCrearEvidencia } from '@/features/cumplimiento/hooks/useEvidencias';
 import type { Evidencia, CategoriaEvidencia } from '@/features/cumplimiento/types/evidencia.types';
 

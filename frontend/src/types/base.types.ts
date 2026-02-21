@@ -46,7 +46,7 @@ export interface ActivableEntity {
 /**
  * Entidad completa con todos los campos base
  */
-export interface FullEntity extends AuditableEntity, SoftDeletableEntity, ActivableEntity {}
+export type FullEntity = AuditableEntity & SoftDeletableEntity & ActivableEntity;
 
 // ==================== UTILITY TYPES FOR DTOS ====================
 

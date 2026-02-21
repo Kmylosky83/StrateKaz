@@ -342,7 +342,7 @@ class PresupuestoPorArea(BaseCompanyModel):
         unique_together = [['empresa', 'area', 'centro_costo', 'rubro', 'anio']]
 
     def __str__(self):
-        area_nombre = self.area.nombre if self.area else self.centro_costo.nombre
+        area_nombre = self.area.name if self.area else self.centro_costo.nombre
         return f"{self.codigo} - {area_nombre} - {self.rubro.nombre} - {self.anio}"
 
     @property

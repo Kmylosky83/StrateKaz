@@ -16,7 +16,8 @@ describe('cn utility function', () => {
   });
 
   it('should ignore falsy values', () => {
-    const result = cn('base-class', false && 'hidden', null, undefined, '');
+    const isFalsy = false as boolean;
+    const result = cn('base-class', isFalsy && 'hidden', null, undefined, '');
     expect(result).toBe('base-class');
   });
 
@@ -37,8 +38,8 @@ describe('cn utility function', () => {
   it('should handle object with boolean values', () => {
     const result = cn({
       'base-class': true,
-      'active': true,
-      'disabled': false,
+      active: true,
+      disabled: false,
     });
     expect(result).toContain('base-class');
     expect(result).toContain('active');

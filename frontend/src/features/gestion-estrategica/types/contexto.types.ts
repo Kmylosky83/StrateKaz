@@ -15,18 +15,9 @@
 // ENUMS
 // ============================================================================
 
-export type EstadoAnalisis =
-  | 'borrador'
-  | 'en_revision'
-  | 'aprobado'
-  | 'vigente'
-  | 'archivado';
+export type EstadoAnalisis = 'borrador' | 'en_revision' | 'aprobado' | 'vigente' | 'archivado';
 
-export type TipoFactorDOFA =
-  | 'fortaleza'
-  | 'oportunidad'
-  | 'debilidad'
-  | 'amenaza';
+export type TipoFactorDOFA = 'fortaleza' | 'oportunidad' | 'debilidad' | 'amenaza';
 
 export type TipoFactorPESTEL =
   | 'politico'
@@ -298,7 +289,7 @@ export interface CreateFuerzaPorterDTO {
   implicaciones_estrategicas?: string;
 }
 
-export interface UpdateFuerzaPorterDTO extends Partial<CreateFuerzaPorterDTO> {}
+export type UpdateFuerzaPorterDTO = Partial<CreateFuerzaPorterDTO>;
 
 // ============================================================================
 // TOWS (Estrategias cruzadas)

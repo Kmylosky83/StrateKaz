@@ -135,9 +135,6 @@ const MonitoreoPage = lazy(() =>
 
 // ==================== NIVEL 6: GESTION INTEGRAL HSEQ ====================
 const HSEQPage = lazy(() => import('@/features/hseq').then((m) => ({ default: m.HSEQPage })));
-const SistemaDocumentalPage = lazy(() =>
-  import('@/features/hseq').then((m) => ({ default: m.SistemaDocumentalPage }))
-);
 const PlanificacionSistemaPage = lazy(() =>
   import('@/features/hseq').then((m) => ({ default: m.PlanificacionSistemaPage }))
 );

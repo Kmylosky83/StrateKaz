@@ -20,7 +20,7 @@ class CentroCostoSerializer(serializers.ModelSerializer):
 
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     area_nombre = serializers.CharField(
-        source='area.nombre',
+        source='area.name',
         read_only=True,
         allow_null=True
     )
@@ -52,7 +52,7 @@ class CentroCostoSerializer(serializers.ModelSerializer):
 class CentroCostoListSerializer(serializers.ModelSerializer):
     """Serializer simplificado para listado de centros de costo."""
 
-    area_nombre = serializers.CharField(source='area.nombre', read_only=True, allow_null=True)
+    area_nombre = serializers.CharField(source='area.name', read_only=True, allow_null=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
 
     class Meta:
@@ -133,7 +133,7 @@ class PresupuestoPorAreaSerializer(serializers.ModelSerializer):
 
     # Relaciones nested (read only)
     area_nombre = serializers.CharField(
-        source='area.nombre',
+        source='area.name',
         read_only=True,
         allow_null=True
     )
@@ -199,7 +199,7 @@ class PresupuestoPorAreaListSerializer(serializers.ModelSerializer):
     porcentaje_ejecucion = serializers.DecimalField(max_digits=5, decimal_places=2, read_only=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     area_nombre = serializers.CharField(
-        source='area.nombre',
+        source='area.name',
         read_only=True,
         allow_null=True
     )
@@ -310,7 +310,7 @@ class EjecucionSerializer(serializers.ModelSerializer):
         read_only=True
     )
     presupuesto_area = serializers.CharField(
-        source='presupuesto.area.nombre',
+        source='presupuesto.area.name',
         read_only=True,
         allow_null=True
     )
@@ -370,7 +370,7 @@ class EjecucionListSerializer(serializers.ModelSerializer):
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     presupuesto_codigo = serializers.CharField(source='presupuesto.codigo', read_only=True)
     presupuesto_area = serializers.CharField(
-        source='presupuesto.area.nombre',
+        source='presupuesto.area.name',
         read_only=True,
         allow_null=True
     )

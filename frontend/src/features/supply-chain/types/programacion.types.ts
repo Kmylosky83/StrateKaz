@@ -283,18 +283,18 @@ export interface CreateLiquidacionDTO {
 
 // ==================== DTOs - UPDATE ====================
 
-export interface UpdateTipoOperacionDTO extends Partial<CreateTipoOperacionDTO> {}
-export interface UpdateEstadoProgramacionDTO extends Partial<CreateEstadoProgramacionDTO> {}
-export interface UpdateUnidadMedidaDTO extends Partial<CreateUnidadMedidaDTO> {}
-export interface UpdateEstadoEjecucionDTO extends Partial<CreateEstadoEjecucionDTO> {}
-export interface UpdateEstadoLiquidacionDTO extends Partial<CreateEstadoLiquidacionDTO> {}
+export type UpdateTipoOperacionDTO = Partial<CreateTipoOperacionDTO>;
+export type UpdateEstadoProgramacionDTO = Partial<CreateEstadoProgramacionDTO>;
+export type UpdateUnidadMedidaDTO = Partial<CreateUnidadMedidaDTO>;
+export type UpdateEstadoEjecucionDTO = Partial<CreateEstadoEjecucionDTO>;
+export type UpdateEstadoLiquidacionDTO = Partial<CreateEstadoLiquidacionDTO>;
 
 export interface UpdateProgramacionDTO extends Partial<CreateProgramacionDTO> {
   estado?: number;
   fecha_ejecucion?: string;
 }
 
-export interface UpdateAsignacionRecursoDTO extends Partial<CreateAsignacionRecursoDTO> {}
+export type UpdateAsignacionRecursoDTO = Partial<CreateAsignacionRecursoDTO>;
 
 export interface UpdateEjecucionDTO extends Partial<CreateEjecucionDTO> {
   estado?: number;

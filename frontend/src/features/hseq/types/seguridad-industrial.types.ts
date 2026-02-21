@@ -77,7 +77,12 @@ export type TipoProgramaSeguridad =
   | 'MEJORA_CONTINUA'
   | 'OTRO';
 
-export type EstadoProgramaSeguridad = 'PLANIFICADO' | 'EN_EJECUCION' | 'PAUSADO' | 'COMPLETADO' | 'CANCELADO';
+export type EstadoProgramaSeguridad =
+  | 'PLANIFICADO'
+  | 'EN_EJECUCION'
+  | 'PAUSADO'
+  | 'COMPLETADO'
+  | 'CANCELADO';
 
 // ==================== TIPO PERMISO TRABAJO ====================
 
@@ -110,7 +115,7 @@ export interface CreateTipoPermisoTrabajoDTO {
   activo?: boolean;
 }
 
-export interface UpdateTipoPermisoTrabajoDTO extends Partial<CreateTipoPermisoTrabajoDTO> {}
+export type UpdateTipoPermisoTrabajoDTO = Partial<CreateTipoPermisoTrabajoDTO>;
 
 // ==================== PERMISO TRABAJO ====================
 
@@ -223,7 +228,7 @@ export interface CreateTipoInspeccionDTO {
   orden?: number;
 }
 
-export interface UpdateTipoInspeccionDTO extends Partial<CreateTipoInspeccionDTO> {}
+export type UpdateTipoInspeccionDTO = Partial<CreateTipoInspeccionDTO>;
 
 // ==================== PLANTILLA INSPECCION ====================
 
@@ -263,7 +268,7 @@ export interface CreatePlantillaInspeccionDTO {
   activo?: boolean;
 }
 
-export interface UpdatePlantillaInspeccionDTO extends Partial<CreatePlantillaInspeccionDTO> {}
+export type UpdatePlantillaInspeccionDTO = Partial<CreatePlantillaInspeccionDTO>;
 
 // ==================== INSPECCION ====================
 
@@ -392,7 +397,7 @@ export interface CreateTipoEPPDTO {
   orden?: number;
 }
 
-export interface UpdateTipoEPPDTO extends Partial<CreateTipoEPPDTO> {}
+export type UpdateTipoEPPDTO = Partial<CreateTipoEPPDTO>;
 
 export interface TiposEPPPorCategoria {
   categoria: CategoriaEPP;

@@ -516,7 +516,7 @@ class ParticipanteEncuesta(TimestampedModel):
         elif self.area:
             return f"{self.encuesta.titulo} - Área: {self.area.name}"
         elif self.cargo:
-            return f"{self.encuesta.titulo} - Cargo: {self.cargo.nombre}"
+            return f"{self.encuesta.titulo} - Cargo: {self.cargo.name}"
         return f"{self.encuesta.titulo} - Participante"
 
     def marcar_notificado(self):

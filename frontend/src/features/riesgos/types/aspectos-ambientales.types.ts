@@ -139,7 +139,7 @@ export interface CategoriaAspectoCreate {
   color?: string;
 }
 
-export interface CategoriaAspectoUpdate extends Partial<CategoriaAspectoCreate> {}
+export type CategoriaAspectoUpdate = Partial<CategoriaAspectoCreate>;
 
 // ============================================
 // ASPECTO AMBIENTAL
@@ -213,7 +213,7 @@ export interface AspectoAmbientalCreate {
   meta?: string;
 }
 
-export interface AspectoAmbientalUpdate extends Partial<AspectoAmbientalCreate> {}
+export type AspectoAmbientalUpdate = Partial<AspectoAmbientalCreate>;
 
 export interface AspectoAmbientalFilter {
   categoria?: number;
@@ -261,7 +261,7 @@ export interface ImpactoAmbientalCreate {
   observaciones?: string;
 }
 
-export interface ImpactoAmbientalUpdate extends Partial<ImpactoAmbientalCreate> {}
+export type ImpactoAmbientalUpdate = Partial<ImpactoAmbientalCreate>;
 
 export interface ImpactoAmbientalFilter {
   aspecto?: number;

@@ -746,7 +746,7 @@ export function useMonitoreoEstadisticas() {
   });
 }
 
-export function useExamenesVencidos() {
+export function useExamenesVencidosHigiene() {
   return useQuery({
     queryKey: higieneIndustrialKeys.examenesVencidos(),
     queryFn: async () => {

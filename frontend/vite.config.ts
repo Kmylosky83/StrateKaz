@@ -107,89 +107,30 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          // === CORE FRAMEWORK (siempre necesario) ===
-          if (id.includes('node_modules/react/') ||
-              id.includes('node_modules/react-dom/') ||
-              id.includes('node_modules/react-router-dom/') ||
-              id.includes('node_modules/react-router/') ||
-              id.includes('node_modules/@remix-run/') ||
-              id.includes('node_modules/react-reconciler/') ||
-              id.includes('node_modules/scheduler/')) {
-            return 'vendor-react'
-          }
+          // Solo aislamos paquetes grandes que NO dependen de React internamente.
+          // Todo lo demás (react, echarts, recharts, framer-motion, headlessui,
+          // tanstack, zustand, etc.) se deja a Rollup automático para evitar
+          // circular chunks que rompen el singleton de React en producción.
 
-          // === STATE & DATA (crítico para toda la app) ===
-          if (id.includes('node_modules/@tanstack/') ||
-              id.includes('node_modules/zustand/') ||
-              id.includes('node_modules/axios/') ||
-              id.includes('node_modules/use-sync-external-store/')) {
-            return 'vendor-state'
-          }
-
-          // === CHARTS & ANALYTICS (pesado, solo en dashboards) ===
-          if (id.includes('node_modules/echarts') ||
-              id.includes('node_modules/recharts') ||
-              id.includes('node_modules/react-gauge-chart') ||
-              id.includes('node_modules/simple-statistics') ||
-              id.includes('node_modules/d3-') ||
-              id.includes('node_modules/victory-')) {
-            return 'vendor-analytics'
-          }
-
-          // === 3D GRAPHICS (muy pesado, solo NetworkBackground) ===
-          if (id.includes('node_modules/three') ||
-              id.includes('node_modules/@react-three/')) {
+          // === 3D GRAPHICS (~500 KB, solo three.js core sin React bindings) ===
+          if (id.includes('node_modules/three/')) {
             return 'vendor-3d'
           }
+          // NOTA: @react-three/* usa React hooks internamente, NO separar del auto-chunk
 
-          // === GRAPHS & DIAGRAMS (organigrama, mapa, workflow) ===
-          if (id.includes('node_modules/@xyflow/') ||
-              id.includes('node_modules/@dagrejs/')) {
-            return 'vendor-graphs'
-          }
-
-          // === PDF & EXPORT ===
-          if (id.includes('node_modules/jspdf') ||
-              id.includes('node_modules/html-to-image') ||
-              id.includes('node_modules/react-to-print')) {
-            return 'vendor-export'
-          }
-
-          // === RICH TEXT EDITOR ===
-          if (id.includes('node_modules/@tiptap/') ||
-              id.includes('node_modules/prosemirror-') ||
+          // === RICH TEXT EDITOR (~250 KB, solo prosemirror core sin React) ===
+          if (id.includes('node_modules/prosemirror-') ||
               id.includes('node_modules/@prosemirror/')) {
             return 'vendor-editor'
           }
+          // NOTA: @tiptap/react usa React hooks, NO separar del auto-chunk
 
-          // === FORMS & VALIDATION ===
-          if (id.includes('node_modules/react-hook-form/') ||
-              id.includes('node_modules/@hookform/') ||
-              id.includes('node_modules/zod/')) {
-            return 'vendor-forms'
+          // === PDF & EXPORT (~300 KB, solo librerías sin React) ===
+          if (id.includes('node_modules/jspdf') ||
+              id.includes('node_modules/html-to-image')) {
+            return 'vendor-export'
           }
-
-          // === UI COMPONENTS & UTILITIES ===
-          if (id.includes('node_modules/@headlessui/') ||
-              id.includes('node_modules/@heroicons/') ||
-              id.includes('node_modules/lucide-react') ||
-              id.includes('node_modules/framer-motion') ||
-              id.includes('node_modules/sonner') ||
-              id.includes('node_modules/clsx') ||
-              id.includes('node_modules/tailwind-merge') ||
-              id.includes('node_modules/date-fns') ||
-              id.includes('node_modules/@dnd-kit/') ||
-              id.includes('node_modules/@fontsource/') ||
-              id.includes('node_modules/react-signature-canvas') ||
-              id.includes('node_modules/signature_pad') ||
-              id.includes('node_modules/qrcode')) {
-            return 'vendor-ui'
-          }
-
-          // === RESTO de node_modules ===
-          if (id.includes('node_modules')) {
-            return 'vendor-misc'
-          }
+          // NOTA: react-to-print usa React hooks, NO separar del auto-chunk
         },
       },
     },

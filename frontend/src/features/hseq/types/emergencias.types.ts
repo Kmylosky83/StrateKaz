@@ -44,7 +44,12 @@ export type ProbabilidadAmenaza = 'MUY_BAJA' | 'BAJA' | 'MEDIA' | 'ALTA' | 'MUY_
 export type SeveridadAmenaza = 'INSIGNIFICANTE' | 'MENOR' | 'MODERADA' | 'MAYOR' | 'CATASTROFICA';
 
 // Plan de Emergencia
-export type EstadoPlanEmergencia = 'BORRADOR' | 'EN_REVISION' | 'APROBADO' | 'VIGENTE' | 'DESACTUALIZADO';
+export type EstadoPlanEmergencia =
+  | 'BORRADOR'
+  | 'EN_REVISION'
+  | 'APROBADO'
+  | 'VIGENTE'
+  | 'DESACTUALIZADO';
 
 // Procedimiento de Emergencia
 export type TipoEmergencia =
@@ -80,7 +85,13 @@ export type TipoSimulacro =
   | 'OTRO';
 
 export type AlcanceSimulacro = 'PARCIAL' | 'TOTAL' | 'POR_AREAS';
-export type EstadoSimulacro = 'PROGRAMADO' | 'CONFIRMADO' | 'REALIZADO' | 'EVALUADO' | 'CANCELADO' | 'POSPUESTO';
+export type EstadoSimulacro =
+  | 'PROGRAMADO'
+  | 'CONFIRMADO'
+  | 'REALIZADO'
+  | 'EVALUADO'
+  | 'CANCELADO'
+  | 'POSPUESTO';
 
 // Recursos de Emergencia
 export type TipoRecursoEmergencia =
@@ -96,8 +107,18 @@ export type TipoRecursoEmergencia =
   | 'DESFIBRILADOR'
   | 'OTRO';
 
-export type EstadoRecursoEmergencia = 'OPERATIVO' | 'EN_MANTENIMIENTO' | 'FUERA_SERVICIO' | 'DADO_BAJA';
-export type FrecuenciaInspeccionEmergencia = 'SEMANAL' | 'QUINCENAL' | 'MENSUAL' | 'TRIMESTRAL' | 'SEMESTRAL' | 'ANUAL';
+export type EstadoRecursoEmergencia =
+  | 'OPERATIVO'
+  | 'EN_MANTENIMIENTO'
+  | 'FUERA_SERVICIO'
+  | 'DADO_BAJA';
+export type FrecuenciaInspeccionEmergencia =
+  | 'SEMANAL'
+  | 'QUINCENAL'
+  | 'MENSUAL'
+  | 'TRIMESTRAL'
+  | 'SEMESTRAL'
+  | 'ANUAL';
 export type ResultadoInspeccionRecurso = 'CONFORME' | 'NO_CONFORME_MENOR' | 'NO_CONFORME_MAYOR';
 
 // ==================== ANÁLISIS DE VULNERABILIDAD ====================
@@ -851,7 +872,7 @@ export interface UpdateAnalisisVulnerabilidadDTO extends Partial<CreateAnalisisV
   aprobado_por?: string;
 }
 
-export interface UpdateAmenazaDTO extends Partial<CreateAmenazaDTO> {}
+export type UpdateAmenazaDTO = Partial<CreateAmenazaDTO>;
 export interface UpdatePlanEmergenciaDTO extends Partial<CreatePlanEmergenciaDTO> {
   estado?: EstadoPlanEmergencia;
   fecha_aprobacion?: string;
@@ -864,7 +885,7 @@ export interface UpdatePlanoEvacuacionDTO extends Partial<CreatePlanoEvacuacionD
   publicado?: boolean;
   ubicaciones_publicacion?: string;
 }
-export interface UpdateTipoBrigadaDTO extends Partial<CreateTipoBrigadaDTO> {}
+export type UpdateTipoBrigadaDTO = Partial<CreateTipoBrigadaDTO>;
 export interface UpdateBrigadaDTO extends Partial<CreateBrigadaDTO> {
   estado?: EstadoBrigada;
   fecha_ultima_capacitacion?: string;

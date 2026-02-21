@@ -105,7 +105,7 @@ class ActivoFijoSerializer(serializers.ModelSerializer):
         read_only=True
     )
     area_nombre = serializers.CharField(
-        source='area.nombre',
+        source='area.name',
         read_only=True,
         allow_null=True
     )
@@ -160,7 +160,7 @@ class ActivoFijoListSerializer(serializers.ModelSerializer):
 
     categoria_nombre = serializers.CharField(source='categoria.nombre', read_only=True)
     area_nombre = serializers.CharField(
-        source='area.nombre',
+        source='area.name',
         read_only=True,
         allow_null=True
     )

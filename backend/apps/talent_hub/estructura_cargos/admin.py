@@ -58,8 +58,8 @@ class ProfesiogramaAdmin(admin.ModelAdmin):
     search_fields = [
         'codigo',
         'nombre',
-        'cargo__nombre',
-        'area__nombre',
+        'cargo__name',
+        'area__name',
     ]
     readonly_fields = [
         'created_at',
@@ -244,8 +244,8 @@ class VacanteAdmin(admin.ModelAdmin):
     search_fields = [
         'codigo',
         'titulo_vacante',
-        'cargo__nombre',
-        'area__nombre',
+        'cargo__name',
+        'area__name',
     ]
     readonly_fields = [
         'created_at',

@@ -27,7 +27,7 @@ export interface BaseCatalogo extends BaseTimestamped {
  * Categoría de Materia Prima
  * Ejemplos: HUESO, SEBO_CRUDO, SEBO_PROCESADO, OTROS
  */
-export interface CategoriaMateriaPrima extends BaseCatalogo {}
+export type CategoriaMateriaPrima = BaseCatalogo;
 
 /**
  * Tipo de Materia Prima (relacionado con CategoriaMateriaPrima)
@@ -54,25 +54,25 @@ export interface TipoProveedor extends BaseCatalogo {
  * Modalidad Logística
  * Ejemplos: ENTREGA_PLANTA, COMPRA_EN_PUNTO
  */
-export interface ModalidadLogistica extends BaseCatalogo {}
+export type ModalidadLogistica = BaseCatalogo;
 
 /**
  * Forma de Pago
  * Ejemplos: EFECTIVO, TRANSFERENCIA, CHEQUE
  */
-export interface FormaPago extends BaseCatalogo {}
+export type FormaPago = BaseCatalogo;
 
 /**
  * Tipo de Cuenta Bancaria
  * Ejemplos: AHORROS, CORRIENTE
  */
-export interface TipoCuentaBancaria extends BaseCatalogo {}
+export type TipoCuentaBancaria = BaseCatalogo;
 
 /**
  * Tipo de Documento de Identidad
  * Ejemplos: CC, NIT, CE, PASAPORTE
  */
-export interface TipoDocumentoIdentidad extends BaseCatalogo {}
+export type TipoDocumentoIdentidad = BaseCatalogo;
 
 /**
  * Departamento (Colombia)

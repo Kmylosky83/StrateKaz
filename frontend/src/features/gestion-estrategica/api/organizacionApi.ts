@@ -65,12 +65,12 @@ export interface CreateAreaDTO {
   orden?: number;
 }
 
-export interface UpdateAreaDTO extends Partial<CreateAreaDTO> {}
+export type UpdateAreaDTO = Partial<CreateAreaDTO>;
 
 export interface AreaFilters {
   is_active?: boolean;
   parent?: number;
-  include_inactive?: boolean;  // Backend usa 'include_inactive', no 'show_inactive'
+  include_inactive?: boolean; // Backend usa 'include_inactive', no 'show_inactive'
   search?: string;
 }
 
@@ -116,7 +116,10 @@ export const areasApi = {
     return response.data;
   },
 
-  toggle: async (id: number, isActive?: boolean): Promise<{ id: number; is_active: boolean; message: string }> => {
+  toggle: async (
+    id: number,
+    isActive?: boolean
+  ): Promise<{ id: number; is_active: boolean; message: string }> => {
     const response = await axiosInstance.post(`${BASE_URL}/areas/${id}/toggle-active/`, {
       is_active: isActive,
     });

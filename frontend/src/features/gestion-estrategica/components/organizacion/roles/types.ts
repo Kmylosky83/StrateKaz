@@ -27,14 +27,7 @@ export type ModuloSistema =
   | 'CADENA_VALOR'
   | 'PROCESOS_APOYO';
 
-export type AccionPermiso =
-  | 'VIEW'
-  | 'CREATE'
-  | 'EDIT'
-  | 'DELETE'
-  | 'APPROVE'
-  | 'EXPORT'
-  | 'MANAGE';
+export type AccionPermiso = 'VIEW' | 'CREATE' | 'EDIT' | 'DELETE' | 'APPROVE' | 'EXPORT' | 'MANAGE';
 
 export type AlcancePermiso = 'OWN' | 'TEAM' | 'ALL';
 
@@ -104,7 +97,7 @@ export interface CreateRolAdicionalDTO {
   is_active?: boolean;
 }
 
-export interface UpdateRolAdicionalDTO extends Partial<CreateRolAdicionalDTO> {}
+export type UpdateRolAdicionalDTO = Partial<CreateRolAdicionalDTO>;
 
 // ==================== FILTROS ====================
 

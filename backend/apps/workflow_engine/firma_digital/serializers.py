@@ -26,7 +26,7 @@ User = get_user_model()
 class FlowNodeSerializer(serializers.ModelSerializer):
     """Serializer para nodos de flujo"""
 
-    cargo_nombre = serializers.CharField(source='cargo.nombre', read_only=True)
+    cargo_nombre = serializers.CharField(source='cargo.name', read_only=True)
     rol_firma_display = serializers.CharField(source='get_rol_firma_display', read_only=True)
 
     class Meta:
@@ -90,7 +90,7 @@ class FirmaDigitalSerializer(serializers.ModelSerializer):
     """Serializer para firmas digitales"""
 
     usuario_nombre = serializers.CharField(source='usuario.get_full_name', read_only=True)
-    cargo_nombre = serializers.CharField(source='cargo.nombre', read_only=True)
+    cargo_nombre = serializers.CharField(source='cargo.name', read_only=True)
     rol_firma_display = serializers.CharField(source='get_rol_firma_display', read_only=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     delegante_nombre = serializers.CharField(source='delegante.get_full_name', read_only=True, allow_null=True)
@@ -162,7 +162,7 @@ class DelegacionFirmaSerializer(serializers.ModelSerializer):
 
     delegante_nombre = serializers.CharField(source='delegante.get_full_name', read_only=True)
     delegado_nombre = serializers.CharField(source='delegado.get_full_name', read_only=True)
-    cargo_nombre = serializers.CharField(source='cargo.nombre', read_only=True)
+    cargo_nombre = serializers.CharField(source='cargo.name', read_only=True)
     esta_vigente = serializers.SerializerMethodField()
     dias_restantes = serializers.SerializerMethodField()
 

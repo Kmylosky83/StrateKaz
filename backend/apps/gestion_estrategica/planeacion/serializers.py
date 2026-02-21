@@ -35,7 +35,7 @@ class StrategicObjectiveSerializer(serializers.ModelSerializer):
         read_only=True
     )
     responsible_cargo_name = serializers.CharField(
-        source='responsible_cargo.nombre',
+        source='responsible_cargo.name',
         read_only=True
     )
     created_by_name = serializers.CharField(
@@ -363,7 +363,7 @@ class KPIObjetivoSerializer(serializers.ModelSerializer):
         read_only=True
     )
     responsible_cargo_name = serializers.CharField(
-        source='responsible_cargo.nombre',
+        source='responsible_cargo.name',
         read_only=True
     )
     created_by_name = serializers.CharField(
@@ -449,7 +449,7 @@ class GestionCambioSerializer(serializers.ModelSerializer):
         read_only=True
     )
     responsible_cargo_name = serializers.CharField(
-        source='responsible_cargo.nombre',
+        source='responsible_cargo.name',
         read_only=True
     )
     created_by_name = serializers.CharField(

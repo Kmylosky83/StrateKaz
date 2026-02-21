@@ -16,14 +16,14 @@ from .models import Profesiograma, MatrizCompetencia, RequisitoEspecial, Vacante
 class CargoBasicoSerializer(serializers.Serializer):
     """Serializer básico para FK de Cargo"""
     id = serializers.IntegerField(read_only=True)
-    nombre = serializers.CharField(read_only=True)
+    nombre = serializers.CharField(source='name', read_only=True)
     codigo = serializers.CharField(read_only=True)
 
 
 class AreaBasicaSerializer(serializers.Serializer):
     """Serializer básico para FK de Area"""
     id = serializers.IntegerField(read_only=True)
-    nombre = serializers.CharField(read_only=True)
+    nombre = serializers.CharField(source='name', read_only=True)
     codigo = serializers.CharField(read_only=True)
 
 
@@ -182,8 +182,8 @@ class RequisitoEspecialCreateSerializer(serializers.ModelSerializer):
 class ProfesiogramaListSerializer(serializers.ModelSerializer):
     """Serializer para listado de Profesiogramas"""
 
-    cargo_nombre = serializers.CharField(source='cargo.nombre', read_only=True)
-    area_nombre = serializers.CharField(source='area.nombre', read_only=True)
+    cargo_nombre = serializers.CharField(source='cargo.name', read_only=True)
+    area_nombre = serializers.CharField(source='area.name', read_only=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     nivel_educativo_display = serializers.CharField(
         source='get_nivel_educativo_minimo_display',
@@ -358,8 +358,8 @@ class ProfesiogramaCreateUpdateSerializer(serializers.ModelSerializer):
 class VacanteListSerializer(serializers.ModelSerializer):
     """Serializer para listado de Vacantes"""
 
-    cargo_nombre = serializers.CharField(source='cargo.nombre', read_only=True)
-    area_nombre = serializers.CharField(source='area.nombre', read_only=True)
+    cargo_nombre = serializers.CharField(source='cargo.name', read_only=True)
+    area_nombre = serializers.CharField(source='area.name', read_only=True)
     profesiograma_codigo = serializers.CharField(
         source='profesiograma.codigo',
         read_only=True

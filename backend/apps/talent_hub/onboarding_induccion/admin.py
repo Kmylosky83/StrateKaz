@@ -28,7 +28,7 @@ class ModuloInduccionAdmin(admin.ModelAdmin):
 class AsignacionPorCargoAdmin(admin.ModelAdmin):
     list_display = ['cargo', 'modulo', 'es_obligatorio', 'dias_para_completar', 'orden_ejecucion']
     list_filter = ['es_obligatorio', 'cargo']
-    search_fields = ['cargo__nombre', 'modulo__nombre']
+    search_fields = ['cargo__name', 'modulo__nombre']
     ordering = ['cargo', 'orden_ejecucion']
     readonly_fields = ['created_at', 'updated_at']
 

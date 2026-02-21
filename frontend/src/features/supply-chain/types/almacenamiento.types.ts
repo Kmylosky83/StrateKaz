@@ -14,7 +14,12 @@
 
 export type AfectacionStock = 'POSITIVO' | 'NEGATIVO' | 'NEUTRO';
 export type PrioridadAlerta = 'BAJA' | 'MEDIA' | 'ALTA' | 'CRITICA';
-export type TipoProducto = 'MATERIA_PRIMA' | 'PRODUCTO_TERMINADO' | 'PRODUCTO_PROCESO' | 'INSUMO' | 'REPUESTO';
+export type TipoProducto =
+  | 'MATERIA_PRIMA'
+  | 'PRODUCTO_TERMINADO'
+  | 'PRODUCTO_PROCESO'
+  | 'INSUMO'
+  | 'REPUESTO';
 export type TipoMedida = 'PESO' | 'VOLUMEN' | 'LONGITUD' | 'UNIDAD' | 'OTRO';
 export type CriticidadAlerta = 'BAJA' | 'MEDIA' | 'ALTA' | 'CRITICA';
 
@@ -352,8 +357,8 @@ export interface CreateConfiguracionStockDTO {
 
 // ==================== DTOs - UPDATE ====================
 
-export interface UpdateInventarioDTO extends Partial<CreateInventarioDTO> {}
-export interface UpdateMovimientoInventarioDTO extends Partial<CreateMovimientoInventarioDTO> {}
+export type UpdateInventarioDTO = Partial<CreateInventarioDTO>;
+export type UpdateMovimientoInventarioDTO = Partial<CreateMovimientoInventarioDTO>;
 export interface UpdateConfiguracionStockDTO extends Partial<CreateConfiguracionStockDTO> {
   activo?: boolean;
 }

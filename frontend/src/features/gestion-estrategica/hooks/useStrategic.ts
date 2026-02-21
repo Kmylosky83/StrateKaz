@@ -152,7 +152,6 @@ export const strategicKeys = {
 
   // Normas ISO
   normasISO: normaISOKeys.all,
-  normasISOChoices: normaISOKeys.custom(['choices']),
   normasISOByCategory: normaISOKeys.custom(['by-category']),
 
   // Unidades de Medida
@@ -673,14 +672,6 @@ export const useUpdateNormaISO = normaISOHooks.useUpdate;
 export const useDeleteNormaISO = normaISOHooks.useDelete;
 
 // Custom hooks
-export const useNormasISOChoicesData = () => {
-  return useQuery({
-    queryKey: strategicKeys.normasISOChoices,
-    queryFn: normasISOApi.getChoices,
-    staleTime: 15 * 60 * 1000,
-  });
-};
-
 export const useNormasISOByCategory = () => {
   return useQuery({
     queryKey: strategicKeys.normasISOByCategory,

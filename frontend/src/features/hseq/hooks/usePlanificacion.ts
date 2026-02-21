@@ -41,7 +41,15 @@ export interface ActividadPlan {
   codigo_actividad: string;
   nombre: string;
   descripcion?: string;
-  tipo_actividad: 'CAPACITACION' | 'INSPECCION' | 'MEDICION' | 'AUDITORIA' | 'SIMULACRO' | 'MANTENIMIENTO' | 'EVALUACION' | 'OTRO';
+  tipo_actividad:
+    | 'CAPACITACION'
+    | 'INSPECCION'
+    | 'MEDICION'
+    | 'AUDITORIA'
+    | 'SIMULACRO'
+    | 'MANTENIMIENTO'
+    | 'EVALUACION'
+    | 'OTRO';
   objetivo_relacionado?: number;
   programa_relacionado?: number;
   fecha_inicio_programada: string;
@@ -102,7 +110,13 @@ export interface ProgramaGestion {
   codigo_programa: string;
   nombre: string;
   descripcion?: string;
-  tipo_programa: 'CAPACITACION' | 'PREVENCION_RIESGOS' | 'VIGILANCIA_SALUD' | 'GESTION_AMBIENTAL' | 'MEJORA_CONTINUA' | 'OTRO';
+  tipo_programa:
+    | 'CAPACITACION'
+    | 'PREVENCION_RIESGOS'
+    | 'VIGILANCIA_SALUD'
+    | 'GESTION_AMBIENTAL'
+    | 'MEJORA_CONTINUA'
+    | 'OTRO';
   objetivo_principal: string;
   alcance: string;
   responsable: number;
@@ -217,7 +231,7 @@ export interface CreatePlanTrabajoAnualDTO {
   observaciones?: string;
 }
 
-export interface UpdatePlanTrabajoAnualDTO extends Partial<CreatePlanTrabajoAnualDTO> {}
+export type UpdatePlanTrabajoAnualDTO = Partial<CreatePlanTrabajoAnualDTO>;
 
 export interface CreateActividadPlanDTO {
   plan_trabajo: number;
@@ -238,7 +252,7 @@ export interface CreateActividadPlanDTO {
   requiere_aprobacion?: boolean;
 }
 
-export interface UpdateActividadPlanDTO extends Partial<CreateActividadPlanDTO> {}
+export type UpdateActividadPlanDTO = Partial<CreateActividadPlanDTO>;
 
 export interface ActualizarAvanceActividadDTO {
   porcentaje_avance: number;
@@ -267,7 +281,7 @@ export interface CreateObjetivoSistemaDTO {
   recursos_asignados?: string[];
 }
 
-export interface UpdateObjetivoSistemaDTO extends Partial<CreateObjetivoSistemaDTO> {}
+export type UpdateObjetivoSistemaDTO = Partial<CreateObjetivoSistemaDTO>;
 
 export interface ActualizarCumplimientoDTO {
   valor_actual: number;
@@ -291,7 +305,7 @@ export interface CreateProgramaGestionDTO {
   resultados_esperados?: string[];
 }
 
-export interface UpdateProgramaGestionDTO extends Partial<CreateProgramaGestionDTO> {}
+export type UpdateProgramaGestionDTO = Partial<CreateProgramaGestionDTO>;
 
 export interface ActualizarAvanceProgramaDTO {
   porcentaje_avance: number;
@@ -349,21 +363,26 @@ export const planificacionKeys = {
   // Actividades de Plan
   actividades: (planId: number) => [...planificacionKeys.all, 'actividades', planId] as const,
   actividad: (id: number) => [...planificacionKeys.all, 'actividad', id] as const,
-  actividadesByTipo: (planId: number, tipo: string) => [...planificacionKeys.actividades(planId), 'tipo', tipo] as const,
-  actividadesByEstado: (planId: number, estado: string) => [...planificacionKeys.actividades(planId), 'estado', estado] as const,
+  actividadesByTipo: (planId: number, tipo: string) =>
+    [...planificacionKeys.actividades(planId), 'tipo', tipo] as const,
+  actividadesByEstado: (planId: number, estado: string) =>
+    [...planificacionKeys.actividades(planId), 'estado', estado] as const,
 
   // Objetivos
   objetivos: (planId: number) => [...planificacionKeys.all, 'objetivos', planId] as const,
   objetivo: (id: number) => [...planificacionKeys.all, 'objetivo', id] as const,
-  objetivosByCategoria: (planId: number, categoria: string) => [...planificacionKeys.objetivos(planId), 'categoria', categoria] as const,
+  objetivosByCategoria: (planId: number, categoria: string) =>
+    [...planificacionKeys.objetivos(planId), 'categoria', categoria] as const,
 
   // Programas
   programas: (planId: number) => [...planificacionKeys.all, 'programas', planId] as const,
   programa: (id: number) => [...planificacionKeys.all, 'programa', id] as const,
-  programasByTipo: (planId: number, tipo: string) => [...planificacionKeys.programas(planId), 'tipo', tipo] as const,
+  programasByTipo: (planId: number, tipo: string) =>
+    [...planificacionKeys.programas(planId), 'tipo', tipo] as const,
 
   // Actividades de Programa
-  actividadesPrograma: (programaId: number) => [...planificacionKeys.all, 'actividades-programa', programaId] as const,
+  actividadesPrograma: (programaId: number) =>
+    [...planificacionKeys.all, 'actividades-programa', programaId] as const,
 
   // Seguimientos
   seguimientos: (planId: number) => [...planificacionKeys.all, 'seguimientos', planId] as const,
@@ -379,10 +398,12 @@ export function usePlanesTrabajo(filters?: { año?: number; estado?: string }) {
     queryKey: filters?.año
       ? planificacionKeys.planesByAño(filters.año)
       : filters?.estado
-      ? planificacionKeys.planesByEstado(filters.estado)
-      : planificacionKeys.planes(),
+        ? planificacionKeys.planesByEstado(filters.estado)
+        : planificacionKeys.planes(),
     queryFn: async () => {
-      const { data } = await apiClient.get<PlanTrabajoAnual[]>('/api/hseq/planificacion/planes/', { params: filters });
+      const { data } = await apiClient.get<PlanTrabajoAnual[]>('/api/hseq/planificacion/planes/', {
+        params: filters,
+      });
       return data;
     },
   });
@@ -392,7 +413,9 @@ export function usePlanTrabajo(id: number) {
   return useQuery({
     queryKey: planificacionKeys.plan(id),
     queryFn: async () => {
-      const { data } = await apiClient.get<PlanTrabajoAnual>(`/api/hseq/planificacion/planes/${id}/`);
+      const { data } = await apiClient.get<PlanTrabajoAnual>(
+        `/api/hseq/planificacion/planes/${id}/`
+      );
       return data;
     },
     enabled: !!id,
@@ -403,7 +426,10 @@ export function useCreatePlanTrabajo() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (datos: CreatePlanTrabajoAnualDTO) => {
-      const { data } = await apiClient.post<PlanTrabajoAnual>('/api/hseq/planificacion/planes/', datos);
+      const { data } = await apiClient.post<PlanTrabajoAnual>(
+        '/api/hseq/planificacion/planes/',
+        datos
+      );
       return data;
     },
     onSuccess: () => {
@@ -420,7 +446,10 @@ export function useUpdatePlanTrabajo() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, datos }: { id: number; datos: UpdatePlanTrabajoAnualDTO }) => {
-      const { data } = await apiClient.patch<PlanTrabajoAnual>(`/api/hseq/planificacion/planes/${id}/`, datos);
+      const { data } = await apiClient.patch<PlanTrabajoAnual>(
+        `/api/hseq/planificacion/planes/${id}/`,
+        datos
+      );
       return data;
     },
     onSuccess: (_, { id }) => {
@@ -455,7 +484,9 @@ export function useAprobarPlan() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const { data } = await apiClient.post<PlanTrabajoAnual>(`/api/hseq/planificacion/planes/${id}/aprobar/`);
+      const { data } = await apiClient.post<PlanTrabajoAnual>(
+        `/api/hseq/planificacion/planes/${id}/aprobar/`
+      );
       return data;
     },
     onSuccess: (_, id) => {
@@ -497,8 +528,8 @@ export function useActividadesPlan(planId: number, filters?: { tipo?: string; es
     queryKey: filters?.tipo
       ? planificacionKeys.actividadesByTipo(planId, filters.tipo)
       : filters?.estado
-      ? planificacionKeys.actividadesByEstado(planId, filters.estado)
-      : planificacionKeys.actividades(planId),
+        ? planificacionKeys.actividadesByEstado(planId, filters.estado)
+        : planificacionKeys.actividades(planId),
     queryFn: async () => {
       const { data } = await apiClient.get<ActividadPlan[]>(
         `/api/hseq/planificacion/planes/${planId}/actividades/`,
@@ -514,7 +545,9 @@ export function useActividadPlan(id: number) {
   return useQuery({
     queryKey: planificacionKeys.actividad(id),
     queryFn: async () => {
-      const { data } = await apiClient.get<ActividadPlan>(`/api/hseq/planificacion/actividades/${id}/`);
+      const { data } = await apiClient.get<ActividadPlan>(
+        `/api/hseq/planificacion/actividades/${id}/`
+      );
       return data;
     },
     enabled: !!id,
@@ -525,7 +558,10 @@ export function useCreateActividadPlan() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (datos: CreateActividadPlanDTO) => {
-      const { data } = await apiClient.post<ActividadPlan>('/api/hseq/planificacion/actividades/', datos);
+      const { data } = await apiClient.post<ActividadPlan>(
+        '/api/hseq/planificacion/actividades/',
+        datos
+      );
       return data;
     },
     onSuccess: (data) => {
@@ -544,7 +580,10 @@ export function useUpdateActividadPlan() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, datos }: { id: number; datos: UpdateActividadPlanDTO }) => {
-      const { data } = await apiClient.patch<ActividadPlan>(`/api/hseq/planificacion/actividades/${id}/`, datos);
+      const { data } = await apiClient.patch<ActividadPlan>(
+        `/api/hseq/planificacion/actividades/${id}/`,
+        datos
+      );
       return data;
     },
     onSuccess: (data, { id }) => {
@@ -605,7 +644,9 @@ export function useObjetivo(id: number) {
   return useQuery({
     queryKey: planificacionKeys.objetivo(id),
     queryFn: async () => {
-      const { data } = await apiClient.get<ObjetivoSistema>(`/api/hseq/planificacion/objetivos/${id}/`);
+      const { data } = await apiClient.get<ObjetivoSistema>(
+        `/api/hseq/planificacion/objetivos/${id}/`
+      );
       return data;
     },
     enabled: !!id,
@@ -616,7 +657,10 @@ export function useCreateObjetivo() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (datos: CreateObjetivoSistemaDTO) => {
-      const { data } = await apiClient.post<ObjetivoSistema>('/api/hseq/planificacion/objetivos/', datos);
+      const { data } = await apiClient.post<ObjetivoSistema>(
+        '/api/hseq/planificacion/objetivos/',
+        datos
+      );
       return data;
     },
     onSuccess: (data) => {
@@ -634,7 +678,10 @@ export function useUpdateObjetivo() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, datos }: { id: number; datos: UpdateObjetivoSistemaDTO }) => {
-      const { data } = await apiClient.patch<ObjetivoSistema>(`/api/hseq/planificacion/objetivos/${id}/`, datos);
+      const { data } = await apiClient.patch<ObjetivoSistema>(
+        `/api/hseq/planificacion/objetivos/${id}/`,
+        datos
+      );
       return data;
     },
     onSuccess: (data, { id }) => {
@@ -693,7 +740,9 @@ export function usePrograma(id: number) {
   return useQuery({
     queryKey: planificacionKeys.programa(id),
     queryFn: async () => {
-      const { data } = await apiClient.get<ProgramaGestion>(`/api/hseq/planificacion/programas/${id}/`);
+      const { data } = await apiClient.get<ProgramaGestion>(
+        `/api/hseq/planificacion/programas/${id}/`
+      );
       return data;
     },
     enabled: !!id,
@@ -704,7 +753,10 @@ export function useCreatePrograma() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (datos: CreateProgramaGestionDTO) => {
-      const { data } = await apiClient.post<ProgramaGestion>('/api/hseq/planificacion/programas/', datos);
+      const { data } = await apiClient.post<ProgramaGestion>(
+        '/api/hseq/planificacion/programas/',
+        datos
+      );
       return data;
     },
     onSuccess: (data) => {
@@ -722,7 +774,10 @@ export function useUpdatePrograma() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, datos }: { id: number; datos: UpdateProgramaGestionDTO }) => {
-      const { data } = await apiClient.patch<ProgramaGestion>(`/api/hseq/planificacion/programas/${id}/`, datos);
+      const { data } = await apiClient.patch<ProgramaGestion>(
+        `/api/hseq/planificacion/programas/${id}/`,
+        datos
+      );
       return data;
     },
     onSuccess: (data, { id }) => {
@@ -778,11 +833,16 @@ export function useCreateActividadPrograma() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (datos: CreateActividadProgramaDTO) => {
-      const { data } = await apiClient.post<ActividadPrograma>('/api/hseq/planificacion/actividades-programa/', datos);
+      const { data } = await apiClient.post<ActividadPrograma>(
+        '/api/hseq/planificacion/actividades-programa/',
+        datos
+      );
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: planificacionKeys.actividadesPrograma(data.programa) });
+      queryClient.invalidateQueries({
+        queryKey: planificacionKeys.actividadesPrograma(data.programa),
+      });
       queryClient.invalidateQueries({ queryKey: planificacionKeys.programa(data.programa) });
       toast.success('Actividad de programa creada exitosamente');
     },
@@ -803,7 +863,9 @@ export function useEjecutarActividad() {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: planificacionKeys.actividadesPrograma(data.programa) });
+      queryClient.invalidateQueries({
+        queryKey: planificacionKeys.actividadesPrograma(data.programa),
+      });
       queryClient.invalidateQueries({ queryKey: planificacionKeys.programa(data.programa) });
       toast.success('Actividad marcada como ejecutada exitosamente');
     },
@@ -832,11 +894,16 @@ export function useCreateSeguimiento() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (datos: CreateSeguimientoCronogramaDTO) => {
-      const { data } = await apiClient.post<SeguimientoCronograma>('/api/hseq/planificacion/seguimientos/', datos);
+      const { data } = await apiClient.post<SeguimientoCronograma>(
+        '/api/hseq/planificacion/seguimientos/',
+        datos
+      );
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: planificacionKeys.seguimientos(data.plan_trabajo) });
+      queryClient.invalidateQueries({
+        queryKey: planificacionKeys.seguimientos(data.plan_trabajo),
+      });
       queryClient.invalidateQueries({ queryKey: planificacionKeys.dashboard(data.plan_trabajo) });
       toast.success('Seguimiento registrado exitosamente');
     },

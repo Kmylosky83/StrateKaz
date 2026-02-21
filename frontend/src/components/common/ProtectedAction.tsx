@@ -41,6 +41,7 @@
 
 import React, { ReactNode } from 'react';
 import { usePermissions } from '@/hooks/usePermissions';
+import { CargoLevels } from '@/constants/permissions';
 import type { CargoCode, CargoLevel, RoleCode } from '@/constants/permissions';
 
 interface ProtectedActionProps {
@@ -158,7 +159,6 @@ export function CoordinationOnly({
   children: ReactNode;
   fallback?: ReactNode;
 }) {
-  const { CargoLevels } = require('@/constants/permissions');
   return (
     <ProtectedAction minLevel={CargoLevels.COORDINACION} fallback={fallback}>
       {children}
@@ -176,7 +176,6 @@ export function DirectionOnly({
   children: ReactNode;
   fallback?: ReactNode;
 }) {
-  const { CargoLevels } = require('@/constants/permissions');
   return (
     <ProtectedAction minLevel={CargoLevels.DIRECCION} fallback={fallback}>
       {children}

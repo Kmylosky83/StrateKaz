@@ -36,7 +36,7 @@ export interface CreatePlanDTO {
   is_default?: boolean;
 }
 
-export interface UpdatePlanDTO extends Partial<CreatePlanDTO> {}
+export type UpdatePlanDTO = Partial<CreatePlanDTO>;
 
 // =============================================================================
 // TENANT
@@ -44,11 +44,32 @@ export interface UpdatePlanDTO extends Partial<CreatePlanDTO> {}
 
 export type SchemaStatus = 'pending' | 'creating' | 'ready' | 'failed';
 
-export type TipoSociedad = 'SAS' | 'SA' | 'LTDA' | 'SCA' | 'SC' | 'COLECTIVA' | 'ESAL' | 'PERSONA_NATURAL' | 'SUCURSAL_EXTRANJERA' | 'OTRO';
-export type RegimenTributario = 'COMUN' | 'SIMPLE' | 'NO_RESPONSABLE' | 'ESPECIAL' | 'GRAN_CONTRIBUYENTE';
+export type TipoSociedad =
+  | 'SAS'
+  | 'SA'
+  | 'LTDA'
+  | 'SCA'
+  | 'SC'
+  | 'COLECTIVA'
+  | 'ESAL'
+  | 'PERSONA_NATURAL'
+  | 'SUCURSAL_EXTRANJERA'
+  | 'OTRO';
+export type RegimenTributario =
+  | 'COMUN'
+  | 'SIMPLE'
+  | 'NO_RESPONSABLE'
+  | 'ESPECIAL'
+  | 'GRAN_CONTRIBUYENTE';
 export type FormatoFecha = 'DD/MM/YYYY' | 'MM/DD/YYYY' | 'YYYY-MM-DD' | 'DD-MM-YYYY';
 export type Moneda = 'COP' | 'USD' | 'EUR';
-export type ZonaHoraria = 'America/Bogota' | 'America/New_York' | 'America/Los_Angeles' | 'America/Mexico_City' | 'Europe/Madrid' | 'UTC';
+export type ZonaHoraria =
+  | 'America/Bogota'
+  | 'America/New_York'
+  | 'America/Los_Angeles'
+  | 'America/Mexico_City'
+  | 'Europe/Madrid'
+  | 'UTC';
 
 export interface Tenant {
   id: number;

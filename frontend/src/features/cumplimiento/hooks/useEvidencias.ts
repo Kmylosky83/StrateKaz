@@ -2,7 +2,8 @@
  * TanStack Query hooks para Evidencias Centralizadas.
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from '@/components/common';
+// Direct import to avoid circular dependency: common/index.ts → EvidenceUploader → useEvidencias → common/index.ts
+import { toast } from '@/components/common/Toast';
 import { createQueryKeys } from '@/lib/query-keys';
 import { evidenciaApi } from '../api/evidenciaApi';
 import type {

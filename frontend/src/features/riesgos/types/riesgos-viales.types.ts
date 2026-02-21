@@ -147,7 +147,7 @@ export interface TipoRiesgoVialCreate {
   color?: string;
 }
 
-export interface TipoRiesgoVialUpdate extends Partial<TipoRiesgoVialCreate> {}
+export type TipoRiesgoVialUpdate = Partial<TipoRiesgoVialCreate>;
 
 // ============================================
 // RIESGO VIAL
@@ -735,49 +735,229 @@ export const PILAR_PESV_COLORS: Record<PilarPESV, string> = {
 
 export const ITEMS_CHECKLIST: ChecklistItem[] = [
   // Documentos
-  { id: 'DOC001', categoria: 'Documentos', item: 'Licencia de Conduccion', descripcion: 'Vigente y categoria correcta', critico: true },
+  {
+    id: 'DOC001',
+    categoria: 'Documentos',
+    item: 'Licencia de Conduccion',
+    descripcion: 'Vigente y categoria correcta',
+    critico: true,
+  },
   { id: 'DOC002', categoria: 'Documentos', item: 'SOAT', descripcion: 'Vigente', critico: true },
-  { id: 'DOC003', categoria: 'Documentos', item: 'Revision Tecnicomecanica', descripcion: 'Vigente', critico: true },
-  { id: 'DOC004', categoria: 'Documentos', item: 'Tarjeta de Propiedad', descripcion: 'Original o copia', critico: true },
-  { id: 'DOC005', categoria: 'Documentos', item: 'Poliza de Responsabilidad Civil', descripcion: 'Vigente', critico: false },
+  {
+    id: 'DOC003',
+    categoria: 'Documentos',
+    item: 'Revision Tecnicomecanica',
+    descripcion: 'Vigente',
+    critico: true,
+  },
+  {
+    id: 'DOC004',
+    categoria: 'Documentos',
+    item: 'Tarjeta de Propiedad',
+    descripcion: 'Original o copia',
+    critico: true,
+  },
+  {
+    id: 'DOC005',
+    categoria: 'Documentos',
+    item: 'Poliza de Responsabilidad Civil',
+    descripcion: 'Vigente',
+    critico: false,
+  },
 
   // Motor
-  { id: 'MOT001', categoria: 'Motor', item: 'Nivel de Aceite', descripcion: 'En nivel adecuado', critico: true },
-  { id: 'MOT002', categoria: 'Motor', item: 'Nivel de Refrigerante', descripcion: 'En nivel adecuado', critico: true },
-  { id: 'MOT003', categoria: 'Motor', item: 'Nivel de Liquido de Frenos', descripcion: 'En nivel adecuado', critico: true },
-  { id: 'MOT004', categoria: 'Motor', item: 'Correas', descripcion: 'Sin grietas ni desgaste', critico: false },
-  { id: 'MOT005', categoria: 'Motor', item: 'Mangueras', descripcion: 'Sin fugas ni deterioro', critico: false },
+  {
+    id: 'MOT001',
+    categoria: 'Motor',
+    item: 'Nivel de Aceite',
+    descripcion: 'En nivel adecuado',
+    critico: true,
+  },
+  {
+    id: 'MOT002',
+    categoria: 'Motor',
+    item: 'Nivel de Refrigerante',
+    descripcion: 'En nivel adecuado',
+    critico: true,
+  },
+  {
+    id: 'MOT003',
+    categoria: 'Motor',
+    item: 'Nivel de Liquido de Frenos',
+    descripcion: 'En nivel adecuado',
+    critico: true,
+  },
+  {
+    id: 'MOT004',
+    categoria: 'Motor',
+    item: 'Correas',
+    descripcion: 'Sin grietas ni desgaste',
+    critico: false,
+  },
+  {
+    id: 'MOT005',
+    categoria: 'Motor',
+    item: 'Mangueras',
+    descripcion: 'Sin fugas ni deterioro',
+    critico: false,
+  },
 
   // Llantas
-  { id: 'LLA001', categoria: 'Llantas', item: 'Profundidad Labrado', descripcion: 'Minimo 1.6mm', critico: true },
-  { id: 'LLA002', categoria: 'Llantas', item: 'Presion de Aire', descripcion: 'Segun especificacion', critico: true },
-  { id: 'LLA003', categoria: 'Llantas', item: 'Estado General', descripcion: 'Sin cortes ni abultamientos', critico: true },
-  { id: 'LLA004', categoria: 'Llantas', item: 'Llanta de Repuesto', descripcion: 'En buen estado', critico: false },
+  {
+    id: 'LLA001',
+    categoria: 'Llantas',
+    item: 'Profundidad Labrado',
+    descripcion: 'Minimo 1.6mm',
+    critico: true,
+  },
+  {
+    id: 'LLA002',
+    categoria: 'Llantas',
+    item: 'Presion de Aire',
+    descripcion: 'Segun especificacion',
+    critico: true,
+  },
+  {
+    id: 'LLA003',
+    categoria: 'Llantas',
+    item: 'Estado General',
+    descripcion: 'Sin cortes ni abultamientos',
+    critico: true,
+  },
+  {
+    id: 'LLA004',
+    categoria: 'Llantas',
+    item: 'Llanta de Repuesto',
+    descripcion: 'En buen estado',
+    critico: false,
+  },
 
   // Frenos
-  { id: 'FRE001', categoria: 'Frenos', item: 'Freno de Servicio', descripcion: 'Funcionamiento correcto', critico: true },
-  { id: 'FRE002', categoria: 'Frenos', item: 'Freno de Emergencia', descripcion: 'Funcionamiento correcto', critico: true },
-  { id: 'FRE003', categoria: 'Frenos', item: 'Pastillas/Bandas', descripcion: 'Con espesor adecuado', critico: true },
+  {
+    id: 'FRE001',
+    categoria: 'Frenos',
+    item: 'Freno de Servicio',
+    descripcion: 'Funcionamiento correcto',
+    critico: true,
+  },
+  {
+    id: 'FRE002',
+    categoria: 'Frenos',
+    item: 'Freno de Emergencia',
+    descripcion: 'Funcionamiento correcto',
+    critico: true,
+  },
+  {
+    id: 'FRE003',
+    categoria: 'Frenos',
+    item: 'Pastillas/Bandas',
+    descripcion: 'Con espesor adecuado',
+    critico: true,
+  },
 
   // Luces
-  { id: 'LUC001', categoria: 'Luces', item: 'Luces Delanteras', descripcion: 'Funcionan correctamente', critico: true },
-  { id: 'LUC002', categoria: 'Luces', item: 'Luces Traseras', descripcion: 'Funcionan correctamente', critico: true },
-  { id: 'LUC003', categoria: 'Luces', item: 'Direccionales', descripcion: 'Funcionan correctamente', critico: true },
-  { id: 'LUC004', categoria: 'Luces', item: 'Luces de Freno', descripcion: 'Funcionan correctamente', critico: true },
-  { id: 'LUC005', categoria: 'Luces', item: 'Luces de Reversa', descripcion: 'Funcionan correctamente', critico: false },
+  {
+    id: 'LUC001',
+    categoria: 'Luces',
+    item: 'Luces Delanteras',
+    descripcion: 'Funcionan correctamente',
+    critico: true,
+  },
+  {
+    id: 'LUC002',
+    categoria: 'Luces',
+    item: 'Luces Traseras',
+    descripcion: 'Funcionan correctamente',
+    critico: true,
+  },
+  {
+    id: 'LUC003',
+    categoria: 'Luces',
+    item: 'Direccionales',
+    descripcion: 'Funcionan correctamente',
+    critico: true,
+  },
+  {
+    id: 'LUC004',
+    categoria: 'Luces',
+    item: 'Luces de Freno',
+    descripcion: 'Funcionan correctamente',
+    critico: true,
+  },
+  {
+    id: 'LUC005',
+    categoria: 'Luces',
+    item: 'Luces de Reversa',
+    descripcion: 'Funcionan correctamente',
+    critico: false,
+  },
 
   // Seguridad
-  { id: 'SEG001', categoria: 'Seguridad', item: 'Cinturones de Seguridad', descripcion: 'Funcionan correctamente', critico: true },
-  { id: 'SEG002', categoria: 'Seguridad', item: 'Extintor', descripcion: 'Vigente y cargado', critico: true },
-  { id: 'SEG003', categoria: 'Seguridad', item: 'Botiquin', descripcion: 'Completo y vigente', critico: true },
-  { id: 'SEG004', categoria: 'Seguridad', item: 'Kit de Carretera', descripcion: 'Completo', critico: true },
-  { id: 'SEG005', categoria: 'Seguridad', item: 'Espejos Retrovisores', descripcion: 'Completos y ajustados', critico: true },
+  {
+    id: 'SEG001',
+    categoria: 'Seguridad',
+    item: 'Cinturones de Seguridad',
+    descripcion: 'Funcionan correctamente',
+    critico: true,
+  },
+  {
+    id: 'SEG002',
+    categoria: 'Seguridad',
+    item: 'Extintor',
+    descripcion: 'Vigente y cargado',
+    critico: true,
+  },
+  {
+    id: 'SEG003',
+    categoria: 'Seguridad',
+    item: 'Botiquin',
+    descripcion: 'Completo y vigente',
+    critico: true,
+  },
+  {
+    id: 'SEG004',
+    categoria: 'Seguridad',
+    item: 'Kit de Carretera',
+    descripcion: 'Completo',
+    critico: true,
+  },
+  {
+    id: 'SEG005',
+    categoria: 'Seguridad',
+    item: 'Espejos Retrovisores',
+    descripcion: 'Completos y ajustados',
+    critico: true,
+  },
 
   // Carroceria
-  { id: 'CAR001', categoria: 'Carroceria', item: 'Estado General', descripcion: 'Sin danos significativos', critico: false },
-  { id: 'CAR002', categoria: 'Carroceria', item: 'Puertas', descripcion: 'Abren y cierran correctamente', critico: false },
-  { id: 'CAR003', categoria: 'Carroceria', item: 'Parabrisas', descripcion: 'Sin grietas o fisuras', critico: true },
-  { id: 'CAR004', categoria: 'Carroceria', item: 'Limpiaparabrisas', descripcion: 'Funcionan correctamente', critico: false },
+  {
+    id: 'CAR001',
+    categoria: 'Carroceria',
+    item: 'Estado General',
+    descripcion: 'Sin danos significativos',
+    critico: false,
+  },
+  {
+    id: 'CAR002',
+    categoria: 'Carroceria',
+    item: 'Puertas',
+    descripcion: 'Abren y cierran correctamente',
+    critico: false,
+  },
+  {
+    id: 'CAR003',
+    categoria: 'Carroceria',
+    item: 'Parabrisas',
+    descripcion: 'Sin grietas o fisuras',
+    critico: true,
+  },
+  {
+    id: 'CAR004',
+    categoria: 'Carroceria',
+    item: 'Limpiaparabrisas',
+    descripcion: 'Funcionan correctamente',
+    critico: false,
+  },
 ];
 
 // ============================================
@@ -815,7 +995,9 @@ export function requiereAccionInmediata(nivel: NivelRiesgoVial): boolean {
 /**
  * Verifica si un incidente es grave (reportable a ARL)
  */
-export function esAccidenteGrave(incidente: Pick<IncidenteVial, 'severidad' | 'fallecidos' | 'lesionados'>): boolean {
+export function esAccidenteGrave(
+  incidente: Pick<IncidenteVial, 'severidad' | 'fallecidos' | 'lesionados'>
+): boolean {
   return (
     incidente.severidad === SeveridadIncidente.GRAVE ||
     incidente.severidad === SeveridadIncidente.FATAL ||

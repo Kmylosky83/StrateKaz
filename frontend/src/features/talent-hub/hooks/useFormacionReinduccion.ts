@@ -372,7 +372,7 @@ export function useDeleteProgramacion() {
 // HOOKS - EJECUCIONES
 // ============================================================================
 
-export function useEjecuciones() {
+export function useEjecucionesFormacion() {
   return useQuery({
     queryKey: formacionKeys.ejecuciones.list(),
     queryFn: async () => {
@@ -383,7 +383,7 @@ export function useEjecuciones() {
   });
 }
 
-export function useEjecucionesPorColaborador(colaboradorId: number) {
+export function useEjecucionesFormacionPorColaborador(colaboradorId: number) {
   return useQuery({
     queryKey: formacionKeys.ejecuciones.porColaborador(colaboradorId),
     queryFn: async () => {
@@ -397,7 +397,7 @@ export function useEjecucionesPorColaborador(colaboradorId: number) {
   });
 }
 
-export function useCreateEjecucion() {
+export function useCreateEjecucionFormacion() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (formData: { programacion: number; colaborador: number }) => {

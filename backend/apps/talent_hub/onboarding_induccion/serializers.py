@@ -66,7 +66,7 @@ class ModuloInduccionCreateUpdateSerializer(serializers.ModelSerializer):
 
 class AsignacionPorCargoSerializer(serializers.ModelSerializer):
     """Serializer para asignaciones de módulos por cargo."""
-    cargo_nombre = serializers.CharField(source='cargo.nombre', read_only=True)
+    cargo_nombre = serializers.CharField(source='cargo.name', read_only=True)
     modulo_nombre = serializers.CharField(source='modulo.nombre', read_only=True)
 
     class Meta:

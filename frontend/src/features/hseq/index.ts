@@ -12,7 +12,6 @@
 export { default as HSEQPage } from './pages/HSEQPage';
 
 // Páginas de Módulos
-export { default as SistemaDocumentalPage } from './pages/SistemaDocumentalPage';
 export { default as PlanificacionSistemaPage } from './pages/PlanificacionSistemaPage';
 export { default as CalidadPage } from './pages/CalidadPage';
 export { default as MedicinaLaboralPage } from './pages/MedicinaLaboralPage';

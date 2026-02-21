@@ -1488,7 +1488,7 @@ class UserRolesAdicionalesViewSet(viewsets.ViewSet):
         data = {
             'user_id': user.id,
             'user_nombre': user.get_full_name(),
-            'cargo': user.cargo.nombre if user.cargo else None,
+            'cargo': user.cargo.name if user.cargo else None,
             'permisos_cargo': PermisoListSerializer(permisos_cargo, many=True).data,
             'permisos_roles_adicionales': permisos_roles_adicionales,
             'permisos_efectivos': PermisoListSerializer(permisos_efectivos, many=True).data,

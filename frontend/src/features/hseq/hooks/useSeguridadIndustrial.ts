@@ -57,13 +57,15 @@ export const seguridadIndustrialKeys = {
   plantilla: (id: number) => [...seguridadIndustrialKeys.plantillas(), id] as const,
   inspecciones: () => [...seguridadIndustrialKeys.all, 'inspecciones'] as const,
   inspeccion: (id: number) => [...seguridadIndustrialKeys.inspecciones(), id] as const,
-  inspeccionesEstadisticas: () => [...seguridadIndustrialKeys.inspecciones(), 'estadisticas'] as const,
+  inspeccionesEstadisticas: () =>
+    [...seguridadIndustrialKeys.inspecciones(), 'estadisticas'] as const,
   tiposEPP: () => [...seguridadIndustrialKeys.all, 'tipos-epp'] as const,
   tipoEPP: (id: number) => [...seguridadIndustrialKeys.tiposEPP(), id] as const,
   tiposEPPCategoria: () => [...seguridadIndustrialKeys.tiposEPP(), 'por-categoria'] as const,
   entregas: () => [...seguridadIndustrialKeys.all, 'entregas-epp'] as const,
   entrega: (id: number) => [...seguridadIndustrialKeys.entregas(), id] as const,
-  entregasColaborador: (id: number) => [...seguridadIndustrialKeys.entregas(), 'colaborador', id] as const,
+  entregasColaborador: (id: number) =>
+    [...seguridadIndustrialKeys.entregas(), 'colaborador', id] as const,
   entregasPorVencer: () => [...seguridadIndustrialKeys.entregas(), 'por-vencer'] as const,
   programas: () => [...seguridadIndustrialKeys.all, 'programas'] as const,
   programa: (id: number) => [...seguridadIndustrialKeys.programas(), id] as const,
@@ -471,8 +473,7 @@ export function useCreateTipoEPP() {
 export function useUpdateTipoEPP() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, dto }: { id: number; dto: UpdateTipoEPPDTO }) =>
-      tipoEPPApi.update(id, dto),
+    mutationFn: ({ id, dto }: { id: number; dto: UpdateTipoEPPDTO }) => tipoEPPApi.update(id, dto),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: seguridadIndustrialKeys.tiposEPP() });
       queryClient.invalidateQueries({ queryKey: seguridadIndustrialKeys.tipoEPP(id) });
@@ -650,7 +651,7 @@ export function useDeleteProgramaSeguridad() {
   });
 }
 
-export function useActualizarAvancePrograma() {
+export function useActualizarAvanceProgramaSeguridad() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, dto }: { id: number; dto: ActualizarAvanceProgramaDTO }) =>

@@ -1,13 +1,8 @@
 /**
- * Página Principal: Contabilidad (Módulo Activable)
+ * Pagina Principal: Contabilidad (Modulo Activable)
  *
- * Dashboard de contabilidad con acceso a:
- * - Configuración: Plan de cuentas PUC
- * - Movimientos: Comprobantes contables
- * - Informes: Estados financieros
- * - Integración: Conexión con otros módulos
+ * Dashboard de contabilidad con datos reales del backend
  */
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   BookOpen,
@@ -16,57 +11,43 @@ import {
   Link2,
   TrendingUp,
   TrendingDown,
-  DollarSign,
-  CheckCircle,
-  Clock,
-  AlertTriangle,
   ArrowUpRight,
   Calculator,
   FileText,
   Settings,
+  Loader2,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { cn } from '@/utils/cn';
+import {
+  useConfiguracionContable,
+  usePlanesCuentas,
+  useCuentasContables,
+  useComprobantes,
+  useInformes,
+  useGeneraciones,
+  useColaPendientes,
+  useColaErrores,
+  useParametrosIntegracion,
+} from '../hooks';
 
-// ==================== MOCK DATA ====================
+const dec = (v: string | number | null | undefined): number => Number(v ?? 0);
 
-const mockResumen = {
-  configuracion: {
-    ejercicio_actual: 2024,
-    periodo_actual: 12,
-    cuentas_activas: 245,
-    plan_cuentas: 'PUC Colombia',
-  },
-  movimientos: {
-    comprobantes_mes: 156,
-    total_debitos: 1250000000,
-    total_creditos: 1250000000,
-    pendientes_contabilizar: 8,
-  },
-  informes: {
-    ultimo_balance: '2024-11-30',
-    ultimo_estado_resultados: '2024-11-30',
-    informes_generados: 24,
-  },
-  integracion: {
-    modulos_integrados: 4,
-    cola_pendiente: 12,
-    errores_recientes: 2,
-  },
-};
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+  }).format(value);
 
-const mockComprobantesRecientes = [
-  { id: 1, numero: 'CE-2024-0156', tipo: 'Egreso', fecha: '2024-12-28', concepto: 'Pago proveedores', debito: 15800000, credito: 15800000, estado: 'contabilizado' },
-  { id: 2, numero: 'CI-2024-0089', tipo: 'Ingreso', fecha: '2024-12-27', concepto: 'Recaudo clientes', debito: 28500000, credito: 28500000, estado: 'contabilizado' },
-  { id: 3, numero: 'NC-2024-0045', tipo: 'Nota Contable', fecha: '2024-12-26', concepto: 'Ajuste depreciación', debito: 4500000, credito: 4500000, estado: 'borrador' },
-  { id: 4, numero: 'CE-2024-0155', tipo: 'Egreso', fecha: '2024-12-25', concepto: 'Pago nómina', debito: 45000000, credito: 45000000, estado: 'contabilizado' },
-];
-
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(value);
+const extractResults = <T,>(data: unknown): T[] => {
+  if (!data) return [];
+  if (Array.isArray(data)) return data;
+  const d = data as { results?: T[] };
+  return d.results ?? [];
 };
 
 // ==================== COMPONENTS ====================
@@ -118,18 +99,74 @@ const ModuloCard = ({
 
 export default function AccountingPage() {
   const navigate = useNavigate();
-  const resumen = mockResumen;
-  const comprobantes = mockComprobantesRecientes;
+
+  const { data: configData } = useConfiguracionContable();
+  const { data: planesData } = usePlanesCuentas();
+  const { data: cuentasData } = useCuentasContables({ is_active: true });
+  const { data: comprobantesData } = useComprobantes({ ordering: '-created_at' });
+  const { data: borradoresData } = useComprobantes({ estado: 'borrador' });
+  const { data: informesData } = useInformes();
+  const { data: generacionesData } = useGeneraciones({ ordering: '-created_at' });
+  const { data: colaPendientesData } = useColaPendientes();
+  const { data: colaErroresData } = useColaErrores();
+  const { data: parametrosData } = useParametrosIntegracion();
+
+  const configs = extractResults(configData);
+  const config = configs[0];
+  const planes = extractResults(planesData);
+  const planActivo = planes.find((p) => p.es_activo);
+  const cuentas = extractResults(cuentasData);
+  const comprobantes = extractResults(comprobantesData);
+  const borradores = extractResults(borradoresData);
+  const informes = extractResults(informesData);
+  const generaciones = extractResults(generacionesData);
+  const colaPendientes = Array.isArray(colaPendientesData) ? colaPendientesData : [];
+  const colaErrores = Array.isArray(colaErroresData) ? colaErroresData : [];
+  const parametros = extractResults(parametrosData);
+  const modulosActivos = new Set(parametros.filter((p) => p.activo).map((p) => p.modulo)).size;
+
+  // KPIs de comprobantes del mes
+  const mesActual = new Date().toISOString().slice(0, 7); // YYYY-MM
+  const compMes = comprobantes.filter((c) => c.fecha_comprobante?.startsWith(mesActual));
+  const totalDebitos = compMes.reduce((sum, c) => sum + dec(c.total_debito), 0);
+  const totalCreditos = compMes.reduce((sum, c) => sum + dec(c.total_credito), 0);
+
+  // Ultimas generaciones
+  const ultimaGeneracion = generaciones[0];
+
+  // Comprobantes recientes (top 5)
+  const recientes = comprobantes.slice(0, 5);
+
+  const getEstadoBadge = (estado: string) => {
+    switch (estado) {
+      case 'contabilizado':
+        return { variant: 'success' as const, label: 'Contabilizado' };
+      case 'aprobado':
+        return { variant: 'primary' as const, label: 'Aprobado' };
+      case 'pendiente_aprobacion':
+        return { variant: 'warning' as const, label: 'Pend. Aprobacion' };
+      case 'borrador':
+        return { variant: 'warning' as const, label: 'Borrador' };
+      case 'anulado':
+        return { variant: 'danger' as const, label: 'Anulado' };
+      default:
+        return { variant: 'secondary' as const, label: estado };
+    }
+  };
 
   return (
     <div className="space-y-8">
       <PageHeader
         title="Contabilidad"
-        description="Sistema de contabilidad integrado - Plan Único de Cuentas (PUC) Colombia"
+        description="Sistema de contabilidad integrado - Plan Unico de Cuentas (PUC) Colombia"
       />
 
-      {/* Información del Período */}
-      <Card variant="bordered" padding="md" className="bg-gradient-to-r from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/20">
+      {/* Informacion del Periodo */}
+      <Card
+        variant="bordered"
+        padding="md"
+        className="bg-gradient-to-r from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/20"
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 bg-white dark:bg-gray-800 rounded-xl flex items-center justify-center shadow">
@@ -137,17 +174,28 @@ export default function AccountingPage() {
             </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Ejercicio {resumen.configuracion.ejercicio_actual} - Período {resumen.configuracion.periodo_actual}
+                {config
+                  ? `Ejercicio ${config.fecha_inicio_ejercicio?.slice(0, 4) ?? '-'} - Periodo ${config.periodo_actual}`
+                  : 'Cargando configuracion...'}
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                {resumen.configuracion.plan_cuentas} • {resumen.configuracion.cuentas_activas} cuentas activas
+                {planActivo?.nombre ?? 'Sin plan activo'} &bull; {cuentas.length} cuentas activas
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="success">Período Abierto</Badge>
-            <Button variant="outline" size="sm" leftIcon={<Settings className="w-4 h-4" />}>
-              Configuración
+            {config && (
+              <Badge variant={config.ejercicio_abierto ? 'success' : 'danger'}>
+                {config.ejercicio_abierto ? 'Periodo Abierto' : 'Periodo Cerrado'}
+              </Badge>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              leftIcon={<Settings className="w-4 h-4" />}
+              onClick={() => navigate('/contabilidad/configuracion')}
+            >
+              Configuracion
             </Button>
           </div>
         </div>
@@ -158,9 +206,9 @@ export default function AccountingPage() {
         <Card variant="bordered" padding="md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Débitos del Mes</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Debitos del Mes</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                {formatCurrency(resumen.movimientos.total_debitos)}
+                {formatCurrency(totalDebitos)}
               </p>
             </div>
             <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
@@ -172,9 +220,9 @@ export default function AccountingPage() {
         <Card variant="bordered" padding="md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Créditos del Mes</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Creditos del Mes</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                {formatCurrency(resumen.movimientos.total_creditos)}
+                {formatCurrency(totalCreditos)}
               </p>
             </div>
             <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
@@ -187,41 +235,45 @@ export default function AccountingPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Comprobantes</p>
-              <p className="text-2xl font-bold text-primary-600 mt-1">{resumen.movimientos.comprobantes_mes}</p>
+              <p className="text-2xl font-bold text-primary-600 mt-1">{compMes.length}</p>
             </div>
             <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
               <FileText className="w-6 h-6 text-primary-600" />
             </div>
           </div>
-          <p className="text-sm text-warning-600 mt-2">{resumen.movimientos.pendientes_contabilizar} pendientes</p>
+          {borradores.length > 0 && (
+            <p className="text-sm text-warning-600 mt-2">{borradores.length} pendientes</p>
+          )}
         </Card>
 
         <Card variant="bordered" padding="md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Cola Integración</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{resumen.integracion.cola_pendiente}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Cola Integracion</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                {colaPendientes.length}
+              </p>
             </div>
             <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
               <Link2 className="w-6 h-6 text-orange-600" />
             </div>
           </div>
-          {resumen.integracion.errores_recientes > 0 && (
-            <p className="text-sm text-danger-600 mt-2">{resumen.integracion.errores_recientes} errores</p>
+          {colaErrores.length > 0 && (
+            <p className="text-sm text-danger-600 mt-2">{colaErrores.length} errores</p>
           )}
         </Card>
       </div>
 
-      {/* Módulos Grid */}
+      {/* Modulos Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <ModuloCard
-          titulo="Configuración Contable"
+          titulo="Configuracion Contable"
           icono={<BookOpen className="w-6 h-6 text-white" />}
           color="bg-primary-600"
           stats={[
-            { label: 'Plan de cuentas', value: resumen.configuracion.plan_cuentas },
-            { label: 'Cuentas activas', value: resumen.configuracion.cuentas_activas },
-            { label: 'Ejercicio', value: resumen.configuracion.ejercicio_actual },
+            { label: 'Plan de cuentas', value: planActivo?.nombre ?? 'Sin plan' },
+            { label: 'Cuentas activas', value: cuentas.length },
+            { label: 'Ejercicio', value: config?.fecha_inicio_ejercicio?.slice(0, 4) ?? '-' },
           ]}
           ruta="/contabilidad/configuracion"
         />
@@ -231,9 +283,12 @@ export default function AccountingPage() {
           icono={<FileSpreadsheet className="w-6 h-6 text-white" />}
           color="bg-blue-600"
           stats={[
-            { label: 'Comprobantes mes', value: resumen.movimientos.comprobantes_mes },
-            { label: 'Pendientes', value: resumen.movimientos.pendientes_contabilizar },
-            { label: 'Débitos = Créditos', value: 'Cuadrado' },
+            { label: 'Comprobantes mes', value: compMes.length },
+            { label: 'Pendientes', value: borradores.length },
+            {
+              label: 'Debitos = Creditos',
+              value: totalDebitos === totalCreditos ? 'Cuadrado' : 'Descuadrado',
+            },
           ]}
           ruta="/contabilidad/movimientos"
         />
@@ -243,21 +298,21 @@ export default function AccountingPage() {
           icono={<BarChart3 className="w-6 h-6 text-white" />}
           color="bg-green-600"
           stats={[
-            { label: 'Último balance', value: resumen.informes.ultimo_balance },
-            { label: 'Estado resultados', value: resumen.informes.ultimo_estado_resultados },
-            { label: 'Generados', value: resumen.informes.informes_generados },
+            { label: 'Definiciones', value: informes.length },
+            { label: 'Generados', value: generaciones.length },
+            { label: 'Ultimo', value: ultimaGeneracion?.created_at?.slice(0, 10) ?? '-' },
           ]}
           ruta="/contabilidad/informes"
         />
 
         <ModuloCard
-          titulo="Integración"
+          titulo="Integracion"
           icono={<Link2 className="w-6 h-6 text-white" />}
           color="bg-orange-600"
           stats={[
-            { label: 'Módulos integrados', value: resumen.integracion.modulos_integrados },
-            { label: 'En cola', value: resumen.integracion.cola_pendiente },
-            { label: 'Errores', value: resumen.integracion.errores_recientes },
+            { label: 'Modulos integrados', value: modulosActivos },
+            { label: 'En cola', value: colaPendientes.length },
+            { label: 'Errores', value: colaErrores.length },
           ]}
           ruta="/contabilidad/integracion"
         />
@@ -266,47 +321,78 @@ export default function AccountingPage() {
       {/* Comprobantes Recientes */}
       <Card variant="bordered" padding="md">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Comprobantes Recientes</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Comprobantes Recientes
+          </h3>
           <Button variant="ghost" size="sm" onClick={() => navigate('/contabilidad/movimientos')}>
             Ver todos
           </Button>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Número</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Concepto</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Débito</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Crédito</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {comprobantes.map((comp) => (
-                <tr key={comp.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{comp.numero}</td>
-                  <td className="px-4 py-3">
-                    <Badge variant={comp.tipo === 'Ingreso' ? 'success' : comp.tipo === 'Egreso' ? 'danger' : 'primary'} size="sm">
-                      {comp.tipo}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{comp.fecha}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{comp.concepto}</td>
-                  <td className="px-4 py-3 text-sm font-medium text-right text-blue-600">{formatCurrency(comp.debito)}</td>
-                  <td className="px-4 py-3 text-sm font-medium text-right text-green-600">{formatCurrency(comp.credito)}</td>
-                  <td className="px-4 py-3">
-                    <Badge variant={comp.estado === 'contabilizado' ? 'success' : 'warning'} size="sm">
-                      {comp.estado.charAt(0).toUpperCase() + comp.estado.slice(1)}
-                    </Badge>
-                  </td>
+        {recientes.length === 0 ? (
+          <p className="text-center text-gray-500 py-8">No hay comprobantes registrados</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Numero
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Tipo
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Fecha
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Concepto
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    Debito
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    Credito
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Estado
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {recientes.map((comp) => {
+                  const badge = getEstadoBadge(comp.estado);
+                  return (
+                    <tr key={comp.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                      <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
+                        {comp.numero_comprobante}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge variant="primary" size="sm">
+                          {comp.tipo_documento_codigo}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{comp.fecha_comprobante}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600 max-w-[200px] truncate">
+                        {comp.concepto}
+                      </td>
+                      <td className="px-4 py-3 text-sm font-medium text-right text-blue-600">
+                        {formatCurrency(dec(comp.total_debito))}
+                      </td>
+                      <td className="px-4 py-3 text-sm font-medium text-right text-green-600">
+                        {formatCurrency(dec(comp.total_credito))}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge variant={badge.variant} size="sm">
+                          {badge.label}
+                        </Badge>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
     </div>
   );

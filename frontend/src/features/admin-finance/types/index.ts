@@ -1,359 +1,740 @@
 /**
- * Types para Admin Finance
+ * Types para Admin Finance - Alineados con serializers del backend
+ * DRF DecimalField retorna STRING - usar Number() antes de .toFixed()
  */
 
-// ==================== TESORERÍA ====================
+// ==================== BASE AUDIT FIELDS ====================
 
-export interface CuentaBancaria {
-  id: number;
-  empresa: number;
-  codigo: string;
-  nombre: string;
-  tipo_cuenta: 'ahorros' | 'corriente' | 'fiducia' | 'cdt' | 'otro';
-  banco: string;
-  numero_cuenta: string;
-  saldo_inicial: number;
-  saldo_actual: number;
-  moneda: string;
-  activa: boolean;
+interface AuditFields {
+  is_active: boolean;
   created_at: string;
   updated_at: string;
+  created_by: number | null;
+  updated_by: number | null;
 }
 
-export interface MovimientoBancario {
+// ==================== TESORERIA ====================
+
+export interface Banco extends AuditFields {
   id: number;
   empresa: number;
-  cuenta: number;
-  cuenta_nombre?: string;
-  tipo_movimiento: 'ingreso' | 'egreso' | 'transferencia' | 'nota_debito' | 'nota_credito';
-  numero_documento: string;
-  fecha: string;
-  concepto: string;
-  valor: number;
-  saldo_anterior: number;
-  saldo_posterior: number;
-  tercero?: number;
-  tercero_nombre?: string;
-  referencia?: string;
-  conciliado: boolean;
-  created_at: string;
+  entidad_bancaria: string;
+  tipo_cuenta: 'ahorros' | 'corriente';
+  tipo_cuenta_display: string;
+  numero_cuenta: string;
+  nombre_cuenta: string;
+  saldo_actual: string; // DecimalField -> string
+  saldo_disponible: string;
+  saldo_comprometido: string;
+  estado: 'activa' | 'inactiva' | 'bloqueada';
+  estado_display: string;
+  sucursal: string;
+  responsable: number | null;
+  responsable_nombre: string | null;
+  observaciones: string;
 }
 
-export interface FlujoCaja {
+export interface BancoList {
   id: number;
-  empresa: number;
-  periodo: string;
-  fecha_inicio: string;
-  fecha_fin: string;
-  saldo_inicial: number;
-  total_ingresos: number;
-  total_egresos: number;
-  saldo_final: number;
-  estado: 'borrador' | 'cerrado';
-  created_at: string;
+  entidad_bancaria: string;
+  tipo_cuenta: string;
+  tipo_cuenta_display: string;
+  numero_cuenta: string;
+  nombre_cuenta: string;
+  saldo_actual: string;
+  saldo_disponible: string;
+  estado: string;
+  estado_display: string;
 }
 
-export interface ConciliacionBancaria {
-  id: number;
-  cuenta: number;
-  cuenta_nombre?: string;
-  periodo: string;
-  saldo_libros: number;
-  saldo_extracto: number;
-  diferencia: number;
-  estado: 'pendiente' | 'conciliada' | 'descuadrada';
-  fecha_conciliacion?: string;
-  created_at: string;
-}
-
-export interface ProgramacionPago {
-  id: number;
-  empresa: number;
-  cuenta: number;
-  cuenta_nombre?: string;
-  proveedor: number;
-  proveedor_nombre?: string;
-  concepto: string;
-  valor: number;
-  fecha_vencimiento: string;
-  fecha_programada?: string;
-  estado: 'pendiente' | 'programado' | 'pagado' | 'vencido';
-  prioridad: 'alta' | 'media' | 'baja';
-  created_at: string;
-}
-
-export interface CajaChica {
+export interface CuentaPorPagar extends AuditFields {
   id: number;
   empresa: number;
   codigo: string;
-  nombre: string;
-  responsable: number;
-  responsable_nombre?: string;
-  fondo_fijo: number;
-  saldo_actual: number;
-  estado: 'activa' | 'cerrada' | 'en_reembolso';
-  created_at: string;
+  concepto: string;
+  proveedor: number | null;
+  proveedor_nombre: string | null;
+  orden_compra: number | null;
+  orden_compra_numero: string | null;
+  liquidacion_nomina: number | null;
+  liquidacion_numero: string | null;
+  monto_total: string;
+  monto_pagado: string;
+  saldo_pendiente: string;
+  fecha_documento: string;
+  fecha_vencimiento: string;
+  dias_para_vencimiento: number;
+  estado: 'pendiente' | 'parcial' | 'pagada' | 'anulada';
+  estado_display: string;
+  esta_vencida: boolean;
+  observaciones: string;
+}
+
+export interface CuentaPorPagarList {
+  id: number;
+  codigo: string;
+  concepto: string;
+  proveedor_nombre: string | null;
+  monto_total: string;
+  monto_pagado: string;
+  saldo_pendiente: string;
+  fecha_vencimiento: string;
+  dias_para_vencimiento: number;
+  estado: string;
+  estado_display: string;
+}
+
+export interface CuentaPorCobrar extends AuditFields {
+  id: number;
+  empresa: number;
+  codigo: string;
+  concepto: string;
+  cliente: number | null;
+  cliente_nombre: string | null;
+  factura: number | null;
+  factura_numero: string | null;
+  monto_total: string;
+  monto_cobrado: string;
+  saldo_pendiente: string;
+  fecha_documento: string;
+  fecha_vencimiento: string;
+  dias_para_vencimiento: number;
+  estado: 'pendiente' | 'parcial' | 'cobrada' | 'anulada';
+  estado_display: string;
+  esta_vencida: boolean;
+  observaciones: string;
+}
+
+export interface CuentaPorCobrarList {
+  id: number;
+  codigo: string;
+  concepto: string;
+  cliente_nombre: string | null;
+  monto_total: string;
+  monto_cobrado: string;
+  saldo_pendiente: string;
+  fecha_vencimiento: string;
+  dias_para_vencimiento: number;
+  estado: string;
+  estado_display: string;
+}
+
+export interface FlujoCaja extends AuditFields {
+  id: number;
+  empresa: number;
+  codigo: string;
+  tipo: 'ingreso' | 'egreso';
+  tipo_display: string;
+  concepto: string;
+  banco: number | null;
+  banco_nombre: string | null;
+  cuenta_por_pagar: number | null;
+  cuenta_pagar_codigo: string | null;
+  cuenta_por_cobrar: number | null;
+  cuenta_cobrar_codigo: string | null;
+  fecha: string;
+  monto_proyectado: string;
+  monto_real: string;
+  variacion: string;
+  porcentaje_cumplimiento: string;
+  observaciones: string;
+}
+
+export interface FlujoCajaList {
+  id: number;
+  codigo: string;
+  tipo: string;
+  tipo_display: string;
+  concepto: string;
+  fecha: string;
+  monto_proyectado: string;
+  monto_real: string;
+  variacion: string;
+}
+
+export interface Pago extends AuditFields {
+  id: number;
+  empresa: number;
+  codigo: string;
+  cuenta_por_pagar: number;
+  cuenta_por_pagar_codigo: string;
+  cuenta_por_pagar_concepto: string;
+  banco: number;
+  banco_nombre: string;
+  proveedor_nombre: string | null;
+  fecha_pago: string;
+  monto: string;
+  metodo_pago: 'transferencia' | 'cheque' | 'efectivo' | 'pse';
+  metodo_pago_display: string;
+  referencia: string;
+  comprobante: string | null;
+  observaciones: string;
+}
+
+export interface PagoList {
+  id: number;
+  codigo: string;
+  fecha_pago: string;
+  monto: string;
+  cuenta_concepto: string;
+  proveedor_nombre: string | null;
+  metodo_pago: string;
+  metodo_pago_display: string;
+  referencia: string;
+}
+
+export interface Recaudo extends AuditFields {
+  id: number;
+  empresa: number;
+  codigo: string;
+  cuenta_por_cobrar: number;
+  cuenta_por_cobrar_codigo: string;
+  cuenta_por_cobrar_concepto: string;
+  banco: number;
+  banco_nombre: string;
+  cliente_nombre: string | null;
+  fecha_recaudo: string;
+  monto: string;
+  metodo_pago: 'transferencia' | 'cheque' | 'efectivo' | 'pse';
+  metodo_pago_display: string;
+  referencia: string;
+  comprobante: string | null;
+  observaciones: string;
+}
+
+export interface RecaudoList {
+  id: number;
+  codigo: string;
+  fecha_recaudo: string;
+  monto: string;
+  cuenta_concepto: string;
+  cliente_nombre: string | null;
+  metodo_pago: string;
+  metodo_pago_display: string;
+  referencia: string;
 }
 
 // ==================== PRESUPUESTO ====================
 
-export interface PresupuestoAnual {
+export interface CentroCosto extends AuditFields {
   id: number;
   empresa: number;
   codigo: string;
   nombre: string;
-  periodo_fiscal: number;
-  fecha_inicio: string;
-  fecha_fin: string;
-  monto_total: number;
-  estado: 'borrador' | 'aprobado' | 'en_ejecucion' | 'cerrado';
-  created_at: string;
+  descripcion: string;
+  area: number | null;
+  area_nombre: string | null;
+  responsable: number | null;
+  responsable_nombre: string | null;
+  estado: 'activo' | 'inactivo';
+  estado_display: string;
 }
 
-export interface RubroPresupuestal {
+export interface CentroCostoList {
   id: number;
-  presupuesto: number;
+  codigo: string;
+  nombre: string;
+  area_nombre: string | null;
+  estado: string;
+  estado_display: string;
+}
+
+export interface Rubro extends AuditFields {
+  id: number;
+  empresa: number;
   codigo: string;
   nombre: string;
   tipo: 'ingreso' | 'gasto';
-  monto_asignado: number;
-  monto_ejecutado: number;
-  monto_disponible: number;
-  porcentaje_ejecucion: number;
-  rubro_padre?: number;
-  nivel: number;
-  created_at: string;
+  tipo_display: string;
+  categoria: string;
+  categoria_display: string;
+  descripcion: string;
+  rubro_padre: number | null;
+  rubro_padre_nombre: string | null;
+  subrubros: RubroList[];
 }
 
-export interface EjecucionPresupuestal {
+export interface RubroList {
   id: number;
+  codigo: string;
+  nombre: string;
+  tipo: string;
+  tipo_display: string;
+  categoria: string;
+  categoria_display: string;
+}
+
+export interface PresupuestoPorArea extends AuditFields {
+  id: number;
+  empresa: number;
+  codigo: string;
+  area: number | null;
+  area_nombre: string | null;
+  centro_costo: number | null;
+  centro_costo_nombre: string | null;
   rubro: number;
-  rubro_codigo?: string;
-  rubro_nombre?: string;
-  tipo_ejecucion: 'compromiso' | 'causacion' | 'pago';
-  numero_documento: string;
-  fecha: string;
-  concepto: string;
-  valor: number;
-  tercero?: number;
-  tercero_nombre?: string;
-  created_at: string;
+  rubro_nombre: string;
+  rubro_tipo: string;
+  anio: number;
+  monto_asignado: string;
+  monto_ejecutado: string;
+  saldo_disponible: string;
+  porcentaje_ejecucion: string;
+  estado: 'borrador' | 'aprobado' | 'en_ejecucion' | 'cerrado';
+  estado_display: string;
+  observaciones: string;
 }
 
-export interface CdpCrp {
+export interface PresupuestoPorAreaList {
   id: number;
-  empresa: number;
-  tipo: 'cdp' | 'crp';
-  numero: string;
-  fecha: string;
-  objeto: string;
-  valor: number;
-  tercero: number;
-  tercero_nombre?: string;
-  estado: 'vigente' | 'ejecutado' | 'anulado';
-  created_at: string;
+  codigo: string;
+  area_nombre: string | null;
+  centro_costo_nombre: string | null;
+  rubro_nombre: string;
+  anio: number;
+  monto_asignado: string;
+  monto_ejecutado: string;
+  saldo_disponible: string;
+  porcentaje_ejecucion: string;
+  estado: string;
+  estado_display: string;
 }
 
-export interface TrasladorPresupuestal {
+export interface Aprobacion extends AuditFields {
   id: number;
   empresa: number;
-  numero: string;
-  fecha: string;
-  rubro_origen: number;
-  rubro_destino: number;
-  valor: number;
-  justificacion: string;
+  presupuesto: number;
+  presupuesto_codigo: string;
+  nivel_aprobacion: string;
+  nivel_aprobacion_display: string;
+  orden: number;
+  aprobado_por: number | null;
+  aprobado_por_nombre: string | null;
+  fecha_aprobacion: string | null;
   estado: 'pendiente' | 'aprobado' | 'rechazado';
-  created_at: string;
+  estado_display: string;
+  observaciones: string;
+}
+
+export interface AprobacionList {
+  id: number;
+  presupuesto_codigo: string;
+  nivel_aprobacion: string;
+  nivel_aprobacion_display: string;
+  orden: number;
+  aprobado_por_nombre: string | null;
+  fecha_aprobacion: string | null;
+  estado: string;
+  estado_display: string;
+}
+
+export interface Ejecucion extends AuditFields {
+  id: number;
+  empresa: number;
+  codigo: string;
+  presupuesto: number;
+  presupuesto_codigo: string;
+  presupuesto_area: string | null;
+  presupuesto_rubro: string;
+  presupuesto_saldo_disponible: string;
+  fecha: string;
+  monto: string;
+  concepto: string;
+  documento_soporte: string | null;
+  numero_documento: string;
+  estado: 'registrada' | 'aprobada' | 'anulada';
+  estado_display: string;
+  observaciones: string;
+}
+
+export interface EjecucionList {
+  id: number;
+  codigo: string;
+  fecha: string;
+  monto: string;
+  concepto: string;
+  presupuesto_codigo: string;
+  presupuesto_area: string | null;
+  presupuesto_rubro: string;
+  estado: string;
+  estado_display: string;
 }
 
 // ==================== ACTIVOS FIJOS ====================
 
-export interface ActivoFijo {
+export interface CategoriaActivo extends AuditFields {
   id: number;
   empresa: number;
   codigo: string;
   nombre: string;
-  descripcion?: string;
-  categoria: number;
-  categoria_nombre?: string;
-  ubicacion: number;
-  ubicacion_nombre?: string;
-  responsable: number;
-  responsable_nombre?: string;
-  proveedor?: number;
-  proveedor_nombre?: string;
-  numero_factura?: string;
-  fecha_adquisicion: string;
-  costo_adquisicion: number;
-  valor_residual: number;
+  descripcion: string;
+  vida_util_anios: number;
   vida_util_meses: number;
-  metodo_depreciacion: 'linea_recta' | 'doble_declive' | 'unidades_producidas';
-  depreciacion_acumulada: number;
-  valor_libros: number;
+  metodo_depreciacion: 'linea_recta' | 'saldos_decrecientes' | 'unidades_produccion';
+  metodo_depreciacion_display: string;
+  cantidad_activos: number;
+}
+
+export interface CategoriaActivoList {
+  id: number;
+  codigo: string;
+  nombre: string;
+  vida_util_anios: number;
+  metodo_depreciacion: string;
+  metodo_depreciacion_display: string;
+}
+
+export interface ActivoFijo extends AuditFields {
+  id: number;
+  empresa: number;
+  codigo: string;
+  categoria: number;
+  categoria_codigo: string;
+  categoria_nombre: string;
+  nombre: string;
+  descripcion: string;
+  numero_serie: string;
+  marca: string;
+  modelo: string;
+  fecha_adquisicion: string;
+  valor_adquisicion: string;
+  valor_residual: string;
+  valor_depreciable: string;
+  depreciacion_mensual: string;
+  depreciacion_acumulada: string;
+  valor_en_libros: string;
+  meses_desde_adquisicion: number;
+  porcentaje_depreciacion: string;
+  ubicacion: string;
+  area: number | null;
+  area_nombre: string | null;
+  responsable: number | null;
+  responsable_nombre: string | null;
   estado: 'activo' | 'en_mantenimiento' | 'dado_de_baja' | 'vendido';
-  created_at: string;
+  estado_display: string;
+  observaciones: string;
 }
 
-export interface CategoriaActivo {
+export interface ActivoFijoList {
+  id: number;
+  codigo: string;
+  nombre: string;
+  categoria_nombre: string;
+  area_nombre: string | null;
+  fecha_adquisicion: string;
+  valor_adquisicion: string;
+  valor_en_libros: string;
+  estado: string;
+  estado_display: string;
+  ubicacion: string;
+}
+
+export interface HojaVidaActivo extends AuditFields {
   id: number;
   empresa: number;
   codigo: string;
-  nombre: string;
-  cuenta_contable?: number;
-  cuenta_depreciacion?: number;
-  vida_util_default: number;
-  metodo_default: 'linea_recta' | 'doble_declive' | 'unidades_producidas';
-  activa: boolean;
-  created_at: string;
-}
-
-export interface UbicacionActivo {
-  id: number;
-  empresa: number;
-  codigo: string;
-  nombre: string;
-  direccion?: string;
-  responsable?: number;
-  responsable_nombre?: string;
-  activa: boolean;
-  created_at: string;
-}
-
-export interface DepreciacionMensual {
-  id: number;
   activo: number;
-  activo_codigo?: string;
-  activo_nombre?: string;
-  periodo: string;
-  valor_inicial: number;
-  depreciacion: number;
-  depreciacion_acumulada: number;
-  valor_final: number;
-  created_at: string;
-}
-
-export interface MovimientoActivo {
-  id: number;
-  activo: number;
-  activo_codigo?: string;
-  tipo_movimiento: 'traslado' | 'mantenimiento' | 'mejora' | 'baja' | 'venta';
+  activo_codigo: string;
+  activo_nombre: string;
+  tipo_evento: 'mantenimiento' | 'reparacion' | 'mejora' | 'traslado' | 'otro';
+  tipo_evento_display: string;
   fecha: string;
-  ubicacion_origen?: number;
-  ubicacion_destino?: number;
-  responsable_origen?: number;
-  responsable_destino?: number;
   descripcion: string;
-  costo?: number;
-  created_at: string;
+  costo: string;
+  realizado_por: number | null;
+  realizado_por_nombre: string | null;
+  documento_soporte: string | null;
 }
 
-export interface MantenimientoActivo {
+export interface HojaVidaActivoList {
   id: number;
-  activo: number;
-  activo_codigo?: string;
-  activo_nombre?: string;
-  tipo_mantenimiento: 'preventivo' | 'correctivo' | 'predictivo';
-  fecha_programada?: string;
-  fecha_ejecucion?: string;
-  proveedor?: number;
-  proveedor_nombre?: string;
+  codigo: string;
+  activo_codigo: string;
+  tipo_evento: string;
+  tipo_evento_display: string;
+  fecha: string;
   descripcion: string;
-  costo: number;
+  costo: string;
+}
+
+export interface ProgramaMantenimiento extends AuditFields {
+  id: number;
+  empresa: number;
+  activo: number;
+  activo_codigo: string;
+  activo_nombre: string;
+  tipo: 'preventivo' | 'correctivo' | 'predictivo';
+  tipo_display: string;
+  descripcion: string;
+  frecuencia_dias: number;
+  ultima_fecha: string | null;
+  proxima_fecha: string;
+  dias_para_mantenimiento: number;
+  esta_vencido: boolean;
+  responsable: number | null;
+  responsable_nombre: string | null;
   estado: 'programado' | 'en_proceso' | 'completado' | 'cancelado';
-  created_at: string;
+  estado_display: string;
+  observaciones: string;
+}
+
+export interface ProgramaMantenimientoList {
+  id: number;
+  activo_codigo: string;
+  tipo: string;
+  tipo_display: string;
+  proxima_fecha: string;
+  dias_para_mantenimiento: number;
+  estado: string;
+  estado_display: string;
+}
+
+export interface Depreciacion extends AuditFields {
+  id: number;
+  empresa: number;
+  activo: number;
+  activo_codigo: string;
+  activo_nombre: string;
+  periodo_mes: number;
+  periodo_anio: number;
+  periodo_label: string;
+  valor_inicial: string;
+  depreciacion_periodo: string;
+  depreciacion_acumulada: string;
+  valor_en_libros: string;
+}
+
+export interface DepreciacionList {
+  id: number;
+  activo_codigo: string;
+  periodo_label: string;
+  depreciacion_periodo: string;
+  depreciacion_acumulada: string;
+  valor_en_libros: string;
+}
+
+export interface BajaActivo extends AuditFields {
+  id: number;
+  empresa: number;
+  activo: number;
+  activo_codigo: string;
+  activo_nombre: string;
+  activo_valor_residual_estimado: string;
+  fecha_baja: string;
+  motivo: 'obsolescencia' | 'dano' | 'venta' | 'donacion' | 'hurto' | 'otro';
+  motivo_display: string;
+  valor_residual_real: string;
+  diferencia_valor_residual: string;
+  acta_baja: string | null;
+  observaciones: string;
+  aprobado_por: number | null;
+  aprobado_por_nombre: string | null;
+  fecha_aprobacion: string | null;
+}
+
+export interface BajaActivoList {
+  id: number;
+  activo_codigo: string;
+  activo_nombre: string;
+  fecha_baja: string;
+  motivo: string;
+  motivo_display: string;
+  valor_residual_real: string;
 }
 
 // ==================== SERVICIOS GENERALES ====================
 
-export interface ContratoServicio {
+export interface MantenimientoLocativo extends AuditFields {
   id: number;
   empresa: number;
+  empresa_nombre: string;
   codigo: string;
-  nombre: string;
-  proveedor: number;
-  proveedor_nombre?: string;
-  tipo_servicio: 'arrendamiento' | 'vigilancia' | 'aseo' | 'mantenimiento' | 'comunicaciones' | 'servicios_publicos' | 'seguros' | 'otro';
-  fecha_inicio: string;
-  fecha_fin?: string;
-  valor_mensual: number;
-  forma_pago: 'mensual' | 'bimestral' | 'trimestral' | 'anual';
-  estado: 'activo' | 'suspendido' | 'terminado' | 'vencido';
-  renovacion_automatica: boolean;
-  created_at: string;
+  tipo: 'preventivo' | 'correctivo' | 'mejora';
+  tipo_display: string;
+  ubicacion: string;
+  descripcion_trabajo: string;
+  fecha_solicitud: string;
+  fecha_programada: string | null;
+  fecha_ejecucion: string | null;
+  responsable: number | null;
+  responsable_nombre: string;
+  proveedor: number | null;
+  proveedor_nombre: string | null;
+  costo_estimado: string;
+  costo_real: string | null;
+  variacion_costo: string;
+  porcentaje_variacion: string;
+  estado: 'solicitado' | 'programado' | 'en_ejecucion' | 'completado' | 'cancelado';
+  estado_display: string;
+  observaciones: string;
+  dias_hasta_programacion: number;
 }
 
-export interface GastoOperativo {
+export interface MantenimientoLocativoList {
   id: number;
-  empresa: number;
-  contrato?: number;
-  contrato_nombre?: string;
-  categoria: 'arrendamiento' | 'servicios_publicos' | 'aseo_cafeteria' | 'vigilancia' | 'comunicaciones' | 'papeleria' | 'transporte' | 'varios';
-  concepto: string;
-  proveedor?: number;
-  proveedor_nombre?: string;
-  numero_factura?: string;
-  fecha: string;
-  valor: number;
-  iva?: number;
-  retencion?: number;
-  valor_neto: number;
-  estado: 'registrado' | 'aprobado' | 'pagado' | 'anulado';
-  created_at: string;
+  codigo: string;
+  tipo: string;
+  tipo_display: string;
+  ubicacion: string;
+  fecha_solicitud: string;
+  fecha_programada: string | null;
+  responsable_nombre: string;
+  proveedor_nombre: string | null;
+  costo_estimado: string;
+  costo_real: string | null;
+  estado: string;
+  estado_display: string;
 }
 
-export interface ConsumoServicioPublico {
+export interface ServicioPublico extends AuditFields {
   id: number;
   empresa: number;
-  contrato?: number;
-  tipo_servicio: 'energia' | 'agua' | 'gas' | 'telefono' | 'internet';
-  periodo: string;
-  lectura_anterior: number;
-  lectura_actual: number;
-  consumo: number;
-  unidad_medida: string;
-  valor_consumo: number;
-  otros_cargos: number;
-  valor_total: number;
+  empresa_nombre: string;
+  codigo: string;
+  tipo_servicio: 'energia' | 'agua' | 'gas' | 'telefonia' | 'internet' | 'alcantarillado' | 'otro';
+  tipo_servicio_display: string;
+  proveedor_nombre: string; // plain field, not FK
+  numero_cuenta: string;
+  ubicacion: string;
+  periodo_mes: number;
+  periodo_anio: number;
   fecha_vencimiento: string;
-  estado: 'pendiente' | 'pagado' | 'vencido';
-  created_at: string;
+  valor: string;
+  estado_pago: 'pendiente' | 'pagado' | 'vencido';
+  estado_pago_display: string;
+  consumo: string | null;
+  unidad_medida: string;
+  observaciones: string;
+  dias_para_vencimiento: number;
+  esta_vencido: boolean;
+  proximo_a_vencer: boolean;
 }
 
-// ==================== STATS & SUMMARY TYPES ====================
+export interface ServicioPublicoList {
+  id: number;
+  codigo: string;
+  tipo_servicio: string;
+  tipo_servicio_display: string;
+  proveedor_nombre: string;
+  periodo_mes: number;
+  periodo_anio: number;
+  fecha_vencimiento: string;
+  valor: string;
+  estado_pago: string;
+  estado_pago_display: string;
+  esta_vencido: boolean;
+  proximo_a_vencer: boolean;
+}
 
-export interface TesoreriaStats {
-  saldo_total_bancos: number;
-  ingresos_mes: number;
-  egresos_mes: number;
-  pagos_pendientes: number;
-  pagos_vencidos: number;
+export interface ContratoServicio extends AuditFields {
+  id: number;
+  empresa: number;
+  empresa_nombre: string;
+  codigo: string;
+  proveedor: number | null;
+  proveedor_nombre: string | null;
+  proveedor_nit: string | null;
+  tipo_servicio: string;
+  tipo_servicio_display: string;
+  objeto: string;
+  fecha_inicio: string;
+  fecha_fin: string | null;
+  valor_mensual: string;
+  valor_total: string;
+  frecuencia_pago: string;
+  frecuencia_pago_display: string;
+  estado: 'vigente' | 'suspendido' | 'terminado' | 'vencido';
+  estado_display: string;
+  observaciones: string;
+  dias_para_vencimiento: number;
+  contrato_vigente: boolean;
+  contrato_vencido: boolean;
+  proximo_a_vencer: boolean;
+  duracion_dias: number;
+}
+
+export interface ContratoServicioList {
+  id: number;
+  codigo: string;
+  proveedor_nombre: string | null;
+  tipo_servicio: string;
+  tipo_servicio_display: string;
+  fecha_inicio: string;
+  fecha_fin: string | null;
+  valor_mensual: string;
+  valor_total: string;
+  estado: string;
+  estado_display: string;
+  contrato_vigente: boolean;
+  proximo_a_vencer: boolean;
+}
+
+// ==================== STATS & DASHBOARD TYPES ====================
+
+export interface BancoSaldos {
+  total_saldo_actual: string;
+  total_saldo_disponible: string;
+  total_saldo_comprometido: string;
   cuentas_activas: number;
+  bancos: BancoList[];
 }
 
-export interface PresupuestoStats {
-  presupuesto_total: number;
-  ejecutado: number;
-  comprometido: number;
-  disponible: number;
-  porcentaje_ejecucion: number;
-  rubros_sobre_ejecutados: number;
+export interface CuentaPorPagarEstadisticas {
+  total_pendiente: string;
+  total_vencido: string;
+  cantidad_pendientes: number;
+  cantidad_vencidas: number;
+  proximas_a_vencer: number;
 }
 
-export interface ActivosFijosStats {
+export interface CuentaPorCobrarEstadisticas {
+  total_pendiente: string;
+  total_vencido: string;
+  cantidad_pendientes: number;
+  cantidad_vencidas: number;
+  proximas_a_vencer: number;
+}
+
+export interface ResumenEjecucion {
+  total_asignado: string;
+  total_ejecutado: string;
+  total_disponible: string;
+  porcentaje_ejecucion: string;
+  por_area: Array<{
+    area_nombre: string;
+    monto_asignado: string;
+    monto_ejecutado: string;
+    porcentaje: string;
+  }>;
+}
+
+export interface ActivosFijosEstadisticas {
   total_activos: number;
-  valor_adquisicion: number;
-  depreciacion_acumulada: number;
-  valor_libros: number;
-  activos_en_mantenimiento: number;
-  proximas_depreciaciones: number;
+  valor_total_adquisicion: string;
+  depreciacion_total_acumulada: string;
+  valor_total_en_libros: string;
+  por_estado: Record<string, number>;
+  por_categoria: Array<{
+    categoria_nombre: string;
+    cantidad: number;
+    valor_adquisicion: string;
+  }>;
 }
 
-export interface ServiciosGeneralesStats {
-  contratos_activos: number;
-  gastos_mes: number;
-  presupuesto_mensual: number;
-  consumo_energia: number;
-  consumo_agua: number;
-  facturas_pendientes: number;
+export interface FlujoCajaResumen {
+  total_ingresos_proyectados: string;
+  total_ingresos_reales: string;
+  total_egresos_proyectados: string;
+  total_egresos_reales: string;
+  saldo_neto_proyectado: string;
+  saldo_neto_real: string;
+}
+
+// ==================== PAGINATED RESPONSE ====================
+
+export interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
 }

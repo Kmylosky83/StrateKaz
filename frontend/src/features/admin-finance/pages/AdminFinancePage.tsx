@@ -1,13 +1,9 @@
 /**
- * Página Principal: Administración Financiera
+ * Dashboard: Administracion Financiera
  *
- * Dashboard de gestión financiera y administrativa con acceso a:
- * - Tesorería: Cuentas bancarias y flujo de caja
- * - Presupuesto: Control presupuestal
- * - Activos Fijos: Inventario y depreciaciones
- * - Servicios Generales: Gastos operativos
+ * KPIs y acceso a: Tesoreria, Presupuesto, Activos Fijos, Servicios Generales.
+ * Datos reales via hooks conectados al backend.
  */
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Wallet,
@@ -19,123 +15,45 @@ import {
   DollarSign,
   CreditCard,
   AlertTriangle,
-  CheckCircle,
   Clock,
   ArrowUpRight,
   ArrowDownRight,
   BarChart3,
+  Loader2,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { cn } from '@/utils/cn';
+import {
+  useBancoSaldos,
+  useResumenEjecucion,
+  useActivosFijosEstadisticas,
+  useCuentasPorPagarEstadisticas,
+  useCuentasPorPagarPorVencer,
+  useContratosPorVencer,
+  useContratosVigentes,
+  usePagos,
+  useRecaudos,
+} from '../hooks';
+import type { PagoList, RecaudoList } from '../types';
 
-// ==================== MOCK DATA ====================
+// ==================== HELPERS ====================
 
-const mockResumen = {
-  tesoreria: {
-    saldo_total: 245680000,
-    ingresos_mes: 89500000,
-    egresos_mes: 67800000,
-    pagos_pendientes: 12,
-  },
-  presupuesto: {
-    total: 1200000000,
-    ejecutado: 720000000,
-    comprometido: 180000000,
-    disponible: 300000000,
-    porcentaje: 60,
-  },
-  activos: {
-    total_activos: 156,
-    valor_libros: 456780000,
-    en_mantenimiento: 8,
-    proximas_depreciaciones: 45600000,
-  },
-  servicios: {
-    contratos_activos: 24,
-    gastos_mes: 32450000,
-    facturas_pendientes: 5,
-  },
-};
-
-const mockAlertasFinancieras = [
-  {
-    id: 1,
-    tipo: 'warning',
-    titulo: 'Pagos próximos a vencer',
-    descripcion: '5 pagos vencen en los próximos 3 días',
-    modulo: 'tesoreria',
-  },
-  {
-    id: 2,
-    tipo: 'danger',
-    titulo: 'Rubro sobre-ejecutado',
-    descripcion: 'Gastos de viaje al 115% del presupuesto',
-    modulo: 'presupuesto',
-  },
-  {
-    id: 3,
-    tipo: 'info',
-    titulo: 'Depreciación pendiente',
-    descripcion: 'Calcular depreciación del mes de diciembre',
-    modulo: 'activos',
-  },
-  {
-    id: 4,
-    tipo: 'warning',
-    titulo: 'Contrato por vencer',
-    descripcion: 'Contrato de vigilancia vence en 15 días',
-    modulo: 'servicios',
-  },
-];
-
-const mockUltimosMovimientos = [
-  {
-    id: 1,
-    tipo: 'ingreso',
-    concepto: 'Recaudo clientes',
-    valor: 15800000,
-    fecha: '2024-12-28',
-    cuenta: 'Bancolombia 001',
-  },
-  {
-    id: 2,
-    tipo: 'egreso',
-    concepto: 'Pago proveedores',
-    valor: 8500000,
-    fecha: '2024-12-27',
-    cuenta: 'Davivienda 002',
-  },
-  {
-    id: 3,
-    tipo: 'egreso',
-    concepto: 'Nómina quincenal',
-    valor: 23400000,
-    fecha: '2024-12-15',
-    cuenta: 'Bancolombia 001',
-  },
-  {
-    id: 4,
-    tipo: 'ingreso',
-    concepto: 'Venta de activo',
-    valor: 4500000,
-    fecha: '2024-12-10',
-    cuenta: 'BBVA 003',
-  },
-];
-
-// ==================== COMPONENTS ====================
-
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('es-CO', {
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat('es-CO', {
     style: 'currency',
     currency: 'COP',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(value);
-};
+
+/** DRF DecimalField returns string - convert safely */
+const dec = (val: string | number | undefined | null): number =>
+  val != null ? Number(val) || 0 : 0;
+
+// ==================== SUB-COMPONENTS ====================
 
 const ModuloCard = ({
   titulo,
@@ -196,41 +114,30 @@ const ModuloCard = ({
   );
 };
 
-const AlertaCard = ({
-  alerta,
-}: {
-  alerta: { id: number; tipo: string; titulo: string; descripcion: string; modulo: string };
-}) => {
-  const getAlertaIcon = (tipo: string) => {
-    switch (tipo) {
-      case 'danger':
-        return <AlertTriangle className="w-5 h-5 text-danger-600" />;
-      case 'warning':
-        return <Clock className="w-5 h-5 text-warning-600" />;
-      case 'info':
-        return <CheckCircle className="w-5 h-5 text-primary-600" />;
-      default:
-        return <AlertTriangle className="w-5 h-5 text-gray-600" />;
-    }
-  };
+interface AlertaItem {
+  id: string;
+  tipo: 'danger' | 'warning' | 'info';
+  titulo: string;
+  descripcion: string;
+  modulo: string;
+}
 
-  const getAlertaColor = (tipo: string) => {
-    switch (tipo) {
-      case 'danger':
-        return 'border-l-danger-500 bg-danger-50 dark:bg-danger-900/20';
-      case 'warning':
-        return 'border-l-warning-500 bg-warning-50 dark:bg-warning-900/20';
-      case 'info':
-        return 'border-l-primary-500 bg-primary-50 dark:bg-primary-900/20';
-      default:
-        return 'border-l-gray-500 bg-gray-50 dark:bg-gray-800';
-    }
+const AlertaCard = ({ alerta }: { alerta: AlertaItem }) => {
+  const iconMap = {
+    danger: <AlertTriangle className="w-5 h-5 text-danger-600" />,
+    warning: <Clock className="w-5 h-5 text-warning-600" />,
+    info: <Clock className="w-5 h-5 text-primary-600" />,
+  };
+  const colorMap = {
+    danger: 'border-l-danger-500 bg-danger-50 dark:bg-danger-900/20',
+    warning: 'border-l-warning-500 bg-warning-50 dark:bg-warning-900/20',
+    info: 'border-l-primary-500 bg-primary-50 dark:bg-primary-900/20',
   };
 
   return (
-    <div className={cn('p-4 border-l-4 rounded-r-lg', getAlertaColor(alerta.tipo))}>
+    <div className={cn('p-4 border-l-4 rounded-r-lg', colorMap[alerta.tipo])}>
       <div className="flex items-start gap-3">
-        {getAlertaIcon(alerta.tipo)}
+        {iconMap[alerta.tipo]}
         <div className="flex-1">
           <h4 className="font-medium text-gray-900 dark:text-white">{alerta.titulo}</h4>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{alerta.descripcion}</p>
@@ -247,15 +154,119 @@ const AlertaCard = ({
 
 export default function AdminFinancePage() {
   const navigate = useNavigate();
-  const resumen = mockResumen;
-  const alertas = mockAlertasFinancieras;
-  const movimientos = mockUltimosMovimientos;
+
+  // --- Data hooks ---
+  const { data: saldos, isLoading: loadingSaldos } = useBancoSaldos();
+  const { data: resumenEjec, isLoading: loadingEjec } = useResumenEjecucion();
+  const { data: activosStats, isLoading: loadingActivos } = useActivosFijosEstadisticas();
+  const { data: cxpStats } = useCuentasPorPagarEstadisticas();
+  const { data: cxpPorVencer } = useCuentasPorPagarPorVencer();
+  const { data: contratosVigentes } = useContratosVigentes();
+  const { data: contratosPorVencer } = useContratosPorVencer();
+  const { data: pagosData } = usePagos({ page_size: 3, ordering: '-fecha_pago' });
+  const { data: recaudosData } = useRecaudos({ page_size: 3, ordering: '-fecha_recaudo' });
+
+  const isLoading = loadingSaldos || loadingEjec || loadingActivos;
+
+  // --- Derived values (DRF returns strings for DecimalField) ---
+  const saldoTotal = dec(saldos?.total_saldo_actual);
+  const pctEjecucion = dec(resumenEjec?.porcentaje_ejecucion);
+  const totalActivos = activosStats?.total_activos ?? 0;
+  const valorLibros = dec(activosStats?.valor_total_en_libros);
+  const porEstado = activosStats?.por_estado ?? {};
+  const enMantenimiento = porEstado['en_mantenimiento'] ?? 0;
+
+  const numContratosVigentes =
+    contratosVigentes?.count ??
+    (Array.isArray(contratosVigentes) ? (contratosVigentes as unknown[]).length : 0);
+
+  // --- Build alerts from real data ---
+  const alertas: AlertaItem[] = [];
+  if (cxpStats && dec(cxpStats.cantidad_vencidas) > 0) {
+    alertas.push({
+      id: 'cxp-vencidas',
+      tipo: 'danger',
+      titulo: 'Cuentas por pagar vencidas',
+      descripcion: `${cxpStats.cantidad_vencidas} cuentas vencidas por ${formatCurrency(dec(cxpStats.total_vencido))}`,
+      modulo: 'Tesoreria',
+    });
+  }
+  if (cxpPorVencer) {
+    const proximas = Array.isArray(cxpPorVencer) ? cxpPorVencer.length : (cxpPorVencer.count ?? 0);
+    if (proximas > 0) {
+      alertas.push({
+        id: 'cxp-por-vencer',
+        tipo: 'warning',
+        titulo: 'Pagos proximos a vencer',
+        descripcion: `${proximas} pagos proximos a vencimiento`,
+        modulo: 'Tesoreria',
+      });
+    }
+  }
+  if (contratosPorVencer) {
+    const ctsPorVencer = Array.isArray(contratosPorVencer)
+      ? contratosPorVencer.length
+      : (contratosPorVencer.count ?? 0);
+    if (ctsPorVencer > 0) {
+      alertas.push({
+        id: 'contratos-por-vencer',
+        tipo: 'warning',
+        titulo: 'Contratos por vencer',
+        descripcion: `${ctsPorVencer} contratos proximos a vencimiento`,
+        modulo: 'Servicios',
+      });
+    }
+  }
+  if (enMantenimiento > 0) {
+    alertas.push({
+      id: 'activos-mantenimiento',
+      tipo: 'info',
+      titulo: 'Activos en mantenimiento',
+      descripcion: `${enMantenimiento} activos actualmente en mantenimiento`,
+      modulo: 'Activos',
+    });
+  }
+
+  // --- Recent movements: merge pagos + recaudos ---
+  const pagos = (Array.isArray(pagosData) ? pagosData : (pagosData?.results ?? [])) as PagoList[];
+  const recaudos = (
+    Array.isArray(recaudosData) ? recaudosData : (recaudosData?.results ?? [])
+  ) as RecaudoList[];
+
+  const movimientos = [
+    ...pagos.map((p) => ({
+      id: `pago-${p.id}`,
+      tipo: 'egreso' as const,
+      concepto: p.cuenta_concepto || p.proveedor_nombre || 'Pago',
+      valor: dec(p.monto),
+      fecha: p.fecha_pago,
+      referencia: p.referencia,
+    })),
+    ...recaudos.map((r) => ({
+      id: `recaudo-${r.id}`,
+      tipo: 'ingreso' as const,
+      concepto: r.cuenta_concepto || r.cliente_nombre || 'Recaudo',
+      valor: dec(r.monto),
+      fecha: r.fecha_recaudo,
+      referencia: r.referencia,
+    })),
+  ]
+    .sort((a, b) => b.fecha.localeCompare(a.fecha))
+    .slice(0, 5);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Administración Financiera"
-        description="Gestión integral de tesorería, presupuesto, activos fijos y servicios generales"
+        title="Administracion Financiera"
+        description="Gestion integral de tesoreria, presupuesto, activos fijos y servicios generales"
       />
 
       {/* KPI Cards Principales */}
@@ -265,17 +276,16 @@ export default function AdminFinancePage() {
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Saldo en Bancos</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                {formatCurrency(resumen.tesoreria.saldo_total)}
+                {formatCurrency(saldoTotal)}
               </p>
             </div>
             <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
               <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" />
             </div>
           </div>
-          <div className="flex items-center gap-2 mt-3">
-            <TrendingUp className="w-4 h-4 text-success-600" />
-            <span className="text-sm text-success-600">+12.5% vs mes anterior</span>
-          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
+            {saldos?.cuentas_activas ?? 0} cuentas activas
+          </p>
         </Card>
 
         <Card variant="bordered" padding="md">
@@ -283,7 +293,7 @@ export default function AdminFinancePage() {
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Presupuesto Ejecutado</p>
               <p className="text-2xl font-bold text-primary-600 dark:text-primary-400 mt-1">
-                {resumen.presupuesto.porcentaje}%
+                {pctEjecucion.toFixed(1)}%
               </p>
             </div>
             <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
@@ -292,8 +302,8 @@ export default function AdminFinancePage() {
           </div>
           <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full mt-3">
             <div
-              className="h-full bg-primary-600 rounded-full"
-              style={{ width: `${resumen.presupuesto.porcentaje}%` }}
+              className="h-full bg-primary-600 rounded-full transition-all"
+              style={{ width: `${Math.min(pctEjecucion, 100)}%` }}
             />
           </div>
         </Card>
@@ -303,7 +313,7 @@ export default function AdminFinancePage() {
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Valor en Activos</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                {formatCurrency(resumen.activos.valor_libros)}
+                {formatCurrency(valorLibros)}
               </p>
             </div>
             <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
@@ -311,16 +321,16 @@ export default function AdminFinancePage() {
             </div>
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
-            {resumen.activos.total_activos} activos registrados
+            {totalActivos} activos registrados
           </p>
         </Card>
 
         <Card variant="bordered" padding="md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Gastos Operativos</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Contratos Activos</p>
               <p className="text-2xl font-bold text-orange-600 dark:text-orange-400 mt-1">
-                {formatCurrency(resumen.servicios.gastos_mes)}
+                {numContratosVigentes}
               </p>
             </div>
             <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
@@ -328,21 +338,27 @@ export default function AdminFinancePage() {
             </div>
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
-            {resumen.servicios.contratos_activos} contratos activos
+            {cxpStats ? cxpStats.cantidad_pendientes : 0} pagos pendientes
           </p>
         </Card>
       </div>
 
-      {/* Módulos Grid */}
+      {/* Modulos Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <ModuloCard
-          titulo="Tesorería"
+          titulo="Tesoreria"
           icono={<Wallet className="w-6 h-6 text-white" />}
           color="bg-green-600"
           stats={[
-            { label: 'Ingresos mes', value: formatCurrency(resumen.tesoreria.ingresos_mes), trend: 'up' },
-            { label: 'Egresos mes', value: formatCurrency(resumen.tesoreria.egresos_mes), trend: 'down' },
-            { label: 'Pagos pendientes', value: resumen.tesoreria.pagos_pendientes },
+            {
+              label: 'Saldo disponible',
+              value: formatCurrency(dec(saldos?.total_saldo_disponible)),
+            },
+            { label: 'Pagos pendientes', value: cxpStats?.cantidad_pendientes ?? 0 },
+            {
+              label: 'Total por pagar',
+              value: formatCurrency(dec(cxpStats?.total_pendiente)),
+            },
           ]}
           ruta="/finanzas/tesoreria"
         />
@@ -352,9 +368,18 @@ export default function AdminFinancePage() {
           icono={<BarChart3 className="w-6 h-6 text-white" />}
           color="bg-primary-600"
           stats={[
-            { label: 'Total asignado', value: formatCurrency(resumen.presupuesto.total) },
-            { label: 'Ejecutado', value: formatCurrency(resumen.presupuesto.ejecutado) },
-            { label: 'Disponible', value: formatCurrency(resumen.presupuesto.disponible) },
+            {
+              label: 'Total asignado',
+              value: formatCurrency(dec(resumenEjec?.total_asignado)),
+            },
+            {
+              label: 'Ejecutado',
+              value: formatCurrency(dec(resumenEjec?.total_ejecutado)),
+            },
+            {
+              label: 'Disponible',
+              value: formatCurrency(dec(resumenEjec?.total_disponible)),
+            },
           ]}
           ruta="/finanzas/presupuesto"
         />
@@ -364,9 +389,12 @@ export default function AdminFinancePage() {
           icono={<Building2 className="w-6 h-6 text-white" />}
           color="bg-blue-600"
           stats={[
-            { label: 'Total activos', value: resumen.activos.total_activos },
-            { label: 'En mantenimiento', value: resumen.activos.en_mantenimiento },
-            { label: 'Depreciación pend.', value: formatCurrency(resumen.activos.proximas_depreciaciones) },
+            { label: 'Total activos', value: totalActivos },
+            { label: 'En mantenimiento', value: enMantenimiento },
+            {
+              label: 'Depreciacion acum.',
+              value: formatCurrency(dec(activosStats?.depreciacion_total_acumulada)),
+            },
           ]}
           ruta="/finanzas/activos-fijos"
         />
@@ -376,9 +404,15 @@ export default function AdminFinancePage() {
           icono={<Wrench className="w-6 h-6 text-white" />}
           color="bg-orange-600"
           stats={[
-            { label: 'Contratos activos', value: resumen.servicios.contratos_activos },
-            { label: 'Gastos del mes', value: formatCurrency(resumen.servicios.gastos_mes) },
-            { label: 'Facturas pend.', value: resumen.servicios.facturas_pendientes },
+            { label: 'Contratos vigentes', value: numContratosVigentes },
+            {
+              label: 'Vencidas por pagar',
+              value: cxpStats?.cantidad_vencidas ?? 0,
+            },
+            {
+              label: 'Monto vencido',
+              value: formatCurrency(dec(cxpStats?.total_vencido)),
+            },
           ]}
           ruta="/finanzas/servicios-generales"
         />
@@ -392,66 +426,78 @@ export default function AdminFinancePage() {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
               Alertas Financieras
             </h3>
-            <Badge variant="warning">{alertas.length}</Badge>
+            {alertas.length > 0 && <Badge variant="warning">{alertas.length}</Badge>}
           </div>
-          <div className="space-y-3">
-            {alertas.map((alerta) => (
-              <AlertaCard key={alerta.id} alerta={alerta} />
-            ))}
-          </div>
+          {alertas.length > 0 ? (
+            <div className="space-y-3">
+              {alertas.map((alerta) => (
+                <AlertaCard key={alerta.id} alerta={alerta} />
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500 dark:text-gray-400 py-4 text-center">
+              No hay alertas pendientes
+            </p>
+          )}
         </Card>
 
-        {/* Últimos Movimientos */}
+        {/* Ultimos Movimientos */}
         <Card variant="bordered" padding="md">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Últimos Movimientos
+              Ultimos Movimientos
             </h3>
             <Button variant="ghost" size="sm" onClick={() => navigate('/finanzas/tesoreria')}>
               Ver todos
             </Button>
           </div>
-          <div className="space-y-4">
-            {movimientos.map((mov) => (
-              <div
-                key={mov.id}
-                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={cn(
-                      'w-10 h-10 rounded-lg flex items-center justify-center',
-                      mov.tipo === 'ingreso'
-                        ? 'bg-success-100 dark:bg-success-900/30'
-                        : 'bg-danger-100 dark:bg-danger-900/30'
-                    )}
-                  >
-                    {mov.tipo === 'ingreso' ? (
-                      <ArrowDownRight className="w-5 h-5 text-success-600" />
-                    ) : (
-                      <ArrowUpRight className="w-5 h-5 text-danger-600" />
-                    )}
+          {movimientos.length > 0 ? (
+            <div className="space-y-4">
+              {movimientos.map((mov) => (
+                <div
+                  key={mov.id}
+                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={cn(
+                        'w-10 h-10 rounded-lg flex items-center justify-center',
+                        mov.tipo === 'ingreso'
+                          ? 'bg-success-100 dark:bg-success-900/30'
+                          : 'bg-danger-100 dark:bg-danger-900/30'
+                      )}
+                    >
+                      {mov.tipo === 'ingreso' ? (
+                        <ArrowDownRight className="w-5 h-5 text-success-600" />
+                      ) : (
+                        <ArrowUpRight className="w-5 h-5 text-danger-600" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">{mov.concepto}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{mov.referencia}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white">{mov.concepto}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{mov.cuenta}</p>
+                  <div className="text-right">
+                    <p
+                      className={cn(
+                        'font-semibold',
+                        mov.tipo === 'ingreso' ? 'text-success-600' : 'text-danger-600'
+                      )}
+                    >
+                      {mov.tipo === 'ingreso' ? '+' : '-'}
+                      {formatCurrency(mov.valor)}
+                    </p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{mov.fecha}</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p
-                    className={cn(
-                      'font-semibold',
-                      mov.tipo === 'ingreso' ? 'text-success-600' : 'text-danger-600'
-                    )}
-                  >
-                    {mov.tipo === 'ingreso' ? '+' : '-'}
-                    {formatCurrency(mov.valor)}
-                  </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{mov.fecha}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500 dark:text-gray-400 py-4 text-center">
+              No hay movimientos recientes
+            </p>
+          )}
         </Card>
       </div>
     </div>

@@ -1,10 +1,8 @@
 /**
- * Página: Servicios Generales
+ * Pagina: Servicios Generales
  *
- * Control de servicios y gastos operativos:
- * - Contratos de Servicios
- * - Gastos Operativos
- * - Consumos de Servicios Públicos
+ * Tabs: Contratos, Mantenimientos Locativos, Servicios Publicos
+ * Conectada a hooks reales del backend.
  */
 import { useState } from 'react';
 import {
@@ -12,20 +10,12 @@ import {
   FileText,
   Zap,
   Plus,
-  Filter,
-  Download,
   Eye,
   Edit,
-  CheckCircle,
   Clock,
   AlertTriangle,
   DollarSign,
-  Calendar,
-  TrendingUp,
-  Droplet,
-  Flame,
-  Wifi,
-  Building,
+  Loader2,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
 import { Tabs } from '@/components/common/Tabs';
@@ -33,68 +23,89 @@ import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { cn } from '@/utils/cn';
+import {
+  useContratosServicios,
+  useContratosVigentes,
+  useContratosPorVencer,
+  useMantenimientosLocativos,
+  useServiciosPublicos,
+} from '../hooks';
+import type {
+  ContratoServicioList,
+  MantenimientoLocativoList,
+  ServicioPublicoList,
+} from '../types';
 
-// ==================== MOCK DATA ====================
+// ==================== HELPERS ====================
 
-const mockContratos = [
-  { id: 1, codigo: 'CT-001', nombre: 'Vigilancia Sede Principal', proveedor: 'Seguridad ABC', tipo: 'vigilancia', valor_mensual: 8500000, fecha_inicio: '2024-01-01', fecha_fin: '2024-12-31', estado: 'activo' },
-  { id: 2, codigo: 'CT-002', nombre: 'Arrendamiento Bodega A', proveedor: 'Inmobiliaria XYZ', tipo: 'arrendamiento', valor_mensual: 12000000, fecha_inicio: '2024-03-01', fecha_fin: '2025-02-28', estado: 'activo' },
-  { id: 3, codigo: 'CT-003', nombre: 'Aseo y Cafetería', proveedor: 'Servicios Integrales', tipo: 'aseo', valor_mensual: 4500000, fecha_inicio: '2024-06-01', fecha_fin: '2025-05-31', estado: 'activo' },
-  { id: 4, codigo: 'CT-004', nombre: 'Internet Fibra Óptica', proveedor: 'Claro Colombia', tipo: 'comunicaciones', valor_mensual: 850000, fecha_inicio: '2024-01-15', fecha_fin: '2025-01-14', estado: 'activo' },
-];
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+  }).format(value);
 
-const mockGastos = [
-  { id: 1, numero_factura: 'FV-12345', fecha: '2024-12-28', proveedor: 'EPM', categoria: 'servicios_publicos', concepto: 'Energía dic 2024', valor: 4800000, estado: 'registrado' },
-  { id: 2, numero_factura: 'FV-12346', fecha: '2024-12-27', proveedor: 'Papelería Nacional', categoria: 'papeleria', concepto: 'Insumos oficina', valor: 650000, estado: 'aprobado' },
-  { id: 3, numero_factura: 'FV-12347', fecha: '2024-12-26', proveedor: 'Transporte Express', categoria: 'transporte', concepto: 'Mensajería mes', valor: 890000, estado: 'pagado' },
-  { id: 4, numero_factura: 'FV-12348', fecha: '2024-12-25', proveedor: 'Aguas de Cartagena', categoria: 'servicios_publicos', concepto: 'Agua dic 2024', valor: 1200000, estado: 'pendiente' },
-];
+const dec = (val: string | number | undefined | null): number =>
+  val != null ? Number(val) || 0 : 0;
 
-const mockConsumos = [
-  { id: 1, tipo: 'energia', periodo: '2024-12', lectura_anterior: 45000, lectura_actual: 48500, consumo: 3500, unidad: 'kWh', valor: 4800000, estado: 'pendiente' },
-  { id: 2, tipo: 'agua', periodo: '2024-12', lectura_anterior: 1200, lectura_actual: 1350, consumo: 150, unidad: 'm³', valor: 1200000, estado: 'pagado' },
-  { id: 3, tipo: 'gas', periodo: '2024-12', lectura_anterior: 890, lectura_actual: 920, consumo: 30, unidad: 'm³', valor: 450000, estado: 'pendiente' },
-  { id: 4, tipo: 'internet', periodo: '2024-12', lectura_anterior: 0, lectura_actual: 0, consumo: 0, unidad: 'GB', valor: 850000, estado: 'pagado' },
-];
-
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(value);
+const extractResults = <T,>(data: unknown): T[] => {
+  if (!data) return [];
+  if (Array.isArray(data)) return data as T[];
+  return ((data as { results?: T[] }).results ?? []) as T[];
 };
 
-const getTipoContratoIcon = (tipo: string) => {
-  switch (tipo) {
-    case 'vigilancia': return <Building className="w-5 h-5" />;
-    case 'arrendamiento': return <Building className="w-5 h-5" />;
-    case 'aseo': return <Wrench className="w-5 h-5" />;
-    case 'comunicaciones': return <Wifi className="w-5 h-5" />;
-    default: return <FileText className="w-5 h-5" />;
-  }
-};
-
-const getTipoConsumoIcon = (tipo: string) => {
-  switch (tipo) {
-    case 'energia': return <Zap className="w-5 h-5 text-yellow-500" />;
-    case 'agua': return <Droplet className="w-5 h-5 text-blue-500" />;
-    case 'gas': return <Flame className="w-5 h-5 text-orange-500" />;
-    case 'internet': return <Wifi className="w-5 h-5 text-purple-500" />;
-    default: return <Zap className="w-5 h-5" />;
-  }
+const getEstadoBadge = (estado: string) => {
+  const map: Record<
+    string,
+    { variant: 'success' | 'warning' | 'danger' | 'primary' | 'gray'; label: string }
+  > = {
+    vigente: { variant: 'success', label: 'Vigente' },
+    suspendido: { variant: 'warning', label: 'Suspendido' },
+    terminado: { variant: 'gray', label: 'Terminado' },
+    vencido: { variant: 'danger', label: 'Vencido' },
+    solicitado: { variant: 'primary', label: 'Solicitado' },
+    programado: { variant: 'primary', label: 'Programado' },
+    en_ejecucion: { variant: 'warning', label: 'En ejecucion' },
+    completado: { variant: 'success', label: 'Completado' },
+    cancelado: { variant: 'gray', label: 'Cancelado' },
+    pendiente: { variant: 'warning', label: 'Pendiente' },
+    pagado: { variant: 'success', label: 'Pagado' },
+  };
+  return map[estado] ?? { variant: 'gray' as const, label: estado };
 };
 
 // ==================== SECTIONS ====================
 
 const ContratosSection = () => {
-  const contratos = mockContratos;
-  const totalMensual = contratos.reduce((s, c) => s + c.valor_mensual, 0);
+  const { data: contratosData, isLoading } = useContratosServicios();
+  const { data: vigentesData } = useContratosVigentes();
+  const { data: porVencerData } = useContratosPorVencer();
+
+  const contratos = extractResults<ContratoServicioList>(contratosData);
+  const numVigentes = vigentesData?.count ?? extractResults(vigentesData).length;
+  const numPorVencer = porVencerData?.count ?? extractResults(porVencerData).length;
+
+  const totalMensual = contratos
+    .filter((c) => c.contrato_vigente)
+    .reduce((s, c) => s + dec(c.valor_mensual), 0);
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
+      {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card variant="bordered" padding="md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Contratos Activos</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{contratos.filter(c => c.estado === 'activo').length}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Contratos Vigentes</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{numVigentes}</p>
             </div>
             <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
               <FileText className="w-6 h-6 text-primary-600" />
@@ -106,7 +117,9 @@ const ContratosSection = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Gasto Mensual</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{formatCurrency(totalMensual)}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                {formatCurrency(totalMensual)}
+              </p>
             </div>
             <div className="w-12 h-12 bg-success-100 rounded-lg flex items-center justify-center">
               <DollarSign className="w-6 h-6 text-success-600" />
@@ -118,7 +131,7 @@ const ContratosSection = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Por Vencer</p>
-              <p className="text-2xl font-bold text-warning-600 mt-1">2</p>
+              <p className="text-2xl font-bold text-warning-600 mt-1">{numPorVencer}</p>
             </div>
             <div className="w-12 h-12 bg-warning-100 rounded-lg flex items-center justify-center">
               <Clock className="w-6 h-6 text-warning-600" />
@@ -129,139 +142,269 @@ const ContratosSection = () => {
         <Card variant="bordered" padding="md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Gasto Anual Est.</p>
-              <p className="text-2xl font-bold text-primary-600 mt-1">{formatCurrency(totalMensual * 12)}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Total Contratos</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                {contratos.length}
+              </p>
             </div>
-            <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-primary-600" />
+            <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
+              <FileText className="w-6 h-6 text-gray-600" />
             </div>
           </div>
         </Card>
       </div>
 
+      {/* Actions */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Contratos de Servicios</h3>
-        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>Nuevo Contrato</Button>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          Contratos de Servicios
+        </h3>
+        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
+          Nuevo Contrato
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {contratos.map((contrato) => (
-          <Card key={contrato.id} variant="bordered" padding="md">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
-                  {getTipoContratoIcon(contrato.tipo)}
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-900 dark:text-white">{contrato.nombre}</h4>
-                  <p className="text-sm text-gray-500">{contrato.proveedor}</p>
-                </div>
-              </div>
-              <Badge variant={contrato.estado === 'activo' ? 'success' : 'warning'} size="sm">
-                {contrato.estado.charAt(0).toUpperCase() + contrato.estado.slice(1)}
-              </Badge>
-            </div>
-
-            <div className="space-y-2 mb-4">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Valor mensual</span>
-                <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(contrato.valor_mensual)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Vigencia</span>
-                <span className="text-gray-900 dark:text-white">{contrato.fecha_inicio} - {contrato.fecha_fin}</span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <Button variant="ghost" size="sm" leftIcon={<Eye className="w-4 h-4" />}>Ver</Button>
-              <Button variant="ghost" size="sm" leftIcon={<Edit className="w-4 h-4" />}>Editar</Button>
-              <Button variant="ghost" size="sm" leftIcon={<Calendar className="w-4 h-4" />}>Renovar</Button>
-            </div>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-const GastosSection = () => {
-  const gastos = mockGastos;
-  const totalGastos = gastos.reduce((s, g) => s + g.valor, 0);
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Gastos Operativos</h3>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>Filtros</Button>
-          <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>Exportar</Button>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>Nuevo Gasto</Button>
-        </div>
-      </div>
-
-      <Card variant="bordered" padding="none">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Factura</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Proveedor</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Concepto</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoría</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Valor</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {gastos.map((gasto) => (
-                <tr key={gasto.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{gasto.numero_factura}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{gasto.fecha}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{gasto.proveedor}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{gasto.concepto}</td>
-                  <td className="px-6 py-4">
-                    <Badge variant="gray" size="sm">{gasto.categoria.replace('_', ' ').charAt(0).toUpperCase() + gasto.categoria.slice(1).replace('_', ' ')}</Badge>
-                  </td>
-                  <td className="px-6 py-4 text-sm font-medium text-right text-gray-900 dark:text-white">{formatCurrency(gasto.valor)}</td>
-                  <td className="px-6 py-4">
-                    <Badge
-                      variant={gasto.estado === 'pagado' ? 'success' : gasto.estado === 'aprobado' ? 'primary' : gasto.estado === 'registrado' ? 'warning' : 'gray'}
-                      size="sm"
-                    >
-                      {gasto.estado.charAt(0).toUpperCase() + gasto.estado.slice(1)}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button variant="ghost" size="sm"><Eye className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="sm"><CheckCircle className="w-4 h-4 text-success-600" /></Button>
-                    </div>
-                  </td>
+      {contratos.length > 0 ? (
+        <Card variant="bordered" padding="none">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Codigo
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Proveedor
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Tipo
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Vigencia
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    Mensual
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    Total
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Estado
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    Acciones
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {contratos.map((c) => {
+                  const badge = getEstadoBadge(c.estado);
+                  return (
+                    <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                        {c.codigo}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                        {c.proveedor_nombre ?? '-'}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                        {c.tipo_servicio_display}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                        <div className="flex items-center gap-1">
+                          {c.fecha_inicio} - {c.fecha_fin ?? 'Indefinido'}
+                          {c.proximo_a_vencer && (
+                            <AlertTriangle className="w-4 h-4 text-warning-600" />
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm font-medium text-right">
+                        {formatCurrency(dec(c.valor_mensual))}
+                      </td>
+                      <td className="px-6 py-4 text-sm font-medium text-right">
+                        {formatCurrency(dec(c.valor_total))}
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge variant={badge.variant} size="sm">
+                          {badge.label}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button variant="ghost" size="sm">
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      ) : (
+        <Card variant="bordered" padding="lg">
+          <p className="text-center text-gray-500 dark:text-gray-400 py-8">
+            No hay contratos registrados
+          </p>
+        </Card>
+      )}
     </div>
   );
 };
 
-const ConsumosSection = () => {
-  const consumos = mockConsumos;
-  const totalConsumos = consumos.reduce((s, c) => s + c.valor, 0);
+const MantenimientosLocativosSection = () => {
+  const { data: mantData, isLoading } = useMantenimientosLocativos();
+  const mantenimientos = extractResults<MantenimientoLocativoList>(mantData);
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          Mantenimientos Locativos
+        </h3>
+        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
+          Nueva Solicitud
+        </Button>
+      </div>
+
+      {mantenimientos.length > 0 ? (
+        <Card variant="bordered" padding="none">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Codigo
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Tipo
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Ubicacion
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Fecha Solicitud
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Programada
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Responsable
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    Costo Est.
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    Costo Real
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Estado
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {mantenimientos.map((m) => {
+                  const badge = getEstadoBadge(m.estado);
+                  return (
+                    <tr key={m.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                        {m.codigo}
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge
+                          variant={
+                            m.tipo === 'preventivo'
+                              ? 'primary'
+                              : m.tipo === 'correctivo'
+                                ? 'warning'
+                                : 'info'
+                          }
+                          size="sm"
+                        >
+                          {m.tipo_display}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                        {m.ubicacion}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                        {m.fecha_solicitud}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                        {m.fecha_programada ?? '-'}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                        {m.responsable_nombre}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-right">
+                        {formatCurrency(dec(m.costo_estimado))}
+                      </td>
+                      <td className="px-6 py-4 text-sm font-medium text-right">
+                        {m.costo_real ? formatCurrency(dec(m.costo_real)) : '-'}
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge variant={badge.variant} size="sm">
+                          {badge.label}
+                        </Badge>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      ) : (
+        <Card variant="bordered" padding="lg">
+          <p className="text-center text-gray-500 dark:text-gray-400 py-8">
+            No hay mantenimientos locativos
+          </p>
+        </Card>
+      )}
+    </div>
+  );
+};
+
+const ServiciosPublicosSection = () => {
+  const { data: spData, isLoading } = useServiciosPublicos();
+  const servicios = extractResults<ServicioPublicoList>(spData);
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+      </div>
+    );
+  }
+
+  const totalValor = servicios.reduce((s, sp) => s + dec(sp.valor), 0);
+  const pendientes = servicios.filter((s) => s.estado_pago === 'pendiente').length;
+  const vencidos = servicios.filter((s) => s.esta_vencido).length;
+
+  return (
+    <div className="space-y-6">
+      {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card variant="bordered" padding="md">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Total Servicios</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{formatCurrency(totalConsumos)}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                {formatCurrency(totalValor)}
+              </p>
             </div>
             <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
               <Zap className="w-6 h-6 text-primary-600" />
@@ -269,66 +412,130 @@ const ConsumosSection = () => {
           </div>
         </Card>
 
-        {consumos.slice(0, 3).map((consumo) => (
-          <Card key={consumo.id} variant="bordered" padding="md">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 capitalize">{consumo.tipo}</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white mt-1">{consumo.consumo} {consumo.unidad}</p>
-              </div>
-              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                {getTipoConsumoIcon(consumo.tipo)}
-              </div>
+        <Card variant="bordered" padding="md">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Registrados</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                {servicios.length}
+              </p>
             </div>
-            <p className="text-sm text-gray-600 mt-2">{formatCurrency(consumo.valor)}</p>
-          </Card>
-        ))}
+            <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
+              <FileText className="w-6 h-6 text-primary-600" />
+            </div>
+          </div>
+        </Card>
+
+        <Card variant="bordered" padding="md">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Pendientes</p>
+              <p className="text-2xl font-bold text-warning-600 mt-1">{pendientes}</p>
+            </div>
+            <div className="w-12 h-12 bg-warning-100 rounded-lg flex items-center justify-center">
+              <Clock className="w-6 h-6 text-warning-600" />
+            </div>
+          </div>
+        </Card>
+
+        <Card variant="bordered" padding="md">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Vencidos</p>
+              <p className="text-2xl font-bold text-danger-600 mt-1">{vencidos}</p>
+            </div>
+            <div className="w-12 h-12 bg-danger-100 rounded-lg flex items-center justify-center">
+              <AlertTriangle className="w-6 h-6 text-danger-600" />
+            </div>
+          </div>
+        </Card>
       </div>
 
+      {/* Actions */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Consumos de Servicios Públicos</h3>
-        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>Registrar Consumo</Button>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Servicios Publicos</h3>
+        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
+          Registrar Servicio
+        </Button>
       </div>
 
-      <Card variant="bordered" padding="none">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Servicio</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Periodo</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Lectura Ant.</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Lectura Act.</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Consumo</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Valor</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {consumos.map((consumo) => (
-                <tr key={consumo.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      {getTipoConsumoIcon(consumo.tipo)}
-                      <span className="font-medium text-gray-900 dark:text-white capitalize">{consumo.tipo}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{consumo.periodo}</td>
-                  <td className="px-6 py-4 text-sm text-right text-gray-600">{consumo.lectura_anterior.toLocaleString()}</td>
-                  <td className="px-6 py-4 text-sm text-right text-gray-600">{consumo.lectura_actual.toLocaleString()}</td>
-                  <td className="px-6 py-4 text-sm font-medium text-right text-gray-900 dark:text-white">{consumo.consumo.toLocaleString()} {consumo.unidad}</td>
-                  <td className="px-6 py-4 text-sm font-medium text-right text-gray-900 dark:text-white">{formatCurrency(consumo.valor)}</td>
-                  <td className="px-6 py-4">
-                    <Badge variant={consumo.estado === 'pagado' ? 'success' : consumo.estado === 'pendiente' ? 'warning' : 'danger'} size="sm">
-                      {consumo.estado.charAt(0).toUpperCase() + consumo.estado.slice(1)}
-                    </Badge>
-                  </td>
+      {servicios.length > 0 ? (
+        <Card variant="bordered" padding="none">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Codigo
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Tipo
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Proveedor
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Periodo
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Vencimiento
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    Valor
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Estado
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {servicios.map((sp) => {
+                  const badge = getEstadoBadge(sp.estado_pago);
+                  return (
+                    <tr key={sp.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                        {sp.codigo}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                        {sp.tipo_servicio_display}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                        {sp.proveedor_nombre}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                        {sp.periodo_mes}/{sp.periodo_anio}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                        <div className="flex items-center gap-1">
+                          {sp.fecha_vencimiento}
+                          {sp.esta_vencido && <AlertTriangle className="w-4 h-4 text-danger-600" />}
+                          {sp.proximo_a_vencer && !sp.esta_vencido && (
+                            <Clock className="w-4 h-4 text-warning-600" />
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm font-medium text-right text-gray-900 dark:text-white">
+                        {formatCurrency(dec(sp.valor))}
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge variant={badge.variant} size="sm">
+                          {badge.label}
+                        </Badge>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      ) : (
+        <Card variant="bordered" padding="lg">
+          <p className="text-center text-gray-500 dark:text-gray-400 py-8">
+            No hay servicios publicos registrados
+          </p>
+        </Card>
+      )}
     </div>
   );
 };
@@ -340,18 +547,21 @@ export default function ServiciosGeneralesPage() {
 
   const tabs = [
     { id: 'contratos', label: 'Contratos', icon: <FileText className="w-4 h-4" /> },
-    { id: 'gastos', label: 'Gastos Operativos', icon: <DollarSign className="w-4 h-4" /> },
-    { id: 'consumos', label: 'Servicios Públicos', icon: <Zap className="w-4 h-4" /> },
+    { id: 'mantenimientos', label: 'Mantenimientos', icon: <Wrench className="w-4 h-4" /> },
+    { id: 'servicios', label: 'Servicios Publicos', icon: <Zap className="w-4 h-4" /> },
   ];
 
   return (
     <div className="space-y-8">
-      <PageHeader title="Servicios Generales" description="Gestión de contratos, gastos operativos y consumos de servicios públicos" />
+      <PageHeader
+        title="Servicios Generales"
+        description="Gestion de contratos, mantenimientos locativos y servicios publicos"
+      />
       <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} variant="pills" />
       <div className="mt-6">
         {activeTab === 'contratos' && <ContratosSection />}
-        {activeTab === 'gastos' && <GastosSection />}
-        {activeTab === 'consumos' && <ConsumosSection />}
+        {activeTab === 'mantenimientos' && <MantenimientosLocativosSection />}
+        {activeTab === 'servicios' && <ServiciosPublicosSection />}
       </div>
     </div>
   );

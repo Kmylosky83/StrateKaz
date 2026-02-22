@@ -1,230 +1,435 @@
 /**
- * Hooks para Admin Finance
+ * Hooks para Admin Finance - Alineados con backend real
+ * Usan DRF paginated responses: Array.isArray(data) ? data : (data?.results ?? [])
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  cuentasBancariasApi,
-  movimientosBancariosApi,
+  bancosApi,
+  cuentasPorPagarApi,
+  cuentasPorCobrarApi,
   flujoCajaApi,
-  programacionPagosApi,
-  cajasChicasApi,
-  presupuestosApi,
+  pagosApi,
+  recaudosApi,
+  centrosCostoApi,
   rubrosApi,
+  presupuestosApi,
+  aprobacionesApi,
   ejecucionesApi,
-  cdpCrpApi,
-  trasladosApi,
-  activosFijosApi,
   categoriasActivosApi,
-  ubicacionesActivosApi,
+  activosFijosApi,
+  hojasVidaApi,
+  programasMantenimientoApi,
   depreciacionesApi,
-  mantenimientosActivosApi,
+  bajasApi,
+  mantenimientosLocativosApi,
+  serviciosPublicosApi,
   contratosServiciosApi,
-  gastosOperativosApi,
-  consumosServiciosApi,
 } from '../api';
 
-// ==================== TESORERÍA HOOKS ====================
+// ==================== TESORERIA HOOKS ====================
 
-export const useCuentasBancarias = () => {
-  return useQuery({
-    queryKey: ['cuentas-bancarias'],
-    queryFn: () => cuentasBancariasApi.getAll(),
+export const useBancos = (params?: Record<string, unknown>) =>
+  useQuery({
+    queryKey: ['admin-finance', 'bancos', params],
+    queryFn: () => bancosApi.getAll(params).then((r) => r.data),
   });
-};
 
-export const useCuentaBancaria = (id: number) => {
-  return useQuery({
-    queryKey: ['cuenta-bancaria', id],
-    queryFn: () => cuentasBancariasApi.getById(id),
+export const useBanco = (id: number) =>
+  useQuery({
+    queryKey: ['admin-finance', 'banco', id],
+    queryFn: () => bancosApi.getById(id).then((r) => r.data),
     enabled: !!id,
   });
+
+export const useBancoSaldos = () =>
+  useQuery({
+    queryKey: ['admin-finance', 'bancos', 'saldos'],
+    queryFn: () => bancosApi.getSaldos().then((r) => r.data),
+  });
+
+export const useCreateBanco = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Parameters<typeof bancosApi.create>[0]) =>
+      bancosApi.create(data).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-finance', 'bancos'] }),
+  });
 };
 
-export const useCreateCuentaBancaria = () => {
-  const queryClient = useQueryClient();
+export const useUpdateBanco = () => {
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: cuentasBancariasApi.create,
+    mutationFn: ({ id, data }: { id: number; data: Parameters<typeof bancosApi.update>[1] }) =>
+      bancosApi.update(id, data).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-finance', 'bancos'] }),
+  });
+};
+
+export const useDeleteBanco = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => bancosApi.delete(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-finance', 'bancos'] }),
+  });
+};
+
+// Cuentas por Pagar
+export const useCuentasPorPagar = (params?: Record<string, unknown>) =>
+  useQuery({
+    queryKey: ['admin-finance', 'cuentas-por-pagar', params],
+    queryFn: () => cuentasPorPagarApi.getAll(params).then((r) => r.data),
+  });
+
+export const useCuentaPorPagar = (id: number) =>
+  useQuery({
+    queryKey: ['admin-finance', 'cuenta-por-pagar', id],
+    queryFn: () => cuentasPorPagarApi.getById(id).then((r) => r.data),
+    enabled: !!id,
+  });
+
+export const useCuentasPorPagarEstadisticas = () =>
+  useQuery({
+    queryKey: ['admin-finance', 'cuentas-por-pagar', 'estadisticas'],
+    queryFn: () => cuentasPorPagarApi.getEstadisticas().then((r) => r.data),
+  });
+
+export const useCuentasPorPagarPorVencer = () =>
+  useQuery({
+    queryKey: ['admin-finance', 'cuentas-por-pagar', 'por-vencer'],
+    queryFn: () => cuentasPorPagarApi.getPorVencer().then((r) => r.data),
+  });
+
+export const useCreateCuentaPorPagar = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Parameters<typeof cuentasPorPagarApi.create>[0]) =>
+      cuentasPorPagarApi.create(data).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-finance', 'cuentas-por-pagar'] }),
+  });
+};
+
+// Cuentas por Cobrar
+export const useCuentasPorCobrar = (params?: Record<string, unknown>) =>
+  useQuery({
+    queryKey: ['admin-finance', 'cuentas-por-cobrar', params],
+    queryFn: () => cuentasPorCobrarApi.getAll(params).then((r) => r.data),
+  });
+
+export const useCuentasPorCobrarEstadisticas = () =>
+  useQuery({
+    queryKey: ['admin-finance', 'cuentas-por-cobrar', 'estadisticas'],
+    queryFn: () => cuentasPorCobrarApi.getEstadisticas().then((r) => r.data),
+  });
+
+// Flujo de Caja
+export const useFlujoCaja = (params?: Record<string, unknown>) =>
+  useQuery({
+    queryKey: ['admin-finance', 'flujo-caja', params],
+    queryFn: () => flujoCajaApi.getAll(params).then((r) => r.data),
+  });
+
+export const useFlujoCajaResumen = (fechaInicio: string, fechaFin: string) =>
+  useQuery({
+    queryKey: ['admin-finance', 'flujo-caja', 'resumen', fechaInicio, fechaFin],
+    queryFn: () =>
+      flujoCajaApi
+        .getResumenPeriodo({ fecha_inicio: fechaInicio, fecha_fin: fechaFin })
+        .then((r) => r.data),
+    enabled: !!fechaInicio && !!fechaFin,
+  });
+
+// Pagos
+export const usePagos = (params?: Record<string, unknown>) =>
+  useQuery({
+    queryKey: ['admin-finance', 'pagos', params],
+    queryFn: () => pagosApi.getAll(params).then((r) => r.data),
+  });
+
+export const useCreatePago = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Parameters<typeof pagosApi.create>[0]) =>
+      pagosApi.create(data).then((r) => r.data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cuentas-bancarias'] });
+      qc.invalidateQueries({ queryKey: ['admin-finance', 'pagos'] });
+      qc.invalidateQueries({ queryKey: ['admin-finance', 'cuentas-por-pagar'] });
+      qc.invalidateQueries({ queryKey: ['admin-finance', 'bancos'] });
     },
   });
 };
 
-export const useMovimientosBancarios = (params?: Record<string, unknown>) => {
-  return useQuery({
-    queryKey: ['movimientos-bancarios', params],
-    queryFn: () => movimientosBancariosApi.getAll(params),
+// Recaudos
+export const useRecaudos = (params?: Record<string, unknown>) =>
+  useQuery({
+    queryKey: ['admin-finance', 'recaudos', params],
+    queryFn: () => recaudosApi.getAll(params).then((r) => r.data),
   });
-};
 
-export const useFlujoCaja = (params?: Record<string, unknown>) => {
-  return useQuery({
-    queryKey: ['flujo-caja', params],
-    queryFn: () => flujoCajaApi.getAll(params),
-  });
-};
-
-export const useProgramacionPagos = (params?: Record<string, unknown>) => {
-  return useQuery({
-    queryKey: ['programacion-pagos', params],
-    queryFn: () => programacionPagosApi.getAll(params),
-  });
-};
-
-export const useCajasChicas = () => {
-  return useQuery({
-    queryKey: ['cajas-chicas'],
-    queryFn: () => cajasChicasApi.getAll(),
+export const useCreateRecaudo = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Parameters<typeof recaudosApi.create>[0]) =>
+      recaudosApi.create(data).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-finance', 'recaudos'] });
+      qc.invalidateQueries({ queryKey: ['admin-finance', 'cuentas-por-cobrar'] });
+      qc.invalidateQueries({ queryKey: ['admin-finance', 'bancos'] });
+    },
   });
 };
 
 // ==================== PRESUPUESTO HOOKS ====================
 
-export const usePresupuestos = (params?: Record<string, unknown>) => {
-  return useQuery({
-    queryKey: ['presupuestos', params],
-    queryFn: () => presupuestosApi.getAll(params),
+export const useCentrosCosto = (params?: Record<string, unknown>) =>
+  useQuery({
+    queryKey: ['admin-finance', 'centros-costo', params],
+    queryFn: () => centrosCostoApi.getAll(params).then((r) => r.data),
   });
-};
 
-export const usePresupuesto = (id: number) => {
-  return useQuery({
-    queryKey: ['presupuesto', id],
-    queryFn: () => presupuestosApi.getById(id),
+export const useRubros = (params?: Record<string, unknown>) =>
+  useQuery({
+    queryKey: ['admin-finance', 'rubros', params],
+    queryFn: () => rubrosApi.getAll(params).then((r) => r.data),
+  });
+
+export const usePresupuestos = (params?: Record<string, unknown>) =>
+  useQuery({
+    queryKey: ['admin-finance', 'presupuestos', params],
+    queryFn: () => presupuestosApi.getAll(params).then((r) => r.data),
+  });
+
+export const usePresupuesto = (id: number) =>
+  useQuery({
+    queryKey: ['admin-finance', 'presupuesto', id],
+    queryFn: () => presupuestosApi.getById(id).then((r) => r.data),
     enabled: !!id,
   });
-};
+
+export const useResumenEjecucion = (anio?: number) =>
+  useQuery({
+    queryKey: ['admin-finance', 'presupuestos', 'resumen-ejecucion', anio],
+    queryFn: () =>
+      presupuestosApi.getResumenEjecucion(anio ? { anio } : undefined).then((r) => r.data),
+  });
 
 export const useCreatePresupuesto = () => {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: presupuestosApi.create,
+    mutationFn: (data: Parameters<typeof presupuestosApi.create>[0]) =>
+      presupuestosApi.create(data).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-finance', 'presupuestos'] }),
+  });
+};
+
+export const useAprobaciones = (params?: Record<string, unknown>) =>
+  useQuery({
+    queryKey: ['admin-finance', 'aprobaciones', params],
+    queryFn: () => aprobacionesApi.getAll(params).then((r) => r.data),
+  });
+
+export const useAprobacionesPendientes = () =>
+  useQuery({
+    queryKey: ['admin-finance', 'aprobaciones', 'pendientes'],
+    queryFn: () => aprobacionesApi.getPendientes().then((r) => r.data),
+  });
+
+export const useAprobarPresupuesto = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data?: { observaciones?: string } }) =>
+      aprobacionesApi.aprobar(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['presupuestos'] });
+      qc.invalidateQueries({ queryKey: ['admin-finance', 'aprobaciones'] });
+      qc.invalidateQueries({ queryKey: ['admin-finance', 'presupuestos'] });
     },
   });
 };
 
-export const useRubros = (params?: Record<string, unknown>) => {
-  return useQuery({
-    queryKey: ['rubros', params],
-    queryFn: () => rubrosApi.getAll(params),
+export const useRechazarPresupuesto = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data?: { observaciones?: string } }) =>
+      aprobacionesApi.rechazar(id, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-finance', 'aprobaciones'] });
+      qc.invalidateQueries({ queryKey: ['admin-finance', 'presupuestos'] });
+    },
   });
 };
 
-export const useEjecuciones = (params?: Record<string, unknown>) => {
-  return useQuery({
-    queryKey: ['ejecuciones', params],
-    queryFn: () => ejecucionesApi.getAll(params),
+export const useEjecuciones = (params?: Record<string, unknown>) =>
+  useQuery({
+    queryKey: ['admin-finance', 'ejecuciones', params],
+    queryFn: () => ejecucionesApi.getAll(params).then((r) => r.data),
   });
-};
 
-export const useCdpCrp = (params?: Record<string, unknown>) => {
-  return useQuery({
-    queryKey: ['cdp-crp', params],
-    queryFn: () => cdpCrpApi.getAll(params),
-  });
-};
-
-export const useTraslados = (params?: Record<string, unknown>) => {
-  return useQuery({
-    queryKey: ['traslados', params],
-    queryFn: () => trasladosApi.getAll(params),
+export const useCreateEjecucion = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Parameters<typeof ejecucionesApi.create>[0]) =>
+      ejecucionesApi.create(data).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-finance', 'ejecuciones'] });
+      qc.invalidateQueries({ queryKey: ['admin-finance', 'presupuestos'] });
+    },
   });
 };
 
 // ==================== ACTIVOS FIJOS HOOKS ====================
 
-export const useActivosFijos = (params?: Record<string, unknown>) => {
-  return useQuery({
-    queryKey: ['activos-fijos', params],
-    queryFn: () => activosFijosApi.getAll(params),
+export const useCategoriasActivos = (params?: Record<string, unknown>) =>
+  useQuery({
+    queryKey: ['admin-finance', 'categorias-activos', params],
+    queryFn: () => categoriasActivosApi.getAll(params).then((r) => r.data),
   });
-};
 
-export const useActivoFijo = (id: number) => {
-  return useQuery({
-    queryKey: ['activo-fijo', id],
-    queryFn: () => activosFijosApi.getById(id),
+export const useActivosFijos = (params?: Record<string, unknown>) =>
+  useQuery({
+    queryKey: ['admin-finance', 'activos-fijos', params],
+    queryFn: () => activosFijosApi.getAll(params).then((r) => r.data),
+  });
+
+export const useActivoFijo = (id: number) =>
+  useQuery({
+    queryKey: ['admin-finance', 'activo-fijo', id],
+    queryFn: () => activosFijosApi.getById(id).then((r) => r.data),
     enabled: !!id,
   });
-};
+
+export const useActivosFijosEstadisticas = () =>
+  useQuery({
+    queryKey: ['admin-finance', 'activos-fijos', 'estadisticas'],
+    queryFn: () => activosFijosApi.getEstadisticas().then((r) => r.data),
+  });
 
 export const useCreateActivoFijo = () => {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: activosFijosApi.create,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['activos-fijos'] });
-    },
+    mutationFn: (data: Parameters<typeof activosFijosApi.create>[0]) =>
+      activosFijosApi.create(data).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-finance', 'activos-fijos'] }),
   });
 };
 
-export const useCategoriasActivos = () => {
-  return useQuery({
-    queryKey: ['categorias-activos'],
-    queryFn: () => categoriasActivosApi.getAll(),
+export const useUpdateActivoFijo = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: Parameters<typeof activosFijosApi.update>[1];
+    }) => activosFijosApi.update(id, data).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-finance', 'activos-fijos'] }),
   });
 };
 
-export const useUbicacionesActivos = () => {
-  return useQuery({
-    queryKey: ['ubicaciones-activos'],
-    queryFn: () => ubicacionesActivosApi.getAll(),
+export const useHojasVida = (params?: Record<string, unknown>) =>
+  useQuery({
+    queryKey: ['admin-finance', 'hojas-vida', params],
+    queryFn: () => hojasVidaApi.getAll(params).then((r) => r.data),
   });
-};
 
-export const useDepreciaciones = (params?: Record<string, unknown>) => {
-  return useQuery({
-    queryKey: ['depreciaciones', params],
-    queryFn: () => depreciacionesApi.getAll(params),
+export const useProgramasMantenimiento = (params?: Record<string, unknown>) =>
+  useQuery({
+    queryKey: ['admin-finance', 'programas-mantenimiento', params],
+    queryFn: () => programasMantenimientoApi.getAll(params).then((r) => r.data),
   });
-};
 
-export const useMantenimientosActivos = (params?: Record<string, unknown>) => {
-  return useQuery({
-    queryKey: ['mantenimientos-activos', params],
-    queryFn: () => mantenimientosActivosApi.getAll(params),
+export const useProgramasMantenimientoProximos = () =>
+  useQuery({
+    queryKey: ['admin-finance', 'programas-mantenimiento', 'proximos'],
+    queryFn: () => programasMantenimientoApi.getProximos().then((r) => r.data),
   });
-};
+
+export const useDepreciaciones = (params?: Record<string, unknown>) =>
+  useQuery({
+    queryKey: ['admin-finance', 'depreciaciones', params],
+    queryFn: () => depreciacionesApi.getAll(params).then((r) => r.data),
+  });
+
+export const useBajas = (params?: Record<string, unknown>) =>
+  useQuery({
+    queryKey: ['admin-finance', 'bajas', params],
+    queryFn: () => bajasApi.getAll(params).then((r) => r.data),
+  });
 
 // ==================== SERVICIOS GENERALES HOOKS ====================
 
-export const useContratosServicios = (params?: Record<string, unknown>) => {
-  return useQuery({
-    queryKey: ['contratos-servicios', params],
-    queryFn: () => contratosServiciosApi.getAll(params),
+export const useMantenimientosLocativos = (params?: Record<string, unknown>) =>
+  useQuery({
+    queryKey: ['admin-finance', 'mantenimientos-locativos', params],
+    queryFn: () => mantenimientosLocativosApi.getAll(params).then((r) => r.data),
   });
-};
 
-export const useContratoServicio = (id: number) => {
-  return useQuery({
-    queryKey: ['contrato-servicio', id],
-    queryFn: () => contratosServiciosApi.getById(id),
+export const useMantenimientoLocativo = (id: number) =>
+  useQuery({
+    queryKey: ['admin-finance', 'mantenimiento-locativo', id],
+    queryFn: () => mantenimientosLocativosApi.getById(id).then((r) => r.data),
     enabled: !!id,
   });
+
+export const useCreateMantenimientoLocativo = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Parameters<typeof mantenimientosLocativosApi.create>[0]) =>
+      mantenimientosLocativosApi.create(data).then((r) => r.data),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ['admin-finance', 'mantenimientos-locativos'] }),
+  });
 };
+
+export const useServiciosPublicos = (params?: Record<string, unknown>) =>
+  useQuery({
+    queryKey: ['admin-finance', 'servicios-publicos', params],
+    queryFn: () => serviciosPublicosApi.getAll(params).then((r) => r.data),
+  });
+
+export const useServiciosPorVencer = () =>
+  useQuery({
+    queryKey: ['admin-finance', 'servicios-publicos', 'por-vencer'],
+    queryFn: () => serviciosPublicosApi.getPorVencer().then((r) => r.data),
+  });
+
+export const useContratosServicios = (params?: Record<string, unknown>) =>
+  useQuery({
+    queryKey: ['admin-finance', 'contratos-servicios', params],
+    queryFn: () => contratosServiciosApi.getAll(params).then((r) => r.data),
+  });
+
+export const useContratoServicio = (id: number) =>
+  useQuery({
+    queryKey: ['admin-finance', 'contrato-servicio', id],
+    queryFn: () => contratosServiciosApi.getById(id).then((r) => r.data),
+    enabled: !!id,
+  });
+
+export const useContratosVigentes = () =>
+  useQuery({
+    queryKey: ['admin-finance', 'contratos-servicios', 'vigentes'],
+    queryFn: () => contratosServiciosApi.getVigentes().then((r) => r.data),
+  });
+
+export const useContratosPorVencer = () =>
+  useQuery({
+    queryKey: ['admin-finance', 'contratos-servicios', 'por-vencer'],
+    queryFn: () => contratosServiciosApi.getPorVencer().then((r) => r.data),
+  });
 
 export const useCreateContratoServicio = () => {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: contratosServiciosApi.create,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['contratos-servicios'] });
-    },
+    mutationFn: (data: Parameters<typeof contratosServiciosApi.create>[0]) =>
+      contratosServiciosApi.create(data).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-finance', 'contratos-servicios'] }),
   });
 };
 
-export const useGastosOperativos = (params?: Record<string, unknown>) => {
-  return useQuery({
-    queryKey: ['gastos-operativos', params],
-    queryFn: () => gastosOperativosApi.getAll(params),
-  });
-};
-
-export const useConsumosServicios = (params?: Record<string, unknown>) => {
-  return useQuery({
-    queryKey: ['consumos-servicios', params],
-    queryFn: () => consumosServiciosApi.getAll(params),
+export const useTerminarContrato = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => contratosServiciosApi.terminar(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-finance', 'contratos-servicios'] }),
   });
 };

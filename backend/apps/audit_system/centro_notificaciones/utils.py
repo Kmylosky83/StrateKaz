@@ -234,7 +234,7 @@ def enviar_email(destinatario, asunto, mensaje, link=None):
                 <div class="content">
                     <p>Hola {destinatario.get_full_name() or destinatario.username},</p>
                     <p>{mensaje}</p>
-                    {f'<a href="{settings.FRONTEND_URL}{link}" class="button">Ver Documento</a>' if link else ''}
+                    {f'<a href="{getattr(settings, "FRONTEND_URL", "https://app.stratekaz.com")}{link}" class="button">Ver Documento</a>' if link else ''}
                 </div>
                 <div class="footer">
                     <p>Este es un mensaje automático del Sistema de Gestión StrateKaz</p>

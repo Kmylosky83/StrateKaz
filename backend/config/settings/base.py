@@ -22,6 +22,9 @@ SECRET_KEY = config('SECRET_KEY')  # REQUERIDO — sin default para forzar confi
 DEBUG = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
 
+# URL del frontend (para links en emails de reset de contraseña, notificaciones, etc.)
+FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3010')
+
 # =============================================================================
 # DJANGO-TENANTS CONFIGURATION
 # =============================================================================

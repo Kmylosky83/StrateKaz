@@ -52,12 +52,7 @@ class EmailService:
                 is_active=True
             ).first()
 
-            if not integracion:
-                # Intentar buscar por tipo legacy
-                integracion = IntegracionExterna.objects.filter(
-                    tipo_servicio_legacy='EMAIL',
-                    is_active=True
-                ).first()
+            # tipo_servicio_legacy fue eliminado en migracion 0004
 
             if integracion:
                 return {
@@ -121,8 +116,8 @@ class EmailService:
                 from_email = f"{from_name} <{from_email_addr}>"
 
             # Agregar variables globales al contexto
-            context.setdefault('frontend_url', settings.FRONTEND_URL)
-            context.setdefault('current_year', '2024')
+            context.setdefault('frontend_url', getattr(settings, 'FRONTEND_URL', 'https://app.stratekaz.com'))
+            context.setdefault('current_year', str(__import__('datetime').date.today().year))
 
             # Renderizar template
             template_path = f"emails/{template_name}.html"

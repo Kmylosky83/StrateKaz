@@ -125,6 +125,11 @@ LOGGING['loggers']['apps']['level'] = 'INFO'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # =============================================================================
+# FRONTEND URL (para links en emails)
+# =============================================================================
+FRONTEND_URL = config('FRONTEND_URL', default='https://app.stratekaz.com')
+
+# =============================================================================
 # DJANGO-TENANTS
 # =============================================================================
 SHOW_PUBLIC_IF_NO_TENANT_FOUND = False

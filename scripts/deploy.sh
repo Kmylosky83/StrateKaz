@@ -166,6 +166,11 @@ fi
 log_step "PASO 2: Pull del Codigo"
 
 log_info "Rama actual: $(git branch --show-current)"
+
+# Descartar cambios locales (ej: package-lock.json modificado por npm install)
+log_info "Descartando cambios locales en archivos tracked..."
+run_cmd "git checkout -- ."
+
 run_cmd "git pull origin main"
 
 if [ "$DRY_RUN" = false ]; then

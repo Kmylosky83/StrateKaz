@@ -113,7 +113,11 @@ class EmailService:
             if not from_email:
                 from_name = config.get('from_name', 'StrateKaz')
                 from_email_addr = config.get('from_email', 'noreply@stratekaz.com')
-                from_email = f"{from_name} <{from_email_addr}>"
+                # Evitar doble envolvimiento si from_email_addr ya tiene formato "Name <email>"
+                if '<' in str(from_email_addr):
+                    from_email = from_email_addr
+                else:
+                    from_email = f"{from_name} <{from_email_addr}>"
 
             # Agregar variables globales al contexto
             context.setdefault('frontend_url', getattr(settings, 'FRONTEND_URL', 'https://app.stratekaz.com'))

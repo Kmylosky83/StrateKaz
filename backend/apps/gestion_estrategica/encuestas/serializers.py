@@ -75,7 +75,10 @@ class TemaEncuestaCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TemaEncuesta
-        fields = ['area', 'titulo', 'descripcion', 'orden']
+        fields = ['encuesta', 'area', 'titulo', 'descripcion', 'orden']
+        extra_kwargs = {
+            'encuesta': {'required': False},
+        }
 
 
 class TemaEncuestaPublicoSerializer(serializers.ModelSerializer):

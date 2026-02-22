@@ -38,6 +38,7 @@ import {
   Eye,
   LogOut,
   Briefcase,
+  Shield,
 } from 'lucide-react';
 import {
   useColaboradores,
@@ -53,6 +54,7 @@ import type {
   TipoContratoColaborador,
 } from '../../types';
 import { ColaboradorFormModal } from './ColaboradorFormModal';
+import { CrearAccesoModal } from './CrearAccesoModal';
 
 // Opciones de estado para filtro
 const ESTADO_OPTIONS = [
@@ -106,6 +108,8 @@ export const ColaboradoresSection = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isRetireOpen, setIsRetireOpen] = useState(false);
   const [retireTarget, setRetireTarget] = useState<Colaborador | null>(null);
+  const [isAccesoOpen, setIsAccesoOpen] = useState(false);
+  const [accesoTarget, setAccesoTarget] = useState<Colaborador | null>(null);
 
   // Module color
   const { color: moduleColor } = useModuleColor('TALENT_HUB');
@@ -188,6 +192,11 @@ export const ColaboradoresSection = () => {
   const handleRetire = (colaborador: Colaborador) => {
     setRetireTarget(colaborador);
     setIsRetireOpen(true);
+  };
+
+  const handleCrearAcceso = (colaborador: Colaborador) => {
+    setAccesoTarget(colaborador);
+    setIsAccesoOpen(true);
   };
 
   const confirmRetire = async () => {
@@ -410,6 +419,16 @@ export const ColaboradoresSection = () => {
                 >
                   <Pencil size={16} />
                 </button>
+                {!c.usuario && c.estado === 'activo' && (
+                  <button
+                    type="button"
+                    onClick={() => handleCrearAcceso(c as unknown as Colaborador)}
+                    className="p-1.5 rounded-md text-gray-400 hover:text-success-600 hover:bg-success-50 dark:hover:text-success-400 dark:hover:bg-success-900/20"
+                    title="Crear Acceso al Sistema"
+                  >
+                    <Shield size={16} />
+                  </button>
+                )}
                 {c.estado === 'activo' && (
                   <button
                     type="button"
@@ -440,6 +459,16 @@ export const ColaboradoresSection = () => {
         onClose={() => {
           setIsFormOpen(false);
           setSelectedColaborador(null);
+        }}
+      />
+
+      {/* Crear Acceso Modal */}
+      <CrearAccesoModal
+        colaborador={accesoTarget}
+        isOpen={isAccesoOpen}
+        onClose={() => {
+          setIsAccesoOpen(false);
+          setAccesoTarget(null);
         }}
       />
 

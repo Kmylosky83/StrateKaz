@@ -238,6 +238,38 @@ export function useRetirarColaborador() {
 }
 
 // ============================================================================
+// HOOKS - CREAR ACCESO (para colaboradores existentes sin usuario)
+// ============================================================================
+
+export function useCrearAccesoColaborador() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      email_corporativo,
+      username,
+    }: {
+      id: string;
+      email_corporativo: string;
+      username: string;
+    }) =>
+      api
+        .post(`/talent-hub/empleados/colaboradores/${id}/crear-acceso/`, {
+          email_corporativo,
+          username,
+        })
+        .then((r) => r.data),
+    onSuccess: (_, { id }) => {
+      qc.invalidateQueries({ queryKey: thKeys.colaboradores.all });
+      qc.invalidateQueries({ queryKey: colaboradoresKeys.detail(id) });
+      qc.invalidateQueries({ queryKey: colaboradoresKeys.completo(id) });
+      toast.success('Acceso al sistema creado. Se envió un correo para configurar la contraseña.');
+    },
+    onError: (e) => toast.error(getMsg(e, 'Error al crear acceso al sistema')),
+  });
+}
+
+// ============================================================================
 // HOOKS - HOJA DE VIDA
 // ============================================================================
 

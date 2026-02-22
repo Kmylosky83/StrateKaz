@@ -11,7 +11,7 @@ from .models import (
     FactorRiesgoLAFT,
     SegmentoCliente,
     MatrizRiesgoLAFT,
-    SeñalAlerta,
+    SenalAlerta,
     ReporteOperacionSospechosa,
     DebidaDiligencia
 )
@@ -22,8 +22,8 @@ from .serializers import (
     SegmentoClienteDetailSerializer,
     MatrizRiesgoLAFTListSerializer,
     MatrizRiesgoLAFTDetailSerializer,
-    SeñalAlertaListSerializer,
-    SeñalAlertaDetailSerializer,
+    SenalAlertaListSerializer,
+    SenalAlertaDetailSerializer,
     ReporteOperacionSospechosaListSerializer,
     ReporteOperacionSospechosaDetailSerializer,
     DebidaDiligenciaListSerializer,
@@ -190,18 +190,18 @@ class MatrizRiesgoLAFTViewSet(viewsets.ModelViewSet):
         return Response(MatrizRiesgoLAFTListSerializer(queryset, many=True).data)
 
 
-class SeñalAlertaViewSet(viewsets.ModelViewSet):
-    """ViewSet para Señales de Alerta LAFT"""
+class SenalAlertaViewSet(viewsets.ModelViewSet):
+    """ViewSet para Senales de Alerta LAFT"""
     permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         if self.action == 'list':
-            return SeñalAlertaListSerializer
-        return SeñalAlertaDetailSerializer
+            return SenalAlertaListSerializer
+        return SenalAlertaDetailSerializer
 
     def get_queryset(self):
         empresa = get_tenant_empresa(auto_create=False)
-        queryset = SeñalAlerta.objects.select_related(
+        queryset = SenalAlerta.objects.select_related(
             'matriz_riesgo', 'analista_asignado', 'created_by'
         )
 
@@ -233,7 +233,7 @@ class SeñalAlertaViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def asignar_analista(self, request, pk=None):
         """Asigna un analista a la señal"""
-        señal = self.get_object()
+        senal = self.get_object()
         analista_id = request.data.get('analista_id')
         if not analista_id:
             return Response(
@@ -249,29 +249,29 @@ class SeñalAlertaViewSet(viewsets.ModelViewSet):
                 {'error': 'Analista no encontrado'},
                 status=status.HTTP_404_NOT_FOUND
             )
-        señal.analista_asignado = analista
-        señal.estado = 'EN_ANALISIS'
-        señal.save()
-        return Response(SeñalAlertaDetailSerializer(señal).data)
+        senal.analista_asignado = analista
+        senal.estado = 'EN_ANALISIS'
+        senal.save()
+        return Response(SenalAlertaDetailSerializer(senal).data)
 
     @action(detail=False, methods=['get'])
     def pendientes(self, request):
-        """Señales pendientes de análisis"""
+        """Senales pendientes de análisis"""
         queryset = self.get_queryset().filter(
             estado__in=['DETECTADA', 'EN_ANALISIS'],
             es_catalogo=False
         )
-        return Response(SeñalAlertaListSerializer(queryset, many=True).data)
+        return Response(SenalAlertaListSerializer(queryset, many=True).data)
 
     @action(detail=False, methods=['get'])
     def requieren_ros(self, request):
-        """Señales que requieren ROS"""
+        """Senales que requieren ROS"""
         queryset = self.get_queryset().filter(
             requiere_ros=True,
             estado='CONFIRMADA',
             es_catalogo=False
         )
-        return Response(SeñalAlertaListSerializer(queryset, many=True).data)
+        return Response(SenalAlertaListSerializer(queryset, many=True).data)
 
 
 class ReporteOperacionSospechosaViewSet(viewsets.ModelViewSet):
@@ -287,7 +287,7 @@ class ReporteOperacionSospechosaViewSet(viewsets.ModelViewSet):
         empresa = get_tenant_empresa(auto_create=False)
         queryset = ReporteOperacionSospechosa.objects.select_related(
             'matriz_riesgo', 'elaborado_por', 'revisado_por', 'aprobado_por'
-        ).prefetch_related('señales_alerta')
+        ).prefetch_related('senales_alerta')
 
         if empresa:
             queryset = queryset.filter(empresa_id=empresa.id)

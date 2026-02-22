@@ -6,7 +6,7 @@ from .models import (
     FactorRiesgoLAFT,
     SegmentoCliente,
     MatrizRiesgoLAFT,
-    SeñalAlerta,
+    SenalAlerta,
     ReporteOperacionSospechosa,
     DebidaDiligencia
 )
@@ -132,14 +132,14 @@ class MatrizRiesgoLAFTDetailSerializer(serializers.ModelSerializer):
 # =============================================================================
 # Señal Alerta Serializers
 # =============================================================================
-class SeñalAlertaListSerializer(serializers.ModelSerializer):
+class SenalAlertaListSerializer(serializers.ModelSerializer):
     """Serializer para listado de señales"""
     categoria_display = serializers.CharField(source='get_categoria_display', read_only=True)
     severidad_display = serializers.CharField(source='get_severidad_display', read_only=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
 
     class Meta:
-        model = SeñalAlerta
+        model = SenalAlerta
         fields = [
             'id', 'codigo', 'nombre', 'categoria', 'categoria_display',
             'severidad', 'severidad_display', 'estado', 'estado_display',
@@ -147,7 +147,7 @@ class SeñalAlertaListSerializer(serializers.ModelSerializer):
         ]
 
 
-class SeñalAlertaDetailSerializer(serializers.ModelSerializer):
+class SenalAlertaDetailSerializer(serializers.ModelSerializer):
     """Serializer para detalle de señales"""
     categoria_display = serializers.CharField(source='get_categoria_display', read_only=True)
     severidad_display = serializers.CharField(source='get_severidad_display', read_only=True)
@@ -157,7 +157,7 @@ class SeñalAlertaDetailSerializer(serializers.ModelSerializer):
     created_by_nombre = serializers.CharField(source='created_by.get_full_name', read_only=True)
 
     class Meta:
-        model = SeñalAlerta
+        model = SenalAlerta
         fields = [
             'id', 'codigo', 'nombre', 'categoria', 'categoria_display',
             'descripcion', 'severidad', 'severidad_display', 'criterios_deteccion',
@@ -178,18 +178,18 @@ class ReporteOperacionSospechosaListSerializer(serializers.ModelSerializer):
     """Serializer para listado de ROS"""
     tipo_operacion_display = serializers.CharField(source='get_tipo_operacion_display', read_only=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
-    total_señales = serializers.SerializerMethodField()
+    total_senales = serializers.SerializerMethodField()
 
     class Meta:
         model = ReporteOperacionSospechosa
         fields = [
             'id', 'numero_ros', 'fecha_deteccion', 'tipo_operacion', 'tipo_operacion_display',
             'nombre_reportado', 'identificacion_reportado', 'monto_total', 'moneda',
-            'estado', 'estado_display', 'total_señales', 'fecha_envio_uiaf'
+            'estado', 'estado_display', 'total_senales', 'fecha_envio_uiaf'
         ]
 
-    def get_total_señales(self, obj):
-        return obj.señales_alerta.count()
+    def get_total_senales(self, obj):
+        return obj.senales_alerta.count()
 
 
 class ReporteOperacionSospechosaDetailSerializer(serializers.ModelSerializer):
@@ -200,7 +200,7 @@ class ReporteOperacionSospechosaDetailSerializer(serializers.ModelSerializer):
     elaborado_por_nombre = serializers.CharField(source='elaborado_por.get_full_name', read_only=True)
     revisado_por_nombre = serializers.CharField(source='revisado_por.get_full_name', read_only=True)
     aprobado_por_nombre = serializers.CharField(source='aprobado_por.get_full_name', read_only=True)
-    señales_detail = SeñalAlertaListSerializer(source='señales_alerta', many=True, read_only=True)
+    senales_detail = SenalAlertaListSerializer(source='senales_alerta', many=True, read_only=True)
 
     class Meta:
         model = ReporteOperacionSospechosa
@@ -208,7 +208,7 @@ class ReporteOperacionSospechosaDetailSerializer(serializers.ModelSerializer):
             'id', 'numero_ros', 'fecha_deteccion', 'tipo_operacion', 'tipo_operacion_display',
             'matriz_riesgo', 'matriz_riesgo_codigo', 'nombre_reportado',
             'identificacion_reportado', 'tipo_identificacion',
-            'señales_alerta', 'señales_detail',
+            'senales_alerta', 'senales_detail',
             'descripcion_operacion', 'monto_total', 'moneda', 'periodo_operaciones',
             'analisis_detallado', 'fundamentos_sospecha', 'documentos_soporte',
             'elaborado_por', 'elaborado_por_nombre', 'fecha_elaboracion',

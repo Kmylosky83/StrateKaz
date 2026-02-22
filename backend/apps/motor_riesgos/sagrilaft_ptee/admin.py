@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import FactorRiesgoLAFT, SegmentoCliente, MatrizRiesgoLAFT, SeñalAlerta, ReporteOperacionSospechosa, DebidaDiligencia
+from .models import FactorRiesgoLAFT, SegmentoCliente, MatrizRiesgoLAFT, SenalAlerta, ReporteOperacionSospechosa, DebidaDiligencia
 
 @admin.register(FactorRiesgoLAFT)
 class FactorRiesgoLAFTAdmin(admin.ModelAdmin):
@@ -16,8 +16,8 @@ class MatrizRiesgoLAFTAdmin(admin.ModelAdmin):
     list_display = ['codigo', 'nombre_evaluado', 'estado']
     search_fields = ['codigo', 'nombre_evaluado']
 
-@admin.register(SeñalAlerta)
-class SeñalAlertaAdmin(admin.ModelAdmin):
+@admin.register(SenalAlerta)
+class SenalAlertaAdmin(admin.ModelAdmin):
     list_display = ['codigo', 'nombre', 'categoria', 'severidad']
     search_fields = ['codigo', 'nombre']
 

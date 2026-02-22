@@ -1,27 +1,29 @@
 """
 Modelos para Aspectos Ambientales - ISO 14001
-Sistema de Gestión Ambiental
+Sistema de Gestion Ambiental
 """
 from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
 
+from apps.core.base_models import TimestampedModel, SoftDeleteModel, AuditModel
 
-class CategoriaAspecto(models.Model):
+
+class CategoriaAspecto(TimestampedModel, SoftDeleteModel):
     """
-    Categorías de aspectos ambientales según ISO 14001
-    Catálogo global reutilizable
+    Categorias de aspectos ambientales segun ISO 14001
+    Catalogo global reutilizable
     """
     TIPO_CHOICES = [
-        ('EMISION', 'Emisiones a la Atmósfera'),
+        ('EMISION', 'Emisiones a la Atmosfera'),
         ('VERTIMIENTO', 'Vertimientos al Agua'),
-        ('RESIDUO', 'Generación de Residuos'),
+        ('RESIDUO', 'Generacion de Residuos'),
         ('CONSUMO_RECURSO', 'Consumo de Recursos'),
-        ('CONTAMINACION_SUELO', 'Contaminación del Suelo'),
+        ('CONTAMINACION_SUELO', 'Contaminacion del Suelo'),
         ('RUIDO_VIBRACION', 'Ruido y Vibraciones'),
-        ('BIODIVERSIDAD', 'Afectación a Biodiversidad'),
-        ('ENERGIA', 'Uso de Energía'),
+        ('BIODIVERSIDAD', 'Afectacion a Biodiversidad'),
+        ('ENERGIA', 'Uso de Energia'),
         ('OTRO', 'Otro'),
     ]
 
@@ -29,7 +31,7 @@ class CategoriaAspecto(models.Model):
         max_length=20,
         unique=True,
         db_index=True,
-        verbose_name='Código'
+        verbose_name='Codigo'
     )
     tipo = models.CharField(
         max_length=30,
@@ -42,7 +44,7 @@ class CategoriaAspecto(models.Model):
     )
     descripcion = models.TextField(
         blank=True,
-        verbose_name='Descripción'
+        verbose_name='Descripcion'
     )
     impactos_asociados = models.TextField(
         blank=True,
@@ -54,34 +56,26 @@ class CategoriaAspecto(models.Model):
         verbose_name='Requisitos Legales Aplicables',
         help_text='Normatividad colombiana aplicable (ej: Decreto 1076/2015)'
     )
-    is_active = models.BooleanField(
-        default=True,
-        verbose_name='Activo'
-    )
-
-    # Auditoría
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha Creación')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Fecha Actualización')
 
     class Meta:
         db_table = 'aspectos_amb_categoria'
-        verbose_name = 'Categoría de Aspecto Ambiental'
-        verbose_name_plural = 'Categorías de Aspectos Ambientales'
+        verbose_name = 'Categoria de Aspecto Ambiental'
+        verbose_name_plural = 'Categorias de Aspectos Ambientales'
         ordering = ['tipo', 'codigo']
 
     def __str__(self):
         return f"{self.codigo} - {self.nombre}"
 
 
-class AspectoAmbiental(models.Model):
+class AspectoAmbiental(AuditModel, SoftDeleteModel):
     """
     Aspectos ambientales identificados en procesos/actividades
-    Evaluación de significancia según ISO 14001
+    Evaluacion de significancia segun ISO 14001
     """
     CONDICION_CHOICES = [
-        ('NORMAL', 'Operación Normal'),
-        ('ANORMAL', 'Operación Anormal'),
-        ('EMERGENCIA', 'Situación de Emergencia'),
+        ('NORMAL', 'Operacion Normal'),
+        ('ANORMAL', 'Operacion Anormal'),
+        ('EMERGENCIA', 'Situacion de Emergencia'),
     ]
 
     TIEMPO_CHOICES = [
@@ -93,27 +87,27 @@ class AspectoAmbiental(models.Model):
     SIGNIFICANCIA_CHOICES = [
         ('NO_SIGNIFICATIVO', 'No Significativo'),
         ('SIGNIFICATIVO', 'Significativo'),
-        ('CRITICO', 'Crítico'),
+        ('CRITICO', 'Critico'),
     ]
 
     ESTADO_CHOICES = [
         ('BORRADOR', 'Borrador'),
         ('VIGENTE', 'Vigente'),
-        ('EN_REVISION', 'En Revisión'),
+        ('EN_REVISION', 'En Revision'),
         ('OBSOLETO', 'Obsoleto'),
     ]
 
-    # Identificación del aspecto
+    # Identificacion del aspecto
     codigo = models.CharField(
         max_length=50,
-        verbose_name='Código',
-        help_text='Código único del aspecto'
+        verbose_name='Codigo',
+        help_text='Codigo unico del aspecto'
     )
     categoria = models.ForeignKey(
         CategoriaAspecto,
         on_delete=models.PROTECT,
         related_name='aspectos',
-        verbose_name='Categoría'
+        verbose_name='Categoria'
     )
     proceso = models.CharField(
         max_length=200,
@@ -125,27 +119,26 @@ class AspectoAmbiental(models.Model):
         verbose_name='Actividad'
     )
     descripcion_aspecto = models.TextField(
-        verbose_name='Descripción del Aspecto Ambiental',
+        verbose_name='Descripcion del Aspecto Ambiental',
         help_text='Elemento de las actividades que puede interactuar con el ambiente'
     )
 
-    # Condición y temporalidad
+    # Condicion y temporalidad
     condicion_operacion = models.CharField(
         max_length=20,
         choices=CONDICION_CHOICES,
         default='NORMAL',
-        verbose_name='Condición de Operación'
+        verbose_name='Condicion de Operacion'
     )
     tiempo_verbo = models.CharField(
         max_length=20,
         choices=TIEMPO_CHOICES,
         default='PRESENTE',
         verbose_name='Temporalidad',
-        help_text='¿Cuándo ocurre el aspecto?'
+        help_text='Cuando ocurre el aspecto?'
     )
 
-    # Criterios de evaluación de significancia (escala 1-5)
-    # Según ISO 14001: frecuencia × severidad × probabilidad
+    # Criterios de evaluacion de significancia (escala 1-5)
     frecuencia = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(5)],
         verbose_name='Frecuencia',
@@ -166,32 +159,32 @@ class AspectoAmbiental(models.Model):
     alcance = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(5)],
         default=3,
-        verbose_name='Alcance/Extensión',
-        help_text='Área afectada: 1=Puntual, 5=Regional'
+        verbose_name='Alcance/Extension',
+        help_text='Area afectada: 1=Puntual, 5=Regional'
     )
     reversibilidad = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(5)],
         default=3,
         verbose_name='Reversibilidad',
-        help_text='Capacidad de recuperación: 1=Totalmente reversible, 5=Irreversible'
+        help_text='Capacidad de recuperacion: 1=Totalmente reversible, 5=Irreversible'
     )
     cumplimiento_legal = models.BooleanField(
         default=True,
         verbose_name='Cumplimiento Legal',
-        help_text='¿Se cumple la normatividad aplicable?'
+        help_text='Se cumple la normatividad aplicable?'
     )
     quejas_comunidad = models.BooleanField(
         default=False,
         verbose_name='Quejas de la Comunidad',
-        help_text='¿Ha generado quejas de partes interesadas?'
+        help_text='Ha generado quejas de partes interesadas?'
     )
 
-    # Cálculos automáticos
+    # Calculos automaticos
     valor_significancia = models.PositiveIntegerField(
         editable=False,
         default=0,
         verbose_name='Valor de Significancia',
-        help_text='Frecuencia × Severidad × Probabilidad'
+        help_text='Frecuencia x Severidad x Probabilidad'
     )
     significancia = models.CharField(
         max_length=20,
@@ -202,7 +195,7 @@ class AspectoAmbiental(models.Model):
 
     # Impactos asociados
     descripcion_impacto = models.TextField(
-        verbose_name='Descripción del Impacto Ambiental',
+        verbose_name='Descripcion del Impacto Ambiental',
         help_text='Cambio en el medio ambiente como resultado del aspecto'
     )
     tipo_impacto = models.CharField(
@@ -223,22 +216,18 @@ class AspectoAmbiental(models.Model):
         verbose_name='Procedimientos Asociados',
         help_text='Procedimientos operacionales que controlan el aspecto'
     )
-
-    # Número de personas/áreas afectadas
     areas_afectadas = models.TextField(
         blank=True,
-        verbose_name='Áreas Afectadas',
+        verbose_name='Areas Afectadas',
         help_text='Ubicaciones donde se presenta el aspecto'
     )
-
-    # Requisito legal
     requisito_legal_aplicable = models.TextField(
         blank=True,
         verbose_name='Requisito Legal Aplicable',
-        help_text='Normatividad colombiana específica (Decretos, Resoluciones)'
+        help_text='Normatividad colombiana especifica (Decretos, Resoluciones)'
     )
 
-    # Gestión
+    # Gestion
     estado = models.CharField(
         max_length=20,
         choices=ESTADO_CHOICES,
@@ -246,29 +235,18 @@ class AspectoAmbiental(models.Model):
         verbose_name='Estado'
     )
     fecha_identificacion = models.DateField(
-        verbose_name='Fecha de Identificación'
+        verbose_name='Fecha de Identificacion'
     )
     proxima_evaluacion = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Próxima Evaluación'
+        verbose_name='Proxima Evaluacion'
     )
 
     # Multi-tenancy
     empresa_id = models.PositiveBigIntegerField(
         db_index=True,
         verbose_name='Empresa ID'
-    )
-
-    # Auditoría
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha Creación')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Fecha Actualización')
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='aspectos_ambientales_created',
-        verbose_name='Creado por'
     )
 
     class Meta:
@@ -288,45 +266,29 @@ class AspectoAmbiental(models.Model):
         return f"{self.codigo} - {self.proceso} - {self.actividad[:30]}"
 
     def save(self, *args, **kwargs):
-        """Calcular significancia automáticamente"""
-        # Cálculo base: frecuencia × severidad × probabilidad
+        """Calcular significancia automaticamente"""
         self.valor_significancia = (
             self.frecuencia * self.severidad * self.probabilidad
         )
 
-        # Ajustar por criterios adicionales
-        # Incrementar si alcance es alto
         if self.alcance >= 4:
             self.valor_significancia += 10
-
-        # Incrementar si irreversible
         if self.reversibilidad >= 4:
             self.valor_significancia += 10
-
-        # Incrementar significativamente si no cumple legal
         if not self.cumplimiento_legal:
             self.valor_significancia += 50
-
-        # Incrementar si hay quejas
         if self.quejas_comunidad:
             self.valor_significancia += 25
 
-        # Determinar categoría de significancia
         self.significancia = self._calcular_categoria_significancia()
-
         super().save(*args, **kwargs)
 
     def _calcular_categoria_significancia(self):
         """
-        Determina categoría de significancia basada en valor calculado
-
-        Rangos:
-        - < 50: No Significativo
-        - 50-99: Significativo
-        - >= 100: Crítico
+        Determina categoria de significancia basada en valor calculado
+        Rangos: < 50: No Significativo | 50-99: Significativo | >= 100: Critico
         """
         valor = self.valor_significancia
-
         if valor >= 100:
             return 'CRITICO'
         elif valor >= 50:
@@ -335,7 +297,7 @@ class AspectoAmbiental(models.Model):
             return 'NO_SIGNIFICATIVO'
 
     def get_nivel_prioridad(self):
-        """Obtiene nivel de prioridad para planes de acción"""
+        """Obtiene nivel de prioridad para planes de accion"""
         if self.significancia == 'CRITICO':
             return 'INMEDIATO'
         elif self.significancia == 'SIGNIFICATIVO':
@@ -344,10 +306,10 @@ class AspectoAmbiental(models.Model):
             return 'BAJO'
 
 
-class ImpactoAmbiental(models.Model):
+class ImpactoAmbiental(AuditModel, SoftDeleteModel):
     """
-    Impactos ambientales específicos derivados de aspectos
-    Permite múltiples impactos por aspecto
+    Impactos ambientales especificos derivados de aspectos
+    Permite multiples impactos por aspecto
     """
     MAGNITUD_CHOICES = [
         ('MUY_BAJA', 'Muy Baja'),
@@ -365,7 +327,7 @@ class ImpactoAmbiental(models.Model):
         ('FAUNA', 'Fauna'),
         ('PAISAJE', 'Paisaje'),
         ('SOCIAL', 'Social'),
-        ('ECONOMICO', 'Económico'),
+        ('ECONOMICO', 'Economico'),
     ]
 
     aspecto = models.ForeignKey(
@@ -376,25 +338,23 @@ class ImpactoAmbiental(models.Model):
     )
     codigo = models.CharField(
         max_length=50,
-        verbose_name='Código del Impacto'
+        verbose_name='Codigo del Impacto'
     )
     nombre = models.CharField(
         max_length=255,
         verbose_name='Nombre del Impacto'
     )
     descripcion = models.TextField(
-        verbose_name='Descripción del Impacto',
+        verbose_name='Descripcion del Impacto',
         help_text='Cambio ambiental resultante del aspecto'
     )
 
-    # Componente afectado
     componente_ambiental = models.CharField(
         max_length=20,
         choices=COMPONENTE_CHOICES,
         verbose_name='Componente Ambiental Afectado'
     )
 
-    # Caracterización del impacto
     tipo_impacto = models.CharField(
         max_length=20,
         choices=[('NEGATIVO', 'Negativo'), ('POSITIVO', 'Positivo')],
@@ -409,11 +369,11 @@ class ImpactoAmbiental(models.Model):
     duracion = models.CharField(
         max_length=20,
         choices=[
-            ('TEMPORAL', 'Temporal (< 1 año)'),
-            ('MEDIO_PLAZO', 'Medio Plazo (1-5 años)'),
-            ('PERMANENTE', 'Permanente (> 5 años)'),
+            ('TEMPORAL', 'Temporal (< 1 anio)'),
+            ('MEDIO_PLAZO', 'Medio Plazo (1-5 anios)'),
+            ('PERMANENTE', 'Permanente (> 5 anios)'),
         ],
-        verbose_name='Duración'
+        verbose_name='Duracion'
     )
     extension = models.CharField(
         max_length=20,
@@ -423,17 +383,16 @@ class ImpactoAmbiental(models.Model):
             ('REGIONAL', 'Regional'),
             ('NACIONAL', 'Nacional'),
         ],
-        verbose_name='Extensión'
+        verbose_name='Extension'
     )
 
-    # Cuantificación (si aplica)
     valor_cuantitativo = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         null=True,
         blank=True,
         verbose_name='Valor Cuantitativo',
-        help_text='Ej: kg CO2, m³ agua, tons residuos'
+        help_text='Ej: kg CO2, m3 agua, tons residuos'
     )
     unidad_medida = models.CharField(
         max_length=50,
@@ -441,7 +400,6 @@ class ImpactoAmbiental(models.Model):
         verbose_name='Unidad de Medida'
     )
 
-    # Medidas de mitigación/prevención
     medidas_control = models.TextField(
         blank=True,
         verbose_name='Medidas de Control',
@@ -452,17 +410,6 @@ class ImpactoAmbiental(models.Model):
     empresa_id = models.PositiveBigIntegerField(
         db_index=True,
         verbose_name='Empresa ID'
-    )
-
-    # Auditoría
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha Creación')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Fecha Actualización')
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='impactos_ambientales_created',
-        verbose_name='Creado por'
     )
 
     class Meta:
@@ -480,31 +427,31 @@ class ImpactoAmbiental(models.Model):
         return f"{self.codigo} - {self.nombre}"
 
 
-class ProgramaAmbiental(models.Model):
+class ProgramaAmbiental(AuditModel, SoftDeleteModel):
     """
-    Programas de gestión ambiental para abordar aspectos significativos
-    ISO 14001 Cláusula 6.1.4 - Planificación de acciones
+    Programas de gestion ambiental para abordar aspectos significativos
+    ISO 14001 Clausula 6.1.4 - Planificacion de acciones
     """
     ESTADO_CHOICES = [
         ('PLANIFICADO', 'Planificado'),
-        ('EN_EJECUCION', 'En Ejecución'),
+        ('EN_EJECUCION', 'En Ejecucion'),
         ('COMPLETADO', 'Completado'),
         ('SUSPENDIDO', 'Suspendido'),
         ('CANCELADO', 'Cancelado'),
     ]
 
     TIPO_PROGRAMA_CHOICES = [
-        ('PREVENCION', 'Prevención'),
-        ('MITIGACION', 'Mitigación'),
-        ('COMPENSACION', 'Compensación'),
+        ('PREVENCION', 'Prevencion'),
+        ('MITIGACION', 'Mitigacion'),
+        ('COMPENSACION', 'Compensacion'),
         ('MEJORAMIENTO', 'Mejoramiento Continuo'),
         ('CUMPLIMIENTO', 'Cumplimiento Legal'),
     ]
 
-    # Identificación
+    # Identificacion
     codigo = models.CharField(
         max_length=50,
-        verbose_name='Código del Programa'
+        verbose_name='Codigo del Programa'
     )
     nombre = models.CharField(
         max_length=255,
@@ -512,7 +459,7 @@ class ProgramaAmbiental(models.Model):
     )
     objetivo = models.TextField(
         verbose_name='Objetivo del Programa',
-        help_text='Qué se pretende lograr con este programa'
+        help_text='Que se pretende lograr con este programa'
     )
     tipo_programa = models.CharField(
         max_length=20,
@@ -543,7 +490,7 @@ class ProgramaAmbiental(models.Model):
         verbose_name='Equipo de Apoyo'
     )
 
-    # Planificación
+    # Planificacion
     fecha_inicio = models.DateField(
         verbose_name='Fecha de Inicio Planificada'
     )
@@ -552,18 +499,18 @@ class ProgramaAmbiental(models.Model):
     )
     actividades = models.TextField(
         verbose_name='Actividades del Programa',
-        help_text='Descripción detallada de actividades a ejecutar'
+        help_text='Descripcion detallada de actividades a ejecutar'
     )
 
     # Metas e indicadores
     metas = models.TextField(
         verbose_name='Metas',
-        help_text='Metas específicas, medibles y con plazo'
+        help_text='Metas especificas, medibles y con plazo'
     )
     indicadores_medicion = models.TextField(
         blank=True,
-        verbose_name='Indicadores de Medición',
-        help_text='Cómo se medirá el progreso y cumplimiento'
+        verbose_name='Indicadores de Medicion',
+        help_text='Como se medira el progreso y cumplimiento'
     )
 
     # Recursos
@@ -577,7 +524,7 @@ class ProgramaAmbiental(models.Model):
     recursos_necesarios = models.TextField(
         blank=True,
         verbose_name='Recursos Necesarios',
-        help_text='Recursos humanos, técnicos, financieros'
+        help_text='Recursos humanos, tecnicos, financieros'
     )
 
     # Seguimiento
@@ -601,12 +548,12 @@ class ProgramaAmbiental(models.Model):
     fecha_completado = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Completación Real'
+        verbose_name='Fecha de Completacion Real'
     )
     resultados_obtenidos = models.TextField(
         blank=True,
         verbose_name='Resultados Obtenidos',
-        help_text='Descripción de logros y resultados al finalizar'
+        help_text='Descripcion de logros y resultados al finalizar'
     )
     eficacia = models.CharField(
         max_length=20,
@@ -624,17 +571,6 @@ class ProgramaAmbiental(models.Model):
     empresa_id = models.PositiveBigIntegerField(
         db_index=True,
         verbose_name='Empresa ID'
-    )
-
-    # Auditoría
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha Creación')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Fecha Actualización')
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='programas_ambientales_created',
-        verbose_name='Creado por'
     )
 
     class Meta:
@@ -661,32 +597,32 @@ class ProgramaAmbiental(models.Model):
                 )
 
     def get_duracion_dias(self):
-        """Calcula duración del programa en días"""
+        """Calcula duracion del programa en dias"""
         if self.fecha_inicio and self.fecha_fin:
             return (self.fecha_fin - self.fecha_inicio).days
         return None
 
     def is_vencido(self):
-        """Verifica si el programa está vencido"""
+        """Verifica si el programa esta vencido"""
         from django.utils import timezone
         if self.fecha_fin and self.estado not in ['COMPLETADO', 'CANCELADO']:
             return self.fecha_fin < timezone.now().date()
         return False
 
 
-class MonitoreoAmbiental(models.Model):
+class MonitoreoAmbiental(AuditModel, SoftDeleteModel):
     """
     Registros de monitoreo ambiental
-    ISO 14001 Cláusula 9.1 - Seguimiento, medición, análisis y evaluación
+    ISO 14001 Clausula 9.1 - Seguimiento, medicion, analisis y evaluacion
     """
     TIPO_MONITOREO_CHOICES = [
-        ('EMISION_ATMOSFERICA', 'Emisión Atmosférica'),
+        ('EMISION_ATMOSFERICA', 'Emision Atmosferica'),
         ('CALIDAD_AGUA', 'Calidad del Agua'),
         ('VERTIMIENTO', 'Vertimiento'),
         ('RUIDO', 'Ruido Ambiental'),
-        ('RESIDUOS', 'Gestión de Residuos'),
+        ('RESIDUOS', 'Gestion de Residuos'),
         ('CONSUMO_AGUA', 'Consumo de Agua'),
-        ('CONSUMO_ENERGIA', 'Consumo de Energía'),
+        ('CONSUMO_ENERGIA', 'Consumo de Energia'),
         ('CONSUMO_COMBUSTIBLE', 'Consumo de Combustible'),
         ('BIODIVERSIDAD', 'Biodiversidad'),
         ('SUELO', 'Calidad del Suelo'),
@@ -709,10 +645,10 @@ class MonitoreoAmbiental(models.Model):
         ('NO_APLICA', 'No Aplica'),
     ]
 
-    # Identificación
+    # Identificacion
     codigo = models.CharField(
         max_length=50,
-        verbose_name='Código de Monitoreo'
+        verbose_name='Codigo de Monitoreo'
     )
     tipo_monitoreo = models.CharField(
         max_length=30,
@@ -736,10 +672,10 @@ class MonitoreoAmbiental(models.Model):
         verbose_name='Programa Relacionado'
     )
 
-    # Ubicación y fecha
+    # Ubicacion y fecha
     ubicacion = models.CharField(
         max_length=200,
-        verbose_name='Ubicación del Monitoreo'
+        verbose_name='Ubicacion del Monitoreo'
     )
     fecha_monitoreo = models.DateField(
         verbose_name='Fecha del Monitoreo'
@@ -758,7 +694,7 @@ class MonitoreoAmbiental(models.Model):
     # Mediciones
     parametro_medido = models.CharField(
         max_length=200,
-        verbose_name='Parámetro Medido',
+        verbose_name='Parametro Medido',
         help_text='Ej: pH, DBO, Material Particulado, dB(A), kWh'
     )
     valor_medido = models.DecimalField(
@@ -775,8 +711,8 @@ class MonitoreoAmbiental(models.Model):
         decimal_places=3,
         null=True,
         blank=True,
-        verbose_name='Valor de Referencia/Límite',
-        help_text='Límite legal o meta establecida'
+        verbose_name='Valor de Referencia/Limite',
+        help_text='Limite legal o meta establecida'
     )
 
     # Cumplimiento
@@ -789,15 +725,15 @@ class MonitoreoAmbiental(models.Model):
         max_length=255,
         blank=True,
         verbose_name='Normatividad Aplicable',
-        help_text='Resolución, Decreto o norma que establece el límite'
+        help_text='Resolucion, Decreto o norma que establece el limite'
     )
 
-    # Metodología
+    # Metodologia
     metodo_medicion = models.CharField(
         max_length=200,
         blank=True,
-        verbose_name='Método de Medición',
-        help_text='Método o norma técnica utilizada'
+        verbose_name='Metodo de Medicion',
+        help_text='Metodo o norma tecnica utilizada'
     )
     equipo_utilizado = models.CharField(
         max_length=200,
@@ -809,10 +745,10 @@ class MonitoreoAmbiental(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         related_name='monitoreos_ambientales_responsable',
-        verbose_name='Responsable de la Medición'
+        verbose_name='Responsable de la Medicion'
     )
 
-    # Laboratorio externo (si aplica)
+    # Laboratorio externo
     laboratorio_externo = models.CharField(
         max_length=200,
         blank=True,
@@ -822,7 +758,7 @@ class MonitoreoAmbiental(models.Model):
     numero_informe = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Número de Informe de Laboratorio'
+        verbose_name='Numero de Informe de Laboratorio'
     )
 
     # Observaciones y acciones
@@ -839,8 +775,8 @@ class MonitoreoAmbiental(models.Model):
     # Evidencias
     evidencia_fotografica = models.TextField(
         blank=True,
-        verbose_name='Evidencia Fotográfica',
-        help_text='URLs o referencias a fotografías'
+        verbose_name='Evidencia Fotografica',
+        help_text='URLs o referencias a fotografias'
     )
     archivo_adjunto = models.CharField(
         max_length=500,
@@ -853,17 +789,6 @@ class MonitoreoAmbiental(models.Model):
     empresa_id = models.PositiveBigIntegerField(
         db_index=True,
         verbose_name='Empresa ID'
-    )
-
-    # Auditoría
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha Creación')
-    updated_at = models.DateTimeField(auto_now=True, verbose_name='Fecha Actualización')
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='monitoreos_ambientales_created',
-        verbose_name='Creado por'
     )
 
     class Meta:
@@ -883,15 +808,12 @@ class MonitoreoAmbiental(models.Model):
         return f"{self.codigo} - {self.get_tipo_monitoreo_display()} - {self.fecha_monitoreo}"
 
     def get_porcentaje_cumplimiento(self):
-        """
-        Calcula porcentaje de cumplimiento respecto al valor de referencia
-        Retorna None si no hay valor de referencia
-        """
+        """Calcula porcentaje de cumplimiento respecto al valor de referencia"""
         if self.valor_referencia and self.valor_referencia > 0:
             porcentaje = (self.valor_medido / self.valor_referencia) * 100
             return round(porcentaje, 2)
         return None
 
     def requiere_accion_correctiva(self):
-        """Determina si requiere acción correctiva"""
+        """Determina si requiere accion correctiva"""
         return self.cumplimiento == 'NO_CUMPLE'

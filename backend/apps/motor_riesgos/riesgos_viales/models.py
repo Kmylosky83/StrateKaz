@@ -1,47 +1,49 @@
 """
-Modelos para riesgos_viales - PESV (Plan Estratégico de Seguridad Vial)
-Basado en Resolución 40595/2022 - Ministerio de Transporte de Colombia
+Modelos para riesgos_viales - PESV (Plan Estrategico de Seguridad Vial)
+Basado en Resolucion 40595/2022 - Ministerio de Transporte de Colombia
 """
 from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from decimal import Decimal
 
+from apps.core.base_models import TimestampedModel, SoftDeleteModel, AuditModel
 
-class TipoRiesgoVial(models.Model):
+
+class TipoRiesgoVial(TimestampedModel, SoftDeleteModel):
     """
-    Catálogo de tipos de riesgos viales según PESV
+    Catalogo de tipos de riesgos viales segun PESV
 
-    Categorías principales:
+    Categorias principales:
     - Factor Humano: Comportamientos del conductor
-    - Factor Vehículo: Estado mecánico y condiciones del vehículo
-    - Factor Vía: Condiciones de infraestructura vial
-    - Factor Ambiental: Condiciones climáticas y del entorno
+    - Factor Vehiculo: Estado mecanico y condiciones del vehiculo
+    - Factor Via: Condiciones de infraestructura vial
+    - Factor Ambiental: Condiciones climaticas y del entorno
     """
     CATEGORIA_CHOICES = [
         ('HUMANO', 'Factor Humano'),
-        ('VEHICULO', 'Factor Vehículo'),
-        ('VIA', 'Factor Vía/Infraestructura'),
+        ('VEHICULO', 'Factor Vehiculo'),
+        ('VIA', 'Factor Via/Infraestructura'),
         ('AMBIENTAL', 'Factor Ambiental'),
     ]
 
     codigo = models.CharField(
         max_length=20,
         unique=True,
-        verbose_name='Código'
+        verbose_name='Codigo'
     )
     categoria = models.CharField(
         max_length=20,
         choices=CATEGORIA_CHOICES,
-        verbose_name='Categoría'
+        verbose_name='Categoria'
     )
     nombre = models.CharField(
         max_length=200,
         verbose_name='Nombre del Riesgo'
     )
     descripcion = models.TextField(
-        verbose_name='Descripción',
-        help_text='Descripción detallada del tipo de riesgo vial'
+        verbose_name='Descripcion',
+        help_text='Descripcion detallada del tipo de riesgo vial'
     )
     consecuencias_posibles = models.TextField(
         blank=True,
@@ -51,16 +53,8 @@ class TipoRiesgoVial(models.Model):
     marco_legal = models.TextField(
         blank=True,
         verbose_name='Marco Legal',
-        help_text='Normatividad aplicable (Res. 40595/2022, Código de Tránsito, etc.)'
+        help_text='Normatividad aplicable (Res. 40595/2022, Codigo de Transito, etc.)'
     )
-    is_active = models.BooleanField(
-        default=True,
-        verbose_name='Activo'
-    )
-
-    # Auditoría
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'riesgos_viales_tipo_riesgo'
@@ -72,12 +66,12 @@ class TipoRiesgoVial(models.Model):
         return f"{self.get_categoria_display()} - {self.nombre}"
 
 
-class RiesgoVial(models.Model):
+class RiesgoVial(AuditModel, SoftDeleteModel):
     """
     Riesgos viales identificados y evaluados
 
-    Evaluación basada en:
-    - Frecuencia de exposición al riesgo
+    Evaluacion basada en:
+    - Frecuencia de exposicion al riesgo
     - Probabilidad de ocurrencia
     - Severidad de las consecuencias
     """
@@ -85,21 +79,21 @@ class RiesgoVial(models.Model):
         ('BAJO', 'Bajo'),
         ('MEDIO', 'Medio'),
         ('ALTO', 'Alto'),
-        ('CRITICO', 'Crítico'),
+        ('CRITICO', 'Critico'),
     ]
 
     ESTADO_CHOICES = [
         ('IDENTIFICADO', 'Identificado'),
-        ('EN_EVALUACION', 'En Evaluación'),
+        ('EN_EVALUACION', 'En Evaluacion'),
         ('EN_TRATAMIENTO', 'En Tratamiento'),
         ('CONTROLADO', 'Controlado'),
         ('CERRADO', 'Cerrado'),
     ]
 
-    # Identificación
+    # Identificacion
     codigo = models.CharField(
         max_length=50,
-        verbose_name='Código'
+        verbose_name='Codigo'
     )
     tipo_riesgo = models.ForeignKey(
         TipoRiesgoVial,
@@ -108,52 +102,49 @@ class RiesgoVial(models.Model):
         verbose_name='Tipo de Riesgo'
     )
     descripcion = models.TextField(
-        verbose_name='Descripción del Riesgo',
-        help_text='Descripción específica de cómo se manifiesta el riesgo en la operación'
+        verbose_name='Descripcion del Riesgo',
+        help_text='Descripcion especifica de como se manifiesta el riesgo en la operacion'
     )
 
     # Contexto operacional
     proceso_afectado = models.CharField(
         max_length=200,
         verbose_name='Proceso Afectado',
-        help_text='Proceso de negocio afectado (ej: Distribución, Recolección, etc.)'
+        help_text='Proceso de negocio afectado (ej: Distribucion, Recoleccion, etc.)'
     )
     rutas_afectadas = models.TextField(
         blank=True,
         verbose_name='Rutas Afectadas',
-        help_text='Rutas específicas donde se presenta el riesgo'
+        help_text='Rutas especificas donde se presenta el riesgo'
     )
     tipo_vehiculo = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Tipo de Vehículo',
-        help_text='Tipo de vehículo afectado por el riesgo'
+        verbose_name='Tipo de Vehiculo',
+        help_text='Tipo de vehiculo afectado por el riesgo'
     )
 
-    # Evaluación del riesgo (método matriz)
-    # Frecuencia: 1-5 (Muy rara vez a Muy frecuente)
+    # Evaluacion del riesgo (metodo matriz)
     frecuencia = models.IntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(5)],
-        verbose_name='Frecuencia de Exposición',
+        verbose_name='Frecuencia de Exposicion',
         help_text='1=Muy rara vez, 2=Poco frecuente, 3=Ocasional, 4=Frecuente, 5=Muy frecuente'
     )
-    # Probabilidad: 1-5 (Muy improbable a Muy probable)
     probabilidad = models.IntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(5)],
         verbose_name='Probabilidad de Ocurrencia',
         help_text='1=Muy improbable, 2=Improbable, 3=Moderada, 4=Probable, 5=Muy probable'
     )
-    # Severidad: 1-5 (Insignificante a Catastrófico)
     severidad = models.IntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(5)],
         verbose_name='Severidad de Consecuencias',
-        help_text='1=Insignificante, 2=Menor, 3=Moderado, 4=Mayor, 5=Catastrófico'
+        help_text='1=Insignificante, 2=Menor, 3=Moderado, 4=Mayor, 5=Catastrofico'
     )
 
-    # Valoración calculada (Frecuencia x Probabilidad x Severidad)
+    # Valoracion calculada
     valoracion_riesgo = models.IntegerField(
         editable=False,
-        verbose_name='Valoración del Riesgo',
+        verbose_name='Valoracion del Riesgo',
         help_text='Producto de Frecuencia x Probabilidad x Severidad'
     )
     nivel_riesgo = models.CharField(
@@ -181,7 +172,7 @@ class RiesgoVial(models.Model):
         verbose_name='Efectividad de Controles'
     )
 
-    # Valoración residual (después de controles)
+    # Valoracion residual (despues de controles)
     frecuencia_residual = models.IntegerField(
         null=True,
         blank=True,
@@ -204,7 +195,7 @@ class RiesgoVial(models.Model):
         null=True,
         blank=True,
         editable=False,
-        verbose_name='Valoración Residual'
+        verbose_name='Valoracion Residual'
     )
     nivel_residual = models.CharField(
         max_length=10,
@@ -220,7 +211,7 @@ class RiesgoVial(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         related_name='riesgos_viales_responsable',
-        verbose_name='Responsable de Gestión'
+        verbose_name='Responsable de Gestion'
     )
 
     # Estado
@@ -231,20 +222,19 @@ class RiesgoVial(models.Model):
         verbose_name='Estado'
     )
     fecha_identificacion = models.DateField(
-        verbose_name='Fecha de Identificación'
+        verbose_name='Fecha de Identificacion'
     )
     fecha_evaluacion = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Evaluación'
+        verbose_name='Fecha de Evaluacion'
     )
     fecha_revision = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Próxima Revisión'
+        verbose_name='Proxima Revision'
     )
 
-    # Observaciones
     observaciones = models.TextField(
         blank=True,
         verbose_name='Observaciones'
@@ -254,17 +244,6 @@ class RiesgoVial(models.Model):
     empresa_id = models.PositiveBigIntegerField(
         db_index=True,
         verbose_name='Empresa ID'
-    )
-
-    # Auditoría
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='riesgos_viales_created',
-        verbose_name='Creado por'
     )
 
     class Meta:
@@ -284,11 +263,9 @@ class RiesgoVial(models.Model):
         return f"{self.codigo} - {self.descripcion[:50]}"
 
     def save(self, *args, **kwargs):
-        # Calcular valoración de riesgo inherente
         self.valoracion_riesgo = self.frecuencia * self.probabilidad * self.severidad
         self.nivel_riesgo = self._calcular_nivel_riesgo(self.valoracion_riesgo)
 
-        # Calcular valoración residual si hay datos
         if all([
             self.frecuencia_residual is not None,
             self.probabilidad_residual is not None,
@@ -305,13 +282,8 @@ class RiesgoVial(models.Model):
 
     def _calcular_nivel_riesgo(self, valoracion):
         """
-        Calcula el nivel de riesgo basado en la valoración
-
-        Escala PESV:
-        - 1-25: Bajo
-        - 26-60: Medio
-        - 61-100: Alto
-        - 101-125: Crítico
+        Calcula el nivel de riesgo basado en la valoracion
+        Escala PESV: 1-25: Bajo | 26-60: Medio | 61-100: Alto | 101-125: Critico
         """
         if valoracion <= 25:
             return 'BAJO'
@@ -324,12 +296,12 @@ class RiesgoVial(models.Model):
 
     @property
     def requiere_accion_inmediata(self):
-        """Indica si el riesgo requiere acción inmediata"""
+        """Indica si el riesgo requiere accion inmediata"""
         return self.nivel_riesgo in ['ALTO', 'CRITICO']
 
     @property
     def porcentaje_reduccion(self):
-        """Calcula el porcentaje de reducción del riesgo con controles"""
+        """Calcula el porcentaje de reduccion del riesgo con controles"""
         if self.valoracion_residual and self.valoracion_riesgo > 0:
             reduccion = ((self.valoracion_riesgo - self.valoracion_residual) /
                         self.valoracion_riesgo) * 100
@@ -337,14 +309,9 @@ class RiesgoVial(models.Model):
         return None
 
 
-class ControlVial(models.Model):
+class ControlVial(AuditModel, SoftDeleteModel):
     """
     Controles de seguridad vial implementados
-
-    Clasificados según momento de aplicación:
-    - Antes del viaje (planificación, inspección)
-    - Durante el viaje (monitoreo, comunicación)
-    - Después del viaje (análisis, mejora)
     """
     TIPO_CONTROL_CHOICES = [
         ('PREVENTIVO', 'Preventivo'),
@@ -355,19 +322,18 @@ class ControlVial(models.Model):
     MOMENTO_APLICACION_CHOICES = [
         ('ANTES_VIAJE', 'Antes del Viaje'),
         ('DURANTE_VIAJE', 'Durante el Viaje'),
-        ('DESPUES_VIAJE', 'Después del Viaje'),
+        ('DESPUES_VIAJE', 'Despues del Viaje'),
         ('PERMANENTE', 'Permanente'),
     ]
 
     ESTADO_CHOICES = [
         ('PROPUESTO', 'Propuesto'),
         ('APROBADO', 'Aprobado'),
-        ('EN_IMPLEMENTACION', 'En Implementación'),
+        ('EN_IMPLEMENTACION', 'En Implementacion'),
         ('IMPLEMENTADO', 'Implementado'),
         ('SUSPENDIDO', 'Suspendido'),
     ]
 
-    # Relación con riesgo
     riesgo_vial = models.ForeignKey(
         RiesgoVial,
         on_delete=models.CASCADE,
@@ -375,21 +341,19 @@ class ControlVial(models.Model):
         verbose_name='Riesgo Vial'
     )
 
-    # Identificación del control
     codigo = models.CharField(
         max_length=50,
-        verbose_name='Código'
+        verbose_name='Codigo'
     )
     nombre = models.CharField(
         max_length=200,
         verbose_name='Nombre del Control'
     )
     descripcion = models.TextField(
-        verbose_name='Descripción',
-        help_text='Descripción detallada del control a implementar'
+        verbose_name='Descripcion',
+        help_text='Descripcion detallada del control a implementar'
     )
 
-    # Clasificación
     tipo_control = models.CharField(
         max_length=15,
         choices=TIPO_CONTROL_CHOICES,
@@ -398,37 +362,35 @@ class ControlVial(models.Model):
     momento_aplicacion = models.CharField(
         max_length=20,
         choices=MOMENTO_APLICACION_CHOICES,
-        verbose_name='Momento de Aplicación'
+        verbose_name='Momento de Aplicacion'
     )
 
-    # Jerarquía de controles (según PESV)
     jerarquia = models.CharField(
         max_length=30,
         choices=[
-            ('ELIMINACION', 'Eliminación'),
-            ('SUSTITUCION', 'Sustitución'),
-            ('CONTROLES_INGENIERIA', 'Controles de Ingeniería'),
+            ('ELIMINACION', 'Eliminacion'),
+            ('SUSTITUCION', 'Sustitucion'),
+            ('CONTROLES_INGENIERIA', 'Controles de Ingenieria'),
             ('CONTROLES_ADMIN', 'Controles Administrativos'),
-            ('SEÑALIZACION', 'Señalización/Advertencia'),
-            ('EPP', 'Equipos de Protección Personal'),
+            ('SENALIZACION', 'Senializacion/Advertencia'),
+            ('EPP', 'Equipos de Proteccion Personal'),
         ],
-        verbose_name='Jerarquía de Control'
+        verbose_name='Jerarquia de Control'
     )
 
-    # Responsabilidad
     responsable = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='controles_viales_responsable',
-        verbose_name='Responsable de Implementación'
+        verbose_name='Responsable de Implementacion'
     )
     area_responsable = models.CharField(
         max_length=100,
-        verbose_name='Área Responsable'
+        verbose_name='Area Responsable'
     )
 
-    # Implementación
+    # Implementacion
     fecha_propuesta = models.DateField(
         verbose_name='Fecha de Propuesta'
     )
@@ -440,7 +402,7 @@ class ControlVial(models.Model):
     fecha_implementacion_real = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Fecha Real de Implementación'
+        verbose_name='Fecha Real de Implementacion'
     )
     estado = models.CharField(
         max_length=20,
@@ -473,7 +435,7 @@ class ControlVial(models.Model):
     indicador_efectividad = models.TextField(
         blank=True,
         verbose_name='Indicador de Efectividad',
-        help_text='Cómo se medirá la efectividad del control'
+        help_text='Como se medira la efectividad del control'
     )
     efectividad_verificada = models.BooleanField(
         default=False,
@@ -482,14 +444,14 @@ class ControlVial(models.Model):
     fecha_verificacion = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Verificación'
+        verbose_name='Fecha de Verificacion'
     )
     resultado_verificacion = models.TextField(
         blank=True,
-        verbose_name='Resultado de Verificación'
+        verbose_name='Resultado de Verificacion'
     )
 
-    # Documentación
+    # Documentacion
     documentos_soporte = models.TextField(
         blank=True,
         verbose_name='Documentos de Soporte',
@@ -498,10 +460,9 @@ class ControlVial(models.Model):
     evidencias = models.TextField(
         blank=True,
         verbose_name='Evidencias',
-        help_text='Evidencias de implementación (fotos, registros, etc.)'
+        help_text='Evidencias de implementacion (fotos, registros, etc.)'
     )
 
-    # Observaciones
     observaciones = models.TextField(
         blank=True,
         verbose_name='Observaciones'
@@ -511,17 +472,6 @@ class ControlVial(models.Model):
     empresa_id = models.PositiveBigIntegerField(
         db_index=True,
         verbose_name='Empresa ID'
-    )
-
-    # Auditoría
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='controles_viales_created',
-        verbose_name='Creado por'
     )
 
     class Meta:
@@ -541,28 +491,27 @@ class ControlVial(models.Model):
 
     @property
     def esta_atrasado(self):
-        """Verifica si el control está atrasado en su implementación"""
+        """Verifica si el control esta atrasado en su implementacion"""
         if self.estado in ['PROPUESTO', 'EN_IMPLEMENTACION'] and self.fecha_implementacion_programada:
             from django.utils import timezone
             return self.fecha_implementacion_programada < timezone.now().date()
         return False
 
 
-class IncidenteVial(models.Model):
+class IncidenteVial(AuditModel, SoftDeleteModel):
     """
     Registro de incidentes y accidentes viales
-
-    Para análisis de causalidad y mejora continua del PESV
+    Para analisis de causalidad y mejora continua del PESV
     """
     TIPO_INCIDENTE_CHOICES = [
-        ('ACCIDENTE_TRANSITO', 'Accidente de Tránsito'),
+        ('ACCIDENTE_TRANSITO', 'Accidente de Transito'),
         ('INCIDENTE_MENOR', 'Incidente Menor'),
         ('CASI_ACCIDENTE', 'Casi Accidente'),
-        ('INFRACCION', 'Infracción de Tránsito'),
+        ('INFRACCION', 'Infraccion de Transito'),
     ]
 
     GRAVEDAD_CHOICES = [
-        ('SOLO_DAÑOS', 'Solo Daños Materiales'),
+        ('SOLO_DANOS', 'Solo Danos Materiales'),
         ('LESION_LEVE', 'Lesiones Leves'),
         ('LESION_GRAVE', 'Lesiones Graves'),
         ('FATAL', 'Fatal'),
@@ -570,16 +519,16 @@ class IncidenteVial(models.Model):
 
     ESTADO_INVESTIGACION_CHOICES = [
         ('REPORTADO', 'Reportado'),
-        ('EN_INVESTIGACION', 'En Investigación'),
-        ('ANALISIS_CAUSAL', 'Análisis de Causas'),
-        ('PLAN_ACCION', 'Plan de Acción'),
+        ('EN_INVESTIGACION', 'En Investigacion'),
+        ('ANALISIS_CAUSAL', 'Analisis de Causas'),
+        ('PLAN_ACCION', 'Plan de Accion'),
         ('CERRADO', 'Cerrado'),
     ]
 
-    # Identificación
+    # Identificacion
     numero_incidente = models.CharField(
         max_length=50,
-        verbose_name='Número de Incidente'
+        verbose_name='Numero de Incidente'
     )
     tipo_incidente = models.CharField(
         max_length=25,
@@ -598,8 +547,8 @@ class IncidenteVial(models.Model):
     )
     ubicacion = models.CharField(
         max_length=300,
-        verbose_name='Ubicación',
-        help_text='Dirección o punto de referencia donde ocurrió'
+        verbose_name='Ubicacion',
+        help_text='Direccion o punto de referencia donde ocurrio'
     )
     municipio = models.CharField(
         max_length=100,
@@ -623,72 +572,72 @@ class IncidenteVial(models.Model):
     )
     conductor_identificacion = models.CharField(
         max_length=50,
-        verbose_name='Identificación del Conductor'
+        verbose_name='Identificacion del Conductor'
     )
     conductor_licencia = models.CharField(
         max_length=50,
         blank=True,
-        verbose_name='Número de Licencia'
+        verbose_name='Numero de Licencia'
     )
     vehiculo_placa = models.CharField(
         max_length=10,
-        verbose_name='Placa del Vehículo'
+        verbose_name='Placa del Vehiculo'
     )
     vehiculo_tipo = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Tipo de Vehículo'
+        verbose_name='Tipo de Vehiculo'
     )
 
-    # Descripción
+    # Descripcion
     descripcion_hechos = models.TextField(
-        verbose_name='Descripción de los Hechos'
+        verbose_name='Descripcion de los Hechos'
     )
     condiciones_climaticas = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Condiciones Climáticas'
+        verbose_name='Condiciones Climaticas'
     )
     condiciones_via = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Condiciones de la Vía'
+        verbose_name='Condiciones de la Via'
     )
     condiciones_vehiculo = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Condiciones del Vehículo'
+        verbose_name='Condiciones del Vehiculo'
     )
 
     # Consecuencias
     numero_lesionados = models.IntegerField(
         default=0,
-        verbose_name='Número de Lesionados'
+        verbose_name='Numero de Lesionados'
     )
     numero_fallecidos = models.IntegerField(
         default=0,
-        verbose_name='Número de Fallecidos'
+        verbose_name='Numero de Fallecidos'
     )
     descripcion_lesiones = models.TextField(
         blank=True,
-        verbose_name='Descripción de Lesiones'
+        verbose_name='Descripcion de Lesiones'
     )
 
-    # Daños materiales
-    daños_vehiculo_propio = models.TextField(
+    # Danos materiales
+    danos_vehiculo_propio = models.TextField(
         blank=True,
-        verbose_name='Daños al Vehículo Propio'
+        verbose_name='Danos al Vehiculo Propio'
     )
-    daños_terceros = models.TextField(
+    danos_terceros = models.TextField(
         blank=True,
-        verbose_name='Daños a Terceros'
+        verbose_name='Danos a Terceros'
     )
-    costo_estimado_daños = models.DecimalField(
+    costo_estimado_danos = models.DecimalField(
         max_digits=12,
         decimal_places=2,
         null=True,
         blank=True,
-        verbose_name='Costo Estimado de Daños'
+        verbose_name='Costo Estimado de Danos'
     )
 
     # Autoridades
@@ -699,20 +648,20 @@ class IncidenteVial(models.Model):
     numero_informe_policial = models.CharField(
         max_length=50,
         blank=True,
-        verbose_name='Número de Informe Policial'
+        verbose_name='Numero de Informe Policial'
     )
     comparendo_numero = models.CharField(
         max_length=50,
         blank=True,
-        verbose_name='Número de Comparendo'
+        verbose_name='Numero de Comparendo'
     )
 
-    # Investigación
+    # Investigacion
     estado_investigacion = models.CharField(
         max_length=25,
         choices=ESTADO_INVESTIGACION_CHOICES,
         default='REPORTADO',
-        verbose_name='Estado de Investigación'
+        verbose_name='Estado de Investigacion'
     )
     investigador = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -725,15 +674,15 @@ class IncidenteVial(models.Model):
     fecha_inicio_investigacion = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Fecha Inicio Investigación'
+        verbose_name='Fecha Inicio Investigacion'
     )
     fecha_cierre_investigacion = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Fecha Cierre Investigación'
+        verbose_name='Fecha Cierre Investigacion'
     )
 
-    # Análisis de causas
+    # Analisis de causas
     causas_inmediatas = models.TextField(
         blank=True,
         verbose_name='Causas Inmediatas',
@@ -741,16 +690,16 @@ class IncidenteVial(models.Model):
     )
     causas_basicas = models.TextField(
         blank=True,
-        verbose_name='Causas Básicas',
+        verbose_name='Causas Basicas',
         help_text='Factores personales y del trabajo'
     )
     causas_raiz = models.TextField(
         blank=True,
-        verbose_name='Causas Raíz',
-        help_text='Fallas en el sistema de gestión'
+        verbose_name='Causas Raiz',
+        help_text='Fallas en el sistema de gestion'
     )
 
-    # Relación con riesgos identificados
+    # Relacion con riesgos identificados
     riesgos_relacionados = models.ManyToManyField(
         RiesgoVial,
         blank=True,
@@ -771,7 +720,7 @@ class IncidenteVial(models.Model):
     # Evidencias
     evidencias_fotograficas = models.TextField(
         blank=True,
-        verbose_name='Evidencias Fotográficas',
+        verbose_name='Evidencias Fotograficas',
         help_text='Referencias a archivos de fotos'
     )
     documentos_adjuntos = models.TextField(
@@ -784,17 +733,6 @@ class IncidenteVial(models.Model):
     empresa_id = models.PositiveBigIntegerField(
         db_index=True,
         verbose_name='Empresa ID'
-    )
-
-    # Auditoría
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='incidentes_viales_created',
-        verbose_name='Reportado por'
     )
 
     class Meta:
@@ -825,19 +763,17 @@ class IncidenteVial(models.Model):
 
     @property
     def dias_investigacion_abierta(self):
-        """Calcula días desde inicio de investigación"""
+        """Calcula dias desde inicio de investigacion"""
         if self.fecha_inicio_investigacion and not self.fecha_cierre_investigacion:
             from django.utils import timezone
             return (timezone.now().date() - self.fecha_inicio_investigacion).days
         return None
 
 
-class InspeccionVehiculo(models.Model):
+class InspeccionVehiculo(AuditModel, SoftDeleteModel):
     """
-    Registros de inspecciones pre-operacionales de vehículos
-
-    Parte fundamental del PESV para prevención de riesgos viales
-    Inspecciones diarias antes de iniciar operación
+    Registros de inspecciones pre-operacionales de vehiculos
+    Parte fundamental del PESV para prevencion de riesgos viales
     """
     RESULTADO_CHOICES = [
         ('APROBADO', 'Aprobado - Apto para Operar'),
@@ -845,25 +781,25 @@ class InspeccionVehiculo(models.Model):
         ('RECHAZADO', 'Rechazado - No Apto'),
     ]
 
-    # Identificación
+    # Identificacion
     numero_inspeccion = models.CharField(
         max_length=50,
-        verbose_name='Número de Inspección'
+        verbose_name='Numero de Inspeccion'
     )
     fecha_inspeccion = models.DateTimeField(
         auto_now_add=True,
-        verbose_name='Fecha y Hora de Inspección'
+        verbose_name='Fecha y Hora de Inspeccion'
     )
 
-    # Vehículo e inspector
+    # Vehiculo e inspector
     vehiculo_placa = models.CharField(
         max_length=10,
-        verbose_name='Placa del Vehículo'
+        verbose_name='Placa del Vehiculo'
     )
     vehiculo_tipo = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Tipo de Vehículo'
+        verbose_name='Tipo de Vehiculo'
     )
     conductor_nombre = models.CharField(
         max_length=200,
@@ -871,166 +807,47 @@ class InspeccionVehiculo(models.Model):
     )
     conductor_identificacion = models.CharField(
         max_length=50,
-        verbose_name='Identificación del Conductor'
+        verbose_name='Identificacion del Conductor'
     )
     odometro = models.IntegerField(
         null=True,
         blank=True,
-        verbose_name='Lectura de Odómetro (km)'
+        verbose_name='Lectura de Odometro (km)'
     )
 
-    # Checklist de inspección (según normativa)
-    # Estado general
-    estado_carroceria = models.BooleanField(
-        default=True,
-        verbose_name='Estado de Carrocería'
-    )
-    limpieza_vehiculo = models.BooleanField(
-        default=True,
-        verbose_name='Limpieza del Vehículo'
-    )
-
-    # Sistema de iluminación
-    luces_delanteras = models.BooleanField(
-        default=True,
-        verbose_name='Luces Delanteras'
-    )
-    luces_traseras = models.BooleanField(
-        default=True,
-        verbose_name='Luces Traseras'
-    )
-    luces_direccionales = models.BooleanField(
-        default=True,
-        verbose_name='Luces Direccionales'
-    )
-    luces_freno = models.BooleanField(
-        default=True,
-        verbose_name='Luces de Freno'
-    )
-    luces_emergencia = models.BooleanField(
-        default=True,
-        verbose_name='Luces de Emergencia'
-    )
-
-    # Espejos
-    espejo_retrovisor_int = models.BooleanField(
-        default=True,
-        verbose_name='Espejo Retrovisor Interior'
-    )
-    espejo_lateral_izq = models.BooleanField(
-        default=True,
-        verbose_name='Espejo Lateral Izquierdo'
-    )
-    espejo_lateral_der = models.BooleanField(
-        default=True,
-        verbose_name='Espejo Lateral Derecho'
-    )
-
-    # Llantas
-    estado_llantas = models.BooleanField(
-        default=True,
-        verbose_name='Estado de Llantas (profundidad, presión)'
-    )
-    llanta_repuesto = models.BooleanField(
-        default=True,
-        verbose_name='Llanta de Repuesto'
-    )
-
-    # Frenos
-    freno_servicio = models.BooleanField(
-        default=True,
-        verbose_name='Freno de Servicio'
-    )
-    freno_emergencia = models.BooleanField(
-        default=True,
-        verbose_name='Freno de Emergencia'
-    )
-
-    # Dirección y suspensión
-    sistema_direccion = models.BooleanField(
-        default=True,
-        verbose_name='Sistema de Dirección'
-    )
-    sistema_suspension = models.BooleanField(
-        default=True,
-        verbose_name='Sistema de Suspensión'
-    )
-
-    # Niveles de fluidos
-    nivel_aceite_motor = models.BooleanField(
-        default=True,
-        verbose_name='Nivel de Aceite de Motor'
-    )
-    nivel_refrigerante = models.BooleanField(
-        default=True,
-        verbose_name='Nivel de Refrigerante'
-    )
-    nivel_liquido_frenos = models.BooleanField(
-        default=True,
-        verbose_name='Nivel de Líquido de Frenos'
-    )
-    nivel_liquido_direccion = models.BooleanField(
-        default=True,
-        verbose_name='Nivel de Líquido de Dirección'
-    )
-
-    # Limpiabrisas y parabrisas
-    limpiabrisas = models.BooleanField(
-        default=True,
-        verbose_name='Limpiabrisas'
-    )
-    parabrisas = models.BooleanField(
-        default=True,
-        verbose_name='Parabrisas (sin fisuras)'
-    )
-
-    # Cinturones de seguridad
-    cinturones_seguridad = models.BooleanField(
-        default=True,
-        verbose_name='Cinturones de Seguridad'
-    )
-
-    # Bocina y alarma de reversa
-    bocina = models.BooleanField(
-        default=True,
-        verbose_name='Bocina'
-    )
-    alarma_reversa = models.BooleanField(
-        default=True,
-        verbose_name='Alarma de Reversa'
-    )
-
-    # Kit de seguridad
-    extintor = models.BooleanField(
-        default=True,
-        verbose_name='Extintor (carga vigente)'
-    )
-    botiquin = models.BooleanField(
-        default=True,
-        verbose_name='Botiquín de Primeros Auxilios'
-    )
-    kit_carretera = models.BooleanField(
-        default=True,
-        verbose_name='Kit de Carretera (señales, cruceta, tacos)'
-    )
-    chaleco_reflectivo = models.BooleanField(
-        default=True,
-        verbose_name='Chaleco Reflectivo'
-    )
-
-    # Documentación del vehículo
-    soat_vigente = models.BooleanField(
-        default=True,
-        verbose_name='SOAT Vigente'
-    )
-    revision_tecnomecanica = models.BooleanField(
-        default=True,
-        verbose_name='Revisión Tecnomecánica Vigente'
-    )
-    tarjeta_propiedad = models.BooleanField(
-        default=True,
-        verbose_name='Tarjeta de Propiedad'
-    )
+    # Checklist de inspeccion
+    estado_carroceria = models.BooleanField(default=True, verbose_name='Estado de Carroceria')
+    limpieza_vehiculo = models.BooleanField(default=True, verbose_name='Limpieza del Vehiculo')
+    luces_delanteras = models.BooleanField(default=True, verbose_name='Luces Delanteras')
+    luces_traseras = models.BooleanField(default=True, verbose_name='Luces Traseras')
+    luces_direccionales = models.BooleanField(default=True, verbose_name='Luces Direccionales')
+    luces_freno = models.BooleanField(default=True, verbose_name='Luces de Freno')
+    luces_emergencia = models.BooleanField(default=True, verbose_name='Luces de Emergencia')
+    espejo_retrovisor_int = models.BooleanField(default=True, verbose_name='Espejo Retrovisor Interior')
+    espejo_lateral_izq = models.BooleanField(default=True, verbose_name='Espejo Lateral Izquierdo')
+    espejo_lateral_der = models.BooleanField(default=True, verbose_name='Espejo Lateral Derecho')
+    estado_llantas = models.BooleanField(default=True, verbose_name='Estado de Llantas (profundidad, presion)')
+    llanta_repuesto = models.BooleanField(default=True, verbose_name='Llanta de Repuesto')
+    freno_servicio = models.BooleanField(default=True, verbose_name='Freno de Servicio')
+    freno_emergencia = models.BooleanField(default=True, verbose_name='Freno de Emergencia')
+    sistema_direccion = models.BooleanField(default=True, verbose_name='Sistema de Direccion')
+    sistema_suspension = models.BooleanField(default=True, verbose_name='Sistema de Suspension')
+    nivel_aceite_motor = models.BooleanField(default=True, verbose_name='Nivel de Aceite de Motor')
+    nivel_refrigerante = models.BooleanField(default=True, verbose_name='Nivel de Refrigerante')
+    nivel_liquido_frenos = models.BooleanField(default=True, verbose_name='Nivel de Liquido de Frenos')
+    nivel_liquido_direccion = models.BooleanField(default=True, verbose_name='Nivel de Liquido de Direccion')
+    limpiabrisas = models.BooleanField(default=True, verbose_name='Limpiabrisas')
+    parabrisas = models.BooleanField(default=True, verbose_name='Parabrisas (sin fisuras)')
+    cinturones_seguridad = models.BooleanField(default=True, verbose_name='Cinturones de Seguridad')
+    bocina = models.BooleanField(default=True, verbose_name='Bocina')
+    alarma_reversa = models.BooleanField(default=True, verbose_name='Alarma de Reversa')
+    extintor = models.BooleanField(default=True, verbose_name='Extintor (carga vigente)')
+    botiquin = models.BooleanField(default=True, verbose_name='Botiquin de Primeros Auxilios')
+    kit_carretera = models.BooleanField(default=True, verbose_name='Kit de Carretera (senales, cruceta, tacos)')
+    chaleco_reflectivo = models.BooleanField(default=True, verbose_name='Chaleco Reflectivo')
+    soat_vigente = models.BooleanField(default=True, verbose_name='SOAT Vigente')
+    revision_tecnomecanica = models.BooleanField(default=True, verbose_name='Revision Tecnomecanica Vigente')
+    tarjeta_propiedad = models.BooleanField(default=True, verbose_name='Tarjeta de Propiedad')
 
     # Observaciones y resultado
     observaciones = models.TextField(
@@ -1040,13 +857,13 @@ class InspeccionVehiculo(models.Model):
     )
     items_rechazados = models.TextField(
         blank=True,
-        verbose_name='Ítems Rechazados',
-        help_text='Lista de ítems que no cumplen'
+        verbose_name='Items Rechazados',
+        help_text='Lista de items que no cumplen'
     )
     resultado = models.CharField(
         max_length=30,
         choices=RESULTADO_CHOICES,
-        verbose_name='Resultado de Inspección'
+        verbose_name='Resultado de Inspeccion'
     )
 
     # Seguimiento
@@ -1064,7 +881,7 @@ class InspeccionVehiculo(models.Model):
         verbose_name='Mantenimiento Completado'
     )
 
-    # Firma digital / confirmación
+    # Firma digital / confirmacion
     inspeccion_confirmada_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -1076,7 +893,7 @@ class InspeccionVehiculo(models.Model):
     fecha_confirmacion = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Confirmación'
+        verbose_name='Fecha de Confirmacion'
     )
 
     # Multi-tenancy
@@ -1085,21 +902,10 @@ class InspeccionVehiculo(models.Model):
         verbose_name='Empresa ID'
     )
 
-    # Auditoría
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='inspecciones_vehiculo_created',
-        verbose_name='Inspector'
-    )
-
     class Meta:
         db_table = 'riesgos_viales_inspeccion_vehiculo'
-        verbose_name = 'Inspección de Vehículo'
-        verbose_name_plural = 'Inspecciones de Vehículos'
+        verbose_name = 'Inspeccion de Vehiculo'
+        verbose_name_plural = 'Inspecciones de Vehiculos'
         ordering = ['-fecha_inspeccion']
         unique_together = ['empresa_id', 'numero_inspeccion']
         indexes = [
@@ -1113,10 +919,8 @@ class InspeccionVehiculo(models.Model):
         return f"{self.numero_inspeccion} - {self.vehiculo_placa} - {self.fecha_inspeccion.strftime('%Y-%m-%d %H:%M')}"
 
     def save(self, *args, **kwargs):
-        # Auto-calcular resultado basado en checklist
-        if not self.pk:  # Solo en creación
+        if not self.pk:
             items_fallidos = self._contar_items_fallidos()
-
             if items_fallidos == 0:
                 self.resultado = 'APROBADO'
             elif items_fallidos <= 3 and not self._tiene_fallas_criticas():
@@ -1125,11 +929,10 @@ class InspeccionVehiculo(models.Model):
             else:
                 self.resultado = 'RECHAZADO'
                 self.requiere_mantenimiento = True
-
         super().save(*args, **kwargs)
 
     def _contar_items_fallidos(self):
-        """Cuenta items que no pasaron inspección"""
+        """Cuenta items que no pasaron inspeccion"""
         items = [
             self.estado_carroceria, self.luces_delanteras, self.luces_traseras,
             self.luces_direccionales, self.luces_freno, self.luces_emergencia,
@@ -1144,7 +947,7 @@ class InspeccionVehiculo(models.Model):
         return sum(1 for item in items if not item)
 
     def _tiene_fallas_criticas(self):
-        """Verifica si hay fallas críticas que impiden operación"""
+        """Verifica si hay fallas criticas que impiden operacion"""
         fallas_criticas = [
             not self.freno_servicio,
             not self.sistema_direccion,
@@ -1157,7 +960,7 @@ class InspeccionVehiculo(models.Model):
 
     @property
     def porcentaje_conformidad(self):
-        """Calcula porcentaje de ítems conformes"""
-        total_items = 27  # Total de items checklist
+        """Calcula porcentaje de items conformes"""
+        total_items = 27
         items_fallidos = self._contar_items_fallidos()
         return round(((total_items - items_fallidos) / total_items) * 100, 2)

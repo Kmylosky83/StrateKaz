@@ -1,24 +1,26 @@
 """
-Modelos para SAGRILAFT/PTEE - Sistema de Administración del Riesgo de Lavado de Activos y
-Financiación del Terrorismo / Programa de Transparencia y Ética Empresarial
-Basado en regulación colombiana (Circular Externa 100-000016 de 2020 - Superintendencia de Sociedades)
+Modelos para SAGRILAFT/PTEE - Sistema de Administracion del Riesgo de Lavado de Activos y
+Financiacion del Terrorismo / Programa de Transparencia y Etica Empresarial
+Basado en regulacion colombiana (Circular Externa 100-000016 de 2020 - Superintendencia de Sociedades)
 """
 from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from decimal import Decimal
 
+from apps.core.base_models import TimestampedModel, SoftDeleteModel, AuditModel
 
-class FactorRiesgoLAFT(models.Model):
+
+class FactorRiesgoLAFT(TimestampedModel, SoftDeleteModel):
     """
-    Catálogo de Factores de Riesgo LAFT
-    Factores según circular: Cliente, Jurisdicción, Producto/Servicio, Canal de Distribución
+    Catalogo de Factores de Riesgo LAFT
+    Factores segun circular: Cliente, Jurisdiccion, Producto/Servicio, Canal de Distribucion
     """
     TIPO_FACTOR_CHOICES = [
         ('CLIENTE', 'Cliente'),
-        ('JURISDICCION', 'Jurisdicción'),
+        ('JURISDICCION', 'Jurisdiccion'),
         ('PRODUCTO_SERVICIO', 'Producto/Servicio'),
-        ('CANAL_DISTRIBUCION', 'Canal de Distribución'),
+        ('CANAL_DISTRIBUCION', 'Canal de Distribucion'),
     ]
 
     NIVEL_RIESGO_CHOICES = [
@@ -31,8 +33,8 @@ class FactorRiesgoLAFT(models.Model):
     codigo = models.CharField(
         max_length=30,
         unique=True,
-        verbose_name='Código',
-        help_text='Código único del factor de riesgo (ej: FR-CLI-001)'
+        verbose_name='Codigo',
+        help_text='Codigo unico del factor de riesgo (ej: FR-CLI-001)'
     )
     tipo_factor = models.CharField(
         max_length=30,
@@ -45,8 +47,8 @@ class FactorRiesgoLAFT(models.Model):
         verbose_name='Nombre del Factor'
     )
     descripcion = models.TextField(
-        verbose_name='Descripción',
-        help_text='Descripción detallada del factor de riesgo'
+        verbose_name='Descripcion',
+        help_text='Descripcion detallada del factor de riesgo'
     )
     nivel_riesgo_inherente = models.CharField(
         max_length=10,
@@ -65,21 +67,14 @@ class FactorRiesgoLAFT(models.Model):
     criterios_evaluacion = models.JSONField(
         default=dict,
         blank=True,
-        verbose_name='Criterios de Evaluación',
-        help_text='JSON con criterios específicos de evaluación'
+        verbose_name='Criterios de Evaluacion',
+        help_text='JSON con criterios especificos de evaluacion'
     )
     normativa_aplicable = models.TextField(
         blank=True,
         verbose_name='Normativa Aplicable',
         help_text='Referencias normativas relacionadas'
     )
-    is_active = models.BooleanField(
-        default=True,
-        verbose_name='Activo'
-    )
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'sagrilaft_factor_riesgo_laft'
@@ -94,15 +89,14 @@ class FactorRiesgoLAFT(models.Model):
         return f"{self.codigo} - {self.nombre}"
 
 
-class SegmentoCliente(models.Model):
+class SegmentoCliente(AuditModel, SoftDeleteModel):
     """
-    Segmentación de Clientes para Clasificación de Riesgo LAFT
-    Permite clasificar clientes según perfil de riesgo
+    Segmentacion de Clientes para Clasificacion de Riesgo LAFT
     """
     TIPO_CLIENTE_CHOICES = [
         ('PERSONA_NATURAL', 'Persona Natural'),
-        ('PERSONA_JURIDICA', 'Persona Jurídica'),
-        ('PEP', 'Persona Expuesta Políticamente (PEP)'),
+        ('PERSONA_JURIDICA', 'Persona Juridica'),
+        ('PEP', 'Persona Expuesta Politicamente (PEP)'),
     ]
 
     NIVEL_RIESGO_CHOICES = [
@@ -114,8 +108,8 @@ class SegmentoCliente(models.Model):
 
     codigo = models.CharField(
         max_length=30,
-        verbose_name='Código del Segmento',
-        help_text='Código único (ej: SEG-PN-BAJO)'
+        verbose_name='Codigo del Segmento',
+        help_text='Codigo unico (ej: SEG-PN-BAJO)'
     )
     nombre = models.CharField(
         max_length=200,
@@ -133,12 +127,12 @@ class SegmentoCliente(models.Model):
         verbose_name='Nivel de Riesgo'
     )
     descripcion = models.TextField(
-        verbose_name='Descripción',
-        help_text='Características del segmento'
+        verbose_name='Descripcion',
+        help_text='Caracteristicas del segmento'
     )
     criterios_clasificacion = models.JSONField(
         default=dict,
-        verbose_name='Criterios de Clasificación',
+        verbose_name='Criterios de Clasificacion',
         help_text='JSON con criterios para clasificar clientes en este segmento'
     )
     requiere_debida_diligencia_reforzada = models.BooleanField(
@@ -152,36 +146,22 @@ class SegmentoCliente(models.Model):
     frecuencia_monitoreo_dias = models.IntegerField(
         default=180,
         validators=[MinValueValidator(1)],
-        verbose_name='Frecuencia de Monitoreo (días)',
-        help_text='Días entre revisiones de debida diligencia'
+        verbose_name='Frecuencia de Monitoreo (dias)',
+        help_text='Dias entre revisiones de debida diligencia'
     )
     monto_maximo_transaccion = models.DecimalField(
         max_digits=15,
         decimal_places=2,
         null=True,
         blank=True,
-        verbose_name='Monto Máximo de Transacción',
-        help_text='Monto máximo sin alertas adicionales'
-    )
-    is_active = models.BooleanField(
-        default=True,
-        verbose_name='Activo'
+        verbose_name='Monto Maximo de Transaccion',
+        help_text='Monto maximo sin alertas adicionales'
     )
 
     # Multi-tenancy
     empresa_id = models.PositiveBigIntegerField(
         db_index=True,
         verbose_name='Empresa ID'
-    )
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='segmentos_cliente_created',
-        verbose_name='Creado por'
     )
 
     class Meta:
@@ -199,10 +179,9 @@ class SegmentoCliente(models.Model):
         return f"{self.codigo} - {self.nombre} ({self.get_nivel_riesgo_display()})"
 
 
-class MatrizRiesgoLAFT(models.Model):
+class MatrizRiesgoLAFT(AuditModel, SoftDeleteModel):
     """
-    Matriz de Riesgo LAFT - Evaluación consolidada por cliente/tercero
-    Calcula riesgo inherente y residual considerando todos los factores
+    Matriz de Riesgo LAFT - Evaluacion consolidada por cliente/tercero
     """
     TIPO_EVALUADO_CHOICES = [
         ('CLIENTE', 'Cliente'),
@@ -223,15 +202,15 @@ class MatrizRiesgoLAFT(models.Model):
         ('BORRADOR', 'Borrador'),
         ('APROBADO', 'Aprobado'),
         ('VIGENTE', 'Vigente'),
-        ('EN_REVISION', 'En Revisión'),
+        ('EN_REVISION', 'En Revision'),
         ('OBSOLETO', 'Obsoleto'),
     ]
 
-    # Identificación
+    # Identificacion
     codigo = models.CharField(
         max_length=50,
-        verbose_name='Código de Evaluación',
-        help_text='Código único (ej: MLAFT-2024-001)'
+        verbose_name='Codigo de Evaluacion',
+        help_text='Codigo unico (ej: MLAFT-2024-001)'
     )
     tipo_evaluado = models.CharField(
         max_length=20,
@@ -245,7 +224,7 @@ class MatrizRiesgoLAFT(models.Model):
     )
     identificacion_evaluado = models.CharField(
         max_length=50,
-        verbose_name='Identificación',
+        verbose_name='Identificacion',
         help_text='NIT, CC, CE, Pasaporte'
     )
     segmento = models.ForeignKey(
@@ -257,7 +236,7 @@ class MatrizRiesgoLAFT(models.Model):
         verbose_name='Segmento'
     )
 
-    # Evaluación de Factores
+    # Evaluacion de Factores
     puntaje_factor_cliente = models.DecimalField(
         max_digits=5,
         decimal_places=2,
@@ -270,7 +249,7 @@ class MatrizRiesgoLAFT(models.Model):
         decimal_places=2,
         default=Decimal('0.00'),
         validators=[MinValueValidator(Decimal('0.00')), MaxValueValidator(Decimal('100.00'))],
-        verbose_name='Puntaje Factor Jurisdicción'
+        verbose_name='Puntaje Factor Jurisdiccion'
     )
     puntaje_factor_producto = models.DecimalField(
         max_digits=5,
@@ -293,7 +272,7 @@ class MatrizRiesgoLAFT(models.Model):
         decimal_places=2,
         editable=False,
         verbose_name='Puntaje Riesgo Inherente',
-        help_text='Calculado automáticamente'
+        help_text='Calculado automaticamente'
     )
     nivel_riesgo_inherente = models.CharField(
         max_length=10,
@@ -332,13 +311,13 @@ class MatrizRiesgoLAFT(models.Model):
         verbose_name='Nivel Riesgo Residual'
     )
 
-    # Gestión
+    # Gestion
     fecha_evaluacion = models.DateField(
-        verbose_name='Fecha de Evaluación'
+        verbose_name='Fecha de Evaluacion'
     )
     proxima_revision = models.DateField(
-        verbose_name='Próxima Revisión',
-        help_text='Calculada según frecuencia del segmento'
+        verbose_name='Proxima Revision',
+        help_text='Calculada segun frecuencia del segmento'
     )
     estado = models.CharField(
         max_length=20,
@@ -361,24 +340,13 @@ class MatrizRiesgoLAFT(models.Model):
     fecha_aprobacion = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Aprobación'
+        verbose_name='Fecha de Aprobacion'
     )
 
     # Multi-tenancy
     empresa_id = models.PositiveBigIntegerField(
         db_index=True,
         verbose_name='Empresa ID'
-    )
-
-    # Auditoría
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='matrices_laft_created',
-        verbose_name='Creado por'
     )
 
     class Meta:
@@ -398,29 +366,21 @@ class MatrizRiesgoLAFT(models.Model):
         return f"{self.codigo} - {self.nombre_evaluado} ({self.get_nivel_riesgo_residual_display()})"
 
     def save(self, *args, **kwargs):
-        """
-        Calcula automáticamente los puntajes y niveles de riesgo
-        """
-        # Calcular riesgo inherente (promedio ponderado de factores)
-        # Ponderación: Cliente 40%, Jurisdicción 30%, Producto 20%, Canal 10%
+        """Calcula automaticamente los puntajes y niveles de riesgo"""
+        # Ponderacion: Cliente 40%, Jurisdiccion 30%, Producto 20%, Canal 10%
         self.puntaje_riesgo_inherente = (
             (self.puntaje_factor_cliente * Decimal('0.40')) +
             (self.puntaje_factor_jurisdiccion * Decimal('0.30')) +
             (self.puntaje_factor_producto * Decimal('0.20')) +
             (self.puntaje_factor_canal * Decimal('0.10'))
         )
-
-        # Determinar nivel de riesgo inherente
         self.nivel_riesgo_inherente = self._calcular_nivel_riesgo(
             self.puntaje_riesgo_inherente
         )
 
-        # Calcular riesgo residual
         self.puntaje_riesgo_residual = self.puntaje_riesgo_inherente * (
             Decimal('1.00') - (self.efectividad_controles / Decimal('100.00'))
         )
-
-        # Determinar nivel de riesgo residual
         self.nivel_riesgo_residual = self._calcular_nivel_riesgo(
             self.puntaje_riesgo_residual
         )
@@ -429,12 +389,8 @@ class MatrizRiesgoLAFT(models.Model):
 
     def _calcular_nivel_riesgo(self, puntaje):
         """
-        Determina el nivel de riesgo según el puntaje
-        Rangos estándar SAGRILAFT:
-        - Bajo: 0-25
-        - Medio: 26-50
-        - Alto: 51-75
-        - Extremo: 76-100
+        Determina el nivel de riesgo segun el puntaje
+        Rangos SAGRILAFT: Bajo: 0-25 | Medio: 26-50 | Alto: 51-75 | Extremo: 76-100
         """
         if puntaje <= 25:
             return 'BAJO'
@@ -446,15 +402,15 @@ class MatrizRiesgoLAFT(models.Model):
             return 'EXTREMO'
 
 
-class SeñalAlerta(models.Model):
+class SenalAlerta(AuditModel, SoftDeleteModel):
     """
-    Catálogo y registro de Señales de Alerta LAFT
-    Incluye tanto el catálogo de señales como los eventos detectados
+    Catalogo y registro de Senales de Alerta LAFT
+    Incluye tanto el catalogo de senales como los eventos detectados
     """
     CATEGORIA_CHOICES = [
         ('TRANSACCIONAL', 'Transaccional'),
         ('COMPORTAMENTAL', 'Comportamental'),
-        ('GEOGRAFICA', 'Geográfica'),
+        ('GEOGRAFICA', 'Geografica'),
         ('DOCUMENTAL', 'Documental'),
         ('REPUTACIONAL', 'Reputacional'),
         ('LISTAS_CONTROL', 'Listas de Control'),
@@ -464,47 +420,44 @@ class SeñalAlerta(models.Model):
         ('BAJA', 'Baja'),
         ('MEDIA', 'Media'),
         ('ALTA', 'Alta'),
-        ('CRITICA', 'Crítica'),
+        ('CRITICA', 'Critica'),
     ]
 
     ESTADO_CHOICES = [
         ('DETECTADA', 'Detectada'),
-        ('EN_ANALISIS', 'En Análisis'),
+        ('EN_ANALISIS', 'En Analisis'),
         ('CONFIRMADA', 'Confirmada'),
         ('FALSO_POSITIVO', 'Falso Positivo'),
         ('ESCALADA', 'Escalada'),
         ('CERRADA', 'Cerrada'),
     ]
 
-    # Si es un catálogo o un evento
     es_catalogo = models.BooleanField(
         default=False,
-        verbose_name='Es Catálogo',
-        help_text='True para definiciones de señales, False para eventos detectados'
+        verbose_name='Es Catalogo',
+        help_text='True para definiciones de senales, False para eventos detectados'
     )
 
-    # Identificación
     codigo = models.CharField(
         max_length=50,
-        verbose_name='Código',
-        help_text='Código de la señal (ej: SA-TRANS-001) o del evento (ej: EV-2024-0001)'
+        verbose_name='Codigo',
+        help_text='Codigo de la senal (ej: SA-TRANS-001) o del evento (ej: EV-2024-0001)'
     )
     nombre = models.CharField(
         max_length=255,
-        verbose_name='Nombre de la Señal'
+        verbose_name='Nombre de la Senal'
     )
     categoria = models.CharField(
         max_length=20,
         choices=CATEGORIA_CHOICES,
-        verbose_name='Categoría',
+        verbose_name='Categoria',
         db_index=True
     )
     descripcion = models.TextField(
-        verbose_name='Descripción',
-        help_text='Descripción de la señal o del evento detectado'
+        verbose_name='Descripcion',
+        help_text='Descripcion de la senal o del evento detectado'
     )
 
-    # Severidad y evaluación
     severidad = models.CharField(
         max_length=10,
         choices=SEVERIDAD_CHOICES,
@@ -513,8 +466,8 @@ class SeñalAlerta(models.Model):
     criterios_deteccion = models.JSONField(
         default=dict,
         blank=True,
-        verbose_name='Criterios de Detección',
-        help_text='Criterios técnicos para detectar esta señal'
+        verbose_name='Criterios de Deteccion',
+        help_text='Criterios tecnicos para detectar esta senal'
     )
 
     # Si es un evento detectado
@@ -523,24 +476,24 @@ class SeñalAlerta(models.Model):
         on_delete=models.CASCADE,
         null=True,
         blank=True,
-        related_name='señales_alerta',
+        related_name='senales_alerta',
         verbose_name='Matriz de Riesgo Asociada'
     )
     fecha_deteccion = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Detección'
+        verbose_name='Fecha de Deteccion'
     )
     origen_deteccion = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Origen de Detección',
-        help_text='Sistema, Usuario, Auditoría, etc.'
+        verbose_name='Origen de Deteccion',
+        help_text='Sistema, Usuario, Auditoria, etc.'
     )
     evidencia = models.TextField(
         blank=True,
         verbose_name='Evidencia',
-        help_text='Descripción de la evidencia que generó la alerta'
+        help_text='Descripcion de la evidencia que genero la alerta'
     )
     monto_involucrado = models.DecimalField(
         max_digits=15,
@@ -550,23 +503,23 @@ class SeñalAlerta(models.Model):
         verbose_name='Monto Involucrado'
     )
 
-    # Análisis
+    # Analisis
     analista_asignado = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='señales_analizadas',
+        related_name='senales_analizadas',
         verbose_name='Analista Asignado'
     )
     fecha_analisis = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Análisis'
+        verbose_name='Fecha de Analisis'
     )
     resultado_analisis = models.TextField(
         blank=True,
-        verbose_name='Resultado del Análisis'
+        verbose_name='Resultado del Analisis'
     )
     estado = models.CharField(
         max_length=20,
@@ -577,20 +530,15 @@ class SeñalAlerta(models.Model):
     requiere_ros = models.BooleanField(
         default=False,
         verbose_name='Requiere ROS',
-        help_text='Indica si requiere Reporte de Operación Sospechosa'
+        help_text='Indica si requiere Reporte de Operacion Sospechosa'
     )
 
-    # Normativa
     normativa_aplicable = models.TextField(
         blank=True,
         verbose_name='Normativa Aplicable'
     )
-    is_active = models.BooleanField(
-        default=True,
-        verbose_name='Activo'
-    )
 
-    # Multi-tenancy (solo para eventos, no para catálogo)
+    # Multi-tenancy (solo para eventos, no para catalogo)
     empresa_id = models.PositiveBigIntegerField(
         db_index=True,
         null=True,
@@ -598,21 +546,10 @@ class SeñalAlerta(models.Model):
         verbose_name='Empresa ID'
     )
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='señales_created',
-        verbose_name='Creado por'
-    )
-
     class Meta:
-        db_table = 'sagrilaft_señal_alerta'
-        verbose_name = 'Señal de Alerta'
-        verbose_name_plural = 'Señales de Alerta'
+        db_table = 'sagrilaft_senal_alerta'
+        verbose_name = 'Senal de Alerta'
+        verbose_name_plural = 'Senales de Alerta'
         ordering = ['-fecha_deteccion', 'severidad', 'codigo']
         indexes = [
             models.Index(fields=['empresa_id', 'estado']),
@@ -622,18 +559,18 @@ class SeñalAlerta(models.Model):
         ]
 
     def __str__(self):
-        tipo = "Catálogo" if self.es_catalogo else "Evento"
+        tipo = "Catalogo" if self.es_catalogo else "Evento"
         return f"{tipo}: {self.codigo} - {self.nombre}"
 
 
-class ReporteOperacionSospechosa(models.Model):
+class ReporteOperacionSospechosa(AuditModel, SoftDeleteModel):
     """
-    Reporte de Operación Sospechosa (ROS)
-    Reportes a la UIAF (Unidad de Información y Análisis Financiero)
+    Reporte de Operacion Sospechosa (ROS)
+    Reportes a la UIAF (Unidad de Informacion y Analisis Financiero)
     """
     ESTADO_CHOICES = [
         ('BORRADOR', 'Borrador'),
-        ('EN_REVISION', 'En Revisión'),
+        ('EN_REVISION', 'En Revision'),
         ('APROBADO', 'Aprobado'),
         ('ENVIADO', 'Enviado a UIAF'),
         ('CONFIRMADO', 'Confirmado por UIAF'),
@@ -642,24 +579,24 @@ class ReporteOperacionSospechosa(models.Model):
 
     TIPO_OPERACION_CHOICES = [
         ('LAVADO_ACTIVOS', 'Lavado de Activos'),
-        ('FINANCIACION_TERRORISMO', 'Financiación del Terrorismo'),
-        ('ADMINISTRACION_RECURSOS_ILICITOS', 'Administración de Recursos Ilícitos'),
+        ('FINANCIACION_TERRORISMO', 'Financiacion del Terrorismo'),
+        ('ADMINISTRACION_RECURSOS_ILICITOS', 'Administracion de Recursos Ilicitos'),
     ]
 
-    # Identificación
+    # Identificacion
     numero_ros = models.CharField(
         max_length=50,
         unique=True,
-        verbose_name='Número ROS',
-        help_text='Número único del reporte (ej: ROS-2024-0001)'
+        verbose_name='Numero ROS',
+        help_text='Numero unico del reporte (ej: ROS-2024-0001)'
     )
     fecha_deteccion = models.DateField(
-        verbose_name='Fecha de Detección'
+        verbose_name='Fecha de Deteccion'
     )
     tipo_operacion = models.CharField(
         max_length=50,
         choices=TIPO_OPERACION_CHOICES,
-        verbose_name='Tipo de Operación Sospechosa'
+        verbose_name='Tipo de Operacion Sospechosa'
     )
 
     # Sujeto reportado
@@ -675,25 +612,25 @@ class ReporteOperacionSospechosa(models.Model):
     )
     identificacion_reportado = models.CharField(
         max_length=50,
-        verbose_name='Identificación del Reportado'
+        verbose_name='Identificacion del Reportado'
     )
     tipo_identificacion = models.CharField(
         max_length=20,
         default='NIT',
-        verbose_name='Tipo de Identificación'
+        verbose_name='Tipo de Identificacion'
     )
 
-    # Señales de alerta relacionadas
-    señales_alerta = models.ManyToManyField(
-        SeñalAlerta,
+    # Senales de alerta relacionadas
+    senales_alerta = models.ManyToManyField(
+        SenalAlerta,
         related_name='reportes_ros',
-        verbose_name='Señales de Alerta Relacionadas'
+        verbose_name='Senales de Alerta Relacionadas'
     )
 
-    # Descripción de la operación
+    # Descripcion de la operacion
     descripcion_operacion = models.TextField(
-        verbose_name='Descripción de la Operación',
-        help_text='Descripción detallada de la operación sospechosa'
+        verbose_name='Descripcion de la Operacion',
+        help_text='Descripcion detallada de la operacion sospechosa'
     )
     monto_total = models.DecimalField(
         max_digits=15,
@@ -708,18 +645,18 @@ class ReporteOperacionSospechosa(models.Model):
     )
     periodo_operaciones = models.CharField(
         max_length=100,
-        verbose_name='Período de las Operaciones',
+        verbose_name='Periodo de las Operaciones',
         help_text='Rango de fechas de las operaciones sospechosas'
     )
 
-    # Análisis
+    # Analisis
     analisis_detallado = models.TextField(
-        verbose_name='Análisis Detallado',
-        help_text='Análisis técnico de por qué se considera sospechosa'
+        verbose_name='Analisis Detallado',
+        help_text='Analisis tecnico de por que se considera sospechosa'
     )
     fundamentos_sospecha = models.TextField(
         verbose_name='Fundamentos de la Sospecha',
-        help_text='Fundamentos legales y técnicos'
+        help_text='Fundamentos legales y tecnicos'
     )
     documentos_soporte = models.JSONField(
         default=list,
@@ -736,7 +673,7 @@ class ReporteOperacionSospechosa(models.Model):
         verbose_name='Elaborado por'
     )
     fecha_elaboracion = models.DateField(
-        verbose_name='Fecha de Elaboración'
+        verbose_name='Fecha de Elaboracion'
     )
     revisado_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -749,7 +686,7 @@ class ReporteOperacionSospechosa(models.Model):
     fecha_revision = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Revisión'
+        verbose_name='Fecha de Revision'
     )
     aprobado_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -762,19 +699,19 @@ class ReporteOperacionSospechosa(models.Model):
     fecha_aprobacion = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Aprobación'
+        verbose_name='Fecha de Aprobacion'
     )
 
-    # Envío a UIAF
+    # Envio a UIAF
     fecha_envio_uiaf = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Envío a UIAF'
+        verbose_name='Fecha de Envio a UIAF'
     )
     numero_radicado_uiaf = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Número de Radicado UIAF'
+        verbose_name='Numero de Radicado UIAF'
     )
     respuesta_uiaf = models.TextField(
         blank=True,
@@ -799,13 +736,9 @@ class ReporteOperacionSospechosa(models.Model):
         verbose_name='Empresa ID'
     )
 
-    # Auditoría
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
     class Meta:
         db_table = 'sagrilaft_reporte_operacion_sospechosa'
-        verbose_name = 'Reporte de Operación Sospechosa (ROS)'
+        verbose_name = 'Reporte de Operacion Sospechosa (ROS)'
         verbose_name_plural = 'Reportes de Operaciones Sospechosas (ROS)'
         ordering = ['-fecha_deteccion', 'numero_ros']
         indexes = [
@@ -818,10 +751,10 @@ class ReporteOperacionSospechosa(models.Model):
         return f"{self.numero_ros} - {self.nombre_reportado} ({self.get_estado_display()})"
 
 
-class DebidaDiligencia(models.Model):
+class DebidaDiligencia(AuditModel, SoftDeleteModel):
     """
     Registro de Debida Diligencia para clientes/terceros
-    Documentación y verificación de identidad según nivel de riesgo
+    Documentacion y verificacion de identidad segun nivel de riesgo
     """
     TIPO_DILIGENCIA_CHOICES = [
         ('NORMAL', 'Debida Diligencia Normal'),
@@ -836,14 +769,14 @@ class DebidaDiligencia(models.Model):
         ('COMPLETADA', 'Completada'),
         ('APROBADA', 'Aprobada'),
         ('RECHAZADA', 'Rechazada'),
-        ('REQUIERE_ACTUALIZACION', 'Requiere Actualización'),
+        ('REQUIERE_ACTUALIZACION', 'Requiere Actualizacion'),
     ]
 
-    # Identificación
+    # Identificacion
     codigo = models.CharField(
         max_length=50,
-        verbose_name='Código',
-        help_text='Código único (ej: DD-2024-0001)'
+        verbose_name='Codigo',
+        help_text='Codigo unico (ej: DD-2024-0001)'
     )
     matriz_riesgo = models.ForeignKey(
         MatrizRiesgoLAFT,
@@ -863,7 +796,7 @@ class DebidaDiligencia(models.Model):
     )
     fecha_vencimiento = models.DateField(
         verbose_name='Fecha de Vencimiento',
-        help_text='Fecha límite para completar la diligencia'
+        help_text='Fecha limite para completar la diligencia'
     )
     fecha_completada = models.DateField(
         null=True,
@@ -873,11 +806,11 @@ class DebidaDiligencia(models.Model):
     proxima_actualizacion = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Próxima Actualización',
-        help_text='Calculada según frecuencia del segmento'
+        verbose_name='Proxima Actualizacion',
+        help_text='Calculada segun frecuencia del segmento'
     )
 
-    # Documentación requerida
+    # Documentacion requerida
     documentos_requeridos = models.JSONField(
         default=list,
         verbose_name='Documentos Requeridos',
@@ -898,21 +831,21 @@ class DebidaDiligencia(models.Model):
         verbose_name='Porcentaje de Completitud (%)'
     )
 
-    # Verificación de identidad
+    # Verificacion de identidad
     verificacion_identidad_realizada = models.BooleanField(
         default=False,
-        verbose_name='Verificación de Identidad Realizada'
+        verbose_name='Verificacion de Identidad Realizada'
     )
     metodo_verificacion = models.CharField(
         max_length=100,
         blank=True,
-        verbose_name='Método de Verificación',
-        help_text='Presencial, Video llamada, Biometría, etc.'
+        verbose_name='Metodo de Verificacion',
+        help_text='Presencial, Video llamada, Biometria, etc.'
     )
     fecha_verificacion_identidad = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Verificación de Identidad'
+        verbose_name='Fecha de Verificacion de Identidad'
     )
 
     # Consulta en listas restrictivas
@@ -943,7 +876,7 @@ class DebidaDiligencia(models.Model):
         help_text='Positivo/Negativo y detalles'
     )
 
-    # PEP (Persona Expuesta Políticamente)
+    # PEP
     es_pep = models.BooleanField(
         default=False,
         verbose_name='Es PEP'
@@ -951,7 +884,7 @@ class DebidaDiligencia(models.Model):
     detalles_pep = models.TextField(
         blank=True,
         verbose_name='Detalles PEP',
-        help_text='Cargo público, período, etc.'
+        help_text='Cargo publico, periodo, etc.'
     )
 
     # Origen de fondos
@@ -964,7 +897,7 @@ class DebidaDiligencia(models.Model):
         verbose_name='Origen de Fondos Verificado'
     )
 
-    # Referencias comerciales y bancarias
+    # Referencias
     referencias_comerciales = models.JSONField(
         default=list,
         blank=True,
@@ -976,7 +909,7 @@ class DebidaDiligencia(models.Model):
         verbose_name='Referencias Bancarias'
     )
 
-    # Visita/entrevista (para diligencia reforzada)
+    # Visita/entrevista
     requiere_visita = models.BooleanField(
         default=False,
         verbose_name='Requiere Visita'
@@ -1010,7 +943,7 @@ class DebidaDiligencia(models.Model):
     fecha_aprobacion = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Aprobación'
+        verbose_name='Fecha de Aprobacion'
     )
 
     # Estado
@@ -1035,17 +968,6 @@ class DebidaDiligencia(models.Model):
         verbose_name='Empresa ID'
     )
 
-    # Auditoría
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='diligencias_created',
-        verbose_name='Creado por'
-    )
-
     class Meta:
         db_table = 'sagrilaft_debida_diligencia'
         verbose_name = 'Debida Diligencia'
@@ -1063,9 +985,7 @@ class DebidaDiligencia(models.Model):
         return f"{self.codigo} - {self.matriz_riesgo.nombre_evaluado} ({self.get_estado_display()})"
 
     def save(self, *args, **kwargs):
-        """
-        Calcula el porcentaje de completitud automáticamente
-        """
+        """Calcula el porcentaje de completitud automaticamente"""
         if self.documentos_requeridos:
             total_requeridos = len(self.documentos_requeridos)
             total_recibidos = len(self.documentos_recibidos) if self.documentos_recibidos else 0

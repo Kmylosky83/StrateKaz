@@ -1,28 +1,33 @@
+"""
+Modelos para Seguridad de la Informacion - ISO 27001
+"""
 from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 
+from apps.core.base_models import TimestampedModel, SoftDeleteModel, AuditModel
 
-class ActivoInformacion(models.Model):
+
+class ActivoInformacion(AuditModel, SoftDeleteModel):
     TIPO_CHOICES = [
         ("HARDWARE", "Hardware"),
         ("SOFTWARE", "Software"),
-        ("INFORMACION", "Información"),
+        ("INFORMACION", "Informacion"),
         ("SERVICIOS", "Servicios"),
         ("PERSONAS", "Personas"),
         ("INTANGIBLES", "Intangibles"),
     ]
 
     CLASIFICACION_CHOICES = [
-        ("PUBLICA", "Pública"),
+        ("PUBLICA", "Publica"),
         ("INTERNA", "Interna"),
         ("CONFIDENCIAL", "Confidencial"),
         ("SECRETA", "Secreta"),
     ]
 
-    codigo = models.CharField(max_length=50, unique=True, verbose_name="Código")
+    codigo = models.CharField(max_length=50, unique=True, verbose_name="Codigo")
     nombre = models.CharField(max_length=255, verbose_name="Nombre")
-    descripcion = models.TextField(blank=True, verbose_name="Descripción")
+    descripcion = models.TextField(blank=True, verbose_name="Descripcion")
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, verbose_name="Tipo")
 
     propietario = models.ForeignKey(
@@ -40,12 +45,12 @@ class ActivoInformacion(models.Model):
         verbose_name="Custodio"
     )
 
-    ubicacion = models.CharField(max_length=255, blank=True, verbose_name="Ubicación")
+    ubicacion = models.CharField(max_length=255, blank=True, verbose_name="Ubicacion")
     clasificacion = models.CharField(
         max_length=20,
         choices=CLASIFICACION_CHOICES,
         default="INTERNA",
-        verbose_name="Clasificación"
+        verbose_name="Clasificacion"
     )
 
     valor_confidencialidad = models.PositiveSmallIntegerField(
@@ -70,16 +75,12 @@ class ActivoInformacion(models.Model):
         verbose_name="Criticidad"
     )
 
-    is_active = models.BooleanField(default=True, verbose_name="Activo")
     empresa_id = models.PositiveBigIntegerField(verbose_name="Empresa ID")
-
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha Creación")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha Actualización")
 
     class Meta:
         db_table = "motor_riesgos_activo_informacion"
-        verbose_name = "Activo de Información"
-        verbose_name_plural = "Activos de Información"
+        verbose_name = "Activo de Informacion"
+        verbose_name_plural = "Activos de Informacion"
         ordering = ["codigo"]
         indexes = [
             models.Index(fields=["empresa_id", "is_active"]),
@@ -97,27 +98,23 @@ class ActivoInformacion(models.Model):
         return f"{self.codigo} - {self.nombre}"
 
 
-class Amenaza(models.Model):
+class Amenaza(TimestampedModel, SoftDeleteModel):
     TIPO_CHOICES = [
         ("NATURAL", "Natural"),
         ("HUMANA_INTENCIONAL", "Humana Intencional"),
         ("HUMANA_NO_INTENCIONAL", "Humana No Intencional"),
-        ("TECNICA", "Técnica"),
+        ("TECNICA", "Tecnica"),
     ]
 
-    codigo = models.CharField(max_length=50, unique=True, verbose_name="Código")
+    codigo = models.CharField(max_length=50, unique=True, verbose_name="Codigo")
     tipo = models.CharField(max_length=30, choices=TIPO_CHOICES, verbose_name="Tipo")
     nombre = models.CharField(max_length=255, verbose_name="Nombre")
-    descripcion = models.TextField(blank=True, verbose_name="Descripción")
+    descripcion = models.TextField(blank=True, verbose_name="Descripcion")
     probabilidad_ocurrencia = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(5)],
         default=3,
         verbose_name="Probabilidad de Ocurrencia"
     )
-    is_active = models.BooleanField(default=True, verbose_name="Activo")
-
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha Creación")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha Actualización")
 
     class Meta:
         db_table = "motor_riesgos_amenaza"
@@ -132,25 +129,21 @@ class Amenaza(models.Model):
         return f"{self.codigo} - {self.nombre}"
 
 
-class Vulnerabilidad(models.Model):
+class Vulnerabilidad(AuditModel, SoftDeleteModel):
     activo = models.ForeignKey(
         ActivoInformacion,
         on_delete=models.CASCADE,
         related_name="vulnerabilidades",
         verbose_name="Activo"
     )
-    codigo = models.CharField(max_length=50, verbose_name="Código")
-    descripcion = models.TextField(verbose_name="Descripción")
+    codigo = models.CharField(max_length=50, verbose_name="Codigo")
+    descripcion = models.TextField(verbose_name="Descripcion")
     facilidad_explotacion = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(5)],
         default=3,
-        verbose_name="Facilidad de Explotación"
+        verbose_name="Facilidad de Explotacion"
     )
-    is_active = models.BooleanField(default=True, verbose_name="Activo")
     empresa_id = models.PositiveBigIntegerField(verbose_name="Empresa ID")
-
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha Creación")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Fecha Actualización")
 
     class Meta:
         db_table = "motor_riesgos_vulnerabilidad"
@@ -166,9 +159,9 @@ class Vulnerabilidad(models.Model):
         return f"{self.codigo} - {self.activo.codigo}"
 
 
-class RiesgoSeguridad(models.Model):
+class RiesgoSeguridad(AuditModel, SoftDeleteModel):
     """
-    Evaluación de Riesgo de Seguridad de la Información - ISO 27001
+    Evaluacion de Riesgo de Seguridad de la Informacion - ISO 27001
     Combina activo + amenaza + vulnerabilidad para calcular riesgo
     """
     PROBABILIDAD_CHOICES = [
@@ -184,14 +177,14 @@ class RiesgoSeguridad(models.Model):
         (2, 'Menor'),
         (3, 'Moderado'),
         (4, 'Mayor'),
-        (5, 'Catastrófico'),
+        (5, 'Catastrofico'),
     ]
 
     NIVEL_RIESGO_CHOICES = [
         ('BAJO', 'Bajo'),
         ('MEDIO', 'Medio'),
         ('ALTO', 'Alto'),
-        ('CRITICO', 'Crítico'),
+        ('CRITICO', 'Critico'),
     ]
 
     ACEPTABILIDAD_CHOICES = [
@@ -202,18 +195,17 @@ class RiesgoSeguridad(models.Model):
 
     ESTADO_CHOICES = [
         ('IDENTIFICADO', 'Identificado'),
-        ('EN_EVALUACION', 'En Evaluación'),
+        ('EN_EVALUACION', 'En Evaluacion'),
         ('EN_TRATAMIENTO', 'En Tratamiento'),
         ('CONTROLADO', 'Controlado'),
         ('CERRADO', 'Cerrado'),
     ]
 
-    # Identificación del riesgo
     activo = models.ForeignKey(
         ActivoInformacion,
         on_delete=models.PROTECT,
         related_name='riesgos',
-        verbose_name='Activo de Información'
+        verbose_name='Activo de Informacion'
     )
     amenaza = models.ForeignKey(
         Amenaza,
@@ -231,10 +223,10 @@ class RiesgoSeguridad(models.Model):
     )
     escenario_riesgo = models.TextField(
         verbose_name='Escenario de Riesgo',
-        help_text='Descripción del escenario de riesgo'
+        help_text='Descripcion del escenario de riesgo'
     )
 
-    # Evaluación inherente
+    # Evaluacion inherente
     probabilidad = models.PositiveSmallIntegerField(
         choices=PROBABILIDAD_CHOICES,
         default=3,
@@ -252,13 +244,12 @@ class RiesgoSeguridad(models.Model):
         verbose_name='Nivel de Riesgo'
     )
 
-    # Controles existentes
     controles_existentes = models.TextField(
         blank=True,
         verbose_name='Controles Existentes'
     )
 
-    # Evaluación residual
+    # Evaluacion residual
     probabilidad_residual = models.PositiveSmallIntegerField(
         choices=PROBABILIDAD_CHOICES,
         null=True,
@@ -306,17 +297,6 @@ class RiesgoSeguridad(models.Model):
         verbose_name='Empresa ID'
     )
 
-    # Auditoría
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='riesgos_seguridad_creados',
-        verbose_name='Creado por'
-    )
-
     class Meta:
         db_table = 'motor_riesgos_riesgo_seguridad'
         verbose_name = 'Riesgo de Seguridad'
@@ -350,7 +330,7 @@ class RiesgoSeguridad(models.Model):
         return f"Riesgo: {self.activo.codigo} - {self.amenaza.codigo}"
 
 
-class ControlSeguridad(models.Model):
+class ControlSeguridad(AuditModel, SoftDeleteModel):
     """
     Controles de Seguridad basados en Anexo A de ISO 27001
     """
@@ -362,7 +342,7 @@ class ControlSeguridad(models.Model):
 
     ESTADO_CHOICES = [
         ('NO_IMPLEMENTADO', 'No Implementado'),
-        ('EN_IMPLEMENTACION', 'En Implementación'),
+        ('EN_IMPLEMENTACION', 'En Implementacion'),
         ('IMPLEMENTADO', 'Implementado'),
         ('OPTIMIZADO', 'Optimizado'),
     ]
@@ -379,7 +359,7 @@ class ControlSeguridad(models.Model):
         help_text='Ej: A.5.1.1, A.6.1.1'
     )
     descripcion = models.TextField(
-        verbose_name='Descripción del Control'
+        verbose_name='Descripcion del Control'
     )
     tipo_control = models.CharField(
         max_length=15,
@@ -391,7 +371,7 @@ class ControlSeguridad(models.Model):
         max_length=20,
         choices=ESTADO_CHOICES,
         default='NO_IMPLEMENTADO',
-        verbose_name='Estado de Implementación'
+        verbose_name='Estado de Implementacion'
     )
     efectividad = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(0), MaxValueValidator(100)],
@@ -409,7 +389,7 @@ class ControlSeguridad(models.Model):
     fecha_implementacion = models.DateField(
         null=True,
         blank=True,
-        verbose_name='Fecha de Implementación'
+        verbose_name='Fecha de Implementacion'
     )
     evidencia = models.TextField(
         blank=True,
@@ -422,10 +402,6 @@ class ControlSeguridad(models.Model):
         verbose_name='Empresa ID'
     )
 
-    # Auditoría
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
     class Meta:
         db_table = 'motor_riesgos_control_seguridad'
         verbose_name = 'Control de Seguridad'
@@ -436,19 +412,19 @@ class ControlSeguridad(models.Model):
         return f"{self.control_iso} - {self.riesgo}"
 
 
-class IncidenteSeguridad(models.Model):
+class IncidenteSeguridad(AuditModel, SoftDeleteModel):
     """
-    Gestión de Incidentes de Seguridad de la Información
+    Gestion de Incidentes de Seguridad de la Informacion
     """
     TIPO_INCIDENTE_CHOICES = [
         ('ACCESO_NO_AUTORIZADO', 'Acceso No Autorizado'),
         ('MALWARE', 'Malware/Virus'),
-        ('FUGA_INFORMACION', 'Fuga de Información'),
+        ('FUGA_INFORMACION', 'Fuga de Informacion'),
         ('PHISHING', 'Phishing'),
-        ('DENEGACION_SERVICIO', 'Denegación de Servicio'),
-        ('PERDIDA_DATOS', 'Pérdida de Datos'),
+        ('DENEGACION_SERVICIO', 'Denegacion de Servicio'),
+        ('PERDIDA_DATOS', 'Perdida de Datos'),
         ('ROBO_EQUIPOS', 'Robo de Equipos'),
-        ('INGENIERIA_SOCIAL', 'Ingeniería Social'),
+        ('INGENIERIA_SOCIAL', 'Ingenieria Social'),
         ('OTRO', 'Otro'),
     ]
 
@@ -456,12 +432,12 @@ class IncidenteSeguridad(models.Model):
         ('BAJA', 'Baja'),
         ('MEDIA', 'Media'),
         ('ALTA', 'Alta'),
-        ('CRITICA', 'Crítica'),
+        ('CRITICA', 'Critica'),
     ]
 
     ESTADO_CHOICES = [
         ('REPORTADO', 'Reportado'),
-        ('EN_INVESTIGACION', 'En Investigación'),
+        ('EN_INVESTIGACION', 'En Investigacion'),
         ('CONTENIDO', 'Contenido'),
         ('ERRADICADO', 'Erradicado'),
         ('RECUPERADO', 'Recuperado'),
@@ -469,10 +445,10 @@ class IncidenteSeguridad(models.Model):
     ]
 
     fecha_deteccion = models.DateTimeField(
-        verbose_name='Fecha de Detección'
+        verbose_name='Fecha de Deteccion'
     )
     descripcion = models.TextField(
-        verbose_name='Descripción del Incidente'
+        verbose_name='Descripcion del Incidente'
     )
     activos_afectados = models.ManyToManyField(
         ActivoInformacion,
@@ -499,11 +475,11 @@ class IncidenteSeguridad(models.Model):
     # Respuesta
     acciones_contencion = models.TextField(
         blank=True,
-        verbose_name='Acciones de Contención'
+        verbose_name='Acciones de Contencion'
     )
     acciones_erradicacion = models.TextField(
         blank=True,
-        verbose_name='Acciones de Erradicación'
+        verbose_name='Acciones de Erradicacion'
     )
     lecciones_aprendidas = models.TextField(
         blank=True,
@@ -530,10 +506,6 @@ class IncidenteSeguridad(models.Model):
         db_index=True,
         verbose_name='Empresa ID'
     )
-
-    # Auditoría
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'motor_riesgos_incidente_seguridad'

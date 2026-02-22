@@ -147,6 +147,64 @@ def send_welcome_email_task(self, user_email: str, user_name: str,
         raise self.retry(exc=exc)
 
 
+@shared_task(
+    bind=True,
+    max_retries=3,
+    default_retry_delay=60,
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+)
+def send_setup_password_email_task(
+    self,
+    user_email: str,
+    user_name: str,
+    tenant_name: str,
+    cargo_name: str = '',
+    setup_url: str = '',
+    expiry_hours: int = 72
+) -> Dict[str, Any]:
+    """
+    Envia email con enlace para configurar contraseña inicial.
+
+    Se usa cuando RH crea un colaborador con acceso al sistema desde Talent Hub.
+    El empleado recibe este email para establecer su contraseña.
+    """
+    try:
+        logger.info(f"[Task {self.request.id}] Enviando setup password a {user_email}")
+
+        html_content = render_to_string('emails/setup_password.html', {
+            'user_name': user_name,
+            'tenant_name': tenant_name,
+            'cargo_name': cargo_name,
+            'setup_url': setup_url,
+            'expiry_hours': expiry_hours,
+        })
+
+        text_content = strip_tags(html_content)
+
+        email = EmailMultiAlternatives(
+            subject=f'Configura tu contraseña - {tenant_name}',
+            body=text_content,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[user_email],
+        )
+        email.attach_alternative(html_content, "text/html")
+        email.send(fail_silently=False)
+
+        logger.info(f"[Task {self.request.id}] Email setup password enviado a {user_email}")
+
+        return {
+            'status': 'success',
+            'email': user_email,
+            'task_id': self.request.id,
+            'timestamp': datetime.now().isoformat(),
+        }
+
+    except Exception as exc:
+        logger.error(f"[Task {self.request.id}] Error enviando setup password a {user_email}: {exc}")
+        raise self.retry(exc=exc)
+
+
 @shared_task(bind=True, max_retries=3)
 def send_notification_email(self, user_id: int, template: str, context: Dict[str, Any]) -> Dict[str, Any]:
     """

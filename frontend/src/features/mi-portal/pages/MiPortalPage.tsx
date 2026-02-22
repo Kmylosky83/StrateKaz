@@ -41,7 +41,7 @@ import type { MiPortalTab } from '../types';
 const INTERNAL_ONLY_TABS = new Set<MiPortalTab>(['vacaciones', 'permisos', 'recibos']);
 
 /** Tabs que solo aplican a externos (contratistas, consultores) */
-const EXTERNAL_ONLY_TABS = new Set<MiPortalTab>(['documentos', 'hseq']);
+const EXTERNAL_ONLY_TABS = new Set<MiPortalTab>(['hseq']);
 
 const ALL_PORTAL_TABS = [
   { id: 'perfil' as const, label: 'Mi perfil', icon: <User className="w-4 h-4" /> },
@@ -115,7 +115,7 @@ export default function MiPortalPage() {
             />
           )}
 
-          {safeActiveTab === 'documentos' && isExterno && <MisDocumentos />}
+          {safeActiveTab === 'documentos' && <MisDocumentos />}
           {safeActiveTab === 'hseq' && isExterno && <MiHSEQ />}
           {safeActiveTab === 'vacaciones' && !isExterno && <VacacionesSaldo />}
           {safeActiveTab === 'permisos' && !isExterno && <PermisoSolicitar />}

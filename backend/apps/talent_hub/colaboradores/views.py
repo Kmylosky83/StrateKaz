@@ -5,12 +5,19 @@ Sistema de Gestión StrateKaz
 ViewSets CRUD completos para colaboradores, hojas de vida,
 información personal e historial laboral.
 """
+import logging
+import uuid
+from datetime import timedelta
+
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from django.contrib.auth import get_user_model
+from django.db import transaction
 from django.db.models import Count, Q
 from django.utils import timezone
+from django.conf import settings
 
 from apps.core.base_models import get_tenant_empresa
 from .models import Colaborador, HojaVida, InfoPersonal, HistorialLaboral
@@ -18,6 +25,7 @@ from .serializers import (
     ColaboradorListSerializer,
     ColaboradorDetailSerializer,
     ColaboradorCreateUpdateSerializer,
+    ColaboradorCreateWithAccessSerializer,
     ColaboradorCompleteSerializer,
     ColaboradorEstadisticasSerializer,
     HojaVidaSerializer,
@@ -28,6 +36,9 @@ from .serializers import (
     HistorialLaboralSerializer,
     HistorialLaboralCreateSerializer,
 )
+
+logger = logging.getLogger(__name__)
+User = get_user_model()
 
 
 class ColaboradorViewSet(viewsets.ModelViewSet):
@@ -82,18 +93,136 @@ class ColaboradorViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'list':
             return ColaboradorListSerializer
-        elif self.action in ['create', 'update', 'partial_update']:
+        elif self.action == 'create':
+            return ColaboradorCreateWithAccessSerializer
+        elif self.action in ['update', 'partial_update']:
             return ColaboradorCreateUpdateSerializer
         elif self.action == 'completo':
             return ColaboradorCompleteSerializer
         return ColaboradorDetailSerializer
 
+    @transaction.atomic
     def perform_create(self, serializer):
-        serializer.save(
-            empresa=get_tenant_empresa(),
-            created_by=self.request.user,
-            updated_by=self.request.user
+        """
+        Creacion unificada de Colaborador con registros asociados.
+
+        1. Crea Colaborador con datos laborales completos
+        2. Auto-crea HojaVida vacia (para documentos en Mi Portal)
+        3. Auto-crea InfoPersonal vacia (para datos personales)
+        4. Crea HistorialLaboral tipo='contratacion'
+        5. Opcionalmente crea User + envia email para configurar contraseña
+        """
+        empresa = get_tenant_empresa()
+        user = self.request.user
+
+        # Extraer campos de acceso (no son campos del modelo Colaborador)
+        crear_acceso = serializer.validated_data.pop('crear_acceso', False)
+        email_corporativo = serializer.validated_data.pop('email_corporativo', None)
+        username = serializer.validated_data.pop('username', None)
+
+        # 1. Guardar Colaborador
+        colaborador = serializer.save(
+            empresa=empresa,
+            created_by=user,
+            updated_by=user
         )
+
+        # 2. Auto-crear HojaVida vacia
+        HojaVida.objects.create(
+            colaborador=colaborador,
+            empresa=empresa,
+            created_by=user,
+            updated_by=user
+        )
+
+        # 3. Auto-crear InfoPersonal vacia
+        InfoPersonal.objects.create(
+            colaborador=colaborador,
+            empresa=empresa,
+            created_by=user,
+            updated_by=user
+        )
+
+        # 4. Crear HistorialLaboral de contratacion
+        HistorialLaboral.objects.create(
+            empresa=empresa,
+            colaborador=colaborador,
+            tipo_movimiento='contratacion',
+            fecha_movimiento=colaborador.fecha_ingreso,
+            cargo_nuevo=colaborador.cargo,
+            area_nueva=colaborador.area,
+            salario_nuevo=colaborador.salario,
+            motivo='Contratación inicial',
+            created_by=user,
+            updated_by=user
+        )
+
+        # 5. Opcionalmente crear User con acceso al sistema
+        if crear_acceso and email_corporativo and username:
+            self._create_user_for_colaborador(
+                colaborador, email_corporativo.strip(), username.strip(), empresa, user
+            )
+
+    def _create_user_for_colaborador(self, colaborador, email, username, empresa, created_by):
+        """Crea cuenta de usuario vinculada al colaborador y envia email de setup."""
+        # Password temporal aleatorio (el usuario lo configura via email)
+        temp_password = uuid.uuid4().hex
+
+        # Crear User con flag _from_contratacion para evitar signal duplicado
+        new_user = User(
+            username=username,
+            email=email,
+            first_name=colaborador.primer_nombre,
+            last_name=colaborador.primer_apellido,
+            cargo=colaborador.cargo,
+            document_type=colaborador.tipo_documento,
+            document_number=colaborador.numero_identificacion,
+            phone=colaborador.telefono_movil or '',
+            fecha_ingreso=colaborador.fecha_ingreso,
+            is_active=True,
+            created_by=created_by,
+        )
+        new_user._from_contratacion = True
+        new_user.set_password(temp_password)
+
+        # Generar token de setup de contraseña (72 horas)
+        setup_token = uuid.uuid4().hex
+        new_user.password_setup_token = setup_token
+        new_user.password_setup_expires = timezone.now() + timedelta(hours=72)
+        new_user.save()
+
+        # Vincular Colaborador al User
+        colaborador.usuario = new_user
+        colaborador.save(update_fields=['usuario'])
+
+        # Enviar email de configuracion de contraseña (async)
+        try:
+            from apps.core.tasks import send_setup_password_email_task
+
+            frontend_url = getattr(settings, 'FRONTEND_URL', 'https://app.stratekaz.com')
+            setup_url = f"{frontend_url}/setup-password?token={setup_token}&email={email}"
+
+            tenant_name = str(empresa)
+            if hasattr(empresa, 'razon_social') and empresa.razon_social:
+                tenant_name = empresa.razon_social
+
+            send_setup_password_email_task.delay(
+                user_email=email,
+                user_name=colaborador.get_nombre_completo(),
+                tenant_name=tenant_name,
+                cargo_name=colaborador.cargo.name if colaborador.cargo else '',
+                setup_url=setup_url,
+                expiry_hours=72,
+            )
+            logger.info(
+                'User %s creado para Colaborador %s, email de setup enviado a %s',
+                new_user.id, colaborador.id, email
+            )
+        except Exception as e:
+            logger.error(
+                'Error enviando email de setup para User %s: %s',
+                new_user.id, e, exc_info=True
+            )
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
@@ -188,6 +317,55 @@ class ColaboradorViewSet(viewsets.ModelViewSet):
         colaborador = self.get_object()
         serializer = ColaboradorCompleteSerializer(colaborador)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], url_path='crear-acceso')
+    @transaction.atomic
+    def crear_acceso(self, request, pk=None):
+        """
+        Crea cuenta de usuario para un colaborador existente sin acceso.
+
+        POST /colaboradores/{id}/crear-acceso/
+        Body: {email_corporativo, username}
+        """
+        colaborador = self.get_object()
+
+        if colaborador.usuario:
+            return Response(
+                {'detail': 'Este colaborador ya tiene acceso al sistema.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        email = request.data.get('email_corporativo', '').strip()
+        username = request.data.get('username', '').strip()
+
+        if not email or not username:
+            return Response(
+                {'detail': 'El email corporativo y nombre de usuario son requeridos.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if User.objects.filter(email=email).exists():
+            return Response(
+                {'detail': 'Este email ya está registrado en el sistema.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if User.objects.filter(username=username).exists():
+            return Response(
+                {'detail': 'Este nombre de usuario ya existe.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        empresa = get_tenant_empresa()
+        self._create_user_for_colaborador(
+            colaborador, email, username, empresa, request.user
+        )
+
+        serializer = ColaboradorDetailSerializer(colaborador)
+        return Response({
+            'detail': 'Acceso al sistema creado exitosamente. Se envió un correo para configurar la contraseña.',
+            'colaborador': serializer.data
+        })
 
 
 class HojaVidaViewSet(viewsets.ModelViewSet):

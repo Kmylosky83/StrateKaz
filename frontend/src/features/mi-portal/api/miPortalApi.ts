@@ -26,6 +26,7 @@ const BASE_URL = '/talent-hub/mi-portal';
 export const miPortalKeys = {
   all: ['mi-portal'] as const,
   perfil: () => [...miPortalKeys.all, 'perfil'] as const,
+  documentos: () => [...miPortalKeys.all, 'documentos'] as const,
   vacaciones: () => [...miPortalKeys.all, 'vacaciones'] as const,
   recibos: () => [...miPortalKeys.all, 'recibos'] as const,
   capacitaciones: () => [...miPortalKeys.all, 'capacitaciones'] as const,
@@ -69,6 +70,53 @@ export function useUpdateMiPerfil() {
     onError: (error: any) => {
       toast.error(error.response?.data?.detail || 'Error al actualizar datos');
     },
+  });
+}
+
+// ============================================================================
+// HOOKS - DOCUMENTOS (HOJA DE VIDA)
+// ============================================================================
+
+interface HojaVidaESS {
+  id: number;
+  colaborador: number;
+  nivel_estudio_maximo: string;
+  titulo_academico: string;
+  institucion: string;
+  anio_graduacion: number | null;
+  estudios_adicionales: unknown[];
+  certificaciones: unknown[];
+  experiencia_previa: unknown[];
+  idiomas: { idioma: string; nivel: string }[];
+  habilidades: unknown[];
+  competencias_blandas: unknown[];
+  referencias_laborales: unknown[];
+  cv_documento: string | null;
+  certificados_estudios: string | null;
+  observaciones: string;
+  total_anios_experiencia: number;
+  tiene_formacion_completa: boolean;
+}
+
+export function useMisDocumentos(colaboradorId: number | null | undefined) {
+  return useQuery({
+    queryKey: [...miPortalKeys.documentos(), colaboradorId],
+    queryFn: async (): Promise<HojaVidaESS | null> => {
+      if (!colaboradorId) return null;
+      try {
+        const response = await api.get<HojaVidaESS>(
+          `/talent-hub/empleados/hojas-vida/por-colaborador/${colaboradorId}/`
+        );
+        return response.data;
+      } catch (error: any) {
+        // 404 = no tiene hoja de vida aun
+        if (error.response?.status === 404) return null;
+        throw error;
+      }
+    },
+    enabled: !!colaboradorId,
+    staleTime: 10 * 60 * 1000,
+    retry: false,
   });
 }
 

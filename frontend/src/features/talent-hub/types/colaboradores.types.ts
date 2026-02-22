@@ -160,6 +160,11 @@ export interface ColaboradorFormData {
   telefono_movil?: string;
   observaciones?: string;
   usuario?: string;
+
+  // Step 4: Acceso al sistema (write-only, no se almacena en Colaborador)
+  crear_acceso?: boolean;
+  email_corporativo?: string;
+  username?: string;
 }
 
 // =============================================================================

@@ -2,13 +2,14 @@
  * ColaboradorFormModal - Modal de creacion/edicion de colaboradores
  * Talento Humano > Colaboradores
  *
- * Wizard de 3 pasos:
+ * Wizard de 4 pasos (creacion) / 3 pasos (edicion):
  * - Step 1: Datos basicos (nombre, documento, contacto)
  * - Step 2: Asignacion organizacional (cargo, area, fecha ingreso)
  * - Step 3: Contratacion (tipo contrato, salario, horas)
+ * - Step 4: Acceso al Sistema (solo creacion - crear usuario + envio email)
  *
- * Compatible con el flujo maestro:
- * Cargo -> Colaborador -> User (auto-creado en backend)
+ * Compatible con el flujo maestro unificado:
+ * Colaborador -> (opcional) User con email de configuracion de contraseña
  */
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -19,7 +20,18 @@ import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
 import { Switch } from '@/components/forms/Switch';
-import { User, Briefcase, FileText, ChevronLeft, ChevronRight, Check, Plus } from 'lucide-react';
+import {
+  User,
+  Briefcase,
+  FileText,
+  Shield,
+  ChevronLeft,
+  ChevronRight,
+  Check,
+  Plus,
+  Mail,
+  Info,
+} from 'lucide-react';
 import { useCreateColaborador, useUpdateColaborador } from '../../hooks/useColaboradores';
 import { useCargos } from '@/features/users/hooks/useUsers';
 import { useAreas } from '@/features/gestion-estrategica/hooks/useAreas';
@@ -38,13 +50,25 @@ interface ColaboradorFormModalProps {
   onClose: () => void;
 }
 
-type StepKey = 'datos' | 'asignacion' | 'contratacion';
+type StepKey = 'datos' | 'asignacion' | 'contratacion' | 'acceso';
 
-const STEPS: { key: StepKey; label: string; icon: React.ReactNode }[] = [
-  { key: 'datos', label: 'Datos Basicos', icon: <User size={16} /> },
-  { key: 'asignacion', label: 'Asignacion', icon: <Briefcase size={16} /> },
-  { key: 'contratacion', label: 'Contratacion', icon: <FileText size={16} /> },
+interface StepDef {
+  key: StepKey;
+  label: string;
+  icon: React.ReactNode;
+}
+
+const BASE_STEPS: StepDef[] = [
+  { key: 'datos', label: 'Datos Básicos', icon: <User size={16} /> },
+  { key: 'asignacion', label: 'Asignación', icon: <Briefcase size={16} /> },
+  { key: 'contratacion', label: 'Contratación', icon: <FileText size={16} /> },
 ];
+
+const ACCESS_STEP: StepDef = {
+  key: 'acceso',
+  label: 'Acceso al Sistema',
+  icon: <Shield size={16} />,
+};
 
 const TIPO_DOCUMENTO_OPTIONS = [
   { value: 'CC', label: 'Cedula de Ciudadania' },
@@ -80,6 +104,10 @@ const INITIAL_FORM: ColaboradorFormData = {
   email_personal: '',
   telefono_movil: '',
   observaciones: '',
+  // Step 4: Acceso al sistema
+  crear_acceso: false,
+  email_corporativo: '',
+  username: '',
 };
 
 export const ColaboradorFormModal = ({
@@ -91,6 +119,9 @@ export const ColaboradorFormModal = ({
   const [activeStep, setActiveStep] = useState<number>(0);
   const [formData, setFormData] = useState<ColaboradorFormData>(INITIAL_FORM);
   const [showCargoModal, setShowCargoModal] = useState(false);
+
+  // Dynamic steps: Step 4 (Acceso) only shown when creating
+  const STEPS = useMemo(() => (isEditing ? BASE_STEPS : [...BASE_STEPS, ACCESS_STEP]), [isEditing]);
 
   // Queries
   const queryClient = useQueryClient();
@@ -176,6 +207,34 @@ export const ColaboradorFormModal = ({
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  // Auto-suggest email and username when names change (only in create mode)
+  const suggestedEmail = useMemo(() => {
+    if (isEditing) return '';
+    const nombre = (formData.primer_nombre || '').toLowerCase().trim();
+    const apellido = (formData.primer_apellido || '').toLowerCase().trim();
+    if (!nombre || !apellido) return '';
+    // Normalizar: quitar tildes, espacios
+    const normalize = (s: string) =>
+      s
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, '');
+    return `${normalize(nombre)}.${normalize(apellido)}`;
+  }, [formData.primer_nombre, formData.primer_apellido, isEditing]);
+
+  const suggestedUsername = useMemo(() => {
+    if (isEditing) return '';
+    const nombre = (formData.primer_nombre || '').toLowerCase().trim();
+    const apellido = (formData.primer_apellido || '').toLowerCase().trim();
+    if (!nombre || !apellido) return '';
+    const normalize = (s: string) =>
+      s
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, '');
+    return `${normalize(nombre)}.${normalize(apellido)}`;
+  }, [formData.primer_nombre, formData.primer_apellido, isEditing]);
+
   // Validation per step
   const isStepValid = (step: number): boolean => {
     switch (step) {
@@ -189,6 +248,13 @@ export const ColaboradorFormModal = ({
         return !!(formData.cargo && formData.area && formData.fecha_ingreso);
       case 2: // Contratacion
         return !!(formData.tipo_contrato && formData.salario);
+      case 3: // Acceso al sistema (siempre valido - es opcional)
+        if (!formData.crear_acceso) return true;
+        return !!(
+          formData.email_corporativo?.trim() &&
+          formData.email_corporativo.includes('@') &&
+          formData.username?.trim()
+        );
       default:
         return false;
     }
@@ -196,7 +262,10 @@ export const ColaboradorFormModal = ({
 
   // Submit
   const handleSubmit = async () => {
-    if (!isStepValid(0) || !isStepValid(1) || !isStepValid(2)) return;
+    // Validate all steps
+    for (let i = 0; i < STEPS.length; i++) {
+      if (!isStepValid(i)) return;
+    }
 
     const data = { ...formData };
     // Clean optional fields
@@ -207,8 +276,18 @@ export const ColaboradorFormModal = ({
     if (!data.observaciones) delete data.observaciones;
 
     if (isEditing && colaborador) {
+      // En edicion, no enviar campos de acceso
+      delete data.crear_acceso;
+      delete data.email_corporativo;
+      delete data.username;
       await updateMutation.mutateAsync({ id: colaborador.id, data });
     } else {
+      // En creacion, limpiar campos de acceso si no se selecciono
+      if (!data.crear_acceso) {
+        delete data.crear_acceso;
+        delete data.email_corporativo;
+        delete data.username;
+      }
       await createMutation.mutateAsync(data);
     }
     onClose();
@@ -525,9 +604,107 @@ export const ColaboradorFormModal = ({
               onChange={(checked) => updateField('auxilio_transporte', checked)}
             />
 
-            {/* Resumen */}
+            {/* Resumen (solo en modo edicion, ya que en creacion el resumen va en Step 4) */}
+            {isEditing && (
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Resumen</h4>
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 text-sm space-y-1">
+                  <p>
+                    <span className="text-gray-500">Nombre:</span>{' '}
+                    <span className="font-medium text-gray-900 dark:text-white">
+                      {formData.primer_nombre} {formData.segundo_nombre} {formData.primer_apellido}{' '}
+                      {formData.segundo_apellido}
+                    </span>
+                  </p>
+                  <p>
+                    <span className="text-gray-500">Salario:</span>{' '}
+                    <span className="font-medium text-gray-900 dark:text-white">
+                      ${Number(formData.salario || 0).toLocaleString('es-CO')}
+                    </span>
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ========== STEP 4: ACCESO AL SISTEMA (solo creacion) ========== */}
+        {currentStepKey === 'acceso' && (
+          <div className="space-y-4">
+            <Alert
+              variant="info"
+              message="Opcionalmente puedes crear una cuenta de acceso al sistema para este colaborador. Se le enviará un correo para configurar su contraseña."
+            />
+
+            {/* Toggle principal */}
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+              <Switch
+                label="¿Crear acceso al sistema?"
+                checked={formData.crear_acceso ?? false}
+                onChange={(checked) => {
+                  updateField('crear_acceso', checked);
+                  // Auto-rellenar sugerencias al activar
+                  if (checked && !formData.email_corporativo && suggestedEmail) {
+                    updateField('email_corporativo', suggestedEmail + '@empresa.com');
+                  }
+                  if (checked && !formData.username && suggestedUsername) {
+                    updateField('username', suggestedUsername);
+                  }
+                }}
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                Si se activa, se creará un usuario con acceso al sistema y se enviará un correo
+                electrónico para que el colaborador configure su contraseña.
+              </p>
+            </div>
+
+            {/* Campos de acceso (visibles solo si crear_acceso está activo) */}
+            {formData.crear_acceso && (
+              <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                <Input
+                  label="Email Corporativo"
+                  type="email"
+                  value={formData.email_corporativo || ''}
+                  onChange={(e) => updateField('email_corporativo', e.target.value)}
+                  placeholder={
+                    suggestedEmail ? `${suggestedEmail}@empresa.com` : 'correo@empresa.com'
+                  }
+                  required
+                />
+                <Input
+                  label="Nombre de Usuario"
+                  value={formData.username || ''}
+                  onChange={(e) => updateField('username', e.target.value)}
+                  placeholder={suggestedUsername || 'nombre.apellido'}
+                  required
+                />
+
+                <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <Mail size={16} className="text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
+                  <p className="text-xs text-blue-700 dark:text-blue-300">
+                    Se enviará un correo a <strong>{formData.email_corporativo || '...'}</strong>{' '}
+                    con un enlace para configurar la contraseña. El enlace expira en 72 horas.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Info cuando no se activa acceso */}
+            {!formData.crear_acceso && (
+              <div className="flex items-start gap-2 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                <Info size={16} className="text-gray-500 dark:text-gray-400 mt-0.5 shrink-0" />
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  El colaborador será registrado sin acceso al sistema. Podrás crear su cuenta más
+                  adelante desde el listado de colaboradores.
+                </p>
+              </div>
+            )}
+
+            {/* Resumen final */}
             <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-              <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Resumen</h4>
+              <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
+                Resumen de Creación
+              </h4>
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 text-sm space-y-1">
                 <p>
                   <span className="text-gray-500">Nombre:</span>{' '}
@@ -558,6 +735,14 @@ export const ColaboradorFormModal = ({
                   <span className="text-gray-500">Salario:</span>{' '}
                   <span className="font-medium text-gray-900 dark:text-white">
                     ${Number(formData.salario || 0).toLocaleString('es-CO')}
+                  </span>
+                </p>
+                <p>
+                  <span className="text-gray-500">Acceso al sistema:</span>{' '}
+                  <span
+                    className={`font-medium ${formData.crear_acceso ? 'text-success-600 dark:text-success-400' : 'text-gray-500'}`}
+                  >
+                    {formData.crear_acceso ? `Sí — ${formData.email_corporativo}` : 'No'}
                   </span>
                 </p>
               </div>

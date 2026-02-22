@@ -32,6 +32,10 @@ from .user_preferences_views import (
     UserPreferencesView,
 )
 
+from .setup_password_views import (
+    SetupPasswordView,
+)
+
 __all__ = [
     # Security views
     'ratelimit_error_view',
@@ -57,4 +61,6 @@ __all__ = [
     'TwoFactorRegenerateBackupCodesView',
     # User Preferences view (MS-003)
     'UserPreferencesView',
+    # Setup Password view (Talent Hub)
+    'SetupPasswordView',
 ]

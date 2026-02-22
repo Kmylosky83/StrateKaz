@@ -15,7 +15,7 @@ NOTA: Branding se maneja ahora en /api/tenant/public/branding/
 """
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import health_check, current_user, test_celery_task, task_status, revoke_task
+from .views import health_check, current_user, test_celery_task, task_status, revoke_task, SetupPasswordView
 from .viewsets import CargoViewSet, UserViewSet, PermisoViewSet
 from .viewsets_rbac import (
     PermissionViewSet,
@@ -107,6 +107,9 @@ urlpatterns = [
 
     # Endpoints User Preferences (MS-003) - Singleton pattern
     path('user-preferences/', UserPreferencesView.as_view(), name='user-preferences'),
+
+    # Setup Password (Talent Hub - configurar contraseña inicial)
+    path('setup-password/', SetupPasswordView.as_view(), name='setup-password'),
 
     # Endpoints Sincronización de Secciones (RBAC v4.1)
     path('sections/all/', get_all_sections, name='sections-all'),

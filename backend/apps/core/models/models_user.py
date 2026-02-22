@@ -745,6 +745,23 @@ class User(AbstractUser):
     )
 
     # ==========================================================================
+    # PASSWORD SETUP (para usuarios creados desde Talent Hub sin contraseña)
+    # ==========================================================================
+    password_setup_token = models.CharField(
+        max_length=64,
+        null=True,
+        blank=True,
+        verbose_name='Token de configuración de contraseña',
+        help_text='Token único para configurar contraseña inicial'
+    )
+    password_setup_expires = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Expiración token contraseña',
+        help_text='Fecha de expiración del token de configuración'
+    )
+
+    # ==========================================================================
     # RBAC HÍBRIDO - ROLES ADICIONALES
     # ==========================================================================
     roles_adicionales = models.ManyToManyField(

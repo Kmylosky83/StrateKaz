@@ -22,6 +22,7 @@ import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { LoginPage } from '@/pages/LoginPage';
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
+import { SetupPasswordPage } from '@/pages/SetupPasswordPage';
 import { AuthCallbackPage } from '@/pages/AuthCallbackPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { ErrorPage } from '@/pages/ErrorPage';
@@ -311,6 +312,7 @@ export const AppRoutes = () => {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/setup-password" element={<SetupPasswordPage />} />
       <Route path="/auth/callback" element={<AuthCallbackPage />} />
       <Route path="/encuestas/responder/:token" element={withSuspense(EncuestaPublicaPage)} />
       <Route path="/pruebas/responder/:token" element={withSuspense(ResponderPruebaPage)} />

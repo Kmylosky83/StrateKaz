@@ -501,6 +501,59 @@ class ColaboradorCreateUpdateSerializer(serializers.ModelSerializer):
         return attrs
 
 
+class ColaboradorCreateWithAccessSerializer(ColaboradorCreateUpdateSerializer):
+    """
+    Serializer extendido para crear Colaborador con acceso opcional al sistema.
+
+    Agrega 3 campos write-only que NO se almacenan en Colaborador:
+    - crear_acceso: toggle para crear cuenta de usuario
+    - email_corporativo: email del usuario en el sistema
+    - username: nombre de usuario para login
+    """
+    crear_acceso = serializers.BooleanField(
+        default=False, write_only=True, required=False
+    )
+    email_corporativo = serializers.EmailField(
+        write_only=True, required=False, allow_blank=True
+    )
+    username = serializers.CharField(
+        write_only=True, required=False, allow_blank=True, max_length=150
+    )
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+
+        crear_acceso = attrs.get('crear_acceso', False)
+        if crear_acceso:
+            email_corporativo = attrs.get('email_corporativo', '').strip()
+            username = attrs.get('username', '').strip()
+
+            if not email_corporativo:
+                raise serializers.ValidationError({
+                    'email_corporativo': 'El email corporativo es requerido para crear acceso al sistema.'
+                })
+            if not username:
+                raise serializers.ValidationError({
+                    'username': 'El nombre de usuario es requerido para crear acceso al sistema.'
+                })
+            if ' ' in username:
+                raise serializers.ValidationError({
+                    'username': 'El nombre de usuario no puede contener espacios.'
+                })
+
+            # Validar unicidad en User
+            if User.objects.filter(email=email_corporativo).exists():
+                raise serializers.ValidationError({
+                    'email_corporativo': 'Este email ya está registrado en el sistema.'
+                })
+            if User.objects.filter(username=username).exists():
+                raise serializers.ValidationError({
+                    'username': 'Este nombre de usuario ya existe.'
+                })
+
+        return attrs
+
+
 class ColaboradorCompleteSerializer(serializers.ModelSerializer):
     """
     Serializer completo con TODA la información (incluyendo datos sensibles).

@@ -122,6 +122,20 @@ export const authAPI = {
   },
 
   /**
+   * Configurar contraseña inicial (empleados creados desde Talent Hub)
+   * Endpoint publico sin autenticacion - usa token temporal
+   */
+  setupPassword: async (data: {
+    email: string;
+    token: string;
+    new_password: string;
+    new_password_confirm: string;
+  }): Promise<{ message: string }> => {
+    const response = await axios.post<{ message: string }>('/core/setup-password/', data);
+    return response.data;
+  },
+
+  /**
    * Subir foto de perfil
    */
   uploadPhoto: async (file: File): Promise<{ photo_url: string }> => {

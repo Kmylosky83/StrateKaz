@@ -858,7 +858,8 @@ class ParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         Formato compatible con F-GD-04 MATRIZ PARTES INTERESADAS.xlsx
         """
         queryset = self.filter_queryset(self.get_queryset()).select_related(
-            'tipo', 'tipo__grupo', 'responsable_empresa', 'cargo_responsable', 'area_responsable'
+            'tipo', 'tipo__grupo', 'responsable_empresa', 'responsable_empresa__usuario',
+            'cargo_responsable', 'area_responsable'
         ).order_by('tipo__grupo__orden', 'tipo__orden', 'nombre')
 
         # Crear workbook
@@ -962,9 +963,9 @@ class ParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         for parte in queryset:
             ws3.append([
                 parte.nombre,
-                parte.responsable_empresa.usuario.get_full_name() if parte.responsable_empresa else '',
+                parte.responsable_empresa.usuario.get_full_name() if parte.responsable_empresa and parte.responsable_empresa.usuario else '',
                 parte.cargo_responsable.name if parte.cargo_responsable else '',
-                parte.area_responsable.nombre if parte.area_responsable else '',
+                parte.area_responsable.name if parte.area_responsable else '',
                 parte.get_canal_principal_display() if parte.canal_principal else ''
             ])
 
@@ -1013,9 +1014,9 @@ class ParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
                 parte.get_nivel_influencia_pi_display(),
                 parte.get_nivel_influencia_empresa_display(),
                 parte.get_nivel_interes_display(),
-                parte.responsable_empresa.usuario.get_full_name() if parte.responsable_empresa else '',
+                parte.responsable_empresa.usuario.get_full_name() if parte.responsable_empresa and parte.responsable_empresa.usuario else '',
                 parte.cargo_responsable.name if parte.cargo_responsable else '',
-                parte.area_responsable.nombre if parte.area_responsable else '',
+                parte.area_responsable.name if parte.area_responsable else '',
                 parte.get_canal_principal_display() if parte.canal_principal else '',
                 'Sí' if parte.relacionado_sst else 'No',
                 'Sí' if parte.relacionado_ambiental else 'No',

@@ -270,9 +270,24 @@ const planHooks = createCrudHooks<StrategicPlan, CreateStrategicPlanDTO, UpdateS
 
 export const usePlans = planHooks.useList;
 export const usePlan = planHooks.useDetail;
-export const useCreatePlan = planHooks.useCreate;
 export const useUpdatePlan = planHooks.useUpdate;
 export const useDeletePlan = planHooks.useDelete;
+
+// useCreatePlan con invalidación custom (refetch activePlan tras crear)
+export const useCreatePlan = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateStrategicPlanDTO) => plansApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: planKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: strategicKeys.activePlan });
+      toast.success('Plan estratégico creado exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al crear el plan estratégico');
+    },
+  });
+};
 
 // Custom hooks
 export const useActivePlan = () => {

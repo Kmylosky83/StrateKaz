@@ -140,7 +140,7 @@ export const EstrategiaTowsFormModal = ({
 
   // Queries
   const { data: estrategiaDetail } = useEstrategiaTowsDetail(estrategia?.id);
-  const { data: analisisData } = useAnalisisDofa({ estado: 'vigente' }, 1, 100);
+  const { data: analisisData } = useAnalisisDofa({}, 1, 100);
   const { data: areasData } = useAreas();
   const { data: cargosData } = useCargos();
 

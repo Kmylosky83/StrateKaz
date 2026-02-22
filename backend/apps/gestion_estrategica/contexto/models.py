@@ -235,6 +235,14 @@ class FactorDOFA(BaseCompanyModel, OrderedModel):
         default=0,
         verbose_name='Votos como Debilidad'
     )
+    votos_oportunidad = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Votos como Oportunidad'
+    )
+    votos_amenaza = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Votos como Amenaza'
+    )
 
     class Meta:
         db_table = 'contexto_factor_dofa'

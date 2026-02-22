@@ -65,8 +65,14 @@ class ConsecutivoConfigViewSet(viewsets.ModelViewSet):
     ordering = ['categoria', 'codigo']
 
     def get_queryset(self):
-        """Retorna consecutivos no eliminados por defecto."""
+        """Retorna consecutivos no eliminados, filtrados por tenant."""
+        from apps.core.base_models.mixins import get_tenant_empresa
+
+        empresa = get_tenant_empresa()
         queryset = ConsecutivoConfig.objects.filter(deleted_at__isnull=True)
+
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
 
         include_inactive = self.request.query_params.get('include_inactive', 'false')
         if include_inactive.lower() != 'true':
@@ -274,8 +280,15 @@ class ConsecutivoConfigViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # Obtener empresa_id del usuario o usar 1 por defecto
-        empresa_id = getattr(request.user, 'empresa_id', 1)
+        from apps.core.base_models.mixins import get_tenant_empresa
+
+        empresa = get_tenant_empresa()
+        if not empresa:
+            return Response(
+                {'detail': 'No se pudo determinar la empresa del tenant actual.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        empresa_id = empresa.id
 
         created_count = 0
         updated_count = 0

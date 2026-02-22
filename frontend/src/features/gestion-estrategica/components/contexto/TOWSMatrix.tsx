@@ -120,7 +120,10 @@ const EstrategiaCard = ({
       whileHover={{ scale: readOnly ? 1 : 1.02 }}
       className="h-full"
     >
-      <Card className="h-full flex flex-col p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={onEdit}>
+      <Card
+        className="h-full flex flex-col p-4 cursor-pointer hover:shadow-md transition-shadow"
+        onClick={onEdit}
+      >
         {/* Header con badges */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex flex-wrap gap-2">
@@ -174,14 +177,16 @@ const EstrategiaCard = ({
             </div>
           )}
           {estrategia.dias_restantes !== null && estrategia.dias_restantes !== undefined && (
-            <div className={cn(
-              'flex items-center gap-2',
-              estrategia.dias_restantes < 0
-                ? 'text-red-600 dark:text-red-400'
-                : estrategia.dias_restantes < 30
-                  ? 'text-amber-600 dark:text-amber-400'
-                  : 'text-gray-600 dark:text-gray-400'
-            )}>
+            <div
+              className={cn(
+                'flex items-center gap-2',
+                estrategia.dias_restantes < 0
+                  ? 'text-red-600 dark:text-red-400'
+                  : estrategia.dias_restantes < 30
+                    ? 'text-amber-600 dark:text-amber-400'
+                    : 'text-gray-600 dark:text-gray-400'
+              )}
+            >
               <Calendar className="w-3 h-3" />
               <span>
                 {estrategia.dias_restantes < 0
@@ -315,16 +320,10 @@ const CuadranteTOWS = ({
       <div className={cn('p-4 rounded-t-lg', config.bgClass, config.borderClass, 'border-b-2')}>
         <div className="flex items-center justify-between">
           <div>
-            <h3 className={cn('text-lg font-semibold', config.textClass)}>
-              {config.label}
-            </h3>
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-              {config.description}
-            </p>
+            <h3 className={cn('text-lg font-semibold', config.textClass)}>{config.label}</h3>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{config.description}</p>
           </div>
-          <Badge variant={config.color as any}>
-            {estrategias.length}
-          </Badge>
+          <Badge variant={config.color as any}>{estrategias.length}</Badge>
         </div>
       </div>
 
@@ -335,9 +334,7 @@ const CuadranteTOWS = ({
             <div className="text-center py-8 text-gray-400">
               <TrendingUp className="w-12 h-12 mx-auto mb-2 opacity-30" />
               <p className="text-sm">No hay estrategias en este cuadrante</p>
-              {!readOnly && (
-                <p className="text-xs mt-1">Crea estrategias desde el análisis DOFA</p>
-              )}
+              {!readOnly && <p className="text-xs mt-1">Crea estrategias desde el análisis DOFA</p>}
             </div>
           ) : (
             <div className="grid gap-3">
@@ -369,11 +366,7 @@ const CuadranteTOWS = ({
 export const TOWSMatrix = ({ analisisId, onEditEstrategia, readOnly }: TOWSMatrixProps) => {
   const [selectedEstrategia, setSelectedEstrategia] = useState<EstrategiaTOWS | null>(null);
 
-  const { data, isLoading, error } = useEstrategiasTows(
-    { analisis: analisisId },
-    1,
-    100
-  );
+  const { data, isLoading, error } = useEstrategiasTows({ analisis: analisisId }, 1, 100);
   const aprobarMutation = useAprobarEstrategiaTows();
   const ejecutarMutation = useEjecutarEstrategiaTows();
   const completarMutation = useCompletarEstrategiaTows();
@@ -410,7 +403,7 @@ export const TOWSMatrix = ({ analisisId, onEditEstrategia, readOnly }: TOWSMatri
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-4 h-[calc(100vh-20rem)]">
+      <div className="grid grid-cols-2 gap-4 h-[calc(100vh-32rem)]">
         {/* Fila Superior: FO (Ofensiva) | FA (Defensiva) */}
         <CuadranteTOWS
           tipo="fo"

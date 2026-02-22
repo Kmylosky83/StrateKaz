@@ -783,14 +783,24 @@ class ParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # Llamar al método del modelo
-        comunicacion, created = parte.generar_comunicacion_automatica()
+        # Llamar al método del modelo (retorna lista de tuplas)
+        resultados = parte.generar_comunicacion_automatica()
+
+        if not resultados:
+            return Response(
+                {'error': 'No se pudo generar la matriz. Verifique que la parte interesada tiene canales configurados.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        comunicaciones = [r[0] for r in resultados]
+        any_created = any(r[1] for r in resultados)
 
         return Response({
-            'message': 'Matriz de comunicación generada exitosamente' if created else 'Matriz de comunicación ya existía',
-            'created': created,
-            'data': MatrizComunicacionSerializer(comunicacion).data
-        }, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+            'message': f'Matriz de comunicación generada exitosamente ({len(comunicaciones)} registros)',
+            'created': any_created,
+            'total': len(comunicaciones),
+            'data': MatrizComunicacionSerializer(comunicaciones, many=True).data
+        }, status=status.HTTP_201_CREATED if any_created else status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'])
     def generar_matriz_comunicacion_masiva(self, request) -> Response:
@@ -811,11 +821,12 @@ class ParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
         for parte in queryset:
             try:
-                _, created = parte.generar_comunicacion_automatica()
-                if created:
-                    created_count += 1
-                else:
-                    updated_count += 1
+                resultados = parte.generar_comunicacion_automatica()
+                for _, created in resultados:
+                    if created:
+                        created_count += 1
+                    else:
+                        updated_count += 1
             except Exception as e:
                 errors.append({
                     'parte_interesada_id': parte.id,

@@ -27,14 +27,7 @@
 
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import {
-  Swords,
-  UserPlus,
-  Repeat,
-  Truck,
-  Users as UsersIcon,
-  ChevronRight,
-} from 'lucide-react';
+import { Swords, UserPlus, Repeat, Truck, Users as UsersIcon, ChevronRight } from 'lucide-react';
 import { Card, Badge, Button, Progress } from '@/components/common';
 import { Spinner } from '@/components/common/Spinner';
 import { Alert } from '@/components/common/Alert';
@@ -96,11 +89,10 @@ const FuerzaCard = ({ fuerza, tipo, onClick, readOnly }: FuerzaCardProps) => {
     );
   }
 
-  const nivelConfig = NIVEL_IMPACTO_CONFIG[fuerza.nivel];
+  const nivelConfig = NIVEL_IMPACTO_CONFIG[fuerza.nivel] ?? NIVEL_IMPACTO_CONFIG.bajo;
 
   // Calcular intensidad (0-100) basada en nivel
-  const intensidad =
-    fuerza.nivel === 'alto' ? 80 : fuerza.nivel === 'medio' ? 50 : 20;
+  const intensidad = fuerza.nivel === 'alto' ? 80 : fuerza.nivel === 'medio' ? 50 : 20;
 
   return (
     <motion.div
@@ -128,17 +120,13 @@ const FuerzaCard = ({ fuerza, tipo, onClick, readOnly }: FuerzaCardProps) => {
         </div>
 
         {/* Descripción de la fuerza */}
-        <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
-          {config.description}
-        </p>
+        <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">{config.description}</p>
 
         {/* Progress bar de intensidad */}
         <div className="mb-3">
           <div className="flex justify-between items-center text-xs mb-1">
             <span className="text-gray-600 dark:text-gray-400">Intensidad</span>
-            <span className="font-semibold text-gray-700 dark:text-gray-300">
-              {intensidad}%
-            </span>
+            <span className="font-semibold text-gray-700 dark:text-gray-300">{intensidad}%</span>
           </div>
           <Progress
             value={intensidad}
@@ -194,11 +182,7 @@ const FuerzaCard = ({ fuerza, tipo, onClick, readOnly }: FuerzaCardProps) => {
 // COMPONENTE PRINCIPAL
 // ============================================================================
 
-export const PorterDiagram = ({
-  periodo,
-  onEditFuerza,
-  readOnly,
-}: PorterDiagramProps) => {
+export const PorterDiagram = ({ periodo, onEditFuerza, readOnly }: PorterDiagramProps) => {
   const { data, isLoading, error } = useFuerzasPorter(
     { periodo },
     1,
@@ -210,11 +194,9 @@ export const PorterDiagram = ({
     const fuerzas = data?.results || [];
     return {
       rivalidad: fuerzas.find((f) => f.tipo === 'rivalidad') || null,
-      nuevos_entrantes:
-        fuerzas.find((f) => f.tipo === 'nuevos_entrantes') || null,
+      nuevos_entrantes: fuerzas.find((f) => f.tipo === 'nuevos_entrantes') || null,
       sustitutos: fuerzas.find((f) => f.tipo === 'sustitutos') || null,
-      poder_proveedores:
-        fuerzas.find((f) => f.tipo === 'poder_proveedores') || null,
+      poder_proveedores: fuerzas.find((f) => f.tipo === 'poder_proveedores') || null,
       poder_clientes: fuerzas.find((f) => f.tipo === 'poder_clientes') || null,
     };
   }, [data?.results]);
@@ -248,8 +230,7 @@ export const PorterDiagram = ({
             fuerza={fuerzasPorTipo.nuevos_entrantes}
             tipo="nuevos_entrantes"
             onClick={() =>
-              fuerzasPorTipo.nuevos_entrantes &&
-              onEditFuerza?.(fuerzasPorTipo.nuevos_entrantes)
+              fuerzasPorTipo.nuevos_entrantes && onEditFuerza?.(fuerzasPorTipo.nuevos_entrantes)
             }
             readOnly={readOnly}
           />
@@ -261,8 +242,7 @@ export const PorterDiagram = ({
             fuerza={fuerzasPorTipo.poder_proveedores}
             tipo="poder_proveedores"
             onClick={() =>
-              fuerzasPorTipo.poder_proveedores &&
-              onEditFuerza?.(fuerzasPorTipo.poder_proveedores)
+              fuerzasPorTipo.poder_proveedores && onEditFuerza?.(fuerzasPorTipo.poder_proveedores)
             }
             readOnly={readOnly}
           />
@@ -271,9 +251,7 @@ export const PorterDiagram = ({
           <FuerzaCard
             fuerza={fuerzasPorTipo.rivalidad}
             tipo="rivalidad"
-            onClick={() =>
-              fuerzasPorTipo.rivalidad && onEditFuerza?.(fuerzasPorTipo.rivalidad)
-            }
+            onClick={() => fuerzasPorTipo.rivalidad && onEditFuerza?.(fuerzasPorTipo.rivalidad)}
             readOnly={readOnly}
           />
         </div>
@@ -282,8 +260,7 @@ export const PorterDiagram = ({
             fuerza={fuerzasPorTipo.poder_clientes}
             tipo="poder_clientes"
             onClick={() =>
-              fuerzasPorTipo.poder_clientes &&
-              onEditFuerza?.(fuerzasPorTipo.poder_clientes)
+              fuerzasPorTipo.poder_clientes && onEditFuerza?.(fuerzasPorTipo.poder_clientes)
             }
             readOnly={readOnly}
           />
@@ -294,9 +271,7 @@ export const PorterDiagram = ({
           <FuerzaCard
             fuerza={fuerzasPorTipo.sustitutos}
             tipo="sustitutos"
-            onClick={() =>
-              fuerzasPorTipo.sustitutos && onEditFuerza?.(fuerzasPorTipo.sustitutos)
-            }
+            onClick={() => fuerzasPorTipo.sustitutos && onEditFuerza?.(fuerzasPorTipo.sustitutos)}
             readOnly={readOnly}
           />
         </div>
@@ -308,8 +283,7 @@ export const PorterDiagram = ({
           fuerza={fuerzasPorTipo.nuevos_entrantes}
           tipo="nuevos_entrantes"
           onClick={() =>
-            fuerzasPorTipo.nuevos_entrantes &&
-            onEditFuerza?.(fuerzasPorTipo.nuevos_entrantes)
+            fuerzasPorTipo.nuevos_entrantes && onEditFuerza?.(fuerzasPorTipo.nuevos_entrantes)
           }
           readOnly={readOnly}
         />
@@ -317,34 +291,28 @@ export const PorterDiagram = ({
           fuerza={fuerzasPorTipo.poder_proveedores}
           tipo="poder_proveedores"
           onClick={() =>
-            fuerzasPorTipo.poder_proveedores &&
-            onEditFuerza?.(fuerzasPorTipo.poder_proveedores)
+            fuerzasPorTipo.poder_proveedores && onEditFuerza?.(fuerzasPorTipo.poder_proveedores)
           }
           readOnly={readOnly}
         />
         <FuerzaCard
           fuerza={fuerzasPorTipo.rivalidad}
           tipo="rivalidad"
-          onClick={() =>
-            fuerzasPorTipo.rivalidad && onEditFuerza?.(fuerzasPorTipo.rivalidad)
-          }
+          onClick={() => fuerzasPorTipo.rivalidad && onEditFuerza?.(fuerzasPorTipo.rivalidad)}
           readOnly={readOnly}
         />
         <FuerzaCard
           fuerza={fuerzasPorTipo.poder_clientes}
           tipo="poder_clientes"
           onClick={() =>
-            fuerzasPorTipo.poder_clientes &&
-            onEditFuerza?.(fuerzasPorTipo.poder_clientes)
+            fuerzasPorTipo.poder_clientes && onEditFuerza?.(fuerzasPorTipo.poder_clientes)
           }
           readOnly={readOnly}
         />
         <FuerzaCard
           fuerza={fuerzasPorTipo.sustitutos}
           tipo="sustitutos"
-          onClick={() =>
-            fuerzasPorTipo.sustitutos && onEditFuerza?.(fuerzasPorTipo.sustitutos)
-          }
+          onClick={() => fuerzasPorTipo.sustitutos && onEditFuerza?.(fuerzasPorTipo.sustitutos)}
           readOnly={readOnly}
         />
       </div>

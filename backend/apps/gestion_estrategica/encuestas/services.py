@@ -261,6 +261,8 @@ class EncuestaService:
                     fuente='encuesta_pci_poam' if es_pci_poam else 'encuesta',
                     votos_fortaleza=respuestas.filter(clasificacion='fortaleza').count(),
                     votos_debilidad=respuestas.filter(clasificacion='debilidad').count(),
+                    votos_oportunidad=respuestas.filter(clasificacion='oportunidad').count(),
+                    votos_amenaza=respuestas.filter(clasificacion='amenaza').count(),
                 )
                 factores_dofa.append({
                     'id': factor_dofa.id,

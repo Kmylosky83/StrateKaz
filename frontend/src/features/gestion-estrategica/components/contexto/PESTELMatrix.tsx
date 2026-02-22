@@ -40,6 +40,7 @@ import { useFactoresPestel } from '../../hooks/useContexto';
 import {
   TIPO_FACTOR_PESTEL_CONFIG,
   NIVEL_IMPACTO_CONFIG,
+  PROBABILIDAD_CONFIG,
   TENDENCIA_FACTOR_CONFIG,
   type FactorPESTEL,
   type TipoFactorPESTEL,
@@ -67,11 +68,15 @@ interface FactorCardProps {
   readOnly?: boolean;
 }
 
+const DEFAULT_NIVEL = { label: 'N/D', color: 'gray' as const, bgClass: '', textClass: '' };
+const DEFAULT_TENDENCIA = { label: 'N/D', color: 'gray' as const, icon: 'Minus' };
+
 const FactorCard = ({ factor, onClick, readOnly }: FactorCardProps) => {
-  const tipoConfig = TIPO_FACTOR_PESTEL_CONFIG[factor.tipo];
-  const impactoConfig = NIVEL_IMPACTO_CONFIG[factor.impacto];
-  const probabilidadConfig = NIVEL_IMPACTO_CONFIG[factor.probabilidad];
-  const tendenciaConfig = TENDENCIA_FACTOR_CONFIG[factor.tendencia];
+  const tipoConfig = TIPO_FACTOR_PESTEL_CONFIG[factor.tipo] ?? TIPO_FACTOR_PESTEL_CONFIG.politico;
+  const impactoConfig = NIVEL_IMPACTO_CONFIG[factor.impacto] ?? DEFAULT_NIVEL;
+  const probabilidadConfig =
+    PROBABILIDAD_CONFIG[factor.probabilidad as keyof typeof PROBABILIDAD_CONFIG] ?? DEFAULT_NIVEL;
+  const tendenciaConfig = TENDENCIA_FACTOR_CONFIG[factor.tendencia] ?? DEFAULT_TENDENCIA;
 
   const TrendIcon = {
     mejorando: TrendingUp,
@@ -97,9 +102,7 @@ const FactorCard = ({ factor, onClick, readOnly }: FactorCardProps) => {
         onClick={onClick}
       >
         {/* Descripción */}
-        <p className={cn('text-sm font-medium mb-2', tipoConfig.textClass)}>
-          {factor.descripcion}
-        </p>
+        <p className={cn('text-sm font-medium mb-2', tipoConfig.textClass)}>{factor.descripcion}</p>
 
         {/* Badges en fila */}
         <div className="flex flex-wrap gap-2 mb-2">
@@ -172,7 +175,11 @@ const CuadrantePESTEL = ({
     <Card className="h-full flex flex-col">
       {/* Header del cuadrante */}
       <div
-        className={cn('p-4 rounded-t-lg border-b-2', config.bgClass, 'border-gray-300 dark:border-gray-600')}
+        className={cn(
+          'p-4 rounded-t-lg border-b-2',
+          config.bgClass,
+          'border-gray-300 dark:border-gray-600'
+        )}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -194,9 +201,7 @@ const CuadrantePESTEL = ({
             <div className="text-center py-6 text-gray-400">
               <Icon className="w-10 h-10 mx-auto mb-2 opacity-30" />
               <p className="text-sm">No hay factores</p>
-              {!readOnly && (
-                <p className="text-xs mt-1">Agrega factores de este tipo</p>
-              )}
+              {!readOnly && <p className="text-xs mt-1">Agrega factores de este tipo</p>}
             </div>
           ) : (
             <div className="space-y-3">
@@ -216,12 +221,7 @@ const CuadrantePESTEL = ({
       {/* Footer con botón agregar */}
       {!readOnly && onAddFactor && (
         <div className="p-3 border-t border-gray-200 dark:border-gray-700">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onAddFactor}
-            className="w-full"
-          >
+          <Button variant="ghost" size="sm" onClick={onAddFactor} className="w-full">
             <Plus className="w-4 h-4 mr-2" />
             Agregar factor
           </Button>

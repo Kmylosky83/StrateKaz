@@ -69,22 +69,17 @@ interface SortableFactorCardProps {
 }
 
 const SortableFactorCard = ({ factor, onClick, readOnly }: SortableFactorCardProps) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: factor.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: factor.id,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
   };
 
-  const config = TIPO_FACTOR_DOFA_CONFIG[factor.tipo];
-  const impactoConfig = NIVEL_IMPACTO_CONFIG[factor.impacto];
+  const config = TIPO_FACTOR_DOFA_CONFIG[factor.tipo] ?? TIPO_FACTOR_DOFA_CONFIG.fortaleza;
+  const impactoConfig = NIVEL_IMPACTO_CONFIG[factor.impacto] ?? NIVEL_IMPACTO_CONFIG.bajo;
 
   return (
     <motion.div
@@ -95,10 +90,7 @@ const SortableFactorCard = ({ factor, onClick, readOnly }: SortableFactorCardPro
       animate={{ opacity: isDragging ? 0.5 : 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9 }}
       whileHover={{ scale: readOnly ? 1 : 1.02 }}
-      className={cn(
-        'group relative',
-        isDragging && 'z-50'
-      )}
+      className={cn('group relative', isDragging && 'z-50')}
     >
       <div
         className={cn(
@@ -124,9 +116,7 @@ const SortableFactorCard = ({ factor, onClick, readOnly }: SortableFactorCardPro
         {/* Content */}
         <div className="pl-6 space-y-2">
           {/* Descripción */}
-          <p className={cn('text-sm font-medium', config.textClass)}>
-            {factor.descripcion}
-          </p>
+          <p className={cn('text-sm font-medium', config.textClass)}>{factor.descripcion}</p>
 
           {/* Badges */}
           <div className="flex flex-wrap gap-2">
@@ -256,12 +246,13 @@ export const DOFAMatrix = ({ analisisId, onEditFactor, readOnly }: DOFAMatrixPro
 
   // Agrupar factores por tipo
   const factoresPorTipo = useMemo(() => {
-    if (!data?.results) return {
-      fortaleza: [],
-      oportunidad: [],
-      debilidad: [],
-      amenaza: [],
-    };
+    if (!data?.results)
+      return {
+        fortaleza: [],
+        oportunidad: [],
+        debilidad: [],
+        amenaza: [],
+      };
 
     return {
       fortaleza: data.results.filter((f) => f.tipo === 'fortaleza'),
@@ -329,11 +320,7 @@ export const DOFAMatrix = ({ analisisId, onEditFactor, readOnly }: DOFAMatrixPro
   }
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={handleDragEnd}
-    >
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       {/* Grid 2x2 con altura mínima fija para cada cuadrante */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-8">
         {/* Fila Superior: Fortalezas | Debilidades */}

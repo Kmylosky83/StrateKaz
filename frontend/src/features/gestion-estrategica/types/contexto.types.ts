@@ -559,6 +559,27 @@ export const NIVEL_IMPACTO_CONFIG = {
   },
 } as const;
 
+export const PROBABILIDAD_CONFIG = {
+  alta: {
+    label: 'Alta',
+    color: 'danger' as const,
+    bgClass: 'bg-red-100 dark:bg-red-900/30',
+    textClass: 'text-red-700 dark:text-red-400',
+  },
+  media: {
+    label: 'Media',
+    color: 'warning' as const,
+    bgClass: 'bg-yellow-100 dark:bg-yellow-900/30',
+    textClass: 'text-yellow-700 dark:text-yellow-400',
+  },
+  baja: {
+    label: 'Baja',
+    color: 'success' as const,
+    bgClass: 'bg-green-100 dark:bg-green-900/30',
+    textClass: 'text-green-700 dark:text-green-400',
+  },
+} as const;
+
 export const TENDENCIA_FACTOR_CONFIG = {
   mejorando: {
     label: 'Mejorando',

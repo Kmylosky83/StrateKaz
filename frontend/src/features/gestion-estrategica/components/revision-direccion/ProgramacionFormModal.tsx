@@ -8,7 +8,11 @@ import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
 import { useCreateProgramacion, useUpdateProgramacion } from '../../hooks/useRevisionDireccion';
-import type { ProgramacionRevision } from '../../types/revision-direccion.types';
+import type {
+  ProgramacionRevision,
+  CreateProgramacionRevisionDTO,
+  UpdateProgramacionRevisionDTO,
+} from '../../types/revision-direccion.types';
 
 interface ProgramacionFormModalProps {
   programacion: ProgramacionRevision | null;
@@ -16,7 +20,6 @@ interface ProgramacionFormModalProps {
   onClose: () => void;
 }
 
-/** Form state uses backend model field names */
 interface FormData {
   periodo: string;
   frecuencia: string;
@@ -76,22 +79,20 @@ export const ProgramacionFormModal = ({
 
   useEffect(() => {
     if (programacion) {
-      // Map API response to form — supports both old frontend names and backend names
-      const p = programacion as any;
       setForm({
-        periodo: p.periodo || p.nombre || '',
-        frecuencia: (p.frecuencia || 'semestral').toLowerCase(),
-        fecha_programada: p.fecha_programada || '',
-        hora_inicio: p.hora_inicio || '08:00',
-        duracion_estimada_horas: p.duracion_estimada_horas ?? 2,
-        lugar: p.lugar || p.ubicacion || '',
-        modalidad: (p.modalidad || 'presencial').toLowerCase(),
-        incluye_calidad: p.incluye_calidad ?? p.iso_9001 ?? true,
-        incluye_ambiental: p.incluye_ambiental ?? p.iso_14001 ?? true,
-        incluye_sst: p.incluye_sst ?? p.iso_45001 ?? true,
-        incluye_seguridad_info: p.incluye_seguridad_info ?? p.iso_27001 ?? false,
-        incluye_pesv: p.incluye_pesv ?? p.pesv ?? false,
-        observaciones: p.observaciones || p.descripcion || '',
+        periodo: programacion.periodo || '',
+        frecuencia: programacion.frecuencia || 'semestral',
+        fecha_programada: programacion.fecha_programada || '',
+        hora_inicio: programacion.hora_inicio || '08:00',
+        duracion_estimada_horas: Number(programacion.duracion_estimada_horas) || 2,
+        lugar: programacion.lugar || '',
+        modalidad: programacion.modalidad || 'presencial',
+        incluye_calidad: programacion.incluye_calidad ?? true,
+        incluye_ambiental: programacion.incluye_ambiental ?? true,
+        incluye_sst: programacion.incluye_sst ?? true,
+        incluye_seguridad_info: programacion.incluye_seguridad_info ?? false,
+        incluye_pesv: programacion.incluye_pesv ?? false,
+        observaciones: programacion.observaciones || '',
       });
     } else {
       setForm(INITIAL_FORM);
@@ -105,32 +106,43 @@ export const ProgramacionFormModal = ({
   const handleSubmit = () => {
     if (!form.periodo.trim() || !form.fecha_programada) return;
 
-    // Build payload matching backend ProgramaRevision model
     const anio = new Date(form.fecha_programada).getFullYear();
-    const payload: Record<string, unknown> = {
-      periodo: form.periodo.trim(),
-      anio,
-      frecuencia: form.frecuencia,
-      fecha_programada: form.fecha_programada,
-      hora_inicio: form.hora_inicio,
-      duracion_estimada_horas: form.duracion_estimada_horas,
-      lugar: form.lugar,
-      modalidad: form.modalidad,
-      incluye_calidad: form.incluye_calidad,
-      incluye_ambiental: form.incluye_ambiental,
-      incluye_sst: form.incluye_sst,
-      incluye_seguridad_info: form.incluye_seguridad_info,
-      incluye_pesv: form.incluye_pesv,
-      observaciones: form.observaciones || undefined,
-    };
 
     if (isEditing) {
-      updateMutation.mutate(
-        { id: programacion.id, data: payload as any },
-        { onSuccess: () => onClose() }
-      );
+      const payload: UpdateProgramacionRevisionDTO = {
+        periodo: form.periodo.trim(),
+        frecuencia: form.frecuencia as CreateProgramacionRevisionDTO['frecuencia'],
+        fecha_programada: form.fecha_programada,
+        hora_inicio: form.hora_inicio,
+        duracion_estimada_horas: form.duracion_estimada_horas,
+        lugar: form.lugar,
+        modalidad: form.modalidad,
+        incluye_calidad: form.incluye_calidad,
+        incluye_ambiental: form.incluye_ambiental,
+        incluye_sst: form.incluye_sst,
+        incluye_seguridad_info: form.incluye_seguridad_info,
+        incluye_pesv: form.incluye_pesv,
+        observaciones: form.observaciones || undefined,
+      };
+      updateMutation.mutate({ id: programacion.id, data: payload }, { onSuccess: () => onClose() });
     } else {
-      createMutation.mutate(payload as any, { onSuccess: () => onClose() });
+      const payload: CreateProgramacionRevisionDTO = {
+        anio,
+        periodo: form.periodo.trim(),
+        frecuencia: form.frecuencia as CreateProgramacionRevisionDTO['frecuencia'],
+        fecha_programada: form.fecha_programada,
+        hora_inicio: form.hora_inicio,
+        duracion_estimada_horas: form.duracion_estimada_horas,
+        lugar: form.lugar,
+        modalidad: form.modalidad,
+        incluye_calidad: form.incluye_calidad,
+        incluye_ambiental: form.incluye_ambiental,
+        incluye_sst: form.incluye_sst,
+        incluye_seguridad_info: form.incluye_seguridad_info,
+        incluye_pesv: form.incluye_pesv,
+        observaciones: form.observaciones || undefined,
+      };
+      createMutation.mutate(payload, { onSuccess: () => onClose() });
     }
   };
 

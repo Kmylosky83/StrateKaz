@@ -18,7 +18,7 @@ ROOT_DIR = BASE_DIR.parent  # Directorio raíz del proyecto
 # =============================================================================
 # SECURITY
 # =============================================================================
-SECRET_KEY = config('SECRET_KEY', default='dev-secret-key-change-in-production')
+SECRET_KEY = config('SECRET_KEY')  # REQUERIDO — sin default para forzar configuracion en .env
 DEBUG = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
 

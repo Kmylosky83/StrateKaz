@@ -8,32 +8,36 @@ Uso: DJANGO_SETTINGS_MODULE=config.settings.testing
 from .base import *
 
 # =============================================================================
-# DEBUG
+# SECURITY - Testing defaults
 # =============================================================================
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-testing-only-key-NOT-FOR-PRODUCTION')
 DEBUG = False
 
 # =============================================================================
-# DATABASE - SQLite en memoria para tests rápidos
+# DATABASE - Lee de env vars (CI con PostgreSQL), fallback a SQLite (local)
 # =============================================================================
-# Nota: Para tests de multi-tenant, usar PostgreSQL
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': ':memory:',
-    }
-}
+_db_engine = config('DB_ENGINE', default='django.db.backends.sqlite3')
 
-# Para tests de multi-tenant, descomentar:
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django_tenants.postgresql_backend',
-#         'NAME': 'stratekaz_test',
-#         'USER': 'stratekaz',
-#         'PASSWORD': 'stratekaz_dev_2024',
-#         'HOST': 'localhost',
-#         'PORT': '5432',
-#     }
-# }
+if 'postgresql' in _db_engine:
+    # CI / multi-tenant tests: PostgreSQL con django-tenants
+    DATABASES = {
+        'default': {
+            'ENGINE': _db_engine,
+            'NAME': config('DB_NAME', default='stratekaz_test'),
+            'USER': config('DB_USER', default='test_user'),
+            'PASSWORD': config('DB_PASSWORD', default='test_password'),
+            'HOST': config('DB_HOST', default='127.0.0.1'),
+            'PORT': config('DB_PORT', default='5432'),
+        }
+    }
+else:
+    # Local: SQLite en memoria para tests rapidos
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': ':memory:',
+        }
+    }
 
 # =============================================================================
 # PASSWORD HASHER - Más rápido para tests

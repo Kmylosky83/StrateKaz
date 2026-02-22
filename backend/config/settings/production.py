@@ -97,16 +97,26 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@stratekaz.com')
 
 # =============================================================================
-# LOGGING
+# LOGGING - RotatingFileHandler para evitar logs gigantes
 # =============================================================================
 LOGGING['handlers']['file'] = {
-    'class': 'logging.FileHandler',
+    'class': 'logging.handlers.RotatingFileHandler',
     'filename': '/var/log/stratekaz/django.log',
+    'maxBytes': 10 * 1024 * 1024,  # 10 MB
+    'backupCount': 5,
     'formatter': 'verbose',
 }
-LOGGING['loggers']['django']['handlers'] = ['console', 'file']
+LOGGING['handlers']['error_file'] = {
+    'class': 'logging.handlers.RotatingFileHandler',
+    'filename': '/var/log/stratekaz/error.log',
+    'maxBytes': 10 * 1024 * 1024,  # 10 MB
+    'backupCount': 5,
+    'formatter': 'verbose',
+    'level': 'ERROR',
+}
+LOGGING['loggers']['django']['handlers'] = ['console', 'file', 'error_file']
 LOGGING['loggers']['django']['level'] = 'WARNING'
-LOGGING['loggers']['apps']['handlers'] = ['console', 'file']
+LOGGING['loggers']['apps']['handlers'] = ['console', 'file', 'error_file']
 LOGGING['loggers']['apps']['level'] = 'INFO'
 
 # =============================================================================

@@ -57,11 +57,16 @@ const CompromisoRow = ({ compromiso, onEdit }: CompromisoRowProps) => {
       MEDIA: 'primary',
       BAJA: 'success',
     };
-    return <Badge variant={variants[prioridad] || 'gray'} size="sm">{compromiso.prioridad_display}</Badge>;
+    return (
+      <Badge variant={variants[prioridad] || 'gray'} size="sm">
+        {compromiso.prioridad_display}
+      </Badge>
+    );
   };
 
   const diasVencimiento = compromiso.dias_vencimiento || 0;
-  const showAlert = diasVencimiento <= 7 && diasVencimiento > 0 && compromiso.estado !== 'COMPLETADO';
+  const showAlert =
+    diasVencimiento <= 7 && diasVencimiento > 0 && compromiso.estado !== 'COMPLETADO';
 
   return (
     <tr className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50">
@@ -96,7 +101,9 @@ const CompromisoRow = ({ compromiso, onEdit }: CompromisoRowProps) => {
             {format(new Date(compromiso.fecha_limite), 'dd/MM/yyyy', { locale: es })}
           </p>
           {diasVencimiento > 0 && compromiso.estado !== 'COMPLETADO' && (
-            <p className={`text-xs ${diasVencimiento <= 7 ? 'text-orange-600 font-medium' : 'text-gray-500'}`}>
+            <p
+              className={`text-xs ${diasVencimiento <= 7 ? 'text-orange-600 font-medium' : 'text-gray-500'}`}
+            >
               {diasVencimiento} {diasVencimiento === 1 ? 'día' : 'días'}
             </p>
           )}
@@ -234,12 +241,8 @@ const NotasSesion = () => {
             )}
           </div>
           <div className="flex items-center gap-2">
-            {!saved && (
-              <span className="text-xs text-amber-500 animate-pulse">Guardando...</span>
-            )}
-            {saved && notas.length > 0 && (
-              <span className="text-xs text-green-500">Guardado</span>
-            )}
+            {!saved && <span className="text-xs text-amber-500 animate-pulse">Guardando...</span>}
+            {saved && notas.length > 0 && <span className="text-xs text-green-500">Guardado</span>}
             {expanded ? (
               <ChevronUp className="h-4 w-4 text-gray-400" />
             ) : (
@@ -371,7 +374,11 @@ export const CompromisosDashboard = () => {
                           {comp.dias_vencimiento} días)
                         </p>
                       </div>
-                      <Button variant="outline" size="sm" onClick={() => handleEditCompromiso(comp)}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditCompromiso(comp)}
+                      >
                         Ver
                       </Button>
                     </div>
@@ -408,8 +415,8 @@ export const CompromisosDashboard = () => {
                         resp.tasa_cumplimiento >= 80
                           ? 'text-green-600'
                           : resp.tasa_cumplimiento >= 50
-                          ? 'text-yellow-600'
-                          : 'text-red-600'
+                            ? 'text-yellow-600'
+                            : 'text-red-600'
                       }`}
                     >
                       {resp.tasa_cumplimiento.toFixed(0)}%
@@ -465,7 +472,12 @@ export const CompromisosDashboard = () => {
                 <select
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   value={filters.estado || ''}
-                  onChange={(e) => setFilters({ ...filters, estado: e.target.value as any || undefined })}
+                  onChange={(e) =>
+                    setFilters({
+                      ...filters,
+                      estado: (e.target.value || undefined) as CompromisoRevisionFilters['estado'],
+                    })
+                  }
                 >
                   <option value="">Todos</option>
                   <option value="PENDIENTE">Pendiente</option>
@@ -482,7 +494,13 @@ export const CompromisosDashboard = () => {
                 <select
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   value={filters.prioridad || ''}
-                  onChange={(e) => setFilters({ ...filters, prioridad: e.target.value as any || undefined })}
+                  onChange={(e) =>
+                    setFilters({
+                      ...filters,
+                      prioridad: (e.target.value ||
+                        undefined) as CompromisoRevisionFilters['prioridad'],
+                    })
+                  }
                 >
                   <option value="">Todas</option>
                   <option value="CRITICA">Crítica</option>

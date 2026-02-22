@@ -8,8 +8,9 @@ Uso: DJANGO_SETTINGS_MODULE=config.settings.development
 from .base import *
 
 # =============================================================================
-# DEBUG
+# SECURITY - Development defaults
 # =============================================================================
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-dev-only-key-DO-NOT-USE-IN-PRODUCTION-2026')
 DEBUG = True
 
 # =============================================================================

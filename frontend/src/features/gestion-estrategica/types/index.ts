@@ -83,6 +83,7 @@ export type {
   TipoDecision,
   EntradaCategoria,
   ProgramacionRevision,
+  TemaRevision,
   ParticipanteConvocado,
   ActaRevision,
   ParticipanteActa,

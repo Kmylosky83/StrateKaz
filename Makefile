@@ -28,7 +28,7 @@ help:
 	@echo ""
 	@echo "  make shell-backend  - Abrir shell en el contenedor backend"
 	@echo "  make shell-frontend - Abrir shell en el contenedor frontend"
-	@echo "  make shell-db       - Conectar a MySQL shell"
+	@echo "  make shell-db       - Conectar a PostgreSQL shell"
 	@echo ""
 	@echo "  make migrate        - Ejecutar migraciones de Django"
 	@echo "  make makemigrations - Crear nuevas migraciones"
@@ -57,7 +57,7 @@ up:
 	@echo "✅ Servicios iniciados!"
 	@echo "   Backend:  http://localhost:8000"
 	@echo "   Frontend: http://localhost:3010"
-	@echo "   MySQL:    localhost:3307"
+	@echo "   PostgreSQL: localhost:5432"
 
 down:
 	@echo "🛑 Deteniendo servicios..."
@@ -90,8 +90,8 @@ shell-frontend:
 	$(DOCKER_COMPOSE) exec frontend sh
 
 shell-db:
-	@echo "🗄️  Conectando a MySQL..."
-	$(DOCKER_COMPOSE) exec db mysql -u root -p
+	@echo "🗄️  Conectando a PostgreSQL..."
+	$(DOCKER_COMPOSE) exec db psql -U $${DB_USER:-stratekaz} -d $${DB_NAME:-stratekaz}
 
 # Django management commands
 migrate:
@@ -146,7 +146,7 @@ health:
 	@curl -sf http://localhost:3010 > /dev/null && echo "✅ Frontend OK" || echo "❌ Frontend no responde"
 	@echo ""
 	@echo "🔍 Database Health Check:"
-	@$(DOCKER_COMPOSE) exec -T db mysqladmin ping -h localhost > /dev/null 2>&1 && echo "✅ Database OK" || echo "❌ Database no responde"
+	@$(DOCKER_COMPOSE) exec -T db pg_isready -U $${DB_USER:-stratekaz} -d $${DB_NAME:-stratekaz} > /dev/null 2>&1 && echo "✅ Database OK" || echo "❌ Database no responde"
 
 # Cleanup operations
 clean:
@@ -175,7 +175,7 @@ dev-setup:
 	@echo ""
 	@echo "2️⃣  Iniciando base de datos..."
 	$(DOCKER_COMPOSE) up -d db
-	@echo "   Esperando 15 segundos a que MySQL inicie..."
+	@echo "   Esperando 15 segundos a que PostgreSQL inicie..."
 	@sleep 15
 	@echo ""
 	@echo "3️⃣  Iniciando backend..."

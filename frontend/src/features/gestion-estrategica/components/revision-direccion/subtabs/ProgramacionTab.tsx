@@ -49,11 +49,11 @@ export const ProgramacionTab = () => {
 
   const getEstadoBadge = (estado: string, display?: string) => {
     const variants: Record<string, 'primary' | 'success' | 'warning' | 'danger' | 'gray'> = {
-      PROGRAMADA: 'primary',
-      EN_PROCESO: 'warning',
-      COMPLETADA: 'success',
-      CANCELADA: 'gray',
-      REPROGRAMADA: 'warning',
+      programada: 'primary',
+      convocada: 'warning',
+      realizada: 'success',
+      cancelada: 'gray',
+      reprogramada: 'warning',
     };
     return <Badge variant={variants[estado] || 'gray'}>{display || estado}</Badge>;
   };
@@ -73,7 +73,7 @@ export const ProgramacionTab = () => {
                 <div className="p-4">
                   <div className="flex items-start justify-between mb-2">
                     <span className="font-medium text-gray-900 dark:text-gray-100">
-                      {prog.nombre || prog.codigo}
+                      {prog.periodo}
                     </span>
                     <Badge variant="primary" size="sm">
                       {format(new Date(prog.fecha_programada), 'dd MMM', { locale: es })}
@@ -86,7 +86,7 @@ export const ProgramacionTab = () => {
                     </p>
                     <p className="flex items-center gap-2">
                       <Users className="h-4 w-4" />
-                      {prog.convocados_count ?? prog.convocados?.length ?? 0} convocados
+                      {prog.total_participantes ?? 0} convocados
                     </p>
                   </div>
                   <div className="flex gap-2 mt-3">
@@ -98,7 +98,7 @@ export const ProgramacionTab = () => {
                     >
                       Ver Detalle
                     </Button>
-                    {!prog.notificacion_enviada && prog.estado === 'PROGRAMADA' && (
+                    {prog.estado === 'programada' && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -164,7 +164,7 @@ export const ProgramacionTab = () => {
                 >
                   <td className="px-4 py-3">
                     <span className="font-medium text-gray-900 dark:text-gray-100">
-                      {prog.nombre || prog.codigo}
+                      {prog.periodo}
                     </span>
                   </td>
                   <td className="px-4 py-3">
@@ -187,7 +187,7 @@ export const ProgramacionTab = () => {
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-gray-400" />
                       <span className="text-sm text-gray-900 dark:text-gray-100">
-                        {prog.convocados_count ?? prog.convocados?.length ?? 0} convocados
+                        {prog.total_participantes ?? 0} convocados
                       </span>
                     </div>
                   </td>
@@ -207,7 +207,7 @@ export const ProgramacionTab = () => {
                         <Edit3 className="h-3.5 w-3.5 mr-1" />
                         Ver
                       </Button>
-                      {prog.estado === 'PROGRAMADA' && (
+                      {prog.estado === 'programada' && (
                         <Button
                           variant="ghost"
                           size="sm"

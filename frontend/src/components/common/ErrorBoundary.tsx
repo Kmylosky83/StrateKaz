@@ -1,4 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
+import * as Sentry from '@sentry/react';
 
 interface Props {
   children: ReactNode;
@@ -29,13 +30,11 @@ export class ErrorBoundary extends Component<Props, State> {
   public componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     this.setState({ errorInfo });
 
-    // Log a consola en desarrollo
     console.error('Error capturado por ErrorBoundary:', error, errorInfo);
 
-    // TODO: Integrar con Sentry cuando esté configurado
-    // if (typeof window !== 'undefined' && (window as any).Sentry) {
-    //   (window as any).Sentry.captureException(error, { extra: errorInfo });
-    // }
+    Sentry.captureException(error, {
+      extra: { componentStack: errorInfo?.componentStack },
+    });
   }
 
   private handleReset = (): void => {
@@ -98,9 +97,7 @@ function ErrorFallback({ error, onReset, onReload }: ErrorFallbackProps): JSX.El
         </div>
 
         {/* Mensaje */}
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-          Algo salió mal
-        </h1>
+        <h1 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Algo salió mal</h1>
         <p className="text-gray-600 dark:text-gray-300 mb-6">
           Ha ocurrido un error inesperado. Puedes intentar recargar la página o volver al inicio.
         </p>

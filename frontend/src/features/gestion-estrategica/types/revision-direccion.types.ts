@@ -6,10 +6,22 @@
 import type { ISOStandard } from './strategic.types';
 
 // ==================== ENUMS ====================
+// Nota: Los valores son lowercase porque el backend Django TextChoices los almacena asi
 
-export type FrecuenciaRevision = 'TRIMESTRAL' | 'CUATRIMESTRAL' | 'SEMESTRAL' | 'ANUAL';
+export type FrecuenciaRevision =
+  | 'mensual'
+  | 'bimestral'
+  | 'trimestral'
+  | 'cuatrimestral'
+  | 'semestral'
+  | 'anual';
 
-export type EstadoProgramacion = 'PROGRAMADA' | 'EN_PROCESO' | 'COMPLETADA' | 'CANCELADA' | 'REPROGRAMADA';
+export type EstadoProgramacion =
+  | 'programada'
+  | 'convocada'
+  | 'realizada'
+  | 'cancelada'
+  | 'reprogramada';
 
 export type EstadoActa = 'BORRADOR' | 'EN_REVISION' | 'APROBADA' | 'CERRADA';
 
@@ -33,47 +45,53 @@ export type AsistenciaEstado = 'CONFIRMADA' | 'ASISTIO' | 'NO_ASISTIO' | 'JUSTIF
 
 export interface ProgramacionRevision {
   id: number;
-  codigo: string;
-  nombre: string;
-  descripcion?: string | null;
+  anio: number;
+  periodo: string;
   frecuencia: FrecuenciaRevision;
   frecuencia_display?: string;
   fecha_programada: string;
-  hora_inicio: string;
-  hora_fin?: string | null;
-  duracion_estimada_horas?: number | null;
-  ubicacion?: string | null;
-  modalidad: 'PRESENCIAL' | 'VIRTUAL' | 'HIBRIDA';
-  modalidad_display?: string;
-  enlace_reunion?: string | null;
+  fecha_realizada?: string | null;
+  hora_inicio?: string | null;
+  duracion_estimada_horas?: number | string | null;
+  lugar?: string;
+  modalidad?: string;
   estado: EstadoProgramacion;
   estado_display?: string;
-  // ISO Standards aplicables
-  iso_9001: boolean;
-  iso_14001: boolean;
-  iso_45001: boolean;
-  iso_27001: boolean;
-  pesv: boolean;
-  sg_sst: boolean;
-  // Participantes
-  convocados: ParticipanteConvocado[];
-  convocados_count?: number;
-  // Control
-  responsable_preparacion?: number | null;
-  responsable_preparacion_name?: string | null;
-  notificacion_enviada: boolean;
-  fecha_notificacion?: string | null;
-  recordatorio_enviado: boolean;
-  // Relaciones
-  acta_id?: number | null;
-  acta_numero?: string | null;
-  tiene_acta: boolean;
-  // Auditoría
+  // Responsable de convocar
+  responsable_convocatoria?: number | null;
+  responsable_nombre?: string | null;
+  // Sistemas de gestion a revisar
+  incluye_calidad: boolean;
+  incluye_sst: boolean;
+  incluye_ambiental: boolean;
+  incluye_pesv: boolean;
+  incluye_seguridad_info: boolean;
+  // Computed fields (list serializer)
+  total_participantes?: number;
+  total_temas?: number;
+  tiene_acta?: boolean;
+  // Detail serializer extras
+  participantes?: ParticipanteConvocado[];
+  temas?: TemaRevision[];
+  observaciones?: string;
+  // Auditoria
   is_active: boolean;
   created_by?: number | null;
-  created_by_name?: string | null;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/** Tema/agenda item de una revision */
+export interface TemaRevision {
+  id: number;
+  programa: number;
+  categoria: string;
+  categoria_display?: string;
+  titulo: string;
+  descripcion?: string;
+  responsable?: number | null;
+  responsable_nombre?: string | null;
+  orden: number;
 }
 
 export interface ParticipanteConvocado {
@@ -95,39 +113,39 @@ export interface ParticipanteConvocado {
 }
 
 export interface CreateProgramacionRevisionDTO {
-  codigo?: string;
-  nombre: string;
-  descripcion?: string;
-  frecuencia: FrecuenciaRevision;
+  anio: number;
+  periodo: string;
+  frecuencia?: FrecuenciaRevision;
   fecha_programada: string;
-  hora_inicio: string;
-  hora_fin?: string;
+  hora_inicio?: string;
   duracion_estimada_horas?: number;
-  ubicacion?: string;
-  modalidad: 'PRESENCIAL' | 'VIRTUAL' | 'HIBRIDA';
-  enlace_reunion?: string;
-  iso_9001?: boolean;
-  iso_14001?: boolean;
-  iso_45001?: boolean;
-  iso_27001?: boolean;
-  pesv?: boolean;
-  sg_sst?: boolean;
-  responsable_preparacion?: number;
-  convocados?: CreateParticipanteConvocadoDTO[];
+  lugar?: string;
+  modalidad?: string;
+  incluye_calidad?: boolean;
+  incluye_sst?: boolean;
+  incluye_ambiental?: boolean;
+  incluye_pesv?: boolean;
+  incluye_seguridad_info?: boolean;
+  responsable_convocatoria?: number;
+  observaciones?: string;
 }
 
 export interface UpdateProgramacionRevisionDTO {
-  nombre?: string;
-  descripcion?: string;
+  periodo?: string;
+  frecuencia?: FrecuenciaRevision;
   fecha_programada?: string;
   hora_inicio?: string;
-  hora_fin?: string;
   duracion_estimada_horas?: number;
-  ubicacion?: string;
-  modalidad?: 'PRESENCIAL' | 'VIRTUAL' | 'HIBRIDA';
-  enlace_reunion?: string;
+  lugar?: string;
+  modalidad?: string;
   estado?: EstadoProgramacion;
-  responsable_preparacion?: number;
+  incluye_calidad?: boolean;
+  incluye_sst?: boolean;
+  incluye_ambiental?: boolean;
+  incluye_pesv?: boolean;
+  incluye_seguridad_info?: boolean;
+  responsable_convocatoria?: number;
+  observaciones?: string;
   is_active?: boolean;
 }
 
@@ -391,6 +409,7 @@ export interface AprobarActaDTO {
 // ==================== FILTERS ====================
 
 export interface ProgramacionFilters {
+  anio?: number;
   frecuencia?: FrecuenciaRevision;
   estado?: EstadoProgramacion;
   fecha_desde?: string;

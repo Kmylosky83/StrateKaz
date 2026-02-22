@@ -5,6 +5,8 @@ import path from 'path'
 import pkg from './package.json'
 
 // https://vitejs.dev/config/
+const isProduction = process.env.NODE_ENV === 'production'
+
 export default defineConfig({
   base: '/',
   // Inyectar versión desde package.json en build time
@@ -99,9 +101,9 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  // Configuración de esbuild para minificación en producción
+  // Eliminar console.log y debugger SOLO en produccion (preservar en dev para debugging)
   esbuild: {
-    drop: ['console', 'debugger'], // Eliminar console.log y debugger en producción
+    drop: isProduction ? ['console', 'debugger'] : [],
   },
   build: {
     rollupOptions: {

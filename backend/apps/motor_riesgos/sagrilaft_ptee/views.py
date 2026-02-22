@@ -29,6 +29,7 @@ from .serializers import (
     DebidaDiligenciaListSerializer,
     DebidaDiligenciaDetailSerializer
 )
+from apps.core.base_models.mixins import get_tenant_empresa
 
 
 class FactorRiesgoLAFTViewSet(viewsets.ModelViewSet):
@@ -77,11 +78,11 @@ class SegmentoClienteViewSet(viewsets.ModelViewSet):
         return SegmentoClienteDetailSerializer
 
     def get_queryset(self):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
         queryset = SegmentoCliente.objects.select_related('created_by')
 
-        if empresa_id:
-            queryset = queryset.filter(empresa_id=empresa_id)
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
 
         tipo = self.request.query_params.get('tipo_cliente')
         if tipo:
@@ -94,8 +95,8 @@ class SegmentoClienteViewSet(viewsets.ModelViewSet):
         return queryset.order_by('tipo_cliente', 'nivel_riesgo', 'codigo')
 
     def perform_create(self, serializer):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
-        serializer.save(empresa_id=empresa_id, created_by=self.request.user)
+        empresa = get_tenant_empresa(auto_create=False)
+        serializer.save(empresa_id=empresa.id if empresa else None, created_by=self.request.user)
 
 
 class MatrizRiesgoLAFTViewSet(viewsets.ModelViewSet):
@@ -108,13 +109,13 @@ class MatrizRiesgoLAFTViewSet(viewsets.ModelViewSet):
         return MatrizRiesgoLAFTDetailSerializer
 
     def get_queryset(self):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
         queryset = MatrizRiesgoLAFT.objects.select_related(
             'segmento', 'created_by', 'aprobado_por'
         )
 
-        if empresa_id:
-            queryset = queryset.filter(empresa_id=empresa_id)
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
 
         tipo = self.request.query_params.get('tipo_evaluado')
         if tipo:
@@ -131,8 +132,8 @@ class MatrizRiesgoLAFTViewSet(viewsets.ModelViewSet):
         return queryset.order_by('-fecha_evaluacion', 'codigo')
 
     def perform_create(self, serializer):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
-        serializer.save(empresa_id=empresa_id, created_by=self.request.user)
+        empresa = get_tenant_empresa(auto_create=False)
+        serializer.save(empresa_id=empresa.id if empresa else None, created_by=self.request.user)
 
     @action(detail=True, methods=['post'])
     def aprobar(self, request, pk=None):
@@ -152,8 +153,10 @@ class MatrizRiesgoLAFTViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def resumen(self, request):
         """Resumen de matrices por nivel de riesgo"""
-        empresa_id = request.headers.get('X-Empresa-ID')
-        queryset = MatrizRiesgoLAFT.objects.filter(empresa_id=empresa_id, estado='VIGENTE')
+        empresa = get_tenant_empresa(auto_create=False)
+        queryset = MatrizRiesgoLAFT.objects.filter(estado='VIGENTE')
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
 
         resumen = {
             'total': queryset.count(),
@@ -171,16 +174,18 @@ class MatrizRiesgoLAFTViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def proximas_revisiones(self, request):
-        """Matrices que requieren revisión próximamente"""
-        empresa_id = request.headers.get('X-Empresa-ID')
+        """Matrices que requieren revision proximamente"""
+        empresa = get_tenant_empresa(auto_create=False)
         hoy = timezone.now().date()
         en_30_dias = hoy + timezone.timedelta(days=30)
 
         queryset = MatrizRiesgoLAFT.objects.filter(
-            empresa_id=empresa_id,
             estado='VIGENTE',
             proxima_revision__lte=en_30_dias
-        ).order_by('proxima_revision')
+        )
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
+        queryset = queryset.order_by('proxima_revision')
 
         return Response(MatrizRiesgoLAFTListSerializer(queryset, many=True).data)
 
@@ -195,17 +200,17 @@ class SeñalAlertaViewSet(viewsets.ModelViewSet):
         return SeñalAlertaDetailSerializer
 
     def get_queryset(self):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
         queryset = SeñalAlerta.objects.select_related(
             'matriz_riesgo', 'analista_asignado', 'created_by'
         )
 
-        # Filtrar por empresa (eventos) o catálogo global
+        # Filtrar por empresa (eventos) o catalogo global
         es_catalogo = self.request.query_params.get('catalogo')
         if es_catalogo == 'true':
             queryset = queryset.filter(es_catalogo=True)
-        elif empresa_id:
-            queryset = queryset.filter(empresa_id=empresa_id, es_catalogo=False)
+        elif empresa:
+            queryset = queryset.filter(empresa_id=empresa.id, es_catalogo=False)
 
         categoria = self.request.query_params.get('categoria')
         if categoria:
@@ -222,8 +227,8 @@ class SeñalAlertaViewSet(viewsets.ModelViewSet):
         return queryset.order_by('-fecha_deteccion', 'severidad')
 
     def perform_create(self, serializer):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
-        serializer.save(empresa_id=empresa_id, created_by=self.request.user)
+        empresa = get_tenant_empresa(auto_create=False)
+        serializer.save(empresa_id=empresa.id if empresa else None, created_by=self.request.user)
 
     @action(detail=True, methods=['post'])
     def asignar_analista(self, request, pk=None):
@@ -279,13 +284,13 @@ class ReporteOperacionSospechosaViewSet(viewsets.ModelViewSet):
         return ReporteOperacionSospechosaDetailSerializer
 
     def get_queryset(self):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
         queryset = ReporteOperacionSospechosa.objects.select_related(
             'matriz_riesgo', 'elaborado_por', 'revisado_por', 'aprobado_por'
         ).prefetch_related('señales_alerta')
 
-        if empresa_id:
-            queryset = queryset.filter(empresa_id=empresa_id)
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
 
         estado = self.request.query_params.get('estado')
         if estado:
@@ -298,8 +303,8 @@ class ReporteOperacionSospechosaViewSet(viewsets.ModelViewSet):
         return queryset.order_by('-fecha_deteccion', 'numero_ros')
 
     def perform_create(self, serializer):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
-        serializer.save(empresa_id=empresa_id, elaborado_por=self.request.user)
+        empresa = get_tenant_empresa(auto_create=False)
+        serializer.save(empresa_id=empresa.id if empresa else None, elaborado_por=self.request.user)
 
     @action(detail=True, methods=['post'])
     def enviar_uiaf(self, request, pk=None):
@@ -333,13 +338,13 @@ class DebidaDiligenciaViewSet(viewsets.ModelViewSet):
         return DebidaDiligenciaDetailSerializer
 
     def get_queryset(self):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
         queryset = DebidaDiligencia.objects.select_related(
             'matriz_riesgo', 'responsable', 'aprobado_por', 'created_by'
         )
 
-        if empresa_id:
-            queryset = queryset.filter(empresa_id=empresa_id)
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
 
         tipo = self.request.query_params.get('tipo_diligencia')
         if tipo:
@@ -352,8 +357,8 @@ class DebidaDiligenciaViewSet(viewsets.ModelViewSet):
         return queryset.order_by('-fecha_inicio', 'codigo')
 
     def perform_create(self, serializer):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
-        serializer.save(empresa_id=empresa_id, created_by=self.request.user)
+        empresa = get_tenant_empresa(auto_create=False)
+        serializer.save(empresa_id=empresa.id if empresa else None, created_by=self.request.user)
 
     @action(detail=False, methods=['get'])
     def vencidas(self, request):

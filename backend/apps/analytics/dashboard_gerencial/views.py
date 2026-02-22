@@ -12,6 +12,7 @@ from .serializers import (
 )
 from .widgets_valores_vividos import ValoresVividosWidgetService, get_valores_vividos_summary
 from .services import CrossModuleStatsService
+from apps.core.base_models.mixins import get_tenant_empresa
 
 
 class VistaDashboardViewSet(StandardViewSetMixin, OrderingMixin, viewsets.ModelViewSet):
@@ -100,7 +101,8 @@ class VistaDashboardViewSet(StandardViewSetMixin, OrderingMixin, viewsets.ModelV
         Agrega datos de Talent Hub, HSEQ, Riesgos, Cumplimiento,
         Emergencias, Workflow y Proyectos en un unico endpoint.
         """
-        empresa_id = getattr(request.user, 'empresa_id', None)
+        empresa = get_tenant_empresa(auto_create=False)
+        empresa_id = empresa.id if empresa else None
         if not empresa_id:
             empresa_id = request.query_params.get('empresa_id')
 

@@ -32,6 +32,7 @@ from .serializers import (
     IncidenteSeguridadSerializer,
     IncidenteSeguridadListSerializer
 )
+from apps.core.base_models.mixins import get_tenant_empresa
 
 
 class ActivoInformacionViewSet(viewsets.ModelViewSet):
@@ -59,10 +60,10 @@ class ActivoInformacionViewSet(viewsets.ModelViewSet):
         return ActivoInformacionSerializer
 
     def get_queryset(self):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
         queryset = ActivoInformacion.objects.select_related('propietario', 'custodio')
-        if empresa_id:
-            queryset = queryset.filter(empresa_id=empresa_id)
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
         return queryset
 
     @action(detail=False, methods=['get'])
@@ -136,10 +137,10 @@ class VulnerabilidadViewSet(viewsets.ModelViewSet):
         return VulnerabilidadSerializer
 
     def get_queryset(self):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
         queryset = Vulnerabilidad.objects.select_related('activo')
-        if empresa_id:
-            queryset = queryset.filter(empresa_id=empresa_id)
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
 
         # Filtrar por activo específico
         activo_id = self.request.query_params.get('activo')
@@ -171,21 +172,21 @@ class RiesgoSeguridadViewSet(viewsets.ModelViewSet):
         return RiesgoSeguridadDetailSerializer
 
     def get_queryset(self):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
         queryset = RiesgoSeguridad.objects.select_related(
             'activo', 'amenaza', 'vulnerabilidad',
             'responsable_tratamiento', 'created_by'
         )
-        if empresa_id:
-            queryset = queryset.filter(empresa_id=empresa_id)
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
         return queryset
 
     def perform_create(self, serializer):
         """Asigna empresa_id y created_by"""
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
         serializer.save(
             created_by=self.request.user,
-            empresa_id=empresa_id
+            empresa_id=empresa.id if empresa else None
         )
 
     @action(detail=False, methods=['get'])
@@ -274,12 +275,12 @@ class ControlSeguridadViewSet(viewsets.ModelViewSet):
         return ControlSeguridadSerializer
 
     def get_queryset(self):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
         queryset = ControlSeguridad.objects.select_related(
             'riesgo', 'riesgo__activo', 'riesgo__amenaza', 'responsable'
         )
-        if empresa_id:
-            queryset = queryset.filter(empresa_id=empresa_id)
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
 
         # Filtrar por riesgo específico
         riesgo_id = self.request.query_params.get('riesgo')
@@ -290,8 +291,8 @@ class ControlSeguridadViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """Asigna empresa_id"""
-        empresa_id = self.request.headers.get('X-Empresa-ID')
-        serializer.save(empresa_id=empresa_id)
+        empresa = get_tenant_empresa(auto_create=False)
+        serializer.save(empresa_id=empresa.id if empresa else None)
 
     @action(detail=False, methods=['get'])
     def pendientes(self, request):
@@ -344,16 +345,16 @@ class IncidenteSeguridadViewSet(viewsets.ModelViewSet):
         return IncidenteSeguridadSerializer
 
     def get_queryset(self):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
         queryset = IncidenteSeguridad.objects.select_related('reportado_por').prefetch_related('activos_afectados')
-        if empresa_id:
-            queryset = queryset.filter(empresa_id=empresa_id)
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
         return queryset
 
     def perform_create(self, serializer):
         """Asigna empresa_id y reportado_por"""
-        empresa_id = self.request.headers.get('X-Empresa-ID')
-        serializer.save(empresa_id=empresa_id)
+        empresa = get_tenant_empresa(auto_create=False)
+        serializer.save(empresa_id=empresa.id if empresa else None)
 
     @action(detail=False, methods=['get'])
     def abiertos(self, request):

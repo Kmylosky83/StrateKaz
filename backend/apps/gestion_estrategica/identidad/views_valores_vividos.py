@@ -37,6 +37,7 @@ from .serializers_valores_vividos import (
     ResumenValoresVividosSerializer,
     ConfiguracionMetricaValorSerializer,
 )
+from apps.core.base_models.mixins import get_tenant_empresa
 
 
 class ValorVividoViewSet(viewsets.ModelViewSet):
@@ -309,8 +310,8 @@ class ValorVividoViewSet(viewsets.ModelViewSet):
         fecha_desde = request.query_params.get('fecha_desde')
         fecha_hasta = request.query_params.get('fecha_hasta')
 
-        # Obtener empresa_id del usuario autenticado
-        empresa_id = getattr(request.user, 'empresa_id', None)
+        empresa = get_tenant_empresa(auto_create=False)
+        empresa_id = empresa.id if empresa else None
 
         stats = ValorVivido.objects.estadisticas_por_valor(
             empresa_id=empresa_id,
@@ -337,8 +338,8 @@ class ValorVividoViewSet(viewsets.ModelViewSet):
         """
         meses = int(request.query_params.get('meses', 12))
 
-        # Obtener empresa_id del usuario autenticado
-        empresa_id = getattr(request.user, 'empresa_id', None)
+        empresa = get_tenant_empresa(auto_create=False)
+        empresa_id = empresa.id if empresa else None
 
         tendencia = ValorVivido.objects.tendencia_mensual(
             empresa_id=empresa_id,
@@ -365,8 +366,8 @@ class ValorVividoViewSet(viewsets.ModelViewSet):
         """
         valor_id = request.query_params.get('valor_id')
 
-        # Obtener empresa_id del usuario autenticado
-        empresa_id = getattr(request.user, 'empresa_id', None)
+        empresa = get_tenant_empresa(auto_create=False)
+        empresa_id = empresa.id if empresa else None
 
         ranking = ValorVivido.objects.ranking_categorias(
             valor_id=valor_id,
@@ -398,8 +399,8 @@ class ValorVividoViewSet(viewsets.ModelViewSet):
         """
         umbral = int(request.query_params.get('umbral', 5))
 
-        # Obtener empresa_id del usuario autenticado
-        empresa_id = getattr(request.user, 'empresa_id', None) or 1
+        empresa = get_tenant_empresa(auto_create=False)
+        empresa_id = empresa.id if empresa else None
 
         subrepresentados = ValorVivido.objects.valores_subrepresentados(
             empresa_id=empresa_id,
@@ -428,8 +429,8 @@ class ValorVividoViewSet(viewsets.ModelViewSet):
             "valores_subrepresentados": [...]
         }
         """
-        # Obtener empresa_id del usuario autenticado
-        empresa_id = getattr(request.user, 'empresa_id', None)
+        empresa = get_tenant_empresa(auto_create=False)
+        empresa_id = empresa.id if empresa else None
 
         qs = ValorVivido.objects.activos()
 
@@ -463,10 +464,13 @@ class ValorVividoViewSet(viewsets.ModelViewSet):
         ).order_by('-total')[:5])
 
         # Subrepresentados
-        subrepresentados = ValorVivido.objects.valores_subrepresentados(
-            empresa_id=empresa_id or 1,
-            umbral_minimo=5
-        )[:3]
+        if empresa_id:
+            subrepresentados = ValorVivido.objects.valores_subrepresentados(
+                empresa_id=empresa_id,
+                umbral_minimo=5
+            )[:3]
+        else:
+            subrepresentados = []
 
         data = {
             'total_vinculos': total_vinculos,
@@ -496,13 +500,11 @@ class ConfiguracionMetricaValorViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Filtrar por empresa del usuario"""
+        """Filtrar por empresa del tenant actual."""
         qs = super().get_queryset()
-        # Filtrar por empresa del usuario autenticado
-        if hasattr(self.request, 'user') and self.request.user.is_authenticated:
-            empresa_id = getattr(self.request.user, 'empresa_id', None)
-            if empresa_id:
-                qs = qs.filter(empresa_id=empresa_id)
+        empresa = get_tenant_empresa(auto_create=False)
+        if empresa:
+            qs = qs.filter(empresa_id=empresa.id)
         return qs
 
     @action(detail=False, methods=['get'])

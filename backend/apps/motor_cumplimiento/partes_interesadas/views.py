@@ -6,6 +6,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
 
 from apps.core.mixins import StandardViewSetMixin
+from apps.core.base_models.mixins import get_tenant_empresa
 from .models import TipoParteInteresada, ParteInteresada, RequisitoParteInteresada, MatrizComunicacion
 from .serializers import TipoParteInteresadaSerializer, ParteInteresadaSerializer, RequisitoParteInteresadaSerializer, MatrizComunicacionSerializer
 
@@ -45,8 +46,11 @@ class ParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def matriz_poder_interes(self, request):
-        empresa_id = request.query_params.get("empresa", 1)
-        partes = self.get_queryset().filter(empresa_id=empresa_id, is_active=True)
+        empresa = get_tenant_empresa(auto_create=False)
+        queryset = self.get_queryset().filter(is_active=True)
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
+        partes = queryset
         cuadrantes = {
             "gestionar_cerca": [],
             "mantener_satisfecho": [],

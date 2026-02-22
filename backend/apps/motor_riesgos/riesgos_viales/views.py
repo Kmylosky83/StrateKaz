@@ -32,6 +32,7 @@ from .serializers import (
     InspeccionVehiculoCreateSerializer,
 )
 
+from apps.core.base_models.mixins import get_tenant_empresa
 
 class FactorRiesgoVialViewSet(viewsets.ModelViewSet):
     """
@@ -136,15 +137,15 @@ class RiesgoVialViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Filtra riesgos por empresa_id del header X-Empresa-ID
+        Filtra riesgos por empresa via get_tenant_empresa()
         """
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
 
-        if not empresa_id:
+        if not empresa:
             return RiesgoVial.objects.none()
 
         queryset = RiesgoVial.objects.filter(
-            empresa_id=empresa_id
+            empresa_id=empresa.id
         ).select_related(
             'tipo_riesgo',
             'responsable',
@@ -283,13 +284,13 @@ class ControlVialViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Filtra controles por empresa_id"""
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
 
-        if not empresa_id:
+        if not empresa:
             return ControlVial.objects.none()
 
         queryset = ControlVial.objects.filter(
-            empresa_id=empresa_id
+            empresa_id=empresa.id
         ).select_related(
             'riesgo_vial',
             'riesgo_vial__tipo_riesgo',
@@ -395,13 +396,13 @@ class IncidenteVialViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Filtra incidentes por empresa_id"""
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
 
-        if not empresa_id:
+        if not empresa:
             return IncidenteVial.objects.none()
 
         queryset = IncidenteVial.objects.filter(
-            empresa_id=empresa_id
+            empresa_id=empresa.id
         ).select_related(
             'investigador',
             'created_by'
@@ -606,13 +607,13 @@ class InspeccionVehiculoViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Filtra inspecciones por empresa_id"""
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
 
-        if not empresa_id:
+        if not empresa:
             return InspeccionVehiculo.objects.none()
 
         queryset = InspeccionVehiculo.objects.filter(
-            empresa_id=empresa_id
+            empresa_id=empresa.id
         ).select_related(
             'created_by',
             'inspeccion_confirmada_por'

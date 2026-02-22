@@ -292,8 +292,10 @@ def cache_list_view(viewset_name: str, timeout: int = 300):
         @wraps(func)
         def wrapper(self, request, *args, **kwargs):
             # Generar clave basada en query params
+            from apps.core.base_models.mixins import get_tenant_empresa
             query_params = dict(request.query_params)
-            empresa_id = getattr(request.user, 'empresa_id', None)
+            empresa = get_tenant_empresa(auto_create=False)
+            empresa_id = empresa.id if empresa else None
 
             cache_key = generate_cache_key(
                 f'viewset:{viewset_name}:list',

@@ -17,6 +17,7 @@ from django.utils import timezone
 from django.db.models import Avg, Count, Q
 from datetime import timedelta
 from decimal import Decimal
+from apps.core.base_models.mixins import get_tenant_empresa
 
 
 class PeopleAnalyticsSerializer(serializers.Serializer):
@@ -47,17 +48,7 @@ class PeopleAnalyticsView(APIView):
     def get(self, request):
         from apps.talent_hub.colaboradores.models import Colaborador
 
-        empresa = getattr(request.user, 'empresa', None)
-        if not empresa:
-            # Buscar via colaborador
-            col = None
-            if hasattr(request.user, 'colaborador'):
-                col = request.user.colaborador
-            else:
-                col = Colaborador.objects.filter(
-                    user=request.user, is_active=True
-                ).first()
-            empresa = col.empresa if col else None
+        empresa = get_tenant_empresa(auto_create=False)
 
         if not empresa:
             return Response(

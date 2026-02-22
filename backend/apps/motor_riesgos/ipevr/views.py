@@ -17,6 +17,7 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from django.db.models import Count, Q, Sum
 
 from apps.core.mixins import StandardViewSetMixin
+from apps.core.base_models.mixins import get_tenant_empresa
 from .models import ClasificacionPeligro, PeligroGTC45, MatrizIPEVR, ControlSST
 from .serializers import (
     ClasificacionPeligroSerializer,
@@ -123,8 +124,10 @@ class MatrizIPEVRViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def resumen(self, request):
         """Resumen estadistico de la matriz IPEVR."""
-        empresa_id = request.query_params.get('empresa', 1)
-        matrices = self.get_queryset().filter(empresa_id=empresa_id, is_active=True)
+        empresa = get_tenant_empresa(auto_create=False)
+        matrices = self.get_queryset().filter(is_active=True)
+        if empresa:
+            matrices = matrices.filter(empresa_id=empresa.id)
 
         # Contar por interpretacion NR
         nivel_i = matrices.filter(estado='vigente').count()
@@ -150,12 +153,13 @@ class MatrizIPEVRViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def criticos(self, request):
         """Lista de riesgos criticos (niveles I y II)."""
-        empresa_id = request.query_params.get('empresa', 1)
+        empresa = get_tenant_empresa(auto_create=False)
         matrices = self.get_queryset().filter(
-            empresa_id=empresa_id,
             estado='vigente',
             is_active=True
         )
+        if empresa:
+            matrices = matrices.filter(empresa_id=empresa.id)
 
         # Filtrar por nivel de riesgo alto (NR >= 150)
         criticos = [m for m in matrices if m.nivel_riesgo >= 150]
@@ -165,12 +169,14 @@ class MatrizIPEVRViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def por_area(self, request):
         """Matrices agrupadas por area."""
-        empresa_id = request.query_params.get('empresa', 1)
-        stats = self.get_queryset().filter(
-            empresa_id=empresa_id,
+        empresa = get_tenant_empresa(auto_create=False)
+        queryset = self.get_queryset().filter(
             estado='vigente',
             is_active=True
-        ).values('area').annotate(
+        )
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
+        stats = queryset.values('area').annotate(
             total=Count('id'),
         ).order_by('-total')
         return Response(list(stats))
@@ -178,12 +184,14 @@ class MatrizIPEVRViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def por_cargo(self, request):
         """Matrices agrupadas por cargo."""
-        empresa_id = request.query_params.get('empresa', 1)
-        stats = self.get_queryset().filter(
-            empresa_id=empresa_id,
+        empresa = get_tenant_empresa(auto_create=False)
+        queryset = self.get_queryset().filter(
             estado='vigente',
             is_active=True
-        ).values('cargo').annotate(
+        )
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
+        stats = queryset.values('cargo').annotate(
             total=Count('id'),
         ).order_by('-total')
         return Response(list(stats))
@@ -191,12 +199,14 @@ class MatrizIPEVRViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def por_peligro(self, request):
         """Matrices agrupadas por tipo de peligro."""
-        empresa_id = request.query_params.get('empresa', 1)
-        stats = self.get_queryset().filter(
-            empresa_id=empresa_id,
+        empresa = get_tenant_empresa(auto_create=False)
+        queryset = self.get_queryset().filter(
             estado='vigente',
             is_active=True
-        ).values(
+        )
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
+        stats = queryset.values(
             'peligro__clasificacion__categoria',
             'peligro__clasificacion__nombre'
         ).annotate(
@@ -245,23 +255,25 @@ class ControlSSTViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def pendientes(self, request):
         """Controles pendientes de implementacion."""
-        empresa_id = request.query_params.get('empresa', 1)
+        empresa = get_tenant_empresa(auto_create=False)
         controles = self.get_queryset().filter(
-            empresa_id=empresa_id,
             estado__in=['propuesto', 'en_implementacion'],
             is_active=True
-        ).order_by('fecha_implementacion')
+        )
+        if empresa:
+            controles = controles.filter(empresa_id=empresa.id)
+        controles = controles.order_by('fecha_implementacion')
         serializer = self.get_serializer(controles, many=True)
         return Response(serializer.data)
 
     @action(detail=False, methods=['get'])
     def por_tipo(self, request):
         """Estadisticas de controles por tipo."""
-        empresa_id = request.query_params.get('empresa', 1)
-        stats = self.get_queryset().filter(
-            empresa_id=empresa_id,
-            is_active=True
-        ).values('tipo_control').annotate(
+        empresa = get_tenant_empresa(auto_create=False)
+        queryset = self.get_queryset().filter(is_active=True)
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
+        stats = queryset.values('tipo_control').annotate(
             total=Count('id'),
             implementados=Count('id', filter=Q(estado='implementado')),
             verificados=Count('id', filter=Q(estado='verificado')),

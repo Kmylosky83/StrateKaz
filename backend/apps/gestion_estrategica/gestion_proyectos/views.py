@@ -206,8 +206,10 @@ class ProyectoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def por_estado(self, request):
         """Retorna proyectos agrupados por estado"""
-        empresa_id = request.query_params.get('empresa', 1)
-        queryset = self.get_queryset().filter(empresa_id=empresa_id, is_active=True)
+        empresa = get_tenant_empresa(auto_create=False)
+        queryset = self.get_queryset().filter(is_active=True)
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
 
         resultado = {}
         for estado, _ in Proyecto.Estado.choices:
@@ -613,13 +615,12 @@ class LeccionAprendidaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def buscar(self, request):
         """Busca lecciones aprendidas en todos los proyectos"""
-        empresa_id = request.query_params.get('empresa', 1)
+        empresa = get_tenant_empresa(auto_create=False)
         query = request.query_params.get('q', '')
 
-        lecciones = self.get_queryset().filter(
-            proyecto__empresa_id=empresa_id,
-            is_active=True
-        )
+        lecciones = self.get_queryset().filter(is_active=True)
+        if empresa:
+            lecciones = lecciones.filter(proyecto__empresa_id=empresa.id)
 
         if query:
             lecciones = lecciones.filter(

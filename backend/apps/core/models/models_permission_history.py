@@ -263,8 +263,11 @@ class PermissionChangeLog(models.Model):
         if request:
             if hasattr(request, 'user') and request.user.is_authenticated:
                 user = request.user
-                if hasattr(user, 'empresa'):
-                    empresa = user.empresa
+                try:
+                    from apps.core.base_models.mixins import get_tenant_empresa
+                    empresa = get_tenant_empresa(auto_create=False)
+                except Exception:
+                    pass
             ip_address = cls._get_client_ip(request)
             user_agent = request.META.get('HTTP_USER_AGENT', '')[:500]
             request_id = request.META.get('HTTP_X_REQUEST_ID')

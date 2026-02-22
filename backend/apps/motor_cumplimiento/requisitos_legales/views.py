@@ -8,6 +8,7 @@ from django.utils import timezone
 from django.db.models import Count
 
 from apps.core.mixins import StandardViewSetMixin
+from apps.core.base_models.mixins import get_tenant_empresa
 from .models import TipoRequisito, RequisitoLegal, EmpresaRequisito, AlertaVencimiento
 from .serializers import TipoRequisitoSerializer, RequisitoLegalSerializer, EmpresaRequisitoSerializer, AlertaVencimientoSerializer
 
@@ -64,33 +65,42 @@ class EmpresaRequisitoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def por_vencer(self, request):
-        empresa_id = request.query_params.get("empresa", 1)
+        empresa = get_tenant_empresa(auto_create=False)
+        empresa_id = empresa.id if empresa else None
         dias = int(request.query_params.get("dias", 30))
         fecha_limite = timezone.now().date() + timezone.timedelta(days=dias)
         queryset = self.get_queryset().filter(
-            empresa_id=empresa_id,
             fecha_vencimiento__lte=fecha_limite,
             fecha_vencimiento__gte=timezone.now().date(),
             is_active=True
-        ).order_by("fecha_vencimiento")
+        )
+        if empresa_id:
+            queryset = queryset.filter(empresa_id=empresa_id)
+        queryset = queryset.order_by("fecha_vencimiento")
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
     @action(detail=False, methods=["get"])
     def vencidos(self, request):
-        empresa_id = request.query_params.get("empresa", 1)
+        empresa = get_tenant_empresa(auto_create=False)
+        empresa_id = empresa.id if empresa else None
         queryset = self.get_queryset().filter(
-            empresa_id=empresa_id,
             fecha_vencimiento__lt=timezone.now().date(),
             is_active=True
-        ).order_by("fecha_vencimiento")
+        )
+        if empresa_id:
+            queryset = queryset.filter(empresa_id=empresa_id)
+        queryset = queryset.order_by("fecha_vencimiento")
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
     @action(detail=False, methods=["get"])
     def estadisticas(self, request):
-        empresa_id = request.query_params.get("empresa", 1)
-        queryset = self.get_queryset().filter(empresa_id=empresa_id, is_active=True)
+        empresa = get_tenant_empresa(auto_create=False)
+        empresa_id = empresa.id if empresa else None
+        queryset = self.get_queryset().filter(is_active=True)
+        if empresa_id:
+            queryset = queryset.filter(empresa_id=empresa_id)
         stats = queryset.values("estado").annotate(total=Count("id"))
         return Response({"estadisticas_por_estado": list(stats), "total": queryset.count()})
 

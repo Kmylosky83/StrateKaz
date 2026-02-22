@@ -26,6 +26,7 @@ from .serializers import (
     AprobarPermisoSerializer, CerrarPermisoSerializer,
     GenerarHallazgoSerializer, CompletarInspeccionSerializer
 )
+from apps.core.base_models.mixins import get_tenant_empresa
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -63,11 +64,10 @@ class PermisoTrabajoViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        user = self.request.user
 
-        # Filtrar por empresa del usuario
-        if hasattr(user, 'empresa_id'):
-            queryset = queryset.filter(empresa_id=user.empresa_id)
+        empresa = get_tenant_empresa(auto_create=False)
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
 
         # Filtros adicionales por query params
         estado = self.request.query_params.get('estado', None)
@@ -236,11 +236,10 @@ class TipoInspeccionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        user = self.request.user
 
-        # Filtrar por empresa del usuario
-        if hasattr(user, 'empresa_id'):
-            queryset = queryset.filter(empresa_id=user.empresa_id)
+        empresa = get_tenant_empresa(auto_create=False)
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
 
         return queryset.order_by('orden', 'nombre')
 
@@ -256,10 +255,10 @@ class PlantillaInspeccionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        user = self.request.user
 
-        if hasattr(user, 'empresa_id'):
-            queryset = queryset.filter(empresa_id=user.empresa_id)
+        empresa = get_tenant_empresa(auto_create=False)
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
 
         return queryset.select_related('tipo_inspeccion')
 
@@ -278,10 +277,10 @@ class InspeccionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        user = self.request.user
 
-        if hasattr(user, 'empresa_id'):
-            queryset = queryset.filter(empresa_id=user.empresa_id)
+        empresa = get_tenant_empresa(auto_create=False)
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
 
         return queryset.select_related(
             'tipo_inspeccion', 'plantilla', 'inspector'
@@ -508,10 +507,10 @@ class EntregaEPPViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        user = self.request.user
 
-        if hasattr(user, 'empresa_id'):
-            queryset = queryset.filter(empresa_id=user.empresa_id)
+        empresa = get_tenant_empresa(auto_create=False)
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
 
         return queryset.select_related(
             'tipo_epp', 'colaborador', 'entregado_por'
@@ -621,10 +620,10 @@ class ProgramaSeguridadViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        user = self.request.user
 
-        if hasattr(user, 'empresa_id'):
-            queryset = queryset.filter(empresa_id=user.empresa_id)
+        empresa = get_tenant_empresa(auto_create=False)
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
 
         return queryset.select_related('responsable').order_by('-fecha_inicio')
 

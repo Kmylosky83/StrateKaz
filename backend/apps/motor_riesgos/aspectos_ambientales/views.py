@@ -23,6 +23,7 @@ from .serializers import (
     ProgramaAmbientalDetailSerializer,
     MonitoreoAmbientalSerializer
 )
+from apps.core.base_models.mixins import get_tenant_empresa
 
 
 class CategoriaAspectoViewSet(viewsets.ModelViewSet):
@@ -46,26 +47,24 @@ class AspectoAmbientalViewSet(viewsets.ModelViewSet):
         return AspectoAmbientalDetailSerializer
 
     def get_queryset(self):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
         queryset = AspectoAmbiental.objects.select_related('categoria', 'created_by')
-        if empresa_id:
-            queryset = queryset.filter(empresa_id=empresa_id)
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
         return queryset.order_by('-valor_significancia', '-created_at')
 
     def perform_create(self, serializer):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
         serializer.save(
             created_by=self.request.user,
-            empresa_id=empresa_id
+            empresa_id=empresa.id if empresa else None
         )
 
     @action(detail=False, methods=['get'])
     def resumen(self, request):
         """Resumen estadístico de aspectos ambientales"""
-        empresa_id = request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
         queryset = self.get_queryset()
-        if empresa_id:
-            queryset = queryset.filter(empresa_id=empresa_id)
 
         resumen = {
             'total': queryset.count(),
@@ -120,10 +119,10 @@ class ImpactoAmbientalViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
         queryset = ImpactoAmbiental.objects.select_related('aspecto', 'created_by')
-        if empresa_id:
-            queryset = queryset.filter(empresa_id=empresa_id)
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
 
         # Filtrar por aspecto específico
         aspecto_id = self.request.query_params.get('aspecto')
@@ -138,19 +137,17 @@ class ImpactoAmbientalViewSet(viewsets.ModelViewSet):
         return queryset.order_by('-created_at')
 
     def perform_create(self, serializer):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
         serializer.save(
             created_by=self.request.user,
-            empresa_id=empresa_id
+            empresa_id=empresa.id if empresa else None
         )
 
     @action(detail=False, methods=['get'])
     def por_componente(self, request):
         """Impactos agrupados por componente ambiental"""
-        empresa_id = request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
         queryset = self.get_queryset()
-        if empresa_id:
-            queryset = queryset.filter(empresa_id=empresa_id)
 
         resumen = list(
             queryset.values('componente_ambiental')
@@ -170,12 +167,12 @@ class ProgramaAmbientalViewSet(viewsets.ModelViewSet):
         return ProgramaAmbientalDetailSerializer
 
     def get_queryset(self):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
         queryset = ProgramaAmbiental.objects.select_related(
             'responsable', 'created_by'
         ).prefetch_related('aspectos_relacionados', 'equipo_apoyo')
-        if empresa_id:
-            queryset = queryset.filter(empresa_id=empresa_id)
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
 
         # Filtrar por estado
         estado = self.request.query_params.get('estado')
@@ -185,19 +182,17 @@ class ProgramaAmbientalViewSet(viewsets.ModelViewSet):
         return queryset.order_by('-fecha_inicio', '-created_at')
 
     def perform_create(self, serializer):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
         serializer.save(
             created_by=self.request.user,
-            empresa_id=empresa_id
+            empresa_id=empresa.id if empresa else None
         )
 
     @action(detail=False, methods=['get'])
     def resumen(self, request):
         """Resumen estadístico de programas ambientales"""
-        empresa_id = request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
         queryset = self.get_queryset()
-        if empresa_id:
-            queryset = queryset.filter(empresa_id=empresa_id)
 
         resumen = {
             'total': queryset.count(),
@@ -239,13 +234,13 @@ class MonitoreoAmbientalViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
         queryset = MonitoreoAmbiental.objects.select_related(
             'aspecto_relacionado', 'programa_relacionado',
             'responsable_medicion', 'created_by'
         )
-        if empresa_id:
-            queryset = queryset.filter(empresa_id=empresa_id)
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
 
         # Filtrar por aspecto
         aspecto_id = self.request.query_params.get('aspecto')
@@ -270,19 +265,17 @@ class MonitoreoAmbientalViewSet(viewsets.ModelViewSet):
         return queryset.order_by('-fecha_monitoreo', '-hora_monitoreo')
 
     def perform_create(self, serializer):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
         serializer.save(
             created_by=self.request.user,
-            empresa_id=empresa_id
+            empresa_id=empresa.id if empresa else None
         )
 
     @action(detail=False, methods=['get'])
     def resumen(self, request):
         """Resumen estadístico de monitoreos ambientales"""
-        empresa_id = request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
         queryset = self.get_queryset()
-        if empresa_id:
-            queryset = queryset.filter(empresa_id=empresa_id)
 
         resumen = {
             'total': queryset.count(),

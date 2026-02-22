@@ -23,6 +23,7 @@ from .serializers import (
     ArchivoAdjuntoSerializer,
     NotificacionFlujoSerializer
 )
+from apps.core.base_models.mixins import get_tenant_empresa
 
 logger = logging.getLogger('workflow')
 
@@ -37,7 +38,7 @@ class InstanciaFlujoViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha_inicio']
 
     def get_queryset(self):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
         queryset = InstanciaFlujo.objects.select_related(
             'plantilla',
             'nodo_actual',
@@ -45,13 +46,13 @@ class InstanciaFlujoViewSet(viewsets.ModelViewSet):
             'responsable_actual',
             'finalizado_por'
         )
-        if empresa_id:
-            queryset = queryset.filter(empresa_id=empresa_id)
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
         return queryset
 
     def perform_create(self, serializer):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
-        serializer.save(empresa_id=empresa_id, iniciado_por=self.request.user)
+        empresa = get_tenant_empresa(auto_create=False)
+        serializer.save(empresa_id=empresa.id if empresa else None, iniciado_por=self.request.user)
 
     @action(detail=False, methods=['get'])
     def mis_instancias(self, request):
@@ -203,9 +204,8 @@ class InstanciaFlujoViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        empresa_id = request.headers.get('X-Empresa-ID')
-        if not empresa_id:
-            empresa_id = getattr(request.user, 'empresa_id', None)
+        empresa = get_tenant_empresa(auto_create=False)
+        empresa_id = empresa.id if empresa else None
         if not empresa_id:
             return Response(
                 {'error': 'empresa_id no disponible'},
@@ -249,7 +249,7 @@ class TareaActivaViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha_creacion']
 
     def get_queryset(self):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
         queryset = TareaActiva.objects.select_related(
             'instancia',
             'nodo',
@@ -258,14 +258,14 @@ class TareaActivaViewSet(viewsets.ModelViewSet):
             'escalada_a',
             'created_by'
         )
-        if empresa_id:
-            queryset = queryset.filter(empresa_id=empresa_id)
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
         return queryset
 
     def perform_create(self, serializer):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
         serializer.save(
-            empresa_id=empresa_id,
+            empresa_id=empresa.id if empresa else None,
             created_by=self.request.user
         )
 
@@ -338,6 +338,7 @@ class TareaActivaViewSet(viewsets.ModelViewSet):
         tarea.fecha_inicio = timezone.now()
         tarea.save()
 
+        empresa = get_tenant_empresa(auto_create=False)
         HistorialTarea.objects.create(
             tarea=tarea,
             instancia=tarea.instancia,
@@ -346,7 +347,7 @@ class TareaActivaViewSet(viewsets.ModelViewSet):
             estado_anterior='PENDIENTE',
             estado_nuevo='EN_PROGRESO',
             usuario=request.user,
-            empresa_id=request.headers.get('X-Empresa-ID')
+            empresa_id=empresa.id if empresa else None
         )
         serializer = self.get_serializer(tarea)
         return Response(serializer.data)
@@ -354,6 +355,7 @@ class TareaActivaViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def completar(self, request, pk=None):
         """Completar una tarea"""
+        empresa = get_tenant_empresa(auto_create=False)
         tarea = self.get_object()
         if tarea.estado not in ['PENDIENTE', 'EN_PROGRESO']:
             return Response(
@@ -379,7 +381,7 @@ class TareaActivaViewSet(viewsets.ModelViewSet):
                 'formulario_data': tarea.formulario_data
             },
             usuario=request.user,
-            empresa_id=request.headers.get('X-Empresa-ID')
+            empresa_id=empresa.id if empresa else None
         )
 
         # Auto-avanzar el flujo de trabajo
@@ -403,6 +405,7 @@ class TareaActivaViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def rechazar(self, request, pk=None):
         """Rechazar una tarea"""
+        empresa = get_tenant_empresa(auto_create=False)
         tarea = self.get_object()
         if tarea.estado not in ['PENDIENTE', 'EN_PROGRESO']:
             return Response(
@@ -430,7 +433,7 @@ class TareaActivaViewSet(viewsets.ModelViewSet):
             estado_nuevo='RECHAZADA',
             datos_cambio={'motivo_rechazo': motivo_rechazo},
             usuario=request.user,
-            empresa_id=request.headers.get('X-Empresa-ID')
+            empresa_id=empresa.id if empresa else None
         )
 
         # Manejar rechazo en el flujo de trabajo
@@ -453,17 +456,18 @@ class TareaActivaViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def reasignar(self, request, pk=None):
         """Reasignar una tarea a otro usuario"""
+        empresa = get_tenant_empresa(auto_create=False)
         tarea = self.get_object()
         asignado_a_id = request.data.get('asignado_a')
         if not asignado_a_id:
             return Response(
-                {'error': 'Debe indicar a quién se asignará la tarea'},
+                {'error': 'Debe indicar a quien se asignara la tarea'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         from django.contrib.auth import get_user_model
         User = get_user_model()
         try:
-            nuevo_asignado = User.objects.get(id=asignado_a_id, empresa_id=request.headers.get('X-Empresa-ID'))
+            nuevo_asignado = User.objects.get(id=asignado_a_id)
         except User.DoesNotExist:
             return Response(
                 {'error': 'Usuario no encontrado'},
@@ -482,7 +486,7 @@ class TareaActivaViewSet(viewsets.ModelViewSet):
             asignado_anterior=asignado_anterior,
             asignado_nuevo=nuevo_asignado,
             usuario=request.user,
-            empresa_id=request.headers.get('X-Empresa-ID')
+            empresa_id=empresa.id if empresa else None
         )
         serializer = self.get_serializer(tarea)
         return Response(serializer.data)
@@ -497,7 +501,7 @@ class HistorialTareaViewSet(viewsets.ReadOnlyModelViewSet):
     ordering = ['-fecha_accion']
 
     def get_queryset(self):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
         queryset = HistorialTarea.objects.select_related(
             'tarea',
             'instancia',
@@ -505,8 +509,8 @@ class HistorialTareaViewSet(viewsets.ReadOnlyModelViewSet):
             'asignado_anterior',
             'asignado_nuevo'
         )
-        if empresa_id:
-            queryset = queryset.filter(empresa_id=empresa_id)
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
         return queryset
 
     @action(detail=False, methods=['get'])
@@ -535,18 +539,19 @@ class ArchivoAdjuntoViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha_subida']
 
     def get_queryset(self):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
         queryset = ArchivoAdjunto.objects.select_related(
             'instancia',
             'tarea',
             'subido_por'
         )
-        if empresa_id:
-            queryset = queryset.filter(empresa_id=empresa_id)
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
         return queryset
 
     def perform_create(self, serializer):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
+        empresa_id = empresa.id if empresa else None
         archivo = self.request.FILES.get('archivo')
         if archivo:
             serializer.save(
@@ -604,21 +609,21 @@ class NotificacionFlujoViewSet(viewsets.ModelViewSet):
     ordering = ['-fecha_creacion']
 
     def get_queryset(self):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
         queryset = NotificacionFlujo.objects.select_related(
             'destinatario',
             'instancia',
             'tarea',
             'generada_por'
         )
-        if empresa_id:
-            queryset = queryset.filter(empresa_id=empresa_id)
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
         return queryset
 
     def perform_create(self, serializer):
-        empresa_id = self.request.headers.get('X-Empresa-ID')
+        empresa = get_tenant_empresa(auto_create=False)
         serializer.save(
-            empresa_id=empresa_id,
+            empresa_id=empresa.id if empresa else None,
             generada_por=self.request.user
         )
 

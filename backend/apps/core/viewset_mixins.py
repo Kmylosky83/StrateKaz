@@ -124,8 +124,10 @@ class CachedListMixin:
         Override de list para agregar caché.
         """
         # Generar clave de caché
+        from apps.core.base_models.mixins import get_tenant_empresa
         prefix = self.cache_key_prefix or self.__class__.__name__
-        empresa_id = getattr(request.user, 'empresa_id', None) if hasattr(request, 'user') else None
+        empresa = get_tenant_empresa(auto_create=False)
+        empresa_id = empresa.id if empresa else None
         query_params = dict(request.query_params)
 
         cache_key = generate_cache_key(

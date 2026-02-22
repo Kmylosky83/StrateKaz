@@ -7,6 +7,7 @@ from rest_framework.filters import SearchFilter
 from django.db.models import Count
 
 from apps.core.mixins import StandardViewSetMixin
+from apps.core.base_models.mixins import get_tenant_empresa
 from .models import TipoReglamento, Reglamento, VersionReglamento, PublicacionReglamento, SocializacionReglamento
 from .serializers import TipoReglamentoSerializer, ReglamentoSerializer, VersionReglamentoSerializer, PublicacionReglamentoSerializer, SocializacionReglamentoSerializer
 
@@ -46,15 +47,19 @@ class ReglamentoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def vigentes(self, request):
-        empresa_id = request.query_params.get("empresa", 1)
-        queryset = self.get_queryset().filter(empresa_id=empresa_id, estado="vigente", is_active=True)
+        empresa = get_tenant_empresa(auto_create=False)
+        queryset = self.get_queryset().filter(estado="vigente", is_active=True)
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
     @action(detail=False, methods=["get"])
     def estadisticas(self, request):
-        empresa_id = request.query_params.get("empresa", 1)
-        queryset = self.get_queryset().filter(empresa_id=empresa_id, is_active=True)
+        empresa = get_tenant_empresa(auto_create=False)
+        queryset = self.get_queryset().filter(is_active=True)
+        if empresa:
+            queryset = queryset.filter(empresa_id=empresa.id)
         stats = queryset.values("estado").annotate(total=Count("id"))
         return Response({"por_estado": list(stats), "total": queryset.count()})
 

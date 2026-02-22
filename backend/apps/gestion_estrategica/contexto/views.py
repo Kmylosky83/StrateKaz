@@ -717,11 +717,12 @@ class ParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
         stats = {
             'total': queryset.count(),
-            'por_grupo': dict(
-                queryset.values('tipo__grupo__nombre').annotate(
+            'por_grupo': {
+                k or 'Sin grupo': v
+                for k, v in queryset.values('tipo__grupo__nombre').annotate(
                     total=Count('id')
                 ).values_list('tipo__grupo__nombre', 'total')
-            ),
+            },
             'por_tipo': dict(
                 queryset.values('tipo__nombre').annotate(
                     total=Count('id')
@@ -1228,7 +1229,7 @@ class MatrizComunicacionViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_fields = [
         'empresa', 'parte_interesada', 'cuando_comunicar', 'como_comunicar',
-        'aplica_sst', 'aplica_ambiental', 'aplica_calidad', 'aplica_pesv', 'is_active'
+        'es_obligatoria', 'is_active'
     ]
     search_fields = ['que_comunicar', 'registro_evidencia']
     ordering_fields = ['parte_interesada', 'cuando_comunicar', 'created_at']

@@ -1,243 +1,489 @@
-import { Lock, ArrowLeft, Shield, Database, AlertTriangle, Key } from 'lucide-react';
+/**
+ * Seguridad de la Información — ISO 27001:2022
+ *
+ * Conecta con backend: /api/riesgos/seguridad-info/
+ * Hooks: useActivosInformacion, useRiesgosSeguridad, useControlesSeguridad, useIncidentesSeguridad
+ */
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import {
+  Lock,
+  ArrowLeft,
+  Database,
+  AlertTriangle,
+  Shield,
+  Activity,
+  Layers,
+  ClipboardCheck,
+} from 'lucide-react';
+import { useModuleColor } from '@/hooks/useModuleColor';
+import { Spinner } from '@/components/common/Spinner';
+import { Alert } from '@/components/common/Alert';
+import { Badge } from '@/components/common/Badge';
+import { EmptyState } from '@/components/common/EmptyState';
+import { Tabs } from '@/components/common/Tabs';
+import { StatsGrid, type StatItem } from '@/components/layout/StatsGrid';
+import {
+  useActivosInformacion,
+  useActivosEstadisticas,
+  useRiesgosSeguridad,
+  useControlesSeguridad,
+  useIncidentesSeguridad,
+} from '../hooks/useSeguridadInformacion';
+import {
+  CLASIFICACION_LABELS,
+  CLASIFICACION_COLORS,
+  NIVEL_RIESGO_SI_LABELS,
+  NIVEL_RIESGO_SI_COLORS,
+  ESTADO_RIESGO_SI_LABELS,
+  SEVERIDAD_SI_LABELS,
+  SEVERIDAD_SI_COLORS,
+  ESTADO_INCIDENTE_SI_LABELS,
+  ESTADO_IMPL_LABELS,
+  ESTADO_IMPL_COLORS,
+  type ClasificacionActivo,
+  type NivelRiesgoSI,
+  type EstadoRiesgoSI,
+  type SeveridadIncidenteSI,
+  type EstadoIncidenteSI,
+  type EstadoImplementacion,
+} from '../types/seguridad-informacion.types';
 
 export default function SeguridadInformacionPage() {
+  const { color: moduleColor, isLoading: isColorLoading } = useModuleColor('MOTOR_RIESGOS');
+  const [activeTab, setActiveTab] = useState('activos');
+
+  const {
+    data: activosData,
+    isLoading: isLoadingActivos,
+    error: activosError,
+  } = useActivosInformacion();
+  const { data: estadisticas, isLoading: isLoadingStats } = useActivosEstadisticas();
+  const { data: riesgosData, isLoading: isLoadingRiesgos } = useRiesgosSeguridad();
+  const { data: controlesData, isLoading: isLoadingControles } = useControlesSeguridad();
+  const { data: incidentesData, isLoading: isLoadingIncidentes } = useIncidentesSeguridad();
+
+  const activos = useMemo(() => {
+    if (!activosData) return [];
+    return Array.isArray(activosData) ? activosData : (activosData?.results ?? []);
+  }, [activosData]);
+
+  const riesgos = useMemo(() => {
+    if (!riesgosData) return [];
+    return Array.isArray(riesgosData) ? riesgosData : (riesgosData?.results ?? []);
+  }, [riesgosData]);
+
+  const controles = useMemo(() => {
+    if (!controlesData) return [];
+    return Array.isArray(controlesData) ? controlesData : (controlesData?.results ?? []);
+  }, [controlesData]);
+
+  const incidentes = useMemo(() => {
+    if (!incidentesData) return [];
+    return Array.isArray(incidentesData) ? incidentesData : (incidentesData?.results ?? []);
+  }, [incidentesData]);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const statsData = estadisticas as Record<string, any> | undefined;
+
+  const stats: StatItem[] = useMemo(
+    () => [
+      {
+        label: 'Activos',
+        value: statsData?.total ?? activos.length,
+        icon: Database,
+        iconColor: 'info',
+        description: 'De información',
+      },
+      {
+        label: 'Riesgos',
+        value: riesgos.length,
+        icon: AlertTriangle,
+        iconColor: 'danger',
+        description: 'Identificados',
+      },
+      {
+        label: 'Controles',
+        value: controles.length,
+        icon: Shield,
+        iconColor: 'success',
+        description: 'ISO 27001',
+      },
+      {
+        label: 'Incidentes',
+        value: incidentes.length,
+        icon: Activity,
+        iconColor: 'warning',
+        description: 'Registrados',
+      },
+    ],
+    [statsData, activos, riesgos, controles, incidentes]
+  );
+
+  const tabs = [
+    { id: 'activos', label: 'Activos', icon: <Database className="h-4 w-4" /> },
+    { id: 'riesgos', label: 'Riesgos', icon: <Layers className="h-4 w-4" /> },
+    { id: 'controles', label: 'Controles', icon: <Shield className="h-4 w-4" /> },
+    { id: 'incidentes', label: 'Incidentes', icon: <ClipboardCheck className="h-4 w-4" /> },
+  ];
+
+  if (isColorLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Spinner />
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-4">
         <Link
           to="/riesgos"
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
         >
-          <ArrowLeft className="h-5 w-5 text-gray-600" />
+          <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
         </Link>
         <div className="flex items-center gap-3">
           <div className="p-3 bg-red-100 rounded-lg">
             <Lock className="h-8 w-8 text-red-600" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Seguridad de la Información</h1>
-            <p className="text-gray-600">Sistema de Gestión según ISO 27001:2022</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-red-100 rounded-lg">
-              <Shield className="h-6 w-6 text-red-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900">Triada CIA</h3>
-          </div>
-          <div className="space-y-3">
-            <div className="p-4 bg-blue-50 border-l-4 border-blue-500">
-              <p className="text-sm font-semibold text-blue-900 mb-1">Confidencialidad</p>
-              <p className="text-xs text-blue-700">
-                Garantizar que la información solo sea accesible a personas autorizadas
-              </p>
-            </div>
-            <div className="p-4 bg-green-50 border-l-4 border-green-500">
-              <p className="text-sm font-semibold text-green-900 mb-1">Integridad</p>
-              <p className="text-xs text-green-700">
-                Asegurar que la información sea exacta y completa
-              </p>
-            </div>
-            <div className="p-4 bg-purple-50 border-l-4 border-purple-500">
-              <p className="text-sm font-semibold text-purple-900 mb-1">Disponibilidad</p>
-              <p className="text-xs text-purple-700">
-                Garantizar acceso a la información cuando se necesite
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-orange-100 rounded-lg">
-              <Database className="h-6 w-6 text-orange-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900">Activos de Información</h3>
-          </div>
-          <div className="space-y-3">
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded">
-              <p className="text-sm font-medium text-blue-900">Información</p>
-              <p className="text-xs text-blue-700 mt-1">Bases de datos, documentos, registros</p>
-            </div>
-            <div className="p-3 bg-purple-50 border border-purple-200 rounded">
-              <p className="text-sm font-medium text-purple-900">Software</p>
-              <p className="text-xs text-purple-700 mt-1">Aplicaciones, sistemas operativos</p>
-            </div>
-            <div className="p-3 bg-orange-50 border border-orange-200 rounded">
-              <p className="text-sm font-medium text-orange-900">Hardware</p>
-              <p className="text-xs text-orange-700 mt-1">Servidores, equipos, dispositivos</p>
-            </div>
-            <div className="p-3 bg-green-50 border border-green-200 rounded">
-              <p className="text-sm font-medium text-green-900">Personas</p>
-              <p className="text-xs text-green-700 mt-1">Conocimiento, habilidades</p>
-            </div>
-            <div className="p-3 bg-red-50 border border-red-200 rounded">
-              <p className="text-sm font-medium text-red-900">Servicios</p>
-              <p className="text-xs text-red-700 mt-1">Comunicaciones, utilidades</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <AlertTriangle className="h-6 w-6 text-purple-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900">Amenazas Comunes</h3>
-          </div>
-          <div className="space-y-3">
-            <div className="p-3 bg-red-50 border border-red-200 rounded">
-              <p className="text-sm font-medium text-red-900">Ciberataques</p>
-              <p className="text-xs text-red-700 mt-1">Malware, ransomware, phishing</p>
-            </div>
-            <div className="p-3 bg-orange-50 border border-orange-200 rounded">
-              <p className="text-sm font-medium text-orange-900">Accesos No Autorizados</p>
-              <p className="text-xs text-orange-700 mt-1">Intrusión, robo de credenciales</p>
-            </div>
-            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
-              <p className="text-sm font-medium text-yellow-900">Errores Humanos</p>
-              <p className="text-xs text-yellow-700 mt-1">Divulgación, eliminación accidental</p>
-            </div>
-            <div className="p-3 bg-purple-50 border border-purple-200 rounded">
-              <p className="text-sm font-medium text-purple-900">Fallas Técnicas</p>
-              <p className="text-xs text-purple-700 mt-1">Hardware, software, red</p>
-            </div>
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded">
-              <p className="text-sm font-medium text-blue-900">Desastres</p>
-              <p className="text-xs text-blue-700 mt-1">Incendio, inundación, terremoto</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-indigo-100 rounded-lg">
-            <Key className="h-6 w-6 text-indigo-600" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900">Controles ISO 27001:2022 - Anexo A</h3>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="p-4 bg-blue-50 rounded-lg">
-            <p className="text-sm font-semibold text-blue-900 mb-2">Organizacionales (37)</p>
-            <p className="text-xs text-blue-700">Políticas, roles, gestión de activos, RRHH</p>
-          </div>
-          <div className="p-4 bg-green-50 rounded-lg">
-            <p className="text-sm font-semibold text-green-900 mb-2">Personas (8)</p>
-            <p className="text-xs text-green-700">Selección, concientización, disciplina</p>
-          </div>
-          <div className="p-4 bg-purple-50 rounded-lg">
-            <p className="text-sm font-semibold text-purple-900 mb-2">Físicos (14)</p>
-            <p className="text-xs text-purple-700">Perímetros, acceso, protección equipos</p>
-          </div>
-          <div className="p-4 bg-orange-50 rounded-lg">
-            <p className="text-sm font-semibold text-orange-900 mb-2">Tecnológicos (34)</p>
-            <p className="text-xs text-orange-700">Acceso, criptografía, desarrollo seguro</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Evaluación de Riesgos</h3>
-          <div className="space-y-3">
-            <div className="flex items-start gap-3 p-3 bg-blue-50 rounded">
-              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-bold text-sm">1</span>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-blue-900">Identificación de Activos</p>
-                <p className="text-xs text-blue-700 mt-1">Inventario completo de activos de información</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 p-3 bg-purple-50 rounded">
-              <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-bold text-sm">2</span>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-purple-900">Valoración de Activos</p>
-                <p className="text-xs text-purple-700 mt-1">Clasificación por confidencialidad, integridad, disponibilidad</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 p-3 bg-orange-50 rounded">
-              <div className="w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-bold text-sm">3</span>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-orange-900">Identificación Amenazas</p>
-                <p className="text-xs text-orange-700 mt-1">Amenazas y vulnerabilidades potenciales</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 p-3 bg-green-50 rounded">
-              <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-bold text-sm">4</span>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-green-900">Análisis de Riesgos</p>
-                <p className="text-xs text-green-700 mt-1">Probabilidad e impacto, nivel de riesgo</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 p-3 bg-red-50 rounded">
-              <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-bold text-sm">5</span>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-red-900">Tratamiento de Riesgos</p>
-                <p className="text-xs text-red-700 mt-1">Mitigar, aceptar, transferir, evitar</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Normatividad Relacionada</h3>
-          <div className="space-y-3">
-            <div className="p-3 bg-gray-50 border border-gray-200 rounded">
-              <p className="text-sm font-medium text-gray-900">ISO 27001:2022</p>
-              <p className="text-xs text-gray-600 mt-1">Sistema de Gestión de Seguridad de la Información</p>
-            </div>
-            <div className="p-3 bg-gray-50 border border-gray-200 rounded">
-              <p className="text-sm font-medium text-gray-900">Ley 1581 de 2012</p>
-              <p className="text-xs text-gray-600 mt-1">Protección de Datos Personales</p>
-            </div>
-            <div className="p-3 bg-gray-50 border border-gray-200 rounded">
-              <p className="text-sm font-medium text-gray-900">Decreto 1377 de 2013</p>
-              <p className="text-xs text-gray-600 mt-1">Reglamentación Ley 1581</p>
-            </div>
-            <div className="p-3 bg-gray-50 border border-gray-200 rounded">
-              <p className="text-sm font-medium text-gray-900">Ley 1273 de 2009</p>
-              <p className="text-xs text-gray-600 mt-1">Delitos informáticos</p>
-            </div>
-            <div className="p-3 bg-gray-50 border border-gray-200 rounded">
-              <p className="text-sm font-medium text-gray-900">ISO 27002:2022</p>
-              <p className="text-xs text-gray-600 mt-1">Código de buenas prácticas</p>
-            </div>
-            <div className="p-3 bg-gray-50 border border-gray-200 rounded">
-              <p className="text-sm font-medium text-gray-900">ISO 27005:2022</p>
-              <p className="text-xs text-gray-600 mt-1">Gestión de riesgos de seguridad</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-        <div className="flex items-start gap-4">
-          <Lock className="h-6 w-6 text-red-600 flex-shrink-0 mt-1" />
-          <div>
-            <h3 className="text-lg font-semibold text-red-900 mb-2">Próximamente</h3>
-            <p className="text-red-800 text-sm">
-              Esta página implementará el Sistema de Gestión de Seguridad de la Información según ISO 27001:2022.
-              Incluirá inventario de activos de información, evaluación de riesgos, declaración de aplicabilidad (SoA),
-              gestión de incidentes de seguridad, registros de acceso, y cumplimiento de controles del Anexo A.
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              Seguridad de la Información
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              Sistema de Gestión según ISO 27001:2022
             </p>
           </div>
         </div>
       </div>
+
+      {activosError && (
+        <Alert variant="error" message="Error al cargar los activos de información." />
+      )}
+
+      <StatsGrid stats={stats} isLoading={isLoadingStats} moduleColor={moduleColor} />
+
+      <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+
+      {/* TAB: Activos de Información */}
+      {activeTab === 'activos' && (
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg">
+          {isLoadingActivos ? (
+            <div className="flex items-center justify-center py-12">
+              <Spinner />
+            </div>
+          ) : activos.length === 0 ? (
+            <EmptyState
+              icon={Database}
+              title="Sin activos de información"
+              description="No se han registrado activos de información aún."
+            />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 dark:bg-gray-800">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
+                      Activo
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
+                      Tipo
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
+                      Clasificación
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
+                      Criticidad
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {activos.map((a: Record<string, unknown>) => {
+                    const clasif = (a.clasificacion ?? '') as ClasificacionActivo;
+                    const criticidad = Number(a.criticidad ?? 0);
+                    return (
+                      <tr
+                        key={a.id as number}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                      >
+                        <td className="px-4 py-3">
+                          <p className="font-medium text-gray-900 dark:text-white">
+                            {(a.nombre ?? a.codigo ?? '-') as string}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate max-w-xs">
+                            {(a.ubicacion ?? '') as string}
+                          </p>
+                        </td>
+                        <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
+                          {(a.tipo_display ?? a.tipo ?? '-') as string}
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge
+                            className={CLASIFICACION_COLORS[clasif] ?? 'bg-gray-100 text-gray-800'}
+                          >
+                            {CLASIFICACION_LABELS[clasif] ?? clasif ?? '-'}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden max-w-[80px]">
+                              <div
+                                className={`h-full rounded-full ${
+                                  criticidad >= 4
+                                    ? 'bg-red-500'
+                                    : criticidad >= 3
+                                      ? 'bg-yellow-500'
+                                      : 'bg-green-500'
+                                }`}
+                                style={{ width: `${(criticidad / 5) * 100}%` }}
+                              />
+                            </div>
+                            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                              {criticidad}/5
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB: Riesgos */}
+      {activeTab === 'riesgos' && (
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg">
+          {isLoadingRiesgos ? (
+            <div className="flex items-center justify-center py-12">
+              <Spinner />
+            </div>
+          ) : riesgos.length === 0 ? (
+            <EmptyState
+              icon={AlertTriangle}
+              title="Sin riesgos de seguridad"
+              description="No se han identificado riesgos de seguridad de la información aún."
+            />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 dark:bg-gray-800">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
+                      Escenario
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
+                      Nivel
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
+                      Estado
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
+                      Aceptabilidad
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {riesgos.map((r: Record<string, unknown>) => {
+                    const nivel = (r.nivel_riesgo ?? '') as NivelRiesgoSI;
+                    const estado = (r.estado ?? '') as EstadoRiesgoSI;
+                    return (
+                      <tr
+                        key={r.id as number}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                      >
+                        <td className="px-4 py-3">
+                          <p className="font-medium text-gray-900 dark:text-white truncate max-w-xs">
+                            {(r.escenario_riesgo ?? '-') as string}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {(r.activo_nombre ?? '') as string}
+                          </p>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge
+                            className={NIVEL_RIESGO_SI_COLORS[nivel] ?? 'bg-gray-100 text-gray-800'}
+                          >
+                            {NIVEL_RIESGO_SI_LABELS[nivel] ?? nivel ?? '-'}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
+                          {ESTADO_RIESGO_SI_LABELS[estado] ?? (r.estado_display as string) ?? '-'}
+                        </td>
+                        <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
+                          {(r.aceptabilidad_display ?? r.aceptabilidad ?? '-') as string}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB: Controles */}
+      {activeTab === 'controles' && (
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg">
+          {isLoadingControles ? (
+            <div className="flex items-center justify-center py-12">
+              <Spinner />
+            </div>
+          ) : controles.length === 0 ? (
+            <EmptyState
+              icon={Shield}
+              title="Sin controles"
+              description="No se han registrado controles de seguridad aún."
+            />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 dark:bg-gray-800">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
+                      Control ISO
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
+                      Tipo
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
+                      Estado
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
+                      Efectividad
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {controles.map((c: Record<string, unknown>) => {
+                    const estadoImpl = (c.estado_implementacion ?? '') as EstadoImplementacion;
+                    const efectividad = Number(c.efectividad ?? 0);
+                    return (
+                      <tr
+                        key={c.id as number}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                      >
+                        <td className="px-4 py-3">
+                          <p className="font-medium text-gray-900 dark:text-white">
+                            {(c.control_iso ?? '-') as string}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate max-w-xs">
+                            {(c.descripcion ?? '') as string}
+                          </p>
+                        </td>
+                        <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
+                          {(c.tipo_control_display ?? c.tipo_control ?? '-') as string}
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge
+                            className={
+                              ESTADO_IMPL_COLORS[estadoImpl] ?? 'bg-gray-100 text-gray-800'
+                            }
+                          >
+                            {ESTADO_IMPL_LABELS[estadoImpl] ?? estadoImpl ?? '-'}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden max-w-[80px]">
+                              <div
+                                className="h-full bg-blue-500 rounded-full"
+                                style={{ width: `${efectividad}%` }}
+                              />
+                            </div>
+                            <span className="text-xs text-gray-600 dark:text-gray-400">
+                              {efectividad}%
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB: Incidentes */}
+      {activeTab === 'incidentes' && (
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg">
+          {isLoadingIncidentes ? (
+            <div className="flex items-center justify-center py-12">
+              <Spinner />
+            </div>
+          ) : incidentes.length === 0 ? (
+            <EmptyState
+              icon={Activity}
+              title="Sin incidentes"
+              description="No se han registrado incidentes de seguridad aún."
+            />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 dark:bg-gray-800">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
+                      Incidente
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
+                      Severidad
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
+                      Estado
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
+                      Fecha
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {incidentes.map((i: Record<string, unknown>) => {
+                    const sev = (i.severidad ?? '') as SeveridadIncidenteSI;
+                    const estado = (i.estado ?? '') as EstadoIncidenteSI;
+                    return (
+                      <tr
+                        key={i.id as number}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                      >
+                        <td className="px-4 py-3">
+                          <p className="font-medium text-gray-900 dark:text-white">
+                            {(i.tipo_incidente_display ?? i.tipo_incidente ?? '-') as string}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate max-w-xs">
+                            {(i.descripcion ?? '') as string}
+                          </p>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge
+                            className={SEVERIDAD_SI_COLORS[sev] ?? 'bg-gray-100 text-gray-800'}
+                          >
+                            {SEVERIDAD_SI_LABELS[sev] ?? sev ?? '-'}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
+                          {ESTADO_INCIDENTE_SI_LABELS[estado] ??
+                            (i.estado_display as string) ??
+                            '-'}
+                        </td>
+                        <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
+                          {(i.fecha_deteccion ?? '-') as string}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

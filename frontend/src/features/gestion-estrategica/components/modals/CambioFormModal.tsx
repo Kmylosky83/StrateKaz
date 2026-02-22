@@ -235,7 +235,7 @@ export const CambioFormModal = ({ cambio, isOpen, onClose }: CambioFormModalProp
   const priorityOptions = priorities?.map((p) => ({ value: p.value, label: p.label })) || [];
   const statusOptions = statuses?.map((s) => ({ value: s.value, label: s.label })) || [];
   const objectiveOptions =
-    objectivesData?.results.map((o) => ({ value: o.id, label: `${o.code} - ${o.name}` })) || [];
+    objectivesData?.results?.map((o) => ({ value: o.id, label: `${o.code} - ${o.name}` })) || [];
 
   const footer = (
     <>
@@ -342,13 +342,19 @@ export const CambioFormModal = ({ cambio, isOpen, onClose }: CambioFormModalProp
                   variant="outline"
                   className={`${PRIORITY_CONFIG[formData.priority].textColor} ${PRIORITY_CONFIG[formData.priority].borderColor}`}
                 >
-                  <DynamicIcon name={PRIORITY_CONFIG[formData.priority].icon} className="w-3 h-3 mr-1" />
+                  <DynamicIcon
+                    name={PRIORITY_CONFIG[formData.priority].icon}
+                    className="w-3 h-3 mr-1"
+                  />
                   {PRIORITY_CONFIG[formData.priority].label}
                 </Badge>
                 <Badge
                   className={`${STATUS_CONFIG[formData.status].bgColor} ${STATUS_CONFIG[formData.status].textColor} border-0`}
                 >
-                  <DynamicIcon name={STATUS_CONFIG[formData.status].icon} className="w-3 h-3 mr-1" />
+                  <DynamicIcon
+                    name={STATUS_CONFIG[formData.status].icon}
+                    className="w-3 h-3 mr-1"
+                  />
                   {STATUS_CONFIG[formData.status].label}
                 </Badge>
                 <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">

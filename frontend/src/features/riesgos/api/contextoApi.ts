@@ -28,7 +28,7 @@ import type {
   PaginatedResponse,
 } from '../types';
 
-const BASE_URL = '/api/motor-riesgos/contexto';
+const BASE_URL = '/gestion-estrategica/contexto';
 
 // ==================== ANÁLISIS DOFA ====================
 

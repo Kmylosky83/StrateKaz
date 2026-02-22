@@ -21,7 +21,7 @@ import type {
   OportunidadFilters,
 } from '../types';
 
-const BASE_URL = '/api/motor-riesgos/riesgos-procesos';
+const BASE_URL = '/riesgos/riesgos-procesos';
 
 // ==================== RIESGOS ====================
 
@@ -60,7 +60,9 @@ export const riesgosApi = {
   },
 
   // Acciones especiales
-  getResumen: async (empresaId?: number): Promise<{
+  getResumen: async (
+    empresaId?: number
+  ): Promise<{
     total: number;
     por_estado: Array<{ estado: string; cantidad: number }>;
     por_tipo: Array<{ tipo: string; cantidad: number }>;
@@ -78,12 +80,16 @@ export const riesgosApi = {
     return response.data;
   },
 
-  getMapaCalor: async (empresaId?: number): Promise<Array<{
-    probabilidad: number;
-    impacto: number;
-    cantidad: number;
-    riesgos: Array<{ id: number; nombre: string }>;
-  }>> => {
+  getMapaCalor: async (
+    empresaId?: number
+  ): Promise<
+    Array<{
+      probabilidad: number;
+      impacto: number;
+      cantidad: number;
+      riesgos: Array<{ id: number; nombre: string }>;
+    }>
+  > => {
     const params = empresaId ? `?empresa=${empresaId}` : '';
     const response = await apiClient.get(`${BASE_URL}/riesgos/mapa-calor/${params}`);
     return response.data;
@@ -196,7 +202,9 @@ export const oportunidadesApi = {
   },
 
   cambiarEstado: async (id: number, estado: string): Promise<Oportunidad> => {
-    const response = await apiClient.post(`${BASE_URL}/oportunidades/${id}/cambiar_estado/`, { estado });
+    const response = await apiClient.post(`${BASE_URL}/oportunidades/${id}/cambiar_estado/`, {
+      estado,
+    });
     return response.data;
   },
 };

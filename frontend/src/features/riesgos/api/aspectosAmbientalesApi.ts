@@ -30,7 +30,7 @@ import type {
   ResumenMonitoreosAmbientales,
 } from '../types/aspectos-ambientales.types';
 
-const BASE_URL = '/api/motor-riesgos/aspectos-ambientales';
+const BASE_URL = '/riesgos/aspectos-ambientales';
 
 // ============================================
 // CATEGORIAS DE ASPECTOS (Catalogo)
@@ -95,12 +95,16 @@ export const aspectosAmbientalesApi = {
 
   // Endpoints especiales
   resumen: async (): Promise<ResumenAspectosAmbientales> => {
-    const response = await apiClient.get<ResumenAspectosAmbientales>(`${BASE_URL}/aspectos/resumen/`);
+    const response = await apiClient.get<ResumenAspectosAmbientales>(
+      `${BASE_URL}/aspectos/resumen/`
+    );
     return response.data;
   },
 
   significativos: async (): Promise<AspectoAmbientalList[]> => {
-    const response = await apiClient.get<AspectoAmbientalList[]>(`${BASE_URL}/aspectos/significativos/`);
+    const response = await apiClient.get<AspectoAmbientalList[]>(
+      `${BASE_URL}/aspectos/significativos/`
+    );
     return response.data;
   },
 
@@ -110,7 +114,9 @@ export const aspectosAmbientalesApi = {
   },
 
   incumplimientoLegal: async (): Promise<AspectoAmbientalList[]> => {
-    const response = await apiClient.get<AspectoAmbientalList[]>(`${BASE_URL}/aspectos/incumplimiento_legal/`);
+    const response = await apiClient.get<AspectoAmbientalList[]>(
+      `${BASE_URL}/aspectos/incumplimiento_legal/`
+    );
     return response.data;
   },
 };
@@ -196,7 +202,9 @@ export const programasAmbientalesApi = {
 
   // Endpoints especiales
   resumen: async (): Promise<ResumenProgramasAmbientales> => {
-    const response = await apiClient.get<ResumenProgramasAmbientales>(`${BASE_URL}/programas/resumen/`);
+    const response = await apiClient.get<ResumenProgramasAmbientales>(
+      `${BASE_URL}/programas/resumen/`
+    );
     return response.data;
   },
 
@@ -206,7 +214,9 @@ export const programasAmbientalesApi = {
   },
 
   vencidos: async (): Promise<ProgramaAmbientalList[]> => {
-    const response = await apiClient.get<ProgramaAmbientalList[]>(`${BASE_URL}/programas/vencidos/`);
+    const response = await apiClient.get<ProgramaAmbientalList[]>(
+      `${BASE_URL}/programas/vencidos/`
+    );
     return response.data;
   },
 };
@@ -234,7 +244,10 @@ export const monitoreosAmbientalesApi = {
   },
 
   update: async (id: number, data: MonitoreoAmbientalUpdate): Promise<MonitoreoAmbiental> => {
-    const response = await apiClient.patch<MonitoreoAmbiental>(`${BASE_URL}/monitoreos/${id}/`, data);
+    const response = await apiClient.patch<MonitoreoAmbiental>(
+      `${BASE_URL}/monitoreos/${id}/`,
+      data
+    );
     return response.data;
   },
 
@@ -244,19 +257,26 @@ export const monitoreosAmbientalesApi = {
 
   // Endpoints especiales
   resumen: async (): Promise<ResumenMonitoreosAmbientales> => {
-    const response = await apiClient.get<ResumenMonitoreosAmbientales>(`${BASE_URL}/monitoreos/resumen/`);
+    const response = await apiClient.get<ResumenMonitoreosAmbientales>(
+      `${BASE_URL}/monitoreos/resumen/`
+    );
     return response.data;
   },
 
   incumplimientos: async (): Promise<MonitoreoAmbiental[]> => {
-    const response = await apiClient.get<MonitoreoAmbiental[]>(`${BASE_URL}/monitoreos/incumplimientos/`);
+    const response = await apiClient.get<MonitoreoAmbiental[]>(
+      `${BASE_URL}/monitoreos/incumplimientos/`
+    );
     return response.data;
   },
 
   porRangoFechas: async (fechaInicio: string, fechaFin: string): Promise<MonitoreoAmbiental[]> => {
-    const response = await apiClient.get<MonitoreoAmbiental[]>(`${BASE_URL}/monitoreos/por_rango_fechas/`, {
-      params: { fecha_inicio: fechaInicio, fecha_fin: fechaFin },
-    });
+    const response = await apiClient.get<MonitoreoAmbiental[]>(
+      `${BASE_URL}/monitoreos/por_rango_fechas/`,
+      {
+        params: { fecha_inicio: fechaInicio, fecha_fin: fechaFin },
+      }
+    );
     return response.data;
   },
 

@@ -17,7 +17,7 @@ import type {
   ControlSSTFilters,
 } from '../types';
 
-const BASE_URL = '/api/motor-riesgos/ipevr';
+const BASE_URL = '/riesgos/ipevr';
 
 // ==================== CLASIFICACION DE PELIGROS ====================
 
@@ -38,9 +38,9 @@ export const clasificacionPeligroApi = {
   },
 
   porCategoria: async () => {
-    const response = await apiClient.get<Record<string, { nombre: string; items: ClasificacionPeligro[] }>>(
-      `${BASE_URL}/clasificaciones/por_categoria/`
-    );
+    const response = await apiClient.get<
+      Record<string, { nombre: string; items: ClasificacionPeligro[] }>
+    >(`${BASE_URL}/clasificaciones/por_categoria/`);
     return response.data;
   },
 };
@@ -49,26 +49,22 @@ export const clasificacionPeligroApi = {
 
 export const peligroGTC45Api = {
   getAll: async (params?: { clasificacion?: number; is_active?: boolean }) => {
-    const response = await apiClient.get<PaginatedResponse<PeligroGTC45>>(
-      `${BASE_URL}/peligros/`,
-      { params }
-    );
+    const response = await apiClient.get<PaginatedResponse<PeligroGTC45>>(`${BASE_URL}/peligros/`, {
+      params,
+    });
     return response.data;
   },
 
   getById: async (id: number) => {
-    const response = await apiClient.get<PeligroGTC45>(
-      `${BASE_URL}/peligros/${id}/`
-    );
+    const response = await apiClient.get<PeligroGTC45>(`${BASE_URL}/peligros/${id}/`);
     return response.data;
   },
 
   porClasificacion: async (clasificacionId?: number) => {
     const params = clasificacionId ? { clasificacion_id: clasificacionId } : {};
-    const response = await apiClient.get<Record<string, { nombre: string; categoria: string; color: string; peligros: PeligroGTC45[] }>>(
-      `${BASE_URL}/peligros/por_clasificacion/`,
-      { params }
-    );
+    const response = await apiClient.get<
+      Record<string, { nombre: string; categoria: string; color: string; peligros: PeligroGTC45[] }>
+    >(`${BASE_URL}/peligros/por_clasificacion/`, { params });
     return response.data;
   },
 };
@@ -77,33 +73,24 @@ export const peligroGTC45Api = {
 
 export const matrizIPEVRApi = {
   getAll: async (params?: MatrizIPEVRFilters & { page?: number; page_size?: number }) => {
-    const response = await apiClient.get<PaginatedResponse<MatrizIPEVR>>(
-      `${BASE_URL}/matrices/`,
-      { params }
-    );
+    const response = await apiClient.get<PaginatedResponse<MatrizIPEVR>>(`${BASE_URL}/matrices/`, {
+      params,
+    });
     return response.data;
   },
 
   getById: async (id: number) => {
-    const response = await apiClient.get<MatrizIPEVR>(
-      `${BASE_URL}/matrices/${id}/`
-    );
+    const response = await apiClient.get<MatrizIPEVR>(`${BASE_URL}/matrices/${id}/`);
     return response.data;
   },
 
   create: async (data: CreateMatrizIPEVRDTO) => {
-    const response = await apiClient.post<MatrizIPEVR>(
-      `${BASE_URL}/matrices/`,
-      data
-    );
+    const response = await apiClient.post<MatrizIPEVR>(`${BASE_URL}/matrices/`, data);
     return response.data;
   },
 
   update: async (id: number, data: UpdateMatrizIPEVRDTO) => {
-    const response = await apiClient.patch<MatrizIPEVR>(
-      `${BASE_URL}/matrices/${id}/`,
-      data
-    );
+    const response = await apiClient.patch<MatrizIPEVR>(`${BASE_URL}/matrices/${id}/`, data);
     return response.data;
   },
 
@@ -114,19 +101,15 @@ export const matrizIPEVRApi = {
   // Acciones especiales
   resumen: async (empresaId?: number) => {
     const params = empresaId ? { empresa: empresaId } : {};
-    const response = await apiClient.get<ResumenIPEVR>(
-      `${BASE_URL}/matrices/resumen/`,
-      { params }
-    );
+    const response = await apiClient.get<ResumenIPEVR>(`${BASE_URL}/matrices/resumen/`, { params });
     return response.data;
   },
 
   criticos: async (empresaId?: number) => {
     const params = empresaId ? { empresa: empresaId } : {};
-    const response = await apiClient.get<MatrizIPEVR[]>(
-      `${BASE_URL}/matrices/criticos/`,
-      { params }
-    );
+    const response = await apiClient.get<MatrizIPEVR[]>(`${BASE_URL}/matrices/criticos/`, {
+      params,
+    });
     return response.data;
   },
 
@@ -150,10 +133,13 @@ export const matrizIPEVRApi = {
 
   porPeligro: async (empresaId?: number) => {
     const params = empresaId ? { empresa: empresaId } : {};
-    const response = await apiClient.get<Array<{ peligro__clasificacion__categoria: string; peligro__clasificacion__nombre: string; total: number }>>(
-      `${BASE_URL}/matrices/por_peligro/`,
-      { params }
-    );
+    const response = await apiClient.get<
+      Array<{
+        peligro__clasificacion__categoria: string;
+        peligro__clasificacion__nombre: string;
+        total: number;
+      }>
+    >(`${BASE_URL}/matrices/por_peligro/`, { params });
     return response.data;
   },
 
@@ -170,33 +156,24 @@ export const matrizIPEVRApi = {
 
 export const controlSSTApi = {
   getAll: async (params?: ControlSSTFilters & { page?: number; page_size?: number }) => {
-    const response = await apiClient.get<PaginatedResponse<ControlSST>>(
-      `${BASE_URL}/controles/`,
-      { params }
-    );
+    const response = await apiClient.get<PaginatedResponse<ControlSST>>(`${BASE_URL}/controles/`, {
+      params,
+    });
     return response.data;
   },
 
   getById: async (id: number) => {
-    const response = await apiClient.get<ControlSST>(
-      `${BASE_URL}/controles/${id}/`
-    );
+    const response = await apiClient.get<ControlSST>(`${BASE_URL}/controles/${id}/`);
     return response.data;
   },
 
   create: async (data: CreateControlSSTDTO) => {
-    const response = await apiClient.post<ControlSST>(
-      `${BASE_URL}/controles/`,
-      data
-    );
+    const response = await apiClient.post<ControlSST>(`${BASE_URL}/controles/`, data);
     return response.data;
   },
 
   update: async (id: number, data: UpdateControlSSTDTO) => {
-    const response = await apiClient.patch<ControlSST>(
-      `${BASE_URL}/controles/${id}/`,
-      data
-    );
+    const response = await apiClient.patch<ControlSST>(`${BASE_URL}/controles/${id}/`, data);
     return response.data;
   },
 
@@ -207,19 +184,17 @@ export const controlSSTApi = {
   // Acciones especiales
   pendientes: async (empresaId?: number) => {
     const params = empresaId ? { empresa: empresaId } : {};
-    const response = await apiClient.get<ControlSST[]>(
-      `${BASE_URL}/controles/pendientes/`,
-      { params }
-    );
+    const response = await apiClient.get<ControlSST[]>(`${BASE_URL}/controles/pendientes/`, {
+      params,
+    });
     return response.data;
   },
 
   porTipo: async (empresaId?: number) => {
     const params = empresaId ? { empresa: empresaId } : {};
-    const response = await apiClient.get<Array<{ tipo_control: string; total: number; implementados: number; verificados: number }>>(
-      `${BASE_URL}/controles/por_tipo/`,
-      { params }
-    );
+    const response = await apiClient.get<
+      Array<{ tipo_control: string; total: number; implementados: number; verificados: number }>
+    >(`${BASE_URL}/controles/por_tipo/`, { params });
     return response.data;
   },
 };

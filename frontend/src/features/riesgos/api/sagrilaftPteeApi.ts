@@ -12,7 +12,7 @@ import type {
   DebidaDiligencia,
 } from '../types/sagrilaft-ptee.types';
 
-const BASE_URL = '/api/riesgos/sagrilaft';
+const BASE_URL = '/riesgos/sagrilaft';
 
 // ============================================
 // FACTORES DE RIESGO LA/FT

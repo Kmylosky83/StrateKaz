@@ -34,7 +34,7 @@ import type {
   PilarPESV,
 } from '../types/riesgos-viales.types';
 
-const BASE_URL = '/api/motor-riesgos/riesgos-viales';
+const BASE_URL = '/riesgos/riesgos-viales';
 
 // ============================================
 // TIPOS/FACTORES DE RIESGO VIAL (Catalogo)
@@ -226,12 +226,16 @@ export const incidentesVialesApi = {
 
   // Endpoints especiales
   resumen: async (): Promise<ResumenIncidentesViales> => {
-    const response = await apiClient.get<ResumenIncidentesViales>(`${BASE_URL}/incidentes/resumen/`);
+    const response = await apiClient.get<ResumenIncidentesViales>(
+      `${BASE_URL}/incidentes/resumen/`
+    );
     return response.data;
   },
 
   pendientesInvestigacion: async (): Promise<IncidenteVialList[]> => {
-    const response = await apiClient.get<IncidenteVialList[]>(`${BASE_URL}/incidentes/pendientes_investigacion/`);
+    const response = await apiClient.get<IncidenteVialList[]>(
+      `${BASE_URL}/incidentes/pendientes_investigacion/`
+    );
     return response.data;
   },
 
@@ -241,17 +245,23 @@ export const incidentesVialesApi = {
   },
 
   porRangoFechas: async (fechaInicio: string, fechaFin: string): Promise<IncidenteVialList[]> => {
-    const response = await apiClient.get<IncidenteVialList[]>(`${BASE_URL}/incidentes/por_rango_fechas/`, {
-      params: { fecha_inicio: fechaInicio, fecha_fin: fechaFin },
-    });
+    const response = await apiClient.get<IncidenteVialList[]>(
+      `${BASE_URL}/incidentes/por_rango_fechas/`,
+      {
+        params: { fecha_inicio: fechaInicio, fecha_fin: fechaFin },
+      }
+    );
     return response.data;
   },
 
   // Acciones especiales
   iniciarInvestigacion: async (id: number, responsableId: number): Promise<IncidenteVial> => {
-    const response = await apiClient.post<IncidenteVial>(`${BASE_URL}/incidentes/${id}/iniciar_investigacion/`, {
-      responsable_investigacion_id: responsableId,
-    });
+    const response = await apiClient.post<IncidenteVial>(
+      `${BASE_URL}/incidentes/${id}/iniciar_investigacion/`,
+      {
+        responsable_investigacion_id: responsableId,
+      }
+    );
     return response.data;
   },
 
@@ -264,7 +274,10 @@ export const incidentesVialesApi = {
       acciones_correctivas: string;
     }
   ): Promise<IncidenteVial> => {
-    const response = await apiClient.post<IncidenteVial>(`${BASE_URL}/incidentes/${id}/cerrar_investigacion/`, data);
+    const response = await apiClient.post<IncidenteVial>(
+      `${BASE_URL}/incidentes/${id}/cerrar_investigacion/`,
+      data
+    );
     return response.data;
   },
 
@@ -272,7 +285,10 @@ export const incidentesVialesApi = {
     id: number,
     data: { numero_reporte_arl: string; fecha_reporte_arl: string }
   ): Promise<IncidenteVial> => {
-    const response = await apiClient.post<IncidenteVial>(`${BASE_URL}/incidentes/${id}/reportar_arl/`, data);
+    const response = await apiClient.post<IncidenteVial>(
+      `${BASE_URL}/incidentes/${id}/reportar_arl/`,
+      data
+    );
     return response.data;
   },
 };
@@ -300,7 +316,10 @@ export const inspeccionesVehiculoApi = {
   },
 
   update: async (id: number, data: InspeccionVehiculoUpdate): Promise<InspeccionVehiculo> => {
-    const response = await apiClient.patch<InspeccionVehiculo>(`${BASE_URL}/inspecciones/${id}/`, data);
+    const response = await apiClient.patch<InspeccionVehiculo>(
+      `${BASE_URL}/inspecciones/${id}/`,
+      data
+    );
     return response.data;
   },
 
@@ -310,12 +329,16 @@ export const inspeccionesVehiculoApi = {
 
   // Endpoints especiales
   resumen: async (): Promise<ResumenInspeccionesVehiculo> => {
-    const response = await apiClient.get<ResumenInspeccionesVehiculo>(`${BASE_URL}/inspecciones/resumen/`);
+    const response = await apiClient.get<ResumenInspeccionesVehiculo>(
+      `${BASE_URL}/inspecciones/resumen/`
+    );
     return response.data;
   },
 
   rechazadas: async (): Promise<InspeccionVehiculo[]> => {
-    const response = await apiClient.get<InspeccionVehiculo[]>(`${BASE_URL}/inspecciones/rechazadas/`);
+    const response = await apiClient.get<InspeccionVehiculo[]>(
+      `${BASE_URL}/inspecciones/rechazadas/`
+    );
     return response.data;
   },
 
@@ -327,9 +350,12 @@ export const inspeccionesVehiculoApi = {
   },
 
   porRangoFechas: async (fechaInicio: string, fechaFin: string): Promise<InspeccionVehiculo[]> => {
-    const response = await apiClient.get<InspeccionVehiculo[]>(`${BASE_URL}/inspecciones/por_rango_fechas/`, {
-      params: { fecha_inicio: fechaInicio, fecha_fin: fechaFin },
-    });
+    const response = await apiClient.get<InspeccionVehiculo[]>(
+      `${BASE_URL}/inspecciones/por_rango_fechas/`,
+      {
+        params: { fecha_inicio: fechaInicio, fecha_fin: fechaFin },
+      }
+    );
     return response.data;
   },
 
@@ -359,12 +385,16 @@ export const estadisticasPESVApi = {
     return response.data;
   },
 
-  getIndicadores: async (
-    periodo?: { fecha_inicio: string; fecha_fin: string }
-  ): Promise<EstadisticasPESV['indicadores']> => {
-    const response = await apiClient.get<EstadisticasPESV['indicadores']>(`${BASE_URL}/estadisticas/indicadores/`, {
-      params: periodo,
-    });
+  getIndicadores: async (periodo?: {
+    fecha_inicio: string;
+    fecha_fin: string;
+  }): Promise<EstadisticasPESV['indicadores']> => {
+    const response = await apiClient.get<EstadisticasPESV['indicadores']>(
+      `${BASE_URL}/estadisticas/indicadores/`,
+      {
+        params: periodo,
+      }
+    );
     return response.data;
   },
 

@@ -12,7 +12,7 @@ import type {
   IncidenteSeguridad,
 } from '../types/seguridad-informacion.types';
 
-const BASE_URL = '/api/riesgos/seguridad-info';
+const BASE_URL = '/riesgos/seguridad-info';
 
 // ============================================
 // ACTIVOS DE INFORMACIÓN

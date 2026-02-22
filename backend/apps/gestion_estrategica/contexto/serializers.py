@@ -163,18 +163,6 @@ class EstrategiaTOWSSerializer(serializers.ModelSerializer):
     responsable_name = serializers.CharField(source='responsable.name', read_only=True)
     created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
 
-    # Objetivo estratégico vinculado
-    objetivo_estrategico_code = serializers.CharField(
-        source='objetivo_estrategico.code',
-        read_only=True,
-        allow_null=True
-    )
-    objetivo_estrategico_name = serializers.CharField(
-        source='objetivo_estrategico.name',
-        read_only=True,
-        allow_null=True
-    )
-
     # Computed fields
     dias_restantes = serializers.SerializerMethodField()
 
@@ -184,7 +172,6 @@ class EstrategiaTOWSSerializer(serializers.ModelSerializer):
             'id', 'analisis', 'tipo', 'tipo_display', 'descripcion', 'objetivo',
             'responsable', 'responsable_name',
             'area_responsable', 'area_responsable_id',
-            'objetivo_estrategico', 'objetivo_estrategico_code', 'objetivo_estrategico_name',
             'fecha_implementacion', 'fecha_limite',
             'prioridad', 'prioridad_display', 'estado', 'estado_display',
             'recursos_necesarios', 'indicadores_exito', 'progreso_porcentaje',

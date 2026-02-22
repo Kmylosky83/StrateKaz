@@ -132,11 +132,18 @@ class ParticipanteEncuestaSerializer(serializers.ModelSerializer):
 
 
 class ParticipanteEncuestaCreateSerializer(serializers.ModelSerializer):
-    """Serializer para crear participantes"""
+    """Serializer para crear participantes.
+
+    `encuesta` es requerido cuando se usa directamente via POST /participantes/.
+    Cuando se usa inline en EncuestaDofaCreateSerializer, se asigna manualmente.
+    """
 
     class Meta:
         model = ParticipanteEncuesta
-        fields = ['tipo', 'usuario', 'area', 'cargo']
+        fields = ['encuesta', 'tipo', 'usuario', 'area', 'cargo']
+        extra_kwargs = {
+            'encuesta': {'required': False},
+        }
 
     def validate(self, attrs):
         tipo = attrs.get('tipo')

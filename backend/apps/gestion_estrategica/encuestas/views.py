@@ -350,6 +350,13 @@ class ParticipanteEncuestaViewSet(viewsets.ModelViewSet):
             return ParticipanteEncuestaCreateSerializer
         return ParticipanteEncuestaSerializer
 
+    def perform_create(self, serializer):
+        """Valida que encuesta esté presente al crear directamente."""
+        if not serializer.validated_data.get('encuesta'):
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError({'encuesta': 'Este campo es requerido.'})
+        serializer.save()
+
 
 class RespuestaEncuestaViewSet(viewsets.ModelViewSet):
     """

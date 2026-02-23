@@ -6,28 +6,39 @@
 // ============ PERFIL ============
 
 export interface ColaboradorESS {
-  id: string;
+  id: number;
   nombre_completo: string;
   numero_identificacion: string;
-  cargo_nombre: string;
-  area_nombre: string;
+  tipo_identificacion: string;
+  cargo_nombre: string | null;
+  area_nombre: string | null;
   fecha_ingreso: string;
   estado: string;
+  /** URL absoluta de la foto del colaborador (sincronizada con User.photo via signal) */
   foto_url: string | null;
-  telefono: string;
-  celular: string;
-  direccion: string;
+  /** Email del sistema (User.email — no editable por ESS) */
+  email: string | null;
+  /** Email personal editable — Colaborador.email_personal */
   email_personal: string;
+  /** Teléfono móvil — Colaborador.telefono_movil */
+  celular: string;
+  /** Teléfono fijo — InfoPersonal.telefono_fijo */
+  telefono: string;
+  /** Dirección de residencia — InfoPersonal.direccion */
+  direccion: string;
+  /** Ciudad de residencia — InfoPersonal.ciudad */
+  ciudad: string;
   contacto_emergencia_nombre: string;
   contacto_emergencia_telefono: string;
   contacto_emergencia_parentesco: string;
 }
 
 export interface InfoPersonalUpdateData {
-  telefono?: string;
   celular?: string;
-  direccion?: string;
   email_personal?: string;
+  telefono?: string;
+  direccion?: string;
+  ciudad?: string;
   contacto_emergencia_nombre?: string;
   contacto_emergencia_telefono?: string;
   contacto_emergencia_parentesco?: string;
@@ -52,13 +63,7 @@ export interface SolicitudVacacionesFormData {
 
 // ============ PERMISOS ============
 
-export type TipoPermisoESS =
-  | 'personal'
-  | 'medico'
-  | 'familiar'
-  | 'academico'
-  | 'legal'
-  | 'otro';
+export type TipoPermisoESS = 'personal' | 'medico' | 'familiar' | 'academico' | 'legal' | 'otro';
 
 export interface SolicitudPermisoFormData {
   tipo_permiso: TipoPermisoESS;

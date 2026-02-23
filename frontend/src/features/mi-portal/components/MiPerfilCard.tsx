@@ -121,21 +121,24 @@ export function MiPerfilCard({ perfil, isLoading, onEdit, onAvatarClick }: MiPer
             <h4 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
               Informacion de contacto
             </h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <InfoItem
                 icon={Mail}
-                label="Email"
+                label="Email personal"
                 value={perfil.email_personal || 'Sin email personal'}
               />
               <InfoItem
                 icon={Phone}
-                label="Telefono"
-                value={perfil.celular || perfil.telefono || 'Sin telefono'}
+                label="Celular / Teléfono"
+                value={
+                  [perfil.celular, perfil.telefono].filter(Boolean).join(' · ') || 'Sin teléfono'
+                }
               />
+              <InfoItem icon={MapPin} label="Ciudad" value={perfil.ciudad || 'Sin ciudad'} />
               <InfoItem
                 icon={MapPin}
-                label="Direccion"
-                value={perfil.direccion || 'Sin direccion'}
+                label="Dirección"
+                value={perfil.direccion || 'Sin dirección'}
               />
             </div>
           </div>

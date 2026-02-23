@@ -51,7 +51,7 @@ class MiPerfilView(APIView):
                     {'error': 'No tiene un perfil de colaborador asociado.'},
                     status=status.HTTP_404_NOT_FOUND
                 )
-            serializer = ColaboradorESSSerializer(colaborador)
+            serializer = ColaboradorESSSerializer(colaborador, context={'request': request})
             return Response(serializer.data)
         except Exception as e:
             logger.error(f'mi-perfil GET error: {type(e).__name__}: {e}', exc_info=True)
@@ -67,17 +67,64 @@ class MiPerfilView(APIView):
                 {'error': 'No tiene un perfil de colaborador asociado.'},
                 status=status.HTTP_404_NOT_FOUND
             )
+
         serializer = InfoPersonalUpdateESSSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
 
-        # Actualizar solo los campos permitidos
-        for field, value in serializer.validated_data.items():
-            if hasattr(colaborador, field):
-                setattr(colaborador, field, value)
-        colaborador.updated_by = request.user
-        colaborador.save()
+        # ── Campos directos en Colaborador ───────────────────────────────────
+        # celular → telefono_movil | email_personal → email_personal
+        colaborador_dirty = False
+        if 'celular' in data:
+            colaborador.telefono_movil = data['celular']
+            colaborador_dirty = True
+        if 'email_personal' in data:
+            colaborador.email_personal = data['email_personal']
+            colaborador_dirty = True
 
-        return Response(ColaboradorESSSerializer(colaborador).data)
+        if colaborador_dirty:
+            colaborador.updated_by = request.user
+            colaborador.save(
+                update_fields=['telefono_movil', 'email_personal', 'updated_by', 'updated_at']
+            )
+
+        # ── Campos en InfoPersonal (OneToOne via info_personal) ──────────────
+        INFO_FIELD_MAP = {
+            'telefono': 'telefono_fijo',
+            'direccion': 'direccion',
+            'ciudad': 'ciudad',
+            'contacto_emergencia_nombre': 'nombre_contacto_emergencia',
+            'contacto_emergencia_telefono': 'telefono_contacto_emergencia',
+            'contacto_emergencia_parentesco': 'parentesco_contacto_emergencia',
+        }
+        info_updates = {
+            INFO_FIELD_MAP[k]: v
+            for k, v in data.items()
+            if k in INFO_FIELD_MAP
+        }
+
+        if info_updates:
+            from apps.talent_hub.colaboradores.models import InfoPersonal
+            info_personal, _ = InfoPersonal.objects.get_or_create(
+                colaborador=colaborador,
+                defaults={
+                    'empresa': colaborador.empresa,
+                    'created_by': request.user,
+                    'updated_by': request.user,
+                },
+            )
+            for field, value in info_updates.items():
+                setattr(info_personal, field, value)
+            info_personal.updated_by = request.user
+            info_personal.save(
+                update_fields=list(info_updates.keys()) + ['updated_by', 'updated_at']
+            )
+
+        # Refrescar desde DB para que los SerializerMethodField lean valores actualizados
+        colaborador.refresh_from_db()
+        return Response(
+            ColaboradorESSSerializer(colaborador, context={'request': request}).data
+        )
 
 
 class MisVacacionesView(APIView):

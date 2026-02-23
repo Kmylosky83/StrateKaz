@@ -35,7 +35,6 @@ import { Spinner } from '@/components/common/Spinner';
 import { cn } from '@/utils/cn';
 import { useModulesTree } from '@/features/gestion-estrategica/hooks/useModules';
 import { useCargoSectionAccess, useSaveCargoSectionAccess } from '../../hooks/useCargos';
-import { useAuthStore } from '@/store/authStore';
 import type {
   SystemModuleTree,
   ModuleTab,
@@ -73,7 +72,11 @@ export const TabAccesoSecciones = ({ cargoId, cargoName: _cargoName }: TabAcceso
 
   // Queries
   const { data: modulesTree, isLoading: isLoadingModules } = useModulesTree();
-  const { data: cargoAccessData, isLoading: isLoadingAccess } = useCargoSectionAccess(cargoId);
+  const {
+    data: cargoAccessData,
+    isLoading: isLoadingAccess,
+    refetch: refetchAccess,
+  } = useCargoSectionAccess(cargoId);
   const saveMutation = useSaveCargoSectionAccess();
 
   // Resetear initialized cuando cambia el cargoId (otro cargo seleccionado)
@@ -339,29 +342,37 @@ export const TabAccesoSecciones = ({ cargoId, cargoName: _cargoName }: TabAcceso
     [localAccesses]
   );
 
-  // Usuarios y autenticación
-  const user = useAuthStore((s) => s.user);
-  const loadUserProfile = useAuthStore((s) => s.loadUserProfile);
-
   // Guardar cambios
   const handleSave = async () => {
     const accesses = Array.from(localAccesses.values());
-    await saveMutation.mutateAsync({
-      cargoId,
-      accesses,
-    });
+    await saveMutation.mutateAsync({ cargoId, accesses });
 
-    // Resetear initialized para que al refetch del servidor,
-    // el estado local se sincronice con los datos confirmados
-    setInitialized(false);
-
-    // Si estamos editando el cargo del usuario actual, refrescar su perfil
-    // para que los cambios de permisos se reflejen inmediatamente en la UI
-    if (user?.cargo?.id === cargoId) {
-      // Forzar recarga del perfil para actualizar permission_codes
-      useAuthStore.setState({ user: null });
-      await loadUserProfile();
+    // CRÍTICO: NO usar setInitialized(false) aquí.
+    // Causaría race condition: el useEffect de init se dispara con cargoAccessData
+    // stale (antes de que el refetch complete), sobreescribiendo localAccesses con
+    // datos vacíos/viejos. El usuario ve la UI vacía, guarda de nuevo, y con
+    // replace=true el backend borra TODOS los accesos del cargo.
+    //
+    // Solución: forzar refetch explícito y sincronizar localAccesses manualmente
+    // con los datos CONFIRMADOS del servidor.
+    const { data: freshData } = await refetchAccess();
+    if (freshData?.accesses) {
+      const newMap = new Map<number, SectionAccess>();
+      for (const access of freshData.accesses) {
+        newMap.set(access.section_id, {
+          section_id: access.section_id,
+          can_view: access.can_view,
+          can_create: access.can_create,
+          can_edit: access.can_edit,
+          can_delete: access.can_delete,
+          custom_actions: access.custom_actions || {},
+        });
+      }
+      setLocalAccesses(newMap);
+      // initialized permanece true: el useEffect de init NO sobreescribirá el estado
     }
+    // Nota: useSaveCargoSectionAccess.onSuccess ya maneja refreshUserProfile()
+    // para el cargo del usuario actual. No duplicar aquí.
   };
 
   // Revertir cambios

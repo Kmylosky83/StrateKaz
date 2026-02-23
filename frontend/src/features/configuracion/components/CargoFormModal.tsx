@@ -286,9 +286,19 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
     setActiveTab('identificacion');
   }, [cargoCompleto]);
 
-  // Reset cuando se cierra o cambia a crear nuevo
+  // Reset cuando el modal se ABRE en modo creación (cargo=null).
+  //
+  // PROBLEMA RESUELTO: CargoFormModal permanece montado en el parent entre aperturas
+  // (BaseModal solo desmonta sus children via AnimatePresence, no el componente padre).
+  // Con [cargo] como única dependencia: si cargo siempre es null entre dos sesiones
+  // de creación, el efecto nunca se re-ejecuta y createdCargo conserva el ID del
+  // cargo creado anteriormente → isEditing=true → handleSubmit hace UPDATE en vez de
+  // CREATE, editando accidentalmente el cargo anterior.
+  //
+  // Solución: agregar isOpen a las dependencias. Cuando isOpen cambia de false→true
+  // con cargo=null, el efecto se dispara y limpia el estado.
   useEffect(() => {
-    if (!cargo) {
+    if (!cargo && isOpen) {
       setCreatedCargo(null);
       setFormData({
         code: '',
@@ -326,7 +336,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
       });
       setActiveTab('identificacion');
     }
-  }, [cargo]);
+  }, [isOpen, cargo]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

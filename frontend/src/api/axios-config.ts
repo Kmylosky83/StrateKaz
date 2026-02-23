@@ -70,12 +70,10 @@ axiosInstance.interceptors.response.use(
         }
         return axiosInstance(originalRequest);
       } catch (refreshError) {
-        // Si falla el refresh, limpiar estado completo via forceLogout
+        // forceLogout limpia localStorage + Zustand + RQ cache.
+        // ProtectedRoute detecta ausencia de tokens y redirige a /login via React Router.
+        // NO usar window.location.href: causa hard reload que borra estado y hace loop.
         useAuthStore.getState().forceLogout();
-        // Solo redirigir si NO estamos ya en login (evitar loop)
-        if (!window.location.pathname.startsWith('/login')) {
-          window.location.href = '/login';
-        }
         return Promise.reject(refreshError);
       }
     }

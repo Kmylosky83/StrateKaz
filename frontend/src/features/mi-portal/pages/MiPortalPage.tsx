@@ -25,6 +25,7 @@ import {
   Sunset,
   Moon,
   Clock,
+  Camera,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Tabs, AnimatedPage, Badge, Card, Avatar, Skeleton } from '@/components/common';
@@ -237,14 +238,24 @@ export default function MiPortalPage() {
             />
             <div className="p-6 md:p-8">
               <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-                {/* Avatar */}
-                <Avatar
-                  src={perfil?.foto_url || user?.photo_url || undefined}
-                  name={fullName}
-                  size="2xl"
-                  status={isExterno ? 'external' : 'active'}
-                  className="ring-4 ring-white dark:ring-gray-800 shadow-lg flex-shrink-0"
-                />
+                {/* Avatar — clickeable para abrir modal de edición */}
+                <button
+                  type="button"
+                  onClick={() => setShowEditPerfil(true)}
+                  className="relative group focus:outline-none flex-shrink-0"
+                  title="Cambiar foto de perfil"
+                >
+                  <Avatar
+                    src={perfil?.foto_url || user?.photo_url || undefined}
+                    name={fullName}
+                    size="2xl"
+                    status={isExterno ? 'external' : 'active'}
+                    className="ring-4 ring-white dark:ring-gray-800 shadow-lg"
+                  />
+                  <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/30 transition-all duration-200 flex items-center justify-center">
+                    <Camera className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </button>
 
                 {/* Greeting & Info */}
                 <div className="flex-1 min-w-0">

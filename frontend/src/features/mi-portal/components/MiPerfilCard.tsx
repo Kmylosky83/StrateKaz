@@ -14,6 +14,7 @@ import {
   AlertCircle,
   Heart,
   Pencil,
+  Camera,
 } from 'lucide-react';
 import { Card, Badge, Avatar, Skeleton } from '@/components/common';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
@@ -70,12 +71,18 @@ export function MiPerfilCard({ perfil, isLoading, onEdit }: MiPerfilCardProps) {
     <Card className="p-6">
       {/* Header: Avatar + Nombre + Badge */}
       <div className="flex flex-col md:flex-row items-start gap-6">
-        <Avatar
-          src={perfil.foto_url}
-          alt={perfil.nombre_completo}
-          size="xl"
-          className="flex-shrink-0"
-        />
+        {/* Avatar clickeable para cambiar foto */}
+        <button
+          type="button"
+          onClick={onEdit}
+          className="relative group focus:outline-none flex-shrink-0"
+          title="Cambiar foto de perfil"
+        >
+          <Avatar src={perfil.foto_url} alt={perfil.nombre_completo} size="xl" />
+          <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/30 transition-all duration-200 flex items-center justify-center">
+            <Camera className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
+        </button>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-3">

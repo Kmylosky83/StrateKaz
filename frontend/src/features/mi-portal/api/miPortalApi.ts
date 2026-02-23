@@ -6,6 +6,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { api } from '@/lib/api-client';
+import { authAPI } from '@/api/auth.api';
+import { useAuthStore } from '@/store/authStore';
 import type {
   ColaboradorESS,
   InfoPersonalUpdateData,
@@ -69,6 +71,25 @@ export function useUpdateMiPerfil() {
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.detail || 'Error al actualizar datos');
+    },
+  });
+}
+
+export function useUploadMiPhoto() {
+  const queryClient = useQueryClient();
+  const refreshUserProfile = useAuthStore((s) => s.refreshUserProfile);
+
+  return useMutation({
+    mutationFn: (file: File) => authAPI.uploadPhoto(file),
+    onSuccess: () => {
+      // Refresh foto_url en el perfil ESS (Colaborador.foto via signal)
+      queryClient.invalidateQueries({ queryKey: miPortalKeys.perfil() });
+      // Refresh photo_url en el user del authStore
+      refreshUserProfile();
+      toast.success('Foto actualizada');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.detail || 'Error al subir la foto');
     },
   });
 }

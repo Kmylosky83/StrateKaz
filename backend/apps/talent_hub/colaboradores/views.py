@@ -198,6 +198,7 @@ class ColaboradorViewSet(viewsets.ModelViewSet):
         # Enviar email de configuracion de contraseña (async)
         try:
             from apps.core.tasks import send_setup_password_email_task
+            from django.db import connection
 
             frontend_url = getattr(settings, 'FRONTEND_URL', 'https://app.stratekaz.com')
             setup_url = f"{frontend_url}/setup-password?token={setup_token}&email={email}"
@@ -206,6 +207,14 @@ class ColaboradorViewSet(viewsets.ModelViewSet):
             if hasattr(empresa, 'razon_social') and empresa.razon_social:
                 tenant_name = empresa.razon_social
 
+            # Obtener colores del tenant para el email con branding corporativo
+            try:
+                primary_color = connection.tenant.primary_color or '#3b82f6'
+                secondary_color = connection.tenant.secondary_color or '#1e40af'
+            except Exception:
+                primary_color = '#3b82f6'
+                secondary_color = '#1e40af'
+
             send_setup_password_email_task.delay(
                 user_email=email,
                 user_name=colaborador.get_nombre_completo(),
@@ -213,6 +222,8 @@ class ColaboradorViewSet(viewsets.ModelViewSet):
                 cargo_name=colaborador.cargo.name if colaborador.cargo else '',
                 setup_url=setup_url,
                 expiry_hours=72,
+                primary_color=primary_color,
+                secondary_color=secondary_color,
             )
             logger.info(
                 'User %s creado para Colaborador %s, email de setup enviado a %s',

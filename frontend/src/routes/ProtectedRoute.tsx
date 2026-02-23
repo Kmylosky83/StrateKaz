@@ -7,8 +7,6 @@ export const ProtectedRoute = () => {
   const hasHydrated = useAuthStore((state) => state._hasHydrated);
   const currentTenantId = useAuthStore((state) => state.currentTenantId);
   const isSuperadmin = useAuthStore((state) => state.isSuperadmin);
-  const user = useAuthStore((state) => state.user);
-  const isLoadingUser = useAuthStore((state) => state.isLoadingUser);
   const location = useLocation();
 
   // Esperar a que Zustand termine de rehidratarse desde localStorage.
@@ -33,15 +31,8 @@ export const ProtectedRoute = () => {
     return <Navigate to="/login" replace />;
   }
 
-  // Durante rehidratación (F5): el user no se persiste, esperar a que se cargue
-  // Esto previene redirect falso mientras loadUserProfile() está en progreso
-  if (currentTenantId && !user && isLoadingUser) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
+  // NOTA: No bloquear con spinner mientras user se carga (isLoadingUser).
+  // DashboardLayout maneja la carga del user via loadUserProfile().
+  // Bloquear aquí causa oscilación: spinner -> unmount DashboardLayout -> remount -> loop.
   return <Outlet />;
 };

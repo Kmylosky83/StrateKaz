@@ -1,67 +1,40 @@
-import { useState, useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { Loader2 } from 'lucide-react';
 
 /**
- * Timeout de seguridad para la hidratacion de Zustand persist.
- * Si onFinishHydration no dispara en este tiempo, asumimos que ya paso
- * o que nunca va a pasar, y dejamos que la app continue.
+ * ProtectedRoute — Guard de autenticacion para rutas protegidas.
+ *
+ * PROBLEMA RESUELTO: En F5 (hard reload), Zustand persist rehidrata de forma
+ * asincrona. Antes de que termine, `isAuthenticated` es `false` (estado inicial),
+ * lo que causaba un redirect falso a /login.
+ *
+ * SOLUCION: Verificar tokens JWT directamente en localStorage (sincrono,
+ * no depende de Zustand). Si hay tokens pero Zustand aun no rehidrato,
+ * mostramos un spinner breve hasta que el estado se sincronice.
  */
-const HYDRATION_TIMEOUT_MS = 1500;
 
-/**
- * Hook que detecta de forma robusta si Zustand persist ya termino de hidratar.
- * Usa 3 mecanismos complementarios:
- *   1. persist.hasHydrated() — check sincrono al inicializar
- *   2. persist.onFinishHydration() — callback oficial de Zustand
- *   3. setTimeout — failsafe si los anteriores fallan
- */
-function useHasHydrated(): boolean {
-  const [hydrated, setHydrated] = useState(() => {
-    // Check sincrono: si ya hidrató antes de montar el componente
-    return useAuthStore.persist?.hasHydrated?.() ?? true;
-  });
-
-  useEffect(() => {
-    // Si ya está hidratado, no hacer nada
-    if (hydrated) return;
-
-    // Listener oficial de Zustand persist
-    const unsubscribe = useAuthStore.persist?.onFinishHydration?.(() => {
-      setHydrated(true);
-    });
-
-    // Double-check: puede haber hidratado entre el useState y el useEffect
-    if (useAuthStore.persist?.hasHydrated?.()) {
-      setHydrated(true);
-    }
-
-    // Failsafe: si nada funciona, desbloquear después del timeout
-    const timer = setTimeout(() => {
-      setHydrated(true);
-    }, HYDRATION_TIMEOUT_MS);
-
-    return () => {
-      unsubscribe?.();
-      clearTimeout(timer);
-    };
-  }, [hydrated]);
-
-  return hydrated;
+/** Check sincrono: hay tokens JWT en localStorage? */
+function hasTokensInStorage(): boolean {
+  try {
+    return !!localStorage.getItem('access_token') && !!localStorage.getItem('refresh_token');
+  } catch {
+    return false;
+  }
 }
 
 export const ProtectedRoute = () => {
-  const hasHydrated = useHasHydrated();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const currentTenantId = useAuthStore((state) => state.currentTenantId);
   const isSuperadmin = useAuthStore((state) => state.isSuperadmin);
   const location = useLocation();
 
-  // Esperar a que Zustand termine de rehidratarse desde localStorage.
-  // Sin esto, en F5 el estado inicial tiene isAuthenticated=false ANTES de que
-  // persist middleware restaure el valor real, causando un redirect falso a /login.
-  if (!hasHydrated) {
+  // Tokens en localStorage es la fuente de verdad para "hay sesion activa"
+  const tokensExist = hasTokensInStorage();
+
+  // CASO 1: Hay tokens pero Zustand aun no rehidrato (F5 / hard reload)
+  // → Mostrar spinner breve. Zustand restaurara isAuthenticated=true en ms.
+  if (tokensExist && !isAuthenticated) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -69,18 +42,27 @@ export const ProtectedRoute = () => {
     );
   }
 
-  if (!isAuthenticated) {
+  // CASO 2: No hay tokens y no esta autenticado → ir a login
+  if (!tokensExist && !isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  // Si no hay tenant seleccionado y no es superadmin navegando a admin-global
-  // → redirigir al login para que seleccione tenant
+  // CASO 3: Autenticado pero sin tenant (y no es superadmin en admin-global)
   const isAdminGlobalRoute = location.pathname.startsWith('/admin-global');
   if (!currentTenantId && !isSuperadmin && !isAdminGlobalRoute) {
+    // Verificar si hay tenant_id en localStorage que Zustand aun no restauro
+    const storedTenantId = localStorage.getItem('current_tenant_id');
+    if (storedTenantId) {
+      // Tokens + tenantId existen, Zustand aun no sincronizo → esperar
+      return (
+        <div className="flex h-screen items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      );
+    }
     return <Navigate to="/login" replace />;
   }
 
-  // NOTA: No bloquear con spinner mientras user se carga (isLoadingUser).
-  // DashboardLayout maneja la carga del user via loadUserProfile().
+  // CASO 4: Todo OK → renderizar la ruta protegida
   return <Outlet />;
 };

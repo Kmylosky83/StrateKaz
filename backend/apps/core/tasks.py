@@ -336,8 +336,8 @@ def send_weekly_reports(self) -> Dict[str, Any]:
                 User = get_user_model()
 
                 admins = User.objects.filter(
-                    Q(is_superuser=True) | Q(role__code='ADMIN')
-                )
+                    Q(is_superuser=True) | Q(cargo__rol_sistema__code='ADMIN')
+                ).distinct()
 
                 for admin in admins:
                     generate_report_async.delay(

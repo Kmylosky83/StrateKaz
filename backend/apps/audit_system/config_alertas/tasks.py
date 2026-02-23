@@ -4,6 +4,9 @@ Tareas Celery para Configuración de Alertas - Audit System
 - ejecutar_verificacion_alertas: Evalúa ConfiguracionAlerta y genera AlertaGenerada
 - escalar_alertas_no_atendidas: Escala alertas no atendidas según EscalamientoAlerta
 - limpiar_alertas_antiguas: Limpieza de alertas atendidas antiguas
+
+NOTA: Todas las tareas iteran sobre tenants activos usando schema_context
+porque Celery Beat ejecuta en el schema 'public' donde las tablas tenant no existen.
 """
 import logging
 from celery import shared_task
@@ -11,6 +14,12 @@ from django.utils import timezone
 from datetime import timedelta
 
 logger = logging.getLogger(__name__)
+
+
+def _get_active_tenants():
+    """Retorna tenants activos (excluye public schema)."""
+    from apps.tenant.models import Tenant
+    return Tenant.objects.filter(is_active=True).exclude(schema_name='public')
 
 
 @shared_task(
@@ -24,19 +33,42 @@ def ejecutar_verificacion_alertas(self):
     Evalúa todas las ConfiguracionAlerta activas y genera AlertaGenerada
     cuando se cumplen las condiciones configuradas.
 
-    Categorías soportadas:
-    - vencimiento: Verifica campos de fecha próximos a vencer
-    - umbral: Verifica valores que superan umbrales configurados
-    - inactividad: Verifica registros sin actividad
-    - cumplimiento: Verifica estado de cumplimiento
-
     Se ejecuta cada hora.
     """
-    from django.apps import apps
-    from django.contrib.contenttypes.models import ContentType
-    from .models import ConfiguracionAlerta, AlertaGenerada, TipoAlerta
+    from django_tenants.utils import schema_context
 
     ahora = timezone.now()
+    total_alertas = 0
+    total_errores = 0
+
+    for tenant in _get_active_tenants():
+        try:
+            with schema_context(tenant.schema_name):
+                alertas, errores = _ejecutar_verificacion_en_tenant(ahora)
+                total_alertas += alertas
+                total_errores += errores
+        except Exception as e:
+            total_errores += 1
+            logger.error(
+                f'[ConfigAlertas] Error en tenant {tenant.schema_name}: {e}'
+            )
+
+    if total_alertas > 0:
+        logger.info(f'[ConfigAlertas] {total_alertas} alertas generadas en total')
+    if total_errores > 0:
+        logger.warning(f'[ConfigAlertas] {total_errores} errores durante verificación')
+
+    return {
+        'alertas_generadas': total_alertas,
+        'errores': total_errores,
+        'fecha': str(ahora),
+    }
+
+
+def _ejecutar_verificacion_en_tenant(ahora):
+    """Ejecuta verificación de alertas dentro de un schema tenant."""
+    from .models import ConfiguracionAlerta
+
     alertas_generadas = 0
     errores = 0
 
@@ -63,16 +95,7 @@ def ejecutar_verificacion_alertas(self):
                 f'({config.nombre}): {str(e)}'
             )
 
-    if alertas_generadas > 0:
-        logger.info(f'[ConfigAlertas] {alertas_generadas} alertas generadas')
-    if errores > 0:
-        logger.warning(f'[ConfigAlertas] {errores} errores durante verificación')
-
-    return {
-        'alertas_generadas': alertas_generadas,
-        'errores': errores,
-        'fecha': str(ahora),
-    }
+    return alertas_generadas, errores
 
 
 def _verificar_vencimientos(config, tipo, condicion, ahora):
@@ -101,10 +124,6 @@ def _verificar_vencimientos(config, tipo, condicion, ahora):
         f'{campo_fecha}__gte': ahora.date(),
     }
 
-    # Filtrar por empresa si el modelo tiene el campo
-    if hasattr(Model, 'empresa'):
-        filtros['empresa'] = config.empresa
-
     registros = Model.objects.filter(**filtros)
     content_type = ContentType.objects.get_for_model(Model)
     count = 0
@@ -114,7 +133,6 @@ def _verificar_vencimientos(config, tipo, condicion, ahora):
         if not fecha_campo:
             continue
 
-        # Evitar duplicados: no generar si ya existe alerta activa para este objeto
         existe = AlertaGenerada.objects.filter(
             configuracion=config,
             content_type=content_type,
@@ -148,7 +166,7 @@ def _verificar_umbrales(config, tipo, condicion, ahora):
     modelo_str = condicion.get('modelo')
     campo_valor = condicion.get('campo_valor')
     valor_umbral = condicion.get('valor_umbral')
-    operador = condicion.get('operador', 'gte')  # gte, lte, gt, lt
+    operador = condicion.get('operador', 'gte')
 
     if not modelo_str or not campo_valor or valor_umbral is None:
         return 0
@@ -161,8 +179,6 @@ def _verificar_umbrales(config, tipo, condicion, ahora):
 
     filtro_key = f'{campo_valor}__{operador}'
     filtros = {filtro_key: valor_umbral}
-    if hasattr(Model, 'empresa'):
-        filtros['empresa'] = config.empresa
 
     registros = Model.objects.filter(**filtros)
     content_type = ContentType.objects.get_for_model(Model)
@@ -212,10 +228,8 @@ def _verificar_inactividad(config, tipo, condicion, ahora):
 
     fecha_limite = ahora - timedelta(days=dias_inactividad)
     filtros = {f'{campo_fecha}__lt': fecha_limite}
-    if hasattr(Model, 'empresa'):
-        filtros['empresa'] = config.empresa
 
-    registros = Model.objects.filter(**filtros)[:100]  # Limitar para performance
+    registros = Model.objects.filter(**filtros)[:100]
     content_type = ContentType.objects.get_for_model(Model)
     count = 0
 
@@ -250,46 +264,52 @@ def _verificar_inactividad(config, tipo, condicion, ahora):
 def escalar_alertas_no_atendidas(self):
     """
     Escala alertas no atendidas según la configuración de EscalamientoAlerta.
-    Verifica las horas de espera por nivel de escalamiento.
     Se ejecuta cada 2 horas.
     """
+    from django_tenants.utils import schema_context
     from .models import AlertaGenerada, EscalamientoAlerta
 
     ahora = timezone.now()
-    escalamientos_realizados = 0
+    total_escalamientos = 0
 
-    alertas_pendientes = AlertaGenerada.objects.filter(
-        esta_atendida=False,
-    ).select_related('configuracion', 'configuracion__tipo_alerta')
+    for tenant in _get_active_tenants():
+        try:
+            with schema_context(tenant.schema_name):
+                alertas_pendientes = AlertaGenerada.objects.filter(
+                    esta_atendida=False,
+                ).select_related('configuracion', 'configuracion__tipo_alerta')
 
-    for alerta in alertas_pendientes:
-        config = alerta.configuracion
-        escalamientos = EscalamientoAlerta.objects.filter(
-            configuracion_alerta=config,
-            is_active=True,
-        ).order_by('nivel')
+                for alerta in alertas_pendientes:
+                    config = alerta.configuracion
+                    escalamientos = EscalamientoAlerta.objects.filter(
+                        configuracion_alerta=config,
+                        is_active=True,
+                    ).order_by('nivel')
 
-        for escalamiento in escalamientos:
-            horas_desde_creacion = (ahora - alerta.created_at).total_seconds() / 3600
+                    for escalamiento in escalamientos:
+                        horas_desde_creacion = (ahora - alerta.created_at).total_seconds() / 3600
 
-            if horas_desde_creacion >= escalamiento.horas_espera:
-                # Verificar si ya se escaló a este nivel
-                ya_escalado = hasattr(alerta, '_escalamiento_procesado')
-                if not ya_escalado:
-                    logger.info(
-                        f'[ConfigAlertas] Escalando alerta {alerta.id} '
-                        f'al nivel {escalamiento.nivel} '
-                        f'({escalamiento.notificar_a})'
-                    )
-                    escalamientos_realizados += 1
+                        if horas_desde_creacion >= escalamiento.horas_espera:
+                            ya_escalado = hasattr(alerta, '_escalamiento_procesado')
+                            if not ya_escalado:
+                                logger.info(
+                                    f'[ConfigAlertas] {tenant.schema_name}: '
+                                    f'Escalando alerta {alerta.id} '
+                                    f'al nivel {escalamiento.nivel}'
+                                )
+                                total_escalamientos += 1
+        except Exception as e:
+            logger.error(
+                f'[ConfigAlertas] Error en tenant {tenant.schema_name}: {e}'
+            )
 
-    if escalamientos_realizados > 0:
+    if total_escalamientos > 0:
         logger.info(
-            f'[ConfigAlertas] {escalamientos_realizados} escalamientos realizados'
+            f'[ConfigAlertas] {total_escalamientos} escalamientos realizados en total'
         )
 
     return {
-        'escalamientos': escalamientos_realizados,
+        'escalamientos': total_escalamientos,
         'fecha': str(ahora),
     }
 
@@ -303,17 +323,30 @@ def limpiar_alertas_antiguas(self):
     Limpia alertas atendidas con más de 90 días de antigüedad.
     Se ejecuta semanalmente los domingos a las 3 AM.
     """
+    from django_tenants.utils import schema_context
     from .models import AlertaGenerada
 
     ahora = timezone.now()
     fecha_limite = ahora - timedelta(days=90)
+    total_eliminadas = 0
 
-    count, _ = AlertaGenerada.objects.filter(
-        esta_atendida=True,
-        fecha_atencion__lt=fecha_limite,
-    ).delete()
+    for tenant in _get_active_tenants():
+        try:
+            with schema_context(tenant.schema_name):
+                count, _ = AlertaGenerada.objects.filter(
+                    esta_atendida=True,
+                    fecha_atencion__lt=fecha_limite,
+                ).delete()
 
-    if count > 0:
-        logger.info(f'[ConfigAlertas] {count} alertas antiguas eliminadas')
+                if count > 0:
+                    logger.info(
+                        f'[ConfigAlertas] {tenant.schema_name}: '
+                        f'{count} alertas antiguas eliminadas'
+                    )
+                    total_eliminadas += count
+        except Exception as e:
+            logger.error(
+                f'[ConfigAlertas] Error en tenant {tenant.schema_name}: {e}'
+            )
 
-    return {'alertas_eliminadas': count, 'fecha': str(ahora)}
+    return {'alertas_eliminadas': total_eliminadas, 'fecha': str(ahora)}

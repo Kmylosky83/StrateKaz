@@ -4,6 +4,9 @@ Celery tasks para el modulo Analytics.
 Tasks:
 - calcular_kpis_automaticos: Diario, calcula KPIs desde datos de modulos operativos
 - snapshot_dashboard_gerencial: Cada hora, cachea datos del dashboard cross-module
+
+NOTA: Todas las tareas iteran sobre tenants activos usando schema_context
+porque Celery Beat ejecuta en el schema 'public' donde las tablas tenant no existen.
 """
 import logging
 from datetime import timedelta
@@ -15,6 +18,12 @@ from django.db.models import Avg, Count, Q, Sum
 from django.utils import timezone
 
 logger = logging.getLogger('analytics')
+
+
+def _get_active_tenants():
+    """Retorna tenants activos (excluye public schema)."""
+    from apps.tenant.models import Tenant
+    return Tenant.objects.filter(is_active=True).exclude(schema_name='public')
 
 
 @shared_task(
@@ -32,6 +41,8 @@ def calcular_kpis_automaticos(self):
     Busca KPIs activos con fuente_datos definida y calcula su valor actual
     basado en queries a los modulos correspondientes.
     """
+    from django_tenants.utils import schema_context
+
     try:
         FichaTecnicaKPI = apps.get_model('config_indicadores', 'FichaTecnicaKPI')
         ValorKPI = apps.get_model('indicadores_area', 'ValorKPI')
@@ -41,44 +52,46 @@ def calcular_kpis_automaticos(self):
 
     ahora = timezone.now()
     periodo = ahora.strftime('%Y-%m')
+    total_calculados = 0
+    total_errores = 0
 
-    # KPIs activos con fuente_datos automatica
-    kpis = FichaTecnicaKPI.objects.filter(
-        is_active=True,
-        fuente_datos__startswith='auto:',
-    )
-
-    calculados = 0
-    errores = 0
-
-    for kpi in kpis:
+    for tenant in _get_active_tenants():
         try:
-            valor = _calcular_valor_kpi(kpi)
-            if valor is not None:
-                ValorKPI.objects.update_or_create(
-                    kpi=kpi,
-                    periodo=periodo,
-                    empresa_id=kpi.empresa_id,
-                    defaults={
-                        'valor': Decimal(str(valor)),
-                        'fecha_registro': ahora,
-                        'registrado_automatico': True,
-                        'observaciones': f'Calculado automaticamente desde {kpi.fuente_datos}',
-                    },
+            with schema_context(tenant.schema_name):
+                kpis = FichaTecnicaKPI.objects.filter(
+                    is_active=True,
+                    fuente_datos__startswith='auto:',
                 )
-                calculados += 1
+
+                for kpi in kpis:
+                    try:
+                        valor = _calcular_valor_kpi(kpi)
+                        if valor is not None:
+                            ValorKPI.objects.update_or_create(
+                                kpi=kpi,
+                                periodo=periodo,
+                                empresa_id=kpi.empresa_id,
+                                defaults={
+                                    'valor': Decimal(str(valor)),
+                                    'fecha_registro': ahora,
+                                    'registrado_automatico': True,
+                                    'observaciones': f'Calculado automaticamente desde {kpi.fuente_datos}',
+                                },
+                            )
+                            total_calculados += 1
+                    except Exception as e:
+                        logger.error(f"Error calculando KPI {kpi.codigo} en {tenant.schema_name}: {e}")
+                        total_errores += 1
         except Exception as e:
-            logger.error(f"Error calculando KPI {kpi.codigo}: {e}")
-            errores += 1
+            logger.error(f'[Analytics] Error en tenant {tenant.schema_name}: {e}')
 
     result = {
-        'kpis_procesados': kpis.count(),
-        'calculados': calculados,
-        'errores': errores,
+        'calculados': total_calculados,
+        'errores': total_errores,
         'periodo': periodo,
         'timestamp': ahora.isoformat(),
     }
-    if calculados > 0:
+    if total_calculados > 0:
         logger.info(f"[Auto-KPI] {result}")
 
     return result
@@ -101,9 +114,9 @@ def _calcular_valor_kpi(kpi) -> float | None:
         return None
 
     try:
-        spec = fuente[5:]  # Remove 'auto:' prefix
+        spec = fuente[5:]
         parts = spec.split(':')
-        model_spec = parts[0]  # e.g. "accidentalidad.AccidenteTrabajo.count"
+        model_spec = parts[0]
         filter_spec = parts[1] if len(parts) > 1 else ''
 
         model_parts = model_spec.split('.')
@@ -112,12 +125,11 @@ def _calcular_valor_kpi(kpi) -> float | None:
 
         app_label = model_parts[0]
         model_name = model_parts[1]
-        operation = model_parts[2]  # count, sum, avg, percent
+        operation = model_parts[2]
 
         Model = apps.get_model(app_label, model_name)
         qs = Model.objects.filter(empresa_id=kpi.empresa_id)
 
-        # Apply filters
         if filter_spec:
             filters = {}
             for f in filter_spec.split(','):
@@ -127,13 +139,11 @@ def _calcular_valor_kpi(kpi) -> float | None:
                 key = key.strip()
                 val = val.strip()
 
-                # Handle special values
                 if val == '{year}':
                     val = str(timezone.now().year)
                 if key.endswith('__in'):
                     val = val.split('|')
 
-                # Try to convert to int
                 if isinstance(val, str) and val.isdigit():
                     val = int(val)
 
@@ -141,7 +151,6 @@ def _calcular_valor_kpi(kpi) -> float | None:
 
             qs = qs.filter(**filters)
 
-        # Execute operation
         if operation == 'count':
             return float(qs.count())
         elif operation == 'sum':
@@ -153,7 +162,6 @@ def _calcular_valor_kpi(kpi) -> float | None:
             result = qs.aggregate(promedio=Avg(field))['promedio']
             return float(result) if result else 0.0
         elif operation == 'percent':
-            # Percentage of filtered vs total
             total = Model.objects.filter(empresa_id=kpi.empresa_id).count()
             if total == 0:
                 return 0.0
@@ -181,28 +189,32 @@ def snapshot_dashboard_gerencial(self):
     Guarda el resultado en cache (via SnapshotDashboard model si existe)
     para que el frontend no necesite esperar la agregacion en tiempo real.
     """
-    from apps.analytics.dashboard_gerencial.services import CrossModuleStatsService
+    from django_tenants.utils import schema_context
 
-    try:
-        Empresa = apps.get_model('tenant', 'Empresa')
-    except LookupError:
-        try:
-            Empresa = apps.get_model('tenant', 'Tenant')
-        except LookupError:
-            logger.error("Modelo Empresa/Tenant no encontrado")
-            return {'status': 'model_not_found'}
-
-    empresas = Empresa.objects.filter(is_active=True)
     procesadas = 0
 
-    for empresa in empresas:
+    for tenant in _get_active_tenants():
         try:
-            data = CrossModuleStatsService.get_dashboard_completo(empresa.id)
-            # Store in JSONField or cache
-            # For now, just validate the data is generated correctly
-            procesadas += 1
+            with schema_context(tenant.schema_name):
+                from apps.analytics.dashboard_gerencial.services import CrossModuleStatsService
+
+                try:
+                    Empresa = apps.get_model('configuracion', 'Empresa')
+                    empresas = Empresa.objects.filter(is_active=True)
+                except LookupError:
+                    empresas = []
+
+                for empresa in empresas:
+                    try:
+                        data = CrossModuleStatsService.get_dashboard_completo(empresa.id)
+                        procesadas += 1
+                    except Exception as e:
+                        logger.error(
+                            f"Error generando snapshot para empresa {empresa.id} "
+                            f"en {tenant.schema_name}: {e}"
+                        )
         except Exception as e:
-            logger.error(f"Error generando snapshot para empresa {empresa.id}: {e}")
+            logger.error(f'[Dashboard Snapshot] Error en tenant {tenant.schema_name}: {e}')
 
     result = {
         'empresas_procesadas': procesadas,

@@ -206,7 +206,8 @@ def send_setup_password_email_task(
 
 
 @shared_task(bind=True, max_retries=3)
-def send_notification_email(self, user_id: int, template: str, context: Dict[str, Any]) -> Dict[str, Any]:
+def send_notification_email(self, user_id: int, template: str, context: Dict[str, Any],
+                            schema_name: str = None) -> Dict[str, Any]:
     """
     Enviar email de notificación usando template.
 
@@ -214,29 +215,35 @@ def send_notification_email(self, user_id: int, template: str, context: Dict[str
         user_id: ID del usuario destinatario
         template: Nombre del template de email
         context: Contexto para renderizar el template
+        schema_name: Schema del tenant (requerido para contexto Celery)
 
     Returns:
         Dict con el resultado del envío
     """
+    from django_tenants.utils import schema_context
+
+    if not schema_name:
+        logger.error(f"send_notification_email: schema_name no proporcionado")
+        return {'status': 'error', 'error': 'schema_name requerido'}
+
     try:
-        from django.contrib.auth import get_user_model
-        User = get_user_model()
+        with schema_context(schema_name):
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
 
-        user = User.objects.get(id=user_id)
+            user = User.objects.get(id=user_id)
 
-        # Renderizar template HTML
-        html_content = render_to_string(f'emails/{template}.html', context)
-        text_content = strip_tags(html_content)
+            html_content = render_to_string(f'emails/{template}.html', context)
+            text_content = strip_tags(html_content)
 
-        subject = context.get('subject', 'Notificación del Sistema')
+            subject = context.get('subject', 'Notificación del Sistema')
 
-        # Enviar email usando la tarea anterior
-        return send_email_async.delay(
-            subject=subject,
-            message=text_content,
-            recipient_list=[user.email],
-            html_message=html_content,
-        ).get()
+            return send_email_async.delay(
+                subject=subject,
+                message=text_content,
+                recipient_list=[user.email],
+                html_message=html_content,
+            ).get()
 
     except Exception as exc:
         logger.error(f"[Task {self.request.id}] Error en notificación: {str(exc)}")
@@ -311,45 +318,50 @@ def send_weekly_reports(self) -> Dict[str, Any]:
     """
     Tarea periódica: Enviar reportes semanales a los administradores.
 
-    Esta tarea se ejecuta automáticamente según el schedule configurado en celery.py
+    Esta tarea se ejecuta automáticamente según el schedule configurado en celery.py.
+    Itera sobre tenants activos usando schema_context.
     """
-    try:
-        from django.contrib.auth import get_user_model
-        User = get_user_model()
+    from django_tenants.utils import schema_context
+    from apps.tenant.models import Tenant
 
-        logger.info(f"[Task {self.request.id}] Generando reportes semanales")
+    logger.info(f"[Task {self.request.id}] Generando reportes semanales")
 
-        # Obtener usuarios con permisos de administrador
-        admins = User.objects.filter(
-            Q(is_superuser=True) | Q(role__code='ADMIN')
-        )
+    total_reports = 0
+    tenants = Tenant.objects.filter(is_active=True).exclude(schema_name='public')
 
-        reports_sent = 0
+    for tenant in tenants:
+        try:
+            with schema_context(tenant.schema_name):
+                from django.contrib.auth import get_user_model
+                User = get_user_model()
 
-        for admin in admins:
-            # Generar y enviar reporte para cada admin
-            generate_report_async.delay(
-                report_type='weekly_summary',
-                params={
-                    'start_date': (datetime.now() - timedelta(days=7)).isoformat(),
-                    'end_date': datetime.now().isoformat(),
-                },
-                user_id=admin.id,
+                admins = User.objects.filter(
+                    Q(is_superuser=True) | Q(role__code='ADMIN')
+                )
+
+                for admin in admins:
+                    generate_report_async.delay(
+                        report_type='weekly_summary',
+                        params={
+                            'start_date': (datetime.now() - timedelta(days=7)).isoformat(),
+                            'end_date': datetime.now().isoformat(),
+                        },
+                        user_id=admin.id,
+                    )
+                    total_reports += 1
+        except Exception as e:
+            logger.error(
+                f'[WeeklyReports] Error en tenant {tenant.schema_name}: {e}'
             )
-            reports_sent += 1
 
-        logger.info(f"[Task {self.request.id}] {reports_sent} reportes semanales programados")
+    logger.info(f"[Task {self.request.id}] {total_reports} reportes semanales programados")
 
-        return {
-            'status': 'success',
-            'reports_scheduled': reports_sent,
-            'task_id': self.request.id,
-            'timestamp': datetime.now().isoformat(),
-        }
-
-    except Exception as exc:
-        logger.error(f"[Task {self.request.id}] Error en reportes semanales: {str(exc)}")
-        raise
+    return {
+        'status': 'success',
+        'reports_scheduled': total_reports,
+        'task_id': self.request.id,
+        'timestamp': datetime.now().isoformat(),
+    }
 
 
 # ═══════════════════════════════════════════════════

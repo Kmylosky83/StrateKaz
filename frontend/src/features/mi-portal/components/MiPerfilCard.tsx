@@ -1,9 +1,22 @@
 /**
  * MiPerfilCard - Tarjeta de perfil del empleado (read-only)
+ * Muestra informacion laboral y de contacto organizada en subsecciones.
+ * Usa colores de branding del tenant (NO hardcoded).
  */
 
-import { User, Mail, Phone, MapPin, Briefcase, Calendar, AlertCircle } from 'lucide-react';
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Briefcase,
+  Calendar,
+  AlertCircle,
+  Heart,
+  Pencil,
+} from 'lucide-react';
 import { Card, Badge, Avatar, Skeleton } from '@/components/common';
+import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import type { ColaboradorESS } from '../types';
 
 interface MiPerfilCardProps {
@@ -13,15 +26,21 @@ interface MiPerfilCardProps {
 }
 
 export function MiPerfilCard({ perfil, isLoading, onEdit }: MiPerfilCardProps) {
+  const { primaryColor } = useBrandingConfig();
+
   if (isLoading) {
     return (
       <Card className="p-6">
         <div className="flex items-start gap-6">
-          <Skeleton className="w-20 h-20 rounded-full" />
+          <Skeleton className="w-20 h-20 rounded-full flex-shrink-0" />
           <div className="flex-1 space-y-3">
             <Skeleton className="h-6 w-48" />
             <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-4 w-64" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+            </div>
           </div>
         </div>
       </Card>
@@ -49,18 +68,17 @@ export function MiPerfilCard({ perfil, isLoading, onEdit }: MiPerfilCardProps) {
 
   return (
     <Card className="p-6">
+      {/* Header: Avatar + Nombre + Badge */}
       <div className="flex flex-col md:flex-row items-start gap-6">
-        {/* Avatar */}
         <Avatar
           src={perfil.foto_url}
           alt={perfil.nombre_completo}
-          size="lg"
-          className="w-20 h-20"
+          size="xl"
+          className="flex-shrink-0"
         />
 
-        {/* Info Principal */}
-        <div className="flex-1 space-y-4">
-          <div className="flex items-start justify-between">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                 {perfil.nombre_completo}
@@ -74,57 +92,106 @@ export function MiPerfilCard({ perfil, isLoading, onEdit }: MiPerfilCardProps) {
             </Badge>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-              <Briefcase className="w-4 h-4 text-gray-400" />
-              <span>{perfil.cargo_nombre}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-              <User className="w-4 h-4 text-gray-400" />
-              <span>{perfil.area_nombre}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-              <Calendar className="w-4 h-4 text-gray-400" />
-              <span>Ingreso: {perfil.fecha_ingreso}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-              <Mail className="w-4 h-4 text-gray-400" />
-              <span>{perfil.email_personal || 'Sin email personal'}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-              <Phone className="w-4 h-4 text-gray-400" />
-              <span>{perfil.celular || perfil.telefono || 'Sin telefono'}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-              <MapPin className="w-4 h-4 text-gray-400" />
-              <span>{perfil.direccion || 'Sin direccion'}</span>
+          {/* ================================================================
+              INFORMACION LABORAL
+              ================================================================ */}
+          <div className="mt-5">
+            <h4 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
+              Informacion laboral
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <InfoItem icon={Briefcase} label="Cargo" value={perfil.cargo_nombre} />
+              <InfoItem icon={User} label="Area" value={perfil.area_nombre} />
+              <InfoItem icon={Calendar} label="Fecha de ingreso" value={perfil.fecha_ingreso} />
             </div>
           </div>
 
-          {/* Contacto de emergencia */}
+          {/* ================================================================
+              INFORMACION DE CONTACTO
+              ================================================================ */}
+          <div className="mt-5">
+            <h4 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
+              Informacion de contacto
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <InfoItem
+                icon={Mail}
+                label="Email"
+                value={perfil.email_personal || 'Sin email personal'}
+              />
+              <InfoItem
+                icon={Phone}
+                label="Telefono"
+                value={perfil.celular || perfil.telefono || 'Sin telefono'}
+              />
+              <InfoItem
+                icon={MapPin}
+                label="Direccion"
+                value={perfil.direccion || 'Sin direccion'}
+              />
+            </div>
+          </div>
+
+          {/* ================================================================
+              CONTACTO DE EMERGENCIA
+              ================================================================ */}
           {perfil.contacto_emergencia_nombre && (
-            <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-1">
+            <div className="mt-5">
+              <h4 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
                 Contacto de emergencia
-              </p>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                {perfil.contacto_emergencia_nombre} ({perfil.contacto_emergencia_parentesco}) -{' '}
-                {perfil.contacto_emergencia_telefono}
-              </p>
+              </h4>
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20">
+                <Heart className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+                <div className="text-sm">
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {perfil.contacto_emergencia_nombre}
+                  </p>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    {perfil.contacto_emergencia_parentesco} &middot;{' '}
+                    {perfil.contacto_emergencia_telefono}
+                  </p>
+                </div>
+              </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Boton editar */}
-      <div className="mt-4 flex justify-end">
+      {/* Boton editar con branding color */}
+      <div className="mt-5 flex justify-end">
         <button
           onClick={onEdit}
-          className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+          className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:opacity-80"
+          style={{ color: primaryColor }}
         >
+          <Pencil className="w-3.5 h-3.5" />
           Editar datos personales
         </button>
       </div>
     </Card>
+  );
+}
+
+// ============================================================================
+// HELPER COMPONENT
+// ============================================================================
+
+function InfoItem({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Briefcase;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-start gap-2">
+      <Icon className="w-4 h-4 text-gray-400 dark:text-gray-500 mt-0.5 flex-shrink-0" />
+      <div className="min-w-0">
+        <p className="text-xs text-gray-400 dark:text-gray-500">{label}</p>
+        <p className="text-sm text-gray-700 dark:text-gray-300 truncate">{value}</p>
+      </div>
+    </div>
   );
 }

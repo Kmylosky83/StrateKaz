@@ -1,16 +1,16 @@
 /**
  * MiPortalPage - Portal del Empleado (ESS)
- * Pagina principal con tabs para cada seccion del autoservicio.
+ * Pagina principal con hero personalizado, stats y tabs para autoservicio.
  *
  * INTELIGENTE: Filtra tabs segun tipo de cargo.
  * - Internos: todas las secciones (perfil, vacaciones, permisos, recibos, capacitaciones, evaluacion)
  * - Externos (contratistas, consultores): perfil, documentos, HSEQ, capacitaciones, evaluacion
  *
- * Externos NO ven: vacaciones, permisos, recibos (no aplica para prestacion de servicios)
- * Externos SI ven: documentos (firmar/consultar), HSEQ (SST aplicable), capacitaciones, evaluacion
+ * BRANDING: Usa primaryColor del tenant (NO moduleColor hardcoded)
  */
 
 import { useState, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import {
   User,
   Calendar,
@@ -20,10 +20,25 @@ import {
   BarChart3,
   FolderOpen,
   ShieldCheck,
+  Pencil,
+  Sun,
+  Sunset,
+  Moon,
+  Clock,
 } from 'lucide-react';
-import { Tabs, AnimatedPage, Badge, SectionHeader } from '@/components/common';
+import type { LucideIcon } from 'lucide-react';
+import { Tabs, AnimatedPage, Badge, Card, Avatar, Skeleton } from '@/components/common';
+import { StatsGrid, StatsGridSkeleton } from '@/components/layout';
+import type { StatItem } from '@/components/layout';
+import { useAuthStore } from '@/store/authStore';
+import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import { useIsExterno } from '@/hooks/useIsExterno';
-import { useMiPerfil } from '../api/miPortalApi';
+import {
+  useMiPerfil,
+  useMisVacaciones,
+  useMisCapacitaciones,
+  useMiEvaluacion,
+} from '../api/miPortalApi';
 import {
   MiPerfilCard,
   MiPerfilEditForm,
@@ -36,6 +51,34 @@ import {
   MiHSEQ,
 } from '../components';
 import type { MiPortalTab } from '../types';
+
+// ============================================================================
+// HELPERS
+// ============================================================================
+
+function getGreeting(): { text: string; Icon: LucideIcon } {
+  const now = new Date();
+  const hour = Number(
+    now.toLocaleString('en-US', { timeZone: 'America/Bogota', hour: 'numeric', hour12: false })
+  );
+  if (hour >= 5 && hour < 12) return { text: 'Buenos dias', Icon: Sun };
+  if (hour >= 12 && hour < 18) return { text: 'Buenas tardes', Icon: Sunset };
+  return { text: 'Buenas noches', Icon: Moon };
+}
+
+function getCurrentDateFormatted(): string {
+  return new Date().toLocaleDateString('es-CO', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'America/Bogota',
+  });
+}
+
+// ============================================================================
+// TAB CONFIGURATION
+// ============================================================================
 
 /** Tabs que solo aplican a empleados internos (no contratistas) */
 const INTERNAL_ONLY_TABS = new Set<MiPortalTab>(['vacaciones', 'permisos', 'recibos']);
@@ -55,22 +98,120 @@ const ALL_PORTAL_TABS = [
     label: 'Capacitaciones',
     icon: <GraduationCap className="w-4 h-4" />,
   },
-  { id: 'evaluacion' as const, label: 'Evaluación', icon: <BarChart3 className="w-4 h-4" /> },
+  { id: 'evaluacion' as const, label: 'Evaluacion', icon: <BarChart3 className="w-4 h-4" /> },
 ];
+
+// ============================================================================
+// HERO SKELETON
+// ============================================================================
+
+function HeroSkeleton() {
+  return (
+    <Card padding="none" className="overflow-hidden">
+      <div className="h-1.5 bg-gray-200 dark:bg-gray-700 animate-pulse" />
+      <div className="p-6 md:p-8">
+        <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+          <Skeleton className="h-24 w-24 rounded-full flex-shrink-0" />
+          <div className="flex-1 space-y-3">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <div className="hidden md:flex flex-col items-end gap-3">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+// ============================================================================
+// MAIN PAGE
+// ============================================================================
 
 export default function MiPortalPage() {
   const [activeTab, setActiveTab] = useState<MiPortalTab>('perfil');
   const [showEditPerfil, setShowEditPerfil] = useState(false);
+
+  // Auth store for quick name access (already loaded, no API call)
+  const user = useAuthStore((s) => s.user);
+
+  // Branding
+  const { primaryColor } = useBrandingConfig();
+
+  // Perfil del colaborador
   const { data: perfil, isLoading: perfilLoading } = useMiPerfil();
   const { isExterno } = useIsExterno();
+
+  // Stats data hooks — React Query deduplica si child components usan los mismos hooks
+  const { data: vacaciones, isLoading: vacacionesLoading } = useMisVacaciones();
+  const { data: capacitaciones, isLoading: capacitacionesLoading } = useMisCapacitaciones();
+  const { data: evaluaciones, isLoading: evaluacionesLoading } = useMiEvaluacion();
+
+  // Greeting
+  const { text: greetingText, Icon: GreetingIcon } = getGreeting();
+  const currentDate = getCurrentDateFormatted();
+
+  // Nombre para el hero
+  const firstName = perfil?.nombre_completo?.split(' ')[0] || user?.first_name || 'Usuario';
+  const fullName = perfil?.nombre_completo || user?.full_name || user?.first_name || 'Usuario';
+
+  // Stats loading
+  const statsLoading = isExterno
+    ? capacitacionesLoading || evaluacionesLoading
+    : vacacionesLoading || capacitacionesLoading || evaluacionesLoading;
+
+  // Build stats items
+  const statsItems: StatItem[] = useMemo(() => {
+    const items: StatItem[] = [];
+
+    if (!isExterno) {
+      items.push({
+        label: 'Dias de vacaciones',
+        value: vacaciones?.dias_disponibles ?? '-',
+        icon: Calendar,
+        iconColor: 'info',
+        description: 'disponibles',
+      });
+      items.push({
+        label: 'Solicitudes pendientes',
+        value: vacaciones?.solicitudes_pendientes ?? 0,
+        icon: Clock,
+        iconColor: 'warning',
+      });
+    }
+
+    const capacitacionesList = Array.isArray(capacitaciones) ? capacitaciones : [];
+    const completedCount = capacitacionesList.filter(
+      (c) => c.estado === 'completada' || c.estado === 'aprobada'
+    ).length;
+
+    items.push({
+      label: 'Capacitaciones',
+      value: capacitacionesList.length,
+      icon: GraduationCap,
+      iconColor: 'success',
+      description: completedCount > 0 ? `${completedCount} completadas` : undefined,
+    });
+
+    const evaluacionesList = Array.isArray(evaluaciones) ? evaluaciones : [];
+    items.push({
+      label: 'Evaluaciones',
+      value: evaluacionesList.length,
+      icon: BarChart3,
+      iconColor: 'primary',
+    });
+
+    return items;
+  }, [isExterno, vacaciones, capacitaciones, evaluaciones]);
 
   // Filtrar tabs segun tipo de cargo
   const visibleTabs = useMemo(() => {
     if (isExterno) {
-      // Externos: ocultar tabs internos (vacaciones, permisos, recibos)
       return ALL_PORTAL_TABS.filter((tab) => !INTERNAL_ONLY_TABS.has(tab.id));
     }
-    // Internos: ocultar tabs de externos (documentos, hseq)
     return ALL_PORTAL_TABS.filter((tab) => !EXTERNAL_ONLY_TABS.has(tab.id));
   }, [isExterno]);
 
@@ -80,33 +221,116 @@ export default function MiPortalPage() {
   return (
     <AnimatedPage>
       <div className="space-y-6">
-        {/* Header */}
-        <SectionHeader
-          title="Mi Portal"
-          description={
-            isExterno
-              ? 'Consulte su información, documentos, requisitos HSEQ y capacitaciones.'
-              : 'Consulte su información, solicite vacaciones y permisos, y revise sus recibos de nómina.'
-          }
-        />
+        {/* ================================================================
+            HERO SECTION
+            ================================================================ */}
+        {perfilLoading && !perfil ? (
+          <HeroSkeleton />
+        ) : (
+          <Card padding="none" className="overflow-hidden">
+            {/* Gradient accent bar */}
+            <div
+              className="h-1.5"
+              style={{
+                background: `linear-gradient(90deg, ${primaryColor}, ${primaryColor}80)`,
+              }}
+            />
+            <div className="p-6 md:p-8">
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+                {/* Avatar */}
+                <Avatar
+                  src={perfil?.foto_url || user?.photo_url || undefined}
+                  name={fullName}
+                  size="2xl"
+                  status={isExterno ? 'external' : 'active'}
+                  className="ring-4 ring-white dark:ring-gray-800 shadow-lg flex-shrink-0"
+                />
 
-        {/* Badge de tipo de vinculacion */}
-        {isExterno && (
-          <Badge variant="info" size="sm">
-            Colaborador Externo
-          </Badge>
+                {/* Greeting & Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <GreetingIcon className="w-5 h-5 text-amber-500" />
+                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                      {greetingText}
+                    </span>
+                  </div>
+                  <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white truncate">
+                    {firstName}
+                  </h1>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-sm text-gray-600 dark:text-gray-400">
+                    {perfil?.cargo_nombre && <span>{perfil.cargo_nombre}</span>}
+                    {perfil?.cargo_nombre && perfil?.area_nombre && (
+                      <span className="hidden md:inline text-gray-300 dark:text-gray-600">|</span>
+                    )}
+                    {perfil?.area_nombre && <span>{perfil.area_nombre}</span>}
+                  </div>
+                  {isExterno && (
+                    <Badge variant="info" size="sm" className="mt-2">
+                      Colaborador Externo
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Right side: Date + Edit (desktop only) */}
+                <div className="hidden md:flex flex-col items-end gap-3 flex-shrink-0">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">
+                    {currentDate}
+                  </p>
+                  <button
+                    onClick={() => setShowEditPerfil(true)}
+                    className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:opacity-80"
+                    style={{ color: primaryColor }}
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                    Editar perfil
+                  </button>
+                </div>
+              </div>
+
+              {/* Mobile: date + edit button */}
+              <div className="flex items-center justify-between mt-4 md:hidden">
+                <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">{currentDate}</p>
+                <button
+                  onClick={() => setShowEditPerfil(true)}
+                  className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:opacity-80"
+                  style={{ color: primaryColor }}
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  Editar perfil
+                </button>
+              </div>
+            </div>
+          </Card>
         )}
 
-        {/* Tabs */}
+        {/* ================================================================
+            STATS GRID
+            ================================================================ */}
+        {statsLoading ? (
+          <StatsGridSkeleton count={isExterno ? 2 : 4} />
+        ) : (
+          <StatsGrid stats={statsItems} columns={isExterno ? 2 : 4} />
+        )}
+
+        {/* ================================================================
+            TABS
+            ================================================================ */}
         <Tabs
           tabs={visibleTabs}
           activeTab={safeActiveTab}
           onChange={(tab) => setActiveTab(tab as MiPortalTab)}
-          variant="pills"
+          variant="underline"
         />
 
-        {/* Contenido por tab */}
-        <div className="mt-6">
+        {/* ================================================================
+            TAB CONTENT (animated)
+            ================================================================ */}
+        <motion.div
+          key={safeActiveTab}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.15 }}
+        >
           {safeActiveTab === 'perfil' && (
             <MiPerfilCard
               perfil={perfil}
@@ -122,9 +346,11 @@ export default function MiPortalPage() {
           {safeActiveTab === 'recibos' && !isExterno && <RecibosNomina />}
           {safeActiveTab === 'capacitaciones' && <CapacitacionesList />}
           {safeActiveTab === 'evaluacion' && <EvaluacionResumen />}
-        </div>
+        </motion.div>
 
-        {/* Modal editar perfil */}
+        {/* ================================================================
+            MODAL EDITAR PERFIL
+            ================================================================ */}
         <MiPerfilEditForm
           isOpen={showEditPerfil}
           onClose={() => setShowEditPerfil(false)}

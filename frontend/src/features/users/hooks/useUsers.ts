@@ -1,7 +1,13 @@
 ﻿import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usersAPI } from '@/api/users.api';
+import { useAuthStore } from '@/store/authStore';
 import { toast } from 'sonner';
-import type { UserFilters, CreateUserDTO, UpdateUserDTO, ChangePasswordDTO } from '@/types/users.types';
+import type {
+  UserFilters,
+  CreateUserDTO,
+  UpdateUserDTO,
+  ChangePasswordDTO,
+} from '@/types/users.types';
 
 export const useUsers = (filters?: UserFilters) => {
   return useQuery({
@@ -40,9 +46,22 @@ export const useUpdateUser = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: UpdateUserDTO }) =>
       usersAPI.updateUser(id, data),
-    onSuccess: (_,  variables) => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       queryClient.invalidateQueries({ queryKey: ['user', variables.id] });
+
+      // Si se cambió el cargo, invalidar sidebar para que refleje los nuevos permisos
+      if (variables.data.cargo_id !== undefined) {
+        queryClient.invalidateQueries({ queryKey: ['modules', 'sidebar'] });
+        queryClient.invalidateQueries({ queryKey: ['modules', 'tree'] });
+
+        // Si el usuario editado es el usuario logueado, refrescar su perfil
+        const loggedUserId = useAuthStore.getState().user?.id;
+        if (loggedUserId === variables.id) {
+          useAuthStore.getState().refreshUserProfile();
+        }
+      }
+
       toast.success('Usuario actualizado exitosamente');
     },
     onError: (error: any) => {
@@ -141,7 +160,9 @@ export const useUsersByPermission = (permission: string, enabled: boolean = true
  * Hook para obtener lista de recolectores - mantener por compatibilidad
  */
 export const useRecolectores = () => {
-  console.warn('useRecolectores is deprecated. Use useUsersByCargoCode or useUsersByPermission instead.');
+  console.warn(
+    'useRecolectores is deprecated. Use useUsersByCargoCode or useUsersByPermission instead.'
+  );
   // Mantener funcionalidad básica - obtener todos los usuarios para no romper código existente
   return useQuery({
     queryKey: ['users', {}],

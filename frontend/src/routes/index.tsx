@@ -18,6 +18,7 @@ import { lazy, Suspense, ComponentType } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 import { ModuleGuard } from './ModuleGuard';
+import { SectionGuard } from './SectionGuard';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
 import { LoginPage } from '@/pages/LoginPage';
 import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
@@ -332,7 +333,16 @@ export const AppRoutes = () => {
           {/* ADMIN GLOBAL - Solo Superusuarios (is_superuser=true) */}
           {/* Gestion de: Tenants, Planes, Usuarios Globales, Modulos */}
           {/* ═══════════════════════════════════════════════════════════════ */}
-          <Route path="/admin-global" element={withSuspense(AdminGlobalPage)} />
+          <Route
+            path="/admin-global"
+            element={
+              <SectionGuard requireSuperadmin>
+                <Suspense fallback={<PageLoader />}>
+                  <AdminGlobalPage />
+                </Suspense>
+              </SectionGuard>
+            }
+          />
 
           {/* ═══════════════════════════════════════════════════════════════ */}
           {/* PERFIL DE USUARIO */}
@@ -347,8 +357,17 @@ export const AppRoutes = () => {
           <Route path="/mi-portal" element={withSuspense(MiPortalPage)} />
           <Route path="/mi-equipo" element={withSuspense(MiEquipoPage)} />
 
-          {/* Usuarios - Modulo transversal */}
-          <Route path="/usuarios" element={withSuspense(UsersPage)} />
+          {/* Usuarios - Modulo transversal (requiere acceso RBAC) */}
+          <Route
+            path="/usuarios"
+            element={
+              <SectionGuard moduleCode="core" sectionCode="users_management">
+                <Suspense fallback={<PageLoader />}>
+                  <UsersPage />
+                </Suspense>
+              </SectionGuard>
+            }
+          />
 
           {/* ═══════════════════════════════════════════════════════════════ */}
           {/* NIVEL 1-2: FUNDACION EMPRESARIAL + ESTRUCTURA ORGANIZACIONAL */}

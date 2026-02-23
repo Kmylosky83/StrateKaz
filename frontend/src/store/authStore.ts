@@ -3,14 +3,7 @@ import { persist } from 'zustand/middleware';
 import { authAPI } from '@/api/auth.api';
 import { clearLastRoute } from '@/hooks/useLastRoute';
 import { invalidateAllQueries, clearAllQueries } from '@/lib/queryClient';
-import type {
-  AuthState,
-  LoginCredentials,
-  User,
-  TenantUser,
-  TenantInfo,
-  TenantAccess,
-} from '@/types/auth.types';
+import type { AuthState, LoginCredentials, User, TenantInfo } from '@/types/auth.types';
 
 // Constantes para claves de localStorage
 const STORAGE_KEYS = {
@@ -164,6 +157,16 @@ export const useAuthStore = create<AuthState>()(
           await authAPI.logout(refreshToken);
         }
 
+        // Usar forceLogout para limpiar estado local
+        get().forceLogout();
+      },
+
+      /**
+       * Logout sin llamada al backend.
+       * Usar cuando el refresh token ya falló y no podemos contactar al servidor.
+       * Evita loops infinitos en el interceptor de axios.
+       */
+      forceLogout: () => {
         // Limpiar localStorage
         localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
         localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
@@ -286,6 +289,25 @@ export const useAuthStore = create<AuthState>()(
           set({ user: userProfile, isLoadingUser: false });
         } catch (error) {
           console.warn('Failed to load user profile:', error);
+          set({ isLoadingUser: false });
+        }
+      },
+
+      /**
+       * Fuerza recarga del perfil del User (core.User) dentro del tenant actual.
+       * A diferencia de loadUserProfile(), ignora el guard de user existente.
+       * Usar cuando el cargo o permisos del usuario cambian.
+       */
+      refreshUserProfile: async () => {
+        const { currentTenantId } = get();
+        if (!currentTenantId) return;
+
+        try {
+          set({ isLoadingUser: true, user: null });
+          const userProfile = await authAPI.getProfile();
+          set({ user: userProfile, isLoadingUser: false });
+        } catch (error) {
+          console.warn('Failed to refresh user profile:', error);
           set({ isLoadingUser: false });
         }
       },

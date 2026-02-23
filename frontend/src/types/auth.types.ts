@@ -156,7 +156,11 @@ export interface AuthState {
   // Acciones
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;
+  /** Logout sin llamada al backend — para usar cuando el refresh token falla */
+  forceLogout: () => void;
   refreshTenantProfile: () => Promise<void>;
+  /** Fuerza recarga del perfil del User (ignora guard de user existente) */
+  refreshUserProfile: () => Promise<void>;
   selectTenant: (tenantId: number) => Promise<void>;
   loadUserProfile: () => Promise<void>;
   setUser: (user: User) => void;

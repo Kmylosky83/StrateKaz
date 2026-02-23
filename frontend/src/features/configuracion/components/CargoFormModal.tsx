@@ -53,6 +53,7 @@ import {
 import { FuncionesTable } from './FuncionesTable';
 import { CompetenciasTable } from './CompetenciasTable';
 import type { Tab } from '@/components/common';
+import { toast } from 'sonner';
 import {
   UserCircle,
   FileText,
@@ -177,7 +178,11 @@ const ListEditor = ({
 };
 
 export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormModalProps) => {
-  const isEditing = cargo !== null;
+  // Estado para transicion create→edit: al crear un cargo, permite configurar permisos sin cerrar el modal
+  const [createdCargo, setCreatedCargo] = useState<{ id: number; name: string } | null>(null);
+  const isEditing = cargo !== null || createdCargo !== null;
+  const editingCargoId = cargo?.id ?? createdCargo?.id ?? null;
+  const editingCargoName = cargo?.name ?? createdCargo?.name ?? '';
 
   // Form state organizado por tabs
   const [formData, setFormData] = useState({
@@ -284,6 +289,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
   // Reset cuando se cierra o cambia a crear nuevo
   useEffect(() => {
     if (!cargo) {
+      setCreatedCargo(null);
       setFormData({
         code: '',
         name: '',
@@ -325,7 +331,8 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (isEditing && cargo) {
+    if (isEditing && (cargo || createdCargo)) {
+      const cargoId = cargo?.id ?? createdCargo!.id;
       const updateData: UpdateCargoDTO = {
         name: formData.name,
         description: formData.description || undefined,
@@ -362,7 +369,7 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
         restricciones_medicas: formData.restricciones_medicas || undefined,
         capacitaciones_sst: formData.capacitaciones_sst,
       };
-      await updateMutation.mutateAsync({ id: cargo.id, data: updateData });
+      await updateMutation.mutateAsync({ id: cargoId, data: updateData });
     } else {
       const createData: CreateCargoDTO = {
         code: formData.code,
@@ -403,6 +410,12 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
       };
       const newCargo = await createMutation.mutateAsync(createData);
       onSuccess?.(newCargo.id);
+
+      // Transicionar a modo edición para configurar permisos RBAC
+      setCreatedCargo({ id: newCargo.id, name: newCargo.name || formData.name });
+      setActiveTab('acceso');
+      toast.success('Cargo creado. Ahora configura los accesos y permisos.');
+      return; // No cerrar el modal
     }
 
     onClose();
@@ -434,7 +447,13 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
     <BaseModal
       isOpen={isOpen}
       onClose={onClose}
-      title={isEditing ? `Editar Cargo: ${cargo?.name}` : 'Nuevo Cargo'}
+      title={
+        cargo
+          ? `Editar Cargo: ${cargo.name}`
+          : createdCargo
+            ? `Cargo: ${createdCargo.name}`
+            : 'Nuevo Cargo'
+      }
       size="5xl"
       footer={footer}
     >
@@ -854,12 +873,12 @@ export const CargoFormModal = ({ cargo, isOpen, onClose, onSuccess }: CargoFormM
           {/* ========== TAB 5: ACCESO Y PERMISOS (RBAC Unificado v4.0) ========== */}
           {activeTab === 'acceso' && (
             <div className="space-y-4">
-              {isEditing && cargo ? (
-                <TabAccesoSecciones cargoId={cargo.id} cargoName={cargo.name} />
+              {isEditing && editingCargoId ? (
+                <TabAccesoSecciones cargoId={editingCargoId} cargoName={editingCargoName} />
               ) : (
                 <Alert
-                  variant="warning"
-                  message="Los accesos y permisos se configuran después de crear el cargo. Guarda primero y luego configura los accesos."
+                  variant="info"
+                  message="Los accesos y permisos se configurarán después de guardar el cargo. Completa la información y guarda para continuar."
                 />
               )}
             </div>

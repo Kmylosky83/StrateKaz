@@ -2,6 +2,7 @@
  * Hooks para gestion de Cargos
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuthStore } from '@/store/authStore';
 import { rbacAPI } from '../api/rbac.api';
 import type { CargoFilters, CreateCargoDTO, UpdateCargoDTO } from '../types/rbac.types';
 
@@ -194,7 +195,13 @@ export function useAsignarPermisosCargo() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ cargoId, permissionIds }: { cargoId: number; permissionIds: number[] }) => {
+    mutationFn: async ({
+      cargoId,
+      permissionIds,
+    }: {
+      cargoId: number;
+      permissionIds: number[];
+    }) => {
       return rbacAPI.assignPermissionsToCargo(cargoId, permissionIds, true);
     },
     onSuccess: (_, variables) => {
@@ -290,6 +297,13 @@ export function useSaveCargoSectionAccess() {
       // Invalidar sidebar y tree para actualización inmediata de navegación
       queryClient.invalidateQueries({ queryKey: ['modules', 'sidebar'] });
       queryClient.invalidateQueries({ queryKey: ['modules', 'tree'] });
+
+      // Si el cargo modificado es el del usuario logueado, refrescar su perfil
+      // para que permission_codes y section_ids se actualicen
+      const loggedUser = useAuthStore.getState().user;
+      if (loggedUser?.cargo?.id === variables.cargoId) {
+        useAuthStore.getState().refreshUserProfile();
+      }
     },
   });
 }

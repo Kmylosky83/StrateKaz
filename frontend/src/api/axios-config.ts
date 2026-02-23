@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { API_URL } from '@/utils/constants';
+import { useAuthStore } from '@/store/authStore';
 
 const axiosInstance = axios.create({
   baseURL: API_URL,
@@ -69,9 +70,8 @@ axiosInstance.interceptors.response.use(
         }
         return axiosInstance(originalRequest);
       } catch (refreshError) {
-        // Si falla el refresh, limpiar tokens
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
+        // Si falla el refresh, limpiar estado completo via forceLogout
+        useAuthStore.getState().forceLogout();
         // Solo redirigir si NO estamos ya en login (evitar loop)
         if (!window.location.pathname.startsWith('/login')) {
           window.location.href = '/login';

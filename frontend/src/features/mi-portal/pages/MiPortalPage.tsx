@@ -51,6 +51,7 @@ import {
   MisDocumentos,
   MiHSEQ,
 } from '../components';
+import { AvatarUploadModal } from '@/features/perfil/components/AvatarUploadModal';
 import type { MiPortalTab } from '../types';
 
 // ============================================================================
@@ -88,7 +89,7 @@ const INTERNAL_ONLY_TABS = new Set<MiPortalTab>(['vacaciones', 'permisos', 'reci
 const EXTERNAL_ONLY_TABS = new Set<MiPortalTab>(['hseq']);
 
 const ALL_PORTAL_TABS = [
-  { id: 'perfil' as const, label: 'Mi perfil', icon: <User className="w-4 h-4" /> },
+  { id: 'perfil' as const, label: 'Mis datos', icon: <User className="w-4 h-4" /> },
   { id: 'documentos' as const, label: 'Documentos', icon: <FolderOpen className="w-4 h-4" /> },
   { id: 'hseq' as const, label: 'HSEQ', icon: <ShieldCheck className="w-4 h-4" /> },
   { id: 'vacaciones' as const, label: 'Vacaciones', icon: <Calendar className="w-4 h-4" /> },
@@ -135,6 +136,7 @@ function HeroSkeleton() {
 export default function MiPortalPage() {
   const [activeTab, setActiveTab] = useState<MiPortalTab>('perfil');
   const [showEditPerfil, setShowEditPerfil] = useState(false);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
 
   // Auth store for quick name access (already loaded, no API call)
   const user = useAuthStore((s) => s.user);
@@ -238,10 +240,10 @@ export default function MiPortalPage() {
             />
             <div className="p-6 md:p-8">
               <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-                {/* Avatar — clickeable para abrir modal de edición */}
+                {/* Avatar — clickeable para abrir AvatarUploadModal */}
                 <button
                   type="button"
-                  onClick={() => setShowEditPerfil(true)}
+                  onClick={() => setShowAvatarModal(true)}
                   className="relative group focus:outline-none flex-shrink-0"
                   title="Cambiar foto de perfil"
                 >
@@ -347,6 +349,7 @@ export default function MiPortalPage() {
               perfil={perfil}
               isLoading={perfilLoading}
               onEdit={() => setShowEditPerfil(true)}
+              onAvatarClick={() => setShowAvatarModal(true)}
             />
           )}
 
@@ -360,13 +363,18 @@ export default function MiPortalPage() {
         </motion.div>
 
         {/* ================================================================
-            MODAL EDITAR PERFIL
+            MODAL EDITAR DATOS PERSONALES (Colaborador)
             ================================================================ */}
         <MiPerfilEditForm
           isOpen={showEditPerfil}
           onClose={() => setShowEditPerfil(false)}
           perfil={perfil}
         />
+
+        {/* ================================================================
+            MODAL CAMBIAR FOTO (Avatar — mismo modal que en /perfil)
+            ================================================================ */}
+        <AvatarUploadModal isOpen={showAvatarModal} onClose={() => setShowAvatarModal(false)} />
       </div>
     </AnimatedPage>
   );

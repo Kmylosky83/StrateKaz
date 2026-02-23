@@ -24,9 +24,10 @@ interface MiPerfilCardProps {
   perfil: ColaboradorESS | null | undefined;
   isLoading: boolean;
   onEdit: () => void;
+  onAvatarClick: () => void;
 }
 
-export function MiPerfilCard({ perfil, isLoading, onEdit }: MiPerfilCardProps) {
+export function MiPerfilCard({ perfil, isLoading, onEdit, onAvatarClick }: MiPerfilCardProps) {
   const { primaryColor } = useBrandingConfig();
 
   if (isLoading) {
@@ -74,7 +75,7 @@ export function MiPerfilCard({ perfil, isLoading, onEdit }: MiPerfilCardProps) {
         {/* Avatar clickeable para cambiar foto */}
         <button
           type="button"
-          onClick={onEdit}
+          onClick={onAvatarClick}
           className="relative group focus:outline-none flex-shrink-0"
           title="Cambiar foto de perfil"
         >

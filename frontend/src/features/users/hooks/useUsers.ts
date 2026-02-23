@@ -31,6 +31,8 @@ export const useCreateUser = () => {
     mutationFn: (data: CreateUserDTO) => usersAPI.createUser(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      // Nuevo usuario afecta users_count del cargo asignado
+      queryClient.invalidateQueries({ queryKey: ['cargos-rbac'] });
       toast.success('Usuario creado exitosamente');
     },
     onError: (error: any) => {
@@ -54,6 +56,8 @@ export const useUpdateUser = () => {
       if (variables.data.cargo_id !== undefined) {
         queryClient.invalidateQueries({ queryKey: ['modules', 'sidebar'] });
         queryClient.invalidateQueries({ queryKey: ['modules', 'tree'] });
+        // Invalidar lista de cargos para actualizar users_count (cargo anterior y nuevo)
+        queryClient.invalidateQueries({ queryKey: ['cargos-rbac'] });
 
         // Si el usuario editado es el usuario logueado, refrescar su perfil
         const loggedUserId = useAuthStore.getState().user?.id;
@@ -78,6 +82,8 @@ export const useDeleteUser = () => {
     mutationFn: (id: number) => usersAPI.deleteUser(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      // Usuario eliminado afecta users_count del cargo que tenía
+      queryClient.invalidateQueries({ queryKey: ['cargos-rbac'] });
       toast.success('Usuario eliminado exitosamente');
     },
     onError: (error: any) => {
@@ -95,6 +101,8 @@ export const useToggleUserStatus = () => {
       usersAPI.toggleUserStatus(id, is_active),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      // Activar/desactivar afecta users_count del cargo (filtra por is_active)
+      queryClient.invalidateQueries({ queryKey: ['cargos-rbac'] });
       toast.success('Estado del usuario actualizado');
     },
     onError: (error: any) => {

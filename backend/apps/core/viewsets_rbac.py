@@ -392,7 +392,7 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(is_system=False)
 
         return queryset.select_related('parent_cargo', 'area', 'rol_sistema').prefetch_related(
-            'permisos', 'default_roles', 'expuesto_riesgos'
+            'permisos', 'default_roles', 'expuesto_riesgos', 'usuarios'
         )
 
     def perform_destroy(self, instance):

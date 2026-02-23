@@ -48,6 +48,7 @@ export const useAuthStore = create<AuthState>()(
       currentTenant: null,
       accessibleTenants: [],
       isSuperadmin: false,
+      _hasHydrated: false,
 
       /**
        * Login con TenantUser (sistema multi-tenant)
@@ -366,6 +367,13 @@ export const useAuthStore = create<AuthState>()(
         accessibleTenants: state.accessibleTenants,
         isSuperadmin: state.isSuperadmin,
       }),
+      // Marcar el store como rehidratado cuando termina el proceso de persist
+      // Esto previene el redirect falso a /login durante F5 (hard reload)
+      onRehydrateStorage: () => {
+        return () => {
+          useAuthStore.setState({ _hasHydrated: true });
+        };
+      },
       // Migración: limpia datos antiguos para forzar re-login
       migrate: (persistedState, version) => {
         if (version < 4) {

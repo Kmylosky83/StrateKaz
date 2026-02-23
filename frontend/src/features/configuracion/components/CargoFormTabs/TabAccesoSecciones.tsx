@@ -76,6 +76,11 @@ export const TabAccesoSecciones = ({ cargoId, cargoName: _cargoName }: TabAcceso
   const { data: cargoAccessData, isLoading: isLoadingAccess } = useCargoSectionAccess(cargoId);
   const saveMutation = useSaveCargoSectionAccess();
 
+  // Resetear initialized cuando cambia el cargoId (otro cargo seleccionado)
+  useEffect(() => {
+    setInitialized(false);
+  }, [cargoId]);
+
   // Inicializar estado local desde servidor
   useEffect(() => {
     if (cargoAccessData?.accesses && !initialized) {
@@ -345,6 +350,10 @@ export const TabAccesoSecciones = ({ cargoId, cargoName: _cargoName }: TabAcceso
       cargoId,
       accesses,
     });
+
+    // Resetear initialized para que al refetch del servidor,
+    // el estado local se sincronice con los datos confirmados
+    setInitialized(false);
 
     // Si estamos editando el cargo del usuario actual, refrescar su perfil
     // para que los cambios de permisos se reflejen inmediatamente en la UI

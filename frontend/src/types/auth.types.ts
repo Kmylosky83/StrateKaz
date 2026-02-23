@@ -153,6 +153,8 @@ export interface AuthState {
   accessibleTenants: TenantAccess[];
   /** Es superadmin (acceso a todos los tenants) */
   isSuperadmin: boolean;
+  /** Indica si el store ya se rehidrató desde localStorage (previene redirect falso en F5) */
+  _hasHydrated: boolean;
   // Acciones
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;

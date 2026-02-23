@@ -66,8 +66,8 @@ export const EditProfileModal = ({ isOpen, onClose, user }: EditProfileModalProp
     <BaseModal
       isOpen={isOpen}
       onClose={onClose}
-      title="Editar Perfil"
-      description="Actualiza tu información personal"
+      title="Configuración de cuenta"
+      description="Nombre de usuario y correo de acceso al sistema"
       size="md"
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -104,7 +104,7 @@ export const EditProfileModal = ({ isOpen, onClose, user }: EditProfileModalProp
 
         {/* Teléfono */}
         <Input
-          label="Teléfono"
+          label="Teléfono de contacto"
           placeholder="+57 300 123 4567"
           leftIcon={<Phone className="h-5 w-5 text-gray-400" />}
           {...register('phone')}

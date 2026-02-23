@@ -460,10 +460,15 @@ class ChangePasswordSerializer(serializers.Serializer):
         return attrs
 
     def save(self, **kwargs):
-        """Cambiar contraseña del usuario"""
+        """Cambiar contraseña del usuario y sincronizar a TenantUser."""
         user = self.context.get('user')
         user.set_password(self.validated_data['new_password'])
         user.save()
+
+        # Sincronizar password al TenantUser (public schema) para que el login funcione
+        from apps.core.utils import sync_password_to_tenant_user
+        sync_password_to_tenant_user(user)
+
         return user
 
 

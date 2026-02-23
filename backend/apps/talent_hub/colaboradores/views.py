@@ -329,6 +329,198 @@ class ColaboradorViewSet(viewsets.ModelViewSet):
         serializer = ColaboradorCompleteSerializer(colaborador)
         return Response(serializer.data)
 
+    # =========================================================================
+    # IMPORTACION MASIVA DESDE EXCEL
+    # =========================================================================
+
+    @action(detail=False, methods=['get'], url_path='plantilla-importacion')
+    def plantilla_importacion(self, request):
+        """
+        Descarga la plantilla Excel para importación masiva de colaboradores.
+        GET /colaboradores/plantilla-importacion/
+        Incluye hoja de datos + hoja de referencia con valores válidos del tenant.
+        """
+        from django.http import HttpResponse
+        from .import_utils import generate_import_template
+
+        # Obtener cargos y áreas del tenant para la hoja de referencia
+        try:
+            from apps.core.estructura_cargos.models import Cargo
+            cargos = list(Cargo.objects.filter(is_active=True).values('name'))
+        except Exception:
+            cargos = []
+
+        try:
+            from apps.gestion_estrategica.organizacion.models import Area
+            areas = list(Area.objects.filter(is_active=True).values('name'))
+        except Exception:
+            areas = []
+
+        excel_bytes = generate_import_template(cargos=cargos, areas=areas)
+
+        response = HttpResponse(
+            excel_bytes,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="plantilla_colaboradores.xlsx"'
+        return response
+
+    @action(detail=False, methods=['post'], url_path='importar')
+    def importar(self, request):
+        """
+        Importa colaboradores desde un archivo Excel/CSV.
+        POST /colaboradores/importar/   multipart/form-data  campo: archivo
+
+        Procesa fila por fila — los errores NO bloquean las filas válidas.
+        Respuesta:
+        {
+          "creados": N,
+          "con_acceso": N,
+          "errores": [{"fila": X, "identificacion": "...", "errores": [...]}]
+        }
+        """
+        archivo = request.FILES.get('archivo')
+        if not archivo:
+            return Response(
+                {'detail': 'Se requiere el archivo Excel (.xlsx).'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validar extensión
+        nombre = archivo.name.lower()
+        if not (nombre.endswith('.xlsx') or nombre.endswith('.xls') or nombre.endswith('.csv')):
+            return Response(
+                {'detail': 'El archivo debe ser Excel (.xlsx) o CSV (.csv).'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Parsear el archivo
+        try:
+            from .import_utils import parse_excel_file, COLUMNAS
+            contenido = archivo.read()
+            filas = parse_excel_file(contenido)
+        except Exception as e:
+            logger.error('Error parseando archivo de importación: %s', e, exc_info=True)
+            return Response(
+                {'detail': f'No se pudo leer el archivo: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not filas:
+            return Response(
+                {'detail': 'El archivo no contiene datos. Verifica que haya filas después de la cabecera.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        empresa = get_tenant_empresa()
+        user = request.user
+        creados = 0
+        con_acceso = 0
+        errores = []
+
+        from .import_serializer import ColaboradorImportRowSerializer
+
+        for fila_raw in filas:
+            num_fila = fila_raw.pop('_fila', '?')
+            identificacion = str(fila_raw.get('numero_identificacion', '')).strip()
+
+            # Construir dict normalizado para el serializer
+            datos = {col: fila_raw.get(col, '') for col in COLUMNAS if col != '_fila'}
+
+            serializer = ColaboradorImportRowSerializer(data=datos)
+            if not serializer.is_valid():
+                # Aplanar errores a lista de strings
+                msgs = []
+                for field, errs in serializer.errors.items():
+                    if isinstance(errs, list):
+                        msgs.extend([str(e) for e in errs])
+                    else:
+                        msgs.append(str(errs))
+                errores.append({
+                    'fila': num_fila,
+                    'identificacion': identificacion or '—',
+                    'errores': msgs,
+                })
+                continue
+
+            vdata = serializer.validated_data
+            cargo = vdata.pop('_cargo')
+            area = vdata.pop('_area')
+            crear_acceso = vdata.pop('_crear_acceso', False)
+            email_corp = vdata.pop('_email_corporativo', None)
+            username_corp = vdata.pop('_username', None)
+
+            # Limpiar campos auxiliares no presentes en el modelo
+            for key in ['cargo_nombre', 'area_nombre', 'crear_acceso',
+                        'email_corporativo', 'username']:
+                vdata.pop(key, None)
+
+            try:
+                with transaction.atomic():
+                    colaborador = Colaborador(
+                        **vdata,
+                        cargo=cargo,
+                        area=area,
+                        empresa=empresa,
+                        created_by=user,
+                        updated_by=user,
+                    )
+                    colaborador.full_clean(exclude=['usuario'])
+                    colaborador.save()
+
+                    # Records asociados
+                    HojaVida.objects.create(
+                        colaborador=colaborador,
+                        empresa=empresa,
+                        created_by=user,
+                        updated_by=user,
+                    )
+                    InfoPersonal.objects.create(
+                        colaborador=colaborador,
+                        empresa=empresa,
+                        created_by=user,
+                        updated_by=user,
+                    )
+                    HistorialLaboral.objects.create(
+                        empresa=empresa,
+                        colaborador=colaborador,
+                        tipo_movimiento='contratacion',
+                        fecha_movimiento=colaborador.fecha_ingreso,
+                        cargo_nuevo=cargo,
+                        area_nueva=area,
+                        salario_nuevo=colaborador.salario,
+                        motivo='Contratación — importación masiva',
+                        created_by=user,
+                        updated_by=user,
+                    )
+
+                    # Crear acceso si aplica
+                    if crear_acceso and email_corp and username_corp:
+                        self._create_user_for_colaborador(
+                            colaborador, email_corp, username_corp, empresa, user
+                        )
+                        con_acceso += 1
+
+                    creados += 1
+
+            except Exception as e:
+                logger.error(
+                    'Error importando fila %s (CC %s): %s',
+                    num_fila, identificacion, e, exc_info=True
+                )
+                errores.append({
+                    'fila': num_fila,
+                    'identificacion': identificacion or '—',
+                    'errores': [str(e)],
+                })
+
+        return Response({
+            'creados': creados,
+            'con_acceso': con_acceso,
+            'errores': errores,
+            'total_filas': creados + len(errores),
+        }, status=status.HTTP_200_OK if creados > 0 else status.HTTP_400_BAD_REQUEST)
+
     @action(detail=True, methods=['post'], url_path='crear-acceso')
     @transaction.atomic
     def crear_acceso(self, request, pk=None):

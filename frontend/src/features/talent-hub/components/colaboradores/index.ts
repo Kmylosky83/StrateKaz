@@ -5,3 +5,4 @@
 export { ColaboradoresSection } from './ColaboradoresSection';
 export { ColaboradorFormModal } from './ColaboradorFormModal';
 export { CrearAccesoModal } from './CrearAccesoModal';
+export { ImportarColaboradoresModal } from './ImportarColaboradoresModal';

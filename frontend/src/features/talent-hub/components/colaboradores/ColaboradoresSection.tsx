@@ -39,6 +39,7 @@ import {
   LogOut,
   Briefcase,
   Shield,
+  Upload,
 } from 'lucide-react';
 import {
   useColaboradores,
@@ -55,6 +56,7 @@ import type {
 } from '../../types';
 import { ColaboradorFormModal } from './ColaboradorFormModal';
 import { CrearAccesoModal } from './CrearAccesoModal';
+import { ImportarColaboradoresModal } from './ImportarColaboradoresModal';
 
 // Opciones de estado para filtro
 const ESTADO_OPTIONS = [
@@ -110,6 +112,7 @@ export const ColaboradoresSection = () => {
   const [retireTarget, setRetireTarget] = useState<Colaborador | null>(null);
   const [isAccesoOpen, setIsAccesoOpen] = useState(false);
   const [accesoTarget, setAccesoTarget] = useState<Colaborador | null>(null);
+  const [isImportOpen, setIsImportOpen] = useState(false);
 
   // Module color
   const { color: moduleColor } = useModuleColor('TALENT_HUB');
@@ -356,6 +359,10 @@ export const ColaboradoresSection = () => {
               options={ESTADO_OPTIONS}
               className="w-36"
             />
+            <Button variant="outline" size="sm" onClick={() => setIsImportOpen(true)}>
+              <Upload size={16} className="mr-1" />
+              Importar
+            </Button>
             <Button variant="primary" size="sm" onClick={handleCreate}>
               <UserPlus size={16} className="mr-1" />
               Nuevo
@@ -486,6 +493,9 @@ export const ColaboradoresSection = () => {
           setRetireTarget(null);
         }}
       />
+
+      {/* Importar Modal */}
+      <ImportarColaboradoresModal isOpen={isImportOpen} onClose={() => setIsImportOpen(false)} />
     </div>
   );
 };

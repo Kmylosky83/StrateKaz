@@ -542,19 +542,19 @@ class CrearAccesoProveedorSerializer(serializers.Serializer):
 
     email = serializers.EmailField(required=True)
     username = serializers.CharField(required=True, max_length=150)
-    cargo_id = serializers.PrimaryKeyRelatedField(
-        queryset=None,
+    cargo_id = serializers.IntegerField(
         required=True,
         help_text='ID del cargo a asignar al usuario'
     )
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def validate_cargo_id(self, value):
         from django.apps import apps
         Cargo = apps.get_model('core', 'Cargo')
-        self.fields['cargo_id'].queryset = Cargo.objects.filter(
-            is_active=True, is_system=False
-        )
+        try:
+            Cargo.objects.get(id=value, is_active=True, is_system=False)
+        except Cargo.DoesNotExist:
+            raise serializers.ValidationError('Cargo no encontrado o no válido.')
+        return value
 
     def validate_username(self, value):
         value = value.strip()

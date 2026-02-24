@@ -736,7 +736,11 @@ class ProveedorViewSet(viewsets.ModelViewSet):
 
         email = serializer.validated_data['email']
         username = serializer.validated_data['username']
-        cargo = serializer.validated_data['cargo_id']
+        cargo_id = serializer.validated_data['cargo_id']
+
+        from django.apps import apps
+        Cargo = apps.get_model('core', 'Cargo')
+        cargo = Cargo.objects.get(id=cargo_id)
 
         if User.objects.filter(email=email).exists():
             return Response(

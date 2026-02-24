@@ -1,0 +1,421 @@
+/**
+ * ProveedorPortalPage — Portal del Consultor / Proveedor Externo
+ *
+ * Página de solo lectura para usuarios externos vinculados a un Proveedor.
+ * Muestra 3 tabs: Empresa | Contratos | Evaluaciones
+ *
+ * Accesible desde: UserMenu → "Mi Empresa"
+ * Guard: redirige a /dashboard si el usuario no tiene proveedor vinculado
+ */
+import { useState } from 'react';
+import { Navigate } from 'react-router-dom';
+import {
+  Building2,
+  FileText,
+  BarChart3,
+  MapPin,
+  Phone,
+  Mail,
+  Hash,
+  Badge as BadgeIcon,
+} from 'lucide-react';
+import { AnimatedPage, Badge, Card, Skeleton, Tabs } from '@/components/common';
+import { useAuthStore } from '@/store/authStore';
+import { useBrandingConfig } from '@/hooks/useBrandingConfig';
+import { useMiEmpresa, useMisContratos, useMisEvaluaciones } from '../hooks/useMiEmpresa';
+import type { ContratoProveedor, EvaluacionProveedor } from '../types';
+
+// ============================================================================
+// HELPERS
+// ============================================================================
+
+function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return '—';
+  return new Date(dateStr).toLocaleDateString('es-CO', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function calificacionBadge(calificacion: string | null): {
+  label: string;
+  variant: 'success' | 'warning' | 'error' | 'info';
+} {
+  if (!calificacion) return { label: 'Sin calificar', variant: 'info' };
+  const val = Number(calificacion);
+  if (val >= 80) return { label: `${val.toFixed(1)}`, variant: 'success' };
+  if (val >= 60) return { label: `${val.toFixed(1)}`, variant: 'warning' };
+  return { label: `${val.toFixed(1)}`, variant: 'error' };
+}
+
+const ESTADO_MAP: Record<string, 'success' | 'warning' | 'error' | 'info'> = {
+  APROBADA: 'success',
+  COMPLETADA: 'info',
+  EN_PROCESO: 'warning',
+  BORRADOR: 'error',
+};
+
+// ============================================================================
+// SUB-COMPONENTS
+// ============================================================================
+
+function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 py-2.5 border-b border-gray-100 dark:border-gray-700 last:border-0">
+      <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide sm:w-40 flex-shrink-0">
+        {label}
+      </span>
+      <span className="text-sm text-gray-900 dark:text-gray-100">{value || '—'}</span>
+    </div>
+  );
+}
+
+function TabEmpresa() {
+  const { data: empresa, isLoading } = useMiEmpresa();
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-10 w-full" />
+        ))}
+      </div>
+    );
+  }
+
+  if (!empresa) {
+    return (
+      <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-8">
+        No se encontró información de tu empresa.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Identificación */}
+      <div>
+        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+          Identificación
+        </h3>
+        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl px-4">
+          <InfoRow label="Nombre comercial" value={empresa.nombre_comercial} />
+          <InfoRow label="Razón social" value={empresa.razon_social} />
+          <InfoRow label="Tipo de documento" value={empresa.tipo_documento_data?.nombre || '—'} />
+          <InfoRow label="N.° documento" value={empresa.numero_documento} />
+          {empresa.nit && <InfoRow label="NIT" value={empresa.nit} />}
+          <InfoRow label="Tipo proveedor" value={empresa.tipo_proveedor_data?.nombre || '—'} />
+        </div>
+      </div>
+
+      {/* Contacto */}
+      <div>
+        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+          Contacto
+        </h3>
+        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl px-4">
+          <InfoRow
+            label="Dirección"
+            value={
+              empresa.direccion ? (
+                <span className="flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                  {empresa.direccion}, {empresa.ciudad}
+                  {empresa.departamento_data && `, ${empresa.departamento_data.nombre}`}
+                </span>
+              ) : null
+            }
+          />
+          <InfoRow
+            label="Teléfono"
+            value={
+              empresa.telefono ? (
+                <span className="flex items-center gap-1.5">
+                  <Phone className="w-3.5 h-3.5 text-gray-400" />
+                  {empresa.telefono}
+                </span>
+              ) : null
+            }
+          />
+          <InfoRow
+            label="Email"
+            value={
+              empresa.email ? (
+                <span className="flex items-center gap-1.5">
+                  <Mail className="w-3.5 h-3.5 text-gray-400" />
+                  {empresa.email}
+                </span>
+              ) : null
+            }
+          />
+        </div>
+      </div>
+
+      {empresa.observaciones && (
+        <div>
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+            Observaciones
+          </h3>
+          <p className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
+            {empresa.observaciones}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TabContratos() {
+  const { data: contratos, isLoading } = useMisContratos();
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {[1, 2].map((i) => (
+          <Skeleton key={i} className="h-24 w-full rounded-xl" />
+        ))}
+      </div>
+    );
+  }
+
+  const lista: ContratoProveedor[] = contratos ?? [];
+
+  if (lista.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <FileText className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          No hay condiciones comerciales registradas.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {lista.map((contrato) => (
+        <div
+          key={contrato.id}
+          className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                {contrato.descripcion}
+              </p>
+              {contrato.forma_pago && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  Forma de pago: {contrato.forma_pago}
+                </p>
+              )}
+            </div>
+            <Badge variant={contrato.esta_vigente ? 'success' : 'error'} size="sm">
+              {contrato.esta_vigente ? 'Vigente' : 'Vencida'}
+            </Badge>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+            <div>
+              <span className="text-gray-400 block">Valor acordado</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100">
+                {contrato.valor_acordado}
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-400 block">Vigencia desde</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100">
+                {formatDate(contrato.vigencia_desde)}
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-400 block">Vigencia hasta</span>
+              <span className="font-medium text-gray-900 dark:text-gray-100">
+                {contrato.vigencia_hasta ? formatDate(contrato.vigencia_hasta) : 'Indefinida'}
+              </span>
+            </div>
+          </div>
+          {contrato.plazo_entrega && (
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Plazo de entrega: {contrato.plazo_entrega}
+            </p>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TabEvaluaciones() {
+  const { data: evaluaciones, isLoading } = useMisEvaluaciones();
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {[1, 2].map((i) => (
+          <Skeleton key={i} className="h-20 w-full rounded-xl" />
+        ))}
+      </div>
+    );
+  }
+
+  const lista: EvaluacionProveedor[] = evaluaciones ?? [];
+
+  if (lista.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <BarChart3 className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          No hay evaluaciones registradas aún.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {lista.map((ev) => {
+        const cal = calificacionBadge(ev.calificacion_total);
+        return (
+          <div key={ev.id} className="rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div>
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  Período: {ev.periodo}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  {formatDate(ev.fecha_evaluacion)} · Evaluado por: {ev.evaluado_por_nombre}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant={ESTADO_MAP[ev.estado] ?? 'info'} size="sm">
+                  {ev.estado_display}
+                </Badge>
+                <Badge variant={cal.variant} size="sm">
+                  {cal.label}
+                </Badge>
+              </div>
+            </div>
+            {ev.observaciones && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 border-t border-gray-100 dark:border-gray-700 pt-2 mt-2">
+                {ev.observaciones}
+              </p>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ============================================================================
+// PAGE TABS
+// ============================================================================
+
+type PortalTab = 'empresa' | 'contratos' | 'evaluaciones';
+
+const PORTAL_TABS = [
+  { id: 'empresa' as const, label: 'Mi Empresa', icon: <Building2 className="w-4 h-4" /> },
+  { id: 'contratos' as const, label: 'Contratos', icon: <FileText className="w-4 h-4" /> },
+  { id: 'evaluaciones' as const, label: 'Evaluaciones', icon: <BarChart3 className="w-4 h-4" /> },
+];
+
+// ============================================================================
+// MAIN PAGE
+// ============================================================================
+
+export default function ProveedorPortalPage() {
+  const [activeTab, setActiveTab] = useState<PortalTab>('empresa');
+  const user = useAuthStore((s) => s.user);
+  const { primaryColor } = useBrandingConfig();
+  const { data: empresa, isLoading } = useMiEmpresa();
+
+  // Guard: sin proveedor vinculado → dashboard
+  if (!user?.proveedor) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  const proveedorNombre = empresa?.nombre_comercial || user.proveedor_nombre || 'Mi Empresa';
+
+  return (
+    <AnimatedPage>
+      <div className="space-y-6">
+        {/* ================================================================
+            HERO HEADER
+            ================================================================ */}
+        <Card padding="none" className="overflow-hidden">
+          {/* Gradient bar */}
+          <div
+            className="h-1.5"
+            style={{ background: `linear-gradient(90deg, ${primaryColor}, ${primaryColor}80)` }}
+          />
+          <div className="p-6 md:p-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              {/* Icon */}
+              <div
+                className="h-14 w-14 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: `${primaryColor}15` }}
+              >
+                <Building2 className="w-7 h-7" style={{ color: primaryColor }} />
+              </div>
+
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                {isLoading ? (
+                  <>
+                    <Skeleton className="h-6 w-48 mb-1" />
+                    <Skeleton className="h-4 w-32" />
+                  </>
+                ) : (
+                  <>
+                    <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white truncate">
+                      {proveedorNombre}
+                    </h1>
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                      {empresa?.tipo_documento_data && (
+                        <span className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                          <Hash className="w-3.5 h-3.5" />
+                          {empresa.tipo_documento_data.codigo}: {empresa.numero_documento}
+                        </span>
+                      )}
+                      {empresa?.tipo_proveedor_data && (
+                        <Badge variant="info" size="sm">
+                          {empresa.tipo_proveedor_data.nombre}
+                        </Badge>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Status badge */}
+              {!isLoading && empresa && (
+                <Badge variant={empresa.is_active ? 'success' : 'error'} size="sm">
+                  {empresa.is_active ? 'Activo' : 'Inactivo'}
+                </Badge>
+              )}
+            </div>
+          </div>
+        </Card>
+
+        {/* ================================================================
+            TABS
+            ================================================================ */}
+        <Tabs
+          tabs={PORTAL_TABS}
+          activeTab={activeTab}
+          onChange={(tab) => setActiveTab(tab as PortalTab)}
+          variant="underline"
+        />
+
+        {/* ================================================================
+            TAB CONTENT
+            ================================================================ */}
+        <div>
+          {activeTab === 'empresa' && <TabEmpresa />}
+          {activeTab === 'contratos' && <TabContratos />}
+          {activeTab === 'evaluaciones' && <TabEvaluaciones />}
+        </div>
+      </div>
+    </AnimatedPage>
+  );
+}

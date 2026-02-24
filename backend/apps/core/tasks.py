@@ -95,7 +95,10 @@ def send_email_async(self, subject: str, message: str, recipient_list: List[str]
 )
 def send_welcome_email_task(self, user_email: str, user_name: str,
                             tenant_name: str, cargo_name: str = '',
-                            temp_password_hint: str = '') -> Dict[str, Any]:
+                            temp_password_hint: str = '',
+                            primary_color: str = '#ec268f',
+                            secondary_color: str = '#000000',
+                            current_year: int = None) -> Dict[str, Any]:
     """
     Envia email de bienvenida a un nuevo trabajador.
 
@@ -105,12 +108,16 @@ def send_welcome_email_task(self, user_email: str, user_name: str,
         tenant_name: Nombre de la empresa (tenant)
         cargo_name: Nombre del cargo asignado
         temp_password_hint: Indicacion del password temporal (ej: "Tu numero de documento")
+        primary_color: Color primario del tenant para branding (#ec268f por defecto)
+        secondary_color: Color secundario del tenant para branding (#000000 por defecto)
+        current_year: Año para el footer (se calcula automáticamente si no se pasa)
     """
     try:
         logger.info(f"[Task {self.request.id}] Enviando bienvenida a {user_email}")
 
         frontend_url = getattr(settings, 'FRONTEND_URL', 'https://app.stratekaz.com')
         login_url = f"{frontend_url}/login"
+        year = current_year or datetime.now().year
 
         html_content = render_to_string('emails/welcome_user.html', {
             'user_name': user_name,
@@ -120,6 +127,9 @@ def send_welcome_email_task(self, user_email: str, user_name: str,
             'login_url': login_url,
             'frontend_url': frontend_url,
             'temp_password_hint': temp_password_hint,
+            'primary_color': primary_color,
+            'secondary_color': secondary_color,
+            'current_year': year,
         })
 
         text_content = strip_tags(html_content)

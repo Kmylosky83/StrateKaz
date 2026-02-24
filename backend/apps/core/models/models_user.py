@@ -762,6 +762,19 @@ class User(AbstractUser):
     )
 
     # ==========================================================================
+    # PROVEEDOR VINCULADO (para usuarios externos: consultores, auditores)
+    # ==========================================================================
+    proveedor = models.ForeignKey(
+        'gestion_proveedores.Proveedor',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='usuarios_vinculados',
+        verbose_name='Proveedor vinculado',
+        help_text='Solo para usuarios externos (consultores, auditores, proveedores de servicios)',
+    )
+
+    # ==========================================================================
     # RBAC HÍBRIDO - ROLES ADICIONALES
     # ==========================================================================
     roles_adicionales = models.ManyToManyField(

@@ -98,6 +98,9 @@ class UserDetailSerializer(serializers.ModelSerializer):
     # URL de foto de perfil
     photo_url = serializers.SerializerMethodField()
 
+    # Proveedor vinculado (para usuarios externos: consultores, auditores)
+    proveedor_nombre = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
@@ -133,6 +136,9 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'area_nombre',
             # Foto de perfil
             'photo_url',
+            # Proveedor vinculado
+            'proveedor',
+            'proveedor_nombre',
         ]
         read_only_fields = [
             'id',
@@ -174,6 +180,13 @@ class UserDetailSerializer(serializers.ModelSerializer):
             if request:
                 return request.build_absolute_uri(obj.photo.url)
             return obj.photo.url
+        return None
+
+    def get_proveedor_nombre(self, obj):
+        """Retorna el nombre comercial del proveedor vinculado (None si no tiene)"""
+        proveedor = getattr(obj, 'proveedor', None)
+        if proveedor:
+            return proveedor.nombre_comercial
         return None
 
     def get_section_ids(self, obj):
@@ -359,6 +372,32 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         allow_null=True,
         help_text='ID del cargo'
     )
+    proveedor_id = serializers.IntegerField(
+        required=False,
+        allow_null=True,
+        help_text='ID del proveedor vinculado (para usuarios externos)',
+    )
+
+    def validate_proveedor_id(self, value):
+        """Valida que el proveedor exista si se proporciona un ID"""
+        if value is None:
+            return None
+        try:
+            from django.apps import apps
+            Proveedor = apps.get_model('gestion_proveedores', 'Proveedor')
+            return Proveedor.objects.get(id=value, is_active=True)
+        except Exception:
+            raise serializers.ValidationError('Proveedor no encontrado o inactivo')
+
+    def update(self, instance, validated_data):
+        """Override para manejar proveedor_id → proveedor FK"""
+        proveedor = validated_data.pop('proveedor_id', 'NOT_SET')
+        instance = super().update(instance, validated_data)
+        if proveedor != 'NOT_SET':
+            # proveedor es None (desvinculado) o una instancia Proveedor
+            instance.proveedor = proveedor
+            instance.save(update_fields=['proveedor'])
+        return instance
 
     class Meta:
         model = User
@@ -368,6 +407,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             'email',
             'phone',
             'cargo_id',
+            'proveedor_id',
             'is_active',
             'is_staff',
         ]

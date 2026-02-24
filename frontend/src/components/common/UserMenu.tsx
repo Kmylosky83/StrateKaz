@@ -11,7 +11,7 @@
  */
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Settings, LogOut, ChevronDown, Shield, Bell } from 'lucide-react';
+import { User, Settings, LogOut, ChevronDown, Shield, Bell, Building2 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { cn } from '@/utils/cn';
 import { USER_MENU_LABELS, ROUTES } from '@/constants';
@@ -202,6 +202,14 @@ export const UserMenu = ({ compact = false, className }: UserMenuProps) => {
               label={USER_MENU_LABELS.PROFILE}
               onClick={() => handleNavigate(ROUTES.PROFILE)}
             />
+            {user?.proveedor && (
+              <MenuItem
+                icon={Building2}
+                label="Mi Empresa"
+                sublabel={user.proveedor_nombre ?? undefined}
+                onClick={() => handleNavigate(ROUTES.PROVEEDOR_PORTAL)}
+              />
+            )}
             <MenuItem
               icon={Bell}
               label={USER_MENU_LABELS.NOTIFICATIONS}
@@ -240,11 +248,13 @@ export const UserMenu = ({ compact = false, className }: UserMenuProps) => {
 interface MenuItemProps {
   icon: React.ElementType;
   label: string;
+  /** Texto secundario debajo del label (ej: nombre del proveedor) */
+  sublabel?: string;
   onClick: () => void;
   variant?: 'default' | 'danger';
 }
 
-const MenuItem = ({ icon: Icon, label, onClick, variant = 'default' }: MenuItemProps) => {
+const MenuItem = ({ icon: Icon, label, sublabel, onClick, variant = 'default' }: MenuItemProps) => {
   return (
     <button
       onClick={onClick}
@@ -257,7 +267,14 @@ const MenuItem = ({ icon: Icon, label, onClick, variant = 'default' }: MenuItemP
       )}
     >
       <Icon className="h-4 w-4 flex-shrink-0" />
-      <span>{label}</span>
+      <span className="flex-1 min-w-0">
+        {label}
+        {sublabel && (
+          <span className="block text-xs text-gray-400 dark:text-gray-500 truncate max-w-[140px]">
+            {sublabel}
+          </span>
+        )}
+      </span>
     </button>
   );
 };

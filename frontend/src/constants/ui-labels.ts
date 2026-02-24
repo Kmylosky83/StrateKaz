@@ -104,4 +104,5 @@ export const ROUTES = {
   PROFILE_SECURITY: '/perfil/seguridad',
   PROFILE_PREFERENCES: '/perfil/preferencias',
   NOTIFICATIONS: '/auditoria/notificaciones',
+  PROVEEDOR_PORTAL: '/proveedor-portal',
 } as const;

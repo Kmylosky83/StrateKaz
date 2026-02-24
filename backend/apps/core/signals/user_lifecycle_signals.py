@@ -200,15 +200,18 @@ def send_welcome_email_on_user_created(sender, instance, created, **kwargs):
     if not user.email:
         return
 
-    # Obtener nombre del tenant
+    # Obtener datos del tenant (nombre + colores para branding del email)
     current_tenant = getattr(connection, 'tenant', None)
     tenant_name = getattr(current_tenant, 'name', 'StrateKaz')
+    primary_color = getattr(current_tenant, 'primary_color', '#ec268f') or '#ec268f'
+    secondary_color = getattr(current_tenant, 'secondary_color', '#000000') or '#000000'
 
     # Si viene de contratacion, incluir indicacion de password temporal
     temp_password_hint = getattr(user, '_temp_password_hint', '')
 
     try:
         from apps.core.tasks import send_welcome_email_task
+        from django.utils import timezone
 
         send_welcome_email_task.delay(
             user_email=user.email,
@@ -216,6 +219,9 @@ def send_welcome_email_on_user_created(sender, instance, created, **kwargs):
             tenant_name=tenant_name,
             cargo_name=user.cargo.name if user.cargo else '',
             temp_password_hint=temp_password_hint,
+            primary_color=primary_color,
+            secondary_color=secondary_color,
+            current_year=timezone.now().year,
         )
 
         logger.info(

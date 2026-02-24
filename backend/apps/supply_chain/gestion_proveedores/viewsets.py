@@ -627,6 +627,92 @@ class ProveedorViewSet(viewsets.ModelViewSet):
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    # ==========================================================================
+    # PORTAL PROVEEDOR — Endpoints para usuarios externos vinculados
+    # ==========================================================================
+
+    @action(
+        detail=False,
+        methods=['get'],
+        url_path='mi-empresa',
+        permission_classes=[IsAuthenticated],
+    )
+    def mi_empresa(self, request):
+        """
+        Retorna el Proveedor vinculado al usuario autenticado.
+
+        GET /api/supply-chain/proveedores/mi-empresa/
+
+        Solo accesible para usuarios con proveedor asignado.
+        Solo lectura — el consultor ve su ficha pero no la edita.
+        """
+        proveedor = getattr(request.user, 'proveedor', None)
+        if not proveedor:
+            return Response(
+                {'detail': 'No tienes un proveedor vinculado a tu cuenta.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = ProveedorDetailSerializer(
+            proveedor,
+            context={'request': request}
+        )
+        return Response(serializer.data)
+
+    @action(
+        detail=False,
+        methods=['get'],
+        url_path='mi-empresa/contratos',
+        permission_classes=[IsAuthenticated],
+    )
+    def mi_empresa_contratos(self, request):
+        """
+        Retorna las condiciones comerciales del proveedor vinculado al usuario.
+
+        GET /api/supply-chain/proveedores/mi-empresa/contratos/
+        """
+        proveedor = getattr(request.user, 'proveedor', None)
+        if not proveedor:
+            return Response(
+                {'detail': 'No tienes un proveedor vinculado a tu cuenta.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        condiciones = CondicionComercialProveedor.objects.filter(
+            proveedor=proveedor
+        ).select_related('created_by').order_by('-vigencia_desde')
+
+        serializer = CondicionComercialSerializer(condiciones, many=True)
+        return Response(serializer.data)
+
+    @action(
+        detail=False,
+        methods=['get'],
+        url_path='mi-empresa/evaluaciones',
+        permission_classes=[IsAuthenticated],
+    )
+    def mi_empresa_evaluaciones(self, request):
+        """
+        Retorna las evaluaciones del proveedor vinculado al usuario.
+
+        GET /api/supply-chain/proveedores/mi-empresa/evaluaciones/
+        """
+        proveedor = getattr(request.user, 'proveedor', None)
+        if not proveedor:
+            return Response(
+                {'detail': 'No tienes un proveedor vinculado a tu cuenta.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        evaluaciones = EvaluacionProveedor.objects.filter(
+            proveedor=proveedor
+        ).select_related(
+            'evaluado_por', 'aprobado_por'
+        ).prefetch_related('detalles__criterio').order_by('-fecha_evaluacion')
+
+        serializer = EvaluacionProveedorSerializer(evaluaciones, many=True)
+        return Response(serializer.data)
+
 
 # ==============================================================================
 # VIEWSETS DE HISTORIAL Y CONDICIONES

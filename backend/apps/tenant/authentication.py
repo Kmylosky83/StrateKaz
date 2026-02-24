@@ -109,6 +109,9 @@ class HybridJWTAuthentication(JWTAuthentication):
         Si el token tiene 'email' (viene de TenantUser login),
         busca el User en el schema actual con ese email.
         Si no existe, lo crea automáticamente.
+
+        SEGURIDAD: TenantUserAccess se valida en AMBAS ramas (User existente
+        y User no existente) para evitar cross-tenant bypass.
         """
         email = validated_token.get('email')
 
@@ -116,54 +119,46 @@ class HybridJWTAuthentication(JWTAuthentication):
             # Token de TenantUser - buscar o crear User en schema actual
             from apps.core.models import User
             is_superadmin = validated_token.get('is_superadmin', False)
+            tenant_user_id = validated_token.get('tenant_user_id')
+
             try:
                 user = User.objects.get(email=email, is_active=True)
-                # Audit: registrar acceso de superadmin al tenant
-                # NO sincronizar is_superuser automáticamente en cada request
-                # para evitar escalación silenciosa de privilegios.
-                # El is_superuser solo se establece al momento de crear el User.
+
+                # SECURITY FIX: validar TenantUserAccess aunque el User ya exista.
+                # Sin esta verificación, si el mismo email tiene un User en varios
+                # schemas, cualquier token válido puede acceder a todos ellos.
+                if not is_superadmin and tenant_user_id:
+                    self._assert_tenant_access(tenant_user_id)
+
+                # Sincronizar nombres si el User los tiene vacíos (ej: fue creado
+                # antes de que el TenantUser tuviera first_name/last_name).
+                if tenant_user_id and (not user.first_name or not user.last_name):
+                    self._sync_name_if_empty(user, tenant_user_id)
+
                 if is_superadmin:
                     logger.info(
-                        f"Superadmin access: TenantUser {email} accessing tenant "
-                        f"as local User (is_superuser={user.is_superuser})"
+                        "Superadmin access: TenantUser %s accessing tenant as local User "
+                        "(is_superuser=%s)",
+                        email, user.is_superuser
                     )
                 return user
+
             except User.DoesNotExist:
                 # El User no existe en este tenant, intentar crearlo
-                tenant_user_id = validated_token.get('tenant_user_id')
-
                 if tenant_user_id:
                     try:
                         tenant_user = TenantUser.objects.get(id=tenant_user_id, is_active=True)
 
-                        # Verificar que el TenantUser tiene acceso al tenant actual
-                        # antes de auto-crear un User en el schema
-                        from django.db import connection
-                        from django_tenants.utils import schema_context
-                        current_tenant = getattr(connection, 'tenant', None)
-                        if current_tenant:
-                            with schema_context('public'):
-                                from apps.tenant.models import TenantUserAccess
-                                has_access = TenantUserAccess.objects.filter(
-                                    tenant_user=tenant_user,
-                                    tenant=current_tenant,
-                                    is_active=True
-                                ).exists()
-                                # Superadmins siempre tienen acceso implícito
-                                if not has_access and not tenant_user.is_superadmin:
-                                    logger.warning(
-                                        f"TenantUser {tenant_user.email} attempted to access "
-                                        f"tenant '{current_tenant}' without TenantUserAccess"
-                                    )
-                                    raise AuthenticationFailed(
-                                        'No tiene acceso autorizado a esta empresa. '
-                                        'Contacte al administrador.'
-                                    )
+                        # Verificar acceso antes de auto-crear el User en el schema
+                        if not is_superadmin:
+                            self._assert_tenant_access(tenant_user_id)
 
                         # Crear User sincronizado con TenantUser
                         user = self._create_user_from_tenant_user(tenant_user, is_superadmin)
                         if user:
-                            logger.info(f"Created User {email} in current tenant from TenantUser")
+                            logger.info(
+                                "Created User %s in current tenant from TenantUser", email
+                            )
                             return user
                     except TenantUser.DoesNotExist:
                         pass
@@ -175,6 +170,56 @@ class HybridJWTAuthentication(JWTAuthentication):
 
         # Token tradicional - comportamiento default
         return super().get_user(validated_token)
+
+    def _assert_tenant_access(self, tenant_user_id: int):
+        """
+        Verifica que el TenantUser tiene TenantUserAccess activo al tenant actual.
+        Lanza AuthenticationFailed si no tiene acceso.
+        """
+        from django.db import connection
+        from django_tenants.utils import schema_context
+        from apps.tenant.models import TenantUserAccess
+
+        current_tenant = getattr(connection, 'tenant', None)
+        if not current_tenant:
+            return  # Sin tenant activo, no se puede verificar
+
+        with schema_context('public'):
+            has_access = TenantUserAccess.objects.filter(
+                tenant_user_id=tenant_user_id,
+                tenant=current_tenant,
+                is_active=True
+            ).exists()
+            if not has_access:
+                logger.warning(
+                    "TenantUser id=%s intentó acceder a tenant '%s' sin TenantUserAccess",
+                    tenant_user_id, current_tenant.schema_name
+                )
+                raise AuthenticationFailed(
+                    'No tiene acceso autorizado a esta empresa. '
+                    'Contacte al administrador.'
+                )
+
+    def _sync_name_if_empty(self, user, tenant_user_id: int):
+        """
+        Sincroniza first_name/last_name desde TenantUser si el User los tiene vacíos.
+        Caso de uso: User creado antes de que se rellenaran los nombres en TenantUser
+        (ej: se creó con test data o desde Admin Global sin nombre).
+        """
+        from django_tenants.utils import schema_context
+        try:
+            with schema_context('public'):
+                tu = TenantUser.objects.get(id=tenant_user_id)
+                if tu.first_name or tu.last_name:
+                    user.first_name = tu.first_name or user.first_name
+                    user.last_name = tu.last_name or user.last_name
+                    user.save(update_fields=['first_name', 'last_name'])
+                    logger.info(
+                        "Sincronizados nombres para User %s desde TenantUser %s",
+                        user.email, tenant_user_id
+                    )
+        except Exception as e:
+            logger.debug("No se pudieron sincronizar nombres desde TenantUser: %s", e)
 
     def _create_user_from_tenant_user(self, tenant_user: TenantUser, is_superadmin: bool = False):
         """

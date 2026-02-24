@@ -60,6 +60,10 @@ export interface User {
   permission_codes: string[] | null;
   /** URL de la foto de perfil del usuario */
   photo_url?: string | null;
+  /** ID del proveedor vinculado (para usuarios externos: consultores, auditores) */
+  proveedor?: number | null;
+  /** Nombre comercial del proveedor vinculado */
+  proveedor_nombre?: string | null;
 }
 
 export interface LoginCredentials {

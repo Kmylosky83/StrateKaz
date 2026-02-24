@@ -2,43 +2,77 @@
 
 {% block title %}Bienvenido a {{ tenant_name }}{% endblock %}
 
-{% block content %}
-<h2>Bienvenido/a, {{ user_name }}</h2>
+{# Header con branding del tenant — misma estructura que setup_password.html #}
+{% block header %}
+<div style="height: 4px; background: linear-gradient(90deg, {{ primary_color|default:'#ec268f' }}, {{ secondary_color|default:'#000000' }});"></div>
+<div style="background-color: #1f2937; padding: 32px 24px; text-align: center;">
+    <p style="color: {{ primary_color|default:'#ec268f' }}; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 8px 0; font-weight: 700;">Sistema de Gestión Integral</p>
+    <h1 style="color: #ffffff; font-size: 26px; font-weight: 700; margin: 0; letter-spacing: -0.5px;">{{ tenant_name }}</h1>
+    <p style="color: #9ca3af; font-size: 13px; margin: 8px 0 0 0;">Plataforma StrateKaz</p>
+</div>
+{% endblock %}
 
-<p>
+{% block content %}
+
+{# Greeting card con acento de color del tenant #}
+<div style="border-left: 4px solid {{ primary_color|default:'#ec268f' }}; background-color: #f8fafc; padding: 16px 20px; border-radius: 0 8px 8px 0; margin-bottom: 28px;">
+    <p style="margin: 0 0 4px 0; font-size: 20px; font-weight: 700; color: #111827;">¡Bienvenido/a, {{ user_name }}!</p>
+    {% if cargo_name %}
+    <p style="margin: 0; font-size: 14px; color: #6b7280;">
+        <span style="display: inline-block; background-color: {{ primary_color|default:'#ec268f' }}20; color: {{ primary_color|default:'#ec268f' }}; padding: 2px 10px; border-radius: 12px; font-weight: 600; font-size: 13px;">{{ cargo_name }}</span>
+        &nbsp;·&nbsp; {{ tenant_name }}
+    </p>
+    {% endif %}
+</div>
+
+<p style="color: #374151; font-size: 16px; line-height: 1.7; margin: 0 0 16px 0;">
     Tu cuenta en <strong>{{ tenant_name }}</strong> ha sido creada exitosamente.
-    Ya puedes ingresar al portal para consultar tu informacion, firmar documentos,
-    ver capacitaciones asignadas y mas.
+    Ya puedes ingresar al portal para consultar tu información, firmar documentos,
+    ver capacitaciones asignadas y más.
 </p>
 
-{% if cargo_name %}
-<div class="email-card">
-    <p class="email-card-title">Tu cargo</p>
-    <p class="email-card-content">{{ cargo_name }}</p>
+{% if temp_password_hint %}
+<div style="background-color: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 16px 20px; margin-bottom: 24px;">
+    <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #92400e;">Datos de acceso temporales</p>
+    <p style="margin: 0 0 4px 0; font-size: 14px; color: #78350f;">
+        <strong>Email:</strong> {{ user_email }}
+    </p>
+    <p style="margin: 0 0 8px 0; font-size: 14px; color: #78350f;">
+        <strong>Contraseña temporal:</strong> {{ temp_password_hint }}
+    </p>
+    <p style="margin: 0; font-size: 13px; color: #dc2626; font-weight: 600;">
+        ⚠ Te recomendamos cambiar tu contraseña después del primer ingreso.
+    </p>
+</div>
+{% else %}
+<div style="background-color: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 16px 20px; margin-bottom: 24px;">
+    <p style="margin: 0 0 4px 0; font-size: 14px; font-weight: 600; color: #075985;">Datos de acceso</p>
+    <p style="margin: 0; font-size: 14px; color: #0c4a6e;">
+        <strong>Email:</strong> {{ user_email }}<br>
+        <strong>Contraseña:</strong> La que te asignó tu administrador
+    </p>
 </div>
 {% endif %}
 
-<div class="email-card">
-    <p class="email-card-title">Datos de acceso</p>
-    <p class="email-card-content">
-        <strong>Email:</strong> {{ user_email }}<br>
-        {% if temp_password_hint %}
-        <strong>Contrasena temporal:</strong> {{ temp_password_hint }}<br>
-        <span style="color: #dc2626; font-size: 14px;">
-            Te recomendamos cambiar tu contrasena despues del primer ingreso.
-        </span>
-        {% else %}
-        <strong>Contrasena:</strong> La que te asigno tu administrador
-        {% endif %}
-    </p>
+{# CTA con color del tenant #}
+<div style="text-align: center; padding: 8px 0 32px 0;">
+    <a href="{{ login_url }}"
+       style="display: inline-block;
+              background-color: {{ primary_color|default:'#ec268f' }};
+              color: #ffffff;
+              padding: 14px 32px;
+              border-radius: 8px;
+              text-decoration: none;
+              font-weight: 700;
+              font-size: 16px;
+              letter-spacing: 0.3px;">
+        Ingresar al Portal &rarr;
+    </a>
 </div>
 
-<div class="text-center mt-4">
-    <a href="{{ login_url }}" class="email-button">Ingresar al Portal</a>
-</div>
-
-<p class="text-muted mt-4">
+<p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0;">
     Si no reconoces esta cuenta o tienes problemas para ingresar,
     contacta al administrador de tu empresa.
 </p>
+
 {% endblock %}

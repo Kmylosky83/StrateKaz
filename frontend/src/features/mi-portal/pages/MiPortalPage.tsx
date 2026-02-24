@@ -10,6 +10,7 @@
  */
 
 import { useState, useMemo } from 'react';
+import { Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   User,
@@ -220,6 +221,17 @@ export default function MiPortalPage() {
 
   // Si el tab activo fue filtrado, volver a 'perfil'
   const safeActiveTab = visibleTabs.some((t) => t.id === activeTab) ? activeTab : 'perfil';
+
+  // ── Redirect cuando no hay Colaborador vinculado ──────────────────────────
+  // Usuarios externos (consultores) auto-creados sin Colaborador:
+  //   → con proveedor: portal de proveedor
+  //   → sin proveedor: dashboard general
+  if (!perfilLoading && perfil == null) {
+    if (user?.proveedor) {
+      return <Navigate to="/proveedor-portal" replace />;
+    }
+    return <Navigate to="/dashboard" replace />;
+  }
 
   return (
     <AnimatedPage>

@@ -294,6 +294,9 @@ const MiPortalPage = lazy(() =>
 const MiEquipoPage = lazy(() =>
   import('@/features/mi-equipo').then((m) => ({ default: m.MiEquipoPage }))
 );
+const ProveedorPortalPage = lazy(() =>
+  import('@/features/proveedor-portal').then((m) => ({ default: m.ProveedorPortalPage }))
+);
 
 // ==================== PERFIL DE USUARIO ====================
 const PerfilPage = lazy(() => import('@/features/perfil').then((m) => ({ default: m.PerfilPage })));
@@ -356,6 +359,7 @@ export const AppRoutes = () => {
           {/* ═══════════════════════════════════════════════════════════════ */}
           <Route path="/mi-portal" element={withSuspense(MiPortalPage)} />
           <Route path="/mi-equipo" element={withSuspense(MiEquipoPage)} />
+          <Route path="/proveedor-portal" element={withSuspense(ProveedorPortalPage)} />
 
           {/* Usuarios - Modulo transversal (requiere acceso RBAC) */}
           <Route

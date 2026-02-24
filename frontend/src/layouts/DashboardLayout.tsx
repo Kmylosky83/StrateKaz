@@ -20,10 +20,12 @@ import { useRouteTracker } from '@/hooks/useLastRoute';
 import { useIsMobile, useIsTablet } from '@/hooks/useMediaQuery';
 import { BottomNavigation } from '@/components/mobile';
 import { useAuthStore } from '@/store/authStore';
+import { ImpersonationBanner } from '@/components/common/ImpersonationBanner';
 
 export const DashboardLayout = () => {
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
+  const isImpersonating = useAuthStore((state) => state.isImpersonating);
 
   // Estado del sidebar
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -92,8 +94,15 @@ export const DashboardLayout = () => {
   return (
     <HeaderProvider>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        {/* Impersonation Banner — empuja todo hacia abajo cuando activo */}
+        <ImpersonationBanner />
+
         {/* Header */}
-        <Header onToggleSidebar={handleToggleSidebar} isMobileMenuOpen={isMobileMenuOpen} />
+        <Header
+          onToggleSidebar={handleToggleSidebar}
+          isMobileMenuOpen={isMobileMenuOpen}
+          impersonationOffset={isImpersonating}
+        />
 
         {/* Mobile Overlay */}
         {isMobile && (
@@ -113,12 +122,14 @@ export const DashboardLayout = () => {
           isMobile={isMobile}
           isMobileOpen={isMobileMenuOpen}
           onCloseMobile={handleCloseMobileMenu}
+          impersonationOffset={isImpersonating}
         />
 
         {/* Main Content */}
         <main
           className={cn(
-            'flex-1 transition-all duration-300 pt-16 min-h-screen flex flex-col',
+            'flex-1 transition-all duration-300 min-h-screen flex flex-col',
+            isImpersonating ? 'pt-[104px]' : 'pt-16',
             // En mobile: sin margen izquierdo (sidebar es overlay)
             // En tablet/desktop: margen segun estado del sidebar
             isMobile ? 'ml-0' : isSidebarCollapsed ? 'ml-16' : 'ml-64'

@@ -10,6 +10,7 @@ const STORAGE_KEYS = {
   ACCESS_TOKEN: 'access_token',
   REFRESH_TOKEN: 'refresh_token',
   CURRENT_TENANT_ID: 'current_tenant_id',
+  IS_IMPERSONATING: 'is_impersonating',
 } as const;
 
 // Inicializar currentTenantId desde localStorage
@@ -17,6 +18,12 @@ const getInitialTenantId = (): number | null => {
   if (typeof window === 'undefined') return null;
   const stored = localStorage.getItem(STORAGE_KEYS.CURRENT_TENANT_ID);
   return stored ? Number(stored) : null;
+};
+
+// Inicializar isImpersonating desde localStorage
+const getInitialImpersonating = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem(STORAGE_KEYS.IS_IMPERSONATING) === 'true';
 };
 
 /**
@@ -48,6 +55,7 @@ export const useAuthStore = create<AuthState>()(
       currentTenant: null,
       accessibleTenants: [],
       isSuperadmin: false,
+      isImpersonating: getInitialImpersonating(),
 
       /**
        * Login con TenantUser (sistema multi-tenant)
@@ -171,6 +179,7 @@ export const useAuthStore = create<AuthState>()(
         localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
         localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
         localStorage.removeItem(STORAGE_KEYS.CURRENT_TENANT_ID);
+        localStorage.removeItem(STORAGE_KEYS.IS_IMPERSONATING);
 
         // Limpiar última ruta
         clearLastRoute();
@@ -187,6 +196,7 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
           accessibleTenants: [],
           isSuperadmin: false,
+          isImpersonating: false,
           currentTenantId: null,
           currentTenant: null,
         });
@@ -346,13 +356,33 @@ export const useAuthStore = create<AuthState>()(
        */
       clearTenantContext: () => {
         localStorage.removeItem(STORAGE_KEYS.CURRENT_TENANT_ID);
+        localStorage.removeItem(STORAGE_KEYS.IS_IMPERSONATING);
         set({
           currentTenantId: null,
           currentTenant: null,
           user: null,
+          isImpersonating: false,
         });
         // Invalidar queries para modo Admin Global
         invalidateAllQueries();
+      },
+
+      /**
+       * Superadmin entra a un tenant desde Admin Global.
+       * Usa selectTenant() internamente (llama backend + invalida queries + recarga perfil).
+       */
+      startImpersonation: async (tenantId: number) => {
+        await get().selectTenant(tenantId);
+        localStorage.setItem(STORAGE_KEYS.IS_IMPERSONATING, 'true');
+        set({ isImpersonating: true });
+      },
+
+      /**
+       * Superadmin sale del tenant y vuelve a Admin Global.
+       * Limpia contexto de tenant y flag de impersonacion.
+       */
+      stopImpersonation: () => {
+        get().clearTenantContext();
       },
     }),
     {
@@ -365,6 +395,7 @@ export const useAuthStore = create<AuthState>()(
         currentTenant: state.currentTenant,
         accessibleTenants: state.accessibleTenants,
         isSuperadmin: state.isSuperadmin,
+        isImpersonating: state.isImpersonating,
       }),
       // Migración: limpia datos antiguos para forzar re-login
       migrate: (persistedState, version) => {

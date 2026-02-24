@@ -22,9 +22,15 @@ import { HEADER_LABELS, ROUTES } from '@/constants';
 interface HeaderProps {
   onToggleSidebar: () => void;
   isMobileMenuOpen?: boolean;
+  /** Cuando el banner de impersonacion esta activo, desplazar header hacia abajo */
+  impersonationOffset?: boolean;
 }
 
-export const Header = ({ onToggleSidebar, isMobileMenuOpen = false }: HeaderProps) => {
+export const Header = ({
+  onToggleSidebar,
+  isMobileMenuOpen = false,
+  impersonationOffset = false,
+}: HeaderProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, toggleTheme } = useThemeStore();
@@ -54,7 +60,12 @@ export const Header = ({ onToggleSidebar, isMobileMenuOpen = false }: HeaderProp
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 h-16">
+      <header
+        className={cn(
+          'fixed left-0 right-0 z-50 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 h-16',
+          impersonationOffset ? 'top-10' : 'top-0'
+        )}
+      >
         <div className="h-full px-2 sm:px-4 flex items-center justify-between">
           {/* ═══════════════════════════════════════════════════════════════ */}
           {/* ZONA A: Menu + Logo/Marca (sin limite de ancho) */}

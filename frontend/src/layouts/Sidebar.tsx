@@ -37,6 +37,8 @@ interface SidebarProps {
   isMobileOpen?: boolean;
   /** Callback para cerrar el drawer mobile */
   onCloseMobile?: () => void;
+  /** Cuando el banner de impersonacion esta activo, desplazar sidebar hacia abajo */
+  impersonationOffset?: boolean;
 }
 
 // Colores por módulo - Sincronizado con backend CATEGORY_DEFAULT_COLORS
@@ -486,6 +488,7 @@ export const Sidebar = ({
   isMobile = false,
   isMobileOpen = false,
   onCloseMobile,
+  impersonationOffset = false,
 }: SidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -572,7 +575,8 @@ export const Sidebar = ({
 
   // Sidebar siempre neutro: blanco en light, gris oscuro en dark
   const sidebarBaseClasses = cn(
-    'fixed top-16 bottom-0 z-40',
+    'fixed bottom-0 z-40',
+    impersonationOffset ? 'top-[104px]' : 'top-16',
     'bg-white dark:bg-gray-800',
     'border-r border-gray-200 dark:border-gray-700',
     'transition-all duration-300 ease-in-out'

@@ -5,7 +5,7 @@
  * Hard delete (eliminacion permanente) solo disponible para superadmin.
  * Muestra progreso de creacion asincrona de tenants.
  */
-import { useState, useMemo, forwardRef } from 'react';
+import { useState, useMemo, useEffect, forwardRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Building2,
@@ -25,6 +25,8 @@ import {
   AlertCircle,
   Loader2,
   Eye,
+  LayoutGrid,
+  List,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, Badge, Button, BrandedSkeleton, Dropdown } from '@/components/common';
@@ -262,8 +264,17 @@ export const TenantsSection = () => {
   // Progreso de creacion de tenant
   const [progressTenant, setProgressTenant] = useState<{ id: number; name: string } | null>(null);
 
+  // Toggle cards/table con persistencia en localStorage
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>(
+    () => (localStorage.getItem('admin_tenants_view') || 'cards') as 'cards' | 'table'
+  );
+
+  useEffect(() => {
+    localStorage.setItem('admin_tenants_view', viewMode);
+  }, [viewMode]);
+
   // Obtener funciones del authStore
-  const setCurrentTenantId = useAuthStore((state) => state.setCurrentTenantId);
+  const startImpersonation = useAuthStore((state) => state.startImpersonation);
   const isSuperadmin = useAuthStore((state) => state.isSuperadmin);
 
   const { data: tenants, isLoading } = useTenantsList({
@@ -326,12 +337,12 @@ export const TenantsSection = () => {
   };
 
   /**
-   * Entrar a una empresa como usuario
-   * Cambia el contexto de tenant y navega al dashboard
+   * Entrar a una empresa como administrador (impersonacion).
+   * Usa selectTenant internamente (llama backend + invalida queries + recarga perfil).
    */
-  const handleEnterTenant = (tenant: Tenant) => {
-    setCurrentTenantId(tenant.id);
-    navigate('/mi-portal');
+  const handleEnterTenant = async (tenant: Tenant) => {
+    await startImpersonation(tenant.id);
+    navigate('/dashboard');
   };
 
   const handleViewProgress = (tenant: Tenant) => {
@@ -391,6 +402,22 @@ export const TenantsSection = () => {
             <option value="inactive">Inactivos</option>
           </select>
 
+          {/* Toggle Cards/Table */}
+          <button
+            type="button"
+            onClick={() => setViewMode(viewMode === 'cards' ? 'table' : 'cards')}
+            className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg
+                     bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300
+                     hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            title={viewMode === 'cards' ? 'Vista tabla' : 'Vista tarjetas'}
+          >
+            {viewMode === 'cards' ? (
+              <List className="h-4 w-4" />
+            ) : (
+              <LayoutGrid className="h-4 w-4" />
+            )}
+          </button>
+
           <Button
             variant="primary"
             className="flex items-center gap-2"
@@ -430,23 +457,215 @@ export const TenantsSection = () => {
         )}
       </div>
 
-      {/* Grid de tenants */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        <AnimatePresence mode="popLayout">
-          {filteredTenants.map((tenant) => (
-            <TenantCard
-              key={tenant.id}
-              tenant={tenant}
-              onEdit={handleEditTenant}
-              onToggle={handleToggle}
-              onHardDelete={setTenantToHardDelete}
-              onEnter={handleEnterTenant}
-              onViewProgress={handleViewProgress}
-              isSuperadmin={isSuperadmin}
-            />
-          ))}
-        </AnimatePresence>
-      </div>
+      {/* Contenido: Cards o Tabla */}
+      {viewMode === 'cards' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <AnimatePresence mode="popLayout">
+            {filteredTenants.map((tenant) => (
+              <TenantCard
+                key={tenant.id}
+                tenant={tenant}
+                onEdit={handleEditTenant}
+                onToggle={handleToggle}
+                onHardDelete={setTenantToHardDelete}
+                onEnter={handleEnterTenant}
+                onViewProgress={handleViewProgress}
+                isSuperadmin={isSuperadmin}
+              />
+            ))}
+          </AnimatePresence>
+        </div>
+      ) : (
+        <Card variant="bordered" padding="none">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                  <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
+                    Empresa
+                  </th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400 hidden md:table-cell">
+                    Subdominio
+                  </th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400 hidden lg:table-cell">
+                    Plan
+                  </th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600 dark:text-gray-400 hidden sm:table-cell">
+                    Tier
+                  </th>
+                  <th className="text-center px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
+                    Usuarios
+                  </th>
+                  <th className="text-center px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
+                    Estado
+                  </th>
+                  <th className="text-right px-4 py-3 font-medium text-gray-600 dark:text-gray-400">
+                    Acciones
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {filteredTenants.map((tenant) => {
+                  const isReady = !tenant.schema_status || tenant.schema_status === 'ready';
+                  const isCreating =
+                    tenant.schema_status === 'creating' || tenant.schema_status === 'pending';
+                  const isFailed = tenant.schema_status === 'failed';
+
+                  const statusColor: BadgeVariant = isCreating
+                    ? 'info'
+                    : isFailed
+                      ? 'danger'
+                      : tenant.is_active
+                        ? tenant.is_subscription_valid
+                          ? 'success'
+                          : 'warning'
+                        : 'gray';
+
+                  const statusText = isCreating
+                    ? 'Creando...'
+                    : isFailed
+                      ? 'Error'
+                      : tenant.is_active
+                        ? tenant.is_subscription_valid
+                          ? 'Activo'
+                          : 'Vencido'
+                        : 'Inactivo';
+
+                  return (
+                    <tr
+                      key={tenant.id}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors cursor-pointer"
+                      onClick={() => handleEditTenant(tenant)}
+                    >
+                      {/* Empresa */}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                            style={{ backgroundColor: tenant.primary_color || '#6366F1' }}
+                          >
+                            {tenant.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-medium text-gray-900 dark:text-white truncate">
+                              {tenant.name}
+                            </p>
+                            {tenant.nit && (
+                              <p className="text-xs text-gray-400 truncate">NIT: {tenant.nit}</p>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Subdominio */}
+                      <td className="px-4 py-3 hidden md:table-cell">
+                        <span className="text-gray-600 dark:text-gray-400 text-xs">
+                          {tenant.primary_domain || `${tenant.subdomain}.stratekaz.com`}
+                        </span>
+                      </td>
+
+                      {/* Plan */}
+                      <td className="px-4 py-3 hidden lg:table-cell">
+                        {tenant.plan_name ? (
+                          <Badge variant="accent" size="sm">
+                            {tenant.plan_name}
+                          </Badge>
+                        ) : (
+                          <span className="text-gray-400 text-xs">Sin plan</span>
+                        )}
+                      </td>
+
+                      {/* Tier */}
+                      <td className="px-4 py-3 hidden sm:table-cell">
+                        <Badge variant={TIER_COLORS[tenant.tier] || 'gray'} size="sm">
+                          {TIER_LABELS[tenant.tier] || tenant.tier}
+                        </Badge>
+                      </td>
+
+                      {/* Usuarios */}
+                      <td className="px-4 py-3 text-center">
+                        <span className="text-gray-700 dark:text-gray-300">
+                          {tenant.user_count || 0}
+                          <span className="text-gray-400">/{tenant.max_users}</span>
+                        </span>
+                      </td>
+
+                      {/* Estado */}
+                      <td className="px-4 py-3 text-center">
+                        <Badge variant={statusColor} size="sm">
+                          {isCreating && <Loader2 className="h-3 w-3 animate-spin mr-1 inline" />}
+                          {statusText}
+                        </Badge>
+                        {tenant.is_trial && (
+                          <Badge variant="warning" size="sm" className="ml-1">
+                            Trial
+                          </Badge>
+                        )}
+                      </td>
+
+                      {/* Acciones */}
+                      <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                        <Dropdown
+                          items={[
+                            ...(tenant.is_active && isReady
+                              ? [
+                                  {
+                                    label: 'Entrar como usuario',
+                                    icon: <LogIn className="h-4 w-4" />,
+                                    onClick: () => handleEnterTenant(tenant),
+                                  },
+                                ]
+                              : []),
+                            ...(!isReady
+                              ? [
+                                  {
+                                    label: 'Ver progreso',
+                                    icon: <Eye className="h-4 w-4" />,
+                                    onClick: () => handleViewProgress(tenant),
+                                  },
+                                ]
+                              : []),
+                            {
+                              label: 'Editar',
+                              icon: <Edit className="h-4 w-4" />,
+                              onClick: () => handleEditTenant(tenant),
+                            },
+                            ...(isReady
+                              ? [
+                                  {
+                                    label: tenant.is_active ? 'Desactivar' : 'Activar',
+                                    icon: tenant.is_active ? (
+                                      <ToggleLeft className="h-4 w-4" />
+                                    ) : (
+                                      <ToggleRight className="h-4 w-4" />
+                                    ),
+                                    onClick: () => handleToggle(tenant.id),
+                                  },
+                                ]
+                              : []),
+                            ...(isSuperadmin
+                              ? [
+                                  { label: '', onClick: () => {}, divider: true },
+                                  {
+                                    label: 'Eliminar permanentemente',
+                                    icon: <Trash2 className="h-4 w-4" />,
+                                    onClick: () => setTenantToHardDelete(tenant),
+                                    variant: 'danger' as const,
+                                  },
+                                ]
+                              : []),
+                          ]}
+                          align="right"
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
 
       {/* Empty state */}
       {filteredTenants.length === 0 && (

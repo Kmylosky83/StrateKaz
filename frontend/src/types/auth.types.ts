@@ -157,6 +157,8 @@ export interface AuthState {
   accessibleTenants: TenantAccess[];
   /** Es superadmin (acceso a todos los tenants) */
   isSuperadmin: boolean;
+  /** Indica si el superadmin está visitando un tenant desde Admin Global */
+  isImpersonating: boolean;
   // Acciones
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;
@@ -170,4 +172,8 @@ export interface AuthState {
   setUser: (user: User) => void;
   setCurrentTenantId: (tenantId: number | null) => void;
   clearTenantContext: () => void;
+  /** Superadmin entra a un tenant desde Admin Global */
+  startImpersonation: (tenantId: number) => Promise<void>;
+  /** Superadmin sale del tenant y vuelve a Admin Global */
+  stopImpersonation: () => void;
 }

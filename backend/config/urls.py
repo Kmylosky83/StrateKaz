@@ -205,7 +205,7 @@ if is_app_installed('apps.hseq_management.calidad'):
 # NIVEL 4: CADENA DE VALOR - Supply + Production + Logistics + Sales
 # ═══════════════════════════════════════════════════════════════════════════
 if is_app_installed('apps.supply_chain.gestion_proveedores'):
-    urlpatterns.append(path('api/supply-chain/', include('apps.supply_chain.gestion_proveedores.urls')))
+    urlpatterns.append(path('api/supply-chain/', include('apps.supply_chain.urls')))
 
 if is_app_installed('apps.production_ops.recepcion'):
     urlpatterns.append(path('api/production-ops/', include('apps.production_ops.urls')))

@@ -13,14 +13,8 @@
 import { useState } from 'react';
 import { PageHeader } from '@/components/layout';
 import { PageTabs } from '@/components/layout';
-import {
-  Users,
-  DollarSign,
-  FlaskConical,
-  ClipboardCheck,
-  Settings,
-  Building2,
-} from 'lucide-react';
+import { Users, DollarSign, FlaskConical, ClipboardCheck, Settings, Building2 } from 'lucide-react';
+import { ProveedoresTable } from '../components/ProveedoresTable';
 
 // ==================== TABS CONFIGURATION ====================
 
@@ -63,35 +57,7 @@ const tabs = [
   },
 ];
 
-// ==================== PLACEHOLDER TABS (Por implementar) ====================
-
-function ProveedoresTab() {
-  return (
-    <div className="space-y-6">
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-8 text-center">
-        <Users className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-          Gestión de Proveedores
-        </h3>
-        <p className="text-gray-600 dark:text-gray-400 mb-4">
-          Lista de proveedores con filtros por tipo, estado, materias primas.
-          <br />
-          Crear/editar proveedores con información completa (contacto, bancaria, comercial).
-        </p>
-        <div className="text-sm text-gray-500">
-          <strong>Funcionalidades:</strong>
-          <ul className="list-disc list-inside mt-2 text-left max-w-md mx-auto">
-            <li>Tabla con paginación y búsqueda avanzada</li>
-            <li>Formulario completo con validaciones</li>
-            <li>Cambio de estado (Activo/Suspendido/Bloqueado)</li>
-            <li>Vista de detalle con tabs (Datos, Precios, Evaluaciones)</li>
-            <li>Exportar a Excel</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  );
-}
+// ==================== PLACEHOLDER TABS (Por implementar en sprints futuros) ====================
 
 function PreciosTab() {
   return (
@@ -284,7 +250,7 @@ export default function GestionProveedoresPage() {
       />
 
       {/* Renderizado condicional de tabs */}
-      {activeTab === 'proveedores' && <ProveedoresTab />}
+      {activeTab === 'proveedores' && <ProveedoresTable />}
       {activeTab === 'precios' && <PreciosTab />}
       {activeTab === 'pruebas-acidez' && <PruebasAcidezTab />}
       {activeTab === 'evaluaciones' && <EvaluacionesTab />}

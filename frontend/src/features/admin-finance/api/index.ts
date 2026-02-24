@@ -53,7 +53,7 @@ import type {
   PaginatedResponse,
 } from '../types';
 
-const API_BASE = '/api/admin-finance';
+const API_BASE = '/admin-finance';
 
 // ==================== TESORERIA API ====================
 

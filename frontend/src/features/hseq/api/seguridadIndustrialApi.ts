@@ -45,7 +45,7 @@ import type {
   CategoriaEPP,
 } from '../types/seguridad-industrial.types';
 
-const BASE_URL = '/api/hseq/seguridad-industrial';
+const BASE_URL = '/hseq/seguridad';
 
 // ==================== TIPOS DE PERMISO DE TRABAJO ====================
 
@@ -248,10 +248,7 @@ export const inspeccionApi = {
 // ==================== TIPOS DE EPP ====================
 
 export const tipoEPPApi = {
-  getAll: async (params?: {
-    activo?: boolean;
-    categoria?: CategoriaEPP;
-  }): Promise<TipoEPP[]> => {
+  getAll: async (params?: { activo?: boolean; categoria?: CategoriaEPP }): Promise<TipoEPP[]> => {
     const { data } = await apiClient.get(`${BASE_URL}/tipos-epp/`, { params });
     return data;
   },
@@ -323,7 +320,9 @@ export const entregaEPPApi = {
   },
 
   porColaborador: async (colaboradorId: number): Promise<EntregaEPP[]> => {
-    const { data } = await apiClient.get(`${BASE_URL}/entregas-epp/por-colaborador/${colaboradorId}/`);
+    const { data } = await apiClient.get(
+      `${BASE_URL}/entregas-epp/por-colaborador/${colaboradorId}/`
+    );
     return data;
   },
 
@@ -368,8 +367,14 @@ export const programaSeguridadApi = {
     await apiClient.delete(`${BASE_URL}/programas-seguridad/${id}/`);
   },
 
-  actualizarAvance: async (id: number, dto: ActualizarAvanceProgramaDTO): Promise<ProgramaSeguridad> => {
-    const { data } = await apiClient.post(`${BASE_URL}/programas-seguridad/${id}/actualizar-avance/`, dto);
+  actualizarAvance: async (
+    id: number,
+    dto: ActualizarAvanceProgramaDTO
+  ): Promise<ProgramaSeguridad> => {
+    const { data } = await apiClient.post(
+      `${BASE_URL}/programas-seguridad/${id}/actualizar-avance/`,
+      dto
+    );
     return data;
   },
 

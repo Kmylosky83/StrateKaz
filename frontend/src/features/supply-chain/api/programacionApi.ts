@@ -28,7 +28,7 @@ import type {
   EstadisticasResponse,
 } from '../types';
 
-const BASE_URL = '/api/supply-chain/programacion-abastecimiento';
+const BASE_URL = '/supply-chain/programacion-abastecimiento';
 
 // ==================== CATÁLOGOS ====================
 

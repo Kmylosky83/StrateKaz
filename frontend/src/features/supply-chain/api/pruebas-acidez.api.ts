@@ -13,7 +13,7 @@ import type {
   PaginatedResponse,
 } from '../types';
 
-const BASE_URL = '/api/supply-chain/pruebas-acidez';
+const BASE_URL = '/supply-chain/pruebas-acidez';
 
 // ==================== PRUEBAS DE ACIDEZ ====================
 
@@ -93,10 +93,9 @@ export const pruebaAcidezApi = {
     fecha_desde?: string;
     fecha_hasta?: string;
   }): Promise<EstadisticasPruebasAcidez> => {
-    const response = await apiClient.get<EstadisticasPruebasAcidez>(
-      `${BASE_URL}/estadisticas/`,
-      { params }
-    );
+    const response = await apiClient.get<EstadisticasPruebasAcidez>(`${BASE_URL}/estadisticas/`, {
+      params,
+    });
     return response.data;
   },
 

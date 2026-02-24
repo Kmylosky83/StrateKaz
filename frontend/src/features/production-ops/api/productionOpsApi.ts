@@ -96,7 +96,7 @@ import type {
   PaginatedResponse,
 } from '../types/production-ops.types';
 
-const BASE_URL = '/api/production-ops';
+const BASE_URL = '/production-ops';
 
 // ==================== RECEPCIÓN - CATÁLOGOS ====================
 
@@ -228,9 +228,12 @@ export const recepcionApi = {
   },
 
   cambiarEstado: async (id: number, nuevoEstadoId: number): Promise<Recepcion> => {
-    const response = await apiClient.post(`${BASE_URL}/recepcion/recepciones/${id}/cambiar_estado/`, {
-      nuevo_estado: nuevoEstadoId,
-    });
+    const response = await apiClient.post(
+      `${BASE_URL}/recepcion/recepciones/${id}/cambiar_estado/`,
+      {
+        nuevo_estado: nuevoEstadoId,
+      }
+    );
     return response.data;
   },
 };
@@ -254,7 +257,10 @@ export const detalleRecepcionApi = {
     return response.data;
   },
 
-  update: async (id: number, data: Partial<CreateDetalleRecepcionDTO>): Promise<DetalleRecepcion> => {
+  update: async (
+    id: number,
+    data: Partial<CreateDetalleRecepcionDTO>
+  ): Promise<DetalleRecepcion> => {
     const response = await apiClient.patch(`${BASE_URL}/recepcion/detalles/${id}/`, data);
     return response.data;
   },
@@ -283,7 +289,10 @@ export const controlCalidadRecepcionApi = {
     return response.data;
   },
 
-  update: async (id: number, data: Partial<CreateControlCalidadRecepcionDTO>): Promise<ControlCalidadRecepcion> => {
+  update: async (
+    id: number,
+    data: Partial<CreateControlCalidadRecepcionDTO>
+  ): Promise<ControlCalidadRecepcion> => {
     const response = await apiClient.patch(`${BASE_URL}/recepcion/controles-calidad/${id}/`, data);
     return response.data;
   },
@@ -346,7 +355,9 @@ export const lineaProduccionApi = {
     empresa_id?: number;
     is_active?: boolean;
   }): Promise<PaginatedResponse<LineaProduccion>> => {
-    const response = await apiClient.get(`${BASE_URL}/procesamiento/lineas-produccion/`, { params });
+    const response = await apiClient.get(`${BASE_URL}/procesamiento/lineas-produccion/`, {
+      params,
+    });
     return response.data;
   },
 
@@ -361,7 +372,10 @@ export const lineaProduccionApi = {
   },
 
   update: async (id: number, data: Partial<LineaProduccion>): Promise<LineaProduccion> => {
-    const response = await apiClient.patch(`${BASE_URL}/procesamiento/lineas-produccion/${id}/`, data);
+    const response = await apiClient.patch(
+      `${BASE_URL}/procesamiento/lineas-produccion/${id}/`,
+      data
+    );
     return response.data;
   },
 
@@ -385,7 +399,9 @@ export const ordenProduccionApi = {
     fecha_fin?: string;
     empresa_id?: number;
   }): Promise<PaginatedResponse<OrdenProduccionList>> => {
-    const response = await apiClient.get(`${BASE_URL}/procesamiento/ordenes-produccion/`, { params });
+    const response = await apiClient.get(`${BASE_URL}/procesamiento/ordenes-produccion/`, {
+      params,
+    });
     return response.data;
   },
 
@@ -400,7 +416,10 @@ export const ordenProduccionApi = {
   },
 
   update: async (id: number, data: UpdateOrdenProduccionDTO): Promise<OrdenProduccion> => {
-    const response = await apiClient.patch(`${BASE_URL}/procesamiento/ordenes-produccion/${id}/`, data);
+    const response = await apiClient.patch(
+      `${BASE_URL}/procesamiento/ordenes-produccion/${id}/`,
+      data
+    );
     return response.data;
   },
 
@@ -409,12 +428,18 @@ export const ordenProduccionApi = {
   },
 
   iniciar: async (id: number, data?: IniciarOrdenProduccionDTO): Promise<OrdenProduccion> => {
-    const response = await apiClient.post(`${BASE_URL}/procesamiento/ordenes-produccion/${id}/iniciar/`, data);
+    const response = await apiClient.post(
+      `${BASE_URL}/procesamiento/ordenes-produccion/${id}/iniciar/`,
+      data
+    );
     return response.data;
   },
 
   finalizar: async (id: number, data?: FinalizarOrdenProduccionDTO): Promise<OrdenProduccion> => {
-    const response = await apiClient.post(`${BASE_URL}/procesamiento/ordenes-produccion/${id}/finalizar/`, data);
+    const response = await apiClient.post(
+      `${BASE_URL}/procesamiento/ordenes-produccion/${id}/finalizar/`,
+      data
+    );
     return response.data;
   },
 };
@@ -476,7 +501,9 @@ export const controlCalidadProcesoApi = {
     lote_produccion?: number;
     cumple?: boolean;
   }): Promise<ControlCalidadProceso[]> => {
-    const response = await apiClient.get(`${BASE_URL}/procesamiento/controles-calidad/`, { params });
+    const response = await apiClient.get(`${BASE_URL}/procesamiento/controles-calidad/`, {
+      params,
+    });
     return response.data;
   },
 
@@ -523,7 +550,9 @@ export const tipoMantenimientoApi = {
     es_correctivo?: boolean;
     activo?: boolean;
   }): Promise<PaginatedResponse<TipoMantenimiento>> => {
-    const response = await apiClient.get(`${BASE_URL}/mantenimiento/tipos-mantenimiento/`, { params });
+    const response = await apiClient.get(`${BASE_URL}/mantenimiento/tipos-mantenimiento/`, {
+      params,
+    });
     return response.data;
   },
 
@@ -596,7 +625,10 @@ export const equipoMedicionApi = {
   },
 
   update: async (id: number, data: Partial<CreateEquipoMedicionDTO>): Promise<EquipoMedicion> => {
-    const response = await apiClient.patch(`${BASE_URL}/mantenimiento/equipos-medicion/${id}/`, data);
+    const response = await apiClient.patch(
+      `${BASE_URL}/mantenimiento/equipos-medicion/${id}/`,
+      data
+    );
     return response.data;
   },
 
@@ -629,7 +661,10 @@ export const planMantenimientoApi = {
     return response.data;
   },
 
-  update: async (id: number, data: Partial<CreatePlanMantenimientoDTO>): Promise<PlanMantenimiento> => {
+  update: async (
+    id: number,
+    data: Partial<CreatePlanMantenimientoDTO>
+  ): Promise<PlanMantenimiento> => {
     const response = await apiClient.patch(`${BASE_URL}/mantenimiento/planes/${id}/`, data);
     return response.data;
   },
@@ -665,7 +700,10 @@ export const ordenTrabajoApi = {
   },
 
   update: async (id: number, data: UpdateOrdenTrabajoDTO): Promise<OrdenTrabajo> => {
-    const response = await apiClient.patch(`${BASE_URL}/mantenimiento/ordenes-trabajo/${id}/`, data);
+    const response = await apiClient.patch(
+      `${BASE_URL}/mantenimiento/ordenes-trabajo/${id}/`,
+      data
+    );
     return response.data;
   },
 
@@ -674,12 +712,18 @@ export const ordenTrabajoApi = {
   },
 
   iniciar: async (id: number, data?: IniciarOrdenTrabajoDTO): Promise<OrdenTrabajo> => {
-    const response = await apiClient.post(`${BASE_URL}/mantenimiento/ordenes-trabajo/${id}/iniciar/`, data);
+    const response = await apiClient.post(
+      `${BASE_URL}/mantenimiento/ordenes-trabajo/${id}/iniciar/`,
+      data
+    );
     return response.data;
   },
 
   completar: async (id: number, data: CompletarOrdenTrabajoDTO): Promise<OrdenTrabajo> => {
-    const response = await apiClient.post(`${BASE_URL}/mantenimiento/ordenes-trabajo/${id}/completar/`, data);
+    const response = await apiClient.post(
+      `${BASE_URL}/mantenimiento/ordenes-trabajo/${id}/completar/`,
+      data
+    );
     return response.data;
   },
 };
@@ -764,7 +808,9 @@ export const tipoProductoApi = {
     search?: string;
     activo?: boolean;
   }): Promise<PaginatedResponse<TipoProducto>> => {
-    const response = await apiClient.get(`${BASE_URL}/producto-terminado/tipos-producto/`, { params });
+    const response = await apiClient.get(`${BASE_URL}/producto-terminado/tipos-producto/`, {
+      params,
+    });
     return response.data;
   },
 
@@ -785,7 +831,9 @@ export const estadoLoteApi = {
     page_size?: number;
     activo?: boolean;
   }): Promise<PaginatedResponse<EstadoLote>> => {
-    const response = await apiClient.get(`${BASE_URL}/producto-terminado/estados-lote/`, { params });
+    const response = await apiClient.get(`${BASE_URL}/producto-terminado/estados-lote/`, {
+      params,
+    });
     return response.data;
   },
 
@@ -824,7 +872,10 @@ export const productoTerminadoApi = {
     return response.data;
   },
 
-  update: async (id: number, data: Partial<CreateProductoTerminadoDTO>): Promise<ProductoTerminado> => {
+  update: async (
+    id: number,
+    data: Partial<CreateProductoTerminadoDTO>
+  ): Promise<ProductoTerminado> => {
     const response = await apiClient.patch(`${BASE_URL}/producto-terminado/productos/${id}/`, data);
     return response.data;
   },
@@ -867,17 +918,26 @@ export const stockProductoApi = {
   },
 
   reservar: async (id: number, data: ReservarCantidadDTO): Promise<StockProducto> => {
-    const response = await apiClient.post(`${BASE_URL}/producto-terminado/stocks/${id}/reservar/`, data);
+    const response = await apiClient.post(
+      `${BASE_URL}/producto-terminado/stocks/${id}/reservar/`,
+      data
+    );
     return response.data;
   },
 
   liberarReserva: async (id: number, data: LiberarReservaDTO): Promise<StockProducto> => {
-    const response = await apiClient.post(`${BASE_URL}/producto-terminado/stocks/${id}/liberar_reserva/`, data);
+    const response = await apiClient.post(
+      `${BASE_URL}/producto-terminado/stocks/${id}/liberar_reserva/`,
+      data
+    );
     return response.data;
   },
 
   consumir: async (id: number, data: ConsumirCantidadDTO): Promise<StockProducto> => {
-    const response = await apiClient.post(`${BASE_URL}/producto-terminado/stocks/${id}/consumir/`, data);
+    const response = await apiClient.post(
+      `${BASE_URL}/producto-terminado/stocks/${id}/consumir/`,
+      data
+    );
     return response.data;
   },
 };
@@ -890,7 +950,9 @@ export const liberacionApi = {
     resultado?: string;
     empresa_id?: number;
   }): Promise<PaginatedResponse<LiberacionList>> => {
-    const response = await apiClient.get(`${BASE_URL}/producto-terminado/liberaciones/`, { params });
+    const response = await apiClient.get(`${BASE_URL}/producto-terminado/liberaciones/`, {
+      params,
+    });
     return response.data;
   },
 
@@ -905,7 +967,10 @@ export const liberacionApi = {
   },
 
   update: async (id: number, data: UpdateLiberacionDTO): Promise<Liberacion> => {
-    const response = await apiClient.patch(`${BASE_URL}/producto-terminado/liberaciones/${id}/`, data);
+    const response = await apiClient.patch(
+      `${BASE_URL}/producto-terminado/liberaciones/${id}/`,
+      data
+    );
     return response.data;
   },
 
@@ -914,17 +979,26 @@ export const liberacionApi = {
   },
 
   aprobar: async (id: number, data: AprobarLiberacionDTO): Promise<Liberacion> => {
-    const response = await apiClient.post(`${BASE_URL}/producto-terminado/liberaciones/${id}/aprobar/`, data);
+    const response = await apiClient.post(
+      `${BASE_URL}/producto-terminado/liberaciones/${id}/aprobar/`,
+      data
+    );
     return response.data;
   },
 
   rechazar: async (id: number, data: RechazarLiberacionDTO): Promise<Liberacion> => {
-    const response = await apiClient.post(`${BASE_URL}/producto-terminado/liberaciones/${id}/rechazar/`, data);
+    const response = await apiClient.post(
+      `${BASE_URL}/producto-terminado/liberaciones/${id}/rechazar/`,
+      data
+    );
     return response.data;
   },
 
   aprobarConObservaciones: async (id: number, data: AprobarLiberacionDTO): Promise<Liberacion> => {
-    const response = await apiClient.post(`${BASE_URL}/producto-terminado/liberaciones/${id}/aprobar_con_observaciones/`, data);
+    const response = await apiClient.post(
+      `${BASE_URL}/producto-terminado/liberaciones/${id}/aprobar_con_observaciones/`,
+      data
+    );
     return response.data;
   },
 };
@@ -937,7 +1011,9 @@ export const certificadoCalidadApi = {
     cliente_nombre?: string;
     empresa_id?: number;
   }): Promise<PaginatedResponse<CertificadoCalidadList>> => {
-    const response = await apiClient.get(`${BASE_URL}/producto-terminado/certificados/`, { params });
+    const response = await apiClient.get(`${BASE_URL}/producto-terminado/certificados/`, {
+      params,
+    });
     return response.data;
   },
 

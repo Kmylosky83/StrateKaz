@@ -29,7 +29,7 @@ import type {
   PaginatedResponse,
 } from '../types/mejora-continua.types';
 
-const BASE_URL = '/api/hseq/mejora-continua';
+const BASE_URL = '/hseq/mejora';
 
 // ==================== PROGRAMA DE AUDITORÍA ====================
 
@@ -139,9 +139,13 @@ export const auditoriaApi = {
   uploadInforme: async (id: number, file: File): Promise<Auditoria> => {
     const formData = new FormData();
     formData.append('informe_auditoria', file);
-    const response = await apiClient.post(`${BASE_URL}/auditorias/${id}/upload_informe/`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const response = await apiClient.post(
+      `${BASE_URL}/auditorias/${id}/upload_informe/`,
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }
+    );
     return response.data;
   },
 };
@@ -213,9 +217,13 @@ export const hallazgoApi = {
   uploadEvidencia: async (id: number, file: File): Promise<Hallazgo> => {
     const formData = new FormData();
     formData.append('archivo_evidencia', file);
-    const response = await apiClient.post(`${BASE_URL}/hallazgos/${id}/upload_evidencia/`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const response = await apiClient.post(
+      `${BASE_URL}/hallazgos/${id}/upload_evidencia/`,
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      }
+    );
     return response.data;
   },
 };
@@ -248,7 +256,10 @@ export const evaluacionCumplimientoApi = {
     return response.data;
   },
 
-  update: async (id: number, data: UpdateEvaluacionCumplimientoDTO): Promise<EvaluacionCumplimiento> => {
+  update: async (
+    id: number,
+    data: UpdateEvaluacionCumplimientoDTO
+  ): Promise<EvaluacionCumplimiento> => {
     const response = await apiClient.patch(`${BASE_URL}/evaluaciones-cumplimiento/${id}/`, data);
     return response.data;
   },
@@ -258,7 +269,9 @@ export const evaluacionCumplimientoApi = {
   },
 
   calcularProximaEvaluacion: async (id: number): Promise<EvaluacionCumplimiento> => {
-    const response = await apiClient.post(`${BASE_URL}/evaluaciones-cumplimiento/${id}/calcular_proxima_evaluacion/`);
+    const response = await apiClient.post(
+      `${BASE_URL}/evaluaciones-cumplimiento/${id}/calcular_proxima_evaluacion/`
+    );
     return response.data;
   },
 

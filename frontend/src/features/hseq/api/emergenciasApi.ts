@@ -54,7 +54,7 @@ import type {
   PaginatedResponse,
 } from '../types/emergencias.types';
 
-const BASE_URL = '/api/hseq/emergencias';
+const BASE_URL = '/hseq/emergencias';
 
 // ==================== ANÁLISIS DE VULNERABILIDAD ====================
 
@@ -81,7 +81,10 @@ export const analisisVulnerabilidadApi = {
     return response.data;
   },
 
-  update: async (id: number, data: UpdateAnalisisVulnerabilidadDTO): Promise<AnalisisVulnerabilidad> => {
+  update: async (
+    id: number,
+    data: UpdateAnalisisVulnerabilidadDTO
+  ): Promise<AnalisisVulnerabilidad> => {
     const response = await apiClient.patch(`${BASE_URL}/analisis-vulnerabilidad/${id}/`, data);
     return response.data;
   },
@@ -201,7 +204,10 @@ export const procedimientoEmergenciaApi = {
     return response.data;
   },
 
-  update: async (id: number, data: UpdateProcedimientoEmergenciaDTO): Promise<ProcedimientoEmergencia> => {
+  update: async (
+    id: number,
+    data: UpdateProcedimientoEmergenciaDTO
+  ): Promise<ProcedimientoEmergencia> => {
     const response = await apiClient.patch(`${BASE_URL}/procedimientos/${id}/`, data);
     return response.data;
   },

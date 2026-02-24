@@ -46,7 +46,7 @@ import type {
   EstadisticasMonitoreo,
 } from '../types/higiene-industrial.types';
 
-const BASE_URL = '/api/hseq/higiene';
+const BASE_URL = '/hseq/higiene';
 
 // ==================== TIPOS DE AGENTE ====================
 
@@ -140,7 +140,10 @@ export const grupoExposicionApi = {
     return response.data;
   },
 
-  update: async (id: number, data: UpdateGrupoExposicionSimilarDTO): Promise<GrupoExposicionSimilar> => {
+  update: async (
+    id: number,
+    data: UpdateGrupoExposicionSimilarDTO
+  ): Promise<GrupoExposicionSimilar> => {
     const response = await apiClient.patch(`${BASE_URL}/grupos-exposicion/${id}/`, data);
     return response.data;
   },
@@ -229,7 +232,9 @@ export const medicionAmbientalApi = {
   },
 
   evaluarCumplimiento: async (id: number): Promise<MedicionAmbiental> => {
-    const response = await apiClient.post(`${BASE_URL}/mediciones-ambientales/${id}/evaluar_cumplimiento/`);
+    const response = await apiClient.post(
+      `${BASE_URL}/mediciones-ambientales/${id}/evaluar_cumplimiento/`
+    );
     return response.data;
   },
 

@@ -14,7 +14,7 @@ import type {
   PaginatedResponse,
 } from '../types';
 
-const BASE_URL = '/motor_cumplimiento/reglamentos-internos';
+const BASE_URL = '/cumplimiento/reglamentos-internos';
 
 // ==================== TIPOS DE REGLAMENTO ====================
 

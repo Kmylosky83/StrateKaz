@@ -59,7 +59,7 @@ import type {
   PaginatedResponse,
 } from '../types/gestion-ambiental.types';
 
-const BASE_URL = '/api/hseq/gestion-ambiental';
+const BASE_URL = '/hseq/ambiental';
 
 // ==================== TIPOS DE RESIDUOS ====================
 
@@ -186,7 +186,9 @@ export const registroResiduoApi = {
     return response.data;
   },
 
-  generarCertificado: async (data: GenerarCertificadoDTO): Promise<{ mensaje: string; certificado: CertificadoAmbiental }> => {
+  generarCertificado: async (
+    data: GenerarCertificadoDTO
+  ): Promise<{ mensaje: string; certificado: CertificadoAmbiental }> => {
     const response = await apiClient.post(`${BASE_URL}/residuos/generar_certificado/`, data);
     return response.data;
   },
@@ -227,7 +229,9 @@ export const vertimientoApi = {
     await apiClient.delete(`${BASE_URL}/vertimientos/${id}/`);
   },
 
-  getNoConformes: async (empresa_id?: number): Promise<{ total: number; vertimientos: Vertimiento[] }> => {
+  getNoConformes: async (
+    empresa_id?: number
+  ): Promise<{ total: number; vertimientos: Vertimiento[] }> => {
     const response = await apiClient.get(`${BASE_URL}/vertimientos/no_conformes/`, {
       params: { empresa_id },
     });
@@ -304,7 +308,9 @@ export const registroEmisionApi = {
     await apiClient.delete(`${BASE_URL}/emisiones/${id}/`);
   },
 
-  getNoConformes: async (empresa_id?: number): Promise<{ total: number; emisiones: RegistroEmision[] }> => {
+  getNoConformes: async (
+    empresa_id?: number
+  ): Promise<{ total: number; emisiones: RegistroEmision[] }> => {
     const response = await apiClient.get(`${BASE_URL}/emisiones/no_conformes/`, {
       params: { empresa_id },
     });
@@ -381,7 +387,10 @@ export const consumoRecursoApi = {
     await apiClient.delete(`${BASE_URL}/consumos/${id}/`);
   },
 
-  getResumenAnual: async (empresa_id: number, year?: number): Promise<{
+  getResumenAnual: async (
+    empresa_id: number,
+    year?: number
+  ): Promise<{
     year: number;
     por_recurso: any[];
     por_mes: any[];
@@ -419,7 +428,10 @@ export const huellaCarbonoApi = {
     return response.data;
   },
 
-  update: async (id: number, data: UpdateCalculoHuellaCarbonoDTO): Promise<CalculoHuellaCarbono> => {
+  update: async (
+    id: number,
+    data: UpdateCalculoHuellaCarbonoDTO
+  ): Promise<CalculoHuellaCarbono> => {
     const response = await apiClient.patch(`${BASE_URL}/huella-carbono/${id}/`, data);
     return response.data;
   },
@@ -428,7 +440,9 @@ export const huellaCarbonoApi = {
     await apiClient.delete(`${BASE_URL}/huella-carbono/${id}/`);
   },
 
-  calcularHuella: async (data: CalcularHuellaInputDTO): Promise<{
+  calcularHuella: async (
+    data: CalcularHuellaInputDTO
+  ): Promise<{
     mensaje: string;
     calculo: CalculoHuellaCarbono;
   }> => {
@@ -436,7 +450,10 @@ export const huellaCarbonoApi = {
     return response.data;
   },
 
-  verificar: async (id: number, verificador_externo?: string): Promise<{
+  verificar: async (
+    id: number,
+    verificador_externo?: string
+  ): Promise<{
     mensaje: string;
     calculo: CalculoHuellaCarbono;
   }> => {
@@ -446,7 +463,9 @@ export const huellaCarbonoApi = {
     return response.data;
   },
 
-  getComparativaAnual: async (empresa_id: number): Promise<{
+  getComparativaAnual: async (
+    empresa_id: number
+  ): Promise<{
     empresa_id: number;
     comparativa: Array<{
       year: number;
@@ -491,7 +510,10 @@ export const certificadoAmbientalApi = {
     return response.data;
   },
 
-  update: async (id: number, data: UpdateCertificadoAmbientalDTO): Promise<CertificadoAmbiental> => {
+  update: async (
+    id: number,
+    data: UpdateCertificadoAmbientalDTO
+  ): Promise<CertificadoAmbiental> => {
     const response = await apiClient.patch(`${BASE_URL}/certificados/${id}/`, data);
     return response.data;
   },

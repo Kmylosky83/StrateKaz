@@ -54,7 +54,7 @@ import type {
   TipoExamen,
 } from '../types/medicina-laboral.types';
 
-const BASE_URL = '/api/hseq/medicina-laboral';
+const BASE_URL = '/hseq/medicina';
 
 // ==================== TIPO EXAMEN ====================
 
@@ -444,10 +444,16 @@ export const programaVigilanciaApi = {
   /**
    * Cambiar estado de un programa de vigilancia
    */
-  cambiarEstado: async (id: number, estado: EstadoProgramaVigilancia): Promise<ProgramaVigilancia> => {
-    const response = await apiClient.post(`${BASE_URL}/programas-vigilancia/${id}/cambiar-estado/`, {
-      estado,
-    });
+  cambiarEstado: async (
+    id: number,
+    estado: EstadoProgramaVigilancia
+  ): Promise<ProgramaVigilancia> => {
+    const response = await apiClient.post(
+      `${BASE_URL}/programas-vigilancia/${id}/cambiar-estado/`,
+      {
+        estado,
+      }
+    );
     return response.data;
   },
 
@@ -538,10 +544,13 @@ export const casoVigilanciaApi = {
    * Registrar seguimiento en un caso de vigilancia
    */
   registrarSeguimiento: async (id: number, descripcion: string): Promise<CasoVigilancia> => {
-    const response = await apiClient.post(`${BASE_URL}/casos-vigilancia/${id}/registrar-seguimiento/`, {
-      descripcion,
-      fecha: new Date().toISOString().split('T')[0],
-    });
+    const response = await apiClient.post(
+      `${BASE_URL}/casos-vigilancia/${id}/registrar-seguimiento/`,
+      {
+        descripcion,
+        fecha: new Date().toISOString().split('T')[0],
+      }
+    );
     return response.data;
   },
 
@@ -638,7 +647,10 @@ export const diagnosticoOcupacionalApi = {
   /**
    * Actualizar un diagnóstico ocupacional
    */
-  update: async (id: number, data: UpdateDiagnosticoOcupacionalDTO): Promise<DiagnosticoOcupacional> => {
+  update: async (
+    id: number,
+    data: UpdateDiagnosticoOcupacionalDTO
+  ): Promise<DiagnosticoOcupacional> => {
     const response = await apiClient.patch(`${BASE_URL}/diagnosticos/${id}/`, data);
     return response.data;
   },

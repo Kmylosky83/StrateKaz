@@ -11,8 +11,8 @@ import type {
   TipoNormaCreate,
 } from '../types/matrizLegal';
 
-const BASE_URL = '/api/cumplimiento/normas-legales';
-const TIPOS_URL = '/api/cumplimiento/tipos-norma';
+const BASE_URL = '/cumplimiento/matriz-legal/normas';
+const TIPOS_URL = '/cumplimiento/matriz-legal/tipos-norma';
 
 // ============================================================================
 // NORMAS LEGALES

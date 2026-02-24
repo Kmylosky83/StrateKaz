@@ -56,7 +56,7 @@ import type {
   EstadisticasComite,
 } from '../types/comites.types';
 
-const BASE_URL = '/api/hseq/gestion-comites';
+const BASE_URL = '/hseq/comites';
 
 // ==================== TIPOS DE COMITÉ ====================
 
@@ -234,7 +234,10 @@ export const reunionApi = {
     cumple_quorum: boolean;
     asistencias: AsistenciaReunion[];
   }> => {
-    const response = await apiClient.post(`${BASE_URL}/reuniones/${id}/registrar_asistencia/`, data);
+    const response = await apiClient.post(
+      `${BASE_URL}/reuniones/${id}/registrar_asistencia/`,
+      data
+    );
     return response.data;
   },
 
@@ -290,7 +293,10 @@ export const actaReunionApi = {
     await apiClient.delete(`${BASE_URL}/actas/${id}/`);
   },
 
-  aprobar: async (id: number, data: AprobarActaDTO): Promise<{ message: string; acta: ActaReunion }> => {
+  aprobar: async (
+    id: number,
+    data: AprobarActaDTO
+  ): Promise<{ message: string; acta: ActaReunion }> => {
     const response = await apiClient.post(`${BASE_URL}/actas/${id}/aprobar_acta/`, data);
     return response.data;
   },
@@ -354,12 +360,18 @@ export const compromisoApi = {
     return response.data;
   },
 
-  cerrar: async (id: number, data: CerrarCompromisoDTO): Promise<{ message: string; compromiso: Compromiso }> => {
+  cerrar: async (
+    id: number,
+    data: CerrarCompromisoDTO
+  ): Promise<{ message: string; compromiso: Compromiso }> => {
     const response = await apiClient.post(`${BASE_URL}/compromisos/${id}/cerrar_compromiso/`, data);
     return response.data;
   },
 
-  actualizarAvance: async (id: number, data: ActualizarAvanceCompromisoDTO): Promise<Compromiso> => {
+  actualizarAvance: async (
+    id: number,
+    data: ActualizarAvanceCompromisoDTO
+  ): Promise<Compromiso> => {
     const response = await apiClient.post(`${BASE_URL}/compromisos/${id}/actualizar_avance/`, data);
     return response.data;
   },
@@ -390,7 +402,10 @@ export const seguimientoCompromisoApi = {
     return response.data;
   },
 
-  update: async (id: number, data: Partial<CreateSeguimientoCompromisoDTO>): Promise<SeguimientoCompromiso> => {
+  update: async (
+    id: number,
+    data: Partial<CreateSeguimientoCompromisoDTO>
+  ): Promise<SeguimientoCompromiso> => {
     const response = await apiClient.patch(`${BASE_URL}/seguimientos/${id}/`, data);
     return response.data;
   },

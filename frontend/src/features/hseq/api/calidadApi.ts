@@ -39,7 +39,7 @@ import type {
   PrioridadCambio,
 } from '../types/calidad.types';
 
-const BASE_URL = '/api/hseq/calidad';
+const BASE_URL = '/hseq/calidad';
 
 // ==================== NO CONFORMIDAD ====================
 
@@ -115,10 +115,13 @@ export const noConformidadApi = {
     responsable_id: number,
     tipo: 'analisis' | 'cierre'
   ): Promise<NoConformidad> => {
-    const response = await apiClient.post(`${BASE_URL}/no-conformidades/${id}/asignar-responsable/`, {
-      responsable_id,
-      tipo,
-    });
+    const response = await apiClient.post(
+      `${BASE_URL}/no-conformidades/${id}/asignar-responsable/`,
+      {
+        responsable_id,
+        tipo,
+      }
+    );
     return response.data;
   },
 
@@ -130,23 +133,33 @@ export const noConformidadApi = {
     analisis: string,
     metodo: MetodoAnalisis
   ): Promise<NoConformidad> => {
-    const response = await apiClient.post(`${BASE_URL}/no-conformidades/${id}/completar-analisis/`, {
-      analisis_causa_raiz: analisis,
-      metodo_analisis: metodo,
-      fecha_analisis: new Date().toISOString().split('T')[0],
-    });
+    const response = await apiClient.post(
+      `${BASE_URL}/no-conformidades/${id}/completar-analisis/`,
+      {
+        analisis_causa_raiz: analisis,
+        metodo_analisis: metodo,
+        fecha_analisis: new Date().toISOString().split('T')[0],
+      }
+    );
     return response.data;
   },
 
   /**
    * Verificar eficacia de la no conformidad
    */
-  verificarEficacia: async (id: number, eficaz: boolean, comentarios?: string): Promise<NoConformidad> => {
-    const response = await apiClient.post(`${BASE_URL}/no-conformidades/${id}/verificar-eficacia/`, {
-      verificacion_eficaz: eficaz,
-      comentarios_verificacion: comentarios,
-      fecha_verificacion: new Date().toISOString().split('T')[0],
-    });
+  verificarEficacia: async (
+    id: number,
+    eficaz: boolean,
+    comentarios?: string
+  ): Promise<NoConformidad> => {
+    const response = await apiClient.post(
+      `${BASE_URL}/no-conformidades/${id}/verificar-eficacia/`,
+      {
+        verificacion_eficaz: eficaz,
+        comentarios_verificacion: comentarios,
+        fecha_verificacion: new Date().toISOString().split('T')[0],
+      }
+    );
     return response.data;
   },
 
@@ -259,9 +272,12 @@ export const accionCorrectivaApi = {
    * Cambiar estado de la accion correctiva
    */
   cambiarEstado: async (id: number, estado: EstadoAccion): Promise<AccionCorrectiva> => {
-    const response = await apiClient.post(`${BASE_URL}/acciones-correctivas/${id}/cambiar-estado/`, {
-      estado,
-    });
+    const response = await apiClient.post(
+      `${BASE_URL}/acciones-correctivas/${id}/cambiar-estado/`,
+      {
+        estado,
+      }
+    );
     return response.data;
   },
 
@@ -292,13 +308,16 @@ export const accionCorrectivaApi = {
     metodo: string,
     resultados: string
   ): Promise<AccionCorrectiva> => {
-    const response = await apiClient.post(`${BASE_URL}/acciones-correctivas/${id}/verificar-eficacia/`, {
-      fecha_verificacion: new Date().toISOString().split('T')[0],
-      eficaz,
-      metodo_verificacion: metodo,
-      resultados_verificacion: resultados,
-      estado: 'VERIFICADA',
-    });
+    const response = await apiClient.post(
+      `${BASE_URL}/acciones-correctivas/${id}/verificar-eficacia/`,
+      {
+        fecha_verificacion: new Date().toISOString().split('T')[0],
+        eficaz,
+        metodo_verificacion: metodo,
+        resultados_verificacion: resultados,
+        estado: 'VERIFICADA',
+      }
+    );
     return response.data;
   },
 
@@ -382,9 +401,12 @@ export const salidaNoConformeApi = {
    * Cambiar estado de la salida no conforme
    */
   cambiarEstado: async (id: number, estado: EstadoSalidaNoConforme): Promise<SalidaNoConforme> => {
-    const response = await apiClient.post(`${BASE_URL}/salidas-no-conformes/${id}/cambiar-estado/`, {
-      estado,
-    });
+    const response = await apiClient.post(
+      `${BASE_URL}/salidas-no-conformes/${id}/cambiar-estado/`,
+      {
+        estado,
+      }
+    );
     return response.data;
   },
 
@@ -396,12 +418,15 @@ export const salidaNoConformeApi = {
     disposicion: DisposicionSalidaNoConforme,
     justificacion: string
   ): Promise<SalidaNoConforme> => {
-    const response = await apiClient.post(`${BASE_URL}/salidas-no-conformes/${id}/definir-disposicion/`, {
-      disposicion,
-      justificacion_disposicion: justificacion,
-      fecha_disposicion: new Date().toISOString().split('T')[0],
-      estado: 'DISPOSICION_DEFINIDA',
-    });
+    const response = await apiClient.post(
+      `${BASE_URL}/salidas-no-conformes/${id}/definir-disposicion/`,
+      {
+        disposicion,
+        justificacion_disposicion: justificacion,
+        fecha_disposicion: new Date().toISOString().split('T')[0],
+        estado: 'DISPOSICION_DEFINIDA',
+      }
+    );
     return response.data;
   },
 
@@ -613,7 +638,11 @@ export const controlCambioApi = {
   /**
    * Verificar eficacia del control de cambio
    */
-  verificarEficacia: async (id: number, eficaz: boolean, resultados: string): Promise<ControlCambio> => {
+  verificarEficacia: async (
+    id: number,
+    eficaz: boolean,
+    resultados: string
+  ): Promise<ControlCambio> => {
     const response = await apiClient.post(`${BASE_URL}/control-cambios/${id}/verificar-eficacia/`, {
       verificacion_realizada: true,
       fecha_verificacion: new Date().toISOString().split('T')[0],

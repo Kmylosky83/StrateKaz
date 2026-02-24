@@ -41,7 +41,7 @@ export const requisitosKeys = {
 export const useTiposRequisito = () => {
   return useGenericCRUD<TipoRequisito>({
     queryKey: requisitosKeys.tiposRequisito,
-    endpoint: '/motor_cumplimiento/requisitos-legales/tipos/',
+    endpoint: '/cumplimiento/requisitos-legales/tipos/',
     entityName: 'Tipo de Requisito',
     isPaginated: true,
   });
@@ -52,7 +52,7 @@ export const useTiposRequisito = () => {
 export const useRequisitosLegales = (filters?: RequisitoLegalFilters) => {
   return useGenericCRUD<RequisitoLegal>({
     queryKey: requisitosKeys.requisitos(filters),
-    endpoint: `/motor_cumplimiento/requisitos-legales/requisitos/${filters ? '?' + new URLSearchParams(filters as Record<string, string>).toString() : ''}`,
+    endpoint: `/cumplimiento/requisitos-legales/requisitos/${filters ? '?' + new URLSearchParams(filters as Record<string, string>).toString() : ''}`,
     entityName: 'Requisito Legal',
     isPaginated: true,
   });
@@ -63,7 +63,7 @@ export const useRequisitosLegales = (filters?: RequisitoLegalFilters) => {
 export const useEmpresaRequisitos = (filters?: EmpresaRequisitoFilters) => {
   return useGenericCRUD<EmpresaRequisito>({
     queryKey: requisitosKeys.empresaRequisitos(filters),
-    endpoint: `/motor_cumplimiento/requisitos-legales/empresa-requisitos/${filters ? '?' + new URLSearchParams(filters as Record<string, string>).toString() : ''}`,
+    endpoint: `/cumplimiento/requisitos-legales/empresa-requisitos/${filters ? '?' + new URLSearchParams(filters as Record<string, string>).toString() : ''}`,
     entityName: 'Requisito de Empresa',
     isPaginated: true,
   });

@@ -18,7 +18,7 @@ import type {
   PaginatedResponse,
 } from '../types';
 
-const BASE_URL = '/motor_cumplimiento/requisitos-legales';
+const BASE_URL = '/cumplimiento/requisitos-legales';
 
 // ==================== TIPOS DE REQUISITO ====================
 
@@ -79,8 +79,12 @@ export const requisitosLegalesApi = {
 // ==================== EMPRESA-REQUISITO ====================
 
 export const empresaRequisitosApi = {
-  getAll: async (filters?: EmpresaRequisitoFilters): Promise<PaginatedResponse<EmpresaRequisito>> => {
-    const response = await axiosInstance.get(`${BASE_URL}/empresa-requisitos/`, { params: filters });
+  getAll: async (
+    filters?: EmpresaRequisitoFilters
+  ): Promise<PaginatedResponse<EmpresaRequisito>> => {
+    const response = await axiosInstance.get(`${BASE_URL}/empresa-requisitos/`, {
+      params: filters,
+    });
     return response.data;
   },
 
@@ -149,7 +153,10 @@ export const empresaRequisitosApi = {
   },
 
   renovar: async (id: number, data: CreateEmpresaRequisitoDTO): Promise<EmpresaRequisito> => {
-    const response = await axiosInstance.post(`${BASE_URL}/empresa-requisitos/${id}/renovar/`, data);
+    const response = await axiosInstance.post(
+      `${BASE_URL}/empresa-requisitos/${id}/renovar/`,
+      data
+    );
     return response.data;
   },
 };

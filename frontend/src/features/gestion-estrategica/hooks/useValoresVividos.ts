@@ -175,7 +175,7 @@ export interface ConfiguracionMetricaValor {
 // API BASE PATH
 // =============================================================================
 
-const API_PATH = '/api/gestion-estrategica/identidad/bi';
+const API_PATH = '/gestion-estrategica/identidad/bi';
 
 // =============================================================================
 // QUERY KEYS
@@ -184,20 +184,16 @@ const API_PATH = '/api/gestion-estrategica/identidad/bi';
 export const valoresVividosKeys = {
   all: ['valores-vividos'] as const,
   lists: () => [...valoresVividosKeys.all, 'list'] as const,
-  list: (filters?: Record<string, unknown>) =>
-    [...valoresVividosKeys.lists(), filters] as const,
+  list: (filters?: Record<string, unknown>) => [...valoresVividosKeys.lists(), filters] as const,
   detail: (id: number) => [...valoresVividosKeys.all, 'detail', id] as const,
   porAccion: (contentType: string, objectId: number) =>
     [...valoresVividosKeys.all, 'por-accion', contentType, objectId] as const,
-  porValor: (valorId: number) =>
-    [...valoresVividosKeys.all, 'por-valor', valorId] as const,
+  porValor: (valorId: number) => [...valoresVividosKeys.all, 'por-valor', valorId] as const,
   // BI
   estadisticas: (filters?: Record<string, unknown>) =>
     [...valoresVividosKeys.all, 'estadisticas', filters] as const,
-  tendencia: (meses?: number) =>
-    [...valoresVividosKeys.all, 'tendencia', meses] as const,
-  rankingCategorias: (valorId?: number) =>
-    [...valoresVividosKeys.all, 'ranking', valorId] as const,
+  tendencia: (meses?: number) => [...valoresVividosKeys.all, 'tendencia', meses] as const,
+  rankingCategorias: (valorId?: number) => [...valoresVividosKeys.all, 'ranking', valorId] as const,
   subrepresentados: (umbral?: number) =>
     [...valoresVividosKeys.all, 'subrepresentados', umbral] as const,
   resumen: () => [...valoresVividosKeys.all, 'resumen'] as const,
@@ -240,9 +236,7 @@ export const useValorVividoDetail = (id: number) => {
   return useQuery({
     queryKey: valoresVividosKeys.detail(id),
     queryFn: async () => {
-      const { data } = await api.get<ValorVividoDetail>(
-        `${API_PATH}/valores-vividos/${id}/`
-      );
+      const { data } = await api.get<ValorVividoDetail>(`${API_PATH}/valores-vividos/${id}/`);
       return data;
     },
     enabled: id > 0,
@@ -320,10 +314,9 @@ export const useTendenciaValores = (meses = 12) => {
   return useQuery({
     queryKey: valoresVividosKeys.tendencia(meses),
     queryFn: async () => {
-      const { data } = await api.get<TendenciaMensual[]>(
-        `${API_PATH}/valores-vividos/tendencia/`,
-        { params: { meses } }
-      );
+      const { data } = await api.get<TendenciaMensual[]>(`${API_PATH}/valores-vividos/tendencia/`, {
+        params: { meses },
+      });
       return data;
     },
   });
@@ -368,9 +361,7 @@ export const useResumenValoresVividos = () => {
   return useQuery({
     queryKey: valoresVividosKeys.resumen(),
     queryFn: async () => {
-      const { data } = await api.get<ResumenValoresVividos>(
-        `${API_PATH}/valores-vividos/resumen/`
-      );
+      const { data } = await api.get<ResumenValoresVividos>(`${API_PATH}/valores-vividos/resumen/`);
       return data;
     },
   });
@@ -443,13 +434,7 @@ export const useVerificarValorVivido = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      id,
-      observaciones,
-    }: {
-      id: number;
-      observaciones?: string;
-    }) => {
+    mutationFn: async ({ id, observaciones }: { id: number; observaciones?: string }) => {
       const { data } = await api.post<ValorVividoDetail>(
         `${API_PATH}/valores-vividos/${id}/verificar/`,
         { observaciones }
@@ -523,7 +508,9 @@ export const useUpdateConfiguracionMetricas = () => {
       data: updateData,
     }: {
       id: number;
-      data: Partial<Omit<ConfiguracionMetricaValor, 'id' | 'empresa' | 'created_at' | 'updated_at'>>;
+      data: Partial<
+        Omit<ConfiguracionMetricaValor, 'id' | 'empresa' | 'created_at' | 'updated_at'>
+      >;
     }) => {
       const { data } = await api.patch<ConfiguracionMetricaValor>(
         `${API_PATH}/config-metricas/${id}/`,
@@ -561,7 +548,11 @@ export const CATEGORIAS_ACCION_OPTIONS: { value: CategoriaAccion; label: string 
 export const TIPOS_VINCULO_OPTIONS: { value: TipoVinculo; label: string; description: string }[] = [
   { value: 'REFLEJA', label: 'Refleja el valor', description: 'La acción ejemplifica el valor' },
   { value: 'PROMUEVE', label: 'Promueve el valor', description: 'La acción fomenta el valor' },
-  { value: 'RESULTADO', label: 'Es resultado del valor', description: 'La acción es consecuencia del valor' },
+  {
+    value: 'RESULTADO',
+    label: 'Es resultado del valor',
+    description: 'La acción es consecuencia del valor',
+  },
   { value: 'MEJORA', label: 'Mejora el valor', description: 'La acción fortalece el valor' },
 ];
 

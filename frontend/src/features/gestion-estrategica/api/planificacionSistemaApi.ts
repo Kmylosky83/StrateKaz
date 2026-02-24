@@ -37,7 +37,7 @@ import type {
 } from '../types/planificacion-sistema.types';
 
 // Nueva ubicacion despues de migracion
-const BASE_URL = '/api/gestion-estrategica/planificacion-sistema';
+const BASE_URL = '/gestion-estrategica/planificacion-sistema';
 
 // ==================== PLAN TRABAJO ANUAL ====================
 

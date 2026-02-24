@@ -46,7 +46,7 @@ import type {
   EstadoAccion,
 } from '../types/accidentalidad.types';
 
-const BASE_URL = '/api/hseq/accidentalidad';
+const BASE_URL = '/hseq/accidentalidad';
 
 // ==================== ACCIDENTES DE TRABAJO ====================
 
@@ -85,16 +85,24 @@ export const accidenteTrabajoApi = {
     await apiClient.delete(`${BASE_URL}/accidentes-trabajo/${id}/`);
   },
 
-  reportarARL: async (id: number, dto: {
-    numero_caso_arl: string;
-    fecha_reporte_arl: string;
-  }): Promise<AccidenteTrabajo> => {
-    const { data } = await apiClient.post(`${BASE_URL}/accidentes-trabajo/${id}/reportar-arl/`, dto);
+  reportarARL: async (
+    id: number,
+    dto: {
+      numero_caso_arl: string;
+      fecha_reporte_arl: string;
+    }
+  ): Promise<AccidenteTrabajo> => {
+    const { data } = await apiClient.post(
+      `${BASE_URL}/accidentes-trabajo/${id}/reportar-arl/`,
+      dto
+    );
     return data;
   },
 
   iniciarInvestigacion: async (id: number): Promise<InvestigacionATEL> => {
-    const { data } = await apiClient.post(`${BASE_URL}/accidentes-trabajo/${id}/iniciar-investigacion/`);
+    const { data } = await apiClient.post(
+      `${BASE_URL}/accidentes-trabajo/${id}/iniciar-investigacion/`
+    );
     return data;
   },
 };
@@ -136,7 +144,9 @@ export const enfermedadLaboralApi = {
   },
 
   iniciarInvestigacion: async (id: number): Promise<InvestigacionATEL> => {
-    const { data } = await apiClient.post(`${BASE_URL}/enfermedades-laborales/${id}/iniciar-investigacion/`);
+    const { data } = await apiClient.post(
+      `${BASE_URL}/enfermedades-laborales/${id}/iniciar-investigacion/`
+    );
     return data;
   },
 };
@@ -178,7 +188,9 @@ export const incidenteTrabajoApi = {
   },
 
   iniciarInvestigacion: async (id: number): Promise<InvestigacionATEL> => {
-    const { data } = await apiClient.post(`${BASE_URL}/incidentes-trabajo/${id}/iniciar-investigacion/`);
+    const { data } = await apiClient.post(
+      `${BASE_URL}/incidentes-trabajo/${id}/iniciar-investigacion/`
+    );
     return data;
   },
 };
@@ -235,7 +247,9 @@ export const investigacionATELApi = {
   },
 
   agregarCausas: async (id: number, causas: CreateCausaRaizDTO[]): Promise<CausaRaiz[]> => {
-    const { data } = await apiClient.post(`${BASE_URL}/investigaciones/${id}/agregar-causas/`, { causas });
+    const { data } = await apiClient.post(`${BASE_URL}/investigaciones/${id}/agregar-causas/`, {
+      causas,
+    });
     return data;
   },
 };

@@ -16,7 +16,7 @@ import type {
   PaginatedResponse,
 } from '../types';
 
-const BASE_URL = '/api/supply-chain';
+const BASE_URL = '/supply-chain';
 
 // ==================== CRITERIOS DE EVALUACIÓN ====================
 
@@ -64,10 +64,7 @@ export const criterioEvaluacionApi = {
   /**
    * Actualizar criterio
    */
-  update: async (
-    id: number,
-    data: UpdateCriterioEvaluacionDTO
-  ): Promise<CriterioEvaluacion> => {
+  update: async (id: number, data: UpdateCriterioEvaluacionDTO): Promise<CriterioEvaluacion> => {
     const response = await apiClient.patch<CriterioEvaluacion>(
       `${BASE_URL}/criterios-evaluacion/${id}/`,
       data
@@ -155,10 +152,7 @@ export const evaluacionProveedorApi = {
   /**
    * Actualizar evaluación
    */
-  update: async (
-    id: number,
-    data: UpdateEvaluacionProveedorDTO
-  ): Promise<EvaluacionProveedor> => {
+  update: async (id: number, data: UpdateEvaluacionProveedorDTO): Promise<EvaluacionProveedor> => {
     const response = await apiClient.patch<EvaluacionProveedor>(
       `${BASE_URL}/evaluaciones-proveedor/${id}/`,
       data

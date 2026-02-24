@@ -29,7 +29,7 @@ import type {
   EstadisticasComprasResponse,
 } from '../types';
 
-const BASE_URL = '/api/supply-chain/compras';
+const BASE_URL = '/supply-chain/compras';
 
 const requisicionApi = {
   getAll: (params?: Record<string, any>) =>

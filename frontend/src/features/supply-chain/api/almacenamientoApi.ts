@@ -25,7 +25,7 @@ import type {
   EstadisticasAlmacenamientoResponse,
 } from '../types';
 
-const BASE_URL = '/api/supply-chain/almacenamiento';
+const BASE_URL = '/supply-chain/almacenamiento';
 
 const inventarioApi = {
   getAll: (params?: Record<string, any>) =>

@@ -71,8 +71,8 @@ function buildQueryString(filters: Record<string, unknown>): string {
   return params.toString();
 }
 
-const BASE_URL_FLOTA = '/api/logistics-fleet/gestion-flota';
-const BASE_URL_TRANSPORTE = '/api/logistics-fleet/gestion-transporte';
+const BASE_URL_FLOTA = '/logistics-fleet/gestion-flota';
+const BASE_URL_TRANSPORTE = '/logistics-fleet/gestion-transporte';
 
 export const logisticsFleetAPI = {
   // ==================== CATALOGOS FLOTA ====================
@@ -81,9 +81,7 @@ export const logisticsFleetAPI = {
    * Obtener tipos de vehiculos
    */
   getTiposVehiculo: async (): Promise<TipoVehiculo[]> => {
-    const response = await axiosInstance.get<TipoVehiculo[]>(
-      `${BASE_URL_FLOTA}/tipos-vehiculo/`
-    );
+    const response = await axiosInstance.get<TipoVehiculo[]>(`${BASE_URL_FLOTA}/tipos-vehiculo/`);
     return response.data;
   },
 
@@ -115,9 +113,7 @@ export const logisticsFleetAPI = {
    * Obtener un vehiculo por ID
    */
   getVehiculo: async (id: number): Promise<Vehiculo> => {
-    const response = await axiosInstance.get<Vehiculo>(
-      `${BASE_URL_FLOTA}/vehiculos/${id}/`
-    );
+    const response = await axiosInstance.get<Vehiculo>(`${BASE_URL_FLOTA}/vehiculos/${id}/`);
     return response.data;
   },
 
@@ -125,10 +121,7 @@ export const logisticsFleetAPI = {
    * Crear nuevo vehiculo
    */
   createVehiculo: async (data: CreateVehiculoDTO): Promise<Vehiculo> => {
-    const response = await axiosInstance.post<Vehiculo>(
-      `${BASE_URL_FLOTA}/vehiculos/`,
-      data
-    );
+    const response = await axiosInstance.post<Vehiculo>(`${BASE_URL_FLOTA}/vehiculos/`, data);
     return response.data;
   },
 
@@ -171,9 +164,7 @@ export const logisticsFleetAPI = {
     documentos_vencidos: number;
     mantenimientos_pendientes: number;
   }> => {
-    const response = await axiosInstance.get(
-      `${BASE_URL_FLOTA}/vehiculos/dashboard/`
-    );
+    const response = await axiosInstance.get(`${BASE_URL_FLOTA}/vehiculos/dashboard/`);
     return response.data;
   },
 
@@ -269,9 +260,7 @@ export const logisticsFleetAPI = {
   /**
    * Crear nuevo mantenimiento
    */
-  createMantenimiento: async (
-    data: CreateMantenimientoDTO
-  ): Promise<MantenimientoVehiculo> => {
+  createMantenimiento: async (data: CreateMantenimientoDTO): Promise<MantenimientoVehiculo> => {
     const response = await axiosInstance.post<MantenimientoVehiculo>(
       `${BASE_URL_FLOTA}/mantenimientos/`,
       data
@@ -391,9 +380,7 @@ export const logisticsFleetAPI = {
   /**
    * Crear verificacion PESV
    */
-  createVerificacion: async (
-    data: Partial<VerificacionTercero>
-  ): Promise<VerificacionTercero> => {
+  createVerificacion: async (data: Partial<VerificacionTercero>): Promise<VerificacionTercero> => {
     const response = await axiosInstance.post<VerificacionTercero>(
       `${BASE_URL_FLOTA}/verificaciones/`,
       data
@@ -407,9 +394,7 @@ export const logisticsFleetAPI = {
    * Obtener tipos de rutas
    */
   getTiposRuta: async (): Promise<TipoRuta[]> => {
-    const response = await axiosInstance.get<TipoRuta[]>(
-      `${BASE_URL_TRANSPORTE}/tipos-ruta/`
-    );
+    const response = await axiosInstance.get<TipoRuta[]>(`${BASE_URL_TRANSPORTE}/tipos-ruta/`);
     return response.data;
   },
 
@@ -441,9 +426,7 @@ export const logisticsFleetAPI = {
    * Obtener una ruta por ID
    */
   getRuta: async (id: number): Promise<Ruta> => {
-    const response = await axiosInstance.get<Ruta>(
-      `${BASE_URL_TRANSPORTE}/rutas/${id}/`
-    );
+    const response = await axiosInstance.get<Ruta>(`${BASE_URL_TRANSPORTE}/rutas/${id}/`);
     return response.data;
   },
 
@@ -451,10 +434,7 @@ export const logisticsFleetAPI = {
    * Crear nueva ruta
    */
   createRuta: async (data: CreateRutaDTO): Promise<Ruta> => {
-    const response = await axiosInstance.post<Ruta>(
-      `${BASE_URL_TRANSPORTE}/rutas/`,
-      data
-    );
+    const response = await axiosInstance.post<Ruta>(`${BASE_URL_TRANSPORTE}/rutas/`, data);
     return response.data;
   },
 
@@ -462,10 +442,7 @@ export const logisticsFleetAPI = {
    * Actualizar ruta existente
    */
   updateRuta: async (id: number, data: Partial<CreateRutaDTO>): Promise<Ruta> => {
-    const response = await axiosInstance.patch<Ruta>(
-      `${BASE_URL_TRANSPORTE}/rutas/${id}/`,
-      data
-    );
+    const response = await axiosInstance.patch<Ruta>(`${BASE_URL_TRANSPORTE}/rutas/${id}/`, data);
     return response.data;
   },
 
@@ -481,9 +458,7 @@ export const logisticsFleetAPI = {
   /**
    * Obtener lista de conductores con filtros
    */
-  getConductores: async (
-    filters?: ConductorFilters
-  ): Promise<PaginatedConductoresResponse> => {
+  getConductores: async (filters?: ConductorFilters): Promise<PaginatedConductoresResponse> => {
     const queryString = filters ? buildQueryString(filters) : '';
     const url = queryString
       ? `${BASE_URL_TRANSPORTE}/conductores/?${queryString}`
@@ -516,10 +491,7 @@ export const logisticsFleetAPI = {
   /**
    * Actualizar conductor existente
    */
-  updateConductor: async (
-    id: number,
-    data: Partial<CreateConductorDTO>
-  ): Promise<Conductor> => {
+  updateConductor: async (id: number, data: Partial<CreateConductorDTO>): Promise<Conductor> => {
     const response = await axiosInstance.patch<Conductor>(
       `${BASE_URL_TRANSPORTE}/conductores/${id}/`,
       data
@@ -579,9 +551,7 @@ export const logisticsFleetAPI = {
   /**
    * Crear nueva programacion
    */
-  createProgramacion: async (
-    data: Partial<ProgramacionRuta>
-  ): Promise<ProgramacionRuta> => {
+  createProgramacion: async (data: Partial<ProgramacionRuta>): Promise<ProgramacionRuta> => {
     const response = await axiosInstance.post<ProgramacionRuta>(
       `${BASE_URL_TRANSPORTE}/programaciones/`,
       data
@@ -606,10 +576,7 @@ export const logisticsFleetAPI = {
   /**
    * Iniciar viaje
    */
-  iniciarViaje: async (
-    id: number,
-    data: { km_inicial: number }
-  ): Promise<ProgramacionRuta> => {
+  iniciarViaje: async (id: number, data: { km_inicial: number }): Promise<ProgramacionRuta> => {
     const response = await axiosInstance.post<ProgramacionRuta>(
       `${BASE_URL_TRANSPORTE}/programaciones/${id}/iniciar/`,
       data
@@ -649,9 +616,7 @@ export const logisticsFleetAPI = {
    * Obtener un despacho por ID
    */
   getDespacho: async (id: number): Promise<Despacho> => {
-    const response = await axiosInstance.get<Despacho>(
-      `${BASE_URL_TRANSPORTE}/despachos/${id}/`
-    );
+    const response = await axiosInstance.get<Despacho>(`${BASE_URL_TRANSPORTE}/despachos/${id}/`);
     return response.data;
   },
 
@@ -659,10 +624,7 @@ export const logisticsFleetAPI = {
    * Crear nuevo despacho
    */
   createDespacho: async (data: CreateDespachoDTO): Promise<Despacho> => {
-    const response = await axiosInstance.post<Despacho>(
-      `${BASE_URL_TRANSPORTE}/despachos/`,
-      data
-    );
+    const response = await axiosInstance.post<Despacho>(`${BASE_URL_TRANSPORTE}/despachos/`, data);
     return response.data;
   },
 
@@ -690,9 +652,7 @@ export const logisticsFleetAPI = {
   /**
    * Agregar detalle a despacho
    */
-  addDetalleDespacho: async (
-    data: Partial<DetalleDespacho>
-  ): Promise<DetalleDespacho> => {
+  addDetalleDespacho: async (data: Partial<DetalleDespacho>): Promise<DetalleDespacho> => {
     const response = await axiosInstance.post<DetalleDespacho>(
       `${BASE_URL_TRANSPORTE}/detalles-despacho/`,
       data

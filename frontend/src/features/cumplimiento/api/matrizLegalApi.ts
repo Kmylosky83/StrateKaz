@@ -18,7 +18,7 @@ import type {
   PaginatedResponse,
 } from '../types';
 
-const BASE_URL = '/motor_cumplimiento/matriz-legal';
+const BASE_URL = '/cumplimiento/matriz-legal';
 
 // ==================== TIPOS DE NORMA ====================
 
@@ -75,7 +75,9 @@ export const normasLegalesApi = {
     await axiosInstance.delete(`${BASE_URL}/normas/${id}/`);
   },
 
-  getBySistema: async (sistema: 'sst' | 'ambiental' | 'calidad' | 'pesv'): Promise<NormaLegal[]> => {
+  getBySistema: async (
+    sistema: 'sst' | 'ambiental' | 'calidad' | 'pesv'
+  ): Promise<NormaLegal[]> => {
     const response = await axiosInstance.get(`${BASE_URL}/normas/by-sistema/`, {
       params: { sistema },
     });

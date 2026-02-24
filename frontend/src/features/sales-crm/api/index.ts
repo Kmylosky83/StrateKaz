@@ -68,7 +68,7 @@ import type {
   PQRSDashboard,
 } from '../types';
 
-const BASE_URL = '/api/sales-crm';
+const BASE_URL = '/sales-crm';
 
 // ==================== CLIENTES ====================
 
@@ -272,7 +272,9 @@ export const oportunidadesApi = {
     return response.data;
   },
 
-  getKanban: async (params?: { vendedor?: number }): Promise<{
+  getKanban: async (params?: {
+    vendedor?: number;
+  }): Promise<{
     etapas: Array<{
       etapa: string;
       nombre: string;
@@ -309,7 +311,10 @@ export const actividadesApi = {
     return response.data;
   },
 
-  update: async (id: number, data: Partial<ActividadOportunidad>): Promise<ActividadOportunidad> => {
+  update: async (
+    id: number,
+    data: Partial<ActividadOportunidad>
+  ): Promise<ActividadOportunidad> => {
     const response = await apiClient.patch(`${BASE_URL}/actividades-oportunidad/${id}/`, data);
     return response.data;
   },
@@ -468,7 +473,10 @@ export const facturasApi = {
     await apiClient.delete(`${BASE_URL}/facturas/${id}/`);
   },
 
-  registrarPago: async (id: number, data: RegistrarPagoDTO): Promise<{ factura: Factura; pago: PagoFactura }> => {
+  registrarPago: async (
+    id: number,
+    data: RegistrarPagoDTO
+  ): Promise<{ factura: Factura; pago: PagoFactura }> => {
     const response = await apiClient.post(`${BASE_URL}/facturas/${id}/registrar_pago/`, data);
     return response.data;
   },
@@ -663,7 +671,10 @@ export const programasFidelizacionApi = {
     return response.data;
   },
 
-  update: async (id: number, data: Partial<ProgramaFidelizacion>): Promise<ProgramaFidelizacion> => {
+  update: async (
+    id: number,
+    data: Partial<ProgramaFidelizacion>
+  ): Promise<ProgramaFidelizacion> => {
     const response = await apiClient.patch(`${BASE_URL}/programas-fidelizacion/${id}/`, data);
     return response.data;
   },

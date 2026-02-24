@@ -18,27 +18,27 @@ import type {
   DashboardData,
 } from '../types';
 
-const API_BASE = '/api/analytics';
+const API_BASE = '/analytics';
 
 // ==================== CONFIG INDICADORES API ====================
 
 export const catalogoKPIApi = {
   getAll: (params?: Record<string, unknown>) =>
     apiClient.get<CatalogoKPI[]>(`${API_BASE}/config/kpis/`, { params }),
-  getById: (id: number) =>
-    apiClient.get<CatalogoKPI>(`${API_BASE}/config/kpis/${id}/`),
+  getById: (id: number) => apiClient.get<CatalogoKPI>(`${API_BASE}/config/kpis/${id}/`),
   create: (data: Partial<CatalogoKPI>) =>
     apiClient.post<CatalogoKPI>(`${API_BASE}/config/kpis/`, data),
   update: (id: number, data: Partial<CatalogoKPI>) =>
     apiClient.patch<CatalogoKPI>(`${API_BASE}/config/kpis/${id}/`, data),
-  delete: (id: number) =>
-    apiClient.delete(`${API_BASE}/config/kpis/${id}/`),
+  delete: (id: number) => apiClient.delete(`${API_BASE}/config/kpis/${id}/`),
   porCategoria: (categoria: string) =>
     apiClient.get<CatalogoKPI[]>(`${API_BASE}/config/kpis/por_categoria/?categoria=${categoria}`),
   porArea: (areaId: number) =>
     apiClient.get<CatalogoKPI[]>(`${API_BASE}/config/kpis/por_area/?area=${areaId}`),
   porPerspectiva: (perspectiva: string) =>
-    apiClient.get<CatalogoKPI[]>(`${API_BASE}/config/kpis/por_perspectiva/?perspectiva=${perspectiva}`),
+    apiClient.get<CatalogoKPI[]>(
+      `${API_BASE}/config/kpis/por_perspectiva/?perspectiva=${perspectiva}`
+    ),
 };
 
 export const fichasTecnicasApi = {
@@ -52,23 +52,19 @@ export const fichasTecnicasApi = {
     apiClient.post<FichaTecnicaKPI>(`${API_BASE}/config/fichas-tecnicas/`, data),
   update: (id: number, data: Partial<FichaTecnicaKPI>) =>
     apiClient.patch<FichaTecnicaKPI>(`${API_BASE}/config/fichas-tecnicas/${id}/`, data),
-  delete: (id: number) =>
-    apiClient.delete(`${API_BASE}/config/fichas-tecnicas/${id}/`),
+  delete: (id: number) => apiClient.delete(`${API_BASE}/config/fichas-tecnicas/${id}/`),
 };
 
 export const metasKPIApi = {
   getAll: (params?: Record<string, unknown>) =>
     apiClient.get<MetaKPI[]>(`${API_BASE}/config/metas/`, { params }),
-  getById: (id: number) =>
-    apiClient.get<MetaKPI>(`${API_BASE}/config/metas/${id}/`),
+  getById: (id: number) => apiClient.get<MetaKPI>(`${API_BASE}/config/metas/${id}/`),
   getByKPI: (kpiId: number, params?: Record<string, unknown>) =>
     apiClient.get<MetaKPI[]>(`${API_BASE}/config/metas/por_kpi/${kpiId}/`, { params }),
-  create: (data: Partial<MetaKPI>) =>
-    apiClient.post<MetaKPI>(`${API_BASE}/config/metas/`, data),
+  create: (data: Partial<MetaKPI>) => apiClient.post<MetaKPI>(`${API_BASE}/config/metas/`, data),
   update: (id: number, data: Partial<MetaKPI>) =>
     apiClient.patch<MetaKPI>(`${API_BASE}/config/metas/${id}/`, data),
-  delete: (id: number) =>
-    apiClient.delete(`${API_BASE}/config/metas/${id}/`),
+  delete: (id: number) => apiClient.delete(`${API_BASE}/config/metas/${id}/`),
 };
 
 export const semaforosApi = {
@@ -82,8 +78,7 @@ export const semaforosApi = {
     apiClient.post<ConfiguracionSemaforo>(`${API_BASE}/config/semaforos/`, data),
   update: (id: number, data: Partial<ConfiguracionSemaforo>) =>
     apiClient.patch<ConfiguracionSemaforo>(`${API_BASE}/config/semaforos/${id}/`, data),
-  delete: (id: number) =>
-    apiClient.delete(`${API_BASE}/config/semaforos/${id}/`),
+  delete: (id: number) => apiClient.delete(`${API_BASE}/config/semaforos/${id}/`),
 };
 
 // ==================== DASHBOARD API ====================
@@ -91,44 +86,42 @@ export const semaforosApi = {
 export const vistasDashboardApi = {
   getAll: (params?: Record<string, unknown>) =>
     apiClient.get<VistaDashboard[]>(`${API_BASE}/dashboards/vistas/`, { params }),
-  getById: (id: number) =>
-    apiClient.get<VistaDashboard>(`${API_BASE}/dashboards/vistas/${id}/`),
+  getById: (id: number) => apiClient.get<VistaDashboard>(`${API_BASE}/dashboards/vistas/${id}/`),
   getData: (id: number) =>
     apiClient.get<DashboardData>(`${API_BASE}/dashboards/vistas/${id}/data/`),
   create: (data: Partial<VistaDashboard>) =>
     apiClient.post<VistaDashboard>(`${API_BASE}/dashboards/vistas/`, data),
   update: (id: number, data: Partial<VistaDashboard>) =>
     apiClient.patch<VistaDashboard>(`${API_BASE}/dashboards/vistas/${id}/`, data),
-  delete: (id: number) =>
-    apiClient.delete(`${API_BASE}/dashboards/vistas/${id}/`),
+  delete: (id: number) => apiClient.delete(`${API_BASE}/dashboards/vistas/${id}/`),
   porPerspectiva: (perspectiva: string) =>
-    apiClient.get<VistaDashboard[]>(`${API_BASE}/dashboards/vistas/por_perspectiva/?perspectiva=${perspectiva}`),
+    apiClient.get<VistaDashboard[]>(
+      `${API_BASE}/dashboards/vistas/por_perspectiva/?perspectiva=${perspectiva}`
+    ),
 };
 
 export const widgetsDashboardApi = {
   getAll: (params?: Record<string, unknown>) =>
     apiClient.get<WidgetDashboard[]>(`${API_BASE}/dashboards/widgets/`, { params }),
-  getById: (id: number) =>
-    apiClient.get<WidgetDashboard>(`${API_BASE}/dashboards/widgets/${id}/`),
+  getById: (id: number) => apiClient.get<WidgetDashboard>(`${API_BASE}/dashboards/widgets/${id}/`),
   getByVista: (vistaId: number) =>
     apiClient.get<WidgetDashboard[]>(`${API_BASE}/dashboards/widgets/por_vista/${vistaId}/`),
   create: (data: Partial<WidgetDashboard>) =>
     apiClient.post<WidgetDashboard>(`${API_BASE}/dashboards/widgets/`, data),
   update: (id: number, data: Partial<WidgetDashboard>) =>
     apiClient.patch<WidgetDashboard>(`${API_BASE}/dashboards/widgets/${id}/`, data),
-  delete: (id: number) =>
-    apiClient.delete(`${API_BASE}/dashboards/widgets/${id}/`),
-  reordenar: (vistaId: number, widgets: Array<{ id: number; posicion_fila: number; posicion_columna: number }>) =>
-    apiClient.post(`${API_BASE}/dashboards/widgets/reordenar/`, { vista: vistaId, widgets }),
+  delete: (id: number) => apiClient.delete(`${API_BASE}/dashboards/widgets/${id}/`),
+  reordenar: (
+    vistaId: number,
+    widgets: Array<{ id: number; posicion_fila: number; posicion_columna: number }>
+  ) => apiClient.post(`${API_BASE}/dashboards/widgets/reordenar/`, { vista: vistaId, widgets }),
 };
 
 export const favoritosApi = {
-  getAll: () =>
-    apiClient.get<FavoritoDashboard[]>(`${API_BASE}/dashboards/favoritos/`),
+  getAll: () => apiClient.get<FavoritoDashboard[]>(`${API_BASE}/dashboards/favoritos/`),
   create: (vistaId: number) =>
     apiClient.post<FavoritoDashboard>(`${API_BASE}/dashboards/favoritos/`, { vista: vistaId }),
-  delete: (id: number) =>
-    apiClient.delete(`${API_BASE}/dashboards/favoritos/${id}/`),
+  delete: (id: number) => apiClient.delete(`${API_BASE}/dashboards/favoritos/${id}/`),
   setPredeterminado: (id: number) =>
     apiClient.post(`${API_BASE}/dashboards/favoritos/${id}/predeterminado/`),
 };
@@ -138,8 +131,7 @@ export const favoritosApi = {
 export const valoresKPIApi = {
   getAll: (params?: Record<string, unknown>) =>
     apiClient.get<ValorKPI[]>(`${API_BASE}/indicadores/valores/`, { params }),
-  getById: (id: number) =>
-    apiClient.get<ValorKPI>(`${API_BASE}/indicadores/valores/${id}/`),
+  getById: (id: number) => apiClient.get<ValorKPI>(`${API_BASE}/indicadores/valores/${id}/`),
   getByKPI: (kpiId: number, params?: Record<string, unknown>) =>
     apiClient.get<ValorKPI[]>(`${API_BASE}/indicadores/valores/por_kpi/${kpiId}/`, { params }),
   getUltimoValor: (kpiId: number) =>
@@ -148,10 +140,8 @@ export const valoresKPIApi = {
     apiClient.post<ValorKPI>(`${API_BASE}/indicadores/valores/`, data),
   update: (id: number, data: Partial<ValorKPI>) =>
     apiClient.patch<ValorKPI>(`${API_BASE}/indicadores/valores/${id}/`, data),
-  delete: (id: number) =>
-    apiClient.delete(`${API_BASE}/indicadores/valores/${id}/`),
-  aprobar: (id: number) =>
-    apiClient.post(`${API_BASE}/indicadores/valores/${id}/aprobar/`),
+  delete: (id: number) => apiClient.delete(`${API_BASE}/indicadores/valores/${id}/`),
+  aprobar: (id: number) => apiClient.post(`${API_BASE}/indicadores/valores/${id}/aprobar/`),
   rechazar: (id: number, motivo: string) =>
     apiClient.post(`${API_BASE}/indicadores/valores/${id}/rechazar/`, { motivo }),
 };
@@ -159,16 +149,14 @@ export const valoresKPIApi = {
 export const accionesKPIApi = {
   getAll: (params?: Record<string, unknown>) =>
     apiClient.get<AccionPorKPI[]>(`${API_BASE}/indicadores/acciones/`, { params }),
-  getById: (id: number) =>
-    apiClient.get<AccionPorKPI>(`${API_BASE}/indicadores/acciones/${id}/`),
+  getById: (id: number) => apiClient.get<AccionPorKPI>(`${API_BASE}/indicadores/acciones/${id}/`),
   getByKPI: (kpiId: number) =>
     apiClient.get<AccionPorKPI[]>(`${API_BASE}/indicadores/acciones/por_kpi/${kpiId}/`),
   create: (data: Partial<AccionPorKPI>) =>
     apiClient.post<AccionPorKPI>(`${API_BASE}/indicadores/acciones/`, data),
   update: (id: number, data: Partial<AccionPorKPI>) =>
     apiClient.patch<AccionPorKPI>(`${API_BASE}/indicadores/acciones/${id}/`, data),
-  delete: (id: number) =>
-    apiClient.delete(`${API_BASE}/indicadores/acciones/${id}/`),
+  delete: (id: number) => apiClient.delete(`${API_BASE}/indicadores/acciones/${id}/`),
   completar: (id: number, resultado: string) =>
     apiClient.post(`${API_BASE}/indicadores/acciones/${id}/completar/`, { resultado }),
   cancelar: (id: number, motivo: string) =>
@@ -178,21 +166,18 @@ export const accionesKPIApi = {
 export const alertasKPIApi = {
   getAll: (params?: Record<string, unknown>) =>
     apiClient.get<AlertaKPI[]>(`${API_BASE}/indicadores/alertas/`, { params }),
-  getById: (id: number) =>
-    apiClient.get<AlertaKPI>(`${API_BASE}/indicadores/alertas/${id}/`),
+  getById: (id: number) => apiClient.get<AlertaKPI>(`${API_BASE}/indicadores/alertas/${id}/`),
   getByKPI: (kpiId: number) =>
     apiClient.get<AlertaKPI[]>(`${API_BASE}/indicadores/alertas/por_kpi/${kpiId}/`),
   marcarLeida: (id: number) =>
     apiClient.post(`${API_BASE}/indicadores/alertas/${id}/marcar_leida/`),
-  delete: (id: number) =>
-    apiClient.delete(`${API_BASE}/indicadores/alertas/${id}/`),
+  delete: (id: number) => apiClient.delete(`${API_BASE}/indicadores/alertas/${id}/`),
 };
 
 // ==================== ANALYTICS API ====================
 
 export const analyticsApi = {
-  getStats: () =>
-    apiClient.get<AnalyticsStats>(`${API_BASE}/stats/`),
+  getStats: () => apiClient.get<AnalyticsStats>(`${API_BASE}/stats/`),
   getKPISummary: (params?: Record<string, unknown>) =>
     apiClient.get<KPISummary[]>(`${API_BASE}/kpi-summary/`, { params }),
   getKPISummaryByCategoria: (categoria: string) =>
@@ -224,8 +209,7 @@ import type {
 export const analisisKPIApi = {
   getAll: (params?: Record<string, unknown>) =>
     apiClient.get<AnalisisKPI[]>(`${API_BASE}/analisis/analisis-kpi/`, { params }),
-  getById: (id: number) =>
-    apiClient.get<AnalisisKPI>(`${API_BASE}/analisis/analisis-kpi/${id}/`),
+  getById: (id: number) => apiClient.get<AnalisisKPI>(`${API_BASE}/analisis/analisis-kpi/${id}/`),
   create: (data: Partial<AnalisisKPI>) =>
     apiClient.post<AnalisisKPI>(`${API_BASE}/analisis/analisis-kpi/`, data),
   generarAnalisis: (kpiId: number, periodo: string, tipoAnalisis: string) =>
@@ -246,9 +230,13 @@ export const analisisKPIApi = {
 export const tendenciasKPIApi = {
   getAll: (params?: Record<string, unknown>) =>
     apiClient.get<TendenciaKPI[]>(`${API_BASE}/analisis/tendencias/`, { params }),
-  getById: (id: number) =>
-    apiClient.get<TendenciaKPI>(`${API_BASE}/analisis/tendencias/${id}/`),
-  calcularTendencia: (kpiId: number, periodoInicio: string, periodoFin: string, tipoTendencia: string) =>
+  getById: (id: number) => apiClient.get<TendenciaKPI>(`${API_BASE}/analisis/tendencias/${id}/`),
+  calcularTendencia: (
+    kpiId: number,
+    periodoInicio: string,
+    periodoFin: string,
+    tipoTendencia: string
+  ) =>
     apiClient.post<TendenciaKPI>(`${API_BASE}/analisis/tendencias/calcular/`, {
       kpi: kpiId,
       periodo_inicio: periodoInicio,
@@ -283,8 +271,7 @@ export const plantillasInformeApi = {
     apiClient.post<PlantillaInforme>(`${API_BASE}/informes/plantillas/`, data),
   update: (id: number, data: Partial<PlantillaInforme>) =>
     apiClient.patch<PlantillaInforme>(`${API_BASE}/informes/plantillas/${id}/`, data),
-  delete: (id: number) =>
-    apiClient.delete(`${API_BASE}/informes/plantillas/${id}/`),
+  delete: (id: number) => apiClient.delete(`${API_BASE}/informes/plantillas/${id}/`),
   duplicar: (id: number) =>
     apiClient.post<PlantillaInforme>(`${API_BASE}/informes/plantillas/${id}/duplicar/`),
 };
@@ -293,8 +280,7 @@ export const plantillasInformeApi = {
 export const informesDinamicosApi = {
   getAll: (params?: Record<string, unknown>) =>
     apiClient.get<InformeDinamico[]>(`${API_BASE}/informes/dinamicos/`, { params }),
-  getById: (id: number) =>
-    apiClient.get<InformeDinamico>(`${API_BASE}/informes/dinamicos/${id}/`),
+  getById: (id: number) => apiClient.get<InformeDinamico>(`${API_BASE}/informes/dinamicos/${id}/`),
   create: (data: Partial<InformeDinamico>) =>
     apiClient.post<InformeDinamico>(`${API_BASE}/informes/dinamicos/`, data),
   generar: (plantillaId: number, periodo: string, parametros?: Record<string, unknown>) =>
@@ -321,34 +307,31 @@ export const programacionesInformeApi = {
     apiClient.patch<ProgramacionInforme>(`${API_BASE}/informes/programaciones/${id}/`, data),
   ejecutarAhora: (id: number) =>
     apiClient.post(`${API_BASE}/informes/programaciones/${id}/ejecutar_ahora/`),
-  pausar: (id: number) =>
-    apiClient.post(`${API_BASE}/informes/programaciones/${id}/pausar/`),
-  reanudar: (id: number) =>
-    apiClient.post(`${API_BASE}/informes/programaciones/${id}/reanudar/`),
+  pausar: (id: number) => apiClient.post(`${API_BASE}/informes/programaciones/${id}/pausar/`),
+  reanudar: (id: number) => apiClient.post(`${API_BASE}/informes/programaciones/${id}/reanudar/`),
 };
 
 // Historial de Informes
 export const historialInformesApi = {
   getAll: (params?: Record<string, unknown>) =>
     apiClient.get<HistorialInforme[]>(`${API_BASE}/informes/historial/`, { params }),
-  getById: (id: number) =>
-    apiClient.get<HistorialInforme>(`${API_BASE}/informes/historial/${id}/`),
+  getById: (id: number) => apiClient.get<HistorialInforme>(`${API_BASE}/informes/historial/${id}/`),
 };
 
 // Planes de Acción KPI
 export const planesAccionKPIApi = {
   getAll: (params?: Record<string, unknown>) =>
     apiClient.get<PlanAccionKPI[]>(`${API_BASE}/acciones/planes/`, { params }),
-  getById: (id: number) =>
-    apiClient.get<PlanAccionKPI>(`${API_BASE}/acciones/planes/${id}/`),
+  getById: (id: number) => apiClient.get<PlanAccionKPI>(`${API_BASE}/acciones/planes/${id}/`),
   create: (data: Partial<PlanAccionKPI>) =>
     apiClient.post<PlanAccionKPI>(`${API_BASE}/acciones/planes/`, data),
   update: (id: number, data: Partial<PlanAccionKPI>) =>
     apiClient.patch<PlanAccionKPI>(`${API_BASE}/acciones/planes/${id}/`, data),
-  aprobar: (id: number) =>
-    apiClient.post(`${API_BASE}/acciones/planes/${id}/aprobar/`),
+  aprobar: (id: number) => apiClient.post(`${API_BASE}/acciones/planes/${id}/aprobar/`),
   completar: (id: number, resultadoObtenido: string) =>
-    apiClient.post(`${API_BASE}/acciones/planes/${id}/completar/`, { resultado_obtenido: resultadoObtenido }),
+    apiClient.post(`${API_BASE}/acciones/planes/${id}/completar/`, {
+      resultado_obtenido: resultadoObtenido,
+    }),
   agregarSeguimiento: (id: number, data: Partial<SeguimientoPlanKPI>) =>
     apiClient.post<SeguimientoPlanKPI>(`${API_BASE}/acciones/planes/${id}/seguimientos/`, data),
 };
@@ -378,7 +361,9 @@ export const seguimientosPlanKPIApi = {
 // Integraciones con Acciones Correctivas
 export const integracionesACApi = {
   getAll: (params?: Record<string, unknown>) =>
-    apiClient.get<IntegracionAccionCorrectiva[]>(`${API_BASE}/acciones/integraciones-ac/`, { params }),
+    apiClient.get<IntegracionAccionCorrectiva[]>(`${API_BASE}/acciones/integraciones-ac/`, {
+      params,
+    }),
   create: (data: Partial<IntegracionAccionCorrectiva>) =>
     apiClient.post<IntegracionAccionCorrectiva>(`${API_BASE}/acciones/integraciones-ac/`, data),
 };
@@ -386,19 +371,23 @@ export const integracionesACApi = {
 // Configuraciones de Exportación
 export const configExportacionApi = {
   getAll: (params?: Record<string, unknown>) =>
-    apiClient.get<ConfiguracionExportacion[]>(`${API_BASE}/exportacion/configuraciones/`, { params }),
+    apiClient.get<ConfiguracionExportacion[]>(`${API_BASE}/exportacion/configuraciones/`, {
+      params,
+    }),
   getById: (id: number) =>
     apiClient.get<ConfiguracionExportacion>(`${API_BASE}/exportacion/configuraciones/${id}/`),
   create: (data: Partial<ConfiguracionExportacion>) =>
     apiClient.post<ConfiguracionExportacion>(`${API_BASE}/exportacion/configuraciones/`, data),
   update: (id: number, data: Partial<ConfiguracionExportacion>) =>
-    apiClient.patch<ConfiguracionExportacion>(`${API_BASE}/exportacion/configuraciones/${id}/`, data),
+    apiClient.patch<ConfiguracionExportacion>(
+      `${API_BASE}/exportacion/configuraciones/${id}/`,
+      data
+    ),
 };
 
 // Logs de Exportación
 export const logsExportacionApi = {
   getAll: (params?: Record<string, unknown>) =>
     apiClient.get<LogExportacion[]>(`${API_BASE}/exportacion/logs/`, { params }),
-  getById: (id: number) =>
-    apiClient.get<LogExportacion>(`${API_BASE}/exportacion/logs/${id}/`),
+  getById: (id: number) => apiClient.get<LogExportacion>(`${API_BASE}/exportacion/logs/${id}/`),
 };

@@ -39,7 +39,7 @@ export const matrizLegalKeys = {
 export const useTiposNorma = () => {
   return useGenericCRUD<TipoNorma>({
     queryKey: matrizLegalKeys.tiposNorma,
-    endpoint: '/motor_cumplimiento/matriz-legal/tipos-norma/',
+    endpoint: '/cumplimiento/matriz-legal/tipos-norma/',
     entityName: 'Tipo de Norma',
     isPaginated: true,
   });
@@ -50,7 +50,7 @@ export const useTiposNorma = () => {
 export const useNormasLegales = (filters?: NormaLegalFilters) => {
   return useGenericCRUD<NormaLegal>({
     queryKey: matrizLegalKeys.normas(filters),
-    endpoint: `/motor_cumplimiento/matriz-legal/normas/${filters ? '?' + new URLSearchParams(filters as Record<string, string>).toString() : ''}`,
+    endpoint: `/cumplimiento/matriz-legal/normas/${filters ? '?' + new URLSearchParams(filters as Record<string, string>).toString() : ''}`,
     entityName: 'Norma Legal',
     isFeminine: true,
     isPaginated: true,
@@ -81,7 +81,7 @@ export const useNormasLegalesBySistema = (sistema: 'sst' | 'ambiental' | 'calida
 export const useEmpresaNormas = (filters?: EmpresaNormaFilters) => {
   return useGenericCRUD<EmpresaNorma>({
     queryKey: matrizLegalKeys.empresaNormas(filters),
-    endpoint: `/motor_cumplimiento/matriz-legal/empresa-normas/${filters ? '?' + new URLSearchParams(filters as Record<string, string>).toString() : ''}`,
+    endpoint: `/cumplimiento/matriz-legal/empresa-normas/${filters ? '?' + new URLSearchParams(filters as Record<string, string>).toString() : ''}`,
     entityName: 'Asignación de Norma',
     isFeminine: true,
     isPaginated: true,

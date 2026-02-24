@@ -4,7 +4,7 @@
  */
 import axiosInstance from '@/api/axios-config';
 
-const BASE_URL = '/api/riesgos/riesgos-procesos';
+const BASE_URL = '/riesgos/riesgos-procesos';
 
 // ==================== TIPOS LOCALES ====================
 

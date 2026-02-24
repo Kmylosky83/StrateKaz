@@ -37,7 +37,7 @@ import type {
   PaginatedResponse,
 } from '../types';
 
-const BASE = '/api/accounting';
+const BASE = '/accounting';
 
 // ==================== CONFIG CONTABLE ====================
 

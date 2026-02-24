@@ -33,7 +33,7 @@ export const reglamentosKeys = {
 export const useTiposReglamento = () => {
   return useGenericCRUD<TipoReglamento>({
     queryKey: reglamentosKeys.tipos,
-    endpoint: '/motor_cumplimiento/reglamentos-internos/tipos/',
+    endpoint: '/cumplimiento/reglamentos-internos/tipos/',
     entityName: 'Tipo de Reglamento',
     isPaginated: true,
   });
@@ -59,7 +59,7 @@ export const useReorderTiposReglamento = () => {
 export const useReglamentos = (filters?: ReglamentoFilters) => {
   return useGenericCRUD<Reglamento>({
     queryKey: reglamentosKeys.reglamentos(filters),
-    endpoint: `/motor_cumplimiento/reglamentos-internos/reglamentos/${filters ? '?' + new URLSearchParams(filters as Record<string, string>).toString() : ''}`,
+    endpoint: `/cumplimiento/reglamentos-internos/reglamentos/${filters ? '?' + new URLSearchParams(filters as Record<string, string>).toString() : ''}`,
     entityName: 'Reglamento',
     isPaginated: true,
   });
@@ -152,8 +152,13 @@ export const useReorderReglamentos = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ empresaId, items }: { empresaId: number; items: { id: number; orden: number }[] }) =>
-      reglamentosApi.reorder(empresaId, items),
+    mutationFn: ({
+      empresaId,
+      items,
+    }: {
+      empresaId: number;
+      items: { id: number; orden: number }[];
+    }) => reglamentosApi.reorder(empresaId, items),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: reglamentosKeys.reglamentos() });
       toast.success('Orden actualizado exitosamente');

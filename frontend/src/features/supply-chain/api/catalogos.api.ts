@@ -34,7 +34,7 @@ import type {
   PaginatedResponse,
 } from '../types';
 
-const BASE_URL = '/api/supply-chain';
+const BASE_URL = '/supply-chain';
 
 // ==================== HELPER GENÉRICO ====================
 

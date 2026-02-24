@@ -345,15 +345,17 @@ class ColaboradorViewSet(viewsets.ModelViewSet):
 
         # Obtener cargos y áreas del tenant para la hoja de referencia
         try:
-            from apps.core.estructura_cargos.models import Cargo
-            cargos = list(Cargo.objects.filter(is_active=True).values('name'))
+            from apps.core.models.models_user import Cargo
+            cargos = list(Cargo.objects.filter(is_active=True, is_system=False).values('name'))
         except Exception:
+            logger.warning("No se pudieron obtener los cargos para la plantilla de importación")
             cargos = []
 
         try:
             from apps.gestion_estrategica.organizacion.models import Area
             areas = list(Area.objects.filter(is_active=True).values('name'))
         except Exception:
+            logger.warning("No se pudieron obtener las áreas para la plantilla de importación")
             areas = []
 
         excel_bytes = generate_import_template(cargos=cargos, areas=areas)

@@ -137,6 +137,8 @@ export interface ProveedorList {
   calificacion_actual?: number;
   tipos_materia_prima_nombres: string[];
   is_active: boolean;
+  usuarios_vinculados_count: number;
+  tiene_acceso: boolean;
 }
 
 export interface CreateProveedorDTO {

@@ -8,7 +8,7 @@
  * - Paginación
  */
 import { useState } from 'react';
-import { Edit, Eye, Trash2, Download, Filter, Plus, Users } from 'lucide-react';
+import { Edit, Eye, Trash2, Download, Filter, Plus, Users, Shield, UserCheck } from 'lucide-react';
 
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
@@ -18,6 +18,7 @@ import { EmptyState } from '@/components/common/EmptyState';
 
 import { useProveedores, useDeleteProveedor, useExportProveedores } from '../hooks/useProveedores';
 import { useTiposProveedor } from '../hooks/useCatalogos';
+import { CrearAccesoProveedorModal } from './CrearAccesoProveedorModal';
 import type { ProveedorList, TipoProveedor } from '../types';
 
 // ==================== TIPOS ====================
@@ -57,6 +58,7 @@ export function ProveedoresTable({ onView, onEdit, onNew }: ProveedoresTableProp
   const [filtros, setFiltros] = useState<Filtros>({});
   const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState(1);
+  const [accesoProveedor, setAccesoProveedor] = useState<ProveedorList | null>(null);
   const pageSize = 10;
 
   // Queries
@@ -150,7 +152,12 @@ export function ProveedoresTable({ onView, onEdit, onNew }: ProveedoresTableProp
             Exportar
           </Button>
           {onNew && (
-            <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />} onClick={onNew}>
+            <Button
+              variant="primary"
+              size="sm"
+              leftIcon={<Plus className="w-4 h-4" />}
+              onClick={onNew}
+            >
               Nuevo Proveedor
             </Button>
           )}
@@ -192,15 +199,19 @@ export function ProveedoresTable({ onView, onEdit, onNew }: ProveedoresTableProp
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                   value={filtros.tipo_proveedor || ''}
                   onChange={(e) =>
-                    handleFilterChange('tipo_proveedor', e.target.value ? Number(e.target.value) : undefined)
+                    handleFilterChange(
+                      'tipo_proveedor',
+                      e.target.value ? Number(e.target.value) : undefined
+                    )
                   }
                 >
                   <option value="">Todos</option>
-                  {Array.isArray(tiposProveedor) && tiposProveedor.map((tipo: TipoProveedor) => (
-                    <option key={tipo.id} value={tipo.id}>
-                      {tipo.nombre}
-                    </option>
-                  ))}
+                  {Array.isArray(tiposProveedor) &&
+                    tiposProveedor.map((tipo: TipoProveedor) => (
+                      <option key={tipo.id} value={tipo.id}>
+                        {tipo.nombre}
+                      </option>
+                    ))}
                 </select>
               </div>
 
@@ -270,7 +281,9 @@ export function ProveedoresTable({ onView, onEdit, onNew }: ProveedoresTableProp
                   <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
                     <p className="font-medium">{proveedor.razon_social}</p>
                     {proveedor.nombre_comercial && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{proveedor.nombre_comercial}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {proveedor.nombre_comercial}
+                      </p>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
@@ -321,10 +334,29 @@ export function ProveedoresTable({ onView, onEdit, onNew }: ProveedoresTableProp
                         </Button>
                       )}
                       {onEdit && (
-                        <Button variant="ghost" size="sm" onClick={() => onEdit(proveedor)} className="text-secondary-600 hover:text-secondary-700 hover:bg-secondary-50 dark:text-secondary-400 dark:hover:text-secondary-300 dark:hover:bg-secondary-900/20">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onEdit(proveedor)}
+                          className="text-secondary-600 hover:text-secondary-700 hover:bg-secondary-50 dark:text-secondary-400 dark:hover:text-secondary-300 dark:hover:bg-secondary-900/20"
+                        >
                           <Edit className="w-4 h-4" />
                         </Button>
                       )}
+                      {proveedor.tiene_acceso ? (
+                        <span title="Ya tiene acceso al sistema">
+                          <UserCheck className="w-4 h-4 text-success-600 dark:text-success-400" />
+                        </span>
+                      ) : proveedor.estado === 'ACTIVO' ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setAccesoProveedor(proveedor)}
+                          title="Crear acceso al sistema"
+                        >
+                          <Shield className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                        </Button>
+                      ) : null}
                       <Button
                         variant="ghost"
                         size="sm"
@@ -346,8 +378,8 @@ export function ProveedoresTable({ onView, onEdit, onNew }: ProveedoresTableProp
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            Mostrando {(page - 1) * pageSize + 1} a {Math.min(page * pageSize, totalCount)} de {totalCount}{' '}
-            proveedores
+            Mostrando {(page - 1) * pageSize + 1} a {Math.min(page * pageSize, totalCount)} de{' '}
+            {totalCount} proveedores
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -372,6 +404,13 @@ export function ProveedoresTable({ onView, onEdit, onNew }: ProveedoresTableProp
           </div>
         </div>
       )}
+
+      {/* Modal Crear Acceso */}
+      <CrearAccesoProveedorModal
+        proveedor={accesoProveedor}
+        isOpen={!!accesoProveedor}
+        onClose={() => setAccesoProveedor(null)}
+      />
     </div>
   );
 }

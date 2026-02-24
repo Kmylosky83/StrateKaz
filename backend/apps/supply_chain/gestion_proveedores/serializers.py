@@ -225,6 +225,10 @@ class ProveedorListSerializer(serializers.ModelSerializer):
     # Precios de materia prima
     precios_materia_prima = PrecioMateriaPrimaSerializer(many=True, read_only=True)
 
+    # Acceso al sistema
+    usuarios_vinculados_count = serializers.IntegerField(read_only=True, default=0)
+    tiene_acceso = serializers.SerializerMethodField()
+
     class Meta:
         model = Proveedor
         fields = [
@@ -238,8 +242,15 @@ class ProveedorListSerializer(serializers.ModelSerializer):
             'formas_pago', 'formas_pago_display', 'dias_plazo_pago',
             'banco', 'tipo_cuenta', 'numero_cuenta', 'titular_cuenta',
             'precios_materia_prima', 'es_proveedor_materia_prima',
-            'observaciones', 'is_active', 'created_by_nombre', 'created_at'
+            'observaciones', 'is_active', 'created_by_nombre', 'created_at',
+            'usuarios_vinculados_count', 'tiene_acceso',
         ]
+
+    def get_tiene_acceso(self, obj):
+        """Retorna True si el proveedor tiene al menos un usuario activo."""
+        if hasattr(obj, 'usuarios_vinculados_count'):
+            return obj.usuarios_vinculados_count > 0
+        return obj.usuarios_vinculados.filter(is_active=True).exists()
 
     def get_tipos_materia_prima_display(self, obj):
         """Retorna nombres de tipos de materia prima."""
@@ -520,6 +531,38 @@ class CambiarPrecioSerializer(serializers.Serializer):
         )
 
         return precio_obj
+
+
+# ==============================================================================
+# SERIALIZER PARA CREAR ACCESO AL SISTEMA
+# ==============================================================================
+
+class CrearAccesoProveedorSerializer(serializers.Serializer):
+    """Serializer para crear acceso al sistema para un proveedor."""
+
+    email = serializers.EmailField(required=True)
+    username = serializers.CharField(required=True, max_length=150)
+    cargo_id = serializers.PrimaryKeyRelatedField(
+        queryset=None,
+        required=True,
+        help_text='ID del cargo a asignar al usuario'
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from django.apps import apps
+        Cargo = apps.get_model('core', 'Cargo')
+        self.fields['cargo_id'].queryset = Cargo.objects.filter(
+            is_active=True, is_system=False
+        )
+
+    def validate_username(self, value):
+        value = value.strip()
+        if ' ' in value:
+            raise serializers.ValidationError('El nombre de usuario no puede contener espacios.')
+        if len(value) < 3:
+            raise serializers.ValidationError('El nombre de usuario debe tener al menos 3 caracteres.')
+        return value
 
 
 # ==============================================================================

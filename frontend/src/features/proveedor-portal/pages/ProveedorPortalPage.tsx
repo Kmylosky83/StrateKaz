@@ -18,11 +18,20 @@ import {
   Mail,
   Hash,
   Badge as BadgeIcon,
+  Settings,
+  Key,
+  Smartphone,
+  CheckCircle,
+  XCircle,
 } from 'lucide-react';
-import { AnimatedPage, Badge, Card, Skeleton, Tabs } from '@/components/common';
+import { AnimatedPage, Badge, Button, Card, Skeleton, Tabs } from '@/components/common';
 import { useAuthStore } from '@/store/authStore';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import { useMiEmpresa, useMisContratos, useMisEvaluaciones } from '../hooks/useMiEmpresa';
+import { ChangePasswordModal } from '@/features/perfil/components/ChangePasswordModal';
+import { TwoFactorModal } from '@/features/perfil/components/TwoFactorModal';
+import { Disable2FAModal } from '@/features/perfil/components/Disable2FAModal';
+import { use2FA } from '@/features/perfil/hooks/use2FA';
 import type { ContratoProveedor, EvaluacionProveedor } from '../types';
 
 // ============================================================================
@@ -307,16 +316,110 @@ function TabEvaluaciones() {
   );
 }
 
+function TabMiCuenta() {
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [show2FAModal, setShow2FAModal] = useState(false);
+  const [showDisable2FAModal, setShowDisable2FAModal] = useState(false);
+  const { status, isLoadingStatus } = use2FA();
+  const user = useAuthStore((s) => s.user);
+
+  return (
+    <div className="space-y-4">
+      {/* Info usuario */}
+      <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl px-4">
+        <InfoRow label="Usuario" value={user?.username} />
+        <InfoRow label="Email" value={user?.email} />
+        <InfoRow label="Cargo" value={user?.cargo_name} />
+      </div>
+
+      {/* Cambiar contraseña */}
+      <Card className="p-5">
+        <div className="flex items-start gap-4">
+          <div className="p-2.5 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex-shrink-0">
+            <Key className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+              Cambiar Contraseña
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              Actualiza tu contraseña regularmente para mantener tu cuenta segura.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3"
+              onClick={() => setShowPasswordModal(true)}
+            >
+              Cambiar Contraseña
+            </Button>
+          </div>
+        </div>
+      </Card>
+
+      {/* 2FA */}
+      <Card className="p-5">
+        <div className="flex items-start gap-4">
+          <div className="p-2.5 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex-shrink-0">
+            <Smartphone className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+              Autenticación de Dos Factores
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              Añade una capa extra de seguridad a tu cuenta.
+            </p>
+            {!isLoadingStatus && status && (
+              <div className="mt-3 flex items-center gap-3">
+                {status.is_enabled ? (
+                  <>
+                    <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                      <CheckCircle className="h-3.5 w-3.5" /> Habilitado
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowDisable2FAModal(true)}
+                    >
+                      Deshabilitar
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                      <XCircle className="h-3.5 w-3.5" /> Deshabilitado
+                    </span>
+                    <Button variant="outline" size="sm" onClick={() => setShow2FAModal(true)}>
+                      Habilitar
+                    </Button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </Card>
+
+      {/* Modals */}
+      <ChangePasswordModal isOpen={showPasswordModal} onClose={() => setShowPasswordModal(false)} />
+      <TwoFactorModal isOpen={show2FAModal} onClose={() => setShow2FAModal(false)} />
+      <Disable2FAModal isOpen={showDisable2FAModal} onClose={() => setShowDisable2FAModal(false)} />
+    </div>
+  );
+}
+
 // ============================================================================
 // PAGE TABS
 // ============================================================================
 
-type PortalTab = 'empresa' | 'contratos' | 'evaluaciones';
+type PortalTab = 'empresa' | 'contratos' | 'evaluaciones' | 'mi-cuenta';
 
 const PORTAL_TABS = [
   { id: 'empresa' as const, label: 'Mi Empresa', icon: <Building2 className="w-4 h-4" /> },
   { id: 'contratos' as const, label: 'Contratos', icon: <FileText className="w-4 h-4" /> },
   { id: 'evaluaciones' as const, label: 'Evaluaciones', icon: <BarChart3 className="w-4 h-4" /> },
+  { id: 'mi-cuenta' as const, label: 'Mi Cuenta', icon: <Settings className="w-4 h-4" /> },
 ];
 
 // ============================================================================
@@ -414,6 +517,7 @@ export default function ProveedorPortalPage() {
           {activeTab === 'empresa' && <TabEmpresa />}
           {activeTab === 'contratos' && <TabContratos />}
           {activeTab === 'evaluaciones' && <TabEvaluaciones />}
+          {activeTab === 'mi-cuenta' && <TabMiCuenta />}
         </div>
       </div>
     </AnimatedPage>

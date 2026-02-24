@@ -219,6 +219,20 @@ export const proveedorApi = {
     });
     return response.data;
   },
+
+  /**
+   * Crear acceso al sistema para un proveedor
+   */
+  crearAcceso: async (
+    id: number,
+    data: { email: string; username: string; cargo_id: number }
+  ): Promise<{ detail: string }> => {
+    const response = await apiClient.post<{ detail: string }>(
+      `${BASE_URL}/proveedores/${id}/crear-acceso/`,
+      data
+    );
+    return response.data;
+  },
 };
 
 // ==================== HISTORIAL DE PRECIOS ====================

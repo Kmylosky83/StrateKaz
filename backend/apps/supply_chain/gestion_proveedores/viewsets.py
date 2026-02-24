@@ -4,13 +4,20 @@ Sistema de Gestión StrateKaz
 
 100% DINÁMICO: ViewSets usan modelos de catálogo dinámicos.
 """
+import logging
+import uuid
+from datetime import timedelta
+
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
+from django.contrib.auth import get_user_model
+from django.db import transaction
 from django.db.models import Q, Avg, Sum, Count
 from django.utils import timezone
+from django.conf import settings
 
 from .models import (
     # Catálogos dinámicos
@@ -56,6 +63,7 @@ from .serializers import (
     ProveedorUpdateSerializer,
     PrecioMateriaPrimaSerializer,
     CambiarPrecioSerializer,
+    CrearAccesoProveedorSerializer,
     # Historial y Condiciones
     HistorialPrecioSerializer,
     CondicionComercialSerializer,
@@ -69,6 +77,9 @@ from .serializers import (
     EvaluacionProveedorSerializer,
     DetalleEvaluacionSerializer,
 )
+
+logger = logging.getLogger(__name__)
+User = get_user_model()
 from .permissions import (
     CanManageProveedores,
     CanModifyPrecioProveedor,
@@ -464,7 +475,13 @@ class ProveedorViewSet(viewsets.ModelViewSet):
             'tipos_materia_prima',
             'formas_pago',
             'precios_materia_prima',
-            'precios_materia_prima__tipo_materia'
+            'precios_materia_prima__tipo_materia',
+            'usuarios_vinculados',
+        ).annotate(
+            usuarios_vinculados_count=Count(
+                'usuarios_vinculados',
+                filter=Q(usuarios_vinculados__is_active=True)
+            ),
         )
 
     def get_serializer_class(self):
@@ -626,6 +643,118 @@ class ProveedorViewSet(viewsets.ModelViewSet):
             serializer.save()
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    # ==========================================================================
+    # CREAR ACCESO — Crear usuario para un proveedor existente
+    # ==========================================================================
+
+    def _create_user_for_proveedor(self, proveedor, email, username, cargo, created_by):
+        """Crea cuenta de usuario vinculada al proveedor y envía email de setup."""
+        temp_password = uuid.uuid4().hex
+
+        new_user = User(
+            username=username,
+            email=email,
+            first_name=proveedor.nombre_comercial or proveedor.razon_social,
+            last_name='',
+            cargo=cargo,
+            document_number=proveedor.numero_documento or f'PROV-{proveedor.id}',
+            proveedor=proveedor,
+            is_active=True,
+            created_by=created_by,
+        )
+        new_user._from_contratacion = True
+        new_user.set_password(temp_password)
+
+        setup_token = uuid.uuid4().hex
+        new_user.password_setup_token = setup_token
+        new_user.password_setup_expires = timezone.now() + timedelta(hours=72)
+        new_user.save()
+
+        try:
+            from apps.core.tasks import send_setup_password_email_task
+            from django.db import connection
+
+            frontend_url = getattr(settings, 'FRONTEND_URL', 'https://app.stratekaz.com')
+            setup_url = f"{frontend_url}/setup-password?token={setup_token}&email={email}"
+
+            tenant_name = proveedor.nombre_comercial or proveedor.razon_social
+
+            try:
+                primary_color = connection.tenant.primary_color or '#3b82f6'
+                secondary_color = connection.tenant.secondary_color or '#1e40af'
+            except Exception:
+                primary_color = '#3b82f6'
+                secondary_color = '#1e40af'
+
+            send_setup_password_email_task.delay(
+                user_email=email,
+                user_name=proveedor.nombre_comercial or proveedor.razon_social,
+                tenant_name=tenant_name,
+                cargo_name=cargo.name if cargo else '',
+                setup_url=setup_url,
+                expiry_hours=72,
+                primary_color=primary_color,
+                secondary_color=secondary_color,
+            )
+            logger.info(
+                'User %s creado para Proveedor %s, email de setup enviado a %s',
+                new_user.id, proveedor.id, email
+            )
+        except Exception as e:
+            logger.error(
+                'Error enviando email de setup para User %s (Proveedor %s): %s',
+                new_user.id, proveedor.id, e, exc_info=True
+            )
+
+        return new_user
+
+    @action(
+        detail=True,
+        methods=['post'],
+        url_path='crear-acceso',
+        permission_classes=[IsAuthenticated, CanManageProveedores],
+    )
+    @transaction.atomic
+    def crear_acceso(self, request, pk=None):
+        """
+        Crea cuenta de usuario para un proveedor existente sin acceso.
+
+        POST /api/supply-chain/proveedores/{id}/crear-acceso/
+        Body: { email, username, cargo_id }
+        """
+        proveedor = self.get_object()
+
+        if proveedor.usuarios_vinculados.filter(is_active=True).exists():
+            return Response(
+                {'detail': 'Este proveedor ya tiene un usuario activo vinculado.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = CrearAccesoProveedorSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data['email']
+        username = serializer.validated_data['username']
+        cargo = serializer.validated_data['cargo_id']
+
+        if User.objects.filter(email=email).exists():
+            return Response(
+                {'detail': 'Este email ya está registrado en el sistema.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if User.objects.filter(username=username).exists():
+            return Response(
+                {'detail': 'Este nombre de usuario ya existe.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        self._create_user_for_proveedor(proveedor, email, username, cargo, request.user)
+
+        return Response({
+            'detail': 'Acceso al sistema creado exitosamente. Se envió un correo para configurar la contraseña.',
+        })
 
     # ==========================================================================
     # PORTAL PROVEEDOR — Endpoints para usuarios externos vinculados

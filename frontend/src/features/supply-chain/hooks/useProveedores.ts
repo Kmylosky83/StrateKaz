@@ -26,7 +26,8 @@ export const proveedoresKeys = {
 
   // Proveedores
   proveedores: () => [...proveedoresKeys.all, 'list'] as const,
-  proveedoresFiltered: (filters: Record<string, any>) => [...proveedoresKeys.proveedores(), 'filtered', filters] as const,
+  proveedoresFiltered: (filters: Record<string, any>) =>
+    [...proveedoresKeys.proveedores(), 'filtered', filters] as const,
   proveedor: (id: number) => [...proveedoresKeys.all, 'detail', id] as const,
   estadisticas: () => [...proveedoresKeys.all, 'estadisticas'] as const,
 
@@ -36,11 +37,13 @@ export const proveedoresKeys = {
 
   // Precios
   precios: (proveedorId: number) => [...proveedoresKeys.all, 'precios', proveedorId] as const,
-  historialPrecios: (proveedorId: number) => [...proveedoresKeys.all, 'historial-precios', proveedorId] as const,
+  historialPrecios: (proveedorId: number) =>
+    [...proveedoresKeys.all, 'historial-precios', proveedorId] as const,
 
   // Condiciones Comerciales
   condiciones: () => [...proveedoresKeys.all, 'condiciones-comerciales'] as const,
-  condicionesPorProveedor: (proveedorId: number) => [...proveedoresKeys.condiciones(), 'proveedor', proveedorId] as const,
+  condicionesPorProveedor: (proveedorId: number) =>
+    [...proveedoresKeys.condiciones(), 'proveedor', proveedorId] as const,
 };
 
 // ==================== UNIDADES DE NEGOCIO ====================
@@ -48,7 +51,10 @@ export const proveedoresKeys = {
 export function useUnidadesNegocio(params?: { is_active?: boolean }) {
   return useQuery({
     queryKey: params ? proveedoresKeys.unidades() : proveedoresKeys.unidades(),
-    queryFn: () => (params?.is_active ? proveedoresApi.unidadNegocio.getActivas() : proveedoresApi.unidadNegocio.getAll()),
+    queryFn: () =>
+      params?.is_active
+        ? proveedoresApi.unidadNegocio.getActivas()
+        : proveedoresApi.unidadNegocio.getAll(),
   });
 }
 
@@ -202,7 +208,10 @@ export function usePreciosActuales(proveedorId: number) {
   });
 }
 
-export function useHistorialPrecios(proveedorId: number, params?: { tipo_materia_prima?: number; limit?: number }) {
+export function useHistorialPrecios(
+  proveedorId: number,
+  params?: { tipo_materia_prima?: number; limit?: number }
+) {
   return useQuery({
     queryKey: proveedoresKeys.historialPrecios(proveedorId),
     queryFn: () => proveedoresApi.proveedor.getHistorialPrecios(proveedorId, params),
@@ -215,8 +224,15 @@ export function useHistorialPrecios(proveedorId: number, params?: { tipo_materia
 export function useCambiarEstadoProveedor() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, estado, motivo }: { id: number; estado: 'ACTIVO' | 'INACTIVO' | 'SUSPENDIDO' | 'BLOQUEADO'; motivo?: string }) =>
-      proveedoresApi.proveedor.cambiarEstado(id, estado, motivo),
+    mutationFn: ({
+      id,
+      estado,
+      motivo,
+    }: {
+      id: number;
+      estado: 'ACTIVO' | 'INACTIVO' | 'SUSPENDIDO' | 'BLOQUEADO';
+      motivo?: string;
+    }) => proveedoresApi.proveedor.cambiarEstado(id, estado, motivo),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: proveedoresKeys.proveedores() });
       queryClient.invalidateQueries({ queryKey: proveedoresKeys.proveedor(id) });
@@ -243,7 +259,9 @@ export function useEstadisticasProveedores() {
 
 export function useCondicionesComerciales(params?: { proveedor?: number; vigente?: boolean }) {
   return useQuery({
-    queryKey: params ? proveedoresKeys.condicionesPorProveedor(params.proveedor!) : proveedoresKeys.condiciones(),
+    queryKey: params
+      ? proveedoresKeys.condicionesPorProveedor(params.proveedor!)
+      : proveedoresKeys.condiciones(),
     queryFn: () => proveedoresApi.condicionComercial.getAll(params),
     enabled: params?.proveedor ? !!params.proveedor : true,
   });
@@ -252,10 +270,13 @@ export function useCondicionesComerciales(params?: { proveedor?: number; vigente
 export function useCreateCondicionComercial() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: CreateCondicionComercialDTO) => proveedoresApi.condicionComercial.create(data),
+    mutationFn: (data: CreateCondicionComercialDTO) =>
+      proveedoresApi.condicionComercial.create(data),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: proveedoresKeys.condiciones() });
-      queryClient.invalidateQueries({ queryKey: proveedoresKeys.condicionesPorProveedor(data.proveedor) });
+      queryClient.invalidateQueries({
+        queryKey: proveedoresKeys.condicionesPorProveedor(data.proveedor),
+      });
       toast.success('Condición comercial creada exitosamente');
     },
     onError: (error: any) => {
@@ -289,6 +310,33 @@ export function useDeleteCondicionComercial() {
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.detail || 'Error al eliminar condición comercial');
+    },
+  });
+}
+
+// ==================== CREAR ACCESO ====================
+
+export function useCrearAccesoProveedor() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      email,
+      username,
+      cargo_id,
+    }: {
+      id: number;
+      email: string;
+      username: string;
+      cargo_id: number;
+    }) => proveedoresApi.proveedor.crearAcceso(id, { email, username, cargo_id }),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: proveedoresKeys.proveedores() });
+      queryClient.invalidateQueries({ queryKey: proveedoresKeys.proveedor(id) });
+      toast.success('Acceso al sistema creado. Se envió un correo para configurar la contraseña.');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.detail || 'Error al crear acceso al sistema');
     },
   });
 }

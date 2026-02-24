@@ -15,6 +15,9 @@ import { PageHeader } from '@/components/layout';
 import { PageTabs } from '@/components/layout';
 import { Users, DollarSign, FlaskConical, ClipboardCheck, Settings, Building2 } from 'lucide-react';
 import { ProveedoresTable } from '../components/ProveedoresTable';
+import { ProveedorForm } from '../components/ProveedorForm';
+import { useProveedor } from '../hooks/useProveedores';
+import type { ProveedorList } from '../types';
 
 // ==================== TABS CONFIGURATION ====================
 
@@ -232,6 +235,30 @@ function UnidadesNegocioTab() {
 export default function GestionProveedoresPage() {
   const [activeTab, setActiveTab] = useState('proveedores');
 
+  // ==================== ESTADO FORMULARIO PROVEEDOR ====================
+  const [showProveedorForm, setShowProveedorForm] = useState(false);
+  const [editProveedorId, setEditProveedorId] = useState<number | null>(null);
+
+  // Fetch detalle completo del proveedor cuando se edita
+  const { data: proveedorDetalle } = useProveedor(editProveedorId ?? 0);
+
+  // ==================== HANDLERS ====================
+
+  const handleNewProveedor = () => {
+    setEditProveedorId(null);
+    setShowProveedorForm(true);
+  };
+
+  const handleEditProveedor = (proveedor: ProveedorList) => {
+    setEditProveedorId(proveedor.id);
+    setShowProveedorForm(true);
+  };
+
+  const handleCloseForm = () => {
+    setShowProveedorForm(false);
+    setEditProveedorId(null);
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -250,12 +277,21 @@ export default function GestionProveedoresPage() {
       />
 
       {/* Renderizado condicional de tabs */}
-      {activeTab === 'proveedores' && <ProveedoresTable />}
+      {activeTab === 'proveedores' && (
+        <ProveedoresTable onNew={handleNewProveedor} onEdit={handleEditProveedor} />
+      )}
       {activeTab === 'precios' && <PreciosTab />}
       {activeTab === 'pruebas-acidez' && <PruebasAcidezTab />}
       {activeTab === 'evaluaciones' && <EvaluacionesTab />}
       {activeTab === 'catalogos' && <CatalogosTab />}
       {activeTab === 'unidades-negocio' && <UnidadesNegocioTab />}
+
+      {/* Modal Crear/Editar Proveedor */}
+      <ProveedorForm
+        isOpen={showProveedorForm}
+        proveedor={editProveedorId ? proveedorDetalle : undefined}
+        onClose={handleCloseForm}
+      />
     </div>
   );
 }

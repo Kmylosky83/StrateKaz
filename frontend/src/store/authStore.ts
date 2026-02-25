@@ -11,6 +11,7 @@ const STORAGE_KEYS = {
   REFRESH_TOKEN: 'refresh_token',
   CURRENT_TENANT_ID: 'current_tenant_id',
   IS_IMPERSONATING: 'is_impersonating',
+  IMPERSONATED_USER_ID: 'impersonated_user_id',
 } as const;
 
 // Inicializar currentTenantId desde localStorage
@@ -24,6 +25,13 @@ const getInitialTenantId = (): number | null => {
 const getInitialImpersonating = (): boolean => {
   if (typeof window === 'undefined') return false;
   return localStorage.getItem(STORAGE_KEYS.IS_IMPERSONATING) === 'true';
+};
+
+// Inicializar impersonatedUserId desde localStorage
+const getInitialImpersonatedUserId = (): number | null => {
+  if (typeof window === 'undefined') return null;
+  const stored = localStorage.getItem(STORAGE_KEYS.IMPERSONATED_USER_ID);
+  return stored ? Number(stored) : null;
 };
 
 /**
@@ -40,6 +48,12 @@ const getInitialImpersonating = (): boolean => {
  *    - Guardar currentTenantId
  *    - Todas las APIs incluirán X-Tenant-ID header
  * 5. Cargar perfil de User dentro del tenant (si existe)
+ *
+ * IMPERSONACIÓN:
+ * - startImpersonation(tenantId): Superadmin entra a un tenant (vista admin)
+ * - startUserImpersonation(userId): Override de user con perfil de otro usuario
+ * - stopUserImpersonation(): Restaura perfil original (queda en tenant)
+ * - stopImpersonation(): Sale del tenant completamente → Admin Global
  */
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -56,6 +70,8 @@ export const useAuthStore = create<AuthState>()(
       accessibleTenants: [],
       isSuperadmin: false,
       isImpersonating: getInitialImpersonating(),
+      originalUser: null,
+      impersonatedUserId: getInitialImpersonatedUserId(),
 
       /**
        * Login con TenantUser (sistema multi-tenant)
@@ -180,6 +196,7 @@ export const useAuthStore = create<AuthState>()(
         localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
         localStorage.removeItem(STORAGE_KEYS.CURRENT_TENANT_ID);
         localStorage.removeItem(STORAGE_KEYS.IS_IMPERSONATING);
+        localStorage.removeItem(STORAGE_KEYS.IMPERSONATED_USER_ID);
 
         // Limpiar última ruta
         clearLastRoute();
@@ -199,6 +216,8 @@ export const useAuthStore = create<AuthState>()(
           isImpersonating: false,
           currentTenantId: null,
           currentTenant: null,
+          originalUser: null,
+          impersonatedUserId: null,
         });
       },
 
@@ -253,12 +272,17 @@ export const useAuthStore = create<AuthState>()(
         // para que las nuevas requests usen el nuevo X-Tenant-ID
         localStorage.setItem(STORAGE_KEYS.CURRENT_TENANT_ID, String(tenantId));
 
+        // Limpiar impersonación de usuario al cambiar de tenant
+        localStorage.removeItem(STORAGE_KEYS.IMPERSONATED_USER_ID);
+
         // Actualizar estado
         set({
           currentTenantId: tenantId,
           currentTenant: tenantAccess.tenant,
           user: null, // Limpiar usuario del tenant anterior
           isLoadingUser: true,
+          originalUser: null,
+          impersonatedUserId: null,
         });
 
         // Limpiar cache de branding en localStorage para evitar flash con datos del tenant anterior
@@ -286,6 +310,9 @@ export const useAuthStore = create<AuthState>()(
        * Cargar perfil del User dentro del tenant actual.
        * Se llama automáticamente desde DashboardLayout cuando hay tenant pero no user.
        * Esto cubre el caso de recarga de página (F5) donde user no se persiste.
+       *
+       * Si hay impersonación activa (impersonatedUserId en localStorage),
+       * recarga el perfil del usuario impersonado en vez del propio.
        */
       loadUserProfile: async () => {
         const { currentTenantId, user, isLoadingUser } = get();
@@ -295,11 +322,37 @@ export const useAuthStore = create<AuthState>()(
 
         try {
           set({ isLoadingUser: true });
-          const userProfile = await authAPI.getProfile();
-          set({ user: userProfile, isLoadingUser: false });
+
+          const impersonatedId = getInitialImpersonatedUserId();
+
+          if (impersonatedId) {
+            // Estamos impersonando: recargar perfil del usuario target
+            const impersonatedProfile = await authAPI.getImpersonateProfile(impersonatedId);
+
+            // También recargar perfil del superadmin como originalUser
+            const superadminProfile = await authAPI.getProfile();
+
+            set({
+              user: impersonatedProfile,
+              originalUser: superadminProfile,
+              impersonatedUserId: impersonatedId,
+              isImpersonating: true,
+              isLoadingUser: false,
+            });
+          } else {
+            // Flujo normal: cargar perfil propio
+            const userProfile = await authAPI.getProfile();
+            set({ user: userProfile, isLoadingUser: false });
+          }
         } catch (error) {
           console.warn('Failed to load user profile:', error);
-          set({ isLoadingUser: false });
+          // Si falla la impersonación, limpiar estado y cargar como admin
+          localStorage.removeItem(STORAGE_KEYS.IMPERSONATED_USER_ID);
+          set({
+            isLoadingUser: false,
+            impersonatedUserId: null,
+            originalUser: null,
+          });
         }
       },
 
@@ -357,11 +410,14 @@ export const useAuthStore = create<AuthState>()(
       clearTenantContext: () => {
         localStorage.removeItem(STORAGE_KEYS.CURRENT_TENANT_ID);
         localStorage.removeItem(STORAGE_KEYS.IS_IMPERSONATING);
+        localStorage.removeItem(STORAGE_KEYS.IMPERSONATED_USER_ID);
         set({
           currentTenantId: null,
           currentTenant: null,
           user: null,
           isImpersonating: false,
+          originalUser: null,
+          impersonatedUserId: null,
         });
         // Invalidar queries para modo Admin Global
         invalidateAllQueries();
@@ -379,15 +435,65 @@ export const useAuthStore = create<AuthState>()(
 
       /**
        * Superadmin sale del tenant y vuelve a Admin Global.
-       * Limpia contexto de tenant y flag de impersonacion.
+       * Limpia contexto de tenant y flag de impersonación.
        */
       stopImpersonation: () => {
         get().clearTenantContext();
       },
+
+      /**
+       * Superadmin ve la app como un usuario específico dentro del tenant actual.
+       * Override de authStore.user con el perfil del usuario target.
+       *
+       * El JWT sigue siendo del superadmin (acceso completo a APIs),
+       * pero el rendering del frontend (sidebar, guards, portals) se adapta
+       * al perfil del usuario impersonado.
+       */
+      startUserImpersonation: async (userId: number) => {
+        const { user } = get();
+
+        // Guardar perfil original del superadmin
+        const originalUser = user;
+
+        // Obtener perfil completo del usuario target
+        const impersonatedProfile = await authAPI.getImpersonateProfile(userId);
+
+        // Persistir en localStorage para sobrevivir F5
+        localStorage.setItem(STORAGE_KEYS.IMPERSONATED_USER_ID, String(userId));
+        localStorage.setItem(STORAGE_KEYS.IS_IMPERSONATING, 'true');
+
+        // Override del user en el store
+        set({
+          originalUser,
+          user: impersonatedProfile,
+          impersonatedUserId: userId,
+          isImpersonating: true,
+        });
+      },
+
+      /**
+       * Dejar de impersonar un usuario específico.
+       * Restaura el perfil del superadmin pero mantiene el contexto de tenant.
+       * El superadmin queda como admin en el tenant (puede elegir otro usuario).
+       */
+      stopUserImpersonation: () => {
+        const { originalUser } = get();
+
+        // Limpiar localStorage de impersonación de usuario
+        localStorage.removeItem(STORAGE_KEYS.IMPERSONATED_USER_ID);
+
+        // Restaurar perfil original, mantener contexto de tenant
+        set({
+          user: originalUser,
+          originalUser: null,
+          impersonatedUserId: null,
+          // isImpersonating se mantiene true (sigue en el tenant como admin)
+        });
+      },
     }),
     {
       name: 'auth-storage',
-      version: 4, // Incrementar al cambiar estructura para multi-tenant
+      version: 5, // Bump: impersonación de usuario
       partialize: (state) => ({
         tenantUser: state.tenantUser,
         isAuthenticated: state.isAuthenticated,
@@ -396,11 +502,12 @@ export const useAuthStore = create<AuthState>()(
         accessibleTenants: state.accessibleTenants,
         isSuperadmin: state.isSuperadmin,
         isImpersonating: state.isImpersonating,
+        impersonatedUserId: state.impersonatedUserId,
       }),
       // Migración: limpia datos antiguos para forzar re-login
       migrate: (persistedState, version) => {
-        if (version < 4) {
-          // Versiones anteriores: forzar re-login para obtener nuevos campos
+        if (version < 5) {
+          // Versiones anteriores: forzar re-login + limpiar impersonación
           return {
             tenantUser: null,
             user: null,
@@ -409,6 +516,8 @@ export const useAuthStore = create<AuthState>()(
             currentTenant: null,
             accessibleTenants: [],
             isSuperadmin: false,
+            isImpersonating: false,
+            impersonatedUserId: null,
           };
         }
         return persistedState as Partial<AuthState>;

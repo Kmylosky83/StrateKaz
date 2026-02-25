@@ -57,7 +57,11 @@ interface PermissionsContext {
   hasPermission: (permissionCode: string) => boolean;
 
   /** Verifica permiso CRUD por módulo/sección/acción (RBAC Unificado v4.0) */
-  canDo: (modulo: string, seccion: string, accion: 'view' | 'create' | 'edit' | 'delete') => boolean;
+  canDo: (
+    modulo: string,
+    seccion: string,
+    accion: 'view' | 'create' | 'edit' | 'delete'
+  ) => boolean;
 
   /** Verifica si tiene al menos uno de los permisos */
   hasAnyPermission: (permissions: string[]) => boolean;
@@ -105,11 +109,18 @@ interface AccessOptions {
 export function usePermissions(): PermissionsContext {
   const user = useAuthStore((state) => state.user);
   const isSuperadminGlobal = useAuthStore((state) => state.isSuperadmin);
+  const impersonatedUserId = useAuthStore((state) => state.impersonatedUserId);
 
   // Superadmin si: TenantUser.is_superadmin (global) O User.is_superuser (dentro del tenant)
+  // EXCEPCIÓN: cuando se está impersonando un usuario, usar SOLO los permisos del target.
+  // Sin esto, isSuperadminGlobal (del TenantUser) siempre bypassearía los guards,
+  // haciendo que la impersonación sea visualmente idéntica a ser admin.
   const isSuperAdmin = useMemo(() => {
+    if (impersonatedUserId) {
+      return user?.is_superuser ?? false;
+    }
     return isSuperadminGlobal || (user?.is_superuser ?? false);
-  }, [isSuperadminGlobal, user?.is_superuser]);
+  }, [isSuperadminGlobal, user?.is_superuser, impersonatedUserId]);
 
   const cargoCode = useMemo(() => {
     return user?.cargo_code ?? null;
@@ -181,7 +192,11 @@ export function usePermissions(): PermissionsContext {
    * @param accion Acción CRUD (view, create, edit, delete)
    */
   const canDo = useCallback(
-    (modulo: string, seccion: string, accion: 'view' | 'create' | 'edit' | 'delete' | string): boolean => {
+    (
+      modulo: string,
+      seccion: string,
+      accion: 'view' | 'create' | 'edit' | 'delete' | string
+    ): boolean => {
       const code = `${modulo}.${seccion}.${accion}`;
       return hasPermission(code);
     },
@@ -322,6 +337,9 @@ export function usePermissions(): PermissionsContext {
 export function useIsSuperAdmin(): boolean {
   const user = useAuthStore((state) => state.user);
   const isSuperadminGlobal = useAuthStore((state) => state.isSuperadmin);
+  const impersonatedUserId = useAuthStore((state) => state.impersonatedUserId);
+  // Cuando impersonando, usar solo permisos del target user
+  if (impersonatedUserId) return user?.is_superuser ?? false;
   return isSuperadminGlobal || (user?.is_superuser ?? false);
 }
 

@@ -136,6 +136,15 @@ export const authAPI = {
   },
 
   /**
+   * Obtener perfil de un usuario para impersonación (solo superadmins).
+   * Retorna el mismo formato que getProfile() pero para el usuario especificado.
+   */
+  getImpersonateProfile: async (userId: number): Promise<User> => {
+    const response = await axios.get<User>(`/core/users/${userId}/impersonate-profile/`);
+    return response.data;
+  },
+
+  /**
    * Subir foto de perfil
    */
   uploadPhoto: async (file: File): Promise<{ photo_url: string }> => {

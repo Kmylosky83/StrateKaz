@@ -125,6 +125,16 @@ def log_backup_code_used(request, user):
     security_logger.warning(f"2FA_BACKUP_CODE_USED: user '{user.username}' (ID:{user.id}) - IP: {get_client_ip(request)}")
 
 
+# IMPERSONATION OPERATIONS
+def log_impersonation(request, target_user):
+    """Log cuando un superadmin impersona a otro usuario"""
+    security_logger.warning(
+        f"IMPERSONATE: superadmin '{_user_str(request.user)}' (ID:{request.user.id}) "
+        f"viewing as '{target_user.username}' (ID:{target_user.id}) "
+        f"- IP: {get_client_ip(request)}"
+    )
+
+
 # USER PREFERENCES OPERATIONS (MS-003)
 def log_preferences_updated(user, updated_fields):
     """

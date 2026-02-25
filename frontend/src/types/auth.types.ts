@@ -159,6 +159,10 @@ export interface AuthState {
   isSuperadmin: boolean;
   /** Indica si el superadmin está visitando un tenant desde Admin Global */
   isImpersonating: boolean;
+  /** Perfil original del superadmin guardado antes de impersonar un usuario */
+  originalUser: User | null;
+  /** ID del usuario impersonado (null = no impersonando usuario específico) */
+  impersonatedUserId: number | null;
   // Acciones
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;
@@ -176,4 +180,8 @@ export interface AuthState {
   startImpersonation: (tenantId: number) => Promise<void>;
   /** Superadmin sale del tenant y vuelve a Admin Global */
   stopImpersonation: () => void;
+  /** Superadmin ve la app como un usuario específico dentro del tenant */
+  startUserImpersonation: (userId: number) => Promise<void>;
+  /** Deja de ver como usuario específico (vuelve a vista admin en el tenant) */
+  stopUserImpersonation: () => void;
 }

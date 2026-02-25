@@ -40,6 +40,7 @@ import {
 import { useAuthStore } from '@/store/authStore';
 import { TenantFormModal } from './TenantFormModal';
 import { TenantCreationProgress } from './TenantCreationProgress';
+import { UserImpersonationModal } from './UserImpersonationModal';
 import type { Tenant } from '../types';
 
 // Colores para los tiers - mapeados a BadgeVariant validos
@@ -65,12 +66,16 @@ interface TenantCardProps {
   onToggle: (id: number) => void;
   onHardDelete: (tenant: Tenant) => void;
   onEnter: (tenant: Tenant) => void;
+  onViewAsUser: (tenant: Tenant) => void;
   onViewProgress: (tenant: Tenant) => void;
   isSuperadmin: boolean;
 }
 
 const TenantCard = forwardRef<HTMLDivElement, TenantCardProps>(
-  ({ tenant, onEdit, onToggle, onHardDelete, onEnter, onViewProgress, isSuperadmin }, ref) => {
+  (
+    { tenant, onEdit, onToggle, onHardDelete, onEnter, onViewAsUser, onViewProgress, isSuperadmin },
+    ref
+  ) => {
     const isReady = !tenant.schema_status || tenant.schema_status === 'ready';
     const isCreating = tenant.schema_status === 'creating' || tenant.schema_status === 'pending';
     const isFailed = tenant.schema_status === 'failed';
@@ -129,11 +134,16 @@ const TenantCard = forwardRef<HTMLDivElement, TenantCardProps>(
             {/* Menu */}
             <Dropdown
               items={[
-                // Entrar a la empresa - Solo si esta activa y schema ready
+                // Opciones de acceso al tenant - Solo si esta activo y schema ready
                 ...(tenant.is_active && isReady
                   ? [
                       {
-                        label: 'Entrar como usuario',
+                        label: 'Ver como usuario',
+                        icon: <Eye className="h-4 w-4" />,
+                        onClick: () => onViewAsUser(tenant),
+                      },
+                      {
+                        label: 'Administrar empresa',
                         icon: <LogIn className="h-4 w-4" />,
                         onClick: () => onEnter(tenant),
                       },
@@ -261,6 +271,9 @@ export const TenantsSection = () => {
   const [tenantToHardDelete, setTenantToHardDelete] = useState<Tenant | null>(null);
   const [hardDeleteConfirmName, setHardDeleteConfirmName] = useState('');
 
+  // Impersonacion de usuario (modal de seleccion)
+  const [showUserImpersonation, setShowUserImpersonation] = useState(false);
+
   // Progreso de creacion de tenant
   const [progressTenant, setProgressTenant] = useState<{ id: number; name: string } | null>(null);
 
@@ -337,12 +350,22 @@ export const TenantsSection = () => {
   };
 
   /**
-   * Entrar a una empresa como administrador (impersonacion).
+   * Entrar a una empresa como administrador (badge amarillo).
    * Usa selectTenant internamente (llama backend + invalida queries + recarga perfil).
    */
   const handleEnterTenant = async (tenant: Tenant) => {
     await startImpersonation(tenant.id);
     navigate('/dashboard');
+  };
+
+  /**
+   * Ver como usuario: entra al tenant y abre modal de selección de usuario.
+   * Usa startImpersonation para que el banner amber aparezca mientras el
+   * modal está abierto. Si el usuario cierra sin seleccionar, queda como admin.
+   */
+  const handleViewAsUser = async (tenant: Tenant) => {
+    await startImpersonation(tenant.id);
+    setShowUserImpersonation(true);
   };
 
   const handleViewProgress = (tenant: Tenant) => {
@@ -469,6 +492,7 @@ export const TenantsSection = () => {
                 onToggle={handleToggle}
                 onHardDelete={setTenantToHardDelete}
                 onEnter={handleEnterTenant}
+                onViewAsUser={handleViewAsUser}
                 onViewProgress={handleViewProgress}
                 isSuperadmin={isSuperadmin}
               />
@@ -610,7 +634,12 @@ export const TenantsSection = () => {
                             ...(tenant.is_active && isReady
                               ? [
                                   {
-                                    label: 'Entrar como usuario',
+                                    label: 'Ver como usuario',
+                                    icon: <Eye className="h-4 w-4" />,
+                                    onClick: () => handleViewAsUser(tenant),
+                                  },
+                                  {
+                                    label: 'Administrar empresa',
                                     icon: <LogIn className="h-4 w-4" />,
                                     onClick: () => handleEnterTenant(tenant),
                                   },
@@ -769,6 +798,12 @@ export const TenantsSection = () => {
           onClose={handleProgressClose}
         />
       )}
+
+      {/* User Impersonation Modal */}
+      <UserImpersonationModal
+        isOpen={showUserImpersonation}
+        onClose={() => setShowUserImpersonation(false)}
+      />
     </div>
   );
 };

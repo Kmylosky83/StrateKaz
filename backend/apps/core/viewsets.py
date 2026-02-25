@@ -97,6 +97,7 @@ class UserViewSet(viewsets.ModelViewSet):
         'me': 'can_view', # Usually allowany or authenticated, but for now map to view
         'update_profile': 'can_view', # Self-service action, user updates own profile
         'upload_photo': 'can_view', # Self-service action, user uploads own photo
+        'impersonate_profile': 'can_view', # Custom superuser check inside action
     }
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['cargo', 'cargo__code', 'is_active', 'is_staff', 'document_type']
@@ -344,6 +345,114 @@ class UserViewSet(viewsets.ModelViewSet):
             )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['get'], url_path='impersonate-profile')
+    def impersonate_profile(self, request, pk=None):
+        """
+        Obtener perfil completo de un usuario para impersonación.
+
+        GET /api/core/users/{id}/impersonate-profile/
+
+        Solo superadmins pueden usar este endpoint. Retorna el mismo formato
+        que current_user() (core_views.py) para que el frontend pueda
+        hacer override del perfil en el authStore.
+
+        Uso: Admin Global → "Ver como usuario" → seleccionar usuario →
+        frontend reemplaza authStore.user con esta respuesta.
+        """
+        if not request.user.is_superuser:
+            return Response(
+                {'error': 'Solo superadmins pueden impersonar usuarios'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Buscar el usuario target (bypasa get_queryset que excluye superusers)
+        try:
+            target_user = User.objects.select_related(
+                'cargo', 'cargo__area', 'proveedor'
+            ).get(pk=pk, deleted_at__isnull=True)
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'Usuario no encontrado'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # No permitir impersonarse a sí mismo
+        if target_user.id == request.user.id:
+            return Response(
+                {'error': 'No puedes impersonarte a ti mismo'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Computar RBAC del usuario target (misma lógica que current_user)
+        if target_user.is_superuser:
+            section_ids = None
+            permission_codes = ['*']
+        else:
+            section_ids = []
+            permission_codes = []
+            if target_user.cargo:
+                from apps.core.models import CargoSectionAccess
+                section_ids = list(CargoSectionAccess.objects.filter(
+                    cargo=target_user.cargo, can_view=True
+                ).values_list('section_id', flat=True))
+            if hasattr(target_user, 'get_permisos_efectivos'):
+                permission_codes = target_user.get_permisos_efectivos()
+
+        # Datos de contexto
+        empresa_nombre = None
+        if hasattr(request, 'tenant') and request.tenant:
+            empresa_nombre = request.tenant.name
+
+        area_nombre = None
+        if target_user.cargo and hasattr(target_user.cargo, 'area') and target_user.cargo.area:
+            area_nombre = target_user.cargo.area.name
+
+        photo_url = None
+        if target_user.photo:
+            photo_url = request.build_absolute_uri(target_user.photo.url)
+
+        # Log de seguridad
+        from apps.core.utils.audit_logging import log_impersonation
+        log_impersonation(request, target_user)
+
+        # Respuesta en el mismo formato que current_user() de core_views.py
+        return Response({
+            'id': target_user.id,
+            'username': target_user.username,
+            'email': target_user.email,
+            'first_name': target_user.first_name,
+            'last_name': target_user.last_name,
+            'full_name': target_user.get_full_name(),
+            'cargo': {
+                'id': target_user.cargo.id,
+                'code': target_user.cargo.code,
+                'name': target_user.cargo.name,
+                'level': target_user.cargo.level,
+            } if target_user.cargo else None,
+            'cargo_code': target_user.cargo_code,
+            'cargo_level': target_user.cargo_level,
+            'phone': target_user.phone,
+            'document_type': target_user.document_type,
+            'document_type_display': target_user.get_document_type_display(),
+            'document_number': target_user.document_number,
+            'is_active': target_user.is_active,
+            'is_staff': target_user.is_staff,
+            'is_superuser': target_user.is_superuser,
+            'is_deleted': target_user.is_deleted,
+            'date_joined': target_user.date_joined,
+            'last_login': target_user.last_login,
+            'section_ids': section_ids,
+            'permission_codes': permission_codes,
+            'empresa_nombre': empresa_nombre,
+            'area_nombre': area_nombre,
+            'photo_url': photo_url,
+            'proveedor': target_user.proveedor_id,
+            'proveedor_nombre': (
+                target_user.proveedor.nombre_comercial
+                if target_user.proveedor else None
+            ),
+        })
 
     @action(detail=False, methods=['get'])
     def stats(self, request):

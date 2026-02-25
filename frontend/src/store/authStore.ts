@@ -504,19 +504,13 @@ export const useAuthStore = create<AuthState>()(
         isImpersonating: state.isImpersonating,
         impersonatedUserId: state.impersonatedUserId,
       }),
-      // Migración: limpia datos antiguos para forzar re-login
+      // Migración: preserva estado existente, agrega campos nuevos
       migrate: (persistedState, version) => {
+        const state = persistedState as Record<string, unknown>;
         if (version < 5) {
-          // Versiones anteriores: forzar re-login + limpiar impersonación
+          // Solo agregar campo nuevo de impersonación de usuario
           return {
-            tenantUser: null,
-            user: null,
-            isAuthenticated: false,
-            currentTenantId: null,
-            currentTenant: null,
-            accessibleTenants: [],
-            isSuperadmin: false,
-            isImpersonating: false,
+            ...state,
             impersonatedUserId: null,
           };
         }

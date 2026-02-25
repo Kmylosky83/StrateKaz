@@ -21,11 +21,14 @@ import { useIsMobile, useIsTablet } from '@/hooks/useMediaQuery';
 import { BottomNavigation } from '@/components/mobile';
 import { useAuthStore } from '@/store/authStore';
 import { ImpersonationBanner } from '@/components/common/ImpersonationBanner';
+import { UserImpersonationModal } from '@/features/admin-global/components/UserImpersonationModal';
 
 export const DashboardLayout = () => {
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
   const isImpersonating = useAuthStore((state) => state.isImpersonating);
+  const pendingUserSelection = useAuthStore((state) => state.pendingUserSelection);
+  const setPendingUserSelection = useAuthStore((state) => state.setPendingUserSelection);
 
   // Estado del sidebar
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -154,6 +157,12 @@ export const DashboardLayout = () => {
 
         {/* Bottom Navigation - Solo visible en mobile */}
         <BottomNavigation onOpenMenu={() => setIsMobileMenuOpen(true)} />
+
+        {/* Modal de selección de usuario para impersonación */}
+        <UserImpersonationModal
+          isOpen={pendingUserSelection}
+          onClose={() => setPendingUserSelection(false)}
+        />
       </div>
     </HeaderProvider>
   );

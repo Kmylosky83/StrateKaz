@@ -163,6 +163,8 @@ export interface AuthState {
   originalUser: User | null;
   /** ID del usuario impersonado (null = no impersonando usuario específico) */
   impersonatedUserId: number | null;
+  /** Flag transitorio: el superadmin quiere seleccionar un usuario para impersonar */
+  pendingUserSelection: boolean;
   // Acciones
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;
@@ -184,4 +186,6 @@ export interface AuthState {
   startUserImpersonation: (userId: number) => Promise<void>;
   /** Deja de ver como usuario específico (vuelve a vista admin en el tenant) */
   stopUserImpersonation: () => void;
+  /** Controla el flag pendingUserSelection */
+  setPendingUserSelection: (pending: boolean) => void;
 }

@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Shield, ArrowLeft, Eye, Users } from 'lucide-react';
+import { Shield, ArrowLeft, Eye, Users, UserSearch } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { cn } from '@/utils/cn';
 
@@ -22,6 +22,7 @@ export const ImpersonationBanner = () => {
   const user = useAuthStore((state) => state.user);
   const stopImpersonation = useAuthStore((state) => state.stopImpersonation);
   const stopUserImpersonation = useAuthStore((state) => state.stopUserImpersonation);
+  const setPendingUserSelection = useAuthStore((state) => state.setPendingUserSelection);
 
   if (!isImpersonating) return null;
 
@@ -121,11 +122,26 @@ export const ImpersonationBanner = () => {
         <span className="hidden md:inline"> como superadmin</span>
       </span>
 
+      {/* Botón: Ver como usuario (abre modal de selección) */}
+      <button
+        type="button"
+        onClick={() => setPendingUserSelection(true)}
+        className={cn(
+          'flex items-center gap-1.5 ml-2 px-3 py-1 rounded-md',
+          'bg-white/20 hover:bg-white/30 transition-colors',
+          'text-xs font-semibold whitespace-nowrap'
+        )}
+      >
+        <UserSearch className="w-3.5 h-3.5" />
+        <span className="hidden sm:inline">Ver como usuario</span>
+        <span className="sm:hidden">Usuarios</span>
+      </button>
+
       <button
         type="button"
         onClick={handleExitToAdmin}
         className={cn(
-          'flex items-center gap-1.5 ml-2 px-3 py-1 rounded-md',
+          'flex items-center gap-1.5 px-3 py-1 rounded-md',
           'bg-white/20 hover:bg-white/30 transition-colors',
           'text-xs font-semibold whitespace-nowrap'
         )}

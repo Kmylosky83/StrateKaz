@@ -72,6 +72,7 @@ export const useAuthStore = create<AuthState>()(
       isImpersonating: getInitialImpersonating(),
       originalUser: null,
       impersonatedUserId: getInitialImpersonatedUserId(),
+      pendingUserSelection: false,
 
       /**
        * Login con TenantUser (sistema multi-tenant)
@@ -490,6 +491,8 @@ export const useAuthStore = create<AuthState>()(
           // isImpersonating se mantiene true (sigue en el tenant como admin)
         });
       },
+
+      setPendingUserSelection: (pending: boolean) => set({ pendingUserSelection: pending }),
     }),
     {
       name: 'auth-storage',

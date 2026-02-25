@@ -61,6 +61,7 @@ export const UserImpersonationModal = ({ isOpen, onClose }: UserImpersonationMod
       }
     } catch (error) {
       console.error('Error al impersonar usuario:', error);
+    } finally {
       setLoading(null);
     }
   };
@@ -107,7 +108,7 @@ export const UserImpersonationModal = ({ isOpen, onClose }: UserImpersonationMod
             </div>
           ) : (
             users.map((user) => {
-              const isExterno = !!(user as { proveedor?: number }).proveedor;
+              const isExterno = (user as { proveedor?: number | null }).proveedor != null;
               const isLoading = loading === user.id;
 
               return (

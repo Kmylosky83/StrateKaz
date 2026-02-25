@@ -40,7 +40,6 @@ import {
 import { useAuthStore } from '@/store/authStore';
 import { TenantFormModal } from './TenantFormModal';
 import { TenantCreationProgress } from './TenantCreationProgress';
-import { UserImpersonationModal } from './UserImpersonationModal';
 import type { Tenant } from '../types';
 
 // Colores para los tiers - mapeados a BadgeVariant validos
@@ -271,9 +270,6 @@ export const TenantsSection = () => {
   const [tenantToHardDelete, setTenantToHardDelete] = useState<Tenant | null>(null);
   const [hardDeleteConfirmName, setHardDeleteConfirmName] = useState('');
 
-  // Impersonacion de usuario (modal de seleccion)
-  const [showUserImpersonation, setShowUserImpersonation] = useState(false);
-
   // Progreso de creacion de tenant
   const [progressTenant, setProgressTenant] = useState<{ id: number; name: string } | null>(null);
 
@@ -288,6 +284,7 @@ export const TenantsSection = () => {
 
   // Obtener funciones del authStore
   const startImpersonation = useAuthStore((state) => state.startImpersonation);
+  const setPendingUserSelection = useAuthStore((state) => state.setPendingUserSelection);
   const isSuperadmin = useAuthStore((state) => state.isSuperadmin);
 
   const { data: tenants, isLoading } = useTenantsList({
@@ -359,13 +356,14 @@ export const TenantsSection = () => {
   };
 
   /**
-   * Ver como usuario: entra al tenant y abre modal de selección de usuario.
-   * Usa startImpersonation para que el banner amber aparezca mientras el
-   * modal está abierto. Si el usuario cierra sin seleccionar, queda como admin.
+   * Ver como usuario: entra al tenant y navega al dashboard.
+   * El flag pendingUserSelection hace que DashboardLayout abra el modal
+   * de selección de usuario automáticamente.
    */
   const handleViewAsUser = async (tenant: Tenant) => {
     await startImpersonation(tenant.id);
-    setShowUserImpersonation(true);
+    setPendingUserSelection(true);
+    navigate('/dashboard');
   };
 
   const handleViewProgress = (tenant: Tenant) => {
@@ -798,12 +796,6 @@ export const TenantsSection = () => {
           onClose={handleProgressClose}
         />
       )}
-
-      {/* User Impersonation Modal */}
-      <UserImpersonationModal
-        isOpen={showUserImpersonation}
-        onClose={() => setShowUserImpersonation(false)}
-      />
     </div>
   );
 };

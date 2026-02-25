@@ -1,0 +1,168 @@
+"""
+Select Lists API — Endpoints genericos para dropdowns compartidos.
+
+Capa 0 (Plataforma): Estos endpoints proveen datos que multiples
+modulos necesitan para dropdowns/selects, sin crear dependencias
+cruzadas entre modulos de Capa 2.
+
+Patron: GET /api/core/select-lists/{entidad}/
+Respuesta: [{"id": 1, "label": "...", "extra": {...}}]
+
+Regla: Cada modulo de C2 llama a estos endpoints en vez de importar
+hooks/modelos de otro modulo de C2.
+"""
+from django.apps import apps
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
+
+def _safe_get_model(app_label, model_name):
+    """Obtiene un modelo de forma segura sin importar directamente."""
+    try:
+        return apps.get_model(app_label, model_name)
+    except LookupError:
+        return None
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def select_colaboradores(request):
+    """
+    Lista de colaboradores activos para dropdowns.
+    Usado por: HSEQ (accidentalidad, medicina), Analytics (responsable KPI)
+    """
+    Colaborador = _safe_get_model('colaboradores', 'Colaborador')
+    if not Colaborador:
+        return Response([])
+
+    qs = Colaborador.objects.filter(
+        is_active=True, is_deleted=False
+    ).select_related('cargo').values(
+        'id', 'primer_nombre', 'segundo_nombre',
+        'primer_apellido', 'segundo_apellido',
+        'numero_documento', 'cargo__name'
+    ).order_by('primer_apellido', 'primer_nombre')[:500]
+
+    results = []
+    for c in qs:
+        nombre = f"{c['primer_nombre'] or ''} {c['primer_apellido'] or ''}".strip()
+        if c['segundo_apellido']:
+            nombre += f" {c['segundo_apellido']}"
+        results.append({
+            'id': c['id'],
+            'label': nombre,
+            'extra': {
+                'documento': c.get('numero_documento', ''),
+                'cargo': c.get('cargo__name', ''),
+            }
+        })
+
+    return Response(results)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def select_areas(request):
+    """
+    Lista de areas activas para dropdowns.
+    Usado por: HSEQ (comites), Analytics (indicadores), Audit (alertas)
+    """
+    Area = _safe_get_model('organizacion', 'Area')
+    if not Area:
+        return Response([])
+
+    qs = Area.objects.filter(
+        is_active=True, is_deleted=False
+    ).values('id', 'name', 'code').order_by('name')[:200]
+
+    return Response([
+        {'id': a['id'], 'label': a['name'], 'extra': {'code': a['code']}}
+        for a in qs
+    ])
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def select_proveedores(request):
+    """
+    Lista de proveedores activos para dropdowns.
+    Usado por: Admin Finance (pagos), Production Ops (recepcion)
+    """
+    Proveedor = _safe_get_model('gestion_proveedores', 'Proveedor')
+    if not Proveedor:
+        return Response([])
+
+    qs = Proveedor.objects.filter(
+        is_active=True, is_deleted=False
+    ).values(
+        'id', 'razon_social', 'nit', 'tipo_proveedor__nombre'
+    ).order_by('razon_social')[:500]
+
+    return Response([
+        {
+            'id': p['id'],
+            'label': p['razon_social'],
+            'extra': {
+                'nit': p.get('nit', ''),
+                'tipo': p.get('tipo_proveedor__nombre', ''),
+            }
+        }
+        for p in qs
+    ])
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def select_clientes(request):
+    """
+    Lista de clientes activos para dropdowns.
+    Usado por: Admin Finance (cuentas por cobrar), Sales CRM
+    """
+    Cliente = _safe_get_model('gestion_clientes', 'Cliente')
+    if not Cliente:
+        return Response([])
+
+    qs = Cliente.objects.filter(
+        is_active=True, is_deleted=False
+    ).values(
+        'id', 'razon_social', 'nit'
+    ).order_by('razon_social')[:500]
+
+    return Response([
+        {
+            'id': c['id'],
+            'label': c['razon_social'],
+            'extra': {'nit': c.get('nit', '')}
+        }
+        for c in qs
+    ])
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def select_users(request):
+    """
+    Lista de usuarios activos para dropdowns.
+    Usado por: Workflows (asignacion), Audit (tareas)
+    """
+    User = apps.get_model('core', 'User')
+    qs = User.objects.filter(
+        is_active=True
+    ).exclude(
+        is_superuser=True
+    ).values(
+        'id', 'first_name', 'last_name', 'email', 'cargo__name'
+    ).order_by('first_name', 'last_name')[:500]
+
+    return Response([
+        {
+            'id': u['id'],
+            'label': f"{u['first_name'] or ''} {u['last_name'] or ''}".strip() or u['email'],
+            'extra': {
+                'email': u['email'],
+                'cargo': u.get('cargo__name', ''),
+            }
+        }
+        for u in qs
+    ])

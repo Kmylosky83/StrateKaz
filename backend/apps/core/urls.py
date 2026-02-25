@@ -55,6 +55,14 @@ from .api.sections_api import (
     invalidate_user_cache,
     invalidate_cargo_cache,
 )
+# Select Lists — Dropdowns compartidos entre modulos (Capa 0)
+from .views.select_lists import (
+    select_colaboradores,
+    select_areas,
+    select_proveedores,
+    select_clientes,
+    select_users,
+)
 
 app_name = 'core'
 
@@ -117,6 +125,16 @@ urlpatterns = [
     path('sections/user-access/', get_user_section_access, name='sections-user-access'),
     path('sections/invalidate-cache/', invalidate_user_cache, name='sections-invalidate-cache'),
     path('sections/invalidate-cargo-cache/', invalidate_cargo_cache, name='sections-invalidate-cargo-cache'),
+
+    # ═══════════════════════════════════════════════════════════════
+    # Select Lists — Dropdowns compartidos entre modulos (Capa 0)
+    # GET /api/core/select-lists/{entidad}/
+    # ═══════════════════════════════════════════════════════════════
+    path('select-lists/colaboradores/', select_colaboradores, name='select-colaboradores'),
+    path('select-lists/areas/', select_areas, name='select-areas'),
+    path('select-lists/proveedores/', select_proveedores, name='select-proveedores'),
+    path('select-lists/clientes/', select_clientes, name='select-clientes'),
+    path('select-lists/users/', select_users, name='select-users'),
 
     # Incluir rutas del router
     path('', include(router.urls)),

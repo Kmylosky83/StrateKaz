@@ -166,3 +166,57 @@ def select_users(request):
         }
         for u in qs
     ])
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def select_cargos(request):
+    """
+    Lista de cargos para dropdowns (excluye system cargos).
+    Usado por: Talent Hub (colaboradores), GE (DOFA, PESTEL, encuestas),
+    Supply Chain (crear acceso), Audit (notificaciones)
+    """
+    Cargo = apps.get_model('core', 'Cargo')
+    qs = Cargo.objects.filter(
+        is_system=False
+    ).values(
+        'id', 'name', 'code', 'rol_sistema__name', 'rol_sistema__code'
+    ).order_by('name')[:200]
+
+    return Response([
+        {
+            'id': c['id'],
+            'label': c['name'],
+            'extra': {
+                'code': c.get('code', ''),
+                'rol': c.get('rol_sistema__name', ''),
+                'rol_code': c.get('rol_sistema__code', ''),
+            }
+        }
+        for c in qs
+    ])
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def select_roles(request):
+    """
+    Lista de roles del sistema para dropdowns.
+    Usado por: Users (asignacion de roles)
+    """
+    Role = _safe_get_model('core', 'Role')
+    if not Role:
+        return Response([])
+
+    qs = Role.objects.values(
+        'id', 'name', 'code'
+    ).order_by('name')[:50]
+
+    return Response([
+        {
+            'id': r['id'],
+            'label': r['name'],
+            'extra': {'code': r.get('code', '')}
+        }
+        for r in qs
+    ])

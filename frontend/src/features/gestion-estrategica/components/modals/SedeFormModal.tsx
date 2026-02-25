@@ -28,7 +28,7 @@ import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
 import { Switch } from '@/components/forms/Switch';
 import { useCreateSede, useUpdateSede, useSede, useSedeChoices } from '../../hooks/useStrategic';
-import { useUsers } from '@/features/users/hooks/useUsers';
+import { useSelectUsers } from '@/hooks/useSelectLists';
 import type {
   SedeEmpresaList,
   CreateSedeEmpresaDTO,
@@ -144,7 +144,7 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
   // Queries y mutations
   const { data: sedeDetail } = useSede(sede?.id || 0);
   const { data: choices } = useSedeChoices();
-  const { data: usersData } = useUsers();
+  const { data: usersData } = useSelectUsers();
   const createMutation = useCreateSede();
   const updateMutation = useUpdateSede();
 
@@ -260,19 +260,10 @@ export const SedeFormModal = ({ sede, isOpen, onClose }: SedeFormModalProps) => 
     })) || [];
 
   const userOptions =
-    usersData?.results
-      ?.filter((user) => !user.is_superuser && user.is_active)
-      .map((user) => {
-        const nombre =
-          user.first_name && user.last_name
-            ? `${user.first_name} ${user.last_name}`
-            : user.username;
-        const cargo = user.cargo?.name || user.cargo_name;
-        return {
-          value: user.id.toString(),
-          label: cargo ? `${nombre} — ${cargo}` : nombre,
-        };
-      }) || [];
+    usersData?.map((user) => ({
+      value: user.id.toString(),
+      label: user.extra?.cargo ? `${user.label} — ${user.extra.cargo}` : user.label,
+    })) || [];
 
   const footer = (
     <>

@@ -38,7 +38,7 @@ import {
   useAnalisisDofa,
 } from '../../hooks/useContexto';
 import { useAreas } from '../../hooks/useAreas';
-import { useCargos } from '@/features/configuracion/hooks';
+import { useSelectCargos } from '@/hooks/useSelectLists';
 import type {
   EstrategiaTOWS,
   CreateEstrategiaTOWSDTO,
@@ -142,7 +142,7 @@ export const EstrategiaTowsFormModal = ({
   const { data: estrategiaDetail } = useEstrategiaTowsDetail(estrategia?.id);
   const { data: analisisData } = useAnalisisDofa({}, 1, 100);
   const { data: areasData } = useAreas();
-  const { data: cargosData } = useCargos();
+  const { data: cargosData } = useSelectCargos();
 
   // Mutations
   const createMutation = useCreateEstrategiaTows();
@@ -235,9 +235,9 @@ export const EstrategiaTowsFormModal = ({
 
   // Opciones para Cargo Responsable
   const cargoOptions =
-    cargosData?.results?.map((c) => ({
+    cargosData?.map((c) => ({
       value: c.id.toString(),
-      label: c.name,
+      label: c.label,
     })) || [];
 
   const selectedTipoConfig = TIPO_ESTRATEGIA_TOWS_CONFIG[formData.tipo];

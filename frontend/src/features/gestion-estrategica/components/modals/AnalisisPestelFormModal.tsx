@@ -43,7 +43,7 @@ import {
   useDeleteFactorPestel,
   useTiposAnalisisPestel,
 } from '../../hooks/useContexto';
-import { useCargos } from '@/features/configuracion/hooks';
+import { useSelectCargos } from '@/hooks/useSelectLists';
 import type {
   AnalisisPESTEL,
   FactorPESTEL,
@@ -169,7 +169,7 @@ export const AnalisisPestelFormModal = ({
     analisis?.id ? { analisis: analisis.id } : undefined
   );
   const { data: tiposAnalisisData } = useTiposAnalisisPestel();
-  const { data: cargosData } = useCargos();
+  const { data: cargosData } = useSelectCargos();
 
   // Opciones para selects
   const tipoAnalisisOptions =
@@ -179,9 +179,9 @@ export const AnalisisPestelFormModal = ({
     })) || [];
 
   const cargoOptions =
-    cargosData?.results?.map((c) => ({
+    cargosData?.map((c) => ({
       value: c.id.toString(),
-      label: c.name,
+      label: c.label,
     })) || [];
 
   // Mutations

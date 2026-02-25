@@ -41,7 +41,7 @@ import {
   type MatrizComunicacionFilters,
 } from '../../hooks/useMatrizComunicacion';
 import { usePartesInteresadas } from '../../hooks/usePartesInteresadas';
-import { useCargos } from '@/features/configuracion/hooks';
+import { useSelectCargos } from '@/hooks/useSelectLists';
 
 // =============================================================================
 // CONSTANTES
@@ -127,7 +127,7 @@ const MatrizFormModal = ({ item, isOpen, onClose }: MatrizFormModalProps) => {
 
   const { create, update, isLoading } = useMatrizComunicacionMutation();
   const { data: partesInteresadas } = usePartesInteresadas({ page_size: 200 });
-  const { data: cargosData } = useCargos();
+  const { data: cargosData } = useSelectCargos();
 
   // Load data on edit
   React.useEffect(() => {
@@ -181,9 +181,9 @@ const MatrizFormModal = ({ item, isOpen, onClose }: MatrizFormModalProps) => {
   const cargoOptions = useMemo(
     () => [
       { value: '', label: 'Sin asignar' },
-      ...(Array.isArray(cargosData) ? cargosData : cargosData?.results || []).map((c) => ({
+      ...(cargosData || []).map((c) => ({
         value: c.id.toString(),
-        label: c.nombre,
+        label: c.label,
       })),
     ],
     [cargosData]

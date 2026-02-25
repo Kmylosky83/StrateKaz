@@ -28,10 +28,8 @@ import { AnimatedPage, Badge, Button, Card, Skeleton, Tabs } from '@/components/
 import { useAuthStore } from '@/store/authStore';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import { useMiEmpresa, useMisContratos, useMisEvaluaciones } from '../hooks/useMiEmpresa';
-import { ChangePasswordModal } from '@/features/perfil/components/ChangePasswordModal';
-import { TwoFactorModal } from '@/features/perfil/components/TwoFactorModal';
-import { Disable2FAModal } from '@/features/perfil/components/Disable2FAModal';
-import { use2FA } from '@/features/perfil/hooks/use2FA';
+import { ChangePasswordModal, TwoFactorModal, Disable2FAModal } from '@/components/common/auth';
+import { use2FA } from '@/hooks/use2FA';
 import type { ContratoProveedor, EvaluacionProveedor } from '../types';
 
 // ============================================================================

@@ -22,7 +22,7 @@ import {
   useDeleteUser,
   useToggleUserStatus,
 } from '../hooks/useUsers';
-import { useRoles } from '@/features/configuracion/hooks/useRoles';
+import { useSelectRoles } from '@/hooks/useSelectLists';
 import type { User, CreateUserDTO, UpdateUserDTO, UserFilters } from '@/types/users.types';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -48,7 +48,7 @@ export default function UsersPage() {
   const { data: usersData, isLoading: isLoadingUsers } = useUsers(filters);
   const { data: cargosData } = useCargos();
   const cargos = cargosData?.results || [];
-  const { data: rolesData } = useRoles({ is_active: true });
+  const { data: rolesData } = useSelectRoles();
   const createUserMutation = useCreateUser();
   const updateUserMutation = useUpdateUser();
   const deleteUserMutation = useDeleteUser();
@@ -255,7 +255,7 @@ export default function UsersPage() {
         onSubmit={handleSubmit}
         user={selectedUser}
         cargos={cargos}
-        roles={rolesData?.results || []}
+        roles={rolesData || []}
         isLoading={createUserMutation.isPending || updateUserMutation.isPending}
       />
 

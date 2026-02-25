@@ -21,8 +21,7 @@ import {
   useUpdateVacanteActiva,
   useTiposContrato,
 } from '../../hooks/useSeleccionContratacion';
-import { useCargos } from '@/features/users/hooks/useUsers';
-import { useAreas } from '@/features/gestion-estrategica/hooks/useAreas';
+import { useSelectCargos, useSelectAreas } from '@/hooks/useSelectLists';
 import type {
   VacanteActiva,
   VacanteActivaFormData,
@@ -97,8 +96,8 @@ export const VacanteFormModal = ({ vacante, isOpen, onClose }: VacanteFormModalP
   const createMutation = useCreateVacanteActiva();
   const updateMutation = useUpdateVacanteActiva();
   const { data: tiposContratoData } = useTiposContrato();
-  const { data: cargosData } = useCargos();
-  const { data: areasData } = useAreas();
+  const { data: cargosData } = useSelectCargos();
+  const { data: areasData } = useSelectAreas();
 
   // Options
   const tipoContratoOptions = useMemo(() => {
@@ -115,9 +114,9 @@ export const VacanteFormModal = ({ vacante, isOpen, onClose }: VacanteFormModalP
 
   const cargoOptions = useMemo(() => {
     const options = [{ value: '', label: 'Escribir cargo requerido' }];
-    if (cargosData?.results) {
-      cargosData.results.forEach((c: { id: number; name: string }) => {
-        options.push({ value: c.name, label: c.name });
+    if (cargosData) {
+      cargosData.forEach((c) => {
+        options.push({ value: c.label, label: c.label });
       });
     }
     return options;
@@ -125,9 +124,9 @@ export const VacanteFormModal = ({ vacante, isOpen, onClose }: VacanteFormModalP
 
   const areaOptions = useMemo(() => {
     const options = [{ value: '', label: 'Seleccionar proceso/area' }];
-    if (areasData?.results) {
-      areasData.results.forEach((a: { id: number; name: string }) => {
-        options.push({ value: a.name, label: a.name });
+    if (areasData) {
+      areasData.forEach((a) => {
+        options.push({ value: a.label, label: a.label });
       });
     }
     return options;

@@ -52,8 +52,7 @@ import {
   useCreateAnalisisPestel,
 } from '../../hooks/useContexto';
 import { useAreas } from '../../hooks/useAreas';
-import { useColaboradoresActivos } from '@/features/talent-hub/hooks/useColaboradores';
-import { useCargos } from '@/features/configuracion/hooks/useCargos';
+import { useSelectCargos, useSelectColaboradores } from '@/hooks/useSelectLists';
 import type {
   EncuestaDofa,
   CreateEncuestaDTO,
@@ -166,8 +165,8 @@ export const EncuestaFormModal = ({
   const { data: pestelData } = useAnalisisPestel({}, 1, 100);
   const { data: preguntasData } = usePreguntasContexto();
   const { data: areasData } = useAreas();
-  const { data: colaboradoresData } = useColaboradoresActivos();
-  const { data: cargosData } = useCargos();
+  const { data: colaboradoresData } = useSelectColaboradores();
+  const { data: cargosData } = useSelectCargos();
   const { data: temasData } = useTemasEncuesta(currentEncuesta?.id);
   const { data: participantesData } = useParticipantes(
     currentEncuesta?.id ? { encuesta: currentEncuesta.id } : undefined
@@ -372,19 +371,16 @@ export const EncuestaFormModal = ({
 
   // Options para colaboradores (usuarios activos)
   const colaboradorOptions =
-    (colaboradoresData as any)?.results?.map((c: any) => ({
-      value: c.user?.id?.toString() || c.id?.toString(),
-      label:
-        c.nombre_completo ||
-        `${c.nombres || ''} ${c.apellidos || ''}`.trim() ||
-        c.numero_identificacion,
+    colaboradoresData?.map((c) => ({
+      value: c.id.toString(),
+      label: c.label,
     })) || [];
 
   // Options para cargos
   const cargoOptions =
-    cargosData?.results?.map((c: any) => ({
+    cargosData?.map((c) => ({
       value: c.id.toString(),
-      label: c.name,
+      label: c.label,
     })) || [];
 
   // Temas y participantes

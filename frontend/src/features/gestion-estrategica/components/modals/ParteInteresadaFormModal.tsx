@@ -51,8 +51,7 @@ import {
 } from '../../hooks/usePartesInteresadas';
 import { useNormasISO } from '../../hooks/useNormasISO';
 import { useAreas } from '../../hooks/useAreas'; // Sprint 17
-import { useColaboradores } from '@/features/talent-hub/hooks'; // Sprint 17
-import { useCargos } from '@/features/configuracion/hooks'; // Sprint 17
+import { useSelectCargos, useSelectColaboradores } from '@/hooks/useSelectLists'; // Sprint 17
 import { DynamicIcon } from '@/components/common';
 import { Badge } from '@/components/common/Badge'; // Sprint 17
 
@@ -242,8 +241,8 @@ const ParteInteresadaFormModalComponent = ({
   const { data: normasData, isLoading: isLoadingNormas } = useNormasISO();
   // Sprint 17: Queries para responsables
   const { data: areasData } = useAreas();
-  const { data: colaboradoresData } = useColaboradores();
-  const { data: cargosData } = useCargos();
+  const { data: colaboradoresData } = useSelectColaboradores();
+  const { data: cargosData } = useSelectCargos();
 
   // Lista de normas disponibles - memoizada para evitar re-renders
   const normasDisponibles = useMemo(() => normasData?.results || [], [normasData?.results]);
@@ -469,12 +468,9 @@ const ParteInteresadaFormModalComponent = ({
   const colaboradorOptions = useMemo(
     () => [
       { value: '', label: 'Sin asignar' },
-      ...(Array.isArray(colaboradoresData)
-        ? colaboradoresData
-        : colaboradoresData?.results || []
-      ).map((c) => ({
+      ...(colaboradoresData || []).map((c) => ({
         value: c.id.toString(),
-        label: `${c.nombre_completo} - ${c.cargo_nombre || 'Sin cargo'}`,
+        label: c.extra?.cargo ? `${c.label} - ${c.extra.cargo}` : c.label,
       })),
     ],
     [colaboradoresData]
@@ -483,9 +479,9 @@ const ParteInteresadaFormModalComponent = ({
   const cargoOptions = useMemo(
     () => [
       { value: '', label: 'Sin asignar' },
-      ...(Array.isArray(cargosData) ? cargosData : cargosData?.results || []).map((c) => ({
+      ...(cargosData || []).map((c) => ({
         value: c.id.toString(),
-        label: c.nombre,
+        label: c.label,
       })),
     ],
     [cargosData]

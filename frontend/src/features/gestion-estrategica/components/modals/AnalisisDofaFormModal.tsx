@@ -39,7 +39,7 @@ import {
   useDeleteFactorDofa,
 } from '../../hooks/useContexto';
 import { useAreas } from '../../hooks/useAreas';
-import { useCargos } from '@/features/configuracion/hooks/useCargos';
+import { useSelectCargos } from '@/hooks/useSelectLists';
 import type {
   AnalisisDOFA,
   FactorDOFA,
@@ -141,7 +141,7 @@ export const AnalisisDofaFormModal = ({
     analisis?.id ? { analisis: analisis.id } : undefined
   );
   const { data: areasData } = useAreas();
-  const { data: cargosData } = useCargos();
+  const { data: cargosData } = useSelectCargos();
 
   // Mutations
   const createMutation = useCreateAnalisisDofa();
@@ -262,9 +262,9 @@ export const AnalisisDofaFormModal = ({
 
   // Options - Cargos para responsable del análisis (más estable organizacionalmente)
   const cargoOptions =
-    cargosData?.results?.map((c) => ({
+    cargosData?.map((c) => ({
       value: c.id.toString(),
-      label: c.name,
+      label: c.label,
     })) || [];
 
   // Options - Areas para factores

@@ -52,7 +52,7 @@ import {
   MisDocumentos,
   MiHSEQ,
 } from '../components';
-import { AvatarUploadModal } from '@/features/perfil/components/AvatarUploadModal';
+import { AvatarUploadModal } from '@/components/common/AvatarUploadModal';
 import type { MiPortalTab } from '../types';
 
 // ============================================================================

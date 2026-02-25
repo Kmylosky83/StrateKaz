@@ -33,8 +33,7 @@ import {
   Info,
 } from 'lucide-react';
 import { useCreateColaborador, useUpdateColaborador } from '../../hooks/useColaboradores';
-import { useCargos } from '@/features/users/hooks/useUsers';
-import { useAreas } from '@/features/gestion-estrategica/hooks/useAreas';
+import { useSelectCargos, useSelectAreas } from '@/hooks/useSelectLists';
 import { CargoFormModal } from '../estructura';
 import type {
   Colaborador,
@@ -125,8 +124,8 @@ export const ColaboradorFormModal = ({
 
   // Queries
   const queryClient = useQueryClient();
-  const { data: cargosData } = useCargos();
-  const { data: areasData } = useAreas();
+  const { data: cargosData } = useSelectCargos();
+  const { data: areasData } = useSelectAreas();
   const createMutation = useCreateColaborador();
   const updateMutation = useUpdateColaborador();
 
@@ -136,9 +135,8 @@ export const ColaboradorFormModal = ({
    */
   const handleCargoCreated = useCallback(
     (newCargoId: number) => {
-      // Invalidar ambos queries de cargos (el de users y el de rbac)
-      queryClient.invalidateQueries({ queryKey: ['cargos'] });
-      queryClient.invalidateQueries({ queryKey: ['cargos-rbac'] });
+      // Invalidar query de cargos (select-lists centralizado)
+      queryClient.invalidateQueries({ queryKey: ['select-lists', 'cargos'] });
       // Auto-seleccionar el cargo recien creado
       setFormData((prev) => ({ ...prev, cargo: String(newCargoId) }));
       setShowCargoModal(false);
@@ -148,19 +146,19 @@ export const ColaboradorFormModal = ({
 
   // Cargo options
   const cargoOptions = useMemo(() => {
-    if (!cargosData?.results) return [];
-    return cargosData.results.map((c: { id: number; name: string }) => ({
+    if (!cargosData) return [];
+    return cargosData.map((c) => ({
       value: String(c.id),
-      label: c.name,
+      label: c.label,
     }));
   }, [cargosData]);
 
   // Area options
   const areaOptions = useMemo(() => {
-    if (!areasData?.results) return [];
-    return areasData.results.map((a: { id: number; name: string }) => ({
+    if (!areasData) return [];
+    return areasData.map((a) => ({
       value: String(a.id),
-      label: a.name,
+      label: a.label,
     }));
   }, [areasData]);
 

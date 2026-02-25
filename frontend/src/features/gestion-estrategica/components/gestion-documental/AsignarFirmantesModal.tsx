@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 
 import { Modal } from '@/components/common/Modal';
 import { Button } from '@/components/common/Button';
-import { useColaboradores } from '@/features/talent-hub/hooks/useColaboradores';
+import { useSelectColaboradores } from '@/hooks/useSelectLists';
 import {
   useWorkflowFirmas,
   type AsignarFirmantesDTO,

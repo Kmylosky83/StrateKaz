@@ -15,7 +15,7 @@ import {
   useEntidadesSS,
   useTiposEntidad,
 } from '../../hooks/useSeleccionContratacion';
-import { useUsers } from '@/features/users/hooks/useUsers';
+import { useSelectUsers } from '@/hooks/useSelectLists';
 import type { AfiliacionSSFormData } from '../../types';
 
 interface Props {
@@ -31,10 +31,10 @@ export const AfiliacionFormModal = ({ isOpen, onClose }: Props) => {
   const [tipoEntidadFiltro, setTipoEntidadFiltro] = useState('');
   const { data: entidadesSS = [] } = useEntidadesSS(tipoEntidadFiltro || undefined);
   const { data: candidatosData } = useCandidatos({ estado: 'contratado', page_size: 200 });
-  const { data: usersData } = useUsers();
+  const { data: usersData } = useSelectUsers();
 
   const candidatos = candidatosData?.results || [];
-  const users = usersData?.results || usersData || [];
+  const users = usersData || [];
 
   const [formData, setFormData] = useState<AfiliacionSSFormData>({
     candidato: 0,
@@ -139,13 +139,11 @@ export const AfiliacionFormModal = ({ isOpen, onClose }: Props) => {
             required
           >
             <option value="">Seleccionar responsable...</option>
-            {(Array.isArray(users) ? users : []).map(
-              (u: { id: number; first_name: string; last_name: string }) => (
-                <option key={u.id} value={u.id}>
-                  {u.first_name} {u.last_name}
-                </option>
-              )
-            )}
+            {users.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.label}
+              </option>
+            ))}
           </Select>
         </div>
 

@@ -14,7 +14,7 @@ import {
   useCandidatos,
   useVacantesActivasAbiertas,
 } from '../../hooks/useSeleccionContratacion';
-import { useUsers } from '@/features/users/hooks/useUsers';
+import { useSelectUsers } from '@/hooks/useSelectLists';
 import { TIPO_ENTREVISTA_OPTIONS } from '../../types';
 import type { EntrevistaFormData, TipoEntrevistaType } from '../../types';
 
@@ -41,10 +41,10 @@ export const EntrevistaFormModal = ({ isOpen, onClose }: Props) => {
     ...(vacanteFilter ? { vacante: vacanteFilter } : {}),
   });
   const { data: vacantes } = useVacantesActivasAbiertas();
-  const { data: usersData } = useUsers();
+  const { data: usersData } = useSelectUsers();
 
   const candidatos = candidatosData?.results || [];
-  const users = usersData?.results || [];
+  const users = usersData || [];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,7 +151,8 @@ export const EntrevistaFormModal = ({ isOpen, onClose }: Props) => {
           <option value="">Seleccionar entrevistador</option>
           {users.map((u) => (
             <option key={u.id} value={u.id}>
-              {u.first_name} {u.last_name} ({u.email})
+              {u.label}
+              {u.extra?.email ? ` (${u.extra.email})` : ''}
             </option>
           ))}
         </Select>

@@ -11,7 +11,7 @@ import { Input } from '@/components/forms/Input';
 import { Alert } from '@/components/common/Alert';
 import { Shield, Mail, Check } from 'lucide-react';
 import { useCrearAccesoProveedor } from '../hooks/useProveedores';
-import { useCargos } from '@/features/configuracion/hooks/useCargos';
+import { useSelectCargos } from '@/hooks/useSelectLists';
 import type { ProveedorList } from '../types';
 
 interface CrearAccesoProveedorModalProps {
@@ -29,9 +29,9 @@ export function CrearAccesoProveedorModal({
   const [username, setUsername] = useState('');
   const [cargoId, setCargoId] = useState<number | ''>('');
   const crearAccesoMutation = useCrearAccesoProveedor();
-  const { data: cargosData } = useCargos();
+  const { data: cargosData } = useSelectCargos();
 
-  const cargos = Array.isArray(cargosData) ? cargosData : (cargosData?.results ?? []);
+  const cargos = cargosData || [];
 
   // Auto-suggest based on proveedor name
   const suggested = useMemo(() => {
@@ -153,9 +153,9 @@ export function CrearAccesoProveedorModal({
             required
           >
             <option value="">Seleccionar cargo...</option>
-            {cargos.map((cargo: { id: number; name: string }) => (
+            {cargos.map((cargo) => (
               <option key={cargo.id} value={cargo.id}>
-                {cargo.name}
+                {cargo.label}
               </option>
             ))}
           </select>

@@ -75,3 +75,19 @@ export {
   type Breakpoint,
   type ResponsiveState,
 } from './useResponsive';
+
+// Select Lists — Dropdowns compartidos (Capa 0, reemplazan imports cruzados)
+export {
+  useSelectAreas,
+  useSelectCargos,
+  useSelectColaboradores,
+  useSelectUsers,
+  useSelectProveedores,
+  useSelectClientes,
+  useSelectRoles,
+  selectListKeys,
+} from './useSelectLists';
+
+// Auth utilities compartidas (extraídas de features para evitar imports cruzados)
+export { useChangePassword } from './useChangePassword';
+export { useUploadPhoto } from './useUploadPhoto';

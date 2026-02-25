@@ -46,8 +46,7 @@ import {
   useColaboradoresEstadisticas,
   useRetirarColaborador,
 } from '../../hooks/useColaboradores';
-import { useCargos } from '@/features/users/hooks/useUsers';
-import { useAreas } from '@/features/gestion-estrategica/hooks/useAreas';
+import { useSelectCargos, useSelectAreas } from '@/hooks/useSelectLists';
 import type {
   Colaborador,
   ColaboradorFilters,
@@ -124,8 +123,8 @@ export const ColaboradoresSection = () => {
     search: searchTerm || undefined,
   });
   const { data: statsData } = useColaboradoresEstadisticas();
-  const { data: cargosData } = useCargos();
-  const { data: areasData } = useAreas();
+  const { data: cargosData } = useSelectCargos();
+  const { data: areasData } = useSelectAreas();
   const retirarMutation = useRetirarColaborador();
 
   // Stats
@@ -162,9 +161,9 @@ export const ColaboradoresSection = () => {
   // Cargo options for filter
   const cargoOptions = useMemo(() => {
     const options = [{ value: '', label: 'Todos los cargos' }];
-    if (cargosData?.results) {
-      cargosData.results.forEach((c: { id: number; name: string }) => {
-        options.push({ value: String(c.id), label: c.name });
+    if (cargosData) {
+      cargosData.forEach((c) => {
+        options.push({ value: String(c.id), label: c.label });
       });
     }
     return options;
@@ -173,9 +172,9 @@ export const ColaboradoresSection = () => {
   // Area options for filter
   const areaOptions = useMemo(() => {
     const options = [{ value: '', label: 'Todos los procesos' }];
-    if (areasData?.results) {
-      areasData.results.forEach((a: { id: number; name: string }) => {
-        options.push({ value: String(a.id), label: a.name });
+    if (areasData) {
+      areasData.forEach((a) => {
+        options.push({ value: String(a.id), label: a.label });
       });
     }
     return options;

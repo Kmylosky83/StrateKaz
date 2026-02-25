@@ -62,6 +62,8 @@ from .views.select_lists import (
     select_proveedores,
     select_clientes,
     select_users,
+    select_cargos,
+    select_roles,
 )
 
 app_name = 'core'
@@ -135,6 +137,8 @@ urlpatterns = [
     path('select-lists/proveedores/', select_proveedores, name='select-proveedores'),
     path('select-lists/clientes/', select_clientes, name='select-clientes'),
     path('select-lists/users/', select_users, name='select-users'),
+    path('select-lists/cargos/', select_cargos, name='select-cargos'),
+    path('select-lists/roles/', select_roles, name='select-roles'),
 
     # Incluir rutas del router
     path('', include(router.urls)),

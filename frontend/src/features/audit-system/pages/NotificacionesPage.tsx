@@ -50,8 +50,7 @@ import {
   useUpdatePreferencia,
   useCreateNotificacionMasiva,
 } from '../hooks/useNotificaciones';
-import { useCargos, useUsers } from '@/features/users/hooks/useUsers';
-import { useAreas } from '@/features/gestion-estrategica/hooks/useAreas';
+import { useSelectCargos, useSelectUsers, useSelectAreas } from '@/hooks/useSelectLists';
 import { TipoNotificacionModal } from '../components';
 import type { Notificacion, TipoNotificacion } from '../types/notificaciones.types';
 
@@ -951,13 +950,13 @@ function PreferenciasTab() {
  */
 function MasivasTab() {
   const createMasiva = useCreateNotificacionMasiva();
-  const { data: cargosData } = useCargos();
-  const cargos = cargosData?.results || [];
-  const { data: areasData } = useAreas();
-  const { data: usersData } = useUsers({ is_active: true });
+  const { data: cargosData } = useSelectCargos();
+  const cargos = cargosData || [];
+  const { data: areasData } = useSelectAreas();
+  const { data: usersData } = useSelectUsers();
 
-  const areas = areasData?.results || [];
-  const users = usersData?.results || [];
+  const areas = areasData || [];
+  const users = usersData || [];
 
   // Estado para vista previa
   const [showPreview, setShowPreview] = useState(false);
@@ -1052,11 +1051,11 @@ function MasivasTab() {
     if (formData.destinatarios_tipo === 'todos') {
       return 'todos los usuarios';
     } else if (formData.destinatarios_tipo === 'rol' && formData.cargo_id) {
-      const cargo = cargos.find((c: any) => c.id === parseInt(formData.cargo_id));
-      return cargo ? `usuarios con cargo: ${cargo.name}` : 'seleccionar cargo';
+      const cargo = cargos.find((c) => c.id === parseInt(formData.cargo_id));
+      return cargo ? `usuarios con cargo: ${cargo.label}` : 'seleccionar cargo';
     } else if (formData.destinatarios_tipo === 'area' && formData.area_id) {
-      const area = areas.find((a: any) => a.id === parseInt(formData.area_id));
-      return area ? `usuarios del área: ${area.name}` : 'seleccionar área';
+      const area = areas.find((a) => a.id === parseInt(formData.area_id));
+      return area ? `usuarios del área: ${area.label}` : 'seleccionar área';
     } else if (
       formData.destinatarios_tipo === 'usuarios_especificos' &&
       formData.usuarios_ids.length > 0
@@ -1200,9 +1199,9 @@ function MasivasTab() {
                   required
                 >
                   <option value="">Seleccione un cargo</option>
-                  {cargos.map((cargo: any) => (
+                  {cargos.map((cargo) => (
                     <option key={cargo.id} value={cargo.id}>
-                      {cargo.name}
+                      {cargo.label}
                     </option>
                   ))}
                 </select>
@@ -1222,9 +1221,9 @@ function MasivasTab() {
                   required
                 >
                   <option value="">Seleccione un proceso</option>
-                  {areas.map((area: any) => (
+                  {areas.map((area) => (
                     <option key={area.id} value={area.id}>
-                      {area.name}
+                      {area.label}
                     </option>
                   ))}
                 </select>
@@ -1245,12 +1244,9 @@ function MasivasTab() {
                     </p>
                   ) : (
                     <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                      {users.map((user: any) => {
+                      {users.map((user) => {
                         const isSelected = formData.usuarios_ids.includes(user.id);
-                        const displayName =
-                          user.first_name && user.last_name
-                            ? `${user.first_name} ${user.last_name}`
-                            : user.username || user.email;
+                        const displayName = user.label;
 
                         return (
                           <label
@@ -1282,9 +1278,9 @@ function MasivasTab() {
                               <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                                 {displayName}
                               </p>
-                              {user.email && (
+                              {user.extra?.email && (
                                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                  {user.email}
+                                  {user.extra.email}
                                 </p>
                               )}
                             </div>

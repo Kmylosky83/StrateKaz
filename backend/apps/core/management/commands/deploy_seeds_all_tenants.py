@@ -29,6 +29,7 @@ class Command(BaseCommand):
         ('notificaciones', 'seed_notification_types', [], 'Tipos de notificación'),
         ('documentos_th', 'seed_tipos_documento_th', [], 'TipoDocumento + Plantilla para contratos laborales'),
         ('consecutivos', 'seed_consecutivos_sistema', [], 'Consecutivos del sistema (22 códigos base + módulos)'),
+        ('supply_chain', 'seed_supply_chain_catalogs', [], 'Catálogos Supply Chain (tipos proveedor, documentos, departamentos, ciudades)'),
     ]
 
     def add_arguments(self, parser):

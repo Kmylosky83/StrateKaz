@@ -230,12 +230,19 @@ class ExamenMedico(models.Model):
         related_name='examenes',
         verbose_name='Tipo de Examen'
     )
-    colaborador = models.ForeignKey(
-        'colaboradores.Colaborador',
-        on_delete=models.PROTECT,
-        related_name='examenes_medicos',
-        verbose_name='Colaborador',
-        help_text='Colaborador evaluado'
+    # Desacoplado de Talent Hub (Sprint M1 — Modularización)
+    colaborador_id = models.PositiveBigIntegerField(
+        null=True,
+        blank=True,
+        db_index=True,
+        verbose_name='ID Colaborador',
+        help_text='ID del colaborador evaluado (talent_hub.Colaborador)'
+    )
+    colaborador_nombre = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Nombre Colaborador',
+        help_text='Cache: nombre completo del colaborador'
     )
     cargo = models.ForeignKey(
         'core.Cargo',
@@ -402,7 +409,7 @@ class ExamenMedico(models.Model):
         verbose_name_plural = 'Exámenes Médicos'
         ordering = ['-fecha_programada']
         indexes = [
-            models.Index(fields=['empresa_id', 'colaborador']),
+            models.Index(fields=['empresa_id', 'colaborador_id']),
             models.Index(fields=['numero_examen']),
             models.Index(fields=['estado', 'fecha_programada']),
             models.Index(fields=['concepto_aptitud']),
@@ -497,12 +504,19 @@ class RestriccionMedica(models.Model):
         verbose_name='Examen Médico',
         help_text='Examen médico que originó la restricción'
     )
-    colaborador = models.ForeignKey(
-        'colaboradores.Colaborador',
-        on_delete=models.PROTECT,
-        related_name='restricciones_medicas',
-        verbose_name='Colaborador',
-        help_text='Colaborador con restricción'
+    # Desacoplado de Talent Hub (Sprint M1 — Modularización)
+    colaborador_id = models.PositiveBigIntegerField(
+        null=True,
+        blank=True,
+        db_index=True,
+        verbose_name='ID Colaborador',
+        help_text='ID del colaborador con restricción (talent_hub.Colaborador)'
+    )
+    colaborador_nombre = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Nombre Colaborador',
+        help_text='Cache: nombre completo del colaborador'
     )
     cargo = models.ForeignKey(
         'core.Cargo',
@@ -642,7 +656,7 @@ class RestriccionMedica(models.Model):
         verbose_name_plural = 'Restricciones Médicas'
         ordering = ['-fecha_inicio']
         indexes = [
-            models.Index(fields=['empresa_id', 'colaborador']),
+            models.Index(fields=['empresa_id', 'colaborador_id']),
             models.Index(fields=['codigo_restriccion']),
             models.Index(fields=['estado', 'fecha_fin']),
             models.Index(fields=['tipo_restriccion', 'categoria']),
@@ -904,12 +918,19 @@ class CasoVigilancia(models.Model):
         related_name='casos',
         verbose_name='Programa de Vigilancia'
     )
-    colaborador = models.ForeignKey(
-        'colaboradores.Colaborador',
-        on_delete=models.PROTECT,
-        related_name='casos_vigilancia',
-        verbose_name='Colaborador',
-        help_text='Colaborador en seguimiento'
+    # Desacoplado de Talent Hub (Sprint M1 — Modularización)
+    colaborador_id = models.PositiveBigIntegerField(
+        null=True,
+        blank=True,
+        db_index=True,
+        verbose_name='ID Colaborador',
+        help_text='ID del colaborador en seguimiento (talent_hub.Colaborador)'
+    )
+    colaborador_nombre = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Nombre Colaborador',
+        help_text='Cache: nombre completo del colaborador'
     )
     cargo = models.ForeignKey(
         'core.Cargo',
@@ -1048,7 +1069,7 @@ class CasoVigilancia(models.Model):
         verbose_name_plural = 'Casos en Vigilancia'
         ordering = ['-fecha_apertura']
         indexes = [
-            models.Index(fields=['empresa_id', 'colaborador']),
+            models.Index(fields=['empresa_id', 'colaborador_id']),
             models.Index(fields=['numero_caso']),
             models.Index(fields=['programa', 'estado']),
             models.Index(fields=['severidad', 'estado']),

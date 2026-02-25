@@ -25,7 +25,7 @@ class MantenimientoLocativoAdmin(admin.ModelAdmin):
 
     list_display = [
         'codigo', 'tipo', 'ubicacion', 'fecha_solicitud',
-        'fecha_programada', 'responsable', 'proveedor',
+        'fecha_programada', 'responsable', 'proveedor_nombre',
         'costo_estimado', 'costo_real', 'estado_badge'
     ]
     list_filter = ['tipo', 'estado', 'responsable', 'fecha_solicitud']
@@ -47,7 +47,7 @@ class MantenimientoLocativoAdmin(admin.ModelAdmin):
             )
         }),
         ('Responsables', {
-            'fields': ('responsable', 'proveedor')
+            'fields': ('responsable', 'proveedor_id', 'proveedor_nombre')
         }),
         ('Costos', {
             'fields': (
@@ -168,12 +168,12 @@ class ContratoServicioAdmin(admin.ModelAdmin):
     """Admin para ContratoServicio."""
 
     list_display = [
-        'codigo', 'proveedor', 'tipo_servicio', 'fecha_inicio',
+        'codigo', 'proveedor_nombre', 'tipo_servicio', 'fecha_inicio',
         'fecha_fin', 'valor_mensual', 'valor_total',
         'estado_badge', 'alerta_vencimiento'
     ]
     list_filter = ['tipo_servicio', 'estado', 'frecuencia_pago']
-    search_fields = ['codigo', 'proveedor__razon_social', 'objeto']
+    search_fields = ['codigo', 'proveedor_nombre', 'objeto']
     readonly_fields = [
         'codigo', 'dias_para_vencimiento', 'contrato_vigente',
         'contrato_vencido', 'proximo_a_vencer', 'duracion_dias',
@@ -183,7 +183,7 @@ class ContratoServicioAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('Información General', {
-            'fields': ('codigo', 'proveedor', 'tipo_servicio', 'objeto')
+            'fields': ('codigo', 'proveedor_id', 'proveedor_nombre', 'tipo_servicio', 'objeto')
         }),
         ('Vigencia', {
             'fields': (

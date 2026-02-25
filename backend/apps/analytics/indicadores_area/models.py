@@ -188,12 +188,19 @@ class AccionPorKPI(BaseCompanyModel):
         verbose_name='Descripción',
         help_text='Descripción de la acción a tomar'
     )
-    responsable = models.ForeignKey(
-        'colaboradores.Colaborador',
-        on_delete=models.PROTECT,
-        related_name='acciones_kpi',
-        verbose_name='Responsable',
-        help_text='Colaborador responsable de ejecutar la acción'
+    # Desacoplado de Talent Hub (Sprint M1 — Modularización)
+    responsable_id = models.PositiveBigIntegerField(
+        null=True,
+        blank=True,
+        db_index=True,
+        verbose_name='ID Responsable',
+        help_text='ID del colaborador responsable (talent_hub.Colaborador)'
+    )
+    responsable_nombre = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Nombre Responsable',
+        help_text='Cache: nombre completo del responsable'
     )
     fecha_compromiso = models.DateField(
         verbose_name='Fecha Compromiso',
@@ -224,7 +231,7 @@ class AccionPorKPI(BaseCompanyModel):
         ordering = ['fecha_compromiso', 'estado']
         indexes = [
             models.Index(fields=['empresa', 'estado']),
-            models.Index(fields=['responsable', 'estado']),
+            models.Index(fields=['responsable_id', 'estado']),
             models.Index(fields=['fecha_compromiso']),
         ]
 

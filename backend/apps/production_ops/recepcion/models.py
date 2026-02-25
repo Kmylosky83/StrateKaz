@@ -293,22 +293,26 @@ class Recepcion(BaseCompanyModel):
         help_text='Hora en que salió el vehículo de la planta'
     )
 
-    # Relaciones externas
-    proveedor = models.ForeignKey(
-        'gestion_proveedores.Proveedor',
-        on_delete=models.PROTECT,
-        related_name='recepciones_materia_prima',
-        verbose_name='Proveedor',
-        help_text='Proveedor que entrega la materia prima'
-    )
-    programacion = models.ForeignKey(
-        'programacion_abastecimiento.Programacion',
-        on_delete=models.SET_NULL,
+    # Relaciones externas — Desacoplado de Supply Chain (Sprint M1)
+    proveedor_id = models.PositiveBigIntegerField(
         null=True,
         blank=True,
-        related_name='recepciones',
-        verbose_name='Programación asociada',
-        help_text='Programación de abastecimiento asociada (si aplica)'
+        db_index=True,
+        verbose_name='ID Proveedor',
+        help_text='ID del proveedor que entrega la materia prima (supply_chain.Proveedor)'
+    )
+    proveedor_nombre = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Nombre Proveedor',
+        help_text='Cache: nombre comercial del proveedor'
+    )
+    programacion_id = models.PositiveBigIntegerField(
+        null=True,
+        blank=True,
+        db_index=True,
+        verbose_name='ID Programación',
+        help_text='ID de la programación de abastecimiento asociada (supply_chain.Programacion)'
     )
 
     # Configuración de recepción
@@ -409,14 +413,14 @@ class Recepcion(BaseCompanyModel):
         indexes = [
             models.Index(fields=['empresa', 'codigo']),
             models.Index(fields=['empresa', 'fecha']),
-            models.Index(fields=['proveedor', 'fecha']),
+            models.Index(fields=['proveedor_id', 'fecha']),
             models.Index(fields=['estado']),
-            models.Index(fields=['programacion']),
+            models.Index(fields=['programacion_id']),
             models.Index(fields=['is_active']),
         ]
 
     def __str__(self):
-        return f"{self.codigo} - {self.proveedor.nombre_comercial} - {self.fecha}"
+        return f"{self.codigo} - {self.proveedor_nombre or 'N/A'} - {self.fecha}"
 
     @staticmethod
     def generar_codigo(empresa_id):
@@ -506,10 +510,10 @@ class Recepcion(BaseCompanyModel):
         """Validaciones personalizadas."""
         super().clean()
 
-        # Validar que el proveedor esté activo
-        if self.proveedor and not self.proveedor.is_active:
+        # Validar que se tiene proveedor
+        if not self.proveedor_id:
             raise ValidationError({
-                'proveedor': 'El proveedor no está activo'
+                'proveedor_id': 'Debe indicar el proveedor'
             })
 
         # Validar que el punto de recepción pertenezca a la misma empresa
@@ -558,12 +562,19 @@ class DetalleRecepcion(models.Model):
         verbose_name='Recepción'
     )
 
-    # Tipo de materia prima (dinámico desde supply_chain)
-    tipo_materia_prima = models.ForeignKey(
-        'gestion_proveedores.TipoMateriaPrima',
-        on_delete=models.PROTECT,
-        related_name='detalles_recepcion',
-        verbose_name='Tipo de materia prima'
+    # Desacoplado de Supply Chain (Sprint M1 — Modularización)
+    tipo_materia_prima_id = models.PositiveBigIntegerField(
+        null=True,
+        blank=True,
+        db_index=True,
+        verbose_name='ID Tipo Materia Prima',
+        help_text='ID del tipo de materia prima (supply_chain.TipoMateriaPrima)'
+    )
+    tipo_materia_prima_nombre = models.CharField(
+        max_length=150,
+        blank=True,
+        verbose_name='Nombre Tipo Materia Prima',
+        help_text='Cache: nombre del tipo de materia prima'
     )
 
     # Cantidad
@@ -640,12 +651,12 @@ class DetalleRecepcion(models.Model):
         ordering = ['recepcion', 'id']
         indexes = [
             models.Index(fields=['recepcion']),
-            models.Index(fields=['tipo_materia_prima']),
+            models.Index(fields=['tipo_materia_prima_id']),
             models.Index(fields=['lote_asignado']),
         ]
 
     def __str__(self):
-        return f"{self.recepcion.codigo} - {self.tipo_materia_prima.nombre}: {self.cantidad} {self.unidad_medida}"
+        return f"{self.recepcion.codigo} - {self.tipo_materia_prima_nombre or 'N/A'}: {self.cantidad} {self.unidad_medida}"
 
     @property
     def cumple_acidez(self):
@@ -653,8 +664,11 @@ class DetalleRecepcion(models.Model):
         if self.acidez_medida is None:
             return None
 
-        tipo = self.tipo_materia_prima
-        if tipo.acidez_min is not None and tipo.acidez_max is not None:
+        # Lazy load tipo_materia_prima via apps.get_model
+        from django.apps import apps
+        TipoMateriaPrima = apps.get_model('gestion_proveedores', 'TipoMateriaPrima')
+        tipo = TipoMateriaPrima.objects.filter(id=self.tipo_materia_prima_id).first()
+        if tipo and tipo.acidez_min is not None and tipo.acidez_max is not None:
             return tipo.acidez_min <= self.acidez_medida <= tipo.acidez_max
 
         return None
@@ -664,13 +678,13 @@ class DetalleRecepcion(models.Model):
         if not self.lote_asignado:
             from datetime import date
             hoy = date.today()
-            tipo_codigo = self.tipo_materia_prima.codigo[:3].upper()
+            tipo_codigo = (self.tipo_materia_prima_nombre or 'MAT')[:3].upper()
             fecha_str = hoy.strftime('%Y%m%d')
 
             # Buscar último lote del día para este tipo
             ultimo = DetalleRecepcion.objects.filter(
                 lote_asignado__startswith=f"LOTE-{tipo_codigo}-{fecha_str}-",
-                tipo_materia_prima=self.tipo_materia_prima
+                tipo_materia_prima_id=self.tipo_materia_prima_id
             ).order_by('-lote_asignado').first()
 
             if ultimo:

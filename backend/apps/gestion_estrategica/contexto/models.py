@@ -847,16 +847,20 @@ class ParteInteresada(BaseCompanyModel):
     )
 
     # ========================================================================
-    # RESPONSABLE EN LA EMPRESA (NUEVO - Sprint 17) ⭐
+    # RESPONSABLE EN LA EMPRESA — Desacoplado de Talent Hub (Sprint M1)
     # ========================================================================
-    responsable_empresa = models.ForeignKey(
-        'colaboradores.Colaborador',
-        on_delete=models.SET_NULL,
+    responsable_empresa_id = models.PositiveBigIntegerField(
         null=True,
         blank=True,
-        related_name='partes_interesadas_asignadas',
-        verbose_name='Responsable en la Empresa',
-        help_text='Persona responsable de gestionar la relación con esta PI'
+        db_index=True,
+        verbose_name='ID Responsable Empresa',
+        help_text='ID del colaborador responsable (talent_hub.Colaborador)'
+    )
+    responsable_empresa_nombre = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Nombre Responsable',
+        help_text='Cache: nombre completo del responsable'
     )
     cargo_responsable = models.ForeignKey(
         'core.Cargo',
@@ -994,7 +998,7 @@ class ParteInteresada(BaseCompanyModel):
         indexes = [
             models.Index(fields=["empresa", "tipo"]),
             models.Index(fields=["empresa", "nivel_influencia_pi", "nivel_interes"]),  # Actualizado
-            models.Index(fields=["empresa", "responsable_empresa"]),  # NUEVO
+            models.Index(fields=["empresa", "responsable_empresa_id"]),  # Desacoplado Sprint M1
             models.Index(fields=["empresa", "area_responsable"]),  # NUEVO
         ]
 

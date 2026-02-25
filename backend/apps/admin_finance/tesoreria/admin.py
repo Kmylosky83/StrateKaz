@@ -36,10 +36,10 @@ class BancoAdmin(admin.ModelAdmin):
 
 @admin.register(CuentaPorPagar)
 class CuentaPorPagarAdmin(admin.ModelAdmin):
-    list_display = ('codigo', 'concepto', 'proveedor', 'monto_total', 'monto_pagado',
+    list_display = ('codigo', 'concepto', 'proveedor_nombre', 'monto_total', 'monto_pagado',
                     'fecha_vencimiento', 'estado', 'is_active')
     list_filter = ('estado', 'fecha_vencimiento', 'is_active')
-    search_fields = ('codigo', 'concepto', 'proveedor__nombre_comercial')
+    search_fields = ('codigo', 'concepto', 'proveedor_nombre')
     readonly_fields = ('codigo', 'created_at', 'updated_at', 'created_by', 'updated_by')
     date_hierarchy = 'fecha_vencimiento'
     fieldsets = (
@@ -47,7 +47,7 @@ class CuentaPorPagarAdmin(admin.ModelAdmin):
             'fields': ('empresa', 'codigo', 'concepto')
         }),
         ('Origen', {
-            'fields': ('proveedor', 'orden_compra', 'liquidacion_nomina')
+            'fields': ('proveedor_id', 'proveedor_nombre', 'orden_compra_id', 'orden_compra_codigo', 'liquidacion_nomina_id', 'liquidacion_nomina_codigo')
         }),
         ('Montos', {
             'fields': ('monto_total', 'monto_pagado')
@@ -67,10 +67,10 @@ class CuentaPorPagarAdmin(admin.ModelAdmin):
 
 @admin.register(CuentaPorCobrar)
 class CuentaPorCobrarAdmin(admin.ModelAdmin):
-    list_display = ('codigo', 'concepto', 'cliente', 'monto_total', 'monto_cobrado',
+    list_display = ('codigo', 'concepto', 'cliente_nombre', 'monto_total', 'monto_cobrado',
                     'fecha_vencimiento', 'estado', 'is_active')
     list_filter = ('estado', 'fecha_vencimiento', 'is_active')
-    search_fields = ('codigo', 'concepto', 'cliente__razon_social')
+    search_fields = ('codigo', 'concepto', 'cliente_nombre')
     readonly_fields = ('codigo', 'created_at', 'updated_at', 'created_by', 'updated_by')
     date_hierarchy = 'fecha_vencimiento'
     fieldsets = (
@@ -78,7 +78,7 @@ class CuentaPorCobrarAdmin(admin.ModelAdmin):
             'fields': ('empresa', 'codigo', 'concepto')
         }),
         ('Origen', {
-            'fields': ('cliente', 'factura')
+            'fields': ('cliente_id', 'cliente_nombre', 'factura_id', 'factura_codigo')
         }),
         ('Montos', {
             'fields': ('monto_total', 'monto_cobrado')

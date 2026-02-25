@@ -96,18 +96,27 @@ class PuntoRecepcionListSerializer(serializers.ModelSerializer):
 class DetalleRecepcionSerializer(serializers.ModelSerializer):
     """Serializer para Detalle de Recepción."""
 
-    tipo_materia_prima_nombre = serializers.CharField(
-        source='tipo_materia_prima.nombre', read_only=True
-    )
-    tipo_materia_prima_codigo = serializers.CharField(
-        source='tipo_materia_prima.codigo', read_only=True
-    )
+    # tipo_materia_prima_nombre viene del modelo directamente (campo cache — Sprint M1)
+    tipo_materia_prima_codigo = serializers.SerializerMethodField()
     cumple_acidez = serializers.BooleanField(read_only=True)
+
+    def get_tipo_materia_prima_codigo(self, obj):
+        """Lazy load del código del tipo de materia prima."""
+        if not obj.tipo_materia_prima_id:
+            return None
+        try:
+            from django.apps import apps
+            TipoMateriaPrima = apps.get_model('gestion_proveedores', 'TipoMateriaPrima')
+            return TipoMateriaPrima.objects.filter(
+                id=obj.tipo_materia_prima_id
+            ).values_list('codigo', flat=True).first()
+        except LookupError:
+            return None
 
     class Meta:
         model = DetalleRecepcion
         fields = [
-            'id', 'recepcion', 'tipo_materia_prima', 'tipo_materia_prima_nombre',
+            'id', 'recepcion', 'tipo_materia_prima_id', 'tipo_materia_prima_nombre',
             'tipo_materia_prima_codigo', 'cantidad', 'unidad_medida',
             'acidez_medida', 'cumple_acidez', 'temperatura',
             'precio_unitario', 'subtotal', 'lote_asignado', 'observaciones',
@@ -166,9 +175,7 @@ class ControlCalidadRecepcionSerializer(serializers.ModelSerializer):
 class RecepcionListSerializer(serializers.ModelSerializer):
     """Serializer para listado de recepciones (campos resumidos)."""
 
-    proveedor_nombre = serializers.CharField(
-        source='proveedor.nombre_comercial', read_only=True
-    )
+    # proveedor_nombre viene del modelo directamente (campo cache — Sprint M1)
     tipo_recepcion_nombre = serializers.CharField(
         source='tipo_recepcion.nombre', read_only=True
     )
@@ -193,7 +200,7 @@ class RecepcionListSerializer(serializers.ModelSerializer):
         model = Recepcion
         fields = [
             'id', 'codigo', 'fecha', 'hora_llegada', 'hora_salida',
-            'proveedor', 'proveedor_nombre',
+            'proveedor_id', 'proveedor_nombre',
             'tipo_recepcion', 'tipo_recepcion_nombre',
             'punto_recepcion', 'punto_recepcion_nombre',
             'estado', 'estado_nombre', 'estado_color',
@@ -244,24 +251,45 @@ class RecepcionDetailSerializer(serializers.ModelSerializer):
         ]
 
     def get_proveedor_data(self, obj):
-        """Datos básicos del proveedor."""
+        """Datos básicos del proveedor (lazy load — Sprint M1 Modularización)."""
+        if not obj.proveedor_id:
+            return None
+        try:
+            from django.apps import apps
+            Proveedor = apps.get_model('gestion_proveedores', 'Proveedor')
+            proveedor = Proveedor.objects.filter(id=obj.proveedor_id).first()
+            if proveedor:
+                return {
+                    'id': proveedor.id,
+                    'codigo_interno': proveedor.codigo_interno,
+                    'nombre_comercial': proveedor.nombre_comercial,
+                    'nit': proveedor.nit,
+                    'telefono': proveedor.telefono,
+                }
+        except LookupError:
+            pass
         return {
-            'id': obj.proveedor.id,
-            'codigo_interno': obj.proveedor.codigo_interno,
-            'nombre_comercial': obj.proveedor.nombre_comercial,
-            'nit': obj.proveedor.nit,
-            'telefono': obj.proveedor.telefono,
+            'id': obj.proveedor_id,
+            'nombre_comercial': obj.proveedor_nombre,
         }
 
     def get_programacion_data(self, obj):
-        """Datos de programación si existe."""
-        if obj.programacion:
-            return {
-                'id': obj.programacion.id,
-                'codigo': obj.programacion.codigo,
-                'fecha_programada': obj.programacion.fecha_programada,
-            }
-        return None
+        """Datos de programación si existe (lazy load — Sprint M1)."""
+        if not obj.programacion_id:
+            return None
+        try:
+            from django.apps import apps
+            Programacion = apps.get_model('programacion_abastecimiento', 'ProgramacionAbastecimiento')
+            prog = Programacion.objects.filter(id=obj.programacion_id).first()
+            if prog:
+                return {
+                    'id': prog.id,
+                    'codigo': prog.codigo,
+                    'fecha_programada': prog.fecha_programada,
+                }
+        except LookupError:
+            pass
+        return {'id': obj.programacion_id}
 
 
 class RecepcionCreateSerializer(serializers.ModelSerializer):
@@ -285,7 +313,8 @@ class RecepcionCreateSerializer(serializers.ModelSerializer):
         model = Recepcion
         fields = [
             'empresa', 'fecha', 'hora_llegada', 'hora_salida',
-            'proveedor', 'programacion', 'tipo_recepcion', 'punto_recepcion', 'estado',
+            'proveedor_id', 'proveedor_nombre', 'programacion_id',
+            'tipo_recepcion', 'punto_recepcion', 'estado',
             'vehiculo_proveedor', 'conductor_proveedor',
             'peso_bruto', 'peso_tara', 'temperatura_llegada',
             'observaciones', 'recibido_por',
@@ -384,7 +413,7 @@ class RecepcionCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """Crear recepción con detalles y controles."""
-        from apps.supply_chain.gestion_proveedores.models import TipoMateriaPrima
+        from django.apps import apps
 
         detalles_data = validated_data.pop('detalles_data', [])
         controles_data = validated_data.pop('controles_data', [])
@@ -394,14 +423,16 @@ class RecepcionCreateSerializer(serializers.ModelSerializer):
         # Crear recepción
         recepcion = Recepcion.objects.create(**validated_data)
 
-        # Crear detalles
+        # Crear detalles (desacoplado de Supply Chain — Sprint M1)
+        TipoMateriaPrima = apps.get_model('gestion_proveedores', 'TipoMateriaPrima')
         for detalle_info in detalles_data:
             tipo_materia = TipoMateriaPrima.objects.get(
                 id=detalle_info['tipo_materia_prima_id']
             )
             DetalleRecepcion.objects.create(
                 recepcion=recepcion,
-                tipo_materia_prima=tipo_materia,
+                tipo_materia_prima_id=tipo_materia.id,
+                tipo_materia_prima_nombre=tipo_materia.nombre,
                 cantidad=Decimal(str(detalle_info['cantidad'])),
                 unidad_medida=detalle_info.get('unidad_medida', 'KG'),
                 acidez_medida=detalle_info.get('acidez_medida'),

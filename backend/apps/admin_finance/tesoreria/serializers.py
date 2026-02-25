@@ -84,30 +84,16 @@ class CuentaPorPagarSerializer(serializers.ModelSerializer):
     dias_para_vencimiento = serializers.IntegerField(read_only=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
 
-    # Relaciones nested (read only)
-    proveedor_nombre = serializers.CharField(
-        source='proveedor.nombre_comercial',
-        read_only=True,
-        allow_null=True
-    )
-    orden_compra_numero = serializers.CharField(
-        source='orden_compra.numero_orden',
-        read_only=True,
-        allow_null=True
-    )
-    liquidacion_numero = serializers.CharField(
-        source='liquidacion_nomina.id',
-        read_only=True,
-        allow_null=True
-    )
+    # proveedor_nombre, orden_compra_codigo, liquidacion_nomina_codigo
+    # vienen del modelo directamente (campos cache — Sprint M1 Modularización)
 
     class Meta:
         model = CuentaPorPagar
         fields = [
             'id', 'empresa', 'codigo', 'concepto',
-            'proveedor', 'proveedor_nombre',
-            'orden_compra', 'orden_compra_numero',
-            'liquidacion_nomina', 'liquidacion_numero',
+            'proveedor_id', 'proveedor_nombre',
+            'orden_compra_id', 'orden_compra_codigo',
+            'liquidacion_nomina_id', 'liquidacion_nomina_codigo',
             'monto_total', 'monto_pagado', 'saldo_pendiente',
             'fecha_documento', 'fecha_vencimiento', 'dias_para_vencimiento',
             'estado', 'estado_display', 'esta_vencida', 'observaciones',
@@ -121,7 +107,7 @@ class CuentaPorPagarSerializer(serializers.ModelSerializer):
     def validate(self, data):
         """Validaciones generales."""
         # Validar que al menos uno de los orígenes esté presente
-        if not any([data.get('proveedor'), data.get('orden_compra'), data.get('liquidacion_nomina')]):
+        if not any([data.get('proveedor_id'), data.get('orden_compra_id'), data.get('liquidacion_nomina_id')]):
             raise serializers.ValidationError(
                 'Debe especificar al menos un origen (proveedor, orden de compra o liquidación de nómina).'
             )
@@ -149,11 +135,7 @@ class CuentaPorPagarListSerializer(serializers.ModelSerializer):
     saldo_pendiente = serializers.DecimalField(max_digits=15, decimal_places=2, read_only=True)
     dias_para_vencimiento = serializers.IntegerField(read_only=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
-    proveedor_nombre = serializers.CharField(
-        source='proveedor.nombre_comercial',
-        read_only=True,
-        allow_null=True
-    )
+    # proveedor_nombre viene del modelo directamente (campo cache)
 
     class Meta:
         model = CuentaPorPagar
@@ -181,24 +163,14 @@ class CuentaPorCobrarSerializer(serializers.ModelSerializer):
     dias_para_vencimiento = serializers.IntegerField(read_only=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
 
-    # Relaciones nested (read only)
-    cliente_nombre = serializers.CharField(
-        source='cliente.razon_social',
-        read_only=True,
-        allow_null=True
-    )
-    factura_numero = serializers.CharField(
-        source='factura.numero_factura',
-        read_only=True,
-        allow_null=True
-    )
+    # cliente_nombre, factura_codigo vienen del modelo directamente (campos cache — Sprint M1)
 
     class Meta:
         model = CuentaPorCobrar
         fields = [
             'id', 'empresa', 'codigo', 'concepto',
-            'cliente', 'cliente_nombre',
-            'factura', 'factura_numero',
+            'cliente_id', 'cliente_nombre',
+            'factura_id', 'factura_codigo',
             'monto_total', 'monto_cobrado', 'saldo_pendiente',
             'fecha_documento', 'fecha_vencimiento', 'dias_para_vencimiento',
             'estado', 'estado_display', 'esta_vencida', 'observaciones',
@@ -212,7 +184,7 @@ class CuentaPorCobrarSerializer(serializers.ModelSerializer):
     def validate(self, data):
         """Validaciones generales."""
         # Validar que al menos uno de los orígenes esté presente
-        if not any([data.get('cliente'), data.get('factura')]):
+        if not any([data.get('cliente_id'), data.get('factura_id')]):
             raise serializers.ValidationError(
                 'Debe especificar al menos un origen (cliente o factura).'
             )
@@ -240,11 +212,7 @@ class CuentaPorCobrarListSerializer(serializers.ModelSerializer):
     saldo_pendiente = serializers.DecimalField(max_digits=15, decimal_places=2, read_only=True)
     dias_para_vencimiento = serializers.IntegerField(read_only=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
-    cliente_nombre = serializers.CharField(
-        source='cliente.razon_social',
-        read_only=True,
-        allow_null=True
-    )
+    # cliente_nombre viene del modelo directamente (campo cache)
 
     class Meta:
         model = CuentaPorCobrar
@@ -361,7 +329,7 @@ class PagoSerializer(serializers.ModelSerializer):
         read_only=True
     )
     proveedor_nombre = serializers.CharField(
-        source='cuenta_por_pagar.proveedor.nombre_comercial',
+        source='cuenta_por_pagar.proveedor_nombre',
         read_only=True,
         allow_null=True
     )
@@ -410,7 +378,7 @@ class PagoListSerializer(serializers.ModelSerializer):
     metodo_pago_display = serializers.CharField(source='get_metodo_pago_display', read_only=True)
     cuenta_concepto = serializers.CharField(source='cuenta_por_pagar.concepto', read_only=True)
     proveedor_nombre = serializers.CharField(
-        source='cuenta_por_pagar.proveedor.nombre_comercial',
+        source='cuenta_por_pagar.proveedor_nombre',
         read_only=True,
         allow_null=True
     )
@@ -447,7 +415,7 @@ class RecaudoSerializer(serializers.ModelSerializer):
         read_only=True
     )
     cliente_nombre = serializers.CharField(
-        source='cuenta_por_cobrar.cliente.razon_social',
+        source='cuenta_por_cobrar.cliente_nombre',
         read_only=True,
         allow_null=True
     )
@@ -488,7 +456,7 @@ class RecaudoListSerializer(serializers.ModelSerializer):
     metodo_pago_display = serializers.CharField(source='get_metodo_pago_display', read_only=True)
     cuenta_concepto = serializers.CharField(source='cuenta_por_cobrar.concepto', read_only=True)
     cliente_nombre = serializers.CharField(
-        source='cuenta_por_cobrar.cliente.razon_social',
+        source='cuenta_por_cobrar.cliente_nombre',
         read_only=True,
         allow_null=True
     )

@@ -49,11 +49,7 @@ class MantenimientoLocativoSerializer(serializers.ModelSerializer):
         source='responsable.get_full_name',
         read_only=True
     )
-    proveedor_nombre = serializers.CharField(
-        source='proveedor.razon_social',
-        read_only=True,
-        allow_null=True
-    )
+    # proveedor_nombre viene del modelo directamente (campo cache — Sprint M1)
     empresa_nombre = serializers.CharField(
         source='empresa.razon_social',
         read_only=True
@@ -75,7 +71,7 @@ class MantenimientoLocativoSerializer(serializers.ModelSerializer):
             'id', 'codigo', 'tipo', 'tipo_display', 'ubicacion',
             'descripcion_trabajo', 'fecha_solicitud', 'fecha_programada',
             'fecha_ejecucion', 'responsable', 'responsable_nombre',
-            'proveedor', 'proveedor_nombre', 'costo_estimado', 'costo_real',
+            'proveedor_id', 'proveedor_nombre', 'costo_estimado', 'costo_real',
             'variacion_costo', 'porcentaje_variacion', 'estado',
             'estado_display', 'observaciones', 'dias_hasta_programacion',
             'empresa', 'empresa_nombre', 'created_at', 'updated_at',
@@ -122,11 +118,7 @@ class MantenimientoLocativoListSerializer(serializers.ModelSerializer):
         source='responsable.get_full_name',
         read_only=True
     )
-    proveedor_nombre = serializers.CharField(
-        source='proveedor.razon_social',
-        read_only=True,
-        allow_null=True
-    )
+    # proveedor_nombre viene del modelo directamente (campo cache)
     tipo_display = serializers.CharField(
         source='get_tipo_display',
         read_only=True
@@ -263,17 +255,9 @@ class ContratoServicioSerializer(serializers.ModelSerializer):
     proximo_a_vencer = serializers.BooleanField(read_only=True)
     duracion_dias = serializers.IntegerField(read_only=True)
 
-    # Campos relacionados
-    proveedor_nombre = serializers.CharField(
-        source='proveedor.razon_social',
-        read_only=True,
-        allow_null=True
-    )
-    proveedor_nit = serializers.CharField(
-        source='proveedor.nit',
-        read_only=True,
-        allow_null=True
-    )
+    # proveedor_nombre viene del modelo directamente (campo cache — Sprint M1)
+    # proveedor_nit se resuelve vía lazy load (opcional)
+    proveedor_nit = serializers.SerializerMethodField()
     empresa_nombre = serializers.CharField(
         source='empresa.razon_social',
         read_only=True
@@ -293,10 +277,23 @@ class ContratoServicioSerializer(serializers.ModelSerializer):
         read_only=True
     )
 
+    def get_proveedor_nit(self, obj):
+        """Lazy load del NIT del proveedor."""
+        if not obj.proveedor_id:
+            return None
+        try:
+            from django.apps import apps
+            Proveedor = apps.get_model('gestion_proveedores', 'Proveedor')
+            return Proveedor.objects.filter(
+                id=obj.proveedor_id
+            ).values_list('nit', flat=True).first()
+        except LookupError:
+            return None
+
     class Meta:
         model = ContratoServicio
         fields = [
-            'id', 'codigo', 'proveedor', 'proveedor_nombre', 'proveedor_nit',
+            'id', 'codigo', 'proveedor_id', 'proveedor_nombre', 'proveedor_nit',
             'tipo_servicio', 'tipo_servicio_display', 'objeto',
             'fecha_inicio', 'fecha_fin', 'valor_mensual', 'valor_total',
             'frecuencia_pago', 'frecuencia_pago_display', 'estado',
@@ -340,11 +337,7 @@ class ContratoServicioSerializer(serializers.ModelSerializer):
 class ContratoServicioListSerializer(serializers.ModelSerializer):
     """Serializer simplificado para listado."""
 
-    proveedor_nombre = serializers.CharField(
-        source='proveedor.razon_social',
-        read_only=True,
-        allow_null=True
-    )
+    # proveedor_nombre viene del modelo directamente (campo cache)
     tipo_servicio_display = serializers.CharField(
         source='get_tipo_servicio_display',
         read_only=True

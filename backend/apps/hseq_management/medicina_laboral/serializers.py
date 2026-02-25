@@ -58,13 +58,13 @@ class ExamenMedicoSerializer(serializers.ModelSerializer):
     tipo_examen_nombre = serializers.CharField(source='tipo_examen.nombre', read_only=True)
     concepto_aptitud_display = serializers.CharField(source='get_concepto_aptitud_display', read_only=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
-    colaborador_nombre = serializers.CharField(source='colaborador.__str__', read_only=True)
+    # colaborador_nombre viene del modelo directamente (campo cache)
 
     class Meta:
         model = ExamenMedico
         fields = [
             'id', 'empresa_id', 'numero_examen', 'tipo_examen', 'tipo_examen_nombre',
-            'colaborador', 'colaborador_nombre', 'cargo', 'fecha_programada', 'fecha_realizado',
+            'colaborador_id', 'colaborador_nombre', 'cargo', 'fecha_programada', 'fecha_realizado',
             'entidad_prestadora', 'medico_evaluador', 'licencia_medica',
             'concepto_aptitud', 'concepto_aptitud_display', 'hallazgos_relevantes',
             'recomendaciones', 'diagnosticos', 'requiere_restricciones',
@@ -94,12 +94,12 @@ class ExamenMedicoListSerializer(serializers.ModelSerializer):
     tipo_examen_nombre = serializers.CharField(source='tipo_examen.nombre', read_only=True)
     concepto_aptitud_display = serializers.CharField(source='get_concepto_aptitud_display', read_only=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
-    colaborador_nombre = serializers.CharField(source='colaborador.__str__', read_only=True)
+    # colaborador_nombre viene del modelo directamente (campo cache)
 
     class Meta:
         model = ExamenMedico
         fields = [
-            'id', 'numero_examen', 'tipo_examen_nombre', 'colaborador',
+            'id', 'numero_examen', 'tipo_examen_nombre', 'colaborador_id',
             'colaborador_nombre', 'fecha_programada', 'fecha_realizado',
             'concepto_aptitud', 'concepto_aptitud_display', 'estado', 'estado_display'
         ]
@@ -112,13 +112,13 @@ class RestriccionMedicaSerializer(serializers.ModelSerializer):
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     esta_vigente = serializers.ReadOnlyField()
     examen_medico_numero = serializers.CharField(source='examen_medico.numero_examen', read_only=True)
-    colaborador_nombre = serializers.CharField(source='colaborador.__str__', read_only=True)
+    # colaborador_nombre viene del modelo directamente (campo cache)
 
     class Meta:
         model = RestriccionMedica
         fields = [
             'id', 'empresa_id', 'codigo_restriccion', 'examen_medico',
-            'examen_medico_numero', 'colaborador', 'colaborador_nombre', 'cargo',
+            'examen_medico_numero', 'colaborador_id', 'colaborador_nombre', 'cargo',
             'tipo_restriccion', 'tipo_restriccion_display', 'categoria',
             'categoria_display', 'descripcion', 'actividades_restringidas',
             'fecha_inicio', 'fecha_fin', 'medico_ordena', 'licencia_medica',
@@ -150,12 +150,12 @@ class RestriccionMedicaListSerializer(serializers.ModelSerializer):
     categoria_display = serializers.CharField(source='get_categoria_display', read_only=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
     esta_vigente = serializers.ReadOnlyField()
-    colaborador_nombre = serializers.CharField(source='colaborador.__str__', read_only=True)
+    # colaborador_nombre viene del modelo directamente (campo cache)
 
     class Meta:
         model = RestriccionMedica
         fields = [
-            'id', 'codigo_restriccion', 'colaborador', 'colaborador_nombre',
+            'id', 'codigo_restriccion', 'colaborador_id', 'colaborador_nombre',
             'tipo_restriccion', 'tipo_restriccion_display', 'categoria',
             'categoria_display', 'fecha_inicio', 'fecha_fin', 'estado',
             'estado_display', 'esta_vigente'
@@ -203,13 +203,13 @@ class CasoVigilanciaSerializer(serializers.ModelSerializer):
     programa_tipo = serializers.CharField(source='programa.tipo', read_only=True)
     severidad_display = serializers.CharField(source='get_severidad_display', read_only=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
-    colaborador_nombre = serializers.CharField(source='colaborador.__str__', read_only=True)
+    # colaborador_nombre viene del modelo directamente (campo cache)
 
     class Meta:
         model = CasoVigilancia
         fields = [
             'id', 'empresa_id', 'numero_caso', 'programa', 'programa_nombre',
-            'programa_tipo', 'colaborador', 'colaborador_nombre', 'cargo',
+            'programa_tipo', 'colaborador_id', 'colaborador_nombre', 'cargo',
             'fecha_apertura', 'descripcion_caso', 'severidad', 'severidad_display',
             'diagnosticos_cie10', 'factores_riesgo_identificados',
             'exposicion_laboral', 'plan_intervencion', 'acciones_implementadas',
@@ -226,12 +226,12 @@ class CasoVigilanciaListSerializer(serializers.ModelSerializer):
     programa_nombre = serializers.CharField(source='programa.nombre', read_only=True)
     severidad_display = serializers.CharField(source='get_severidad_display', read_only=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
-    colaborador_nombre = serializers.CharField(source='colaborador.__str__', read_only=True)
+    # colaborador_nombre viene del modelo directamente (campo cache)
 
     class Meta:
         model = CasoVigilancia
         fields = [
-            'id', 'numero_caso', 'programa_nombre', 'colaborador',
+            'id', 'numero_caso', 'programa_nombre', 'colaborador_id',
             'colaborador_nombre', 'fecha_apertura', 'severidad',
             'severidad_display', 'estado', 'estado_display',
             'fecha_proximo_seguimiento'

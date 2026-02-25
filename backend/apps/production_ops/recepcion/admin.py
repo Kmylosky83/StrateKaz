@@ -159,9 +159,8 @@ class DetalleRecepcionInline(admin.TabularInline):
     model = DetalleRecepcion
     extra = 0
     readonly_fields = ['subtotal', 'cumple_acidez', 'created_at']
-    raw_id_fields = ['tipo_materia_prima']
     fields = [
-        'tipo_materia_prima', 'cantidad', 'unidad_medida',
+        'tipo_materia_prima_id', 'tipo_materia_prima_nombre', 'cantidad', 'unidad_medida',
         'acidez_medida', 'cumple_acidez', 'temperatura',
         'precio_unitario', 'subtotal', 'lote_asignado', 'observaciones'
     ]
@@ -216,7 +215,7 @@ class ControlCalidadRecepcionInline(admin.TabularInline):
 class RecepcionAdmin(admin.ModelAdmin):
     """Admin para Recepciones de Materia Prima."""
     list_display = [
-        'codigo', 'fecha', 'proveedor', 'tipo_recepcion', 'estado_badge',
+        'codigo', 'fecha', 'proveedor_nombre', 'tipo_recepcion', 'estado_badge',
         'peso_neto', 'tiene_detalles_badge', 'recibido_por', 'created_at'
     ]
     list_filter = [
@@ -224,13 +223,13 @@ class RecepcionAdmin(admin.ModelAdmin):
         'is_active', 'created_at'
     ]
     search_fields = [
-        'codigo', 'proveedor__nombre_comercial', 'proveedor__nit',
+        'codigo', 'proveedor_nombre',
         'vehiculo_proveedor', 'conductor_proveedor'
     ]
     ordering = ['-fecha', '-created_at']
     date_hierarchy = 'fecha'
     raw_id_fields = [
-        'empresa', 'proveedor', 'programacion', 'recibido_por',
+        'empresa', 'recibido_por',
         'created_by', 'updated_by'
     ]
     readonly_fields = [
@@ -250,7 +249,7 @@ class RecepcionAdmin(admin.ModelAdmin):
             )
         }),
         ('Proveedor y Programación', {
-            'fields': ('proveedor', 'programacion')
+            'fields': ('proveedor_id', 'proveedor_nombre', 'programacion_id')
         }),
         ('Configuración de Recepción', {
             'fields': ('tipo_recepcion', 'punto_recepcion', 'estado')
@@ -316,8 +315,8 @@ class RecepcionAdmin(admin.ModelAdmin):
         """Optimizar consultas."""
         queryset = super().get_queryset(request)
         return queryset.select_related(
-            'empresa', 'proveedor', 'tipo_recepcion',
-            'punto_recepcion', 'estado', 'programacion',
+            'empresa', 'tipo_recepcion',
+            'punto_recepcion', 'estado',
             'recibido_por', 'created_by'
         ).prefetch_related('detalles', 'controles_calidad')
 
@@ -330,21 +329,20 @@ class RecepcionAdmin(admin.ModelAdmin):
 class DetalleRecepcionAdmin(admin.ModelAdmin):
     """Admin para Detalles de Recepción."""
     list_display = [
-        'recepcion_codigo', 'tipo_materia_prima', 'cantidad', 'unidad_medida',
+        'recepcion_codigo', 'tipo_materia_prima_nombre', 'cantidad', 'unidad_medida',
         'acidez_medida', 'cumple_acidez_badge', 'precio_unitario',
         'subtotal', 'lote_asignado', 'created_at'
     ]
     list_filter = [
-        'tipo_materia_prima__categoria', 'tipo_materia_prima',
         'unidad_medida', 'created_at'
     ]
     search_fields = [
-        'recepcion__codigo', 'tipo_materia_prima__nombre',
+        'recepcion__codigo', 'tipo_materia_prima_nombre',
         'lote_asignado', 'observaciones'
     ]
     ordering = ['-created_at']
     date_hierarchy = 'created_at'
-    raw_id_fields = ['recepcion', 'tipo_materia_prima']
+    raw_id_fields = ['recepcion']
     readonly_fields = ['subtotal', 'cumple_acidez', 'created_at', 'updated_at']
 
     fieldsets = (
@@ -352,7 +350,7 @@ class DetalleRecepcionAdmin(admin.ModelAdmin):
             'fields': ('recepcion',)
         }),
         ('Materia Prima', {
-            'fields': ('tipo_materia_prima', 'cantidad', 'unidad_medida')
+            'fields': ('tipo_materia_prima_id', 'tipo_materia_prima_nombre', 'cantidad', 'unidad_medida')
         }),
         ('Controles de Calidad', {
             'fields': ('acidez_medida', 'cumple_acidez', 'temperatura')
@@ -401,7 +399,7 @@ class DetalleRecepcionAdmin(admin.ModelAdmin):
         """Optimizar consultas."""
         queryset = super().get_queryset(request)
         return queryset.select_related(
-            'recepcion', 'tipo_materia_prima', 'tipo_materia_prima__categoria'
+            'recepcion'
         )
 
 
@@ -418,7 +416,7 @@ class ControlCalidadRecepcionAdmin(admin.ModelAdmin):
     ]
     list_filter = ['cumple', 'parametro', 'fecha_verificacion', 'created_at']
     search_fields = [
-        'recepcion__codigo', 'recepcion__proveedor__nombre_comercial',
+        'recepcion__codigo', 'recepcion__proveedor_nombre',
         'parametro', 'valor_esperado', 'valor_obtenido', 'observaciones'
     ]
     ordering = ['-fecha_verificacion']
@@ -478,5 +476,5 @@ class ControlCalidadRecepcionAdmin(admin.ModelAdmin):
         """Optimizar consultas."""
         queryset = super().get_queryset(request)
         return queryset.select_related(
-            'recepcion', 'recepcion__proveedor', 'verificado_por'
+            'recepcion', 'verificado_por'
         )

@@ -150,14 +150,19 @@ class MantenimientoLocativo(BaseCompanyModel):
         verbose_name='Responsable',
         help_text='Usuario responsable del seguimiento'
     )
-    proveedor = models.ForeignKey(
-        'gestion_proveedores.Proveedor',
-        on_delete=models.PROTECT,
+    # Desacoplado de Supply Chain (Sprint M1 — Modularización)
+    proveedor_id = models.PositiveBigIntegerField(
         null=True,
         blank=True,
-        related_name='mantenimientos_locativos',
-        verbose_name='Proveedor',
-        help_text='Proveedor que realiza el trabajo (si aplica)'
+        db_index=True,
+        verbose_name='ID Proveedor',
+        help_text='ID del proveedor que realiza el trabajo (supply_chain.Proveedor)'
+    )
+    proveedor_nombre = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Nombre Proveedor',
+        help_text='Cache: razón social del proveedor'
     )
 
     # Costos
@@ -475,15 +480,19 @@ class ContratoServicio(BaseCompanyModel):
         help_text='Código único del contrato (auto-generado: CS-YYYY-####)'
     )
 
-    # Proveedor
-    proveedor = models.ForeignKey(
-        'gestion_proveedores.Proveedor',
-        on_delete=models.PROTECT,
+    # Desacoplado de Supply Chain (Sprint M1 — Modularización)
+    proveedor_id = models.PositiveBigIntegerField(
         null=True,
         blank=True,
-        related_name='contratos_servicio',
-        verbose_name='Proveedor',
-        help_text='Proveedor del servicio'
+        db_index=True,
+        verbose_name='ID Proveedor',
+        help_text='ID del proveedor del servicio (supply_chain.Proveedor)'
+    )
+    proveedor_nombre = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Nombre Proveedor',
+        help_text='Cache: razón social del proveedor'
     )
 
     # Tipo de servicio
@@ -560,13 +569,13 @@ class ContratoServicio(BaseCompanyModel):
             models.Index(fields=['empresa', 'estado']),
             models.Index(fields=['codigo']),
             models.Index(fields=['tipo_servicio', 'estado']),
-            models.Index(fields=['proveedor', 'estado']),
+            models.Index(fields=['proveedor_id', 'estado']),
             models.Index(fields=['fecha_inicio', 'fecha_fin']),
         ]
 
     def __str__(self):
-        proveedor_nombre = self.proveedor.razon_social if self.proveedor else 'Sin proveedor'
-        return f"{self.codigo} - {self.get_tipo_servicio_display()} - {proveedor_nombre}"
+        nombre = self.proveedor_nombre or 'Sin proveedor'
+        return f"{self.codigo} - {self.get_tipo_servicio_display()} - {nombre}"
 
     @property
     def dias_para_vencimiento(self):

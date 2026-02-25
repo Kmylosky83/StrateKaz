@@ -16,7 +16,7 @@ class ValorKPIAdmin(admin.ModelAdmin):
 
 @admin.register(AccionPorKPI)
 class AccionPorKPIAdmin(admin.ModelAdmin):
-    list_display = ['valor_kpi', 'tipo_accion', 'responsable', 'fecha_compromiso', 'estado', 'esta_vencida']
+    list_display = ['valor_kpi', 'tipo_accion', 'responsable_nombre', 'fecha_compromiso', 'estado', 'esta_vencida']
     list_filter = ['estado', 'tipo_accion', 'is_active']
     search_fields = ['descripcion', 'valor_kpi__kpi__codigo']
     ordering = ['fecha_compromiso']

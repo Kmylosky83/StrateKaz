@@ -370,12 +370,7 @@ class ParteInteresadaSerializer(serializers.ModelSerializer):
     canal_principal_display = serializers.CharField(source='get_canal_principal_display', read_only=True)
     frecuencia_comunicacion_display = serializers.CharField(source='get_frecuencia_comunicacion_display', read_only=True)
 
-    # Responsables en la empresa (Sprint 17 - NUEVO)
-    responsable_empresa_nombre = serializers.CharField(
-        source='responsable_empresa.usuario.get_full_name',
-        read_only=True,
-        allow_null=True
-    )
+    # responsable_empresa_nombre viene del modelo directamente (campo cache — Sprint M1)
     cargo_responsable_nombre = serializers.CharField(
         source='cargo_responsable.name',
         read_only=True,
@@ -407,7 +402,7 @@ class ParteInteresadaSerializer(serializers.ModelSerializer):
             'representante', 'cargo_representante',
             'telefono', 'email', 'direccion', 'sitio_web',
             # Responsables en la Empresa (NUEVO - Sprint 17)
-            'responsable_empresa', 'responsable_empresa_nombre',
+            'responsable_empresa_id', 'responsable_empresa_nombre',
             'cargo_responsable', 'cargo_responsable_nombre',
             'area_responsable', 'area_responsable_nombre',
             # Matriz poder-interés (MEJORADO - Sprint 17)

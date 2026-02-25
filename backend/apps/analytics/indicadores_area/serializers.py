@@ -30,14 +30,14 @@ class ValorKPISerializer(serializers.ModelSerializer):
 class AccionPorKPISerializer(serializers.ModelSerializer):
     """Serializer para AccionPorKPI"""
     valor_kpi_info = serializers.SerializerMethodField()
-    responsable_nombre = serializers.CharField(source='responsable.nombre_completo', read_only=True)
+    # responsable_nombre viene del modelo directamente (campo cache — Sprint M1)
     esta_vencida = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = AccionPorKPI
         fields = [
             'id', 'valor_kpi', 'valor_kpi_info', 'tipo_accion',
-            'accion_correctiva', 'descripcion', 'responsable',
+            'accion_correctiva_id', 'descripcion', 'responsable_id',
             'responsable_nombre', 'fecha_compromiso', 'estado',
             'fecha_cierre', 'efectividad', 'esta_vencida',
             'is_active', 'empresa', 'created_at', 'updated_at'

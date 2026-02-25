@@ -206,33 +206,48 @@ class CuentaPorPagar(BaseCompanyModel):
     - Otros pasivos
     """
 
-    # Relaciones opcionales (origen de la obligación)
-    proveedor = models.ForeignKey(
-        'gestion_proveedores.Proveedor',
-        on_delete=models.PROTECT,
+    # Relaciones desacopladas (Sprint M1 — Modularización)
+    # Origen: supply_chain.gestion_proveedores.Proveedor
+    proveedor_id = models.PositiveBigIntegerField(
         null=True,
         blank=True,
-        related_name='cuentas_por_pagar',
-        verbose_name='Proveedor',
-        help_text='Proveedor al que se debe pagar (si aplica)'
+        db_index=True,
+        verbose_name='ID Proveedor',
+        help_text='ID del proveedor al que se debe pagar (supply_chain.Proveedor)'
     )
-    orden_compra = models.ForeignKey(
-        'compras.OrdenCompra',
-        on_delete=models.SET_NULL,
-        null=True,
+    proveedor_nombre = models.CharField(
+        max_length=200,
         blank=True,
-        related_name='cuentas_por_pagar',
-        verbose_name='Orden de Compra',
-        help_text='Orden de compra que origina el pago'
+        verbose_name='Nombre Proveedor',
+        help_text='Cache: razón social del proveedor'
     )
-    liquidacion_nomina = models.ForeignKey(
-        'nomina.LiquidacionNomina',
-        on_delete=models.SET_NULL,
+    # Origen: supply_chain.compras.OrdenCompra
+    orden_compra_id = models.PositiveBigIntegerField(
         null=True,
         blank=True,
-        related_name='cuentas_por_pagar',
-        verbose_name='Liquidación de Nómina',
-        help_text='Liquidación de nómina que origina el pago'
+        db_index=True,
+        verbose_name='ID Orden de Compra',
+        help_text='ID de la orden de compra que origina el pago (supply_chain.OrdenCompra)'
+    )
+    orden_compra_codigo = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name='Código Orden de Compra',
+        help_text='Cache: código de la orden de compra'
+    )
+    # Origen: talent_hub.nomina.LiquidacionNomina
+    liquidacion_nomina_id = models.PositiveBigIntegerField(
+        null=True,
+        blank=True,
+        db_index=True,
+        verbose_name='ID Liquidación de Nómina',
+        help_text='ID de la liquidación de nómina que origina el pago (talent_hub.LiquidacionNomina)'
+    )
+    liquidacion_nomina_codigo = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name='Código Liquidación',
+        help_text='Cache: código de la liquidación de nómina'
     )
 
     # Información de la cuenta
@@ -300,7 +315,7 @@ class CuentaPorPagar(BaseCompanyModel):
         indexes = [
             models.Index(fields=['empresa', 'estado']),
             models.Index(fields=['codigo']),
-            models.Index(fields=['proveedor', 'estado']),
+            models.Index(fields=['proveedor_id', 'estado']),
             models.Index(fields=['fecha_vencimiento']),
         ]
 
@@ -386,24 +401,34 @@ class CuentaPorCobrar(BaseCompanyModel):
     - Otros derechos de cobro
     """
 
-    # Relaciones opcionales (origen del cobro)
-    cliente = models.ForeignKey(
-        'gestion_clientes.Cliente',
-        on_delete=models.PROTECT,
+    # Relaciones desacopladas (Sprint M1 — Modularización)
+    # Origen: sales_crm.gestion_clientes.Cliente
+    cliente_id = models.PositiveBigIntegerField(
         null=True,
         blank=True,
-        related_name='cuentas_por_cobrar',
-        verbose_name='Cliente',
-        help_text='Cliente que debe pagar'
+        db_index=True,
+        verbose_name='ID Cliente',
+        help_text='ID del cliente que debe pagar (sales_crm.Cliente)'
     )
-    factura = models.ForeignKey(
-        'pedidos_facturacion.Factura',
-        on_delete=models.SET_NULL,
+    cliente_nombre = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name='Nombre Cliente',
+        help_text='Cache: razón social del cliente'
+    )
+    # Origen: sales_crm.pedidos_facturacion.Factura
+    factura_id = models.PositiveBigIntegerField(
         null=True,
         blank=True,
-        related_name='cuentas_por_cobrar',
-        verbose_name='Factura',
-        help_text='Factura que origina el cobro'
+        db_index=True,
+        verbose_name='ID Factura',
+        help_text='ID de la factura que origina el cobro (sales_crm.Factura)'
+    )
+    factura_codigo = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name='Código Factura',
+        help_text='Cache: código/número de la factura'
     )
 
     # Información de la cuenta
@@ -471,7 +496,7 @@ class CuentaPorCobrar(BaseCompanyModel):
         indexes = [
             models.Index(fields=['empresa', 'estado']),
             models.Index(fields=['codigo']),
-            models.Index(fields=['cliente', 'estado']),
+            models.Index(fields=['cliente_id', 'estado']),
             models.Index(fields=['fecha_vencimiento']),
         ]
 

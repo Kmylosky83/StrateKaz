@@ -31,6 +31,9 @@ import { withSuspense } from './helpers';
 import { adminGlobalRoutes } from './modules/admin-global.routes';
 import { perfilRoutes } from './modules/perfil.routes';
 import { portalsRoutes } from './modules/portals.routes';
+import { fundacionRoutes } from './modules/fundacion.routes';
+import { planeacionEstrategicaRoutes } from './modules/planeacion-estrategica.routes';
+import { revisionDireccionRoutes } from './modules/revision-direccion.routes';
 import { gestionEstrategicaRoutes } from './modules/gestion-estrategica.routes';
 import { sistemaGestionRoutes } from './modules/sistema-gestion.routes';
 import { talentHubRoutes } from './modules/talent-hub.routes';
@@ -86,11 +89,12 @@ export const AppRoutes = () => {
           {perfilRoutes}
           {portalsRoutes}
 
-          {/* C1 + C2 — Gestion Estrategica (Fundacion + Planeacion) */}
-          {gestionEstrategicaRoutes}
-          {sistemaGestionRoutes}
+          {/* C1 — Fundacion */}
+          {fundacionRoutes}
 
           {/* C2 — Modulos de Negocio (independientes) */}
+          {planeacionEstrategicaRoutes}
+          {sistemaGestionRoutes}
           {talentHubRoutes}
           {cumplimientoRoutes}
           {riesgosRoutes}
@@ -105,7 +109,11 @@ export const AppRoutes = () => {
 
           {/* C3 — Inteligencia */}
           {analyticsRoutes}
+          {revisionDireccionRoutes}
           {auditSystemRoutes}
+
+          {/* Legacy redirects (gestion-estrategica → nuevas rutas) */}
+          {gestionEstrategicaRoutes}
         </Route>
       </Route>
 

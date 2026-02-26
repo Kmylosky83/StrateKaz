@@ -12,7 +12,7 @@ import { Circle, MoreHorizontal, Check } from 'lucide-react';
 import { getIconComponent as getDynamicIcon } from '@/components/common/DynamicIcon';
 import { useIsMobile } from '@/hooks/useResponsive';
 import { cn } from '@/utils/cn';
-import type { TabSection } from '@/features/gestion-estrategica/types/modules.types';
+import type { TabSection } from '@/hooks/useModules';
 
 type ModuleColor =
   | 'purple'

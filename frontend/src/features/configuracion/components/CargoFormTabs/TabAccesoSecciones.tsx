@@ -33,13 +33,9 @@ import { Alert } from '@/components/common/Alert';
 import { Button } from '@/components/common/Button';
 import { Spinner } from '@/components/common/Spinner';
 import { cn } from '@/utils/cn';
-import { useModulesTree } from '@/features/gestion-estrategica/hooks/useModules';
+import { useModulesTree } from '@/hooks/useModules';
 import { useCargoSectionAccess, useSaveCargoSectionAccess } from '../../hooks/useCargos';
-import type {
-  SystemModuleTree,
-  ModuleTab,
-  TabSectionTree,
-} from '@/features/gestion-estrategica/types/modules.types';
+import type { SystemModuleTree, ModuleTab, TabSectionTree } from '@/hooks/useModules';
 
 interface TabAccesoSeccionesProps {
   /** ID del cargo */

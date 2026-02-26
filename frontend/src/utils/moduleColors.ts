@@ -12,7 +12,7 @@
  * <div className={colors.container}>...</div>
  * ```
  */
-import type { ModuleColor } from '@/features/gestion-estrategica/types/modules.types';
+import type { ModuleColor } from '@/hooks/useModules';
 
 /**
  * Clases de color para contenedores de secciones/tabs

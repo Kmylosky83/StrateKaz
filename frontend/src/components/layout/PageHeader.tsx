@@ -3,7 +3,7 @@ import { Circle } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { getIconComponent as getDynamicIcon } from '@/components/common/DynamicIcon';
 import { getModuleColorClasses, type ModuleColor } from '@/utils/moduleColors';
-import type { TabSection } from '@/features/gestion-estrategica/types/modules.types';
+import type { TabSection } from '@/hooks/useModules';
 
 export interface PageHeaderProps {
   /** Titulo principal de la pagina */

@@ -9,7 +9,7 @@
  * - Frontend: ModuleGuard bloquea navegación a rutas de módulos desactivados
  */
 import { Navigate } from 'react-router-dom';
-import { useModuleEnabled } from '@/features/gestion-estrategica/hooks/useModules';
+import { useModuleEnabled } from '@/hooks/useModules';
 import { PageLoader } from '@/components/common/PageLoader';
 import { ShieldOff } from 'lucide-react';
 

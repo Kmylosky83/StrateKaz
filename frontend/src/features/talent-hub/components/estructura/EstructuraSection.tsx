@@ -10,7 +10,7 @@
  */
 import { useState, useEffect } from 'react';
 import { DynamicSections } from '@/components/common';
-import { useTabSections } from '@/features/gestion-estrategica/hooks/useModules';
+import { useTabSections } from '@/hooks/useModules';
 import { useModuleColor } from '@/hooks/useModuleColor';
 // Importar directamente de fuentes (NO del barrel index.ts para evitar circular deps)
 import { CargosTab as CargosSection } from '@/features/configuracion/components/CargosTab';

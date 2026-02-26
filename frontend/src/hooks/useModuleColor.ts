@@ -14,8 +14,8 @@
  * ```
  */
 import { useMemo } from 'react';
-import { useModulesTree } from '@/features/gestion-estrategica/hooks/useModules';
-import type { ModuleColor } from '@/features/gestion-estrategica/types/modules.types';
+import { useModulesTree } from '@/hooks/useModules';
+import type { ModuleColor } from '@/hooks/useModules';
 
 // Re-export ModuleColor para uso externo
 export type { ModuleColor };

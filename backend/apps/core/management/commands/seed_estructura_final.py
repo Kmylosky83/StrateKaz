@@ -1,23 +1,24 @@
 """
-Management command MAESTRO para configurar TODOS los 14 módulos del ERP StrateKaz
-según la Estructura Final 22 (validada 2025-12-22)
+Management command MAESTRO para configurar TODOS los 16 módulos del ERP StrateKaz
+según la Arquitectura Modular por Capas (C0-C3).
 
-ORDEN DEFINITIVO (Sprint 13.2 - TH sube a posición 2):
-    10. Dirección Estratégica
-    15. Centro de Talento (dato maestro: cargos, colaboradores)
-    20. Sistema de Gestión
-    25. Cumplimiento Normativo
-    26. Motor de Riesgos
-    27. Flujos de Trabajo
-    30. Gestión Integral
-    40. Cadena de Suministro
-    41. Base de Operaciones
-    42. Logística y Flota
-    43. Ventas y CRM
-    50. Administración y Financiero
-    51. Contabilidad
-    60. Inteligencia de Negocios
-    61. Sistema de Auditorías
+CAPAS Y MÓDULOS:
+    C1 — Fundación:
+        10. Fundación (configuración, organización, identidad)
+    C2 — Módulos de Negocio (14 independientes):
+        11. Planeación Estratégica (contexto, planeación, riesgos/oportunidades, proyectos)
+        15. Centro de Talento (11 tabs)
+        20. Sistema de Gestión (documental, planificación, auditorías, mejora)
+        25. Cumplimiento Normativo
+        26. Motor de Riesgos
+        27. Flujos de Trabajo
+        30. Gestión Integral (HSEQ)
+        40-43. Cadena de Valor (supply, production, logistics, sales)
+        50-51. Habilitadores (finance, accounting)
+    C3 — Inteligencia:
+        60. Inteligencia de Negocios
+        62. Revisión por la Dirección
+        63. Centro de Control (logs, alertas, notificaciones)
 
 Uso:
     docker exec -it backend python manage.py seed_estructura_final
@@ -27,7 +28,7 @@ from apps.core.models import SystemModule, ModuleTab, TabSection
 
 
 class Command(BaseCommand):
-    help = 'Configura los 14 módulos del ERP según Estructura Final 22'
+    help = 'Configura los 16 módulos del ERP según Arquitectura Modular por Capas'
 
     def handle(self, *args, **options):
         self.stdout.write('=' * 80)
@@ -35,11 +36,14 @@ class Command(BaseCommand):
             '  SEED ESTRUCTURA FINAL - ERP STRATEKAZ'
         ))
         self.stdout.write(self.style.MIGRATE_HEADING(
-            '  14 Módulos | 83 Tabs | Secciones | 6 Niveles'
+            '  16 Módulos | 3 Capas (C1/C2/C3) | Secciones | RBAC'
         ))
         self.stdout.write('=' * 80)
 
-        # Definir TODOS los módulos según Estructura Final 22
+        # PASO 1: Migrar tabs de gestion_estrategica a nuevos módulos
+        self._migrate_gestion_estrategica()
+
+        # PASO 2: Configurar todos los módulos
         modules_config = self.get_modules_config()
 
         total_modules = 0
@@ -84,20 +88,135 @@ class Command(BaseCommand):
 
         self.print_summary(total_modules, total_tabs, total_sections, deleted_sections, deleted_tabs)
 
-    def get_modules_config(self):
-        """Retorna la configuración completa de los 14 módulos"""
-        return [
-            # =====================================================================
-            # NIVEL 1: ESTRATÉGICO (10)
-            # =====================================================================
-            {
-                'code': 'gestion_estrategica',
-                'name': 'Dirección Estratégica',
-                'description': 'Base del sistema, configuración empresarial y planificación estratégica',
+    def _migrate_gestion_estrategica(self):
+        """
+        Migra los tabs del antiguo módulo 'gestion_estrategica' a los 3 nuevos módulos.
+
+        CRÍTICO: Usa UPDATE de ModuleTab.module FK (no delete+create)
+        para preservar TabSection IDs → CargoSectionAccess intacto.
+        """
+        try:
+            old_module = SystemModule.objects.get(code='gestion_estrategica')
+        except SystemModule.DoesNotExist:
+            self.stdout.write(self.style.WARNING(
+                '  [SKIP] gestion_estrategica no existe — migración no necesaria'
+            ))
+            return
+
+        self.stdout.write(self.style.MIGRATE_HEADING(
+            '\n  MIGRACIÓN: gestion_estrategica → 3 módulos separados'
+        ))
+
+        # Mapeo: tab_code → nuevo módulo code
+        TAB_MIGRATION = {
+            # C1 — Fundación
+            'configuracion': 'fundacion',
+            'organizacion': 'fundacion',
+            'identidad': 'fundacion',
+            # C2 — Planeación Estratégica
+            'contexto': 'planeacion_estrategica',
+            'planeacion': 'planeacion_estrategica',
+            'riesgos_oportunidades': 'planeacion_estrategica',
+            'gestion_proyectos': 'planeacion_estrategica',
+            # C3 — Revisión por la Dirección
+            'revision_direccion': 'revision_direccion',
+        }
+
+        # Crear los 3 nuevos módulos si no existen
+        new_modules_config = {
+            'fundacion': {
+                'name': 'Fundación',
+                'description': 'Configuración organizacional, estructura y identidad corporativa',
                 'category': 'STRATEGIC',
                 'color': 'blue',
-                'icon': 'Building2',
-                'route': '/gestion-estrategica',
+                'icon': 'Landmark',
+                'route': '/fundacion',
+                'is_core': True,
+                'is_enabled': True,
+                'orden': 10,
+            },
+            'planeacion_estrategica': {
+                'name': 'Planeación Estratégica',
+                'description': 'Contexto organizacional, planeación BSC, riesgos/oportunidades y proyectos',
+                'category': 'STRATEGIC',
+                'color': 'blue',
+                'icon': 'Target',
+                'route': '/planeacion-estrategica',
+                'is_core': False,
+                'is_enabled': True,
+                'orden': 11,
+            },
+            'revision_direccion': {
+                'name': 'Revisión por la Dirección',
+                'description': 'Revisiones gerenciales, actas y seguimiento de compromisos (ISO 9.3)',
+                'category': 'INTELLIGENCE',
+                'color': 'purple',
+                'icon': 'ClipboardCheck',
+                'route': '/revision-direccion',
+                'is_core': False,
+                'is_enabled': True,
+                'orden': 62,
+            },
+        }
+
+        new_modules = {}
+        for code, defaults in new_modules_config.items():
+            module, created = SystemModule.objects.get_or_create(
+                code=code,
+                defaults=defaults
+            )
+            if not created:
+                # Actualizar datos por si cambiaron
+                for key, value in defaults.items():
+                    setattr(module, key, value)
+                module.save()
+            new_modules[code] = module
+            status = 'CREADO' if created else 'EXISTENTE'
+            self.stdout.write(f'    [{status}] Módulo: {defaults["name"]}')
+
+        # Migrar tabs (UPDATE module FK, preserva IDs)
+        migrated_count = 0
+        for tab in ModuleTab.objects.filter(module=old_module):
+            target_code = TAB_MIGRATION.get(tab.code)
+            if target_code and target_code in new_modules:
+                target_module = new_modules[target_code]
+                tab.module = target_module
+                tab.save(update_fields=['module'])
+                migrated_count += 1
+                self.stdout.write(self.style.SUCCESS(
+                    f'    [MIGRADO] Tab "{tab.name}" ({tab.code}) → {target_module.name}'
+                ))
+            else:
+                self.stdout.write(self.style.WARNING(
+                    f'    [SKIP] Tab "{tab.name}" ({tab.code}) — sin mapeo definido'
+                ))
+
+        # Verificar que gestion_estrategica quedó vacío y eliminarlo
+        remaining_tabs = ModuleTab.objects.filter(module=old_module).count()
+        if remaining_tabs == 0:
+            old_module.delete()
+            self.stdout.write(self.style.SUCCESS(
+                f'  [OK] Módulo gestion_estrategica eliminado ({migrated_count} tabs migrados)'
+            ))
+        else:
+            self.stdout.write(self.style.WARNING(
+                f'  [WARN] gestion_estrategica aún tiene {remaining_tabs} tabs — no eliminado'
+            ))
+
+    def get_modules_config(self):
+        """Retorna la configuración completa de los 16 módulos (3 capas)"""
+        return [
+            # =====================================================================
+            # C1 — FUNDACIÓN (se configura 1 vez, afecta a todos)
+            # =====================================================================
+            {
+                'code': 'fundacion',
+                'name': 'Fundación',
+                'description': 'Configuración organizacional, estructura y identidad corporativa',
+                'category': 'STRATEGIC',
+                'color': 'blue',
+                'icon': 'Landmark',
+                'route': '/fundacion',
                 'is_core': True,
                 'is_enabled': True,
                 'orden': 10,
@@ -126,9 +245,6 @@ class Command(BaseCommand):
                             {'code': 'areas', 'name': 'Procesos', 'icon': 'FolderTree', 'orden': 1, 'description': 'Gestión de áreas y departamentos'},
                             {'code': 'mapa_procesos', 'name': 'Mapa de Procesos', 'icon': 'Grid3x3', 'orden': 2, 'description': 'Visualización interactiva de la estructura de procesos'},
                             {'code': 'consecutivos', 'name': 'Consecutivos', 'icon': 'Hash', 'orden': 3, 'description': 'Numeración automática de documentos'},
-                            # NOTA: 'unidades_medida' eliminado — catálogo del sistema vía seeds, se consume desde choices endpoint
-                            # NOTA: 'cargos' y 'colaboradores' migrados a Talento Humano (Sprint 13)
-                            # NOTA: 'organigrama de cargos' migrado a TH > Estructura de Cargos (Sprint 13)
                         ]
                     },
                     {
@@ -143,15 +259,31 @@ class Command(BaseCommand):
                             {'code': 'politicas', 'name': 'Políticas', 'icon': 'FileCheck', 'orden': 3, 'description': 'Políticas organizacionales'},
                         ]
                     },
+                ]
+            },
+
+            # =====================================================================
+            # C2 — MÓDULOS DE NEGOCIO (14 independientes)
+            # =====================================================================
+            {
+                'code': 'planeacion_estrategica',
+                'name': 'Planeación Estratégica',
+                'description': 'Contexto organizacional, planeación BSC, riesgos/oportunidades y proyectos',
+                'category': 'STRATEGIC',
+                'color': 'blue',
+                'icon': 'Target',
+                'route': '/planeacion-estrategica',
+                'is_core': False,
+                'is_enabled': True,
+                'orden': 11,
+                'tabs': [
                     {
                         'code': 'contexto',
                         'name': 'Contexto Organizacional',
                         'icon': 'Compass',
                         'route': 'contexto',
-                        'orden': 4,
+                        'orden': 1,
                         'sections': [
-                            # Análisis del contexto interno y externo (ISO 9001:2015 Cláusula 4.1)
-                            # Flujo: Stakeholders → Encuestas (PCI-POAM) → DOFA (visor matriz) → PESTEL (visor matriz) → Porter → TOWS
                             {'code': 'stakeholders', 'name': 'Stakeholders', 'icon': 'Users', 'orden': 1, 'description': 'Identificación y análisis de partes interesadas'},
                             {'code': 'encuestas_dofa', 'name': 'Encuestas', 'icon': 'ClipboardList', 'orden': 2, 'description': 'Encuestas PCI-POAM para recopilar factores internos y externos del contexto organizacional'},
                             {'code': 'analisis_dofa', 'name': 'DOFA', 'icon': 'Grid3X3', 'orden': 3, 'description': 'Matriz de Fortalezas, Oportunidades, Debilidades y Amenazas (alimentada desde Encuestas)'},
@@ -165,22 +297,20 @@ class Command(BaseCommand):
                         'name': 'Planeación Estratégica',
                         'icon': 'Target',
                         'route': 'planeacion',
-                        'orden': 5,
+                        'orden': 2,
                         'sections': [
-                            # Formulación y seguimiento estratégico
                             {'code': 'objetivos_bsc', 'name': 'Objetivos', 'icon': 'Target', 'orden': 1, 'description': 'Objetivos por perspectiva BSC vinculados al plan estratégico'},
                             {'code': 'mapa_estrategico', 'name': 'Mapa', 'icon': 'Map', 'orden': 2, 'description': 'Visualización interactiva de objetivos y relaciones causa-efecto'},
                             {'code': 'kpis', 'name': 'KPIs', 'icon': 'BarChart3', 'orden': 3, 'description': 'Indicadores de desempeño con metas y semáforos de seguimiento'},
                             {'code': 'gestion_cambio', 'name': 'Cambios', 'icon': 'RefreshCw', 'orden': 4, 'description': 'Registre y dé seguimiento a cambios estratégicos, organizacionales, de procesos o tecnológicos'},
                         ]
                     },
-                    # Orden: Contexto (4) → Planeación (5) → Riesgos (6) → Proyectos (7) → Revisión (8)
                     {
                         'code': 'riesgos_oportunidades',
                         'name': 'Riesgos y Oportunidades',
                         'icon': 'ShieldAlert',
                         'route': 'riesgos-oportunidades',
-                        'orden': 6,
+                        'orden': 3,
                         'sections': [
                             {'code': 'resumen', 'name': 'Resumen', 'icon': 'PieChart', 'orden': 1, 'description': 'Vista general de indicadores de riesgos y oportunidades'},
                             {'code': 'mapa_calor', 'name': 'Mapa de Calor', 'icon': 'Grid3X3', 'orden': 2, 'description': 'Visualización matricial de probabilidad vs impacto'},
@@ -194,25 +324,13 @@ class Command(BaseCommand):
                         'name': 'Gestión de Proyectos',
                         'icon': 'Gantt',
                         'route': 'proyectos',
-                        'orden': 7,
+                        'orden': 4,
                         'sections': [
                             {'code': 'portafolio', 'name': 'Portafolio', 'icon': 'Briefcase', 'orden': 1, 'description': 'Vista general del portafolio, programas y estado de proyectos'},
                             {'code': 'iniciacion', 'name': 'Iniciación', 'icon': 'FileSignature', 'orden': 2, 'description': 'Charter del proyecto, objetivos SMART y registro de stakeholders'},
                             {'code': 'planificacion', 'name': 'Planificación', 'icon': 'CalendarRange', 'orden': 3, 'description': 'Alcance, cronograma, recursos, costos y plan de riesgos'},
                             {'code': 'ejecucion_monitoreo', 'name': 'Ejecución y Monitoreo', 'icon': 'Activity', 'orden': 4, 'description': 'Seguimiento de avance, indicadores EVM y control de cambios'},
                             {'code': 'cierre', 'name': 'Cierre', 'icon': 'CheckCircle2', 'orden': 5, 'description': 'Lecciones aprendidas, acta de cierre y liberación de recursos'},
-                        ]
-                    },
-                    {
-                        'code': 'revision_direccion',
-                        'name': 'Revisión por Dirección',
-                        'icon': 'ClipboardCheck',
-                        'route': 'revision-direccion',
-                        'orden': 8,
-                        'sections': [
-                            {'code': 'programacion', 'name': 'Programación', 'icon': 'Calendar', 'orden': 1, 'description': 'Calendario y listado de revisiones gerenciales programadas'},
-                            {'code': 'actas', 'name': 'Actas', 'icon': 'FileText', 'orden': 2, 'description': 'Gestión de actas generadas en las revisiones por la dirección'},
-                            {'code': 'compromisos', 'name': 'Compromisos', 'icon': 'ClipboardList', 'orden': 3, 'description': 'Seguimiento de compromisos derivados de las revisiones'},
                         ]
                     },
                 ]
@@ -557,8 +675,34 @@ class Command(BaseCommand):
                 ]
             },
             {
+                'code': 'revision_direccion',
+                'name': 'Revisión por la Dirección',
+                'description': 'Revisiones gerenciales, actas y seguimiento de compromisos (ISO 9.3)',
+                'category': 'INTELLIGENCE',
+                'color': 'purple',
+                'icon': 'ClipboardCheck',
+                'route': '/revision-direccion',
+                'is_core': False,
+                'is_enabled': True,
+                'orden': 62,
+                'tabs': [
+                    {
+                        'code': 'revision_direccion',
+                        'name': 'Revisión por la Dirección',
+                        'icon': 'ClipboardCheck',
+                        'route': 'programacion',
+                        'orden': 1,
+                        'sections': [
+                            {'code': 'programacion', 'name': 'Programación', 'icon': 'Calendar', 'orden': 1, 'description': 'Calendario y listado de revisiones gerenciales programadas'},
+                            {'code': 'actas', 'name': 'Actas', 'icon': 'FileText', 'orden': 2, 'description': 'Gestión de actas generadas en las revisiones por la dirección'},
+                            {'code': 'compromisos', 'name': 'Compromisos', 'icon': 'ClipboardList', 'orden': 3, 'description': 'Seguimiento de compromisos derivados de las revisiones'},
+                        ]
+                    },
+                ]
+            },
+            {
                 'code': 'audit_system',
-                'name': 'Sistema de Auditorías',
+                'name': 'Centro de Control',
                 'description': 'Logs, notificaciones, alertas y trazabilidad del sistema',
                 'category': 'INTELLIGENCE',
                 'color': 'slate',
@@ -566,7 +710,7 @@ class Command(BaseCommand):
                 'route': '/auditoria',
                 'is_core': True,
                 'is_enabled': True,
-                'orden': 61,
+                'orden': 63,
                 'tabs': [
                     {'code': 'logs_sistema', 'name': 'Logs del Sistema', 'icon': 'Terminal', 'route': 'logs', 'orden': 1},
                     {'code': 'centro_notificaciones', 'name': 'Centro Notificaciones', 'icon': 'Bell', 'route': 'notificaciones', 'orden': 2},

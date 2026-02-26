@@ -13,7 +13,7 @@
 import { useMemo } from 'react';
 import { Circle, Loader2 } from 'lucide-react';
 import { cn } from '@/utils/cn';
-import type { TabSection } from '@/features/gestion-estrategica/types/modules.types';
+import type { TabSection } from '@/hooks/useModules';
 import { getIconComponent as getDynamicIcon } from './DynamicIcon';
 
 export interface DynamicSectionsProps {

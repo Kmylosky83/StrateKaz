@@ -1,7 +1,7 @@
 import { Card } from '@/components/common/Card';
 import { cn } from '@/utils/cn';
 import { LucideIcon } from 'lucide-react';
-import type { ModuleColor } from '@/features/gestion-estrategica/types/modules.types';
+import type { ModuleColor } from '@/hooks/useModules';
 
 export interface StatItem {
   /** Etiqueta de la estadística */
@@ -121,13 +121,7 @@ export function StatsGrid({
   };
 
   return (
-    <div
-      className={cn(
-        'grid grid-cols-1 gap-4',
-        colsClass[columns],
-        className
-      )}
-    >
+    <div className={cn('grid grid-cols-1 gap-4', colsClass[columns], className)}>
       {stats.map((stat, index) => (
         <StatCard key={index} stat={stat} variant={variant} colorKey={colorKey} />
       ))}
@@ -158,15 +152,18 @@ function StatCard({ stat, variant, colorKey }: StatCardProps) {
       <Card className={cn('p-4', cardClasses)}>
         <div className="flex items-center gap-3">
           {Icon && (
-            <div className={cn('p-2 rounded-lg bg-gray-100 dark:bg-gray-700', iconColors[stat.iconColor || 'gray'])}>
+            <div
+              className={cn(
+                'p-2 rounded-lg bg-gray-100 dark:bg-gray-700',
+                iconColors[stat.iconColor || 'gray']
+              )}
+            >
               <Icon className="h-5 w-5" />
             </div>
           )}
           <div>
             <p className="text-sm text-gray-600 dark:text-gray-400">{stat.label}</p>
-            <p className="text-xl font-bold text-gray-900 dark:text-gray-100">
-              {stat.value}
-            </p>
+            <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{stat.value}</p>
           </div>
         </div>
       </Card>
@@ -177,28 +174,19 @@ function StatCard({ stat, variant, colorKey }: StatCardProps) {
     <Card className={cn('p-5', cardClasses)}>
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-            {stat.label}
-          </p>
-          <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">
-            {stat.value}
-          </p>
+          <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{stat.label}</p>
+          <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">{stat.value}</p>
           {(stat.change || stat.description) && (
             <div className="mt-2 flex items-center gap-2">
               {stat.change && (
                 <span
-                  className={cn(
-                    'text-sm font-medium',
-                    changeColors[stat.changeType || 'neutral']
-                  )}
+                  className={cn('text-sm font-medium', changeColors[stat.changeType || 'neutral'])}
                 >
                   {stat.change}
                 </span>
               )}
               {stat.description && (
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {stat.description}
-                </span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">{stat.description}</span>
               )}
             </div>
           )}

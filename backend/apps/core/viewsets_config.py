@@ -44,6 +44,40 @@ from .serializers_config import (
 
 
 # =============================================================================
+# SIDEBAR: Agrupamiento por capas (C1/C2/C3)
+# Frontend Sidebar.tsx ya soporta is_category + NIVEL_ prefix
+# =============================================================================
+SIDEBAR_LAYERS = [
+    {
+        'code': 'NIVEL_C1',
+        'name': 'Fundación',
+        'icon': 'Landmark',
+        'color': '#3B82F6',
+        'module_codes': ['fundacion'],
+    },
+    {
+        'code': 'NIVEL_C2',
+        'name': 'Módulos de Negocio',
+        'icon': 'Boxes',
+        'color': '#10B981',
+        'module_codes': [
+            'planeacion_estrategica', 'talent_hub', 'sistema_gestion',
+            'motor_cumplimiento', 'motor_riesgos', 'workflow_engine',
+            'hseq_management', 'supply_chain', 'production_ops',
+            'logistics_fleet', 'sales_crm', 'admin_finance', 'accounting',
+        ],
+    },
+    {
+        'code': 'NIVEL_C3',
+        'name': 'Inteligencia',
+        'icon': 'BrainCircuit',
+        'color': '#8B5CF6',
+        'module_codes': ['analytics', 'revision_direccion', 'audit_system'],
+    },
+]
+
+
+# =============================================================================
 # TAB 4: CONFIGURACIÓN (SOLO MODELOS DE CORE)
 # =============================================================================
 
@@ -551,14 +585,22 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
         return self._build_sidebar_response(modules, include_sections=False)
 
     def _build_sidebar_response(self, modules, include_sections=False):
-        """Construye la respuesta del sidebar."""
-        result = []
+        """
+        Construye la respuesta del sidebar agrupada por capas (C1/C2/C3).
+
+        Estructura:
+        [
+          {is_category: True, code: 'NIVEL_C1', name: 'Fundación', children: [módulos...]},
+          {is_category: True, code: 'NIVEL_C2', name: 'Módulos de Negocio', children: [módulos...]},
+          {is_category: True, code: 'NIVEL_C3', name: 'Inteligencia', children: [módulos...]},
+        ]
+        """
+        # 1. Serializar módulos a dicts
+        module_dicts = {}
         for module in modules:
             enabled_tabs = list(module.tabs.all())
             children = None
             module_effective_color = module.get_effective_color()
-
-            # Usar campo route del modelo, o generar desde code como fallback
             module_route_segment = (module.route or module.code.replace('_', '-')).lstrip('/')
 
             if enabled_tabs:
@@ -575,16 +617,11 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
                         'children': None
                     }
 
-                    # Incluir secciones si es usuario normal (para filtrado adicional en frontend)
                     if include_sections and hasattr(tab, 'sections'):
                         sections = list(tab.sections.all())
                         if sections:
                             tab_data['sections'] = [
-                                {
-                                    'id': s.id,
-                                    'code': s.code,
-                                    'name': s.name
-                                }
+                                {'id': s.id, 'code': s.code, 'name': s.name}
                                 for s in sections
                             ]
 
@@ -599,7 +636,35 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
                 'is_category': False,
                 'children': children
             }
-            result.append(module_data)
+            module_dicts[module.code] = module_data
+
+        # 2. Agrupar en capas (SIDEBAR_LAYERS)
+        result = []
+        assigned_codes = set()
+
+        for layer in SIDEBAR_LAYERS:
+            layer_children = []
+            for mc in layer['module_codes']:
+                if mc in module_dicts:
+                    layer_children.append(module_dicts[mc])
+                    assigned_codes.add(mc)
+
+            # Solo incluir capas con ≥1 módulo visible
+            if layer_children:
+                result.append({
+                    'code': layer['code'],
+                    'name': layer['name'],
+                    'icon': layer['icon'],
+                    'color': layer['color'],
+                    'route': None,
+                    'is_category': True,
+                    'children': layer_children,
+                })
+
+        # 3. Módulos huérfanos (no asignados a ninguna capa) → al final
+        for code, mod_data in module_dicts.items():
+            if code not in assigned_codes:
+                result.append(mod_data)
 
         return Response(result)
 

@@ -15,14 +15,19 @@ logger = logging.getLogger('apps')
 # Mapeo de prefijos de URL a códigos de módulo en SystemModule
 # Sincronizado con config/urls.py y seed_estructura_final.py
 URL_TO_MODULE_CODE = {
-    'api/gestion-estrategica/': 'gestion_estrategica',
-    'api/configuracion/': 'gestion_estrategica',
-    'api/organizacion/': 'gestion_estrategica',
-    'api/identidad/': 'gestion_estrategica',
-    'api/planeacion/': 'gestion_estrategica',
-    'api/encuestas-dofa/': 'gestion_estrategica',
-    'api/proyectos/': 'gestion_estrategica',
-    'api/revision-direccion/': 'gestion_estrategica',
+    # C1 — Fundación
+    'api/configuracion/': 'fundacion',
+    'api/organizacion/': 'fundacion',
+    'api/identidad/': 'fundacion',
+    # C2 — Planeación Estratégica
+    'api/planeacion/': 'planeacion_estrategica',
+    'api/encuestas-dofa/': 'planeacion_estrategica',
+    'api/proyectos/': 'planeacion_estrategica',
+    # C3 — Revisión por la Dirección
+    'api/revision-direccion/': 'revision_direccion',
+    # Legacy (redirige a fundacion para compatibilidad)
+    'api/gestion-estrategica/': 'fundacion',
+    # C2 — Otros módulos
     'api/cumplimiento/': 'motor_cumplimiento',
     'api/riesgos/': 'motor_riesgos',
     'api/workflows/': 'workflow_engine',

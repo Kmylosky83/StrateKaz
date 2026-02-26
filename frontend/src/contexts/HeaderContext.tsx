@@ -10,7 +10,7 @@
  * de forma consistente en toda la aplicacion.
  */
 import { createContext, useContext, useState, useCallback, useMemo, type ReactNode } from 'react';
-import type { TabSection } from '@/features/gestion-estrategica/types/modules.types';
+import type { TabSection } from '@/hooks/useModules';
 
 // Tipo para el color del modulo
 type ModuleColor =

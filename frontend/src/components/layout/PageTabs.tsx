@@ -15,7 +15,7 @@
 import { motion } from 'framer-motion';
 import { cn } from '@/utils/cn';
 import { LucideIcon } from 'lucide-react';
-import type { ModuleColor } from '@/features/gestion-estrategica/types/modules.types';
+import type { ModuleColor } from '@/hooks/useModules';
 
 // ============================================================================
 // TIPOS
@@ -60,14 +60,17 @@ export interface PageTabsProps {
 // CONFIGURACIÓN DE COLORES POR MÓDULO
 // ============================================================================
 
-const moduleColorConfig: Record<ModuleColor, {
-  activeBg: string;
-  activeText: string;
-  activeShadow: string;
-  activeRing: string;
-  badgeBg: string;
-  badgeText: string;
-}> = {
+const moduleColorConfig: Record<
+  ModuleColor,
+  {
+    activeBg: string;
+    activeText: string;
+    activeShadow: string;
+    activeRing: string;
+    badgeBg: string;
+    badgeText: string;
+  }
+> = {
   purple: {
     activeBg: 'bg-white dark:bg-gray-800',
     activeText: 'text-purple-700 dark:text-purple-400',
@@ -154,12 +157,15 @@ const moduleColorConfig: Record<ModuleColor, {
 // CONFIGURACIÓN DE TAMAÑOS
 // ============================================================================
 
-const sizeConfig: Record<PageTabsSize, {
-  container: string;
-  tab: string;
-  icon: string;
-  badge: string;
-}> = {
+const sizeConfig: Record<
+  PageTabsSize,
+  {
+    container: string;
+    tab: string;
+    icon: string;
+    badge: string;
+  }
+> = {
   sm: {
     container: 'gap-1 p-1',
     tab: 'px-3 py-1.5 text-xs gap-1.5',
@@ -235,12 +241,7 @@ function PillsVariant({
                 sizes.tab,
                 tab.disabled && 'opacity-50 cursor-not-allowed',
                 isActive
-                  ? cn(
-                      colors.activeBg,
-                      colors.activeText,
-                      colors.activeShadow,
-                      colors.activeRing
-                    )
+                  ? cn(colors.activeBg, colors.activeText, colors.activeShadow, colors.activeRing)
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-gray-800/50'
               )}
               whileHover={!tab.disabled ? { scale: 1.02 } : undefined}
@@ -249,11 +250,7 @@ function PillsVariant({
             >
               {Icon && (
                 <Icon
-                  className={cn(
-                    sizes.icon,
-                    'transition-colors',
-                    isActive && colors.activeText
-                  )}
+                  className={cn(sizes.icon, 'transition-colors', isActive && colors.activeText)}
                 />
               )}
               <span>{tab.label}</span>
@@ -433,11 +430,7 @@ function SegmentedVariant({
               <span className="relative z-10 flex items-center gap-2">
                 {Icon && (
                   <Icon
-                    className={cn(
-                      sizes.icon,
-                      'transition-colors',
-                      isActive && colors.activeText
-                    )}
+                    className={cn(sizes.icon, 'transition-colors', isActive && colors.activeText)}
                   />
                 )}
                 {tab.label}
@@ -504,10 +497,7 @@ function SegmentedVariant({
  * />
  * ```
  */
-export function PageTabs({
-  variant = 'pills',
-  ...props
-}: PageTabsProps) {
+export function PageTabs({ variant = 'pills', ...props }: PageTabsProps) {
   switch (variant) {
     case 'underline':
       return <UnderlineVariant {...props} />;
@@ -550,13 +540,7 @@ export function PageTabsSkeleton({
   }
 
   return (
-    <div
-      className={cn(
-        'inline-flex',
-        sizes.container,
-        'bg-gray-100 dark:bg-gray-800 rounded-xl'
-      )}
-    >
+    <div className={cn('inline-flex', sizes.container, 'bg-gray-100 dark:bg-gray-800 rounded-xl')}>
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}

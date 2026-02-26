@@ -20,8 +20,8 @@
  * ```
  */
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { useTabSections } from '@/features/gestion-estrategica/hooks/useModules';
-import type { TabSection } from '@/features/gestion-estrategica/types/modules.types';
+import { useTabSections } from '@/hooks/useModules';
+import type { TabSection } from '@/hooks/useModules';
 
 export interface UsePageSectionsOptions {
   /** Codigo del modulo */

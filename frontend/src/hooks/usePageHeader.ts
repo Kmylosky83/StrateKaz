@@ -19,9 +19,9 @@
  */
 import { useEffect, useCallback, useMemo, useRef } from 'react';
 import { useHeaderContext } from '@/contexts/HeaderContext';
-import { useTabSections } from '@/features/gestion-estrategica/hooks/useModules';
+import { useTabSections } from '@/hooks/useModules';
 import type { ReactNode } from 'react';
-import type { TabSection } from '@/features/gestion-estrategica/types/modules.types';
+import type { TabSection } from '@/hooks/useModules';
 
 type ModuleColor =
   | 'purple'

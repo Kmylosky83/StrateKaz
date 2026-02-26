@@ -10,8 +10,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/utils/cn';
-import { useSidebarModules } from '@/features/gestion-estrategica/hooks/useModules';
-import type { SidebarModule } from '@/features/gestion-estrategica/types/modules.types';
+import { useSidebarModules } from '@/hooks/useModules';
+import type { SidebarModule } from '@/hooks/useModules';
 import {
   ChevronRight,
   ChevronDown,

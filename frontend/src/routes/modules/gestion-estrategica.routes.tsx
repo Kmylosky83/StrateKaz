@@ -1,90 +1,62 @@
 /**
- * Rutas: Gestion Estrategica
- * Capa 1 (Fundacion) + Capa 2 (Planeacion Estrategica)
+ * Rutas legacy: Gestión Estratégica → Redirects
  *
- * Incluye: Configuracion, Organizacion, Identidad, Planeacion,
- * Contexto, Proyectos, Riesgos y Oportunidades, Revision Direccion
+ * Este módulo fue separado en 3 módulos independientes (Sprint P0):
+ *   - /fundacion (C1: Configuración, Organización, Identidad)
+ *   - /planeacion-estrategica (C2: Contexto, Planeación, Riesgos, Proyectos)
+ *   - /revision-direccion (C3: Revisiones gerenciales)
+ *
+ * Estas rutas solo existen para compatibilidad con URLs antiguas.
  */
-import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
-import { withModuleGuard } from '../helpers';
-
-// Nivel 1-2: Fundacion + Estructura
-const ConfiguracionPage = lazy(
-  () => import('@/features/gestion-estrategica/pages/ConfiguracionPage')
-);
-const OrganizacionPage = lazy(
-  () => import('@/features/gestion-estrategica/pages/OrganizacionPage')
-);
-
-// Nivel 3: Direccion Estrategica
-const IdentidadPage = lazy(() => import('@/features/gestion-estrategica/pages/IdentidadPage'));
-const PlaneacionPage = lazy(() => import('@/features/gestion-estrategica/pages/PlaneacionPage'));
-const ProyectosPage = lazy(() => import('@/features/gestion-estrategica/pages/ProyectosPage'));
-const RevisionDireccionPage = lazy(
-  () => import('@/features/gestion-estrategica/pages/RevisionDireccionPage')
-);
-const ContextoPage = lazy(() => import('@/features/gestion-estrategica/pages/ContextoPage'));
-const RiesgosOportunidadesPage = lazy(
-  () => import('@/features/gestion-estrategica/pages/RiesgosOportunidadesPage')
-);
 
 export const gestionEstrategicaRoutes = (
   <>
+    {/* Redirect raíz */}
     <Route
       path="/gestion-estrategica"
-      element={<Navigate to="/gestion-estrategica/configuracion" replace />}
+      element={<Navigate to="/fundacion/configuracion" replace />}
     />
 
-    {/* Tab 1: Configuracion (Fundacion) */}
+    {/* C1 — Fundación */}
     <Route
       path="/gestion-estrategica/configuracion"
-      element={withModuleGuard(ConfiguracionPage, 'gestion_estrategica')}
+      element={<Navigate to="/fundacion/configuracion" replace />}
     />
-
-    {/* Tab 2: Organizacion (Estructura) */}
     <Route
       path="/gestion-estrategica/organizacion"
-      element={withModuleGuard(OrganizacionPage, 'gestion_estrategica')}
+      element={<Navigate to="/fundacion/organizacion" replace />}
     />
-
-    {/* Tab 3: Identidad Corporativa */}
     <Route
       path="/gestion-estrategica/identidad"
-      element={withModuleGuard(IdentidadPage, 'gestion_estrategica')}
+      element={<Navigate to="/fundacion/identidad" replace />}
     />
 
-    {/* Tab 4: Planeacion Estrategica */}
-    <Route
-      path="/gestion-estrategica/planeacion"
-      element={withModuleGuard(PlaneacionPage, 'gestion_estrategica')}
-    />
-
-    {/* Tab 4b: Contexto Organizacional (DOFA/PESTEL) */}
+    {/* C2 — Planeación Estratégica */}
     <Route
       path="/gestion-estrategica/contexto"
-      element={withModuleGuard(ContextoPage, 'gestion_estrategica')}
+      element={<Navigate to="/planeacion-estrategica/contexto" replace />}
     />
-
-    {/* Tab 5: Gestion de Proyectos */}
     <Route
-      path="/gestion-estrategica/proyectos"
-      element={withModuleGuard(ProyectosPage, 'gestion_estrategica')}
+      path="/gestion-estrategica/planeacion"
+      element={<Navigate to="/planeacion-estrategica/planeacion" replace />}
     />
-
-    {/* Tab 6: Riesgos y Oportunidades (ISO 6.1) */}
     <Route
       path="/gestion-estrategica/riesgos-oportunidades"
-      element={withModuleGuard(RiesgosOportunidadesPage, 'gestion_estrategica')}
+      element={<Navigate to="/planeacion-estrategica/riesgos-oportunidades" replace />}
+    />
+    <Route
+      path="/gestion-estrategica/proyectos"
+      element={<Navigate to="/planeacion-estrategica/proyectos" replace />}
     />
 
-    {/* Tab 7: Revision por Direccion (ISO 9.3) */}
+    {/* C3 — Revisión por la Dirección */}
     <Route
       path="/gestion-estrategica/revision-direccion"
-      element={withModuleGuard(RevisionDireccionPage, 'gestion_estrategica')}
+      element={<Navigate to="/revision-direccion/programacion" replace />}
     />
 
-    {/* Legacy redirects: Soporte Estrategico -> Sistema de Gestion */}
+    {/* Legacy: Soporte Estratégico → Sistema de Gestión */}
     <Route
       path="/soporte-estrategico"
       element={<Navigate to="/sistema-gestion/documentos" replace />}

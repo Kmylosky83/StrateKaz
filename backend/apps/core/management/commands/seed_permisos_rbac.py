@@ -5,7 +5,7 @@ IMPORTANTE: Los permisos deben corresponder 1:1 con las secciones de TabSection.
 Cada sección que permite acciones (CRUD) debe tener sus permisos correspondientes.
 
 Formato de permisos: "modulo.seccion.accion"
-- modulo: código del SystemModule (ej: gestion_estrategica)
+- modulo: código del SystemModule (ej: fundacion, planeacion_estrategica)
 - seccion: código del TabSection (ej: empresa, sedes, mision_vision)
 - accion: view, create, update, delete
 
@@ -32,12 +32,12 @@ from apps.core.models import (
 
 SECCIONES_PERMISOS = {
     # =========================================================================
-    # MÓDULO: gestion_estrategica
+    # C1 — FUNDACIÓN
     # =========================================================================
-    'gestion_estrategica': {
-        'name': 'Gestión Estratégica',
+    'fundacion': {
+        'name': 'Fundación',
         'orden': 10,
-        'icon': 'mdi-target',
+        'icon': 'mdi-landmark',
         'secciones': [
             # Tab: Configuración
             {'code': 'empresa', 'name': 'Datos de Empresa', 'acciones': ['view', 'update']},
@@ -57,14 +57,23 @@ SECCIONES_PERMISOS = {
             {'code': 'mision_vision', 'name': 'Misión y Visión', 'acciones': ['view', 'update']},
             {'code': 'valores', 'name': 'Valores Corporativos', 'acciones': ['view', 'create', 'update', 'delete']},
             {'code': 'politicas', 'name': 'Políticas', 'acciones': ['view', 'create', 'update', 'delete']},
+        ]
+    },
 
-            # Tab: Planeación Estratégica
-            {'code': 'plan_estrategico', 'name': 'Plan Estratégico', 'acciones': ['view', 'create', 'update', 'delete']},
-            {'code': 'objetivos', 'name': 'Objetivos Estratégicos', 'acciones': ['view', 'create', 'update', 'delete']},
+    # =========================================================================
+    # C2 — PLANEACIÓN ESTRATÉGICA
+    # =========================================================================
+    'planeacion_estrategica': {
+        'name': 'Planeación Estratégica',
+        'orden': 11,
+        'icon': 'mdi-target',
+        'secciones': [
             {'code': 'contexto', 'name': 'Contexto Organizacional', 'acciones': ['view', 'create', 'update', 'delete']},
             {'code': 'dofa', 'name': 'Análisis DOFA', 'acciones': ['view', 'create', 'update', 'delete']},
             {'code': 'pestel', 'name': 'Análisis PESTEL', 'acciones': ['view', 'create', 'update', 'delete']},
             {'code': 'porter', 'name': '5 Fuerzas de Porter', 'acciones': ['view', 'create', 'update', 'delete']},
+            {'code': 'plan_estrategico', 'name': 'Plan Estratégico', 'acciones': ['view', 'create', 'update', 'delete']},
+            {'code': 'objetivos', 'name': 'Objetivos Estratégicos', 'acciones': ['view', 'create', 'update', 'delete']},
         ]
     },
 
@@ -268,10 +277,24 @@ SECCIONES_PERMISOS = {
     },
 
     # =========================================================================
-    # MÓDULO: auditoria
+    # C3 — REVISIÓN POR LA DIRECCIÓN
+    # =========================================================================
+    'revision_direccion': {
+        'name': 'Revisión por la Dirección',
+        'orden': 105,
+        'icon': 'mdi-clipboard-check',
+        'secciones': [
+            {'code': 'programacion', 'name': 'Programación', 'acciones': ['view', 'create', 'update', 'delete']},
+            {'code': 'actas', 'name': 'Actas', 'acciones': ['view', 'create', 'update', 'delete']},
+            {'code': 'compromisos', 'name': 'Compromisos', 'acciones': ['view', 'create', 'update', 'delete']},
+        ]
+    },
+
+    # =========================================================================
+    # C3 — CENTRO DE CONTROL
     # =========================================================================
     'auditoria': {
-        'name': 'Sistema de Auditorías',
+        'name': 'Centro de Control',
         'orden': 110,
         'icon': 'mdi-clipboard-check',
         'secciones': [
@@ -476,6 +499,6 @@ class Command(BaseCommand):
 
         self.stdout.write('')
         self.stdout.write('Formato de código: "modulo.seccion.accion"')
-        self.stdout.write('Ejemplo: "gestion_estrategica.empresa.update"')
+        self.stdout.write('Ejemplo: "fundacion.empresa.update"')
         self.stdout.write('')
         self.stdout.write('NOTA: El código de sección debe coincidir con TabSection.code')

@@ -651,15 +651,19 @@ class SystemModuleViewSet(viewsets.ModelViewSet):
 
             # Solo incluir capas con ≥1 módulo visible
             if layer_children:
-                result.append({
-                    'code': layer['code'],
-                    'name': layer['name'],
-                    'icon': layer['icon'],
-                    'color': layer['color'],
-                    'route': None,
-                    'is_category': True,
-                    'children': layer_children,
-                })
+                if len(layer_children) == 1:
+                    # Capa con 1 solo módulo → render directo sin wrapper redundante
+                    result.append(layer_children[0])
+                else:
+                    result.append({
+                        'code': layer['code'],
+                        'name': layer['name'],
+                        'icon': layer['icon'],
+                        'color': layer['color'],
+                        'route': None,
+                        'is_category': True,
+                        'children': layer_children,
+                    })
 
         # 3. Módulos huérfanos (no asignados a ninguna capa) → al final
         for code, mod_data in module_dicts.items():

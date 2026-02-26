@@ -10,8 +10,9 @@
  */
 
 import { useState, useMemo } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useIsSuperAdmin } from '@/hooks/usePermissions';
 import {
   User,
   Calendar,
@@ -27,6 +28,9 @@ import {
   Moon,
   Clock,
   Camera,
+  Eye,
+  LayoutDashboard,
+  ArrowRight,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Tabs, AnimatedPage, Badge, Card, Avatar, Skeleton } from '@/components/common';
@@ -131,6 +135,86 @@ function HeroSkeleton() {
 }
 
 // ============================================================================
+// ADMIN PORTAL VIEW (Super admin sin Colaborador)
+// ============================================================================
+
+function AdminPortalView() {
+  const { primaryColor } = useBrandingConfig();
+
+  return (
+    <AnimatedPage>
+      <div className="max-w-2xl mx-auto py-12 px-4">
+        <Card padding="none" className="overflow-hidden">
+          {/* Gradient accent bar */}
+          <div
+            className="h-1.5"
+            style={{ background: `linear-gradient(90deg, ${primaryColor}, ${primaryColor}80)` }}
+          />
+          <div className="p-8 text-center space-y-6">
+            {/* Icono */}
+            <div
+              className="mx-auto w-16 h-16 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: `${primaryColor}15` }}
+            >
+              <ShieldCheck className="w-8 h-8" style={{ color: primaryColor }} />
+            </div>
+
+            {/* Titulo y descripcion */}
+            <div className="space-y-2">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Portal del Administrador
+              </h1>
+              <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+                Como administrador del sistema, no tienes un perfil de colaborador asociado a esta
+                empresa. Usa la <strong>impersonaci&oacute;n</strong> para ver el portal como
+                cualquier usuario.
+              </p>
+            </div>
+
+            {/* Instrucciones de impersonacion */}
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 text-left">
+              <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-2 mb-2">
+                <Eye className="w-4 h-4" />
+                C&oacute;mo impersonar un usuario
+              </h3>
+              <ol className="text-sm text-amber-700 dark:text-amber-400 space-y-1 list-decimal list-inside">
+                <li>
+                  Ve a <strong>Usuarios</strong> en el men&uacute; lateral
+                </li>
+                <li>
+                  Haz clic en el bot&oacute;n <Eye className="w-3 h-3 inline" /> del usuario que
+                  deseas ver
+                </li>
+                <li>Ver&aacute;s el sistema exactamente como lo ve ese usuario</li>
+              </ol>
+            </div>
+
+            {/* Acciones rapidas */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+              <Link
+                to="/dashboard"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-white font-medium text-sm transition-colors hover:opacity-90"
+                style={{ backgroundColor: primaryColor }}
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                Ir al Dashboard
+              </Link>
+              <Link
+                to="/usuarios"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
+              >
+                Ver Usuarios
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        </Card>
+      </div>
+    </AnimatedPage>
+  );
+}
+
+// ============================================================================
 // MAIN PAGE
 // ============================================================================
 
@@ -141,6 +225,7 @@ export default function MiPortalPage() {
 
   // Auth store for quick name access (already loaded, no API call)
   const user = useAuthStore((s) => s.user);
+  const isSuperAdmin = useIsSuperAdmin();
 
   // Branding
   const { primaryColor } = useBrandingConfig();
@@ -223,12 +308,16 @@ export default function MiPortalPage() {
   const safeActiveTab = visibleTabs.some((t) => t.id === activeTab) ? activeTab : 'perfil';
 
   // ── Redirect cuando no hay Colaborador vinculado ──────────────────────────
+  // Super admin sin Colaborador → vista informativa (no redirigir)
   // Usuarios externos (consultores) auto-creados sin Colaborador:
   //   → con proveedor: portal de proveedor
   //   → sin proveedor: dashboard general
   if (!perfilLoading && perfil == null) {
     if (user?.proveedor) {
       return <Navigate to="/proveedor-portal" replace />;
+    }
+    if (isSuperAdmin) {
+      return <AdminPortalView />;
     }
     return <Navigate to="/dashboard" replace />;
   }

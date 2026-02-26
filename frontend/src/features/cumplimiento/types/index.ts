@@ -7,7 +7,6 @@
  * Estructura:
  * - matrizLegal: TipoNorma, NormaLegal, EmpresaNorma
  * - requisitosLegales: TipoRequisito, RequisitoLegal, EmpresaRequisito, AlertaVencimiento
- * - partesInteresadas: TipoParteInteresada, ParteInteresada, RequisitoParteInteresada, MatrizComunicacion
  * - reglamentos: TipoReglamento, Reglamento, VersionReglamento, PublicacionReglamento, SocializacionReglamento
  */
 
@@ -59,51 +58,6 @@ export type {
 export { ESTADOS_REQUISITO, TIPOS_ALERTA } from './requisitosLegales';
 
 // ============================================================================
-// PARTES INTERESADAS
-// ============================================================================
-export type {
-  // Enums
-  CategoriaPI,
-  NivelInfluencia,
-  NivelInteres,
-  TipoRequisitoPI,
-  PrioridadRequisito,
-  FrecuenciaComunicacion,
-  MedioComunicacion,
-  // Tipos Base
-  BaseTimestamped as PartesInteresadasBaseTimestamped,
-  BaseSoftDelete as PartesInteresadasBaseSoftDelete,
-  BaseOrdered as PartesInteresadasBaseOrdered,
-  // Modelos
-  TipoParteInteresada,
-  TipoParteInteresadaCreate,
-  ParteInteresada,
-  ParteInteresadaCreate,
-  RequisitoParteInteresada,
-  RequisitoParteInteresadaCreate,
-  MatrizComunicacion,
-  MatrizComunicacionCreate,
-  // Filters
-  ParteInteresadaFilters,
-  // DTOs
-  CreateTipoParteInteresadaDTO,
-  UpdateTipoParteInteresadaDTO,
-  CreateParteInteresadaDTO,
-  UpdateParteInteresadaDTO,
-  PaginatedResponse,
-} from './partesInteresadas';
-
-export {
-  CATEGORIAS_PI,
-  NIVELES_INFLUENCIA,
-  NIVELES_INTERES,
-  TIPOS_REQUISITO_PI,
-  PRIORIDADES,
-  FRECUENCIAS_COMUNICACION,
-  MEDIOS_COMUNICACION,
-} from './partesInteresadas';
-
-// ============================================================================
 // REGLAMENTOS INTERNOS
 // ============================================================================
 export type {
@@ -128,8 +82,4 @@ export type {
   SocializacionReglamentoCreate,
 } from './reglamentos';
 
-export {
-  ESTADOS_REGLAMENTO,
-  MEDIOS_PUBLICACION,
-  TIPOS_SOCIALIZACION,
-} from './reglamentos';
+export { ESTADOS_REGLAMENTO, MEDIOS_PUBLICACION, TIPOS_SOCIALIZACION } from './reglamentos';

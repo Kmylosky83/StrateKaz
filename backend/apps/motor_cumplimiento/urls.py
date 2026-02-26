@@ -13,8 +13,7 @@ urlpatterns = [
     # Requisitos Legales
     path('requisitos-legales/', include('apps.motor_cumplimiento.requisitos_legales.urls')),
 
-    # Partes Interesadas
-    path('partes-interesadas/', include('apps.motor_cumplimiento.partes_interesadas.urls')),
+    # Partes Interesadas ELIMINADO — fuente canónica en gestion_estrategica.contexto (ISO 9001:2015 §4.2)
 
     # Reglamentos Internos
     path('reglamentos-internos/', include('apps.motor_cumplimiento.reglamentos_internos.urls')),

@@ -6,11 +6,19 @@
  * - KPIGaugeAdvanced: Velocímetros con predicción y tendencias
  * - Semáforos visuales según umbrales
  */
-import { Target, TrendingUp, AlertTriangle, XCircle, HelpCircle, Plus, BarChart3 } from 'lucide-react';
+import {
+  Target,
+  TrendingUp,
+  AlertTriangle,
+  XCircle,
+  HelpCircle,
+  Plus,
+  BarChart3,
+} from 'lucide-react';
 import { Card, Badge, Button, EmptyState, Spinner } from '@/components/common';
 import { StatsGrid } from '@/components/layout';
 import type { StatItem } from '@/components/layout';
-import { KPIGaugeAdvanced, type KPIGaugeData } from '@/features/analytics/components';
+import { KPIGaugeAdvanced, type KPIGaugeData } from '@/components/data-display';
 import { useKPIs } from '../../hooks/useKPIs';
 import type { KPIObjetivo, SemaforoStatus } from '../../types/kpi.types';
 import { FREQUENCY_CONFIG, SEMAFORO_CONFIG, getProgressColor } from '../../types/kpi.types';
@@ -122,11 +130,7 @@ export function KPIDashboard({ objectiveId, onSelectKPI, onCreateKPI }: KPIDashb
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {kpis.map((kpi) => (
-            <KPICard
-              key={kpi.id}
-              kpi={kpi}
-              onClick={() => onSelectKPI?.(kpi)}
-            />
+            <KPICard key={kpi.id} kpi={kpi} onClick={() => onSelectKPI?.(kpi)} />
           ))}
         </div>
       </div>
@@ -170,9 +174,10 @@ function KPICard({ kpi, onClick }: KPICardProps) {
   const progressColor = getProgressColor(kpi.status_semaforo);
 
   // Calcular progreso visual (0-100)
-  const progress = kpi.last_value !== null && kpi.last_value !== undefined
-    ? calculateVisualProgress(kpi.last_value, kpi.target_value, kpi.trend_type)
-    : 0;
+  const progress =
+    kpi.last_value !== null && kpi.last_value !== undefined
+      ? calculateVisualProgress(kpi.last_value, kpi.target_value, kpi.trend_type)
+      : 0;
 
   // Icono de semáforo
   const SemaforoIcon = getSemaforoIcon(kpi.status_semaforo);
@@ -185,9 +190,7 @@ function KPICard({ kpi, onClick }: KPICardProps) {
       <div className="p-4 space-y-3">
         {/* Header: Nombre + Badge de Frecuencia */}
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-semibold text-sm line-clamp-2 flex-1">
-            {kpi.name}
-          </h3>
+          <h3 className="font-semibold text-sm line-clamp-2 flex-1">{kpi.name}</h3>
           <Badge variant="secondary" className="text-xs whitespace-nowrap">
             {frequencyConfig.label}
           </Badge>

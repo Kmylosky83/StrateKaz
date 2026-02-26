@@ -6,3 +6,7 @@ class PlaneacionConfig(AppConfig):
     name = 'apps.gestion_estrategica.planeacion'
     label = 'planeacion'
     verbose_name = 'Planeación Estratégica'
+
+    def ready(self):
+        """Registrar signals para notificaciones automáticas."""
+        import apps.gestion_estrategica.planeacion.signals  # noqa: F401

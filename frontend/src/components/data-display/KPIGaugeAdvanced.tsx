@@ -66,7 +66,10 @@ const COLORS = {
 
 // ==================== HELPERS ====================
 
-function calculateTrend(values: number[]): { direction: 'up' | 'down' | 'stable'; percentage: number } {
+function calculateTrend(values: number[]): {
+  direction: 'up' | 'down' | 'stable';
+  percentage: number;
+} {
   if (!values || values.length < 2) {
     return { direction: 'stable', percentage: 0 };
   }
@@ -126,10 +129,19 @@ export function KPIGaugeAdvanced({
 
   // Análisis de datos
   const analysis = useMemo(() => {
-    const { currentValue, targetValue, warningThreshold, criticalThreshold, trendType, historicalValues } = kpi;
+    const {
+      currentValue,
+      targetValue,
+      warningThreshold,
+      criticalThreshold,
+      trendType,
+      historicalValues,
+    } = kpi;
 
     // Calcular tendencia
-    const trend = historicalValues ? calculateTrend(historicalValues) : { direction: 'stable' as const, percentage: 0 };
+    const trend = historicalValues
+      ? calculateTrend(historicalValues)
+      : { direction: 'stable' as const, percentage: 0 };
 
     // Determinar si la tendencia es positiva según el tipo de KPI
     const isTrendPositive =
@@ -137,7 +149,13 @@ export function KPIGaugeAdvanced({
       (trendType === 'MENOR_MEJOR' && trend.direction === 'down');
 
     // Color del semáforo
-    const semaforoColor = getSemaforoColor(currentValue, targetValue, warningThreshold, criticalThreshold, trendType);
+    const semaforoColor = getSemaforoColor(
+      currentValue,
+      targetValue,
+      warningThreshold,
+      criticalThreshold,
+      trendType
+    );
 
     // Progreso hacia la meta
     let progress = 0;
@@ -148,14 +166,15 @@ export function KPIGaugeAdvanced({
     }
 
     // Estadísticas históricas
-    const stats = historicalValues && historicalValues.length > 0
-      ? {
-          mean: ss.mean(historicalValues),
-          stdDev: ss.standardDeviation(historicalValues),
-          min: ss.min(historicalValues),
-          max: ss.max(historicalValues),
-        }
-      : null;
+    const stats =
+      historicalValues && historicalValues.length > 0
+        ? {
+            mean: ss.mean(historicalValues),
+            stdDev: ss.standardDeviation(historicalValues),
+            min: ss.min(historicalValues),
+            max: ss.max(historicalValues),
+          }
+        : null;
 
     return {
       trend,
@@ -168,10 +187,22 @@ export function KPIGaugeAdvanced({
 
   // Configuración del gráfico
   const option = useMemo<EChartsOption>(() => {
-    const { currentValue, targetValue, minValue = 0, maxValue, warningThreshold, criticalThreshold, unit, name, trendType, projectedValue } = kpi;
+    const {
+      currentValue,
+      targetValue,
+      minValue = 0,
+      maxValue,
+      warningThreshold,
+      criticalThreshold,
+      unit,
+      name,
+      trendType,
+      projectedValue,
+    } = kpi;
 
     // Calcular max del gauge
-    const gaugeMax = maxValue ?? Math.max(targetValue, currentValue, warningThreshold, criticalThreshold) * 1.3;
+    const gaugeMax =
+      maxValue ?? Math.max(targetValue, currentValue, warningThreshold, criticalThreshold) * 1.3;
 
     // Colores de las zonas según tipo de tendencia
     let axisLineColors: [number, string][];
@@ -297,7 +328,10 @@ export function KPIGaugeAdvanced({
         axisLine: {
           lineStyle: {
             width: 3,
-            color: [[projectedValue / gaugeMax, COLORS.violeta], [1, 'transparent']],
+            color: [
+              [projectedValue / gaugeMax, COLORS.violeta],
+              [1, 'transparent'],
+            ],
           },
         },
         axisTick: { show: false },
@@ -321,7 +355,10 @@ export function KPIGaugeAdvanced({
         axisLine: {
           lineStyle: {
             width: 6,
-            color: [[analysis.progress / 100, analysis.semaforoColor + '40'], [1, '#f3f4f6']],
+            color: [
+              [analysis.progress / 100, analysis.semaforoColor + '40'],
+              [1, '#f3f4f6'],
+            ],
           },
         },
         axisTick: { show: false },
@@ -340,8 +377,12 @@ export function KPIGaugeAdvanced({
     };
   }, [kpi, variant, sizeConfig, showPrediction, showProgress, animated, analysis]);
 
-  const TrendIcon = analysis.trend.direction === 'up' ? TrendingUp
-    : analysis.trend.direction === 'down' ? TrendingDown : Minus;
+  const TrendIcon =
+    analysis.trend.direction === 'up'
+      ? TrendingUp
+      : analysis.trend.direction === 'down'
+        ? TrendingDown
+        : Minus;
 
   return (
     <Card
@@ -363,9 +404,7 @@ export function KPIGaugeAdvanced({
           <div
             className={cn(
               'flex items-center gap-1 px-2 py-0.5 rounded-full text-xs',
-              analysis.isTrendPositive
-                ? 'bg-green-100 text-green-700'
-                : 'bg-red-100 text-red-700'
+              analysis.isTrendPositive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
             )}
           >
             <TrendIcon className="w-3 h-3" />
@@ -404,9 +443,7 @@ export function KPIGaugeAdvanced({
             <div className="flex items-center justify-center gap-1 text-purple-400 mb-1">
               <Clock className="w-3 h-3" />
             </div>
-            <p className="text-xs font-medium text-purple-600">
-              {kpi.projectedValue.toFixed(1)}
-            </p>
+            <p className="text-xs font-medium text-purple-600">{kpi.projectedValue.toFixed(1)}</p>
             <p className="text-[10px] text-gray-500">Proyección</p>
           </div>
         )}
@@ -416,9 +453,7 @@ export function KPIGaugeAdvanced({
             <div className="flex items-center justify-center gap-1 text-gray-400 mb-1">
               <Clock className="w-3 h-3" />
             </div>
-            <p className="text-xs font-medium text-gray-600">
-              {kpi.lastPeriodValue.toFixed(1)}
-            </p>
+            <p className="text-xs font-medium text-gray-600">{kpi.lastPeriodValue.toFixed(1)}</p>
             <p className="text-[10px] text-gray-500">Anterior</p>
           </div>
         )}

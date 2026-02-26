@@ -91,7 +91,7 @@ TENANT_APPS = [
     # ═══════════════════════════════════════════════════════════════════════════
     'apps.motor_cumplimiento.matriz_legal',
     'apps.motor_cumplimiento.requisitos_legales',
-    'apps.motor_cumplimiento.partes_interesadas',
+    # partes_interesadas ELIMINADO — la fuente canónica está en gestion_estrategica.contexto (ISO 9001:2015 Cláusula 4.2)
     'apps.motor_cumplimiento.reglamentos_internos',
     'apps.motor_cumplimiento.evidencias',
 

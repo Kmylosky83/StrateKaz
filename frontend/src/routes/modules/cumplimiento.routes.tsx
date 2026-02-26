@@ -1,6 +1,9 @@
 /**
  * Rutas: Motor de Cumplimiento
  * Capa 2 — Modulo de Negocio
+ *
+ * NOTA: Partes Interesadas fue migrado a Contexto Organizacional
+ * (gestion_estrategica.contexto) como fuente canonica ISO 9001:2015 §4.2
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
@@ -11,9 +14,6 @@ const MatrizLegalPage = lazy(() =>
 );
 const RequisitosLegalesPage = lazy(() =>
   import('@/features/cumplimiento').then((m) => ({ default: m.RequisitosLegalesPage }))
-);
-const PartesInteresadasPage = lazy(() =>
-  import('@/features/cumplimiento').then((m) => ({ default: m.PartesInteresadasPage }))
 );
 const ReglamentosInternosPage = lazy(() =>
   import('@/features/cumplimiento').then((m) => ({ default: m.ReglamentosInternosPage }))
@@ -30,9 +30,10 @@ export const cumplimientoRoutes = (
       path="/cumplimiento/requisitos-legales"
       element={withModuleGuard(RequisitosLegalesPage, 'motor_cumplimiento')}
     />
+    {/* Partes Interesadas: redirect a Contexto Organizacional */}
     <Route
       path="/cumplimiento/partes-interesadas"
-      element={withModuleGuard(PartesInteresadasPage, 'motor_cumplimiento')}
+      element={<Navigate to="/planeacion-estrategica/contexto" replace />}
     />
     <Route
       path="/cumplimiento/reglamentos-internos"

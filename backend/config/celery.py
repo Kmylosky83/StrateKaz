@@ -194,6 +194,38 @@ app.conf.beat_schedule = {
     },
 
     # ═══════════════════════════════════════════════════
+    # PLANEACIÓN ESTRATÉGICA - OBJETIVOS, CAMBIOS Y KPIs
+    # ═══════════════════════════════════════════════════
+
+    # Verificar objetivos estratégicos vencidos o próximos a vencer - Diario 7:00 AM
+    'planeacion-check-objectives-overdue': {
+        'task': 'planeacion.check_objectives_overdue',
+        'schedule': crontab(hour=7, minute=0),
+        'options': {'queue': 'compliance'},
+    },
+
+    # Verificar cambios organizacionales vencidos - Diario 7:15 AM
+    'planeacion-check-changes-overdue': {
+        'task': 'planeacion.check_changes_overdue',
+        'schedule': crontab(hour=7, minute=15),
+        'options': {'queue': 'compliance'},
+    },
+
+    # Verificar KPIs pendientes de medición - Diario 8:00 AM
+    'planeacion-check-kpi-measurements-due': {
+        'task': 'planeacion.check_kpi_measurements_due',
+        'schedule': crontab(hour=8, minute=0),
+        'options': {'queue': 'compliance'},
+    },
+
+    # Verificar planes estratégicos próximos a vencer - Semanal lunes 8:00 AM
+    'planeacion-check-plan-expiration': {
+        'task': 'planeacion.check_plan_expiration',
+        'schedule': crontab(hour=8, minute=0, day_of_week=1),
+        'options': {'queue': 'compliance'},
+    },
+
+    # ═══════════════════════════════════════════════════
     # GESTION DOCUMENTAL - REVISIONES PROGRAMADAS
     # ═══════════════════════════════════════════════════
 
@@ -332,6 +364,12 @@ app.conf.task_routes = {
     # Analytics tasks
     'apps.analytics.tasks.calcular_kpis_automaticos': {'queue': 'reports'},
     'apps.analytics.tasks.snapshot_dashboard_gerencial': {'queue': 'reports'},
+
+    # Planeación Estratégica tasks
+    'planeacion.check_objectives_overdue': {'queue': 'compliance'},
+    'planeacion.check_changes_overdue': {'queue': 'compliance'},
+    'planeacion.check_kpi_measurements_due': {'queue': 'compliance'},
+    'planeacion.check_plan_expiration': {'queue': 'compliance'},
 
     # Revision por la Direccion tasks
     'apps.gestion_estrategica.revision_direccion.tasks.verificar_compromisos_vencidos': {'queue': 'compliance'},

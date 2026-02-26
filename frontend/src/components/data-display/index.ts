@@ -36,3 +36,7 @@ export type { DataCardProps, DataCardVariant } from './DataCard';
 export type { DataFieldProps, DataFieldValueVariant } from './DataField';
 export type { DataGridProps } from './DataGrid';
 export type { DataSectionProps } from './DataSection';
+
+// KPI Gauge (compartido — usado por planeación y analytics)
+export { KPIGaugeAdvanced } from './KPIGaugeAdvanced';
+export type { KPIGaugeAdvancedProps, KPIGaugeData, GaugeVariant } from './KPIGaugeAdvanced';

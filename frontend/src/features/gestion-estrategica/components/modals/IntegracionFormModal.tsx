@@ -78,70 +78,156 @@ const defaultFormData: FormData = {
   password: '',
 };
 
+// Opción genérica que siempre aparece como fallback en todos los tipos
+const PERSONALIZADO_OPTION = { value: 'PERSONALIZADO' as Proveedor, label: 'Personalizado' };
+
 // Mapeo de tipos de servicio a proveedores compatibles (sincronizado con backend)
-const PROVEEDOR_POR_TIPO: Partial<Record<TipoServicio, { value: Proveedor; label: string }[]>> = {
-  // Comunicación
+const PROVEEDOR_POR_TIPO: Record<TipoServicio, { value: Proveedor; label: string }[]> = {
+  // ── Comunicación ──
   EMAIL: [
     { value: 'GMAIL', label: 'Gmail / Google Workspace' },
     { value: 'OUTLOOK', label: 'Outlook / Microsoft 365' },
+    { value: 'SENDGRID', label: 'SendGrid' },
+    { value: 'SES', label: 'Amazon SES' },
     { value: 'SMTP_CUSTOM', label: 'SMTP Personalizado' },
   ],
   SMS: [
     { value: 'TWILIO', label: 'Twilio' },
     { value: 'MESSAGEBIRD', label: 'MessageBird' },
+    { value: 'INFOBIP', label: 'Infobip' },
+    PERSONALIZADO_OPTION,
   ],
-  WHATSAPP: [{ value: 'WHATSAPP_BUSINESS', label: 'WhatsApp Business API' }],
-  // Tributario
+  WHATSAPP: [
+    { value: 'WHATSAPP_BUSINESS', label: 'WhatsApp Business API' },
+    { value: 'TWILIO', label: 'Twilio (WhatsApp)' },
+    PERSONALIZADO_OPTION,
+  ],
+  NOTIFICACIONES: [
+    { value: 'FIREBASE', label: 'Firebase Cloud Messaging' },
+    { value: 'ONESIGNAL', label: 'OneSignal' },
+    PERSONALIZADO_OPTION,
+  ],
+  // ── Tributario ──
   FACTURACION: [
     { value: 'DIAN', label: 'DIAN (Directo)' },
+    { value: 'CARVAJAL', label: 'Carvajal Tecnología' },
     { value: 'SIIGO', label: 'Siigo' },
     { value: 'ALEGRA', label: 'Alegra' },
   ],
   NOMINA: [
     { value: 'SIIGO', label: 'Siigo' },
     { value: 'ALEGRA', label: 'Alegra' },
+    PERSONALIZADO_OPTION,
   ],
-  // Almacenamiento
+  RADIAN: [
+    { value: 'DIAN', label: 'DIAN RADIAN' },
+    { value: 'CARVAJAL', label: 'Carvajal Tecnología' },
+    PERSONALIZADO_OPTION,
+  ],
+  // ── Archivos ──
   ALMACENAMIENTO: [
     { value: 'GOOGLE_DRIVE', label: 'Google Drive' },
     { value: 'AWS_S3', label: 'Amazon S3' },
     { value: 'AZURE_BLOB', label: 'Azure Blob Storage' },
     { value: 'GCS', label: 'Google Cloud Storage' },
   ],
-  // Analítica
+  CDN: [
+    { value: 'CLOUDFLARE', label: 'Cloudflare' },
+    { value: 'AWS_CLOUDFRONT', label: 'AWS CloudFront' },
+    PERSONALIZADO_OPTION,
+  ],
+  BACKUP: [
+    { value: 'AWS_S3', label: 'Amazon S3' },
+    { value: 'AZURE_BLOB', label: 'Azure Blob' },
+    { value: 'GOOGLE_DRIVE', label: 'Google Drive' },
+    PERSONALIZADO_OPTION,
+  ],
+  // ── Analítica ──
   BI: [
+    { value: 'POWER_BI', label: 'Power BI' },
+    { value: 'METABASE', label: 'Metabase' },
     { value: 'GOOGLE_LOOKER', label: 'Google Looker Studio' },
     { value: 'GOOGLE_SHEETS', label: 'Google Sheets' },
   ],
-  // Financiero
+  ANALYTICS: [
+    { value: 'GOOGLE_ANALYTICS', label: 'Google Analytics' },
+    { value: 'MIXPANEL', label: 'Mixpanel' },
+    PERSONALIZADO_OPTION,
+  ],
+  // ── Financiero ──
   PAGOS: [
-    { value: 'PSE', label: 'PSE (ACH Colombia)' },
     { value: 'WOMPI', label: 'Wompi' },
     { value: 'PAYU', label: 'PayU Latam' },
     { value: 'MERCADOPAGO', label: 'MercadoPago' },
+    PERSONALIZADO_OPTION,
   ],
-  // Geolocalización
+  PSE: [
+    { value: 'ACH_COLOMBIA', label: 'ACH Colombia' },
+    { value: 'EVERTEC', label: 'Evertec' },
+    PERSONALIZADO_OPTION,
+  ],
+  BANCARIO: [
+    { value: 'BANCOLOMBIA', label: 'Bancolombia API' },
+    { value: 'DAVIVIENDA', label: 'Davivienda' },
+    { value: 'BBVA', label: 'BBVA Colombia' },
+    PERSONALIZADO_OPTION,
+  ],
+  // ── Geolocalización ──
   MAPAS: [
     { value: 'GOOGLE_MAPS', label: 'Google Maps Platform' },
+    { value: 'MAPBOX', label: 'Mapbox' },
     { value: 'OSM', label: 'OpenStreetMap' },
   ],
   RASTREO: [
     { value: 'RUNT', label: 'RUNT' },
     { value: 'MINTRANSPORTE', label: 'MinTransporte' },
+    PERSONALIZADO_OPTION,
   ],
-  // Legal
+  // ── Legal y Cumplimiento ──
   FIRMA_DIGITAL: [
     { value: 'CERTICAMARA', label: 'Certicámara' },
     { value: 'GSE', label: 'GSE' },
     { value: 'ANDES_SCD', label: 'Andes SCD' },
   ],
-  // Sistemas
+  OFAC: [
+    { value: 'DOW_JONES', label: 'Dow Jones Risk & Compliance' },
+    { value: 'REFINITIV', label: 'Refinitiv World-Check' },
+    PERSONALIZADO_OPTION,
+  ],
+  SAGRILAFT: [
+    { value: 'INFOLAFT', label: 'Infolaft' },
+    { value: 'TRANSPARENCIA_CO', label: 'Transparencia Colombia' },
+    PERSONALIZADO_OPTION,
+  ],
+  // ── Inteligencia Artificial ──
+  IA: [
+    { value: 'OPENAI', label: 'OpenAI (GPT)' },
+    { value: 'ANTHROPIC', label: 'Anthropic (Claude)' },
+    { value: 'GOOGLE_AI', label: 'Google AI (Gemini)' },
+    PERSONALIZADO_OPTION,
+  ],
+  OCR: [
+    { value: 'GOOGLE_VISION', label: 'Google Cloud Vision' },
+    { value: 'AWS_TEXTRACT', label: 'AWS Textract' },
+    PERSONALIZADO_OPTION,
+  ],
+  // ── Sistemas ──
   ERP: [
     { value: 'SIIGO', label: 'Siigo' },
     { value: 'ALEGRA', label: 'Alegra' },
     { value: 'WORLD_OFFICE', label: 'World Office' },
     { value: 'SAP', label: 'SAP' },
   ],
+  CRM: [
+    { value: 'HUBSPOT', label: 'HubSpot' },
+    { value: 'SALESFORCE', label: 'Salesforce' },
+    { value: 'ZOHO', label: 'Zoho CRM' },
+    PERSONALIZADO_OPTION,
+  ],
+  // ── Genéricos ──
+  API_TERCEROS: [PERSONALIZADO_OPTION],
+  WEBHOOK: [PERSONALIZADO_OPTION],
+  OTRO: [PERSONALIZADO_OPTION],
 };
 
 // Tipos de servicio organizados por categoría
@@ -242,14 +328,15 @@ export const IntegracionFormModal = ({
 
   // Actualizar proveedor cuando cambia tipo de servicio
   useEffect(() => {
-    const proveedoresDisponibles = PROVEEDOR_POR_TIPO[formData.tipo_servicio];
-    if (proveedoresDisponibles && proveedoresDisponibles.length > 0) {
-      const proveedorActualValido = proveedoresDisponibles.some(
-        (p) => p.value === formData.proveedor
-      );
-      if (!proveedorActualValido) {
-        setFormData((prev) => ({ ...prev, proveedor: proveedoresDisponibles[0].value }));
-      }
+    const proveedoresDisponibles =
+      PROVEEDOR_POR_TIPO[formData.tipo_servicio]?.length > 0
+        ? PROVEEDOR_POR_TIPO[formData.tipo_servicio]
+        : [PERSONALIZADO_OPTION];
+    const proveedorActualValido = proveedoresDisponibles.some(
+      (p) => p.value === formData.proveedor
+    );
+    if (!proveedorActualValido) {
+      setFormData((prev) => ({ ...prev, proveedor: proveedoresDisponibles[0].value }));
     }
   }, [formData.tipo_servicio]);
 
@@ -307,8 +394,11 @@ export const IntegracionFormModal = ({
 
   const isLoading = createMutation.isPending || updateMutation.isPending;
 
-  // Opciones de proveedores según tipo seleccionado
-  const proveedorOptions = PROVEEDOR_POR_TIPO[formData.tipo_servicio] || [];
+  // Opciones de proveedores según tipo seleccionado (siempre incluye Personalizado como fallback)
+  const proveedorOptions =
+    PROVEEDOR_POR_TIPO[formData.tipo_servicio]?.length > 0
+      ? PROVEEDOR_POR_TIPO[formData.tipo_servicio]
+      : [PERSONALIZADO_OPTION];
 
   const footer = (
     <>

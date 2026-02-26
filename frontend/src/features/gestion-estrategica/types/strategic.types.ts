@@ -799,31 +799,53 @@ export type Proveedor =
   | 'GMAIL'
   | 'OUTLOOK'
   | 'SMTP_CUSTOM'
+  | 'SENDGRID'
+  | 'SES'
   // SMS
   | 'TWILIO'
   | 'MESSAGEBIRD'
+  | 'INFOBIP'
   // WhatsApp
   | 'WHATSAPP_BUSINESS'
-  // Facturación
+  // Notificaciones Push
+  | 'FIREBASE'
+  | 'ONESIGNAL'
+  // Facturación / Tributario
   | 'DIAN'
+  | 'CARVAJAL'
+  // CDN
+  | 'CLOUDFLARE'
+  | 'AWS_CLOUDFRONT'
   // Almacenamiento
   | 'GOOGLE_DRIVE'
   | 'AWS_S3'
   | 'AZURE_BLOB'
   | 'GCS'
-  // BI
+  // BI / Analytics
   | 'GOOGLE_LOOKER'
   | 'GOOGLE_SHEETS'
-  // Pagos
+  | 'POWER_BI'
+  | 'METABASE'
+  | 'GOOGLE_ANALYTICS'
+  | 'MIXPANEL'
+  // Pagos / PSE / Bancario
   | 'PSE'
   | 'WOMPI'
   | 'PAYU'
   | 'MERCADOPAGO'
-  // ERP
+  | 'EVERTEC'
+  | 'ACH_COLOMBIA'
+  | 'BANCOLOMBIA'
+  | 'DAVIVIENDA'
+  | 'BBVA'
+  // ERP / CRM
   | 'SIIGO'
   | 'ALEGRA'
   | 'WORLD_OFFICE'
   | 'SAP'
+  | 'HUBSPOT'
+  | 'SALESFORCE'
+  | 'ZOHO'
   // Firma Digital
   | 'CERTICAMARA'
   | 'GSE'
@@ -831,9 +853,24 @@ export type Proveedor =
   // Mapas
   | 'GOOGLE_MAPS'
   | 'OSM'
+  | 'MAPBOX'
   // Transporte
   | 'RUNT'
-  | 'MINTRANSPORTE';
+  | 'MINTRANSPORTE'
+  // Compliance (OFAC / SAGRILAFT)
+  | 'DOW_JONES'
+  | 'REFINITIV'
+  | 'INFOLAFT'
+  | 'TRANSPARENCIA_CO'
+  // IA / OCR
+  | 'OPENAI'
+  | 'ANTHROPIC'
+  | 'GOOGLE_AI'
+  | 'GOOGLE_VISION'
+  | 'AWS_TEXTRACT'
+  // Genérico
+  | 'PERSONALIZADO'
+  | 'OTRO';
 
 export type MetodoAutenticacion =
   | 'API_KEY'

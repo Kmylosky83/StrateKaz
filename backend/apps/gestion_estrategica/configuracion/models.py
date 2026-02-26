@@ -1034,48 +1034,144 @@ class ProveedorIntegracion(TimestampedModel, SoftDeleteModel):
 
     @classmethod
     def cargar_proveedores_sistema(cls):
-        """Carga los proveedores base del sistema"""
+        """
+        Carga los proveedores base del sistema con su tipo_servicio FK asignado.
+
+        Cada proveedor se vincula a su TipoServicioIntegracion principal.
+        Proveedores que sirven múltiples tipos (ej: SIIGO para FACTURACION y NOMINA)
+        se asignan al tipo primario más relevante.
+
+        IMPORTANTE: Ejecutar DESPUÉS de TipoServicioIntegracion.cargar_tipos_sistema()
+        para que los tipos ya existan en la base de datos.
+        """
+        # ── Construir lookup de tipos por code ──
+        tipos_qs = TipoServicioIntegracion.objects.filter(es_sistema=True)
+        tipos_map = {t.code: t for t in tipos_qs}
+
+        def _tipo(code):
+            """Retorna la instancia del tipo o None si no existe."""
+            return tipos_map.get(code)
+
+        # ── Definición completa de proveedores con tipo_servicio ──
+        # Formato: (code, name, pais_origen, tipo_servicio_code, orden)
+        # tipo_servicio_code=None para proveedores genéricos (PERSONALIZADO, OTRO)
         proveedores = [
-            # Email
-            {'code': 'GMAIL', 'name': 'Gmail / Google Workspace', 'pais_origen': 'USA', 'orden': 1},
-            {'code': 'OUTLOOK', 'name': 'Outlook / Microsoft 365', 'pais_origen': 'USA', 'orden': 2},
-            {'code': 'SENDGRID', 'name': 'SendGrid', 'pais_origen': 'USA', 'orden': 3},
-            {'code': 'SES', 'name': 'Amazon SES', 'pais_origen': 'USA', 'orden': 4},
-            # SMS/WhatsApp
-            {'code': 'TWILIO', 'name': 'Twilio', 'pais_origen': 'USA', 'orden': 10},
-            {'code': 'INFOBIP', 'name': 'Infobip', 'pais_origen': 'Croacia', 'orden': 11},
-            # Facturación Colombia
-            {'code': 'DIAN', 'name': 'DIAN (Directo)', 'pais_origen': 'Colombia', 'orden': 20},
-            {'code': 'CARVAJAL', 'name': 'Carvajal Tecnología y Servicios', 'pais_origen': 'Colombia', 'orden': 21},
-            {'code': 'SIIGO', 'name': 'Siigo', 'pais_origen': 'Colombia', 'orden': 22},
-            {'code': 'ALEGRA', 'name': 'Alegra', 'pais_origen': 'Colombia', 'orden': 23},
-            # Almacenamiento
-            {'code': 'AWS_S3', 'name': 'Amazon S3', 'pais_origen': 'USA', 'orden': 30},
-            {'code': 'GOOGLE_DRIVE', 'name': 'Google Drive', 'pais_origen': 'USA', 'orden': 31},
-            {'code': 'AZURE_BLOB', 'name': 'Azure Blob Storage', 'pais_origen': 'USA', 'orden': 32},
-            # BI
-            {'code': 'POWER_BI', 'name': 'Microsoft Power BI', 'pais_origen': 'USA', 'orden': 40},
-            {'code': 'METABASE', 'name': 'Metabase', 'pais_origen': 'USA', 'orden': 41},
-            # Pagos Colombia
-            {'code': 'PAYU', 'name': 'PayU Latam', 'pais_origen': 'Colombia', 'orden': 50},
-            {'code': 'WOMPI', 'name': 'Wompi', 'pais_origen': 'Colombia', 'orden': 51},
-            {'code': 'MERCADOPAGO', 'name': 'MercadoPago', 'pais_origen': 'Argentina', 'orden': 52},
-            {'code': 'EVERTEC', 'name': 'Evertec (PlacetoPay)', 'pais_origen': 'Colombia', 'orden': 53},
-            # Mapas
-            {'code': 'GOOGLE_MAPS', 'name': 'Google Maps Platform', 'pais_origen': 'USA', 'orden': 60},
-            {'code': 'MAPBOX', 'name': 'Mapbox', 'pais_origen': 'USA', 'orden': 61},
-            # Firma Digital Colombia
-            {'code': 'CERTICAMARA', 'name': 'Certicámara', 'pais_origen': 'Colombia', 'orden': 70},
-            {'code': 'ANDES_SCD', 'name': 'Andes SCD', 'pais_origen': 'Colombia', 'orden': 71},
-            # Otros
-            {'code': 'PERSONALIZADO', 'name': 'Servicio Personalizado', 'pais_origen': None, 'orden': 98},
-            {'code': 'OTRO', 'name': 'Otro Proveedor', 'pais_origen': None, 'orden': 99},
+            # ── Comunicación: Email ──
+            {'code': 'GMAIL', 'name': 'Gmail / Google Workspace', 'pais_origen': 'USA', 'tipo': 'EMAIL', 'orden': 1},
+            {'code': 'OUTLOOK', 'name': 'Outlook / Microsoft 365', 'pais_origen': 'USA', 'tipo': 'EMAIL', 'orden': 2},
+            {'code': 'SENDGRID', 'name': 'SendGrid', 'pais_origen': 'USA', 'tipo': 'EMAIL', 'orden': 3},
+            {'code': 'SES', 'name': 'Amazon SES', 'pais_origen': 'USA', 'tipo': 'EMAIL', 'orden': 4},
+            {'code': 'SMTP_CUSTOM', 'name': 'SMTP Personalizado', 'pais_origen': None, 'tipo': 'EMAIL', 'orden': 5},
+
+            # ── Comunicación: SMS ──
+            {'code': 'TWILIO', 'name': 'Twilio', 'pais_origen': 'USA', 'tipo': 'SMS', 'orden': 10},
+            {'code': 'MESSAGEBIRD', 'name': 'MessageBird', 'pais_origen': 'Países Bajos', 'tipo': 'SMS', 'orden': 11},
+            {'code': 'INFOBIP', 'name': 'Infobip', 'pais_origen': 'Croacia', 'tipo': 'SMS', 'orden': 12},
+
+            # ── Comunicación: WhatsApp ──
+            {'code': 'WHATSAPP_BUSINESS', 'name': 'WhatsApp Business API', 'pais_origen': 'USA', 'tipo': 'WHATSAPP', 'orden': 15},
+
+            # ── Comunicación: Notificaciones Push ──
+            {'code': 'FIREBASE', 'name': 'Firebase Cloud Messaging', 'pais_origen': 'USA', 'tipo': 'NOTIFICACIONES', 'orden': 18},
+            {'code': 'ONESIGNAL', 'name': 'OneSignal', 'pais_origen': 'USA', 'tipo': 'NOTIFICACIONES', 'orden': 19},
+
+            # ── Tributario: Facturación Electrónica ──
+            {'code': 'DIAN', 'name': 'DIAN (Directo)', 'pais_origen': 'Colombia', 'tipo': 'FACTURACION', 'orden': 20},
+            {'code': 'CARVAJAL', 'name': 'Carvajal Tecnología y Servicios', 'pais_origen': 'Colombia', 'tipo': 'FACTURACION', 'orden': 21},
+            {'code': 'SIIGO', 'name': 'Siigo', 'pais_origen': 'Colombia', 'tipo': 'FACTURACION', 'orden': 22},
+            {'code': 'ALEGRA', 'name': 'Alegra', 'pais_origen': 'Colombia', 'tipo': 'FACTURACION', 'orden': 23},
+
+            # ── Archivos: Almacenamiento en la Nube ──
+            {'code': 'GOOGLE_DRIVE', 'name': 'Google Drive', 'pais_origen': 'USA', 'tipo': 'ALMACENAMIENTO', 'orden': 30},
+            {'code': 'AWS_S3', 'name': 'Amazon S3', 'pais_origen': 'USA', 'tipo': 'ALMACENAMIENTO', 'orden': 31},
+            {'code': 'AZURE_BLOB', 'name': 'Azure Blob Storage', 'pais_origen': 'USA', 'tipo': 'ALMACENAMIENTO', 'orden': 32},
+            {'code': 'GCS', 'name': 'Google Cloud Storage', 'pais_origen': 'USA', 'tipo': 'ALMACENAMIENTO', 'orden': 33},
+
+            # ── Archivos: CDN ──
+            {'code': 'CLOUDFLARE', 'name': 'Cloudflare CDN', 'pais_origen': 'USA', 'tipo': 'CDN', 'orden': 36},
+            {'code': 'AWS_CLOUDFRONT', 'name': 'Amazon CloudFront', 'pais_origen': 'USA', 'tipo': 'CDN', 'orden': 37},
+
+            # ── Analítica: BI ──
+            {'code': 'POWER_BI', 'name': 'Microsoft Power BI', 'pais_origen': 'USA', 'tipo': 'BI', 'orden': 40},
+            {'code': 'METABASE', 'name': 'Metabase', 'pais_origen': 'USA', 'tipo': 'BI', 'orden': 41},
+            {'code': 'GOOGLE_LOOKER', 'name': 'Google Looker Studio', 'pais_origen': 'USA', 'tipo': 'BI', 'orden': 42},
+            {'code': 'GOOGLE_SHEETS', 'name': 'Google Sheets (BI)', 'pais_origen': 'USA', 'tipo': 'BI', 'orden': 43},
+
+            # ── Analítica: Analytics ──
+            {'code': 'GOOGLE_ANALYTICS', 'name': 'Google Analytics', 'pais_origen': 'USA', 'tipo': 'ANALYTICS', 'orden': 46},
+            {'code': 'MIXPANEL', 'name': 'Mixpanel', 'pais_origen': 'USA', 'tipo': 'ANALYTICS', 'orden': 47},
+
+            # ── Financiero: Pasarela de Pagos ──
+            {'code': 'WOMPI', 'name': 'Wompi', 'pais_origen': 'Colombia', 'tipo': 'PAGOS', 'orden': 50},
+            {'code': 'PAYU', 'name': 'PayU Latam', 'pais_origen': 'Colombia', 'tipo': 'PAGOS', 'orden': 51},
+            {'code': 'MERCADOPAGO', 'name': 'MercadoPago', 'pais_origen': 'Argentina', 'tipo': 'PAGOS', 'orden': 52},
+
+            # ── Financiero: PSE ──
+            {'code': 'ACH_COLOMBIA', 'name': 'ACH Colombia', 'pais_origen': 'Colombia', 'tipo': 'PSE', 'orden': 55},
+            {'code': 'EVERTEC', 'name': 'Evertec (PlacetoPay)', 'pais_origen': 'Colombia', 'tipo': 'PSE', 'orden': 56},
+
+            # ── Financiero: Bancario ──
+            {'code': 'BANCOLOMBIA', 'name': 'Bancolombia', 'pais_origen': 'Colombia', 'tipo': 'BANCARIO', 'orden': 58},
+            {'code': 'DAVIVIENDA', 'name': 'Davivienda', 'pais_origen': 'Colombia', 'tipo': 'BANCARIO', 'orden': 59},
+            {'code': 'BBVA', 'name': 'BBVA Colombia', 'pais_origen': 'Colombia', 'tipo': 'BANCARIO', 'orden': 60},
+
+            # ── Geolocalización: Mapas ──
+            {'code': 'GOOGLE_MAPS', 'name': 'Google Maps Platform', 'pais_origen': 'USA', 'tipo': 'MAPAS', 'orden': 62},
+            {'code': 'MAPBOX', 'name': 'Mapbox', 'pais_origen': 'USA', 'tipo': 'MAPAS', 'orden': 63},
+            {'code': 'OSM', 'name': 'OpenStreetMap', 'pais_origen': 'Internacional', 'tipo': 'MAPAS', 'orden': 64},
+
+            # ── Geolocalización: Rastreo ──
+            {'code': 'RUNT', 'name': 'RUNT (Registro Único Nacional de Tránsito)', 'pais_origen': 'Colombia', 'tipo': 'RASTREO', 'orden': 66},
+            {'code': 'MINTRANSPORTE', 'name': 'Ministerio de Transporte', 'pais_origen': 'Colombia', 'tipo': 'RASTREO', 'orden': 67},
+
+            # ── Legal: Firma Digital ──
+            {'code': 'CERTICAMARA', 'name': 'Certicámara', 'pais_origen': 'Colombia', 'tipo': 'FIRMA_DIGITAL', 'orden': 70},
+            {'code': 'GSE', 'name': 'GSE (Gestión de Seguridad Electrónica)', 'pais_origen': 'Colombia', 'tipo': 'FIRMA_DIGITAL', 'orden': 71},
+            {'code': 'ANDES_SCD', 'name': 'Andes SCD', 'pais_origen': 'Colombia', 'tipo': 'FIRMA_DIGITAL', 'orden': 72},
+
+            # ── Cumplimiento: OFAC ──
+            {'code': 'DOW_JONES', 'name': 'Dow Jones Risk & Compliance', 'pais_origen': 'USA', 'tipo': 'OFAC', 'orden': 74},
+            {'code': 'REFINITIV', 'name': 'Refinitiv World-Check', 'pais_origen': 'UK', 'tipo': 'OFAC', 'orden': 75},
+
+            # ── Cumplimiento: SAGRILAFT ──
+            {'code': 'INFOLAFT', 'name': 'Infolaft', 'pais_origen': 'Colombia', 'tipo': 'SAGRILAFT', 'orden': 77},
+            {'code': 'TRANSPARENCIA_CO', 'name': 'Transparencia Colombia', 'pais_origen': 'Colombia', 'tipo': 'SAGRILAFT', 'orden': 78},
+
+            # ── IA: Inteligencia Artificial ──
+            {'code': 'OPENAI', 'name': 'OpenAI (GPT)', 'pais_origen': 'USA', 'tipo': 'IA', 'orden': 80},
+            {'code': 'ANTHROPIC', 'name': 'Anthropic (Claude)', 'pais_origen': 'USA', 'tipo': 'IA', 'orden': 81},
+            {'code': 'GOOGLE_AI', 'name': 'Google AI (Gemini)', 'pais_origen': 'USA', 'tipo': 'IA', 'orden': 82},
+
+            # ── IA: OCR ──
+            {'code': 'GOOGLE_VISION', 'name': 'Google Cloud Vision', 'pais_origen': 'USA', 'tipo': 'OCR', 'orden': 84},
+            {'code': 'AWS_TEXTRACT', 'name': 'Amazon Textract', 'pais_origen': 'USA', 'tipo': 'OCR', 'orden': 85},
+
+            # ── Sistemas: ERP ──
+            {'code': 'WORLD_OFFICE', 'name': 'World Office', 'pais_origen': 'Colombia', 'tipo': 'ERP', 'orden': 88},
+            {'code': 'SAP', 'name': 'SAP', 'pais_origen': 'Alemania', 'tipo': 'ERP', 'orden': 89},
+
+            # ── Sistemas: CRM ──
+            {'code': 'HUBSPOT', 'name': 'HubSpot', 'pais_origen': 'USA', 'tipo': 'CRM', 'orden': 91},
+            {'code': 'SALESFORCE', 'name': 'Salesforce', 'pais_origen': 'USA', 'tipo': 'CRM', 'orden': 92},
+            {'code': 'ZOHO', 'name': 'Zoho CRM', 'pais_origen': 'India', 'tipo': 'CRM', 'orden': 93},
+
+            # ── Genéricos (tipo_servicio=None, funcionan para cualquier tipo) ──
+            {'code': 'PERSONALIZADO', 'name': 'Servicio Personalizado', 'pais_origen': None, 'tipo': None, 'orden': 98},
+            {'code': 'OTRO', 'name': 'Otro Proveedor', 'pais_origen': None, 'tipo': None, 'orden': 99},
         ]
+
         creados = 0
         for prov in proveedores:
+            tipo_code = prov.pop('tipo')
+            tipo_servicio = _tipo(tipo_code) if tipo_code else None
             obj, created = cls.objects.update_or_create(
                 code=prov['code'],
-                defaults={**prov, 'es_sistema': True, 'is_active': True}
+                defaults={
+                    **prov,
+                    'tipo_servicio': tipo_servicio,
+                    'es_sistema': True,
+                    'is_active': True,
+                }
             )
             if created:
                 creados += 1

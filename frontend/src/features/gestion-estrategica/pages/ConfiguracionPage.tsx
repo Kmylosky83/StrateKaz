@@ -37,7 +37,7 @@ import { ConfiguracionTab } from '../components/ConfiguracionTab';
 import { usePageSections } from '@/hooks/usePageSections';
 
 // Codigos del modulo y tab en la BD
-const MODULE_CODE = 'gestion_estrategica';
+const MODULE_CODE = 'fundacion';
 const TAB_CODE = 'configuracion';
 
 // Mapeo de nombres de iconos a componentes

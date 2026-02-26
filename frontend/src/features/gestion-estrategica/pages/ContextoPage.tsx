@@ -15,7 +15,7 @@ import { usePageSections } from '@/hooks/usePageSections';
 import { ContextoTab } from '../components/ContextoTab';
 
 // Códigos del módulo y tab en la BD (lowercase para coincidir con BD)
-const MODULE_CODE = 'gestion_estrategica';
+const MODULE_CODE = 'planeacion_estrategica';
 const TAB_CODE = 'contexto';
 
 export const ContextoPage = () => {

@@ -15,7 +15,7 @@ import { IdentidadTab } from '../components/IdentidadTab';
 import { usePageSections } from '@/hooks/usePageSections';
 
 // Códigos del módulo y tab en la BD (lowercase para coincidir con BD)
-const MODULE_CODE = 'gestion_estrategica';
+const MODULE_CODE = 'fundacion';
 const TAB_CODE = 'identidad';
 
 export const IdentidadPage = () => {

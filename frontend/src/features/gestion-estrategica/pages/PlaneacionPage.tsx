@@ -15,7 +15,7 @@ import { PlaneacionTab } from '../components/PlaneacionTab';
 import { usePageSections } from '@/hooks/usePageSections';
 
 // Códigos del módulo y tab en la BD (lowercase para coincidir con BD)
-const MODULE_CODE = 'gestion_estrategica';
+const MODULE_CODE = 'planeacion_estrategica';
 const TAB_CODE = 'planeacion';
 
 export const PlaneacionPage = () => {

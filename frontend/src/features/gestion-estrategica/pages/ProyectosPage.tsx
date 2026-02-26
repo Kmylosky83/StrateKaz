@@ -19,7 +19,7 @@ import { GestionProyectosTab } from '../components/proyectos';
 import { useProyectosDashboard } from '../hooks/useProyectos';
 
 // Códigos del módulo y tab en la BD (lowercase para coincidir con BD)
-const MODULE_CODE = 'gestion_estrategica';
+const MODULE_CODE = 'planeacion_estrategica';
 const TAB_CODE = 'gestion_proyectos';
 
 export const ProyectosPage = () => {

@@ -12,7 +12,7 @@ import { useModuleColor } from '@/hooks/useModuleColor';
 import { OrganizacionTab } from '../components/OrganizacionTab';
 import { usePageSections } from '@/hooks/usePageSections';
 
-const MODULE_CODE = 'gestion_estrategica';
+const MODULE_CODE = 'fundacion';
 const TAB_CODE = 'organizacion';
 
 export const OrganizacionPage = () => {

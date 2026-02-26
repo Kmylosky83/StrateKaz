@@ -21,7 +21,7 @@ import { RevisionDireccionTab } from '../components/revision-direccion';
 import { useRevisionDireccionStats } from '../hooks/useRevisionDireccion';
 
 // Códigos del módulo y tab en la BD
-const MODULE_CODE = 'gestion_estrategica';
+const MODULE_CODE = 'revision_direccion';
 const TAB_CODE = 'revision_direccion';
 
 export const RevisionDireccionPage = () => {

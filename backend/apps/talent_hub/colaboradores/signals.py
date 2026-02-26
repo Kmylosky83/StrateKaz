@@ -55,9 +55,9 @@ def auto_create_colaborador(sender, instance, created, **kwargs):
     if Colaborador.objects.filter(usuario=user).exists():
         return
 
-    # Obtener empresa del tenant actual (en multi-tenant, cada schema tiene 1 sola)
-    from apps.gestion_estrategica.configuracion.models import EmpresaConfig
-    empresa = EmpresaConfig.objects.first()
+    # Obtener empresa del tenant actual via helper centralizado (C0)
+    from apps.core.base_models.mixins import get_tenant_empresa
+    empresa = get_tenant_empresa()
     if not empresa:
         logger.warning(
             'Auto-create Colaborador omitido para User %s (%s): '

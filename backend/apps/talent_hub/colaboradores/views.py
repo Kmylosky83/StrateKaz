@@ -9,6 +9,7 @@ import logging
 import uuid
 from datetime import timedelta
 
+from django.apps import apps
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -352,7 +353,7 @@ class ColaboradorViewSet(viewsets.ModelViewSet):
             cargos = []
 
         try:
-            from apps.gestion_estrategica.organizacion.models import Area
+            Area = apps.get_model('organizacion', 'Area')
             areas = list(Area.objects.filter(is_active=True).values('name'))
         except Exception:
             logger.warning("No se pudieron obtener las áreas para la plantilla de importación")

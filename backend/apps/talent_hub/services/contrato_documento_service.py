@@ -62,9 +62,8 @@ class ContratoDocumentoService:
         # 4. Renderizar contenido
         contenido = cls._renderizar_contenido(plantilla, variables)
 
-        # 5. Generar código del documento
-        from apps.gestion_estrategica.gestion_documental.services import DocumentoService
-        codigo = DocumentoService.generar_codigo(tipo_doc, empresa.id)
+        # 5. Generar código del documento (patrón cross-module: NO importar de C2)
+        codigo = cls._generar_codigo_documento(tipo_doc, empresa.id)
 
         # 6. Crear Documento
         colaborador = historial_contrato.colaborador
@@ -173,6 +172,7 @@ class ContratoDocumentoService:
     def _build_variables(cls, historial_contrato, empresa) -> dict:
         """Construye el diccionario de variables para la plantilla."""
         colaborador = historial_contrato.colaborador
+        # C1: acceder a EmpresaConfig via apps.get_model (no import directo)
         EmpresaConfig = apps.get_model('configuracion', 'EmpresaConfig')
 
         # Obtener datos de la empresa
@@ -236,6 +236,44 @@ class ContratoDocumentoService:
 
         # Fallback: generar HTML básico
         return cls._generar_contenido_basico(variables)
+
+    @classmethod
+    def _generar_codigo_documento(cls, tipo_doc, empresa_id) -> str:
+        """
+        Genera código único para documento de contrato.
+
+        Intenta usar ConsecutivoConfig (C1 — thread-safe).
+        Fallback: contador artesanal basado en prefijo del tipo.
+        """
+        Documento = apps.get_model('gestion_documental', 'Documento')
+        try:
+            ConsecutivoConfig = apps.get_model('organizacion', 'ConsecutivoConfig')
+            return ConsecutivoConfig.obtener_siguiente_consecutivo(
+                'DOC_CONTRATO_LABORAL', empresa_id=empresa_id
+            )
+        except Exception as e:
+            logger.warning(
+                'ConsecutivoConfig no disponible para contratos (empresa=%s): %s. '
+                'Usando generación artesanal.',
+                empresa_id, e
+            )
+            # Fallback artesanal
+            prefijo = tipo_doc.prefijo_codigo or f'{tipo_doc.codigo}-'
+            ultimo = Documento.objects.filter(
+                empresa_id=empresa_id,
+                codigo__startswith=prefijo
+            ).order_by('-codigo').first()
+
+            if ultimo:
+                try:
+                    ultimo_num = int(ultimo.codigo.replace(prefijo, ''))
+                    nuevo_num = ultimo_num + 1
+                except (ValueError, IndexError):
+                    nuevo_num = 1
+            else:
+                nuevo_num = 1
+
+            return f'{prefijo}{nuevo_num:04d}'
 
     @classmethod
     def _generar_contenido_basico(cls, variables) -> str:

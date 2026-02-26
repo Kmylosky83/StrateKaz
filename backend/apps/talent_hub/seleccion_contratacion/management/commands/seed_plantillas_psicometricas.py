@@ -532,8 +532,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         from django.db import connection
+        from django.apps import apps
         from apps.talent_hub.seleccion_contratacion.models import PlantillaPruebaDinamica
-        from apps.gestion_estrategica.configuracion.models import EmpresaConfig
+        EmpresaConfig = apps.get_model('configuracion', 'EmpresaConfig')
 
         schema = getattr(connection, 'schema_name', 'public')
         if schema == 'public':

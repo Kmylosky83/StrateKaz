@@ -261,7 +261,8 @@ class Command(BaseCommand):
         company_id = options.get('company_id')
 
         if not company_id:
-            from apps.gestion_estrategica.configuracion.models import EmpresaConfig
+            from django.apps import apps
+            EmpresaConfig = apps.get_model('configuracion', 'EmpresaConfig')
             empresa = EmpresaConfig.objects.first()
             if not empresa:
                 self.stdout.write(self.style.ERROR('No hay empresa configurada.'))

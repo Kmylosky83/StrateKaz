@@ -205,9 +205,10 @@ class ColaboradorImportRowSerializer(serializers.Serializer):
                 )
             })
 
-        # Resolver Área por nombre
+        # Resolver Área por nombre (C1: via apps.get_model, no import directo)
         try:
-            from apps.gestion_estrategica.organizacion.models import Area
+            from django.apps import apps as django_apps
+            Area = django_apps.get_model('organizacion', 'Area')
             area = Area.objects.get(name__iexact=attrs['area_nombre'])
             attrs['_area'] = area
         except Exception:

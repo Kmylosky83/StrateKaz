@@ -161,13 +161,16 @@ class NotificadorTH:
 
     @staticmethod
     def notificar_contrato_por_vencer(colaborador, dias):
-        """Notifica sobre contrato próximo a vencer."""
+        """Notifica sobre contrato próximo a vencer al colaborador y su jefe."""
         try:
-            usuario = getattr(colaborador, 'user', None)
-            jefe = colaborador.cargo.parent_cargo if colaborador.cargo else None
             destinatarios = []
+            usuario = getattr(colaborador, 'usuario', None)
             if usuario:
                 destinatarios.append(usuario)
+
+            jefe = NotificadorTH._get_jefe_usuario(colaborador)
+            if jefe:
+                destinatarios.append(jefe)
 
             for dest in destinatarios:
                 NotificationService.send_notification(
@@ -177,7 +180,7 @@ class NotificadorTH:
                         'colaborador_nombre': colaborador.get_nombre_completo(),
                         'dias': dias,
                     },
-                    url=f'/talent-hub/seleccion-contratacion/historial-contratos?colaborador={colaborador.id}'
+                    url=f'/talento/seleccion?tab=contratos'
                 )
         except Exception as e:
             logger.error(f'Error notificando contrato por vencer: {e}')
@@ -205,19 +208,28 @@ class NotificadorTH:
     # === VACACIONES Y PERMISOS ===
 
     @staticmethod
+    def _get_jefe_usuario(colaborador):
+        """
+        Obtiene el usuario jefe directo del colaborador.
+
+        Busca el User cuyo cargo sea el parent_cargo del cargo del colaborador.
+        No filtra por empresa — el tenant schema isolation lo maneja.
+        """
+        if not colaborador.cargo or not colaborador.cargo.parent_cargo:
+            return None
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        return User.objects.filter(
+            cargo=colaborador.cargo.parent_cargo,
+            is_active=True
+        ).first()
+
+    @staticmethod
     def notificar_vacaciones_solicitud(solicitud):
         """Notifica al jefe sobre solicitud de vacaciones."""
         try:
             colaborador = solicitud.colaborador
-            jefe_user = None
-            if colaborador.cargo and colaborador.cargo.parent_cargo:
-                from django.contrib.auth import get_user_model
-                User = get_user_model()
-                jefe_user = User.objects.filter(
-                    cargo=colaborador.cargo.parent_cargo,
-                    empresa=colaborador.empresa,
-                    is_active=True
-                ).first()
+            jefe_user = NotificadorTH._get_jefe_usuario(colaborador)
 
             if not jefe_user:
                 return None
@@ -280,15 +292,7 @@ class NotificadorTH:
         """Notifica al jefe sobre solicitud de permiso."""
         try:
             colaborador = permiso.colaborador
-            jefe_user = None
-            if colaborador.cargo and colaborador.cargo.parent_cargo:
-                from django.contrib.auth import get_user_model
-                User = get_user_model()
-                jefe_user = User.objects.filter(
-                    cargo=colaborador.cargo.parent_cargo,
-                    empresa=colaborador.empresa,
-                    is_active=True
-                ).first()
+            jefe_user = NotificadorTH._get_jefe_usuario(colaborador)
 
             if not jefe_user:
                 return None
@@ -310,15 +314,7 @@ class NotificadorTH:
         """Notifica al jefe sobre incapacidad registrada."""
         try:
             colaborador = incapacidad.colaborador
-            jefe_user = None
-            if colaborador.cargo and colaborador.cargo.parent_cargo:
-                from django.contrib.auth import get_user_model
-                User = get_user_model()
-                jefe_user = User.objects.filter(
-                    cargo=colaborador.cargo.parent_cargo,
-                    empresa=colaborador.empresa,
-                    is_active=True
-                ).first()
+            jefe_user = NotificadorTH._get_jefe_usuario(colaborador)
 
             if not jefe_user:
                 return None
@@ -402,16 +398,7 @@ class NotificadorTH:
     def notificar_periodo_prueba(colaborador, dias):
         """Notifica al jefe sobre periodo de prueba próximo a vencer."""
         try:
-            jefe_user = None
-            if colaborador.cargo and colaborador.cargo.parent_cargo:
-                from django.contrib.auth import get_user_model
-                User = get_user_model()
-                jefe_user = User.objects.filter(
-                    cargo=colaborador.cargo.parent_cargo,
-                    empresa=colaborador.empresa,
-                    is_active=True
-                ).first()
-
+            jefe_user = NotificadorTH._get_jefe_usuario(colaborador)
             if not jefe_user:
                 return None
             return NotificationService.send_notification(
@@ -438,16 +425,9 @@ class NotificadorTH:
             if usuario:
                 destinatarios.append(usuario)
 
-            if colaborador.cargo and colaborador.cargo.parent_cargo:
-                from django.contrib.auth import get_user_model
-                User = get_user_model()
-                jefe = User.objects.filter(
-                    cargo=colaborador.cargo.parent_cargo,
-                    empresa=colaborador.empresa,
-                    is_active=True
-                ).first()
-                if jefe:
-                    destinatarios.append(jefe)
+            jefe = NotificadorTH._get_jefe_usuario(colaborador)
+            if jefe:
+                destinatarios.append(jefe)
 
             for dest in destinatarios:
                 NotificationService.send_notification(

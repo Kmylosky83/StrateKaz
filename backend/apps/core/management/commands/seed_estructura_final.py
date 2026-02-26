@@ -43,6 +43,9 @@ class Command(BaseCommand):
         # PASO 1: Migrar tabs de gestion_estrategica a nuevos módulos
         self._migrate_gestion_estrategica()
 
+        # PASO 1.5: Actualizar Tenant.enabled_modules (reemplazar gestion_estrategica por los 3 nuevos)
+        self._update_tenant_enabled_modules()
+
         # PASO 2: Configurar todos los módulos
         modules_config = self.get_modules_config()
 
@@ -202,6 +205,77 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING(
                 f'  [WARN] gestion_estrategica aún tiene {remaining_tabs} tabs — no eliminado'
             ))
+
+    def _update_tenant_enabled_modules(self):
+        """
+        Actualiza Tenant.enabled_modules y Plan.features para reemplazar
+        'gestion_estrategica' por los 3 nuevos códigos de módulo.
+
+        Usa schema_context('public') porque Tenant y Plan viven en el schema público.
+        Se ejecuta SIEMPRE (no solo durante migración) para cubrir tenants
+        que ya migraron SystemModules pero no tenían los códigos actualizados.
+        """
+        from django_tenants.utils import schema_context
+        OLD_CODE = 'gestion_estrategica'
+        NEW_CODES = ['fundacion', 'planeacion_estrategica', 'revision_direccion']
+
+        with schema_context('public'):
+            # Actualizar Tenant.enabled_modules
+            try:
+                from apps.tenant.models import Tenant
+                for tenant in Tenant.objects.all():
+                    modules = list(tenant.enabled_modules or [])
+                    if not modules:
+                        continue  # Sin override, usa plan.features
+
+                    changed = False
+                    if OLD_CODE in modules:
+                        modules.remove(OLD_CODE)
+                        changed = True
+                    for new_code in NEW_CODES:
+                        if new_code not in modules:
+                            modules.append(new_code)
+                            changed = True
+
+                    if changed:
+                        tenant.enabled_modules = modules
+                        tenant.save(update_fields=['enabled_modules'])
+                        self.stdout.write(self.style.SUCCESS(
+                            f'  [TENANT] {tenant.schema_name}: enabled_modules actualizado '
+                            f'({len(modules)} módulos)'
+                        ))
+            except Exception as e:
+                self.stdout.write(self.style.WARNING(
+                    f'  [WARN] No se pudo actualizar Tenant.enabled_modules: {e}'
+                ))
+
+            # Actualizar Plan.features
+            try:
+                from apps.tenant.models import Plan
+                for plan in Plan.objects.all():
+                    features = list(plan.features or [])
+                    if not features:
+                        continue
+
+                    changed = False
+                    if OLD_CODE in features:
+                        features.remove(OLD_CODE)
+                        changed = True
+                    for new_code in NEW_CODES:
+                        if new_code not in features:
+                            features.append(new_code)
+                            changed = True
+
+                    if changed:
+                        plan.features = features
+                        plan.save(update_fields=['features'])
+                        self.stdout.write(self.style.SUCCESS(
+                            f'  [PLAN] {plan.name}: features actualizado ({len(features)} módulos)'
+                        ))
+            except Exception as e:
+                self.stdout.write(self.style.WARNING(
+                    f'  [WARN] No se pudo actualizar Plan.features: {e}'
+                ))
 
     def get_modules_config(self):
         """Retorna la configuración completa de los 16 módulos (3 capas)"""

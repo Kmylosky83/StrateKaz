@@ -87,7 +87,7 @@ SECCIONES_PERMISOS = {
         'secciones': [
             {'code': 'matriz_legal', 'name': 'Matriz Legal', 'acciones': ['view', 'create', 'update', 'delete']},
             {'code': 'requisitos_legales', 'name': 'Requisitos Legales', 'acciones': ['view', 'create', 'update', 'delete']},
-            {'code': 'partes_interesadas', 'name': 'Partes Interesadas', 'acciones': ['view', 'create', 'update', 'delete']},
+            # partes_interesadas ELIMINADO — fuente canónica en contexto (C1)
             {'code': 'reglamentos_internos', 'name': 'Reglamentos Internos', 'acciones': ['view', 'create', 'update', 'delete']},
         ]
     },

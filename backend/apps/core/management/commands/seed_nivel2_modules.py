@@ -112,19 +112,13 @@ class Command(BaseCommand):
                 'icon': 'FileCheck',
                 'order': 2,
             },
-            {
-                'code': 'partes_interesadas',
-                'name': 'Partes Interesadas',
-                'description': 'Identificación y gestión de partes interesadas - Necesidades y expectativas',
-                'icon': 'Users2',
-                'order': 3,
-            },
+            # partes_interesadas ELIMINADO — fuente canónica en gestion_estrategica.contexto (ISO 9001:2015 §4.2)
             {
                 'code': 'reglamentos_internos',
                 'name': 'Reglamentos Internos',
                 'description': 'Políticas, procedimientos y reglamentos internos de la organización',
                 'icon': 'Gavel',
-                'order': 4,
+                'order': 3,
             },
         ]
 

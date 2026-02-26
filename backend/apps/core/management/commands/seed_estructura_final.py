@@ -506,8 +506,8 @@ class Command(BaseCommand):
                         ]
                     },
                     {'code': 'requisitos_legales', 'name': 'Requisitos Legales', 'icon': 'FileCheck', 'route': 'requisitos-legales', 'orden': 2},
-                    {'code': 'partes_interesadas', 'name': 'Partes Interesadas', 'icon': 'Users2', 'route': 'partes-interesadas', 'orden': 3},
-                    {'code': 'reglamentos_internos', 'name': 'Reglamentos Internos', 'icon': 'Gavel', 'route': 'reglamentos-internos', 'orden': 4},
+                    # partes_interesadas ELIMINADO — fuente canónica en gestion_estrategica.contexto (ISO 9001:2015 §4.2)
+                    {'code': 'reglamentos_internos', 'name': 'Reglamentos Internos', 'icon': 'Gavel', 'route': 'reglamentos-internos', 'orden': 3},
                 ]
             },
             {

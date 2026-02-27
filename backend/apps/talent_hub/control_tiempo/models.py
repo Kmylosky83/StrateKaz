@@ -97,6 +97,7 @@ class Turno(BaseCompanyModel):
 
     codigo = models.CharField(
         max_length=20,
+        blank=True,
         db_index=True,
         verbose_name='Código',
         help_text='Código único del turno (Ej: T1, MAÑANA, NOCHE)'
@@ -173,6 +174,12 @@ class Turno(BaseCompanyModel):
 
     def __str__(self):
         return f"{self.codigo} - {self.nombre} ({self.hora_inicio.strftime('%H:%M')} - {self.hora_fin.strftime('%H:%M')})"
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.codigo:
+            from utils.consecutivos import auto_generate_codigo
+            auto_generate_codigo(self, 'TURNO')
+        super().save(*args, **kwargs)
 
     def clean(self):
         """Validaciones del modelo."""

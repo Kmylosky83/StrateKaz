@@ -113,6 +113,7 @@ class ModuloInduccion(BaseCompanyModel):
 
     codigo = models.CharField(
         max_length=20,
+        blank=True,
         db_index=True,
         verbose_name='Código del Módulo',
         help_text='Código único del módulo (ej: IND-001)'
@@ -228,6 +229,12 @@ class ModuloInduccion(BaseCompanyModel):
 
     def __str__(self):
         return f"{self.codigo} - {self.nombre}"
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.codigo:
+            from utils.consecutivos import auto_generate_codigo
+            auto_generate_codigo(self, 'MODULO_INDUCCION')
+        super().save(*args, **kwargs)
 
     @property
     def esta_vigente(self):

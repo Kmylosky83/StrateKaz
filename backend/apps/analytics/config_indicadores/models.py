@@ -47,6 +47,7 @@ class CatalogoKPI(BaseCompanyModel):
 
     codigo = models.CharField(
         max_length=50,
+        blank=True,
         verbose_name='Código KPI',
         help_text='Código único del indicador (ej: SST-001, FIN-002)'
     )
@@ -102,6 +103,12 @@ class CatalogoKPI(BaseCompanyModel):
 
     def __str__(self):
         return f"{self.codigo} - {self.nombre}"
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.codigo:
+            from utils.consecutivos import auto_generate_codigo
+            auto_generate_codigo(self, 'CATALOGO_KPI')
+        super().save(*args, **kwargs)
 
 
 class FichaTecnicaKPI(BaseCompanyModel):

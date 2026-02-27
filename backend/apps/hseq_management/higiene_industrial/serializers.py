@@ -25,6 +25,9 @@ class TipoAgenteSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at', 'created_by', 'updated_by'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
+        extra_kwargs = {
+            'codigo': {'required': False, 'allow_blank': True},
+        }
 
 
 class AgenteRiesgoSerializer(serializers.ModelSerializer):
@@ -250,6 +253,9 @@ class ControlExposicionSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at', 'created_by', 'updated_by'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
+        extra_kwargs = {
+            'codigo': {'required': False, 'allow_blank': True},
+        }
 
 
 class ControlExposicionListSerializer(serializers.ModelSerializer):

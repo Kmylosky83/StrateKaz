@@ -85,7 +85,7 @@ class CentroCosto(BaseCompanyModel):
     # Información básica
     codigo = models.CharField(
         max_length=20,
-        unique=True,
+        blank=True,
         db_index=True,
         verbose_name='Código',
         help_text='Código único del centro de costo (ej: CC-001)'
@@ -140,6 +140,7 @@ class CentroCosto(BaseCompanyModel):
         verbose_name = 'Centro de Costo'
         verbose_name_plural = 'Centros de Costo'
         ordering = ['codigo']
+        unique_together = [['empresa', 'codigo']]
         indexes = [
             models.Index(fields=['empresa', 'estado']),
             models.Index(fields=['codigo']),
@@ -147,6 +148,12 @@ class CentroCosto(BaseCompanyModel):
 
     def __str__(self):
         return f"{self.codigo} - {self.nombre}"
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.codigo:
+            from utils.consecutivos import auto_generate_codigo
+            auto_generate_codigo(self, 'CENTRO_COSTO')
+        super().save(*args, **kwargs)
 
 
 # ==============================================================================
@@ -163,7 +170,7 @@ class Rubro(BaseCompanyModel):
     # Información básica
     codigo = models.CharField(
         max_length=20,
-        unique=True,
+        blank=True,
         db_index=True,
         verbose_name='Código',
         help_text='Código único del rubro (auto-generado: RUB-###)'
@@ -207,6 +214,7 @@ class Rubro(BaseCompanyModel):
         verbose_name = 'Rubro Presupuestal'
         verbose_name_plural = 'Rubros Presupuestales'
         ordering = ['tipo', 'codigo']
+        unique_together = [['empresa', 'codigo']]
         indexes = [
             models.Index(fields=['empresa', 'tipo']),
             models.Index(fields=['codigo']),
@@ -255,7 +263,7 @@ class PresupuestoPorArea(BaseCompanyModel):
     # Información básica
     codigo = models.CharField(
         max_length=50,
-        unique=True,
+        blank=True,
         db_index=True,
         verbose_name='Código',
         help_text='Código único del presupuesto (auto-generado: PRE-YYYY-####)'
@@ -339,7 +347,7 @@ class PresupuestoPorArea(BaseCompanyModel):
             models.Index(fields=['area', 'anio']),
             models.Index(fields=['centro_costo', 'anio']),
         ]
-        unique_together = [['empresa', 'area', 'centro_costo', 'rubro', 'anio']]
+        unique_together = [['empresa', 'codigo'], ['empresa', 'area', 'centro_costo', 'rubro', 'anio']]
 
     def __str__(self):
         area_nombre = self.area.name if self.area else self.centro_costo.nombre
@@ -542,7 +550,7 @@ class Ejecucion(BaseCompanyModel):
     # Información de la ejecución
     codigo = models.CharField(
         max_length=50,
-        unique=True,
+        blank=True,
         db_index=True,
         verbose_name='Código',
         help_text='Código único de la ejecución (auto-generado: EJE-YYYY-####)'
@@ -600,6 +608,7 @@ class Ejecucion(BaseCompanyModel):
         verbose_name = 'Ejecución Presupuestal'
         verbose_name_plural = 'Ejecuciones Presupuestales'
         ordering = ['-fecha', '-created_at']
+        unique_together = [['empresa', 'codigo']]
         indexes = [
             models.Index(fields=['empresa', 'fecha']),
             models.Index(fields=['codigo']),

@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Modal, Button, Spinner } from '@/components/common';
 import { Input, Select, Textarea } from '@/components/forms';
-import { useCreateAuditoria, useUpdateAuditoria, useProgramasAuditoria } from '../hooks/useMejoraContinua';
+import {
+  useCreateAuditoria,
+  useUpdateAuditoria,
+  useProgramasAuditoria,
+} from '../hooks/useMejoraContinua';
 import type { AuditoriaList, CreateAuditoriaDTO } from '../types/mejora-continua.types';
 
 interface AuditoriaFormModalProps {
@@ -43,11 +47,7 @@ const NORMA_OPTIONS = [
   { value: 'MULTIPLE', label: 'Múltiples Normas' },
 ];
 
-export default function AuditoriaFormModal({
-  item,
-  isOpen,
-  onClose,
-}: AuditoriaFormModalProps) {
+export default function AuditoriaFormModal({ item, isOpen, onClose }: AuditoriaFormModalProps) {
   const [formData, setFormData] = useState<CreateAuditoriaDTO>(INITIAL_FORM);
 
   const createMutation = useCreateAuditoria();
@@ -80,10 +80,7 @@ export default function AuditoriaFormModal({
     e.preventDefault();
 
     if (item) {
-      updateMutation.mutate(
-        { id: item.id, datos: formData },
-        { onSuccess: onClose }
-      );
+      updateMutation.mutate({ id: item.id, datos: formData }, { onSuccess: onClose });
     } else {
       createMutation.mutate(formData, { onSuccess: onClose });
     }
@@ -122,7 +119,7 @@ export default function AuditoriaFormModal({
             label="Código"
             value={formData.codigo}
             onChange={(e) => handleChange('codigo', e.target.value)}
-            placeholder="AUD-2026-001"
+            placeholder="Se genera automáticamente"
           />
 
           <Select

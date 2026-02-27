@@ -20,7 +20,7 @@ class ProgramaAuditoria(models.Model):
     ]
 
     empresa_id = models.PositiveBigIntegerField(db_index=True)
-    codigo = models.CharField(max_length=50, unique=True)
+    codigo = models.CharField(max_length=50, blank=True)
     nombre = models.CharField(max_length=255)
     año = models.PositiveIntegerField()
     version = models.PositiveIntegerField(default=1)
@@ -96,6 +96,7 @@ class ProgramaAuditoria(models.Model):
         verbose_name = 'Programa de Auditoría'
         verbose_name_plural = 'Programas de Auditoría'
         ordering = ['-año', 'nombre']
+        unique_together = [['empresa_id', 'codigo']]
         indexes = [
             models.Index(fields=['empresa_id']),
             models.Index(fields=['año']),
@@ -104,6 +105,12 @@ class ProgramaAuditoria(models.Model):
 
     def __str__(self):
         return f"{self.codigo} - {self.nombre} ({self.año})"
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.codigo:
+            from utils.consecutivos import auto_generate_codigo
+            auto_generate_codigo(self, 'PROGRAMA_AUDITORIA')
+        super().save(*args, **kwargs)
 
     def aprobar(self, usuario):
         """Aprueba el programa de auditoría."""
@@ -175,7 +182,7 @@ class Auditoria(models.Model):
         related_name='auditorias'
     )
 
-    codigo = models.CharField(max_length=50, unique=True)
+    codigo = models.CharField(max_length=50, blank=True)
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
     norma_principal = models.CharField(max_length=20, choices=NORMA_CHOICES)
     normas_adicionales = models.JSONField(
@@ -271,6 +278,7 @@ class Auditoria(models.Model):
         verbose_name = 'Auditoría'
         verbose_name_plural = 'Auditorías'
         ordering = ['-fecha_planificada_inicio']
+        unique_together = [['empresa_id', 'codigo']]
         indexes = [
             models.Index(fields=['empresa_id']),
             models.Index(fields=['programa']),
@@ -281,6 +289,12 @@ class Auditoria(models.Model):
 
     def __str__(self):
         return f"{self.codigo} - {self.titulo}"
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.codigo:
+            from utils.consecutivos import auto_generate_codigo
+            auto_generate_codigo(self, 'AUDITORIA')
+        super().save(*args, **kwargs)
 
     def iniciar(self):
         """Inicia la ejecución de la auditoría."""
@@ -334,7 +348,7 @@ class Hallazgo(models.Model):
         related_name='hallazgos'
     )
 
-    codigo = models.CharField(max_length=50, unique=True)
+    codigo = models.CharField(max_length=50, blank=True)
     tipo = models.CharField(max_length=25, choices=TIPO_CHOICES)
     estado = models.CharField(
         max_length=20,
@@ -424,6 +438,7 @@ class Hallazgo(models.Model):
         verbose_name = 'Hallazgo de Auditoría'
         verbose_name_plural = 'Hallazgos de Auditoría'
         ordering = ['-fecha_deteccion', 'tipo']
+        unique_together = [['empresa_id', 'codigo']]
         indexes = [
             models.Index(fields=['empresa_id']),
             models.Index(fields=['auditoria']),
@@ -433,6 +448,12 @@ class Hallazgo(models.Model):
 
     def __str__(self):
         return f"{self.codigo} - {self.titulo}"
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.codigo:
+            from utils.consecutivos import auto_generate_codigo
+            auto_generate_codigo(self, 'HALLAZGO')
+        super().save(*args, **kwargs)
 
     def comunicar(self):
         """Marca el hallazgo como comunicado."""
@@ -507,7 +528,7 @@ class EvaluacionCumplimiento(models.Model):
     ]
 
     empresa_id = models.PositiveBigIntegerField(db_index=True)
-    codigo = models.CharField(max_length=50, unique=True)
+    codigo = models.CharField(max_length=50, blank=True)
 
     # Tipo y alcance
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
@@ -600,6 +621,7 @@ class EvaluacionCumplimiento(models.Model):
         verbose_name = 'Evaluación de Cumplimiento'
         verbose_name_plural = 'Evaluaciones de Cumplimiento'
         ordering = ['-fecha_evaluacion']
+        unique_together = [['empresa_id', 'codigo']]
         indexes = [
             models.Index(fields=['empresa_id']),
             models.Index(fields=['tipo']),
@@ -609,6 +631,12 @@ class EvaluacionCumplimiento(models.Model):
 
     def __str__(self):
         return f"{self.codigo} - {self.nombre} ({self.get_resultado_display()})"
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.codigo:
+            from utils.consecutivos import auto_generate_codigo
+            auto_generate_codigo(self, 'EVAL_CUMPLIMIENTO')
+        super().save(*args, **kwargs)
 
     def calcular_proxima_evaluacion(self):
         """Calcula la fecha de la próxima evaluación según periodicidad."""

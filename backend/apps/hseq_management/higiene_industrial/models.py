@@ -27,6 +27,7 @@ class TipoAgente(models.Model):
     )
     codigo = models.CharField(
         max_length=20,
+        blank=True,
         verbose_name='Código',
         help_text='Código único del tipo de agente'
     )
@@ -71,6 +72,12 @@ class TipoAgente(models.Model):
 
     def __str__(self):
         return f"{self.get_categoria_display()} - {self.nombre}"
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.codigo:
+            from utils.consecutivos import auto_generate_codigo
+            auto_generate_codigo(self, 'TIPO_AGENTE')
+        super().save(*args, **kwargs)
 
 
 class AgenteRiesgo(models.Model):
@@ -641,6 +648,7 @@ class ControlExposicion(models.Model):
     )
     codigo = models.CharField(
         max_length=30,
+        blank=True,
         verbose_name='Código Control',
         help_text='Código único del control'
     )
@@ -801,6 +809,12 @@ class ControlExposicion(models.Model):
 
     def __str__(self):
         return f"{self.codigo} - {self.nombre} ({self.get_jerarquia_control_display()})"
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.codigo:
+            from utils.consecutivos import auto_generate_codigo
+            auto_generate_codigo(self, 'CONTROL_EXPOSICION')
+        super().save(*args, **kwargs)
 
 
 class MonitoreoBiologico(models.Model):

@@ -38,7 +38,7 @@ class PlantillaInforme(BaseCompanyModel):
 
     codigo = models.CharField(
         max_length=50,
-        unique=True,
+        blank=True,
         verbose_name='Código',
         help_text='Código único de la plantilla'
     )
@@ -93,6 +93,7 @@ class PlantillaInforme(BaseCompanyModel):
         verbose_name = 'Plantilla de Informe'
         verbose_name_plural = 'Plantillas de Informes'
         ordering = ['tipo_informe', 'nombre']
+        unique_together = [['empresa', 'codigo']]
         indexes = [
             models.Index(fields=['empresa', 'tipo_informe']),
             models.Index(fields=['codigo']),
@@ -101,6 +102,12 @@ class PlantillaInforme(BaseCompanyModel):
 
     def __str__(self):
         return f"{self.codigo} - {self.nombre}"
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.codigo:
+            from utils.consecutivos import auto_generate_codigo
+            auto_generate_codigo(self, 'PLANTILLA_INFORME')
+        super().save(*args, **kwargs)
 
 
 class InformeDinamico(BaseCompanyModel):

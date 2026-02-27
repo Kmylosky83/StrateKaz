@@ -33,7 +33,7 @@ class VistaDashboard(BaseCompanyModel, OrderedModel):
     )
     codigo = models.CharField(
         max_length=50,
-        unique=True,
+        blank=True,
         verbose_name='Código',
         help_text='Código único de la vista (ej: DASH-FINANCIERO)'
     )
@@ -73,6 +73,12 @@ class VistaDashboard(BaseCompanyModel, OrderedModel):
 
     def __str__(self):
         return f"{self.codigo} - {self.nombre}"
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.codigo:
+            from utils.consecutivos import auto_generate_codigo
+            auto_generate_codigo(self, 'VISTA_DASHBOARD')
+        super().save(*args, **kwargs)
 
 
 class WidgetDashboard(BaseCompanyModel, OrderedModel):

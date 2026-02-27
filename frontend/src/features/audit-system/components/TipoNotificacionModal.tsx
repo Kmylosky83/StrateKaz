@@ -21,9 +21,10 @@ import type { TipoNotificacion } from '../types/notificaciones.types';
 const tipoNotificacionSchema = z.object({
   codigo: z
     .string()
-    .min(3, 'Código debe tener al menos 3 caracteres')
     .max(50, 'Código no puede exceder 50 caracteres')
-    .regex(/^[A-Z_]+$/, 'Código debe ser en mayúsculas y guiones bajos'),
+    .regex(/^[A-Z_]*$/, 'Código debe ser en mayúsculas y guiones bajos')
+    .optional()
+    .or(z.literal('')),
   nombre: z.string().min(3, 'Nombre requerido').max(100, 'Máximo 100 caracteres'),
   descripcion: z.string().max(255, 'Máximo 255 caracteres').optional(),
   categoria: z.enum(['sistema', 'tarea', 'alerta', 'recordatorio', 'aprobacion']),
@@ -118,7 +119,7 @@ export const TipoNotificacionModal = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
             label="Código"
-            placeholder="EJEMPLO_NOTIF"
+            placeholder="Se genera automáticamente"
             leftIcon={<Code className="h-5 w-5 text-gray-400" />}
             {...register('codigo')}
             error={errors.codigo?.message}

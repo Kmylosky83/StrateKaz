@@ -16,6 +16,9 @@ class VistaDashboardSerializer(serializers.ModelSerializer):
             'is_active', 'empresa', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
+        extra_kwargs = {
+            'codigo': {'required': False, 'allow_blank': True},
+        }
 
 
 class WidgetDashboardSerializer(serializers.ModelSerializer):

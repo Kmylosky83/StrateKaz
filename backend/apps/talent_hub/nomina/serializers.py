@@ -120,6 +120,9 @@ class ConceptoNominaDetailSerializer(serializers.ModelSerializer):
         model = ConceptoNomina
         fields = '__all__'
         read_only_fields = ['id', 'empresa', 'created_at', 'updated_at', 'created_by', 'updated_by']
+        extra_kwargs = {
+            'codigo': {'required': False, 'allow_blank': True},
+        }
 
 
 class ConceptoNominaCreateSerializer(serializers.ModelSerializer):
@@ -132,6 +135,9 @@ class ConceptoNominaCreateSerializer(serializers.ModelSerializer):
             'es_fijo', 'es_base_seguridad_social', 'es_base_parafiscales',
             'es_base_prestaciones', 'formula', 'orden'
         ]
+        extra_kwargs = {
+            'codigo': {'required': False, 'allow_blank': True},
+        }
 
     def validate_codigo(self, value):
         """Validar que el código sea único por empresa."""

@@ -17,6 +17,9 @@ class CatalogoKPISerializer(serializers.ModelSerializer):
             'created_at', 'updated_at', 'created_by', 'updated_by'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'created_by', 'updated_by']
+        extra_kwargs = {
+            'codigo': {'required': False, 'allow_blank': True},
+        }
 
 
 class FichaTecnicaKPISerializer(serializers.ModelSerializer):

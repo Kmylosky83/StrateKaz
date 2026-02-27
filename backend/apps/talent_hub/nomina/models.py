@@ -326,6 +326,7 @@ class ConceptoNomina(BaseCompanyModel):
     # Identificación
     codigo = models.CharField(
         max_length=20,
+        blank=True,
         verbose_name='Código',
         help_text='Código único del concepto (ej: SAL_BASICO, HE_DIURNA)',
         db_index=True
@@ -406,6 +407,12 @@ class ConceptoNomina(BaseCompanyModel):
 
     def __str__(self):
         return f"{self.codigo} - {self.nombre}"
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.codigo:
+            from utils.consecutivos import auto_generate_codigo
+            auto_generate_codigo(self, 'CONCEPTO_NOMINA')
+        super().save(*args, **kwargs)
 
     @property
     def es_devengado(self):

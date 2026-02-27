@@ -104,6 +104,7 @@ class PlanFormacion(BaseCompanyModel):
 
     codigo = models.CharField(
         max_length=20,
+        blank=True,
         db_index=True,
         verbose_name='Código del Plan',
         help_text='Código único del plan (ej: PF-2025)'
@@ -198,6 +199,12 @@ class PlanFormacion(BaseCompanyModel):
     def __str__(self):
         return f"{self.codigo} - {self.nombre} ({self.anio})"
 
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.codigo:
+            from utils.consecutivos import auto_generate_codigo
+            auto_generate_codigo(self, 'PLAN_FORMACION')
+        super().save(*args, **kwargs)
+
     @property
     def porcentaje_ejecucion_presupuesto(self):
         """Calcula el porcentaje de ejecución del presupuesto."""
@@ -219,6 +226,7 @@ class Capacitacion(BaseCompanyModel):
 
     codigo = models.CharField(
         max_length=20,
+        blank=True,
         db_index=True,
         verbose_name='Código de Capacitación',
         help_text='Código único de la capacitación (ej: CAP-2025-001)'
@@ -390,6 +398,12 @@ class Capacitacion(BaseCompanyModel):
 
     def __str__(self):
         return f"{self.codigo} - {self.nombre}"
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.codigo:
+            from utils.consecutivos import auto_generate_codigo
+            auto_generate_codigo(self, 'CAPACITACION')
+        super().save(*args, **kwargs)
 
 
 # =============================================================================

@@ -210,12 +210,12 @@ export function PlantillaFormModal({ isOpen, onClose, plantillaId }: PlantillaFo
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Codigo *
+              Código
             </label>
             <input
-              {...register('codigo', { required: 'Codigo es requerido' })}
+              {...register('codigo')}
               className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="PLT-PR-001"
+              placeholder="Se genera automáticamente"
               disabled={isEdit}
             />
             {errors.codigo && <p className="text-xs text-red-500 mt-1">{errors.codigo.message}</p>}

@@ -27,6 +27,9 @@ class PlanFormacionListSerializer(serializers.ModelSerializer):
             'presupuesto_asignado', 'presupuesto_ejecutado', 'porcentaje_ejecucion',
             'aprobado', 'capacitaciones_count', 'is_active',
         ]
+        extra_kwargs = {
+            'codigo': {'required': False, 'allow_blank': True},
+        }
 
 
 class PlanFormacionDetailSerializer(serializers.ModelSerializer):
@@ -40,6 +43,9 @@ class PlanFormacionDetailSerializer(serializers.ModelSerializer):
         model = PlanFormacion
         fields = '__all__'
         read_only_fields = ['empresa', 'created_at', 'updated_at']
+        extra_kwargs = {
+            'codigo': {'required': False, 'allow_blank': True},
+        }
 
 
 # =============================================================================
@@ -58,6 +64,9 @@ class CapacitacionListSerializer(serializers.ModelSerializer):
             'modalidad', 'modalidad_display', 'duracion_horas', 'estado',
             'estado_display', 'puntos_otorgados', 'is_active',
         ]
+        extra_kwargs = {
+            'codigo': {'required': False, 'allow_blank': True},
+        }
 
 
 class CapacitacionDetailSerializer(serializers.ModelSerializer):
@@ -70,6 +79,9 @@ class CapacitacionDetailSerializer(serializers.ModelSerializer):
         model = Capacitacion
         fields = '__all__'
         read_only_fields = ['empresa', 'created_at', 'updated_at']
+        extra_kwargs = {
+            'codigo': {'required': False, 'allow_blank': True},
+        }
 
 
 class CapacitacionCreateUpdateSerializer(serializers.ModelSerializer):
@@ -83,6 +95,9 @@ class CapacitacionCreateUpdateSerializer(serializers.ModelSerializer):
             'cargos_objetivo', 'requiere_evaluacion', 'nota_aprobacion', 'genera_certificado',
             'costo_por_persona', 'costo_total', 'puntos_otorgados', 'estado', 'observaciones',
         ]
+        extra_kwargs = {
+            'codigo': {'required': False, 'allow_blank': True},
+        }
 
 
 # =============================================================================

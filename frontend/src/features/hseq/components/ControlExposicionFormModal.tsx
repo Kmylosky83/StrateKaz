@@ -37,7 +37,11 @@ const INITIAL_FORM: CreateControlExposicionDTO = {
   observaciones: '',
 };
 
-export default function ControlExposicionFormModal({ item, isOpen, onClose }: ControlExposicionFormModalProps) {
+export default function ControlExposicionFormModal({
+  item,
+  isOpen,
+  onClose,
+}: ControlExposicionFormModalProps) {
   const [formData, setFormData] = useState<CreateControlExposicionDTO>(INITIAL_FORM);
   const createMutation = useCreateControlExposicion();
   const updateMutation = useUpdateControlExposicion();
@@ -96,11 +100,10 @@ export default function ControlExposicionFormModal({ item, isOpen, onClose }: Co
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
-            label="Código *"
+            label="Código"
             value={formData.codigo}
             onChange={(e) => handleChange('codigo', e.target.value)}
-            required
-            placeholder="Ej: CTRL-001"
+            placeholder="Se genera automáticamente"
           />
 
           <Input
@@ -187,7 +190,10 @@ export default function ControlExposicionFormModal({ item, isOpen, onClose }: Co
               onChange={(e) => handleChange('requiere_mantenimiento', e.target.checked)}
               className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
             />
-            <label htmlFor="requiere_mantenimiento" className="text-sm text-gray-700 dark:text-gray-300">
+            <label
+              htmlFor="requiere_mantenimiento"
+              className="text-sm text-gray-700 dark:text-gray-300"
+            >
               Requiere Mantenimiento
             </label>
           </div>

@@ -6,7 +6,11 @@ import { useState, useEffect } from 'react';
 import { Modal, Button, Spinner } from '@/components/common';
 import { Input, Select, Textarea } from '@/components/forms';
 import { useCreateTipoAgente, useUpdateTipoAgente } from '../hooks/useHigieneIndustrial';
-import type { TipoAgenteList, CreateTipoAgenteDTO, CategoriaAgente } from '../types/higiene-industrial.types';
+import type {
+  TipoAgenteList,
+  CreateTipoAgenteDTO,
+  CategoriaAgente,
+} from '../types/higiene-industrial.types';
 
 interface TipoAgenteFormModalProps {
   item: TipoAgenteList | null;
@@ -73,11 +77,10 @@ export default function TipoAgenteFormModal({ item, isOpen, onClose }: TipoAgent
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
-            label="Código *"
+            label="Código"
             value={formData.codigo}
             onChange={(e) => handleChange('codigo', e.target.value)}
-            required
-            placeholder="Ej: TA-001"
+            placeholder="Se genera automáticamente"
           />
 
           <Input

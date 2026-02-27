@@ -31,6 +31,9 @@ class ModuloInduccionListSerializer(serializers.ModelSerializer):
             'formato_contenido', 'formato_display', 'duracion_minutos',
             'requiere_evaluacion', 'es_obligatorio', 'orden', 'is_active',
         ]
+        extra_kwargs = {
+            'codigo': {'required': False, 'allow_blank': True},
+        }
 
 
 class ModuloInduccionDetailSerializer(serializers.ModelSerializer):
@@ -44,6 +47,9 @@ class ModuloInduccionDetailSerializer(serializers.ModelSerializer):
         model = ModuloInduccion
         fields = '__all__'
         read_only_fields = ['empresa', 'created_at', 'updated_at', 'created_by', 'updated_by']
+        extra_kwargs = {
+            'codigo': {'required': False, 'allow_blank': True},
+        }
 
 
 class ModuloInduccionCreateUpdateSerializer(serializers.ModelSerializer):
@@ -58,6 +64,9 @@ class ModuloInduccionCreateUpdateSerializer(serializers.ModelSerializer):
             'preguntas_evaluacion', 'fecha_vigencia_desde', 'fecha_vigencia_hasta',
             'orden', 'es_obligatorio', 'responsable',
         ]
+        extra_kwargs = {
+            'codigo': {'required': False, 'allow_blank': True},
+        }
 
 
 # =============================================================================

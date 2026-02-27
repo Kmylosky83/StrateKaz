@@ -99,9 +99,9 @@ export const ConceptoFormModal = ({ isOpen, onClose, concepto }: ConceptoFormMod
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               label="Código"
-              {...register('codigo', { required: 'El código es requerido' })}
+              {...register('codigo')}
               error={errors.codigo?.message}
-              placeholder="Ej: DEV001"
+              placeholder="Se genera automáticamente"
             />
             <Input
               label="Nombre"

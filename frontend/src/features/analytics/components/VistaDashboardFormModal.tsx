@@ -65,7 +65,7 @@ export const VistaDashboardFormModal = ({
   };
 
   const handleSubmit = () => {
-    if (!form.codigo || !form.nombre) return;
+    if (!form.nombre) return;
 
     const payload = {
       codigo: form.codigo,
@@ -77,17 +77,14 @@ export const VistaDashboardFormModal = ({
     };
 
     if (isEditing) {
-      updateVista.mutate(
-        { id: item.id, data: payload },
-        { onSuccess: () => onClose() }
-      );
+      updateVista.mutate({ id: item.id, data: payload }, { onSuccess: () => onClose() });
     } else {
       createVista.mutate(payload, { onSuccess: () => onClose() });
     }
   };
 
   const isPending = createVista.isPending || updateVista.isPending;
-  const isValid = form.codigo && form.nombre;
+  const isValid = !!form.nombre;
 
   const perspectivaOptions = [
     { value: 'general', label: 'General' },
@@ -109,8 +106,7 @@ export const VistaDashboardFormModal = ({
           label="Código"
           value={form.codigo}
           onChange={(e) => handleChange('codigo', e.target.value)}
-          placeholder="Ej: DASH-FINANCIERO"
-          required
+          placeholder="Se genera automáticamente"
           disabled={isEditing}
         />
 
@@ -146,12 +142,8 @@ export const VistaDashboardFormModal = ({
               className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
             />
             <div className="flex-1">
-              <div className="font-medium text-gray-900 dark:text-gray-100">
-                Pública
-              </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                Visible para todos
-              </div>
+              <div className="font-medium text-gray-900 dark:text-gray-100">Pública</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Visible para todos</div>
             </div>
           </label>
 
@@ -163,12 +155,8 @@ export const VistaDashboardFormModal = ({
               className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
             />
             <div className="flex-1">
-              <div className="font-medium text-gray-900 dark:text-gray-100">
-                Activa
-              </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                Disponible para uso
-              </div>
+              <div className="font-medium text-gray-900 dark:text-gray-100">Activa</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Disponible para uso</div>
             </div>
           </label>
         </div>

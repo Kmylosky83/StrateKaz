@@ -130,10 +130,10 @@ export const PlanMejoraFormModal = ({ plan, isOpen, onClose }: Props) => {
       <form className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <Input
-            label="Codigo"
-            placeholder="PM-2026-001"
+            label="Código"
+            placeholder="Se genera automáticamente"
             error={errors.codigo?.message}
-            {...register('codigo', { required: 'El codigo es obligatorio' })}
+            {...register('codigo')}
           />
           <Input
             label="Titulo"

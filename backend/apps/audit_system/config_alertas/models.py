@@ -39,7 +39,7 @@ NOTIFICAR_A_CHOICES = [
 
 class TipoAlerta(BaseCompanyModel):
     """Tipos de alerta configurables"""
-    codigo = models.CharField(max_length=50, unique=True)
+    codigo = models.CharField(max_length=50, blank=True)
     nombre = models.CharField(max_length=200)
     descripcion = models.TextField()
     categoria = models.CharField(max_length=20, choices=CATEGORIA_ALERTA_CHOICES, db_index=True)
@@ -51,9 +51,16 @@ class TipoAlerta(BaseCompanyModel):
         db_table = 'alertas_tipo_alerta'
         verbose_name = 'Tipo de Alerta'
         verbose_name_plural = 'Tipos de Alerta'
+        unique_together = [['empresa', 'codigo']]
 
     def __str__(self):
         return f'{self.nombre} ({self.categoria})'
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.codigo:
+            from utils.consecutivos import auto_generate_codigo
+            auto_generate_codigo(self, 'TIPO_NOTIFICACION')
+        super().save(*args, **kwargs)
 
 
 class ConfiguracionAlerta(BaseCompanyModel):

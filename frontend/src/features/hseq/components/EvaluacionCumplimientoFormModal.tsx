@@ -1,8 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Modal, Button, Spinner } from '@/components/common';
 import { Input, Select, Textarea } from '@/components/forms';
-import { useCreateEvaluacionCumplimiento, useUpdateEvaluacionCumplimiento } from '../hooks/useMejoraContinua';
-import type { EvaluacionCumplimientoList, CreateEvaluacionCumplimientoDTO } from '../types/mejora-continua.types';
+import {
+  useCreateEvaluacionCumplimiento,
+  useUpdateEvaluacionCumplimiento,
+} from '../hooks/useMejoraContinua';
+import type {
+  EvaluacionCumplimientoList,
+  CreateEvaluacionCumplimientoDTO,
+} from '../types/mejora-continua.types';
 
 interface EvaluacionCumplimientoFormModalProps {
   item: EvaluacionCumplimientoList | null;
@@ -91,10 +97,7 @@ export default function EvaluacionCumplimientoFormModal({
     e.preventDefault();
 
     if (item) {
-      updateMutation.mutate(
-        { id: item.id, datos: formData },
-        { onSuccess: onClose }
-      );
+      updateMutation.mutate({ id: item.id, datos: formData }, { onSuccess: onClose });
     } else {
       createMutation.mutate(formData, { onSuccess: onClose });
     }
@@ -114,11 +117,10 @@ export default function EvaluacionCumplimientoFormModal({
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
-            label="Código *"
+            label="Código"
             value={formData.codigo}
             onChange={(e) => handleChange('codigo', e.target.value)}
-            placeholder="EC-2026-001"
-            required
+            placeholder="Se genera automáticamente"
           />
 
           <Select

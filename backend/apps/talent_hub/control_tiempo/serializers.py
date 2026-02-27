@@ -12,17 +12,23 @@ class TurnoListSerializer(serializers.ModelSerializer):
         fields = ['id', 'codigo', 'nombre', 'hora_inicio', 'hora_fin', 'duracion_jornada',
                   'aplica_recargo_nocturno', 'dias_semana', 'color', 'is_active']
         read_only_fields = ['id']
+        extra_kwargs = {
+            'codigo': {'required': False, 'allow_blank': True},
+        }
 
 
 class TurnoDetailSerializer(serializers.ModelSerializer):
     """Detail serializer for Turno"""
     es_nocturno = serializers.BooleanField(read_only=True)
     duracion_calculada = serializers.DecimalField(max_digits=4, decimal_places=2, read_only=True)
-    
+
     class Meta:
         model = Turno
         fields = '__all__'
         read_only_fields = ['id', 'empresa', 'created_at', 'updated_at']
+        extra_kwargs = {
+            'codigo': {'required': False, 'allow_blank': True},
+        }
 
 
 class AsignacionTurnoSerializer(serializers.ModelSerializer):

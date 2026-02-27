@@ -89,7 +89,11 @@ export const PlantillaInformeFormModal = ({
       isOpen={isOpen}
       onClose={onClose}
       title={isEditing ? 'Editar Plantilla de Informe' : 'Nueva Plantilla de Informe'}
-      subtitle={isEditing ? `Editando ${plantilla?.codigo}` : 'Crear una nueva plantilla para generación de informes'}
+      subtitle={
+        isEditing
+          ? `Editando ${plantilla?.codigo}`
+          : 'Crear una nueva plantilla para generación de informes'
+      }
       size="lg"
       footer={
         <>
@@ -105,8 +109,8 @@ export const PlantillaInformeFormModal = ({
       <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
-            label="Código *"
-            placeholder="PLANTILLA-001"
+            label="Código"
+            placeholder="Se genera automáticamente"
             value={formData.codigo}
             onChange={(e) => handleChange('codigo', e.target.value)}
             disabled={isLoading}
@@ -174,7 +178,10 @@ export const PlantillaInformeFormModal = ({
             disabled={isLoading}
             className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 focus:ring-2"
           />
-          <label htmlFor="activa" className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+          <label
+            htmlFor="activa"
+            className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100"
+          >
             Plantilla Activa
           </label>
         </div>

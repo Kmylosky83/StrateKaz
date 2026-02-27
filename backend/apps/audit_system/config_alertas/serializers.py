@@ -6,6 +6,9 @@ class TipoAlertaSerializer(serializers.ModelSerializer):
     class Meta:
         model = TipoAlerta
         fields = '__all__'
+        extra_kwargs = {
+            'codigo': {'required': False, 'allow_blank': True},
+        }
 
 class ConfiguracionAlertaSerializer(serializers.ModelSerializer):
     tipo_alerta_nombre = serializers.CharField(source='tipo_alerta.nombre', read_only=True)

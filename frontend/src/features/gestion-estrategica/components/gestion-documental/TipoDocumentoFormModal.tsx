@@ -105,17 +105,22 @@ export function TipoDocumentoFormModal({ isOpen, onClose, tipoId }: TipoDocument
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={isEdit ? 'Editar Tipo de Documento' : 'Nuevo Tipo de Documento'} size="lg">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={isEdit ? 'Editar Tipo de Documento' : 'Nuevo Tipo de Documento'}
+      size="lg"
+    >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Código *
+              Código
             </label>
             <input
-              {...register('codigo', { required: 'Código es requerido' })}
+              {...register('codigo')}
               className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="PR"
+              placeholder="Se genera automáticamente"
               disabled={isEdit}
             />
             {errors.codigo && <p className="text-xs text-red-500 mt-1">{errors.codigo.message}</p>}
@@ -156,7 +161,9 @@ export function TipoDocumentoFormModal({ isOpen, onClose, tipoId }: TipoDocument
               className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               {NIVEL_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
               ))}
             </select>
           </div>

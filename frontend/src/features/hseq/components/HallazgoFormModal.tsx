@@ -114,7 +114,7 @@ export default function HallazgoFormModal({ item, isOpen, onClose }: HallazgoFor
             label="Código"
             value={formData.codigo}
             onChange={(e) => handleChange('codigo', e.target.value)}
-            placeholder="HAL-2026-001"
+            placeholder="Se genera automáticamente"
           />
 
           <Select

@@ -31,6 +31,9 @@ class TipoDocumentoListSerializer(serializers.ModelSerializer):
             'prefijo_codigo', 'requiere_aprobacion', 'requiere_firma',
             'color_identificacion', 'is_active', 'orden', 'total_documentos'
         ]
+        extra_kwargs = {
+            'codigo': {'required': False, 'allow_blank': True},
+        }
 
     def get_total_documentos(self, obj):
         return obj.documentos.filter(empresa_id=obj.empresa_id).count()
@@ -52,6 +55,9 @@ class TipoDocumentoDetailSerializer(serializers.ModelSerializer):
             'empresa_id', 'created_by', 'created_by_nombre', 'created_at', 'updated_at'
         ]
         read_only_fields = ['empresa_id', 'created_by', 'created_at', 'updated_at']
+        extra_kwargs = {
+            'codigo': {'required': False, 'allow_blank': True},
+        }
 
     def get_total_plantillas(self, obj):
         return obj.plantillas.filter(empresa_id=obj.empresa_id).count()
@@ -74,6 +80,9 @@ class PlantillaDocumentoListSerializer(serializers.ModelSerializer):
             'tipo_plantilla', 'tipo_plantilla_display', 'version', 'estado', 'estado_display',
             'es_por_defecto', 'total_documentos'
         ]
+        extra_kwargs = {
+            'codigo': {'required': False, 'allow_blank': True},
+        }
 
     def get_total_documentos(self, obj):
         return obj.documentos_generados.filter(empresa_id=obj.empresa_id).count()
@@ -96,6 +105,9 @@ class PlantillaDocumentoDetailSerializer(serializers.ModelSerializer):
             'empresa_id', 'created_by', 'created_by_nombre', 'created_at', 'updated_at'
         ]
         read_only_fields = ['empresa_id', 'created_by', 'created_at', 'updated_at']
+        extra_kwargs = {
+            'codigo': {'required': False, 'allow_blank': True},
+        }
 
 
 # =============================================================================

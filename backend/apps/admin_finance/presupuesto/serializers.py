@@ -39,6 +39,9 @@ class CentroCostoSerializer(serializers.ModelSerializer):
             'is_active', 'created_at', 'updated_at', 'created_by', 'updated_by'
         ]
         read_only_fields = ['empresa', 'created_at', 'updated_at', 'created_by', 'updated_by']
+        extra_kwargs = {
+            'codigo': {'required': False, 'allow_blank': True},
+        }
 
     def validate_codigo(self, value):
         """Validar formato de código."""

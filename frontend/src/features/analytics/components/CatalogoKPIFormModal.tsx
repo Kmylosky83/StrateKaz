@@ -75,11 +75,7 @@ const FRECUENCIAS = [
   { value: 'anual', label: 'Anual' },
 ];
 
-export const CatalogoKPIFormModal = ({
-  item,
-  isOpen,
-  onClose,
-}: CatalogoKPIFormModalProps) => {
+export const CatalogoKPIFormModal = ({ item, isOpen, onClose }: CatalogoKPIFormModalProps) => {
   const [form, setForm] = useState<FormData>(INITIAL_FORM);
   const createKPI = useCreateCatalogoKPI();
   const updateKPI = useUpdateCatalogoKPI();
@@ -109,7 +105,7 @@ export const CatalogoKPIFormModal = ({
   };
 
   const handleSubmit = () => {
-    if (!form.codigo || !form.nombre || !form.categoria) return;
+    if (!form.nombre || !form.categoria) return;
 
     const payload = {
       codigo: form.codigo,
@@ -124,17 +120,14 @@ export const CatalogoKPIFormModal = ({
     };
 
     if (isEditing) {
-      updateKPI.mutate(
-        { id: item.id, data: payload },
-        { onSuccess: () => onClose() }
-      );
+      updateKPI.mutate({ id: item.id, data: payload }, { onSuccess: () => onClose() });
     } else {
       createKPI.mutate(payload, { onSuccess: () => onClose() });
     }
   };
 
   const isPending = createKPI.isPending || updateKPI.isPending;
-  const isValid = form.codigo && form.nombre && form.categoria;
+  const isValid = form.nombre && form.categoria;
 
   return (
     <BaseModal
@@ -149,8 +142,7 @@ export const CatalogoKPIFormModal = ({
             label="Código"
             value={form.codigo}
             onChange={(e) => handleChange('codigo', e.target.value)}
-            placeholder="Ej: KPI-SST-001"
-            required
+            placeholder="Se genera automáticamente"
           />
           <Input
             label="Nombre"
@@ -218,9 +210,7 @@ export const CatalogoKPIFormModal = ({
             onChange={(e) => handleChange('activo', e.target.checked)}
             className="w-4 h-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
           />
-          <span className="text-sm text-gray-700 dark:text-gray-300">
-            KPI Activo
-          </span>
+          <span className="text-sm text-gray-700 dark:text-gray-300">KPI Activo</span>
         </label>
 
         <div className="flex justify-end gap-3 pt-4 border-t">

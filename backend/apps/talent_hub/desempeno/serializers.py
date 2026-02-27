@@ -27,6 +27,9 @@ class CicloEvaluacionListSerializer(serializers.ModelSerializer):
             'fecha_inicio', 'fecha_fin', 'fecha_inicio_evaluacion', 'fecha_fin_evaluacion',
             'estado', 'estado_display', 'evaluaciones_count', 'is_active',
         ]
+        extra_kwargs = {
+            'codigo': {'required': False, 'allow_blank': True},
+        }
 
 
 class CicloEvaluacionDetailSerializer(serializers.ModelSerializer):
@@ -38,6 +41,9 @@ class CicloEvaluacionDetailSerializer(serializers.ModelSerializer):
         model = CicloEvaluacion
         fields = '__all__'
         read_only_fields = ['empresa', 'created_at', 'updated_at']
+        extra_kwargs = {
+            'codigo': {'required': False, 'allow_blank': True},
+        }
 
 
 class CriterioEvaluacionSerializer(serializers.ModelSerializer):
@@ -192,6 +198,9 @@ class PlanMejoraListSerializer(serializers.ModelSerializer):
             'tipo_plan', 'tipo_display', 'fecha_inicio', 'fecha_fin',
             'estado', 'estado_display', 'porcentaje_avance', 'actividades_count',
         ]
+        extra_kwargs = {
+            'codigo': {'required': False, 'allow_blank': True},
+        }
 
 
 class PlanMejoraDetailSerializer(serializers.ModelSerializer):
@@ -207,6 +216,9 @@ class PlanMejoraDetailSerializer(serializers.ModelSerializer):
         model = PlanMejora
         fields = '__all__'
         read_only_fields = ['empresa', 'created_at', 'updated_at']
+        extra_kwargs = {
+            'codigo': {'required': False, 'allow_blank': True},
+        }
 
 
 class PlanMejoraCreateUpdateSerializer(serializers.ModelSerializer):
@@ -218,6 +230,9 @@ class PlanMejoraCreateUpdateSerializer(serializers.ModelSerializer):
             'competencias_a_desarrollar', 'recursos_necesarios', 'indicadores_exito',
             'observaciones',
         ]
+        extra_kwargs = {
+            'codigo': {'required': False, 'allow_blank': True},
+        }
 
 
 # =============================================================================

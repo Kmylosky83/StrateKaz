@@ -28,6 +28,7 @@ class TipoDocumento(models.Model):
 
     codigo = models.CharField(
         max_length=20,
+        blank=True,
         verbose_name='Código',
         help_text='Código único del tipo (ej: PR, IN, FT, MA)'
     )
@@ -120,6 +121,12 @@ class TipoDocumento(models.Model):
     def __str__(self):
         return f"{self.codigo} - {self.nombre}"
 
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.codigo:
+            from utils.consecutivos import auto_generate_codigo
+            auto_generate_codigo(self, 'TIPO_DOCUMENTO')
+        super().save(*args, **kwargs)
+
 
 class PlantillaDocumento(models.Model):
     """
@@ -139,6 +146,7 @@ class PlantillaDocumento(models.Model):
 
     codigo = models.CharField(
         max_length=50,
+        blank=True,
         verbose_name='Código de Plantilla'
     )
     nombre = models.CharField(
@@ -231,6 +239,12 @@ class PlantillaDocumento(models.Model):
 
     def __str__(self):
         return f"{self.codigo} - {self.nombre} (v{self.version})"
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.codigo:
+            from utils.consecutivos import auto_generate_codigo
+            auto_generate_codigo(self, 'PLANTILLA_DOCUMENTO')
+        super().save(*args, **kwargs)
 
 
 class Documento(models.Model):

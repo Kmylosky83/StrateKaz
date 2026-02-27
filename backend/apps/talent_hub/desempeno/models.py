@@ -42,7 +42,7 @@ class CicloEvaluacion(BaseCompanyModel):
         ('cancelado', 'Cancelado'),
     ]
 
-    codigo = models.CharField(max_length=20, db_index=True)
+    codigo = models.CharField(max_length=20, blank=True, db_index=True)
     nombre = models.CharField(max_length=200)
     descripcion = models.TextField(blank=True)
     tipo_ciclo = models.CharField(max_length=20, choices=TIPO_CICLO_CHOICES, default='anual')
@@ -95,6 +95,12 @@ class CicloEvaluacion(BaseCompanyModel):
 
     def __str__(self):
         return f"{self.codigo} - {self.nombre}"
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.codigo:
+            from utils.consecutivos import auto_generate_codigo
+            auto_generate_codigo(self, 'CICLO_EVALUACION')
+        super().save(*args, **kwargs)
 
     @property
     def peso_total(self):
@@ -486,7 +492,7 @@ class PlanMejora(BaseCompanyModel):
         on_delete=models.PROTECT,
         related_name='planes_mejora'
     )
-    codigo = models.CharField(max_length=20, db_index=True)
+    codigo = models.CharField(max_length=20, blank=True, db_index=True)
     titulo = models.CharField(max_length=200)
     tipo_plan = models.CharField(max_length=20, choices=TIPO_PLAN_CHOICES, default='desarrollo')
 
@@ -529,6 +535,12 @@ class PlanMejora(BaseCompanyModel):
 
     def __str__(self):
         return f"{self.codigo} - {self.colaborador}"
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.codigo:
+            from utils.consecutivos import auto_generate_codigo
+            auto_generate_codigo(self, 'PLAN_MEJORA')
+        super().save(*args, **kwargs)
 
     def actualizar_avance(self):
         """Actualiza el porcentaje de avance basado en las actividades."""

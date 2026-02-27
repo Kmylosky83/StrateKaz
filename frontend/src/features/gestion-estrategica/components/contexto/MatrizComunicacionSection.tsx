@@ -25,6 +25,8 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { Alert } from '@/components/common/Alert';
 import { Tooltip } from '@/components/common/Tooltip';
+import { Select } from '@/components/forms/Select';
+import { Input } from '@/components/forms/Input';
 import { Textarea } from '@/components/forms/Textarea';
 import { Switch } from '@/components/forms/Switch';
 import { BaseModal } from '@/components/modals/BaseModal';

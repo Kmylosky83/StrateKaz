@@ -1,0 +1,58 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Firma de Contrato - StrateKaz{% endblock %}
+
+{% block content %}
+<h2>Firma de Contrato Requerida</h2>
+
+<p>Hola <strong>{{ colaborador_nombre }}</strong>,</p>
+
+<p>Se requiere tu firma digital para el siguiente contrato laboral. Por favor revisa los detalles y firma antes de la fecha límite.</p>
+
+<div class="email-card">
+    <p class="email-card-title">Detalles del Contrato</p>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="4">
+        <tr>
+            <td style="color: #6b7280; width: 160px;">No. Contrato:</td>
+            <td style="color: #1f2937; font-weight: 600;">{{ numero_contrato }}</td>
+        </tr>
+        <tr>
+            <td style="color: #6b7280;">Tipo de Contrato:</td>
+            <td style="color: #1f2937;">{{ tipo_contrato }}</td>
+        </tr>
+        <tr>
+            <td style="color: #6b7280;">Fecha de Inicio:</td>
+            <td style="color: #1f2937;">{{ fecha_inicio }}</td>
+        </tr>
+        <tr>
+            <td style="color: #6b7280;">Fecha de Fin:</td>
+            <td style="color: #1f2937;">{{ fecha_fin }}</td>
+        </tr>
+        <tr>
+            <td style="color: #6b7280;">Salario Pactado:</td>
+            <td style="color: #1f2937; font-weight: 600;">{{ salario_pactado }}</td>
+        </tr>
+        {% if objeto_contrato and objeto_contrato != "No especificado" %}
+        <tr>
+            <td style="color: #6b7280;">Objeto:</td>
+            <td style="color: #1f2937;">{{ objeto_contrato }}</td>
+        </tr>
+        {% endif %}
+    </table>
+</div>
+
+<div class="text-center mt-4">
+    <a href="{{ action_url }}" class="email-button">Firmar Contrato</a>
+</div>
+
+<div class="email-card" style="background-color: #fef3c7; border-color: #fcd34d;">
+    <p style="color: #92400e; font-size: 14px; margin: 0;">
+        <strong>Importante:</strong> Este enlace expira el {{ fecha_expiracion }}. Después de esa fecha, deberá solicitarse un nuevo enlace de firma.
+    </p>
+</div>
+
+<p class="text-muted mt-4">Si el botón no funciona, copia y pega este enlace en tu navegador:<br>
+<a href="{{ action_url }}" style="color: #3b82f6; word-break: break-all;">{{ action_url }}</a></p>
+
+<p class="text-muted">Al firmar, se registrará tu dirección IP y fecha/hora como constancia legal de la firma.</p>
+{% endblock %}

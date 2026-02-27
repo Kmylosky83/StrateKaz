@@ -205,7 +205,7 @@ export const IntegracionesSection = () => {
     'all' | 'active' | 'inactive' | 'healthy' | 'unhealthy'
   >('all');
 
-  const integraciones = integracionesData?.results || [];
+  const integraciones = Array.isArray(integracionesData) ? integracionesData : [];
 
   // Filtrar integraciones
   const filteredIntegraciones = integraciones.filter((int) => {

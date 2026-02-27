@@ -368,7 +368,7 @@ class Command(BaseCommand):
                     },
                     {
                         'code': 'planeacion',
-                        'name': 'Planeación Estratégica',
+                        'name': 'Plan Estratégico',
                         'icon': 'Target',
                         'route': 'planeacion',
                         'orden': 2,
@@ -396,7 +396,7 @@ class Command(BaseCommand):
                     {
                         'code': 'gestion_proyectos',
                         'name': 'Gestión de Proyectos',
-                        'icon': 'Gantt',
+                        'icon': 'FolderKanban',
                         'route': 'proyectos',
                         'orden': 4,
                         'sections': [
@@ -678,7 +678,7 @@ class Command(BaseCommand):
                     {'code': 'seleccion_contratacion', 'name': 'Selección y Contratación', 'icon': 'UserPlus', 'route': 'seleccion', 'orden': 2},
                     {'code': 'colaboradores', 'name': 'Colaboradores', 'icon': 'Users', 'route': 'colaboradores', 'orden': 3},
                     {'code': 'onboarding_induccion', 'name': 'Onboarding e Inducción', 'icon': 'Rocket', 'route': 'onboarding', 'orden': 4},
-                    {'code': 'formacion_reinduccion', 'name': 'Formación y Reinducción', 'icon': 'BookOpen', 'route': 'formacion', 'orden': 5},
+                    {'code': 'formacion_reinduccion', 'name': 'Formación y Gamificación', 'icon': 'BookOpen', 'route': 'formacion', 'orden': 5},
                     {'code': 'desempeno', 'name': 'Desempeño', 'icon': 'Award', 'route': 'desempeno', 'orden': 6},
                     {'code': 'control_tiempo', 'name': 'Control de Tiempo', 'icon': 'Clock', 'route': 'control-tiempo', 'orden': 7},
                     {'code': 'novedades', 'name': 'Novedades', 'icon': 'Bell', 'route': 'novedades', 'orden': 8},

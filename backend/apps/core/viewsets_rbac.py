@@ -360,6 +360,8 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
         'assign_riesgos': 'can_edit',
         'assign_section_accesses': 'can_edit',
         'clear_section_accesses': 'can_edit',
+        'plantilla_importacion': 'can_view',
+        'importar': 'can_create',
     }
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -874,6 +876,182 @@ class CargoRBACViewSet(viewsets.ModelViewSet):
             'cargo_id': cargo.id,
             'deleted_count': deleted_count
         })
+
+    # =========================================================================
+    # IMPORTACIÓN MASIVA DESDE EXCEL
+    # =========================================================================
+
+    @action(detail=False, methods=['get'], url_path='plantilla-importacion')
+    def plantilla_importacion(self, request):
+        """
+        Descarga la plantilla Excel para importación masiva de cargos.
+        GET /api/core/cargos-rbac/plantilla-importacion/
+        Incluye hoja de datos + hoja de referencia con valores válidos del tenant.
+        """
+        import logging
+        from django.http import HttpResponse
+        from .import_cargos_utils import generate_cargo_import_template
+
+        logger = logging.getLogger(__name__)
+
+        # Obtener áreas del tenant para la hoja de referencia
+        try:
+            from apps.gestion_estrategica.organizacion.models import Area as AreaModel
+            areas = list(AreaModel.objects.filter(is_active=True).values('name'))
+        except Exception:
+            logger.warning("No se pudieron obtener las áreas para la plantilla de importación de cargos")
+            areas = []
+
+        # Obtener cargos existentes para referencia de cargo padre
+        try:
+            cargos_existentes = list(
+                Cargo.objects.filter(is_active=True, is_system=False)
+                .values('name', 'code')
+                .order_by('name')
+            )
+        except Exception:
+            logger.warning("No se pudieron obtener los cargos existentes para la plantilla")
+            cargos_existentes = []
+
+        excel_bytes = generate_cargo_import_template(
+            areas=areas,
+            cargos_existentes=cargos_existentes,
+        )
+
+        response = HttpResponse(
+            excel_bytes,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="plantilla_cargos.xlsx"'
+        return response
+
+    @action(detail=False, methods=['post'], url_path='importar')
+    def importar(self, request):
+        """
+        Importa cargos desde un archivo Excel.
+        POST /api/core/cargos-rbac/importar/   multipart/form-data  campo: archivo
+
+        Procesa fila por fila — los errores NO bloquean las filas válidas.
+        Respuesta:
+        {
+          "creados": N,
+          "actualizados": N,
+          "errores": [{"fila": X, "codigo": "...", "errores": [...]}]
+        }
+        """
+        import logging
+        logger = logging.getLogger(__name__)
+
+        archivo = request.FILES.get('archivo')
+        if not archivo:
+            return Response(
+                {'detail': 'Se requiere el archivo Excel (.xlsx).'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validar extensión
+        nombre = archivo.name.lower()
+        if not (nombre.endswith('.xlsx') or nombre.endswith('.xls')):
+            return Response(
+                {'detail': 'El archivo debe ser Excel (.xlsx).'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Parsear el archivo
+        try:
+            from .import_cargos_utils import parse_cargo_excel, CARGO_COLUMNAS
+            contenido = archivo.read()
+            filas = parse_cargo_excel(contenido)
+        except Exception as e:
+            logger.error('Error parseando archivo de importación de cargos: %s', e, exc_info=True)
+            return Response(
+                {'detail': f'No se pudo leer el archivo: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not filas:
+            return Response(
+                {'detail': 'El archivo no contiene datos. Verifica que haya filas después de las cabeceras (fila 4 en adelante).'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user = request.user
+        creados = 0
+        actualizados = 0
+        errores = []
+
+        from .import_cargos_serializer import CargoImportRowSerializer
+
+        for fila_raw in filas:
+            num_fila = fila_raw.pop('_fila', '?')
+            codigo_raw = str(fila_raw.get('codigo', '')).strip()
+
+            # Construir dict normalizado para el serializer
+            datos = {col: fila_raw.get(col, '') for col in CARGO_COLUMNAS}
+
+            serializer = CargoImportRowSerializer(data=datos)
+            if not serializer.is_valid():
+                # Aplanar errores a lista de strings
+                msgs = []
+                for field, errs in serializer.errors.items():
+                    if isinstance(errs, list):
+                        msgs.extend([str(e) for e in errs])
+                    else:
+                        msgs.append(str(errs))
+                errores.append({
+                    'fila': num_fila,
+                    'codigo': codigo_raw or '—',
+                    'errores': msgs,
+                })
+                continue
+
+            vdata = serializer.validated_data
+            area = vdata.pop('_area')
+            parent_cargo = vdata.pop('_parent_cargo')
+
+            # Limpiar campos auxiliares no presentes en el modelo
+            for key in ['area_nombre', 'cargo_padre_nombre']:
+                vdata.pop(key, None)
+
+            # Renombrar campos al formato del modelo
+            cargo_data = {
+                'code': vdata.pop('codigo'),
+                'name': vdata.pop('nombre'),
+                'nivel_jerarquico': vdata.pop('nivel_jerarquico'),
+                'description': vdata.pop('descripcion', '') or None,
+                'nivel_educativo': vdata.pop('nivel_educativo', None),
+                'experiencia_requerida': vdata.pop('experiencia_requerida', None),
+                'cantidad_posiciones': vdata.pop('cantidad_posiciones', 1),
+                'is_jefatura': vdata.pop('is_jefatura', False),
+                'area': area,
+                'parent_cargo': parent_cargo,
+                'created_by': user,
+            }
+
+            try:
+                with transaction.atomic():
+                    cargo = Cargo(**cargo_data)
+                    cargo.full_clean()
+                    cargo.save()
+                    creados += 1
+
+            except Exception as e:
+                logger.error(
+                    'Error importando cargo fila %s (código %s): %s',
+                    num_fila, codigo_raw, e, exc_info=True
+                )
+                errores.append({
+                    'fila': num_fila,
+                    'codigo': codigo_raw or '—',
+                    'errores': [str(e)],
+                })
+
+        return Response({
+            'creados': creados,
+            'actualizados': actualizados,
+            'errores': errores,
+            'total_filas': creados + actualizados + len(errores),
+        }, status=status.HTTP_200_OK if creados > 0 else status.HTTP_400_BAD_REQUEST)
 
 
 # =============================================================================

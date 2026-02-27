@@ -31,11 +31,17 @@ import {
   User,
   PenTool,
   CalendarClock,
+  Clock,
+  Send,
+  RefreshCw,
+  Mail,
 } from 'lucide-react';
 import {
   useHistorialContratos,
   useContratosPorVencer,
   useFirmarContrato,
+  useEnviarContrato,
+  useReenviarContrato,
 } from '../../hooks/useSeleccionContratacion';
 import { TIPO_MOVIMIENTO_OPTIONS, TIPO_MOVIMIENTO_BADGE } from '../../types';
 import type { HistorialContratoList, HistorialContratoFilters } from '../../types';
@@ -282,6 +288,14 @@ const contratoColumns: ResponsiveTableColumn<HistorialContratoList & Record<stri
             <span className="text-[10px] text-green-600 flex items-center gap-0.5">
               <PenTool size={8} /> Firmado
             </span>
+          ) : c.firma_enviada && !c.firma_token_expirado ? (
+            <span className="text-[10px] text-blue-600 flex items-center gap-0.5">
+              <Mail size={8} /> Enviado
+            </span>
+          ) : c.firma_enviada && c.firma_token_expirado ? (
+            <span className="text-[10px] text-red-600 flex items-center gap-0.5">
+              <Clock size={8} /> Expirado
+            </span>
           ) : (
             <span className="text-[10px] text-amber-600 flex items-center gap-0.5">
               <PenTool size={8} /> Sin firmar
@@ -310,11 +324,15 @@ export const ContratosTab = () => {
   });
   const { data: porVencerData } = useContratosPorVencer(30);
   const firmarMutation = useFirmarContrato();
+  const enviarMutation = useEnviarContrato();
+  const reenviarMutation = useReenviarContrato();
 
   // Modales
   const [showFormModal, setShowFormModal] = useState(false);
   const [showFirmarDialog, setShowFirmarDialog] = useState(false);
+  const [showEnviarDialog, setShowEnviarDialog] = useState(false);
   const [firmarId, setFirmarId] = useState<number | null>(null);
+  const [enviarId, setEnviarId] = useState<number | null>(null);
 
   const contratos = useMemo(() => contratosData?.results || [], [contratosData]);
   const porVencer = porVencerData?.results || [];
@@ -347,6 +365,21 @@ export const ContratosTab = () => {
     if (firmarId) {
       firmarMutation.mutate(firmarId, {
         onSuccess: () => setShowFirmarDialog(false),
+      });
+    }
+  };
+
+  const handleEnviarFirma = (id: number) => {
+    setEnviarId(id);
+    setShowEnviarDialog(true);
+  };
+
+  const confirmEnviarFirma = () => {
+    if (enviarId) {
+      const contrato = contratos.find((c) => c.id === enviarId);
+      const mutation = contrato?.firma_enviada ? reenviarMutation : enviarMutation;
+      mutation.mutate(enviarId, {
+        onSuccess: () => setShowEnviarDialog(false),
       });
     }
   };
@@ -448,14 +481,30 @@ export const ContratosTab = () => {
               const c = item as unknown as HistorialContratoList;
               if (c.firmado) return null;
               return (
-                <Button
-                  size="xs"
-                  variant="ghost"
-                  onClick={() => handleFirmar(c.id)}
-                  title="Firmar contrato"
-                >
-                  <PenTool size={14} className="text-green-500" />
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    onClick={() => handleEnviarFirma(c.id)}
+                    title={
+                      c.firma_enviada ? 'Reenviar email de firma' : 'Enviar para firma digital'
+                    }
+                  >
+                    {c.firma_enviada ? (
+                      <RefreshCw size={14} className="text-blue-500" />
+                    ) : (
+                      <Send size={14} className="text-blue-500" />
+                    )}
+                  </Button>
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    onClick={() => handleFirmar(c.id)}
+                    title="Marcar como firmado (manual)"
+                  >
+                    <PenTool size={14} className="text-green-500" />
+                  </Button>
+                </div>
               );
             }}
             hoverable
@@ -478,6 +527,17 @@ export const ContratosTab = () => {
         confirmText="Confirmar Firma"
         variant="info"
         isLoading={firmarMutation.isPending}
+      />
+
+      <ConfirmDialog
+        isOpen={showEnviarDialog}
+        onClose={() => setShowEnviarDialog(false)}
+        onConfirm={confirmEnviarFirma}
+        title="Enviar para Firma Digital"
+        message="Se enviara un email al colaborador con un enlace para firmar digitalmente el contrato. El enlace tendra una validez de 7 dias."
+        confirmText="Enviar Email"
+        variant="info"
+        isLoading={enviarMutation.isPending || reenviarMutation.isPending}
       />
     </div>
   );

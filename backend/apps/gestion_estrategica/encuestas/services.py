@@ -136,7 +136,9 @@ class EncuestaService:
         """Envía recordatorio a participantes que no han respondido."""
         from apps.audit_system.centro_notificaciones.services import NotificationService
 
-        usuarios_respondieron = encuesta.respuestas.values_list(
+        usuarios_respondieron = RespuestaEncuesta.objects.filter(
+            tema__encuesta=encuesta
+        ).values_list(
             'respondente_id', flat=True
         ).distinct()
 
@@ -505,7 +507,9 @@ class EncuestaService:
 
                 temas_stats.append(tema_stat)
 
-        usuarios_unicos = encuesta.respuestas.values(
+        usuarios_unicos = RespuestaEncuesta.objects.filter(
+            tema__encuesta=encuesta
+        ).values(
             'respondente'
         ).distinct().count()
 

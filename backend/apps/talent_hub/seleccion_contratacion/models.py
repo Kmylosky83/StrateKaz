@@ -1664,6 +1664,39 @@ class HistorialContrato(BaseCompanyModel):
         verbose_name='Archivo del Contrato'
     )
 
+    # Firma digital remota (token → email → firma manuscrita)
+    firma_token = models.CharField(
+        max_length=64,
+        unique=True,
+        null=True,
+        blank=True,
+        db_index=True,
+        verbose_name='Token de Firma',
+        help_text='Token UUID para URL pública de firma digital'
+    )
+    firma_token_expira = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Expiración del Token',
+        help_text='Fecha límite para firmar (7 días desde envío)'
+    )
+    firma_imagen = models.TextField(
+        blank=True,
+        verbose_name='Firma Imagen (Base64)',
+        help_text='Imagen de la firma manuscrita digital en formato Base64/DataURL'
+    )
+    firma_ip = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name='IP del Firmante',
+        help_text='Dirección IP desde donde se firmó el contrato'
+    )
+    firma_user_agent = models.TextField(
+        blank=True,
+        verbose_name='User Agent del Firmante',
+        help_text='Navegador y sistema operativo del firmante'
+    )
+
     # Integración Gestor Documental (Sprint 20)
     contrato_documento = models.ForeignKey(
         'gestion_documental.Documento',
@@ -1690,6 +1723,18 @@ class HistorialContrato(BaseCompanyModel):
 
     def __str__(self):
         return f"{self.numero_contrato} - {self.colaborador.get_nombre_corto()} ({self.tipo_contrato})"
+
+    @property
+    def firma_token_expirado(self):
+        """Indica si el token de firma ya expiró."""
+        if not self.firma_token or not self.firma_token_expira:
+            return True
+        return timezone.now() > self.firma_token_expira
+
+    @property
+    def firma_enviada(self):
+        """Indica si el contrato fue enviado para firma digital."""
+        return bool(self.firma_token)
 
     @property
     def esta_vigente(self):

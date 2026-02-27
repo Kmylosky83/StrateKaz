@@ -38,6 +38,7 @@ import type {
   RenovarContratoDTO,
   OtrosiDTO,
   ContratoWarnings,
+  EnviarContratoResponse,
   ProcesoSeleccionEstadisticas,
   PerfilamientoResponse,
   EstadoCandidato,
@@ -277,6 +278,18 @@ export const historialContratoApi = {
     const response = await apiClient.post(
       `${SELECCION_URL}/historial-contratos/${id}/otrosi/`,
       data
+    );
+    return response.data;
+  },
+  enviarContrato: async (id: number): Promise<EnviarContratoResponse> => {
+    const response = await apiClient.post(
+      `${SELECCION_URL}/historial-contratos/${id}/enviar-contrato/`
+    );
+    return response.data;
+  },
+  reenviarContrato: async (id: number): Promise<EnviarContratoResponse> => {
+    const response = await apiClient.post(
+      `${SELECCION_URL}/historial-contratos/${id}/reenviar-contrato/`
     );
     return response.data;
   },

@@ -19,8 +19,18 @@ import { Select } from '@/components/forms/Select';
 import { Switch } from '@/components/forms/Switch';
 import { Checkbox } from '@/components/forms/Checkbox';
 import { Lock } from 'lucide-react';
-import { useCreateModule, useUpdateModule, useModuleCategories, useModules } from '../../hooks/useStrategic';
-import type { SystemModule, CreateSystemModuleDTO, UpdateSystemModuleDTO, ModuleCategory } from '../../types/strategic.types';
+import {
+  useCreateModule,
+  useUpdateModule,
+  useModuleCategories,
+  useModules,
+} from '../../hooks/useStrategic';
+import type {
+  SystemModule,
+  CreateSystemModuleDTO,
+  UpdateSystemModuleDTO,
+  ModuleCategory,
+} from '../../types/strategic.types';
 
 interface ModuleFormModalProps {
   module: SystemModule | null;
@@ -50,7 +60,8 @@ export const ModuleFormModal = ({ module, isOpen, onClose }: ModuleFormModalProp
   const { data: modulesData } = useModules();
 
   // Obtener módulos disponibles para dependencias (excluyendo el actual)
-  const availableModules = modulesData?.results?.filter((m) => m.id !== module?.id) || [];
+  const allModules = Array.isArray(modulesData) ? modulesData : [];
+  const availableModules = allModules.filter((m) => m.id !== module?.id);
 
   useEffect(() => {
     if (module) {
@@ -169,7 +180,11 @@ export const ModuleFormModal = ({ module, isOpen, onClose }: ModuleFormModalProp
       isOpen={isOpen}
       onClose={onClose}
       title={title}
-      subtitle={isSystemModule ? 'Módulo core del sistema - Solo lectura' : 'Configura un módulo del marketplace'}
+      subtitle={
+        isSystemModule
+          ? 'Módulo core del sistema - Solo lectura'
+          : 'Configura un módulo del marketplace'
+      }
       size="xl"
       footer={footer}
     >
@@ -185,7 +200,9 @@ export const ModuleFormModal = ({ module, isOpen, onClose }: ModuleFormModalProp
           <Input
             label="Código *"
             value={formData.code}
-            onChange={(e) => setFormData({ ...formData, code: e.target.value.toLowerCase().replace(/\s/g, '_') })}
+            onChange={(e) =>
+              setFormData({ ...formData, code: e.target.value.toLowerCase().replace(/\s/g, '_') })
+            }
             placeholder="gestion_estrategica"
             disabled={isEditing}
             required
@@ -193,7 +210,9 @@ export const ModuleFormModal = ({ module, isOpen, onClose }: ModuleFormModalProp
           <Select
             label="Categoría *"
             value={formData.category}
-            onChange={(e) => setFormData({ ...formData, category: e.target.value as ModuleCategory })}
+            onChange={(e) =>
+              setFormData({ ...formData, category: e.target.value as ModuleCategory })
+            }
             options={categoryOptions}
             disabled={isSystemModule}
             required
@@ -254,9 +273,7 @@ export const ModuleFormModal = ({ module, isOpen, onClose }: ModuleFormModalProp
         {/* Dependencias */}
         {availableModules.length > 0 && !isSystemModule && (
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Dependencias
-            </label>
+            <label className="block text-sm font-medium text-gray-700">Dependencias</label>
             <p className="text-xs text-gray-500 mb-2">
               Selecciona los módulos que deben estar activos para que este funcione
             </p>

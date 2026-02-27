@@ -50,6 +50,7 @@ import type {
   PlantillaPruebaList,
   PruebaPublicaData,
   EntrevistaAsincronicaPublicData,
+  ContratoPublicData,
 } from '../types';
 
 // ============================================================================
@@ -722,6 +723,66 @@ export function useContratoWarnings(id: number | null) {
     queryFn: () => historialContratoApi.warnings(id!),
     enabled: !!id,
     staleTime: 10 * 60 * 1000,
+  });
+}
+
+// ============================================================================
+// HOOKS - FIRMA DIGITAL DE CONTRATOS
+// ============================================================================
+
+/** Enviar contrato para firma digital (genera token + email) */
+export function useEnviarContrato() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => historialContratoApi.enviarContrato(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: thKeys.contratos.all });
+      toast.success('Contrato enviado para firma digital');
+    },
+    onError: (e) => toast.error(getMsg(e, 'Error al enviar el contrato para firma')),
+  });
+}
+
+/** Reenviar email de firma digital */
+export function useReenviarContrato() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => historialContratoApi.reenviarContrato(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: thKeys.contratos.all });
+      toast.success('Email de firma reenviado exitosamente');
+    },
+    onError: (e) => toast.error(getMsg(e, 'Error al reenviar el email de firma')),
+  });
+}
+
+/** Obtener contrato público para firma (AllowAny, por token) */
+export function useContratoPublico(token: string) {
+  return useQuery({
+    queryKey: ['contrato-publico', token],
+    queryFn: async () => {
+      const response = await api.get<ContratoPublicData>(
+        `/talent-hub/seleccion/firmar-contrato/${token}/`
+      );
+      return response.data;
+    },
+    enabled: !!token,
+    retry: false,
+    staleTime: Infinity,
+  });
+}
+
+/** Firmar contrato público (AllowAny, por token) */
+export function useFirmarContratoPublico() {
+  return useMutation({
+    mutationFn: async ({ token, firma_imagen }: { token: string; firma_imagen: string }) => {
+      const response = await api.put(`/talent-hub/seleccion/firmar-contrato/${token}/`, {
+        firma_imagen,
+      });
+      return response.data;
+    },
+    onSuccess: () => toast.success('Contrato firmado exitosamente'),
+    onError: (e) => toast.error(getMsg(e, 'Error al firmar el contrato')),
   });
 }
 

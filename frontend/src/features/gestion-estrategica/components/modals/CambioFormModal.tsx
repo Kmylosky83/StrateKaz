@@ -234,8 +234,10 @@ export const CambioFormModal = ({ cambio, isOpen, onClose }: CambioFormModalProp
   const typeOptions = changeTypes?.map((t) => ({ value: t.value, label: t.label })) || [];
   const priorityOptions = priorities?.map((p) => ({ value: p.value, label: p.label })) || [];
   const statusOptions = statuses?.map((s) => ({ value: s.value, label: s.label })) || [];
-  const objectiveOptions =
-    objectivesData?.results?.map((o) => ({ value: o.id, label: `${o.code} - ${o.name}` })) || [];
+  const objectiveOptions = (Array.isArray(objectivesData) ? objectivesData : []).map((o) => ({
+    value: o.id,
+    label: `${o.code} - ${o.name}`,
+  }));
 
   const footer = (
     <>

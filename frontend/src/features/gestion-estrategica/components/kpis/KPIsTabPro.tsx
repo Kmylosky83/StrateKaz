@@ -85,7 +85,7 @@ export function KPIsTabPro({ planId }: KPIsTabProProps) {
     selectedObjectiveId ? { objective: selectedObjectiveId, is_active: true } : { is_active: true }
   );
 
-  const objectives = objectivesData?.results || [];
+  const objectives = Array.isArray(objectivesData) ? objectivesData : [];
   const kpis = kpisData?.results || [];
 
   // Handlers
@@ -166,7 +166,11 @@ export function KPIsTabPro({ planId }: KPIsTabProProps) {
       </Card>
 
       {/* Tabs de Visualización */}
-      <Tabs tabs={TABS} activeTab={activeTab} onChange={(tabId) => setActiveTab(tabId as TabType)} />
+      <Tabs
+        tabs={TABS}
+        activeTab={activeTab}
+        onChange={(tabId) => setActiveTab(tabId as TabType)}
+      />
 
       {/* Contenido según Tab Activa */}
       {kpisLoading ? (
@@ -217,7 +221,9 @@ export function KPIsTabPro({ planId }: KPIsTabProProps) {
             />
           )}
 
-          {activeTab === 'hierarchy' && <KPITreemap objectives={objectives} kpis={kpis} colorBy="semaforo" />}
+          {activeTab === 'hierarchy' && (
+            <KPITreemap objectives={objectives} kpis={kpis} colorBy="semaforo" />
+          )}
         </Suspense>
       )}
 

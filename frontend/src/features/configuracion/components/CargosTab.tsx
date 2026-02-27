@@ -12,7 +12,17 @@
  * - Códigos: gestion_estrategica.cargos.{view|create|edit|delete}
  */
 import { useState, useMemo } from 'react';
-import { Plus, Pencil, Trash2, Users, Lock, Briefcase, CheckCircle, Search } from 'lucide-react';
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Users,
+  Lock,
+  Briefcase,
+  CheckCircle,
+  Search,
+  Upload,
+} from 'lucide-react';
 import { Badge } from '@/components/common/Badge';
 import { Button } from '@/components/common/Button';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -29,6 +39,7 @@ import type { StatItem } from '@/components/layout';
 import { useCargos, useDeleteCargo, useCargoChoices } from '../hooks/useCargos';
 import { CargoLevelBadge } from './CargoLevelBadge';
 import { CargoFormModal } from './CargoFormModal';
+import { ImportCargosModal } from './ImportCargosModal';
 import type { CargoList, CargoFilters, NivelJerarquico } from '../types/rbac.types';
 import { NIVEL_JERARQUICO_OPTIONS } from '../types/rbac.types';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -98,6 +109,7 @@ export const CargosTab = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<CargoList | null>(null);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
+  const [isImportOpen, setIsImportOpen] = useState(false);
 
   // RBAC: Verificar permisos del usuario
   const { canDo } = usePermissions();
@@ -266,10 +278,16 @@ export const CargosTab = () => {
               className="w-44"
             />
             {canCreate && (
-              <Button onClick={handleCreate} variant="primary" size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Nuevo Cargo
-              </Button>
+              <>
+                <Button onClick={() => setIsImportOpen(true)} variant="outline" size="sm">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Importar
+                </Button>
+                <Button onClick={handleCreate} variant="primary" size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nuevo Cargo
+                </Button>
+              </>
             )}
           </div>
         }
@@ -398,6 +416,9 @@ export const CargosTab = () => {
         variant="danger"
         isLoading={deleteMutation.isPending}
       />
+
+      {/* Modal de importación masiva */}
+      <ImportCargosModal isOpen={isImportOpen} onClose={() => setIsImportOpen(false)} />
     </div>
   );
 };

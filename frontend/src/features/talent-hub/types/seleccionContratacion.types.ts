@@ -535,6 +535,8 @@ export interface HistorialContratoList {
   tipo_movimiento_display: string;
   numero_renovacion: number;
   firmado: boolean;
+  firma_enviada: boolean;
+  firma_token_expirado: boolean;
   esta_vigente: boolean;
   dias_para_vencer: number | null;
   contrato_documento: number | null;
@@ -979,6 +981,27 @@ export interface HistorialContratoFilters {
   vigentes?: boolean;
   page?: number;
   page_size?: number;
+}
+
+/** Datos del contrato para la página pública de firma */
+export interface ContratoPublicData {
+  numero_contrato: string;
+  colaborador_nombre: string;
+  tipo_contrato: string;
+  fecha_inicio: string;
+  fecha_fin: string | null;
+  salario_pactado: string;
+  objeto_contrato: string;
+  tipo_movimiento: string;
+  archivo_contrato: string | null;
+  fecha_expiracion: string | null;
+}
+
+/** Respuesta del endpoint enviar-contrato */
+export interface EnviarContratoResponse {
+  message: string;
+  token: string;
+  expira: string;
 }
 
 // =============================================================================

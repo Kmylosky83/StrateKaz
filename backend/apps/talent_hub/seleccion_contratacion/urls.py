@@ -19,6 +19,7 @@ from .views import (
     AfiliacionSSViewSet,
     # Contratos (Ley 2466/2025)
     HistorialContratoViewSet,
+    FirmarContratoPublicView,
     # Estadísticas
     ProcesoSeleccionEstadisticasViewSet,
     # Pruebas Dinámicas (Form Builder)
@@ -28,6 +29,9 @@ from .views import (
     # Entrevistas Asincrónicas
     EntrevistaAsincronicaViewSet,
     ResponderEntrevistaAsincronicaViewSet,
+    # Portal Público de Vacantes
+    VacantePublicaViewSet,
+    PostulacionPublicaView,
 )
 
 app_name = 'seleccion_contratacion'
@@ -59,9 +63,21 @@ router.register(r'responder-prueba', ResponderPruebaDinamicaViewSet, basename='r
 router.register(r'entrevistas-async', EntrevistaAsincronicaViewSet, basename='entrevista-async')
 router.register(r'responder-entrevista', ResponderEntrevistaAsincronicaViewSet, basename='responder-entrevista')
 
+# Firma Digital de Contratos (AllowAny)
+router.register(r'firmar-contrato', FirmarContratoPublicView, basename='firmar-contrato')
+
 # Estadísticas
 router.register(r'estadisticas', ProcesoSeleccionEstadisticasViewSet, basename='estadisticas')
 
+# Portal Público de Vacantes (AllowAny)
+router.register(r'vacantes-publicas', VacantePublicaViewSet, basename='vacante-publica')
+
 urlpatterns = [
+    # Postulación pública (fuera del router por URL custom)
+    path(
+        'vacantes-publicas/<int:vacante_id>/postular/',
+        PostulacionPublicaView.as_view({'post': 'create'}),
+        name='postulacion-publica',
+    ),
     path('', include(router.urls)),
 ]

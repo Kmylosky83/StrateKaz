@@ -9,6 +9,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.parsers import MultiPartParser, FormParser
 from django.db.models import Count, Avg, Q, F, Value, DecimalField
 from decimal import Decimal
 from django.utils import timezone
@@ -60,6 +61,9 @@ from .serializers import (
     EntrevistaAsincronicaCreateSerializer,
     EntrevistaAsincronicaPublicSerializer,
     ResponderEntrevistaAsincronicaSerializer,
+    VacantePublicaListSerializer,
+    VacantePublicaDetailSerializer,
+    PostulacionPublicaSerializer,
 )
 from .serializers_contrato import (
     HistorialContratoListSerializer,
@@ -969,6 +973,247 @@ class HistorialContratoViewSet(viewsets.ModelViewSet):
             'contrato': serializer.data,
         })
 
+    @action(detail=True, methods=['post'], url_path='enviar-contrato')
+    def enviar_contrato(self, request, pk=None):
+        """
+        Genera token de firma y envía email al colaborador para firmar contrato.
+
+        Flujo:
+        1. Genera token UUID único
+        2. Establece expiración a 7 días
+        3. Envía email al colaborador con link de firma
+        4. Retorna token generado
+        """
+        import uuid
+        from datetime import timedelta
+
+        contrato = self.get_object()
+
+        if contrato.firmado:
+            return Response(
+                {'detail': 'Este contrato ya fue firmado.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Generar token
+        token = uuid.uuid4().hex
+        contrato.firma_token = token
+        contrato.firma_token_expira = timezone.now() + timedelta(days=7)
+        contrato.save(update_fields=[
+            'firma_token', 'firma_token_expira', 'updated_at'
+        ])
+
+        # Enviar email al colaborador
+        self._enviar_email_firma_contrato(contrato)
+
+        return Response({
+            'message': 'Contrato enviado para firma digital',
+            'token': token,
+            'expira': contrato.firma_token_expira.isoformat(),
+        })
+
+    def _enviar_email_firma_contrato(self, contrato):
+        """Envía email con link para firmar contrato digitalmente."""
+        from django.core.mail import send_mail
+        from django.conf import settings as django_settings
+        from django.template.loader import render_to_string
+
+        colaborador = contrato.colaborador
+
+        # Obtener email del colaborador (usuario vinculado o email personal)
+        email_destino = None
+        if colaborador.usuario and colaborador.usuario.email:
+            email_destino = colaborador.usuario.email
+        elif colaborador.email_personal:
+            email_destino = colaborador.email_personal
+
+        if not email_destino:
+            return  # Sin email, no se puede enviar
+
+        # Construir URL pública
+        domain = self.request.get_host()
+        protocol = 'https' if self.request.is_secure() else 'http'
+        action_url = f"{protocol}://{domain}/contratos/firmar/{contrato.firma_token}"
+
+        context = {
+            'colaborador_nombre': colaborador.get_nombre_completo(),
+            'numero_contrato': contrato.numero_contrato,
+            'tipo_contrato': contrato.tipo_contrato.nombre,
+            'fecha_inicio': contrato.fecha_inicio.strftime('%d/%m/%Y'),
+            'fecha_fin': contrato.fecha_fin.strftime('%d/%m/%Y') if contrato.fecha_fin else 'Indefinido',
+            'salario_pactado': f"${contrato.salario_pactado:,.0f}",
+            'objeto_contrato': contrato.objeto_contrato or 'No especificado',
+            'fecha_expiracion': contrato.firma_token_expira.strftime('%d/%m/%Y %H:%M'),
+            'action_url': action_url,
+        }
+
+        html_content = render_to_string(
+            'emails/contrato_firma_digital.html', context
+        )
+
+        try:
+            send_mail(
+                subject=f'Firma de contrato requerida: {contrato.numero_contrato}',
+                message='',
+                from_email=django_settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email_destino],
+                html_message=html_content,
+                fail_silently=False,
+            )
+        except Exception:
+            pass  # Log silently, token was already generated
+
+    @action(detail=True, methods=['post'], url_path='reenviar-contrato')
+    def reenviar_contrato(self, request, pk=None):
+        """Reenvía el email de firma para un contrato ya enviado."""
+        import uuid
+        from datetime import timedelta
+
+        contrato = self.get_object()
+
+        if contrato.firmado:
+            return Response(
+                {'detail': 'Este contrato ya fue firmado.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not contrato.firma_token:
+            return Response(
+                {'detail': 'Este contrato no ha sido enviado para firma.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Regenerar token y extender expiración
+        contrato.firma_token = uuid.uuid4().hex
+        contrato.firma_token_expira = timezone.now() + timedelta(days=7)
+        contrato.save(update_fields=[
+            'firma_token', 'firma_token_expira', 'updated_at'
+        ])
+
+        self._enviar_email_firma_contrato(contrato)
+
+        return Response({
+            'message': 'Email de firma reenviado exitosamente',
+            'token': contrato.firma_token,
+            'expira': contrato.firma_token_expira.isoformat(),
+        })
+
+
+class FirmarContratoPublicView(viewsets.ViewSet):
+    """
+    Vista pública (AllowAny) para que colaboradores firmen contratos digitalmente.
+
+    GET  /firmar-contrato/{token}/ → Ver información del contrato
+    PUT  /firmar-contrato/{token}/ → Enviar firma y marcar como firmado
+    """
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def retrieve(self, request, pk=None):
+        """Retorna información del contrato para visualización pública."""
+        try:
+            contrato = HistorialContrato.objects.select_related(
+                'colaborador', 'tipo_contrato'
+            ).get(firma_token=pk, is_active=True)
+        except HistorialContrato.DoesNotExist:
+            return Response(
+                {'detail': 'Contrato no encontrado.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Validar si ya fue firmado
+        if contrato.firmado:
+            return Response(
+                {'detail': 'Este contrato ya fue firmado.', 'firmado': True},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validar si el token expiró
+        if contrato.firma_token_expirado:
+            return Response(
+                {'detail': 'El enlace para firmar este contrato ha expirado.', 'expirado': True},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Datos del contrato para mostrar en la página pública
+        data = {
+            'numero_contrato': contrato.numero_contrato,
+            'colaborador_nombre': contrato.colaborador.get_nombre_completo(),
+            'tipo_contrato': contrato.tipo_contrato.nombre,
+            'fecha_inicio': contrato.fecha_inicio.isoformat(),
+            'fecha_fin': contrato.fecha_fin.isoformat() if contrato.fecha_fin else None,
+            'salario_pactado': str(contrato.salario_pactado),
+            'objeto_contrato': contrato.objeto_contrato or '',
+            'tipo_movimiento': contrato.get_tipo_movimiento_display(),
+            'archivo_contrato': contrato.archivo_contrato.url if contrato.archivo_contrato else None,
+            'fecha_expiracion': contrato.firma_token_expira.isoformat() if contrato.firma_token_expira else None,
+        }
+
+        return Response(data)
+
+    def update(self, request, pk=None):
+        """Recibe la firma digital y marca el contrato como firmado."""
+        try:
+            contrato = HistorialContrato.objects.select_related(
+                'colaborador', 'tipo_contrato'
+            ).get(firma_token=pk, is_active=True)
+        except HistorialContrato.DoesNotExist:
+            return Response(
+                {'detail': 'Contrato no encontrado.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Validaciones
+        if contrato.firmado:
+            return Response(
+                {'detail': 'Este contrato ya fue firmado.', 'firmado': True},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if contrato.firma_token_expirado:
+            return Response(
+                {'detail': 'El enlace para firmar este contrato ha expirado.', 'expirado': True},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validar firma
+        firma_imagen = request.data.get('firma_imagen')
+        if not firma_imagen:
+            return Response(
+                {'detail': 'La firma digital es requerida.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Obtener IP del firmante
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0].strip()
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+
+        user_agent = request.META.get('HTTP_USER_AGENT', '')
+
+        # Guardar firma y marcar como firmado
+        contrato.firma_imagen = firma_imagen
+        contrato.firma_ip = ip
+        contrato.firma_user_agent = user_agent
+        contrato.firmado = True
+        contrato.fecha_firma = timezone.now()
+        # Limpiar token (single-use)
+        contrato.firma_token = None
+        contrato.firma_token_expira = None
+        contrato.save(update_fields=[
+            'firma_imagen', 'firma_ip', 'firma_user_agent',
+            'firmado', 'fecha_firma',
+            'firma_token', 'firma_token_expira',
+            'updated_at',
+        ])
+
+        return Response({
+            'message': 'Contrato firmado exitosamente',
+            'fecha_firma': contrato.fecha_firma.isoformat(),
+        })
+
 
 # =============================================================================
 # PRUEBAS TÉCNICAS DINÁMICAS
@@ -1586,3 +1831,152 @@ class ResponderEntrevistaAsincronicaViewSet(viewsets.ViewSet):
             'detail': 'Entrevista completada exitosamente. Gracias por tus respuestas.',
             'completada': True,
         })
+
+
+# =============================================================================
+# PORTAL PÚBLICO DE VACANTES (AllowAny)
+# =============================================================================
+
+class VacantePublicaViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Vacantes públicas sin autenticación - solo abiertas y publicadas externamente.
+
+    Endpoints:
+    - GET /vacantes-publicas/ - Listar vacantes publicadas
+    - GET /vacantes-publicas/{id}/ - Detalle de vacante
+    - GET /vacantes-publicas/empresa-info/ - Info básica de la empresa
+    """
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def get_queryset(self):
+        queryset = VacanteActiva.objects.filter(
+            estado='abierta',
+            publicada_externamente=True,
+            is_active=True,
+        ).select_related('tipo_contrato').order_by('-prioridad', '-fecha_apertura')
+
+        # Filtros opcionales
+        modalidad = self.request.query_params.get('modalidad')
+        if modalidad:
+            queryset = queryset.filter(modalidad=modalidad)
+
+        ubicacion = self.request.query_params.get('ubicacion')
+        if ubicacion:
+            queryset = queryset.filter(ubicacion__icontains=ubicacion)
+
+        search = self.request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(titulo__icontains=search) |
+                Q(cargo_requerido__icontains=search) |
+                Q(descripcion__icontains=search) |
+                Q(area__icontains=search)
+            )
+
+        return queryset
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return VacantePublicaDetailSerializer
+        return VacantePublicaListSerializer
+
+    @action(detail=False, methods=['get'], url_path='empresa-info')
+    def empresa_info(self, request):
+        """Retorna información básica de la empresa para el portal público."""
+        info = {
+            'nombre': 'Empresa',
+            'logo_url': None,
+        }
+        try:
+            from django.apps import apps
+            EmpresaConfig = apps.get_model('configuracion', 'EmpresaConfig')
+            config = EmpresaConfig.objects.first()
+            if config:
+                info['nombre'] = config.razon_social
+        except Exception:
+            pass
+        return Response(info)
+
+
+class PostulacionPublicaView(viewsets.ViewSet):
+    """
+    Permite a candidatos externos postularse a vacantes sin autenticación.
+
+    POST /vacantes-publicas/{vacante_id}/postular/ - Crear postulación
+    """
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    parser_classes = [MultiPartParser, FormParser]
+
+    def create(self, request, vacante_id=None):
+        """Procesa la postulación pública de un candidato externo."""
+
+        # Inyectar vacante_id en los datos
+        data = request.data.copy()
+        data['vacante_id'] = vacante_id
+
+        serializer = PostulacionPublicaSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        validated = serializer.validated_data
+
+        # Obtener la vacante
+        vacante = VacanteActiva.objects.get(
+            id=validated['vacante_id'],
+            estado='abierta',
+            publicada_externamente=True,
+            is_active=True,
+        )
+
+        # Crear el candidato
+        candidato = Candidato(
+            empresa=vacante.empresa,
+            vacante=vacante,
+            nombres=validated['nombres'],
+            apellidos=validated['apellidos'],
+            email=validated['email'],
+            telefono=validated['telefono'],
+            tipo_documento=validated['tipo_documento'],
+            numero_documento=validated['numero_documento'],
+            ciudad=validated['ciudad'],
+            nivel_educativo=validated.get('nivel_educativo', 'profesional'),
+            hoja_vida=validated['hoja_vida'],
+            estado='postulado',
+            origen_postulacion='portal_empleo',
+        )
+
+        # Guardar carta de presentación como texto en observaciones
+        carta = validated.get('carta_presentacion', '').strip()
+        if carta:
+            candidato.observaciones = f"Carta de presentación:\n{carta}"
+
+        candidato.save()
+
+        # Notificar al reclutador/responsable
+        try:
+            from apps.talent_hub.services.notificador_th import NotificadorTH
+            usuario_notificar = vacante.reclutador or vacante.responsable_proceso
+            if usuario_notificar:
+                from apps.audit_system.centro_notificaciones.services import NotificationService
+                NotificationService.send_notification(
+                    tipo_codigo='TH_NUEVA_POSTULACION',
+                    usuario=usuario_notificar,
+                    datos={
+                        'candidato_nombre': f"{candidato.nombres} {candidato.apellidos}",
+                        'vacante_titulo': vacante.titulo,
+                        'vacante_codigo': vacante.codigo_vacante,
+                        'origen': 'Portal de empleo',
+                    },
+                    url=f'/talent-hub/seleccion-contratacion/candidatos/{candidato.id}',
+                    prioridad='normal',
+                )
+        except Exception:
+            pass  # No bloquear la postulación si falla la notificación
+
+        return Response(
+            {
+                'detail': 'Postulación registrada exitosamente. Te contactaremos pronto.',
+                'candidato_id': candidato.id,
+            },
+            status=status.HTTP_201_CREATED,
+        )

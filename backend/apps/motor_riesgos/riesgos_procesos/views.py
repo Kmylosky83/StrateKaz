@@ -186,12 +186,13 @@ class RiesgoProcesoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
         Retorna:
             - Total de riesgos
+            - Conteo de riesgos críticos (nivel residual CRITICO)
+            - Conteo en tratamiento
             - Distribución por nivel inherente
             - Distribución por nivel residual
             - Distribución por estado
             - Distribución por tipo
             - Distribución por categoría
-            - Efectividad promedio de controles
 
         Query Params:
             - tipo: Filtrar por tipo de riesgo
@@ -204,16 +205,25 @@ class RiesgoProcesoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         total = queryset.count()
 
         # Calcular niveles para todos los riesgos
+        criticos = 0
         riesgos_con_nivel = []
         for riesgo in queryset:
+            interp_residual = riesgo.interpretacion_residual
+            if interp_residual in ('CRITICO', 'ALTO'):
+                criticos += 1
             riesgos_con_nivel.append({
                 'id': riesgo.id,
                 'interpretacion_inherente': riesgo.interpretacion_inherente,
-                'interpretacion_residual': riesgo.interpretacion_residual,
+                'interpretacion_residual': interp_residual,
                 'tipo': riesgo.tipo,
                 'estado': riesgo.estado,
                 'categoria': riesgo.categoria.nombre if riesgo.categoria else None
             })
+
+        # En tratamiento
+        en_tratamiento = queryset.filter(
+            estado=RiesgoProceso.EstadoRiesgo.EN_TRATAMIENTO
+        ).count()
 
         # Contar por nivel inherente
         niveles_inherentes = {}
@@ -251,6 +261,8 @@ class RiesgoProcesoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
         return Response({
             'total': total,
+            'criticos': criticos,
+            'en_tratamiento': en_tratamiento,
             'por_nivel_inherente': [
                 {'nivel': k, 'cantidad': v}
                 for k, v in niveles_inherentes.items()
@@ -269,7 +281,7 @@ class RiesgoProcesoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         """
         Lista de riesgos críticos y altos.
 
-        Retorna todos los riesgos con nivel residual CRITICO o ALTO.
+        Retorna un array plano de riesgos con nivel residual CRITICO o ALTO.
         Útil para priorización y toma de decisiones.
         """
         queryset = self.get_queryset()
@@ -282,17 +294,15 @@ class RiesgoProcesoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
         serializer = RiesgoProcesoListSerializer(riesgos_criticos, many=True)
 
-        return Response({
-            'total': len(riesgos_criticos),
-            'riesgos': serializer.data
-        })
+        return Response(serializer.data)
 
     @action(detail=False, methods=['get'], url_path='mapa-calor')
     def mapa_calor(self, request) -> Response:
         """
-        Genera matriz de mapa de calor de riesgos.
+        Genera mapa de calor de riesgos como lista plana.
 
-        Retorna una matriz 5x5 (probabilidad x impacto) con conteo de riesgos.
+        Retorna un array de celdas con probabilidad, impacto, cantidad
+        y lista de riesgos en esa celda.
 
         Query Params:
             - tipo_evaluacion: 'inherente' o 'residual' (default: 'residual')
@@ -300,50 +310,46 @@ class RiesgoProcesoViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             - categoria: Filtrar por categoría
 
         Retorna:
-            {
-                "tipo_evaluacion": "residual",
-                "matriz": [[...], [...], ...],  # 5x5
-                "total_riesgos": 150,
-                "criticos": 10,
-                "altos": 25,
-                "moderados": 60,
-                "bajos": 55
-            }
+            [
+                {"probabilidad": 1-5, "impacto": 1-5, "cantidad": N,
+                 "riesgos": [{"id": X, "nombre": "..."}]}
+            ]
         """
         tipo_evaluacion = request.query_params.get('tipo_evaluacion', 'residual')
         queryset = self.filter_queryset(self.get_queryset())
 
-        # Inicializar matriz 5x5
-        matriz = [[0 for _ in range(5)] for _ in range(5)]
+        # Agrupar riesgos por celda (probabilidad, impacto)
+        celdas: Dict[tuple, List[Dict[str, Any]]] = {}
 
-        # Contadores por nivel
-        niveles = {'CRITICO': 0, 'ALTO': 0, 'MODERADO': 0, 'BAJO': 0}
-
-        # Llenar matriz
         for riesgo in queryset:
             if tipo_evaluacion == 'inherente':
-                prob = riesgo.probabilidad_inherente - 1  # 0-4
-                imp = riesgo.impacto_inherente - 1  # 0-4
-                nivel = riesgo.interpretacion_inherente
+                prob = riesgo.probabilidad_inherente
+                imp = riesgo.impacto_inherente
             else:
-                prob = riesgo.probabilidad_residual - 1
-                imp = riesgo.impacto_residual - 1
-                nivel = riesgo.interpretacion_residual
+                prob = riesgo.probabilidad_residual
+                imp = riesgo.impacto_residual
 
-            if 0 <= prob < 5 and 0 <= imp < 5:
-                matriz[prob][imp] += 1
-                niveles[nivel] = niveles.get(nivel, 0) + 1
+            if 1 <= prob <= 5 and 1 <= imp <= 5:
+                key = (prob, imp)
+                if key not in celdas:
+                    celdas[key] = []
+                celdas[key].append({
+                    'id': riesgo.id,
+                    'nombre': riesgo.nombre,
+                })
 
-        return Response({
-            'tipo_evaluacion': tipo_evaluacion,
-            'matriz': matriz,
-            'total_riesgos': queryset.count(),
-            'distribucion_niveles': niveles,
-            'criticos': niveles.get('CRITICO', 0),
-            'altos': niveles.get('ALTO', 0),
-            'moderados': niveles.get('MODERADO', 0),
-            'bajos': niveles.get('BAJO', 0)
-        })
+        # Convertir a lista plana
+        resultado = [
+            {
+                'probabilidad': prob,
+                'impacto': imp,
+                'cantidad': len(riesgos_lista),
+                'riesgos': riesgos_lista,
+            }
+            for (prob, imp), riesgos_lista in celdas.items()
+        ]
+
+        return Response(resultado)
 
     @action(detail=True, methods=['post'], url_path='cambiar-estado')
     def cambiar_estado(self, request, pk=None) -> Response:

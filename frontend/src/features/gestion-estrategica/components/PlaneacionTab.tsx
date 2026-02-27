@@ -118,7 +118,12 @@ const getPlanStats = (plan: StrategicPlan): StatItem[] => {
       value: `${progress}%`,
       icon: Percent,
       iconColor: progress >= 75 ? 'success' : progress >= 50 ? 'info' : 'warning',
-      description: progress >= 75 ? 'Avance excelente' : progress >= 50 ? 'En buen camino' : 'Requiere atención',
+      description:
+        progress >= 75
+          ? 'Avance excelente'
+          : progress >= 50
+            ? 'En buen camino'
+            : 'Requiere atención',
     },
     {
       label: 'Período',
@@ -158,7 +163,10 @@ const MapaEstrategicoSection = ({
       <div className="space-y-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-24 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse-subtle" />
+            <div
+              key={i}
+              className="h-24 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse-subtle"
+            />
           ))}
         </div>
         <div className="h-[600px] bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse-subtle" />
@@ -312,7 +320,8 @@ const getObjectivesStats = (objectives: StrategicObjective[]): StatItem[] => {
       value: `${progresoPromedio}%`,
       icon: Percent,
       iconColor: progresoPromedio >= 75 ? 'success' : progresoPromedio >= 50 ? 'info' : 'warning',
-      description: retrasados > 0 ? `${retrasados} retrasado${retrasados > 1 ? 's' : ''}` : 'Sin retrasos',
+      description:
+        retrasados > 0 ? `${retrasados} retrasado${retrasados > 1 ? 's' : ''}` : 'Sin retrasos',
     },
   ];
 };
@@ -523,9 +532,7 @@ const SECTION_KEYS = {
 
 export const PlaneacionTab = ({ activeSection, triggerNewForm }: PlaneacionTabProps) => {
   const { data: plan, isLoading: planLoading } = useActivePlan();
-  const { data: objectivesData } = useObjectives(
-    plan?.id ? { plan: plan.id } : undefined
-  );
+  const { data: objectivesData } = useObjectives(plan?.id ? { plan: plan.id } : undefined);
   const approvePlanMutation = useApprovePlan();
 
   const [showPlanModal, setShowPlanModal] = useState(false);
@@ -539,7 +546,7 @@ export const PlaneacionTab = ({ activeSection, triggerNewForm }: PlaneacionTabPr
     }
   }, [triggerNewForm]);
 
-  const objectives = objectivesData?.results || [];
+  const objectives = Array.isArray(objectivesData) ? objectivesData : [];
 
   const handleEditObjective = (objective: StrategicObjective) => {
     setSelectedObjective(objective);

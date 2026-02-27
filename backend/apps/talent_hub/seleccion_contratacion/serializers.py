@@ -5,6 +5,7 @@ Sistema de Gestión StrateKaz
 100% DINÁMICO: Serializers para API REST del proceso de selección,
 candidatos, entrevistas, pruebas y afiliaciones.
 """
+from django.db import models
 from rest_framework import serializers
 from .models import (
     TipoContrato,
@@ -1073,3 +1074,166 @@ class ResponderEntrevistaAsincronicaSerializer(serializers.Serializer):
         child=serializers.CharField(allow_blank=True),
         help_text='Respuestas del candidato: {pregunta_id: respuesta_texto}'
     )
+
+
+# =============================================================================
+# PORTAL PÚBLICO DE VACANTES (AllowAny)
+# =============================================================================
+
+class VacantePublicaListSerializer(serializers.ModelSerializer):
+    """Serializer público para listado de vacantes - exposición mínima de datos."""
+
+    tipo_contrato_nombre = serializers.CharField(
+        source='tipo_contrato.nombre', read_only=True
+    )
+    modalidad_display = serializers.CharField(
+        source='get_modalidad_display', read_only=True
+    )
+    prioridad_display = serializers.CharField(
+        source='get_prioridad_display', read_only=True
+    )
+    empresa_nombre = serializers.SerializerMethodField()
+    rango_salarial = serializers.SerializerMethodField()
+
+    class Meta:
+        model = VacanteActiva
+        fields = [
+            'id',
+            'codigo_vacante',
+            'titulo',
+            'cargo_requerido',
+            'area',
+            'descripcion',
+            'tipo_contrato_nombre',
+            'modalidad',
+            'modalidad_display',
+            'ubicacion',
+            'horario',
+            'prioridad',
+            'prioridad_display',
+            'numero_posiciones',
+            'posiciones_cubiertas',
+            'fecha_apertura',
+            'rango_salarial',
+            'empresa_nombre',
+        ]
+
+    def get_empresa_nombre(self, obj):
+        """Obtiene el nombre de la empresa desde EmpresaConfig del tenant."""
+        try:
+            from django.apps import apps
+            EmpresaConfig = apps.get_model('configuracion', 'EmpresaConfig')
+            config = EmpresaConfig.objects.first()
+            if config:
+                return config.razon_social
+        except Exception:
+            pass
+        return 'Empresa'
+
+    def get_rango_salarial(self, obj):
+        """Retorna el rango salarial solo si no está oculto."""
+        if obj.salario_oculto:
+            return None
+        result = {}
+        if obj.salario_minimo:
+            result['minimo'] = str(obj.salario_minimo)
+        if obj.salario_maximo:
+            result['maximo'] = str(obj.salario_maximo)
+        return result if result else None
+
+
+class VacantePublicaDetailSerializer(VacantePublicaListSerializer):
+    """Serializer público detallado para una vacante - incluye requisitos completos."""
+
+    class Meta(VacantePublicaListSerializer.Meta):
+        fields = VacantePublicaListSerializer.Meta.fields + [
+            'requisitos_minimos',
+            'requisitos_deseables',
+            'funciones_principales',
+            'competencias_requeridas',
+            'beneficios',
+        ]
+
+
+class PostulacionPublicaSerializer(serializers.Serializer):
+    """Serializer para postulación pública de candidatos externos."""
+
+    vacante_id = serializers.IntegerField()
+    nombres = serializers.CharField(max_length=100)
+    apellidos = serializers.CharField(max_length=100)
+    email = serializers.EmailField()
+    telefono = serializers.CharField(max_length=20)
+    tipo_documento = serializers.ChoiceField(
+        choices=[('CC', 'Cédula de Ciudadanía'), ('CE', 'Cédula de Extranjería'),
+                 ('PA', 'Pasaporte'), ('TI', 'Tarjeta de Identidad')],
+        default='CC',
+    )
+    numero_documento = serializers.CharField(max_length=20)
+    ciudad = serializers.CharField(max_length=100)
+    nivel_educativo = serializers.ChoiceField(
+        choices=[
+            ('bachiller', 'Bachiller'), ('tecnico', 'Técnico'),
+            ('tecnologo', 'Tecnólogo'), ('profesional', 'Profesional'),
+            ('especializacion', 'Especialización'), ('maestria', 'Maestría'),
+            ('doctorado', 'Doctorado'),
+        ],
+        required=False,
+        default='profesional',
+    )
+    hoja_vida = serializers.FileField(
+        required=True,
+        help_text='Hoja de vida en formato PDF, DOC o DOCX (máx. 5MB)',
+    )
+    carta_presentacion = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text='Carta de presentación (texto opcional)',
+    )
+
+    def validate_vacante_id(self, value):
+        """Verifica que la vacante exista, esté abierta y publicada."""
+        try:
+            vacante = VacanteActiva.objects.get(
+                id=value,
+                estado='abierta',
+                publicada_externamente=True,
+                is_active=True,
+            )
+        except VacanteActiva.DoesNotExist:
+            raise serializers.ValidationError(
+                'La vacante no existe o no está disponible para postulaciones.'
+            )
+        return value
+
+    def validate_hoja_vida(self, value):
+        """Valida formato y tamaño del archivo."""
+        max_size = 5 * 1024 * 1024  # 5MB
+        if value.size > max_size:
+            raise serializers.ValidationError(
+                'El archivo no puede superar los 5 MB.'
+            )
+        ext = value.name.split('.')[-1].lower()
+        if ext not in ('pdf', 'doc', 'docx'):
+            raise serializers.ValidationError(
+                'Solo se aceptan archivos PDF, DOC o DOCX.'
+            )
+        return value
+
+    def validate(self, attrs):
+        """Verificar que no exista postulación duplicada."""
+        vacante_id = attrs.get('vacante_id')
+        email = attrs.get('email')
+        numero_documento = attrs.get('numero_documento')
+
+        existe = Candidato.objects.filter(
+            vacante_id=vacante_id,
+            is_active=True,
+        ).filter(
+            models.Q(email=email) | models.Q(numero_documento=numero_documento)
+        ).exists()
+
+        if existe:
+            raise serializers.ValidationError(
+                'Ya existe una postulación para esta vacante con este email o documento.'
+            )
+        return attrs

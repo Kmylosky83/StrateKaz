@@ -58,6 +58,9 @@ const ResponderPruebaPage = lazy(() => import('@/features/talent-hub/pages/Respo
 const ResponderEntrevistaPage = lazy(
   () => import('@/features/talent-hub/pages/ResponderEntrevistaPage')
 );
+const FirmarContratoPage = lazy(() => import('@/features/talent-hub/pages/FirmarContratoPage'));
+const VacantesPublicasPage = lazy(() => import('@/features/talent-hub/pages/VacantesPublicasPage'));
+const PostulacionPage = lazy(() => import('@/features/talent-hub/pages/PostulacionPage'));
 
 export const AppRoutes = () => {
   return (
@@ -73,6 +76,9 @@ export const AppRoutes = () => {
       <Route path="/encuestas/responder/:token" element={withSuspense(EncuestaPublicaPage)} />
       <Route path="/pruebas/responder/:token" element={withSuspense(ResponderPruebaPage)} />
       <Route path="/entrevistas/responder/:token" element={withSuspense(ResponderEntrevistaPage)} />
+      <Route path="/contratos/firmar/:token" element={withSuspense(FirmarContratoPage)} />
+      <Route path="/vacantes" element={withSuspense(VacantesPublicasPage)} />
+      <Route path="/vacantes/:id/postular" element={withSuspense(PostulacionPage)} />
 
       {/* ═══════════════════════════════════════════════════════════════ */}
       {/* RUTAS PROTEGIDAS */}

@@ -46,7 +46,7 @@ export function KPIsTab({ planId }: KPIsTabProps) {
     selectedObjectiveId ? { objective: selectedObjectiveId, is_active: true } : undefined
   );
 
-  const objectives = objectivesData?.results || [];
+  const objectives = Array.isArray(objectivesData) ? objectivesData : [];
   const kpis = kpisData?.results || [];
 
   // Handlers
@@ -185,12 +185,7 @@ export function KPIsTab({ planId }: KPIsTabProps) {
             />
           )}
 
-          {activeTab === 'graficos' && (
-            <ChartsGrid
-              kpis={kpis}
-              selectedKPI={selectedKPI}
-            />
-          )}
+          {activeTab === 'graficos' && <ChartsGrid kpis={kpis} selectedKPI={selectedKPI} />}
         </>
       )}
 

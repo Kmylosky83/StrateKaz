@@ -23,6 +23,8 @@ class HistorialContratoListSerializer(serializers.ModelSerializer):
     )
     esta_vigente = serializers.BooleanField(read_only=True)
     dias_para_vencer = serializers.IntegerField(read_only=True)
+    firma_enviada = serializers.BooleanField(read_only=True)
+    firma_token_expirado = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = HistorialContrato
@@ -33,6 +35,7 @@ class HistorialContratoListSerializer(serializers.ModelSerializer):
             'salario_pactado',
             'tipo_movimiento', 'tipo_movimiento_display',
             'numero_renovacion', 'firmado',
+            'firma_enviada', 'firma_token_expirado',
             'esta_vigente', 'dias_para_vencer',
             'created_at',
         ]

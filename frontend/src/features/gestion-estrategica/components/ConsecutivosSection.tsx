@@ -110,9 +110,7 @@ export const ConsecutivosSection = () => {
   const deleteMutation = useDeleteConsecutivo();
   const cargarSistemaMutation = useCargarConsecutivosSistema();
 
-  const consecutivos = Array.isArray(consecutivosData)
-    ? consecutivosData
-    : (consecutivosData?.results ?? []);
+  const consecutivos = Array.isArray(consecutivosData) ? consecutivosData : [];
 
   // Handlers
   const handleCreate = () => {

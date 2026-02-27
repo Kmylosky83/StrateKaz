@@ -80,12 +80,7 @@ interface ValorSelectorProps {
   isLoading?: boolean;
 }
 
-const ValorSelector = ({
-  valores,
-  valoresVinculados,
-  onSelect,
-  isLoading,
-}: ValorSelectorProps) => {
+const ValorSelector = ({ valores, valoresVinculados, onSelect, isLoading }: ValorSelectorProps) => {
   const disponibles = valores.filter((v) => !valoresVinculados.includes(v.id));
 
   if (disponibles.length === 0) {
@@ -335,7 +330,7 @@ export const ValorVinculadorWidget = ({
 
   // Obtener valores disponibles
   const { data: valoresData } = useValues(identityId || 0);
-  const valores = valoresData?.results || [];
+  const valores = Array.isArray(valoresData) ? valoresData : [];
 
   // Obtener valores ya vinculados
   const { data: vinculosData, refetch: refetchVinculos } = useValoresPorAccion(

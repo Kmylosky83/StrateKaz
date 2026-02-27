@@ -46,7 +46,7 @@ import { cn } from '@/utils/cn';
 import {
   useVacantePublicaDetail,
   usePostulacionPublica,
-  useEmpresaInfoPublica,
+  useBrandingPublicoHelpers,
 } from '../hooks/useVacantesPublicas';
 
 // ============================================================================
@@ -99,24 +99,41 @@ const NIVEL_EDUCATIVO_OPTIONS = [
 function PublicPortalLayout({
   children,
   empresaNombre,
+  logoUrl,
+  primaryColor,
 }: {
   children: React.ReactNode;
   empresaNombre: string;
+  logoUrl: string | null;
+  primaryColor: string;
 }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
       <header className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
-              <Building2 className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">
-                {empresaNombre}
-              </h1>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Portal de empleo</p>
-            </div>
+            {logoUrl ? (
+              <img
+                src={logoUrl}
+                alt={empresaNombre}
+                className="h-10 w-auto max-w-[160px] object-contain"
+              />
+            ) : (
+              <>
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: primaryColor }}
+                >
+                  <Building2 className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">
+                    {empresaNombre}
+                  </h1>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Portal de empleo</p>
+                </div>
+              </>
+            )}
           </div>
           <Link to="/vacantes">
             <Button variant="ghost" size="sm">
@@ -283,9 +300,7 @@ export default function PostulacionPage() {
 
   const { data: vacante, isLoading, error: vacanteError } = useVacantePublicaDetail(vacanteId);
   const postulacionMutation = usePostulacionPublica();
-  const { data: empresaInfo } = useEmpresaInfoPublica();
-
-  const empresaNombre = empresaInfo?.nombre || 'Empresa';
+  const { empresaNombre, logoUrl, primaryColor } = useBrandingPublicoHelpers();
 
   const [submitted, setSubmitted] = useState(false);
   const [cvFile, setCvFile] = useState<File | null>(null);
@@ -364,7 +379,11 @@ export default function PostulacionPage() {
   // Loading
   if (isLoading) {
     return (
-      <PublicPortalLayout empresaNombre={empresaNombre}>
+      <PublicPortalLayout
+        empresaNombre={empresaNombre}
+        logoUrl={logoUrl}
+        primaryColor={primaryColor}
+      >
         <div className="flex flex-col items-center justify-center py-16">
           <Spinner size="lg" />
           <p className="mt-4 text-sm text-gray-500">Cargando informacion de la vacante...</p>
@@ -376,7 +395,11 @@ export default function PostulacionPage() {
   // Error / Not found
   if (vacanteError || !vacante) {
     return (
-      <PublicPortalLayout empresaNombre={empresaNombre}>
+      <PublicPortalLayout
+        empresaNombre={empresaNombre}
+        logoUrl={logoUrl}
+        primaryColor={primaryColor}
+      >
         <div className="max-w-md mx-auto text-center py-16">
           <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-8 h-8 text-red-500" />
@@ -401,7 +424,11 @@ export default function PostulacionPage() {
   // Success
   if (submitted) {
     return (
-      <PublicPortalLayout empresaNombre={empresaNombre}>
+      <PublicPortalLayout
+        empresaNombre={empresaNombre}
+        logoUrl={logoUrl}
+        primaryColor={primaryColor}
+      >
         <div className="max-w-lg mx-auto text-center py-16">
           <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
             <CheckCircle className="w-10 h-10 text-green-600" />
@@ -432,7 +459,7 @@ export default function PostulacionPage() {
     'w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors';
 
   return (
-    <PublicPortalLayout empresaNombre={empresaNombre}>
+    <PublicPortalLayout empresaNombre={empresaNombre} logoUrl={logoUrl} primaryColor={primaryColor}>
       {/* Vacancy info */}
       <VacanteInfoCard vacante={vacante} />
 

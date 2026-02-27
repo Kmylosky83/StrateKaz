@@ -1,10 +1,16 @@
 /**
- * React Query Hooks para Portal Publico de Vacantes
+ * React Query Hooks para Portal Público de Vacantes
  *
- * Endpoints publicos (AllowAny) - No requieren autenticacion.
- * El tenant se detecta automaticamente por subdominio via TenantMainMiddleware.
+ * Endpoints públicos (AllowAny) - No requieren autenticación.
+ * El tenant se detecta automáticamente por subdominio via TenantMainMiddleware.
+ *
+ * Incluye:
+ * - Vacantes públicas (listar, detalle)
+ * - Postulación pública
+ * - Branding público del tenant (logo, colores, nombre)
  *
  * API Base: /talent-hub/seleccion/vacantes-publicas/
+ * Branding: /tenant/public/branding/
  */
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -44,9 +50,21 @@ export interface VacantePublicaDetail extends VacantePublicaItem {
   beneficios: string | null;
 }
 
-export interface EmpresaInfoPublica {
-  nombre: string;
-  logo_url: string | null;
+/** Branding público del tenant — viene de /tenant/public/branding/ */
+export interface BrandingPublico {
+  name: string;
+  nombre_comercial: string | null;
+  company_slogan: string | null;
+  logo: string | null;
+  logo_white: string | null;
+  logo_dark: string | null;
+  favicon: string | null;
+  primary_color: string;
+  secondary_color: string;
+  accent_color: string;
+  sidebar_color: string | null;
+  background_color: string | null;
+  logo_url: string | null; // legacy fallback
 }
 
 // ============================================================================
@@ -77,11 +95,68 @@ export const vacantesPublicasKeys = {
   list: (filters?: { search?: string; modalidad?: string }) =>
     [...vacantesPublicasKeys.all, 'list', filters] as const,
   detail: (id: number) => [...vacantesPublicasKeys.all, 'detail', id] as const,
-  empresaInfo: ['vacantes-publicas', 'empresa-info'] as const,
+  branding: ['public-branding'] as const,
 };
 
 // ============================================================================
-// Hooks - Vacantes Publicas
+// Hooks - Branding Público del Tenant
+// ============================================================================
+
+/**
+ * Hook para obtener el branding del tenant SIN autenticación.
+ * Usa el endpoint público /tenant/public/branding/?domain={hostname}
+ * Retorna logo, colores, nombre de empresa del tenant actual.
+ */
+export function useBrandingPublico() {
+  return useQuery({
+    queryKey: vacantesPublicasKeys.branding,
+    queryFn: async () => {
+      const domain = window.location.hostname;
+      const response = await api.get<BrandingPublico>('/tenant/public/branding/', {
+        params: { domain },
+      });
+      return response.data;
+    },
+    staleTime: 30 * 60 * 1000, // 30 min — branding cambia poco
+    gcTime: 60 * 60 * 1000,
+    retry: 1,
+  });
+}
+
+/**
+ * Helper: extrae datos útiles del branding con fallbacks seguros
+ */
+export function useBrandingPublicoHelpers() {
+  const { data: branding, isLoading } = useBrandingPublico();
+
+  const empresaNombre = branding?.nombre_comercial || branding?.name || 'Empresa';
+  const empresaSlogan = branding?.company_slogan || 'Portal de empleo';
+
+  // Logo efectivo: logo > logo_url (legacy) > null
+  const logoUrl =
+    (branding?.logo && branding.logo.trim() !== '' ? branding.logo : null) ||
+    (branding?.logo_url && branding.logo_url.trim() !== '' ? branding.logo_url : null);
+
+  const logoWhiteUrl =
+    branding?.logo_white && branding.logo_white.trim() !== '' ? branding.logo_white : null;
+
+  const primaryColor = branding?.primary_color || '#3B82F6';
+  const accentColor = branding?.accent_color || '#F59E0B';
+
+  return {
+    branding,
+    isLoading,
+    empresaNombre,
+    empresaSlogan,
+    logoUrl,
+    logoWhiteUrl,
+    primaryColor,
+    accentColor,
+  };
+}
+
+// ============================================================================
+// Hooks - Vacantes Públicas
 // ============================================================================
 
 export function useVacantesPublicas(filters?: { search?: string; modalidad?: string }) {
@@ -120,21 +195,8 @@ export function useVacantePublicaDetail(id: number) {
   });
 }
 
-export function useEmpresaInfoPublica() {
-  return useQuery({
-    queryKey: vacantesPublicasKeys.empresaInfo,
-    queryFn: async () => {
-      const response = await api.get<EmpresaInfoPublica>(
-        '/talent-hub/seleccion/vacantes-publicas/empresa-info/'
-      );
-      return response.data;
-    },
-    staleTime: 30 * 60 * 1000,
-  });
-}
-
 // ============================================================================
-// Hooks - Postulacion Publica
+// Hooks - Postulación Pública
 // ============================================================================
 
 export function usePostulacionPublica() {
@@ -150,10 +212,10 @@ export function usePostulacionPublica() {
       return response.data;
     },
     onSuccess: () => {
-      toast.success('Postulacion enviada exitosamente');
+      toast.success('Postulación enviada exitosamente');
     },
     onError: (e) => {
-      toast.error(getMsg(e, 'Error al enviar la postulacion'));
+      toast.error(getMsg(e, 'Error al enviar la postulación'));
     },
   });
 }

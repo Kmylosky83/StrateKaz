@@ -32,7 +32,7 @@ import { Button } from '@/components/common/Button';
 import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
 import { cn } from '@/utils/cn';
-import { useVacantesPublicas, useEmpresaInfoPublica } from '../hooks/useVacantesPublicas';
+import { useVacantesPublicas, useBrandingPublicoHelpers } from '../hooks/useVacantesPublicas';
 
 // ============================================================================
 // Types
@@ -66,24 +66,48 @@ interface VacantePublica {
 function PublicPortalLayout({
   children,
   empresaNombre,
+  logoUrl,
+  primaryColor,
 }: {
   children: React.ReactNode;
   empresaNombre: string;
+  logoUrl: string | null;
+  primaryColor: string;
 }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
       <header className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
+            {logoUrl ? (
+              <img
+                src={logoUrl}
+                alt={empresaNombre}
+                className="h-10 w-auto max-w-[160px] object-contain"
+                onError={(e) => {
+                  // Fallback si la imagen falla
+                  (e.target as HTMLImageElement).style.display = 'none';
+                  (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+            ) : null}
+            <div
+              className={cn(
+                'w-10 h-10 rounded-xl flex items-center justify-center shrink-0',
+                logoUrl && 'hidden'
+              )}
+              style={{ backgroundColor: primaryColor }}
+            >
               <Building2 className="w-5 h-5 text-white" />
             </div>
-            <div>
-              <h1 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">
-                {empresaNombre}
-              </h1>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Portal de empleo</p>
-            </div>
+            {!logoUrl && (
+              <div>
+                <h1 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">
+                  {empresaNombre}
+                </h1>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Portal de empleo</p>
+              </div>
+            )}
           </div>
           <Badge variant="info" size="sm">
             <Briefcase className="w-3 h-3 mr-1" />
@@ -316,9 +340,7 @@ export default function VacantesPublicasPage() {
   const [modalidad, setModalidad] = useState('');
 
   const { data: vacantes, isLoading, error } = useVacantesPublicas({ search, modalidad });
-  const { data: empresaInfo } = useEmpresaInfoPublica();
-
-  const empresaNombre = empresaInfo?.nombre || 'Empresa';
+  const { empresaNombre, logoUrl, primaryColor } = useBrandingPublicoHelpers();
 
   const vacantesList: VacantePublica[] = useMemo(() => {
     if (!vacantes) return [];
@@ -328,7 +350,7 @@ export default function VacantesPublicasPage() {
   }, [vacantes]);
 
   return (
-    <PublicPortalLayout empresaNombre={empresaNombre}>
+    <PublicPortalLayout empresaNombre={empresaNombre} logoUrl={logoUrl} primaryColor={primaryColor}>
       <FilterBar
         search={search}
         onSearchChange={setSearch}

@@ -32,23 +32,44 @@ import { Card } from '@/components/common/Card';
 import { SignaturePad } from '@/components/forms/SignaturePad';
 import type { SignaturePadRef } from '@/components/forms/SignaturePad';
 import { useContratoPublico, useFirmarContratoPublico } from '../hooks/useSeleccionContratacion';
+import { useBrandingPublicoHelpers } from '../hooks/useVacantesPublicas';
 
 // ============================================================================
 // Public Layout (misma estructura que ResponderEntrevistaPage)
 // ============================================================================
 
-function PublicLayout({ children }: { children: React.ReactNode }) {
+function PublicLayout({
+  children,
+  empresaNombre,
+  logoUrl,
+}: {
+  children: React.ReactNode;
+  empresaNombre: string;
+  logoUrl: string | null;
+}) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 dark:from-gray-900 dark:to-gray-800">
       <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-3">
-          <img src="/logo-light.png" alt="StrateKaz" className="h-8" />
-          <span className="text-lg font-semibold text-gray-800 dark:text-white">StrateKaz</span>
+          {logoUrl ? (
+            <img
+              src={logoUrl}
+              alt={empresaNombre}
+              className="h-8 w-auto max-w-[140px] object-contain"
+            />
+          ) : (
+            <>
+              <img src="/logo-light.png" alt="StrateKaz" className="h-8" />
+              <span className="text-lg font-semibold text-gray-800 dark:text-white">
+                {empresaNombre}
+              </span>
+            </>
+          )}
         </div>
       </header>
       <main className="max-w-3xl mx-auto px-4 py-8">{children}</main>
       <footer className="text-center py-6 text-xs text-gray-400">
-        StrateKaz ERP &middot; Firma digital de contrato
+        {empresaNombre} &middot; Firma digital de contrato &middot; Powered by StrateKaz
       </footer>
     </div>
   );
@@ -58,13 +79,17 @@ function ErrorLayout({
   title,
   message,
   icon,
+  empresaNombre,
+  logoUrl,
 }: {
   title: string;
   message: string;
   icon?: React.ReactNode;
+  empresaNombre: string;
+  logoUrl: string | null;
 }) {
   return (
-    <PublicLayout>
+    <PublicLayout empresaNombre={empresaNombre} logoUrl={logoUrl}>
       <div className="max-w-md mx-auto text-center py-16">
         <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
           {icon || <AlertCircle className="w-8 h-8 text-red-500" />}
@@ -145,6 +170,7 @@ export default function FirmarContratoPage() {
   const { data: contrato, isLoading, error } = useContratoPublico(token || '');
   const firmarMutation = useFirmarContratoPublico();
   const signatureRef = useRef<SignaturePadRef>(null);
+  const { empresaNombre, logoUrl } = useBrandingPublicoHelpers();
 
   const [firmaData, setFirmaData] = useState<string>('');
   const [submitted, setSubmitted] = useState(false);
@@ -171,7 +197,7 @@ export default function FirmarContratoPage() {
   // Loading
   if (isLoading) {
     return (
-      <PublicLayout>
+      <PublicLayout empresaNombre={empresaNombre} logoUrl={logoUrl}>
         <div className="flex flex-col items-center justify-center py-16 gap-4">
           <Spinner size="lg" />
           <p className="text-sm text-gray-500">Cargando contrato...</p>
@@ -194,6 +220,8 @@ export default function FirmarContratoPage() {
           title="Contrato ya firmado"
           message="Este contrato ya fue firmado. No es necesaria ninguna accion adicional."
           icon={<CheckCircle className="w-8 h-8 text-green-500" />}
+          empresaNombre={empresaNombre}
+          logoUrl={logoUrl}
         />
       );
     }
@@ -203,6 +231,8 @@ export default function FirmarContratoPage() {
           title="Enlace expirado"
           message="El enlace para firmar este contrato ha expirado. Por favor solicita un nuevo enlace a tu empresa."
           icon={<Clock className="w-8 h-8 text-amber-500" />}
+          empresaNombre={empresaNombre}
+          logoUrl={logoUrl}
         />
       );
     }
@@ -210,6 +240,8 @@ export default function FirmarContratoPage() {
       <ErrorLayout
         title="Contrato no disponible"
         message={errorData?.detail || 'No se pudo encontrar el contrato solicitado.'}
+        empresaNombre={empresaNombre}
+        logoUrl={logoUrl}
       />
     );
   }
@@ -219,6 +251,8 @@ export default function FirmarContratoPage() {
       <ErrorLayout
         title="Contrato no encontrado"
         message="No se pudo encontrar el contrato solicitado."
+        empresaNombre={empresaNombre}
+        logoUrl={logoUrl}
       />
     );
   }
@@ -226,7 +260,7 @@ export default function FirmarContratoPage() {
   // Success state
   if (submitted) {
     return (
-      <PublicLayout>
+      <PublicLayout empresaNombre={empresaNombre} logoUrl={logoUrl}>
         <div className="max-w-md mx-auto text-center py-16">
           <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-10 h-10 text-green-500" />
@@ -248,7 +282,7 @@ export default function FirmarContratoPage() {
 
   // Main form
   return (
-    <PublicLayout>
+    <PublicLayout empresaNombre={empresaNombre} logoUrl={logoUrl}>
       {/* Header card */}
       <Card className="mb-6 p-6">
         <div className="flex items-start gap-4">

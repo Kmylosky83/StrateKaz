@@ -215,6 +215,12 @@ export const VacanteFormModal = ({ vacante, isOpen, onClose }: VacanteFormModalP
     if (!data.url_publicacion) delete data.url_publicacion;
     if (!data.observaciones) delete data.observaciones;
 
+    // Clean FK fields with value 0 (invalid PK)
+    if (!data.tipo_contrato) delete data.tipo_contrato;
+    if (!data.responsable_proceso) delete data.responsable_proceso;
+    if (!data.reclutador) delete data.reclutador;
+    if (!data.cargo) delete (data as Record<string, unknown>).cargo;
+
     try {
       if (isEditing && vacante) {
         await updateMutation.mutateAsync({ id: vacante.id, data });

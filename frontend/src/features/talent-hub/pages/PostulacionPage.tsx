@@ -176,6 +176,7 @@ function formatCOP(value: string) {
 
 function VacanteInfoCard({
   vacante,
+  primaryColor,
 }: {
   vacante: {
     titulo: string;
@@ -189,6 +190,7 @@ function VacanteInfoCard({
     requisitos_minimos?: string;
     funciones_principales?: string;
   };
+  primaryColor: string;
 }) {
   return (
     <Card className="mb-6">
@@ -478,7 +480,7 @@ export default function PostulacionPage() {
       primaryColor={primaryColor}
     >
       {/* Vacancy info */}
-      <VacanteInfoCard vacante={vacante} />
+      <VacanteInfoCard vacante={vacante} primaryColor={primaryColor} />
 
       {/* Form */}
       <Card>

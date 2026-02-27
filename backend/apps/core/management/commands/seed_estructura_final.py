@@ -23,7 +23,11 @@ CAPAS Y MÓDULOS:
 Uso:
     docker exec -it backend python manage.py seed_estructura_final
 """
+import copy
+
 from django.core.management.base import BaseCommand
+from django_tenants.utils import schema_context
+
 from apps.core.models import SystemModule, ModuleTab, TabSection
 
 
@@ -40,11 +44,34 @@ class Command(BaseCommand):
         ))
         self.stdout.write('=' * 80)
 
+        # PASO 0: Actualizar Tenant.enabled_modules en schema PUBLIC
+        self._update_tenant_enabled_modules()
+
+        # PASO 1+2: Iterar TODOS los tenants (SystemModule es tabla TENANT)
+        from apps.tenant.models import Tenant
+        with schema_context('public'):
+            tenants = list(Tenant.objects.exclude(schema_name='public'))
+
+        if not tenants:
+            self.stdout.write(self.style.WARNING(
+                '\n  [WARN] No hay tenants activos. Nada que configurar.'
+            ))
+            return
+
+        for tenant in tenants:
+            self.stdout.write('\n' + '=' * 80)
+            self.stdout.write(self.style.MIGRATE_HEADING(
+                f'  TENANT: {tenant.schema_name}'
+            ))
+            self.stdout.write('=' * 80)
+
+            with schema_context(tenant.schema_name):
+                self._seed_for_current_tenant()
+
+    def _seed_for_current_tenant(self):
+        """Ejecuta el seed completo dentro del schema del tenant actual."""
         # PASO 1: Migrar tabs de gestion_estrategica a nuevos módulos
         self._migrate_gestion_estrategica()
-
-        # PASO 1.5: Actualizar Tenant.enabled_modules (reemplazar gestion_estrategica por los 3 nuevos)
-        self._update_tenant_enabled_modules()
 
         # PASO 2: Configurar todos los módulos
         modules_config = self.get_modules_config()
@@ -59,6 +86,8 @@ class Command(BaseCommand):
         valid_sections_map = {}  # {(module_code, tab_code): [section_codes]}
 
         for module_data in modules_config:
+            # deep copy para no mutar la config original entre tenants
+            module_data = copy.deepcopy(module_data)
             module_code = module_data['code']
             tabs = module_data.pop('tabs', [])
             module = self.create_or_update_module(module_data)
@@ -215,7 +244,6 @@ class Command(BaseCommand):
         Se ejecuta SIEMPRE (no solo durante migración) para cubrir tenants
         que ya migraron SystemModules pero no tenían los códigos actualizados.
         """
-        from django_tenants.utils import schema_context
         OLD_CODE = 'gestion_estrategica'
         NEW_CODES = ['fundacion', 'planeacion_estrategica', 'revision_direccion']
 

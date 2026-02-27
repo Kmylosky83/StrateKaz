@@ -900,7 +900,7 @@ class HistorialContratoViewSet(viewsets.ModelViewSet):
         contrato = self.get_object()
         return Response({'warnings': contrato.get_warnings()})
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='por-vencer')
     def por_vencer(self, request):
         """Lista contratos que vencen en los próximos N días"""
         dias = int(request.query_params.get('dias', 30))

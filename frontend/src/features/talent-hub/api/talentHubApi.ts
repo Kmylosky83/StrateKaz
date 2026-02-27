@@ -400,7 +400,7 @@ export const entrevistaAsincronicaApi = {
 
 export const procesoSeleccionEstadisticasApi = {
   get: async (): Promise<ProcesoSeleccionEstadisticas> => {
-    const response = await apiClient.get(`${SELECCION_URL}/estadisticas/resumen/`);
+    const response = await apiClient.get(`${SELECCION_URL}/estadisticas/`);
     return response.data;
   },
 };
@@ -520,7 +520,7 @@ export const firmaDocumentoApi = {
 
 export const onboardingEstadisticasApi = {
   get: async (): Promise<OnboardingEstadisticas> => {
-    const response = await apiClient.get(`${ONBOARDING_URL}/estadisticas/resumen/`);
+    const response = await apiClient.get(`${ONBOARDING_URL}/estadisticas/`);
     return response.data;
   },
 };

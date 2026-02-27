@@ -625,9 +625,7 @@ export function useFormacionEstadisticas() {
   return useQuery({
     queryKey: formacionKeys.estadisticas(),
     queryFn: async () => {
-      const { data } = await api.get<FormacionEstadisticas>(
-        '/talent-hub/formacion/estadisticas/resumen/'
-      );
+      const { data } = await api.get<FormacionEstadisticas>('/talent-hub/formacion/estadisticas/');
       return data;
     },
   });

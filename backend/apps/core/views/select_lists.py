@@ -72,9 +72,7 @@ def select_areas(request):
     if not Area:
         return Response([])
 
-    qs = Area.objects.filter(
-        is_active=True, is_deleted=False
-    ).values('id', 'name', 'code').order_by('name')[:200]
+    qs = Area.objects.values('id', 'name', 'code').order_by('name')[:200]
 
     return Response([
         {'id': a['id'], 'label': a['name'], 'extra': {'code': a['code']}}

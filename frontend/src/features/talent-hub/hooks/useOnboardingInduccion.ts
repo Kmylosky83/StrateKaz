@@ -562,7 +562,7 @@ export function useOnboardingEstadisticas() {
     queryKey: onboardingKeys.estadisticas(),
     queryFn: async () => {
       const { data } = await api.get<OnboardingEstadisticas>(
-        '/talent-hub/onboarding/estadisticas/resumen/'
+        '/talent-hub/onboarding/estadisticas/'
       );
       return data;
     },

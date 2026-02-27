@@ -755,9 +755,7 @@ export function useDesempenoEstadisticas() {
   return useQuery({
     queryKey: desempenoKeys.estadisticas(),
     queryFn: async () => {
-      const { data } = await api.get<DesempenoEstadisticas>(
-        '/talent-hub/desempeno/estadisticas/resumen/'
-      );
+      const { data } = await api.get<DesempenoEstadisticas>('/talent-hub/desempeno/estadisticas/');
       return data;
     },
   });

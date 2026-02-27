@@ -32,7 +32,7 @@ import { Card } from '@/components/common/Card';
 import { SignaturePad } from '@/components/forms/SignaturePad';
 import type { SignaturePadRef } from '@/components/forms/SignaturePad';
 import { useContratoPublico, useFirmarContratoPublico } from '../hooks/useSeleccionContratacion';
-import { useBrandingPublicoHelpers } from '../hooks/useVacantesPublicas';
+import { useBrandingPublicoHelpers, hexToRgba } from '../hooks/useVacantesPublicas';
 
 // ============================================================================
 // Public Layout (misma estructura que ResponderEntrevistaPage)
@@ -42,14 +42,17 @@ function PublicLayout({
   children,
   empresaNombre,
   logoUrl,
+  primaryColor,
 }: {
   children: React.ReactNode;
   empresaNombre: string;
   logoUrl: string | null;
+  primaryColor: string;
 }) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 dark:from-gray-900 dark:to-gray-800">
       <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
+        <div className="h-1" style={{ backgroundColor: primaryColor }} />
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-3">
           {logoUrl ? (
             <img
@@ -58,13 +61,16 @@ function PublicLayout({
               className="h-8 w-auto max-w-[140px] object-contain"
             />
           ) : (
-            <>
-              <img src="/logo-light.png" alt="StrateKaz" className="h-8" />
-              <span className="text-lg font-semibold text-gray-800 dark:text-white">
-                {empresaNombre}
-              </span>
-            </>
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+              style={{ backgroundColor: primaryColor }}
+            >
+              <FileText className="w-4 h-4 text-white" />
+            </div>
           )}
+          <span className="text-lg font-semibold text-gray-800 dark:text-white">
+            {empresaNombre}
+          </span>
         </div>
       </header>
       <main className="max-w-3xl mx-auto px-4 py-8">{children}</main>
@@ -81,15 +87,17 @@ function ErrorLayout({
   icon,
   empresaNombre,
   logoUrl,
+  primaryColor,
 }: {
   title: string;
   message: string;
   icon?: React.ReactNode;
   empresaNombre: string;
   logoUrl: string | null;
+  primaryColor: string;
 }) {
   return (
-    <PublicLayout empresaNombre={empresaNombre} logoUrl={logoUrl}>
+    <PublicLayout empresaNombre={empresaNombre} logoUrl={logoUrl} primaryColor={primaryColor}>
       <div className="max-w-md mx-auto text-center py-16">
         <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
           {icon || <AlertCircle className="w-8 h-8 text-red-500" />}
@@ -170,7 +178,7 @@ export default function FirmarContratoPage() {
   const { data: contrato, isLoading, error } = useContratoPublico(token || '');
   const firmarMutation = useFirmarContratoPublico();
   const signatureRef = useRef<SignaturePadRef>(null);
-  const { empresaNombre, logoUrl } = useBrandingPublicoHelpers();
+  const { empresaNombre, logoUrl, primaryColor } = useBrandingPublicoHelpers();
 
   const [firmaData, setFirmaData] = useState<string>('');
   const [submitted, setSubmitted] = useState(false);
@@ -197,7 +205,7 @@ export default function FirmarContratoPage() {
   // Loading
   if (isLoading) {
     return (
-      <PublicLayout empresaNombre={empresaNombre} logoUrl={logoUrl}>
+      <PublicLayout empresaNombre={empresaNombre} logoUrl={logoUrl} primaryColor={primaryColor}>
         <div className="flex flex-col items-center justify-center py-16 gap-4">
           <Spinner size="lg" />
           <p className="text-sm text-gray-500">Cargando contrato...</p>
@@ -222,6 +230,7 @@ export default function FirmarContratoPage() {
           icon={<CheckCircle className="w-8 h-8 text-green-500" />}
           empresaNombre={empresaNombre}
           logoUrl={logoUrl}
+          primaryColor={primaryColor}
         />
       );
     }
@@ -233,6 +242,7 @@ export default function FirmarContratoPage() {
           icon={<Clock className="w-8 h-8 text-amber-500" />}
           empresaNombre={empresaNombre}
           logoUrl={logoUrl}
+          primaryColor={primaryColor}
         />
       );
     }
@@ -260,7 +270,7 @@ export default function FirmarContratoPage() {
   // Success state
   if (submitted) {
     return (
-      <PublicLayout empresaNombre={empresaNombre} logoUrl={logoUrl}>
+      <PublicLayout empresaNombre={empresaNombre} logoUrl={logoUrl} primaryColor={primaryColor}>
         <div className="max-w-md mx-auto text-center py-16">
           <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-10 h-10 text-green-500" />
@@ -286,8 +296,11 @@ export default function FirmarContratoPage() {
       {/* Header card */}
       <Card className="mb-6 p-6">
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center shrink-0">
-            <FileText className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+          <div
+            className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+            style={{ backgroundColor: hexToRgba(primaryColor, 0.1) }}
+          >
+            <FileText className="w-6 h-6" style={{ color: primaryColor }} />
           </div>
           <div className="flex-1">
             <h1 className="text-xl font-semibold text-gray-900 dark:text-white mb-1">
@@ -364,7 +377,8 @@ export default function FirmarContratoPage() {
               href={contrato.archivo_contrato}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400 hover:underline"
+              className="inline-flex items-center gap-2 text-sm hover:underline"
+              style={{ color: primaryColor }}
             >
               <ExternalLink size={14} />
               Ver documento del contrato (PDF)
@@ -376,7 +390,7 @@ export default function FirmarContratoPage() {
       {/* Signature section */}
       <Card className="mb-6 p-6">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-          <PenTool size={16} className="text-emerald-600 dark:text-emerald-400" />
+          <PenTool size={16} style={{ color: primaryColor }} />
           Firma Digital
         </h2>
         <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
@@ -405,16 +419,19 @@ export default function FirmarContratoPage() {
 
       {/* Submit button */}
       <div className="flex justify-end">
-        <Button
+        <button
           onClick={handleSubmit}
-          isLoading={firmarMutation.isPending}
-          disabled={!firmaData}
-          size="lg"
-          className="bg-emerald-600 hover:bg-emerald-700 text-white"
+          disabled={!firmaData || firmarMutation.isPending}
+          className="inline-flex items-center px-6 py-3 rounded-lg text-base font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+          style={{ backgroundColor: primaryColor }}
         >
-          <PenTool size={18} className="mr-2" />
+          {firmarMutation.isPending ? (
+            <Spinner size="sm" className="mr-2" />
+          ) : (
+            <PenTool size={18} className="mr-2" />
+          )}
           Firmar Contrato
-        </Button>
+        </button>
       </div>
     </PublicLayout>
   );

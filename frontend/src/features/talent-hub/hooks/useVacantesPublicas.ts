@@ -141,6 +141,7 @@ export function useBrandingPublicoHelpers() {
     branding?.logo_white && branding.logo_white.trim() !== '' ? branding.logo_white : null;
 
   const primaryColor = branding?.primary_color || '#3B82F6';
+  const secondaryColor = branding?.secondary_color || '#6B7280';
   const accentColor = branding?.accent_color || '#F59E0B';
 
   return {
@@ -151,8 +152,17 @@ export function useBrandingPublicoHelpers() {
     logoUrl,
     logoWhiteUrl,
     primaryColor,
+    secondaryColor,
     accentColor,
   };
+}
+
+/** Convierte hex + alpha a rgba string (para fondos claros, focus rings, etc.) */
+export function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 // ============================================================================

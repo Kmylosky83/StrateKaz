@@ -47,6 +47,7 @@ import {
   useVacantePublicaDetail,
   usePostulacionPublica,
   useBrandingPublicoHelpers,
+  hexToRgba,
 } from '../hooks/useVacantesPublicas';
 
 // ============================================================================
@@ -99,17 +100,20 @@ const NIVEL_EDUCATIVO_OPTIONS = [
 function PublicPortalLayout({
   children,
   empresaNombre,
+  empresaSlogan,
   logoUrl,
   primaryColor,
 }: {
   children: React.ReactNode;
   empresaNombre: string;
+  empresaSlogan: string;
   logoUrl: string | null;
   primaryColor: string;
 }) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
       <header className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
+        <div className="h-1" style={{ backgroundColor: primaryColor }} />
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {logoUrl ? (
@@ -119,21 +123,19 @@ function PublicPortalLayout({
                 className="h-10 w-auto max-w-[160px] object-contain"
               />
             ) : (
-              <>
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: primaryColor }}
-                >
-                  <Building2 className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">
-                    {empresaNombre}
-                  </h1>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Portal de empleo</p>
-                </div>
-              </>
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                style={{ backgroundColor: primaryColor }}
+              >
+                <Building2 className="w-5 h-5 text-white" />
+              </div>
             )}
+            <div className="hidden sm:block">
+              <h1 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">
+                {empresaNombre}
+              </h1>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{empresaSlogan}</p>
+            </div>
           </div>
           <Link to="/vacantes">
             <Button variant="ghost" size="sm">
@@ -146,7 +148,7 @@ function PublicPortalLayout({
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8">{children}</main>
       <footer className="border-t border-gray-200 dark:border-gray-700 bg-white/60 dark:bg-gray-900/60">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 text-center text-xs text-gray-400">
-          {empresaNombre} &middot; Portal de empleo &middot; Powered by StrateKaz
+          {empresaNombre} &middot; {empresaSlogan} &middot; Powered by StrateKaz
         </div>
       </footer>
     </div>
@@ -192,8 +194,11 @@ function VacanteInfoCard({
     <Card className="mb-6">
       <div className="p-5 sm:p-6">
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center shrink-0">
-            <Briefcase className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+          <div
+            className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+            style={{ backgroundColor: hexToRgba(primaryColor, 0.1) }}
+          >
+            <Briefcase className="w-6 h-6" style={{ color: primaryColor }} />
           </div>
           <div className="flex-1 min-w-0">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
@@ -300,7 +305,7 @@ export default function PostulacionPage() {
 
   const { data: vacante, isLoading, error: vacanteError } = useVacantePublicaDetail(vacanteId);
   const postulacionMutation = usePostulacionPublica();
-  const { empresaNombre, logoUrl, primaryColor } = useBrandingPublicoHelpers();
+  const { empresaNombre, empresaSlogan, logoUrl, primaryColor } = useBrandingPublicoHelpers();
 
   const [submitted, setSubmitted] = useState(false);
   const [cvFile, setCvFile] = useState<File | null>(null);
@@ -381,6 +386,7 @@ export default function PostulacionPage() {
     return (
       <PublicPortalLayout
         empresaNombre={empresaNombre}
+        empresaSlogan={empresaSlogan}
         logoUrl={logoUrl}
         primaryColor={primaryColor}
       >
@@ -397,6 +403,7 @@ export default function PostulacionPage() {
     return (
       <PublicPortalLayout
         empresaNombre={empresaNombre}
+        empresaSlogan={empresaSlogan}
         logoUrl={logoUrl}
         primaryColor={primaryColor}
       >
@@ -426,6 +433,7 @@ export default function PostulacionPage() {
     return (
       <PublicPortalLayout
         empresaNombre={empresaNombre}
+        empresaSlogan={empresaSlogan}
         logoUrl={logoUrl}
         primaryColor={primaryColor}
       >
@@ -456,10 +464,19 @@ export default function PostulacionPage() {
 
   // Form
   const inputClass =
-    'w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors';
+    'w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm transition-colors outline-none focus:ring-2 focus:ring-offset-0';
+
+  const inputFocusStyle = {
+    '--tw-ring-color': hexToRgba(primaryColor, 0.3),
+  } as React.CSSProperties;
 
   return (
-    <PublicPortalLayout empresaNombre={empresaNombre} logoUrl={logoUrl} primaryColor={primaryColor}>
+    <PublicPortalLayout
+      empresaNombre={empresaNombre}
+      empresaSlogan={empresaSlogan}
+      logoUrl={logoUrl}
+      primaryColor={primaryColor}
+    >
       {/* Vacancy info */}
       <VacanteInfoCard vacante={vacante} />
 
@@ -674,16 +691,19 @@ export default function PostulacionPage() {
 
             {/* Submit */}
             <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
-              <Button
+              <button
                 type="submit"
-                size="lg"
-                className="w-full sm:w-auto"
-                isLoading={postulacionMutation.isPending}
                 disabled={postulacionMutation.isPending}
+                className="inline-flex items-center justify-center px-6 py-3 rounded-lg text-base font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50 w-full sm:w-auto"
+                style={{ backgroundColor: primaryColor }}
               >
-                <Send className="w-5 h-5 mr-2" />
-                Enviar postulacion
-              </Button>
+                {postulacionMutation.isPending ? (
+                  <Spinner size="sm" className="mr-2" />
+                ) : (
+                  <Send className="w-5 h-5 mr-2" />
+                )}
+                Enviar postulaci&oacute;n
+              </button>
               <p className="mt-3 text-xs text-gray-400">
                 Al enviar tu postulacion, autorizas el tratamiento de tus datos personales conforme
                 a la politica de privacidad de la empresa.

@@ -110,7 +110,9 @@ export const ConsecutivosSection = () => {
   const deleteMutation = useDeleteConsecutivo();
   const cargarSistemaMutation = useCargarConsecutivosSistema();
 
-  const consecutivos = consecutivosData?.results || [];
+  const consecutivos = Array.isArray(consecutivosData)
+    ? consecutivosData
+    : (consecutivosData?.results ?? []);
 
   // Handlers
   const handleCreate = () => {
@@ -238,101 +240,100 @@ export const ConsecutivosSection = () => {
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
                     Categoría
                   </th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
-                      Ejemplo
-                    </th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
-                      Actual
-                    </th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
-                      Tipo
-                    </th>
-                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
-                      Acciones
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {consecutivos.map((consecutivo) => {
-                    const CategoriaIcon = CATEGORIA_ICONS[consecutivo.categoria] || Hash;
-                    return (
-                      <tr
-                        key={consecutivo.id}
-                        className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-                      >
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <div className="p-1.5 rounded bg-gray-100 dark:bg-gray-800">
-                              <CategoriaIcon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                            </div>
-                            <span className="font-mono font-medium text-gray-900 dark:text-gray-100">
-                              {consecutivo.codigo}
-                            </span>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+                    Ejemplo
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+                    Actual
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+                    Tipo
+                  </th>
+                  <th className="text-right py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+                    Acciones
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {consecutivos.map((consecutivo) => {
+                  const CategoriaIcon = CATEGORIA_ICONS[consecutivo.categoria] || Hash;
+                  return (
+                    <tr
+                      key={consecutivo.id}
+                      className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                    >
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          <div className="p-1.5 rounded bg-gray-100 dark:bg-gray-800">
+                            <CategoriaIcon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                           </div>
-                        </td>
-                        <td className="py-3 px-4 text-gray-700 dark:text-gray-300">
-                          {consecutivo.nombre}
-                        </td>
-                        <td className="py-3 px-4">
-                          <Badge variant="secondary" size="sm">
-                            {consecutivo.categoria_display ||
-                              CATEGORIA_LABELS[consecutivo.categoria]}
-                          </Badge>
-                        </td>
-                        <td className="py-3 px-4">
-                          <code className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-sm font-mono text-primary-600 dark:text-primary-400">
-                            {consecutivo.ejemplo_formato}
-                          </code>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="font-mono text-gray-600 dark:text-gray-400">
-                            #{consecutivo.current_number}
+                          <span className="font-mono font-medium text-gray-900 dark:text-gray-100">
+                            {consecutivo.codigo}
                           </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          {consecutivo.es_sistema ? (
-                            <Badge variant="info" size="sm">
-                              <Lock className="h-3 w-3 mr-1" />
-                              Sistema
-                            </Badge>
-                          ) : (
-                            <Badge variant="success" size="sm">
-                              Custom
-                            </Badge>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-gray-700 dark:text-gray-300">
+                        {consecutivo.nombre}
+                      </td>
+                      <td className="py-3 px-4">
+                        <Badge variant="secondary" size="sm">
+                          {consecutivo.categoria_display || CATEGORIA_LABELS[consecutivo.categoria]}
+                        </Badge>
+                      </td>
+                      <td className="py-3 px-4">
+                        <code className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-sm font-mono text-primary-600 dark:text-primary-400">
+                          {consecutivo.ejemplo_formato}
+                        </code>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="font-mono text-gray-600 dark:text-gray-400">
+                          #{consecutivo.current_number}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        {consecutivo.es_sistema ? (
+                          <Badge variant="info" size="sm">
+                            <Lock className="h-3 w-3 mr-1" />
+                            Sistema
+                          </Badge>
+                        ) : (
+                          <Badge variant="success" size="sm">
+                            Custom
+                          </Badge>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {canEdit && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEdit(consecutivo)}
+                              className="p-2 hover:bg-orange-50 dark:hover:bg-orange-900/20"
+                              title="Editar"
+                            >
+                              <Pencil className="h-4 w-4 text-gray-500 hover:text-orange-600" />
+                            </Button>
                           )}
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            {canEdit && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEdit(consecutivo)}
-                                className="p-2 hover:bg-orange-50 dark:hover:bg-orange-900/20"
-                                title="Editar"
-                              >
-                                <Pencil className="h-4 w-4 text-gray-500 hover:text-orange-600" />
-                              </Button>
-                            )}
-                            {canDelete && !consecutivo.es_sistema && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDelete(consecutivo)}
-                                className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20"
-                                title="Eliminar"
-                              >
-                                <Trash2 className="h-4 w-4 text-gray-500 hover:text-red-600" />
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                          {canDelete && !consecutivo.es_sistema && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(consecutivo)}
+                              className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20"
+                              title="Eliminar"
+                            >
+                              <Trash2 className="h-4 w-4 text-gray-500 hover:text-red-600" />
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         ) : null}
       </DataTableCard>
 

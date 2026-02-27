@@ -879,7 +879,7 @@ export const useCargarConsecutivosSistema = () => {
   return useMutation({
     mutationFn: consecutivosApi.cargarSistema,
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: consecutivoKeys.all });
+      queryClient.invalidateQueries({ queryKey: consecutivoKeys.lists() });
       toast.success(result.message);
     },
     onError: () => {

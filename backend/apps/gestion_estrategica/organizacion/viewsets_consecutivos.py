@@ -15,7 +15,7 @@ import logging
 
 from apps.core.permissions import GranularActionPermission
 
-from .models_consecutivos import ConsecutivoConfig, CONSECUTIVOS_SISTEMA
+from .models_consecutivos import ConsecutivoConfig, TODOS_CONSECUTIVOS_SISTEMA
 from .filters_consecutivos import ConsecutivoConfigFilter
 from .serializers_consecutivos import (
     ConsecutivoConfigSerializer,
@@ -293,7 +293,7 @@ class ConsecutivoConfigViewSet(viewsets.ModelViewSet):
         created_count = 0
         updated_count = 0
 
-        for config_data in CONSECUTIVOS_SISTEMA:
+        for config_data in TODOS_CONSECUTIVOS_SISTEMA:
             # Verificar si ya existe para preservar created_by
             existing = ConsecutivoConfig.objects.filter(
                 codigo=config_data['codigo'],
@@ -329,7 +329,7 @@ class ConsecutivoConfigViewSet(viewsets.ModelViewSet):
             'message': 'Consecutivos del sistema cargados exitosamente.',
             'creados': created_count,
             'actualizados': updated_count,
-            'total': len(CONSECUTIVOS_SISTEMA)
+            'total': len(TODOS_CONSECUTIVOS_SISTEMA)
         })
 
     @action(detail=True, methods=['post'])

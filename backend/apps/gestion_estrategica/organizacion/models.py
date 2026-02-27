@@ -13,7 +13,7 @@ from apps.core.base_models import (
 )
 
 # Re-exportar modelos migrados para backward compatibility
-from .models_consecutivos import ConsecutivoConfig, CONSECUTIVOS_SISTEMA
+from .models_consecutivos import ConsecutivoConfig, CONSECUTIVOS_SISTEMA, TODOS_CONSECUTIVOS_SISTEMA
 from .models_unidades import UnidadMedida, CATEGORIA_UNIDAD_CHOICES
 
 __all__ = [
@@ -21,6 +21,7 @@ __all__ = [
     'OrganigramaNodePosition',
     'ConsecutivoConfig',
     'CONSECUTIVOS_SISTEMA',
+    'TODOS_CONSECUTIVOS_SISTEMA',
     'UnidadMedida',
     'CATEGORIA_UNIDAD_CHOICES',
 ]

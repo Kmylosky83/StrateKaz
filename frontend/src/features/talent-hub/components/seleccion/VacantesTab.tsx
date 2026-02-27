@@ -36,11 +36,13 @@ import {
   Clock,
   TrendingUp,
   Globe,
+  ExternalLink,
 } from 'lucide-react';
 import {
   useVacantesActivas,
   useProcesoSeleccionEstadisticas,
   useCerrarVacanteActiva,
+  usePublicarVacanteActiva,
 } from '../../hooks/useSeleccionContratacion';
 import type {
   VacanteActiva,
@@ -80,6 +82,7 @@ export const VacantesTab = () => {
   });
   const { data: statsData } = useProcesoSeleccionEstadisticas();
   const cerrarMutation = useCerrarVacanteActiva();
+  const publicarMutation = usePublicarVacanteActiva();
 
   // Stats
   const stats: StatItem[] = useMemo(
@@ -147,6 +150,13 @@ export const VacantesTab = () => {
     setIsCerrarOpen(false);
     setCerrarTarget(null);
   };
+
+  const handlePublicar = (vacante: VacanteActiva) => {
+    publicarMutation.mutate({ id: vacante.id });
+  };
+
+  // URL del portal público de vacantes (mismo subdominio, ruta /vacantes)
+  const portalPublicoUrl = `${window.location.origin}/vacantes`;
 
   const vacantes = vacantesData?.results || [];
 
@@ -303,6 +313,16 @@ export const VacantesTab = () => {
               options={prioridadOptions}
               className="w-44"
             />
+            <a
+              href={portalPublicoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+              title="Ver portal público de vacantes"
+            >
+              <ExternalLink size={14} />
+              Portal público
+            </a>
             <Button variant="primary" size="sm" onClick={handleCreate}>
               <Plus size={16} className="mr-1" />
               Nueva Vacante
@@ -362,6 +382,25 @@ export const VacantesTab = () => {
                 >
                   <Pencil size={16} />
                 </button>
+                {(v.estado === 'abierta' || v.estado === 'en_proceso') && (
+                  <button
+                    type="button"
+                    onClick={() => handlePublicar(v as unknown as VacanteActiva)}
+                    className={`p-1.5 rounded-md transition-colors ${
+                      v.publicada_externamente
+                        ? 'text-green-500 hover:text-green-700 hover:bg-green-50 dark:hover:text-green-400 dark:hover:bg-green-900/20'
+                        : 'text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:text-green-400 dark:hover:bg-green-900/20'
+                    }`}
+                    title={
+                      v.publicada_externamente
+                        ? 'Despublicar del portal público'
+                        : 'Publicar en portal público'
+                    }
+                    disabled={publicarMutation.isPending}
+                  >
+                    <Globe size={16} />
+                  </button>
+                )}
                 {(v.estado === 'abierta' || v.estado === 'en_proceso') && (
                   <button
                     type="button"

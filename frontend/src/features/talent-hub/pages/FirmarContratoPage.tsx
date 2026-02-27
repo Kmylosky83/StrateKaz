@@ -252,6 +252,7 @@ export default function FirmarContratoPage() {
         message={errorData?.detail || 'No se pudo encontrar el contrato solicitado.'}
         empresaNombre={empresaNombre}
         logoUrl={logoUrl}
+        primaryColor={primaryColor}
       />
     );
   }
@@ -263,6 +264,7 @@ export default function FirmarContratoPage() {
         message="No se pudo encontrar el contrato solicitado."
         empresaNombre={empresaNombre}
         logoUrl={logoUrl}
+        primaryColor={primaryColor}
       />
     );
   }
@@ -292,7 +294,7 @@ export default function FirmarContratoPage() {
 
   // Main form
   return (
-    <PublicLayout empresaNombre={empresaNombre} logoUrl={logoUrl}>
+    <PublicLayout empresaNombre={empresaNombre} logoUrl={logoUrl} primaryColor={primaryColor}>
       {/* Header card */}
       <Card className="mb-6 p-6">
         <div className="flex items-start gap-4">

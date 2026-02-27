@@ -10,7 +10,6 @@ import {
   Pencil,
   Trash2,
   MessageSquare,
-  Search,
   Mail,
   Phone,
   Video,
@@ -26,8 +25,6 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { Alert } from '@/components/common/Alert';
 import { Tooltip } from '@/components/common/Tooltip';
-import { Select } from '@/components/forms/Select';
-import { Input } from '@/components/forms/Input';
 import { Textarea } from '@/components/forms/Textarea';
 import { Switch } from '@/components/forms/Switch';
 import { BaseModal } from '@/components/modals/BaseModal';
@@ -47,7 +44,7 @@ import { useSelectCargos } from '@/hooks/useSelectLists';
 // CONSTANTES
 // =============================================================================
 
-const FRECUENCIAS = [
+export const FRECUENCIAS = [
   { value: 'diaria', label: 'Diaria' },
   { value: 'semanal', label: 'Semanal' },
   { value: 'quincenal', label: 'Quincenal' },
@@ -59,7 +56,7 @@ const FRECUENCIAS = [
   { value: 'segun_necesidad', label: 'Según necesidad' },
 ];
 
-const MEDIOS = [
+export const MEDIOS = [
   { value: 'email', label: 'Correo Electrónico', icon: Mail },
   { value: 'reunion', label: 'Reunión Presencial', icon: UsersIcon },
   { value: 'videoconferencia', label: 'Videoconferencia', icon: Video },
@@ -330,7 +327,19 @@ const MatrizFormModal = ({ item, isOpen, onClose }: MatrizFormModalProps) => {
 // COMPONENTE PRINCIPAL
 // =============================================================================
 
-export const MatrizComunicacionSection = () => {
+interface MatrizComunicacionSectionProps {
+  searchFilter?: string;
+  frecuenciaFilter?: string;
+  medioFilter?: string;
+  triggerNewForm?: number;
+}
+
+export const MatrizComunicacionSection = ({
+  searchFilter,
+  frecuenciaFilter,
+  medioFilter,
+  triggerNewForm,
+}: MatrizComunicacionSectionProps) => {
   const [filters, setFilters] = useState<MatrizComunicacionFilters>({
     page: 1,
     page_size: 10,
@@ -338,6 +347,25 @@ export const MatrizComunicacionSection = () => {
   const [selectedItem, setSelectedItem] = useState<MatrizComunicacion | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<MatrizComunicacion | null>(null);
+
+  // Sincronizar filtros externos del padre
+  React.useEffect(() => {
+    setFilters((prev) => ({
+      ...prev,
+      search: searchFilter || undefined,
+      cuando_comunicar: frecuenciaFilter || undefined,
+      como_comunicar: medioFilter || undefined,
+      page: 1,
+    }));
+  }, [searchFilter, frecuenciaFilter, medioFilter]);
+
+  // Trigger para abrir modal desde el padre
+  React.useEffect(() => {
+    if (triggerNewForm && triggerNewForm > 0) {
+      setSelectedItem(null);
+      setIsModalOpen(true);
+    }
+  }, [triggerNewForm]);
 
   const { canDo } = usePermissions();
   const canCreate = canDo(Modules.GESTION_ESTRATEGICA, Sections.CONTEXTO, 'create');
@@ -393,45 +421,6 @@ export const MatrizComunicacionSection = () => {
 
   return (
     <div className="space-y-4">
-      {/* Header con filtros */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Input
-            id="mc-search"
-            placeholder="Buscar..."
-            value={filters.search || ''}
-            onChange={(e) => setFilters({ ...filters, search: e.target.value, page: 1 })}
-            leftIcon={<Search className="h-4 w-4" />}
-            className="w-48"
-          />
-          <Select
-            value={filters.cuando_comunicar || ''}
-            onChange={(e) =>
-              setFilters({ ...filters, cuando_comunicar: e.target.value || undefined, page: 1 })
-            }
-            options={[{ value: '', label: 'Toda frecuencia' }, ...FRECUENCIAS]}
-            className="w-40"
-          />
-          <Select
-            value={filters.como_comunicar || ''}
-            onChange={(e) =>
-              setFilters({ ...filters, como_comunicar: e.target.value || undefined, page: 1 })
-            }
-            options={[
-              { value: '', label: 'Todo medio' },
-              ...MEDIOS.map((m) => ({ value: m.value, label: m.label })),
-            ]}
-            className="w-44"
-          />
-        </div>
-        {canCreate && (
-          <Button onClick={handleCreate} variant="primary" size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Nuevo
-          </Button>
-        )}
-      </div>
-
       {/* Tabla */}
       {isLoading ? (
         <TableSkeleton rows={5} columns={6} />

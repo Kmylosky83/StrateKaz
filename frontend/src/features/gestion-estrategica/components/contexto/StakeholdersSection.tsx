@@ -35,7 +35,6 @@ import {
   MapPin,
   Landmark,
   Leaf,
-  UserCircle,
   ArrowRightLeft,
   MessageSquare,
 } from 'lucide-react';
@@ -74,7 +73,7 @@ import {
 // Componentes locales
 import { ParteInteresadaFormModal } from '../modals/ParteInteresadaFormModal';
 import { StakeholderMatrix } from './StakeholderMatrix';
-import { MatrizComunicacionSection } from './MatrizComunicacionSection';
+import { MatrizComunicacionSection, FRECUENCIAS, MEDIOS } from './MatrizComunicacionSection';
 
 // =============================================================================
 // TIPOS
@@ -167,6 +166,12 @@ export const StakeholdersSection = ({ triggerNewForm }: StakeholdersSectionProps
     message: string;
   } | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('table');
+
+  // Estado para filtros de vista Comunicación
+  const [comSearch, setComSearch] = useState('');
+  const [comFrecuencia, setComFrecuencia] = useState('');
+  const [comMedio, setComMedio] = useState('');
+  const [comTriggerNew, setComTriggerNew] = useState(0);
 
   // RBAC: Verificar permisos del usuario
   const { canDo } = usePermissions();
@@ -467,41 +472,43 @@ export const StakeholdersSection = ({ triggerNewForm }: StakeholdersSectionProps
         <StatsGrid stats={stakeholderStats} columns={4} moduleColor={moduleColor} />
       )}
 
-      {/* Sprint 17: Toolbar con Import/Export/Generate Matrix */}
-      <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center gap-2">
+      {/* Sprint 17: Toolbar con Import/Export/Generate Matrix — solo en vistas tabla/matriz */}
+      {viewMode !== 'comunicacion' && (
+        <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={handleImportClick}
+              variant="outline"
+              size="sm"
+              disabled={isImporting || !canCreate}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              {isImporting ? 'Importando...' : 'Importar Excel'}
+            </Button>
+            <Button onClick={handleExport} variant="outline" size="sm" disabled={isExporting}>
+              <Download className="h-4 w-4 mr-2" />
+              {isExporting ? 'Exportando...' : 'Exportar Excel'}
+            </Button>
+          </div>
           <Button
-            onClick={handleImportClick}
+            onClick={handleGenerateMatrices}
             variant="outline"
             size="sm"
-            disabled={isImporting || !canCreate}
+            disabled={isGenerating || !canCreate}
           >
-            <Upload className="h-4 w-4 mr-2" />
-            {isImporting ? 'Importando...' : 'Importar Excel'}
+            <Send className="h-4 w-4 mr-2" />
+            {isGenerating ? 'Generando...' : 'Generar Matriz Comunicaciones'}
           </Button>
-          <Button onClick={handleExport} variant="outline" size="sm" disabled={isExporting}>
-            <Download className="h-4 w-4 mr-2" />
-            {isExporting ? 'Exportando...' : 'Exportar Excel'}
-          </Button>
+          {/* Input oculto para importar archivo */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls"
+            onChange={handleFileChange}
+            className="hidden"
+          />
         </div>
-        <Button
-          onClick={handleGenerateMatrices}
-          variant="outline"
-          size="sm"
-          disabled={isGenerating || !canCreate}
-        >
-          <Send className="h-4 w-4 mr-2" />
-          {isGenerating ? 'Generando...' : 'Generar Matriz Comunicaciones'}
-        </Button>
-        {/* Input oculto para importar archivo */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".xlsx,.xls"
-          onChange={handleFileChange}
-          className="hidden"
-        />
-      </div>
+      )}
 
       {/* 2. SectionHeader con filtros en linea y ViewToggle */}
       <SectionHeader
@@ -515,58 +522,84 @@ export const StakeholdersSection = ({ triggerNewForm }: StakeholdersSectionProps
         variant="compact"
         actions={
           <div className="flex items-center gap-3 flex-nowrap">
-            {/* Busqueda */}
-            <Input
-              placeholder="Buscar..."
-              value={filters.search || ''}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value, page: 1 })}
-              leftIcon={<Search className="h-4 w-4" />}
-              className="w-48"
-            />
-            {/* Sprint 17: Filtro por Grupo */}
-            <Select
-              value={filters.tipo__grupo?.toString() || ''}
-              onChange={(e) =>
-                setFilters({
-                  ...filters,
-                  tipo__grupo: e.target.value ? parseInt(e.target.value) : undefined,
-                  page: 1,
-                })
-              }
-              options={grupoOptions}
-              className="w-40"
-            />
-            {/* Filtro: Tipo */}
-            <Select
-              value={filters.tipo?.toString() || ''}
-              onChange={(e) =>
-                setFilters({
-                  ...filters,
-                  tipo: e.target.value ? parseInt(e.target.value) : undefined,
-                  page: 1,
-                })
-              }
-              options={tipoOptions}
-              className="w-40"
-            />
-            {/* Filtro: Influencia PI */}
-            <Select
-              value={filters.nivel_influencia_pi || ''}
-              onChange={(e) =>
-                setFilters({
-                  ...filters,
-                  nivel_influencia_pi: e.target.value
-                    ? (e.target.value as NivelInfluencia)
-                    : undefined,
-                  page: 1,
-                })
-              }
-              options={[
-                { value: '', label: 'Toda influencia' },
-                ...NIVELES_INFLUENCIA.map((n) => ({ value: n.value, label: n.label })),
-              ]}
-              className="w-36"
-            />
+            {/* Busqueda — adaptativa por vista */}
+            {viewMode !== 'comunicacion' ? (
+              <>
+                <Input
+                  placeholder="Buscar..."
+                  value={filters.search || ''}
+                  onChange={(e) => setFilters({ ...filters, search: e.target.value, page: 1 })}
+                  leftIcon={<Search className="h-4 w-4" />}
+                  className="w-48"
+                />
+                <Select
+                  value={filters.tipo__grupo?.toString() || ''}
+                  onChange={(e) =>
+                    setFilters({
+                      ...filters,
+                      tipo__grupo: e.target.value ? parseInt(e.target.value) : undefined,
+                      page: 1,
+                    })
+                  }
+                  options={grupoOptions}
+                  className="w-40"
+                />
+                <Select
+                  value={filters.tipo?.toString() || ''}
+                  onChange={(e) =>
+                    setFilters({
+                      ...filters,
+                      tipo: e.target.value ? parseInt(e.target.value) : undefined,
+                      page: 1,
+                    })
+                  }
+                  options={tipoOptions}
+                  className="w-40"
+                />
+                <Select
+                  value={filters.nivel_influencia_pi || ''}
+                  onChange={(e) =>
+                    setFilters({
+                      ...filters,
+                      nivel_influencia_pi: e.target.value
+                        ? (e.target.value as NivelInfluencia)
+                        : undefined,
+                      page: 1,
+                    })
+                  }
+                  options={[
+                    { value: '', label: 'Toda influencia' },
+                    ...NIVELES_INFLUENCIA.map((n) => ({ value: n.value, label: n.label })),
+                  ]}
+                  className="w-36"
+                />
+              </>
+            ) : (
+              <>
+                <Input
+                  placeholder="Buscar..."
+                  value={comSearch}
+                  onChange={(e) => setComSearch(e.target.value)}
+                  leftIcon={<Search className="h-4 w-4" />}
+                  className="w-48"
+                />
+                <Select
+                  value={comFrecuencia}
+                  onChange={(e) => setComFrecuencia(e.target.value)}
+                  options={[{ value: '', label: 'Toda frecuencia' }, ...FRECUENCIAS]}
+                  className="w-40"
+                />
+                <Select
+                  value={comMedio}
+                  onChange={(e) => setComMedio(e.target.value)}
+                  options={[
+                    { value: '', label: 'Todo medio' },
+                    ...MEDIOS.map((m) => ({ value: m.value, label: m.label })),
+                  ]}
+                  className="w-44"
+                />
+              </>
+            )}
             {/* ViewToggle */}
             <ViewToggle
               value={viewMode}
@@ -574,9 +607,15 @@ export const StakeholdersSection = ({ triggerNewForm }: StakeholdersSectionProps
               options={VIEW_OPTIONS}
               moduleColor={moduleColor as 'purple' | 'blue' | 'green' | 'orange' | 'gray'}
             />
-            {/* Boton: Nuevo */}
+            {/* Boton: Nuevo — adaptativo por vista */}
             {canCreate && (
-              <Button onClick={handleCreate} variant="primary" size="sm">
+              <Button
+                onClick={
+                  viewMode === 'comunicacion' ? () => setComTriggerNew((p) => p + 1) : handleCreate
+                }
+                variant="primary"
+                size="sm"
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Nuevo
               </Button>
@@ -588,7 +627,12 @@ export const StakeholdersSection = ({ triggerNewForm }: StakeholdersSectionProps
       {/* 3. Contenido: Tabla, Matriz o Comunicación */}
       {viewMode === 'comunicacion' ? (
         /* Vista Matriz de Comunicación */
-        <MatrizComunicacionSection />
+        <MatrizComunicacionSection
+          searchFilter={comSearch}
+          frecuenciaFilter={comFrecuencia}
+          medioFilter={comMedio}
+          triggerNewForm={comTriggerNew}
+        />
       ) : isLoading ? (
         <TableSkeleton rows={5} columns={6} />
       ) : isEmpty ? (

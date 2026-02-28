@@ -156,14 +156,30 @@ class ContratacionService:
                 vacante_locked.fecha_cierre_real = timezone.now().date()
             vacante_locked.save()
 
-            # 8. Iniciar onboarding automático
+            # 8. Auto-crear FirmaDocumento vinculado al contrato laboral
+            cls._crear_firma_documento_contrato(
+                colaborador=colaborador,
+                historial_contrato=contrato,
+                empresa=empresa,
+                usuario=usuario_contratante,
+            )
+
+            # 8b. Propagar afiliaciones SS del candidato a InfoPersonal del colaborador
+            cls._propagar_afiliaciones_ss(
+                candidato=candidato,
+                colaborador=colaborador,
+                empresa=empresa,
+                usuario=usuario_contratante,
+            )
+
+            # 9. Iniciar onboarding automático
             onboarding_result = cls._iniciar_onboarding(
                 colaborador=colaborador,
                 empresa=empresa,
                 usuario=usuario_contratante,
             )
 
-            # 9. Generar documento GD (opcional)
+            # 10. Generar documento GD (opcional)
             documento = None
             if datos_contrato.get('generar_documento', False):
                 documento = cls._generar_documento_contrato(
@@ -173,7 +189,7 @@ class ContratacionService:
                     plantilla_id=datos_contrato.get('plantilla_id'),
                 )
 
-        # 10. Enviar notificaciones (fuera de transaction para no bloquear)
+        # 11. Enviar notificaciones (fuera de transaction para no bloquear)
         cls._enviar_notificaciones_contratacion(
             colaborador=colaborador,
             contrato=contrato,
@@ -721,6 +737,117 @@ class ContratacionService:
 
         except Exception as e:
             logger.error(f'Error enviando notificaciones de contratación: {e}')
+
+    @classmethod
+    def _crear_firma_documento_contrato(
+        cls, colaborador, historial_contrato, empresa, usuario
+    ) -> None:
+        """
+        Auto-crea un FirmaDocumento de tipo 'contrato' vinculado al HistorialContrato.
+
+        Este registro permite que el módulo de Onboarding tenga trazabilidad del
+        contrato laboral firmado y pueda gestionarlo desde la ficha del colaborador.
+        """
+        try:
+            FirmaDocumento = apps.get_model('onboarding_induccion', 'FirmaDocumento')
+            FirmaDocumento.objects.create(
+                empresa=empresa,
+                colaborador=colaborador,
+                tipo_documento='contrato',
+                nombre_documento=f'Contrato Laboral - {colaborador.get_nombre_completo()}',
+                metodo_firma='digital',
+                fecha_firma=historial_contrato.fecha_inicio,
+                firmado=False,
+                historial_contrato=historial_contrato,
+                created_by=usuario,
+                updated_by=usuario,
+            )
+            logger.info(
+                f"FirmaDocumento de contrato creado para Colaborador #{colaborador.id}"
+            )
+        except Exception as e:
+            logger.error(
+                f"Error creando FirmaDocumento para Colaborador #{colaborador.id}: {e}"
+            )
+
+    @classmethod
+    def _propagar_afiliaciones_ss(
+        cls, candidato, colaborador, empresa, usuario
+    ) -> None:
+        """
+        Propaga las afiliaciones a seguridad social del Candidato hacia InfoPersonal.
+
+        Mapeo de tipo_entidad.codigo → campo InfoPersonal:
+        - EPS  → eps
+        - ARL  → arl
+        - AFP  → fondo_pensiones
+        - CCF  → caja_compensacion
+
+        Solo actualiza campos cuyas afiliaciones estén en estado 'afiliado'.
+        Si InfoPersonal no existe, la crea.
+        """
+        try:
+            AfiliacionSS = apps.get_model('seleccion_contratacion', 'AfiliacionSS')
+            InfoPersonal = apps.get_model('colaboradores', 'InfoPersonal')
+
+            # Buscar afiliaciones en estado 'afiliado' del candidato
+            afiliaciones = AfiliacionSS.objects.filter(
+                candidato=candidato,
+                estado='afiliado',
+                is_active=True,
+            ).select_related('entidad__tipo_entidad')
+
+            if not afiliaciones.exists():
+                return
+
+            # Mapeo tipo entidad → campo InfoPersonal
+            TIPO_TO_CAMPO = {
+                'EPS': 'eps',
+                'ARL': 'arl',
+                'AFP': 'fondo_pensiones',
+                'CCF': 'caja_compensacion',
+            }
+
+            campos_actualizar = {}
+            for afiliacion in afiliaciones:
+                codigo_tipo = afiliacion.entidad.tipo_entidad.codigo.upper()
+                campo = TIPO_TO_CAMPO.get(codigo_tipo)
+                if campo:
+                    campos_actualizar[campo] = afiliacion.entidad.nombre
+
+            if not campos_actualizar:
+                return
+
+            # Obtener o crear InfoPersonal del colaborador
+            info_personal, created = InfoPersonal.objects.get_or_create(
+                colaborador=colaborador,
+                defaults={
+                    'empresa': empresa,
+                    'created_by': usuario,
+                    'updated_by': usuario,
+                },
+            )
+
+            # Actualizar campos con datos de afiliaciones
+            for campo, valor in campos_actualizar.items():
+                setattr(info_personal, campo, valor)
+
+            info_personal.updated_by = usuario
+            campos_save = list(campos_actualizar.keys()) + ['updated_by', 'updated_at']
+            if created:
+                # Si se acaba de crear, guardar todo
+                info_personal.save()
+            else:
+                info_personal.save(update_fields=campos_save)
+
+            logger.info(
+                f"AfiliacionSS propagada a InfoPersonal de Colaborador #{colaborador.id}: "
+                f"{list(campos_actualizar.keys())}"
+            )
+        except Exception as e:
+            logger.error(
+                f"Error propagando afiliaciones SS para Colaborador #{colaborador.id}: {e}"
+            )
 
     @classmethod
     def _generar_numero_contrato(cls, numero_base: str, num_renovacion: int) -> str:

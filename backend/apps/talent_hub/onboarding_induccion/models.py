@@ -911,6 +911,17 @@ class FirmaDocumento(BaseCompanyModel):
         verbose_name='Método de Firma'
     )
 
+    # Vínculo al contrato laboral (solo cuando tipo_documento='contrato')
+    historial_contrato = models.ForeignKey(
+        'seleccion_contratacion.HistorialContrato',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='firmas_onboarding',
+        verbose_name='Contrato asociado',
+        help_text='Vínculo al contrato laboral del módulo de contratación'
+    )
+
     # Testigo/Validador
     testigo = models.ForeignKey(
         settings.AUTH_USER_MODEL,

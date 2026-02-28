@@ -1,6 +1,11 @@
 /**
  * Sección Tratamientos - Planes de tratamiento y controles
- * Conectado a motor_riesgos API
+ * Conectado a motor_riesgos API (ISO 31000)
+ *
+ * Estados backend: pendiente, en_curso, completado, cancelado
+ * Campos backend: riesgo_codigo, riesgo_nombre, tipo, tipo_display, descripcion,
+ *                 control_propuesto, responsable_nombre, fecha_implementacion,
+ *                 estado, estado_display, efectividad
  */
 import { useState } from 'react';
 import { Filter, ExternalLink } from 'lucide-react';
@@ -14,7 +19,7 @@ interface TratamientosSectionProps {
 
 const ESTADO_BADGE: Record<string, 'primary' | 'success' | 'warning' | 'danger' | 'gray'> = {
   pendiente: 'gray',
-  en_proceso: 'warning',
+  en_curso: 'warning',
   completado: 'success',
   cancelado: 'danger',
 };
@@ -24,6 +29,15 @@ const TIPO_LABELS: Record<string, string> = {
   mitigar: 'Mitigar',
   transferir: 'Transferir',
   aceptar: 'Aceptar',
+};
+
+const EFECTIVIDAD_BADGE: Record<string, 'success' | 'warning' | 'danger' | 'gray'> = {
+  alta: 'success',
+  Alta: 'success',
+  media: 'warning',
+  Media: 'warning',
+  baja: 'danger',
+  Baja: 'danger',
 };
 
 export function TratamientosSection({ triggerNewForm }: TratamientosSectionProps) {
@@ -54,7 +68,7 @@ export function TratamientosSection({ triggerNewForm }: TratamientosSectionProps
             <Button
               variant="outline"
               size="sm"
-              onClick={() => window.open('/riesgos/riesgos-procesos', '_blank')}
+              onClick={() => window.open('/riesgos/procesos', '_blank')}
               className="flex items-center gap-2"
             >
               <ExternalLink className="h-4 w-4" />
@@ -87,7 +101,7 @@ export function TratamientosSection({ triggerNewForm }: TratamientosSectionProps
                 >
                   <option value="">Todos</option>
                   <option value="pendiente">Pendiente</option>
-                  <option value="en_proceso">En Proceso</option>
+                  <option value="en_curso">En Curso</option>
                   <option value="completado">Completado</option>
                   <option value="cancelado">Cancelado</option>
                 </select>
@@ -116,7 +130,12 @@ export function TratamientosSection({ triggerNewForm }: TratamientosSectionProps
                 </select>
               </div>
               <div className="flex items-end">
-                <Button variant="outline" size="sm" onClick={() => setFilters({})} className="w-full">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setFilters({})}
+                  className="w-full"
+                >
                   Limpiar Filtros
                 </Button>
               </div>
@@ -129,10 +148,10 @@ export function TratamientosSection({ triggerNewForm }: TratamientosSectionProps
             <thead className="bg-gray-50 dark:bg-gray-800">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Riesgo Asociado
+                  Riesgo
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Descripción
+                  Control Propuesto
                 </th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                   Estrategia
@@ -141,7 +160,10 @@ export function TratamientosSection({ triggerNewForm }: TratamientosSectionProps
                   Responsable
                 </th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Avance
+                  Fecha Impl.
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                  Efectividad
                 </th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                   Estado
@@ -155,49 +177,54 @@ export function TratamientosSection({ triggerNewForm }: TratamientosSectionProps
                   className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                 >
                   <td className="px-4 py-3">
-                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                      {tratamiento.riesgo_nombre || `Riesgo #${tratamiento.riesgo}`}
-                    </span>
+                    <div>
+                      <span className="text-xs font-mono text-gray-500">
+                        {tratamiento.riesgo_codigo}
+                      </span>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {tratamiento.riesgo_nombre || `Riesgo #${tratamiento.riesgo}`}
+                      </p>
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">
-                      {tratamiento.descripcion}
+                      {tratamiento.control_propuesto || tratamiento.descripcion}
                     </p>
                   </td>
                   <td className="px-4 py-3 text-center">
                     <Badge variant="primary" size="sm">
-                      {TIPO_LABELS[tratamiento.tipo] || tratamiento.tipo}
+                      {tratamiento.tipo_display ||
+                        TIPO_LABELS[tratamiento.tipo] ||
+                        tratamiento.tipo}
                     </Badge>
                   </td>
                   <td className="px-4 py-3">
                     <span className="text-sm text-gray-900 dark:text-gray-100">
-                      {tratamiento.responsable_detail
-                        ? `${tratamiento.responsable_detail.first_name} ${tratamiento.responsable_detail.last_name}`
-                        : 'Sin asignar'}
+                      {tratamiento.responsable_nombre || 'Sin asignar'}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full w-20">
-                        <div
-                          className={`h-2 rounded-full transition-all ${
-                            tratamiento.porcentaje_avance >= 80
-                              ? 'bg-green-500'
-                              : tratamiento.porcentaje_avance >= 40
-                              ? 'bg-yellow-500'
-                              : 'bg-red-500'
-                          }`}
-                          style={{ width: `${tratamiento.porcentaje_avance}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-medium text-gray-500 w-8">
-                        {tratamiento.porcentaje_avance}%
-                      </span>
-                    </div>
+                  <td className="px-4 py-3 text-center">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
+                      {tratamiento.fecha_implementacion
+                        ? new Date(tratamiento.fecha_implementacion).toLocaleDateString('es-CO')
+                        : '-'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    {tratamiento.efectividad ? (
+                      <Badge
+                        variant={EFECTIVIDAD_BADGE[tratamiento.efectividad] || 'gray'}
+                        size="sm"
+                      >
+                        {tratamiento.efectividad}
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-gray-400">Sin evaluar</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <Badge variant={ESTADO_BADGE[tratamiento.estado] || 'gray'}>
-                      {tratamiento.estado.replace(/_/g, ' ')}
+                      {tratamiento.estado_display}
                     </Badge>
                   </td>
                 </tr>

@@ -298,14 +298,20 @@ class FirmaDocumentoListSerializer(serializers.ModelSerializer):
     """Serializer para listado de firmas de documentos."""
     colaborador_nombre = serializers.CharField(source='colaborador.get_nombre_corto', read_only=True)
     tipo_documento_display = serializers.CharField(source='get_tipo_documento_display', read_only=True)
+    historial_contrato_display = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = FirmaDocumento
         fields = [
             'id', 'colaborador', 'colaborador_nombre', 'tipo_documento',
             'tipo_documento_display', 'nombre_documento', 'fecha_firma',
-            'firmado', 'metodo_firma',
+            'firmado', 'metodo_firma', 'historial_contrato', 'historial_contrato_display',
         ]
+
+    def get_historial_contrato_display(self, obj):
+        if obj.historial_contrato_id:
+            return obj.historial_contrato.numero_contrato
+        return None
 
 
 class FirmaDocumentoDetailSerializer(serializers.ModelSerializer):
@@ -313,11 +319,17 @@ class FirmaDocumentoDetailSerializer(serializers.ModelSerializer):
     colaborador_nombre = serializers.CharField(source='colaborador.get_nombre_completo', read_only=True)
     tipo_documento_display = serializers.CharField(source='get_tipo_documento_display', read_only=True)
     testigo_nombre = serializers.CharField(source='testigo.get_full_name', read_only=True)
+    historial_contrato_display = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = FirmaDocumento
         fields = '__all__'
         read_only_fields = ['empresa', 'created_at', 'updated_at']
+
+    def get_historial_contrato_display(self, obj):
+        if obj.historial_contrato_id:
+            return obj.historial_contrato.numero_contrato
+        return None
 
 
 class FirmaDocumentoCreateUpdateSerializer(serializers.ModelSerializer):
@@ -328,7 +340,7 @@ class FirmaDocumentoCreateUpdateSerializer(serializers.ModelSerializer):
         fields = [
             'colaborador', 'tipo_documento', 'nombre_documento', 'version',
             'documento', 'documento_firmado', 'fecha_firma', 'firmado',
-            'metodo_firma', 'testigo', 'observaciones',
+            'metodo_firma', 'testigo', 'observaciones', 'historial_contrato',
         ]
 
 

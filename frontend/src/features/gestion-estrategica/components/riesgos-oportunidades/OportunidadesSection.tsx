@@ -1,6 +1,9 @@
 /**
  * Sección Oportunidades - Listado estratégico de oportunidades organizacionales
  * Conectado a motor_riesgos API (ISO 9001:2015 Cláusula 6.1)
+ *
+ * Estados backend: identificada, en_evaluacion, aprobada, en_ejecucion, materializada, descartada
+ * Campos backend: fuente, impacto_potencial, viabilidad, recursos_requeridos, responsable_nombre
  */
 import { useState } from 'react';
 import { Filter, ExternalLink } from 'lucide-react';
@@ -15,9 +18,19 @@ interface OportunidadesSectionProps {
 const ESTADO_BADGE: Record<string, 'primary' | 'success' | 'warning' | 'danger' | 'gray'> = {
   identificada: 'gray',
   en_evaluacion: 'warning',
-  en_implementacion: 'primary',
-  implementada: 'success',
+  aprobada: 'primary',
+  en_ejecucion: 'primary',
+  materializada: 'success',
   descartada: 'gray',
+};
+
+const IMPACTO_BADGE: Record<string, 'success' | 'warning' | 'danger' | 'gray'> = {
+  alto: 'danger',
+  Alto: 'danger',
+  medio: 'warning',
+  Medio: 'warning',
+  bajo: 'success',
+  Bajo: 'success',
 };
 
 export function OportunidadesSection({ triggerNewForm }: OportunidadesSectionProps) {
@@ -48,7 +61,7 @@ export function OportunidadesSection({ triggerNewForm }: OportunidadesSectionPro
             <Button
               variant="outline"
               size="sm"
-              onClick={() => window.open('/riesgos/riesgos-procesos', '_blank')}
+              onClick={() => window.open('/riesgos/procesos', '_blank')}
               className="flex items-center gap-2"
             >
               <ExternalLink className="h-4 w-4" />
@@ -82,13 +95,19 @@ export function OportunidadesSection({ triggerNewForm }: OportunidadesSectionPro
                   <option value="">Todos</option>
                   <option value="identificada">Identificada</option>
                   <option value="en_evaluacion">En Evaluación</option>
-                  <option value="en_implementacion">En Implementación</option>
-                  <option value="implementada">Implementada</option>
+                  <option value="aprobada">Aprobada</option>
+                  <option value="en_ejecucion">En Ejecución</option>
+                  <option value="materializada">Materializada</option>
                   <option value="descartada">Descartada</option>
                 </select>
               </div>
               <div className="flex items-end">
-                <Button variant="outline" size="sm" onClick={() => setFilters({})} className="w-full">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setFilters({})}
+                  className="w-full"
+                >
                   Limpiar Filtros
                 </Button>
               </div>
@@ -107,13 +126,16 @@ export function OportunidadesSection({ triggerNewForm }: OportunidadesSectionPro
                   Oportunidad
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Beneficio Esperado
+                  Fuente
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                   Responsable
                 </th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Prioridad
+                  Impacto
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                  Viabilidad
                 </th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                   Estado
@@ -131,39 +153,40 @@ export function OportunidadesSection({ triggerNewForm }: OportunidadesSectionPro
                   </td>
                   <td className="px-4 py-3">
                     <div>
-                      <p className="font-medium text-gray-900 dark:text-gray-100">{oportunidad.nombre}</p>
-                      <p className="text-xs text-gray-500 line-clamp-1">{oportunidad.descripcion}</p>
+                      <p className="font-medium text-gray-900 dark:text-gray-100">
+                        {oportunidad.nombre}
+                      </p>
+                      <p className="text-xs text-gray-500 line-clamp-1">
+                        {oportunidad.descripcion}
+                      </p>
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">
-                      {oportunidad.beneficio_esperado || '-'}
-                    </p>
+                    <span className="text-sm text-gray-700 dark:text-gray-300 capitalize">
+                      {oportunidad.fuente}
+                    </span>
                   </td>
                   <td className="px-4 py-3">
                     <span className="text-sm text-gray-900 dark:text-gray-100">
-                      {oportunidad.responsable_detail
-                        ? `${oportunidad.responsable_detail.first_name} ${oportunidad.responsable_detail.last_name}`
-                        : 'Sin asignar'}
+                      {oportunidad.responsable_nombre || 'Sin asignar'}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center">
                     <Badge
-                      variant={
-                        oportunidad.prioridad === 'alta'
-                          ? 'danger'
-                          : oportunidad.prioridad === 'media'
-                          ? 'warning'
-                          : 'gray'
-                      }
+                      variant={IMPACTO_BADGE[oportunidad.impacto_potencial] || 'gray'}
                       size="sm"
                     >
-                      {oportunidad.prioridad || '-'}
+                      {oportunidad.impacto_potencial || '-'}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <Badge variant={IMPACTO_BADGE[oportunidad.viabilidad] || 'gray'} size="sm">
+                      {oportunidad.viabilidad || '-'}
                     </Badge>
                   </td>
                   <td className="px-4 py-3 text-center">
                     <Badge variant={ESTADO_BADGE[oportunidad.estado] || 'gray'}>
-                      {oportunidad.estado.replace(/_/g, ' ')}
+                      {oportunidad.estado_display}
                     </Badge>
                   </td>
                 </tr>

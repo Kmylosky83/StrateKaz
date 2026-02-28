@@ -1,6 +1,9 @@
 /**
  * Sección Riesgos - Listado estratégico de riesgos organizacionales
  * Conectado a motor_riesgos API (ISO 31000 / ISO 9001:2015 Cláusula 6.1)
+ *
+ * Estados backend: identificado, en_analisis, en_tratamiento, monitoreado, cerrado
+ * Tipos backend: estrategico, operativo, financiero, cumplimiento, tecnologico, reputacional, sst, ambiental
  */
 import { useState } from 'react';
 import { Filter, ExternalLink } from 'lucide-react';
@@ -14,30 +17,30 @@ interface RiesgosSectionProps {
 
 const ESTADO_BADGE: Record<string, 'primary' | 'success' | 'warning' | 'danger' | 'gray'> = {
   identificado: 'gray',
+  en_analisis: 'primary',
   en_tratamiento: 'warning',
-  controlado: 'success',
-  materializado: 'danger',
-  cerrado: 'primary',
+  monitoreado: 'success',
+  cerrado: 'gray',
 };
 
 const NIVEL_BADGE: Record<string, 'success' | 'warning' | 'danger' | 'gray'> = {
   bajo: 'success',
-  medio: 'warning',
+  moderado: 'warning',
   alto: 'danger',
   critico: 'danger',
 };
 
 function getNivelLabel(nivel: number): string {
   if (nivel <= 4) return 'Bajo';
-  if (nivel <= 9) return 'Medio';
-  if (nivel <= 16) return 'Alto';
+  if (nivel <= 9) return 'Moderado';
+  if (nivel <= 14) return 'Alto';
   return 'Crítico';
 }
 
 function getNivelKey(nivel: number): string {
   if (nivel <= 4) return 'bajo';
-  if (nivel <= 9) return 'medio';
-  if (nivel <= 16) return 'alto';
+  if (nivel <= 9) return 'moderado';
+  if (nivel <= 14) return 'alto';
   return 'critico';
 }
 
@@ -69,7 +72,7 @@ export function RiesgosSection({ triggerNewForm }: RiesgosSectionProps) {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => window.open('/riesgos/riesgos-procesos', '_blank')}
+              onClick={() => window.open('/riesgos/procesos', '_blank')}
               className="flex items-center gap-2"
             >
               <ExternalLink className="h-4 w-4" />
@@ -102,9 +105,9 @@ export function RiesgosSection({ triggerNewForm }: RiesgosSectionProps) {
                 >
                   <option value="">Todos</option>
                   <option value="identificado">Identificado</option>
+                  <option value="en_analisis">En Análisis</option>
                   <option value="en_tratamiento">En Tratamiento</option>
-                  <option value="controlado">Controlado</option>
-                  <option value="materializado">Materializado</option>
+                  <option value="monitoreado">Monitoreado</option>
                   <option value="cerrado">Cerrado</option>
                 </select>
               </div>
@@ -131,10 +134,17 @@ export function RiesgosSection({ triggerNewForm }: RiesgosSectionProps) {
                   <option value="cumplimiento">Cumplimiento</option>
                   <option value="tecnologico">Tecnológico</option>
                   <option value="reputacional">Reputacional</option>
+                  <option value="sst">SST</option>
+                  <option value="ambiental">Ambiental</option>
                 </select>
               </div>
               <div className="flex items-end">
-                <Button variant="outline" size="sm" onClick={() => setFilters({})} className="w-full">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setFilters({})}
+                  className="w-full"
+                >
                   Limpiar Filtros
                 </Button>
               </div>
@@ -155,11 +165,17 @@ export function RiesgosSection({ triggerNewForm }: RiesgosSectionProps) {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                   Tipo
                 </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                  Responsable
+                </th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                   Nivel Inherente
                 </th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                   Nivel Residual
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                  Reducción
                 </th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                   Estado
@@ -177,13 +193,22 @@ export function RiesgosSection({ triggerNewForm }: RiesgosSectionProps) {
                   </td>
                   <td className="px-4 py-3">
                     <div>
-                      <p className="font-medium text-gray-900 dark:text-gray-100">{riesgo.nombre}</p>
-                      <p className="text-xs text-gray-500 line-clamp-1">{riesgo.causa_raiz}</p>
+                      <p className="font-medium text-gray-900 dark:text-gray-100">
+                        {riesgo.nombre}
+                      </p>
+                      {riesgo.categoria_nombre && (
+                        <p className="text-xs text-gray-500">{riesgo.categoria_nombre}</p>
+                      )}
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="text-sm text-gray-700 dark:text-gray-300 capitalize">
-                      {riesgo.tipo.replace(/_/g, ' ')}
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
+                      {riesgo.tipo_display}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-sm text-gray-900 dark:text-gray-100">
+                      {riesgo.responsable_nombre || 'Sin asignar'}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center">
@@ -203,8 +228,21 @@ export function RiesgosSection({ triggerNewForm }: RiesgosSectionProps) {
                     </Badge>
                   </td>
                   <td className="px-4 py-3 text-center">
+                    <span
+                      className={`text-sm font-semibold ${
+                        riesgo.reduccion_riesgo_porcentaje >= 50
+                          ? 'text-green-600 dark:text-green-400'
+                          : riesgo.reduccion_riesgo_porcentaje >= 25
+                            ? 'text-yellow-600 dark:text-yellow-400'
+                            : 'text-red-600 dark:text-red-400'
+                      }`}
+                    >
+                      {riesgo.reduccion_riesgo_porcentaje}%
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-center">
                     <Badge variant={ESTADO_BADGE[riesgo.estado] || 'gray'}>
-                      {riesgo.estado.replace(/_/g, ' ')}
+                      {riesgo.estado_display}
                     </Badge>
                   </td>
                 </tr>

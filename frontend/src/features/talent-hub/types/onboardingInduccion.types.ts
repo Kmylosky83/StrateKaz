@@ -249,6 +249,10 @@ export interface FirmaDocumento {
   fecha_firma: string;
   firmado: boolean;
   metodo_firma: MetodoFirma;
+  /** ID del HistorialContrato asociado (solo cuando tipo_documento='contrato') */
+  historial_contrato?: number | null;
+  /** Número de contrato legible (solo lectura) */
+  historial_contrato_display?: string | null;
   testigo?: number;
   testigo_nombre?: string;
   observaciones?: string;
@@ -358,5 +362,7 @@ export interface FirmaDocumentoFormData {
   version?: string;
   fecha_firma: string;
   metodo_firma: MetodoFirma;
+  /** Vincular a un contrato laboral existente (opcional, solo para tipo_documento='contrato') */
+  historial_contrato?: number | null;
   observaciones?: string;
 }

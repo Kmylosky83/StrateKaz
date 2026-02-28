@@ -1,8 +1,13 @@
 /**
  * API Client para Riesgos y Oportunidades - Vista Estratégica (ISO 6.1)
  * Consume endpoints del motor_riesgos para vista consolidada en GE
+ *
+ * Types alineados con backend serializers:
+ * - RiesgoProcesoListSerializer → RiesgoProceso
+ * - OportunidadSerializer → Oportunidad
+ * - TratamientoRiesgoSerializer → TratamientoRiesgo
  */
-import axiosInstance from '@/api/axios-config';
+import apiClient from '@/api/axios-config';
 
 const BASE_URL = '/riesgos/riesgos-procesos';
 
@@ -16,72 +21,72 @@ export interface RiesgoResumen {
   en_tratamiento: number;
 }
 
+/** Alineado con RiesgoProcesoListSerializer */
 export interface RiesgoProceso {
   id: number;
   codigo: string;
   nombre: string;
-  descripcion: string;
   tipo: string;
-  estado: string;
+  tipo_display: string;
+  categoria: number | null;
+  categoria_nombre: string;
+  categoria_codigo: string;
   proceso: string;
-  causa_raiz: string;
-  consecuencia: string;
+  estado: string;
+  estado_display: string;
   probabilidad_inherente: number;
   impacto_inherente: number;
   nivel_inherente: number;
+  interpretacion_inherente: string;
   probabilidad_residual: number;
   impacto_residual: number;
   nivel_residual: number;
+  interpretacion_residual: string;
+  reduccion_riesgo_porcentaje: number;
   responsable: number | null;
-  responsable_detail?: {
-    id: number;
-    first_name: string;
-    last_name: string;
-  };
-  fecha_identificacion: string;
-  is_active: boolean;
+  responsable_nombre: string;
+  empresa: number;
   created_at: string;
-  updated_at: string;
 }
 
+/** Alineado con OportunidadSerializer */
 export interface Oportunidad {
   id: number;
   codigo: string;
   nombre: string;
   descripcion: string;
-  tipo: string;
-  estado: string;
-  beneficio_esperado: string;
+  fuente: string;
+  impacto_potencial: string;
+  viabilidad: string;
+  recursos_requeridos: string;
   responsable: number | null;
-  responsable_detail?: {
-    id: number;
-    first_name: string;
-    last_name: string;
-  };
-  prioridad: string;
-  fecha_identificacion: string;
-  is_active: boolean;
+  responsable_nombre: string;
+  estado: string;
+  estado_display: string;
+  empresa: number;
   created_at: string;
+  updated_at: string;
 }
 
+/** Alineado con TratamientoRiesgoSerializer */
 export interface TratamientoRiesgo {
   id: number;
   riesgo: number;
-  riesgo_nombre?: string;
+  riesgo_codigo: string;
+  riesgo_nombre: string;
   tipo: string;
+  tipo_display: string;
   descripcion: string;
+  control_propuesto: string;
   responsable: number | null;
-  responsable_detail?: {
-    id: number;
-    first_name: string;
-    last_name: string;
-  };
-  fecha_inicio: string;
-  fecha_fin: string | null;
+  responsable_nombre: string;
+  fecha_implementacion: string | null;
   estado: string;
-  porcentaje_avance: number;
-  is_active: boolean;
+  estado_display: string;
+  efectividad: string;
+  empresa: number;
   created_at: string;
+  updated_at: string;
 }
 
 export interface MapaCalorItem {
@@ -102,38 +107,38 @@ export interface PaginatedResponse<T> {
 
 export const riesgosEstrategicosApi = {
   getResumen: async (): Promise<RiesgoResumen> => {
-    const response = await axiosInstance.get(`${BASE_URL}/riesgos/resumen/`);
+    const response = await apiClient.get(`${BASE_URL}/riesgos/resumen/`);
     return response.data;
   },
 
   getRiesgos: async (
     params?: Record<string, string>
   ): Promise<PaginatedResponse<RiesgoProceso>> => {
-    const response = await axiosInstance.get(`${BASE_URL}/riesgos/`, { params });
+    const response = await apiClient.get(`${BASE_URL}/riesgos/`, { params });
     return response.data;
   },
 
   getCriticos: async (): Promise<RiesgoProceso[]> => {
-    const response = await axiosInstance.get(`${BASE_URL}/riesgos/criticos/`);
+    const response = await apiClient.get(`${BASE_URL}/riesgos/criticos/`);
     return response.data;
   },
 
   getMapaCalor: async (): Promise<MapaCalorItem[]> => {
-    const response = await axiosInstance.get(`${BASE_URL}/riesgos/mapa-calor/`);
+    const response = await apiClient.get(`${BASE_URL}/riesgos/mapa-calor/`);
     return response.data;
   },
 
   getOportunidades: async (
     params?: Record<string, string>
   ): Promise<PaginatedResponse<Oportunidad>> => {
-    const response = await axiosInstance.get(`${BASE_URL}/oportunidades/`, { params });
+    const response = await apiClient.get(`${BASE_URL}/oportunidades/`, { params });
     return response.data;
   },
 
   getTratamientos: async (
     params?: Record<string, string>
   ): Promise<PaginatedResponse<TratamientoRiesgo>> => {
-    const response = await axiosInstance.get(`${BASE_URL}/tratamientos/`, { params });
+    const response = await apiClient.get(`${BASE_URL}/tratamientos/`, { params });
     return response.data;
   },
 };

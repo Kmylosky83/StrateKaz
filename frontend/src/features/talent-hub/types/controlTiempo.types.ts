@@ -1,18 +1,42 @@
 /**
  * Types para Control de Tiempo - Talent Hub
+ * Alineados con los modelos y serializers del backend.
  * Sistema de Gestión StrateKaz
  */
 
 // ============== ENUMS ==============
 
-export type TipoTurno = 'diurno' | 'nocturno' | 'mixto' | 'rotativo';
-export type EstadoTurno = 'activo' | 'inactivo';
-export type TipoMarcaje = 'entrada' | 'salida' | 'inicio_descanso' | 'fin_descanso';
-export type MetodoMarcaje = 'biometrico' | 'tarjeta' | 'app_movil' | 'web' | 'manual';
-export type EstadoAsistencia = 'presente' | 'ausente' | 'tardanza' | 'permiso' | 'licencia' | 'incapacidad' | 'vacaciones';
-export type TipoHoraExtra = 'diurna' | 'nocturna' | 'dominical' | 'festiva' | 'dominical_nocturna' | 'festiva_nocturna';
-export type EstadoHoraExtra = 'pendiente' | 'aprobada' | 'rechazada' | 'pagada';
-export type EstadoConsolidado = 'borrador' | 'cerrado' | 'aprobado';
+export type TipoJornada = 'ordinaria' | 'flexible' | 'por_turnos' | 'reducida';
+export type DiaSemana =
+  | 'lunes'
+  | 'martes'
+  | 'miercoles'
+  | 'jueves'
+  | 'viernes'
+  | 'sabado'
+  | 'domingo';
+export type EstadoAsistencia =
+  | 'presente'
+  | 'ausente'
+  | 'tardanza'
+  | 'permiso'
+  | 'incapacidad'
+  | 'vacaciones'
+  | 'licencia';
+export type TipoHoraExtra =
+  | 'diurna'
+  | 'nocturna'
+  | 'dominical_diurna'
+  | 'dominical_nocturna'
+  | 'festivo_diurna'
+  | 'festivo_nocturna';
+export type EstadoHoraExtra = 'pendiente' | 'aprobada' | 'rechazada';
+
+// Tipos de marcaje (backend: MarcajeTiempo.TipoMarcaje)
+export type TipoMarcaje = 'entrada' | 'salida' | 'entrada_almuerzo' | 'salida_almuerzo';
+
+// Métodos de marcaje (backend: MarcajeTiempo.MetodoMarcaje)
+export type MetodoMarcaje = 'manual' | 'web' | 'qr' | 'movil';
 
 // ============== TURNO ==============
 
@@ -21,42 +45,38 @@ export interface Turno {
   empresa: number;
   codigo: string;
   nombre: string;
-  tipo: TipoTurno;
-  hora_inicio: string;
-  hora_fin: string;
-  duracion_jornada: number;
-  tiempo_descanso: number;
+  descripcion: string;
+  hora_inicio: string; // "HH:MM:SS"
+  hora_fin: string; // "HH:MM:SS"
+  duracion_jornada: string; // decimal string
   aplica_recargo_nocturno: boolean;
-  hora_inicio_nocturno: string;
-  hora_fin_nocturno: string;
-  dias_laborales: string[];
-  estado: EstadoTurno;
-  observaciones: string;
+  dias_semana: DiaSemana[];
+  horas_semanales_maximas: string; // decimal string
+  tipo_jornada: TipoJornada;
+  qr_token?: string; // UUID, solo en detail
+  es_turno_nocturno?: boolean;
+  horario_formateado?: string;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
-  is_active: boolean;
 }
 
 export interface TurnoFormData {
-  codigo: string;
+  codigo?: string;
   nombre: string;
-  tipo: TipoTurno;
+  descripcion?: string;
   hora_inicio: string;
   hora_fin: string;
   duracion_jornada: number;
-  tiempo_descanso?: number;
   aplica_recargo_nocturno?: boolean;
-  hora_inicio_nocturno?: string;
-  hora_fin_nocturno?: string;
-  dias_laborales?: string[];
-  estado?: EstadoTurno;
-  observaciones?: string;
+  dias_semana?: DiaSemana[];
+  horas_semanales_maximas?: number;
+  tipo_jornada?: TipoJornada;
 }
 
 export interface TurnoFilter {
-  tipo?: TipoTurno;
-  estado?: EstadoTurno;
   search?: string;
+  is_active?: boolean;
 }
 
 // ============== ASIGNACION TURNO ==============
@@ -70,13 +90,12 @@ export interface AsignacionTurno {
   turno_nombre: string;
   fecha_inicio: string;
   fecha_fin: string | null;
-  es_temporal: boolean;
-  motivo_asignacion: string;
-  asignado_por: number;
-  asignado_por_nombre: string;
+  es_rotativo: boolean;
+  observaciones: string;
+  esta_vigente: boolean;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
-  is_active: boolean;
 }
 
 export interface AsignacionTurnoFormData {
@@ -84,16 +103,14 @@ export interface AsignacionTurnoFormData {
   turno: number;
   fecha_inicio: string;
   fecha_fin?: string | null;
-  es_temporal?: boolean;
-  motivo_asignacion?: string;
+  es_rotativo?: boolean;
+  observaciones?: string;
 }
 
 export interface AsignacionTurnoFilter {
   colaborador?: number;
   turno?: number;
-  fecha_inicio?: string;
-  fecha_fin?: string;
-  es_temporal?: boolean;
+  vigente?: boolean;
 }
 
 // ============== REGISTRO ASISTENCIA ==============
@@ -103,55 +120,115 @@ export interface RegistroAsistencia {
   empresa: number;
   colaborador: number;
   colaborador_nombre: string;
+  turno: number;
+  turno_nombre: string;
   fecha: string;
-  turno_asignado: number | null;
-  turno_asignado_nombre: string;
-  hora_entrada: string | null;
-  hora_salida: string | null;
-  metodo_marcaje_entrada: MetodoMarcaje | null;
-  metodo_marcaje_salida: MetodoMarcaje | null;
-  ubicacion_entrada: string;
-  ubicacion_salida: string;
+  hora_entrada: string | null; // "HH:MM:SS"
+  hora_salida: string | null; // "HH:MM:SS"
+  hora_entrada_almuerzo: string | null;
+  hora_salida_almuerzo: string | null;
   estado: EstadoAsistencia;
+  estado_display: string;
   minutos_tardanza: number;
-  horas_trabajadas: number;
+  horas_trabajadas: string; // decimal string
   observaciones: string;
   justificacion: string;
-  aprobado_por: number | null;
-  aprobado_por_nombre: string;
+  registrado_por: number;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
-  is_active: boolean;
 }
 
 export interface RegistroAsistenciaFormData {
   colaborador: number;
+  turno: number;
   fecha: string;
-  turno_asignado?: number | null;
   hora_entrada?: string | null;
   hora_salida?: string | null;
-  metodo_marcaje_entrada?: MetodoMarcaje;
-  metodo_marcaje_salida?: MetodoMarcaje;
-  ubicacion_entrada?: string;
-  ubicacion_salida?: string;
+  hora_entrada_almuerzo?: string | null;
+  hora_salida_almuerzo?: string | null;
   estado?: EstadoAsistencia;
   observaciones?: string;
   justificacion?: string;
 }
 
+export interface RegistrarEntradaData {
+  colaborador_id: number;
+  turno_id: number;
+  fecha: string;
+  hora_entrada: string;
+  observaciones?: string;
+}
+
+export interface RegistrarSalidaData {
+  hora_salida: string;
+  observaciones?: string;
+}
+
+export interface JustificarAsistenciaData {
+  justificacion: string;
+  nuevo_estado?: 'permiso' | 'incapacidad' | 'vacaciones' | 'licencia';
+}
+
 export interface RegistroAsistenciaFilter {
   colaborador?: number;
-  fecha_inicio?: string;
-  fecha_fin?: string;
+  fecha_desde?: string;
+  fecha_hasta?: string;
   estado?: EstadoAsistencia;
-  turno_asignado?: number;
+}
+
+export interface EstadisticasAsistencia {
+  total_registros: number;
+  presentes: number;
+  ausentes: number;
+  tardanzas: number;
+  permisos: number;
+  incapacidades: number;
+  vacaciones: number;
+  licencias: number;
+  porcentaje_asistencia: number;
+  total_minutos_tardanza: number;
+  total_horas_trabajadas: number;
+}
+
+// ============== MARCAJE DE TIEMPO ==============
+
+export interface MarcajeTiempo {
+  id: number;
+  empresa: number;
+  colaborador: number;
+  colaborador_nombre: string;
+  tipo: TipoMarcaje;
+  tipo_display: string;
+  metodo: MetodoMarcaje;
+  metodo_display: string;
+  fecha_hora: string; // ISO datetime
+  latitud: string | null;
+  longitud: string | null;
+  ip_address: string | null;
+  registro_asistencia: number | null;
+  is_active: boolean;
+  created_at: string;
 }
 
 export interface MarcajeData {
-  colaborador: number;
-  tipo_marcaje: TipoMarcaje;
-  metodo: MetodoMarcaje;
-  ubicacion?: string;
+  colaborador_id: number;
+  tipo: TipoMarcaje;
+  metodo?: MetodoMarcaje;
+  latitud?: number | null;
+  longitud?: number | null;
+}
+
+export interface MarcajeQRData {
+  qr_token: string;
+  tipo: TipoMarcaje;
+  latitud?: number | null;
+  longitud?: number | null;
+}
+
+export interface MarcajeFilter {
+  colaborador?: number;
+  fecha?: string;
 }
 
 // ============== HORA EXTRA ==============
@@ -163,23 +240,22 @@ export interface HoraExtra {
   colaborador_nombre: string;
   fecha: string;
   tipo: TipoHoraExtra;
+  tipo_display: string;
   hora_inicio: string;
   hora_fin: string;
-  horas_solicitadas: number;
-  horas_aprobadas: number;
-  motivo: string;
-  trabajo_realizado: string;
+  horas_trabajadas: string; // decimal string (auto-calculado)
+  factor_recargo: string; // decimal string (auto-calculado)
+  horas_con_recargo: string;
+  porcentaje_recargo: string;
+  justificacion: string;
   estado: EstadoHoraExtra;
-  solicitado_por: number;
-  solicitado_por_nombre: string;
+  estado_display: string;
+  aprobado: boolean;
   aprobado_por: number | null;
-  aprobado_por_nombre: string;
   fecha_aprobacion: string | null;
-  observaciones_aprobacion: string;
-  factor_recargo: number;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
-  is_active: boolean;
 }
 
 export interface HoraExtraFormData {
@@ -188,22 +264,19 @@ export interface HoraExtraFormData {
   tipo: TipoHoraExtra;
   hora_inicio: string;
   hora_fin: string;
-  horas_solicitadas: number;
-  motivo: string;
-  trabajo_realizado?: string;
+  justificacion: string;
 }
 
 export interface HoraExtraFilter {
   colaborador?: number;
-  fecha_inicio?: string;
-  fecha_fin?: string;
+  fecha_desde?: string;
+  fecha_hasta?: string;
   tipo?: TipoHoraExtra;
   estado?: EstadoHoraExtra;
 }
 
-export interface AprobacionHoraExtraData {
-  horas_aprobadas: number;
-  observaciones_aprobacion?: string;
+export interface RechazarHoraExtraData {
+  motivo?: string;
 }
 
 // ============== CONSOLIDADO ASISTENCIA ==============
@@ -213,55 +286,45 @@ export interface ConsolidadoAsistencia {
   empresa: number;
   colaborador: number;
   colaborador_nombre: string;
-  periodo_inicio: string;
-  periodo_fin: string;
-  dias_laborados: number;
-  dias_ausencia: number;
-  dias_incapacidad: number;
-  dias_licencia: number;
-  dias_permiso: number;
-  dias_vacaciones: number;
-  total_horas_trabajadas: number;
-  total_horas_extras_diurnas: number;
-  total_horas_extras_nocturnas: number;
-  total_horas_extras_dominicales: number;
-  total_horas_extras_festivas: number;
-  total_recargo_nocturno: number;
-  total_recargo_dominical: number;
-  total_recargo_festivo: number;
-  minutos_tardanza_acumulados: number;
-  estado: EstadoConsolidado;
-  generado_por: number;
-  generado_por_nombre: string;
-  aprobado_por: number | null;
-  aprobado_por_nombre: string;
-  fecha_aprobacion: string | null;
-  observaciones: string;
+  anio: number;
+  mes: number;
+  periodo_formateado: string;
+  dias_trabajados: number;
+  dias_ausente: number;
+  dias_tardanza: number;
+  total_horas_trabajadas: string; // decimal string
+  total_horas_extras: string; // decimal string
+  total_minutos_tardanza: number;
+  total_horas_tardanza: string; // decimal string
+  porcentaje_asistencia: string; // decimal string
+  cerrado: boolean;
+  cerrado_por: number | null;
+  fecha_cierre: string | null;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
-  is_active: boolean;
 }
 
-export interface ConsolidadoAsistenciaFilter {
+export interface ConsolidadoFilter {
   colaborador?: number;
-  periodo_inicio?: string;
-  periodo_fin?: string;
-  estado?: EstadoConsolidado;
+  anio?: number;
+  mes?: number;
+  cerrado?: boolean;
 }
 
 export interface GenerarConsolidadoData {
-  colaborador?: number;
-  periodo_inicio: string;
-  periodo_fin: string;
+  colaborador_id?: number | null;
+  anio: number;
+  mes: number;
 }
 
-// ============== CONFIGURACION RECARGOS — LEY 2466/2025 ==============
+// ============== CONFIGURACION RECARGOS ==============
 
 export interface ConfiguracionRecargo {
   id: number;
   empresa: number;
   tipo_hora_extra: TipoHoraExtra;
-  tipo_hora_extra_display?: string;
+  tipo_hora_extra_display: string;
   factor_vigente: string;
   factor_fase_1: string;
   fecha_inicio_fase_1: string;
@@ -269,8 +332,7 @@ export interface ConfiguracionRecargo {
   fecha_inicio_fase_2: string;
   factor_fase_3: string;
   fecha_inicio_fase_3: string;
-  // Calculado
-  factor_actual?: string;
+  factor_actual: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -287,39 +349,23 @@ export interface ConfiguracionRecargoFormData {
   fecha_inicio_fase_3?: string;
 }
 
-export interface ConfiguracionRecargoFilter {
-  empresa_id?: number;
-  tipo_hora_extra?: TipoHoraExtra;
-  is_active?: boolean;
-}
+// ============== OPTIONS (para selects) ==============
 
-// ============== OPTIONS ==============
-
-export const tipoTurnoOptions = [
-  { value: 'diurno', label: 'Diurno' },
-  { value: 'nocturno', label: 'Nocturno' },
-  { value: 'mixto', label: 'Mixto' },
-  { value: 'rotativo', label: 'Rotativo' },
+export const tipoJornadaOptions = [
+  { value: 'ordinaria', label: 'Jornada Ordinaria' },
+  { value: 'flexible', label: 'Jornada Flexible' },
+  { value: 'por_turnos', label: 'Jornada por Turnos' },
+  { value: 'reducida', label: 'Jornada Reducida' },
 ];
 
-export const estadoTurnoOptions = [
-  { value: 'activo', label: 'Activo' },
-  { value: 'inactivo', label: 'Inactivo' },
-];
-
-export const tipoMarcajeOptions = [
-  { value: 'entrada', label: 'Entrada' },
-  { value: 'salida', label: 'Salida' },
-  { value: 'inicio_descanso', label: 'Inicio Descanso' },
-  { value: 'fin_descanso', label: 'Fin Descanso' },
-];
-
-export const metodoMarcajeOptions = [
-  { value: 'biometrico', label: 'Biométrico' },
-  { value: 'tarjeta', label: 'Tarjeta' },
-  { value: 'app_movil', label: 'App Móvil' },
-  { value: 'web', label: 'Web' },
-  { value: 'manual', label: 'Manual' },
+export const diasSemanaOptions = [
+  { value: 'lunes', label: 'Lunes' },
+  { value: 'martes', label: 'Martes' },
+  { value: 'miercoles', label: 'Miércoles' },
+  { value: 'jueves', label: 'Jueves' },
+  { value: 'viernes', label: 'Viernes' },
+  { value: 'sabado', label: 'Sábado' },
+  { value: 'domingo', label: 'Domingo' },
 ];
 
 export const estadoAsistenciaOptions = [
@@ -335,31 +381,44 @@ export const estadoAsistenciaOptions = [
 export const tipoHoraExtraOptions = [
   { value: 'diurna', label: 'Diurna (25%)' },
   { value: 'nocturna', label: 'Nocturna (75%)' },
-  { value: 'dominical', label: 'Dominical (75%)' },
-  { value: 'festiva', label: 'Festiva (75%)' },
+  { value: 'dominical_diurna', label: 'Dominical Diurna (75%)' },
   { value: 'dominical_nocturna', label: 'Dominical Nocturna (110%)' },
-  { value: 'festiva_nocturna', label: 'Festiva Nocturna (110%)' },
+  { value: 'festivo_diurna', label: 'Festivo Diurna (75%)' },
+  { value: 'festivo_nocturna', label: 'Festivo Nocturna (110%)' },
 ];
 
 export const estadoHoraExtraOptions = [
   { value: 'pendiente', label: 'Pendiente' },
   { value: 'aprobada', label: 'Aprobada' },
   { value: 'rechazada', label: 'Rechazada' },
-  { value: 'pagada', label: 'Pagada' },
 ];
 
-export const estadoConsolidadoOptions = [
-  { value: 'borrador', label: 'Borrador' },
-  { value: 'cerrado', label: 'Cerrado' },
-  { value: 'aprobado', label: 'Aprobado' },
+export const tipoMarcajeOptions = [
+  { value: 'entrada', label: 'Entrada' },
+  { value: 'salida', label: 'Salida' },
+  { value: 'entrada_almuerzo', label: 'Entrada Almuerzo' },
+  { value: 'salida_almuerzo', label: 'Salida Almuerzo' },
 ];
 
-export const diasSemanaOptions = [
-  { value: 'lunes', label: 'Lunes' },
-  { value: 'martes', label: 'Martes' },
-  { value: 'miercoles', label: 'Miércoles' },
-  { value: 'jueves', label: 'Jueves' },
-  { value: 'viernes', label: 'Viernes' },
-  { value: 'sabado', label: 'Sábado' },
-  { value: 'domingo', label: 'Domingo' },
+export const metodoMarcajeOptions = [
+  { value: 'manual', label: 'Manual' },
+  { value: 'web', label: 'Plataforma Web' },
+  { value: 'qr', label: 'Código QR' },
+  { value: 'movil', label: 'App Móvil' },
 ];
+
+// Nombres de meses en español
+export const MESES_NOMBRES: Record<number, string> = {
+  1: 'Enero',
+  2: 'Febrero',
+  3: 'Marzo',
+  4: 'Abril',
+  5: 'Mayo',
+  6: 'Junio',
+  7: 'Julio',
+  8: 'Agosto',
+  9: 'Septiembre',
+  10: 'Octubre',
+  11: 'Noviembre',
+  12: 'Diciembre',
+};

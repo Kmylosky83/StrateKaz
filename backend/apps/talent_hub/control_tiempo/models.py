@@ -7,9 +7,11 @@ Estructura:
 - Turno: Configuración de turnos laborales
 - AsignacionTurno: Asignación de turno a colaborador
 - RegistroAsistencia: Registro diario de asistencia
+- MarcajeTiempo: Registro individual de cada marcaje (entrada/salida)
 - HoraExtra: Registro de horas extras
 - ConsolidadoAsistencia: Resumen mensual por colaborador
 """
+import uuid
 from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -161,6 +163,15 @@ class Turno(BaseCompanyModel):
         help_text='Tipo de jornada según legislación colombiana'
     )
 
+    # Token QR para marcaje
+    qr_token = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        db_index=True,
+        verbose_name='Token QR',
+        help_text='Token único para marcaje por QR'
+    )
+
     class Meta:
         db_table = 'talent_hub_turno'
         verbose_name = 'Turno'
@@ -183,7 +194,6 @@ class Turno(BaseCompanyModel):
 
     def clean(self):
         """Validaciones del modelo."""
-        # Validar que días_semana contenga valores válidos
         if self.dias_semana:
             dias_validos = [d[0] for d in DIAS_SEMANA_CHOICES]
             for dia in self.dias_semana:
@@ -207,13 +217,10 @@ class Turno(BaseCompanyModel):
         Calcula las horas nocturnas del turno (10pm - 6am).
         Según legislación colombiana.
         """
-        # Hora nocturna: 10pm (22:00) a 6am (06:00)
         hora_inicio_nocturna = time(22, 0)
         hora_fin_nocturna = time(6, 0)
 
-        # Implementación simplificada - requiere lógica compleja para turnos que cruzan medianoche
         if self.aplica_recargo_nocturno:
-            # Estimación básica
             if self.hora_inicio >= hora_inicio_nocturna or self.hora_fin <= hora_fin_nocturna:
                 return self.duracion_jornada
         return Decimal('0.00')
@@ -284,14 +291,12 @@ class AsignacionTurno(BaseCompanyModel):
 
     def clean(self):
         """Validaciones del modelo."""
-        # Validar fechas
         if self.fecha_fin and self.fecha_inicio:
             if self.fecha_fin < self.fecha_inicio:
                 raise ValidationError({
                     'fecha_fin': 'La fecha de fin no puede ser anterior a la fecha de inicio.'
                 })
 
-        # Validar que colaborador y turno pertenezcan a la misma empresa
         if self.colaborador and self.turno:
             if self.colaborador.empresa != self.turno.empresa:
                 raise ValidationError(
@@ -383,6 +388,12 @@ class RegistroAsistencia(BaseCompanyModel):
         verbose_name='Observaciones'
     )
 
+    justificacion = models.TextField(
+        blank=True,
+        verbose_name='Justificación',
+        help_text='Justificación de ausencia o tardanza'
+    )
+
     # Registro
     registrado_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -409,26 +420,21 @@ class RegistroAsistencia(BaseCompanyModel):
 
     def clean(self):
         """Validaciones del modelo."""
-        # Si está presente, debe tener hora de entrada
         if self.estado == 'presente' and not self.hora_entrada:
             raise ValidationError({
                 'hora_entrada': 'Debe registrar hora de entrada para asistencia presente.'
             })
 
-        # Hora de salida no puede ser anterior a entrada
         if self.hora_entrada and self.hora_salida:
-            # Comparación simple - no maneja turnos que cruzan medianoche
             if self.hora_salida < self.hora_entrada:
                 # Podría ser turno nocturno que cruza medianoche
                 pass
 
     def save(self, *args, **kwargs):
         """Override de save para calcular tardanza automáticamente."""
-        # Calcular tardanza si hay hora de entrada
         if self.hora_entrada and self.turno:
             entrada_programada = self.turno.hora_inicio
 
-            # Convertir a datetime para comparación
             entrada_real = datetime.combine(self.fecha, self.hora_entrada)
             entrada_esperada = datetime.combine(self.fecha, entrada_programada)
 
@@ -436,7 +442,6 @@ class RegistroAsistencia(BaseCompanyModel):
                 diferencia = entrada_real - entrada_esperada
                 self.minutos_tardanza = int(diferencia.total_seconds() / 60)
 
-                # Si hay tardanza significativa (>5 min), marcar estado
                 if self.minutos_tardanza > 5 and self.estado == 'presente':
                     self.estado = 'tardanza'
             else:
@@ -450,17 +455,14 @@ class RegistroAsistencia(BaseCompanyModel):
         if not self.hora_entrada or not self.hora_salida:
             return Decimal('0.00')
 
-        # Calcular diferencia
         entrada = datetime.combine(self.fecha, self.hora_entrada)
         salida = datetime.combine(self.fecha, self.hora_salida)
 
-        # Si salida es menor que entrada, asumimos turno nocturno
         if salida < entrada:
             salida += timedelta(days=1)
 
         diferencia = salida - entrada
 
-        # Restar tiempo de almuerzo si aplica
         if self.hora_entrada_almuerzo and self.hora_salida_almuerzo:
             almuerzo_inicio = datetime.combine(self.fecha, self.hora_entrada_almuerzo)
             almuerzo_fin = datetime.combine(self.fecha, self.hora_salida_almuerzo)
@@ -474,6 +476,99 @@ class RegistroAsistencia(BaseCompanyModel):
     def llego_tarde(self):
         """Verifica si llegó tarde."""
         return self.minutos_tardanza > 0
+
+
+# =============================================================================
+# MARCAJE DE TIEMPO - Registro individual de marcajes
+# =============================================================================
+
+class MarcajeTiempo(BaseCompanyModel):
+    """
+    Marcaje de Tiempo - Registro individual de marcaje (entrada/salida).
+
+    Captura cada evento de marcaje con método, ubicación geográfica y metadatos.
+    Se vincula automáticamente al RegistroAsistencia del día correspondiente.
+    """
+
+    class TipoMarcaje(models.TextChoices):
+        ENTRADA = 'entrada', 'Entrada'
+        SALIDA = 'salida', 'Salida'
+        ENTRADA_ALMUERZO = 'entrada_almuerzo', 'Entrada Almuerzo'
+        SALIDA_ALMUERZO = 'salida_almuerzo', 'Salida Almuerzo'
+
+    class MetodoMarcaje(models.TextChoices):
+        MANUAL = 'manual', 'Manual'
+        WEB = 'web', 'Plataforma Web'
+        QR = 'qr', 'Código QR'
+        MOVIL = 'movil', 'Aplicación Móvil'
+
+    colaborador = models.ForeignKey(
+        'colaboradores.Colaborador',
+        on_delete=models.CASCADE,
+        related_name='marcajes',
+        verbose_name='Colaborador'
+    )
+    tipo = models.CharField(
+        max_length=20,
+        choices=TipoMarcaje.choices,
+        verbose_name='Tipo de Marcaje'
+    )
+    metodo = models.CharField(
+        max_length=20,
+        choices=MetodoMarcaje.choices,
+        default=MetodoMarcaje.WEB,
+        verbose_name='Método de Marcaje'
+    )
+    fecha_hora = models.DateTimeField(
+        verbose_name='Fecha y Hora del Marcaje',
+        db_index=True
+    )
+    latitud = models.DecimalField(
+        max_digits=10,
+        decimal_places=7,
+        null=True,
+        blank=True,
+        verbose_name='Latitud'
+    )
+    longitud = models.DecimalField(
+        max_digits=10,
+        decimal_places=7,
+        null=True,
+        blank=True,
+        verbose_name='Longitud'
+    )
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name='Dirección IP'
+    )
+    user_agent = models.CharField(
+        max_length=500,
+        blank=True,
+        verbose_name='User Agent'
+    )
+    registro_asistencia = models.ForeignKey(
+        RegistroAsistencia,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='marcajes',
+        verbose_name='Registro de Asistencia'
+    )
+
+    class Meta:
+        db_table = 'talent_hub_marcaje_tiempo'
+        verbose_name = 'Marcaje de Tiempo'
+        verbose_name_plural = 'Marcajes de Tiempo'
+        ordering = ['-fecha_hora']
+        indexes = [
+            models.Index(fields=['colaborador', 'fecha_hora']),
+            models.Index(fields=['empresa', 'fecha_hora']),
+            models.Index(fields=['tipo']),
+        ]
+
+    def __str__(self):
+        return f"{self.colaborador.get_nombre_corto()} - {self.tipo} ({self.fecha_hora.strftime('%d/%m/%Y %H:%M')})"
 
 
 # =============================================================================
@@ -502,7 +597,6 @@ class ConfiguracionRecargo(BaseCompanyModel):
         help_text='Factor de recargo vigente antes de la ley'
     )
 
-    # Fases de implementación Ley 2466/2025
     factor_fase_1 = models.DecimalField(
         max_digits=4,
         decimal_places=2,
@@ -661,7 +755,6 @@ class HoraExtra(BaseCompanyModel):
 
     def clean(self):
         """Validaciones del modelo."""
-        # Calcular horas para validar
         if self.hora_inicio and self.hora_fin:
             inicio = datetime.combine(self.fecha or timezone.now().date(), self.hora_inicio)
             fin = datetime.combine(self.fecha or timezone.now().date(), self.hora_fin)
@@ -675,10 +768,8 @@ class HoraExtra(BaseCompanyModel):
                     'hora_fin': 'Ley 2466/2025: Máximo 2 horas extra por día.'
                 })
 
-        # Ley 2466/2025: Máximo 12 horas extra por semana
         if self.colaborador and self.fecha:
             from datetime import timedelta as td
-            # Calcular inicio de semana (lunes)
             dia_semana = self.fecha.weekday()
             inicio_semana = self.fecha - td(days=dia_semana)
             fin_semana = inicio_semana + td(days=6)
@@ -713,11 +804,9 @@ class HoraExtra(BaseCompanyModel):
 
     def save(self, *args, **kwargs):
         """Override de save para calcular horas y factor automáticamente."""
-        # Calcular horas trabajadas
         inicio = datetime.combine(self.fecha, self.hora_inicio)
         fin = datetime.combine(self.fecha, self.hora_fin)
 
-        # Si fin < inicio, asumimos que cruza medianoche
         if fin < inicio:
             fin += timedelta(days=1)
 
@@ -725,7 +814,6 @@ class HoraExtra(BaseCompanyModel):
         self.horas_trabajadas = Decimal(str(diferencia.total_seconds() / 3600))
         self.horas_trabajadas = round(self.horas_trabajadas, 2)
 
-        # Asignar factor de recargo: usar ConfiguracionRecargo si existe, sino fallback
         try:
             config = ConfiguracionRecargo.objects.get(
                 empresa=self.empresa,
@@ -736,13 +824,30 @@ class HoraExtra(BaseCompanyModel):
         except ConfiguracionRecargo.DoesNotExist:
             self.factor_recargo = FACTOR_RECARGO_MAP.get(self.tipo, Decimal('1.25'))
 
-        # Si se aprueba, actualizar campos
         if self.estado == 'aprobada' and not self.aprobado:
             self.aprobado = True
             if not self.fecha_aprobacion:
                 self.fecha_aprobacion = timezone.now()
 
         super().save(*args, **kwargs)
+
+    def aprobar(self, usuario):
+        """Aprueba la hora extra."""
+        self.estado = 'aprobada'
+        self.aprobado = True
+        self.aprobado_por = usuario
+        self.fecha_aprobacion = timezone.now()
+        self.save(update_fields=['estado', 'aprobado', 'aprobado_por', 'fecha_aprobacion', 'updated_at'])
+
+    def rechazar(self, usuario, motivo=''):
+        """Rechaza la hora extra."""
+        self.estado = 'rechazada'
+        self.aprobado = False
+        self.aprobado_por = usuario
+        self.fecha_aprobacion = timezone.now()
+        if motivo:
+            self.justificacion = f"{self.justificacion}\n[RECHAZADA] {motivo}"
+        self.save(update_fields=['estado', 'aprobado', 'aprobado_por', 'fecha_aprobacion', 'justificacion', 'updated_at'])
 
     @property
     def horas_con_recargo(self):
@@ -763,7 +868,6 @@ class HoraExtra(BaseCompanyModel):
         if not hasattr(self.colaborador, 'salario'):
             return None
 
-        # Salario mensual / 240 horas mensuales = valor hora
         valor_hora = self.colaborador.salario / Decimal('240')
         valor_he = valor_hora * self.horas_con_recargo
         return round(valor_he, 2)
@@ -887,7 +991,6 @@ class ConsolidadoAsistencia(BaseCompanyModel):
 
     def clean(self):
         """Validaciones del modelo."""
-        # Validar rango de mes
         if not (1 <= self.mes <= 12):
             raise ValidationError({
                 'mes': 'El mes debe estar entre 1 y 12.'
@@ -918,7 +1021,6 @@ class ConsolidadoAsistencia(BaseCompanyModel):
         Calcula las estadísticas del consolidado basado en registros.
         Debe llamarse antes de cerrar.
         """
-        # Obtener todos los registros del período
         registros = RegistroAsistencia.objects.filter(
             colaborador=self.colaborador,
             fecha__year=self.anio,
@@ -926,23 +1028,19 @@ class ConsolidadoAsistencia(BaseCompanyModel):
             is_active=True
         )
 
-        # Calcular estadísticas
         self.dias_trabajados = registros.filter(estado='presente').count() + registros.filter(estado='tardanza').count()
         self.dias_ausente = registros.filter(estado='ausente').count()
         self.dias_tardanza = registros.filter(estado='tardanza').count()
 
-        # Total horas trabajadas
         total_horas = Decimal('0.00')
         for registro in registros.filter(estado__in=['presente', 'tardanza']):
             total_horas += registro.horas_trabajadas
         self.total_horas_trabajadas = total_horas
 
-        # Total minutos tardanza
         self.total_minutos_tardanza = sum(
             registro.minutos_tardanza for registro in registros
         )
 
-        # Horas extras aprobadas
         horas_extras = HoraExtra.objects.filter(
             colaborador=self.colaborador,
             fecha__year=self.anio,
@@ -954,7 +1052,6 @@ class ConsolidadoAsistencia(BaseCompanyModel):
             he.horas_trabajadas for he in horas_extras
         ) or Decimal('0.00')
 
-        # Porcentaje de asistencia
         dias_habiles = registros.count()
         if dias_habiles > 0:
             self.porcentaje_asistencia = (Decimal(self.dias_trabajados) / Decimal(dias_habiles)) * Decimal('100')
@@ -965,9 +1062,7 @@ class ConsolidadoAsistencia(BaseCompanyModel):
         self.save()
 
     def cerrar_consolidado(self, usuario):
-        """
-        Cierra el consolidado para evitar modificaciones.
-        """
+        """Cierra el consolidado para evitar modificaciones."""
         if not self.cerrado:
             self.cerrado = True
             self.cerrado_por = usuario
@@ -975,3 +1070,15 @@ class ConsolidadoAsistencia(BaseCompanyModel):
             self.save()
             return True
         return False
+
+    def cerrar_mes(self, usuario):
+        """Cierra el período y recalcula estadísticas."""
+        self.calcular_estadisticas()
+        self.cerrar_consolidado(usuario)
+
+    def reabrir_mes(self, usuario):
+        """Reabre un período cerrado para correcciones."""
+        self.cerrado = False
+        self.cerrado_por = None
+        self.fecha_cierre = None
+        self.save(update_fields=['cerrado', 'cerrado_por', 'fecha_cierre', 'updated_at'])

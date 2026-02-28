@@ -1,18 +1,18 @@
 /**
- * ControlTiempoSection - Componente principal del modulo Control de Tiempo
+ * ControlTiempoSection - Componente principal del módulo Control de Tiempo
  * Talento Humano > Control de Tiempo
  *
- * 4 sub-tabs para gestionar asistencia y horas:
- * 1. Turnos - CRUD turnos laborales
- * 2. Asistencia - Registros de asistencia
- * 3. Horas Extras - Solicitudes y aprobaciones
- * 4. Consolidados - Resumen mensual
+ * 5 sub-tabs para gestionar asistencia y horas:
+ * 1. Dashboard - KPIs, calendario y acceso rápido a marcaje
+ * 2. Turnos - CRUD turnos laborales
+ * 3. Asistencia - Registros de asistencia
+ * 4. Horas Extras - Solicitudes y aprobaciones
+ * 5. Consolidados - Resumen mensual
  */
 import { useState } from 'react';
-import { Card } from '@/components/common/Card';
-import { EmptyState } from '@/components/common/EmptyState';
-import { Clock, UserCheck, Timer, FileText } from 'lucide-react';
+import { LayoutDashboard, Clock, UserCheck, Timer, FileText } from 'lucide-react';
 import { cn } from '@/utils/cn';
+import { DashboardTiempo } from './DashboardTiempo';
 import { TurnosTab } from './TurnosTab';
 import { AsistenciaTab } from './AsistenciaTab';
 import { HorasExtrasTab } from './HorasExtrasTab';
@@ -22,10 +22,17 @@ interface SubTab {
   key: string;
   label: string;
   icon: React.ReactNode;
-  component: React.ComponentType | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  component: React.ComponentType<any>;
 }
 
 const SUB_TABS: SubTab[] = [
+  {
+    key: 'dashboard',
+    label: 'Dashboard',
+    icon: <LayoutDashboard size={16} />,
+    component: DashboardTiempo,
+  },
   {
     key: 'turnos',
     label: 'Turnos',
@@ -53,7 +60,7 @@ const SUB_TABS: SubTab[] = [
 ];
 
 export const ControlTiempoSection = () => {
-  const [activeTab, setActiveTab] = useState('turnos');
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   const currentTab = SUB_TABS.find((t) => t.key === activeTab) || SUB_TABS[0];
   const TabComponent = currentTab.component;
@@ -87,20 +94,10 @@ export const ControlTiempoSection = () => {
         </nav>
       </div>
 
-      {TabComponent ? (
-        <TabComponent />
+      {activeTab === 'dashboard' ? (
+        <DashboardTiempo onNavigateTab={setActiveTab} />
       ) : (
-        <Card className="p-8">
-          <EmptyState
-            icon={
-              <div className="p-3 bg-violet-100 dark:bg-violet-900/30 rounded-xl">
-                {currentTab.icon}
-              </div>
-            }
-            title={currentTab.label}
-            description="Seccion en desarrollo."
-          />
-        </Card>
+        <TabComponent />
       )}
     </div>
   );

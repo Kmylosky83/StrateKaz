@@ -10,6 +10,7 @@ import { Select } from '@/components/forms/Select';
 import { SectionHeader } from '@/components/common/SectionHeader';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Spinner } from '@/components/common/Spinner';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { getModuleColorClasses } from '@/utils/moduleColors';
 import { Timer, Plus, CheckCircle, XCircle } from 'lucide-react';
@@ -18,15 +19,15 @@ import {
   useAprobarHoraExtra,
   useRechazarHoraExtra,
 } from '../../hooks/useControlTiempo';
-import type { HoraExtra, EstadoHoraExtra, TipoHoraExtra } from '../../types';
+import type { EstadoHoraExtra, TipoHoraExtra } from '../../types';
 import { estadoHoraExtraOptions, tipoHoraExtraOptions } from '../../types/controlTiempo.types';
 import { HoraExtraFormModal } from './HoraExtraFormModal';
+import { RechazarHoraExtraModal } from './RechazarHoraExtraModal';
 
-const ESTADO_BADGE: Record<EstadoHoraExtra, 'warning' | 'success' | 'danger' | 'info'> = {
+const ESTADO_BADGE: Record<EstadoHoraExtra, 'warning' | 'success' | 'danger'> = {
   pendiente: 'warning',
   aprobada: 'success',
   rechazada: 'danger',
-  pagada: 'info',
 };
 
 export const HorasExtrasTab = () => {
@@ -34,13 +35,15 @@ export const HorasExtrasTab = () => {
   const [estadoFilter, setEstadoFilter] = useState('');
   const [tipoFilter, setTipoFilter] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [rechazarId, setRechazarId] = useState<number | null>(null);
+  const [aprobarId, setAprobarId] = useState<number | null>(null);
 
   const { color: moduleColor } = useModuleColor('TALENT_HUB');
   const colorClasses = getModuleColorClasses(moduleColor);
 
   const { data: horasExtras, isLoading } = useHorasExtras({
-    estado: estadoFilter || undefined,
-    tipo: tipoFilter as TipoHoraExtra | undefined,
+    estado: (estadoFilter as EstadoHoraExtra | undefined) || undefined,
+    tipo: (tipoFilter as TipoHoraExtra | undefined) || undefined,
   });
 
   const aprobarMutation = useAprobarHoraExtra();
@@ -57,17 +60,19 @@ export const HorasExtrasTab = () => {
     });
   }, [horasExtras, searchTerm]);
 
-  const handleAprobar = async (id: number, horas: number) => {
-    await aprobarMutation.mutateAsync({
-      id,
-      data: { horas_aprobadas: horas },
+  const handleAprobar = () => {
+    if (!aprobarId) return;
+    aprobarMutation.mutate(aprobarId, {
+      onSuccess: () => setAprobarId(null),
     });
   };
 
-  const handleRechazar = async (id: number) => {
-    const observaciones = prompt('Motivo del rechazo:');
-    if (!observaciones) return;
-    await rechazarMutation.mutateAsync({ id, observaciones });
+  const handleRechazar = (motivo: string) => {
+    if (!rechazarId) return;
+    rechazarMutation.mutate(
+      { id: rechazarId, data: { motivo } },
+      { onSuccess: () => setRechazarId(null) }
+    );
   };
 
   return (
@@ -169,41 +174,38 @@ export const HorasExtrasTab = () => {
                         day: '2-digit',
                         month: 'short',
                         year: 'numeric',
+                        timeZone: 'UTC',
                       })}
                     </td>
                     <td className="px-4 py-3">
                       <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                         {hora.colaborador_nombre}
                       </p>
-                      {hora.motivo && (
-                        <p className="text-xs text-gray-500 truncate max-w-xs">{hora.motivo}</p>
+                      {hora.justificacion && (
+                        <p className="text-xs text-gray-500 truncate max-w-xs">
+                          {hora.justificacion}
+                        </p>
                       )}
                     </td>
                     <td className="px-4 py-3">
                       <Badge variant="info" size="sm">
-                        {hora.tipo}
+                        {hora.tipo_display || hora.tipo}
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
-                      {hora.hora_inicio} - {hora.hora_fin}
+                      {hora.hora_inicio.slice(0, 5)} - {hora.hora_fin.slice(0, 5)}
                     </td>
                     <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
-                      {hora.horas_solicitadas}h
-                      {hora.estado === 'aprobada' &&
-                        hora.horas_aprobadas !== hora.horas_solicitadas && (
-                          <span className="text-xs text-green-600 ml-1">
-                            (aprob: {hora.horas_aprobadas}h)
-                          </span>
-                        )}
+                      {Number(hora.horas_trabajadas).toFixed(2)}h
                     </td>
                     <td className="px-4 py-3">
                       <Badge variant="warning" size="sm">
-                        {(Number(hora.factor_recargo) * 100).toFixed(0)}%
+                        {((Number(hora.factor_recargo) - 1) * 100).toFixed(0)}%
                       </Badge>
                     </td>
                     <td className="px-4 py-3">
                       <Badge variant={ESTADO_BADGE[hora.estado]} size="sm">
-                        {hora.estado}
+                        {hora.estado_display || hora.estado}
                       </Badge>
                     </td>
                     <td className="px-4 py-3">
@@ -211,7 +213,7 @@ export const HorasExtrasTab = () => {
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             type="button"
-                            onClick={() => handleAprobar(hora.id, hora.horas_solicitadas)}
+                            onClick={() => setAprobarId(hora.id)}
                             className="p-1.5 rounded-md text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:text-green-400 dark:hover:bg-green-900/20"
                             title="Aprobar"
                           >
@@ -219,8 +221,8 @@ export const HorasExtrasTab = () => {
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleRechazar(hora.id)}
-                            className="p-1.5 rounded-md text-gray-400 hover:text-danger-600 hover:bg-danger-50 dark:hover:text-danger-400 dark:hover:bg-danger-900/20"
+                            onClick={() => setRechazarId(hora.id)}
+                            className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-900/20"
                             title="Rechazar"
                           >
                             <XCircle size={16} />
@@ -243,6 +245,26 @@ export const HorasExtrasTab = () => {
       </Card>
 
       <HoraExtraFormModal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} />
+
+      {/* Modal de rechazo */}
+      <RechazarHoraExtraModal
+        isOpen={rechazarId !== null}
+        isLoading={rechazarMutation.isPending}
+        onClose={() => setRechazarId(null)}
+        onConfirm={handleRechazar}
+      />
+
+      {/* Diálogo de confirmación de aprobación */}
+      <ConfirmDialog
+        isOpen={aprobarId !== null}
+        title="Aprobar horas extras"
+        message="¿Confirma que desea aprobar esta solicitud de horas extras?"
+        confirmText="Aprobar"
+        onConfirm={handleAprobar}
+        onClose={() => setAprobarId(null)}
+        isLoading={aprobarMutation.isPending}
+        variant="info"
+      />
     </div>
   );
 };

@@ -12,9 +12,9 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { Spinner } from '@/components/common/Spinner';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { getModuleColorClasses } from '@/utils/moduleColors';
-import { UserCheck, Plus, Calendar } from 'lucide-react';
+import { UserCheck, Plus } from 'lucide-react';
 import { useRegistrosAsistencia } from '../../hooks/useControlTiempo';
-import type { RegistroAsistencia, EstadoAsistencia } from '../../types';
+import type { EstadoAsistencia } from '../../types';
 import { estadoAsistenciaOptions } from '../../types/controlTiempo.types';
 import { RegistroAsistenciaFormModal } from './RegistroAsistenciaFormModal';
 
@@ -39,9 +39,9 @@ export const AsistenciaTab = () => {
   const colorClasses = getModuleColorClasses(moduleColor);
 
   const { data: registros, isLoading } = useRegistrosAsistencia({
-    fecha_inicio: fechaInicio || undefined,
-    fecha_fin: fechaFin || undefined,
-    estado: estadoFilter || undefined,
+    fecha_desde: fechaInicio || undefined,
+    fecha_hasta: fechaFin || undefined,
+    estado: (estadoFilter as EstadoAsistencia | undefined) || undefined,
   });
 
   const filtered = useMemo(() => {
@@ -172,7 +172,7 @@ export const AsistenciaTab = () => {
                       </p>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
-                      {registro.turno_asignado_nombre || '-'}
+                      {registro.turno_nombre || '-'}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
                       {registro.hora_entrada || '-'}

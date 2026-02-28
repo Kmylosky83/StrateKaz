@@ -12,7 +12,7 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { Spinner } from '@/components/common/Spinner';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { getModuleColorClasses } from '@/utils/moduleColors';
-import { Clock, Plus, Pencil, Trash2, Sun, Moon } from 'lucide-react';
+import { Clock, Plus, Pencil, Trash2, Moon } from 'lucide-react';
 import { useTurnos, useDeleteTurno } from '../../hooks/useControlTiempo';
 import type { Turno } from '../../types';
 import { TurnoFormModal } from './TurnoFormModal';

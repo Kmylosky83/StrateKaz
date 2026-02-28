@@ -158,6 +158,31 @@ app.conf.beat_schedule = {
     },
 
     # ═══════════════════════════════════════════════════
+    # CONTROL DE TIEMPO - ASISTENCIA Y MARCAJES
+    # ═══════════════════════════════════════════════════
+
+    # Detectar ausencias no registradas del día anterior - Diario a las 11 PM
+    'ct-detectar-ausencias-diarias': {
+        'task': 'control_tiempo.detectar_ausencias_diarias',
+        'schedule': crontab(hour=23, minute=0),
+        'options': {'queue': 'notifications'},
+    },
+
+    # Auto-generar consolidados del mes anterior - Día 1 de cada mes a las 2 AM
+    'ct-generar-consolidados-mensuales': {
+        'task': 'control_tiempo.generar_consolidados_mensuales',
+        'schedule': crontab(hour=2, minute=0, day_of_month=1),
+        'options': {'queue': 'reports'},
+    },
+
+    # Recordar marcaje de salida pendiente - Cada 30 min (7 AM - 7 PM)
+    'ct-recordar-marcaje-pendiente': {
+        'task': 'control_tiempo.recordar_marcaje_pendiente',
+        'schedule': crontab(minute='*/30'),
+        'options': {'queue': 'notifications'},
+    },
+
+    # ═══════════════════════════════════════════════════
     # WORKFLOW ENGINE - EJECUCIÓN DE FLUJOS
     # ═══════════════════════════════════════════════════
 
@@ -354,6 +379,11 @@ app.conf.task_routes = {
     # Talent Hub tasks
     'apps.talent_hub.tasks.check_contratos_por_vencer': {'queue': 'notifications'},
     'apps.talent_hub.tasks.check_periodos_prueba': {'queue': 'notifications'},
+
+    # Control de Tiempo tasks
+    'control_tiempo.detectar_ausencias_diarias': {'queue': 'notifications'},
+    'control_tiempo.generar_consolidados_mensuales': {'queue': 'reports'},
+    'control_tiempo.recordar_marcaje_pendiente': {'queue': 'notifications'},
 
     # Workflow Engine tasks
     'apps.workflow_engine.ejecucion.tasks.verificar_tareas_vencidas': {'queue': 'workflow'},

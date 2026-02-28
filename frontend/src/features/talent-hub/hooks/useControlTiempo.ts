@@ -16,14 +16,23 @@ import type {
   RegistroAsistencia,
   RegistroAsistenciaFormData,
   RegistroAsistenciaFilter,
+  RegistrarEntradaData,
+  RegistrarSalidaData,
+  JustificarAsistenciaData,
+  EstadisticasAsistencia,
+  MarcajeTiempo,
   MarcajeData,
+  MarcajeQRData,
+  MarcajeFilter,
   HoraExtra,
   HoraExtraFormData,
   HoraExtraFilter,
-  AprobacionHoraExtraData,
+  RechazarHoraExtraData,
   ConsolidadoAsistencia,
-  ConsolidadoAsistenciaFilter,
+  ConsolidadoFilter,
   GenerarConsolidadoData,
+  ConfiguracionRecargo,
+  ConfiguracionRecargoFormData,
 } from '../types';
 
 const BASE_URL = '/talent-hub/control-tiempo';
@@ -48,6 +57,15 @@ export const controlTiempoKeys = {
     list: (filters?: RegistroAsistenciaFilter) =>
       [...controlTiempoKeys.asistencias.all(), 'list', filters] as const,
     detail: (id: number) => [...controlTiempoKeys.asistencias.all(), 'detail', id] as const,
+    estadisticas: (filters?: RegistroAsistenciaFilter) =>
+      [...controlTiempoKeys.asistencias.all(), 'estadisticas', filters] as const,
+  },
+  marcajes: {
+    all: () => [...controlTiempoKeys.all, 'marcajes'] as const,
+    list: (filters?: MarcajeFilter) =>
+      [...controlTiempoKeys.marcajes.all(), 'list', filters] as const,
+    misMarcajes: (fecha?: string) =>
+      [...controlTiempoKeys.marcajes.all(), 'mis-marcajes', fecha] as const,
   },
   horasExtras: {
     all: () => [...controlTiempoKeys.all, 'horas-extras'] as const,
@@ -57,9 +75,13 @@ export const controlTiempoKeys = {
   },
   consolidados: {
     all: () => [...controlTiempoKeys.all, 'consolidados'] as const,
-    list: (filters?: ConsolidadoAsistenciaFilter) =>
+    list: (filters?: ConsolidadoFilter) =>
       [...controlTiempoKeys.consolidados.all(), 'list', filters] as const,
     detail: (id: number) => [...controlTiempoKeys.consolidados.all(), 'detail', id] as const,
+  },
+  recargos: {
+    all: () => [...controlTiempoKeys.all, 'recargos'] as const,
+    list: () => [...controlTiempoKeys.recargos.all(), 'list'] as const,
   },
 };
 
@@ -228,6 +250,19 @@ export const useRegistroAsistencia = (id: number, enabled = true) => {
   });
 };
 
+export const useEstadisticasAsistencia = (filters?: RegistroAsistenciaFilter) => {
+  return useQuery({
+    queryKey: controlTiempoKeys.asistencias.estadisticas(filters),
+    queryFn: async () => {
+      const { data } = await api.get<EstadisticasAsistencia>(
+        `${BASE_URL}/asistencias/estadisticas/`,
+        { params: filters }
+      );
+      return data;
+    },
+  });
+};
+
 export const useCreateRegistroAsistencia = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -265,31 +300,49 @@ export const useUpdateRegistroAsistencia = () => {
   });
 };
 
-export const useRegistrarMarcaje = () => {
+export const useRegistrarEntrada = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: MarcajeData) => {
+    mutationFn: async (data: RegistrarEntradaData) => {
       const { data: response } = await api.post<RegistroAsistencia>(
-        `${BASE_URL}/asistencias/registrar_marcaje/`,
+        `${BASE_URL}/asistencias/registrar-entrada/`,
         data
       );
       return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: controlTiempoKeys.asistencias.all() });
-      toast.success('Marcaje registrado exitosamente');
+      toast.success('Entrada registrada exitosamente');
     },
-    onError: () => toast.error('Error al registrar el marcaje'),
+    onError: () => toast.error('Error al registrar la entrada'),
+  });
+};
+
+export const useRegistrarSalida = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: RegistrarSalidaData }) => {
+      const { data: response } = await api.post<RegistroAsistencia>(
+        `${BASE_URL}/asistencias/${id}/registrar-salida/`,
+        data
+      );
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.asistencias.all() });
+      toast.success('Salida registrada exitosamente');
+    },
+    onError: () => toast.error('Error al registrar la salida'),
   });
 };
 
 export const useJustificarAsistencia = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, justificacion }: { id: number; justificacion: string }) => {
+    mutationFn: async ({ id, data }: { id: number; data: JustificarAsistenciaData }) => {
       const { data: response } = await api.post<RegistroAsistencia>(
         `${BASE_URL}/asistencias/${id}/justificar/`,
-        { justificacion }
+        data
       );
       return response;
     },
@@ -299,6 +352,70 @@ export const useJustificarAsistencia = () => {
       toast.success('Asistencia justificada exitosamente');
     },
     onError: () => toast.error('Error al justificar la asistencia'),
+  });
+};
+
+// ============== MARCAJES ==============
+
+export const useMarcajes = (filters?: MarcajeFilter) => {
+  return useQuery({
+    queryKey: controlTiempoKeys.marcajes.list(filters),
+    queryFn: async () => {
+      const response = await api.get(`${BASE_URL}/marcajes/`, { params: filters });
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as MarcajeTiempo[];
+    },
+  });
+};
+
+export const useMisMarcajes = (fecha?: string) => {
+  return useQuery({
+    queryKey: controlTiempoKeys.marcajes.misMarcajes(fecha),
+    queryFn: async () => {
+      const { data } = await api.get<MarcajeTiempo[]>(`${BASE_URL}/marcajes/mis-marcajes/`, {
+        params: fecha ? { fecha } : undefined,
+      });
+      return data;
+    },
+  });
+};
+
+export const useRegistrarMarcaje = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: MarcajeData) => {
+      const { data: response } = await api.post<MarcajeTiempo>(
+        `${BASE_URL}/marcajes/marcar/`,
+        data
+      );
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.marcajes.all() });
+      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.asistencias.all() });
+      toast.success('Marcaje registrado exitosamente');
+    },
+    onError: () => toast.error('Error al registrar el marcaje'),
+  });
+};
+
+export const useMarcarQR = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: MarcajeQRData) => {
+      const { data: response } = await api.post<{
+        marcaje: MarcajeTiempo;
+        turno: string;
+        mensaje: string;
+      }>(`${BASE_URL}/marcajes/marcar-qr/`, data);
+      return response;
+    },
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.marcajes.all() });
+      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.asistencias.all() });
+      toast.success(response.mensaje || 'Marcaje QR registrado exitosamente');
+    },
+    onError: () => toast.error('Error al registrar el marcaje QR'),
   });
 };
 
@@ -377,14 +494,13 @@ export const useDeleteHoraExtra = () => {
 export const useAprobarHoraExtra = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: AprobacionHoraExtraData }) => {
+    mutationFn: async (id: number) => {
       const { data: response } = await api.post<HoraExtra>(
-        `${BASE_URL}/horas-extras/${id}/aprobar/`,
-        data
+        `${BASE_URL}/horas-extras/${id}/aprobar/`
       );
       return response;
     },
-    onSuccess: (_, { id }) => {
+    onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: controlTiempoKeys.horasExtras.all() });
       queryClient.invalidateQueries({ queryKey: controlTiempoKeys.horasExtras.detail(id) });
       toast.success('Horas extras aprobadas exitosamente');
@@ -396,10 +512,10 @@ export const useAprobarHoraExtra = () => {
 export const useRechazarHoraExtra = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, observaciones }: { id: number; observaciones: string }) => {
+    mutationFn: async ({ id, data }: { id: number; data: RechazarHoraExtraData }) => {
       const { data: response } = await api.post<HoraExtra>(
         `${BASE_URL}/horas-extras/${id}/rechazar/`,
-        { observaciones_aprobacion: observaciones }
+        data
       );
       return response;
     },
@@ -414,7 +530,7 @@ export const useRechazarHoraExtra = () => {
 
 // ============== CONSOLIDADOS ASISTENCIA ==============
 
-export const useConsolidadosAsistencia = (filters?: ConsolidadoAsistenciaFilter) => {
+export const useConsolidadosAsistencia = (filters?: ConsolidadoFilter) => {
   return useQuery({
     queryKey: controlTiempoKeys.consolidados.list(filters),
     queryFn: async () => {
@@ -440,7 +556,7 @@ export const useGenerarConsolidado = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: GenerarConsolidadoData) => {
-      const { data: response } = await api.post<ConsolidadoAsistencia>(
+      const { data: response } = await api.post<ConsolidadoAsistencia | ConsolidadoAsistencia[]>(
         `${BASE_URL}/consolidados/generar/`,
         data
       );
@@ -459,7 +575,7 @@ export const useCerrarConsolidado = () => {
   return useMutation({
     mutationFn: async (id: number) => {
       const { data: response } = await api.post<ConsolidadoAsistencia>(
-        `${BASE_URL}/consolidados/${id}/cerrar/`
+        `${BASE_URL}/consolidados/${id}/cerrar-mes/`
       );
       return response;
     },
@@ -472,20 +588,51 @@ export const useCerrarConsolidado = () => {
   });
 };
 
-export const useAprobarConsolidado = () => {
+export const useReabrirConsolidado = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
       const { data: response } = await api.post<ConsolidadoAsistencia>(
-        `${BASE_URL}/consolidados/${id}/aprobar/`
+        `${BASE_URL}/consolidados/${id}/reabrir-mes/`
       );
       return response;
     },
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: controlTiempoKeys.consolidados.all() });
       queryClient.invalidateQueries({ queryKey: controlTiempoKeys.consolidados.detail(id) });
-      toast.success('Consolidado aprobado exitosamente');
+      toast.success('Consolidado reabierto exitosamente');
     },
-    onError: () => toast.error('Error al aprobar el consolidado'),
+    onError: () => toast.error('Error al reabrir el consolidado'),
+  });
+};
+
+// ============== CONFIGURACION RECARGOS ==============
+
+export const useConfiguracionesRecargo = () => {
+  return useQuery({
+    queryKey: controlTiempoKeys.recargos.list(),
+    queryFn: async () => {
+      const response = await api.get(`${BASE_URL}/configuracion-recargos/`);
+      const data = response.data;
+      return (Array.isArray(data) ? data : (data?.results ?? [])) as ConfiguracionRecargo[];
+    },
+  });
+};
+
+export const useCreateConfiguracionRecargo = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: ConfiguracionRecargoFormData) => {
+      const { data: response } = await api.post<ConfiguracionRecargo>(
+        `${BASE_URL}/configuracion-recargos/`,
+        data
+      );
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: controlTiempoKeys.recargos.all() });
+      toast.success('Configuración de recargo creada');
+    },
+    onError: () => toast.error('Error al crear la configuración'),
   });
 };

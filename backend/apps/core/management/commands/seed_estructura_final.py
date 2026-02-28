@@ -444,7 +444,7 @@ class Command(BaseCommand):
             {
                 'code': 'sistema_gestion',
                 'name': 'Sistema de Gestión',
-                'description': 'Control documental ISO y planificación del sistema de gestión',
+                'description': 'Gestión documental, planificación, auditorías internas y acciones de mejora',
                 'category': 'STRATEGIC',
                 'color': 'indigo',
                 'icon': 'FolderCog',
@@ -582,7 +582,7 @@ class Command(BaseCommand):
             {
                 'code': 'hseq_management',
                 'name': 'Gestión Integral',
-                'description': 'Sistema integrado HSEQ - Calidad, SST, Ambiental, Seguridad Vial',
+                'description': 'Operación integrada HSEQ - Calidad, SST, Ambiental y Comités',
                 'category': 'INTEGRATED',
                 'color': 'teal',
                 'icon': 'Shield',
@@ -600,7 +600,7 @@ class Command(BaseCommand):
                     {'code': 'accidentalidad', 'name': 'Accidentalidad (ATEL)', 'icon': 'AlertCircle', 'route': 'accidentalidad', 'orden': 6},
                     {'code': 'emergencias', 'name': 'Emergencias', 'icon': 'Siren', 'route': 'emergencias', 'orden': 7},
                     {'code': 'gestion_ambiental', 'name': 'Gestión Ambiental', 'icon': 'Leaf', 'route': 'gestion-ambiental', 'orden': 8},
-                    {'code': 'mejora_continua', 'name': 'Mejora Continua', 'icon': 'TrendingUp', 'route': 'mejora-continua', 'orden': 9},
+                    # NOTA: mejora_continua (auditorías + hallazgos) movido a sistema_gestion [20]
                 ]
             },
 

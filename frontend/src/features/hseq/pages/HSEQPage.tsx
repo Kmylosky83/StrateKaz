@@ -13,19 +13,7 @@
  * - ISO 45001 (Seguridad y Salud Ocupacional)
  * - Decreto 1072/2015 (SG-SST Colombia)
  */
-import {
-  FileText,
-  Target,
-  Award,
-  Heart,
-  HardHat,
-  Wind,
-  Users,
-  AlertTriangle,
-  Siren,
-  Leaf,
-  TrendingUp,
-} from 'lucide-react';
+import { Award, Heart, HardHat, Wind, Users, AlertTriangle, Siren, Leaf } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
 import { SelectionCard, SelectionCardGrid } from '@/components/common/SelectionCard';
 
@@ -44,8 +32,8 @@ export default function HSEQPage() {
         <div className="relative z-10">
           <h2 className="text-2xl font-bold mb-2">Bienvenido a Gestión HSEQ</h2>
           <p className="text-blue-100 max-w-2xl">
-            Gestión integrada de calidad, seguridad, salud ocupacional y medio ambiente.
-            Seleccione un módulo para comenzar.
+            Gestión integrada de calidad, seguridad, salud ocupacional y medio ambiente. Seleccione
+            un módulo para comenzar.
           </p>
           <div className="mt-6 flex flex-wrap gap-4">
             <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2">
@@ -64,30 +52,12 @@ export default function HSEQPage() {
         </div>
       </div>
 
-      {/* GRID DE MÓDULOS */}
+      {/* GRID DE MÓDULOS — 8 tabs operativos HSEQ */}
       <SelectionCardGrid columns={4}>
-        <SelectionCard
-          icon={FileText}
-          title="Sistema Documental"
-          subtitle="Control de documentos, registros, versiones y aprobaciones del sistema HSEQ"
-          href="/hseq/sistema-documental"
-          variant="gradient"
-          color="blue"
-        />
-
-        <SelectionCard
-          icon={Target}
-          title="Planificación"
-          subtitle="Política integrada, objetivos, indicadores y plan de trabajo anual"
-          href="/hseq/planificacion"
-          variant="gradient"
-          color="purple"
-        />
-
         <SelectionCard
           icon={Award}
           title="Calidad"
-          subtitle="ISO 9001 - No conformidades, auditorías y acciones correctivas"
+          subtitle="ISO 9001 - No conformidades, acciones correctivas y control de cambios"
           href="/hseq/calidad"
           variant="gradient"
           color="green"
@@ -107,7 +77,7 @@ export default function HSEQPage() {
           title="Seguridad Industrial"
           subtitle="Inspecciones, EPP, permisos de trabajo y señalización"
           href="/hseq/seguridad-industrial"
-          variant="glass"
+          variant="gradient"
           color="orange"
         />
 
@@ -116,7 +86,7 @@ export default function HSEQPage() {
           title="Higiene Industrial"
           subtitle="Mediciones de agentes físicos, químicos y control ambiental"
           href="/hseq/higiene-industrial"
-          variant="glass"
+          variant="gradient"
           color="blue"
         />
 
@@ -143,7 +113,7 @@ export default function HSEQPage() {
           title="Emergencias"
           subtitle="Plan de emergencias, brigada, simulacros y recursos de respuesta"
           href="/hseq/emergencias"
-          variant="gradient"
+          variant="glass"
           color="orange"
         />
 
@@ -152,17 +122,8 @@ export default function HSEQPage() {
           title="Gestión Ambiental"
           subtitle="ISO 14001 - Aspectos ambientales, programas y monitoreo"
           href="/hseq/gestion-ambiental"
-          variant="gradient"
+          variant="glass"
           color="green"
-        />
-
-        <SelectionCard
-          icon={TrendingUp}
-          title="Mejora Continua"
-          subtitle="Ciclo PHVA, acciones correctivas, preventivas y lecciones aprendidas"
-          href="/hseq/mejora-continua"
-          variant="gradient"
-          color="purple"
         />
       </SelectionCardGrid>
 

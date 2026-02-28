@@ -1,9 +1,12 @@
 /**
- * Rutas: Sistema de Gestion
- * Control documental ISO, planificacion, auditorias, mejora
+ * Rutas: Sistema de Gestión
+ * Gestión documental, planificación, auditorías internas, acciones de mejora
  *
- * Absorbido por gestion-estrategica (Sprint M0.3).
- * Las paginas viven en features/gestion-estrategica/pages/
+ * Pages:
+ * - GestionDocumental: features/gestion-estrategica/pages/
+ * - Planificacion: reutiliza features/hseq/pages/PlanificacionSistemaPage (1028 líneas)
+ * - Auditorías: features/gestion-estrategica/pages/ (consume hooks de hseq)
+ * - Acciones Mejora: features/gestion-estrategica/pages/ (consume hooks de hseq)
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
@@ -12,9 +15,7 @@ import { withModuleGuard } from '../helpers';
 const SGGestionDocumentalPage = lazy(
   () => import('@/features/gestion-estrategica/pages/GestionDocumentalPage')
 );
-const SGPlanificacionPage = lazy(
-  () => import('@/features/gestion-estrategica/pages/PlanificacionSistemaPage')
-);
+const SGPlanificacionPage = lazy(() => import('@/features/hseq/pages/PlanificacionSistemaPage'));
 const SGAuditoriasPage = lazy(
   () => import('@/features/gestion-estrategica/pages/AuditoriasInternasPage')
 );

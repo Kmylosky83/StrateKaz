@@ -52,4 +52,8 @@ urlpatterns = [
     path('revision-direccion/', include('apps.gestion_estrategica.revision_direccion.urls')),
     path('gestion-documental/', include('apps.gestion_estrategica.gestion_documental.urls')),
     path('planificacion-sistema/', include('apps.gestion_estrategica.planificacion_sistema.urls')),
+
+    # Mejora continua (auditorías + hallazgos) — modelos en hseq_management, re-montados aquí
+    # para que sistema_gestion consuma APIs bajo /api/gestion-estrategica/mejora-continua/
+    path('mejora-continua/', include('apps.hseq_management.mejora_continua.urls')),
 ]

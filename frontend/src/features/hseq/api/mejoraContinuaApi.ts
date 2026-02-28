@@ -1,6 +1,9 @@
 /**
- * API Client para Mejora Continua - HSEQ Management
+ * API Client para Mejora Continua (Auditorías Internas)
  * Sistema de Gestión StrateKaz
+ *
+ * Modelos en hseq_management.mejora_continua, re-montados bajo gestion-estrategica.
+ * Consumido por: sistema_gestion (tab Auditorías Internas)
  *
  * Incluye:
  * - Programa de Auditorías
@@ -29,7 +32,7 @@ import type {
   PaginatedResponse,
 } from '../types/mejora-continua.types';
 
-const BASE_URL = '/hseq/mejora';
+const BASE_URL = '/gestion-estrategica/mejora-continua';
 
 // ==================== PROGRAMA DE AUDITORÍA ====================
 

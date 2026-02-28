@@ -1,15 +1,20 @@
 /**
  * Rutas: HSEQ Management (Torre de Control)
- * Capa 2 — Modulo de Negocio
+ * Capa 2 — Módulo de Negocio
+ *
+ * 8 tabs operativos: calidad, medicina, seguridad, higiene, comités,
+ * accidentalidad, emergencias, ambiental.
+ *
+ * Redirects a Sistema de Gestión:
+ * - /hseq/sistema-documental → /sistema-gestion/documentos
+ * - /hseq/planificacion → /sistema-gestion/planificacion
+ * - /hseq/mejora-continua → /sistema-gestion/auditorias
  */
 import { lazy } from 'react';
 import { Route, Navigate } from 'react-router-dom';
 import { withModuleGuard } from '../helpers';
 
 const HSEQPage = lazy(() => import('@/features/hseq').then((m) => ({ default: m.HSEQPage })));
-const PlanificacionSistemaPage = lazy(() =>
-  import('@/features/hseq').then((m) => ({ default: m.PlanificacionSistemaPage }))
-);
 const CalidadPage = lazy(() => import('@/features/hseq').then((m) => ({ default: m.CalidadPage })));
 const MedicinaLaboralPage = lazy(() =>
   import('@/features/hseq').then((m) => ({ default: m.MedicinaLaboralPage }))
@@ -32,25 +37,27 @@ const EmergenciasPage = lazy(() =>
 const GestionAmbientalPage = lazy(() =>
   import('@/features/hseq').then((m) => ({ default: m.GestionAmbientalPage }))
 );
-const MejoraContinuaPage = lazy(() =>
-  import('@/features/hseq').then((m) => ({ default: m.MejoraContinuaPage }))
-);
 
 export const hseqRoutes = (
   <>
     <Route path="/hseq" element={<Navigate to="/hseq/dashboard" replace />} />
     <Route path="/hseq/dashboard" element={withModuleGuard(HSEQPage, 'hseq_management')} />
 
-    {/* Redirige al Sistema de Gestion */}
+    {/* Redirects a Sistema de Gestión (sprint sistema-gestion-hseq-1) */}
     <Route
       path="/hseq/sistema-documental"
       element={<Navigate to="/sistema-gestion/documentos" replace />}
     />
-
     <Route
       path="/hseq/planificacion"
-      element={withModuleGuard(PlanificacionSistemaPage, 'hseq_management')}
+      element={<Navigate to="/sistema-gestion/planificacion" replace />}
     />
+    <Route
+      path="/hseq/mejora-continua"
+      element={<Navigate to="/sistema-gestion/auditorias" replace />}
+    />
+
+    {/* 8 tabs operativos HSEQ */}
     <Route path="/hseq/calidad" element={withModuleGuard(CalidadPage, 'hseq_management')} />
     <Route
       path="/hseq/medicina-laboral"
@@ -73,10 +80,6 @@ export const hseqRoutes = (
     <Route
       path="/hseq/gestion-ambiental"
       element={withModuleGuard(GestionAmbientalPage, 'hseq_management')}
-    />
-    <Route
-      path="/hseq/mejora-continua"
-      element={withModuleGuard(MejoraContinuaPage, 'hseq_management')}
     />
   </>
 );

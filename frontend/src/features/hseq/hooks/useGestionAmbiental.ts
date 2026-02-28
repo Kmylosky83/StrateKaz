@@ -9,26 +9,25 @@ import type {
   CreateTipoResiduoDTO,
   UpdateTipoResiduoDTO,
   CreateGestorAmbientalDTO,
-  UpdateGestorAmbientalDTO,
   CreateRegistroResiduoDTO,
   UpdateRegistroResiduoDTO,
   CreateVertimientoDTO,
   UpdateVertimientoDTO,
-  CreateFuenteEmisionDTO,
-  UpdateFuenteEmisionDTO,
   CreateRegistroEmisionDTO,
   UpdateRegistroEmisionDTO,
-  CreateTipoRecursoDTO,
-  UpdateTipoRecursoDTO,
   CreateConsumoRecursoDTO,
   UpdateConsumoRecursoDTO,
-  CreateCalculoHuellaCarbonoDTO,
-  UpdateCalculoHuellaCarbonoDTO,
   CreateCertificadoAmbientalDTO,
   UpdateCertificadoAmbientalDTO,
   GenerarCertificadoDTO,
   CalcularHuellaInputDTO,
 } from '../types/gestion-ambiental.types';
+
+// Helper para extraer mensaje de error de respuestas API
+const getApiError = (error: unknown, fallback: string): string => {
+  const err = error as { response?: { data?: { detail?: string } } };
+  return err?.response?.data?.detail || fallback;
+};
 
 // ==================== QUERY KEYS ====================
 
@@ -47,7 +46,8 @@ export const gestionAmbientalKeys = {
   // Residuos
   residuos: () => [...gestionAmbientalKeys.all, 'residuos'] as const,
   residuoById: (id: number) => [...gestionAmbientalKeys.residuos(), id] as const,
-  residuosResumen: (filters: Record<string, any>) => [...gestionAmbientalKeys.residuos(), 'resumen', filters] as const,
+  residuosResumen: (filters: Record<string, unknown>) =>
+    [...gestionAmbientalKeys.residuos(), 'resumen', filters] as const,
 
   // Vertimientos
   vertimientos: () => [...gestionAmbientalKeys.all, 'vertimientos'] as const,
@@ -82,13 +82,14 @@ export const gestionAmbientalKeys = {
   // Certificados
   certificados: () => [...gestionAmbientalKeys.all, 'certificados'] as const,
   certificadoById: (id: number) => [...gestionAmbientalKeys.certificados(), id] as const,
-  certificadosProximosVencer: () => [...gestionAmbientalKeys.certificados(), 'proximos-vencer'] as const,
+  certificadosProximosVencer: () =>
+    [...gestionAmbientalKeys.certificados(), 'proximos-vencer'] as const,
   certificadosVencidos: () => [...gestionAmbientalKeys.certificados(), 'vencidos'] as const,
 };
 
 // ==================== TIPOS DE RESIDUOS ====================
 
-export function useTiposResiduos(params?: any) {
+export function useTiposResiduos(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: gestionAmbientalKeys.tiposResiduos(),
     queryFn: async () => {
@@ -120,8 +121,8 @@ export function useCreateTipoResiduo() {
       queryClient.invalidateQueries({ queryKey: gestionAmbientalKeys.tiposResiduos() });
       toast.success('Tipo de residuo creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear tipo de residuo');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al crear tipo de residuo'));
     },
   });
 }
@@ -139,15 +140,15 @@ export function useUpdateTipoResiduo() {
       queryClient.invalidateQueries({ queryKey: gestionAmbientalKeys.tipoResiduoById(id) });
       toast.success('Tipo de residuo actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar tipo de residuo');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al actualizar tipo de residuo'));
     },
   });
 }
 
 // ==================== GESTORES AMBIENTALES ====================
 
-export function useGestores(params?: any) {
+export function useGestores(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: gestionAmbientalKeys.gestores(),
     queryFn: async () => {
@@ -169,15 +170,15 @@ export function useCreateGestor() {
       queryClient.invalidateQueries({ queryKey: gestionAmbientalKeys.gestores() });
       toast.success('Gestor ambiental creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear gestor ambiental');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al crear gestor ambiental'));
     },
   });
 }
 
 // ==================== REGISTROS DE RESIDUOS ====================
 
-export function useResiduos(params?: any) {
+export function useResiduos(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: gestionAmbientalKeys.residuos(),
     queryFn: async () => {
@@ -187,7 +188,11 @@ export function useResiduos(params?: any) {
   });
 }
 
-export function useResiduosResumen(params: { empresa_id: number; fecha_inicio: string; fecha_fin: string }) {
+export function useResiduosResumen(params: {
+  empresa_id: number;
+  fecha_inicio: string;
+  fecha_fin: string;
+}) {
   return useQuery({
     queryKey: gestionAmbientalKeys.residuosResumen(params),
     queryFn: async () => {
@@ -210,8 +215,44 @@ export function useCreateResiduo() {
       queryClient.invalidateQueries({ queryKey: gestionAmbientalKeys.residuos() });
       toast.success('Registro de residuo creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear registro de residuo');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al crear registro de residuo'));
+    },
+  });
+}
+
+export function useUpdateResiduo() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, datos }: { id: number; datos: UpdateRegistroResiduoDTO }) => {
+      const data = await gestionAmbientalApi.registroResiduo.update(id, datos);
+      return data;
+    },
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: gestionAmbientalKeys.residuos() });
+      queryClient.invalidateQueries({ queryKey: gestionAmbientalKeys.residuoById(id) });
+      toast.success('Registro de residuo actualizado exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al actualizar registro de residuo'));
+    },
+  });
+}
+
+export function useDeleteResiduo() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await gestionAmbientalApi.registroResiduo.delete(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: gestionAmbientalKeys.residuos() });
+      toast.success('Registro de residuo eliminado exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al eliminar registro de residuo'));
     },
   });
 }
@@ -228,15 +269,15 @@ export function useGenerarCertificado() {
       queryClient.invalidateQueries({ queryKey: gestionAmbientalKeys.certificados() });
       toast.success('Certificado generado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al generar certificado');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al generar certificado'));
     },
   });
 }
 
 // ==================== VERTIMIENTOS ====================
 
-export function useVertimientos(params?: any) {
+export function useVertimientos(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: gestionAmbientalKeys.vertimientos(),
     queryFn: async () => {
@@ -256,6 +297,42 @@ export function useVertimientosNoConformes(empresaId?: number) {
   });
 }
 
+export function useUpdateVertimiento() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, datos }: { id: number; datos: UpdateVertimientoDTO }) => {
+      const data = await gestionAmbientalApi.vertimiento.update(id, datos);
+      return data;
+    },
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: gestionAmbientalKeys.vertimientos() });
+      queryClient.invalidateQueries({ queryKey: gestionAmbientalKeys.vertimientoById(id) });
+      toast.success('Vertimiento actualizado exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al actualizar vertimiento'));
+    },
+  });
+}
+
+export function useDeleteVertimiento() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await gestionAmbientalApi.vertimiento.delete(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: gestionAmbientalKeys.vertimientos() });
+      toast.success('Vertimiento eliminado exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al eliminar vertimiento'));
+    },
+  });
+}
+
 export function useCreateVertimiento() {
   const queryClient = useQueryClient();
 
@@ -268,15 +345,15 @@ export function useCreateVertimiento() {
       queryClient.invalidateQueries({ queryKey: gestionAmbientalKeys.vertimientos() });
       toast.success('Vertimiento registrado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al registrar vertimiento');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al registrar vertimiento'));
     },
   });
 }
 
 // ==================== EMISIONES ====================
 
-export function useFuentesEmision(params?: any) {
+export function useFuentesEmision(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: gestionAmbientalKeys.fuentesEmision(),
     queryFn: async () => {
@@ -286,12 +363,48 @@ export function useFuentesEmision(params?: any) {
   });
 }
 
-export function useEmisiones(params?: any) {
+export function useEmisiones(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: gestionAmbientalKeys.emisiones(),
     queryFn: async () => {
       const data = await gestionAmbientalApi.registroEmision.getAll(params);
       return data;
+    },
+  });
+}
+
+export function useUpdateEmision() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, datos }: { id: number; datos: UpdateRegistroEmisionDTO }) => {
+      const data = await gestionAmbientalApi.registroEmision.update(id, datos);
+      return data;
+    },
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: gestionAmbientalKeys.emisiones() });
+      queryClient.invalidateQueries({ queryKey: gestionAmbientalKeys.emisionById(id) });
+      toast.success('Emisión actualizada exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al actualizar emisión'));
+    },
+  });
+}
+
+export function useDeleteEmision() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await gestionAmbientalApi.registroEmision.delete(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: gestionAmbientalKeys.emisiones() });
+      toast.success('Emisión eliminada exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al eliminar emisión'));
     },
   });
 }
@@ -308,15 +421,15 @@ export function useCreateEmision() {
       queryClient.invalidateQueries({ queryKey: gestionAmbientalKeys.emisiones() });
       toast.success('Emisión registrada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al registrar emisión');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al registrar emisión'));
     },
   });
 }
 
 // ==================== CONSUMO DE RECURSOS ====================
 
-export function useTiposRecursos(params?: any) {
+export function useTiposRecursos(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: gestionAmbientalKeys.tiposRecursos(),
     queryFn: async () => {
@@ -326,7 +439,7 @@ export function useTiposRecursos(params?: any) {
   });
 }
 
-export function useConsumos(params?: any) {
+export function useConsumos(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: gestionAmbientalKeys.consumos(),
     queryFn: async () => {
@@ -347,6 +460,42 @@ export function useConsumosResumenAnual(empresaId: number, year?: number) {
   });
 }
 
+export function useUpdateConsumo() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, datos }: { id: number; datos: UpdateConsumoRecursoDTO }) => {
+      const data = await gestionAmbientalApi.consumoRecurso.update(id, datos);
+      return data;
+    },
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: gestionAmbientalKeys.consumos() });
+      queryClient.invalidateQueries({ queryKey: gestionAmbientalKeys.consumoById(id) });
+      toast.success('Consumo actualizado exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al actualizar consumo'));
+    },
+  });
+}
+
+export function useDeleteConsumo() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await gestionAmbientalApi.consumoRecurso.delete(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: gestionAmbientalKeys.consumos() });
+      toast.success('Consumo eliminado exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al eliminar consumo'));
+    },
+  });
+}
+
 export function useCreateConsumo() {
   const queryClient = useQueryClient();
 
@@ -359,15 +508,15 @@ export function useCreateConsumo() {
       queryClient.invalidateQueries({ queryKey: gestionAmbientalKeys.consumos() });
       toast.success('Consumo registrado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al registrar consumo');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al registrar consumo'));
     },
   });
 }
 
 // ==================== HUELLA DE CARBONO ====================
 
-export function useHuellasCarbono(params?: any) {
+export function useHuellasCarbono(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: gestionAmbientalKeys.huellasCarbono(),
     queryFn: async () => {
@@ -400,8 +549,8 @@ export function useCalcularHuella() {
       queryClient.invalidateQueries({ queryKey: gestionAmbientalKeys.huellasCarbono() });
       toast.success('Huella de carbono calculada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al calcular huella de carbono');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al calcular huella de carbono'));
     },
   });
 }
@@ -419,15 +568,15 @@ export function useVerificarHuella() {
       queryClient.invalidateQueries({ queryKey: gestionAmbientalKeys.huellaCarbonoById(id) });
       toast.success('Huella de carbono verificada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al verificar huella de carbono');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al verificar huella de carbono'));
     },
   });
 }
 
 // ==================== CERTIFICADOS AMBIENTALES ====================
 
-export function useCertificados(params?: any) {
+export function useCertificados(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: gestionAmbientalKeys.certificados(),
     queryFn: async () => {
@@ -457,6 +606,42 @@ export function useCertificadosVencidos() {
   });
 }
 
+export function useUpdateCertificado() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, datos }: { id: number; datos: UpdateCertificadoAmbientalDTO }) => {
+      const data = await gestionAmbientalApi.certificadoAmbiental.update(id, datos);
+      return data;
+    },
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: gestionAmbientalKeys.certificados() });
+      queryClient.invalidateQueries({ queryKey: gestionAmbientalKeys.certificadoById(id) });
+      toast.success('Certificado actualizado exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al actualizar certificado'));
+    },
+  });
+}
+
+export function useDeleteCertificado() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await gestionAmbientalApi.certificadoAmbiental.delete(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: gestionAmbientalKeys.certificados() });
+      toast.success('Certificado eliminado exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al eliminar certificado'));
+    },
+  });
+}
+
 export function useCreateCertificado() {
   const queryClient = useQueryClient();
 
@@ -469,8 +654,8 @@ export function useCreateCertificado() {
       queryClient.invalidateQueries({ queryKey: gestionAmbientalKeys.certificados() });
       toast.success('Certificado creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear certificado');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al crear certificado'));
     },
   });
 }

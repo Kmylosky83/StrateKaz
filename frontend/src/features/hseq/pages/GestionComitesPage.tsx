@@ -15,14 +15,13 @@ import {
   UserPlus,
   CalendarDays,
   Vote,
-  Eye,
   Edit,
+  Trash2,
   CheckCircle,
   Clock,
   AlertTriangle,
   Play,
   CheckSquare,
-  UserX,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
 import { Tabs } from '@/components/common/Tabs';
@@ -31,6 +30,7 @@ import { Button } from '@/components/common/Button';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Badge } from '@/components/common/Badge';
 import { Spinner } from '@/components/common/Spinner';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { KpiCard, KpiCardGrid, SectionToolbar } from '@/components/common';
 import { formatStatusLabel } from '@/components/common/StatusBadge';
 import {
@@ -39,11 +39,31 @@ import {
   useMiembrosComite,
   useActasReunion,
   useVotaciones,
+  useDeleteTipoComite,
+  useDeleteComite,
+  useDeleteMiembroComite,
+  useDeleteActaReunion,
+  useDeleteVotacion,
 } from '../hooks/useComites';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-import type { EstadoComite, EstadoActa, EstadoVotacion } from '../types/comites.types';
+import type {
+  TipoComiteList,
+  ComiteList,
+  MiembroComiteList,
+  ActaReunionList,
+  VotacionList,
+  EstadoComite,
+  EstadoActa,
+  EstadoVotacion,
+} from '../types/comites.types';
+
+import TipoComiteFormModal from '../components/TipoComiteFormModal';
+import ComiteFormModal from '../components/ComiteFormModal';
+import MiembroComiteFormModal from '../components/MiembroComiteFormModal';
+import ActaReunionFormModal from '../components/ActaReunionFormModal';
+import VotacionFormModal from '../components/VotacionFormModal';
 
 // ==================== UTILITY FUNCTIONS ====================
 
@@ -86,6 +106,22 @@ const getEstadoVotacionVariant = (
 const TiposComiteSection = () => {
   const { data, isLoading } = useTiposComite();
   const tiposComite = data?.results ?? [];
+  const [selectedItem, setSelectedItem] = useState<TipoComiteList | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const deleteMutation = useDeleteTipoComite();
+
+  const handleNew = () => {
+    setSelectedItem(null);
+    setModalOpen(true);
+  };
+  const handleEdit = (item: TipoComiteList) => {
+    setSelectedItem(item);
+    setModalOpen(true);
+  };
+  const handleDelete = () => {
+    if (deleteId) deleteMutation.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+  };
 
   if (isLoading) {
     return (
@@ -97,15 +133,19 @@ const TiposComiteSection = () => {
 
   if (!tiposComite || tiposComite.length === 0) {
     return (
-      <EmptyState
-        icon={<Users className="w-16 h-16" />}
-        title="No hay tipos de comité configurados"
-        description="Configure los tipos de comités que se utilizarán en la organización"
-        action={{
-          label: 'Nuevo Tipo de Comité',
-          onClick: () => {},
-        }}
-      />
+      <>
+        <EmptyState
+          icon={<Users className="w-16 h-16" />}
+          title="No hay tipos de comité configurados"
+          description="Configure los tipos de comités que se utilizarán en la organización"
+          action={{ label: 'Nuevo Tipo de Comité', onClick: handleNew }}
+        />
+        <TipoComiteFormModal
+          item={selectedItem}
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+        />
+      </>
     );
   }
 
@@ -113,10 +153,9 @@ const TiposComiteSection = () => {
     <div className="space-y-6">
       <SectionToolbar
         title="Tipos de Comité"
-        primaryAction={{ label: 'Nuevo Tipo', onClick: () => {} }}
+        primaryAction={{ label: 'Nuevo Tipo', onClick: handleNew }}
       />
 
-      {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {tiposComite.map((tipo) => (
           <Card key={tipo.id} variant="bordered" padding="md">
@@ -163,14 +202,43 @@ const TiposComiteSection = () => {
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                <Button variant="ghost" size="sm" leftIcon={<Edit className="w-4 h-4" />}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leftIcon={<Edit className="w-4 h-4" />}
+                  onClick={() => handleEdit(tipo)}
+                >
                   Editar
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leftIcon={<Trash2 className="w-4 h-4 text-danger-600" />}
+                  onClick={() => setDeleteId(tipo.id)}
+                >
+                  Eliminar
                 </Button>
               </div>
             </div>
           </Card>
         ))}
       </div>
+
+      <TipoComiteFormModal
+        item={selectedItem}
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+      />
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Eliminar Tipo de Comité"
+        description="¿Está seguro de eliminar este tipo de comité? Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        variant="danger"
+        loading={deleteMutation.isPending}
+      />
     </div>
   );
 };
@@ -180,6 +248,22 @@ const TiposComiteSection = () => {
 const ComitesSection = () => {
   const { data, isLoading } = useComites();
   const comites = data?.results ?? [];
+  const [selectedItem, setSelectedItem] = useState<ComiteList | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const deleteMutation = useDeleteComite();
+
+  const handleNew = () => {
+    setSelectedItem(null);
+    setModalOpen(true);
+  };
+  const handleEdit = (item: ComiteList) => {
+    setSelectedItem(item);
+    setModalOpen(true);
+  };
+  const handleDelete = () => {
+    if (deleteId) deleteMutation.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+  };
 
   if (isLoading) {
     return (
@@ -191,15 +275,19 @@ const ComitesSection = () => {
 
   if (!comites || comites.length === 0) {
     return (
-      <EmptyState
-        icon={<Users className="w-16 h-16" />}
-        title="No hay comités registrados"
-        description="Comience conformando los comités de la organización"
-        action={{
-          label: 'Nuevo Comité',
-          onClick: () => {},
-        }}
-      />
+      <>
+        <EmptyState
+          icon={<Users className="w-16 h-16" />}
+          title="No hay comités registrados"
+          description="Comience conformando los comités de la organización"
+          action={{ label: 'Nuevo Comité', onClick: handleNew }}
+        />
+        <ComiteFormModal
+          item={selectedItem}
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+        />
+      </>
     );
   }
 
@@ -212,7 +300,6 @@ const ComitesSection = () => {
 
   return (
     <div className="space-y-6">
-      {/* KPI Cards */}
       <KpiCardGrid>
         <KpiCard
           label="Total Comités"
@@ -242,11 +329,9 @@ const ComitesSection = () => {
 
       <SectionToolbar
         title="Comités Activos"
-        onFilter={() => {}}
-        primaryAction={{ label: 'Nuevo Comité', onClick: () => {} }}
+        primaryAction={{ label: 'Nuevo Comité', onClick: handleNew }}
       />
 
-      {/* Table */}
       <Card variant="bordered" padding="none">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -303,14 +388,11 @@ const ComitesSection = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(comite)}>
                         <Edit className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
-                        <UserPlus className="w-4 h-4" />
+                      <Button variant="ghost" size="sm" onClick={() => setDeleteId(comite.id)}>
+                        <Trash2 className="w-4 h-4 text-danger-600" />
                       </Button>
                     </div>
                   </td>
@@ -320,6 +402,18 @@ const ComitesSection = () => {
           </table>
         </div>
       </Card>
+
+      <ComiteFormModal item={selectedItem} isOpen={modalOpen} onClose={() => setModalOpen(false)} />
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Eliminar Comité"
+        description="¿Está seguro de eliminar este comité? Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        variant="danger"
+        loading={deleteMutation.isPending}
+      />
     </div>
   );
 };
@@ -329,6 +423,22 @@ const ComitesSection = () => {
 const MiembrosSection = () => {
   const { data, isLoading } = useMiembrosComite();
   const miembros = data?.results ?? [];
+  const [selectedItem, setSelectedItem] = useState<MiembroComiteList | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const deleteMutation = useDeleteMiembroComite();
+
+  const handleNew = () => {
+    setSelectedItem(null);
+    setModalOpen(true);
+  };
+  const handleEdit = (item: MiembroComiteList) => {
+    setSelectedItem(item);
+    setModalOpen(true);
+  };
+  const handleDelete = () => {
+    if (deleteId) deleteMutation.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+  };
 
   if (isLoading) {
     return (
@@ -340,15 +450,19 @@ const MiembrosSection = () => {
 
   if (!miembros || miembros.length === 0) {
     return (
-      <EmptyState
-        icon={<UserPlus className="w-16 h-16" />}
-        title="No hay miembros registrados"
-        description="Agregue miembros a los comités conformados"
-        action={{
-          label: 'Agregar Miembro',
-          onClick: () => {},
-        }}
-      />
+      <>
+        <EmptyState
+          icon={<UserPlus className="w-16 h-16" />}
+          title="No hay miembros registrados"
+          description="Agregue miembros a los comités conformados"
+          action={{ label: 'Agregar Miembro', onClick: handleNew }}
+        />
+        <MiembroComiteFormModal
+          item={selectedItem}
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+        />
+      </>
     );
   }
 
@@ -356,12 +470,9 @@ const MiembrosSection = () => {
     <div className="space-y-6">
       <SectionToolbar
         title="Miembros de Comités"
-        onFilter={() => {}}
-        onExport={() => {}}
-        primaryAction={{ label: 'Agregar Miembro', onClick: () => {} }}
+        primaryAction={{ label: 'Agregar Miembro', onClick: handleNew }}
       />
 
-      {/* Table */}
       <Card variant="bordered" padding="none">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -432,14 +543,11 @@ const MiembrosSection = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(miembro)}>
                         <Edit className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
-                        <UserX className="w-4 h-4 text-danger-600" />
+                      <Button variant="ghost" size="sm" onClick={() => setDeleteId(miembro.id)}>
+                        <Trash2 className="w-4 h-4 text-danger-600" />
                       </Button>
                     </div>
                   </td>
@@ -449,6 +557,22 @@ const MiembrosSection = () => {
           </table>
         </div>
       </Card>
+
+      <MiembroComiteFormModal
+        item={selectedItem}
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+      />
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Eliminar Miembro"
+        description="¿Está seguro de eliminar este miembro del comité?"
+        confirmLabel="Eliminar"
+        variant="danger"
+        loading={deleteMutation.isPending}
+      />
     </div>
   );
 };
@@ -458,6 +582,18 @@ const MiembrosSection = () => {
 const ActasSection = () => {
   const { data, isLoading } = useActasReunion();
   const actas = data?.results ?? [];
+  const [selectedItem, setSelectedItem] = useState<ActaReunionList | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const deleteMutation = useDeleteActaReunion();
+
+  const handleNew = () => {
+    setSelectedItem(null);
+    setModalOpen(true);
+  };
+  const handleDelete = () => {
+    if (deleteId) deleteMutation.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+  };
 
   if (isLoading) {
     return (
@@ -469,15 +605,19 @@ const ActasSection = () => {
 
   if (!actas || actas.length === 0) {
     return (
-      <EmptyState
-        icon={<FileText className="w-16 h-16" />}
-        title="No hay actas registradas"
-        description="Registre las actas de las reuniones de comité"
-        action={{
-          label: 'Nueva Acta',
-          onClick: () => {},
-        }}
-      />
+      <>
+        <EmptyState
+          icon={<FileText className="w-16 h-16" />}
+          title="No hay actas registradas"
+          description="Registre las actas de las reuniones de comité"
+          action={{ label: 'Nueva Acta', onClick: handleNew }}
+        />
+        <ActaReunionFormModal
+          item={selectedItem}
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+        />
+      </>
     );
   }
 
@@ -491,7 +631,6 @@ const ActasSection = () => {
 
   return (
     <div className="space-y-6">
-      {/* KPI Cards */}
       <KpiCardGrid columns={5}>
         <KpiCard
           label="Total Actas"
@@ -527,12 +666,9 @@ const ActasSection = () => {
 
       <SectionToolbar
         title="Actas de Comité"
-        onFilter={() => {}}
-        onExport={() => {}}
-        primaryAction={{ label: 'Nueva Acta', onClick: () => {} }}
+        primaryAction={{ label: 'Nueva Acta', onClick: handleNew }}
       />
 
-      {/* Table */}
       <Card variant="bordered" padding="none">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -595,14 +731,8 @@ const ActasSection = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <CheckCircle className="w-4 h-4" />
+                      <Button variant="ghost" size="sm" onClick={() => setDeleteId(acta.id)}>
+                        <Trash2 className="w-4 h-4 text-danger-600" />
                       </Button>
                     </div>
                   </td>
@@ -612,6 +742,22 @@ const ActasSection = () => {
           </table>
         </div>
       </Card>
+
+      <ActaReunionFormModal
+        item={selectedItem}
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+      />
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Eliminar Acta"
+        description="¿Está seguro de eliminar esta acta de reunión?"
+        confirmLabel="Eliminar"
+        variant="danger"
+        loading={deleteMutation.isPending}
+      />
     </div>
   );
 };
@@ -621,6 +767,18 @@ const ActasSection = () => {
 const VotacionesSection = () => {
   const { data, isLoading } = useVotaciones();
   const votaciones = data?.results ?? [];
+  const [selectedItem, setSelectedItem] = useState<VotacionList | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const deleteMutation = useDeleteVotacion();
+
+  const handleNew = () => {
+    setSelectedItem(null);
+    setModalOpen(true);
+  };
+  const handleDelete = () => {
+    if (deleteId) deleteMutation.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+  };
 
   if (isLoading) {
     return (
@@ -632,15 +790,19 @@ const VotacionesSection = () => {
 
   if (!votaciones || votaciones.length === 0) {
     return (
-      <EmptyState
-        icon={<Vote className="w-16 h-16" />}
-        title="No hay votaciones registradas"
-        description="Registre las votaciones para elecciones y decisiones de comité"
-        action={{
-          label: 'Nueva Votación',
-          onClick: () => {},
-        }}
-      />
+      <>
+        <EmptyState
+          icon={<Vote className="w-16 h-16" />}
+          title="No hay votaciones registradas"
+          description="Registre las votaciones para elecciones y decisiones de comité"
+          action={{ label: 'Nueva Votación', onClick: handleNew }}
+        />
+        <VotacionFormModal
+          item={selectedItem}
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+        />
+      </>
     );
   }
 
@@ -652,7 +814,6 @@ const VotacionesSection = () => {
 
   return (
     <div className="space-y-6">
-      {/* KPI Cards */}
       <KpiCardGrid columns={3}>
         <KpiCard
           label="Total Votaciones"
@@ -676,11 +837,9 @@ const VotacionesSection = () => {
 
       <SectionToolbar
         title="Votaciones de Comité"
-        onFilter={() => {}}
-        primaryAction={{ label: 'Nueva Votación', onClick: () => {} }}
+        primaryAction={{ label: 'Nueva Votación', onClick: handleNew }}
       />
 
-      {/* Table */}
       <Card variant="bordered" padding="none">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -742,11 +901,8 @@ const VotacionesSection = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Edit className="w-4 h-4" />
+                      <Button variant="ghost" size="sm" onClick={() => setDeleteId(votacion.id)}>
+                        <Trash2 className="w-4 h-4 text-danger-600" />
                       </Button>
                     </div>
                   </td>
@@ -756,6 +912,22 @@ const VotacionesSection = () => {
           </table>
         </div>
       </Card>
+
+      <VotacionFormModal
+        item={selectedItem}
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+      />
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Eliminar Votación"
+        description="¿Está seguro de eliminar esta votación?"
+        confirmLabel="Eliminar"
+        variant="danger"
+        loading={deleteMutation.isPending}
+      />
     </div>
   );
 };
@@ -766,31 +938,11 @@ export default function GestionComitesPage() {
   const [activeTab, setActiveTab] = useState('tipos');
 
   const tabs = [
-    {
-      id: 'tipos',
-      label: 'Tipos de Comité',
-      icon: <Users className="w-4 h-4" />,
-    },
-    {
-      id: 'comites',
-      label: 'Comités Activos',
-      icon: <CalendarDays className="w-4 h-4" />,
-    },
-    {
-      id: 'miembros',
-      label: 'Miembros',
-      icon: <UserPlus className="w-4 h-4" />,
-    },
-    {
-      id: 'actas',
-      label: 'Actas de Comité',
-      icon: <FileText className="w-4 h-4" />,
-    },
-    {
-      id: 'votaciones',
-      label: 'Votaciones',
-      icon: <Vote className="w-4 h-4" />,
-    },
+    { id: 'tipos', label: 'Tipos de Comité', icon: <Users className="w-4 h-4" /> },
+    { id: 'comites', label: 'Comités Activos', icon: <CalendarDays className="w-4 h-4" /> },
+    { id: 'miembros', label: 'Miembros', icon: <UserPlus className="w-4 h-4" /> },
+    { id: 'actas', label: 'Actas de Comité', icon: <FileText className="w-4 h-4" /> },
+    { id: 'votaciones', label: 'Votaciones', icon: <Vote className="w-4 h-4" /> },
   ];
 
   return (
@@ -800,10 +952,8 @@ export default function GestionComitesPage() {
         description="Gestión integral de comités HSEQ: COPASST, Convivencia, Seguridad Vial, Brigadas, actas y votaciones"
       />
 
-      {/* Tabs */}
       <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} variant="pills" />
 
-      {/* Tab Content */}
       <div className="mt-6">
         {activeTab === 'tipos' && <TiposComiteSection />}
         {activeTab === 'comites' && <ComitesSection />}

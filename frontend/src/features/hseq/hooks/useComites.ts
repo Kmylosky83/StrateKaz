@@ -149,6 +149,21 @@ export function useUpdateTipoComite() {
   });
 }
 
+export function useDeleteTipoComite() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => comitesApi.tipoComite.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: comitesKeys.tiposComite() });
+      toast.success('Tipo de comité eliminado exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar tipo de comité'));
+    },
+  });
+}
+
 // ==================== COMITÉS ====================
 
 export function useComites(params?: Record<string, unknown>) {
@@ -229,6 +244,21 @@ export function useActivarComite() {
   });
 }
 
+export function useDeleteComite() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => comitesApi.comite.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: comitesKeys.comites() });
+      toast.success('Comité eliminado exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar comité'));
+    },
+  });
+}
+
 // ==================== MIEMBROS ====================
 
 export function useMiembrosComite(params?: Record<string, unknown>) {
@@ -284,6 +314,22 @@ export function useRetirarMiembroComite() {
     },
     onError: (error: unknown) => {
       toast.error(getErrorMessage(error, 'Error al retirar miembro'));
+    },
+  });
+}
+
+export function useDeleteMiembroComite() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => comitesApi.miembroComite.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: comitesKeys.miembros() });
+      queryClient.invalidateQueries({ queryKey: comitesKeys.comites() });
+      toast.success('Miembro eliminado del comité');
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar miembro'));
     },
   });
 }
@@ -435,6 +481,21 @@ export function useAprobarActa() {
   });
 }
 
+export function useDeleteActaReunion() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => comitesApi.actaReunion.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: comitesKeys.actas() });
+      toast.success('Acta eliminada exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar acta'));
+    },
+  });
+}
+
 // ==================== COMPROMISOS ====================
 
 export function useCompromisos(params?: Record<string, unknown>) {
@@ -552,6 +613,21 @@ export function useCerrarVotacion() {
     },
     onError: (error: unknown) => {
       toast.error(getErrorMessage(error, 'Error al cerrar votación'));
+    },
+  });
+}
+
+export function useDeleteVotacion() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => comitesApi.votacion.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: comitesKeys.votaciones() });
+      toast.success('Votación eliminada exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getErrorMessage(error, 'Error al eliminar votación'));
     },
   });
 }

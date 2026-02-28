@@ -152,7 +152,7 @@ export const TurnosTab = () => {
                     </td>
                     <td className="px-4 py-3">
                       <Badge variant="gray" size="sm">
-                        {turno.tipo}
+                        {turno.tipo_jornada}
                       </Badge>
                       {turno.aplica_recargo_nocturno && (
                         <Moon
@@ -164,14 +164,14 @@ export const TurnosTab = () => {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
-                        {turno.dias_laborales.slice(0, 3).map((dia, idx) => (
+                        {turno.dias_semana?.slice(0, 3).map((dia, idx) => (
                           <Badge key={idx} variant="info" size="sm">
                             {dia.slice(0, 3)}
                           </Badge>
                         ))}
-                        {turno.dias_laborales.length > 3 && (
+                        {(turno.dias_semana?.length || 0) > 3 && (
                           <Badge variant="gray" size="sm">
-                            +{turno.dias_laborales.length - 3}
+                            +{turno.dias_semana.length - 3}
                           </Badge>
                         )}
                       </div>

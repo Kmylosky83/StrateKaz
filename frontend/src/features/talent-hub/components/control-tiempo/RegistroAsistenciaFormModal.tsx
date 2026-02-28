@@ -1,5 +1,6 @@
 /**
  * RegistroAsistenciaFormModal - Crear registro de asistencia
+ * Alineado con backend: RegistroAsistencia model + RegistroAsistenciaFormData types
  */
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
@@ -64,7 +65,7 @@ export const RegistroAsistenciaFormModal = ({ isOpen, onClose }: Props) => {
     { value: '', label: 'Sin turno asignado' },
     ...(turnos?.map((t) => ({
       value: t.id.toString(),
-      label: `${t.nombre} (${t.hora_inicio} - ${t.hora_fin})`,
+      label: `${t.nombre} (${t.hora_inicio?.slice(0, 5)} - ${t.hora_fin?.slice(0, 5)})`,
     })) || []),
   ];
 
@@ -114,7 +115,7 @@ export const RegistroAsistenciaFormModal = ({ isOpen, onClose }: Props) => {
         <Select
           label="Turno Asignado"
           options={turnoOptions}
-          {...register('turno_asignado', {
+          {...register('turno', {
             setValueAs: (v) => (v ? parseInt(v) : null),
           })}
         />
@@ -122,6 +123,11 @@ export const RegistroAsistenciaFormModal = ({ isOpen, onClose }: Props) => {
         <div className="grid grid-cols-2 gap-4">
           <Input label="Hora Entrada" type="time" {...register('hora_entrada')} />
           <Input label="Hora Salida" type="time" {...register('hora_salida')} />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Input label="Entrada Almuerzo" type="time" {...register('hora_entrada_almuerzo')} />
+          <Input label="Salida Almuerzo" type="time" {...register('hora_salida_almuerzo')} />
         </div>
 
         <Textarea

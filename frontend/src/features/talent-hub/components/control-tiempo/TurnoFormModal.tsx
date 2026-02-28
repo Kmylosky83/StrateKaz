@@ -1,5 +1,6 @@
 /**
  * TurnoFormModal - Crear/Editar turno
+ * Alineado con backend: Turno model + TurnoFormData types
  */
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
@@ -10,8 +11,8 @@ import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
 import { Checkbox } from '@/components/forms/Checkbox';
 import { useCreateTurno, useUpdateTurno } from '../../hooks/useControlTiempo';
-import type { Turno, TurnoFormData } from '../../types';
-import { tipoTurnoOptions, diasSemanaOptions } from '../../types/controlTiempo.types';
+import type { Turno, TurnoFormData, DiaSemana } from '../../types';
+import { tipoJornadaOptions, diasSemanaOptions } from '../../types/controlTiempo.types';
 
 interface Props {
   turno: Turno | null;
@@ -36,21 +37,19 @@ export const TurnoFormModal = ({ turno, isOpen, onClose }: Props) => {
     defaultValues: {
       codigo: '',
       nombre: '',
-      tipo: 'diurno',
+      tipo_jornada: 'ordinaria',
       hora_inicio: '08:00',
       hora_fin: '17:00',
       duracion_jornada: 8,
-      tiempo_descanso: 60,
       aplica_recargo_nocturno: false,
-      hora_inicio_nocturno: '18:00',
-      hora_fin_nocturno: '06:00',
-      dias_laborales: ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'],
-      observaciones: '',
+      dias_semana: ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'],
+      horas_semanales_maximas: 48,
+      descripcion: '',
     },
   });
 
   const aplicaRecargo = watch('aplica_recargo_nocturno');
-  const diasSeleccionados = watch('dias_laborales') || [];
+  const diasSeleccionados = watch('dias_semana') || [];
 
   useEffect(() => {
     if (isOpen) {
@@ -58,31 +57,27 @@ export const TurnoFormModal = ({ turno, isOpen, onClose }: Props) => {
         reset({
           codigo: turno.codigo,
           nombre: turno.nombre,
-          tipo: turno.tipo,
-          hora_inicio: turno.hora_inicio,
-          hora_fin: turno.hora_fin,
-          duracion_jornada: turno.duracion_jornada,
-          tiempo_descanso: turno.tiempo_descanso,
+          tipo_jornada: turno.tipo_jornada,
+          hora_inicio: turno.hora_inicio?.slice(0, 5),
+          hora_fin: turno.hora_fin?.slice(0, 5),
+          duracion_jornada: parseFloat(turno.duracion_jornada) || 8,
           aplica_recargo_nocturno: turno.aplica_recargo_nocturno,
-          hora_inicio_nocturno: turno.hora_inicio_nocturno || '18:00',
-          hora_fin_nocturno: turno.hora_fin_nocturno || '06:00',
-          dias_laborales: turno.dias_laborales,
-          observaciones: turno.observaciones || '',
+          dias_semana: turno.dias_semana,
+          horas_semanales_maximas: parseFloat(turno.horas_semanales_maximas) || 48,
+          descripcion: turno.descripcion || '',
         });
       } else {
         reset({
           codigo: '',
           nombre: '',
-          tipo: 'diurno',
+          tipo_jornada: 'ordinaria',
           hora_inicio: '08:00',
           hora_fin: '17:00',
           duracion_jornada: 8,
-          tiempo_descanso: 60,
           aplica_recargo_nocturno: false,
-          hora_inicio_nocturno: '18:00',
-          hora_fin_nocturno: '06:00',
-          dias_laborales: ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'],
-          observaciones: '',
+          dias_semana: ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'],
+          horas_semanales_maximas: 48,
+          descripcion: '',
         });
       }
     }
@@ -90,13 +85,13 @@ export const TurnoFormModal = ({ turno, isOpen, onClose }: Props) => {
 
   const toggleDia = (dia: string) => {
     const current = diasSeleccionados || [];
-    if (current.includes(dia)) {
+    if (current.includes(dia as DiaSemana)) {
       setValue(
-        'dias_laborales',
+        'dias_semana',
         current.filter((d) => d !== dia)
       );
     } else {
-      setValue('dias_laborales', [...current, dia]);
+      setValue('dias_semana', [...current, dia as DiaSemana]);
     }
   };
 
@@ -136,17 +131,17 @@ export const TurnoFormModal = ({ turno, isOpen, onClose }: Props) => {
           />
           <Input
             label="Nombre"
-            placeholder="Turno Diurno"
+            placeholder="Turno Mañana"
             error={errors.nombre?.message}
             {...register('nombre', { required: 'El nombre es obligatorio' })}
           />
         </div>
 
         <Select
-          label="Tipo de Turno"
-          options={tipoTurnoOptions}
-          error={errors.tipo?.message}
-          {...register('tipo', { required: 'Selecciona el tipo' })}
+          label="Tipo de Jornada"
+          options={tipoJornadaOptions}
+          error={errors.tipo_jornada?.message}
+          {...register('tipo_jornada', { required: 'Selecciona el tipo de jornada' })}
         />
 
         <div className="grid grid-cols-3 gap-4">
@@ -163,28 +158,33 @@ export const TurnoFormModal = ({ turno, isOpen, onClose }: Props) => {
             {...register('hora_fin', { required: 'La hora de fin es obligatoria' })}
           />
           <Input
-            label="Duracion (horas)"
+            label="Duración (horas)"
             type="number"
             step="0.5"
             error={errors.duracion_jornada?.message}
             {...register('duracion_jornada', {
-              required: 'La duracion es obligatoria',
+              required: 'La duración es obligatoria',
               valueAsNumber: true,
-              min: { value: 1, message: 'Minimo 1 hora' },
-              max: { value: 12, message: 'Maximo 12 horas' },
+              min: { value: 1, message: 'Mínimo 1 hora' },
+              max: { value: 12, message: 'Máximo 12 horas' },
             })}
           />
         </div>
 
         <Input
-          label="Tiempo de Descanso (minutos)"
+          label="Horas Semanales Máximas"
           type="number"
-          {...register('tiempo_descanso', { valueAsNumber: true, min: 0 })}
+          step="1"
+          {...register('horas_semanales_maximas', {
+            valueAsNumber: true,
+            min: { value: 1, message: 'Mínimo 1 hora' },
+            max: { value: 72, message: 'Máximo 72 horas' },
+          })}
         />
 
         <div className="space-y-3">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Dias Laborales
+            Días de la Semana
           </label>
           <div className="grid grid-cols-4 gap-3">
             {diasSemanaOptions.map((option) => (
@@ -194,7 +194,7 @@ export const TurnoFormModal = ({ turno, isOpen, onClose }: Props) => {
               >
                 <input
                   type="checkbox"
-                  checked={diasSeleccionados.includes(option.value)}
+                  checked={diasSeleccionados.includes(option.value as DiaSemana)}
                   onChange={() => toggleDia(option.value)}
                   className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                 />
@@ -210,22 +210,18 @@ export const TurnoFormModal = ({ turno, isOpen, onClose }: Props) => {
             {...register('aplica_recargo_nocturno')}
           />
           {aplicaRecargo && (
-            <div className="grid grid-cols-2 gap-4 pt-2">
-              <Input
-                label="Hora Inicio Nocturno"
-                type="time"
-                {...register('hora_inicio_nocturno')}
-              />
-              <Input label="Hora Fin Nocturno" type="time" {...register('hora_fin_nocturno')} />
-            </div>
+            <p className="text-xs text-amber-700 dark:text-amber-300">
+              El recargo nocturno se calculará automáticamente según la franja horaria del turno y
+              la configuración de recargos del sistema.
+            </p>
           )}
         </div>
 
         <Textarea
-          label="Observaciones"
-          placeholder="Observaciones adicionales..."
+          label="Descripción"
+          placeholder="Descripción del turno..."
           rows={2}
-          {...register('observaciones')}
+          {...register('descripcion')}
         />
       </form>
     </BaseModal>

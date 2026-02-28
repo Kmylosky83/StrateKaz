@@ -24,7 +24,6 @@ import {
   Edit,
   Trash2,
   Search,
-  RefreshCw,
   ClipboardList,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
@@ -45,7 +44,24 @@ import {
   useProgramasVigilancia,
   useDiagnosticos,
   useEstadisticaMedica,
+  useDeleteExamenMedico,
+  useDeleteRestriccion,
+  useDeleteCasoVigilancia,
+  useDeleteProgramaVigilancia,
 } from '../hooks/useMedicinaLaboral';
+import type {
+  ExamenMedico,
+  RestriccionMedica,
+  CasoVigilancia,
+  ProgramaVigilancia,
+  DiagnosticoOcupacional,
+} from '../hooks/useMedicinaLaboral';
+import ExamenMedicoFormModal from '../components/ExamenMedicoFormModal';
+import RestriccionMedicaFormModal from '../components/RestriccionMedicaFormModal';
+import ProgramaVigilanciaFormModal from '../components/ProgramaVigilanciaFormModal';
+import CasoVigilanciaFormModal from '../components/CasoVigilanciaFormModal';
+import DiagnosticoOcupacionalFormModal from '../components/DiagnosticoOcupacionalFormModal';
+import { ConfirmDialog } from '@/components/common';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -167,6 +183,26 @@ const formatSeveridad = (severidad: string): string => {
 
 const ExamenesMedicosSection = () => {
   const { data: examenes, isLoading } = useExamenesMedicos();
+  const deleteMutation = useDeleteExamenMedico();
+  const [selectedItem, setSelectedItem] = useState<ExamenMedico | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const handleNew = () => {
+    setSelectedItem(null);
+    setModalOpen(true);
+  };
+  const handleEdit = (item: ExamenMedico) => {
+    setSelectedItem(item);
+    setModalOpen(true);
+  };
+  const handleCloseModal = () => {
+    setSelectedItem(null);
+    setModalOpen(false);
+  };
+  const handleDelete = () => {
+    if (deleteId) deleteMutation.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+  };
 
   if (isLoading) {
     return (
@@ -178,15 +214,18 @@ const ExamenesMedicosSection = () => {
 
   if (!examenes || examenes.length === 0) {
     return (
-      <EmptyState
-        icon={<Stethoscope className="w-16 h-16" />}
-        title="No hay exámenes médicos registrados"
-        description="Comience programando exámenes médicos para sus colaboradores"
-        action={{
-          label: 'Programar Examen',
-          onClick: () => {},
-        }}
-      />
+      <>
+        <EmptyState
+          icon={<Stethoscope className="w-16 h-16" />}
+          title="No hay exámenes médicos registrados"
+          description="Comience programando exámenes médicos para sus colaboradores"
+          action={{
+            label: 'Programar Examen',
+            onClick: handleNew,
+          }}
+        />
+        <ExamenMedicoFormModal item={selectedItem} isOpen={modalOpen} onClose={handleCloseModal} />
+      </>
     );
   }
 
@@ -244,7 +283,7 @@ const ExamenesMedicosSection = () => {
         title="Exámenes Médicos"
         onFilter={() => {}}
         onExport={() => {}}
-        primaryAction={{ label: 'Programar Examen', onClick: () => {} }}
+        primaryAction={{ label: 'Programar Examen', onClick: handleNew }}
       />
 
       {/* Examenes Table */}
@@ -314,11 +353,11 @@ const ExamenesMedicosSection = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(examen)}>
                         <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setDeleteId(examen.id)}>
+                        <Trash2 className="w-4 h-4 text-danger-600" />
                       </Button>
                     </div>
                   </td>
@@ -328,6 +367,16 @@ const ExamenesMedicosSection = () => {
           </table>
         </div>
       </Card>
+
+      <ExamenMedicoFormModal item={selectedItem} isOpen={modalOpen} onClose={handleCloseModal} />
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Eliminar Examen Médico"
+        description="¿Está seguro de que desea eliminar este examen médico? Esta acción no se puede deshacer."
+        loading={deleteMutation.isPending}
+      />
     </div>
   );
 };
@@ -336,6 +385,26 @@ const ExamenesMedicosSection = () => {
 
 const RestriccionesMedicasSection = () => {
   const { data: restricciones, isLoading } = useRestricciones();
+  const deleteMutation = useDeleteRestriccion();
+  const [selectedItem, setSelectedItem] = useState<RestriccionMedica | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const handleNew = () => {
+    setSelectedItem(null);
+    setModalOpen(true);
+  };
+  const handleEdit = (item: RestriccionMedica) => {
+    setSelectedItem(item);
+    setModalOpen(true);
+  };
+  const handleCloseModal = () => {
+    setSelectedItem(null);
+    setModalOpen(false);
+  };
+  const handleDelete = () => {
+    if (deleteId) deleteMutation.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+  };
 
   if (isLoading) {
     return (
@@ -347,15 +416,22 @@ const RestriccionesMedicasSection = () => {
 
   if (!restricciones || restricciones.length === 0) {
     return (
-      <EmptyState
-        icon={<AlertOctagon className="w-16 h-16" />}
-        title="No hay restricciones médicas registradas"
-        description="Registre las restricciones médicas de los colaboradores"
-        action={{
-          label: 'Nueva Restricción',
-          onClick: () => {},
-        }}
-      />
+      <>
+        <EmptyState
+          icon={<AlertOctagon className="w-16 h-16" />}
+          title="No hay restricciones médicas registradas"
+          description="Registre las restricciones médicas de los colaboradores"
+          action={{
+            label: 'Nueva Restricción',
+            onClick: handleNew,
+          }}
+        />
+        <RestriccionMedicaFormModal
+          item={selectedItem}
+          isOpen={modalOpen}
+          onClose={handleCloseModal}
+        />
+      </>
     );
   }
 
@@ -450,7 +526,7 @@ const RestriccionesMedicasSection = () => {
       <SectionToolbar
         title="Restricciones Médicas"
         onFilter={() => {}}
-        primaryAction={{ label: 'Nueva Restricción', onClick: () => {} }}
+        primaryAction={{ label: 'Nueva Restricción', onClick: handleNew }}
       />
 
       {/* Restricciones Table */}
@@ -526,13 +602,10 @@ const RestriccionesMedicasSection = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(restriccion)}>
                         <Edit className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => setDeleteId(restriccion.id)}>
                         <Trash2 className="w-4 h-4 text-danger-600" />
                       </Button>
                     </div>
@@ -543,6 +616,20 @@ const RestriccionesMedicasSection = () => {
           </table>
         </div>
       </Card>
+
+      <RestriccionMedicaFormModal
+        item={selectedItem}
+        isOpen={modalOpen}
+        onClose={handleCloseModal}
+      />
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Eliminar Restricción Médica"
+        description="¿Está seguro de que desea eliminar esta restricción médica? Esta acción no se puede deshacer."
+        loading={deleteMutation.isPending}
+      />
     </div>
   );
 };
@@ -552,6 +639,43 @@ const RestriccionesMedicasSection = () => {
 const VigilanciaEpidemiologicaSection = () => {
   const { data: programas, isLoading: loadingProgramas } = useProgramasVigilancia();
   const { data: casos, isLoading: loadingCasos } = useCasosVigilancia();
+  const deleteProgramaMutation = useDeleteProgramaVigilancia();
+  const deleteCasoMutation = useDeleteCasoVigilancia();
+
+  const [selectedPrograma, setSelectedPrograma] = useState<ProgramaVigilancia | null>(null);
+  const [programaModalOpen, setProgramaModalOpen] = useState(false);
+  const [selectedCaso, setSelectedCaso] = useState<CasoVigilancia | null>(null);
+  const [casoModalOpen, setCasoModalOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<{ type: 'programa' | 'caso'; id: number } | null>(null);
+
+  const handleNewPrograma = () => {
+    setSelectedPrograma(null);
+    setProgramaModalOpen(true);
+  };
+  const handleNewCaso = () => {
+    setSelectedCaso(null);
+    setCasoModalOpen(true);
+  };
+  const handleEditCaso = (item: CasoVigilancia) => {
+    setSelectedCaso(item);
+    setCasoModalOpen(true);
+  };
+  const handleCloseProgramaModal = () => {
+    setSelectedPrograma(null);
+    setProgramaModalOpen(false);
+  };
+  const handleCloseCasoModal = () => {
+    setSelectedCaso(null);
+    setCasoModalOpen(false);
+  };
+  const handleDelete = () => {
+    if (!deleteId) return;
+    if (deleteId.type === 'programa') {
+      deleteProgramaMutation.mutate(deleteId.id, { onSuccess: () => setDeleteId(null) });
+    } else {
+      deleteCasoMutation.mutate(deleteId.id, { onSuccess: () => setDeleteId(null) });
+    }
+  };
 
   if (loadingProgramas || loadingCasos) {
     return (
@@ -563,15 +687,27 @@ const VigilanciaEpidemiologicaSection = () => {
 
   if ((!programas || programas.length === 0) && (!casos || casos.length === 0)) {
     return (
-      <EmptyState
-        icon={<Activity className="w-16 h-16" />}
-        title="No hay programas de vigilancia registrados"
-        description="Configure programas de vigilancia epidemiológica ocupacional"
-        action={{
-          label: 'Nuevo Caso',
-          onClick: () => {},
-        }}
-      />
+      <>
+        <EmptyState
+          icon={<Activity className="w-16 h-16" />}
+          title="No hay programas de vigilancia registrados"
+          description="Configure programas de vigilancia epidemiológica ocupacional"
+          action={{
+            label: 'Nuevo Programa',
+            onClick: handleNewPrograma,
+          }}
+        />
+        <ProgramaVigilanciaFormModal
+          item={selectedPrograma}
+          isOpen={programaModalOpen}
+          onClose={handleCloseProgramaModal}
+        />
+        <CasoVigilanciaFormModal
+          item={selectedCaso}
+          isOpen={casoModalOpen}
+          onClose={handleCloseCasoModal}
+        />
+      </>
     );
   }
 
@@ -659,12 +795,12 @@ const VigilanciaEpidemiologicaSection = () => {
         onFilter={() => {}}
         extraActions={[
           {
-            label: 'Registrar Seguimiento',
-            onClick: () => {},
-            icon: <RefreshCw className="w-4 h-4" />,
+            label: 'Nuevo Programa',
+            onClick: handleNewPrograma,
+            icon: <ClipboardList className="w-4 h-4" />,
           },
         ]}
-        primaryAction={{ label: 'Nuevo Caso', onClick: () => {} }}
+        primaryAction={{ label: 'Nuevo Caso', onClick: handleNewCaso }}
       />
 
       {/* Casos Table */}
@@ -730,14 +866,15 @@ const VigilanciaEpidemiologicaSection = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <RefreshCw className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => handleEditCaso(caso)}>
                         <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDeleteId({ type: 'caso', id: caso.id })}
+                      >
+                        <Trash2 className="w-4 h-4 text-danger-600" />
                       </Button>
                     </div>
                   </td>
@@ -747,6 +884,25 @@ const VigilanciaEpidemiologicaSection = () => {
           </table>
         </div>
       </Card>
+
+      <ProgramaVigilanciaFormModal
+        item={selectedPrograma}
+        isOpen={programaModalOpen}
+        onClose={handleCloseProgramaModal}
+      />
+      <CasoVigilanciaFormModal
+        item={selectedCaso}
+        isOpen={casoModalOpen}
+        onClose={handleCloseCasoModal}
+      />
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        title={deleteId?.type === 'programa' ? 'Eliminar Programa' : 'Eliminar Caso'}
+        description="¿Está seguro de que desea eliminar este registro? Esta acción no se puede deshacer."
+        loading={deleteProgramaMutation.isPending || deleteCasoMutation.isPending}
+      />
     </div>
   );
 };
@@ -756,6 +912,21 @@ const VigilanciaEpidemiologicaSection = () => {
 const DiagnosticosOcupacionalesSection = () => {
   const { data: diagnosticos, isLoading } = useDiagnosticos();
   const [searchCIE10, setSearchCIE10] = useState('');
+  const [selectedItem, setSelectedItem] = useState<DiagnosticoOcupacional | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const handleNew = () => {
+    setSelectedItem(null);
+    setModalOpen(true);
+  };
+  const handleEdit = (item: DiagnosticoOcupacional) => {
+    setSelectedItem(item);
+    setModalOpen(true);
+  };
+  const handleCloseModal = () => {
+    setSelectedItem(null);
+    setModalOpen(false);
+  };
 
   if (isLoading) {
     return (
@@ -767,15 +938,22 @@ const DiagnosticosOcupacionalesSection = () => {
 
   if (!diagnosticos || diagnosticos.length === 0) {
     return (
-      <EmptyState
-        icon={<FileText className="w-16 h-16" />}
-        title="No hay diagnósticos registrados"
-        description="Registre los diagnósticos ocupacionales y comunes de sus colaboradores"
-        action={{
-          label: 'Nuevo Diagnóstico',
-          onClick: () => {},
-        }}
-      />
+      <>
+        <EmptyState
+          icon={<FileText className="w-16 h-16" />}
+          title="No hay diagnósticos registrados"
+          description="Registre los diagnósticos ocupacionales y comunes de sus colaboradores"
+          action={{
+            label: 'Nuevo Diagnóstico',
+            onClick: handleNew,
+          }}
+        />
+        <DiagnosticoOcupacionalFormModal
+          item={selectedItem}
+          isOpen={modalOpen}
+          onClose={handleCloseModal}
+        />
+      </>
     );
   }
 
@@ -839,7 +1017,7 @@ const DiagnosticosOcupacionalesSection = () => {
           searchValue={searchCIE10}
           searchPlaceholder="Buscar por código CIE-10 o nombre..."
           onSearchChange={setSearchCIE10}
-          primaryAction={{ label: 'Nuevo Diagnóstico', onClick: () => {} }}
+          primaryAction={{ label: 'Nuevo Diagnóstico', onClick: handleNew }}
         />
       </Card>
 
@@ -909,14 +1087,8 @@ const DiagnosticosOcupacionalesSection = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(diagnostico)}>
                         <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Trash2 className="w-4 h-4 text-danger-600" />
                       </Button>
                     </div>
                   </td>
@@ -934,6 +1106,12 @@ const DiagnosticosOcupacionalesSection = () => {
           description={`No hay diagnósticos que coincidan con "${searchCIE10}"`}
         />
       )}
+
+      <DiagnosticoOcupacionalFormModal
+        item={selectedItem}
+        isOpen={modalOpen}
+        onClose={handleCloseModal}
+      />
     </div>
   );
 };

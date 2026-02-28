@@ -45,21 +45,41 @@ import {
   KpiCardGrid,
   SectionToolbar,
   StatusBadge,
+  ConfirmDialog,
 } from '@/components/common';
 import { formatStatusLabel } from '@/components/common/StatusBadge';
 import {
   useAnalisisVulnerabilidad,
+  useDeleteAnalisisVulnerabilidad,
   usePlanesEmergencia,
+  useDeletePlanEmergencia,
   usePlanosEvacuacion,
+  useDeletePlanoEvacuacion,
   useBrigadas,
+  useDeleteBrigada,
   useSimulacros,
+  useDeleteSimulacro,
   useRecursosEmergencia,
+  useDeleteRecursoEmergencia,
 } from '../hooks/useEmergencias';
+import type {
+  AnalisisVulnerabilidad,
+  PlanEmergencia,
+  PlanoEvacuacion,
+  Brigada,
+  Simulacro,
+  RecursoEmergencia,
+  TipoRecursoEmergencia,
+} from '../types/emergencias.types';
+import AnalisisVulnerabilidadFormModal from '../components/AnalisisVulnerabilidadFormModal';
+import PlanEmergenciaFormModal from '../components/PlanEmergenciaFormModal';
+import PlanoEvacuacionFormModal from '../components/PlanoEvacuacionFormModal';
+import BrigadaFormModal from '../components/BrigadaFormModal';
+import SimulacroFormModal from '../components/SimulacroFormModal';
+import RecursoEmergenciaFormModal from '../components/RecursoEmergenciaFormModal';
 import { cn } from '@/utils/cn';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-
-import type { TipoRecursoEmergencia } from '../types/emergencias.types';
 
 // ==================== UTILITY FUNCTIONS ====================
 
@@ -112,6 +132,27 @@ const getVariantOverride = (status: string) => EMERGENCIAS_VARIANT_MAP[status] |
 const AnalisisVulnerabilidadSection = () => {
   const { data, isLoading } = useAnalisisVulnerabilidad();
   const analisis = data?.results ?? [];
+  const deleteMutation = useDeleteAnalisisVulnerabilidad();
+
+  const [selectedItem, setSelectedItem] = useState<AnalisisVulnerabilidad | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const handleNew = () => {
+    setSelectedItem(null);
+    setModalOpen(true);
+  };
+  const handleEdit = (item: AnalisisVulnerabilidad) => {
+    setSelectedItem(item);
+    setModalOpen(true);
+  };
+  const handleCloseModal = () => {
+    setSelectedItem(null);
+    setModalOpen(false);
+  };
+  const handleDelete = () => {
+    if (deleteId) deleteMutation.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+  };
 
   if (isLoading) {
     return (
@@ -129,7 +170,7 @@ const AnalisisVulnerabilidadSection = () => {
         description="Comience identificando las amenazas y vulnerabilidades de la organización"
         action={{
           label: 'Nuevo Análisis',
-          onClick: () => {},
+          onClick: handleNew,
           icon: <Plus className="w-4 h-4" />,
         }}
       />
@@ -185,7 +226,7 @@ const AnalisisVulnerabilidadSection = () => {
         onExport={() => {}}
         primaryAction={{
           label: 'Nuevo Análisis',
-          onClick: () => {},
+          onClick: handleNew,
         }}
       />
 
@@ -258,13 +299,13 @@ const AnalisisVulnerabilidadSection = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(item)}>
                         <Eye className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(item)}>
                         <Edit className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => setDeleteId(item.id)}>
                         <Trash2 className="w-4 h-4 text-danger-600" />
                       </Button>
                     </div>
@@ -275,6 +316,21 @@ const AnalisisVulnerabilidadSection = () => {
           </table>
         </div>
       </Card>
+
+      <AnalisisVulnerabilidadFormModal
+        item={selectedItem}
+        isOpen={modalOpen}
+        onClose={handleCloseModal}
+      />
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        title="Eliminar Análisis"
+        message="¿Está seguro de eliminar este análisis de vulnerabilidad? Esta acción no se puede deshacer."
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteId(null)}
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 };
@@ -284,6 +340,27 @@ const AnalisisVulnerabilidadSection = () => {
 const PlanesEmergenciaSection = () => {
   const { data, isLoading } = usePlanesEmergencia();
   const planes = data?.results ?? [];
+  const deleteMutation = useDeletePlanEmergencia();
+
+  const [selectedItem, setSelectedItem] = useState<PlanEmergencia | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const handleNew = () => {
+    setSelectedItem(null);
+    setModalOpen(true);
+  };
+  const handleEdit = (item: PlanEmergencia) => {
+    setSelectedItem(item);
+    setModalOpen(true);
+  };
+  const handleCloseModal = () => {
+    setSelectedItem(null);
+    setModalOpen(false);
+  };
+  const handleDelete = () => {
+    if (deleteId) deleteMutation.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+  };
 
   if (isLoading) {
     return (
@@ -301,7 +378,7 @@ const PlanesEmergenciaSection = () => {
         description="Comience creando el plan de emergencias de la organización"
         action={{
           label: 'Nuevo Plan',
-          onClick: () => {},
+          onClick: handleNew,
           icon: <Plus className="w-4 h-4" />,
         }}
       />
@@ -316,7 +393,7 @@ const PlanesEmergenciaSection = () => {
         onExport={() => {}}
         primaryAction={{
           label: 'Nuevo Plan',
-          onClick: () => {},
+          onClick: handleNew,
         }}
       />
 
@@ -382,17 +459,46 @@ const PlanesEmergenciaSection = () => {
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2">
-                <Button variant="ghost" size="sm" leftIcon={<Eye className="w-4 h-4" />}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leftIcon={<Eye className="w-4 h-4" />}
+                  onClick={() => handleEdit(plan as PlanEmergencia)}
+                >
                   Ver
                 </Button>
-                <Button variant="ghost" size="sm" leftIcon={<Edit className="w-4 h-4" />}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leftIcon={<Edit className="w-4 h-4" />}
+                  onClick={() => handleEdit(plan as PlanEmergencia)}
+                >
                   Editar
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leftIcon={<Trash2 className="w-4 h-4 text-danger-600" />}
+                  onClick={() => setDeleteId(plan.id)}
+                >
+                  Eliminar
                 </Button>
               </div>
             </div>
           </Card>
         ))}
       </div>
+
+      <PlanEmergenciaFormModal item={selectedItem} isOpen={modalOpen} onClose={handleCloseModal} />
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        title="Eliminar Plan"
+        message="¿Está seguro de eliminar este plan de emergencia? Esta acción no se puede deshacer."
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteId(null)}
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 };
@@ -402,6 +508,27 @@ const PlanesEmergenciaSection = () => {
 const PlanosEvacuacionSection = () => {
   const { data, isLoading } = usePlanosEvacuacion();
   const planos = data?.results ?? [];
+  const deleteMutation = useDeletePlanoEvacuacion();
+
+  const [selectedItem, setSelectedItem] = useState<PlanoEvacuacion | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const handleNew = () => {
+    setSelectedItem(null);
+    setModalOpen(true);
+  };
+  const handleEdit = (item: PlanoEvacuacion) => {
+    setSelectedItem(item);
+    setModalOpen(true);
+  };
+  const handleCloseModal = () => {
+    setSelectedItem(null);
+    setModalOpen(false);
+  };
+  const handleDelete = () => {
+    if (deleteId) deleteMutation.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+  };
 
   if (isLoading) {
     return (
@@ -419,7 +546,7 @@ const PlanosEvacuacionSection = () => {
         description="Comience cargando los planos de evacuación de las instalaciones"
         action={{
           label: 'Nuevo Plano',
-          onClick: () => {},
+          onClick: handleNew,
           icon: <Plus className="w-4 h-4" />,
         }}
       />
@@ -434,7 +561,7 @@ const PlanosEvacuacionSection = () => {
         onFilter={() => {}}
         primaryAction={{
           label: 'Nuevo Plano',
-          onClick: () => {},
+          onClick: handleNew,
         }}
       />
 
@@ -496,17 +623,43 @@ const PlanosEvacuacionSection = () => {
               </div>
 
               <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
-                <Button variant="ghost" size="sm" leftIcon={<Eye className="w-4 h-4" />}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leftIcon={<Eye className="w-4 h-4" />}
+                  onClick={() => handleEdit(plano as PlanoEvacuacion)}
+                >
                   Ver Plano
                 </Button>
-                <Button variant="ghost" size="sm" leftIcon={<Edit className="w-4 h-4" />}>
-                  Editar
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    leftIcon={<Edit className="w-4 h-4" />}
+                    onClick={() => handleEdit(plano as PlanoEvacuacion)}
+                  >
+                    Editar
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setDeleteId(plano.id)}>
+                    <Trash2 className="w-4 h-4 text-danger-600" />
+                  </Button>
+                </div>
               </div>
             </div>
           </Card>
         ))}
       </div>
+
+      <PlanoEvacuacionFormModal item={selectedItem} isOpen={modalOpen} onClose={handleCloseModal} />
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        title="Eliminar Plano"
+        message="¿Está seguro de eliminar este plano de evacuación? Esta acción no se puede deshacer."
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteId(null)}
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 };
@@ -516,6 +669,27 @@ const PlanosEvacuacionSection = () => {
 const BrigadasSection = () => {
   const { data, isLoading } = useBrigadas();
   const brigadas = data?.results ?? [];
+  const deleteMutation = useDeleteBrigada();
+
+  const [selectedItem, setSelectedItem] = useState<Brigada | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const handleNew = () => {
+    setSelectedItem(null);
+    setModalOpen(true);
+  };
+  const handleEdit = (item: Brigada) => {
+    setSelectedItem(item);
+    setModalOpen(true);
+  };
+  const handleCloseModal = () => {
+    setSelectedItem(null);
+    setModalOpen(false);
+  };
+  const handleDelete = () => {
+    if (deleteId) deleteMutation.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+  };
 
   if (isLoading) {
     return (
@@ -533,7 +707,7 @@ const BrigadasSection = () => {
         description="Comience conformando las brigadas de emergencia"
         action={{
           label: 'Nueva Brigada',
-          onClick: () => {},
+          onClick: handleNew,
           icon: <Plus className="w-4 h-4" />,
         }}
       />
@@ -580,7 +754,7 @@ const BrigadasSection = () => {
         onExport={() => {}}
         primaryAction={{
           label: 'Nueva Brigada',
-          onClick: () => {},
+          onClick: handleNew,
         }}
       />
 
@@ -655,17 +829,33 @@ const BrigadasSection = () => {
               )}
 
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                <Button variant="ghost" size="sm" leftIcon={<Eye className="w-4 h-4" />}>
-                  Ver
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leftIcon={<Edit className="w-4 h-4" />}
+                  onClick={() => handleEdit(brigada as Brigada)}
+                >
+                  Editar
                 </Button>
-                <Button variant="ghost" size="sm" leftIcon={<Users className="w-4 h-4" />}>
-                  Brigadistas
+                <Button variant="ghost" size="sm" onClick={() => setDeleteId(brigada.id)}>
+                  <Trash2 className="w-4 h-4 text-danger-600" />
                 </Button>
               </div>
             </div>
           </Card>
         ))}
       </div>
+
+      <BrigadaFormModal item={selectedItem} isOpen={modalOpen} onClose={handleCloseModal} />
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        title="Eliminar Brigada"
+        message="¿Está seguro de eliminar esta brigada? Esta acción no se puede deshacer."
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteId(null)}
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 };
@@ -675,6 +865,27 @@ const BrigadasSection = () => {
 const SimulacrosSection = () => {
   const { data, isLoading } = useSimulacros();
   const simulacros = data?.results ?? [];
+  const deleteMutation = useDeleteSimulacro();
+
+  const [selectedItem, setSelectedItem] = useState<Simulacro | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const handleNew = () => {
+    setSelectedItem(null);
+    setModalOpen(true);
+  };
+  const handleEdit = (item: Simulacro) => {
+    setSelectedItem(item);
+    setModalOpen(true);
+  };
+  const handleCloseModal = () => {
+    setSelectedItem(null);
+    setModalOpen(false);
+  };
+  const handleDelete = () => {
+    if (deleteId) deleteMutation.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+  };
 
   if (isLoading) {
     return (
@@ -692,7 +903,7 @@ const SimulacrosSection = () => {
         description="Comience programando simulacros de emergencia"
         action={{
           label: 'Nuevo Simulacro',
-          onClick: () => {},
+          onClick: handleNew,
           icon: <Plus className="w-4 h-4" />,
         }}
       />
@@ -747,7 +958,7 @@ const SimulacrosSection = () => {
         onExport={() => {}}
         primaryAction={{
           label: 'Nuevo Simulacro',
-          onClick: () => {},
+          onClick: handleNew,
         }}
       />
 
@@ -826,14 +1037,22 @@ const SimulacrosSection = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(simulacro as Simulacro)}
+                      >
                         <Eye className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(simulacro as Simulacro)}
+                      >
                         <Edit className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
-                        <FileText className="w-4 h-4" />
+                      <Button variant="ghost" size="sm" onClick={() => setDeleteId(simulacro.id)}>
+                        <Trash2 className="w-4 h-4 text-danger-600" />
                       </Button>
                     </div>
                   </td>
@@ -843,6 +1062,17 @@ const SimulacrosSection = () => {
           </table>
         </div>
       </Card>
+
+      <SimulacroFormModal item={selectedItem} isOpen={modalOpen} onClose={handleCloseModal} />
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        title="Eliminar Simulacro"
+        message="¿Está seguro de eliminar este simulacro? Esta acción no se puede deshacer."
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteId(null)}
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 };
@@ -852,6 +1082,27 @@ const SimulacrosSection = () => {
 const RecursosEmergenciaSection = () => {
   const { data, isLoading } = useRecursosEmergencia();
   const recursos = data?.results ?? [];
+  const deleteMutation = useDeleteRecursoEmergencia();
+
+  const [selectedItem, setSelectedItem] = useState<RecursoEmergencia | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const handleNew = () => {
+    setSelectedItem(null);
+    setModalOpen(true);
+  };
+  const handleEdit = (item: RecursoEmergencia) => {
+    setSelectedItem(item);
+    setModalOpen(true);
+  };
+  const handleCloseModal = () => {
+    setSelectedItem(null);
+    setModalOpen(false);
+  };
+  const handleDelete = () => {
+    if (deleteId) deleteMutation.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+  };
 
   if (isLoading) {
     return (
@@ -869,7 +1120,7 @@ const RecursosEmergenciaSection = () => {
         description="Comience registrando los equipos y recursos de emergencia"
         action={{
           label: 'Nuevo Recurso',
-          onClick: () => {},
+          onClick: handleNew,
           icon: <Plus className="w-4 h-4" />,
         }}
       />
@@ -923,7 +1174,7 @@ const RecursosEmergenciaSection = () => {
         onExport={() => {}}
         primaryAction={{
           label: 'Nuevo Recurso',
-          onClick: () => {},
+          onClick: handleNew,
         }}
       />
 
@@ -1009,14 +1260,22 @@ const RecursosEmergenciaSection = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(recurso as RecursoEmergencia)}
+                      >
                         <Eye className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(recurso as RecursoEmergencia)}
+                      >
                         <Edit className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
-                        <CheckCircle className="w-4 h-4" />
+                      <Button variant="ghost" size="sm" onClick={() => setDeleteId(recurso.id)}>
+                        <Trash2 className="w-4 h-4 text-danger-600" />
                       </Button>
                     </div>
                   </td>
@@ -1026,6 +1285,21 @@ const RecursosEmergenciaSection = () => {
           </table>
         </div>
       </Card>
+
+      <RecursoEmergenciaFormModal
+        item={selectedItem}
+        isOpen={modalOpen}
+        onClose={handleCloseModal}
+      />
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        title="Eliminar Recurso"
+        message="¿Está seguro de eliminar este recurso de emergencia? Esta acción no se puede deshacer."
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteId(null)}
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 };

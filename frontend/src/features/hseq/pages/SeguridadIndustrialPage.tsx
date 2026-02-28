@@ -1,5 +1,5 @@
 /**
- * Pagina: Gestion de Seguridad Industrial HSEQ
+ * Página: Gestión de Seguridad Industrial HSEQ
  *
  * Sistema completo de seguridad industrial con 4 subsecciones:
  * - Permisos de Trabajo
@@ -17,7 +17,6 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  Eye,
   Edit,
   AlertTriangle,
   TrendingUp,
@@ -25,6 +24,7 @@ import {
   Package,
   Calendar,
   User,
+  Trash2,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
 import {
@@ -38,6 +38,7 @@ import {
   SectionToolbar,
   StatusBadge,
   Progress,
+  ConfirmDialog,
 } from '@/components/common';
 import { formatStatusLabel } from '@/components/common/StatusBadge';
 import {
@@ -45,7 +46,21 @@ import {
   useInspecciones,
   useEntregasEPP,
   useProgramasSeguridad,
+  useDeletePermisoTrabajo,
+  useDeleteInspeccion,
+  useDeleteEntregaEPP,
+  useDeleteProgramaSeguridad,
 } from '../hooks/useSeguridadIndustrial';
+import type {
+  PermisoTrabajo,
+  Inspeccion,
+  EntregaEPP,
+  ProgramaSeguridad,
+} from '../types/seguridad-industrial.types';
+import PermisoTrabajoFormModal from '../components/PermisoTrabajoFormModal';
+import InspeccionFormModal from '../components/InspeccionFormModal';
+import EntregaEPPFormModal from '../components/EntregaEPPFormModal';
+import ProgramaSeguridadFormModal from '../components/ProgramaSeguridadFormModal';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -56,14 +71,14 @@ const formatTipo = (tipo: string): string => {
     TRABAJO_ALTURAS: 'Trabajo en Alturas',
     ESPACIOS_CONFINADOS: 'Espacios Confinados',
     TRABAJO_CALIENTE: 'Trabajo en Caliente',
-    TRABAJO_ELECTRICO: 'Trabajo Electrico',
-    EXCAVACION: 'Excavacion',
-    PREVENCION_RIESGOS: 'Prevencion de Riesgos',
-    CAPACITACION: 'Capacitacion',
+    TRABAJO_ELECTRICO: 'Trabajo Eléctrico',
+    EXCAVACION: 'Excavación',
+    PREVENCION_RIESGOS: 'Prevención de Riesgos',
+    CAPACITACION: 'Capacitación',
     VIGILANCIA_SALUD: 'Vigilancia de Salud',
-    INSPECCION: 'Inspeccion',
-    PREPARACION_EMERGENCIAS: 'Preparacion para Emergencias',
-    INVESTIGACION_INCIDENTES: 'Investigacion de Incidentes',
+    INSPECCION: 'Inspección',
+    PREPARACION_EMERGENCIAS: 'Preparación para Emergencias',
+    INVESTIGACION_INCIDENTES: 'Investigación de Incidentes',
     MEJORA_CONTINUA: 'Mejora Continua',
   };
   return tipoMap[tipo] || formatStatusLabel(tipo);
@@ -71,14 +86,14 @@ const formatTipo = (tipo: string): string => {
 
 const formatCategoria = (categoria: string): string => {
   const categoriaMap: Record<string, string> = {
-    CABEZA: 'Proteccion de Cabeza',
-    OJOS_CARA: 'Proteccion de Ojos y Cara',
-    AUDITIVA: 'Proteccion Auditiva',
-    RESPIRATORIA: 'Proteccion Respiratoria',
-    MANOS: 'Proteccion de Manos',
-    PIES: 'Proteccion de Pies',
-    CUERPO: 'Proteccion de Cuerpo',
-    CAIDAS: 'Proteccion contra Caidas',
+    CABEZA: 'Protección de Cabeza',
+    OJOS_CARA: 'Protección de Ojos y Cara',
+    AUDITIVA: 'Protección Auditiva',
+    RESPIRATORIA: 'Protección Respiratoria',
+    MANOS: 'Protección de Manos',
+    PIES: 'Protección de Pies',
+    CUERPO: 'Protección de Cuerpo',
+    CAIDAS: 'Protección contra Caídas',
     OTROS: 'Otros',
   };
   return categoriaMap[categoria] || formatStatusLabel(categoria);
@@ -88,7 +103,30 @@ const formatCategoria = (categoria: string): string => {
 
 const PermisosTrabajoSection = () => {
   const { data, isLoading } = usePermisosTrabajo();
+  const deleteMutation = useDeletePermisoTrabajo();
   const permisos = data?.results ?? [];
+
+  const [selectedItem, setSelectedItem] = useState<PermisoTrabajo | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const handleNew = () => {
+    setSelectedItem(null);
+    setModalOpen(true);
+  };
+  const handleEdit = (item: PermisoTrabajo) => {
+    setSelectedItem(item);
+    setModalOpen(true);
+  };
+  const handleCloseModal = () => {
+    setSelectedItem(null);
+    setModalOpen(false);
+  };
+  const handleDelete = () => {
+    if (deleteId) {
+      deleteMutation.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -100,16 +138,23 @@ const PermisosTrabajoSection = () => {
 
   if (!permisos || permisos.length === 0) {
     return (
-      <EmptyState
-        icon={<FileText className="w-16 h-16" />}
-        title="No hay permisos de trabajo registrados"
-        description="Comience emitiendo permisos de trabajo para actividades de alto riesgo"
-        action={{
-          label: 'Nuevo Permiso',
-          onClick: () => {},
-          icon: <Plus className="w-4 h-4" />,
-        }}
-      />
+      <>
+        <EmptyState
+          icon={<FileText className="w-16 h-16" />}
+          title="No hay permisos de trabajo registrados"
+          description="Comience emitiendo permisos de trabajo para actividades de alto riesgo"
+          action={{
+            label: 'Nuevo Permiso',
+            onClick: handleNew,
+            icon: <Plus className="w-4 h-4" />,
+          }}
+        />
+        <PermisoTrabajoFormModal
+          item={selectedItem}
+          isOpen={modalOpen}
+          onClose={handleCloseModal}
+        />
+      </>
     );
   }
 
@@ -122,14 +167,13 @@ const PermisosTrabajoSection = () => {
 
   return (
     <div className="space-y-6">
-      {/* KPI Cards */}
       <KpiCardGrid columns={4}>
         <KpiCard
           label="Total Permisos"
           value={stats.total}
           icon={<FileText className="w-6 h-6" />}
           color="blue"
-          description="Ultimos 30 dias"
+          description="Últimos 30 días"
         />
         <KpiCard
           label="Aprobados"
@@ -139,7 +183,7 @@ const PermisosTrabajoSection = () => {
           description="Listos para ejecutar"
         />
         <KpiCard
-          label="En Ejecucion"
+          label="En Ejecución"
           value={stats.enEjecucion}
           icon={<Activity className="w-6 h-6" />}
           color="primary"
@@ -150,19 +194,15 @@ const PermisosTrabajoSection = () => {
           value={stats.pendientes}
           icon={<Clock className="w-6 h-6" />}
           color="warning"
-          description="Requieren aprobacion"
+          description="Requieren aprobación"
         />
       </KpiCardGrid>
 
-      {/* Actions */}
       <SectionToolbar
         title="Permisos de Trabajo"
         onFilter={() => {}}
         onExport={() => {}}
-        primaryAction={{
-          label: 'Nuevo Permiso',
-          onClick: () => {},
-        }}
+        primaryAction={{ label: 'Nuevo Permiso', onClick: handleNew }}
       />
 
       {/* Permisos Grid */}
@@ -170,7 +210,6 @@ const PermisosTrabajoSection = () => {
         {permisos.map((permiso) => (
           <Card key={permiso.id} variant="bordered" padding="md">
             <div className="space-y-4">
-              {/* Header */}
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
@@ -193,7 +232,6 @@ const PermisosTrabajoSection = () => {
                 </div>
               </div>
 
-              {/* Details Grid */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Solicitante</p>
@@ -221,7 +259,6 @@ const PermisosTrabajoSection = () => {
                 </div>
               </div>
 
-              {/* Approvals */}
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-gray-500 dark:text-gray-400">SST:</span>
@@ -241,22 +278,39 @@ const PermisosTrabajoSection = () => {
                 </div>
               </div>
 
-              {/* Actions */}
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                <Button variant="ghost" size="sm" leftIcon={<Eye className="w-4 h-4" />}>
-                  Ver Detalle
-                </Button>
-                <Button variant="ghost" size="sm" leftIcon={<Edit className="w-4 h-4" />}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leftIcon={<Edit className="w-4 h-4" />}
+                  onClick={() => handleEdit(permiso)}
+                >
                   Editar
                 </Button>
-                <Button variant="ghost" size="sm" leftIcon={<FileText className="w-4 h-4" />}>
-                  Imprimir
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leftIcon={<Trash2 className="w-4 h-4 text-danger-600" />}
+                  onClick={() => setDeleteId(permiso.id)}
+                >
+                  Eliminar
                 </Button>
               </div>
             </div>
           </Card>
         ))}
       </div>
+
+      <PermisoTrabajoFormModal item={selectedItem} isOpen={modalOpen} onClose={handleCloseModal} />
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Eliminar Permiso"
+        description="¿Está seguro de eliminar este permiso de trabajo? Esta acción no se puede deshacer."
+        variant="danger"
+        loading={deleteMutation.isPending}
+      />
     </div>
   );
 };
@@ -265,7 +319,30 @@ const PermisosTrabajoSection = () => {
 
 const InspeccionesSection = () => {
   const { data, isLoading } = useInspecciones();
+  const deleteMutation = useDeleteInspeccion();
   const inspecciones = data?.results ?? [];
+
+  const [selectedItem, setSelectedItem] = useState<Inspeccion | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const handleNew = () => {
+    setSelectedItem(null);
+    setModalOpen(true);
+  };
+  const handleEdit = (item: Inspeccion) => {
+    setSelectedItem(item);
+    setModalOpen(true);
+  };
+  const handleCloseModal = () => {
+    setSelectedItem(null);
+    setModalOpen(false);
+  };
+  const handleDelete = () => {
+    if (deleteId) {
+      deleteMutation.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -277,16 +354,19 @@ const InspeccionesSection = () => {
 
   if (!inspecciones || inspecciones.length === 0) {
     return (
-      <EmptyState
-        icon={<ClipboardCheck className="w-16 h-16" />}
-        title="No hay inspecciones registradas"
-        description="Comience programando inspecciones de seguridad en las diferentes areas"
-        action={{
-          label: 'Nueva Inspeccion',
-          onClick: () => {},
-          icon: <Plus className="w-4 h-4" />,
-        }}
-      />
+      <>
+        <EmptyState
+          icon={<ClipboardCheck className="w-16 h-16" />}
+          title="No hay inspecciones registradas"
+          description="Comience programando inspecciones de seguridad en las diferentes áreas"
+          action={{
+            label: 'Nueva Inspección',
+            onClick: handleNew,
+            icon: <Plus className="w-4 h-4" />,
+          }}
+        />
+        <InspeccionFormModal item={selectedItem} isOpen={modalOpen} onClose={handleCloseModal} />
+      </>
     );
   }
 
@@ -299,7 +379,6 @@ const InspeccionesSection = () => {
 
   return (
     <div className="space-y-6">
-      {/* KPI Cards */}
       <KpiCardGrid columns={4}>
         <KpiCard
           label="Total Inspecciones"
@@ -323,23 +402,19 @@ const InspeccionesSection = () => {
           description="Este mes"
         />
         <KpiCard
-          label="Hallazgos Criticos"
+          label="Hallazgos Críticos"
           value={stats.conHallazgos}
           icon={<AlertTriangle className="w-6 h-6" />}
           color="danger"
-          description="Requieren accion"
+          description="Requieren acción"
         />
       </KpiCardGrid>
 
-      {/* Actions */}
       <SectionToolbar
         title="Inspecciones de Seguridad"
         onFilter={() => {}}
         onExport={() => {}}
-        primaryAction={{
-          label: 'Nueva Inspeccion',
-          onClick: () => {},
-        }}
+        primaryAction={{ label: 'Nueva Inspección', onClick: handleNew }}
       />
 
       {/* Inspecciones Table */}
@@ -349,13 +424,13 @@ const InspeccionesSection = () => {
             <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Numero
+                  Número
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Tipo
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Ubicacion
+                  Ubicación
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Inspector
@@ -430,14 +505,11 @@ const InspeccionesSection = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(inspeccion)}>
                         <Edit className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
-                        <FileText className="w-4 h-4" />
+                      <Button variant="ghost" size="sm" onClick={() => setDeleteId(inspeccion.id)}>
+                        <Trash2 className="w-4 h-4 text-danger-600" />
                       </Button>
                     </div>
                   </td>
@@ -447,6 +519,17 @@ const InspeccionesSection = () => {
           </table>
         </div>
       </Card>
+
+      <InspeccionFormModal item={selectedItem} isOpen={modalOpen} onClose={handleCloseModal} />
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Eliminar Inspección"
+        description="¿Está seguro de eliminar esta inspección? Esta acción no se puede deshacer."
+        variant="danger"
+        loading={deleteMutation.isPending}
+      />
     </div>
   );
 };
@@ -455,7 +538,30 @@ const InspeccionesSection = () => {
 
 const EntregasEPPSection = () => {
   const { data, isLoading } = useEntregasEPP();
+  const deleteMutation = useDeleteEntregaEPP();
   const entregas = data?.results ?? [];
+
+  const [selectedItem, setSelectedItem] = useState<EntregaEPP | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const handleNew = () => {
+    setSelectedItem(null);
+    setModalOpen(true);
+  };
+  const handleEdit = (item: EntregaEPP) => {
+    setSelectedItem(item);
+    setModalOpen(true);
+  };
+  const handleCloseModal = () => {
+    setSelectedItem(null);
+    setModalOpen(false);
+  };
+  const handleDelete = () => {
+    if (deleteId) {
+      deleteMutation.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -467,16 +573,19 @@ const EntregasEPPSection = () => {
 
   if (!entregas || entregas.length === 0) {
     return (
-      <EmptyState
-        icon={<HardHat className="w-16 h-16" />}
-        title="No hay entregas de EPP registradas"
-        description="Comience registrando las entregas de equipos de proteccion personal"
-        action={{
-          label: 'Nueva Entrega',
-          onClick: () => {},
-          icon: <Plus className="w-4 h-4" />,
-        }}
-      />
+      <>
+        <EmptyState
+          icon={<HardHat className="w-16 h-16" />}
+          title="No hay entregas de EPP registradas"
+          description="Comience registrando las entregas de equipos de protección personal"
+          action={{
+            label: 'Nueva Entrega',
+            onClick: handleNew,
+            icon: <Plus className="w-4 h-4" />,
+          }}
+        />
+        <EntregaEPPFormModal item={selectedItem} isOpen={modalOpen} onClose={handleCloseModal} />
+      </>
     );
   }
 
@@ -484,6 +593,7 @@ const EntregasEPPSection = () => {
     total: entregas.length,
     enUso: entregas.filter((e) => e.estado === 'EN_USO').length,
     porVencer: entregas.filter((e) => {
+      if (!e.fecha_reposicion_programada) return false;
       const diasRestantes = Math.floor(
         (new Date(e.fecha_reposicion_programada).getTime() - new Date().getTime()) /
           (1000 * 60 * 60 * 24)
@@ -495,7 +605,6 @@ const EntregasEPPSection = () => {
 
   return (
     <div className="space-y-6">
-      {/* KPI Cards */}
       <KpiCardGrid columns={4}>
         <KpiCard
           label="Total Entregas"
@@ -516,26 +625,22 @@ const EntregasEPPSection = () => {
           value={stats.porVencer}
           icon={<Clock className="w-6 h-6" />}
           color="warning"
-          description="Proximos 30 dias"
+          description="Próximos 30 días"
         />
         <KpiCard
-          label="Con Capacitacion"
+          label="Con Capacitación"
           value={stats.conCapacitacion}
           icon={<User className="w-6 h-6" />}
           color="primary"
-          description="Capacitacion realizada"
+          description="Capacitación realizada"
         />
       </KpiCardGrid>
 
-      {/* Actions */}
       <SectionToolbar
         title="Entregas de EPP"
         onFilter={() => {}}
         onExport={() => {}}
-        primaryAction={{
-          label: 'Nueva Entrega',
-          onClick: () => {},
-        }}
+        primaryAction={{ label: 'Nueva Entrega', onClick: handleNew }}
       />
 
       {/* Entregas Table */}
@@ -545,7 +650,7 @@ const EntregasEPPSection = () => {
             <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Numero
+                  Número
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Colaborador
@@ -554,7 +659,7 @@ const EntregasEPPSection = () => {
                   EPP
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Categoria
+                  Categoría
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Marca/Modelo
@@ -566,7 +671,7 @@ const EntregasEPPSection = () => {
                   Fecha Entrega
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Reposicion
+                  Reposición
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Estado
@@ -612,23 +717,22 @@ const EntregasEPPSection = () => {
                     {format(new Date(entrega.fecha_entrega), 'dd/MM/yyyy', { locale: es })}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {format(new Date(entrega.fecha_reposicion_programada), 'dd/MM/yyyy', {
-                      locale: es,
-                    })}
+                    {entrega.fecha_reposicion_programada
+                      ? format(new Date(entrega.fecha_reposicion_programada), 'dd/MM/yyyy', {
+                          locale: es,
+                        })
+                      : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <StatusBadge status={entrega.estado} preset="proceso" />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(entrega)}>
                         <Edit className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
-                        <Package className="w-4 h-4" />
+                      <Button variant="ghost" size="sm" onClick={() => setDeleteId(entrega.id)}>
+                        <Trash2 className="w-4 h-4 text-danger-600" />
                       </Button>
                     </div>
                   </td>
@@ -638,6 +742,17 @@ const EntregasEPPSection = () => {
           </table>
         </div>
       </Card>
+
+      <EntregaEPPFormModal item={selectedItem} isOpen={modalOpen} onClose={handleCloseModal} />
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Eliminar Entrega EPP"
+        description="¿Está seguro de eliminar esta entrega de EPP? Esta acción no se puede deshacer."
+        variant="danger"
+        loading={deleteMutation.isPending}
+      />
     </div>
   );
 };
@@ -646,7 +761,30 @@ const EntregasEPPSection = () => {
 
 const ProgramasSeguridadSection = () => {
   const { data, isLoading } = useProgramasSeguridad();
+  const deleteMutation = useDeleteProgramaSeguridad();
   const programas = data?.results ?? [];
+
+  const [selectedItem, setSelectedItem] = useState<ProgramaSeguridad | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const handleNew = () => {
+    setSelectedItem(null);
+    setModalOpen(true);
+  };
+  const handleEdit = (item: ProgramaSeguridad) => {
+    setSelectedItem(item);
+    setModalOpen(true);
+  };
+  const handleCloseModal = () => {
+    setSelectedItem(null);
+    setModalOpen(false);
+  };
+  const handleDelete = () => {
+    if (deleteId) {
+      deleteMutation.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -658,16 +796,23 @@ const ProgramasSeguridadSection = () => {
 
   if (!programas || programas.length === 0) {
     return (
-      <EmptyState
-        icon={<Shield className="w-16 h-16" />}
-        title="No hay programas de seguridad registrados"
-        description="Comience creando programas de seguridad para gestionar las actividades de SST"
-        action={{
-          label: 'Nuevo Programa',
-          onClick: () => {},
-          icon: <Plus className="w-4 h-4" />,
-        }}
-      />
+      <>
+        <EmptyState
+          icon={<Shield className="w-16 h-16" />}
+          title="No hay programas de seguridad registrados"
+          description="Comience creando programas de seguridad para gestionar las actividades de SST"
+          action={{
+            label: 'Nuevo Programa',
+            onClick: handleNew,
+            icon: <Plus className="w-4 h-4" />,
+          }}
+        />
+        <ProgramaSeguridadFormModal
+          item={selectedItem}
+          isOpen={modalOpen}
+          onClose={handleCloseModal}
+        />
+      </>
     );
   }
 
@@ -685,7 +830,6 @@ const ProgramasSeguridadSection = () => {
 
   return (
     <div className="space-y-6">
-      {/* KPI Cards */}
       <KpiCardGrid columns={4}>
         <KpiCard
           label="Total Programas"
@@ -695,7 +839,7 @@ const ProgramasSeguridadSection = () => {
           description="Activos en el sistema"
         />
         <KpiCard
-          label="En Ejecucion"
+          label="En Ejecución"
           value={stats.enEjecucion}
           icon={<Activity className="w-6 h-6" />}
           color="primary"
@@ -709,23 +853,27 @@ const ProgramasSeguridadSection = () => {
           description="Progreso general"
         />
         <KpiCard
-          label="Ejecucion Presupuestal"
-          value={`${Math.round((presupuestoEjecutado / presupuestoTotal) * 100)}%`}
+          label="Ejecución Presupuestal"
+          value={
+            presupuestoTotal > 0
+              ? `${Math.round((presupuestoEjecutado / presupuestoTotal) * 100)}%`
+              : '0%'
+          }
           icon={<Activity className="w-6 h-6" />}
           color="warning"
-          description={`$${(presupuestoEjecutado / 1000000).toFixed(1)}M de $${(presupuestoTotal / 1000000).toFixed(1)}M`}
+          description={
+            presupuestoTotal > 0
+              ? `$${(presupuestoEjecutado / 1000000).toFixed(1)}M de $${(presupuestoTotal / 1000000).toFixed(1)}M`
+              : 'Sin presupuesto'
+          }
         />
       </KpiCardGrid>
 
-      {/* Actions */}
       <SectionToolbar
         title="Programas de Seguridad"
         onFilter={() => {}}
         onExport={() => {}}
-        primaryAction={{
-          label: 'Nuevo Programa',
-          onClick: () => {},
-        }}
+        primaryAction={{ label: 'Nuevo Programa', onClick: handleNew }}
       />
 
       {/* Programas Grid */}
@@ -733,7 +881,6 @@ const ProgramasSeguridadSection = () => {
         {programas.map((programa) => (
           <Card key={programa.id} variant="bordered" padding="md">
             <div className="space-y-4">
-              {/* Header */}
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
@@ -756,7 +903,6 @@ const ProgramasSeguridadSection = () => {
                 </div>
               </div>
 
-              {/* Details Grid */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Responsable</p>
@@ -779,12 +925,13 @@ const ProgramasSeguridadSection = () => {
                 <div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Presupuesto</p>
                   <p className="text-sm font-medium text-gray-900 dark:text-white mt-1">
-                    ${(programa.presupuesto_asignado / 1000000).toFixed(1)}M
+                    {programa.presupuesto_asignado
+                      ? `$${(programa.presupuesto_asignado / 1000000).toFixed(1)}M`
+                      : 'N/A'}
                   </p>
                 </div>
               </div>
 
-              {/* Progress */}
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -797,40 +944,62 @@ const ProgramasSeguridadSection = () => {
                 <Progress value={programa.porcentaje_avance} showLabel={false} />
               </div>
 
-              {/* Budget Progress */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Ejecucion Presupuestal
-                  </span>
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    ${(programa.presupuesto_ejecutado / 1000000).toFixed(1)}M / $
-                    {(programa.presupuesto_asignado / 1000000).toFixed(1)}M
-                  </span>
+              {presupuestoTotal > 0 && programa.presupuesto_asignado ? (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Ejecución Presupuestal
+                    </span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      ${(programa.presupuesto_ejecutado / 1000000).toFixed(1)}M / $
+                      {(programa.presupuesto_asignado / 1000000).toFixed(1)}M
+                    </span>
+                  </div>
+                  <Progress
+                    value={programa.presupuesto_ejecutado}
+                    max={programa.presupuesto_asignado}
+                    showLabel={false}
+                  />
                 </div>
-                <Progress
-                  value={programa.presupuesto_ejecutado}
-                  max={programa.presupuesto_asignado}
-                  showLabel={false}
-                />
-              </div>
+              ) : null}
 
-              {/* Actions */}
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                <Button variant="ghost" size="sm" leftIcon={<Eye className="w-4 h-4" />}>
-                  Ver Detalle
-                </Button>
-                <Button variant="ghost" size="sm" leftIcon={<Edit className="w-4 h-4" />}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leftIcon={<Edit className="w-4 h-4" />}
+                  onClick={() => handleEdit(programa)}
+                >
                   Editar
                 </Button>
-                <Button variant="ghost" size="sm" leftIcon={<Activity className="w-4 h-4" />}>
-                  Actividades
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leftIcon={<Trash2 className="w-4 h-4 text-danger-600" />}
+                  onClick={() => setDeleteId(programa.id)}
+                >
+                  Eliminar
                 </Button>
               </div>
             </div>
           </Card>
         ))}
       </div>
+
+      <ProgramaSeguridadFormModal
+        item={selectedItem}
+        isOpen={modalOpen}
+        onClose={handleCloseModal}
+      />
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Eliminar Programa"
+        description="¿Está seguro de eliminar este programa de seguridad? Esta acción no se puede deshacer."
+        variant="danger"
+        loading={deleteMutation.isPending}
+      />
     </div>
   );
 };
@@ -866,14 +1035,12 @@ export default function SeguridadIndustrialPage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Gestion de Seguridad Industrial"
+        title="Gestión de Seguridad Industrial"
         description="Control integral de permisos de trabajo, inspecciones de seguridad, entregas de EPP y programas de seguridad"
       />
 
-      {/* Tabs */}
       <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} variant="pills" />
 
-      {/* Tab Content */}
       <div className="mt-6">
         {activeTab === 'permisos-trabajo' && <PermisosTrabajoSection />}
         {activeTab === 'inspecciones' && <InspeccionesSection />}

@@ -24,6 +24,7 @@ import {
   Activity,
   CheckCircle,
   AlertCircle,
+  Trash2,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
 import {
@@ -37,6 +38,7 @@ import {
   SectionToolbar,
   StatusBadge,
   ExportButton,
+  ConfirmDialog,
 } from '@/components/common';
 import { formatStatusLabel } from '@/components/common/StatusBadge';
 import {
@@ -44,7 +46,21 @@ import {
   useEnfermedadesLaborales,
   useIncidentesTrabajo,
   useInvestigacionesATEL,
+  useDeleteAccidenteTrabajo,
+  useDeleteEnfermedadLaboral,
+  useDeleteIncidenteTrabajo,
+  useDeleteInvestigacionATEL,
 } from '../hooks/useAccidentalidad';
+import type {
+  AccidenteTrabajo,
+  EnfermedadLaboral,
+  IncidenteTrabajo,
+  InvestigacionATEL,
+} from '../types/accidentalidad.types';
+import AccidenteTrabajoFormModal from '../components/AccidenteTrabajoFormModal';
+import EnfermedadLaboralFormModal from '../components/EnfermedadLaboralFormModal';
+import IncidenteTrabajoFormModal from '../components/IncidenteTrabajoFormModal';
+import InvestigacionATELFormModal from '../components/InvestigacionATELFormModal';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -86,7 +102,30 @@ const formatTipo = (tipo: string): string => {
 
 const AccidentesTrabajoSection = () => {
   const { data, isLoading } = useAccidentesTrabajo();
+  const deleteMutation = useDeleteAccidenteTrabajo();
   const accidentes = data?.results ?? [];
+
+  const [selectedItem, setSelectedItem] = useState<AccidenteTrabajo | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const handleNew = () => {
+    setSelectedItem(null);
+    setModalOpen(true);
+  };
+  const handleEdit = (item: AccidenteTrabajo) => {
+    setSelectedItem(item);
+    setModalOpen(true);
+  };
+  const handleCloseModal = () => {
+    setSelectedItem(null);
+    setModalOpen(false);
+  };
+  const handleDelete = () => {
+    if (deleteId) {
+      deleteMutation.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -98,16 +137,23 @@ const AccidentesTrabajoSection = () => {
 
   if (!accidentes || accidentes.length === 0) {
     return (
-      <EmptyState
-        icon={<AlertTriangle className="w-16 h-16" />}
-        title="No hay accidentes de trabajo registrados"
-        description="Comience registrando los accidentes de trabajo para su análisis e investigación"
-        action={{
-          label: 'Nuevo Accidente',
-          onClick: () => {},
-          icon: <Plus className="w-4 h-4" />,
-        }}
-      />
+      <>
+        <EmptyState
+          icon={<AlertTriangle className="w-16 h-16" />}
+          title="No hay accidentes de trabajo registrados"
+          description="Comience registrando los accidentes de trabajo para su análisis e investigación"
+          action={{
+            label: 'Nuevo Accidente',
+            onClick: handleNew,
+            icon: <Plus className="w-4 h-4" />,
+          }}
+        />
+        <AccidenteTrabajoFormModal
+          item={selectedItem}
+          isOpen={modalOpen}
+          onClose={handleCloseModal}
+        />
+      </>
     );
   }
 
@@ -158,7 +204,7 @@ const AccidentesTrabajoSection = () => {
         <SectionToolbar
           title="Accidentes de Trabajo Registrados"
           onFilter={() => {}}
-          primaryAction={{ label: 'Nuevo Accidente', onClick: () => {} }}
+          primaryAction={{ label: 'Nuevo Accidente', onClick: handleNew }}
           className="flex-1"
         />
         <ExportButton
@@ -230,14 +276,11 @@ const AccidentesTrabajoSection = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(accidente)}>
                         <Edit className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
-                        <FileText className="w-4 h-4" />
+                      <Button variant="ghost" size="sm" onClick={() => setDeleteId(accidente.id)}>
+                        <Trash2 className="w-4 h-4 text-danger-600" />
                       </Button>
                     </div>
                   </td>
@@ -247,6 +290,21 @@ const AccidentesTrabajoSection = () => {
           </table>
         </div>
       </Card>
+
+      <AccidenteTrabajoFormModal
+        item={selectedItem}
+        isOpen={modalOpen}
+        onClose={handleCloseModal}
+      />
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Eliminar Accidente"
+        description="¿Está seguro de eliminar este accidente de trabajo? Esta acción no se puede deshacer."
+        variant="danger"
+        loading={deleteMutation.isPending}
+      />
     </div>
   );
 };
@@ -255,7 +313,30 @@ const AccidentesTrabajoSection = () => {
 
 const EnfermedadesLaboralesSection = () => {
   const { data, isLoading } = useEnfermedadesLaborales();
+  const deleteMutation = useDeleteEnfermedadLaboral();
   const enfermedades = data?.results ?? [];
+
+  const [selectedItem, setSelectedItem] = useState<EnfermedadLaboral | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const handleNew = () => {
+    setSelectedItem(null);
+    setModalOpen(true);
+  };
+  const handleEdit = (item: EnfermedadLaboral) => {
+    setSelectedItem(item);
+    setModalOpen(true);
+  };
+  const handleCloseModal = () => {
+    setSelectedItem(null);
+    setModalOpen(false);
+  };
+  const handleDelete = () => {
+    if (deleteId) {
+      deleteMutation.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -267,16 +348,23 @@ const EnfermedadesLaboralesSection = () => {
 
   if (!enfermedades || enfermedades.length === 0) {
     return (
-      <EmptyState
-        icon={<Stethoscope className="w-16 h-16" />}
-        title="No hay enfermedades laborales registradas"
-        description="Comience registrando las enfermedades laborales diagnosticadas"
-        action={{
-          label: 'Nueva Enfermedad Laboral',
-          onClick: () => {},
-          icon: <Plus className="w-4 h-4" />,
-        }}
-      />
+      <>
+        <EmptyState
+          icon={<Stethoscope className="w-16 h-16" />}
+          title="No hay enfermedades laborales registradas"
+          description="Comience registrando las enfermedades laborales diagnosticadas"
+          action={{
+            label: 'Nueva Enfermedad Laboral',
+            onClick: handleNew,
+            icon: <Plus className="w-4 h-4" />,
+          }}
+        />
+        <EnfermedadLaboralFormModal
+          item={selectedItem}
+          isOpen={modalOpen}
+          onClose={handleCloseModal}
+        />
+      </>
     );
   }
 
@@ -333,7 +421,7 @@ const EnfermedadesLaboralesSection = () => {
         title="Enfermedades Laborales Registradas"
         onFilter={() => {}}
         onExport={() => {}}
-        primaryAction={{ label: 'Nueva Enfermedad Laboral', onClick: () => {} }}
+        primaryAction={{ label: 'Nueva Enfermedad Laboral', onClick: handleNew }}
       />
 
       {/* Enfermedades Grid */}
@@ -394,20 +482,42 @@ const EnfermedadesLaboralesSection = () => {
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                <Button variant="ghost" size="sm" leftIcon={<Eye className="w-4 h-4" />}>
-                  Ver Detalle
-                </Button>
-                <Button variant="ghost" size="sm" leftIcon={<Edit className="w-4 h-4" />}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leftIcon={<Edit className="w-4 h-4" />}
+                  onClick={() => handleEdit(enfermedad)}
+                >
                   Editar
                 </Button>
-                <Button variant="ghost" size="sm" leftIcon={<FileText className="w-4 h-4" />}>
-                  Documentos
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leftIcon={<Trash2 className="w-4 h-4 text-danger-600" />}
+                  onClick={() => setDeleteId(enfermedad.id)}
+                >
+                  Eliminar
                 </Button>
               </div>
             </div>
           </Card>
         ))}
       </div>
+
+      <EnfermedadLaboralFormModal
+        item={selectedItem}
+        isOpen={modalOpen}
+        onClose={handleCloseModal}
+      />
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Eliminar Enfermedad Laboral"
+        description="¿Está seguro de eliminar esta enfermedad laboral? Esta acción no se puede deshacer."
+        variant="danger"
+        loading={deleteMutation.isPending}
+      />
     </div>
   );
 };
@@ -416,7 +526,30 @@ const EnfermedadesLaboralesSection = () => {
 
 const IncidentesSection = () => {
   const { data, isLoading } = useIncidentesTrabajo();
+  const deleteMutation = useDeleteIncidenteTrabajo();
   const incidentes = data?.results ?? [];
+
+  const [selectedItem, setSelectedItem] = useState<IncidenteTrabajo | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const handleNew = () => {
+    setSelectedItem(null);
+    setModalOpen(true);
+  };
+  const handleEdit = (item: IncidenteTrabajo) => {
+    setSelectedItem(item);
+    setModalOpen(true);
+  };
+  const handleCloseModal = () => {
+    setSelectedItem(null);
+    setModalOpen(false);
+  };
+  const handleDelete = () => {
+    if (deleteId) {
+      deleteMutation.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -428,16 +561,23 @@ const IncidentesSection = () => {
 
   if (!incidentes || incidentes.length === 0) {
     return (
-      <EmptyState
-        icon={<AlertOctagon className="w-16 h-16" />}
-        title="No hay incidentes registrados"
-        description="Comience registrando los incidentes y casi accidentes para análisis preventivo"
-        action={{
-          label: 'Nuevo Incidente',
-          onClick: () => {},
-          icon: <Plus className="w-4 h-4" />,
-        }}
-      />
+      <>
+        <EmptyState
+          icon={<AlertOctagon className="w-16 h-16" />}
+          title="No hay incidentes registrados"
+          description="Comience registrando los incidentes y casi accidentes para análisis preventivo"
+          action={{
+            label: 'Nuevo Incidente',
+            onClick: handleNew,
+            icon: <Plus className="w-4 h-4" />,
+          }}
+        />
+        <IncidenteTrabajoFormModal
+          item={selectedItem}
+          isOpen={modalOpen}
+          onClose={handleCloseModal}
+        />
+      </>
     );
   }
 
@@ -491,7 +631,7 @@ const IncidentesSection = () => {
         title="Incidentes Registrados"
         onFilter={() => {}}
         onExport={() => {}}
-        primaryAction={{ label: 'Nuevo Incidente', onClick: () => {} }}
+        primaryAction={{ label: 'Nuevo Incidente', onClick: handleNew }}
       />
 
       {/* Incidentes Grid */}
@@ -544,22 +684,42 @@ const IncidentesSection = () => {
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                <Button variant="ghost" size="sm" leftIcon={<Eye className="w-4 h-4" />}>
-                  Ver Detalle
-                </Button>
-                <Button variant="ghost" size="sm" leftIcon={<Edit className="w-4 h-4" />}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leftIcon={<Edit className="w-4 h-4" />}
+                  onClick={() => handleEdit(incidente)}
+                >
                   Editar
                 </Button>
-                {incidente.requiere_investigacion && (
-                  <Button variant="ghost" size="sm" leftIcon={<Search className="w-4 h-4" />}>
-                    Investigar
-                  </Button>
-                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leftIcon={<Trash2 className="w-4 h-4 text-danger-600" />}
+                  onClick={() => setDeleteId(incidente.id)}
+                >
+                  Eliminar
+                </Button>
               </div>
             </div>
           </Card>
         ))}
       </div>
+
+      <IncidenteTrabajoFormModal
+        item={selectedItem}
+        isOpen={modalOpen}
+        onClose={handleCloseModal}
+      />
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Eliminar Incidente"
+        description="¿Está seguro de eliminar este incidente? Esta acción no se puede deshacer."
+        variant="danger"
+        loading={deleteMutation.isPending}
+      />
     </div>
   );
 };
@@ -568,7 +728,30 @@ const IncidentesSection = () => {
 
 const InvestigacionesSection = () => {
   const { data, isLoading } = useInvestigacionesATEL();
+  const deleteMutation = useDeleteInvestigacionATEL();
   const investigaciones = data?.results ?? [];
+
+  const [selectedItem, setSelectedItem] = useState<InvestigacionATEL | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const handleNew = () => {
+    setSelectedItem(null);
+    setModalOpen(true);
+  };
+  const handleEdit = (item: InvestigacionATEL) => {
+    setSelectedItem(item);
+    setModalOpen(true);
+  };
+  const handleCloseModal = () => {
+    setSelectedItem(null);
+    setModalOpen(false);
+  };
+  const handleDelete = () => {
+    if (deleteId) {
+      deleteMutation.mutate(deleteId, { onSuccess: () => setDeleteId(null) });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -580,16 +763,23 @@ const InvestigacionesSection = () => {
 
   if (!investigaciones || investigaciones.length === 0) {
     return (
-      <EmptyState
-        icon={<Search className="w-16 h-16" />}
-        title="No hay investigaciones registradas"
-        description="Comience creando investigaciones para analizar las causas de accidentes e incidentes"
-        action={{
-          label: 'Nueva Investigación',
-          onClick: () => {},
-          icon: <Plus className="w-4 h-4" />,
-        }}
-      />
+      <>
+        <EmptyState
+          icon={<Search className="w-16 h-16" />}
+          title="No hay investigaciones registradas"
+          description="Comience creando investigaciones para analizar las causas de accidentes e incidentes"
+          action={{
+            label: 'Nueva Investigación',
+            onClick: handleNew,
+            icon: <Plus className="w-4 h-4" />,
+          }}
+        />
+        <InvestigacionATELFormModal
+          item={selectedItem}
+          isOpen={modalOpen}
+          onClose={handleCloseModal}
+        />
+      </>
     );
   }
 
@@ -640,7 +830,7 @@ const InvestigacionesSection = () => {
         title="Investigaciones ATEL"
         onFilter={() => {}}
         onExport={() => {}}
-        primaryAction={{ label: 'Nueva Investigación', onClick: () => {} }}
+        primaryAction={{ label: 'Nueva Investigación', onClick: handleNew }}
       />
 
       {/* Investigaciones Table */}
@@ -706,14 +896,15 @@ const InvestigacionesSection = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(investigacion)}>
                         <Edit className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
-                        <FileText className="w-4 h-4" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDeleteId(investigacion.id)}
+                      >
+                        <Trash2 className="w-4 h-4 text-danger-600" />
                       </Button>
                     </div>
                   </td>
@@ -723,6 +914,21 @@ const InvestigacionesSection = () => {
           </table>
         </div>
       </Card>
+
+      <InvestigacionATELFormModal
+        item={selectedItem}
+        isOpen={modalOpen}
+        onClose={handleCloseModal}
+      />
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Eliminar Investigación"
+        description="¿Está seguro de eliminar esta investigación? Esta acción no se puede deshacer."
+        variant="danger"
+        loading={deleteMutation.isPending}
+      />
     </div>
   );
 };

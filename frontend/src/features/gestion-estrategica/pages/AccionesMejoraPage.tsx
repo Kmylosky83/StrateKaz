@@ -9,7 +9,6 @@
 import { useState, useMemo } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { toast } from 'sonner';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -49,10 +48,6 @@ import {
   useAccionesCorrectivas,
   useDeleteNoConformidad,
   useDeleteAccionCorrectiva,
-  useCreateNoConformidad,
-  useUpdateNoConformidad,
-  useCreateAccionCorrectiva,
-  useUpdateAccionCorrectiva,
 } from '@/features/hseq/hooks/useCalidad';
 
 import type {
@@ -61,6 +56,9 @@ import type {
   EstadoNoConformidad,
   EstadoAccion,
 } from '@/features/hseq/types/calidad.types';
+
+import NoConformidadFormModal from '@/features/hseq/components/NoConformidadFormModal';
+import AccionCorrectivaFormModal from '@/features/hseq/components/AccionCorrectivaFormModal';
 
 // ==================== CONSTANTS ====================
 
@@ -200,10 +198,14 @@ export const AccionesMejoraPage = () => {
   // ---- NC state ----
   const [searchNC, setSearchNC] = useState('');
   const [deleteNCId, setDeleteNCId] = useState<number | null>(null);
+  const [ncModalOpen, setNcModalOpen] = useState(false);
+  const [selectedNC, setSelectedNC] = useState<NoConformidad | null>(null);
 
   // ---- Acciones state ----
   const [searchAccion, setSearchAccion] = useState('');
   const [deleteAccionId, setDeleteAccionId] = useState<number | null>(null);
+  const [accionModalOpen, setAccionModalOpen] = useState(false);
+  const [selectedAccion, setSelectedAccion] = useState<AccionCorrectiva | null>(null);
 
   // ---- Data hooks ----
   const noConformidadesQuery = useNoConformidades();
@@ -212,16 +214,6 @@ export const AccionesMejoraPage = () => {
   // ---- Mutation hooks ----
   const deleteNCMutation = useDeleteNoConformidad();
   const deleteAccionMutation = useDeleteAccionCorrectiva();
-
-  // Mutation hooks for future modal integration
-   
-  const _createNCHook = useCreateNoConformidad;
-   
-  const _updateNCHook = useUpdateNoConformidad;
-   
-  const _createAccionHook = useCreateAccionCorrectiva;
-   
-  const _updateAccionHook = useUpdateAccionCorrectiva;
 
   // ---- Processed data ----
   const noConformidades = useMemo(
@@ -297,21 +289,35 @@ export const AccionesMejoraPage = () => {
     });
   };
 
-  // ---- Create/Edit placeholder handlers (modals en desarrollo) ----
+  // ---- Create/Edit handlers ----
   const handleCreateNC = () => {
-    toast.info('Modal de creaci\u00f3n de No Conformidad en desarrollo');
+    setSelectedNC(null);
+    setNcModalOpen(true);
   };
 
-  const handleEditNC = (_nc: NoConformidad) => {
-    toast.info('Modal de edici\u00f3n de No Conformidad en desarrollo');
+  const handleEditNC = (nc: NoConformidad) => {
+    setSelectedNC(nc);
+    setNcModalOpen(true);
+  };
+
+  const handleCloseNCModal = () => {
+    setNcModalOpen(false);
+    setSelectedNC(null);
   };
 
   const handleCreateAccion = () => {
-    toast.info('Modal de creaci\u00f3n de Acci\u00f3n Correctiva en desarrollo');
+    setSelectedAccion(null);
+    setAccionModalOpen(true);
   };
 
-  const handleEditAccion = (_ac: AccionCorrectiva) => {
-    toast.info('Modal de edici\u00f3n de Acci\u00f3n Correctiva en desarrollo');
+  const handleEditAccion = (ac: AccionCorrectiva) => {
+    setSelectedAccion(ac);
+    setAccionModalOpen(true);
+  };
+
+  const handleCloseAccionModal = () => {
+    setAccionModalOpen(false);
+    setSelectedAccion(null);
   };
 
   // ==================== RENDER ====================
@@ -384,6 +390,14 @@ export const AccionesMejoraPage = () => {
         cancelText="Cancelar"
         variant="danger"
         isLoading={deleteAccionMutation.isPending}
+      />
+
+      {/* CRUD Modals */}
+      <NoConformidadFormModal item={selectedNC} isOpen={ncModalOpen} onClose={handleCloseNCModal} />
+      <AccionCorrectivaFormModal
+        item={selectedAccion}
+        isOpen={accionModalOpen}
+        onClose={handleCloseAccionModal}
       />
     </div>
   );

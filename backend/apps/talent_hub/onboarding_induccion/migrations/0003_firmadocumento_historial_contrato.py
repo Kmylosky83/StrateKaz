@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("onboarding_induccion", "0001_initial"),
+        ("onboarding_induccion", "0002_alter_moduloinduccion_codigo"),
         ("seleccion_contratacion", "0008_add_firma_digital_fields"),
     ]
 

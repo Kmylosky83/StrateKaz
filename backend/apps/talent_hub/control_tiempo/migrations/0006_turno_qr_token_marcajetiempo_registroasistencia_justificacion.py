@@ -18,7 +18,7 @@ def populate_qr_tokens(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('control_tiempo', '0004_turno_horas_semanales_maximas_turno_tipo_jornada_and_more'),
+        ('control_tiempo', '0005_alter_turno_codigo'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

@@ -23,6 +23,7 @@ import {
   Eye,
   RefreshCw,
   FileText,
+  Plus,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
 import { Tabs } from '@/components/common/Tabs';
@@ -31,7 +32,13 @@ import { Button } from '@/components/common/Button';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Badge } from '@/components/common/Badge';
 import { Spinner } from '@/components/common/Spinner';
-import { KpiCard, KpiCardGrid, SectionToolbar, StatusBadge } from '@/components/common';
+import {
+  KpiCard,
+  KpiCardGrid,
+  SectionToolbar,
+  StatusBadge,
+  ConfirmDialog,
+} from '@/components/common';
 import { formatStatusLabel } from '@/components/common/StatusBadge';
 import { cn } from '@/utils/cn';
 import {
@@ -40,7 +47,14 @@ import {
   useObjetivosSistema,
   useProgramasGestion,
   useDashboardPlanificacion,
+  useDeleteActividadPlan,
+  useDeleteObjetivo,
+  useDeletePrograma,
 } from '../hooks/usePlanificacion';
+import type { ActividadPlan, ObjetivoSistema, ProgramaGestion } from '../hooks/usePlanificacion';
+import ActividadPlanFormModal from '../components/ActividadPlanFormModal';
+import ObjetivoSistemaFormModal from '../components/ObjetivoSistemaFormModal';
+import ProgramaGestionFormModal from '../components/ProgramaGestionFormModal';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -132,6 +146,29 @@ interface PlanTrabajoSectionProps {
 
 const PlanTrabajoSection = ({ planId }: PlanTrabajoSectionProps) => {
   const { data: actividades, isLoading } = useActividadesPlan(planId || 0);
+  const deleteMutation = useDeleteActividadPlan();
+
+  const [selectedItem, setSelectedItem] = useState<ActividadPlan | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const handleNew = () => {
+    setSelectedItem(null);
+    setModalOpen(true);
+  };
+  const handleEdit = (item: ActividadPlan) => {
+    setSelectedItem(item);
+    setModalOpen(true);
+  };
+  const handleCloseModal = () => {
+    setSelectedItem(null);
+    setModalOpen(false);
+  };
+  const handleDelete = () => {
+    if (deleteId && planId) {
+      deleteMutation.mutate({ id: deleteId, planId }, { onSuccess: () => setDeleteId(null) });
+    }
+  };
 
   if (!planId) {
     return (
@@ -153,15 +190,20 @@ const PlanTrabajoSection = ({ planId }: PlanTrabajoSectionProps) => {
 
   if (!actividades || actividades.length === 0) {
     return (
-      <EmptyState
-        icon={<Calendar className="w-16 h-16" />}
-        title="No hay actividades registradas"
-        description="Comience creando actividades para el plan de trabajo anual"
-        action={{
-          label: 'Crear Actividad',
-          onClick: () => {},
-        }}
-      />
+      <>
+        <EmptyState
+          icon={<Calendar className="w-16 h-16" />}
+          title="No hay actividades registradas"
+          description="Comience creando actividades para el plan de trabajo anual"
+          action={{ label: 'Crear Actividad', onClick: handleNew }}
+        />
+        <ActividadPlanFormModal
+          item={null}
+          planId={planId}
+          isOpen={modalOpen}
+          onClose={handleCloseModal}
+        />
+      </>
     );
   }
 
@@ -216,7 +258,7 @@ const PlanTrabajoSection = ({ planId }: PlanTrabajoSectionProps) => {
       {/* Actions */}
       <SectionToolbar
         title="Actividades Programadas"
-        primaryAction={{ label: 'Nueva Actividad', onClick: () => {} }}
+        primaryAction={{ label: 'Nueva Actividad', onClick: handleNew }}
       />
 
       {/* Activities Table */}
@@ -306,13 +348,10 @@ const PlanTrabajoSection = ({ planId }: PlanTrabajoSectionProps) => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(actividad)}>
                         <Edit className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => setDeleteId(actividad.id)}>
                         <Trash2 className="w-4 h-4 text-danger-600" />
                       </Button>
                     </div>
@@ -323,6 +362,26 @@ const PlanTrabajoSection = ({ planId }: PlanTrabajoSectionProps) => {
           </table>
         </div>
       </Card>
+
+      {/* Modal CRUD */}
+      <ActividadPlanFormModal
+        item={selectedItem}
+        planId={planId}
+        isOpen={modalOpen}
+        onClose={handleCloseModal}
+      />
+
+      {/* Confirm Delete */}
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Eliminar Actividad"
+        message="¿Está seguro de eliminar esta actividad? Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 };
@@ -335,6 +394,29 @@ interface ObjetivosSectionProps {
 
 const ObjetivosSection = ({ planId }: ObjetivosSectionProps) => {
   const { data: objetivos, isLoading } = useObjetivosSistema(planId || 0);
+  const deleteMutation = useDeleteObjetivo();
+
+  const [selectedItem, setSelectedItem] = useState<ObjetivoSistema | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const handleNew = () => {
+    setSelectedItem(null);
+    setModalOpen(true);
+  };
+  const handleEdit = (item: ObjetivoSistema) => {
+    setSelectedItem(item);
+    setModalOpen(true);
+  };
+  const handleCloseModal = () => {
+    setSelectedItem(null);
+    setModalOpen(false);
+  };
+  const handleDelete = () => {
+    if (deleteId && planId) {
+      deleteMutation.mutate({ id: deleteId, planId }, { onSuccess: () => setDeleteId(null) });
+    }
+  };
 
   if (!planId) {
     return (
@@ -356,15 +438,20 @@ const ObjetivosSection = ({ planId }: ObjetivosSectionProps) => {
 
   if (!objetivos || objetivos.length === 0) {
     return (
-      <EmptyState
-        icon={<Target className="w-16 h-16" />}
-        title="No hay objetivos definidos"
-        description="Comience definiendo los objetivos estratégicos del sistema HSEQ"
-        action={{
-          label: 'Crear Objetivo',
-          onClick: () => {},
-        }}
-      />
+      <>
+        <EmptyState
+          icon={<Target className="w-16 h-16" />}
+          title="No hay objetivos definidos"
+          description="Comience definiendo los objetivos estratégicos del sistema HSEQ"
+          action={{ label: 'Crear Objetivo', onClick: handleNew }}
+        />
+        <ObjetivoSistemaFormModal
+          item={null}
+          planId={planId}
+          isOpen={modalOpen}
+          onClose={handleCloseModal}
+        />
+      </>
     );
   }
 
@@ -411,7 +498,7 @@ const ObjetivosSection = ({ planId }: ObjetivosSectionProps) => {
       {/* Actions */}
       <SectionToolbar
         title="Objetivos del Sistema"
-        primaryAction={{ label: 'Nuevo Objetivo', onClick: () => {} }}
+        primaryAction={{ label: 'Nuevo Objetivo', onClick: handleNew }}
       />
 
       {/* Objectives Grid */}
@@ -474,20 +561,17 @@ const ObjetivosSection = ({ planId }: ObjetivosSectionProps) => {
                 )}
               </div>
 
-              {/* Status Badge */}
+              {/* Actions */}
               <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
                 <Badge variant={getBadgeVariant(objetivo.porcentaje_cumplimiento)} size="sm">
                   {getCumplimientoLabel(objetivo.porcentaje_cumplimiento)}
                 </Badge>
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="sm">
-                    <Eye className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" onClick={() => handleEdit(objetivo)}>
                     <Edit className="w-4 h-4" />
                   </Button>
-                  <Button variant="ghost" size="sm">
-                    <RefreshCw className="w-4 h-4" />
+                  <Button variant="ghost" size="sm" onClick={() => setDeleteId(objetivo.id)}>
+                    <Trash2 className="w-4 h-4 text-danger-600" />
                   </Button>
                 </div>
               </div>
@@ -495,6 +579,26 @@ const ObjetivosSection = ({ planId }: ObjetivosSectionProps) => {
           </Card>
         ))}
       </div>
+
+      {/* Modal CRUD */}
+      <ObjetivoSistemaFormModal
+        item={selectedItem}
+        planId={planId}
+        isOpen={modalOpen}
+        onClose={handleCloseModal}
+      />
+
+      {/* Confirm Delete */}
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Eliminar Objetivo"
+        message="¿Está seguro de eliminar este objetivo? Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 };
@@ -507,6 +611,29 @@ interface ProgramasSectionProps {
 
 const ProgramasSection = ({ planId }: ProgramasSectionProps) => {
   const { data: programas, isLoading } = useProgramasGestion(planId || 0);
+  const deleteMutation = useDeletePrograma();
+
+  const [selectedItem, setSelectedItem] = useState<ProgramaGestion | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const handleNew = () => {
+    setSelectedItem(null);
+    setModalOpen(true);
+  };
+  const handleEdit = (item: ProgramaGestion) => {
+    setSelectedItem(item);
+    setModalOpen(true);
+  };
+  const handleCloseModal = () => {
+    setSelectedItem(null);
+    setModalOpen(false);
+  };
+  const handleDelete = () => {
+    if (deleteId && planId) {
+      deleteMutation.mutate({ id: deleteId, planId }, { onSuccess: () => setDeleteId(null) });
+    }
+  };
 
   if (!planId) {
     return (
@@ -528,15 +655,20 @@ const ProgramasSection = ({ planId }: ProgramasSectionProps) => {
 
   if (!programas || programas.length === 0) {
     return (
-      <EmptyState
-        icon={<Briefcase className="w-16 h-16" />}
-        title="No hay programas registrados"
-        description="Comience creando programas de gestión específicos para el sistema HSEQ"
-        action={{
-          label: 'Crear Programa',
-          onClick: () => {},
-        }}
-      />
+      <>
+        <EmptyState
+          icon={<Briefcase className="w-16 h-16" />}
+          title="No hay programas registrados"
+          description="Comience creando programas de gestión específicos para el sistema HSEQ"
+          action={{ label: 'Crear Programa', onClick: handleNew }}
+        />
+        <ProgramaGestionFormModal
+          item={null}
+          planId={planId}
+          isOpen={modalOpen}
+          onClose={handleCloseModal}
+        />
+      </>
     );
   }
 
@@ -583,7 +715,7 @@ const ProgramasSection = ({ planId }: ProgramasSectionProps) => {
       {/* Actions */}
       <SectionToolbar
         title="Programas de Gestión"
-        primaryAction={{ label: 'Nuevo Programa', onClick: () => {} }}
+        primaryAction={{ label: 'Nuevo Programa', onClick: handleNew }}
       />
 
       {/* Programs Grid */}
@@ -662,20 +794,47 @@ const ProgramasSection = ({ planId }: ProgramasSectionProps) => {
 
               {/* Actions */}
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                <Button variant="ghost" size="sm" leftIcon={<Eye className="w-4 h-4" />}>
-                  Ver Detalle
-                </Button>
-                <Button variant="ghost" size="sm" leftIcon={<Edit className="w-4 h-4" />}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leftIcon={<Edit className="w-4 h-4" />}
+                  onClick={() => handleEdit(programa)}
+                >
                   Editar
                 </Button>
-                <Button variant="ghost" size="sm" leftIcon={<FileText className="w-4 h-4" />}>
-                  Actividades
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leftIcon={<Trash2 className="w-4 h-4 text-danger-600" />}
+                  onClick={() => setDeleteId(programa.id)}
+                >
+                  Eliminar
                 </Button>
               </div>
             </div>
           </Card>
         ))}
       </div>
+
+      {/* Modal CRUD */}
+      <ProgramaGestionFormModal
+        item={selectedItem}
+        planId={planId}
+        isOpen={modalOpen}
+        onClose={handleCloseModal}
+      />
+
+      {/* Confirm Delete */}
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Eliminar Programa"
+        message="¿Está seguro de eliminar este programa? Esto eliminará también sus actividades asociadas."
+        confirmLabel="Eliminar"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 };

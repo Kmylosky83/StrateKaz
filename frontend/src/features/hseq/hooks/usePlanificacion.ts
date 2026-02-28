@@ -622,6 +622,25 @@ export function useActualizarAvanceActividad() {
   });
 }
 
+export function useDeleteActividadPlan() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, planId }: { id: number; planId: number }) => {
+      await apiClient.delete(`/api/hseq/planificacion/actividades/${id}/`);
+      return planId;
+    },
+    onSuccess: (planId) => {
+      queryClient.invalidateQueries({ queryKey: planificacionKeys.actividades(planId) });
+      queryClient.invalidateQueries({ queryKey: planificacionKeys.plan(planId) });
+      queryClient.invalidateQueries({ queryKey: planificacionKeys.dashboard(planId) });
+      toast.success('Actividad eliminada exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al eliminar actividad');
+    },
+  });
+}
+
 // ==================== OBJETIVOS SISTEMA HOOKS ====================
 
 export function useObjetivosSistema(planId: number, filters?: { categoria?: string }) {
@@ -718,6 +737,24 @@ export function useActualizarCumplimiento() {
   });
 }
 
+export function useDeleteObjetivo() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, planId }: { id: number; planId: number }) => {
+      await apiClient.delete(`/api/hseq/planificacion/objetivos/${id}/`);
+      return planId;
+    },
+    onSuccess: (planId) => {
+      queryClient.invalidateQueries({ queryKey: planificacionKeys.objetivos(planId) });
+      queryClient.invalidateQueries({ queryKey: planificacionKeys.dashboard(planId) });
+      toast.success('Objetivo eliminado exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al eliminar objetivo');
+    },
+  });
+}
+
 // ==================== PROGRAMAS GESTION HOOKS ====================
 
 export function useProgramasGestion(planId: number, filters?: { tipo?: string }) {
@@ -810,6 +847,24 @@ export function useActualizarAvancePrograma() {
     },
     onError: () => {
       toast.error('Error al actualizar avance de programa');
+    },
+  });
+}
+
+export function useDeletePrograma() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, planId }: { id: number; planId: number }) => {
+      await apiClient.delete(`/api/hseq/planificacion/programas/${id}/`);
+      return planId;
+    },
+    onSuccess: (planId) => {
+      queryClient.invalidateQueries({ queryKey: planificacionKeys.programas(planId) });
+      queryClient.invalidateQueries({ queryKey: planificacionKeys.dashboard(planId) });
+      toast.success('Programa eliminado exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al eliminar programa');
     },
   });
 }

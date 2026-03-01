@@ -551,11 +551,12 @@ class Command(BaseCommand):
                 'orden': 26,
                 'tabs': [
                     # riesgos_oportunidades MOVIDO a gestion_estrategica (Tab 6)
-                    {'code': 'ipevr', 'name': 'IPEVR (GTC-45)', 'icon': 'ShieldAlert', 'route': 'ipevr', 'orden': 1},
-                    {'code': 'aspectos_ambientales', 'name': 'Aspectos Ambientales', 'icon': 'Leaf', 'route': 'ambientales', 'orden': 2},
-                    {'code': 'riesgos_viales', 'name': 'Riesgos Viales', 'icon': 'Car', 'route': 'viales', 'orden': 3},
-                    {'code': 'sagrilaft_ptee', 'name': 'SAGRILAFT/PTEE', 'icon': 'ShieldCheck', 'route': 'sagrilaft', 'orden': 4},
-                    {'code': 'seguridad_informacion', 'name': 'Seguridad de la Información', 'icon': 'Lock', 'route': 'seguridad-info', 'orden': 5},
+                    {'code': 'riesgos_procesos', 'name': 'Riesgos por Procesos', 'icon': 'AlertTriangle', 'route': 'procesos', 'orden': 1},
+                    {'code': 'ipevr', 'name': 'IPEVR (GTC-45)', 'icon': 'ShieldAlert', 'route': 'ipevr', 'orden': 2},
+                    {'code': 'aspectos_ambientales', 'name': 'Aspectos Ambientales', 'icon': 'Leaf', 'route': 'ambientales', 'orden': 3},
+                    {'code': 'riesgos_viales', 'name': 'Riesgos Viales', 'icon': 'Car', 'route': 'viales', 'orden': 4},
+                    {'code': 'sagrilaft_ptee', 'name': 'SAGRILAFT/PTEE', 'icon': 'ShieldCheck', 'route': 'sagrilaft', 'orden': 5},
+                    {'code': 'seguridad_informacion', 'name': 'Seguridad de la Información', 'icon': 'Lock', 'route': 'seguridad-info', 'orden': 6},
                 ]
             },
             {

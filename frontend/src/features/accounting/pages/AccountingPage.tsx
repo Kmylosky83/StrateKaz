@@ -1,5 +1,5 @@
 /**
- * Pagina Principal: Contabilidad (Modulo Activable)
+ * Pagina Principal: Contabilidad (Módulo Activable)
  *
  * Dashboard de contabilidad con datos reales del backend
  */
@@ -15,12 +15,9 @@ import {
   Calculator,
   FileText,
   Settings,
-  Loader2,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
-import { Card } from '@/components/common/Card';
-import { Button } from '@/components/common/Button';
-import { Badge } from '@/components/common/Badge';
+import { Card, Button, Badge } from '@/components/common';
 import { cn } from '@/utils/cn';
 import {
   useConfiguracionContable,
@@ -131,7 +128,7 @@ export default function AccountingPage() {
   const totalDebitos = compMes.reduce((sum, c) => sum + dec(c.total_debito), 0);
   const totalCreditos = compMes.reduce((sum, c) => sum + dec(c.total_credito), 0);
 
-  // Ultimas generaciones
+  // Últimas generaciones
   const ultimaGeneracion = generaciones[0];
 
   // Comprobantes recientes (top 5)
@@ -144,7 +141,7 @@ export default function AccountingPage() {
       case 'aprobado':
         return { variant: 'primary' as const, label: 'Aprobado' };
       case 'pendiente_aprobacion':
-        return { variant: 'warning' as const, label: 'Pend. Aprobacion' };
+        return { variant: 'warning' as const, label: 'Pend. Aprobación' };
       case 'borrador':
         return { variant: 'warning' as const, label: 'Borrador' };
       case 'anulado':
@@ -158,10 +155,10 @@ export default function AccountingPage() {
     <div className="space-y-8">
       <PageHeader
         title="Contabilidad"
-        description="Sistema de contabilidad integrado - Plan Unico de Cuentas (PUC) Colombia"
+        description="Sistema de contabilidad integrado - Plan Único de Cuentas (PUC) Colombia"
       />
 
-      {/* Informacion del Periodo */}
+      {/* Información del Periodo */}
       <Card
         variant="bordered"
         padding="md"
@@ -176,7 +173,7 @@ export default function AccountingPage() {
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                 {config
                   ? `Ejercicio ${config.fecha_inicio_ejercicio?.slice(0, 4) ?? '-'} - Periodo ${config.periodo_actual}`
-                  : 'Cargando configuracion...'}
+                  : 'Cargando configuración...'}
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 {planActivo?.nombre ?? 'Sin plan activo'} &bull; {cuentas.length} cuentas activas
@@ -195,7 +192,7 @@ export default function AccountingPage() {
               leftIcon={<Settings className="w-4 h-4" />}
               onClick={() => navigate('/contabilidad/configuracion')}
             >
-              Configuracion
+              Configuración
             </Button>
           </div>
         </div>
@@ -206,7 +203,7 @@ export default function AccountingPage() {
         <Card variant="bordered" padding="md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Debitos del Mes</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Débitos del Mes</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
                 {formatCurrency(totalDebitos)}
               </p>
@@ -220,7 +217,7 @@ export default function AccountingPage() {
         <Card variant="bordered" padding="md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Creditos del Mes</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Créditos del Mes</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
                 {formatCurrency(totalCreditos)}
               </p>
@@ -249,7 +246,7 @@ export default function AccountingPage() {
         <Card variant="bordered" padding="md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Cola Integracion</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Cola Integración</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
                 {colaPendientes.length}
               </p>
@@ -264,10 +261,10 @@ export default function AccountingPage() {
         </Card>
       </div>
 
-      {/* Modulos Grid */}
+      {/* Módulos Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <ModuloCard
-          titulo="Configuracion Contable"
+          titulo="Configuración Contable"
           icono={<BookOpen className="w-6 h-6 text-white" />}
           color="bg-primary-600"
           stats={[
@@ -286,7 +283,7 @@ export default function AccountingPage() {
             { label: 'Comprobantes mes', value: compMes.length },
             { label: 'Pendientes', value: borradores.length },
             {
-              label: 'Debitos = Creditos',
+              label: 'Débitos = Créditos',
               value: totalDebitos === totalCreditos ? 'Cuadrado' : 'Descuadrado',
             },
           ]}
@@ -300,17 +297,17 @@ export default function AccountingPage() {
           stats={[
             { label: 'Definiciones', value: informes.length },
             { label: 'Generados', value: generaciones.length },
-            { label: 'Ultimo', value: ultimaGeneracion?.created_at?.slice(0, 10) ?? '-' },
+            { label: 'Último', value: ultimaGeneracion?.created_at?.slice(0, 10) ?? '-' },
           ]}
           ruta="/contabilidad/informes"
         />
 
         <ModuloCard
-          titulo="Integracion"
+          titulo="Integración"
           icono={<Link2 className="w-6 h-6 text-white" />}
           color="bg-orange-600"
           stats={[
-            { label: 'Modulos integrados', value: modulosActivos },
+            { label: 'Módulos integrados', value: modulosActivos },
             { label: 'En cola', value: colaPendientes.length },
             { label: 'Errores', value: colaErrores.length },
           ]}
@@ -336,7 +333,7 @@ export default function AccountingPage() {
               <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Numero
+                    Número
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     Tipo
@@ -348,10 +345,10 @@ export default function AccountingPage() {
                     Concepto
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                    Debito
+                    Débito
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                    Credito
+                    Crédito
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     Estado

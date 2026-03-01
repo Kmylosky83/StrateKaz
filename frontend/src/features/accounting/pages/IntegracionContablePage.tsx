@@ -1,40 +1,41 @@
 /**
- * Pagina: Integracion Contable
+ * Pagina: Integración Contable
  *
- * Gestion de integracion con otros modulos con datos reales del backend:
- * - Parametros: Configuracion de cuentas por modulo
- * - Cola: Cola de contabilizacion automatica
+ * Gestión de integración con otros módulos con datos reales del backend:
+ * - Parámetros: Configuración de cuentas por módulo
+ * - Cola: Cola de contabilización automática
  * - Logs: Historial de integraciones
- * - Estadisticas: Metricas de integracion
+ * - Estadísticas: Métricas de integración
  */
 import { useState } from 'react';
 import {
-  Link2,
   Settings,
   Clock,
   FileText,
   BarChart3,
-  Search,
   Edit2,
   RefreshCw,
   CheckCircle,
   XCircle,
-  Play,
   Trash2,
-  Eye,
-  Download,
-  Loader2,
+  Plus,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
-import { Card } from '@/components/common/Card';
-import { Button } from '@/components/common/Button';
-import { Badge } from '@/components/common/Badge';
-import { Tabs } from '@/components/common/Tabs';
+import {
+  Card,
+  Button,
+  Badge,
+  Tabs,
+  Spinner,
+  EmptyState,
+  SectionToolbar,
+  ConfirmDialog,
+} from '@/components/common';
+import { Select } from '@/components/forms';
 import { cn } from '@/utils/cn';
 import {
   useParametrosIntegracion,
-  useParametrosPorModulo,
-  useResumenIntegracion,
+  useDeleteParametro,
   useToggleParametroActivo,
   useLogsIntegracion,
   useErroresRecientes,
@@ -48,10 +49,12 @@ import {
   useReintentarTodosCola,
 } from '../hooks';
 import type {
+  ParametrosIntegracion,
   ParametrosIntegracionList,
   LogIntegracionList,
   ColaContabilizacionList,
 } from '../types';
+import ParametroIntegracionFormModal from '../components/ParametroIntegracionFormModal';
 
 const extractResults = <T,>(data: unknown): T[] => {
   if (!data) return [];
@@ -109,74 +112,88 @@ const getLogEstadoBadge = (estado: string) => {
 const ParametrosSection = () => {
   const [filtroModulo, setFiltroModulo] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<ParametrosIntegracion | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ParametrosIntegracionList | null>(null);
 
   const { data: parametrosData, isLoading } = useParametrosIntegracion({
     modulo: filtroModulo || undefined,
     search: searchTerm || undefined,
   });
   const toggleActivo = useToggleParametroActivo();
+  const deleteMut = useDeleteParametro();
 
   const parametros = extractResults<ParametrosIntegracionList>(parametrosData);
 
-  // Obtener modulos unicos para el filtro
-  const modulosUnicos = [...new Set(parametros.map((p) => p.modulo))];
+  const openCreate = () => {
+    setEditing(null);
+    setModalOpen(true);
+  };
+  const openEdit = (p: ParametrosIntegracionList) => {
+    setEditing(p as unknown as ParametrosIntegracion);
+    setModalOpen(true);
+  };
+  const closeModal = () => {
+    setEditing(null);
+    setModalOpen(false);
+  };
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Buscar parametro..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm w-64 bg-white dark:bg-gray-800"
-            />
-          </div>
-          <select
-            value={filtroModulo}
-            onChange={(e) => setFiltroModulo(e.target.value)}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800"
-          >
-            <option value="">Todos los modulos</option>
-            {modulosUnicos.map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
-        </div>
+      <SectionToolbar
+        title="Parámetros de Integración"
+        count={parametros.length}
+        searchable
+        searchValue={searchTerm}
+        searchPlaceholder="Buscar parámetro..."
+        onSearchChange={setSearchTerm}
+        primaryAction={{ label: 'Nuevo Parámetro', onClick: openCreate }}
+      />
+
+      <div className="flex items-center gap-3">
+        <Select
+          value={filtroModulo}
+          onChange={(e) => setFiltroModulo(e.target.value)}
+          className="w-56"
+        >
+          <option value="">Todos los módulos</option>
+          <option value="tesoreria">Tesorería</option>
+          <option value="nomina">Nómina</option>
+          <option value="inventarios">Inventarios</option>
+          <option value="activos_fijos">Activos Fijos</option>
+          <option value="ventas">Ventas</option>
+          <option value="compras">Compras</option>
+        </Select>
       </div>
 
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-6 h-6 animate-spin text-primary-600" />
+          <Spinner size="medium" />
         </div>
       ) : parametros.length === 0 ? (
-        <Card variant="bordered" padding="lg">
-          <div className="text-center py-8">
-            <Settings className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              Sin parametros configurados
-            </h3>
-            <p className="text-gray-500">No se encontraron parametros de integracion</p>
-          </div>
-        </Card>
+        <EmptyState
+          icon={<Settings className="w-12 h-12" />}
+          title="Sin parámetros configurados"
+          description="No se encontraron parámetros de integración"
+          action={{
+            label: 'Nuevo Parámetro',
+            onClick: openCreate,
+            icon: <Plus className="w-4 h-4" />,
+          }}
+        />
       ) : (
         <Card variant="bordered" padding="none">
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Modulo
+                  Módulo
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Nombre
+                  Clave
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Descripcion
+                  Descripción
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Cuenta Contable
@@ -202,7 +219,7 @@ const ParametrosSection = () => {
                       {param.modulo_display ?? param.modulo}
                     </span>
                   </td>
-                  <td className="px-4 py-3 font-medium text-sm text-gray-900 dark:text-white">
+                  <td className="px-4 py-3 font-mono text-sm text-gray-900 dark:text-white">
                     {param.nombre}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
@@ -227,6 +244,14 @@ const ParametrosSection = () => {
                         variant="ghost"
                         size="sm"
                         className="p-1"
+                        onClick={() => openEdit(param)}
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="p-1"
                         onClick={() => toggleActivo.mutate(param.id)}
                         disabled={toggleActivo.isPending}
                       >
@@ -236,6 +261,14 @@ const ParametrosSection = () => {
                           <CheckCircle className="w-4 h-4 text-green-400" />
                         )}
                       </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="p-1 text-red-500"
+                        onClick={() => setDeleteTarget(param)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -244,6 +277,21 @@ const ParametrosSection = () => {
           </table>
         </Card>
       )}
+
+      <ParametroIntegracionFormModal item={editing} isOpen={modalOpen} onClose={closeModal} />
+
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (deleteTarget) deleteMut.mutate(deleteTarget.id);
+          setDeleteTarget(null);
+        }}
+        title="Eliminar Parámetro"
+        message={`¿Está seguro de eliminar el parámetro "${deleteTarget?.nombre}"?`}
+        confirmLabel="Eliminar"
+        variant="danger"
+      />
     </div>
   );
 };
@@ -265,11 +313,11 @@ const ColaSection = () => {
   const cola = extractResults<ColaContabilizacionList>(colaData);
   const pendientes = Array.isArray(pendientesData) ? pendientesData : [];
   const errores = Array.isArray(erroresData) ? erroresData : [];
-  const estadisticas = estadisticasData as Record<string, any> | undefined;
+  const estadisticas = estadisticasData as Record<string, number> | undefined;
 
   return (
     <div className="space-y-4">
-      {/* KPIs rapidos */}
+      {/* KPIs rápidos */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card variant="bordered" padding="sm">
           <div className="flex items-center justify-between">
@@ -311,10 +359,10 @@ const ColaSection = () => {
 
       {/* Filtros y acciones */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <select
+        <Select
           value={estadoFilter}
           onChange={(e) => setEstadoFilter(e.target.value)}
-          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800"
+          className="w-56"
         >
           <option value="">Todos los estados</option>
           <option value="pendiente">Pendiente</option>
@@ -322,7 +370,7 @@ const ColaSection = () => {
           <option value="error">Error</option>
           <option value="completado">Completado</option>
           <option value="cancelado">Cancelado</option>
-        </select>
+        </Select>
         <div className="flex items-center gap-2">
           {errores.length > 0 && (
             <Button
@@ -341,23 +389,21 @@ const ColaSection = () => {
       {/* Lista de cola */}
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-6 h-6 animate-spin text-primary-600" />
+          <Spinner size="medium" />
         </div>
       ) : cola.length === 0 ? (
-        <Card variant="bordered" padding="lg">
-          <div className="text-center py-8">
-            <CheckCircle className="w-12 h-12 mx-auto mb-4 text-green-500" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Cola vacia</h3>
-            <p className="text-gray-500">No hay documentos en cola de contabilizacion</p>
-          </div>
-        </Card>
+        <EmptyState
+          icon={<CheckCircle className="w-12 h-12" />}
+          title="Cola vacía"
+          description="No hay documentos en cola de contabilización"
+        />
       ) : (
         <Card variant="bordered" padding="none">
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Modulo
+                  Módulo
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Documento
@@ -505,52 +551,43 @@ const LogsSection = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Buscar documento..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm w-64 bg-white dark:bg-gray-800"
-            />
-          </div>
-          <select
-            value={estadoFilter}
-            onChange={(e) => setEstadoFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800"
-          >
-            <option value="">Todos los estados</option>
-            <option value="exitoso">Exitoso</option>
-            <option value="error">Error</option>
-            <option value="revertido">Revertido</option>
-          </select>
-        </div>
+      <div className="flex items-center gap-3 flex-wrap">
+        <input
+          type="text"
+          placeholder="Buscar documento..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-4 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm w-64 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+        />
+        <Select
+          value={estadoFilter}
+          onChange={(e) => setEstadoFilter(e.target.value)}
+          className="w-52"
+        >
+          <option value="">Todos los estados</option>
+          <option value="exitoso">Exitoso</option>
+          <option value="error">Error</option>
+          <option value="revertido">Revertido</option>
+        </Select>
       </div>
 
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-6 h-6 animate-spin text-primary-600" />
+          <Spinner size="medium" />
         </div>
       ) : logs.length === 0 ? (
-        <Card variant="bordered" padding="lg">
-          <div className="text-center py-8">
-            <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              Sin registros
-            </h3>
-            <p className="text-gray-500">No se encontraron logs de integracion</p>
-          </div>
-        </Card>
+        <EmptyState
+          icon={<FileText className="w-12 h-12" />}
+          title="Sin registros"
+          description="No se encontraron logs de integración"
+        />
       ) : (
         <Card variant="bordered" padding="none">
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Modulo
+                  Módulo
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Documento
@@ -562,7 +599,7 @@ const LogsSection = () => {
                   Comprobante
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Descripcion
+                  Descripción
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Fecha
@@ -631,24 +668,21 @@ const LogsSection = () => {
 };
 
 const EstadisticasSection = () => {
-  const { data: resumenData, isLoading: loadingResumen } = useResumenIntegracion();
   const { data: estadisticasLogsData, isLoading: loadingStats } = useEstadisticasLogs();
   const { data: estadisticasColaData } = useEstadisticasCola();
   const { data: erroresData } = useErroresRecientes();
   const { data: parametrosData } = useParametrosIntegracion();
 
-  const resumen = resumenData as Record<string, any> | undefined;
-  const statsLogs = estadisticasLogsData as Record<string, any> | undefined;
-  const statsCola = estadisticasColaData as Record<string, any> | undefined;
-  const erroresRecientes = extractResults(erroresData);
-  const parametros = extractResults(parametrosData);
-  const modulosActivos = new Set(parametros.filter((p: any) => p.activo).map((p: any) => p.modulo))
-    .size;
+  const statsLogs = estadisticasLogsData as Record<string, number> | undefined;
+  const statsCola = estadisticasColaData as Record<string, number> | undefined;
+  const erroresRecientes = extractResults<LogIntegracionList>(erroresData);
+  const parametros = extractResults<ParametrosIntegracionList>(parametrosData);
+  const modulosActivos = new Set(parametros.filter((p) => p.activo).map((p) => p.modulo)).size;
 
-  if (loadingResumen && loadingStats) {
+  if (loadingStats) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-6 h-6 animate-spin text-primary-600" />
+        <Spinner size="medium" />
       </div>
     );
   }
@@ -667,12 +701,12 @@ const EstadisticasSection = () => {
           <div className="text-center">
             <p className="text-sm text-gray-500 mb-1">Total Procesados</p>
             <p className="text-3xl font-bold text-gray-900 dark:text-white">{totalProcesados}</p>
-            <p className="text-xs text-green-600 mt-1">Historico</p>
+            <p className="text-xs text-green-600 mt-1">Histórico</p>
           </div>
         </Card>
         <Card variant="bordered" padding="md">
           <div className="text-center">
-            <p className="text-sm text-gray-500 mb-1">Tasa de Exito</p>
+            <p className="text-sm text-gray-500 mb-1">Tasa de Éxito</p>
             <p className="text-3xl font-bold text-green-600">{tasaExito}%</p>
             <p className="text-xs text-gray-500 mt-1">General</p>
           </div>
@@ -686,7 +720,7 @@ const EstadisticasSection = () => {
         </Card>
         <Card variant="bordered" padding="md">
           <div className="text-center">
-            <p className="text-sm text-gray-500 mb-1">Modulos Activos</p>
+            <p className="text-sm text-gray-500 mb-1">Módulos Activos</p>
             <p className="text-3xl font-bold text-primary-600">{modulosActivos}</p>
             <p className="text-xs text-gray-500 mt-1">Integrados</p>
           </div>
@@ -725,7 +759,7 @@ const EstadisticasSection = () => {
             </div>
           ) : (
             <div className="space-y-2 max-h-48 overflow-y-auto">
-              {erroresRecientes.slice(0, 5).map((err: any) => (
+              {erroresRecientes.slice(0, 5).map((err) => (
                 <div
                   key={err.id}
                   className="text-xs p-2 bg-red-50 dark:bg-red-900/10 rounded border border-red-100 dark:border-red-900/30"
@@ -761,7 +795,7 @@ export default function IntegracionContablePage() {
   const tabs = [
     {
       id: 'parametros',
-      label: 'Parametros',
+      label: 'Parámetros',
       icon: <Settings className="w-4 h-4" />,
       content: <ParametrosSection />,
     },
@@ -780,7 +814,7 @@ export default function IntegracionContablePage() {
     },
     {
       id: 'estadisticas',
-      label: 'Estadisticas',
+      label: 'Estadísticas',
       icon: <BarChart3 className="w-4 h-4" />,
       content: <EstadisticasSection />,
     },
@@ -789,8 +823,8 @@ export default function IntegracionContablePage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Integracion Contable"
-        description="Integracion automatica con modulos del sistema"
+        title="Integración Contable"
+        description="Integración automática con módulos del sistema"
       />
 
       <Tabs tabs={tabs} defaultTab="cola" />

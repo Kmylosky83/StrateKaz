@@ -452,10 +452,11 @@ export const useRecalcularTotales = () => {
 };
 
 // --- Detalles Comprobante ---
-export const useDetallesComprobante = (params?: Record<string, unknown>) =>
+export const useDetallesComprobante = (comprobanteId: number, options?: { enabled?: boolean }) =>
   useQuery({
-    queryKey: ['accounting', 'detalles-comprobante', params],
-    queryFn: () => detallesComprobanteApi.getAll(params),
+    queryKey: ['accounting', 'detalles-comprobante', comprobanteId],
+    queryFn: () => detallesComprobanteApi.getAll({ comprobante: comprobanteId }),
+    enabled: options?.enabled ?? !!comprobanteId,
   });
 
 export const useCreateDetalle = () => {
@@ -513,8 +514,11 @@ export const useCreateSecuencia = () => {
 };
 
 // --- Plantillas ---
-export const usePlantillas = () =>
-  useQuery({ queryKey: ['accounting', 'plantillas'], queryFn: plantillasApi.getAll });
+export const usePlantillas = (params?: Record<string, unknown>) =>
+  useQuery({
+    queryKey: ['accounting', 'plantillas', params],
+    queryFn: () => plantillasApi.getAll(params),
+  });
 
 export const usePlantilla = (id: number) =>
   useQuery({
@@ -563,8 +567,11 @@ export const useGenerarComprobanteDesde = () => {
 // ==================== INFORMES CONTABLES ====================
 
 // --- Informes ---
-export const useInformes = () =>
-  useQuery({ queryKey: ['accounting', 'informes'], queryFn: informesApi.getAll });
+export const useInformes = (params?: Record<string, unknown>) =>
+  useQuery({
+    queryKey: ['accounting', 'informes', params],
+    queryFn: () => informesApi.getAll(params),
+  });
 
 export const useInforme = (id: number) =>
   useQuery({
@@ -573,11 +580,11 @@ export const useInforme = (id: number) =>
     enabled: !!id,
   });
 
-export const useInformeLineas = (id: number) =>
+export const useInformeLineas = (id: number, options?: { enabled?: boolean }) =>
   useQuery({
     queryKey: ['accounting', 'informe', id, 'lineas'],
     queryFn: () => informesApi.getLineas(id),
-    enabled: !!id,
+    enabled: options?.enabled ?? !!id,
   });
 
 export const useCreateInforme = () => {

@@ -1089,9 +1089,6 @@ export const partesInteresadasApi = {
   downloadPlantilla: async (): Promise<Blob> => {
     const response = await apiClient.get(`${BASE_URL}/partes-interesadas/plantilla-importacion/`, {
       responseType: 'blob',
-      headers: {
-        Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      },
     });
     return response.data;
   },
@@ -1102,9 +1099,6 @@ export const partesInteresadasApi = {
   exportExcel: async (): Promise<Blob> => {
     const response = await apiClient.get(`${BASE_URL}/partes-interesadas/export_excel/`, {
       responseType: 'blob',
-      headers: {
-        Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      },
     });
     return response.data;
   },

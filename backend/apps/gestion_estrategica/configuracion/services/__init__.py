@@ -7,18 +7,20 @@ Incluye:
 
 from .connection_testers import (
     ConnectionTester,
+    AIConnectionTester,
     EmailConnectionTester,
-    OpenAIConnectionTester,
     SAPConnectionTester,
     StorageConnectionTester,
+    GenericHTTPTester,
     get_connection_tester,
 )
 
 __all__ = [
     'ConnectionTester',
+    'AIConnectionTester',
     'EmailConnectionTester',
-    'OpenAIConnectionTester',
     'SAPConnectionTester',
     'StorageConnectionTester',
+    'GenericHTTPTester',
     'get_connection_tester',
 ]

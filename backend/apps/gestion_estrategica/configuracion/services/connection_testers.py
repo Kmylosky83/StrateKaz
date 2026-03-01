@@ -232,21 +232,48 @@ class EmailConnectionTester(ConnectionTester):
             )
 
 
-class OpenAIConnectionTester(ConnectionTester):
+class AIConnectionTester(ConnectionTester):
     """
-    Tester para conexiones a OpenAI API.
+    Tester para conexiones a APIs de Inteligencia Artificial.
+
+    Detecta automáticamente el proveedor (OpenAI, Gemini, Claude, etc.)
+    según la URL o el proveedor configurado.
     """
+
+    # Patrones de URL para detectar proveedor automáticamente
+    PROVIDER_PATTERNS = {
+        'openai': 'api.openai.com',
+        'gemini': 'generativelanguage.googleapis.com',
+        'claude': 'api.anthropic.com',
+        'azure_openai': 'openai.azure.com',
+    }
 
     def get_required_credentials(self) -> list:
         return ['api_key']
 
+    def _detect_provider(self, base_url: str, creds: dict) -> str:
+        """Detecta el proveedor de IA según la URL o credenciales."""
+        url_lower = (base_url or '').lower()
+
+        for provider, pattern in self.PROVIDER_PATTERNS.items():
+            if pattern in url_lower:
+                return provider
+
+        # Fallback: revisar si hay pistas en credenciales
+        if creds.get('provider'):
+            return creds['provider'].lower()
+
+        return 'generic'
+
     def test(self, integracion) -> ConnectionTestResult:
         """
-        Prueba la conexión a OpenAI API.
+        Prueba la conexión a la API de IA.
 
-        Proceso:
-        1. Hacer una llamada simple a /models
-        2. Verificar que la API key es válida
+        Detecta el proveedor y usa el método de autenticación apropiado:
+        - OpenAI: Bearer token + GET /models
+        - Gemini: ?key= query param + GET /models
+        - Claude: x-api-key header + GET /models
+        - Genérico: Bearer token + GET base_url
         """
         import time
         import requests
@@ -266,56 +293,14 @@ class OpenAIConnectionTester(ConnectionTester):
             api_key = creds.get('api_key')
             base_url = self.get_base_url(integracion, default='https://api.openai.com/v1')
 
-            # Hacer request a /models (endpoint ligero)
-            headers = {
-                'Authorization': f'Bearer {api_key}',
-                'Content-Type': 'application/json'
-            }
+            provider = self._detect_provider(base_url, creds)
 
-            response = requests.get(
-                f'{base_url}/models',
-                headers=headers,
-                timeout=10
-            )
-
-            elapsed_ms = (time.time() - start_time) * 1000
-
-            if response.status_code == 200:
-                data = response.json()
-                models_count = len(data.get('data', []))
-
-                logger.info(f"Conexión OpenAI exitosa para {integracion.nombre}")
-
-                return ConnectionTestResult(
-                    success=True,
-                    message=f"Conexión exitosa. {models_count} modelos disponibles.",
-                    details={
-                        'models_count': models_count,
-                        'api_version': 'v1'
-                    },
-                    response_time_ms=round(elapsed_ms, 2)
-                )
-            elif response.status_code == 401:
-                return ConnectionTestResult(
-                    success=False,
-                    message="API Key inválida o expirada",
-                    error_code='AUTH_ERROR',
-                    response_time_ms=round(elapsed_ms, 2)
-                )
-            elif response.status_code == 429:
-                return ConnectionTestResult(
-                    success=False,
-                    message="Rate limit excedido. Intente más tarde.",
-                    error_code='RATE_LIMIT',
-                    response_time_ms=round(elapsed_ms, 2)
-                )
+            if provider == 'gemini':
+                return self._test_gemini(api_key, base_url, integracion, start_time)
+            elif provider == 'claude':
+                return self._test_claude(api_key, base_url, integracion, start_time)
             else:
-                return ConnectionTestResult(
-                    success=False,
-                    message=f"Error HTTP {response.status_code}: {response.text[:100]}",
-                    error_code=f'HTTP_{response.status_code}',
-                    response_time_ms=round(elapsed_ms, 2)
-                )
+                return self._test_openai(api_key, base_url, integracion, start_time)
 
         except requests.Timeout:
             elapsed_ms = (time.time() - start_time) * 1000
@@ -337,11 +322,148 @@ class OpenAIConnectionTester(ConnectionTester):
 
         except Exception as e:
             elapsed_ms = (time.time() - start_time) * 1000
-            logger.error(f"Error inesperado OpenAI para {integracion.nombre}: {e}")
+            logger.error(f"Error inesperado IA para {integracion.nombre}: {e}")
             return ConnectionTestResult(
                 success=False,
                 message=f"Error: {str(e)}",
                 error_code='UNKNOWN_ERROR',
+                response_time_ms=round(elapsed_ms, 2)
+            )
+
+    def _test_openai(self, api_key, base_url, integracion, start_time):
+        """Prueba OpenAI: Bearer token + GET /models."""
+        import time
+        import requests
+
+        headers = {
+            'Authorization': f'Bearer {api_key}',
+            'Content-Type': 'application/json'
+        }
+
+        response = requests.get(
+            f'{base_url}/models',
+            headers=headers,
+            timeout=10
+        )
+
+        elapsed_ms = (time.time() - start_time) * 1000
+
+        if response.status_code == 200:
+            data = response.json()
+            models_count = len(data.get('data', []))
+            logger.info(f"Conexión OpenAI exitosa para {integracion.nombre}")
+            return ConnectionTestResult(
+                success=True,
+                message=f"Conexión exitosa (OpenAI). {models_count} modelos disponibles.",
+                details={'models_count': models_count, 'provider': 'openai'},
+                response_time_ms=round(elapsed_ms, 2)
+            )
+
+        return self._handle_error_response(response, elapsed_ms)
+
+    def _test_gemini(self, api_key, base_url, integracion, start_time):
+        """Prueba Gemini: ?key= query param + GET /models."""
+        import time
+        import requests
+
+        # Gemini usa API key como query parameter
+        # URL: https://generativelanguage.googleapis.com/v1beta/models?key=API_KEY
+        url = f'{base_url.rstrip("/")}/models'
+
+        response = requests.get(
+            url,
+            params={'key': api_key},
+            timeout=10
+        )
+
+        elapsed_ms = (time.time() - start_time) * 1000
+
+        if response.status_code == 200:
+            data = response.json()
+            models = data.get('models', [])
+            models_count = len(models)
+            logger.info(f"Conexión Gemini exitosa para {integracion.nombre}")
+            return ConnectionTestResult(
+                success=True,
+                message=f"Conexión exitosa (Gemini). {models_count} modelos disponibles.",
+                details={'models_count': models_count, 'provider': 'gemini'},
+                response_time_ms=round(elapsed_ms, 2)
+            )
+
+        return self._handle_error_response(response, elapsed_ms)
+
+    def _test_claude(self, api_key, base_url, integracion, start_time):
+        """Prueba Claude/Anthropic: x-api-key header + GET /models."""
+        import time
+        import requests
+
+        headers = {
+            'x-api-key': api_key,
+            'anthropic-version': '2023-06-01',
+            'Content-Type': 'application/json'
+        }
+
+        response = requests.get(
+            f'{base_url.rstrip("/")}/models',
+            headers=headers,
+            timeout=10
+        )
+
+        elapsed_ms = (time.time() - start_time) * 1000
+
+        if response.status_code == 200:
+            data = response.json()
+            models = data.get('data', [])
+            models_count = len(models)
+            logger.info(f"Conexión Claude exitosa para {integracion.nombre}")
+            return ConnectionTestResult(
+                success=True,
+                message=f"Conexión exitosa (Claude). {models_count} modelos disponibles.",
+                details={'models_count': models_count, 'provider': 'claude'},
+                response_time_ms=round(elapsed_ms, 2)
+            )
+
+        return self._handle_error_response(response, elapsed_ms)
+
+    def _handle_error_response(self, response, elapsed_ms):
+        """Maneja respuestas de error comunes para todas las APIs de IA."""
+        if response.status_code == 401:
+            return ConnectionTestResult(
+                success=False,
+                message="API Key inválida o expirada",
+                error_code='AUTH_ERROR',
+                response_time_ms=round(elapsed_ms, 2)
+            )
+        elif response.status_code == 403:
+            return ConnectionTestResult(
+                success=False,
+                message="Acceso denegado. Verifique los permisos de la API Key.",
+                error_code='FORBIDDEN',
+                response_time_ms=round(elapsed_ms, 2)
+            )
+        elif response.status_code == 429:
+            return ConnectionTestResult(
+                success=False,
+                message="Rate limit excedido. Intente más tarde.",
+                error_code='RATE_LIMIT',
+                response_time_ms=round(elapsed_ms, 2)
+            )
+        else:
+            # Intentar extraer mensaje de error del body
+            try:
+                error_data = response.json()
+                error_msg = (
+                    error_data.get('error', {}).get('message', '')
+                    or error_data.get('message', '')
+                    or str(error_data)[:100]
+                )
+            except Exception:
+                error_msg = response.text[:100] if response.text else ''
+
+            return ConnectionTestResult(
+                success=False,
+                message=f"Error HTTP {response.status_code}: {error_msg}",
+                error_code=f'HTTP_{response.status_code}',
                 response_time_ms=round(elapsed_ms, 2)
             )
 
@@ -744,9 +866,10 @@ TESTER_MAP = {
     # Email
     'EMAIL': EmailConnectionTester,
     'SMTP': EmailConnectionTester,
-    # IA
-    'OPENAI': OpenAIConnectionTester,
-    'IA': OpenAIConnectionTester,
+    # IA (detecta proveedor por URL: OpenAI, Gemini, Claude, etc.)
+    'OPENAI': AIConnectionTester,
+    'IA': AIConnectionTester,
+    'OCR': AIConnectionTester,
     # ERP
     'SAP': SAPConnectionTester,
     'ERP': SAPConnectionTester,

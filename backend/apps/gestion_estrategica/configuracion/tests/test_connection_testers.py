@@ -4,7 +4,7 @@ Sistema de Gestión StrateKaz
 
 Tests unitarios para los servicios de prueba de conexión:
 - EmailConnectionTester
-- OpenAIConnectionTester
+- AIConnectionTester (OpenAI, Gemini, Claude)
 - SAPConnectionTester
 - StorageConnectionTester
 - GenericHTTPTester
@@ -16,7 +16,7 @@ from dataclasses import asdict
 from apps.gestion_estrategica.configuracion.services.connection_testers import (
     ConnectionTestResult,
     EmailConnectionTester,
-    OpenAIConnectionTester,
+    AIConnectionTester,
     SAPConnectionTester,
     StorageConnectionTester,
     GenericHTTPTester,
@@ -37,6 +37,7 @@ def mock_integracion():
     integracion.tipo_servicio = Mock()
     integracion.tipo_servicio.code = "EMAIL"
     integracion.credenciales = {}
+    integracion.endpoint_url = None
     return integracion
 
 
@@ -57,7 +58,14 @@ def openai_credentials():
     """Credenciales de OpenAI para testing."""
     return {
         'api_key': 'sk-test-key-123456',
-        'base_url': 'https://api.openai.com/v1',
+    }
+
+
+@pytest.fixture
+def gemini_credentials():
+    """Credenciales de Gemini para testing."""
+    return {
+        'api_key': 'AIzaSy-test-key-123456',
     }
 
 
@@ -202,23 +210,50 @@ class TestEmailConnectionTester:
 
 
 # ==============================================================================
-# TEST: OpenAIConnectionTester
+# TEST: AIConnectionTester (OpenAI, Gemini, Claude)
 # ==============================================================================
 
-class TestOpenAIConnectionTester:
-    """Tests para OpenAIConnectionTester."""
+class TestAIConnectionTester:
+    """Tests para AIConnectionTester."""
 
     def test_get_required_credentials(self):
         """Test credenciales requeridas."""
-        tester = OpenAIConnectionTester()
+        tester = AIConnectionTester()
         required = tester.get_required_credentials()
 
         assert 'api_key' in required
 
+    def test_detect_openai_provider(self):
+        """Test detección de proveedor OpenAI por URL."""
+        tester = AIConnectionTester()
+        provider = tester._detect_provider('https://api.openai.com/v1', {})
+        assert provider == 'openai'
+
+    def test_detect_gemini_provider(self):
+        """Test detección de proveedor Gemini por URL."""
+        tester = AIConnectionTester()
+        provider = tester._detect_provider(
+            'https://generativelanguage.googleapis.com/v1beta', {}
+        )
+        assert provider == 'gemini'
+
+    def test_detect_claude_provider(self):
+        """Test detección de proveedor Claude por URL."""
+        tester = AIConnectionTester()
+        provider = tester._detect_provider('https://api.anthropic.com/v1', {})
+        assert provider == 'claude'
+
+    def test_detect_generic_fallback(self):
+        """Test fallback a genérico si no reconoce la URL."""
+        tester = AIConnectionTester()
+        provider = tester._detect_provider('https://custom-ai-api.com/v1', {})
+        assert provider == 'generic'
+
     @patch('requests.get')
-    def test_connection_success(self, mock_get, mock_integracion, openai_credentials):
+    def test_openai_connection_success(self, mock_get, mock_integracion, openai_credentials):
         """Test conexión OpenAI exitosa."""
         mock_integracion.credenciales = openai_credentials
+        mock_integracion.endpoint_url = 'https://api.openai.com/v1'
 
         # Mock respuesta exitosa
         mock_response = MagicMock()
@@ -226,23 +261,52 @@ class TestOpenAIConnectionTester:
         mock_response.json.return_value = {'data': [{'id': 'gpt-4'}, {'id': 'gpt-3.5'}]}
         mock_get.return_value = mock_response
 
-        tester = OpenAIConnectionTester()
+        tester = AIConnectionTester()
         result = tester.test(mock_integracion)
 
         assert result.success is True
         assert '2 modelos' in result.message
-        assert result.details['models_count'] == 2
+        assert result.details['provider'] == 'openai'
+
+    @patch('requests.get')
+    def test_gemini_connection_success(self, mock_get, mock_integracion, gemini_credentials):
+        """Test conexión Gemini exitosa."""
+        mock_integracion.credenciales = gemini_credentials
+        mock_integracion.endpoint_url = 'https://generativelanguage.googleapis.com/v1beta'
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            'models': [
+                {'name': 'models/gemini-pro'},
+                {'name': 'models/gemini-1.5-flash'},
+            ]
+        }
+        mock_get.return_value = mock_response
+
+        tester = AIConnectionTester()
+        result = tester.test(mock_integracion)
+
+        assert result.success is True
+        assert '2 modelos' in result.message
+        assert result.details['provider'] == 'gemini'
+        # Gemini usa query param, no Bearer header
+        mock_get.assert_called_once()
+        call_kwargs = mock_get.call_args
+        assert 'params' in call_kwargs.kwargs
+        assert call_kwargs.kwargs['params']['key'] == gemini_credentials['api_key']
 
     @patch('requests.get')
     def test_connection_invalid_key(self, mock_get, mock_integracion, openai_credentials):
         """Test API key inválida."""
         mock_integracion.credenciales = openai_credentials
+        mock_integracion.endpoint_url = 'https://api.openai.com/v1'
 
         mock_response = MagicMock()
         mock_response.status_code = 401
         mock_get.return_value = mock_response
 
-        tester = OpenAIConnectionTester()
+        tester = AIConnectionTester()
         result = tester.test(mock_integracion)
 
         assert result.success is False
@@ -252,16 +316,44 @@ class TestOpenAIConnectionTester:
     def test_connection_rate_limit(self, mock_get, mock_integracion, openai_credentials):
         """Test rate limit excedido."""
         mock_integracion.credenciales = openai_credentials
+        mock_integracion.endpoint_url = 'https://api.openai.com/v1'
 
         mock_response = MagicMock()
         mock_response.status_code = 429
         mock_get.return_value = mock_response
 
-        tester = OpenAIConnectionTester()
+        tester = AIConnectionTester()
         result = tester.test(mock_integracion)
 
         assert result.success is False
         assert result.error_code == 'RATE_LIMIT'
+
+    def test_get_base_url_from_endpoint(self, mock_integracion, openai_credentials):
+        """Test que get_base_url prioriza endpoint_url del modelo."""
+        tester = AIConnectionTester()
+        mock_integracion.credenciales = openai_credentials
+        mock_integracion.endpoint_url = 'https://custom-api.com/v1'
+
+        url = tester.get_base_url(mock_integracion)
+        assert url == 'https://custom-api.com/v1'
+
+    def test_get_base_url_fallback_creds(self, mock_integracion):
+        """Test que get_base_url usa credenciales como fallback."""
+        tester = AIConnectionTester()
+        mock_integracion.endpoint_url = None
+        mock_integracion.credenciales = {'api_key': 'test', 'base_url': 'https://creds-url.com'}
+
+        url = tester.get_base_url(mock_integracion)
+        assert url == 'https://creds-url.com'
+
+    def test_get_base_url_default(self, mock_integracion):
+        """Test que get_base_url usa default cuando no hay URL."""
+        tester = AIConnectionTester()
+        mock_integracion.endpoint_url = None
+        mock_integracion.credenciales = {'api_key': 'test'}
+
+        url = tester.get_base_url(mock_integracion, default='https://default.com')
+        assert url == 'https://default.com'
 
 
 # ==============================================================================
@@ -313,16 +405,17 @@ class TestGenericHTTPTester:
     """Tests para GenericHTTPTester."""
 
     def test_get_required_credentials(self):
-        """Test credenciales requeridas."""
+        """Test credenciales requeridas (vacío, URL viene del modelo)."""
         tester = GenericHTTPTester()
         required = tester.get_required_credentials()
 
-        assert 'base_url' in required
+        assert required == []
 
     @patch('requests.get')
-    def test_connection_success(self, mock_get, mock_integracion):
-        """Test conexión HTTP exitosa."""
-        mock_integracion.credenciales = {'base_url': 'https://api.example.com'}
+    def test_connection_success_from_endpoint_url(self, mock_get, mock_integracion):
+        """Test conexión HTTP exitosa usando endpoint_url del modelo."""
+        mock_integracion.endpoint_url = 'https://api.example.com'
+        mock_integracion.credenciales = {}
 
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -335,9 +428,36 @@ class TestGenericHTTPTester:
         assert 'HTTP 200' in result.message
 
     @patch('requests.get')
+    def test_connection_success_from_creds_fallback(self, mock_get, mock_integracion):
+        """Test conexión usando base_url en credenciales (legacy)."""
+        mock_integracion.endpoint_url = None
+        mock_integracion.credenciales = {'base_url': 'https://api.example.com'}
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_get.return_value = mock_response
+
+        tester = GenericHTTPTester()
+        result = tester.test(mock_integracion)
+
+        assert result.success is True
+
+    def test_connection_missing_url(self, mock_integracion):
+        """Test error cuando no hay URL configurada."""
+        mock_integracion.endpoint_url = None
+        mock_integracion.credenciales = {}
+
+        tester = GenericHTTPTester()
+        result = tester.test(mock_integracion)
+
+        assert result.success is False
+        assert result.error_code == 'MISSING_URL'
+
+    @patch('requests.get')
     def test_connection_http_error(self, mock_get, mock_integracion):
         """Test error HTTP."""
-        mock_integracion.credenciales = {'base_url': 'https://api.example.com'}
+        mock_integracion.endpoint_url = 'https://api.example.com'
+        mock_integracion.credenciales = {}
 
         mock_response = MagicMock()
         mock_response.status_code = 500
@@ -362,19 +482,19 @@ class TestGetConnectionTester:
         tester = get_connection_tester('EMAIL')
         assert isinstance(tester, EmailConnectionTester)
 
-    def test_get_email_tester_lowercase(self):
-        """Test obtener tester con código en minúsculas."""
-        tester = get_connection_tester('email')
-        assert isinstance(tester, EmailConnectionTester)
+    def test_get_ia_tester(self):
+        """Test obtener tester de IA."""
+        tester = get_connection_tester('IA')
+        assert isinstance(tester, AIConnectionTester)
 
     def test_get_openai_tester(self):
-        """Test obtener tester de OpenAI."""
+        """Test obtener tester de OpenAI (mapea a AIConnectionTester)."""
         tester = get_connection_tester('OPENAI')
-        assert isinstance(tester, OpenAIConnectionTester)
+        assert isinstance(tester, AIConnectionTester)
 
     def test_get_storage_tester(self):
         """Test obtener tester de almacenamiento."""
-        tester = get_connection_tester('STORAGE')
+        tester = get_connection_tester('ALMACENAMIENTO')
         assert isinstance(tester, StorageConnectionTester)
 
     def test_get_sap_tester(self):
@@ -416,3 +536,24 @@ class TestIntegrationE2E:
         result = tester.test(mock_integracion)
         assert result.success is True
         assert result.response_time_ms is not None
+
+    @patch('requests.get')
+    def test_full_gemini_flow(self, mock_get, mock_integracion, gemini_credentials):
+        """Test flujo completo para Gemini."""
+        mock_integracion.credenciales = gemini_credentials
+        mock_integracion.tipo_servicio.code = 'IA'
+        mock_integracion.endpoint_url = 'https://generativelanguage.googleapis.com/v1beta'
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            'models': [{'name': 'models/gemini-pro'}]
+        }
+        mock_get.return_value = mock_response
+
+        tester = get_connection_tester('IA')
+        assert isinstance(tester, AIConnectionTester)
+
+        result = tester.test(mock_integracion)
+        assert result.success is True
+        assert 'Gemini' in result.message

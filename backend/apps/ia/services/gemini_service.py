@@ -279,9 +279,24 @@ class GeminiService:
                 error_detail = error_data.get('error', {}).get('message', response.text[:200])
             except Exception:
                 error_detail = response.text[:200]
+
+            # Mensaje amigable para errores comunes
+            if response.status_code == 429:
+                friendly_error = (
+                    'Se agotó la cuota de la API de IA. '
+                    'Espera unos minutos o revisa tu plan en la consola de Google AI.'
+                )
+            elif response.status_code == 401:
+                friendly_error = 'La API key de IA es inválida. Revísala en Fundación → Integraciones.'
+            elif response.status_code == 403:
+                friendly_error = 'Sin permisos para usar la API de IA. Verifica la configuración.'
+            else:
+                friendly_error = f'Error del servicio de IA ({response.status_code}). Intenta de nuevo.'
+
+            logger.warning(f'Gemini API error ({response.status_code}): {error_detail}')
             return AIResult(
                 success=False,
-                error=f'Gemini API error ({response.status_code}): {error_detail}',
+                error=friendly_error,
                 provider='gemini',
                 model=model,
             )

@@ -257,6 +257,24 @@ export const useRechazarPresupuesto = () => {
   });
 };
 
+export const useCreateCentroCosto = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Parameters<typeof centrosCostoApi.create>[0]) =>
+      centrosCostoApi.create(data).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-finance', 'centros-costo'] }),
+  });
+};
+
+export const useCreateRubro = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Parameters<typeof rubrosApi.create>[0]) =>
+      rubrosApi.create(data).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-finance', 'rubros'] }),
+  });
+};
+
 export const useEjecuciones = (params?: Record<string, unknown>) =>
   useQuery({
     queryKey: ['admin-finance', 'ejecuciones', params],
@@ -331,11 +349,30 @@ export const useHojasVida = (params?: Record<string, unknown>) =>
     queryFn: () => hojasVidaApi.getAll(params).then((r) => r.data),
   });
 
+export const useCreateHojaVida = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Parameters<typeof hojasVidaApi.create>[0]) =>
+      hojasVidaApi.create(data).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-finance', 'hojas-vida'] }),
+  });
+};
+
 export const useProgramasMantenimiento = (params?: Record<string, unknown>) =>
   useQuery({
     queryKey: ['admin-finance', 'programas-mantenimiento', params],
     queryFn: () => programasMantenimientoApi.getAll(params).then((r) => r.data),
   });
+
+export const useCreateProgramaMantenimiento = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Parameters<typeof programasMantenimientoApi.create>[0]) =>
+      programasMantenimientoApi.create(data).then((r) => r.data),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ['admin-finance', 'programas-mantenimiento'] }),
+  });
+};
 
 export const useProgramasMantenimientoProximos = () =>
   useQuery({
@@ -385,6 +422,15 @@ export const useServiciosPublicos = (params?: Record<string, unknown>) =>
     queryKey: ['admin-finance', 'servicios-publicos', params],
     queryFn: () => serviciosPublicosApi.getAll(params).then((r) => r.data),
   });
+
+export const useCreateServicioPublico = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Parameters<typeof serviciosPublicosApi.create>[0]) =>
+      serviciosPublicosApi.create(data).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-finance', 'servicios-publicos'] }),
+  });
+};
 
 export const useServiciosPorVencer = () =>
   useQuery({

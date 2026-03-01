@@ -28,11 +28,18 @@ export type { InputProps } from './Input';
 export { Select } from './Select';
 export type { SelectProps, SelectOption } from './Select';
 
-export { Textarea } from './Textarea';
-export type { TextareaProps } from './Textarea';
+// Textarea exporta TextareaWithAI como default — incluye asistente IA
+// cuando hay integración configurada, fallback a Textarea normal si no.
+export { TextareaWithAI as Textarea } from './TextareaWithAI';
+export type { TextareaWithAIProps as TextareaProps } from './TextareaWithAI';
 
+// Exportación explícita para casos que necesiten el componente con otro nombre
 export { TextareaWithAI } from './TextareaWithAI';
 export type { TextareaWithAIProps } from './TextareaWithAI';
+
+// Exportación del Textarea base sin IA (uso interno)
+export { Textarea as TextareaBase } from './Textarea';
+export type { TextareaProps as TextareaBaseProps } from './Textarea';
 
 export { Checkbox } from './Checkbox';
 export type { CheckboxProps } from './Checkbox';

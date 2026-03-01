@@ -1083,15 +1083,21 @@ export const partesInteresadasApi = {
   },
 
   /**
-   * 🆕 SPRINT 17: Exportar partes interesadas a Excel (4 hojas)
-   *
-   * Genera archivo Excel formato F-GD-04:
-   * - Hoja 1: Identificación (GRUPO → SUBGRUPO → PI)
-   * - Hoja 2: Caracterización (Temas + Impacto bidireccional)
-   * - Hoja 3: Modelos de Relación (Responsable + Canal)
-   * - Hoja 4: Matriz Consolidada
-   *
-   * @returns Blob del archivo Excel
+   * Descarga plantilla Excel profesional para importación masiva.
+   * Patrón unificado: headers + ejemplo + notas + hoja referencia.
+   */
+  downloadPlantilla: async (): Promise<Blob> => {
+    const response = await apiClient.get(`${BASE_URL}/partes-interesadas/plantilla-importacion/`, {
+      responseType: 'blob',
+      headers: {
+        Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      },
+    });
+    return response.data;
+  },
+
+  /**
+   * Exporta las partes interesadas a Excel (4 hojas F-GD-04).
    */
   exportExcel: async (): Promise<Blob> => {
     const response = await apiClient.get(`${BASE_URL}/partes-interesadas/export_excel/`, {
@@ -1104,14 +1110,12 @@ export const partesInteresadasApi = {
   },
 
   /**
-   * 🆕 SPRINT 17: Importar partes interesadas desde Excel
-   *
-   * @param file - Archivo Excel formato F-GD-04
-   * @returns Resultado de la importación (created, updated, errors)
+   * Importa partes interesadas desde Excel (plantilla nueva o legacy F-GD-04).
+   * Campo: 'archivo' (nuevo) o 'file' (legacy — retrocompatible).
    */
   importExcel: async (file: File): Promise<GenerarMatrizResponse> => {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('archivo', file);
 
     const response = await apiClient.post<GenerarMatrizResponse>(
       `${BASE_URL}/partes-interesadas/import_excel/`,

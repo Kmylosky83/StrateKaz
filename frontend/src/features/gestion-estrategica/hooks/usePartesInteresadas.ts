@@ -238,7 +238,37 @@ export const useGrupoParteInteresadaMutation = () => {
 };
 
 /**
- * 🆕 SPRINT 17: Hook para exportar a Excel
+ * Hook para descargar plantilla de importación masiva.
+ * Patrón unificado: misma estructura que proveedores, clientes, cargos.
+ */
+export const useDownloadPlantillaPI = () => {
+  const mutation = useMutation({
+    mutationFn: partesInteresadasApi.downloadPlantilla,
+    onSuccess: (blob) => {
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Plantilla_Partes_Interesadas.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast.success('Plantilla descargada exitosamente');
+    },
+    onError: () => {
+      toast.error('Error al descargar la plantilla');
+    },
+  });
+
+  return {
+    descargar: mutation.mutateAsync,
+    isDownloading: mutation.isPending,
+  };
+};
+
+/**
+ * Hook para exportar a Excel (F-GD-04 — 4 hojas).
  */
 export const useExportPartesInteresadasExcel = () => {
   const mutation = useMutation({

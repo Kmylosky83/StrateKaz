@@ -28,6 +28,7 @@ import {
   LayoutGrid,
   Upload,
   Download,
+  FileDown,
   Send,
   ShoppingCart,
   Truck,
@@ -61,11 +62,12 @@ import type { ModuleColor } from '@/utils/moduleColors';
 import {
   usePartesInteresadas,
   useTiposParteInteresada,
-  useGruposParteInteresada, // Sprint 17
-  useExportPartesInteresadasExcel, // Sprint 17
-  useImportPartesInteresadasExcel, // Sprint 17
-  useGenerarMatrizComunicacionMasiva, // Sprint 17
-  usePartesInteresadasEstadisticas, // Sprint 17
+  useGruposParteInteresada,
+  useDownloadPlantillaPI,
+  useExportPartesInteresadasExcel,
+  useImportPartesInteresadasExcel,
+  useGenerarMatrizComunicacionMasiva,
+  usePartesInteresadasEstadisticas,
   type ParteInteresada,
   type ParteInteresadaFilters,
 } from '../../hooks/usePartesInteresadas';
@@ -201,6 +203,8 @@ export const StakeholdersSection = ({ triggerNewForm }: StakeholdersSectionProps
   // Sprint 17: Queries nuevas
   const { data: grupos } = useGruposParteInteresada();
   const { data: stats } = usePartesInteresadasEstadisticas();
+  const { descargar: descargarPlantilla, isDownloading: isDownloadingPlantilla } =
+    useDownloadPlantillaPI();
   const { exportar, isExporting } = useExportPartesInteresadasExcel();
   const { importar, isImporting } = useImportPartesInteresadasExcel();
   const { generar: generarMatrices, isGenerating } = useGenerarMatrizComunicacionMasiva();
@@ -327,7 +331,15 @@ export const StakeholdersSection = ({ triggerNewForm }: StakeholdersSectionProps
     handleEdit(stakeholder);
   };
 
-  // Sprint 17: Handlers para Import/Export/Generate Matrix
+  // Handlers para Plantilla/Import/Export/Generate Matrix
+  const handleDownloadPlantilla = async () => {
+    try {
+      await descargarPlantilla();
+    } catch {
+      setAlertMessage({ type: 'error', message: 'Error al descargar la plantilla' });
+    }
+  };
+
   const handleExport = async () => {
     try {
       await exportar();
@@ -472,10 +484,19 @@ export const StakeholdersSection = ({ triggerNewForm }: StakeholdersSectionProps
         <StatsGrid stats={stakeholderStats} columns={4} moduleColor={moduleColor} />
       )}
 
-      {/* Sprint 17: Toolbar con Import/Export/Generate Matrix — solo en vistas tabla/matriz */}
+      {/* Toolbar con Plantilla/Import/Export/Generate Matrix — solo en vistas tabla/matriz */}
       {viewMode !== 'comunicacion' && (
         <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-2">
+            <Button
+              onClick={handleDownloadPlantilla}
+              variant="outline"
+              size="sm"
+              disabled={isDownloadingPlantilla}
+            >
+              <FileDown className="h-4 w-4 mr-2" />
+              {isDownloadingPlantilla ? 'Descargando...' : 'Plantilla'}
+            </Button>
             <Button
               onClick={handleImportClick}
               variant="outline"
@@ -483,11 +504,11 @@ export const StakeholdersSection = ({ triggerNewForm }: StakeholdersSectionProps
               disabled={isImporting || !canCreate}
             >
               <Upload className="h-4 w-4 mr-2" />
-              {isImporting ? 'Importando...' : 'Importar Excel'}
+              {isImporting ? 'Importando...' : 'Importar'}
             </Button>
             <Button onClick={handleExport} variant="outline" size="sm" disabled={isExporting}>
               <Download className="h-4 w-4 mr-2" />
-              {isExporting ? 'Exportando...' : 'Exportar Excel'}
+              {isExporting ? 'Exportando...' : 'Exportar'}
             </Button>
           </div>
           <Button

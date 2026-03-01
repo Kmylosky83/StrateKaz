@@ -1042,34 +1042,71 @@ class ParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
 
         return response
 
+    @action(detail=False, methods=['get'], url_path='plantilla-importacion')
+    def plantilla_importacion(self, request) -> Response:
+        """
+        Descarga plantilla Excel profesional para importación masiva.
+
+        Patrón unificado: igual que proveedores, clientes, cargos.
+        Hoja 1: Plantilla (headers + ejemplo + notas + 500 filas vacías)
+        Hoja 2: Referencia (grupos, tipos, niveles, canales existentes)
+        """
+        from .import_partes_interesadas_utils import generate_partes_interesadas_template
+
+        # Obtener catálogos para la hoja de referencia
+        grupos = list(
+            GrupoParteInteresada.objects.filter(
+                is_active=True
+            ).values('nombre').order_by('orden', 'nombre')
+        )
+        tipos = list(
+            TipoParteInteresada.objects.filter(
+                is_active=True
+            ).values('grupo__nombre', 'nombre').order_by('grupo__orden', 'orden', 'nombre')
+        )
+        partes_existentes = list(
+            ParteInteresada.objects.filter(
+                is_active=True
+            ).select_related('tipo', 'tipo__grupo').values(
+                'nombre', 'tipo__grupo__nombre', 'tipo__nombre'
+            ).order_by('nombre')[:200]
+        )
+
+        content = generate_partes_interesadas_template(
+            grupos=grupos,
+            tipos=tipos,
+            partes_existentes=partes_existentes,
+        )
+
+        response = HttpResponse(
+            content,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+        response['Content-Disposition'] = (
+            'attachment; filename="Plantilla_Partes_Interesadas.xlsx"'
+        )
+        return response
+
     @action(detail=False, methods=['post'], parser_classes=[MultiPartParser, FormParser])
     def import_excel(self, request) -> Response:
         """
-        Importa partes interesadas desde Excel formato F-GD-04.
+        Importa partes interesadas desde Excel.
 
-        Esperado:
-        - Archivo Excel con mínimo hoja "Identificación" o "Matriz Consolidada"
-        - Columnas: GRUPO, SUBGRUPO, NOMBRE PARTE INTERESADA, DESCRIPCIÓN (mínimo)
+        Acepta:
+        - Plantilla nueva (hoja "Partes Interesadas", datos desde fila 4)
+        - Legacy F-GD-04 (hoja "Identificación" o "Matriz Consolidada", datos desde fila 2)
 
-        Opcionales (si están en el Excel):
-        - TEMAS DE INTERÉS PARA LA PI
-        - TEMAS DE INTERÉS PARA LA EMPRESA
-        - IMPACTO PI → EMPRESA
-        - IMPACTO EMPRESA → PI
-        - NIVEL DE INTERÉS
-        - RESPONSABLE, CARGO, ÁREA
-
-        Lógica:
-        1. Buscar grupo por nombre (debe existir pre-seeded o creado)
-        2. Buscar o crear tipo (subgrupo) dentro del grupo
-        3. Crear parte interesada
+        Campo: 'archivo' (nuevo) o 'file' (legacy)
         """
-        file_obj = request.FILES.get('file')
+        import logging
+        logger = logging.getLogger(__name__)
+
+        file_obj = request.FILES.get('archivo') or request.FILES.get('file')
 
         if not file_obj:
             return Response(
-                {'error': 'No se recibió ningún archivo. Use el campo "file"'},
-                status=status.HTTP_400_BAD_REQUEST
+                {'error': 'No se recibió ningún archivo. Use el campo "archivo".'},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
@@ -1077,41 +1114,128 @@ class ParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         except Exception as e:
             return Response(
                 {'error': f'Error al leer el archivo Excel: {str(e)}'},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Intentar leer de "Identificación" primero, sino de "Matriz Consolidada"
-        if 'Identificación' in wb.sheetnames:
-            ws = wb['Identificación']
-        elif 'Matriz Consolidada' in wb.sheetnames:
-            ws = wb['Matriz Consolidada']
+        # ── Detectar formato: nuevo (plantilla unificada) vs legacy (F-GD-04) ──
+        use_new_format = 'Partes Interesadas' in wb.sheetnames
+
+        if use_new_format:
+            return self._import_new_format(wb, request)
+        elif 'Identificación' in wb.sheetnames or 'Matriz Consolidada' in wb.sheetnames:
+            return self._import_legacy_format(wb, request)
         else:
             return Response(
-                {'error': 'El archivo debe contener una hoja "Identificación" o "Matriz Consolidada"'},
-                status=status.HTTP_400_BAD_REQUEST
+                {
+                    'error': (
+                        'El archivo debe contener la hoja "Partes Interesadas" '
+                        '(plantilla nueva) o "Identificación"/"Matriz Consolidada" '
+                        '(formato anterior).'
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
             )
+
+    # ── Importación formato NUEVO (plantilla unificada, fila 4+) ─────────
+    def _import_new_format(self, wb, request):
+        """Importa usando la plantilla unificada (parse desde fila 4)."""
+        from .import_partes_interesadas_utils import parse_partes_interesadas_excel
+        from .import_partes_interesadas_serializer import ParteInteresadaImportRowSerializer
+        from apps.core.base_models.mixins import get_tenant_empresa
+        import io
+
+        # Guardar a bytes para el parser
+        output = io.BytesIO()
+        wb.save(output)
+        file_bytes = output.getvalue()
+
+        rows = parse_partes_interesadas_excel(file_bytes)
+
+        if not rows:
+            return Response(
+                {'error': 'El archivo no contiene datos (los datos deben empezar en la fila 4).'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        empresa = get_tenant_empresa()
+        created_count = 0
+        updated_count = 0
+        errors = []
+
+        with transaction.atomic():
+            for row_data in rows:
+                fila = row_data.pop('_fila', '?')
+                nombre_display = str(row_data.get('nombre', '')).strip()
+
+                serializer = ParteInteresadaImportRowSerializer(data=row_data)
+                if not serializer.is_valid():
+                    errors.append({
+                        'fila': fila,
+                        'nombre': nombre_display,
+                        'errores': serializer.errors,
+                    })
+                    continue
+
+                vd = serializer.validated_data
+                try:
+                    parte, created = ParteInteresada.objects.update_or_create(
+                        nombre=vd['nombre'],
+                        empresa=empresa,
+                        defaults={
+                            'tipo': vd['_tipo'],
+                            'descripcion': vd.get('descripcion', ''),
+                            'representante': vd.get('representante', ''),
+                            'temas_interes_pi': vd.get('temas_interes_pi', ''),
+                            'temas_interes_empresa': vd.get('temas_interes_empresa', ''),
+                            'nivel_influencia_pi': vd['nivel_influencia_pi'],
+                            'nivel_influencia_empresa': vd['nivel_influencia_empresa'],
+                            'nivel_interes': vd['nivel_interes'],
+                            'canal_principal': vd['canal_principal'],
+                            'relacionado_sst': vd['relacionado_sst'],
+                            'relacionado_ambiental': vd['relacionado_ambiental'],
+                            'relacionado_calidad': vd['relacionado_calidad'],
+                            'relacionado_pesv': vd['relacionado_pesv'],
+                        },
+                    )
+                    if created:
+                        created_count += 1
+                    else:
+                        updated_count += 1
+                except Exception as e:
+                    errors.append({
+                        'fila': fila,
+                        'nombre': nombre_display,
+                        'errores': {'detalle': str(e)},
+                    })
+
+        return Response({
+            'message': f'Importación completada: {created_count} creadas, {updated_count} actualizadas',
+            'created': created_count,
+            'updated': updated_count,
+            'errors': errors,
+            'total_procesadas': created_count + updated_count,
+            'total_errores': len(errors),
+        })
+
+    # ── Importación formato LEGACY (F-GD-04, fila 2+) ────────────────────
+    def _import_legacy_format(self, wb, request):
+        """Importa desde el formato antiguo F-GD-04 (compatibilidad)."""
+        from apps.core.base_models.mixins import get_tenant_empresa
+
+        if 'Identificación' in wb.sheetnames:
+            ws = wb['Identificación']
+        else:
+            ws = wb['Matriz Consolidada']
 
         # Leer headers (fila 1)
         headers = [cell.value for cell in ws[1]]
 
-        # Mapeo de columnas (case-insensitive)
         col_map = {}
         for idx, header in enumerate(headers, start=1):
             if header:
                 header_lower = str(header).strip().lower()
                 col_map[header_lower] = idx
 
-        # Validar columnas requeridas
-        required = ['grupo', 'nombre parte interesada']
-        missing = [col for col in required if col not in col_map and not any(col in h for h in col_map.keys())]
-
-        if missing:
-            return Response(
-                {'error': f'Columnas requeridas faltantes: {missing}'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Procesar filas
         created_count = 0
         updated_count = 0
         errors = []
@@ -1119,9 +1243,7 @@ class ParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
         with transaction.atomic():
             for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
                 try:
-                    # Obtener valores por columna
                     def get_col(name_variants):
-                        """Obtiene valor de columna por múltiples nombres posibles."""
                         for variant in name_variants:
                             if variant in col_map:
                                 idx = col_map[variant] - 1
@@ -1135,27 +1257,23 @@ class ParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
                     nombre = get_col(['nombre parte interesada', 'parte interesada', 'nombre'])
                     descripcion = get_col(['descripción', 'descripcion'])
                     representante = get_col(['representante'])
-                    temas_pi = get_col(['temas de interés para la pi', 'temas interes pi'])
-                    temas_empresa = get_col(['temas de interés para la empresa', 'temas interes empresa'])
+                    temas_pi = get_col(['temas de interés para la pi', 'temas interes pi', 'temas interés pi'])
+                    temas_empresa = get_col(['temas de interés para la empresa', 'temas interes empresa', 'temas interés empresa'])
 
-                    # Validar nombre (campo mínimo)
                     if not nombre:
-                        continue  # Fila vacía, skip
+                        continue
 
-                    # Buscar o crear grupo
                     if grupo_nombre:
                         grupo, _ = GrupoParteInteresada.objects.get_or_create(
                             nombre=grupo_nombre,
                             defaults={
                                 'codigo': grupo_nombre.upper().replace(' ', '_')[:30],
-                                'es_sistema': False
+                                'es_sistema': False,
                             }
                         )
                     else:
-                        # Si no hay grupo, usar el primero disponible
                         grupo = GrupoParteInteresada.objects.first()
 
-                    # Buscar o crear tipo (subgrupo)
                     if subgrupo_nombre and grupo:
                         tipo, _ = TipoParteInteresada.objects.get_or_create(
                             nombre=subgrupo_nombre,
@@ -1163,15 +1281,12 @@ class ParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
                             defaults={
                                 'codigo': f"{grupo.codigo}_{subgrupo_nombre.upper().replace(' ', '_')[:20]}"[:30],
                                 'categoria': 'externo',
-                                'es_sistema': False
+                                'es_sistema': False,
                             }
                         )
                     else:
-                        # Si no hay subgrupo, buscar primer tipo del grupo
                         tipo = TipoParteInteresada.objects.filter(grupo=grupo).first()
 
-                    # Crear o actualizar parte interesada
-                    from apps.core.base_models.mixins import get_tenant_empresa
                     parte, created = ParteInteresada.objects.update_or_create(
                         nombre=nombre,
                         empresa=get_tenant_empresa(),
@@ -1181,7 +1296,7 @@ class ParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
                             'representante': representante or '',
                             'temas_interes_pi': temas_pi or '',
                             'temas_interes_empresa': temas_empresa or '',
-                        }
+                        },
                     )
 
                     if created:
@@ -1190,10 +1305,7 @@ class ParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
                         updated_count += 1
 
                 except Exception as e:
-                    errors.append({
-                        'fila': row_idx,
-                        'error': str(e)
-                    })
+                    errors.append({'fila': row_idx, 'error': str(e)})
 
         return Response({
             'message': f'Importación completada: {created_count} creadas, {updated_count} actualizadas',
@@ -1201,7 +1313,7 @@ class ParteInteresadaViewSet(StandardViewSetMixin, viewsets.ModelViewSet):
             'updated': updated_count,
             'errors': errors,
             'total_procesadas': created_count + updated_count,
-            'total_errores': len(errors)
+            'total_errores': len(errors),
         })
 
 

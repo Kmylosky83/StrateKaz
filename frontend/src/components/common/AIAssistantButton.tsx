@@ -9,7 +9,6 @@
  */
 import { useState } from 'react';
 import { Sparkles } from 'lucide-react';
-import { Tooltip } from './Tooltip';
 import { cn } from '@/utils/cn';
 import { useIAStatus } from '@/hooks/useIA';
 import { AIHelpModal } from './AIHelpModal';
@@ -39,22 +38,20 @@ export const AIAssistantButton = ({
 
   return (
     <>
-      <Tooltip content="Asistente IA">
-        <button
-          onClick={() => setIsOpen(true)}
-          className={cn(
-            'relative p-2 rounded-lg transition-colors',
-            'hover:bg-gray-100 dark:hover:bg-gray-700',
-            'focus:outline-none focus:ring-2 focus:ring-primary-500',
-            className
-          )}
-          title="Asistente IA"
-        >
-          <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-          {/* Indicador "IA activa" */}
-          <span className="absolute top-1 right-1 h-2 w-2 bg-purple-500 rounded-full" />
-        </button>
-      </Tooltip>
+      <button
+        onClick={() => setIsOpen(true)}
+        className={cn(
+          'relative p-2 rounded-lg transition-colors',
+          'hover:bg-gray-100 dark:hover:bg-gray-700',
+          'focus:outline-none focus:ring-2 focus:ring-primary-500',
+          className
+        )}
+        title="Asistente IA"
+      >
+        <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+        {/* Indicador "IA activa" */}
+        <span className="absolute top-1 right-1 h-2 w-2 bg-purple-500 rounded-full" />
+      </button>
 
       <AIHelpModal
         isOpen={isOpen}

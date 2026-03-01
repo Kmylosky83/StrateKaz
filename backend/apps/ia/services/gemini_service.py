@@ -83,7 +83,6 @@ class GeminiService:
             return IntegracionExterna.objects.filter(
                 tipo_servicio__code='IA',
                 is_active=True,
-                is_deleted=False,
             ).select_related('tipo_servicio', 'proveedor').first()
         except Exception as e:
             logger.error(f'Error buscando integración IA: {e}')

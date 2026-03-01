@@ -121,7 +121,7 @@ export function KPIsTabPro({ planId }: KPIsTabProProps) {
   if (objectives.length === 0) {
     return (
       <EmptyState
-        icon={Target}
+        icon={<Target className="h-12 w-12" />}
         title="No hay objetivos estratégicos"
         description="Primero debes crear objetivos estratégicos para poder definir KPIs"
       />
@@ -268,7 +268,7 @@ function GaugesGrid({ kpis }: GaugesGridProps) {
   if (kpis.length === 0) {
     return (
       <EmptyState
-        icon={Gauge}
+        icon={<Gauge className="h-12 w-12" />}
         title="No hay KPIs para mostrar"
         description="Crea KPIs y agrega mediciones para visualizar velocímetros"
       />

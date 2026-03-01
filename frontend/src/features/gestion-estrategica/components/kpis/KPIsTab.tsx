@@ -82,7 +82,7 @@ export function KPIsTab({ planId }: KPIsTabProps) {
   if (objectives.length === 0) {
     return (
       <EmptyState
-        icon={Target}
+        icon={<Target className="h-12 w-12" />}
         title="No hay objetivos estratégicos"
         description="Primero debes crear objetivos estratégicos para poder definir KPIs"
       />
@@ -231,7 +231,7 @@ function ChartsGrid({ kpis, selectedKPI }: ChartsGridProps) {
   if (kpis.length === 0) {
     return (
       <EmptyState
-        icon={BarChart3}
+        icon={<BarChart3 className="h-12 w-12" />}
         title="No hay KPIs para graficar"
         description="Crea KPIs y agrega mediciones para visualizar gráficos de progreso"
       />

@@ -28,6 +28,7 @@ import {
   EvidenceGallery,
   EvidenceUploader,
 } from '@/components/common';
+import { Textarea } from '@/components/forms';
 import {
   useDocumento,
   useAprobarDocumento,
@@ -445,11 +446,10 @@ export function DocumentoDetailModal({ isOpen, onClose, documentoId }: Documento
         message={
           <div className="space-y-3">
             <p>¿Marcar &quot;{documento?.titulo}&quot; como obsoleto?</p>
-            <textarea
+            <Textarea
               value={motivoObsoleto}
               onChange={(e) => setMotivoObsoleto(e.target.value)}
               placeholder="Motivo de obsolescencia..."
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 p-2 text-sm bg-transparent"
               rows={3}
             />
           </div>

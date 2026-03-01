@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Modal, Button, Spinner } from '@/components/common';
-import { Input, Select, Textarea } from '@/components/forms';
+import { Input, Select, Textarea, Checkbox } from '@/components/forms';
 import { useCreateProgramaAuditoria, useUpdateProgramaAuditoria } from '../hooks/useMejoraContinua';
 import type {
   ProgramaAuditoriaList,
@@ -164,20 +164,17 @@ export default function ProgramaAuditoriaFormModal({
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Normas Aplicables
             </label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-4 border border-gray-300 rounded-md bg-gray-50">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-4 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-800/40">
               {NORMAS_OPTIONS.map((norma) => (
-                <label key={norma.value} className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.normas_aplicables?.includes(norma.value) || false}
-                    onChange={() => handleNormaToggle(norma.value)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <span className="text-sm text-gray-700">{norma.label}</span>
-                </label>
+                <Checkbox
+                  key={norma.value}
+                  label={norma.label}
+                  checked={formData.normas_aplicables?.includes(norma.value) || false}
+                  onChange={() => handleNormaToggle(norma.value)}
+                />
               ))}
             </div>
           </div>

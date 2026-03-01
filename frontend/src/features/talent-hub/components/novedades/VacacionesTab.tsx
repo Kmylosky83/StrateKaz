@@ -7,6 +7,7 @@ import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
+import { Textarea } from '@/components/forms/Textarea';
 import { SectionHeader } from '@/components/common/SectionHeader';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -14,6 +15,7 @@ import { Spinner } from '@/components/common/Spinner';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { getModuleColorClasses } from '@/utils/moduleColors';
 import { Palmtree, Plus, Trash2, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { cn } from '@/utils/cn';
 import {
   usePeriodosVacaciones,
   useActualizarAcumulacion,
@@ -115,28 +117,34 @@ export const VacacionesTab = () => {
 
       <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="-mb-px flex gap-1" aria-label="Secciones de vacaciones">
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => setActiveSection('periodos')}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-all ${
+            className={cn(
+              '!px-4 !py-2.5 text-sm font-medium border-b-2 transition-all rounded-none',
               activeSection === 'periodos'
                 ? 'border-primary-500 text-primary-600 dark:text-primary-400'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
+            )}
           >
             Periodos de Vacaciones
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => setActiveSection('solicitudes')}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-all ${
+            className={cn(
+              '!px-4 !py-2.5 text-sm font-medium border-b-2 transition-all rounded-none',
               activeSection === 'solicitudes'
                 ? 'border-primary-500 text-primary-600 dark:text-primary-400'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
+            )}
           >
             Solicitudes
-          </button>
+          </Button>
         </nav>
       </div>
 
@@ -211,14 +219,16 @@ export const VacacionesTab = () => {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="sm"
                             onClick={() => setUpdateTarget(per)}
-                            className="p-1.5 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-900/20"
                             title="Actualizar Acumulacion"
+                            className="text-blue-500 hover:text-blue-700"
                           >
                             <RefreshCw size={16} />
-                          </button>
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -340,32 +350,38 @@ export const VacacionesTab = () => {
                           <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             {sol.estado === 'solicitada' && (
                               <>
-                                <button
+                                <Button
                                   type="button"
+                                  variant="ghost"
+                                  size="sm"
                                   onClick={() => setApproveTarget(sol)}
-                                  className="p-1.5 rounded-md text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:text-green-400 dark:hover:bg-green-900/20"
                                   title="Aprobar"
+                                  className="text-green-500 hover:text-green-700"
                                 >
                                   <CheckCircle size={16} />
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                   type="button"
+                                  variant="ghost"
+                                  size="sm"
                                   onClick={() => setRejectTarget(sol)}
-                                  className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-900/20"
                                   title="Rechazar"
+                                  className="text-red-500 hover:text-red-700"
                                 >
                                   <XCircle size={16} />
-                                </button>
+                                </Button>
                               </>
                             )}
-                            <button
+                            <Button
                               type="button"
+                              variant="ghost"
+                              size="sm"
                               onClick={() => setDeleteTarget(sol)}
-                              className="p-1.5 rounded-md text-gray-400 hover:text-danger-600 hover:bg-danger-50 dark:hover:text-danger-400 dark:hover:bg-danger-900/20"
                               title="Eliminar"
+                              className="text-red-500 hover:text-red-700"
                             >
                               <Trash2 size={16} />
-                            </button>
+                            </Button>
                           </div>
                         </td>
                       </tr>
@@ -428,11 +444,10 @@ export const VacacionesTab = () => {
           setRejectObservations('');
         }}
       >
-        <textarea
+        <Textarea
           value={rejectObservations}
           onChange={(e) => setRejectObservations(e.target.value)}
           placeholder="Observaciones (obligatorio)"
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
           rows={3}
           required
         />

@@ -192,45 +192,53 @@ export const ReconocimientosTab = () => {
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         {rec.estado === 'pendiente' && (
                           <>
-                            <button
+                            <Button
                               type="button"
+                              variant="ghost"
+                              size="sm"
                               onClick={() => aprobarMutation.mutate(String(rec.id))}
-                              className="p-1.5 rounded-md text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:text-green-400 dark:hover:bg-green-900/20"
                               title="Aprobar"
+                              className="text-green-500 hover:text-green-700"
                             >
                               <CheckCircle size={16} />
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                               type="button"
+                              variant="ghost"
+                              size="sm"
                               onClick={() =>
                                 rechazarMutation.mutate({ id: String(rec.id), motivo: 'Rechazado' })
                               }
-                              className="p-1.5 rounded-md text-gray-400 hover:text-danger-600 hover:bg-danger-50 dark:hover:text-danger-400 dark:hover:bg-danger-900/20"
                               title="Rechazar"
+                              className="text-red-500 hover:text-red-700"
                             >
                               <XCircle size={16} />
-                            </button>
+                            </Button>
                           </>
                         )}
                         {rec.estado === 'aprobado' && (
                           <>
-                            <button
+                            <Button
                               type="button"
+                              variant="ghost"
+                              size="sm"
                               onClick={() => entregarMutation.mutate(String(rec.id))}
-                              className="p-1.5 rounded-md text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:text-green-400 dark:hover:bg-green-900/20"
                               title="Entregar"
+                              className="text-green-500 hover:text-green-700"
                             >
                               <Gift size={16} />
-                            </button>
+                            </Button>
                             {rec.es_publico && !rec.publicado_en_muro && (
-                              <button
+                              <Button
                                 type="button"
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => publicarMutation.mutate({ id: String(rec.id) })}
-                                className="p-1.5 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-900/20"
                                 title="Publicar en Muro"
+                                className="text-blue-500 hover:text-blue-700"
                               >
                                 <Award size={16} />
-                              </button>
+                              </Button>
                             )}
                           </>
                         )}

@@ -8,6 +8,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Modal, Button, Badge, Spinner } from '@/components/common';
+import { Input, Select, Textarea } from '@/components/forms';
 import { FormBuilder } from '@/components/common/FormBuilder';
 import type { CampoFormulario } from '@/components/common/FormBuilder/types';
 import {
@@ -208,54 +209,37 @@ export function PlantillaFormModal({ isOpen, onClose, plantillaId }: PlantillaFo
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Código
-            </label>
-            <input
-              {...register('codigo')}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Se genera automáticamente"
-              disabled={isEdit}
-            />
-            {errors.codigo && <p className="text-xs text-red-500 mt-1">{errors.codigo.message}</p>}
-          </div>
+          <Input
+            label="Código"
+            {...register('codigo')}
+            placeholder="Se genera automáticamente"
+            disabled={isEdit}
+            error={errors.codigo?.message}
+          />
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Nombre *
-            </label>
-            <input
-              {...register('nombre', { required: 'Nombre es requerido' })}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Plantilla de Procedimiento"
-            />
-            {errors.nombre && <p className="text-xs text-red-500 mt-1">{errors.nombre.message}</p>}
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Descripcion
-          </label>
-          <textarea
-            {...register('descripcion')}
-            rows={2}
-            className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          <Input
+            label="Nombre *"
+            {...register('nombre', { required: 'Nombre es requerido' })}
+            placeholder="Plantilla de Procedimiento"
+            error={errors.nombre?.message}
           />
         </div>
 
+        <Textarea
+          label="Descripcion"
+          {...register('descripcion')}
+          rows={2}
+        />
+
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Tipo de Documento *
-            </label>
-            <select
+            <Select
+              label="Tipo de Documento *"
               {...register('tipo_documento', {
                 required: 'Tipo requerido',
                 validate: (v) => v > 0 || 'Seleccione un tipo',
               })}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              error={errors.tipo_documento?.message}
             >
               <option value={0}>Seleccionar...</option>
               {((tipos as { id: number; nombre: string; codigo: string }[]) || []).map((t) => (
@@ -263,47 +247,31 @@ export function PlantillaFormModal({ isOpen, onClose, plantillaId }: PlantillaFo
                   {t.codigo} - {t.nombre}
                 </option>
               ))}
-            </select>
-            {errors.tipo_documento && (
-              <p className="text-xs text-red-500 mt-1">{errors.tipo_documento.message}</p>
-            )}
+            </Select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Tipo de Plantilla
-            </label>
             <Controller
               name="tipo_plantilla"
               control={control}
               render={({ field }) => (
-                <select
+                <Select
+                  label="Tipo de Plantilla"
                   {...field}
-                  className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  {TIPO_PLANTILLA_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                  options={TIPO_PLANTILLA_OPTIONS}
+                />
               )}
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Version
-            </label>
-            <input
-              {...register('version')}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="1.0"
-            />
-          </div>
+          <Input
+            label="Version"
+            {...register('version')}
+            placeholder="1.0"
+          />
         </div>
 
-        {/* Content area: textarea for HTML/MARKDOWN, FormBuilder for FORMULARIO */}
+        {/* Content area: FormBuilder for FORMULARIO, Textarea otherwise */}
         {isFormulario ? (
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -312,22 +280,16 @@ export function PlantillaFormModal({ isOpen, onClose, plantillaId }: PlantillaFo
             <FormBuilder campos={localCampos} onCamposChange={setLocalCampos} />
           </div>
         ) : (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Contenido de la Plantilla *
-            </label>
-            <textarea
-              {...register('contenido_plantilla', {
-                required: !isFormulario ? 'Contenido es requerido' : false,
-              })}
-              rows={8}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="<h1>{{titulo}}</h1>\n<p>{{contenido}}</p>"
-            />
-            {errors.contenido_plantilla && (
-              <p className="text-xs text-red-500 mt-1">{errors.contenido_plantilla.message}</p>
-            )}
-          </div>
+          <Textarea
+            label="Contenido de la Plantilla *"
+            {...register('contenido_plantilla', {
+              required: !isFormulario ? 'Contenido es requerido' : false,
+            })}
+            rows={8}
+            className="font-mono"
+            placeholder="<h1>{{titulo}}</h1>\n<p>{{contenido}}</p>"
+            error={errors.contenido_plantilla?.message}
+          />
         )}
 
         {isEdit && existing && (

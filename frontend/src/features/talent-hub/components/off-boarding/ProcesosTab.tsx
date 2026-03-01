@@ -10,6 +10,7 @@ import { Card } from '@/components/common/Card';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Button } from '@/components/common/Button';
 import { Select } from '@/components/forms/Select';
+import { Textarea } from '@/components/forms/Textarea';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { cn } from '@/utils/cn';
 import {
@@ -265,13 +266,10 @@ export function ProcesosTab() {
         variant="danger"
       >
         <div className="mt-4">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Motivo de Cancelación *
-          </label>
-          <textarea
+          <Textarea
+            label="Motivo de Cancelación *"
             value={cancelMotivo}
             onChange={(e) => setCancelMotivo(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-violet-500 dark:bg-gray-700 dark:text-gray-100"
             rows={3}
             placeholder="Ingrese el motivo de cancelación..."
           />

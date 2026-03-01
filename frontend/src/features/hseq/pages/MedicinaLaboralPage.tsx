@@ -36,6 +36,7 @@ import { Spinner } from '@/components/common/Spinner';
 import { KpiCard, KpiCardGrid } from '@/components/common';
 import { SectionToolbar } from '@/components/common';
 import { StatusBadge, formatStatusLabel } from '@/components/common/StatusBadge';
+import { Select } from '@/components/forms';
 import { cn } from '@/utils/cn';
 import {
   useExamenesMedicos,
@@ -1180,37 +1181,31 @@ const EstadisticasReportesSection = () => {
           ]}
         />
         <div className="flex items-center gap-4 mt-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Año
-            </label>
-            <select
+          <div className="w-32">
+            <Select
+              label="Año"
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="block w-32 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
             >
               {[2024, 2025, 2026].map((year) => (
                 <option key={year} value={year}>
                   {year}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Mes
-            </label>
-            <select
+          <div className="w-40">
+            <Select
+              label="Mes"
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
-              className="block w-40 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:text-white"
             >
               {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
                 <option key={month} value={month}>
                   {format(new Date(2024, month - 1), 'MMMM', { locale: es })}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
         </div>
       </Card>

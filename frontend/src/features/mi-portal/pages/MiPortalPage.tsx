@@ -33,7 +33,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { Tabs, AnimatedPage, Badge, Card, Avatar, Skeleton } from '@/components/common';
+import { Tabs, AnimatedPage, Badge, Card, Avatar, Skeleton, Button } from '@/components/common';
 import { StatsGrid, StatsGridSkeleton } from '@/components/layout';
 import type { StatItem } from '@/components/layout';
 import { useAuthStore } from '@/store/authStore';
@@ -342,10 +342,10 @@ export default function MiPortalPage() {
             <div className="p-6 md:p-8">
               <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
                 {/* Avatar — clickeable para abrir AvatarUploadModal */}
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
                   onClick={() => setShowAvatarModal(true)}
-                  className="relative group focus:outline-none flex-shrink-0"
+                  className="relative group focus:outline-none flex-shrink-0 p-0 h-auto rounded-full hover:bg-transparent"
                   title="Cambiar foto de perfil"
                 >
                   <Avatar
@@ -358,7 +358,7 @@ export default function MiPortalPage() {
                   <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/30 transition-all duration-200 flex items-center justify-center">
                     <Camera className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
-                </button>
+                </Button>
 
                 {/* Greeting & Info */}
                 <div className="flex-1 min-w-0">
@@ -390,28 +390,32 @@ export default function MiPortalPage() {
                   <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">
                     {currentDate}
                   </p>
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setShowEditPerfil(true)}
-                    className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:opacity-80"
+                    className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:opacity-80 p-0 h-auto"
                     style={{ color: primaryColor }}
                   >
                     <Pencil className="w-3.5 h-3.5" />
                     Editar perfil
-                  </button>
+                  </Button>
                 </div>
               </div>
 
               {/* Mobile: date + edit button */}
               <div className="flex items-center justify-between mt-4 md:hidden">
                 <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">{currentDate}</p>
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setShowEditPerfil(true)}
-                  className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:opacity-80"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:opacity-80 p-0 h-auto"
                   style={{ color: primaryColor }}
                 >
                   <Pencil className="w-3.5 h-3.5" />
                   Editar perfil
-                </button>
+                </Button>
               </div>
             </div>
           </Card>

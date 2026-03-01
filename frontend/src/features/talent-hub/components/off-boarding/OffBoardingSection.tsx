@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { UserMinus, ListChecks, Stethoscope, MessageSquare, Calculator } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { EmptyState } from '@/components/common/EmptyState';
+import { Button } from '@/components/common/Button';
 
 // Lazy imports
 import { ProcesosTab } from './ProcesosTab';
@@ -66,11 +67,14 @@ export function OffBoardingSection() {
       {/* Sub-tabs Navigation */}
       <div className="flex items-center gap-1 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
         {SUB_TABS.map((tab) => (
-          <button
+          <Button
             key={tab.key}
+            type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => setActiveTab(tab.key)}
             className={cn(
-              'flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors',
+              'flex items-center gap-2 !px-4 !py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors rounded-none',
               activeTab === tab.key
                 ? 'border-violet-500 text-violet-600 dark:text-violet-400'
                 : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
@@ -78,7 +82,7 @@ export function OffBoardingSection() {
           >
             {tab.icon}
             {tab.label}
-          </button>
+          </Button>
         ))}
       </div>
 

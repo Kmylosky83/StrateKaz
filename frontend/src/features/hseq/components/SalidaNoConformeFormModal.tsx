@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Modal, Button, Spinner } from '@/components/common';
-import { Input, Select, Textarea } from '@/components/forms';
+import { Input, Select, Textarea, Checkbox } from '@/components/forms';
 import { useCreateSalidaNoConforme, useUpdateSalidaNoConforme } from '../hooks/useCalidad';
 import type { SalidaNoConformeList, CreateSalidaNoConformeDTO } from '../types/calidad.types';
 import {
@@ -185,20 +185,12 @@ export default function SalidaNoConformeFormModal({
             required
           />
 
-          <div className="flex items-center gap-2 mt-6">
-            <input
-              type="checkbox"
-              id="bloqueada"
+          <div className="mt-6">
+            <Checkbox
               checked={formData.bloqueada ?? true}
               onChange={(e) => handleChange('bloqueada', e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              label="Producto bloqueado / en cuarentena"
             />
-            <label
-              htmlFor="bloqueada"
-              className="text-sm font-medium text-gray-700 dark:text-gray-300"
-            >
-              Producto bloqueado / en cuarentena
-            </label>
           </div>
 
           {/* Fila 7: Requisito Incumplido (full) */}

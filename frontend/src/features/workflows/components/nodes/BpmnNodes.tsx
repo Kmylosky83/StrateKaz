@@ -6,6 +6,7 @@
  */
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Button } from '@/components/common/Button';
 import {
   Play,
   Square,
@@ -240,22 +241,26 @@ const TareaNode = memo(({ data, selected }: NodeProps) => {
         {(nodeData.onEdit || nodeData.onDelete) && (
           <div className="px-3 py-1.5 border-t border-gray-200 dark:border-gray-700 flex gap-1 opacity-0 hover:opacity-100 transition-opacity">
             {nodeData.onEdit && (
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={(e) => { e.stopPropagation(); nodeData.onEdit!(nodo.id); }}
-                className="p-1 rounded hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                className="p-1 h-auto min-h-0 hover:bg-blue-100 dark:hover:bg-blue-900/30"
                 title="Editar nodo"
               >
                 <Settings className="h-3.5 w-3.5 text-gray-500" />
-              </button>
+              </Button>
             )}
             {nodeData.onDelete && (
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={(e) => { e.stopPropagation(); nodeData.onDelete!(nodo.id); }}
-                className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30"
+                className="p-1 h-auto min-h-0 hover:bg-red-100 dark:hover:bg-red-900/30"
                 title="Eliminar nodo"
               >
                 <Trash2 className="h-3.5 w-3.5 text-gray-500" />
-              </button>
+              </Button>
             )}
           </div>
         )}

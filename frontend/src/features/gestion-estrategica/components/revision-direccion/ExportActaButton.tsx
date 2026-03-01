@@ -12,6 +12,7 @@
 import { useState } from 'react';
 import { FileDown, Loader2, Eye } from 'lucide-react';
 import { toast } from 'sonner';
+import { Button } from '@/components/common/Button';
 import { exportActaToPDF, ExportActaError } from '../../utils/exportActaPDF';
 import type { ActaRevisionExpandida } from '../../types/revision-direccion.types';
 
@@ -157,11 +158,13 @@ export function ExportActaButton({
   return (
     <>
       {/* Botón de Exportación */}
-      <button
+      <Button
         type="button"
+        variant={variant === 'primary' ? 'primary' : variant === 'danger' ? 'danger' : 'outline'}
+        size={size === 'sm' ? 'sm' : size === 'lg' ? 'lg' : 'md'}
         onClick={handleShowOptions}
         disabled={isExporting}
-        className={buttonClasses}
+        className={className}
         title="Exportar acta a PDF"
       >
         {isExporting ? (
@@ -175,7 +178,7 @@ export function ExportActaButton({
             <span>Exportar PDF</span>
           </>
         )}
-      </button>
+      </Button>
 
       {/* Modal de Opciones de Exportación */}
       {showOptionsModal && (
@@ -319,21 +322,23 @@ function ExportOptionsModal({
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-end gap-3">
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
           >
             Cancelar
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="primary"
+            size="sm"
             onClick={onConfirm}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center gap-2"
           >
             <FileDown size={16} />
             Exportar PDF
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -380,15 +385,17 @@ export function ExportActaButtonCompact({
   };
 
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="sm"
       onClick={handleExport}
       disabled={isExporting}
-      className="p-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
+      className="!p-2 !min-h-0"
       title="Exportar a PDF"
     >
       {isExporting ? <Loader2 size={18} className="animate-spin" /> : <FileDown size={18} />}
-    </button>
+    </Button>
   );
 }
 
@@ -455,11 +462,12 @@ export function ExportActaButtonWithMenu({
 
   return (
     <div className="relative">
-      <button
+      <Button
         type="button"
+        variant="primary"
+        size="sm"
         onClick={() => setShowMenu(!showMenu)}
         disabled={isExporting}
-        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center gap-2 disabled:opacity-50"
       >
         {isExporting ? <Loader2 size={18} className="animate-spin" /> : <FileDown size={18} />}
         <span>Exportar</span>
@@ -471,34 +479,43 @@ export function ExportActaButtonWithMenu({
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
-      </button>
+      </Button>
 
       {showMenu && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
           <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-slate-200 z-20">
             <div className="py-1">
-              <button
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => handleExport('full')}
-                className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50 transition-colors"
+                className="w-full !justify-start !min-h-0 px-4 py-2 text-sm flex-col items-start"
               >
                 <div className="font-medium text-slate-900">Acta Completa</div>
                 <div className="text-xs text-slate-500">Todas las secciones</div>
-              </button>
-              <button
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => handleExport('summary')}
-                className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50 transition-colors"
+                className="w-full !justify-start !min-h-0 px-4 py-2 text-sm flex-col items-start"
               >
                 <div className="font-medium text-slate-900">Resumen Ejecutivo</div>
                 <div className="text-xs text-slate-500">Sin análisis detallado</div>
-              </button>
-              <button
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => handleExport('commitments-only')}
-                className="w-full px-4 py-2 text-left text-sm hover:bg-slate-50 transition-colors"
+                className="w-full !justify-start !min-h-0 px-4 py-2 text-sm flex-col items-start"
               >
                 <div className="font-medium text-slate-900">Solo Compromisos</div>
                 <div className="text-xs text-slate-500">Tabla de acciones</div>
-              </button>
+              </Button>
             </div>
           </div>
         </>

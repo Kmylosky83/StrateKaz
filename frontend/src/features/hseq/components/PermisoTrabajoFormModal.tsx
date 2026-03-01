@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Modal, Button, Spinner } from '@/components/common';
-import { Input, Select, Textarea } from '@/components/forms';
+import { Input, Select, Textarea, Checkbox } from '@/components/forms';
 import {
   useCreatePermisoTrabajo,
   useUpdatePermisoTrabajo,
@@ -207,20 +207,15 @@ export default function PermisoTrabajoFormModal({
           </Select>
 
           {/* Requiere Vigilia */}
-          <div className="flex items-center gap-3 pt-2">
-            <input
-              id="requiere_vigilia"
-              type="checkbox"
+          <div className="pt-2">
+            <Checkbox
               checked={formData.requiere_vigilia ?? false}
               onChange={(e) => {
                 handleChange('requiere_vigilia', e.target.checked);
                 if (!e.target.checked) handleChange('vigilia_id', undefined);
               }}
-              className="h-4 w-4 rounded border-gray-300 text-blue-600"
+              label="Requiere vigilia"
             />
-            <label htmlFor="requiere_vigilia" className="text-sm font-medium text-gray-700">
-              Requiere vigilia
-            </label>
           </div>
 
           {/* Vigilia (condicional) */}

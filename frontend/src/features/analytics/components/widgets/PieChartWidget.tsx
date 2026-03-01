@@ -4,16 +4,17 @@ import { Spinner } from '@/components/common';
 import { useValoresKPIByKPI } from '../../hooks/useAnalytics';
 import type { WidgetDashboard } from '../../types';
 import type { EChartsOption } from 'echarts';
+import { SEMAFORO_COLORS, CHART_AXIS_COLORS } from '@/constants/chart-colors';
 
 interface Props {
   widget: WidgetDashboard;
 }
 
 const chartColors = {
-  verde: '#22c55e',
-  amarillo: '#eab308',
-  rojo: '#ef4444',
-  gris: '#9ca3af',
+  verde: SEMAFORO_COLORS.verde,
+  amarillo: SEMAFORO_COLORS.amarillo,
+  rojo: SEMAFORO_COLORS.rojo,
+  gris: CHART_AXIS_COLORS.axisLabel,
 };
 
 /**
@@ -78,7 +79,7 @@ function PieChartWidget({ widget }: Props) {
       orient: 'vertical',
       right: 10,
       top: 'center',
-      textStyle: { color: '#6b7280', fontSize: 11 },
+      textStyle: { color: CHART_AXIS_COLORS.axisLabel, fontSize: 11 },
     },
     series: [
       {
@@ -97,7 +98,7 @@ function PieChartWidget({ widget }: Props) {
           position: 'outside',
           formatter: '{d}%',
           fontSize: 11,
-          color: '#6b7280',
+          color: CHART_AXIS_COLORS.axisLabel,
         },
         emphasis: {
           label: {

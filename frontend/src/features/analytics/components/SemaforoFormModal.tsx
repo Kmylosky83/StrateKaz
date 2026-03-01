@@ -4,8 +4,7 @@
 import { useState, useEffect } from 'react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
-import { Input } from '@/components/forms/Input';
-import { Select } from '@/components/forms/Select';
+import { Input, Select, Checkbox } from '@/components/forms';
 import { useCreateSemaforo, useUpdateSemaforo } from '../hooks/useAnalytics';
 import type { ConfiguracionSemaforo, CatalogoKPI } from '../types';
 
@@ -132,17 +131,11 @@ export const SemaforoFormModal = ({
           disabled={isEditing}
         />
 
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={form.logica_inversa}
-            onChange={(e) => handleChange('logica_inversa', e.target.checked)}
-            className="w-4 h-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
-          />
-          <span className="text-sm text-gray-700 dark:text-gray-300">
-            Lógica Inversa (menor es mejor)
-          </span>
-        </label>
+        <Checkbox
+          label="Lógica Inversa (menor es mejor)"
+          checked={form.logica_inversa}
+          onChange={(e) => handleChange('logica_inversa', e.target.checked)}
+        />
 
         {/* Verde */}
         <div className="space-y-3 p-4 bg-green-50 dark:bg-green-900/10 rounded-lg border border-green-200 dark:border-green-800">

@@ -15,6 +15,8 @@ import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
+import { Input } from '@/components/forms/Input';
+import { Select } from '@/components/forms/Select';
 
 import { useProveedores, useDeleteProveedor, useExportProveedores } from '../hooks/useProveedores';
 import { useTiposProveedor } from '../hooks/useCatalogos';
@@ -176,62 +178,44 @@ export function ProveedoresTable({ onView, onEdit, onNew }: ProveedoresTableProp
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Búsqueda */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Búsqueda
-                </label>
-                <input
-                  type="text"
-                  placeholder="Buscar por nombre, NIT..."
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  value={filtros.search || ''}
-                  onChange={(e) => handleFilterChange('search', e.target.value)}
-                />
-              </div>
+              <Input
+                label="Búsqueda"
+                type="text"
+                placeholder="Buscar por nombre, NIT..."
+                value={filtros.search || ''}
+                onChange={(e) => handleFilterChange('search', e.target.value)}
+              />
 
-              {/* Tipo de proveedor */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Tipo de Proveedor
-                </label>
-                <select
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  value={filtros.tipo_proveedor || ''}
-                  onChange={(e) =>
-                    handleFilterChange(
-                      'tipo_proveedor',
-                      e.target.value ? Number(e.target.value) : undefined
-                    )
-                  }
-                >
-                  <option value="">Todos</option>
-                  {Array.isArray(tiposProveedor) &&
-                    tiposProveedor.map((tipo: TipoProveedor) => (
-                      <option key={tipo.id} value={tipo.id}>
-                        {tipo.nombre}
-                      </option>
-                    ))}
-                </select>
-              </div>
+              <Select
+                label="Tipo de Proveedor"
+                value={filtros.tipo_proveedor || ''}
+                onChange={(e) =>
+                  handleFilterChange(
+                    'tipo_proveedor',
+                    e.target.value ? Number(e.target.value) : undefined
+                  )
+                }
+              >
+                <option value="">Todos</option>
+                {Array.isArray(tiposProveedor) &&
+                  tiposProveedor.map((tipo: TipoProveedor) => (
+                    <option key={tipo.id} value={tipo.id}>
+                      {tipo.nombre}
+                    </option>
+                  ))}
+              </Select>
 
-              {/* Estado */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Estado
-                </label>
-                <select
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  value={filtros.estado || ''}
-                  onChange={(e) => handleFilterChange('estado', e.target.value || undefined)}
-                >
-                  <option value="">Todos</option>
-                  <option value="ACTIVO">Activo</option>
-                  <option value="INACTIVO">Inactivo</option>
-                  <option value="SUSPENDIDO">Suspendido</option>
-                  <option value="BLOQUEADO">Bloqueado</option>
-                </select>
-              </div>
+              <Select
+                label="Estado"
+                value={filtros.estado || ''}
+                onChange={(e) => handleFilterChange('estado', e.target.value || undefined)}
+              >
+                <option value="">Todos</option>
+                <option value="ACTIVO">Activo</option>
+                <option value="INACTIVO">Inactivo</option>
+                <option value="SUSPENDIDO">Suspendido</option>
+                <option value="BLOQUEADO">Bloqueado</option>
+              </Select>
             </div>
           </div>
         </Card>

@@ -347,11 +347,13 @@ export const DashboardTiempo = ({ colaboradorId, onNavigateTab }: DashboardTiemp
                 { label: 'Turnos', tab: 'turnos', icon: <Clock size={14} /> },
                 { label: 'Consolidados', tab: 'consolidados', icon: <Calendar size={14} /> },
               ].map((item) => (
-                <button
+                <Button
                   key={item.tab}
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => onNavigateTab?.(item.tab)}
-                  className="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group"
+                  className="w-full flex items-center justify-between !px-3 !py-2 text-sm text-gray-700 dark:text-gray-300 group"
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-gray-400 dark:text-gray-500">{item.icon}</span>
@@ -361,7 +363,7 @@ export const DashboardTiempo = ({ colaboradorId, onNavigateTab }: DashboardTiemp
                     size={14}
                     className="text-gray-300 group-hover:text-gray-500 dark:group-hover:text-gray-400 transition-colors"
                   />
-                </button>
+                </Button>
               ))}
             </div>
           </Card>

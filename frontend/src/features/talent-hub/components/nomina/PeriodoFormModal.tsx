@@ -7,6 +7,7 @@ import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
+import { Textarea } from '@/components/forms/Textarea';
 import { useCreatePeriodoNomina } from '../../hooks/useNomina';
 import type { PeriodoNominaFormData } from '../../types';
 import { tipoPeriodoNominaOptions } from '../../types';
@@ -121,17 +122,12 @@ export const PeriodoFormModal = ({ isOpen, onClose }: PeriodoFormModalProps) => 
         </div>
 
         {/* Observaciones */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Observaciones
-          </label>
-          <textarea
-            {...register('observaciones')}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-            placeholder="Observaciones del período..."
-          />
-        </div>
+        <Textarea
+          label="Observaciones"
+          {...register('observaciones')}
+          rows={3}
+          placeholder="Observaciones del período..."
+        />
 
         {/* Actions */}
         <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">

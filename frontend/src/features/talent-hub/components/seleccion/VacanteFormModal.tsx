@@ -301,16 +301,18 @@ export const VacanteFormModal = ({ vacante, isOpen, onClose }: VacanteFormModalP
           const isActive = index === activeStep;
           const isCompleted = index < activeStep;
           return (
-            <button
+            <Button
               key={step.key}
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => {
                 if (index <= activeStep || (index === activeStep + 1 && isStepValid(activeStep))) {
                   setActiveStep(index);
                 }
               }}
               className={cn(
-                'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all',
+                'flex items-center gap-2 !px-3 !py-2 rounded-lg text-sm font-medium transition-all',
                 isActive
                   ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
                   : isCompleted
@@ -331,7 +333,7 @@ export const VacanteFormModal = ({ vacante, isOpen, onClose }: VacanteFormModalP
                 {isCompleted ? <Check size={12} /> : index + 1}
               </span>
               <span className="hidden sm:inline">{step.label}</span>
-            </button>
+            </Button>
           );
         })}
       </div>
@@ -356,13 +358,15 @@ export const VacanteFormModal = ({ vacante, isOpen, onClose }: VacanteFormModalP
                   required
                 />
                 {!formData.codigo_vacante && formData.titulo && (
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={generateCodigo}
-                    className="mt-1 text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400"
+                    className="mt-1 text-xs !px-0 !py-0 !min-h-0 text-primary-600 hover:text-primary-700 dark:text-primary-400"
                   >
                     Generar automaticamente
-                  </button>
+                  </Button>
                 )}
               </div>
               <div className="col-span-2">

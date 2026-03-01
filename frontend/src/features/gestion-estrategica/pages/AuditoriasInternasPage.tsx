@@ -35,6 +35,7 @@ import {
   Progress,
   ConfirmDialog,
 } from '@/components/common';
+import { Select } from '@/components/forms';
 import { formatStatusLabel } from '@/components/common/StatusBadge';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -383,18 +384,12 @@ const AuditoriasSection = ({ onOpenModal }: AuditoriasProps) => {
       {/* Filter + Actions */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
-          <Filter className="w-4 h-4 text-gray-500" />
-          <select
-            className="rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          <Filter className="w-4 h-4 text-gray-500 flex-shrink-0" />
+          <Select
             value={tipoFilter}
             onChange={(e) => setTipoFilter(e.target.value as TipoAuditoria | '')}
-          >
-            {TIPO_AUDITORIA_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+            options={TIPO_AUDITORIA_OPTIONS}
+          />
         </div>
         <Button onClick={() => onOpenModal()}>
           <Plus className="w-4 h-4 mr-2" />
@@ -612,18 +607,12 @@ const HallazgosSection = ({ onOpenModal }: HallazgosProps) => {
       {/* Filter + Actions */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
-          <Filter className="w-4 h-4 text-gray-500" />
-          <select
-            className="rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          <Filter className="w-4 h-4 text-gray-500 flex-shrink-0" />
+          <Select
             value={impactoFilter}
             onChange={(e) => setImpactoFilter(e.target.value as ImpactoHallazgo | '')}
-          >
-            {IMPACTO_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+            options={IMPACTO_OPTIONS}
+          />
         </div>
         <Button onClick={() => onOpenModal()}>
           <Plus className="w-4 h-4 mr-2" />

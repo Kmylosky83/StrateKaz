@@ -22,6 +22,7 @@ import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { Card } from '@/components/common/Card';
 import { EmptyState } from '@/components/common/EmptyState';
+import { Select } from '@/components/forms';
 import { cn } from '@/utils/cn';
 import type { EmpresaRequisito } from '../../types/requisitosLegales';
 
@@ -392,17 +393,14 @@ export const RequisitosTable = ({
             Siguiente
           </Button>
 
-          <select
-            value={pageSize}
-            onChange={(e) => onPageSizeChange(Number(e.target.value))}
-            className="ml-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-2 py-1 text-sm"
-          >
-            {[10, 25, 50, 100].map((size) => (
-              <option key={size} value={size}>
-                {size} por página
-              </option>
-            ))}
-          </select>
+          <div className="ml-2 w-auto">
+            <Select
+              value={pageSize}
+              onChange={(e) => onPageSizeChange(Number(e.target.value))}
+              className="py-1 text-sm"
+              options={[10, 25, 50, 100].map((size) => ({ value: size, label: `${size} por página` }))}
+            />
+          </div>
         </div>
       </div>
     </Card>

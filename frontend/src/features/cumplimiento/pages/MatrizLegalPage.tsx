@@ -21,6 +21,8 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
+import { Button } from '@/components/common/Button';
+import { Input } from '@/components/forms/Input';
 import { usePageSections } from '@/hooks/usePageSections';
 
 // Códigos del módulo y tab en la BD
@@ -88,36 +90,28 @@ const NormasSection = () => {
         <div className="flex flex-col sm:flex-row gap-4">
           {/* Buscador */}
           <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Buscar por número, nombre o área..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
+            <Input
+              placeholder="Buscar por número, nombre o área..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              leftIcon={<Search className="w-4 h-4" />}
+            />
           </div>
 
           {/* Botones de acción */}
           <div className="flex gap-2">
-            <button className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-              <Filter className="w-4 h-4 mr-2" />
+            <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
               Filtros
-            </button>
-            <button className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-              <Download className="w-4 h-4 mr-2" />
+            </Button>
+            <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
               Exportar
-            </button>
-            <button className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-              <Upload className="w-4 h-4 mr-2" />
+            </Button>
+            <Button variant="outline" size="sm" leftIcon={<Upload className="w-4 h-4" />}>
               Importar
-            </button>
-            <button className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">
-              <Plus className="w-4 h-4 mr-2" />
+            </Button>
+            <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
               Nueva Normativa
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -272,18 +266,10 @@ const NormasSection = () => {
               <span className="font-medium">127</span> resultados
             </div>
             <div className="flex gap-2">
-              <button className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-600">
-                Anterior
-              </button>
-              <button className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">
-                1
-              </button>
-              <button className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-600">
-                2
-              </button>
-              <button className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-600">
-                Siguiente
-              </button>
+              <Button variant="outline" size="sm">Anterior</Button>
+              <Button variant="primary" size="sm">1</Button>
+              <Button variant="outline" size="sm">2</Button>
+              <Button variant="outline" size="sm">Siguiente</Button>
             </div>
           </div>
         </div>
@@ -301,9 +287,12 @@ const NormasSection = () => {
             { label: 'Laboral', count: 12, color: 'red' },
             { label: 'Tributaria', count: 5, color: 'yellow' },
           ].map((area) => (
-            <button
+            <Button
               key={area.label}
-              className={`inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors
+              variant="outline"
+              size="sm"
+              leftIcon={<Tag className="w-3.5 h-3.5" />}
+              className={`
                 ${
                   area.color === 'orange'
                     ? 'border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 dark:bg-orange-900/20 dark:border-orange-800 dark:text-orange-400'
@@ -319,10 +308,9 @@ const NormasSection = () => {
                 }
               `}
             >
-              <Tag className="w-3.5 h-3.5 mr-1.5" />
               {area.label}
               <span className="ml-2 opacity-60">({area.count})</span>
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -345,10 +333,9 @@ const EvaluacionSection = () => {
           Aquí podrás evaluar el cumplimiento de cada artículo de las normas registradas,
           documentar evidencias y generar reportes de estado.
         </p>
-        <button className="mt-6 inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">
-          <Plus className="w-4 h-4 mr-2" />
+        <Button variant="primary" size="sm" className="mt-6" leftIcon={<Plus className="w-4 h-4" />}>
           Nueva Evaluación
-        </button>
+        </Button>
       </div>
     </div>
   );

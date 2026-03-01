@@ -11,6 +11,7 @@ import { Card, Badge } from '@/components/common';
 import { cn } from '@/utils/cn';
 import { TrendingUp, TrendingDown, Minus, AlertTriangle, Target, Calendar } from 'lucide-react';
 import type { EChartsOption } from 'echarts';
+import { CHART_COLORS, CHART_AXIS_COLORS, STATUS_COLORS } from '@/constants/chart-colors';
 
 // ==================== TIPOS ====================
 
@@ -46,13 +47,13 @@ export interface KPITrendPredictionProps {
 // ==================== COLORES ====================
 
 const COLORS = {
-  actual: '#3b82f6',
-  target: '#10b981',
-  warning: '#eab308',
-  critical: '#ef4444',
-  prediction: '#8b5cf6',
+  actual: CHART_COLORS[0],     // blue-500   (#3B82F6)
+  target: CHART_COLORS[1],     // emerald-500 (#10B981)
+  warning: STATUS_COLORS.warning,
+  critical: STATUS_COLORS.danger,
+  prediction: CHART_COLORS[4], // violet-500 (#8B5CF6)
   confidence: 'rgba(139, 92, 246, 0.15)',
-  trend: '#06b6d4',
+  trend: CHART_COLORS[6],      // cyan-500   (#06B6D4)
 };
 
 // ==================== HELPERS ====================
@@ -244,19 +245,19 @@ export function KPITrendPrediction({
         textStyle: {
           fontSize: 16,
           fontWeight: 600,
-          color: '#1f2937',
+          color: CHART_AXIS_COLORS.title,
         },
         subtextStyle: {
           fontSize: 12,
-          color: '#6b7280',
+          color: CHART_AXIS_COLORS.axisLabel,
         },
       },
       tooltip: {
         trigger: 'axis',
-        backgroundColor: 'rgba(255, 255, 255, 0.98)',
-        borderColor: '#e5e7eb',
+        backgroundColor: CHART_AXIS_COLORS.tooltip.bg,
+        borderColor: CHART_AXIS_COLORS.tooltip.border,
         borderWidth: 1,
-        textStyle: { color: '#374151' },
+        textStyle: { color: CHART_AXIS_COLORS.tooltip.text },
         formatter: (params: any) => {
           const xIndex = params[0]?.dataIndex;
           const period = xLabels[xIndex] || '';
@@ -291,7 +292,7 @@ export function KPITrendPrediction({
         bottom: 10,
         itemWidth: 12,
         itemHeight: 12,
-        textStyle: { fontSize: 11, color: '#6b7280' },
+        textStyle: { fontSize: 11, color: CHART_AXIS_COLORS.axisLabel },
       },
       grid: {
         left: '5%',
@@ -303,15 +304,15 @@ export function KPITrendPrediction({
       xAxis: {
         type: 'category',
         data: xLabels,
-        axisLabel: { fontSize: 11, color: '#6b7280', rotate: 45 },
-        axisLine: { lineStyle: { color: '#e5e7eb' } },
+        axisLabel: { fontSize: 11, color: CHART_AXIS_COLORS.axisLabel, rotate: 45 },
+        axisLine: { lineStyle: { color: CHART_AXIS_COLORS.axisLine } },
       },
       yAxis: {
         type: 'value',
         name: unit,
-        nameTextStyle: { color: '#6b7280', fontSize: 11 },
-        axisLabel: { fontSize: 11, color: '#6b7280' },
-        splitLine: { lineStyle: { color: '#f3f4f6', type: 'dashed' } },
+        nameTextStyle: { color: CHART_AXIS_COLORS.axisLabel, fontSize: 11 },
+        axisLabel: { fontSize: 11, color: CHART_AXIS_COLORS.axisLabel },
+        splitLine: { lineStyle: { color: CHART_AXIS_COLORS.splitLine, type: 'dashed' } },
       },
       series: [
         // Valores reales

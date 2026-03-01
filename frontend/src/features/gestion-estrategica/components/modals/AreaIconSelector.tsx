@@ -15,6 +15,8 @@ import { useState, useMemo, useCallback } from 'react';
 import { Search, X } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { DynamicIcon } from '@/components/common/DynamicIcon';
+import { Button } from '@/components/common/Button';
+import { Input } from '@/components/forms/Input';
 
 // ==================== TYPES ====================
 
@@ -259,31 +261,25 @@ export function AreaIconSelector({
         {/* Search Bar */}
         <div className="p-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 z-10" />
+            <Input
               type="text"
               placeholder="Buscar icono... (ej: edificio, usuarios, seguridad)"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               disabled={disabled}
-              className={cn(
-                'w-full pl-9 pr-8 py-2 text-sm rounded-md',
-                'bg-white dark:bg-gray-700',
-                'border border-gray-200 dark:border-gray-600',
-                'text-gray-900 dark:text-gray-100',
-                'placeholder-gray-400 dark:placeholder-gray-500',
-                'focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent',
-                disabled && 'cursor-not-allowed'
-              )}
+              className="pl-9 pr-8 text-sm"
             />
             {searchQuery && (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={clearSearch}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                className="absolute right-2 top-1/2 -translate-y-1/2 !p-1 !min-h-0"
               >
                 <X className="w-4 h-4" />
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -295,13 +291,15 @@ export function AreaIconSelector({
               <DynamicIcon name="SearchX" size={32} className="mx-auto mb-2 opacity-50" />
               <p className="text-sm">No se encontraron iconos</p>
               {searchQuery && (
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={clearSearch}
-                  className="mt-2 text-xs text-purple-600 hover:text-purple-700 dark:text-purple-400"
+                  className="mt-2 !min-h-0 text-xs text-purple-600 hover:text-purple-700 dark:text-purple-400"
                 >
                   Limpiar busqueda
-                </button>
+                </Button>
               )}
             </div>
           ) : (
@@ -319,14 +317,16 @@ export function AreaIconSelector({
                     style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
                   >
                     {category.icons.map((icon) => (
-                      <button
+                      <Button
                         key={`${category.code}-${icon.name}`}
                         type="button"
+                        variant="ghost"
+                        size="sm"
                         onClick={() => handleSelect(icon.name)}
                         disabled={disabled}
                         title={icon.label}
                         className={cn(
-                          'p-2 rounded-lg transition-all flex items-center justify-center',
+                          '!p-2 !min-h-0 rounded-lg transition-all flex items-center justify-center',
                           value === icon.name
                             ? 'bg-purple-100 text-purple-700 ring-2 ring-purple-500 dark:bg-purple-900/50 dark:text-purple-300'
                             : 'bg-gray-50 text-gray-600 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700',
@@ -334,7 +334,7 @@ export function AreaIconSelector({
                         )}
                       >
                         <DynamicIcon name={icon.name} size={20} />
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>

@@ -464,17 +464,19 @@ export const AreaFormModal = ({ area, isOpen, onClose, onSuccess }: AreaFormModa
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {COLOR_OPTIONS.map((colorOpt) => (
-                      <button
+                      <Button
                         key={colorOpt.value}
                         type="button"
+                        variant="ghost"
+                        size="sm"
                         onClick={() => field.onChange(colorOpt.value)}
                         title={colorOpt.label}
                         disabled={isPending}
-                        className={`w-8 h-8 rounded-full ${colorOpt.class} transition-all ${
+                        className={`!w-8 !h-8 !min-h-0 !p-0 rounded-full ${colorOpt.class} transition-all ${
                           field.value === colorOpt.value
                             ? 'ring-2 ring-offset-2 ring-gray-900 dark:ring-white scale-110'
                             : 'hover:scale-105'
-                        } ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        }`}
                       />
                     ))}
                   </div>

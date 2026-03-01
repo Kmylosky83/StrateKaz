@@ -11,6 +11,7 @@
 
 import { useState } from 'react';
 import { Tabs } from '@/components/common';
+import { Button } from '@/components/common';
 import { LayoutDashboard, Table2, AlertTriangle, Shield, Plus, Download } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
@@ -269,17 +270,21 @@ function MatrizSection({ className }: MatrizSectionProps) {
           </p>
         </div>
         <div className="flex gap-2">
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleExport}
-            className="px-4 py-2 text-sm border rounded-lg hover:bg-muted transition-colors flex items-center gap-2"
+            leftIcon={<Download className="w-4 h-4" />}
           >
-            <Download className="w-4 h-4" />
             Exportar Excel
-          </button>
-          <button className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2">
-            <Plus className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            leftIcon={<Plus className="w-4 h-4" />}
+          >
             Nueva Valoración
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -293,7 +298,7 @@ function MatrizSection({ className }: MatrizSectionProps) {
             Mostrando {matrices.length} de {matricesData.count} registros
           </span>
           {matricesData.next && (
-            <button className="text-primary hover:underline">Cargar más</button>
+            <Button variant="ghost" size="sm">Cargar más</Button>
           )}
         </div>
       )}
@@ -398,12 +403,13 @@ function PeligrosSection({ className }: PeligrosSectionProps) {
           <div className="bg-card rounded-lg max-w-4xl w-full max-h-[80vh] overflow-y-auto p-6">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-lg font-semibold">Peligros Detallados</h4>
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setSelectedClasificacion(undefined)}
-                className="text-muted-foreground hover:text-foreground"
               >
                 ✕
-              </button>
+              </Button>
             </div>
 
             <div className="space-y-3">
@@ -480,10 +486,13 @@ function ControlesSection({ className }: ControlesSectionProps) {
             Controles implementados según la jerarquía de control de riesgos
           </p>
         </div>
-        <button className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2">
-          <Plus className="w-4 h-4" />
+        <Button
+          variant="primary"
+          size="sm"
+          leftIcon={<Plus className="w-4 h-4" />}
+        >
           Nuevo Control
-        </button>
+        </Button>
       </div>
 
       {/* Estadísticas por tipo */}
@@ -578,9 +587,9 @@ function ControlesSection({ className }: ControlesSectionProps) {
                   ))}
 
                   {controlesDelTipo.length > 5 && (
-                    <button className="w-full text-sm text-primary hover:underline py-2">
+                    <Button variant="ghost" size="sm" className="w-full">
                       Ver todos ({controlesDelTipo.length - 5} más)
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>

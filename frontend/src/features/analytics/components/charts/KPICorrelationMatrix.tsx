@@ -11,6 +11,7 @@ import { Card, Badge } from '@/components/common';
 import { cn } from '@/utils/cn';
 import { Info, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import type { EChartsOption } from 'echarts';
+import { CHART_AXIS_COLORS } from '@/constants/chart-colors';
 
 // ==================== TIPOS ====================
 
@@ -71,24 +72,29 @@ function getCorrelationDirection(r: number): CorrelationResult['direction'] {
   return 'none';
 }
 
+// Correlation color scale: negative (red shades) → neutral → positive (blue shades)
+const CORRELATION_SCALE_NEGATIVE = ['#991B1B', '#DC2626', '#F87171', '#FCA5A5', '#FEE2E2'];
+const CORRELATION_SCALE_POSITIVE = ['#DBEAFE', '#93C5FD', '#60A5FA', '#3B82F6', '#1E40AF'];
+const CORRELATION_NEUTRAL = '#F3F4F6';
+
 function getCorrelationColor(r: number): string {
   const absR = Math.abs(r);
   if (r > 0) {
     // Correlación positiva (azules)
-    if (absR >= 0.8) return '#1e40af';
-    if (absR >= 0.6) return '#3b82f6';
-    if (absR >= 0.4) return '#60a5fa';
-    if (absR >= 0.2) return '#93c5fd';
-    return '#dbeafe';
+    if (absR >= 0.8) return CORRELATION_SCALE_POSITIVE[4];
+    if (absR >= 0.6) return CORRELATION_SCALE_POSITIVE[3];
+    if (absR >= 0.4) return CORRELATION_SCALE_POSITIVE[2];
+    if (absR >= 0.2) return CORRELATION_SCALE_POSITIVE[1];
+    return CORRELATION_SCALE_POSITIVE[0];
   } else if (r < 0) {
     // Correlación negativa (rojos)
-    if (absR >= 0.8) return '#991b1b';
-    if (absR >= 0.6) return '#dc2626';
-    if (absR >= 0.4) return '#f87171';
-    if (absR >= 0.2) return '#fca5a5';
-    return '#fee2e2';
+    if (absR >= 0.8) return CORRELATION_SCALE_NEGATIVE[0];
+    if (absR >= 0.6) return CORRELATION_SCALE_NEGATIVE[1];
+    if (absR >= 0.4) return CORRELATION_SCALE_NEGATIVE[2];
+    if (absR >= 0.2) return CORRELATION_SCALE_NEGATIVE[3];
+    return CORRELATION_SCALE_NEGATIVE[4];
   }
-  return '#f3f4f6';
+  return CORRELATION_NEUTRAL;
 }
 
 // ==================== COMPONENTE ====================
@@ -180,15 +186,15 @@ export function KPICorrelationMatrix({
         textStyle: {
           fontSize: 16,
           fontWeight: 600,
-          color: '#1f2937',
+          color: CHART_AXIS_COLORS.title,
         },
       },
       tooltip: {
         trigger: 'item',
-        backgroundColor: 'rgba(255, 255, 255, 0.98)',
-        borderColor: '#e5e7eb',
+        backgroundColor: CHART_AXIS_COLORS.tooltip.bg,
+        borderColor: CHART_AXIS_COLORS.tooltip.border,
         borderWidth: 1,
-        textStyle: { color: '#374151' },
+        textStyle: { color: CHART_AXIS_COLORS.tooltip.text },
         formatter: (params: any) => {
           const [x, y, value] = params.data;
           const kpi1 = kpis[y];
@@ -260,7 +266,7 @@ export function KPICorrelationMatrix({
         axisLabel: {
           rotate: 45,
           fontSize: 10,
-          color: '#6b7280',
+          color: CHART_AXIS_COLORS.axisLabel,
           interval: 0,
         },
         axisLine: { show: false },
@@ -272,7 +278,7 @@ export function KPICorrelationMatrix({
         splitArea: { show: true },
         axisLabel: {
           fontSize: 10,
-          color: '#6b7280',
+          color: CHART_AXIS_COLORS.axisLabel,
           interval: 0,
         },
         axisLine: { show: false },
@@ -287,11 +293,15 @@ export function KPICorrelationMatrix({
         top: 'center',
         itemHeight: 200,
         inRange: {
-          color: ['#991b1b', '#dc2626', '#f87171', '#fca5a5', '#fee2e2', '#f3f4f6', '#dbeafe', '#93c5fd', '#60a5fa', '#3b82f6', '#1e40af'],
+          color: [
+            ...CORRELATION_SCALE_NEGATIVE,
+            CORRELATION_NEUTRAL,
+            ...CORRELATION_SCALE_POSITIVE,
+          ],
         },
         textStyle: {
           fontSize: 10,
-          color: '#6b7280',
+          color: CHART_AXIS_COLORS.axisLabel,
         },
       },
       series: [

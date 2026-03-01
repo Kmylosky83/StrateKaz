@@ -14,6 +14,7 @@ import { Spinner } from '@/components/common/Spinner';
 import { useModuleColor } from '@/hooks/useModuleColor';
 import { getModuleColorClasses } from '@/utils/moduleColors';
 import { Shirt, Plus, Pencil, Trash2, Settings, Check } from 'lucide-react';
+import { cn } from '@/utils/cn';
 import {
   useConfiguracionDotacion,
   useEntregasDotacion,
@@ -95,28 +96,34 @@ export const DotacionTab = () => {
 
       <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="-mb-px flex gap-1" aria-label="Secciones de dotacion">
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => setActiveSection('config')}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-all ${
+            className={cn(
+              '!px-4 !py-2.5 text-sm font-medium border-b-2 transition-all rounded-none',
               activeSection === 'config'
                 ? 'border-primary-500 text-primary-600 dark:text-primary-400'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
+            )}
           >
             Configuracion
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => setActiveSection('entregas')}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-all ${
+            className={cn(
+              '!px-4 !py-2.5 text-sm font-medium border-b-2 transition-all rounded-none',
               activeSection === 'entregas'
                 ? 'border-primary-500 text-primary-600 dark:text-primary-400'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
+            )}
           >
             Entregas
-          </button>
+          </Button>
         </nav>
       </div>
 
@@ -307,22 +314,25 @@ export const DotacionTab = () => {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
+                            <Button
                               type="button"
+                              variant="ghost"
+                              size="sm"
                               onClick={() => handleEdit(ent)}
-                              className="p-1.5 rounded-md text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:text-primary-400 dark:hover:bg-primary-900/20"
                               title="Editar"
                             >
                               <Pencil size={16} />
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                               type="button"
+                              variant="ghost"
+                              size="sm"
                               onClick={() => setDeleteTarget(ent)}
-                              className="p-1.5 rounded-md text-gray-400 hover:text-danger-600 hover:bg-danger-50 dark:hover:text-danger-400 dark:hover:bg-danger-900/20"
                               title="Eliminar"
+                              className="text-red-500 hover:text-red-700"
                             >
                               <Trash2 size={16} />
-                            </button>
+                            </Button>
                           </div>
                         </td>
                       </tr>

@@ -41,6 +41,7 @@ import { Tabs, Tab } from '@/components/common/Tabs';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
 import { Textarea } from '@/components/forms/Textarea';
+import { Checkbox } from '@/components/forms/Checkbox';
 import { AVAILABLE_MODULES, DEFAULT_ENABLED_MODULES } from '@/constants/modules';
 import {
   TIPO_SOCIEDAD_OPTIONS,
@@ -130,23 +131,26 @@ const ImageUpload = ({
           >
             <img src={preview} alt={label} className="h-14 max-w-[150px] object-contain" />
           </div>
-          <button
+          <Button
             type="button"
+            variant="danger"
+            size="sm"
             onClick={handleRemove}
-            className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+            className="absolute -top-2 -right-2 !p-1 !min-h-0 rounded-full"
           >
             <X className="h-3 w-3" />
-          </button>
+          </Button>
         </div>
       ) : (
-        <button
+        <Button
           type="button"
+          variant="ghost"
           onClick={handleClick}
           className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-primary-500 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
         >
           <Upload className="h-5 w-5 text-gray-400 mb-1" />
           <span className="text-xs text-gray-500 dark:text-gray-400">Click para subir</span>
-        </button>
+        </Button>
       )}
 
       {hint && <p className="text-xs text-gray-500 dark:text-gray-400">{hint}</p>}
@@ -650,27 +654,24 @@ export const TenantFormModal = ({
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <p className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Subdominio *
-              </label>
+              </p>
               <div className="flex">
-                <input
-                  type="text"
-                  value={formData.subdomain || ''}
-                  onChange={(e) => handleChange('subdomain', e.target.value)}
-                  disabled={isEditing}
-                  className={`flex-1 px-3 py-2 border rounded-l-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 ${
-                    isEditing ? 'opacity-50 cursor-not-allowed' : ''
-                  } ${errors.subdomain ? 'border-danger-500' : 'border-gray-300 dark:border-gray-600'}`}
-                  placeholder="miempresa"
-                />
-                <span className="px-3 py-2 bg-gray-100 dark:bg-gray-600 border border-l-0 border-gray-300 dark:border-gray-600 rounded-r-lg text-gray-500 dark:text-gray-400 text-sm">
+                <div className="flex-1">
+                  <Input
+                    value={formData.subdomain || ''}
+                    onChange={(e) => handleChange('subdomain', e.target.value)}
+                    disabled={isEditing}
+                    error={errors.subdomain}
+                    placeholder="miempresa"
+                    className="rounded-r-none"
+                  />
+                </div>
+                <span className="inline-flex items-center px-3 py-2 bg-gray-100 dark:bg-gray-600 border border-l-0 border-gray-300 dark:border-gray-600 rounded-r-lg text-gray-500 dark:text-gray-400 text-sm whitespace-nowrap self-start mt-0">
                   .{import.meta.env.VITE_BASE_DOMAIN || 'localhost'}
                 </span>
               </div>
-              {errors.subdomain && (
-                <p className="text-xs text-danger-600 mt-1">{errors.subdomain}</p>
-              )}
             </div>
             <Select
               label="Plan"
@@ -708,25 +709,17 @@ export const TenantFormModal = ({
               min={1}
               leftIcon={<Database className="h-4 w-4" />}
             />
-            <div className="flex items-center gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.is_active}
-                  onChange={(e) => handleChange('is_active', e.target.checked)}
-                  className="h-4 w-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
-                />
-                <span className="text-sm text-gray-700 dark:text-gray-300">Empresa activa</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.is_trial}
-                  onChange={(e) => handleChange('is_trial', e.target.checked)}
-                  className="h-4 w-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
-                />
-                <span className="text-sm text-gray-700 dark:text-gray-300">Periodo de prueba</span>
-              </label>
+            <div className="flex items-center gap-6">
+              <Checkbox
+                label="Empresa activa"
+                checked={formData.is_active}
+                onChange={(e) => handleChange('is_active', e.target.checked)}
+              />
+              <Checkbox
+                label="Periodo de prueba"
+                checked={formData.is_trial}
+                onChange={(e) => handleChange('is_trial', e.target.checked)}
+              />
             </div>
             {formData.is_trial && (
               <Input
@@ -1256,14 +1249,16 @@ export const TenantFormModal = ({
                       {categoryModules.map((module) => {
                         const isEnabled = formData.enabled_modules?.includes(module.code) ?? false;
                         return (
-                          <button
+                          <Button
                             key={module.code}
                             type="button"
+                            size="sm"
+                            variant={isEnabled ? 'outline' : 'ghost'}
                             onClick={() => handleModuleToggle(module.code)}
-                            className={`flex items-center gap-2 p-2 rounded-lg border transition-all text-left text-sm ${
+                            className={`flex items-center gap-2 !justify-start text-left text-sm w-full ${
                               isEnabled
                                 ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                                : 'border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                             }`}
                           >
                             <div
@@ -1284,7 +1279,7 @@ export const TenantFormModal = ({
                             >
                               {module.name}
                             </span>
-                          </button>
+                          </Button>
                         );
                       })}
                     </div>

@@ -76,13 +76,14 @@ export const PerfilPage = () => {
           <div className="relative group flex-shrink-0">
             <Avatar src={user?.photo_url} name={displayName} size="2xl" className="shadow-lg" />
             {/* Boton flotante para cambiar foto */}
-            <button
+            <Button
+              variant="ghost"
               onClick={() => setShowAvatarModal(true)}
-              className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity p-0"
               aria-label="Cambiar foto de perfil"
             >
               <Camera className="h-8 w-8 text-white" />
-            </button>
+            </Button>
           </div>
 
           <div className="text-center sm:text-left">

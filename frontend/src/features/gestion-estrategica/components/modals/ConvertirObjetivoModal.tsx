@@ -307,17 +307,18 @@ export const ConvertirObjetivoModal = ({
                 const Icon = perspective.icon;
                 const isSelected = selectedPerspective === perspective.value;
                 return (
-                  <button
+                  <Button
                     key={perspective.value}
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setValue('bsc_perspective', perspective.value, { shouldValidate: true })}
                     disabled={yaConvertida}
                     className={cn(
-                      'p-3 rounded-lg border-2 text-left transition-all',
+                      '!p-3 !min-h-0 rounded-lg border-2 !justify-start text-left transition-all w-full',
                       isSelected
                         ? `${perspective.bgColor} ${perspective.color} border-current`
-                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600',
-                      yaConvertida && 'opacity-50 cursor-not-allowed'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                     )}
                   >
                     <div className="flex items-start gap-2">
@@ -331,7 +332,7 @@ export const ConvertirObjetivoModal = ({
                         </p>
                       </div>
                     </div>
-                  </button>
+                  </Button>
                 );
               })}
             </div>

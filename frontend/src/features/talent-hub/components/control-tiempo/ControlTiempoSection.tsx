@@ -12,6 +12,7 @@
 import { useState } from 'react';
 import { LayoutDashboard, Clock, UserCheck, Timer, FileText } from 'lucide-react';
 import { cn } from '@/utils/cn';
+import { Button } from '@/components/common/Button';
 import { DashboardTiempo } from './DashboardTiempo';
 import { TurnosTab } from './TurnosTab';
 import { AsistenciaTab } from './AsistenciaTab';
@@ -75,12 +76,14 @@ export const ControlTiempoSection = () => {
           {SUB_TABS.map((tab) => {
             const isActive = tab.key === activeTab;
             return (
-              <button
+              <Button
                 key={tab.key}
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => setActiveTab(tab.key)}
                 className={cn(
-                  'flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all whitespace-nowrap',
+                  'flex items-center gap-2 !px-4 !py-2.5 text-sm font-medium border-b-2 transition-all whitespace-nowrap rounded-none',
                   isActive
                     ? 'border-primary-500 text-primary-600 dark:text-primary-400'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
@@ -88,7 +91,7 @@ export const ControlTiempoSection = () => {
               >
                 {tab.icon}
                 {tab.label}
-              </button>
+              </Button>
             );
           })}
         </nav>

@@ -211,16 +211,18 @@ const AreaCard = ({
       <div className="flex items-center gap-4 flex-1 min-w-0">
         {/* Indicador de expansión */}
         {hasChildren ? (
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={onToggleExpand}
-            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="!p-1 !min-h-0 rounded"
           >
             {isExpanded ? (
               <ChevronDown className="h-4 w-4 text-gray-500" />
             ) : (
               <ChevronRight className="h-4 w-4 text-gray-500" />
             )}
-          </button>
+          </Button>
         ) : (
           <div className="w-6" /> // Spacer para alineación
         )}

@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, Button, Modal } from '@/components/common';
-import { Input } from '@/components/forms';
+import { Input, Select, Textarea } from '@/components/forms';
 import { FileText, Plus } from 'lucide-react';
 import { useSolicitarPermiso } from '../api/miPortalApi';
 import type { SolicitudPermisoFormData, TipoPermisoESS } from '../types';
@@ -65,25 +65,18 @@ export function PermisoSolicitar() {
 
       <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} title="Solicitar permiso">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Tipo de permiso
-            </label>
-            <select
-              {...register('tipo_permiso', { required: 'Seleccione un tipo' })}
-              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Seleccione...</option>
-              {TIPOS_PERMISO.map((tipo) => (
-                <option key={tipo.value} value={tipo.value}>
-                  {tipo.label}
-                </option>
-              ))}
-            </select>
-            {errors.tipo_permiso && (
-              <p className="mt-1 text-xs text-red-600">{errors.tipo_permiso.message}</p>
-            )}
-          </div>
+          <Select
+            label="Tipo de permiso"
+            {...register('tipo_permiso', { required: 'Seleccione un tipo' })}
+            error={errors.tipo_permiso?.message}
+            placeholder="Seleccione..."
+          >
+            {TIPOS_PERMISO.map((tipo) => (
+              <option key={tipo.value} value={tipo.value}>
+                {tipo.label}
+              </option>
+            ))}
+          </Select>
 
           <Input
             label="Fecha"
@@ -105,20 +98,13 @@ export function PermisoSolicitar() {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Motivo
-            </label>
-            <textarea
-              {...register('motivo', { required: 'Describa el motivo' })}
-              rows={3}
-              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
-              placeholder="Describa brevemente el motivo del permiso..."
-            />
-            {errors.motivo && (
-              <p className="mt-1 text-xs text-red-600">{errors.motivo.message}</p>
-            )}
-          </div>
+          <Textarea
+            label="Motivo"
+            {...register('motivo', { required: 'Describa el motivo' })}
+            rows={3}
+            placeholder="Describa brevemente el motivo del permiso..."
+            error={errors.motivo?.message}
+          />
 
           <div className="flex justify-end gap-3 pt-4">
             <Button variant="outline" type="button" onClick={() => setIsOpen(false)}>

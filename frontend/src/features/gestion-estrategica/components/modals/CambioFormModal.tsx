@@ -429,7 +429,7 @@ export const CambioFormModal = ({ cambio, isOpen, onClose }: CambioFormModalProp
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Objetivos Estratégicos Relacionados
                 </label>
-                <select
+                <Select
                   multiple
                   value={formData.related_objectives.map(String)}
                   onChange={(e) => {
@@ -438,9 +438,6 @@ export const CambioFormModal = ({ cambio, isOpen, onClose }: CambioFormModalProp
                     );
                     setFormData({ ...formData, related_objectives: selected });
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
-                    bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100
-                    focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   size={5}
                 >
                   {objectiveOptions.map((opt) => (
@@ -448,7 +445,7 @@ export const CambioFormModal = ({ cambio, isOpen, onClose }: CambioFormModalProp
                       {opt.label}
                     </option>
                   ))}
-                </select>
+                </Select>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   Mantenga presionado Ctrl/Cmd para seleccionar múltiples
                 </p>

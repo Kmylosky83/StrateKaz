@@ -141,13 +141,15 @@ const ListEditor = ({
               className="inline-flex items-center gap-1 px-2 py-1 text-sm bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-md"
             >
               {item}
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => removeItem(index)}
-                className="p-0.5 hover:text-red-500"
+                className="p-0.5 hover:text-red-500 h-auto min-h-0"
               >
                 <Trash2 size={14} />
-              </button>
+              </Button>
             </span>
           ))}
         </div>
@@ -161,14 +163,16 @@ const ListEditor = ({
               .filter((s) => !items.includes(s))
               .slice(0, 8)
               .map((suggestion) => (
-                <button
+                <Button
                   key={suggestion}
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => addSuggestion(suggestion)}
-                  className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                  className="px-2 py-0.5 text-xs h-auto min-h-0"
                 >
                   + {suggestion}
-                </button>
+                </Button>
               ))}
           </div>
         </div>

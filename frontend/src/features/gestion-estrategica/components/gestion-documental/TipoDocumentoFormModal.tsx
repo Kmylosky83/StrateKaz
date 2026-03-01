@@ -4,6 +4,7 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Modal, Button, Spinner } from '@/components/common';
+import { Input, Select, Textarea } from '@/components/forms';
 import {
   useCreateTipoDocumento,
   useUpdateTipoDocumento,
@@ -113,83 +114,50 @@ export function TipoDocumentoFormModal({ isOpen, onClose, tipoId }: TipoDocument
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Código
-            </label>
-            <input
-              {...register('codigo')}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Se genera automáticamente"
-              disabled={isEdit}
-            />
-            {errors.codigo && <p className="text-xs text-red-500 mt-1">{errors.codigo.message}</p>}
-          </div>
+          <Input
+            label="Código"
+            {...register('codigo')}
+            placeholder="Se genera automáticamente"
+            disabled={isEdit}
+            error={errors.codigo?.message}
+          />
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Nombre *
-            </label>
-            <input
-              {...register('nombre', { required: 'Nombre es requerido' })}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Procedimiento"
-            />
-            {errors.nombre && <p className="text-xs text-red-500 mt-1">{errors.nombre.message}</p>}
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Descripción
-          </label>
-          <textarea
-            {...register('descripcion')}
-            rows={2}
-            className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Descripción del tipo de documento..."
+          <Input
+            label="Nombre *"
+            {...register('nombre', { required: 'Nombre es requerido' })}
+            placeholder="Procedimiento"
+            error={errors.nombre?.message}
           />
         </div>
 
+        <Textarea
+          label="Descripción"
+          {...register('descripcion')}
+          rows={2}
+          placeholder="Descripción del tipo de documento..."
+        />
+
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Nivel
-            </label>
-            <select
-              {...register('nivel_documento')}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              {NIVEL_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          <Select
+            label="Nivel"
+            {...register('nivel_documento')}
+            options={NIVEL_OPTIONS}
+          />
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Prefijo Código
-            </label>
-            <input
-              {...register('prefijo_codigo', { required: 'Prefijo requerido' })}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="PR-"
-            />
-          </div>
+          <Input
+            label="Prefijo Código"
+            {...register('prefijo_codigo', { required: 'Prefijo requerido' })}
+            placeholder="PR-"
+            error={errors.prefijo_codigo?.message}
+          />
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Retención (años)
-            </label>
-            <input
-              type="number"
-              {...register('tiempo_retencion_anos', { min: 1 })}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              min={1}
-            />
-          </div>
+          <Input
+            label="Retención (años)"
+            type="number"
+            {...register('tiempo_retencion_anos', { min: 1 })}
+            min={1}
+            error={errors.tiempo_retencion_anos?.message}
+          />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">

@@ -42,6 +42,9 @@ import { Badge } from '@/components/common/Badge';
 import { Button } from '@/components/common/Button';
 import { Spinner } from '@/components/common/Spinner';
 import { Alert } from '@/components/common/Alert';
+import { Input } from '@/components/forms/Input';
+import { Select } from '@/components/forms/Select';
+import { Textarea } from '@/components/forms/Textarea';
 import { cn } from '@/utils/cn';
 import {
   useVacantePublicaDetail,
@@ -267,35 +270,6 @@ function VacanteInfoCard({
   );
 }
 
-// ============================================================================
-// Form Field wrapper
-// ============================================================================
-
-function FormField({
-  label,
-  error,
-  required,
-  icon,
-  children,
-}: {
-  label: string;
-  error?: string;
-  required?: boolean;
-  icon?: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-        {icon && <span className="text-gray-400">{icon}</span>}
-        {label}
-        {required && <span className="text-red-500">*</span>}
-      </label>
-      {children}
-      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
-    </div>
-  );
-}
 
 // ============================================================================
 // Main Component
@@ -464,14 +438,6 @@ export default function PostulacionPage() {
     );
   }
 
-  // Form
-  const inputClass =
-    'w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm transition-colors outline-none focus:ring-2 focus:ring-offset-0';
-
-  const inputFocusStyle = {
-    '--tw-ring-color': hexToRgba(primaryColor, 0.3),
-  } as React.CSSProperties;
-
   return (
     <PublicPortalLayout
       empresaNombre={empresaNombre}
@@ -496,125 +462,78 @@ export default function PostulacionPage() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             {/* Personal info */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField
-                label="Nombres"
+              <Input
+                label="Nombres *"
+                {...register('nombres')}
+                placeholder="Ej: Juan Carlos"
                 error={errors.nombres?.message}
-                required
-                icon={<User className="w-3.5 h-3.5" />}
-              >
-                <input
-                  {...register('nombres')}
-                  placeholder="Ej: Juan Carlos"
-                  className={inputClass}
-                />
-              </FormField>
-
-              <FormField
-                label="Apellidos"
+                leftIcon={<User className="w-3.5 h-3.5" />}
+              />
+              <Input
+                label="Apellidos *"
+                {...register('apellidos')}
+                placeholder="Ej: Garcia Lopez"
                 error={errors.apellidos?.message}
-                required
-                icon={<User className="w-3.5 h-3.5" />}
-              >
-                <input
-                  {...register('apellidos')}
-                  placeholder="Ej: Garcia Lopez"
-                  className={inputClass}
-                />
-              </FormField>
+                leftIcon={<User className="w-3.5 h-3.5" />}
+              />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField
-                label="Tipo de documento"
+              <Select
+                label="Tipo de documento *"
+                {...register('tipo_documento')}
                 error={errors.tipo_documento?.message}
-                required
-                icon={<CreditCard className="w-3.5 h-3.5" />}
-              >
-                <select {...register('tipo_documento')} className={inputClass}>
-                  {TIPO_DOC_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </FormField>
-
-              <FormField
-                label="Numero de documento"
+                options={TIPO_DOC_OPTIONS}
+              />
+              <Input
+                label="Numero de documento *"
+                {...register('numero_documento')}
+                placeholder="Ej: 1234567890"
                 error={errors.numero_documento?.message}
-                required
-                icon={<CreditCard className="w-3.5 h-3.5" />}
-              >
-                <input
-                  {...register('numero_documento')}
-                  placeholder="Ej: 1234567890"
-                  className={inputClass}
-                />
-              </FormField>
+                leftIcon={<CreditCard className="w-3.5 h-3.5" />}
+              />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField
-                label="Correo electronico"
+              <Input
+                label="Correo electronico *"
+                {...register('email')}
+                type="email"
+                placeholder="Ej: juan@email.com"
                 error={errors.email?.message}
-                required
-                icon={<Mail className="w-3.5 h-3.5" />}
-              >
-                <input
-                  {...register('email')}
-                  type="email"
-                  placeholder="Ej: juan@email.com"
-                  className={inputClass}
-                />
-              </FormField>
-
-              <FormField
-                label="Telefono"
+                leftIcon={<Mail className="w-3.5 h-3.5" />}
+              />
+              <Input
+                label="Telefono *"
+                {...register('telefono')}
+                placeholder="Ej: 3001234567"
                 error={errors.telefono?.message}
-                required
-                icon={<Phone className="w-3.5 h-3.5" />}
-              >
-                <input
-                  {...register('telefono')}
-                  placeholder="Ej: 3001234567"
-                  className={inputClass}
-                />
-              </FormField>
+                leftIcon={<Phone className="w-3.5 h-3.5" />}
+              />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField
-                label="Ciudad"
+              <Input
+                label="Ciudad *"
+                {...register('ciudad')}
+                placeholder="Ej: Bogota"
                 error={errors.ciudad?.message}
-                required
-                icon={<MapPin className="w-3.5 h-3.5" />}
-              >
-                <input {...register('ciudad')} placeholder="Ej: Bogota" className={inputClass} />
-              </FormField>
-
-              <FormField
-                label="Nivel educativo"
+                leftIcon={<MapPin className="w-3.5 h-3.5" />}
+              />
+              <Select
+                label="Nivel educativo *"
+                {...register('nivel_educativo')}
                 error={errors.nivel_educativo?.message}
-                required
-                icon={<GraduationCap className="w-3.5 h-3.5" />}
-              >
-                <select {...register('nivel_educativo')} className={inputClass}>
-                  {NIVEL_EDUCATIVO_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </FormField>
+                options={NIVEL_EDUCATIVO_OPTIONS}
+              />
             </div>
 
             {/* File upload */}
-            <FormField
-              label="Hoja de vida (CV)"
-              error={cvError}
-              required
-              icon={<FileText className="w-3.5 h-3.5" />}
-            >
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                <FileText className="w-3.5 h-3.5 inline mr-1.5 text-gray-400" />
+                Hoja de vida (CV) *
+              </label>
               {cvFile ? (
                 <div className="flex items-center gap-3 p-3 rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
                   <FileText className="w-5 h-5 text-green-600 shrink-0" />
@@ -626,13 +545,9 @@ export default function PostulacionPage() {
                       {(cvFile.size / 1024 / 1024).toFixed(2)} MB
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={removeFile}
-                    className="p-1 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 text-gray-400 hover:text-red-500 transition-colors"
-                  >
+                  <Button variant="ghost" size="sm" type="button" onClick={removeFile}>
                     <X className="w-4 h-4" />
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 <div
@@ -658,20 +573,17 @@ export default function PostulacionPage() {
                 onChange={handleFileChange}
                 className="hidden"
               />
-            </FormField>
+              {cvError && <p className="mt-1 text-xs text-red-500">{cvError}</p>}
+            </div>
 
             {/* Cover letter */}
-            <FormField
+            <Textarea
               label="Carta de presentacion (opcional)"
+              {...register('carta_presentacion')}
+              rows={4}
+              placeholder="Cuentanos por que te interesa esta posicion y que te hace un buen candidato..."
               error={errors.carta_presentacion?.message}
-            >
-              <textarea
-                {...register('carta_presentacion')}
-                rows={4}
-                placeholder="Cuentanos por que te interesa esta posicion y que te hace un buen candidato..."
-                className={cn(inputClass, 'resize-y')}
-              />
-            </FormField>
+            />
 
             {/* Error alert */}
             {postulacionMutation.isError && (
@@ -693,19 +605,16 @@ export default function PostulacionPage() {
 
             {/* Submit */}
             <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
-              <button
+              <Button
                 type="submit"
                 disabled={postulacionMutation.isPending}
-                className="inline-flex items-center justify-center px-6 py-3 rounded-lg text-base font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50 w-full sm:w-auto"
+                isLoading={postulacionMutation.isPending}
+                leftIcon={<Send className="w-5 h-5" />}
+                className="w-full sm:w-auto"
                 style={{ backgroundColor: primaryColor }}
               >
-                {postulacionMutation.isPending ? (
-                  <Spinner size="sm" className="mr-2" />
-                ) : (
-                  <Send className="w-5 h-5 mr-2" />
-                )}
                 Enviar postulaci&oacute;n
-              </button>
+              </Button>
               <p className="mt-3 text-xs text-gray-400">
                 Al enviar tu postulacion, autorizas el tratamiento de tus datos personales conforme
                 a la politica de privacidad de la empresa.

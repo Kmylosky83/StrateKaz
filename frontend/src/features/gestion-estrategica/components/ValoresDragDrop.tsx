@@ -198,14 +198,16 @@ const SortableValueItem = ({
     >
       {/* Drag Handle */}
       {!readOnly && (
-        <button
-          {...attributes}
-          {...listeners}
-          className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing"
+        <Button
+          variant="ghost"
+          size="sm"
+          {...(attributes as object)}
+          {...(listeners as object)}
+          className="flex-shrink-0 !p-1 !min-h-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing"
           title="Arrastrar para reordenar"
         >
           <GripVertical className="w-5 h-5" />
-        </button>
+        </Button>
       )}
 
       {/* Icon - Dinamico desde DB con color del branding */}

@@ -24,7 +24,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { StatsGrid, StatsGridSkeleton } from '@/components/layout';
-import { Card, Badge } from '@/components/common';
+import { Card, Badge, Button } from '@/components/common';
 import { useTenantsStats, useTenantUsersStats, usePlansStats } from '../hooks/useAdminGlobal';
 import { TenantsSection } from '../components/TenantsSection';
 import { PlansSection } from '../components/PlansSection';
@@ -148,22 +148,19 @@ export const AdminGlobalPage = () => {
             const isActive = activeSection === section.code;
 
             return (
-              <button
+              <Button
                 key={section.code}
+                type="button"
+                size="sm"
+                variant={isActive ? 'primary' : 'ghost'}
                 onClick={() => setActiveSection(section.code)}
-                className={`
-                  flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg
-                  text-sm font-medium transition-all duration-200
-                  ${
-                    isActive
-                      ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/25'
-                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
-                  }
-                `}
+                className={`flex-1 justify-center gap-2 ${
+                  isActive ? 'bg-purple-600 hover:bg-purple-700 shadow-lg shadow-purple-600/25' : ''
+                }`}
               >
-                <Icon className={`h-4 w-4 ${isActive ? 'text-white' : ''}`} />
+                <Icon className="h-4 w-4" />
                 <span className="hidden sm:inline">{section.name}</span>
-              </button>
+              </Button>
             );
           })}
         </div>

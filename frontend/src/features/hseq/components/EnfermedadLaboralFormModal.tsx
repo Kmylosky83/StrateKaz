@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Modal, Button, Spinner } from '@/components/common';
-import { Input, Select, Textarea } from '@/components/forms';
+import { Input, Select, Textarea, Checkbox } from '@/components/forms';
 import { useCreateEnfermedadLaboral, useUpdateEnfermedadLaboral } from '../hooks/useAccidentalidad';
 import type { EnfermedadLaboral, CreateEnfermedadLaboralDTO } from '../types/accidentalidad.types';
 import { useSelectColaboradores } from '@/hooks/useSelectLists';
@@ -194,21 +194,11 @@ export default function EnfermedadLaboralFormModal({
           </div>
 
           {/* Fila 7: Checkbox */}
-          <div className="flex items-center gap-3">
-            <input
-              id="requiere_investigacion_el"
-              type="checkbox"
-              checked={formData.requiere_investigacion ?? false}
-              onChange={(e) => handleChange('requiere_investigacion', e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300"
-            />
-            <label
-              htmlFor="requiere_investigacion_el"
-              className="text-sm font-medium text-gray-700"
-            >
-              Requiere Investigación
-            </label>
-          </div>
+          <Checkbox
+            checked={formData.requiere_investigacion ?? false}
+            onChange={(e) => handleChange('requiere_investigacion', e.target.checked)}
+            label="Requiere Investigación"
+          />
         </div>
 
         {/* Fila de botones */}

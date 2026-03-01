@@ -163,13 +163,15 @@ const CampoEditor = ({
             {campo.es_obligatorio ? 'Obligatoria' : 'Opcional'}
           </Badge>
         </div>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={onRemove}
-          className="p-1 rounded-md text-gray-400 hover:text-danger-600 hover:bg-danger-50 dark:hover:text-danger-400 dark:hover:bg-danger-900/20"
+          className="text-gray-400 hover:text-danger-600"
         >
           <Trash2 size={16} />
-        </button>
+        </Button>
       </div>
 
       <div className="space-y-3">
@@ -238,13 +240,15 @@ const CampoEditor = ({
                       Correcta
                     </label>
                   )}
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => removeOpcion(idx)}
-                    className="text-gray-400 hover:text-danger-500"
+                    className="text-gray-400 hover:text-danger-500 !px-1 !min-h-0 !py-1"
                   >
                     <Trash2 size={12} />
-                  </button>
+                  </Button>
                 </div>
               ))}
               <div className="flex items-center gap-2">
@@ -466,16 +470,18 @@ export const FormBuilderModal = ({ plantilla, isOpen, onClose }: FormBuilderModa
           const isActive = index === activeStep;
           const isCompleted = index < activeStep;
           return (
-            <button
+            <Button
               key={step.key}
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => {
                 if (index <= activeStep || (index === 1 && isStep1Valid)) {
                   setActiveStep(index);
                 }
               }}
               className={cn(
-                'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all',
+                'flex items-center gap-2 !px-3 !py-2 rounded-lg text-sm font-medium transition-all',
                 isActive
                   ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
                   : isCompleted
@@ -496,7 +502,7 @@ export const FormBuilderModal = ({ plantilla, isOpen, onClose }: FormBuilderModa
                 {isCompleted ? <Check size={12} /> : index + 1}
               </span>
               <span className="hidden sm:inline">{step.label}</span>
-            </button>
+            </Button>
           );
         })}
       </div>

@@ -140,14 +140,16 @@ export const PlanMejoraDetailModal = ({ plan, isOpen, onClose }: Props) => {
                     </div>
                   </div>
                   {act.estado === 'en_progreso' && (
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="sm"
                       onClick={() => completarMutation.mutate(String(act.id))}
-                      className="p-1.5 rounded-md text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:text-green-400 dark:hover:bg-green-900/20"
                       title="Completar"
+                      className="text-green-500 hover:text-green-700"
                     >
                       <CheckCircle size={16} />
-                    </button>
+                    </Button>
                   )}
                 </div>
               ))}

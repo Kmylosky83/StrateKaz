@@ -12,6 +12,8 @@ import { Button } from '@/components/common/Button';
 import { Modal } from '@/components/common/Modal';
 import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
+import { Input } from '@/components/forms/Input';
+import { Textarea } from '@/components/forms/Textarea';
 
 import { useProveedores, useCambiarPrecio, useHistorialPrecios } from '../hooks/useProveedores';
 import type { PrecioMateriaPrima, HistorialPrecioProveedor } from '../types';
@@ -236,32 +238,22 @@ export function PreciosTab() {
             </p>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Nuevo Precio (COP/Kg) *
-            </label>
-            <input
-              type="number"
-              name="precio_nuevo"
-              step="0.01"
-              min="0"
-              required
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-              placeholder="0.00"
-            />
-          </div>
+          <Input
+            label="Nuevo Precio (COP/Kg) *"
+            type="number"
+            name="precio_nuevo"
+            step="0.01"
+            min="0"
+            required
+            placeholder="0.00"
+          />
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Motivo del Cambio
-            </label>
-            <textarea
-              name="motivo_cambio"
-              rows={2}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-              placeholder="Ej: Ajuste por inflación, nuevo contrato..."
-            />
-          </div>
+          <Textarea
+            label="Motivo del Cambio"
+            name="motivo_cambio"
+            rows={2}
+            placeholder="Ej: Ajuste por inflación, nuevo contrato..."
+          />
 
           <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="outline" onClick={() => setShowCambiarPrecio(false)}>

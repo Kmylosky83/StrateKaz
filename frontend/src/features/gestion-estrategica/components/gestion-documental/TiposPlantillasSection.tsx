@@ -153,24 +153,28 @@ export function TiposPlantillasSection({
                             className="absolute right-0 top-8 z-50 w-40 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <button
-                              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full !justify-start !min-h-0 px-4 py-2 text-sm"
                               onClick={() => {
                                 onEditTipo(tipo);
                                 setTipoMenuOpen(null);
                               }}
                             >
                               <Edit className="w-3 h-3" /> Editar
-                            </button>
-                            <button
-                              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 text-red-600 flex items-center gap-2"
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full !justify-start !min-h-0 px-4 py-2 text-sm text-red-600"
                               onClick={() => {
                                 setConfirmDeleteTipo(tipo);
                                 setTipoMenuOpen(null);
                               }}
                             >
                               <Trash2 className="w-3 h-3" /> Eliminar
-                            </button>
+                            </Button>
                           </div>
                         )}
                       </div>
@@ -254,35 +258,41 @@ export function TiposPlantillasSection({
                         </Button>
                         {plantillaMenuOpen === plantilla.id && (
                           <div className="absolute right-0 top-8 z-50 w-44 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1">
-                            <button
-                              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full !justify-start !min-h-0 px-4 py-2 text-sm"
                               onClick={() => {
                                 onEditPlantilla(plantilla);
                                 setPlantillaMenuOpen(null);
                               }}
                             >
                               <Edit className="w-3 h-3" /> Editar
-                            </button>
+                            </Button>
                             {plantilla.estado !== 'ACTIVA' && (
-                              <button
-                                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 text-green-600 flex items-center gap-2"
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="w-full !justify-start !min-h-0 px-4 py-2 text-sm text-green-600"
                                 onClick={() => {
                                   activarPlantillaMutation.mutate(plantilla.id);
                                   setPlantillaMenuOpen(null);
                                 }}
                               >
                                 <CheckCircle className="w-3 h-3" /> Activar
-                              </button>
+                              </Button>
                             )}
-                            <button
-                              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 text-red-600 flex items-center gap-2"
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full !justify-start !min-h-0 px-4 py-2 text-sm text-red-600"
                               onClick={() => {
                                 setConfirmDeletePlantilla(plantilla);
                                 setPlantillaMenuOpen(null);
                               }}
                             >
                               <Trash2 className="w-3 h-3" /> Eliminar
-                            </button>
+                            </Button>
                           </div>
                         )}
                       </div>

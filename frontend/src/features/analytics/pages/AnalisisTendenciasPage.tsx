@@ -32,6 +32,7 @@ import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
+import { Input, Select } from '@/components/forms';
 import { cn } from '@/utils/cn';
 import {
   useAnalisisKPI,
@@ -104,13 +105,12 @@ const AnalisisSection = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <Input
               placeholder="Buscar análisis..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="pl-10"
             />
           </div>
           <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
@@ -132,30 +132,27 @@ const AnalisisSection = () => {
           <div className="space-y-3">
             <h4 className="font-medium text-gray-900 dark:text-white">Generar Nuevo Análisis</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <input
+              <Input
                 type="number"
                 placeholder="ID del KPI"
                 value={kpiId}
                 onChange={(e) => setKpiId(e.target.value)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
               />
-              <input
-                type="text"
+              <Input
                 placeholder="Periodo (2024-12)"
                 value={periodo}
                 onChange={(e) => setPeriodo(e.target.value)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
               />
-              <select
+              <Select
                 value={tipoAnalisis}
                 onChange={(e) => setTipoAnalisis(e.target.value)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="vs_meta">vs Meta</option>
-                <option value="vs_periodo_anterior">vs Periodo Anterior</option>
-                <option value="vs_mejor_historico">vs Mejor Histórico</option>
-                <option value="tendencia">Tendencia</option>
-              </select>
+                options={[
+                  { value: 'vs_meta', label: 'vs Meta' },
+                  { value: 'vs_periodo_anterior', label: 'vs Periodo Anterior' },
+                  { value: 'vs_mejor_historico', label: 'vs Mejor Histórico' },
+                  { value: 'tendencia', label: 'Tendencia' },
+                ]}
+              />
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" size="sm" onClick={() => setShowGenerateForm(false)}>
@@ -326,36 +323,31 @@ const TendenciasSection = () => {
           <div className="space-y-3">
             <h4 className="font-medium text-gray-900 dark:text-white">Calcular Nueva Tendencia</h4>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <input
+              <Input
                 type="number"
                 placeholder="ID del KPI"
                 value={kpiId}
                 onChange={(e) => setKpiId(e.target.value)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
               />
-              <input
-                type="text"
+              <Input
                 placeholder="Inicio (2024-01)"
                 value={periodoInicio}
                 onChange={(e) => setPeriodoInicio(e.target.value)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
               />
-              <input
-                type="text"
+              <Input
                 placeholder="Fin (2024-12)"
                 value={periodoFin}
                 onChange={(e) => setPeriodoFin(e.target.value)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
               />
-              <select
+              <Select
                 value={tipoTendencia}
                 onChange={(e) => setTipoTendencia(e.target.value)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="lineal">Lineal</option>
-                <option value="exponencial">Exponencial</option>
-                <option value="estacional">Estacional</option>
-              </select>
+                options={[
+                  { value: 'lineal', label: 'Lineal' },
+                  { value: 'exponencial', label: 'Exponencial' },
+                  { value: 'estacional', label: 'Estacional' },
+                ]}
+              />
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" size="sm" onClick={() => setShowCalculateForm(false)}>

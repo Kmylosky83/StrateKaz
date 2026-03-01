@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Modal, Button, Spinner } from '@/components/common';
-import { Input, Select } from '@/components/forms';
+import { Input, Select, Checkbox } from '@/components/forms';
 import { useSelectColaboradores } from '@/hooks/useSelectLists';
 import { useCreateMiembroComite, useUpdateMiembroComite, useComites } from '../hooks/useComites';
 import type { MiembroComiteList, CreateMiembroComiteDTO } from '../types/comites.types';
@@ -177,17 +177,13 @@ export default function MiembroComiteFormModal({
             required
           />
 
-          <div className="flex items-center gap-3 pt-6">
-            <input
+          <div className="flex items-center pt-6">
+            <Checkbox
               id="es_principal"
-              type="checkbox"
+              label="Es Miembro Principal"
               checked={formData.es_principal ?? false}
               onChange={(e) => handleChange('es_principal', e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
             />
-            <label htmlFor="es_principal" className="text-sm font-medium text-gray-700">
-              Es Miembro Principal
-            </label>
           </div>
         </div>
 

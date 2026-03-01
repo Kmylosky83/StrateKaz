@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
 import { Card, Button, Badge, Tabs, Spinner, EmptyState } from '@/components/common';
+import { Input } from '@/components/forms';
 import {
   useInformes,
   useInformeLineas,
@@ -95,15 +96,13 @@ const DefinicionesSection = () => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Buscar informe..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-4 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm w-64 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-          />
-        </div>
+        <Input
+          type="text"
+          placeholder="Buscar informe..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-64"
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

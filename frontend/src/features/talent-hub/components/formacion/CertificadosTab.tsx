@@ -3,6 +3,7 @@
  */
 import { useState, useMemo } from 'react';
 import { Card } from '@/components/common/Card';
+import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
@@ -195,14 +196,16 @@ export const CertificadosTab = () => {
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end opacity-0 group-hover:opacity-100 transition-opacity">
                           {!cert.anulado && (
-                            <button
+                            <Button
                               type="button"
+                              variant="ghost"
+                              size="sm"
                               onClick={() => setAnularTarget(cert)}
-                              className="p-1.5 rounded-md text-gray-400 hover:text-danger-600 hover:bg-danger-50 dark:hover:text-danger-400 dark:hover:bg-danger-900/20"
                               title="Anular certificado"
+                              className="text-red-500 hover:text-red-700"
                             >
                               <Ban size={16} />
-                            </button>
+                            </Button>
                           )}
                         </div>
                       </td>

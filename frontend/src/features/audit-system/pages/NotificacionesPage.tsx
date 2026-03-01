@@ -34,6 +34,7 @@ import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { Alert } from '@/components/common/Alert';
+import { Input, Select, Textarea, Switch, Checkbox } from '@/components/forms';
 import { cn } from '@/utils/cn';
 import { toast } from 'sonner';
 import {
@@ -833,25 +834,12 @@ function PreferenciasTab() {
                     </div>
                   </div>
                   {/* Toggle switch */}
-                  <button
-                    type="button"
-                    onClick={() =>
+                  <Switch
+                    checked={isActive}
+                    onCheckedChange={() =>
                       handleToggle(canal.key as 'recibir_app' | 'recibir_email' | 'recibir_push')
                     }
-                    className={cn(
-                      'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
-                      isActive ? 'bg-primary-600' : 'bg-gray-200 dark:bg-gray-700'
-                    )}
-                    role="switch"
-                    aria-checked={isActive}
-                  >
-                    <span
-                      className={cn(
-                        'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
-                        isActive ? 'translate-x-5' : 'translate-x-0'
-                      )}
-                    />
-                  </button>
+                  />
                 </div>
               );
             })}
@@ -879,32 +867,22 @@ function PreferenciasTab() {
 
           {/* Configuración de horario */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Hora de inicio
-              </label>
-              <input
-                type="time"
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                value={formValues.horario_inicio}
-                onChange={(e) =>
-                  setFormValues((prev) => ({ ...prev, horario_inicio: e.target.value }))
-                }
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Hora de fin
-              </label>
-              <input
-                type="time"
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                value={formValues.horario_fin}
-                onChange={(e) =>
-                  setFormValues((prev) => ({ ...prev, horario_fin: e.target.value }))
-                }
-              />
-            </div>
+            <Input
+              type="time"
+              label="Hora de inicio"
+              value={formValues.horario_inicio}
+              onChange={(e) =>
+                setFormValues((prev) => ({ ...prev, horario_inicio: e.target.value }))
+              }
+            />
+            <Input
+              type="time"
+              label="Hora de fin"
+              value={formValues.horario_fin}
+              onChange={(e) =>
+                setFormValues((prev) => ({ ...prev, horario_fin: e.target.value }))
+              }
+            />
           </div>
 
           <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
@@ -1091,28 +1069,19 @@ function MasivasTab() {
               Contenido del Mensaje
             </h4>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Título de la notificación
-              </label>
-              <input
-                type="text"
-                value={formData.titulo}
-                onChange={(e) => setFormData((prev) => ({ ...prev, titulo: e.target.value }))}
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                placeholder="Ej: Actualización importante del sistema"
-                required
-              />
-            </div>
+            <Input
+              label="Título de la notificación"
+              value={formData.titulo}
+              onChange={(e) => setFormData((prev) => ({ ...prev, titulo: e.target.value }))}
+              placeholder="Ej: Actualización importante del sistema"
+              required
+            />
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Mensaje
-              </label>
-              <textarea
+              <Textarea
+                label="Mensaje"
                 value={formData.mensaje}
                 onChange={(e) => setFormData((prev) => ({ ...prev, mensaje: e.target.value }))}
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 rows={4}
                 placeholder="Escribe el contenido de la notificación..."
                 maxLength={500}
@@ -1135,13 +1104,10 @@ function MasivasTab() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Tipo de Notificación
-                </label>
-                <select
+                <Select
+                  label="Tipo de Notificación"
                   value={formData.tipo}
                   onChange={(e) => setFormData((prev) => ({ ...prev, tipo: e.target.value }))}
-                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   required
                   disabled={tiposLoading}
                 >
@@ -1153,7 +1119,7 @@ function MasivasTab() {
                       {tipo.nombre}
                     </option>
                   ))}
-                </select>
+                </Select>
                 {tipos.length === 0 && !tiposLoading && (
                   <p className="mt-1 text-xs text-yellow-600 dark:text-yellow-400">
                     No hay tipos de notificación disponibles. Créalos en la pestaña "Tipos".
@@ -1161,73 +1127,58 @@ function MasivasTab() {
                 )}
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Destinatarios
-                </label>
-                <select
-                  value={formData.destinatarios_tipo}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      destinatarios_tipo: e.target.value as any,
-                      cargo_id: '',
-                      area_id: '',
-                      usuarios_ids: [],
-                    }))
-                  }
-                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                >
-                  <option value="todos">Todos los usuarios</option>
-                  <option value="rol">Por cargo</option>
-                  <option value="area">Por área</option>
-                  <option value="usuarios_especificos">Usuarios específicos</option>
-                </select>
-              </div>
+              <Select
+                label="Destinatarios"
+                value={formData.destinatarios_tipo}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    destinatarios_tipo: e.target.value as 'todos' | 'rol' | 'area' | 'usuarios_especificos',
+                    cargo_id: '',
+                    area_id: '',
+                    usuarios_ids: [],
+                  }))
+                }
+              >
+                <option value="todos">Todos los usuarios</option>
+                <option value="rol">Por cargo</option>
+                <option value="area">Por área</option>
+                <option value="usuarios_especificos">Usuarios específicos</option>
+              </Select>
             </div>
 
             {/* Select condicional de cargo */}
             {formData.destinatarios_tipo === 'rol' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Seleccionar Cargo
-                </label>
-                <select
-                  value={formData.cargo_id}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, cargo_id: e.target.value }))}
-                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  required
-                >
-                  <option value="">Seleccione un cargo</option>
-                  {cargos.map((cargo) => (
-                    <option key={cargo.id} value={cargo.id}>
-                      {cargo.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <Select
+                label="Seleccionar Cargo"
+                value={formData.cargo_id}
+                onChange={(e) => setFormData((prev) => ({ ...prev, cargo_id: e.target.value }))}
+                required
+              >
+                <option value="">Seleccione un cargo</option>
+                {cargos.map((cargo) => (
+                  <option key={cargo.id} value={cargo.id}>
+                    {cargo.label}
+                  </option>
+                ))}
+              </Select>
             )}
 
             {/* Select condicional de área */}
             {formData.destinatarios_tipo === 'area' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Seleccionar Área
-                </label>
-                <select
-                  value={formData.area_id}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, area_id: e.target.value }))}
-                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  required
-                >
-                  <option value="">Seleccione un proceso</option>
-                  {areas.map((area) => (
-                    <option key={area.id} value={area.id}>
-                      {area.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <Select
+                label="Seleccionar Área"
+                value={formData.area_id}
+                onChange={(e) => setFormData((prev) => ({ ...prev, area_id: e.target.value }))}
+                required
+              >
+                <option value="">Seleccione un proceso</option>
+                {areas.map((area) => (
+                  <option key={area.id} value={area.id}>
+                    {area.label}
+                  </option>
+                ))}
+              </Select>
             )}
 
             {/* Checkboxes de usuarios específicos */}
@@ -1249,15 +1200,27 @@ function MasivasTab() {
                         const displayName = user.label;
 
                         return (
-                          <label
+                          <div
                             key={user.id}
                             className={cn(
                               'flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-700',
                               isSelected && 'bg-primary-50 dark:bg-primary-900/20'
                             )}
+                            onClick={() => {
+                              if (isSelected) {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  usuarios_ids: prev.usuarios_ids.filter((id) => id !== user.id),
+                                }));
+                              } else {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  usuarios_ids: [...prev.usuarios_ids, user.id],
+                                }));
+                              }
+                            }}
                           >
-                            <input
-                              type="checkbox"
+                            <Checkbox
                               checked={isSelected}
                               onChange={(e) => {
                                 if (e.target.checked) {
@@ -1272,7 +1235,6 @@ function MasivasTab() {
                                   }));
                                 }
                               }}
-                              className="rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700"
                             />
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
@@ -1284,7 +1246,7 @@ function MasivasTab() {
                                 </p>
                               )}
                             </div>
-                          </label>
+                          </div>
                         );
                       })}
                     </div>
@@ -1351,7 +1313,9 @@ function MasivasTab() {
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                 Vista Previa de Notificación
               </h3>
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setShowPreview(false)}
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
               >
@@ -1363,7 +1327,7 @@ function MasivasTab() {
                     d="M6 18L18 6M6 6l12 12"
                   />
                 </svg>
-              </button>
+              </Button>
             </div>
 
             {/* Content */}

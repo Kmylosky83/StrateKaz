@@ -28,7 +28,7 @@ import '@xyflow/react/dist/style.css';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import axiosInstance from '@/api/axios-config';
-import { Card, EmptyState, Spinner } from '@/components/common';
+import { Card, EmptyState, Spinner, Button } from '@/components/common';
 import { Building2, Network, Download, Maximize2, RotateCcw, ChevronDown } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { cn } from '@/utils/cn';
@@ -397,42 +397,46 @@ const OrganigramaCanvasInner = ({
             <Panel position="top-right" className="!m-2">
               <div className="flex items-center gap-1 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-1">
                 {/* Fit view */}
-                <button
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => fitView({ padding: 0.2, duration: 300 })}
-                  className="p-2 rounded-md text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  className="!p-2 !min-h-0"
                   title="Ajustar vista"
                 >
                   <Maximize2 className="h-4 w-4" />
-                </button>
+                </Button>
 
                 {/* Reset layout */}
-                <button
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={handleResetLayout}
-                  className="p-2 rounded-md text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  className="!p-2 !min-h-0"
                   title="Restablecer posiciones"
                 >
                   <RotateCcw className="h-4 w-4" />
-                </button>
+                </Button>
 
                 {/* Separador */}
                 <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-0.5" />
 
                 {/* Export dropdown */}
                 <div className="relative">
-                  <button
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setShowExportMenu((prev) => !prev)}
                     disabled={isExporting}
-                    className={cn(
-                      'flex items-center gap-1 p-2 rounded-md transition-colors',
-                      isExporting
-                        ? 'text-gray-400 cursor-not-allowed'
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
-                    )}
+                    className="!p-2 !min-h-0"
                     title="Exportar"
                   >
                     <Download className="h-4 w-4" />
                     <ChevronDown className="h-3 w-3" />
-                  </button>
+                  </Button>
 
                   {showExportMenu && (
                     <>
@@ -442,18 +446,24 @@ const OrganigramaCanvasInner = ({
                         onClick={() => setShowExportMenu(false)}
                       />
                       <div className="absolute right-0 top-full mt-1 z-20 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-1 min-w-[120px]">
-                        <button
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
                           onClick={() => handleExport('png')}
-                          className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                          className="w-full !justify-start !min-h-0 text-sm"
                         >
                           Exportar PNG
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
                           onClick={() => handleExport('pdf')}
-                          className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                          className="w-full !justify-start !min-h-0 text-sm"
                         >
                           Exportar PDF
-                        </button>
+                        </Button>
                       </div>
                     </>
                   )}

@@ -5,7 +5,7 @@
  * Tabla con filtros, badges de estado, y acciones rápidas.
  */
 import { useState } from 'react';
-import { Plus, Eye, Edit, CheckCircle, XCircle, ClipboardCheck, Settings } from 'lucide-react';
+import { Plus, Edit, CheckCircle, XCircle, ClipboardCheck, Settings } from 'lucide-react';
 
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
@@ -13,6 +13,9 @@ import { Badge } from '@/components/common/Badge';
 import { Modal } from '@/components/common/Modal';
 import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
+import { Input } from '@/components/forms/Input';
+import { Select } from '@/components/forms/Select';
+import { Textarea } from '@/components/forms/Textarea';
 
 import { EvaluacionProveedorForm } from './EvaluacionProveedorForm';
 import {
@@ -166,8 +169,7 @@ export function EvaluacionesTab() {
         </h3>
         <div className="flex items-center gap-2">
           {/* Filtro estado */}
-          <select
-            className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+          <Select
             value={filtroEstado}
             onChange={(e) => setFiltroEstado(e.target.value)}
           >
@@ -176,7 +178,7 @@ export function EvaluacionesTab() {
             <option value="COMPLETADA">Completada</option>
             <option value="APROBADA">Aprobada</option>
             <option value="RECHAZADA">Rechazada</option>
-          </select>
+          </Select>
 
           <Button
             variant="outline"
@@ -434,105 +436,70 @@ export function EvaluacionesTab() {
       >
         <form onSubmit={handleSaveCriterio} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Código *
-              </label>
-              <input
-                type="text"
-                name="codigo"
-                required
-                defaultValue={editCriterio?.codigo || ''}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Categoría *
-              </label>
-              <select
-                name="categoria"
-                required
-                defaultValue={editCriterio?.categoria || ''}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-              >
-                <option value="">Seleccione...</option>
-                <option value="CALIDAD">Calidad</option>
-                <option value="ENTREGA">Entrega</option>
-                <option value="SERVICIO">Servicio</option>
-                <option value="PRECIO">Precio</option>
-                <option value="DOCUMENTACION">Documentación</option>
-                <option value="OTRO">Otro</option>
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Nombre *
-            </label>
-            <input
+            <Input
+              label="Código *"
               type="text"
-              name="nombre"
+              name="codigo"
               required
-              defaultValue={editCriterio?.nombre || ''}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              defaultValue={editCriterio?.codigo || ''}
             />
+            <Select
+              label="Categoría *"
+              name="categoria"
+              required
+              defaultValue={editCriterio?.categoria || ''}
+            >
+              <option value="">Seleccione...</option>
+              <option value="CALIDAD">Calidad</option>
+              <option value="ENTREGA">Entrega</option>
+              <option value="SERVICIO">Servicio</option>
+              <option value="PRECIO">Precio</option>
+              <option value="DOCUMENTACION">Documentación</option>
+              <option value="OTRO">Otro</option>
+            </Select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Descripción
-            </label>
-            <textarea
-              name="descripcion"
-              rows={2}
-              defaultValue={editCriterio?.descripcion || ''}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-            />
-          </div>
+          <Input
+            label="Nombre *"
+            type="text"
+            name="nombre"
+            required
+            defaultValue={editCriterio?.nombre || ''}
+          />
+
+          <Textarea
+            label="Descripción"
+            name="descripcion"
+            rows={2}
+            defaultValue={editCriterio?.descripcion || ''}
+          />
 
           <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Peso (%) *
-              </label>
-              <input
-                type="number"
-                name="peso_porcentaje"
-                min="1"
-                max="100"
-                required
-                defaultValue={editCriterio?.peso_porcentaje || ''}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Eliminatorio
-              </label>
-              <select
-                name="es_eliminatorio"
-                defaultValue={editCriterio?.es_eliminatorio ? 'true' : 'false'}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-              >
-                <option value="false">No</option>
-                <option value="true">Sí</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Puntaje Mínimo
-              </label>
-              <input
-                type="number"
-                name="puntaje_minimo"
-                min="0"
-                max="100"
-                defaultValue={editCriterio?.puntaje_minimo_aceptable || ''}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-              />
-            </div>
+            <Input
+              label="Peso (%) *"
+              type="number"
+              name="peso_porcentaje"
+              min="1"
+              max="100"
+              required
+              defaultValue={editCriterio?.peso_porcentaje || ''}
+            />
+            <Select
+              label="Eliminatorio"
+              name="es_eliminatorio"
+              defaultValue={editCriterio?.es_eliminatorio ? 'true' : 'false'}
+            >
+              <option value="false">No</option>
+              <option value="true">Sí</option>
+            </Select>
+            <Input
+              label="Puntaje Mínimo"
+              type="number"
+              name="puntaje_minimo"
+              min="0"
+              max="100"
+              defaultValue={editCriterio?.puntaje_minimo_aceptable || ''}
+            />
           </div>
 
           <div className="flex justify-end gap-3 pt-2">

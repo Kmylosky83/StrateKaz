@@ -357,11 +357,13 @@ export const NormaISOFormModal = ({ norma, isOpen, onClose }: NormaISOFormModalP
                 Colores predefinidos:
               </span>
               {COLOR_PRESETS.map((preset) => (
-                <button
+                <Button
                   key={preset.value}
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setFormData({ ...formData, color: preset.value })}
-                  className={`w-8 h-8 rounded border-2 transition-all ${
+                  className={`!w-8 !h-8 !min-h-0 !p-0 rounded border-2 transition-all ${
                     formData.color === preset.value
                       ? 'border-gray-900 dark:border-white scale-110'
                       : 'border-gray-300 dark:border-gray-600 hover:scale-105'

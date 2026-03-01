@@ -15,6 +15,8 @@ import {
   Avatar,
   Dropdown,
 } from '@/components/common';
+import { Input } from '@/components/forms/Input';
+import { Select } from '@/components/forms/Select';
 import { useTenantUsersList, useDeleteTenantUser } from '../hooks/useAdminGlobal';
 import { TenantUserFormModal } from './TenantUserFormModal';
 import type { TenantUser } from '../types';
@@ -199,48 +201,43 @@ export const UsersGlobalSection = () => {
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         {/* Search */}
-        <div className="relative w-full sm:w-80">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input
+        <div className="w-full sm:w-80">
+          <Input
             type="text"
             placeholder="Buscar usuario..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
-                     bg-white dark:bg-gray-800 text-gray-900 dark:text-white
-                     focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            leftIcon={<Search className="h-4 w-4" />}
           />
         </div>
 
         {/* Filters & Actions */}
         <div className="flex gap-2">
-          <select
+          <Select
             value={filterActive === undefined ? 'all' : filterActive ? 'active' : 'inactive'}
             onChange={(e) => {
               const val = e.target.value;
               setFilterActive(val === 'all' ? undefined : val === 'active');
             }}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
-                     bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
-          >
-            <option value="all">Todos</option>
-            <option value="active">Activos</option>
-            <option value="inactive">Inactivos</option>
-          </select>
+            options={[
+              { value: 'all', label: 'Todos' },
+              { value: 'active', label: 'Activos' },
+              { value: 'inactive', label: 'Inactivos' },
+            ]}
+          />
 
-          <select
+          <Select
             value={filterSuperadmin === undefined ? 'all' : filterSuperadmin ? 'super' : 'normal'}
             onChange={(e) => {
               const val = e.target.value;
               setFilterSuperadmin(val === 'all' ? undefined : val === 'super');
             }}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
-                     bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
-          >
-            <option value="all">Todos los roles</option>
-            <option value="super">Superadmins</option>
-            <option value="normal">Usuarios</option>
-          </select>
+            options={[
+              { value: 'all', label: 'Todos los roles' },
+              { value: 'super', label: 'Superadmins' },
+              { value: 'normal', label: 'Usuarios' },
+            ]}
+          />
 
           <Button variant="primary" className="flex items-center gap-2" onClick={handleOpenNewUser}>
             <Plus className="h-4 w-4" />

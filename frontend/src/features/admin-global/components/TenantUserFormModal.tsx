@@ -8,6 +8,8 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, UserPlus, Mail, Shield, Building2 } from 'lucide-react';
 import { Button, Badge } from '@/components/common';
+import { Input } from '@/components/forms/Input';
+import { Checkbox } from '@/components/forms/Checkbox';
 import { useCreateTenantUser, useUpdateTenantUser, useTenantsList } from '../hooks/useAdminGlobal';
 import type { TenantUser, CreateTenantUserDTO } from '../types';
 
@@ -187,109 +189,66 @@ export const TenantUserFormModal = ({ isOpen, onClose, user }: TenantUserFormMod
           {/* Datos personales */}
           <>
             {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                <Mail className="inline h-4 w-4 mr-1" /> Email *
-              </label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                disabled={isEditing}
-                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
-                    text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500
-                    ${isEditing ? 'opacity-50 cursor-not-allowed' : ''}
-                    ${errors.email ? 'border-danger-500' : 'border-gray-300 dark:border-gray-600'}`}
-                placeholder="usuario@ejemplo.com"
-              />
-              {errors.email && <p className="text-xs text-danger-500 mt-1">{errors.email}</p>}
-            </div>
+            <Input
+              label="Email *"
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              disabled={isEditing}
+              error={errors.email}
+              placeholder="usuario@ejemplo.com"
+              leftIcon={<Mail className="h-4 w-4" />}
+            />
 
             {/* Contraseña */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Contraseña {!isEditing && '*'}
-              </label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
-                    text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500
-                    ${errors.password ? 'border-danger-500' : 'border-gray-300 dark:border-gray-600'}`}
-                placeholder={isEditing ? 'Dejar vacío para no cambiar' : 'Mínimo 8 caracteres'}
-              />
-              {errors.password && <p className="text-xs text-danger-500 mt-1">{errors.password}</p>}
-            </div>
+            <Input
+              label={`Contraseña${!isEditing ? ' *' : ''}`}
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              error={errors.password}
+              placeholder={isEditing ? 'Dejar vacío para no cambiar' : 'Mínimo 8 caracteres'}
+            />
 
             {/* Nombre y Apellido */}
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Nombre *
-                </label>
-                <input
-                  type="text"
-                  name="first_name"
-                  value={formData.first_name}
-                  onChange={handleChange}
-                  className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
-                      text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500
-                      ${errors.first_name ? 'border-danger-500' : 'border-gray-300 dark:border-gray-600'}`}
-                  placeholder="Juan"
-                />
-                {errors.first_name && (
-                  <p className="text-xs text-danger-500 mt-1">{errors.first_name}</p>
-                )}
-              </div>
+              <Input
+                label="Nombre *"
+                type="text"
+                name="first_name"
+                value={formData.first_name}
+                onChange={handleChange}
+                error={errors.first_name}
+                placeholder="Juan"
+              />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Apellido *
-                </label>
-                <input
-                  type="text"
-                  name="last_name"
-                  value={formData.last_name}
-                  onChange={handleChange}
-                  className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
-                      text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500
-                      ${errors.last_name ? 'border-danger-500' : 'border-gray-300 dark:border-gray-600'}`}
-                  placeholder="Pérez"
-                />
-                {errors.last_name && (
-                  <p className="text-xs text-danger-500 mt-1">{errors.last_name}</p>
-                )}
-              </div>
+              <Input
+                label="Apellido *"
+                type="text"
+                name="last_name"
+                value={formData.last_name}
+                onChange={handleChange}
+                error={errors.last_name}
+                placeholder="Pérez"
+              />
             </div>
 
             {/* Opciones */}
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="is_active"
-                  checked={formData.is_active}
-                  onChange={handleChange}
-                  className="h-4 w-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
-                />
-                <span className="text-sm text-gray-700 dark:text-gray-300">Activo</span>
-              </label>
-
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="is_superadmin"
-                  checked={formData.is_superadmin}
-                  onChange={handleChange}
-                  className="h-4 w-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
-                />
-                <span className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                  <Shield className="h-4 w-4" /> Super Admin
-                </span>
-              </label>
+            <div className="flex gap-6">
+              <Checkbox
+                label="Activo"
+                name="is_active"
+                checked={formData.is_active}
+                onChange={handleChange}
+              />
+              <Checkbox
+                label="Super Admin"
+                name="is_superadmin"
+                checked={formData.is_superadmin}
+                onChange={handleChange}
+              />
             </div>
           </>
 

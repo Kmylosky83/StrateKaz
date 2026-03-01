@@ -32,6 +32,7 @@ import {
   Mail,
   Info,
 } from 'lucide-react';
+import { cn } from '@/utils/cn';
 import { useCreateColaborador, useUpdateColaborador } from '../../hooks/useColaboradores';
 import { useSelectCargos, useSelectAreas } from '@/hooks/useSelectLists';
 import { CargoFormModal } from '../estructura';
@@ -361,42 +362,40 @@ export const ColaboradorFormModal = ({
       {/* Step Indicator */}
       <div className="flex items-center gap-2 mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
         {STEPS.map((step, index) => (
-          <button
+          <Button
             key={step.key}
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => {
               // Solo permitir navegar a pasos anteriores o al actual
               if (index <= activeStep || (index === activeStep + 1 && isStepValid(activeStep))) {
                 setActiveStep(index);
               }
             }}
-            className={`
-              flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors
-              ${
-                activeStep === index
-                  ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
-                  : index < activeStep
-                    ? 'text-success-600 dark:text-success-400 hover:bg-gray-100 dark:hover:bg-gray-800'
-                    : 'text-gray-400 dark:text-gray-500'
-              }
-            `}
+            className={cn(
+              'flex items-center gap-2 !px-3 !py-2 rounded-lg text-sm font-medium transition-colors',
+              activeStep === index
+                ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
+                : index < activeStep
+                  ? 'text-success-600 dark:text-success-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                  : 'text-gray-400 dark:text-gray-500'
+            )}
           >
             <span
-              className={`
-              flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold
-              ${
+              className={cn(
+                'flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold',
                 activeStep === index
                   ? 'bg-primary-600 text-white'
                   : index < activeStep
                     ? 'bg-success-500 text-white'
                     : 'bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
-              }
-            `}
+              )}
             >
               {index < activeStep ? <Check size={12} /> : index + 1}
             </span>
             <span className="hidden sm:inline">{step.label}</span>
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -499,14 +498,16 @@ export const ColaboradorFormModal = ({
                     options={[{ value: '', label: 'Seleccionar cargo...' }, ...cargoOptions]}
                     required
                   />
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setShowCargoModal(true)}
-                    className="inline-flex items-center gap-1 text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 transition-colors"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 !px-0 !py-0 !min-h-0"
                   >
                     <Plus size={12} />
                     Crear nuevo cargo
-                  </button>
+                  </Button>
                 </div>
                 <Select
                   label="Proceso (Area)"

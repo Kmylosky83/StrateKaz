@@ -192,30 +192,34 @@ export const PruebasDinamicasTab = () => {
           <div className="flex items-center gap-3 flex-nowrap">
             {/* Sub-view toggle */}
             <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => setSubView('plantillas')}
                 className={cn(
-                  'px-3 py-1.5 text-xs font-medium rounded-md transition-all',
+                  '!px-3 !py-1.5 text-xs font-medium rounded-md transition-all',
                   subView === 'plantillas'
                     ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'
                 )}
               >
                 Plantillas
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => setSubView('asignaciones')}
                 className={cn(
-                  'px-3 py-1.5 text-xs font-medium rounded-md transition-all',
+                  '!px-3 !py-1.5 text-xs font-medium rounded-md transition-all',
                   subView === 'asignaciones'
                     ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'
                 )}
               >
                 Asignaciones
-              </button>
+              </Button>
             </div>
 
             {subView === 'asignaciones' && (
@@ -351,30 +355,34 @@ export const PruebasDinamicasTab = () => {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="sm"
                             onClick={() => handleEditPlantilla(plantilla)}
-                            className="p-1.5 rounded-md text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:text-primary-400 dark:hover:bg-primary-900/20"
                             title="Editar"
                           >
                             <Pencil size={16} />
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="sm"
                             onClick={() => handleDuplicar(plantilla)}
-                            className="p-1.5 rounded-md text-gray-400 hover:text-info-600 hover:bg-info-50 dark:hover:text-info-400 dark:hover:bg-info-900/20"
                             title="Duplicar"
                           >
                             <Copy size={16} />
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="sm"
                             onClick={() => setDeleteTarget(plantilla)}
-                            className="p-1.5 rounded-md text-gray-400 hover:text-danger-600 hover:bg-danger-50 dark:hover:text-danger-400 dark:hover:bg-danger-900/20"
                             title="Eliminar"
+                            className="text-gray-400 hover:text-danger-600"
                           >
                             <Trash2 size={16} />
-                          </button>
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -515,36 +523,39 @@ export const PruebasDinamicasTab = () => {
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           {asignacion.estado === 'pendiente' && (
-                            <button
+                            <Button
                               type="button"
+                              variant="ghost"
+                              size="sm"
                               onClick={() => handleReenviarEmail(asignacion)}
-                              className="p-1.5 rounded-md text-gray-400 hover:text-info-600 hover:bg-info-50 dark:hover:text-info-400 dark:hover:bg-info-900/20"
                               title="Reenviar email"
                             >
                               <RefreshCw size={16} />
-                            </button>
+                            </Button>
                           )}
                           {(asignacion.estado === 'completada' ||
                             asignacion.estado === 'calificada') && (
-                            <button
+                            <Button
                               type="button"
-                              className="p-1.5 rounded-md text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:text-primary-400 dark:hover:bg-primary-900/20"
+                              variant="ghost"
+                              size="sm"
                               title="Ver resultados"
                             >
                               <BarChart3 size={16} />
-                            </button>
+                            </Button>
                           )}
                           {asignacion.plantilla_categoria === 'psicometrico' &&
                             (asignacion.estado === 'completada' ||
                               asignacion.estado === 'calificada') && (
-                              <button
+                              <Button
                                 type="button"
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => setPsicometricoAsignacion(asignacion)}
-                                className="p-1.5 rounded-md text-gray-400 hover:text-violet-600 hover:bg-violet-50 dark:hover:text-violet-400 dark:hover:bg-violet-900/20"
                                 title="Ver perfil psicometrico"
                               >
                                 <Brain size={16} />
-                              </button>
+                              </Button>
                             )}
                         </div>
                       </td>

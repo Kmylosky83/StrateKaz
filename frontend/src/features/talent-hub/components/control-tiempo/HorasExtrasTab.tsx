@@ -211,22 +211,26 @@ export const HorasExtrasTab = () => {
                     <td className="px-4 py-3">
                       {hora.estado === 'pendiente' && (
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="sm"
                             onClick={() => setAprobarId(hora.id)}
-                            className="p-1.5 rounded-md text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:text-green-400 dark:hover:bg-green-900/20"
                             title="Aprobar"
+                            className="text-green-500 hover:text-green-700"
                           >
                             <CheckCircle size={16} />
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="sm"
                             onClick={() => setRechazarId(hora.id)}
-                            className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-900/20"
                             title="Rechazar"
+                            className="text-red-500 hover:text-red-700"
                           >
                             <XCircle size={16} />
-                          </button>
+                          </Button>
                         </div>
                       )}
                     </td>

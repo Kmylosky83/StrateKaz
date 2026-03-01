@@ -8,6 +8,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
+import { Select } from '@/components/forms/Select';
 import { Alert } from '@/components/common/Alert';
 import { Shield, Mail, Check } from 'lucide-react';
 import { useCrearAccesoProveedor } from '../hooks/useProveedores';
@@ -143,14 +144,12 @@ export function CrearAccesoProveedorModal({
 
         {/* Cargo dropdown */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Cargo <span className="text-red-500">*</span>
-          </label>
-          <select
+          <Select
+            label="Cargo *"
             value={cargoId}
             onChange={(e) => setCargoId(e.target.value ? Number(e.target.value) : '')}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
             required
+            helperText="El cargo determina los permisos y acceso a módulos del usuario."
           >
             <option value="">Seleccionar cargo...</option>
             {cargos.map((cargo) => (
@@ -158,10 +157,7 @@ export function CrearAccesoProveedorModal({
                 {cargo.label}
               </option>
             ))}
-          </select>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            El cargo determina los permisos y acceso a módulos del usuario.
-          </p>
+          </Select>
         </div>
 
         {email && email.includes('@') && (

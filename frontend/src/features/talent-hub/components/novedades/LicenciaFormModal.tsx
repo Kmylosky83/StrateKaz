@@ -6,6 +6,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
+import { Textarea } from '@/components/forms/Textarea';
 import { Button } from '@/components/common/Button';
 import { useCreateLicencia, useUpdateLicencia, useTiposLicencia } from '../../hooks/useNovedades';
 import { useColaboradores } from '../../hooks/useColaboradores';
@@ -166,20 +167,13 @@ export const LicenciaFormModal = ({ licencia, isOpen, onClose }: LicenciaFormMod
           control={control}
           rules={{ required: 'El motivo es requerido' }}
           render={({ field }) => (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Motivo *
-              </label>
-              <textarea
-                {...field}
-                rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="Describe el motivo de la licencia..."
-              />
-              {errors.motivo && (
-                <p className="mt-1 text-sm text-red-600">{errors.motivo.message}</p>
-              )}
-            </div>
+            <Textarea
+              label="Motivo *"
+              {...field}
+              rows={4}
+              placeholder="Describe el motivo de la licencia..."
+              error={errors.motivo?.message}
+            />
           )}
         />
 

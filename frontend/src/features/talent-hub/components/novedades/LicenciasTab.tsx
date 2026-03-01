@@ -7,6 +7,7 @@ import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
+import { Textarea } from '@/components/forms/Textarea';
 import { SectionHeader } from '@/components/common/SectionHeader';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -231,40 +232,47 @@ export const LicenciasTab = () => {
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         {lic.estado === 'solicitada' && (
                           <>
-                            <button
+                            <Button
                               type="button"
+                              variant="ghost"
+                              size="sm"
                               onClick={() => setApproveTarget(lic)}
-                              className="p-1.5 rounded-md text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:text-green-400 dark:hover:bg-green-900/20"
                               title="Aprobar"
+                              className="text-green-500 hover:text-green-700"
                             >
                               <CheckCircle size={16} />
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                               type="button"
+                              variant="ghost"
+                              size="sm"
                               onClick={() => setRejectTarget(lic)}
-                              className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-900/20"
                               title="Rechazar"
+                              className="text-red-500 hover:text-red-700"
                             >
                               <XCircle size={16} />
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                               type="button"
+                              variant="ghost"
+                              size="sm"
                               onClick={() => handleEdit(lic)}
-                              className="p-1.5 rounded-md text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:text-primary-400 dark:hover:bg-primary-900/20"
                               title="Editar"
                             >
                               <Pencil size={16} />
-                            </button>
+                            </Button>
                           </>
                         )}
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="sm"
                           onClick={() => setDeleteTarget(lic)}
-                          className="p-1.5 rounded-md text-gray-400 hover:text-danger-600 hover:bg-danger-50 dark:hover:text-danger-400 dark:hover:bg-danger-900/20"
                           title="Eliminar"
+                          className="text-red-500 hover:text-red-700"
                         >
                           <Trash2 size={16} />
-                        </button>
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -325,11 +333,10 @@ export const LicenciasTab = () => {
           setRejectObservations('');
         }}
       >
-        <textarea
+        <Textarea
           value={rejectObservations}
           onChange={(e) => setRejectObservations(e.target.value)}
           placeholder="Observaciones (obligatorio)"
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
           rows={3}
           required
         />

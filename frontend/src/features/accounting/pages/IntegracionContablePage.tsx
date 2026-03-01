@@ -31,7 +31,7 @@ import {
   SectionToolbar,
   ConfirmDialog,
 } from '@/components/common';
-import { Select } from '@/components/forms';
+import { Input, Select } from '@/components/forms';
 import { cn } from '@/utils/cn';
 import {
   useParametrosIntegracion,
@@ -552,12 +552,12 @@ const LogsSection = () => {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3 flex-wrap">
-        <input
+        <Input
           type="text"
           placeholder="Buscar documento..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-4 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm w-64 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+          className="w-64"
         />
         <Select
           value={estadoFilter}

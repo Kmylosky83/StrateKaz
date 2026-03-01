@@ -13,6 +13,9 @@ import { Badge } from '@/components/common/Badge';
 import { Modal } from '@/components/common/Modal';
 import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
+import { Input } from '@/components/forms/Input';
+import { Select } from '@/components/forms/Select';
+import { Textarea } from '@/components/forms/Textarea';
 
 import {
   useCategoriasMateriaPrima,
@@ -223,8 +226,7 @@ export function CatalogosTab() {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
           <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Catálogo:</label>
-          <select
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+          <Select
             value={selectedCatalog}
             onChange={(e) => {
               setSelectedCatalog(e.target.value);
@@ -249,7 +251,7 @@ export function CatalogosTab() {
                 ))}
               </optgroup>
             ))}
-          </select>
+          </Select>
         </div>
 
         <Button
@@ -404,121 +406,81 @@ export function CatalogosTab() {
       >
         <form onSubmit={handleSave} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Código *
-              </label>
-              <input
-                type="text"
-                name="codigo"
-                required
-                defaultValue={editItem?.codigo || ''}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Nombre *
-              </label>
-              <input
-                type="text"
-                name="nombre"
-                required
-                defaultValue={editItem?.nombre || ''}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Descripción
-            </label>
-            <textarea
-              name="descripcion"
-              rows={2}
-              defaultValue={editItem?.descripcion || ''}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+            <Input
+              label="Código *"
+              type="text"
+              name="codigo"
+              required
+              defaultValue={editItem?.codigo || ''}
+            />
+            <Input
+              label="Nombre *"
+              type="text"
+              name="nombre"
+              required
+              defaultValue={editItem?.nombre || ''}
             />
           </div>
+
+          <Textarea
+            label="Descripción"
+            name="descripcion"
+            rows={2}
+            defaultValue={editItem?.descripcion || ''}
+          />
 
           {/* Campos extra: Tipos de Materia Prima */}
           {selectedCatalog === 'tipos-mp' && (
             <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Categoría *
-                </label>
-                <select
-                  name="categoria"
-                  required
-                  defaultValue={editItem?.categoria || ''}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                >
-                  <option value="">Seleccione...</option>
-                  {categorias.map((cat: any) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.nombre}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Acidez Mín. (%)
-                </label>
-                <input
-                  type="number"
-                  name="acidez_min"
-                  step="0.01"
-                  defaultValue={editItem?.acidez_min || ''}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Acidez Máx. (%)
-                </label>
-                <input
-                  type="number"
-                  name="acidez_max"
-                  step="0.01"
-                  defaultValue={editItem?.acidez_max || ''}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                />
-              </div>
+              <Select
+                label="Categoría *"
+                name="categoria"
+                required
+                defaultValue={editItem?.categoria || ''}
+              >
+                <option value="">Seleccione...</option>
+                {categorias.map((cat: any) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.nombre}
+                  </option>
+                ))}
+              </Select>
+              <Input
+                label="Acidez Mín. (%)"
+                type="number"
+                name="acidez_min"
+                step="0.01"
+                defaultValue={editItem?.acidez_min || ''}
+              />
+              <Input
+                label="Acidez Máx. (%)"
+                type="number"
+                name="acidez_max"
+                step="0.01"
+                defaultValue={editItem?.acidez_max || ''}
+              />
             </div>
           )}
 
           {/* Campos extra: Tipos de Proveedor */}
           {selectedCatalog === 'tipos-proveedor' && (
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Requiere Materia Prima
-                </label>
-                <select
-                  name="requiere_materia_prima"
-                  defaultValue={editItem?.requiere_materia_prima ? 'true' : 'false'}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                >
-                  <option value="false">No</option>
-                  <option value="true">Sí</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Requiere Modalidad Logística
-                </label>
-                <select
-                  name="requiere_modalidad_logistica"
-                  defaultValue={editItem?.requiere_modalidad_logistica ? 'true' : 'false'}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                >
-                  <option value="false">No</option>
-                  <option value="true">Sí</option>
-                </select>
-              </div>
+              <Select
+                label="Requiere Materia Prima"
+                name="requiere_materia_prima"
+                defaultValue={editItem?.requiere_materia_prima ? 'true' : 'false'}
+              >
+                <option value="false">No</option>
+                <option value="true">Sí</option>
+              </Select>
+              <Select
+                label="Requiere Modalidad Logística"
+                name="requiere_modalidad_logistica"
+                defaultValue={editItem?.requiere_modalidad_logistica ? 'true' : 'false'}
+              >
+                <option value="false">No</option>
+                <option value="true">Sí</option>
+              </Select>
             </div>
           )}
 

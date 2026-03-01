@@ -421,19 +421,16 @@ export default function FirmarContratoPage() {
 
       {/* Submit button */}
       <div className="flex justify-end">
-        <button
+        <Button
           onClick={handleSubmit}
           disabled={!firmaData || firmarMutation.isPending}
-          className="inline-flex items-center px-6 py-3 rounded-lg text-base font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+          isLoading={firmarMutation.isPending}
+          leftIcon={<PenTool size={18} />}
+          size="lg"
           style={{ backgroundColor: primaryColor }}
         >
-          {firmarMutation.isPending ? (
-            <Spinner size="sm" className="mr-2" />
-          ) : (
-            <PenTool size={18} className="mr-2" />
-          )}
           Firmar Contrato
-        </button>
+        </Button>
       </div>
     </PublicLayout>
   );

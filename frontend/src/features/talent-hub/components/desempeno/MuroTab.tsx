@@ -2,6 +2,7 @@
  * MuroTab - Muro social de reconocimientos
  */
 import { Card } from '@/components/common/Card';
+import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Spinner } from '@/components/common/Spinner';
@@ -92,14 +93,16 @@ export const MuroTab = () => {
                 )}
 
                 <div className="flex items-center gap-4 pt-2 border-t border-gray-100 dark:border-gray-800">
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => likeMutation.mutate(String(pub.id))}
-                    className="flex items-center gap-1 text-sm text-gray-500 hover:text-red-500 transition-colors"
+                    className="flex items-center gap-1 text-sm text-gray-500 hover:text-red-500 !px-1 !py-1 !min-h-0"
                   >
                     <Heart size={16} className={pub.likes > 0 ? 'fill-red-500 text-red-500' : ''} />
                     <span>{pub.likes}</span>
-                  </button>
+                  </Button>
                   <span className="flex items-center gap-1 text-sm text-gray-500">
                     <MessageSquare size={16} />
                     <span>{pub.comentarios_count}</span>

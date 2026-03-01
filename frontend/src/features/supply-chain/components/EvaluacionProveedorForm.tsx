@@ -8,13 +8,16 @@
  * - Calificación automática según puntaje
  */
 import { useState, useEffect, useMemo } from 'react';
-import { Save, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { Save, XCircle } from 'lucide-react';
 
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Modal } from '@/components/common/Modal';
 import { Badge } from '@/components/common/Badge';
 import { Alert } from '@/components/common/Alert';
+import { Input } from '@/components/forms/Input';
+import { Select } from '@/components/forms/Select';
+import { Textarea } from '@/components/forms/Textarea';
 
 import { useCriterios } from '../hooks/useEvaluaciones';
 import { useCreateEvaluacion, useUpdateEvaluacion } from '../hooks/useEvaluaciones';
@@ -240,65 +243,45 @@ export function EvaluacionProveedorForm({
         <Card variant="bordered" padding="md">
           <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Información General</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Código *
-              </label>
-              <input
-                type="text"
-                required
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                value={formData.codigo}
-                onChange={(e) => setFormData((prev) => ({ ...prev, codigo: e.target.value }))}
-              />
-            </div>
+            <Input
+              label="Código *"
+              type="text"
+              required
+              value={formData.codigo}
+              onChange={(e) => setFormData((prev) => ({ ...prev, codigo: e.target.value }))}
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Proveedor *
-              </label>
-              <select
-                required
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                value={formData.proveedor}
-                onChange={(e) => setFormData((prev) => ({ ...prev, proveedor: Number(e.target.value) }))}
-                disabled={isEdit}
-              >
-                <option value="">Seleccionar...</option>
-                {proveedores?.results?.map((prov) => (
-                  <option key={prov.id} value={prov.id}>
-                    {prov.razon_social}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <Select
+              label="Proveedor *"
+              required
+              value={formData.proveedor}
+              onChange={(e) => setFormData((prev) => ({ ...prev, proveedor: Number(e.target.value) }))}
+              disabled={isEdit}
+            >
+              <option value="">Seleccionar...</option>
+              {proveedores?.results?.map((prov) => (
+                <option key={prov.id} value={prov.id}>
+                  {prov.razon_social}
+                </option>
+              ))}
+            </Select>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Periodo *
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="Ej: 2024-Q1, Enero 2024"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                value={formData.periodo}
-                onChange={(e) => setFormData((prev) => ({ ...prev, periodo: e.target.value }))}
-              />
-            </div>
+            <Input
+              label="Periodo *"
+              type="text"
+              required
+              placeholder="Ej: 2024-Q1, Enero 2024"
+              value={formData.periodo}
+              onChange={(e) => setFormData((prev) => ({ ...prev, periodo: e.target.value }))}
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Fecha de Evaluación *
-              </label>
-              <input
-                type="date"
-                required
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                value={formData.fecha_evaluacion}
-                onChange={(e) => setFormData((prev) => ({ ...prev, fecha_evaluacion: e.target.value }))}
-              />
-            </div>
+            <Input
+              label="Fecha de Evaluación *"
+              type="date"
+              required
+              value={formData.fecha_evaluacion}
+              onChange={(e) => setFormData((prev) => ({ ...prev, fecha_evaluacion: e.target.value }))}
+            />
           </div>
         </Card>
 
@@ -375,30 +358,22 @@ export function EvaluacionProveedorForm({
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Puntaje (0-100) *
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          required
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                          value={detalle.puntaje_obtenido}
-                          onChange={(e) =>
-                            handleDetalleChange(criterio.id, 'puntaje_obtenido', Number(e.target.value))
-                          }
-                        />
-                      </div>
+                      <Input
+                        label="Puntaje (0-100) *"
+                        type="number"
+                        min="0"
+                        max="100"
+                        required
+                        value={detalle.puntaje_obtenido}
+                        onChange={(e) =>
+                          handleDetalleChange(criterio.id, 'puntaje_obtenido', Number(e.target.value))
+                        }
+                      />
 
                       <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Observaciones
-                        </label>
-                        <input
+                        <Input
+                          label="Observaciones"
                           type="text"
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                           value={detalle.observaciones || ''}
                           onChange={(e) =>
                             handleDetalleChange(criterio.id, 'observaciones', e.target.value)
@@ -416,53 +391,33 @@ export function EvaluacionProveedorForm({
         <Card variant="bordered" padding="md">
           <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Análisis General</h3>
           <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Fortalezas
-              </label>
-              <textarea
-                rows={2}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                value={formData.fortalezas}
-                onChange={(e) => setFormData((prev) => ({ ...prev, fortalezas: e.target.value }))}
-              />
-            </div>
+            <Textarea
+              label="Fortalezas"
+              rows={2}
+              value={formData.fortalezas}
+              onChange={(e) => setFormData((prev) => ({ ...prev, fortalezas: e.target.value }))}
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Debilidades
-              </label>
-              <textarea
-                rows={2}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                value={formData.debilidades}
-                onChange={(e) => setFormData((prev) => ({ ...prev, debilidades: e.target.value }))}
-              />
-            </div>
+            <Textarea
+              label="Debilidades"
+              rows={2}
+              value={formData.debilidades}
+              onChange={(e) => setFormData((prev) => ({ ...prev, debilidades: e.target.value }))}
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Plan de Mejora
-              </label>
-              <textarea
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                value={formData.plan_mejora}
-                onChange={(e) => setFormData((prev) => ({ ...prev, plan_mejora: e.target.value }))}
-              />
-            </div>
+            <Textarea
+              label="Plan de Mejora"
+              rows={3}
+              value={formData.plan_mejora}
+              onChange={(e) => setFormData((prev) => ({ ...prev, plan_mejora: e.target.value }))}
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Observaciones Generales
-              </label>
-              <textarea
-                rows={2}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                value={formData.observaciones}
-                onChange={(e) => setFormData((prev) => ({ ...prev, observaciones: e.target.value }))}
-              />
-            </div>
+            <Textarea
+              label="Observaciones Generales"
+              rows={2}
+              value={formData.observaciones}
+              onChange={(e) => setFormData((prev) => ({ ...prev, observaciones: e.target.value }))}
+            />
           </div>
         </Card>
 

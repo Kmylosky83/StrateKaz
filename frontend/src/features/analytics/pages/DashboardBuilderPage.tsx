@@ -35,6 +35,7 @@ import {
   Modal,
   ConfirmDialog,
 } from '@/components/common';
+import { Input, Select, Textarea, Checkbox } from '@/components/forms';
 import { cn } from '@/utils/cn';
 import {
   useVistasDashboard,
@@ -192,102 +193,69 @@ const VistaDashboardFormModal = ({ isOpen, onClose, vista }: VistaDashboardFormM
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Código *
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.codigo}
-              onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
-              className="w-full px-3 py-2 border rounded-md"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Nombre *
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.nombre}
-              onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-              className="w-full px-3 py-2 border rounded-md"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Descripción
-          </label>
-          <textarea
-            value={formData.descripcion}
-            onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-            className="w-full px-3 py-2 border rounded-md"
-            rows={3}
+          <Input
+            label="Código *"
+            required
+            value={formData.codigo}
+            onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
+          />
+          <Input
+            label="Nombre *"
+            required
+            value={formData.nombre}
+            onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
           />
         </div>
 
+        <Textarea
+          label="Descripción"
+          value={formData.descripcion}
+          onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+          rows={3}
+        />
+
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Perspectiva BSC
-            </label>
-            <select
-              value={formData.perspectiva}
-              onChange={(e) => setFormData({ ...formData, perspectiva: e.target.value as any })}
-              className="w-full px-3 py-2 border rounded-md"
-            >
-              <option value="general">General</option>
-              <option value="financiera">Financiera</option>
-              <option value="cliente">Cliente</option>
-              <option value="procesos">Procesos Internos</option>
-              <option value="aprendizaje">Aprendizaje y Crecimiento</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Categoría
-            </label>
-            <select
-              value={formData.categoria}
-              onChange={(e) => setFormData({ ...formData, categoria: e.target.value as any })}
-              className="w-full px-3 py-2 border rounded-md"
-            >
-              <option value="">Todas</option>
-              <option value="sst">SST</option>
-              <option value="pesv">PESV</option>
-              <option value="ambiental">Ambiental</option>
-              <option value="calidad">Calidad</option>
-              <option value="financiero">Financiero</option>
-              <option value="operacional">Operacional</option>
-              <option value="rrhh">RRHH</option>
-              <option value="comercial">Comercial</option>
-            </select>
-          </div>
+          <Select
+            label="Perspectiva BSC"
+            value={formData.perspectiva}
+            onChange={(e) => setFormData({ ...formData, perspectiva: e.target.value as any })}
+            options={[
+              { value: 'general', label: 'General' },
+              { value: 'financiera', label: 'Financiera' },
+              { value: 'cliente', label: 'Cliente' },
+              { value: 'procesos', label: 'Procesos Internos' },
+              { value: 'aprendizaje', label: 'Aprendizaje y Crecimiento' },
+            ]}
+          />
+          <Select
+            label="Categoría"
+            value={formData.categoria}
+            onChange={(e) => setFormData({ ...formData, categoria: e.target.value as any })}
+            options={[
+              { value: '', label: 'Todas' },
+              { value: 'sst', label: 'SST' },
+              { value: 'pesv', label: 'PESV' },
+              { value: 'ambiental', label: 'Ambiental' },
+              { value: 'calidad', label: 'Calidad' },
+              { value: 'financiero', label: 'Financiero' },
+              { value: 'operacional', label: 'Operacional' },
+              { value: 'rrhh', label: 'RRHH' },
+              { value: 'comercial', label: 'Comercial' },
+            ]}
+          />
         </div>
 
         <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={formData.es_publica}
-              onChange={(e) => setFormData({ ...formData, es_publica: e.target.checked })}
-              className="rounded"
-            />
-            <span className="text-sm text-gray-700 dark:text-gray-300">Vista Pública</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={formData.activa}
-              onChange={(e) => setFormData({ ...formData, activa: e.target.checked })}
-              className="rounded"
-            />
-            <span className="text-sm text-gray-700 dark:text-gray-300">Activa</span>
-          </label>
+          <Checkbox
+            label="Vista Pública"
+            checked={formData.es_publica}
+            onChange={(e) => setFormData({ ...formData, es_publica: e.target.checked })}
+          />
+          <Checkbox
+            label="Activa"
+            checked={formData.activa}
+            onChange={(e) => setFormData({ ...formData, activa: e.target.checked })}
+          />
         </div>
 
         <div className="flex justify-end gap-3 pt-4">
@@ -350,128 +318,85 @@ const WidgetSelectorModal = ({ isOpen, onClose, vistaId }: WidgetSelectorModalPr
           </div>
         ) : (
           <>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Seleccionar KPI *
-              </label>
-              <select
-                required
-                value={selectedKPI || ''}
-                onChange={(e) => setSelectedKPI(Number(e.target.value))}
-                className="w-full px-3 py-2 border rounded-md"
-              >
-                <option value="">-- Seleccione un KPI --</option>
-                {catalogos?.map((kpi) => (
-                  <option key={kpi.id} value={kpi.id}>
-                    {kpi.codigo} - {kpi.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <Select
+              label="Seleccionar KPI *"
+              required
+              value={selectedKPI !== null ? String(selectedKPI) : ''}
+              onChange={(e) => setSelectedKPI(e.target.value ? Number(e.target.value) : null)}
+              options={[
+                { value: '', label: '-- Seleccione un KPI --' },
+                ...(catalogos?.map((kpi) => ({
+                  value: String(kpi.id),
+                  label: `${kpi.codigo} - ${kpi.nombre}`,
+                })) || []),
+              ]}
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Tipo de Widget *
-              </label>
-              <select
-                value={tipoWidget}
-                onChange={(e) => setTipoWidget(e.target.value as TipoWidget)}
-                className="w-full px-3 py-2 border rounded-md"
-              >
-                <option value="kpi_card">Tarjeta KPI</option>
-                <option value="grafico_linea">Gráfico de Línea</option>
-                <option value="grafico_barra">Gráfico de Barras</option>
-                <option value="grafico_pie">Gráfico Circular</option>
-                <option value="tabla">Tabla</option>
-                <option value="gauge">Gauge</option>
-                <option value="mapa_calor">Mapa de Calor</option>
-              </select>
-            </div>
+            <Select
+              label="Tipo de Widget *"
+              value={tipoWidget}
+              onChange={(e) => setTipoWidget(e.target.value as TipoWidget)}
+              options={[
+                { value: 'kpi_card', label: 'Tarjeta KPI' },
+                { value: 'grafico_linea', label: 'Gráfico de Línea' },
+                { value: 'grafico_barra', label: 'Gráfico de Barras' },
+                { value: 'grafico_pie', label: 'Gráfico Circular' },
+                { value: 'tabla', label: 'Tabla' },
+                { value: 'gauge', label: 'Gauge' },
+                { value: 'mapa_calor', label: 'Mapa de Calor' },
+              ]}
+            />
 
             <div className="grid grid-cols-4 gap-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Ancho
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  max={12}
-                  value={config.ancho}
-                  onChange={(e) => setConfig({ ...config, ancho: Number(e.target.value) })}
-                  className="w-full px-3 py-2 border rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Alto
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  max={6}
-                  value={config.alto}
-                  onChange={(e) => setConfig({ ...config, alto: Number(e.target.value) })}
-                  className="w-full px-3 py-2 border rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Fila
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  value={config.posicion_fila}
-                  onChange={(e) => setConfig({ ...config, posicion_fila: Number(e.target.value) })}
-                  className="w-full px-3 py-2 border rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Columna
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  max={12}
-                  value={config.posicion_columna}
-                  onChange={(e) =>
-                    setConfig({ ...config, posicion_columna: Number(e.target.value) })
-                  }
-                  className="w-full px-3 py-2 border rounded-md"
-                />
-              </div>
+              <Input
+                label="Ancho"
+                type="number"
+                min={1}
+                max={12}
+                value={String(config.ancho)}
+                onChange={(e) => setConfig({ ...config, ancho: Number(e.target.value) })}
+              />
+              <Input
+                label="Alto"
+                type="number"
+                min={1}
+                max={6}
+                value={String(config.alto)}
+                onChange={(e) => setConfig({ ...config, alto: Number(e.target.value) })}
+              />
+              <Input
+                label="Fila"
+                type="number"
+                min={1}
+                value={String(config.posicion_fila)}
+                onChange={(e) => setConfig({ ...config, posicion_fila: Number(e.target.value) })}
+              />
+              <Input
+                label="Columna"
+                type="number"
+                min={1}
+                max={12}
+                value={String(config.posicion_columna)}
+                onChange={(e) => setConfig({ ...config, posicion_columna: Number(e.target.value) })}
+              />
             </div>
 
             <div className="flex flex-wrap gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={config.mostrar_tendencia}
-                  onChange={(e) => setConfig({ ...config, mostrar_tendencia: e.target.checked })}
-                  className="rounded"
-                />
-                <span className="text-sm">Mostrar Tendencia</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={config.mostrar_meta}
-                  onChange={(e) => setConfig({ ...config, mostrar_meta: e.target.checked })}
-                  className="rounded"
-                />
-                <span className="text-sm">Mostrar Meta</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={config.mostrar_semaforo}
-                  onChange={(e) => setConfig({ ...config, mostrar_semaforo: e.target.checked })}
-                  className="rounded"
-                />
-                <span className="text-sm">Mostrar Semáforo</span>
-              </label>
+              <Checkbox
+                label="Mostrar Tendencia"
+                checked={config.mostrar_tendencia}
+                onChange={(e) => setConfig({ ...config, mostrar_tendencia: e.target.checked })}
+              />
+              <Checkbox
+                label="Mostrar Meta"
+                checked={config.mostrar_meta}
+                onChange={(e) => setConfig({ ...config, mostrar_meta: e.target.checked })}
+              />
+              <Checkbox
+                label="Mostrar Semáforo"
+                checked={config.mostrar_semaforo}
+                onChange={(e) => setConfig({ ...config, mostrar_semaforo: e.target.checked })}
+              />
             </div>
           </>
         )}

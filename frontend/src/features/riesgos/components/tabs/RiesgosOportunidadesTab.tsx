@@ -521,39 +521,30 @@ function RiesgosSection({ riesgos, onRiesgoClick, onCreateRiesgo }: {
 
         {/* Filtros rápidos */}
         <div className="mt-4 flex flex-wrap gap-2">
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setFiltros({ ...filtros, nivelMinimo: 0 })}
-            className={cn(
-              'px-3 py-1 rounded-lg text-sm transition-colors',
-              filtros.nivelMinimo === 0
-                ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
-            )}
+            className={filtros.nivelMinimo === 0 ? 'bg-primary-100 text-primary-700 border-primary-300 dark:bg-primary-900/30 dark:text-primary-400' : ''}
           >
             Todos
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setFiltros({ ...filtros, nivelMinimo: 15 })}
-            className={cn(
-              'px-3 py-1 rounded-lg text-sm transition-colors',
-              filtros.nivelMinimo === 15
-                ? 'bg-red-100 text-red-700 dark:bg-red-900/30'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
-            )}
+            className={filtros.nivelMinimo === 15 ? 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-400' : ''}
           >
             Críticos
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setFiltros({ ...filtros, nivelMinimo: 10 })}
-            className={cn(
-              'px-3 py-1 rounded-lg text-sm transition-colors',
-              filtros.nivelMinimo === 10
-                ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
-            )}
+            className={filtros.nivelMinimo === 10 ? 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/30 dark:text-orange-400' : ''}
           >
             Altos
-          </button>
+          </Button>
         </div>
       </Card>
 
@@ -648,39 +639,30 @@ function OportunidadesSection({ oportunidades, onOportunidadClick, onCreateOport
 
         {/* Filtros */}
         <div className="mt-4 flex flex-wrap gap-2">
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setFiltroEstado('todos')}
-            className={cn(
-              'px-3 py-1 rounded-lg text-sm transition-colors',
-              filtroEstado === 'todos'
-                ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
-            )}
+            className={filtroEstado === 'todos' ? 'bg-primary-100 text-primary-700 border-primary-300 dark:bg-primary-900/30 dark:text-primary-400' : ''}
           >
             Todas
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setFiltroEstado('en_ejecucion')}
-            className={cn(
-              'px-3 py-1 rounded-lg text-sm transition-colors',
-              filtroEstado === 'en_ejecucion'
-                ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
-            )}
+            className={filtroEstado === 'en_ejecucion' ? 'bg-yellow-100 text-yellow-700 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-400' : ''}
           >
             En Ejecución
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setFiltroEstado('implementada')}
-            className={cn(
-              'px-3 py-1 rounded-lg text-sm transition-colors',
-              filtroEstado === 'implementada'
-                ? 'bg-green-100 text-green-700 dark:bg-green-900/30'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
-            )}
+            className={filtroEstado === 'implementada' ? 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400' : ''}
           >
             Implementadas
-          </button>
+          </Button>
         </div>
       </Card>
 
@@ -838,39 +820,30 @@ function TratamientosSection({ tratamientos, riesgos, onTratamientoClick, onCrea
 
         {/* Filtros */}
         <div className="mt-4 flex flex-wrap gap-2">
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setFiltroEstado('todos')}
-            className={cn(
-              'px-3 py-1 rounded-lg text-sm transition-colors',
-              filtroEstado === 'todos'
-                ? 'bg-primary-100 text-primary-700 dark:bg-primary-900/30'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
-            )}
+            className={filtroEstado === 'todos' ? 'bg-primary-100 text-primary-700 border-primary-300 dark:bg-primary-900/30 dark:text-primary-400' : ''}
           >
             Todos
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setFiltroEstado('en_proceso')}
-            className={cn(
-              'px-3 py-1 rounded-lg text-sm transition-colors',
-              filtroEstado === 'en_proceso'
-                ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
-            )}
+            className={filtroEstado === 'en_proceso' ? 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/30 dark:text-blue-400' : ''}
           >
             En Proceso
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setFiltroEstado('completado')}
-            className={cn(
-              'px-3 py-1 rounded-lg text-sm transition-colors',
-              filtroEstado === 'completado'
-                ? 'bg-green-100 text-green-700 dark:bg-green-900/30'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
-            )}
+            className={filtroEstado === 'completado' ? 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400' : ''}
           >
             Completados
-          </button>
+          </Button>
         </div>
       </Card>
 

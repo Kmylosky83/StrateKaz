@@ -4,9 +4,7 @@
 import { useState, useEffect } from 'react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
-import { Input } from '@/components/forms/Input';
-import { Textarea } from '@/components/forms/Textarea';
-import { Select } from '@/components/forms/Select';
+import { Input, Textarea, Select, Checkbox } from '@/components/forms';
 import { useCreateCatalogoKPI, useUpdateCatalogoKPI } from '../hooks/useAnalytics';
 import type { CatalogoKPI } from '../types';
 
@@ -203,15 +201,11 @@ export const CatalogoKPIFormModal = ({ item, isOpen, onClose }: CatalogoKPIFormM
           required
         />
 
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={form.activo}
-            onChange={(e) => handleChange('activo', e.target.checked)}
-            className="w-4 h-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
-          />
-          <span className="text-sm text-gray-700 dark:text-gray-300">KPI Activo</span>
-        </label>
+        <Checkbox
+          label="KPI Activo"
+          checked={form.activo}
+          onChange={(e) => handleChange('activo', e.target.checked)}
+        />
 
         <div className="flex justify-end gap-3 pt-4 border-t">
           <Button variant="outline" onClick={onClose} disabled={isPending}>

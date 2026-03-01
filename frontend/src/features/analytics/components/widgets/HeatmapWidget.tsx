@@ -4,6 +4,7 @@ import { Spinner } from '@/components/common';
 import { useValoresKPIByKPI } from '../../hooks/useAnalytics';
 import type { WidgetDashboard } from '../../types';
 import type { EChartsOption } from 'echarts';
+import { HEATMAP_BLUE_COLORS, CHART_AXIS_COLORS } from '@/constants/chart-colors';
 
 interface Props {
   widget: WidgetDashboard;
@@ -84,11 +85,11 @@ function HeatmapWidget({ widget }: Props) {
       left: 'center',
       bottom: 10,
       inRange: {
-        color: ['#e0f2fe', '#7dd3fc', '#0ea5e9', '#0369a1', '#0c4a6e'],
+        color: [...HEATMAP_BLUE_COLORS],
       },
       text: ['Alto', 'Bajo'],
       textStyle: {
-        color: '#6b7280',
+        color: CHART_AXIS_COLORS.axisLabel,
         fontSize: 10,
       },
       itemWidth: 15,
@@ -107,7 +108,7 @@ function HeatmapWidget({ widget }: Props) {
       splitLine: {
         show: true,
         lineStyle: {
-          color: '#e5e7eb',
+          color: CHART_AXIS_COLORS.axisLine,
           width: 1,
           type: 'solid',
         },
@@ -115,15 +116,15 @@ function HeatmapWidget({ widget }: Props) {
       yearLabel: {
         show: true,
         fontSize: 11,
-        color: '#6b7280',
+        color: CHART_AXIS_COLORS.axisLabel,
       },
       monthLabel: {
         fontSize: 10,
-        color: '#6b7280',
+        color: CHART_AXIS_COLORS.axisLabel,
       },
       dayLabel: {
         fontSize: 9,
-        color: '#9ca3af',
+        color: CHART_AXIS_COLORS.subtitle,
         nameMap: ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'],
       },
     },

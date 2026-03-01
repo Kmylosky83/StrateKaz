@@ -14,6 +14,7 @@ import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Textarea } from '@/components/forms/Textarea';
+import { Select } from '@/components/forms';
 import { Alert } from '@/components/common/Alert';
 import { Upload } from 'lucide-react';
 import {
@@ -182,30 +183,23 @@ export const RequisitoFormModal = ({
           <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-4">
             Requisito Legal
           </h3>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Requisito *
-            </label>
-            <select
-              value={formData.requisito}
-              onChange={(e) =>
-                setFormData({ ...formData, requisito: parseInt(e.target.value) })
-              }
-              className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-              required
-              disabled={isEditing}
-            >
-              <option value="">Seleccionar requisito</option>
-              {requisitosLegales.map((req) => (
-                <option key={req.id} value={req.id}>
-                  {req.codigo} - {req.nombre}
-                </option>
-              ))}
-            </select>
-            {errors.requisito && (
-              <p className="mt-1 text-sm text-danger-600">{errors.requisito}</p>
-            )}
-          </div>
+          <Select
+            label="Requisito *"
+            value={formData.requisito}
+            onChange={(e) =>
+              setFormData({ ...formData, requisito: parseInt(e.target.value) })
+            }
+            error={errors.requisito}
+            required
+            disabled={isEditing}
+          >
+            <option value="">Seleccionar requisito</option>
+            {requisitosLegales.map((req) => (
+              <option key={req.id} value={req.id}>
+                {req.codigo} - {req.nombre}
+              </option>
+            ))}
+          </Select>
         </div>
 
         {/* Estado */}
@@ -213,26 +207,21 @@ export const RequisitoFormModal = ({
           <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-4">
             Estado del Requisito
           </h3>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Estado *
-            </label>
-            <select
-              value={formData.estado}
-              onChange={(e) =>
-                setFormData({ ...formData, estado: e.target.value as EstadoRequisito })
-              }
-              className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-              required
-            >
-              <option value="vigente">Vigente</option>
-              <option value="proximo_vencer">Próximo a Vencer</option>
-              <option value="vencido">Vencido</option>
-              <option value="en_tramite">En Trámite</option>
-              <option value="renovando">En Renovación</option>
-              <option value="no_aplica">No Aplica</option>
-            </select>
-          </div>
+          <Select
+            label="Estado *"
+            value={formData.estado}
+            onChange={(e) =>
+              setFormData({ ...formData, estado: e.target.value as EstadoRequisito })
+            }
+            required
+          >
+            <option value="vigente">Vigente</option>
+            <option value="proximo_vencer">Próximo a Vencer</option>
+            <option value="vencido">Vencido</option>
+            <option value="en_tramite">En Trámite</option>
+            <option value="renovando">En Renovación</option>
+            <option value="no_aplica">No Aplica</option>
+          </Select>
         </div>
 
         {/* Campos de documento (solo si no es "No Aplica") */}

@@ -6,8 +6,7 @@
 import { useState, useEffect } from 'react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
-import { Input } from '@/components/forms/Input';
-import { Select } from '@/components/forms/Select';
+import { Input, Select, Checkbox } from '@/components/forms';
 import { useCreateProgramacionInforme, usePlantillasInforme } from '../hooks/useAnalytics';
 import { Spinner } from '@/components/common/Spinner';
 import type { ProgramacionInforme } from '../types';
@@ -171,19 +170,12 @@ export const ProgramacionInformeFormModal = ({
             helpText="Separar múltiples correos con comas"
           />
 
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="activa"
-              checked={formData.activa}
-              onChange={(e) => handleChange('activa', e.target.checked)}
-              disabled={isLoading}
-              className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 focus:ring-2"
-            />
-            <label htmlFor="activa" className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
-              Programación Activa
-            </label>
-          </div>
+          <Checkbox
+            label="Programación Activa"
+            checked={formData.activa}
+            onChange={(e) => handleChange('activa', e.target.checked)}
+            disabled={isLoading}
+          />
         </div>
       )}
     </BaseModal>

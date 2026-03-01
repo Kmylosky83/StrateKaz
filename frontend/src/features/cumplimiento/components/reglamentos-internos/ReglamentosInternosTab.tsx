@@ -28,6 +28,7 @@ import { Card } from '@/components/common/Card';
 import { Badge } from '@/components/common/Badge';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { Select, Input } from '@/components/forms';
 import { ReglamentosTable } from './ReglamentosTable';
 import { ReglamentoFormModal } from './ReglamentoFormModal';
 import { useReglamentos } from '../../hooks/useReglamentos';
@@ -252,40 +253,29 @@ export const ReglamentosInternosTab = ({ activeSection }: ReglamentosInternosTab
         {showFilters && (
           <Card>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Estado
-                </label>
-                <select
-                  value={filters.estado || ''}
-                  onChange={(e) =>
-                    handleFiltersChange({
-                      estado: e.target.value ? (e.target.value as EstadoReglamento) : undefined,
-                    })
-                  }
-                  className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                >
-                  <option value="">Todos los estados</option>
-                  <option value="borrador">Borrador</option>
-                  <option value="en_revision">En Revisión</option>
-                  <option value="aprobado">Aprobado</option>
-                  <option value="vigente">Vigente</option>
-                  <option value="obsoleto">Obsoleto</option>
-                </select>
-              </div>
+              <Select
+                label="Estado"
+                value={filters.estado || ''}
+                onChange={(e) =>
+                  handleFiltersChange({
+                    estado: e.target.value ? (e.target.value as EstadoReglamento) : undefined,
+                  })
+                }
+              >
+                <option value="">Todos los estados</option>
+                <option value="borrador">Borrador</option>
+                <option value="en_revision">En Revisión</option>
+                <option value="aprobado">Aprobado</option>
+                <option value="vigente">Vigente</option>
+                <option value="obsoleto">Obsoleto</option>
+              </Select>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Buscar
-                </label>
-                <input
-                  type="text"
-                  value={filters.search || ''}
-                  onChange={(e) => handleFiltersChange({ search: e.target.value })}
-                  placeholder="Código o nombre del reglamento..."
-                  className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                />
-              </div>
+              <Input
+                label="Buscar"
+                value={filters.search || ''}
+                onChange={(e) => handleFiltersChange({ search: e.target.value })}
+                placeholder="Código o nombre del reglamento..."
+              />
 
               <div className="flex items-end">
                 <Button
@@ -309,64 +299,54 @@ export const ReglamentosInternosTab = ({ activeSection }: ReglamentosInternosTab
 
         {/* Badges de Filtros Rápidos */}
         <div className="flex flex-wrap gap-2">
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => handleFiltersChange({ estado: undefined })}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              !filters.estado
-                ? 'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-400'
-                : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-            }`}
+            className={!filters.estado ? 'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-400 border-primary-300' : ''}
           >
             Todos ({totalCount})
-          </button>
+          </Button>
 
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => handleFiltersChange({ estado: 'vigente' })}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${
-              filters.estado === 'vigente'
-                ? 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-400'
-                : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-            }`}
+            leftIcon={<CheckCircle2 className="h-3 w-3" />}
+            className={filters.estado === 'vigente' ? 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-400 border-success-300' : ''}
           >
-            <CheckCircle2 className="h-3 w-3" />
             Vigentes ({stats.vigentes})
-          </button>
+          </Button>
 
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => handleFiltersChange({ estado: 'en_revision' })}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${
-              filters.estado === 'en_revision'
-                ? 'bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400'
-                : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-            }`}
+            leftIcon={<Clock className="h-3 w-3" />}
+            className={filters.estado === 'en_revision' ? 'bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400 border-warning-300' : ''}
           >
-            <Clock className="h-3 w-3" />
             En Revisión ({stats.enRevision})
-          </button>
+          </Button>
 
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => handleFiltersChange({ estado: 'aprobado' })}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${
-              filters.estado === 'aprobado'
-                ? 'bg-info-100 text-info-800 dark:bg-info-900/30 dark:text-info-400'
-                : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-            }`}
+            leftIcon={<FileCheck className="h-3 w-3" />}
+            className={filters.estado === 'aprobado' ? 'bg-info-100 text-info-800 dark:bg-info-900/30 dark:text-info-400 border-info-300' : ''}
           >
-            <FileCheck className="h-3 w-3" />
             Aprobados ({stats.aprobados})
-          </button>
+          </Button>
 
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => handleFiltersChange({ estado: 'obsoleto' })}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${
-              filters.estado === 'obsoleto'
-                ? 'bg-danger-100 text-danger-800 dark:bg-danger-900/30 dark:text-danger-400'
-                : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-            }`}
+            leftIcon={<XCircle className="h-3 w-3" />}
+            className={filters.estado === 'obsoleto' ? 'bg-danger-100 text-danger-800 dark:bg-danger-900/30 dark:text-danger-400 border-danger-300' : ''}
           >
-            <XCircle className="h-3 w-3" />
             Obsoletos ({stats.obsoletos})
-          </button>
+          </Button>
         </div>
 
         {/* Table */}

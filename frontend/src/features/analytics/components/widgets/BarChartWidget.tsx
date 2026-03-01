@@ -4,18 +4,19 @@ import { Spinner } from '@/components/common';
 import { useValoresKPIByKPI, useMetasKPIByKPI } from '../../hooks/useAnalytics';
 import type { WidgetDashboard } from '../../types';
 import type { EChartsOption } from 'echarts';
+import { SEMAFORO_COLORS, CHART_COLORS, CHART_AXIS_COLORS } from '@/constants/chart-colors';
 
 interface Props {
   widget: WidgetDashboard;
 }
 
 const chartColors = {
-  verde: '#22c55e',
-  amarillo: '#eab308',
-  rojo: '#ef4444',
-  primary: '#3b82f6',
-  bar: '#6366f1',
-  meta: '#9333ea',
+  verde: SEMAFORO_COLORS.verde,
+  amarillo: SEMAFORO_COLORS.amarillo,
+  rojo: SEMAFORO_COLORS.rojo,
+  primary: CHART_COLORS[0],   // blue-500
+  bar: CHART_COLORS[9],       // indigo-500
+  meta: '#9333EA',            // purple-600 (not in palette, kept explicit)
 };
 
 /**
@@ -105,14 +106,14 @@ function BarChartWidget({ widget }: Props) {
     xAxis: {
       type: 'category',
       data: dates,
-      axisLine: { lineStyle: { color: '#e5e7eb' } },
-      axisLabel: { color: '#6b7280', fontSize: 11, rotate: 45 },
+      axisLine: { lineStyle: { color: CHART_AXIS_COLORS.axisLine } },
+      axisLabel: { color: CHART_AXIS_COLORS.axisLabel, fontSize: 11, rotate: 45 },
     },
     yAxis: {
       type: 'value',
-      axisLine: { lineStyle: { color: '#e5e7eb' } },
-      axisLabel: { color: '#6b7280', fontSize: 11 },
-      splitLine: { lineStyle: { color: '#f3f4f6' } },
+      axisLine: { lineStyle: { color: CHART_AXIS_COLORS.axisLine } },
+      axisLabel: { color: CHART_AXIS_COLORS.axisLabel, fontSize: 11 },
+      splitLine: { lineStyle: { color: CHART_AXIS_COLORS.splitLine } },
     },
     series: [
       {

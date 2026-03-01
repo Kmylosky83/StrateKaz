@@ -409,41 +409,47 @@ export const ColaboradoresSection = () => {
             )}
             renderActions={(c) => (
               <>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => handleEdit(c as unknown as Colaborador)}
-                  className="p-1.5 rounded-md text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:text-primary-400 dark:hover:bg-primary-900/20"
                   title="Ver / Editar"
                 >
                   <Eye size={16} />
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => handleEdit(c as unknown as Colaborador)}
-                  className="p-1.5 rounded-md text-gray-400 hover:text-info-600 hover:bg-info-50 dark:hover:text-info-400 dark:hover:bg-info-900/20"
                   title="Editar"
                 >
                   <Pencil size={16} />
-                </button>
+                </Button>
                 {!c.usuario && c.estado === 'activo' && (
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => handleCrearAcceso(c as unknown as Colaborador)}
-                    className="p-1.5 rounded-md text-gray-400 hover:text-success-600 hover:bg-success-50 dark:hover:text-success-400 dark:hover:bg-success-900/20"
                     title="Crear Acceso al Sistema"
+                    className="text-green-500 hover:text-green-700"
                   >
                     <Shield size={16} />
-                  </button>
+                  </Button>
                 )}
                 {c.estado === 'activo' && (
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => handleRetire(c as unknown as Colaborador)}
-                    className="p-1.5 rounded-md text-gray-400 hover:text-danger-600 hover:bg-danger-50 dark:hover:text-danger-400 dark:hover:bg-danger-900/20"
                     title="Retirar"
+                    className="text-red-500 hover:text-red-700"
                   >
                     <LogOut size={16} />
-                  </button>
+                  </Button>
                 )}
               </>
             )}

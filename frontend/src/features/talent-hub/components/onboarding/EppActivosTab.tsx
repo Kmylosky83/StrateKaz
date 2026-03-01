@@ -66,11 +66,13 @@ export const EppActivosTab = () => {
           <div className="flex items-center gap-3">
             {/* Sub-view toggle */}
             <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => setSubView('epp')}
                 className={cn(
-                  'px-3 py-1.5 text-sm font-medium transition-colors',
+                  '!px-3 !py-1.5 text-sm font-medium rounded-none',
                   subView === 'epp'
                     ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
                     : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'
@@ -78,12 +80,14 @@ export const EppActivosTab = () => {
               >
                 <HardHat size={14} className="inline mr-1" />
                 EPP
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => setSubView('activos')}
                 className={cn(
-                  'px-3 py-1.5 text-sm font-medium transition-colors border-l border-gray-200 dark:border-gray-700',
+                  '!px-3 !py-1.5 text-sm font-medium rounded-none border-l border-gray-200 dark:border-gray-700',
                   subView === 'activos'
                     ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
                     : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800'
@@ -91,7 +95,7 @@ export const EppActivosTab = () => {
               >
                 <Package size={14} className="inline mr-1" />
                 Activos
-              </button>
+              </Button>
             </div>
             <Button
               variant="primary"

@@ -19,7 +19,7 @@ import {
 import { StatsGrid, type StatItem } from '@/components/layout/StatsGrid';
 import { DataTableCard } from '@/components/layout/DataTableCard';
 import { Card, Badge, Button } from '@/components/common';
-import { Textarea } from '@/components/forms';
+import { Textarea, Select } from '@/components/forms';
 import {
   useRevisionDireccionDashboard,
   useCompromisos,
@@ -225,9 +225,12 @@ const NotasSesion = () => {
   return (
     <Card className="border-amber-200 dark:border-amber-800">
       <div className="p-4">
-        <button
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
           onClick={() => setExpanded(!expanded)}
-          className="w-full flex items-center justify-between text-left"
+          className="w-full !justify-between !min-h-0"
         >
           <div className="flex items-center gap-2">
             <StickyNote className="h-4 w-4 text-amber-600 dark:text-amber-400" />
@@ -249,7 +252,7 @@ const NotasSesion = () => {
               <ChevronDown className="h-4 w-4 text-gray-400" />
             )}
           </div>
-        </button>
+        </Button>
 
         {expanded && (
           <div className="mt-3 space-y-2">
@@ -266,13 +269,16 @@ const NotasSesion = () => {
                 Las notas se guardan localmente en este dispositivo.
               </p>
               {notas.trim().length > 0 && (
-                <button
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={handleClear}
-                  className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 transition-colors"
+                  className="!min-h-0 !p-1 text-xs text-red-500 hover:text-red-700"
                 >
                   <Trash2 className="h-3 w-3" />
                   Borrar notas
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -465,50 +471,41 @@ export const CompromisosDashboard = () => {
         {showFilters && (
           <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Estado
-                </label>
-                <select
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                  value={filters.estado || ''}
-                  onChange={(e) =>
-                    setFilters({
-                      ...filters,
-                      estado: (e.target.value || undefined) as CompromisoRevisionFilters['estado'],
-                    })
-                  }
-                >
-                  <option value="">Todos</option>
-                  <option value="PENDIENTE">Pendiente</option>
-                  <option value="EN_PROGRESO">En Progreso</option>
-                  <option value="COMPLETADO">Completado</option>
-                  <option value="VENCIDO">Vencido</option>
-                  <option value="CANCELADO">Cancelado</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Prioridad
-                </label>
-                <select
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                  value={filters.prioridad || ''}
-                  onChange={(e) =>
-                    setFilters({
-                      ...filters,
-                      prioridad: (e.target.value ||
-                        undefined) as CompromisoRevisionFilters['prioridad'],
-                    })
-                  }
-                >
-                  <option value="">Todas</option>
-                  <option value="CRITICA">Crítica</option>
-                  <option value="ALTA">Alta</option>
-                  <option value="MEDIA">Media</option>
-                  <option value="BAJA">Baja</option>
-                </select>
-              </div>
+              <Select
+                label="Estado"
+                value={filters.estado || ''}
+                onChange={(e) =>
+                  setFilters({
+                    ...filters,
+                    estado: (e.target.value || undefined) as CompromisoRevisionFilters['estado'],
+                  })
+                }
+              >
+                <option value="">Todos</option>
+                <option value="PENDIENTE">Pendiente</option>
+                <option value="EN_PROGRESO">En Progreso</option>
+                <option value="COMPLETADO">Completado</option>
+                <option value="VENCIDO">Vencido</option>
+                <option value="CANCELADO">Cancelado</option>
+              </Select>
+
+              <Select
+                label="Prioridad"
+                value={filters.prioridad || ''}
+                onChange={(e) =>
+                  setFilters({
+                    ...filters,
+                    prioridad: (e.target.value ||
+                      undefined) as CompromisoRevisionFilters['prioridad'],
+                  })
+                }
+              >
+                <option value="">Todas</option>
+                <option value="CRITICA">Crítica</option>
+                <option value="ALTA">Alta</option>
+                <option value="MEDIA">Media</option>
+                <option value="BAJA">Baja</option>
+              </Select>
               <div className="flex items-end">
                 <Button
                   variant="outline"

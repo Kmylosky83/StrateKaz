@@ -4,9 +4,7 @@
 import { useState, useEffect } from 'react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
-import { Input } from '@/components/forms/Input';
-import { Textarea } from '@/components/forms/Textarea';
-import { Select } from '@/components/forms/Select';
+import { Input, Textarea, Select, Checkbox } from '@/components/forms';
 import { useCreateVistaDashboard, useUpdateVistaDashboard } from '../hooks/useAnalytics';
 import type { VistaDashboard, PerspectivaBSC } from '../types';
 
@@ -135,11 +133,9 @@ export const VistaDashboardFormModal = ({
 
         <div className="grid grid-cols-2 gap-4">
           <label className="flex items-center gap-3 p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={form.es_publica}
               onChange={(e) => handleChange('es_publica', e.target.checked)}
-              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
             />
             <div className="flex-1">
               <div className="font-medium text-gray-900 dark:text-gray-100">Pública</div>
@@ -148,11 +144,9 @@ export const VistaDashboardFormModal = ({
           </label>
 
           <label className="flex items-center gap-3 p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={form.activa}
               onChange={(e) => handleChange('activa', e.target.checked)}
-              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
             />
             <div className="flex-1">
               <div className="font-medium text-gray-900 dark:text-gray-100">Activa</div>

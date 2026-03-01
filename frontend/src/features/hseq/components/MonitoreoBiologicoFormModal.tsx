@@ -4,7 +4,7 @@
  */
 import { useState, useEffect } from 'react';
 import { Modal, Button, Spinner } from '@/components/common';
-import { Input, Select, Textarea } from '@/components/forms';
+import { Input, Select, Textarea, Checkbox } from '@/components/forms';
 import {
   useCreateMonitoreoBiologico,
   useUpdateMonitoreoBiologico,
@@ -198,17 +198,13 @@ export default function MonitoreoBiologicoFormModal({ item, isOpen, onClose }: M
             placeholder="Nombre de la IPS"
           />
 
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
+          <div className="flex items-center">
+            <Checkbox
               id="requiere_seguimiento"
+              label="Requiere Seguimiento"
               checked={formData.requiere_seguimiento || false}
               onChange={(e) => handleChange('requiere_seguimiento', e.target.checked)}
-              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
             />
-            <label htmlFor="requiere_seguimiento" className="text-sm text-gray-700 dark:text-gray-300">
-              Requiere Seguimiento
-            </label>
           </div>
 
           {formData.requiere_seguimiento && (

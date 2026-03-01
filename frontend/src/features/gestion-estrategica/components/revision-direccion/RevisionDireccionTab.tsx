@@ -17,7 +17,7 @@ import {
   Calendar,
   AlertCircle,
 } from 'lucide-react';
-import { Card } from '@/components/common';
+import { Card, Button } from '@/components/common';
 import { ProgramacionTab, ActasTab } from './subtabs';
 import { CompromisosDashboard } from './CompromisosDashboard';
 import {
@@ -91,9 +91,12 @@ const ISOPanel = () => {
   return (
     <Card className="border-indigo-100 dark:border-indigo-900">
       <div className="p-4">
-        <button
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
           onClick={() => setExpanded(!expanded)}
-          className="w-full flex items-center justify-between text-left group"
+          className="w-full !justify-between !min-h-0 text-left"
         >
           <div className="flex items-center gap-2">
             <BookOpen className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
@@ -109,7 +112,7 @@ const ISOPanel = () => {
           ) : (
             <ChevronDown className="h-4 w-4 text-gray-400" />
           )}
-        </button>
+        </Button>
 
         {expanded && (
           <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Modal, Button, Spinner } from '@/components/common';
-import { Input, Select, Textarea } from '@/components/forms';
+import { Input, Select, Textarea, Checkbox } from '@/components/forms';
 import { useCreateVotacion, useComites } from '../hooks/useComites';
 import type { VotacionList, CreateVotacionDTO } from '../types/comites.types';
 
@@ -160,47 +160,26 @@ export default function VotacionFormModal({ item, isOpen, onClose }: VotacionFor
 
           {/* Fila 6: Checkboxes de configuración */}
           <div className="md:col-span-2 flex flex-wrap gap-6">
-            <div className="flex items-center gap-3">
-              <input
-                id="es_secreta"
-                type="checkbox"
-                checked={formData.es_secreta ?? false}
-                onChange={(e) => handleChange('es_secreta', e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-              />
-              <label htmlFor="es_secreta" className="text-sm font-medium text-gray-700">
-                Es Secreta
-              </label>
-            </div>
+            <Checkbox
+              id="es_secreta"
+              label="Es Secreta"
+              checked={formData.es_secreta ?? false}
+              onChange={(e) => handleChange('es_secreta', e.target.checked)}
+            />
 
-            <div className="flex items-center gap-3">
-              <input
-                id="requiere_mayoria_simple"
-                type="checkbox"
-                checked={formData.requiere_mayoria_simple ?? false}
-                onChange={(e) => handleChange('requiere_mayoria_simple', e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-              />
-              <label
-                htmlFor="requiere_mayoria_simple"
-                className="text-sm font-medium text-gray-700"
-              >
-                Requiere Mayoría Simple
-              </label>
-            </div>
+            <Checkbox
+              id="requiere_mayoria_simple"
+              label="Requiere Mayoría Simple"
+              checked={formData.requiere_mayoria_simple ?? false}
+              onChange={(e) => handleChange('requiere_mayoria_simple', e.target.checked)}
+            />
 
-            <div className="flex items-center gap-3">
-              <input
-                id="permite_abstencion"
-                type="checkbox"
-                checked={formData.permite_abstencion ?? false}
-                onChange={(e) => handleChange('permite_abstencion', e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-              />
-              <label htmlFor="permite_abstencion" className="text-sm font-medium text-gray-700">
-                Permite Abstención
-              </label>
-            </div>
+            <Checkbox
+              id="permite_abstencion"
+              label="Permite Abstención"
+              checked={formData.permite_abstencion ?? false}
+              onChange={(e) => handleChange('permite_abstencion', e.target.checked)}
+            />
           </div>
         </div>
 

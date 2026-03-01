@@ -29,8 +29,10 @@ import {
 } from 'lucide-react';
 import { Card } from '@/components/common/Card';
 import { Badge } from '@/components/common/Badge';
+import { Button } from '@/components/common/Button';
 import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
+import { Input } from '@/components/forms/Input';
 import { cn } from '@/utils/cn';
 import {
   useVacantesPublicas,
@@ -261,13 +263,13 @@ function VacanteCard({ vacante, primaryColor }: { vacante: VacantePublica; prima
         <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
           <span className="text-xs text-gray-400">Publicada el {fechaStr}</span>
           <Link to={`/vacantes/${vacante.id}/postular`}>
-            <button
-              className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-white transition-opacity hover:opacity-90"
+            <Button
+              size="sm"
+              rightIcon={<ChevronRight className="w-4 h-4" />}
               style={{ backgroundColor: primaryColor }}
             >
               Postularme
-              <ChevronRight className="w-4 h-4 ml-1" />
-            </button>
+            </Button>
           </Link>
         </div>
       </div>
@@ -319,40 +321,23 @@ function FilterBar({
 
       {/* Search + filters */}
       <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
+        <div className="flex-1">
+          <Input
             type="text"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Buscar por cargo, &aacute;rea o palabra clave..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm transition-colors outline-none"
-            style={{
-              // @ts-expect-error CSS custom property
-              '--tw-ring-color': hexToRgba(primaryColor, 0.4),
-            }}
-            onFocus={(e) => {
-              e.target.style.borderColor = primaryColor;
-              e.target.style.boxShadow = `0 0 0 3px ${hexToRgba(primaryColor, 0.15)}`;
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = '';
-              e.target.style.boxShadow = '';
-            }}
+            placeholder="Buscar por cargo, área o palabra clave..."
+            leftIcon={<Search className="w-4 h-4" />}
           />
         </div>
         <div className="flex items-center gap-2">
           <Filter className="w-4 h-4 text-gray-400 hidden sm:block" />
           {MODALIDAD_FILTERS.map((f) => (
-            <button
+            <Button
               key={f.value}
+              size="sm"
+              variant={modalidad === f.value ? 'primary' : 'outline'}
               onClick={() => onModalidadChange(f.value)}
-              className={cn(
-                'px-3 py-2 rounded-lg text-xs font-medium border transition-all',
-                modalidad === f.value
-                  ? 'text-white'
-                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-gray-400'
-              )}
               style={
                 modalidad === f.value
                   ? { backgroundColor: primaryColor, borderColor: primaryColor }
@@ -360,7 +345,7 @@ function FilterBar({
               }
             >
               {f.label}
-            </button>
+            </Button>
           ))}
         </div>
       </div>

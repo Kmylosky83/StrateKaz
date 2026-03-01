@@ -8,6 +8,7 @@
 import { useState } from 'react';
 import { Filter, ExternalLink } from 'lucide-react';
 import { Badge, Button } from '@/components/common';
+import { Select } from '@/components/forms';
 import { DataTableCard } from '@/components/layout/DataTableCard';
 import { useOportunidadesEstrategicas } from '../../hooks/useRiesgosOportunidades';
 
@@ -76,31 +77,26 @@ export function OportunidadesSection({ triggerNewForm }: OportunidadesSectionPro
         {showFilters && (
           <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Estado
-                </label>
-                <select
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                  value={filters.estado || ''}
-                  onChange={(e) =>
-                    setFilters((prev) => {
-                      const next = { ...prev };
-                      if (e.target.value) next.estado = e.target.value;
-                      else delete next.estado;
-                      return next;
-                    })
-                  }
-                >
-                  <option value="">Todos</option>
-                  <option value="identificada">Identificada</option>
-                  <option value="en_evaluacion">En Evaluación</option>
-                  <option value="aprobada">Aprobada</option>
-                  <option value="en_ejecucion">En Ejecución</option>
-                  <option value="materializada">Materializada</option>
-                  <option value="descartada">Descartada</option>
-                </select>
-              </div>
+              <Select
+                label="Estado"
+                value={filters.estado || ''}
+                onChange={(e) =>
+                  setFilters((prev) => {
+                    const next = { ...prev };
+                    if (e.target.value) next.estado = e.target.value;
+                    else delete next.estado;
+                    return next;
+                  })
+                }
+              >
+                <option value="">Todos</option>
+                <option value="identificada">Identificada</option>
+                <option value="en_evaluacion">En Evaluación</option>
+                <option value="aprobada">Aprobada</option>
+                <option value="en_ejecucion">En Ejecución</option>
+                <option value="materializada">Materializada</option>
+                <option value="descartada">Descartada</option>
+              </Select>
               <div className="flex items-end">
                 <Button
                   variant="outline"

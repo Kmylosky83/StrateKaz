@@ -4,7 +4,7 @@
  */
 import { useState, useEffect } from 'react';
 import { Modal, Button, Spinner } from '@/components/common';
-import { Input, Select, Textarea } from '@/components/forms';
+import { Input, Select, Textarea, Checkbox } from '@/components/forms';
 import {
   useCreateControlExposicion,
   useUpdateControlExposicion,
@@ -182,20 +182,13 @@ export default function ControlExposicionFormModal({
             onChange={(e) => handleChange('efectividad_esperada', parseFloat(e.target.value))}
           />
 
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
+          <div className="flex items-center">
+            <Checkbox
               id="requiere_mantenimiento"
+              label="Requiere Mantenimiento"
               checked={formData.requiere_mantenimiento || false}
               onChange={(e) => handleChange('requiere_mantenimiento', e.target.checked)}
-              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
             />
-            <label
-              htmlFor="requiere_mantenimiento"
-              className="text-sm text-gray-700 dark:text-gray-300"
-            >
-              Requiere Mantenimiento
-            </label>
           </div>
 
           {formData.requiere_mantenimiento && (

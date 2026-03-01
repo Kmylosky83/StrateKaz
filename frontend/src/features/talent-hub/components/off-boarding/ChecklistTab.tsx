@@ -10,6 +10,7 @@ import { Card } from '@/components/common/Card';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Button } from '@/components/common/Button';
 import { Select } from '@/components/forms/Select';
+import { Input } from '@/components/forms/Input';
 import { cn } from '@/utils/cn';
 import {
   useProcesosRetiro,
@@ -288,7 +289,7 @@ export function ChecklistTab() {
                           <td className="p-3">
                             {paz.estado === 'pendiente' && (
                               <div className="flex items-center gap-2">
-                                <input
+                                <Input
                                   type="number"
                                   min="0"
                                   max={paz.cantidad_entregada}
@@ -299,7 +300,7 @@ export function ChecklistTab() {
                                       [paz.id]: Number(e.target.value),
                                     })
                                   }
-                                  className="w-16 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700"
+                                  className="w-16"
                                   placeholder="Cant."
                                 />
                                 <Button

@@ -9,6 +9,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { Modal, Button, Spinner } from '@/components/common';
+import { Input, Select, Textarea } from '@/components/forms';
 import { DynamicFormRenderer, validateDynamicForm } from '@/components/common/DynamicFormRenderer';
 import {
   useCreateDocumento,
@@ -230,29 +231,22 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
         onSubmit={handleSubmit(onSubmit)}
         className="space-y-4 max-h-[70vh] overflow-y-auto pr-1"
       >
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Titulo *
-          </label>
-          <input
-            {...register('titulo', { required: 'Titulo es requerido' })}
-            className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Procedimiento de Control de Documentos"
-          />
-          {errors.titulo && <p className="text-xs text-red-500 mt-1">{errors.titulo.message}</p>}
-        </div>
+        <Input
+          label="Titulo *"
+          {...register('titulo', { required: 'Titulo es requerido' })}
+          placeholder="Procedimiento de Control de Documentos"
+          error={errors.titulo?.message}
+        />
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Tipo de Documento *
-            </label>
-            <select
+            <Select
+              label="Tipo de Documento *"
               {...register('tipo_documento', {
                 required: 'Tipo requerido',
                 validate: (v) => Number(v) > 0 || 'Seleccione un tipo',
               })}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              error={errors.tipo_documento?.message}
             >
               <option value={0}>Seleccionar...</option>
               {((tipos as { id: number; nombre: string; codigo: string }[]) || []).map((t) => (
@@ -260,19 +254,13 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
                   {t.codigo} - {t.nombre}
                 </option>
               ))}
-            </select>
-            {errors.tipo_documento && (
-              <p className="text-xs text-red-500 mt-1">{errors.tipo_documento.message}</p>
-            )}
+            </Select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Plantilla
-            </label>
-            <select
+            <Select
+              label="Plantilla"
               {...register('plantilla')}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">Sin plantilla</option>
               {filteredPlantillas.map((p) => (
@@ -281,39 +269,24 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
                   {p.tipo_plantilla === 'FORMULARIO' ? ' (Formulario)' : ''}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Clasificacion
-            </label>
-            <select
-              {...register('clasificacion')}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              {CLASIFICACION_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Resumen
-          </label>
-          <textarea
-            {...register('resumen')}
-            rows={2}
-            className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Resumen ejecutivo del documento..."
+          <Select
+            label="Clasificacion"
+            {...register('clasificacion')}
+            options={CLASIFICACION_OPTIONS}
           />
         </div>
 
-        {/* Content: DynamicFormRenderer for FORMULARIO, textarea otherwise */}
+        <Textarea
+          label="Resumen"
+          {...register('resumen')}
+          rows={2}
+          placeholder="Resumen ejecutivo del documento..."
+        />
+
+        {/* Content: DynamicFormRenderer for FORMULARIO, Textarea otherwise */}
         {isFormulario && dynamicFields.length > 0 ? (
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -330,58 +303,37 @@ export function DocumentoFormModal({ isOpen, onClose, documentoId }: DocumentoFo
             </div>
           </div>
         ) : (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Contenido {!isFormulario && '*'}
-            </label>
-            <textarea
-              {...register('contenido', {
-                required: !isFormulario ? 'Contenido es requerido' : false,
-              })}
-              rows={10}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Contenido del documento en formato HTML o Markdown..."
-            />
-            {errors.contenido && (
-              <p className="text-xs text-red-500 mt-1">{errors.contenido.message}</p>
-            )}
-          </div>
+          <Textarea
+            label={`Contenido ${!isFormulario ? '*' : ''}`}
+            {...register('contenido', {
+              required: !isFormulario ? 'Contenido es requerido' : false,
+            })}
+            rows={10}
+            className="font-mono"
+            placeholder="Contenido del documento en formato HTML o Markdown..."
+            error={errors.contenido?.message}
+          />
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Fecha de Vigencia
-            </label>
-            <input
-              type="date"
-              {...register('fecha_vigencia')}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
+          <Input
+            label="Fecha de Vigencia"
+            type="date"
+            {...register('fecha_vigencia')}
+          />
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Revision Programada
-            </label>
-            <input
-              type="date"
-              {...register('fecha_revision_programada')}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Observaciones
-          </label>
-          <textarea
-            {...register('observaciones')}
-            rows={2}
-            className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm bg-transparent focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          <Input
+            label="Revision Programada"
+            type="date"
+            {...register('fecha_revision_programada')}
           />
         </div>
+
+        <Textarea
+          label="Observaciones"
+          {...register('observaciones')}
+          rows={2}
+        />
 
         <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
           <Button variant="outline" onClick={onClose} type="button">

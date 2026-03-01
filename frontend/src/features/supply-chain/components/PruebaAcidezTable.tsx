@@ -15,6 +15,8 @@ import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
+import { Input } from '@/components/forms/Input';
+import { Select } from '@/components/forms/Select';
 
 import { usePruebasAcidez, useDeletePruebaAcidez } from '../hooks/usePruebasAcidez';
 import { useProveedores } from '../hooks/useProveedores';
@@ -175,73 +177,49 @@ export function PruebaAcidezTable({ onView, onEdit, onNew, proveedorId }: Prueba
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {/* Proveedor */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Proveedor
-                </label>
-                <select
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  value={filtros.proveedor || ''}
-                  onChange={(e) =>
-                    handleFilterChange('proveedor', e.target.value ? Number(e.target.value) : undefined)
-                  }
-                >
-                  <option value="">Todos</option>
-                  {proveedores.map((prov: any) => (
-                    <option key={prov.id} value={prov.id}>
-                      {prov.razon_social}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <Select
+                label="Proveedor"
+                value={filtros.proveedor || ''}
+                onChange={(e) =>
+                  handleFilterChange('proveedor', e.target.value ? Number(e.target.value) : undefined)
+                }
+              >
+                <option value="">Todos</option>
+                {proveedores.map((prov: any) => (
+                  <option key={prov.id} value={prov.id}>
+                    {prov.razon_social}
+                  </option>
+                ))}
+              </Select>
 
-              {/* Fecha desde */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Fecha Desde
-                </label>
-                <input
-                  type="date"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  value={filtros.fecha_desde || ''}
-                  onChange={(e) => handleFilterChange('fecha_desde', e.target.value || undefined)}
-                />
-              </div>
+              <Input
+                label="Fecha Desde"
+                type="date"
+                value={filtros.fecha_desde || ''}
+                onChange={(e) => handleFilterChange('fecha_desde', e.target.value || undefined)}
+              />
 
-              {/* Fecha hasta */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Fecha Hasta
-                </label>
-                <input
-                  type="date"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  value={filtros.fecha_hasta || ''}
-                  onChange={(e) => handleFilterChange('fecha_hasta', e.target.value || undefined)}
-                />
-              </div>
+              <Input
+                label="Fecha Hasta"
+                type="date"
+                value={filtros.fecha_hasta || ''}
+                onChange={(e) => handleFilterChange('fecha_hasta', e.target.value || undefined)}
+              />
 
-              {/* Cumple especificación */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Cumplimiento
-                </label>
-                <select
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  value={filtros.cumple_especificacion === undefined ? '' : String(filtros.cumple_especificacion)}
-                  onChange={(e) =>
-                    handleFilterChange(
-                      'cumple_especificacion',
-                      e.target.value === '' ? undefined : e.target.value === 'true'
-                    )
-                  }
-                >
-                  <option value="">Todos</option>
-                  <option value="true">Cumple</option>
-                  <option value="false">No Cumple</option>
-                </select>
-              </div>
+              <Select
+                label="Cumplimiento"
+                value={filtros.cumple_especificacion === undefined ? '' : String(filtros.cumple_especificacion)}
+                onChange={(e) =>
+                  handleFilterChange(
+                    'cumple_especificacion',
+                    e.target.value === '' ? undefined : e.target.value === 'true'
+                  )
+                }
+              >
+                <option value="">Todos</option>
+                <option value="true">Cumple</option>
+                <option value="false">No Cumple</option>
+              </Select>
             </div>
           </div>
         </Card>

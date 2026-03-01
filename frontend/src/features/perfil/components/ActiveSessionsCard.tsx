@@ -22,6 +22,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import { Card, Button, Spinner, ConfirmDialog } from '@/components/common';
+import { Input } from '@/components/forms';
 import {
   useSessions,
   useCloseSession,
@@ -84,31 +85,33 @@ const SessionItem = ({
           <div className="flex items-center gap-2">
             {isEditing ? (
               <div className="flex items-center gap-2 flex-1">
-                <input
-                  type="text"
+                <Input
                   value={deviceName}
                   onChange={(e) => setDeviceName(e.target.value)}
-                  className="flex-1 px-2 py-1 text-sm border rounded bg-white dark:bg-gray-700
-                             border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white"
                   placeholder="Nombre del dispositivo"
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleSaveName();
                     if (e.key === 'Escape') setIsEditing(false);
                   }}
+                  className="text-sm py-1"
                 />
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={handleSaveName}
-                  className="p-1 text-green-600 hover:bg-green-100 rounded dark:hover:bg-green-900/30"
+                  className="h-7 w-7 p-0 text-green-600 hover:text-green-700 hover:bg-green-100 dark:hover:bg-green-900/30"
                 >
                   <Check className="h-4 w-4" />
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setIsEditing(false)}
-                  className="p-1 text-gray-500 hover:bg-gray-200 rounded dark:hover:bg-gray-700"
+                  className="h-7 w-7 p-0"
                 >
                   <X className="h-4 w-4" />
-                </button>
+                </Button>
               </div>
             ) : (
               <>
@@ -121,13 +124,15 @@ const SessionItem = ({
                   </span>
                 )}
                 {!session.is_current && (
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setIsEditing(true)}
-                    className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded dark:hover:bg-gray-700"
+                    className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600"
                     title="Renombrar dispositivo"
                   >
                     <Edit2 className="h-3 w-3" />
-                  </button>
+                  </Button>
                 )}
               </>
             )}

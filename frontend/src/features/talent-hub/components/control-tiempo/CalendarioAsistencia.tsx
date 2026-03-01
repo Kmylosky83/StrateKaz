@@ -4,6 +4,7 @@
  */
 import { useMemo } from 'react';
 import { Card } from '@/components/common/Card';
+import { Button } from '@/components/common/Button';
 import { Spinner } from '@/components/common/Spinner';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/utils/cn';
@@ -155,23 +156,25 @@ export const CalendarioAsistencia = ({
     <Card variant="bordered" className="overflow-hidden">
       {/* Header del calendario */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={onPrevMes}
-          className="p-1.5 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
         >
           <ChevronLeft size={18} />
-        </button>
+        </Button>
         <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
           {MESES_NOMBRES[mes]} {anio}
         </h3>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={onNextMes}
-          className="p-1.5 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
         >
           <ChevronRight size={18} />
-        </button>
+        </Button>
       </div>
 
       {isLoading ? (

@@ -11,6 +11,7 @@
 import { useState, useEffect } from 'react';
 import { Search, Filter, X } from 'lucide-react';
 import { Input } from '@/components/forms/Input';
+import { Select } from '@/components/forms';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
 import type { NormasListParams } from '../../api/normasApi';
@@ -135,19 +136,15 @@ export const NormaFilters = ({
           const isActive = filters[key];
 
           return (
-            <button
+            <Button
               key={sistema.value}
+              variant="outline"
+              size="sm"
               onClick={() => handleSistemaToggle(sistema.value)}
-              className={`
-                inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium border transition-all
-                ${isActive
-                  ? `${sistema.color} border-current shadow-sm`
-                  : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                }
-              `}
+              className={isActive ? `${sistema.color} border-current shadow-sm` : ''}
             >
               {sistema.label}
-            </button>
+            </Button>
           );
         })}
       </div>
@@ -157,64 +154,49 @@ export const NormaFilters = ({
         <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Tipo de Norma */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Tipo de Norma
-              </label>
-              <select
-                value={filters.tipo_norma || ''}
-                onChange={(e) => handleTipoNormaChange(e.target.value)}
-                className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-              >
-                <option value="">Todos los tipos</option>
-                {tiposNorma?.map((tipo) => (
-                  <option key={tipo.id} value={tipo.id}>
-                    {tipo.nombre} ({tipo.codigo})
-                  </option>
-                ))}
-              </select>
-            </div>
+            <Select
+              label="Tipo de Norma"
+              value={filters.tipo_norma || ''}
+              onChange={(e) => handleTipoNormaChange(e.target.value)}
+            >
+              <option value="">Todos los tipos</option>
+              {tiposNorma?.map((tipo) => (
+                <option key={tipo.id} value={tipo.id}>
+                  {tipo.nombre} ({tipo.codigo})
+                </option>
+              ))}
+            </Select>
 
             {/* Vigencia */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Vigencia
-              </label>
-              <select
-                value={filters.vigente === undefined ? '' : filters.vigente ? 'true' : 'false'}
-                onChange={(e) =>
-                  handleVigenciaChange(
-                    e.target.value === '' ? undefined : e.target.value === 'true'
-                  )
-                }
-                className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-              >
-                <option value="">Todas</option>
-                <option value="true">Vigentes</option>
-                <option value="false">Derogadas</option>
-              </select>
-            </div>
+            <Select
+              label="Vigencia"
+              value={filters.vigente === undefined ? '' : filters.vigente ? 'true' : 'false'}
+              onChange={(e) =>
+                handleVigenciaChange(
+                  e.target.value === '' ? undefined : e.target.value === 'true'
+                )
+              }
+            >
+              <option value="">Todas</option>
+              <option value="true">Vigentes</option>
+              <option value="false">Derogadas</option>
+            </Select>
 
             {/* Año */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Año
-              </label>
-              <input
-                type="number"
-                min="1900"
-                max={new Date().getFullYear()}
-                placeholder="Ej: 2024"
-                value={filters.anio || ''}
-                onChange={(e) =>
-                  onFiltersChange({
-                    ...filters,
-                    anio: e.target.value ? parseInt(e.target.value) : undefined,
-                  })
-                }
-                className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-              />
-            </div>
+            <Input
+              label="Año"
+              type="number"
+              min="1900"
+              max={new Date().getFullYear()}
+              placeholder="Ej: 2024"
+              value={filters.anio || ''}
+              onChange={(e) =>
+                onFiltersChange({
+                  ...filters,
+                  anio: e.target.value ? parseInt(e.target.value) : undefined,
+                })
+              }
+            />
           </div>
 
           {/* Resumen de filtros activos */}

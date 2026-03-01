@@ -7,6 +7,7 @@ import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
+import { Textarea } from '@/components/forms/Textarea';
 import { useCreateLiquidacion } from '../../hooks/useNomina';
 import { useColaboradores } from '../../hooks/useColaboradores';
 import type { LiquidacionNominaFormData } from '../../types';
@@ -110,17 +111,12 @@ export const LiquidacionFormModal = ({ isOpen, onClose, periodoId }: Liquidacion
         </div>
 
         {/* Observaciones */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Observaciones
-          </label>
-          <textarea
-            {...register('observaciones')}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-            placeholder="Observaciones de la liquidación..."
-          />
-        </div>
+        <Textarea
+          label="Observaciones"
+          {...register('observaciones')}
+          rows={3}
+          placeholder="Observaciones de la liquidación..."
+        />
 
         {/* Info */}
         <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">

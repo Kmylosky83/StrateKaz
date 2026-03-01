@@ -7,3 +7,4 @@ export * from './brand';
 export * from './permissions';
 export * from './timezones';
 export * from './modules';
+export * from './chart-colors';

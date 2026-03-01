@@ -19,6 +19,8 @@ import { Button } from '@/components/common/Button';
 import { Spinner } from '@/components/common/Spinner';
 import { Alert } from '@/components/common/Alert';
 import { Card } from '@/components/common/Card';
+import { Input } from '@/components/forms/Input';
+import { Textarea } from '@/components/forms/Textarea';
 import { cn } from '@/utils/cn';
 import {
   useEntrevistaPublica,
@@ -86,22 +88,20 @@ function PreguntaRenderer({ pregunta, value, onChange, index }: PreguntaRenderer
 
       {/* Texto corto */}
       {pregunta.tipo === 'texto_corto' && (
-        <input
+        <Input
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
           placeholder="Escribe tu respuesta..."
         />
       )}
 
       {/* Texto largo */}
       {pregunta.tipo === 'texto_largo' && (
-        <textarea
+        <Textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
           rows={4}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-y"
           placeholder="Escribe tu respuesta detallada..."
         />
       )}
@@ -140,19 +140,16 @@ function PreguntaRenderer({ pregunta, value, onChange, index }: PreguntaRenderer
             { length: (pregunta.escala_max || 10) - (pregunta.escala_min || 1) + 1 },
             (_, i) => i + (pregunta.escala_min || 1)
           ).map((n) => (
-            <button
+            <Button
               key={n}
               type="button"
+              size="sm"
+              variant={value === String(n) ? 'primary' : 'outline'}
               onClick={() => onChange(String(n))}
-              className={cn(
-                'w-10 h-10 rounded-lg border text-sm font-medium transition-all',
-                value === String(n)
-                  ? 'border-indigo-500 bg-indigo-600 text-white'
-                  : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-indigo-400'
-              )}
+              className="w-10 !px-0"
             >
               {n}
-            </button>
+            </Button>
           ))}
         </div>
       )}

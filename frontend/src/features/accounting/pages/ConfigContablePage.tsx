@@ -92,13 +92,18 @@ const CuentaTreeItem = ({
         style={{ marginLeft: `${level * 24}px` }}
       >
         {hasChildren ? (
-          <button onClick={() => setExpanded(!expanded)} className="p-0.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="p-0.5 min-h-0"
+            onClick={() => setExpanded(!expanded)}
+          >
             {expanded ? (
               <ChevronDown className="w-4 h-4 text-gray-400" />
             ) : (
               <ChevronRight className="w-4 h-4 text-gray-400" />
             )}
-          </button>
+          </Button>
         ) : (
           <span className="w-5" />
         )}
@@ -155,13 +160,18 @@ const CentroCostoTreeItem = ({
         style={{ marginLeft: `${level * 24}px` }}
       >
         {hasChildren ? (
-          <button onClick={() => setExpanded(!expanded)} className="p-0.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="p-0.5 min-h-0"
+            onClick={() => setExpanded(!expanded)}
+          >
             {expanded ? (
               <ChevronDown className="w-4 h-4 text-gray-400" />
             ) : (
               <ChevronRight className="w-4 h-4 text-gray-400" />
             )}
-          </button>
+          </Button>
         ) : (
           <span className="w-5" />
         )}

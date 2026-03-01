@@ -10,6 +10,7 @@
 import { useState } from 'react';
 import { Filter, ExternalLink } from 'lucide-react';
 import { Badge, Button } from '@/components/common';
+import { Select } from '@/components/forms';
 import { DataTableCard } from '@/components/layout/DataTableCard';
 import { useTratamientosEstrategicos } from '../../hooks/useRiesgosOportunidades';
 
@@ -83,52 +84,42 @@ export function TratamientosSection({ triggerNewForm }: TratamientosSectionProps
         {showFilters && (
           <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Estado
-                </label>
-                <select
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                  value={filters.estado || ''}
-                  onChange={(e) =>
-                    setFilters((prev) => {
-                      const next = { ...prev };
-                      if (e.target.value) next.estado = e.target.value;
-                      else delete next.estado;
-                      return next;
-                    })
-                  }
-                >
-                  <option value="">Todos</option>
-                  <option value="pendiente">Pendiente</option>
-                  <option value="en_curso">En Curso</option>
-                  <option value="completado">Completado</option>
-                  <option value="cancelado">Cancelado</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Estrategia
-                </label>
-                <select
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                  value={filters.tipo || ''}
-                  onChange={(e) =>
-                    setFilters((prev) => {
-                      const next = { ...prev };
-                      if (e.target.value) next.tipo = e.target.value;
-                      else delete next.tipo;
-                      return next;
-                    })
-                  }
-                >
-                  <option value="">Todas</option>
-                  <option value="evitar">Evitar</option>
-                  <option value="mitigar">Mitigar</option>
-                  <option value="transferir">Transferir</option>
-                  <option value="aceptar">Aceptar</option>
-                </select>
-              </div>
+              <Select
+                label="Estado"
+                value={filters.estado || ''}
+                onChange={(e) =>
+                  setFilters((prev) => {
+                    const next = { ...prev };
+                    if (e.target.value) next.estado = e.target.value;
+                    else delete next.estado;
+                    return next;
+                  })
+                }
+              >
+                <option value="">Todos</option>
+                <option value="pendiente">Pendiente</option>
+                <option value="en_curso">En Curso</option>
+                <option value="completado">Completado</option>
+                <option value="cancelado">Cancelado</option>
+              </Select>
+              <Select
+                label="Estrategia"
+                value={filters.tipo || ''}
+                onChange={(e) =>
+                  setFilters((prev) => {
+                    const next = { ...prev };
+                    if (e.target.value) next.tipo = e.target.value;
+                    else delete next.tipo;
+                    return next;
+                  })
+                }
+              >
+                <option value="">Todas</option>
+                <option value="evitar">Evitar</option>
+                <option value="mitigar">Mitigar</option>
+                <option value="transferir">Transferir</option>
+                <option value="aceptar">Aceptar</option>
+              </Select>
               <div className="flex items-end">
                 <Button
                   variant="outline"

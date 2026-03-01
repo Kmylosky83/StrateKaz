@@ -182,28 +182,33 @@ export function ControlCambiosSection({
             ) : (
               <div className="space-y-2 max-h-80 overflow-y-auto">
                 {documentos.map((doc) => (
-                  <button
+                  <Button
                     key={doc.id}
+                    type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setSelectedDocumento(doc.id)}
-                    className={`w-full text-left p-3 rounded-lg transition-colors ${
+                    className={`w-full !justify-start text-left !p-3 !min-h-0 rounded-lg transition-colors ${
                       selectedDocumento === doc.id
                         ? 'bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700'
                         : 'bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700/50'
                     }`}
                   >
-                    <p className="font-medium text-sm text-gray-900 dark:text-white">
-                      {doc.codigo}
-                    </p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">
-                      {doc.titulo}
-                    </p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="secondary" size="sm">
-                        v{doc.version_actual}
-                      </Badge>
-                      <span className="text-xs text-gray-500">Rev. {doc.numero_revision}</span>
+                    <div className="flex flex-col items-start w-full">
+                      <p className="font-medium text-sm text-gray-900 dark:text-white">
+                        {doc.codigo}
+                      </p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">
+                        {doc.titulo}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="secondary" size="sm">
+                          v{doc.version_actual}
+                        </Badge>
+                        <span className="text-xs text-gray-500">Rev. {doc.numero_revision}</span>
+                      </div>
                     </div>
-                  </button>
+                  </Button>
                 ))}
               </div>
             )}

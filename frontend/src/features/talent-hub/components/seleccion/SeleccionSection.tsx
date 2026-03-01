@@ -14,6 +14,7 @@
  */
 import { useState } from 'react';
 import { Card } from '@/components/common/Card';
+import { Button } from '@/components/common/Button';
 import { EmptyState } from '@/components/common/EmptyState';
 import {
   BarChart3,
@@ -115,12 +116,14 @@ export const SeleccionSection = () => {
           {SUB_TABS.map((tab) => {
             const isActive = tab.key === activeTab;
             return (
-              <button
+              <Button
                 key={tab.key}
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => setActiveTab(tab.key)}
                 className={cn(
-                  'flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all whitespace-nowrap',
+                  'flex items-center gap-2 !px-4 !py-2.5 text-sm font-medium border-b-2 transition-all whitespace-nowrap rounded-none',
                   isActive
                     ? 'border-primary-500 text-primary-600 dark:text-primary-400'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
@@ -133,7 +136,7 @@ export const SeleccionSection = () => {
                     Pronto
                   </span>
                 )}
-              </button>
+              </Button>
             );
           })}
         </nav>

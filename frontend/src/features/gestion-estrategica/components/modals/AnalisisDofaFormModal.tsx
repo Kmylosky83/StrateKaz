@@ -312,12 +312,14 @@ export const AnalisisDofaFormModal = ({
         { key: 'datos', label: 'Datos Basicos', disabled: false },
         { key: 'factores', label: `Factores (${factores.length})`, disabled: !isEditing },
       ].map((tab) => (
-        <button
+        <Button
           key={tab.key}
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={() => !tab.disabled && setActiveTab(tab.key as typeof activeTab)}
           disabled={tab.disabled}
-          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+          className={`border-b-2 -mb-px rounded-none !min-h-0 transition-colors ${
             activeTab === tab.key
               ? 'border-purple-500 text-purple-600 dark:text-purple-400'
               : tab.disabled
@@ -326,7 +328,7 @@ export const AnalisisDofaFormModal = ({
           }`}
         >
           {tab.label}
-        </button>
+        </Button>
       ))}
     </div>
   );
@@ -434,24 +436,26 @@ export const AnalisisDofaFormModal = ({
           const isActive = filterTipo === value;
 
           return (
-            <button
+            <Button
               key={value}
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => setFilterTipo(isActive ? '' : value)}
-              className={`p-3 rounded-lg border transition-all ${
+              className={`p-3 rounded-lg border transition-all !min-h-0 w-full flex-col items-start ${
                 isActive
                   ? `${config.bgClass} ${config.borderClass} border-2`
                   : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
               }`}
             >
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between w-full">
                 <div className={`p-1.5 rounded ${config.bgClass}`}>
                   <Icon className={`h-4 w-4 ${config.textClass}`} />
                 </div>
                 <span className={`text-xl font-bold ${config.textClass}`}>{count}</span>
               </div>
               <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 text-left">{label}</p>
-            </button>
+            </Button>
           );
         })}
       </div>
@@ -549,11 +553,13 @@ export const AnalisisDofaFormModal = ({
             {TIPO_FACTOR_OPTIONS.map(({ value, label, icon: Icon }) => {
               const config = TIPO_FACTOR_DOFA_CONFIG[value];
               return (
-                <button
+                <Button
                   key={value}
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setFactorForm({ ...factorForm, tipo: value })}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+                  className={`!min-h-0 rounded-lg border transition-colors ${
                     factorForm.tipo === value
                       ? `${config.bgClass} ${config.borderClass} border-2`
                       : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
@@ -565,7 +571,7 @@ export const AnalisisDofaFormModal = ({
                   <span className={`text-sm ${factorForm.tipo === value ? config.textClass : ''}`}>
                     {label}
                   </span>
-                </button>
+                </Button>
               );
             })}
           </div>

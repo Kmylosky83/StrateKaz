@@ -30,6 +30,9 @@ import { Badge } from '@/components/common/Badge';
 import { Spinner } from '@/components/common/Spinner';
 import { Alert } from '@/components/common/Alert';
 import { Card } from '@/components/common/Card';
+import { Input } from '@/components/forms/Input';
+import { Select } from '@/components/forms/Select';
+import { Textarea } from '@/components/forms/Textarea';
 import { cn } from '@/utils/cn';
 import { usePruebaPublica, useResponderPrueba } from '../hooks/useSeleccionContratacion';
 import type { CampoPruebaDinamica } from '../types';
@@ -87,12 +90,11 @@ function CampoRenderer({ campo, value, onChange }: CampoRendererProps) {
   // TEXT
   if (tipo === 'TEXT' || tipo === 'EMAIL') {
     return (
-      <input
+      <Input
         type={tipo === 'EMAIL' ? 'email' : 'text'}
         value={(value as string) || ''}
         onChange={(e) => onChange(e.target.value)}
         placeholder={campo.placeholder || ''}
-        className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-colors"
         required={campo.es_obligatorio}
       />
     );
@@ -101,12 +103,11 @@ function CampoRenderer({ campo, value, onChange }: CampoRendererProps) {
   // TEXTAREA
   if (tipo === 'TEXTAREA') {
     return (
-      <textarea
+      <Textarea
         value={(value as string) || ''}
         onChange={(e) => onChange(e.target.value)}
         placeholder={campo.placeholder || ''}
         rows={4}
-        className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-colors resize-y"
         required={campo.es_obligatorio}
       />
     );
@@ -115,12 +116,11 @@ function CampoRenderer({ campo, value, onChange }: CampoRendererProps) {
   // NUMBER
   if (tipo === 'NUMBER') {
     return (
-      <input
+      <Input
         type="number"
         value={(value as string) || ''}
         onChange={(e) => onChange(e.target.value)}
         placeholder={campo.placeholder || '0'}
-        className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-colors"
         required={campo.es_obligatorio}
       />
     );
@@ -129,11 +129,10 @@ function CampoRenderer({ campo, value, onChange }: CampoRendererProps) {
   // DATE
   if (tipo === 'DATE') {
     return (
-      <input
+      <Input
         type="date"
         value={(value as string) || ''}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-colors"
         required={campo.es_obligatorio}
       />
     );
@@ -142,19 +141,13 @@ function CampoRenderer({ campo, value, onChange }: CampoRendererProps) {
   // SELECT
   if (tipo === 'SELECT') {
     return (
-      <select
+      <Select
         value={(value as string) || ''}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-colors"
         required={campo.es_obligatorio}
-      >
-        <option value="">Seleccionar...</option>
-        {(campo.opciones || []).map((opt) => (
-          <option key={opt.valor} value={opt.valor}>
-            {opt.etiqueta}
-          </option>
-        ))}
-      </select>
+        placeholder="Seleccionar..."
+        options={(campo.opciones || []).map((opt) => ({ value: opt.valor, label: opt.etiqueta }))}
+      />
     );
   }
 
@@ -225,12 +218,11 @@ function CampoRenderer({ campo, value, onChange }: CampoRendererProps) {
 
   // Fallback
   return (
-    <input
+    <Input
       type="text"
       value={(value as string) || ''}
       onChange={(e) => onChange(e.target.value)}
       placeholder={campo.placeholder || ''}
-      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2.5 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-colors"
     />
   );
 }

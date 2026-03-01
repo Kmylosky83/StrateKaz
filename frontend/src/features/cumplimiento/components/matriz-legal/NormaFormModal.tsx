@@ -13,6 +13,7 @@ import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Textarea } from '@/components/forms/Textarea';
+import { Select, Checkbox } from '@/components/forms';
 import { Alert } from '@/components/common/Alert';
 import {
   useCreateNorma,
@@ -185,29 +186,22 @@ export const NormaFormModal = ({ norma, isOpen, onClose }: NormaFormModalProps) 
             Información Básica
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Tipo de Norma *
-              </label>
-              <select
-                value={formData.tipo_norma}
-                onChange={(e) =>
-                  setFormData({ ...formData, tipo_norma: parseInt(e.target.value) })
-                }
-                className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                required
-              >
-                <option value="">Seleccionar tipo</option>
-                {tiposNorma?.map((tipo) => (
-                  <option key={tipo.id} value={tipo.id}>
-                    {tipo.nombre} ({tipo.codigo})
-                  </option>
-                ))}
-              </select>
-              {errors.tipo_norma && (
-                <p className="mt-1 text-sm text-danger-600">{errors.tipo_norma}</p>
-              )}
-            </div>
+            <Select
+              label="Tipo de Norma *"
+              value={formData.tipo_norma}
+              onChange={(e) =>
+                setFormData({ ...formData, tipo_norma: parseInt(e.target.value) })
+              }
+              error={errors.tipo_norma}
+              required
+            >
+              <option value="">Seleccionar tipo</option>
+              {tiposNorma?.map((tipo) => (
+                <option key={tipo.id} value={tipo.id}>
+                  {tipo.nombre} ({tipo.codigo})
+                </option>
+              ))}
+            </Select>
 
             <Input
               label="Número *"
@@ -308,7 +302,7 @@ export const NormaFormModal = ({ norma, isOpen, onClose }: NormaFormModalProps) 
               const isChecked = formData[key] as boolean;
 
               return (
-                <label
+                <div
                   key={sistema.key}
                   className={`
                     flex items-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition-all
@@ -317,17 +311,14 @@ export const NormaFormModal = ({ norma, isOpen, onClose }: NormaFormModalProps) 
                       : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
                     }
                   `}
+                  onClick={() => setFormData({ ...formData, [key]: !isChecked })}
                 >
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={isChecked}
                     onChange={(e) => setFormData({ ...formData, [key]: e.target.checked })}
-                    className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                    label={sistema.label}
                   />
-                  <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {sistema.label}
-                  </span>
-                </label>
+                </div>
               );
             })}
           </div>
@@ -362,17 +353,11 @@ export const NormaFormModal = ({ norma, isOpen, onClose }: NormaFormModalProps) 
         {/* Estado */}
         <div>
           <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">Estado</h3>
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={formData.vigente}
-              onChange={(e) => setFormData({ ...formData, vigente: e.target.checked })}
-              className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-            />
-            <span className="text-sm text-gray-700 dark:text-gray-300">
-              Norma vigente (activa y aplicable)
-            </span>
-          </label>
+          <Checkbox
+            checked={formData.vigente}
+            onChange={(e) => setFormData({ ...formData, vigente: e.target.checked })}
+            label="Norma vigente (activa y aplicable)"
+          />
         </div>
       </form>
     </BaseModal>

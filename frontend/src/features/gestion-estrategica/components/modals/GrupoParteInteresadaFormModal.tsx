@@ -159,12 +159,15 @@ export const GrupoParteInteresadaFormModal = ({
         <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
           {isEditing ? 'Editar Grupo' : 'Nuevo Grupo'}
         </h2>
-        <button
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
           onClick={onClose}
-          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+          className="!min-h-0 !p-1"
         >
           <X className="h-5 w-5" />
-        </button>
+        </Button>
       </div>
 
       {grupo?.es_sistema && (
@@ -221,11 +224,13 @@ export const GrupoParteInteresadaFormModal = ({
           </label>
           <div className="grid grid-cols-4 gap-2">
             {COLOR_OPTIONS.map((opt) => (
-              <button
+              <Button
                 key={opt.value}
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => setFormData({ ...formData, color: opt.value })}
-                className={`h-10 rounded-lg border-2 transition-all ${
+                className={`h-10 rounded-lg border-2 transition-all !min-h-0 !p-0 ${
                   formData.color === opt.value
                     ? 'border-gray-900 dark:border-gray-100 scale-105'
                     : 'border-gray-300 dark:border-gray-600'

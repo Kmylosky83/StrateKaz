@@ -10,6 +10,9 @@ import { Badge } from '@/components/common/Badge';
 import { Modal } from '@/components/common/Modal';
 import { Spinner } from '@/components/common/Spinner';
 import { EmptyState } from '@/components/common/EmptyState';
+import { Input } from '@/components/forms/Input';
+import { Select } from '@/components/forms/Select';
+import { Textarea } from '@/components/forms/Textarea';
 
 import {
   useUnidadesNegocio,
@@ -235,121 +238,76 @@ export function UnidadesNegocioTab() {
       >
         <form onSubmit={handleSave} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Código *
-              </label>
-              <input
-                type="text"
-                name="codigo"
-                required
-                defaultValue={editItem?.codigo || ''}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                placeholder="Ej: UN-001"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Nombre *
-              </label>
-              <input
-                type="text"
-                name="nombre"
-                required
-                defaultValue={editItem?.nombre || ''}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                placeholder="Nombre de la unidad"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Descripción
-            </label>
-            <textarea
-              name="descripcion"
-              rows={2}
-              defaultValue={editItem?.descripcion || ''}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+            <Input
+              label="Código *"
+              type="text"
+              name="codigo"
+              required
+              defaultValue={editItem?.codigo || ''}
+              placeholder="Ej: UN-001"
+            />
+            <Input
+              label="Nombre *"
+              type="text"
+              name="nombre"
+              required
+              defaultValue={editItem?.nombre || ''}
+              placeholder="Nombre de la unidad"
             />
           </div>
 
+          <Textarea
+            label="Descripción"
+            name="descripcion"
+            rows={2}
+            defaultValue={editItem?.descripcion || ''}
+          />
+
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Dirección
-              </label>
-              <input
-                type="text"
-                name="direccion"
-                defaultValue={editItem?.direccion || ''}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Responsable
-              </label>
-              <input
-                type="text"
-                name="responsable"
-                defaultValue={editItem?.responsable || ''}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-              />
-            </div>
+            <Input
+              label="Dirección"
+              type="text"
+              name="direccion"
+              defaultValue={editItem?.direccion || ''}
+            />
+            <Input
+              label="Responsable"
+              type="text"
+              name="responsable"
+              defaultValue={editItem?.responsable || ''}
+            />
           </div>
 
           <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Teléfono
-              </label>
-              <input
-                type="tel"
-                name="telefono"
-                defaultValue={editItem?.telefono || ''}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Email
-              </label>
-              <input
-                type="email"
-                name="email"
-                defaultValue={editItem?.email || ''}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-              />
-            </div>
+            <Input
+              label="Teléfono"
+              type="tel"
+              name="telefono"
+              defaultValue={editItem?.telefono || ''}
+            />
+            <Input
+              label="Email"
+              type="email"
+              name="email"
+              defaultValue={editItem?.email || ''}
+            />
             <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Planta de Producción
-                </label>
-                <select
-                  name="es_planta_produccion"
-                  defaultValue={editItem?.es_planta_produccion ? 'true' : 'false'}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                >
-                  <option value="false">No</option>
-                  <option value="true">Sí</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Centro de Distribución
-                </label>
-                <select
-                  name="es_centro_distribucion"
-                  defaultValue={editItem?.es_centro_distribucion ? 'true' : 'false'}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                >
-                  <option value="false">No</option>
-                  <option value="true">Sí</option>
-                </select>
-              </div>
+              <Select
+                label="Planta de Producción"
+                name="es_planta_produccion"
+                defaultValue={editItem?.es_planta_produccion ? 'true' : 'false'}
+              >
+                <option value="false">No</option>
+                <option value="true">Sí</option>
+              </Select>
+              <Select
+                label="Centro de Distribución"
+                name="es_centro_distribucion"
+                defaultValue={editItem?.es_centro_distribucion ? 'true' : 'false'}
+              >
+                <option value="false">No</option>
+                <option value="true">Sí</option>
+              </Select>
             </div>
           </div>
 

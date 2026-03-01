@@ -4,8 +4,7 @@
 import { useState, useEffect } from 'react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
-import { Input } from '@/components/forms/Input';
-import { Textarea } from '@/components/forms/Textarea';
+import { Input, Textarea, Checkbox } from '@/components/forms';
 import { useCreateSeguimientoPlan } from '../hooks/useAnalytics';
 import type { SeguimientoPlanKPI } from '../types';
 
@@ -141,18 +140,11 @@ export const SeguimientoFormModal = ({ item, isOpen, onClose }: SeguimientoFormM
           placeholder="Ej: 2.6"
         />
 
-        <div className="flex items-center">
-          <input
-            type="checkbox"
-            id="cumple_cronograma"
-            checked={form.cumple_cronograma}
-            onChange={(e) => handleChange('cumple_cronograma', e.target.checked)}
-            className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-          />
-          <label htmlFor="cumple_cronograma" className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-            Cumple Cronograma
-          </label>
-        </div>
+        <Checkbox
+          label="Cumple Cronograma"
+          checked={form.cumple_cronograma}
+          onChange={(e) => handleChange('cumple_cronograma', e.target.checked)}
+        />
 
         <Textarea
           label="Próximas Acciones"

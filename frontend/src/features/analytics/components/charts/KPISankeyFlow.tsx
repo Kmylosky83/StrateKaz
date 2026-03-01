@@ -10,6 +10,7 @@ import { Card } from '@/components/common';
 import { cn } from '@/utils/cn';
 import { Workflow } from 'lucide-react';
 import type { EChartsOption } from 'echarts';
+import { CHART_COLORS, CHART_AXIS_COLORS, BSC_COLORS as BSC_CHART_COLORS } from '@/constants/chart-colors';
 
 // ==================== TIPOS ====================
 
@@ -41,17 +42,17 @@ export interface KPISankeyFlowProps {
 // ==================== COLORES ====================
 
 const TYPE_COLORS = {
-  perspective: '#8b5cf6', // Violeta
-  objective: '#3b82f6',   // Azul
-  kpi: '#10b981',         // Verde
-  outcome: '#f59e0b',     // Amarillo/Naranja
+  perspective: CHART_COLORS[4],  // violet-500 (#8B5CF6)
+  objective: CHART_COLORS[0],    // blue-500   (#3B82F6)
+  kpi: CHART_COLORS[1],          // emerald-500 (#10B981)
+  outcome: CHART_COLORS[2],      // amber-500  (#F59E0B)
 };
 
 const BSC_COLORS: Record<string, string> = {
-  FINANCIERA: '#10b981',
-  CLIENTES: '#3b82f6',
-  PROCESOS: '#f59e0b',
-  APRENDIZAJE: '#8b5cf6',
+  FINANCIERA: BSC_CHART_COLORS.clientes,
+  CLIENTES: BSC_CHART_COLORS.financiera,
+  PROCESOS: BSC_CHART_COLORS.procesos,
+  APRENDIZAJE: BSC_CHART_COLORS.aprendizaje,
 };
 
 // ==================== COMPONENTE ====================
@@ -77,7 +78,7 @@ export function KPISankeyFlow({
       },
       label: {
         fontSize: 11,
-        color: '#374151',
+        color: CHART_AXIS_COLORS.tooltip.text,
       },
     }));
 
@@ -105,16 +106,16 @@ export function KPISankeyFlow({
         textStyle: {
           fontSize: 16,
           fontWeight: 600,
-          color: '#1f2937',
+          color: CHART_AXIS_COLORS.title,
         },
       },
       tooltip: {
         trigger: 'item',
         triggerOn: 'mousemove',
-        backgroundColor: 'rgba(255, 255, 255, 0.98)',
-        borderColor: '#e5e7eb',
+        backgroundColor: CHART_AXIS_COLORS.tooltip.bg,
+        borderColor: CHART_AXIS_COLORS.tooltip.border,
         borderWidth: 1,
-        textStyle: { color: '#374151' },
+        textStyle: { color: CHART_AXIS_COLORS.tooltip.text },
         formatter: (params: any) => {
           if (params.dataType === 'node') {
             const node = nodes.find(n => n.name === params.name);
@@ -197,7 +198,7 @@ export function KPISankeyFlow({
             show: true,
             position: orientation === 'horizontal' ? 'right' : 'bottom',
             fontSize: 11,
-            color: '#374151',
+            color: CHART_AXIS_COLORS.tooltip.text,
             formatter: (params: any) => {
               // Truncar nombres largos
               const name = params.name;

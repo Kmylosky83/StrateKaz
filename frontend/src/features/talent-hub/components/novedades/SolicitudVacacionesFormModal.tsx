@@ -6,6 +6,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
+import { Textarea } from '@/components/forms/Textarea';
 import { Button } from '@/components/common/Button';
 import {
   useCreateSolicitudVacaciones,
@@ -202,17 +203,12 @@ export const SolicitudVacacionesFormModal = ({
           name="observaciones"
           control={control}
           render={({ field }) => (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Observaciones
-              </label>
-              <textarea
-                {...field}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="Observaciones adicionales..."
-              />
-            </div>
+            <Textarea
+              label="Observaciones"
+              {...field}
+              rows={3}
+              placeholder="Observaciones adicionales..."
+            />
           )}
         />
 

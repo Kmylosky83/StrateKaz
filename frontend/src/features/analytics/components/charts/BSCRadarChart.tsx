@@ -9,6 +9,7 @@ import ReactECharts from 'echarts-for-react';
 import { Card } from '@/components/common';
 import { cn } from '@/utils/cn';
 import type { EChartsOption } from 'echarts';
+import { CHART_AXIS_COLORS, BSC_COLORS as BSC_CHART_COLORS } from '@/constants/chart-colors';
 
 // ==================== TIPOS ====================
 
@@ -40,17 +41,17 @@ export interface BSCRadarChartProps {
 // ==================== COLORES ====================
 
 const BSC_COLORS = {
-  FINANCIERA: '#10b981',
-  CLIENTES: '#3b82f6',
-  PROCESOS: '#f59e0b',
-  APRENDIZAJE: '#8b5cf6',
+  FINANCIERA: BSC_CHART_COLORS.clientes,
+  CLIENTES: BSC_CHART_COLORS.financiera,
+  PROCESOS: BSC_CHART_COLORS.procesos,
+  APRENDIZAJE: BSC_CHART_COLORS.aprendizaje,
 };
 
 const SERIES_COLORS = {
-  current: '#3b82f6',
-  target: '#10b981',
-  previous: '#9ca3af',
-  projected: '#8b5cf6',
+  current: BSC_CHART_COLORS.financiera,
+  target: BSC_CHART_COLORS.clientes,
+  previous: CHART_AXIS_COLORS.axisLabel,
+  projected: BSC_CHART_COLORS.aprendizaje,
 };
 
 // ==================== COMPONENTE ====================
@@ -186,16 +187,16 @@ export function BSCRadarChart({
         textStyle: {
           fontSize: 18,
           fontWeight: 600,
-          color: '#1f2937',
+          color: CHART_AXIS_COLORS.title,
         },
       },
       tooltip: {
         trigger: 'item',
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-        borderColor: '#e5e7eb',
+        backgroundColor: CHART_AXIS_COLORS.tooltip.bg,
+        borderColor: CHART_AXIS_COLORS.tooltip.border,
         borderWidth: 1,
         textStyle: {
-          color: '#374151',
+          color: CHART_AXIS_COLORS.tooltip.text,
         },
         formatter: (params: any) => {
           const dataIndex = params.dataIndex;
@@ -256,7 +257,7 @@ export function BSCRadarChart({
             itemHeight: 14,
             textStyle: {
               fontSize: 12,
-              color: '#6b7280',
+              color: CHART_AXIS_COLORS.axisLabel,
             },
           }
         : undefined,
@@ -268,7 +269,7 @@ export function BSCRadarChart({
         splitNumber: 5,
         shape: 'polygon',
         axisName: {
-          color: '#374151',
+          color: CHART_AXIS_COLORS.tooltip.text,
           fontSize: 13,
           fontWeight: 500,
           padding: [3, 5],
@@ -282,12 +283,12 @@ export function BSCRadarChart({
         },
         axisLine: {
           lineStyle: {
-            color: '#e5e7eb',
+            color: CHART_AXIS_COLORS.axisLine,
           },
         },
         splitLine: {
           lineStyle: {
-            color: '#e5e7eb',
+            color: CHART_AXIS_COLORS.axisLine,
           },
         },
       },

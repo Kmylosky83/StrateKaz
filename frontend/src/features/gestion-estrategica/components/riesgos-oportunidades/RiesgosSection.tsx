@@ -8,6 +8,7 @@
 import { useState } from 'react';
 import { Filter, ExternalLink } from 'lucide-react';
 import { Badge, Button } from '@/components/common';
+import { Select } from '@/components/forms';
 import { DataTableCard } from '@/components/layout/DataTableCard';
 import { useRiesgosEstrategicos } from '../../hooks/useRiesgosOportunidades';
 
@@ -87,57 +88,47 @@ export function RiesgosSection({ triggerNewForm }: RiesgosSectionProps) {
         {showFilters && (
           <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Estado
-                </label>
-                <select
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                  value={filters.estado || ''}
-                  onChange={(e) =>
-                    setFilters((prev) => {
-                      const next = { ...prev };
-                      if (e.target.value) next.estado = e.target.value;
-                      else delete next.estado;
-                      return next;
-                    })
-                  }
-                >
-                  <option value="">Todos</option>
-                  <option value="identificado">Identificado</option>
-                  <option value="en_analisis">En Análisis</option>
-                  <option value="en_tratamiento">En Tratamiento</option>
-                  <option value="monitoreado">Monitoreado</option>
-                  <option value="cerrado">Cerrado</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Tipo
-                </label>
-                <select
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                  value={filters.tipo || ''}
-                  onChange={(e) =>
-                    setFilters((prev) => {
-                      const next = { ...prev };
-                      if (e.target.value) next.tipo = e.target.value;
-                      else delete next.tipo;
-                      return next;
-                    })
-                  }
-                >
-                  <option value="">Todos</option>
-                  <option value="estrategico">Estratégico</option>
-                  <option value="operativo">Operativo</option>
-                  <option value="financiero">Financiero</option>
-                  <option value="cumplimiento">Cumplimiento</option>
-                  <option value="tecnologico">Tecnológico</option>
-                  <option value="reputacional">Reputacional</option>
-                  <option value="sst">SST</option>
-                  <option value="ambiental">Ambiental</option>
-                </select>
-              </div>
+              <Select
+                label="Estado"
+                value={filters.estado || ''}
+                onChange={(e) =>
+                  setFilters((prev) => {
+                    const next = { ...prev };
+                    if (e.target.value) next.estado = e.target.value;
+                    else delete next.estado;
+                    return next;
+                  })
+                }
+              >
+                <option value="">Todos</option>
+                <option value="identificado">Identificado</option>
+                <option value="en_analisis">En Análisis</option>
+                <option value="en_tratamiento">En Tratamiento</option>
+                <option value="monitoreado">Monitoreado</option>
+                <option value="cerrado">Cerrado</option>
+              </Select>
+              <Select
+                label="Tipo"
+                value={filters.tipo || ''}
+                onChange={(e) =>
+                  setFilters((prev) => {
+                    const next = { ...prev };
+                    if (e.target.value) next.tipo = e.target.value;
+                    else delete next.tipo;
+                    return next;
+                  })
+                }
+              >
+                <option value="">Todos</option>
+                <option value="estrategico">Estratégico</option>
+                <option value="operativo">Operativo</option>
+                <option value="financiero">Financiero</option>
+                <option value="cumplimiento">Cumplimiento</option>
+                <option value="tecnologico">Tecnológico</option>
+                <option value="reputacional">Reputacional</option>
+                <option value="sst">SST</option>
+                <option value="ambiental">Ambiental</option>
+              </Select>
               <div className="flex items-end">
                 <Button
                   variant="outline"

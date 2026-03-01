@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Modal, Button, Spinner } from '@/components/common';
-import { Input, Select, Textarea } from '@/components/forms';
+import { Input, Select, Textarea, Checkbox } from '@/components/forms';
 import { useCreateTipoComite, useUpdateTipoComite } from '../hooks/useComites';
 import type { TipoComiteList, CreateTipoComiteDTO } from '../types/comites.types';
 
@@ -190,30 +190,22 @@ export default function TipoComiteFormModal({ item, isOpen, onClose }: TipoComit
           />
 
           {/* Fila 6: Checkboxes */}
-          <div className="flex items-center gap-3 pt-2">
-            <input
+          <div className="flex items-center pt-2">
+            <Checkbox
               id="requiere_eleccion"
-              type="checkbox"
+              label="Requiere Elección de Miembros"
               checked={formData.requiere_eleccion ?? false}
               onChange={(e) => handleChange('requiere_eleccion', e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
             />
-            <label htmlFor="requiere_eleccion" className="text-sm font-medium text-gray-700">
-              Requiere Elección de Miembros
-            </label>
           </div>
 
-          <div className="flex items-center gap-3 pt-2">
-            <input
+          <div className="flex items-center pt-2">
+            <Checkbox
               id="requiere_quorum"
-              type="checkbox"
+              label="Requiere Quórum"
               checked={formData.requiere_quorum ?? false}
               onChange={(e) => handleChange('requiere_quorum', e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
             />
-            <label htmlFor="requiere_quorum" className="text-sm font-medium text-gray-700">
-              Requiere Quórum
-            </label>
           </div>
 
           {/* Fila 7: Porcentaje de Quórum (condicional) */}

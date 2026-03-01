@@ -28,6 +28,7 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { Card, Badge, Button, Alert } from '@/components/common';
+import { Textarea } from '@/components/forms';
 import { DynamicIcon } from '@/components/common/DynamicIcon';
 import { useValues } from '../hooks/useStrategic';
 import {
@@ -95,18 +96,14 @@ const ValorSelector = ({ valores, valoresVinculados, onSelect, isLoading }: Valo
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
       {disponibles.map((valor) => (
-        <button
+        <Button
           key={valor.id}
+          type="button"
+          variant="ghost"
+          size="sm"
           onClick={() => onSelect(valor.id)}
           disabled={isLoading}
-          className={`
-            p-3 rounded-lg border-2 border-dashed
-            border-gray-300 dark:border-gray-600
-            hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20
-            transition-all duration-200
-            flex flex-col items-center gap-2
-            disabled:opacity-50 disabled:cursor-not-allowed
-          `}
+          className="!p-3 !min-h-0 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all duration-200 flex flex-col items-center gap-2"
         >
           {valor.icon ? (
             <DynamicIcon name={valor.icon} className="w-6 h-6 text-gray-600 dark:text-gray-400" />
@@ -116,7 +113,7 @@ const ValorSelector = ({ valores, valoresVinculados, onSelect, isLoading }: Valo
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300 text-center">
             {valor.name}
           </span>
-        </button>
+        </Button>
       ))}
     </div>
   );
@@ -173,12 +170,14 @@ const VinculoForm = ({ valor, onSubmit, onCancel, isLoading }: VinculoFormProps)
         </label>
         <div className="grid grid-cols-2 gap-2">
           {TIPOS_VINCULO_OPTIONS.map((option) => (
-            <button
+            <Button
               key={option.value}
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => setTipoVinculo(option.value)}
               className={`
-                p-2 rounded-lg border text-left transition-all
+                p-2 rounded-lg border text-left transition-all !min-h-0 flex-col items-start h-auto
                 ${
                   tipoVinculo === option.value
                     ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30'
@@ -190,7 +189,7 @@ const VinculoForm = ({ valor, onSubmit, onCancel, isLoading }: VinculoFormProps)
                 {option.label}
               </span>
               <p className="text-xs text-gray-500 dark:text-gray-400">{option.description}</p>
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -202,12 +201,14 @@ const VinculoForm = ({ valor, onSubmit, onCancel, isLoading }: VinculoFormProps)
         </label>
         <div className="flex gap-2">
           {NIVELES_IMPACTO_OPTIONS.map((option) => (
-            <button
+            <Button
               key={option.value}
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => setImpacto(option.value)}
               className={`
-                flex-1 py-2 px-3 rounded-lg border text-center transition-all
+                flex-1 rounded-lg border text-center transition-all !min-h-0
                 ${
                   impacto === option.value
                     ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30'
@@ -216,17 +217,15 @@ const VinculoForm = ({ valor, onSubmit, onCancel, isLoading }: VinculoFormProps)
               `}
             >
               <span className={`text-sm font-medium ${option.color}`}>{option.label}</span>
-            </button>
+            </Button>
           ))}
         </div>
       </div>
 
       {/* Justificación */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Justificación *
-        </label>
-        <textarea
+        <Textarea
+          label="Justificación *"
           value={justificacion}
           onChange={(e) => {
             setJustificacion(e.target.value);
@@ -234,20 +233,8 @@ const VinculoForm = ({ valor, onSubmit, onCancel, isLoading }: VinculoFormProps)
           }}
           placeholder="Explique cómo esta acción refleja o promueve el valor corporativo..."
           rows={3}
-          className={`
-            w-full px-3 py-2 rounded-lg border
-            ${error ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}
-            bg-white dark:bg-gray-700
-            text-gray-900 dark:text-gray-100
-            focus:ring-2 focus:ring-primary-500 focus:border-transparent
-          `}
+          error={error || undefined}
         />
-        {error && (
-          <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
-            <AlertCircle className="w-4 h-4" />
-            {error}
-          </p>
-        )}
       </div>
 
       {/* Botones */}
@@ -298,13 +285,16 @@ const ValorVinculadoBadge = ({ vinculo, onRemove, readOnly }: ValorVinculadoBadg
       <span className="text-sm font-medium">{vinculo.valor_nombre}</span>
       <span className="text-xs opacity-70">({vinculo.impacto_display})</span>
       {!readOnly && onRemove && (
-        <button
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
           onClick={onRemove}
-          className="ml-1 p-0.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10"
+          className="ml-1 !p-0.5 !min-h-0 rounded-full hover:bg-black/10 dark:hover:bg-white/10"
           title="Eliminar vínculo"
         >
           <X className="w-3 h-3" />
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -392,13 +382,16 @@ export const ValorVinculadorWidget = ({
           />
         ))}
         {!readOnly && vinculos.length < valores.length && (
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => setIsExpanded(true)}
-            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-primary-500 hover:text-primary-500 transition-colors"
+            className="!min-h-0 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-primary-500 hover:text-primary-500 transition-colors"
           >
             <Plus className="w-4 h-4" />
             <span className="text-sm">Agregar</span>
-          </button>
+          </Button>
         )}
       </div>
     );

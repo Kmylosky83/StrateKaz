@@ -214,33 +214,38 @@ export const PlanesMejoraTab = () => {
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         {plan.estado === 'borrador' && (
-                          <button
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="sm"
                             onClick={() => aprobarMutation.mutate(String(plan.id))}
-                            className="p-1.5 rounded-md text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:text-green-400 dark:hover:bg-green-900/20"
                             title="Aprobar"
+                            className="text-green-500 hover:text-green-700"
                           >
                             <CheckCircle size={16} />
-                          </button>
+                          </Button>
                         )}
                         {plan.estado === 'aprobado' && (
-                          <button
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="sm"
                             onClick={() => iniciarMutation.mutate(String(plan.id))}
-                            className="p-1.5 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-900/20"
                             title="Iniciar"
+                            className="text-blue-500 hover:text-blue-700"
                           >
                             <Play size={16} />
-                          </button>
+                          </Button>
                         )}
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="sm"
                           onClick={() => setDetailPlan(plan)}
-                          className="p-1.5 rounded-md text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:text-primary-400 dark:hover:bg-primary-900/20"
                           title="Ver detalle"
                         >
                           <Eye size={16} />
-                        </button>
+                        </Button>
                       </div>
                     </td>
                   </tr>

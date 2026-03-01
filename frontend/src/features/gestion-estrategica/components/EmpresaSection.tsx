@@ -9,7 +9,7 @@
 import { useState } from 'react';
 import { Building2, Phone, Palette, Globe, Save, X, Upload, Smartphone, Info } from 'lucide-react';
 import { Card, Button, BrandedSkeleton, SectionHeader } from '@/components/common';
-import { Input } from '@/components/forms/Input';
+import { Input, Select, Textarea } from '@/components/forms';
 import { useCurrentTenant, useUpdateCurrentTenant } from '../hooks/useStrategic';
 import type { CurrentTenantData } from '../api/strategicApi';
 import {
@@ -65,13 +65,12 @@ const ColorPickerField = ({ label, value, onChange, disabled }: ColorPickerField
         disabled={disabled}
         className="h-9 w-12 rounded border border-gray-300 dark:border-gray-600 cursor-pointer disabled:cursor-not-allowed"
       />
-      <input
-        type="text"
+      <Input
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
         placeholder="#3B82F6"
-        className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 disabled:opacity-50"
+        className="flex-1"
       />
     </div>
   </div>
@@ -285,18 +284,12 @@ export const EmpresaSection = () => {
             </FieldGroup>
             <FieldGroup label="Tipo de Sociedad">
               {isEditing ? (
-                <select
+                <Select
                   value={val('tipo_sociedad')}
                   onChange={(e) => handleChange('tipo_sociedad', e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                >
-                  <option value="">Seleccionar...</option>
-                  {TIPO_SOCIEDAD_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="Seleccionar..."
+                  options={TIPO_SOCIEDAD_OPTIONS}
+                />
               ) : (
                 <Input value={displayVal('tipo_sociedad', TIPO_SOCIEDAD_MAP)} disabled />
               )}
@@ -310,18 +303,12 @@ export const EmpresaSection = () => {
             </FieldGroup>
             <FieldGroup label="Régimen Tributario">
               {isEditing ? (
-                <select
+                <Select
                   value={val('regimen_tributario')}
                   onChange={(e) => handleChange('regimen_tributario', e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                >
-                  <option value="">Seleccionar...</option>
-                  {REGIMEN_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="Seleccionar..."
+                  options={REGIMEN_OPTIONS}
+                />
               ) : (
                 <Input value={displayVal('regimen_tributario', REGIMEN_MAP)} disabled />
               )}
@@ -354,18 +341,12 @@ export const EmpresaSection = () => {
             </FieldGroup>
             <FieldGroup label="Departamento">
               {isEditing ? (
-                <select
+                <Select
                   value={val('departamento')}
                   onChange={(e) => handleChange('departamento', e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                >
-                  <option value="">Seleccionar...</option>
-                  {DEPARTAMENTOS_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="Seleccionar..."
+                  options={DEPARTAMENTOS_OPTIONS}
+                />
               ) : (
                 <Input value={displayVal('departamento', DEPARTAMENTOS_MAP)} disabled />
               )}
@@ -552,13 +533,13 @@ export const EmpresaSection = () => {
             </div>
 
             <FieldGroup label="Descripción">
-              <textarea
+              <Textarea
                 value={val('pwa_description')}
                 onChange={(e) => handleChange('pwa_description', e.target.value)}
                 disabled={!isEditing}
                 placeholder="Breve descripción de la aplicación"
                 rows={2}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 disabled:opacity-50 resize-none"
+                resize="none"
               />
             </FieldGroup>
 

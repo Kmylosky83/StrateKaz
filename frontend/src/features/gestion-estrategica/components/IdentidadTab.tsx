@@ -438,10 +438,13 @@ const ValoresSection = ({ identity, canEdit }: ValoresSectionProps) => {
           <div className="flex items-center gap-3">
             {/* View Mode Toggle */}
             <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-lg p-0.5">
-              <button
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => setViewMode('list')}
                 className={cn(
-                  'p-1.5 rounded-md transition-colors',
+                  '!p-1.5 !min-h-0 rounded-md transition-colors',
                   viewMode === 'list'
                     ? 'bg-white dark:bg-gray-600 shadow-sm'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
@@ -450,11 +453,14 @@ const ValoresSection = ({ identity, canEdit }: ValoresSectionProps) => {
                 title="Vista de lista"
               >
                 <LayoutList className="w-4 h-4" />
-              </button>
-              <button
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => setViewMode('cards')}
                 className={cn(
-                  'p-1.5 rounded-md transition-colors',
+                  '!p-1.5 !min-h-0 rounded-md transition-colors',
                   viewMode === 'cards'
                     ? 'bg-white dark:bg-gray-600 shadow-sm'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
@@ -463,7 +469,7 @@ const ValoresSection = ({ identity, canEdit }: ValoresSectionProps) => {
                 title="Vista de tarjetas"
               >
                 <LayoutGrid className="w-4 h-4" />
-              </button>
+              </Button>
             </div>
 
             {/* Botón Agregar */}

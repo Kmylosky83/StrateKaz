@@ -4,6 +4,8 @@
 import { useState } from 'react';
 import { cn } from '@/utils/cn';
 import { ChevronDown, ChevronUp, Filter, Eye } from 'lucide-react';
+import { Select } from '@/components/forms';
+import { Button } from '@/components/common/Button';
 import { NivelRiesgoIndicator } from './NivelRiesgoIndicator';
 import type { MatrizIPEVR, InterpretacionNR, Aceptabilidad } from '../../types';
 
@@ -101,26 +103,30 @@ export function MatrizGTC45Table({
           <Filter className="w-4 h-4 text-muted-foreground" />
           <span className="text-sm font-medium">Filtros:</span>
         </div>
-        <select
-          value={filterArea}
-          onChange={(e) => setFilterArea(e.target.value)}
-          className="text-sm border rounded px-2 py-1"
-        >
-          <option value="">Todas las areas</option>
-          {areas.map((area) => (
-            <option key={area} value={area}>{area}</option>
-          ))}
-        </select>
-        <select
-          value={filterCargo}
-          onChange={(e) => setFilterCargo(e.target.value)}
-          className="text-sm border rounded px-2 py-1"
-        >
-          <option value="">Todos los cargos</option>
-          {cargos.map((cargo) => (
-            <option key={cargo} value={cargo}>{cargo}</option>
-          ))}
-        </select>
+        <div className="w-auto">
+          <Select
+            value={filterArea}
+            onChange={(e) => setFilterArea(e.target.value)}
+            className="text-sm py-1"
+          >
+            <option value="">Todas las areas</option>
+            {areas.map((area) => (
+              <option key={area} value={area}>{area}</option>
+            ))}
+          </Select>
+        </div>
+        <div className="w-auto">
+          <Select
+            value={filterCargo}
+            onChange={(e) => setFilterCargo(e.target.value)}
+            className="text-sm py-1"
+          >
+            <option value="">Todos los cargos</option>
+            {cargos.map((cargo) => (
+              <option key={cargo} value={cargo}>{cargo}</option>
+            ))}
+          </Select>
+        </div>
         <span className="text-sm text-muted-foreground ml-auto">
           {filteredMatrices.length} de {matrices.length} registros
         </span>
@@ -205,15 +211,17 @@ export function MatrizGTC45Table({
                     />
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <button
-                      className="p-1 rounded hover:bg-muted"
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
                       onClick={(e) => {
                         e.stopPropagation();
                         onRowClick?.(matriz);
                       }}
                     >
                       <Eye className="w-4 h-4" />
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               ))

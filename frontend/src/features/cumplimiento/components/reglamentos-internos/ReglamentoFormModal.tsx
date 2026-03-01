@@ -17,6 +17,7 @@ import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Textarea } from '@/components/forms/Textarea';
+import { Select, Checkbox } from '@/components/forms';
 import { Alert } from '@/components/common/Alert';
 import { Upload, FileText } from 'lucide-react';
 import {
@@ -213,29 +214,22 @@ export const ReglamentoFormModal = ({
             Información Básica
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Tipo de Reglamento *
-              </label>
-              <select
-                value={formData.tipo}
-                onChange={(e) =>
-                  setFormData({ ...formData, tipo: parseInt(e.target.value) })
-                }
-                className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                required
-              >
-                <option value="">Seleccionar tipo</option>
-                {tiposReglamento.map((tipo) => (
-                  <option key={tipo.id} value={tipo.id}>
-                    {tipo.codigo} - {tipo.nombre}
-                  </option>
-                ))}
-              </select>
-              {errors.tipo && (
-                <p className="mt-1 text-sm text-danger-600">{errors.tipo}</p>
-              )}
-            </div>
+            <Select
+              label="Tipo de Reglamento *"
+              value={formData.tipo}
+              onChange={(e) =>
+                setFormData({ ...formData, tipo: parseInt(e.target.value) })
+              }
+              error={errors.tipo}
+              required
+            >
+              <option value="">Seleccionar tipo</option>
+              {tiposReglamento.map((tipo) => (
+                <option key={tipo.id} value={tipo.id}>
+                  {tipo.codigo} - {tipo.nombre}
+                </option>
+              ))}
+            </Select>
 
             <Input
               label="Código *"
@@ -276,25 +270,20 @@ export const ReglamentoFormModal = ({
             Estado y Versión
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Estado *
-              </label>
-              <select
-                value={formData.estado}
-                onChange={(e) =>
-                  setFormData({ ...formData, estado: e.target.value as EstadoReglamento })
-                }
-                className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-                required
-              >
-                <option value="borrador">Borrador</option>
-                <option value="en_revision">En Revisión</option>
-                <option value="aprobado">Aprobado</option>
-                <option value="vigente">Vigente</option>
-                <option value="obsoleto">Obsoleto</option>
-              </select>
-            </div>
+            <Select
+              label="Estado *"
+              value={formData.estado}
+              onChange={(e) =>
+                setFormData({ ...formData, estado: e.target.value as EstadoReglamento })
+              }
+              required
+            >
+              <option value="borrador">Borrador</option>
+              <option value="en_revision">En Revisión</option>
+              <option value="aprobado">Aprobado</option>
+              <option value="vigente">Vigente</option>
+              <option value="obsoleto">Obsoleto</option>
+            </Select>
 
             <Input
               label="Versión Actual *"
@@ -358,45 +347,26 @@ export const ReglamentoFormModal = ({
             />
           )}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.aplica_sst}
-                onChange={(e) => setFormData({ ...formData, aplica_sst: e.target.checked })}
-                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300">SST</span>
-            </label>
-
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.aplica_ambiental}
-                onChange={(e) => setFormData({ ...formData, aplica_ambiental: e.target.checked })}
-                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300">Ambiental</span>
-            </label>
-
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.aplica_calidad}
-                onChange={(e) => setFormData({ ...formData, aplica_calidad: e.target.checked })}
-                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300">Calidad</span>
-            </label>
-
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.aplica_pesv}
-                onChange={(e) => setFormData({ ...formData, aplica_pesv: e.target.checked })}
-                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300">PESV</span>
-            </label>
+            <Checkbox
+              checked={formData.aplica_sst}
+              onChange={(e) => setFormData({ ...formData, aplica_sst: e.target.checked })}
+              label="SST"
+            />
+            <Checkbox
+              checked={formData.aplica_ambiental}
+              onChange={(e) => setFormData({ ...formData, aplica_ambiental: e.target.checked })}
+              label="Ambiental"
+            />
+            <Checkbox
+              checked={formData.aplica_calidad}
+              onChange={(e) => setFormData({ ...formData, aplica_calidad: e.target.checked })}
+              label="Calidad"
+            />
+            <Checkbox
+              checked={formData.aplica_pesv}
+              onChange={(e) => setFormData({ ...formData, aplica_pesv: e.target.checked })}
+              label="PESV"
+            />
           </div>
         </div>
 

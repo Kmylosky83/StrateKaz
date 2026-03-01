@@ -362,53 +362,58 @@ export const CandidatosTab = () => {
             )}
             renderActions={(c) => (
               <>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleViewDetail(c as unknown as Candidato);
                   }}
-                  className="p-1.5 rounded-md text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:text-primary-400 dark:hover:bg-primary-900/20"
                   title="Ver detalle"
                 >
                   <Eye size={16} />
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleEdit(c as unknown as Candidato);
                   }}
-                  className="p-1.5 rounded-md text-gray-400 hover:text-info-600 hover:bg-info-50 dark:hover:text-info-400 dark:hover:bg-info-900/20"
                   title="Editar"
                 >
                   <Pencil size={16} />
-                </button>
+                </Button>
                 {c.estado === 'aprobado' && (
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleContratar(c as unknown as Candidato);
                     }}
-                    className="p-1.5 rounded-md text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:text-green-400 dark:hover:bg-green-900/20"
                     title="Contratar"
+                    className="text-green-500 hover:text-green-700"
                   >
                     <Briefcase size={16} />
-                  </button>
+                  </Button>
                 )}
                 {c.estado !== 'contratado' && c.estado !== 'rechazado' && (
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleCambiarEstado(c as unknown as Candidato);
                     }}
-                    className="p-1.5 rounded-md text-gray-400 hover:text-warning-600 hover:bg-warning-50 dark:hover:text-warning-400 dark:hover:bg-warning-900/20"
                     title="Cambiar estado"
                   >
                     <ArrowRightLeft size={16} />
-                  </button>
+                  </Button>
                 )}
               </>
             )}

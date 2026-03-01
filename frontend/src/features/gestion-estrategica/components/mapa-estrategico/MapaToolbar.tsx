@@ -174,26 +174,32 @@ export const MapaToolbar = ({
           {/* Export dropdown */}
           {isExportMenuOpen && (
             <div className="absolute right-full mr-2 top-0 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1">
-              <button
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   actions.onExportPNG();
                   setIsExportMenuOpen(false);
                 }}
-                className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                className="w-full !justify-start !px-3 !py-2 !min-h-0 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
               >
                 <Image className="w-4 h-4" />
                 Exportar como PNG
-              </button>
-              <button
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   actions.onExportPDF();
                   setIsExportMenuOpen(false);
                 }}
-                className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                className="w-full !justify-start !px-3 !py-2 !min-h-0 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
               >
                 <FileText className="w-4 h-4" />
                 Exportar como PDF
-              </button>
+              </Button>
             </div>
           )}
         </div>

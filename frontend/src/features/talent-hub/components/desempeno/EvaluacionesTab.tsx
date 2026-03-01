@@ -318,14 +318,15 @@ export const EvaluacionesTab = () => {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="sm"
                           onClick={() => setSelectedEval(ev)}
-                          className="p-1.5 rounded-md text-gray-400 hover:text-primary-600 hover:bg-primary-50 dark:hover:text-primary-400 dark:hover:bg-primary-900/20"
                           title="Ver detalle"
                         >
                           <Eye size={16} />
-                        </button>
+                        </Button>
                       </div>
                     </td>
                   </tr>

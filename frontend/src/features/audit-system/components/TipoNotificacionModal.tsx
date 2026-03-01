@@ -13,7 +13,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { BaseModal } from '@/components/modals/BaseModal';
-import { Input } from '@/components/forms/Input';
+import { Input, Select, Textarea, Checkbox } from '@/components/forms';
 import { Button } from '@/components/common/Button';
 import { Code, FileText, Settings, MessageSquare, Hash } from 'lucide-react';
 import type { TipoNotificacion } from '../types/notificaciones.types';
@@ -137,43 +137,29 @@ export const TipoNotificacionModal = ({
         </div>
 
         {/* Descripción */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Descripción
-          </label>
-          <textarea
-            {...register('descripcion')}
-            className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            rows={2}
-            placeholder="Descripción breve del tipo de notificación"
-            disabled={isLoading}
-          />
-          {errors.descripcion && (
-            <p className="mt-1 text-sm text-red-600">{errors.descripcion.message}</p>
-          )}
-        </div>
+        <Textarea
+          label="Descripción"
+          rows={2}
+          placeholder="Descripción breve del tipo de notificación"
+          disabled={isLoading}
+          {...register('descripcion')}
+          error={errors.descripcion?.message}
+        />
 
         {/* Categoría y Color */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Categoría
-            </label>
-            <select
-              {...register('categoria')}
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              disabled={isLoading}
-            >
-              <option value="sistema">Sistema</option>
-              <option value="tarea">Tarea</option>
-              <option value="alerta">Alerta</option>
-              <option value="recordatorio">Recordatorio</option>
-              <option value="aprobacion">Aprobación</option>
-            </select>
-            {errors.categoria && (
-              <p className="mt-1 text-sm text-red-600">{errors.categoria.message}</p>
-            )}
-          </div>
+          <Select
+            label="Categoría"
+            disabled={isLoading}
+            {...register('categoria')}
+            error={errors.categoria?.message}
+          >
+            <option value="sistema">Sistema</option>
+            <option value="tarea">Tarea</option>
+            <option value="alerta">Alerta</option>
+            <option value="recordatorio">Recordatorio</option>
+            <option value="aprobacion">Aprobación</option>
+          </Select>
 
           <Input
             label="Color (Hexadecimal)"
@@ -209,24 +195,15 @@ export const TipoNotificacionModal = ({
         />
 
         {/* Plantilla Mensaje */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Plantilla de Mensaje
-          </label>
-          <textarea
-            {...register('plantilla_mensaje')}
-            className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            rows={3}
-            placeholder="Se te ha asignado la tarea {tarea_nombre}. Fecha límite: {fecha_limite}"
-            disabled={isLoading}
-          />
-          {errors.plantilla_mensaje && (
-            <p className="mt-1 text-sm text-red-600">{errors.plantilla_mensaje.message}</p>
-          )}
-          <p className="mt-1 text-xs text-gray-500">
-            Usar {'{variable}'} para placeholders dinámicos
-          </p>
-        </div>
+        <Textarea
+          label="Plantilla de Mensaje"
+          rows={3}
+          placeholder="Se te ha asignado la tarea {tarea_nombre}. Fecha límite: {fecha_limite}"
+          disabled={isLoading}
+          {...register('plantilla_mensaje')}
+          error={errors.plantilla_mensaje?.message}
+          helperText="Usar {variable} para placeholders dinámicos"
+        />
 
         {/* URL Template (opcional) */}
         <Input
@@ -240,30 +217,20 @@ export const TipoNotificacionModal = ({
 
         {/* Canales */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+          <p className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
             Canales de Envío
-          </label>
+          </p>
           <div className="flex gap-4">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                {...register('es_email')}
-                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                disabled={isLoading}
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300">Enviar por Email</span>
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                {...register('es_push')}
-                className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                disabled={isLoading}
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                Enviar Notificación Push
-              </span>
-            </label>
+            <Checkbox
+              label="Enviar por Email"
+              disabled={isLoading}
+              {...register('es_email')}
+            />
+            <Checkbox
+              label="Enviar Notificación Push"
+              disabled={isLoading}
+              {...register('es_push')}
+            />
           </div>
         </div>
 

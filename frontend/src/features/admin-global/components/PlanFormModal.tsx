@@ -8,6 +8,9 @@ import { createPortal } from 'react-dom';
 import { X, CreditCard, DollarSign, Users, HardDrive } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/common';
+import { Input } from '@/components/forms/Input';
+import { Textarea } from '@/components/forms/Textarea';
+import { Checkbox } from '@/components/forms/Checkbox';
 import { AVAILABLE_MODULES, DEFAULT_ENABLED_MODULES } from '@/constants/modules';
 import { useCreatePlan, useUpdatePlan } from '../hooks/useAdminGlobal';
 import type { Plan, CreatePlanDTO } from '../types';
@@ -197,174 +200,123 @@ export const PlanFormModal = ({ isOpen, onClose, plan }: PlanFormModalProps) => 
           <form onSubmit={handleSubmit} className="p-4 space-y-4">
             {/* Nombre y Código */}
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Nombre *
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  onBlur={() => !formData.code && generateCode()}
-                  className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
-                    text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500
-                    ${errors.name ? 'border-danger-500' : 'border-gray-300 dark:border-gray-600'}`}
-                  placeholder="Pro"
-                />
-                {errors.name && <p className="text-xs text-danger-500 mt-1">{errors.name}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Código *
-                </label>
-                <input
-                  type="text"
-                  name="code"
-                  value={formData.code}
-                  onChange={handleChange}
-                  disabled={isEditing}
-                  className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700
-                    text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500
-                    ${isEditing ? 'opacity-50 cursor-not-allowed' : ''}
-                    ${errors.code ? 'border-danger-500' : 'border-gray-300 dark:border-gray-600'}`}
-                  placeholder="pro"
-                />
-                {errors.code && <p className="text-xs text-danger-500 mt-1">{errors.code}</p>}
-              </div>
-            </div>
-
-            {/* Descripción */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Descripción
-              </label>
-              <textarea
-                name="description"
-                value={formData.description}
+              <Input
+                label="Nombre *"
+                name="name"
+                value={formData.name}
                 onChange={handleChange}
-                rows={2}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
-                  bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500 resize-none"
-                placeholder="Plan para empresas medianas..."
+                onBlur={() => !formData.code && generateCode()}
+                error={errors.name}
+                placeholder="Pro"
+              />
+
+              <Input
+                label="Código *"
+                name="code"
+                value={formData.code}
+                onChange={handleChange}
+                disabled={isEditing}
+                error={errors.code}
+                placeholder="pro"
               />
             </div>
 
+            {/* Descripción */}
+            <Textarea
+              label="Descripción"
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              rows={2}
+              resize="none"
+              placeholder="Plan para empresas medianas..."
+            />
+
             {/* Precios */}
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  <DollarSign className="inline h-4 w-4" /> Precio Mensual
-                </label>
-                <input
-                  type="number"
-                  name="price_monthly"
-                  value={formData.price_monthly}
-                  onChange={handleChange}
-                  min={0}
-                  step="0.01"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
-                    bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
+              <Input
+                label="Precio Mensual"
+                type="number"
+                name="price_monthly"
+                value={formData.price_monthly}
+                onChange={handleChange}
+                min={0}
+                step="0.01"
+                error={errors.price_monthly}
+                leftIcon={<DollarSign className="h-4 w-4" />}
+              />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  <DollarSign className="inline h-4 w-4" /> Precio Anual
-                </label>
-                <input
-                  type="number"
-                  name="price_yearly"
-                  value={formData.price_yearly}
-                  onChange={handleChange}
-                  min={0}
-                  step="0.01"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
-                    bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
+              <Input
+                label="Precio Anual"
+                type="number"
+                name="price_yearly"
+                value={formData.price_yearly}
+                onChange={handleChange}
+                min={0}
+                step="0.01"
+                leftIcon={<DollarSign className="h-4 w-4" />}
+              />
             </div>
 
             {/* Límites */}
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  <Users className="inline h-4 w-4" /> Máx. Usuarios (0=ilimitado)
-                </label>
-                <input
-                  type="number"
-                  name="max_users"
-                  value={formData.max_users}
-                  onChange={handleChange}
-                  min={0}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
-                    bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
+              <Input
+                label="Máx. Usuarios (0=ilimitado)"
+                type="number"
+                name="max_users"
+                value={formData.max_users}
+                onChange={handleChange}
+                min={0}
+                error={errors.max_users}
+                leftIcon={<Users className="h-4 w-4" />}
+              />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  <HardDrive className="inline h-4 w-4" /> Almacenamiento GB
-                </label>
-                <input
-                  type="number"
-                  name="max_storage_gb"
-                  value={formData.max_storage_gb}
-                  onChange={handleChange}
-                  min={0}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
-                    bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500"
-                />
-              </div>
+              <Input
+                label="Almacenamiento GB"
+                type="number"
+                name="max_storage_gb"
+                value={formData.max_storage_gb}
+                onChange={handleChange}
+                min={0}
+                leftIcon={<HardDrive className="h-4 w-4" />}
+              />
             </div>
 
             {/* Módulos */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <p className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Módulos Incluidos
-              </label>
+              </p>
               <div className="flex flex-wrap gap-2">
                 {AVAILABLE_MODULES.map((mod) => (
-                  <button
+                  <Button
                     key={mod.code}
                     type="button"
+                    size="sm"
+                    variant={formData.features.includes(mod.code) ? 'primary' : 'ghost'}
                     onClick={() => handleFeatureToggle(mod.code)}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors
-                      ${formData.features.includes(mod.code)
-                        ? 'bg-primary-500 text-white'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                      }`}
+                    className="rounded-full text-sm"
                   >
                     {mod.name}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
 
             {/* Opciones */}
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="is_active"
-                  checked={formData.is_active}
-                  onChange={handleChange}
-                  className="h-4 w-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
-                />
-                <span className="text-sm text-gray-700 dark:text-gray-300">Activo</span>
-              </label>
-
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="is_default"
-                  checked={formData.is_default}
-                  onChange={handleChange}
-                  className="h-4 w-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
-                />
-                <span className="text-sm text-gray-700 dark:text-gray-300">Plan por defecto</span>
-              </label>
+            <div className="flex gap-6">
+              <Checkbox
+                label="Activo"
+                name="is_active"
+                checked={formData.is_active}
+                onChange={handleChange}
+              />
+              <Checkbox
+                label="Plan por defecto"
+                name="is_default"
+                checked={formData.is_default}
+                onChange={handleChange}
+              />
             </div>
 
             {/* Footer */}

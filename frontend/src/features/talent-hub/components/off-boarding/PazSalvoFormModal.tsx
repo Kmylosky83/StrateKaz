@@ -6,6 +6,7 @@
 import { useForm } from 'react-hook-form';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Input } from '@/components/forms/Input';
+import { Textarea } from '@/components/forms/Textarea';
 import { Select } from '@/components/forms/Select';
 import { Button } from '@/components/common/Button';
 import { useCreatePazSalvo } from '../../hooks/useOffBoarding';
@@ -55,22 +56,15 @@ export function PazSalvoFormModal({ isOpen, onClose, procesoId }: PazSalvoFormMo
           options={tipoPazSalvoOptions}
         />
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Descripción *
-          </label>
-          <textarea
-            {...register('descripcion', {
-              required: 'La descripción es requerida',
-            })}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-violet-500 dark:bg-gray-700 dark:text-gray-100"
-            rows={2}
-            placeholder="Describa los elementos entregados..."
-          />
-          {errors.descripcion && (
-            <p className="mt-1 text-sm text-red-600">{errors.descripcion.message}</p>
-          )}
-        </div>
+        <Textarea
+          label="Descripción *"
+          {...register('descripcion', {
+            required: 'La descripción es requerida',
+          })}
+          rows={2}
+          placeholder="Describa los elementos entregados..."
+          error={errors.descripcion?.message}
+        />
 
         <Input
           label="Cantidad Entregada"

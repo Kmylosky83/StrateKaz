@@ -335,12 +335,14 @@ export const AnalisisPestelFormModal = ({
         { key: 'datos', label: 'Datos Basicos', disabled: false },
         { key: 'factores', label: `Factores (${factores.length})`, disabled: !isEditing },
       ].map((tab) => (
-        <button
+        <Button
           key={tab.key}
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={() => !tab.disabled && setActiveTab(tab.key as typeof activeTab)}
           disabled={tab.disabled}
-          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+          className={`border-b-2 -mb-px rounded-none !min-h-0 transition-colors ${
             activeTab === tab.key
               ? 'border-purple-500 text-purple-600 dark:text-purple-400'
               : tab.disabled
@@ -349,7 +351,7 @@ export const AnalisisPestelFormModal = ({
           }`}
         >
           {tab.label}
-        </button>
+        </Button>
       ))}
     </div>
   );
@@ -432,11 +434,13 @@ export const AnalisisPestelFormModal = ({
           const isActive = filterTipo === value;
 
           return (
-            <button
+            <Button
               key={value}
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => setFilterTipo(isActive ? '' : value)}
-              className={`p-2 rounded-lg border transition-all text-center ${
+              className={`p-2 rounded-lg border transition-all text-center !min-h-0 flex-col w-full ${
                 isActive
                   ? `${config.bgClass} border-2 border-gray-400`
                   : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
@@ -447,7 +451,7 @@ export const AnalisisPestelFormModal = ({
               </div>
               <span className={`text-lg font-bold ${config.textClass} block`}>{count}</span>
               <p className="text-xs text-gray-600 dark:text-gray-400">{config.shortLabel}</p>
-            </button>
+            </Button>
           );
         })}
       </div>
@@ -562,11 +566,13 @@ export const AnalisisPestelFormModal = ({
             {TIPO_FACTOR_OPTIONS.map(({ value, label, icon: Icon }) => {
               const config = TIPO_FACTOR_PESTEL_CONFIG[value];
               return (
-                <button
+                <Button
                   key={value}
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setFactorForm({ ...factorForm, tipo: value })}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+                  className={`!min-h-0 rounded-lg border transition-colors ${
                     factorForm.tipo === value
                       ? `${config.bgClass} border-2 border-gray-400`
                       : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
@@ -578,7 +584,7 @@ export const AnalisisPestelFormModal = ({
                   <span className={`text-sm ${factorForm.tipo === value ? config.textClass : ''}`}>
                     {label}
                   </span>
-                </button>
+                </Button>
               );
             })}
           </div>

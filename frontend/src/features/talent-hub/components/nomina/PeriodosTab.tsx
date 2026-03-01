@@ -214,13 +214,16 @@ export const PeriodosTab = () => {
                   <>
                     <tr key={periodo.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                       <td className="px-4 py-3 text-sm">
-                        <button
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
                           onClick={() => handleToggleExpand(periodo.id)}
-                          className="flex items-center gap-2 text-left font-medium text-gray-900 dark:text-gray-100 hover:text-primary-600 dark:hover:text-primary-400"
+                          className="flex items-center gap-2 text-left font-medium text-gray-900 dark:text-gray-100 hover:text-primary-600 dark:hover:text-primary-400 !px-0 !py-0 !min-h-0"
                         >
                           {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                           {periodo.nombre_periodo}
-                        </button>
+                        </Button>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                         {new Date(periodo.fecha_inicio).toLocaleDateString('es-CO')} -{' '}

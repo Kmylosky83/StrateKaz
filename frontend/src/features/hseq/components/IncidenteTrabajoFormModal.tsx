@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Modal, Button, Spinner } from '@/components/common';
-import { Input, Select, Textarea } from '@/components/forms';
+import { Input, Select, Textarea, Checkbox } from '@/components/forms';
 import { useCreateIncidenteTrabajo, useUpdateIncidenteTrabajo } from '../hooks/useAccidentalidad';
 import type { IncidenteTrabajo, CreateIncidenteTrabajoDTO } from '../types/accidentalidad.types';
 
@@ -193,17 +193,12 @@ export default function IncidenteTrabajoFormModal({
           </div>
 
           {/* Fila 7: Checkbox Daños Materiales */}
-          <div className="md:col-span-2 flex items-center gap-3">
-            <input
-              id="hubo_danos_materiales"
-              type="checkbox"
+          <div className="md:col-span-2">
+            <Checkbox
               checked={formData.hubo_danos_materiales ?? false}
               onChange={(e) => handleChange('hubo_danos_materiales', e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300"
+              label="Hubo Daños Materiales"
             />
-            <label htmlFor="hubo_danos_materiales" className="text-sm font-medium text-gray-700">
-              Hubo Daños Materiales
-            </label>
           </div>
 
           {/* Fila 8: Descripción de Daños | Costo Estimado (condicional) */}
@@ -235,21 +230,11 @@ export default function IncidenteTrabajoFormModal({
           )}
 
           {/* Fila 9: Requiere Investigación */}
-          <div className="flex items-center gap-3">
-            <input
-              id="requiere_investigacion_inc"
-              type="checkbox"
-              checked={formData.requiere_investigacion ?? false}
-              onChange={(e) => handleChange('requiere_investigacion', e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300"
-            />
-            <label
-              htmlFor="requiere_investigacion_inc"
-              className="text-sm font-medium text-gray-700"
-            >
-              Requiere Investigación
-            </label>
-          </div>
+          <Checkbox
+            checked={formData.requiere_investigacion ?? false}
+            onChange={(e) => handleChange('requiere_investigacion', e.target.checked)}
+            label="Requiere Investigación"
+          />
         </div>
 
         {/* Fila de botones */}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Modal, Button, Spinner } from '@/components/common';
-import { Input, Select, Textarea } from '@/components/forms';
+import { Input, Select, Textarea, Checkbox } from '@/components/forms';
 import {
   useCreateEntregaEPP,
   useUpdateEntregaEPP,
@@ -214,20 +214,15 @@ export default function EntregaEPPFormModal({ item, isOpen, onClose }: EntregaEP
           </Select>
 
           {/* Capacitación Realizada */}
-          <div className="flex items-center gap-3 pt-2">
-            <input
-              id="capacitacion_realizada"
-              type="checkbox"
+          <div className="pt-2">
+            <Checkbox
               checked={formData.capacitacion_realizada ?? false}
               onChange={(e) => {
                 handleChange('capacitacion_realizada', e.target.checked);
                 if (!e.target.checked) handleChange('fecha_capacitacion', '');
               }}
-              className="h-4 w-4 rounded border-gray-300 text-blue-600"
+              label="Capacitación realizada"
             />
-            <label htmlFor="capacitacion_realizada" className="text-sm font-medium text-gray-700">
-              Capacitación realizada
-            </label>
           </div>
 
           {/* Fecha Capacitación (condicional) */}

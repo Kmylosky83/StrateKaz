@@ -7,12 +7,15 @@
  * - Validación de campos
  */
 import { useState, useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { FlaskConical, Calculator, Save, X } from 'lucide-react';
 
 import { Card } from '@/components/common/Card';
 import { Button } from '@/components/common/Button';
 import { Badge } from '@/components/common/Badge';
+import { Input } from '@/components/forms/Input';
+import { Select } from '@/components/forms/Select';
+import { Textarea } from '@/components/forms/Textarea';
 
 import { useCreatePruebaAcidez, useUpdatePruebaAcidez, useSimularPruebaAcidez } from '../hooks/usePruebasAcidez';
 import { useProveedores } from '../hooks/useProveedores';
@@ -61,7 +64,6 @@ export function PruebaAcidezForm({ prueba, proveedorId, onSuccess, onCancel }: P
   const {
     register,
     handleSubmit,
-    control,
     watch,
     setValue,
     formState: { errors, isSubmitting },
@@ -157,105 +159,61 @@ export function PruebaAcidezForm({ prueba, proveedorId, onSuccess, onCancel }: P
 
       {/* Información básica */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* Código */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Código *
-          </label>
-          <input
-            type="text"
-            {...register('codigo', { required: 'El código es requerido' })}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-            placeholder="PA-XXXXXX"
-          />
-          {errors.codigo && (
-            <p className="text-sm text-danger-500 mt-1">{errors.codigo.message}</p>
-          )}
-        </div>
+        <Input
+          label="Código *"
+          type="text"
+          {...register('codigo', { required: 'El código es requerido' })}
+          placeholder="PA-XXXXXX"
+          error={errors.codigo?.message}
+        />
 
-        {/* Fecha */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Fecha de Prueba *
-          </label>
-          <input
-            type="date"
-            {...register('fecha_prueba', { required: 'La fecha es requerida' })}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-          />
-          {errors.fecha_prueba && (
-            <p className="text-sm text-danger-500 mt-1">{errors.fecha_prueba.message}</p>
-          )}
-        </div>
+        <Input
+          label="Fecha de Prueba *"
+          type="date"
+          {...register('fecha_prueba', { required: 'La fecha es requerida' })}
+          error={errors.fecha_prueba?.message}
+        />
 
-        {/* Hora */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Hora de Prueba
-          </label>
-          <input
-            type="time"
-            {...register('hora_prueba')}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-          />
-        </div>
+        <Input
+          label="Hora de Prueba"
+          type="time"
+          {...register('hora_prueba')}
+        />
 
-        {/* Proveedor */}
         {!proveedorId && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Proveedor *
-            </label>
-            <select
-              {...register('proveedor', { required: 'El proveedor es requerido' })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-            >
-              <option value="">Seleccione...</option>
-              {proveedores.map((prov: any) => (
-                <option key={prov.id} value={prov.id}>
-                  {prov.razon_social}
-                </option>
-              ))}
-            </select>
-            {errors.proveedor && (
-              <p className="text-sm text-danger-500 mt-1">{errors.proveedor.message}</p>
-            )}
-          </div>
-        )}
-
-        {/* Lote Recepción */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Lote de Recepción
-          </label>
-          <input
-            type="text"
-            {...register('lote_recepcion')}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-            placeholder="Ej: LOTE-001"
-          />
-        </div>
-
-        {/* Tipo Materia Prima Original */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Tipo Materia Prima Original *
-          </label>
-          <select
-            {...register('tipo_materia_prima_original', { required: 'El tipo de materia prima es requerido' })}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+          <Select
+            label="Proveedor *"
+            {...register('proveedor', { required: 'El proveedor es requerido' })}
+            error={errors.proveedor?.message}
           >
             <option value="">Seleccione...</option>
-            {tiposMateriaPrima.map((tipo: any) => (
-              <option key={tipo.id} value={tipo.id}>
-                {tipo.nombre} ({tipo.codigo})
+            {proveedores.map((prov: any) => (
+              <option key={prov.id} value={prov.id}>
+                {prov.razon_social}
               </option>
             ))}
-          </select>
-          {errors.tipo_materia_prima_original && (
-            <p className="text-sm text-danger-500 mt-1">{errors.tipo_materia_prima_original.message}</p>
-          )}
-        </div>
+          </Select>
+        )}
+
+        <Input
+          label="Lote de Recepción"
+          type="text"
+          {...register('lote_recepcion')}
+          placeholder="Ej: LOTE-001"
+        />
+
+        <Select
+          label="Tipo Materia Prima Original *"
+          {...register('tipo_materia_prima_original', { required: 'El tipo de materia prima es requerido' })}
+          error={errors.tipo_materia_prima_original?.message}
+        >
+          <option value="">Seleccione...</option>
+          {tiposMateriaPrima.map((tipo: any) => (
+            <option key={tipo.id} value={tipo.id}>
+              {tipo.nombre} ({tipo.codigo})
+            </option>
+          ))}
+        </Select>
       </div>
 
       {/* Resultados de la prueba */}
@@ -265,11 +223,9 @@ export function PruebaAcidezForm({ prueba, proveedorId, onSuccess, onCancel }: P
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Valor de Acidez */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Valor de Acidez (%) *
-            </label>
-            <div className="flex gap-2">
-              <input
+            <div className="flex gap-2 items-end">
+              <Input
+                label="Valor de Acidez (%) *"
                 type="number"
                 step="0.01"
                 min="0"
@@ -279,8 +235,8 @@ export function PruebaAcidezForm({ prueba, proveedorId, onSuccess, onCancel }: P
                   min: { value: 0, message: 'Debe ser mayor o igual a 0' },
                   max: { value: 100, message: 'Debe ser menor o igual a 100' },
                 })}
-                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 placeholder="0.00"
+                error={errors.valor_acidez?.message}
               />
               <Button
                 type="button"
@@ -293,37 +249,22 @@ export function PruebaAcidezForm({ prueba, proveedorId, onSuccess, onCancel }: P
                 Simular
               </Button>
             </div>
-            {errors.valor_acidez && (
-              <p className="text-sm text-danger-500 mt-1">{errors.valor_acidez.message}</p>
-            )}
           </div>
 
-          {/* Método de Prueba */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Método de Prueba
-            </label>
-            <input
-              type="text"
-              {...register('metodo_prueba')}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-              placeholder="Ej: Titulación"
-            />
-          </div>
+          <Input
+            label="Método de Prueba"
+            type="text"
+            {...register('metodo_prueba')}
+            placeholder="Ej: Titulación"
+          />
 
-          {/* Temperatura */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Temperatura Muestra (°C)
-            </label>
-            <input
-              type="number"
-              step="0.1"
-              {...register('temperatura_muestra')}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-              placeholder="25"
-            />
-          </div>
+          <Input
+            label="Temperatura Muestra (°C)"
+            type="number"
+            step="0.1"
+            {...register('temperatura_muestra')}
+            placeholder="25"
+          />
         </div>
 
         {/* Resultado de simulación */}
@@ -356,51 +297,33 @@ export function PruebaAcidezForm({ prueba, proveedorId, onSuccess, onCancel }: P
 
       {/* Acción y observaciones */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Acción Tomada */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Acción Tomada
-          </label>
-          <select
-            {...register('accion_tomada')}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-          >
-            {ACCIONES_TOMADA.map((accion) => (
-              <option key={accion.value} value={accion.value}>
-                {accion.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        <Select
+          label="Acción Tomada"
+          {...register('accion_tomada')}
+        >
+          {ACCIONES_TOMADA.map((accion) => (
+            <option key={accion.value} value={accion.value}>
+              {accion.label}
+            </option>
+          ))}
+        </Select>
 
-        {/* Motivo Rechazo */}
         {(accionTomada === 'RECHAZADO' || accionTomada === 'DEVOLUCION') && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Motivo de Rechazo/Devolución
-            </label>
-            <input
-              type="text"
-              {...register('motivo_rechazo')}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-              placeholder="Especifique el motivo..."
-            />
-          </div>
+          <Input
+            label="Motivo de Rechazo/Devolución"
+            type="text"
+            {...register('motivo_rechazo')}
+            placeholder="Especifique el motivo..."
+          />
         )}
       </div>
 
-      {/* Observaciones */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Observaciones
-        </label>
-        <textarea
-          {...register('observaciones')}
-          rows={3}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-          placeholder="Observaciones adicionales..."
-        />
-      </div>
+      <Textarea
+        label="Observaciones"
+        {...register('observaciones')}
+        rows={3}
+        placeholder="Observaciones adicionales..."
+      />
 
       {/* Botones */}
       <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">

@@ -6,6 +6,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
+import { Textarea } from '@/components/forms/Textarea';
 import { Button } from '@/components/common/Button';
 import {
   useCreateIncapacidad,
@@ -260,19 +261,12 @@ export const IncapacidadFormModal = ({
           control={control}
           rules={{ required: 'El diagnostico es requerido' }}
           render={({ field }) => (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Diagnostico *
-              </label>
-              <textarea
-                {...field}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-              {errors.diagnostico && (
-                <p className="mt-1 text-sm text-red-600">{errors.diagnostico.message}</p>
-              )}
-            </div>
+            <Textarea
+              label="Diagnostico *"
+              {...field}
+              rows={3}
+              error={errors.diagnostico?.message}
+            />
           )}
         />
 
@@ -280,16 +274,11 @@ export const IncapacidadFormModal = ({
           name="observaciones"
           control={control}
           render={({ field }) => (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Observaciones
-              </label>
-              <textarea
-                {...field}
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
+            <Textarea
+              label="Observaciones"
+              {...field}
+              rows={3}
+            />
           )}
         />
 

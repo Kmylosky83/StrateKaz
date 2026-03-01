@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
+import { Textarea } from '@/components/forms/Textarea';
 import { Button } from '@/components/common/Button';
 import { useCreateEntrevistaRetiro } from '../../hooks/useOffBoarding';
 import type { EntrevistaRetiroFormData } from '../../types';
@@ -66,34 +67,22 @@ export function EntrevistaFormModal({ isOpen, onClose, procesoId }: EntrevistaFo
             Motivos del Retiro
           </h3>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Motivo Principal *
-            </label>
-            <textarea
-              {...register('motivo_principal_retiro', {
-                required: 'El motivo principal es requerido',
-              })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-violet-500 dark:bg-gray-700 dark:text-gray-100"
-              rows={2}
-              placeholder="Principal razón del retiro..."
-            />
-            {errors.motivo_principal_retiro && (
-              <p className="mt-1 text-sm text-red-600">{errors.motivo_principal_retiro.message}</p>
-            )}
-          </div>
+          <Textarea
+            label="Motivo Principal *"
+            {...register('motivo_principal_retiro', {
+              required: 'El motivo principal es requerido',
+            })}
+            rows={2}
+            placeholder="Principal razón del retiro..."
+            error={errors.motivo_principal_retiro?.message}
+          />
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Motivos Secundarios
-            </label>
-            <textarea
-              {...register('motivos_secundarios')}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-violet-500 dark:bg-gray-700 dark:text-gray-100"
-              rows={2}
-              placeholder="Otros motivos que influyeron..."
-            />
-          </div>
+          <Textarea
+            label="Motivos Secundarios"
+            {...register('motivos_secundarios')}
+            rows={2}
+            placeholder="Otros motivos que influyeron..."
+          />
         </div>
 
         {/* Aspectos */}
@@ -102,29 +91,19 @@ export function EntrevistaFormModal({ isOpen, onClose, procesoId }: EntrevistaFo
             Evaluación de la Experiencia
           </h3>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Aspectos Positivos
-            </label>
-            <textarea
-              {...register('aspectos_positivos')}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-violet-500 dark:bg-gray-700 dark:text-gray-100"
-              rows={3}
-              placeholder="¿Qué aspectos valoró más de trabajar aquí?"
-            />
-          </div>
+          <Textarea
+            label="Aspectos Positivos"
+            {...register('aspectos_positivos')}
+            rows={3}
+            placeholder="¿Qué aspectos valoró más de trabajar aquí?"
+          />
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Aspectos a Mejorar
-            </label>
-            <textarea
-              {...register('aspectos_mejorar')}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-violet-500 dark:bg-gray-700 dark:text-gray-100"
-              rows={3}
-              placeholder="¿Qué aspectos cree que se podrían mejorar?"
-            />
-          </div>
+          <Textarea
+            label="Aspectos a Mejorar"
+            {...register('aspectos_mejorar')}
+            rows={3}
+            placeholder="¿Qué aspectos cree que se podrían mejorar?"
+          />
         </div>
 
         {/* Satisfacción */}
@@ -190,29 +169,19 @@ export function EntrevistaFormModal({ isOpen, onClose, procesoId }: EntrevistaFo
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Sugerencias
-            </label>
-            <textarea
-              {...register('sugerencias')}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-violet-500 dark:bg-gray-700 dark:text-gray-100"
-              rows={2}
-              placeholder="Sugerencias para mejorar..."
-            />
-          </div>
+          <Textarea
+            label="Sugerencias"
+            {...register('sugerencias')}
+            rows={2}
+            placeholder="Sugerencias para mejorar..."
+          />
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Observaciones Generales
-            </label>
-            <textarea
-              {...register('observaciones_generales')}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-violet-500 dark:bg-gray-700 dark:text-gray-100"
-              rows={3}
-              placeholder="Otras observaciones..."
-            />
-          </div>
+          <Textarea
+            label="Observaciones Generales"
+            {...register('observaciones_generales')}
+            rows={3}
+            placeholder="Otras observaciones..."
+          />
         </div>
 
         <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">

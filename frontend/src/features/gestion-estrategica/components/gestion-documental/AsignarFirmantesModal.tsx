@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 
 import { Modal } from '@/components/common/Modal';
 import { Button } from '@/components/common/Button';
+import { Select } from '@/components/forms';
 import { useSelectColaboradores } from '@/hooks/useSelectLists';
 import {
   useWorkflowFirmas,
@@ -192,76 +193,67 @@ export function AsignarFirmantesModal({
                     Firmante
                   </span>
                   <div className="flex items-center gap-0.5">
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="sm"
                       onClick={() => index > 0 && move(index, index - 1)}
                       disabled={index === 0}
-                      className="rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600 disabled:opacity-30 dark:hover:bg-gray-700"
+                      className="!p-1 !min-h-0 rounded"
                     >
                       <ArrowUp className="h-3.5 w-3.5" />
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="sm"
                       onClick={() => index < fields.length - 1 && move(index, index + 1)}
                       disabled={index === fields.length - 1}
-                      className="rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600 disabled:opacity-30 dark:hover:bg-gray-700"
+                      className="!p-1 !min-h-0 rounded"
                     >
                       <ArrowDown className="h-3.5 w-3.5" />
-                    </button>
+                    </Button>
                     {fields.length > 1 && (
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="sm"
                         onClick={() => remove(index)}
-                        className="rounded p-1 text-red-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                        className="!p-1 !min-h-0 rounded text-red-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {/* Colaborador select */}
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
-                      Colaborador *
-                    </label>
-                    <select
-                      value={firmantesWatch?.[index]?.colaborador_id ?? ''}
-                      onChange={(e) => handleColaboradorChange(index, e.target.value)}
-                      className="w-full rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                    >
-                      <option value="">Seleccionar...</option>
-                      {isLoadingColabs ? (
-                        <option disabled>Cargando...</option>
-                      ) : (
-                        colaboradores
-                          ?.filter((c) => c.usuario)
-                          ?.map((c) => (
-                            <option key={c.id} value={c.id}>
-                              {c.nombre_completo || `${c.primer_nombre} ${c.primer_apellido}`}
-                            </option>
-                          ))
-                      )}
-                    </select>
-                  </div>
+                  <Select
+                    label="Colaborador *"
+                    value={firmantesWatch?.[index]?.colaborador_id ?? ''}
+                    onChange={(e) => handleColaboradorChange(index, e.target.value)}
+                  >
+                    <option value="">Seleccionar...</option>
+                    {isLoadingColabs ? (
+                      <option disabled>Cargando...</option>
+                    ) : (
+                      colaboradores
+                        ?.filter((c) => c.usuario)
+                        ?.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.nombre_completo || `${c.primer_nombre} ${c.primer_apellido}`}
+                          </option>
+                        ))
+                    )}
+                  </Select>
 
                   {/* Rol select */}
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">
-                      Rol de Firma *
-                    </label>
-                    <select
-                      {...register(`firmantes.${index}.rol_firma` as const)}
-                      className="w-full rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                    >
-                      {ROL_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <Select
+                    label="Rol de Firma *"
+                    {...register(`firmantes.${index}.rol_firma` as const)}
+                    options={ROL_OPTIONS}
+                  />
                 </div>
 
                 {/* Cargo info */}
@@ -280,14 +272,16 @@ export function AsignarFirmantesModal({
           })}
 
           {/* Add firmante button */}
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={handleAddFirmante}
-            className="flex w-full items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-gray-300 py-2 text-sm text-gray-500 transition-colors hover:border-indigo-400 hover:text-indigo-600 dark:border-gray-600 dark:hover:border-indigo-500"
+            className="w-full !min-h-0 rounded-lg border-2 border-dashed border-gray-300 py-2 text-gray-500 transition-colors hover:border-indigo-400 hover:text-indigo-600 dark:border-gray-600 dark:hover:border-indigo-500"
           >
             <Plus className="h-4 w-4" />
             Agregar Firmante
-          </button>
+          </Button>
 
           {/* Footer */}
           <div className="flex items-center justify-end gap-2 border-t border-gray-200 pt-3 dark:border-gray-700">

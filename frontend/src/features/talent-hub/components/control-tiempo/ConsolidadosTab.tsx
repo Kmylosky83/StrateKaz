@@ -238,24 +238,26 @@ export const ConsolidadosTab = () => {
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           {!consolidado.cerrado && (
-                            <button
+                            <Button
                               type="button"
+                              variant="ghost"
+                              size="sm"
                               onClick={() => setCerrarId(consolidado.id)}
-                              className="p-1.5 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:text-blue-400 dark:hover:bg-blue-900/20"
                               title="Cerrar mes"
                             >
                               <Lock size={16} />
-                            </button>
+                            </Button>
                           )}
                           {consolidado.cerrado && (
-                            <button
+                            <Button
                               type="button"
+                              variant="ghost"
+                              size="sm"
                               onClick={() => setReabrirId(consolidado.id)}
-                              className="p-1.5 rounded-md text-gray-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:text-orange-400 dark:hover:bg-orange-900/20"
                               title="Reabrir mes"
                             >
                               <Unlock size={16} />
-                            </button>
+                            </Button>
                           )}
                         </div>
                       </td>

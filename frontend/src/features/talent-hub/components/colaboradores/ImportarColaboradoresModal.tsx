@@ -172,14 +172,16 @@ export function ImportarColaboradoresModal({ isOpen, onClose }: Props) {
               <FileSpreadsheet className="w-4 h-4 shrink-0" />
               <span>¿Primera vez? Descarga la plantilla con el formato correcto</span>
             </div>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={handleDescargarPlantilla}
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors shrink-0 ml-3"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 shrink-0 ml-3 !px-2 !py-1 !min-h-0"
             >
               <Download className="w-4 h-4" />
               Plantilla Excel
-            </button>
+            </Button>
           </div>
 
           {/* Zona drag & drop */}
@@ -369,14 +371,16 @@ export function ImportarColaboradoresModal({ isOpen, onClose }: Props) {
 
           {/* Acciones */}
           <div className="flex justify-between pt-2">
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={handleReintentar}
-              className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+              className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
             >
               <RefreshCw className="w-4 h-4" />
               Importar otro archivo
-            </button>
+            </Button>
             <Button variant="primary" onClick={handleClose}>
               Cerrar
             </Button>

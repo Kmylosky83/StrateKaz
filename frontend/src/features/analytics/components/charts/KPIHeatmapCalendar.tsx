@@ -11,6 +11,7 @@ import { cn } from '@/utils/cn';
 import { format, parseISO, startOfYear, endOfYear, eachDayOfInterval, getDay, getWeek } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { EChartsOption } from 'echarts';
+import { CHART_AXIS_COLORS } from '@/constants/chart-colors';
 
 // ==================== TIPOS ====================
 
@@ -121,15 +122,15 @@ export function KPIHeatmapCalendar({
         textStyle: {
           fontSize: 16,
           fontWeight: 600,
-          color: '#1f2937',
+          color: CHART_AXIS_COLORS.title,
         },
       },
       tooltip: {
         trigger: 'item',
-        backgroundColor: 'rgba(255, 255, 255, 0.98)',
-        borderColor: '#e5e7eb',
+        backgroundColor: CHART_AXIS_COLORS.tooltip.bg,
+        borderColor: CHART_AXIS_COLORS.tooltip.border,
         borderWidth: 1,
-        textStyle: { color: '#374151' },
+        textStyle: { color: CHART_AXIS_COLORS.tooltip.text },
         formatter: (params: any) => {
           const date = params.data[0];
           const value = params.data[1];
@@ -164,7 +165,7 @@ export function KPIHeatmapCalendar({
         },
         textStyle: {
           fontSize: 10,
-          color: '#6b7280',
+          color: CHART_AXIS_COLORS.axisLabel,
         },
       },
       calendar: {
@@ -182,7 +183,7 @@ export function KPIHeatmapCalendar({
           ? {
               nameMap: MONTH_NAMES,
               fontSize: 11,
-              color: '#6b7280',
+              color: CHART_AXIS_COLORS.axisLabel,
             }
           : { show: false },
         dayLabel: showDayLabels
@@ -190,13 +191,13 @@ export function KPIHeatmapCalendar({
               firstDay: 0,
               nameMap: DAY_NAMES,
               fontSize: 10,
-              color: '#9ca3af',
+              color: CHART_AXIS_COLORS.subtitle,
             }
           : { show: false },
         splitLine: {
           show: true,
           lineStyle: {
-            color: '#e5e7eb',
+            color: CHART_AXIS_COLORS.axisLine,
             width: 1,
           },
         },

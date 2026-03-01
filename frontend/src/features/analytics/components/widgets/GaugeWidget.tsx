@@ -4,16 +4,17 @@ import { Spinner } from '@/components/common';
 import { useUltimoValorKPI, useMetasKPIByKPI, useCatalogoKPI } from '../../hooks/useAnalytics';
 import type { WidgetDashboard } from '../../types';
 import type { EChartsOption } from 'echarts';
+import { SEMAFORO_COLORS, CHART_COLORS, CHART_AXIS_COLORS } from '@/constants/chart-colors';
 
 interface Props {
   widget: WidgetDashboard;
 }
 
 const chartColors = {
-  verde: '#22c55e',
-  amarillo: '#eab308',
-  rojo: '#ef4444',
-  primary: '#3b82f6',
+  verde: SEMAFORO_COLORS.verde,
+  amarillo: SEMAFORO_COLORS.amarillo,
+  rojo: SEMAFORO_COLORS.rojo,
+  primary: CHART_COLORS[0],
 };
 
 /**
@@ -106,7 +107,7 @@ function GaugeWidget({ widget }: Props) {
           splitNumber: 5,
           lineStyle: {
             width: 1,
-            color: '#999',
+            color: CHART_AXIS_COLORS.axisLabel,
           },
         },
         splitLine: {
@@ -114,12 +115,12 @@ function GaugeWidget({ widget }: Props) {
           length: 14,
           lineStyle: {
             width: 2,
-            color: '#999',
+            color: CHART_AXIS_COLORS.axisLabel,
           },
         },
         axisLabel: {
           distance: -45,
-          color: '#6b7280',
+          color: CHART_AXIS_COLORS.axisLabel,
           fontSize: 10,
           formatter: (value: number) => value.toFixed(0),
         },
@@ -140,7 +141,7 @@ function GaugeWidget({ widget }: Props) {
           show: true,
           offsetCenter: [0, '80%'],
           fontSize: 12,
-          color: '#6b7280',
+          color: CHART_AXIS_COLORS.axisLabel,
         },
         detail: {
           valueAnimation: true,
@@ -148,7 +149,7 @@ function GaugeWidget({ widget }: Props) {
           fontWeight: 'bold',
           offsetCenter: [0, '50%'],
           formatter: (value: number) => value.toFixed(2),
-          color: '#1f2937',
+          color: CHART_AXIS_COLORS.title,
         },
         data: [
           {

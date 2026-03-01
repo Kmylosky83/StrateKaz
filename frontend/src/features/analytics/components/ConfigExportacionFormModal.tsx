@@ -6,9 +6,7 @@
 import { useState, useEffect } from 'react';
 import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
-import { Input } from '@/components/forms/Input';
-import { Select } from '@/components/forms/Select';
-import { Textarea } from '@/components/forms/Textarea';
+import { Input, Select, Textarea, Checkbox } from '@/components/forms';
 import { useCreateConfigExportacion } from '../hooks/useAnalytics';
 import type { ConfiguracionExportacion } from '../types';
 
@@ -135,47 +133,24 @@ export const ConfigExportacionFormModal = ({
         />
 
         <div className="space-y-3">
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="incluir_graficos"
-              checked={formData.incluir_graficos}
-              onChange={(e) => handleChange('incluir_graficos', e.target.checked)}
-              disabled={isLoading}
-              className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 focus:ring-2"
-            />
-            <label htmlFor="incluir_graficos" className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
-              Incluir Gráficos
-            </label>
-          </div>
-
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="incluir_analisis"
-              checked={formData.incluir_analisis}
-              onChange={(e) => handleChange('incluir_analisis', e.target.checked)}
-              disabled={isLoading}
-              className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 focus:ring-2"
-            />
-            <label htmlFor="incluir_analisis" className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
-              Incluir Análisis
-            </label>
-          </div>
-
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="activa"
-              checked={formData.activa}
-              onChange={(e) => handleChange('activa', e.target.checked)}
-              disabled={isLoading}
-              className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 focus:ring-2"
-            />
-            <label htmlFor="activa" className="ml-2 text-sm font-medium text-gray-900 dark:text-gray-100">
-              Configuración Activa
-            </label>
-          </div>
+          <Checkbox
+            label="Incluir Gráficos"
+            checked={formData.incluir_graficos}
+            onChange={(e) => handleChange('incluir_graficos', e.target.checked)}
+            disabled={isLoading}
+          />
+          <Checkbox
+            label="Incluir Análisis"
+            checked={formData.incluir_analisis}
+            onChange={(e) => handleChange('incluir_analisis', e.target.checked)}
+            disabled={isLoading}
+          />
+          <Checkbox
+            label="Configuración Activa"
+            checked={formData.activa}
+            onChange={(e) => handleChange('activa', e.target.checked)}
+            disabled={isLoading}
+          />
         </div>
       </div>
     </BaseModal>

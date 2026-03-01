@@ -25,6 +25,8 @@ import {
   Calendar,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
+import { Button } from '@/components/common/Button';
+import { Input } from '@/components/forms/Input';
 
 export default function ReglamentosInternosPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -90,32 +92,28 @@ export default function ReglamentosInternosPage() {
         <div className="flex flex-col sm:flex-row gap-4">
           {/* Buscador */}
           <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Buscar reglamentos o políticas..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
+            <Input
+              placeholder="Buscar reglamentos o políticas..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              leftIcon={<Search className="w-4 h-4" />}
+            />
           </div>
 
           {/* Botones de acción */}
           <div className="flex gap-2">
-            <button className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+            <Button variant="outline" size="sm">
               <Filter className="w-4 h-4 mr-2" />
               Filtros
-            </button>
-            <button className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+            </Button>
+            <Button variant="outline" size="sm">
               <Download className="w-4 h-4 mr-2" />
               Exportar
-            </button>
-            <button className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">
+            </Button>
+            <Button variant="primary" size="sm">
               <Plus className="w-4 h-4 mr-2" />
               Nuevo Reglamento
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -188,9 +186,9 @@ export default function ReglamentosInternosPage() {
                   </div>
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
-                  <button className="text-blue-600 hover:text-blue-700">
+                  <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 p-1 h-auto">
                     <Eye className="w-4 h-4" />
-                  </button>
+                  </Button>
                 </td>
               </tr>
 
@@ -228,9 +226,9 @@ export default function ReglamentosInternosPage() {
                   </div>
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
-                  <button className="text-blue-600 hover:text-blue-700">
+                  <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 p-1 h-auto">
                     <Eye className="w-4 h-4" />
-                  </button>
+                  </Button>
                 </td>
               </tr>
 
@@ -263,9 +261,9 @@ export default function ReglamentosInternosPage() {
                   <span className="text-xs text-gray-500 dark:text-gray-400">Pendiente</span>
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
-                  <button className="text-blue-600 hover:text-blue-700">
+                  <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 p-1 h-auto">
                     <Eye className="w-4 h-4" />
-                  </button>
+                  </Button>
                 </td>
               </tr>
 
@@ -299,9 +297,9 @@ export default function ReglamentosInternosPage() {
                   </div>
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
-                  <button className="text-blue-600 hover:text-blue-700">
+                  <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 p-1 h-auto">
                     <Eye className="w-4 h-4" />
-                  </button>
+                  </Button>
                 </td>
               </tr>
 
@@ -339,9 +337,9 @@ export default function ReglamentosInternosPage() {
                   </div>
                 </td>
                 <td className="px-4 py-4 whitespace-nowrap">
-                  <button className="text-blue-600 hover:text-blue-700">
+                  <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 p-1 h-auto">
                     <Eye className="w-4 h-4" />
-                  </button>
+                  </Button>
                 </td>
               </tr>
             </tbody>
@@ -356,18 +354,10 @@ export default function ReglamentosInternosPage() {
               <span className="font-medium">15</span> resultados
             </div>
             <div className="flex gap-2">
-              <button className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-600">
-                Anterior
-              </button>
-              <button className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">
-                1
-              </button>
-              <button className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-600">
-                2
-              </button>
-              <button className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-600">
-                Siguiente
-              </button>
+              <Button variant="outline" size="sm">Anterior</Button>
+              <Button variant="primary" size="sm">1</Button>
+              <Button variant="outline" size="sm">2</Button>
+              <Button variant="outline" size="sm">Siguiente</Button>
             </div>
           </div>
         </div>
@@ -382,9 +372,9 @@ export default function ReglamentosInternosPage() {
               Próximas Revisiones Programadas
             </h3>
           </div>
-          <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+          <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
             Ver todas →
-          </button>
+          </Button>
         </div>
         <div className="space-y-3">
           {[
@@ -410,9 +400,9 @@ export default function ReglamentosInternosPage() {
               </div>
               <div className="text-right">
                 <p className="text-sm font-medium text-gray-900 dark:text-white">{item.dueDate}</p>
-                <button className="text-xs text-blue-600 hover:text-blue-700">
+                <Button variant="ghost" size="sm" className="text-xs text-blue-600 hover:text-blue-700 p-0 h-auto">
                   Programar revisión
-                </button>
+                </Button>
               </div>
             </div>
           ))}

@@ -252,16 +252,18 @@ export const CandidatoFormModal = ({ candidato, isOpen, onClose }: CandidatoForm
           const isActive = index === activeStep;
           const isCompleted = index < activeStep;
           return (
-            <button
+            <Button
               key={step.key}
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => {
                 if (index <= activeStep || (index === activeStep + 1 && isStepValid(activeStep))) {
                   setActiveStep(index);
                 }
               }}
               className={cn(
-                'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all',
+                'flex items-center gap-2 !px-3 !py-2 rounded-lg text-sm font-medium transition-all',
                 isActive
                   ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
                   : isCompleted
@@ -282,7 +284,7 @@ export const CandidatoFormModal = ({ candidato, isOpen, onClose }: CandidatoForm
                 {isCompleted ? <Check size={12} /> : index + 1}
               </span>
               <span className="hidden sm:inline">{step.label}</span>
-            </button>
+            </Button>
           );
         })}
       </div>
@@ -523,13 +525,15 @@ export const CandidatoFormModal = ({ candidato, isOpen, onClose }: CandidatoForm
                   />
                 </label>
                 {cvFile && (
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setCvFile(null)}
-                    className="text-xs text-red-500 hover:text-red-700"
+                    className="text-red-500 hover:text-red-700 text-xs"
                   >
                     Quitar
-                  </button>
+                  </Button>
                 )}
               </div>
               <p className="mt-1 text-xs text-gray-400">PDF, DOC o DOCX. Max 5MB.</p>

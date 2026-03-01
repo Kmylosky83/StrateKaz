@@ -17,6 +17,7 @@ import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { Globe, Calendar, Clock, Save, RotateCcw } from 'lucide-react';
 import { Card, Button } from '@/components/common';
+import { Select } from '@/components/forms';
 import { PageHeader } from '@/components/layout';
 import { useHeaderContext } from '@/contexts/HeaderContext';
 import { usePreferences, useUpdatePreferences } from '../hooks/usePreferences';
@@ -151,18 +152,15 @@ export const PreferenciasPage = () => {
                 render={({ field }) => (
                   <div className="flex gap-3">
                     {LANGUAGE_OPTIONS.map((option) => (
-                      <button
+                      <Button
                         key={option.value}
                         type="button"
+                        variant={field.value === option.value ? 'outline' : 'ghost'}
+                        size="sm"
                         onClick={() => field.onChange(option.value)}
-                        className={`px-4 py-2 rounded-lg border-2 transition-all ${
-                          field.value === option.value
-                            ? 'border-green-600 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 font-medium'
-                            : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
-                        }`}
                       >
                         {option.label}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 )}
@@ -187,16 +185,13 @@ export const PreferenciasPage = () => {
                 name="timezone"
                 control={control}
                 render={({ field }) => (
-                  <select
-                    {...field}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
+                  <Select {...field}>
                     {COMMON_TIMEZONES.map((tz) => (
                       <option key={tz.value} value={tz.value}>
                         {tz.label}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 )}
               />
             </div>
@@ -223,29 +218,17 @@ export const PreferenciasPage = () => {
                 render={({ field }) => (
                   <div className="grid gap-3 sm:grid-cols-3">
                     {DATE_FORMAT_OPTIONS.map((option) => (
-                      <button
+                      <Button
                         key={option.value}
                         type="button"
+                        variant={field.value === option.value ? 'outline' : 'ghost'}
+                        size="sm"
                         onClick={() => field.onChange(option.value)}
-                        className={`p-4 rounded-lg border-2 transition-all text-center ${
-                          field.value === option.value
-                            ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/20'
-                            : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                        }`}
+                        className="flex flex-col items-center h-auto py-4"
                       >
-                        <div
-                          className={`font-medium ${
-                            field.value === option.value
-                              ? 'text-purple-700 dark:text-purple-400'
-                              : 'text-gray-900 dark:text-white'
-                          }`}
-                        >
-                          {option.label}
-                        </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                          {option.example}
-                        </div>
-                      </button>
+                        <span className="font-medium">{option.label}</span>
+                        <span className="text-sm opacity-70 mt-1">{option.example}</span>
+                      </Button>
                     ))}
                   </div>
                 )}

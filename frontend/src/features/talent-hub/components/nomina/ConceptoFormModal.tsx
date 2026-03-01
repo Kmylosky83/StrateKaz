@@ -7,6 +7,7 @@ import { BaseModal } from '@/components/modals/BaseModal';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/forms/Input';
 import { Select } from '@/components/forms/Select';
+import { Textarea } from '@/components/forms/Textarea';
 import { useCreateConceptoNomina, useUpdateConceptoNomina } from '../../hooks/useNomina';
 import type { ConceptoNominaFormData, ConceptoNomina } from '../../types';
 import { tipoConceptoOptions, categoriaConceptoOptions } from '../../types';
@@ -134,17 +135,12 @@ export const ConceptoFormModal = ({ isOpen, onClose, concepto }: ConceptoFormMod
         </div>
 
         {/* Descripción */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Descripción
-          </label>
-          <textarea
-            {...register('descripcion')}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-            placeholder="Descripción del concepto..."
-          />
-        </div>
+        <Textarea
+          label="Descripción"
+          {...register('descripcion')}
+          rows={3}
+          placeholder="Descripción del concepto..."
+        />
 
         {/* Configuración */}
         <div>
@@ -197,17 +193,12 @@ export const ConceptoFormModal = ({ isOpen, onClose, concepto }: ConceptoFormMod
 
         {/* Fórmula y Orden */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Fórmula (opcional)
-            </label>
-            <textarea
-              {...register('formula')}
-              rows={2}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm"
-              placeholder="Ej: salario_base * 0.08"
-            />
-          </div>
+          <Textarea
+            label="Fórmula (opcional)"
+            {...register('formula')}
+            rows={2}
+            placeholder="Ej: salario_base * 0.08"
+          />
           <Input
             label="Orden de Cálculo"
             type="number"

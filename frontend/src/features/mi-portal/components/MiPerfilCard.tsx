@@ -16,7 +16,7 @@ import {
   Pencil,
   Camera,
 } from 'lucide-react';
-import { Card, Badge, Avatar, Skeleton } from '@/components/common';
+import { Card, Badge, Avatar, Skeleton, Button } from '@/components/common';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import type { ColaboradorESS } from '../types';
 
@@ -73,17 +73,17 @@ export function MiPerfilCard({ perfil, isLoading, onEdit, onAvatarClick }: MiPer
       {/* Header: Avatar + Nombre + Badge */}
       <div className="flex flex-col md:flex-row items-start gap-6">
         {/* Avatar clickeable para cambiar foto */}
-        <button
-          type="button"
+        <Button
+          variant="ghost"
           onClick={onAvatarClick}
-          className="relative group focus:outline-none flex-shrink-0"
+          className="relative group focus:outline-none flex-shrink-0 p-0 h-auto rounded-full hover:bg-transparent"
           title="Cambiar foto de perfil"
         >
           <Avatar src={perfil.foto_url} alt={perfil.nombre_completo} size="xl" />
           <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/30 transition-all duration-200 flex items-center justify-center">
             <Camera className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
-        </button>
+        </Button>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-3">
@@ -170,14 +170,15 @@ export function MiPerfilCard({ perfil, isLoading, onEdit, onAvatarClick }: MiPer
 
       {/* Boton editar con branding color */}
       <div className="mt-5 flex justify-end">
-        <button
+        <Button
+          variant="ghost"
           onClick={onEdit}
-          className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:opacity-80"
+          className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors hover:opacity-80 p-0 h-auto"
           style={{ color: primaryColor }}
         >
           <Pencil className="w-3.5 h-3.5" />
           Editar datos personales
-        </button>
+        </Button>
       </div>
     </Card>
   );

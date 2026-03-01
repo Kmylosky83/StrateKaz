@@ -31,6 +31,8 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, Badge, Button, BrandedSkeleton, Dropdown } from '@/components/common';
 import { Modal } from '@/components/common/Modal';
+import { Input } from '@/components/forms/Input';
+import { Select } from '@/components/forms/Select';
 import type { BadgeVariant } from '@/components/common/Badge';
 import {
   useTenantsList,
@@ -393,43 +395,38 @@ export const TenantsSection = () => {
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         {/* Search */}
-        <div className="relative w-full sm:w-80">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input
+        <div className="w-full sm:w-80">
+          <Input
             type="text"
             placeholder="Buscar empresa..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
-                     bg-white dark:bg-gray-800 text-gray-900 dark:text-white
-                     focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            leftIcon={<Search className="h-4 w-4" />}
           />
         </div>
 
         {/* Filters & Actions */}
         <div className="flex gap-2">
           {/* Filter by status */}
-          <select
+          <Select
             value={filterActive === undefined ? 'all' : filterActive ? 'active' : 'inactive'}
             onChange={(e) => {
               const val = e.target.value;
               setFilterActive(val === 'all' ? undefined : val === 'active');
             }}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
-                     bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
-          >
-            <option value="all">Todos</option>
-            <option value="active">Activos</option>
-            <option value="inactive">Inactivos</option>
-          </select>
+            options={[
+              { value: 'all', label: 'Todos' },
+              { value: 'active', label: 'Activos' },
+              { value: 'inactive', label: 'Inactivos' },
+            ]}
+          />
 
           {/* Toggle Cards/Table */}
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={() => setViewMode(viewMode === 'cards' ? 'table' : 'cards')}
-            className="p-2 border border-gray-300 dark:border-gray-600 rounded-lg
-                     bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300
-                     hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             title={viewMode === 'cards' ? 'Vista tabla' : 'Vista tarjetas'}
           >
             {viewMode === 'cards' ? (
@@ -437,7 +434,7 @@ export const TenantsSection = () => {
             ) : (
               <LayoutGrid className="h-4 w-4" />
             )}
-          </button>
+          </Button>
 
           <Button
             variant="primary"
@@ -738,18 +735,15 @@ export const TenantsSection = () => {
                 <li>Registro de la empresa</li>
               </ul>
               <div className="pt-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Escriba <strong className="text-danger-600">"{tenantToHardDelete?.name}"</strong>{' '}
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Escriba{' '}
+                  <strong className="text-danger-600">"{tenantToHardDelete?.name}"</strong>{' '}
                   para confirmar:
-                </label>
-                <input
-                  type="text"
+                </p>
+                <Input
                   value={hardDeleteConfirmName}
                   onChange={(e) => setHardDeleteConfirmName(e.target.value)}
                   placeholder={tenantToHardDelete?.name}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
-                           bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm
-                           focus:ring-2 focus:ring-danger-500 focus:border-transparent"
                   autoFocus
                 />
               </div>

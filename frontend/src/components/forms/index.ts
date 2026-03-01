@@ -31,6 +31,9 @@ export type { SelectProps, SelectOption } from './Select';
 export { Textarea } from './Textarea';
 export type { TextareaProps } from './Textarea';
 
+export { TextareaWithAI } from './TextareaWithAI';
+export type { TextareaWithAIProps } from './TextareaWithAI';
+
 export { Checkbox } from './Checkbox';
 export type { CheckboxProps } from './Checkbox';
 

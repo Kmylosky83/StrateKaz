@@ -151,6 +151,8 @@ urlpatterns = [
     path('api/core/', include('apps.core.urls')),
     # Multi-Tenant System
     path('api/tenant/', include('apps.tenant.urls')),
+    # Inteligencia Artificial (ayuda contextual, asistente de texto)
+    path('api/ia/', include('apps.ia.urls')),
 ]
 
 # ═══════════════════════════════════════════════════════════════════════════

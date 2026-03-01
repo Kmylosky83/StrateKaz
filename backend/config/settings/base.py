@@ -71,6 +71,7 @@ TENANT_APPS = [
     # NIVEL 0: CORE BASE
     # ═══════════════════════════════════════════════════════════════════════════
     'apps.core',
+    'apps.ia',  # IA: GeminiService, ayuda contextual, asistente de texto
 
     # ═══════════════════════════════════════════════════════════════════════════
     # NIVEL 1: ESTRATÉGICO

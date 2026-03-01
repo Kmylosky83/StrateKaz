@@ -15,7 +15,13 @@ import { useThemeStore } from '@/store/themeStore';
 import { useAuthStore } from '@/store/authStore';
 import { useBrandingConfig } from '@/hooks/useBrandingConfig';
 import { useNotificacionesNoLeidas } from '@/features/audit-system/hooks/useNotificaciones';
-import { UserMenu, SearchModal, useSearchModal, TenantSwitcher } from '@/components/common';
+import {
+  UserMenu,
+  SearchModal,
+  useSearchModal,
+  TenantSwitcher,
+  AIAssistantButton,
+} from '@/components/common';
 import { cn } from '@/utils/cn';
 import { HEADER_LABELS, ROUTES } from '@/constants';
 
@@ -217,6 +223,9 @@ export const Header = ({
                     </span>
                   )}
                 </button>
+
+                {/* Asistente IA */}
+                <AIAssistantButton />
 
                 {/* Theme Toggle */}
                 <button

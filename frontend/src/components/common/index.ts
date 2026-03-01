@@ -296,3 +296,10 @@ export type { EvidenceGalleryProps } from './EvidenceGallery';
 
 export { EvidenceTimeline } from './EvidenceTimeline';
 export type { EvidenceTimelineProps } from './EvidenceTimeline';
+
+// AI Assistant (contextual help + text assist)
+export { AIAssistantButton } from './AIAssistantButton';
+export type { AIAssistantButtonProps } from './AIAssistantButton';
+
+export { AIHelpModal } from './AIHelpModal';
+export type { AIHelpModalProps } from './AIHelpModal';

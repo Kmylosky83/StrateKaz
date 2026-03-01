@@ -584,13 +584,15 @@ export const useTestConnection = () => {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: integracionKeys.lists() });
       if (result.success) {
-        toast.success('Conexión exitosa');
+        toast.success(`Conexión exitosa (${result.response_time_ms ?? 0}ms)`);
       } else {
         toast.error(`Error de conexión: ${result.error || 'Desconocido'}`);
       }
     },
-    onError: () => {
-      toast.error('Error al probar conexión');
+    onError: (error: unknown) => {
+      const axiosErr = error as { response?: { data?: { error?: string } } };
+      const msg = axiosErr?.response?.data?.error || 'Error al probar conexión';
+      toast.error(msg);
     },
   });
 };

@@ -80,6 +80,33 @@ class ConnectionTester(ABC):
 
         return True, None
 
+    def get_base_url(self, integracion, default: str = '') -> str:
+        """
+        Obtiene la URL base del servicio.
+
+        Prioridad:
+        1. integracion.endpoint_url (campo del modelo)
+        2. credenciales['base_url'] (fallback legacy)
+        3. default (valor por defecto)
+
+        Args:
+            integracion: Instancia de IntegracionExterna
+            default: URL por defecto si no se encuentra
+
+        Returns:
+            URL base como string
+        """
+        # Prioridad 1: campo del modelo
+        if integracion.endpoint_url:
+            return integracion.endpoint_url
+
+        # Prioridad 2: dentro de credenciales (legacy)
+        creds = integracion.credenciales or {}
+        if creds.get('base_url'):
+            return creds['base_url']
+
+        return default
+
 
 class EmailConnectionTester(ConnectionTester):
     """
@@ -237,7 +264,7 @@ class OpenAIConnectionTester(ConnectionTester):
 
             creds = integracion.credenciales
             api_key = creds.get('api_key')
-            base_url = creds.get('base_url', 'https://api.openai.com/v1')
+            base_url = self.get_base_url(integracion, default='https://api.openai.com/v1')
 
             # Hacer request a /models (endpoint ligero)
             headers = {
@@ -635,14 +662,17 @@ class GenericHTTPTester(ConnectionTester):
     Tester genérico para APIs HTTP/REST.
 
     Útil para integraciones que no tienen un tester específico.
+    Usa endpoint_url del modelo o base_url de credenciales.
     """
 
     def get_required_credentials(self) -> list:
-        return ['base_url']
+        # No requerimos base_url en credenciales; se obtiene de endpoint_url
+        return []
 
     def test(self, integracion) -> ConnectionTestResult:
         """
         Prueba la conexión haciendo un GET a la URL base.
+        Busca la URL en: endpoint_url (modelo) → base_url (credenciales).
         """
         import time
         import requests
@@ -651,13 +681,13 @@ class GenericHTTPTester(ConnectionTester):
 
         try:
             creds = integracion.credenciales or {}
-            base_url = creds.get('base_url')
+            base_url = self.get_base_url(integracion)
 
             if not base_url:
                 return ConnectionTestResult(
                     success=False,
-                    message="Falta base_url en credenciales",
-                    error_code='MISSING_CREDENTIALS'
+                    message="Falta la URL del endpoint. Configure el campo 'URL Base' de la integración.",
+                    error_code='MISSING_URL'
                 )
 
             headers = {}
@@ -709,21 +739,25 @@ class GenericHTTPTester(ConnectionTester):
 # ==============================================================================
 
 # Mapeo de códigos de tipo de servicio a testers
+# Los tipos no listados aquí usan GenericHTTPTester (fallback)
 TESTER_MAP = {
+    # Email
     'EMAIL': EmailConnectionTester,
     'SMTP': EmailConnectionTester,
-    'email': EmailConnectionTester,
+    # IA
     'OPENAI': OpenAIConnectionTester,
-    'AI': OpenAIConnectionTester,
-    'openai': OpenAIConnectionTester,
+    'IA': OpenAIConnectionTester,
+    # ERP
     'SAP': SAPConnectionTester,
     'ERP': SAPConnectionTester,
-    'sap': SAPConnectionTester,
+    # Almacenamiento
+    'ALMACENAMIENTO': StorageConnectionTester,
     'STORAGE': StorageConnectionTester,
     'S3': StorageConnectionTester,
     'AZURE_BLOB': StorageConnectionTester,
     'GCS': StorageConnectionTester,
-    'storage': StorageConnectionTester,
+    'BACKUP': StorageConnectionTester,
+    'CDN': StorageConnectionTester,
 }
 
 

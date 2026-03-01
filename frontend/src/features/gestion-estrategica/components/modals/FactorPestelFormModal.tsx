@@ -32,10 +32,7 @@ import {
   TrendingDown,
   AlertCircle,
 } from 'lucide-react';
-import {
-  useCreateFactorPestel,
-  useUpdateFactorPestel,
-} from '../../hooks/useContexto';
+import { useCreateFactorPestel, useUpdateFactorPestel } from '../../hooks/useContexto';
 import type {
   FactorPESTEL,
   CreateFactorPESTELDTO,
@@ -69,10 +66,7 @@ const factorPestelSchema = z.object({
     .string()
     .max(1000, 'Las implicaciones no pueden exceder 1000 caracteres')
     .optional(),
-  fuentes: z
-    .string()
-    .max(500, 'Las fuentes no pueden exceder 500 caracteres')
-    .optional(),
+  fuentes: z.string().max(500, 'Las fuentes no pueden exceder 500 caracteres').optional(),
 });
 
 type FactorPestelFormData = z.infer<typeof factorPestelSchema>;
@@ -291,12 +285,14 @@ export const FactorPestelFormModal = ({
               const isSelected = selectedTipo === value;
 
               return (
-                <button
+                <Button
                   key={value}
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setValue('tipo', value, { shouldValidate: true })}
                   className={cn(
-                    'p-3 rounded-lg border-2 transition-all text-center',
+                    '!p-3 !min-h-0 rounded-lg border-2 !flex !flex-col !items-center transition-all w-full',
                     isSelected
                       ? `${config.bgClass} border-current`
                       : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
@@ -308,7 +304,9 @@ export const FactorPestelFormModal = ({
                       isSelected ? config.bgClass : 'bg-gray-100 dark:bg-gray-800'
                     )}
                   >
-                    <Icon className={cn('h-5 w-5', isSelected ? config.textClass : 'text-gray-500')} />
+                    <Icon
+                      className={cn('h-5 w-5', isSelected ? config.textClass : 'text-gray-500')}
+                    />
                   </div>
                   <p
                     className={cn(
@@ -318,14 +316,10 @@ export const FactorPestelFormModal = ({
                   >
                     {label}
                   </p>
-                  <Badge
-                    variant={isSelected ? 'primary' : 'secondary'}
-                    size="sm"
-                    className="mt-1"
-                  >
+                  <Badge variant={isSelected ? 'primary' : 'secondary'} size="sm" className="mt-1">
                     {config.shortLabel}
                   </Badge>
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -454,9 +448,7 @@ export const FactorPestelFormModal = ({
                     <span>{tendenciaConfig.label}</span>
                   </div>
                 </div>
-                <p className="text-sm text-gray-700 dark:text-gray-300">
-                  {watch('descripcion')}
-                </p>
+                <p className="text-sm text-gray-700 dark:text-gray-300">{watch('descripcion')}</p>
                 <div className="flex items-center gap-2 mt-2">
                   <span className="text-xs text-gray-500">Impacto:</span>
                   <Badge variant={impactoConfig.color} size="sm">

@@ -1004,18 +1004,17 @@ const ParteInteresadaFormModalComponent = ({
               {normasDisponibles.map((norma) => {
                 const isSelected = formData.normas_relacionadas.includes(norma.id);
                 return (
-                  <button
+                  <Button
                     key={norma.id}
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => handleNormaToggle(norma.id)}
-                    className={`
-                      flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left
-                      ${
-                        isSelected
-                          ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                      }
-                    `}
+                    className={`!flex !items-center !gap-3 !p-3 !min-h-0 !justify-start rounded-lg border-2 transition-all text-left w-full ${
+                      isSelected
+                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                    }`}
                   >
                     <div
                       className={`
@@ -1072,7 +1071,7 @@ const ParteInteresadaFormModalComponent = ({
                         </svg>
                       )}
                     </div>
-                  </button>
+                  </Button>
                 );
               })}
             </div>

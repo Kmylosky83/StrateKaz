@@ -8,7 +8,7 @@
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { Users, ChevronDown, ChevronRight, AlertCircle } from 'lucide-react';
-import { Badge, Avatar, DynamicIcon } from '@/components/common';
+import { Badge, Avatar, Button, DynamicIcon } from '@/components/common';
 import type {
   CargoNodeData,
   NivelJerarquico,
@@ -120,16 +120,18 @@ const CargoNode = memo(({ data, selected }: CargoNodeProps) => {
             </div>
           </div>
           {hasChildren && (
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={onExpand}
-              className={`p-1 rounded hover:bg-opacity-50 transition-colors ${colors.bgLight}`}
+              className={`!p-1 !min-h-0 rounded hover:bg-opacity-50 transition-colors ${colors.bgLight}`}
             >
               {expanded ? (
                 <ChevronDown className={`h-4 w-4 ${colors.text}`} />
               ) : (
                 <ChevronRight className={`h-4 w-4 ${colors.text}`} />
               )}
-            </button>
+            </Button>
           )}
         </div>
       </div>

@@ -33,6 +33,7 @@ import { PlantillaFormModal } from '@/features/gestion-estrategica/components/ge
 import { DocumentoFormModal } from '@/features/gestion-estrategica/components/gestion-documental/DocumentoFormModal';
 import { DocumentoDetailModal } from '@/features/gestion-estrategica/components/gestion-documental/DocumentoDetailModal';
 import { SignatureModal } from '@/components/modals/SignatureModal';
+import { Textarea } from '@/components/forms';
 
 import { GestionDocumentalTab } from '../components/gestion-documental/GestionDocumentalTab';
 
@@ -223,8 +224,7 @@ export const GestionDocumentalPage = () => {
         message={
           <div className="space-y-3">
             <p>Indique el motivo del rechazo. El documento sera devuelto al elaborador.</p>
-            <textarea
-              className="w-full p-3 border rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-white text-sm"
+            <Textarea
               rows={3}
               placeholder="Motivo del rechazo (minimo 5 caracteres)..."
               value={motivoRechazo}

@@ -425,12 +425,14 @@ export const EncuestaFormModal = ({
           disabled: !isEditing,
         },
       ].map((tab) => (
-        <button
+        <Button
           key={tab.key}
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={() => !tab.disabled && setActiveTab(tab.key as typeof activeTab)}
           disabled={tab.disabled}
-          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+          className={`!px-4 !py-2 !min-h-0 text-sm font-medium border-b-2 -mb-px transition-colors rounded-none ${
             activeTab === tab.key
               ? 'border-purple-500 text-purple-600 dark:text-purple-400'
               : tab.disabled
@@ -439,7 +441,7 @@ export const EncuestaFormModal = ({
           }`}
         >
           {tab.label}
-        </button>
+        </Button>
       ))}
     </div>
   );
@@ -484,9 +486,11 @@ export const EncuestaFormModal = ({
             ].map((opt) => {
               const Icon = opt.icon;
               return (
-                <button
+                <Button
                   key={opt.value}
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() =>
                     setFormData({
                       ...formData,
@@ -498,7 +502,7 @@ export const EncuestaFormModal = ({
                       es_publica: opt.value === 'pci_poam' ? true : formData.es_publica,
                     })
                   }
-                  className={`flex items-start gap-3 p-4 rounded-lg border-2 transition-all text-left ${
+                  className={`!flex !items-start !gap-3 !p-4 !min-h-0 rounded-lg border-2 !justify-start transition-all text-left ${
                     formData.tipo_encuesta === opt.value
                       ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
                       : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
@@ -517,7 +521,7 @@ export const EncuestaFormModal = ({
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{opt.desc}</p>
                   </div>
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -1002,11 +1006,13 @@ export const EncuestaFormModal = ({
             {TIPO_PARTICIPANTE_OPTIONS.map((opt) => {
               const Icon = opt.icon;
               return (
-                <button
+                <Button
                   key={opt.value}
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setNewParticipante({ tipo: opt.value })}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+                  className={`!flex !items-center !gap-2 !px-3 !py-2 !min-h-0 rounded-lg border transition-colors ${
                     newParticipante.tipo === opt.value
                       ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300'
                       : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
@@ -1014,7 +1020,7 @@ export const EncuestaFormModal = ({
                 >
                   <Icon className="h-4 w-4" />
                   <span className="text-sm">{opt.label}</span>
-                </button>
+                </Button>
               );
             })}
           </div>

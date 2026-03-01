@@ -220,11 +220,13 @@ export const FuerzaPorterFormModal = ({
               const isSelected = formData.tipo === value;
 
               return (
-                <button
+                <Button
                   key={value}
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setFormData({ ...formData, tipo: value })}
-                  className={`p-3 rounded-lg border transition-all text-center ${
+                  className={`!p-3 !min-h-0 rounded-lg border !flex !flex-col !items-center transition-all w-full ${
                     isSelected
                       ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 ring-2 ring-purple-500'
                       : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
@@ -242,7 +244,7 @@ export const FuerzaPorterFormModal = ({
                   >
                     {label}
                   </p>
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -264,11 +266,13 @@ export const FuerzaPorterFormModal = ({
               const isSelected = formData.nivel === value;
 
               return (
-                <button
+                <Button
                   key={value}
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setFormData({ ...formData, nivel: value as NivelImpacto })}
-                  className={`flex-1 p-3 rounded-lg border transition-all ${
+                  className={`flex-1 !p-3 !min-h-0 !flex !flex-col !items-center rounded-lg border transition-all ${
                     isSelected
                       ? `${config.bgClass} border-2`
                       : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
@@ -282,7 +286,7 @@ export const FuerzaPorterFormModal = ({
                     {value === 'medio' && 'Presion moderada'}
                     {value === 'bajo' && 'Baja presion'}
                   </p>
-                </button>
+                </Button>
               );
             })}
           </div>

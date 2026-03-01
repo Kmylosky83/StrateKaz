@@ -149,22 +149,21 @@ export const OrganigramaToolbar = ({
         {/* Modo de vista */}
         <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
           {viewModeOptions.map((option) => (
-            <button
+            <Button
               key={option.value}
+              variant="ghost"
+              size="sm"
               onClick={() => onViewModeChange(option.value)}
-              className={`
-                flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors
-                ${
-                  viewMode === option.value
-                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
-                }
-              `}
               title={option.label}
+              className={`!flex !items-center !gap-1.5 !px-3 !py-1.5 !min-h-0 rounded-md text-sm font-medium transition-colors ${
+                viewMode === option.value
+                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+              }`}
             >
               {option.icon}
               <span className="hidden md:inline">{option.label}</span>
-            </button>
+            </Button>
           ))}
         </div>
 

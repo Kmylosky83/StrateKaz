@@ -25,6 +25,7 @@ import {
   ListChecks,
 } from 'lucide-react';
 import { Button, Badge, Spinner, Alert } from '@/components/common';
+import { Textarea } from '@/components/forms';
 import {
   useEncuestaPublica,
   useResponderEncuestaPublica,
@@ -559,14 +560,16 @@ export default function EncuestaPublicaPage() {
               const r = respuestas[tema.id];
               const answered = !!(r?.clasificacion && r?.impacto_percibido);
               return (
-                <button
+                <Button
                   key={tema.id}
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => {
                     setQuestionIndex(i);
                     setScreen('question');
                   }}
-                  className={`w-full text-left p-3 rounded-lg border transition-all min-h-[44px] flex items-center gap-3 ${
+                  className={`w-full !justify-start !p-3 !min-h-[44px] rounded-lg border transition-all ${
                     answered
                       ? 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
                       : 'border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20'
@@ -579,7 +582,7 @@ export default function EncuestaPublicaPage() {
                       <AlertCircle className="w-5 h-5 text-amber-500" />
                     )}
                   </span>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 text-left">
                     <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                       {i + 1}. {tema.titulo}
                     </p>
@@ -590,7 +593,7 @@ export default function EncuestaPublicaPage() {
                     )}
                   </div>
                   <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -737,11 +740,13 @@ export default function EncuestaPublicaPage() {
               ).map((c) => {
                 const isSelected = currentRespuesta?.clasificacion === c;
                 return (
-                  <button
+                  <Button
                     key={c}
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => updateRespuesta(currentTema.id, 'clasificacion', c)}
-                    className={`py-3 px-4 rounded-xl border-2 text-sm font-semibold transition-all min-h-[48px] ${
+                    className={`!py-3 !px-4 rounded-xl border-2 text-sm font-semibold transition-all !min-h-[48px] w-full ${
                       isSelected
                         ? 'shadow-md scale-[1.02]'
                         : 'border-gray-200 dark:border-gray-600 text-gray-500 hover:border-gray-400 active:scale-[0.98]'
@@ -757,7 +762,7 @@ export default function EncuestaPublicaPage() {
                     }
                   >
                     {getClasificacionLabel(c)}
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -774,11 +779,13 @@ export default function EncuestaPublicaPage() {
                 const impactoColor =
                   nivel === 'alto' ? '#ef4444' : nivel === 'medio' ? '#f59e0b' : '#3b82f6';
                 return (
-                  <button
+                  <Button
                     key={nivel}
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => updateRespuesta(currentTema.id, 'impacto_percibido', nivel)}
-                    className={`py-2.5 px-3 rounded-lg border-2 text-sm font-medium transition-all min-h-[48px] ${
+                    className={`!py-2.5 !px-3 rounded-lg border-2 text-sm font-medium transition-all !min-h-[48px] w-full ${
                       isSelected
                         ? 'shadow-sm'
                         : 'border-gray-200 dark:border-gray-600 text-gray-500 hover:border-gray-400 active:scale-[0.98]'
@@ -794,7 +801,7 @@ export default function EncuestaPublicaPage() {
                     }
                   >
                     {nivel.charAt(0).toUpperCase() + nivel.slice(1)}
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -806,12 +813,10 @@ export default function EncuestaPublicaPage() {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                 Justificación (opcional)
               </label>
-              <textarea
+              <Textarea
                 value={currentRespuesta?.justificacion || ''}
                 onChange={(e) => updateRespuesta(currentTema.id, 'justificacion', e.target.value)}
                 rows={2}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2.5 text-sm bg-transparent focus:ring-2 focus:border-transparent transition-shadow"
-                style={{ '--tw-ring-color': `${brand.primary}40` } as React.CSSProperties}
                 placeholder="Explique brevemente su respuesta..."
               />
             </div>
@@ -838,14 +843,16 @@ export default function EncuestaPublicaPage() {
                   respuestas[t.id]?.clasificacion && respuestas[t.id]?.impacto_percibido
                 );
                 return (
-                  <button
+                  <Button
                     key={i}
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => {
                       setSlideDirection(i > questionIndex ? 'right' : 'left');
                       setQuestionIndex(i);
                     }}
-                    className="w-2 h-2 rounded-full transition-all"
+                    className="!w-2 !h-2 !min-h-0 !p-0 rounded-full transition-all"
                     style={{
                       backgroundColor:
                         i === questionIndex

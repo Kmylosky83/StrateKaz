@@ -282,26 +282,32 @@ export const EstrategiaTowsFormModal = ({
               const isSelected = formData.tipo === value;
 
               return (
-                <button
+                <Button
                   key={value}
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setFormData({ ...formData, tipo: value })}
-                  className={`p-4 rounded-lg border-2 transition-all text-left ${
+                  className={`!p-4 !min-h-0 rounded-lg border-2 !justify-start text-left transition-all w-full ${
                     isSelected
                       ? `${config.bgClass} ${config.borderClass}`
                       : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
                   }`}
                 >
-                  <div className="flex items-center gap-2 mb-2">
-                    <Icon
-                      className={`h-5 w-5 ${isSelected ? config.textClass : 'text-gray-500'}`}
-                    />
-                    <span className={`text-sm font-semibold ${isSelected ? config.textClass : ''}`}>
-                      {label}
-                    </span>
+                  <div className="flex flex-col items-start w-full">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Icon
+                        className={`h-5 w-5 ${isSelected ? config.textClass : 'text-gray-500'}`}
+                      />
+                      <span
+                        className={`text-sm font-semibold ${isSelected ? config.textClass : ''}`}
+                      >
+                        {label}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{config.description}</p>
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{config.description}</p>
-                </button>
+                </Button>
               );
             })}
           </div>

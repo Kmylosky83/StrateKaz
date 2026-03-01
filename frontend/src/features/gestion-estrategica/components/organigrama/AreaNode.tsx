@@ -9,7 +9,7 @@
 import { memo, useMemo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { Users, Briefcase, ChevronDown, ChevronRight, MapPin } from 'lucide-react';
-import { Badge, DynamicIcon } from '@/components/common';
+import { Badge, Button, DynamicIcon } from '@/components/common';
 import type { AreaNodeData } from '../../types/organigrama.types';
 
 // Mapa de clases de color para cada color disponible
@@ -197,16 +197,18 @@ const AreaNode = memo(({ data, selected }: AreaNodeProps) => {
             <p className={`text-xs ${colors.text} ${colors.textDark} font-medium`}>{area.code}</p>
           </div>
           {hasChildren && (
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={onExpand}
-              className={`p-1 rounded ${colors.hover} ${colors.hoverDark} transition-colors`}
+              className={`!p-1 !min-h-0 rounded ${colors.hover} ${colors.hoverDark} transition-colors`}
             >
               {expanded ? (
                 <ChevronDown className={`h-4 w-4 ${colors.text} ${colors.textDark}`} />
               ) : (
                 <ChevronRight className={`h-4 w-4 ${colors.text} ${colors.textDark}`} />
               )}
-            </button>
+            </Button>
           )}
         </div>
       </div>

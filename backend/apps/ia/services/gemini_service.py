@@ -1,8 +1,12 @@
 """
-GeminiService — Servicio base para llamadas a la API de Gemini.
+GeminiService — Servicio multi-proveedor de IA.
 
-Busca la IntegracionExterna tipo 'IA' activa del tenant actual
+Busca las IntegracionExterna tipo 'IA' activas del tenant actual
 y realiza llamadas HTTP directas (sin SDK adicional).
+Soporta: Gemini, OpenAI, DeepSeek y cualquier API OpenAI-compatible.
+
+Con fallback automático: si el proveedor principal falla (429, timeout, etc.),
+intenta con el siguiente proveedor configurado.
 
 Uso:
     from apps.ia.services import GeminiService
@@ -37,7 +41,7 @@ class AIResult:
     error: str = ''
     tokens_used: int = 0
     model: str = ''
-    provider: str = 'gemini'
+    provider: str = ''
     processing_time_ms: float = 0
 
     def to_dict(self):
@@ -53,31 +57,60 @@ class AIResult:
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+# MODELOS POR DEFECTO POR PROVEEDOR
+# ═══════════════════════════════════════════════════════════════════════════
+
+DEFAULT_MODELS = {
+    'gemini': 'gemini-2.0-flash',
+    'openai': 'gpt-4o-mini',
+    'deepseek': 'deepseek-chat',
+    'claude': 'claude-sonnet-4-20250514',
+}
+
+# Errores que justifican intentar con el siguiente proveedor
+FALLBACK_STATUS_CODES = {429, 500, 502, 503, 504}
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 # SERVICIO PRINCIPAL
 # ═══════════════════════════════════════════════════════════════════════════
 
 class GeminiService:
     """
-    Servicio estático para interactuar con Gemini AI.
+    Servicio multi-proveedor de IA con fallback automático.
 
-    Busca la integración IA activa del tenant y ejecuta llamadas.
-    Si no hay integración configurada, retorna error descriptivo.
+    Busca todas las integraciones IA activas del tenant y ejecuta llamadas.
+    Si el proveedor principal falla, intenta con el siguiente.
     """
-
-    # Modelo por defecto
-    DEFAULT_MODEL = 'gemini-2.0-flash'
 
     # Timeout para llamadas HTTP
     REQUEST_TIMEOUT = 30  # segundos
 
     @staticmethod
-    def _get_integration():
+    def _get_integrations():
         """
-        Obtiene la IntegracionExterna de tipo IA activa para el tenant actual.
+        Obtiene TODAS las IntegracionExterna de tipo IA activas,
+        ordenadas por id (la primera registrada = principal).
 
         Returns:
-            IntegracionExterna | None
+            list[IntegracionExterna]
         """
+        try:
+            from apps.gestion_estrategica.configuracion.models import IntegracionExterna
+            return list(
+                IntegracionExterna.objects.filter(
+                    tipo_servicio__code='IA',
+                    is_active=True,
+                ).select_related('tipo_servicio', 'proveedor')
+                .order_by('id')
+            )
+        except Exception as e:
+            logger.error(f'Error buscando integraciones IA: {e}')
+            return []
+
+    @staticmethod
+    def _get_integration():
+        """Compatibilidad: retorna la primera integración IA activa."""
         try:
             from apps.gestion_estrategica.configuracion.models import IntegracionExterna
             return IntegracionExterna.objects.filter(
@@ -90,10 +123,12 @@ class GeminiService:
 
     @staticmethod
     def _detect_provider(endpoint_url: str) -> str:
-        """Detecta el proveedor por la URL."""
+        """Detecta el proveedor por la URL del endpoint."""
         url_lower = (endpoint_url or '').lower()
         if 'googleapis.com' in url_lower or 'generativelanguage' in url_lower:
             return 'gemini'
+        if 'deepseek.com' in url_lower:
+            return 'deepseek'
         if 'openai.com' in url_lower:
             return 'openai'
         if 'anthropic.com' in url_lower:
@@ -102,7 +137,7 @@ class GeminiService:
 
     @classmethod
     def is_available(cls) -> bool:
-        """Verifica si hay una integración IA configurada y activa."""
+        """Verifica si hay al menos una integración IA configurada y activa."""
         return cls._get_integration() is not None
 
     @classmethod
@@ -115,66 +150,70 @@ class GeminiService:
         model: Optional[str] = None,
     ) -> AIResult:
         """
-        Genera texto usando la API de Gemini.
+        Genera texto usando IA con fallback multi-proveedor.
+
+        Intenta con cada integración IA activa en orden.
+        Si una falla con error recuperable (429, 5xx, timeout),
+        intenta con la siguiente.
 
         Args:
             prompt: Texto/pregunta del usuario
             system_instruction: Instrucción de sistema (contexto)
             max_tokens: Máximo de tokens en respuesta
             temperature: Creatividad (0.0 - 1.0)
-            model: Modelo específico (override)
+            model: Modelo específico (override, aplica solo al primer intento)
 
         Returns:
             AIResult con el texto generado o error
         """
         start_time = time.time()
 
-        # 1. Obtener integración
-        integration = cls._get_integration()
-        if not integration:
+        # 1. Obtener todas las integraciones IA activas
+        integrations = cls._get_integrations()
+        if not integrations:
             return AIResult(
                 success=False,
                 error='No hay integración de IA configurada. '
-                      'Ve a Configuración → Integraciones y configura un servicio de IA.',
+                      'Ve a Fundación → Integraciones y configura un servicio de IA.',
                 processing_time_ms=(time.time() - start_time) * 1000,
             )
 
-        # 2. Obtener credenciales
-        try:
-            creds = integration.credenciales or {}
-            api_key = creds.get('api_key', '')
-            if not api_key:
-                return AIResult(
-                    success=False,
-                    error='La integración de IA no tiene API key configurada.',
-                    processing_time_ms=(time.time() - start_time) * 1000,
-                )
-        except Exception as e:
-            logger.error(f'Error descifrando credenciales IA: {e}')
-            return AIResult(
-                success=False,
-                error='Error al leer credenciales de la integración IA.',
-                processing_time_ms=(time.time() - start_time) * 1000,
-            )
+        last_error = ''
+        last_provider = ''
 
-        # 3. Determinar proveedor y modelo
-        endpoint_url = integration.endpoint_url or ''
-        provider = cls._detect_provider(endpoint_url)
-        use_model = model or cls.DEFAULT_MODEL
+        # 2. Intentar con cada integración en orden
+        for i, integration in enumerate(integrations):
+            # Obtener credenciales
+            try:
+                creds = integration.credenciales or {}
+                api_key = creds.get('api_key', '')
+                if not api_key:
+                    logger.warning(
+                        f'Integración IA #{integration.id} '
+                        f'({integration.nombre}) sin API key, saltando.'
+                    )
+                    continue
+            except Exception as e:
+                logger.error(f'Error leyendo credenciales de integración #{integration.id}: {e}')
+                continue
 
-        # 4. Ejecutar llamada según proveedor
-        try:
-            if provider == 'gemini':
-                result = cls._call_gemini(
-                    api_key=api_key,
-                    prompt=prompt,
-                    system_instruction=system_instruction,
-                    model=use_model,
-                    max_tokens=max_tokens,
-                    temperature=temperature,
-                )
-            elif provider == 'openai':
-                result = cls._call_openai(
+            # Determinar proveedor y modelo
+            endpoint_url = integration.endpoint_url or ''
+            provider = cls._detect_provider(endpoint_url)
+            last_provider = provider
+
+            # Modelo: usar el override solo en el primer intento,
+            # después usar el default del proveedor
+            if i == 0 and model:
+                use_model = model
+            else:
+                use_model = DEFAULT_MODELS.get(provider, 'gemini-2.0-flash')
+
+            is_last = (i == len(integrations) - 1)
+
+            try:
+                result = cls._call_provider(
+                    provider=provider,
                     api_key=api_key,
                     endpoint_url=endpoint_url,
                     prompt=prompt,
@@ -183,52 +222,124 @@ class GeminiService:
                     max_tokens=max_tokens,
                     temperature=temperature,
                 )
-            else:
-                result = cls._call_gemini(
-                    api_key=api_key,
-                    prompt=prompt,
-                    system_instruction=system_instruction,
-                    model=use_model,
-                    max_tokens=max_tokens,
-                    temperature=temperature,
+
+                if result.success:
+                    # Actualizar estadísticas
+                    cls._update_stats(integration)
+                    result.processing_time_ms = (time.time() - start_time) * 1000
+                    return result
+
+                # Falló pero ¿es recuperable?
+                last_error = result.error
+                if not is_last and cls._is_fallback_error(result.error):
+                    logger.info(
+                        f'Proveedor {provider} falló ({result.error[:80]}), '
+                        f'intentando siguiente integración...'
+                    )
+                    continue
+
+                # Error no recuperable o es la última integración
+                result.processing_time_ms = (time.time() - start_time) * 1000
+                return result
+
+            except requests.Timeout:
+                last_error = f'Timeout de {provider} ({cls.REQUEST_TIMEOUT}s).'
+                logger.warning(f'Timeout llamando a {provider} (integración #{integration.id})')
+                if not is_last:
+                    continue
+                return AIResult(
+                    success=False,
+                    error=f'La llamada a {provider} excedió el tiempo límite.',
+                    provider=provider,
+                    processing_time_ms=(time.time() - start_time) * 1000,
+                )
+            except requests.RequestException as e:
+                last_error = f'Error de conexión con {provider}.'
+                logger.error(f'Error HTTP con {provider}: {e}')
+                if not is_last:
+                    continue
+                return AIResult(
+                    success=False,
+                    error=last_error,
+                    provider=provider,
+                    processing_time_ms=(time.time() - start_time) * 1000,
+                )
+            except Exception as e:
+                logger.error(f'Error inesperado con {provider}: {e}', exc_info=True)
+                last_error = f'Error inesperado: {str(e)}'
+                if not is_last:
+                    continue
+                return AIResult(
+                    success=False,
+                    error=last_error,
+                    provider=provider,
+                    processing_time_ms=(time.time() - start_time) * 1000,
                 )
 
-            # Actualizar estadísticas de la integración
-            try:
-                from django.utils import timezone
-                integration.ultima_conexion_exitosa = timezone.now()
-                integration.contador_llamadas = (integration.contador_llamadas or 0) + 1
-                integration.save(update_fields=['ultima_conexion_exitosa', 'contador_llamadas'])
-            except Exception:
-                pass  # No fallar por stats
+        # Todas las integraciones fallaron
+        return AIResult(
+            success=False,
+            error=last_error or 'Todos los proveedores de IA fallaron.',
+            provider=last_provider,
+            processing_time_ms=(time.time() - start_time) * 1000,
+        )
 
-            result.processing_time_ms = (time.time() - start_time) * 1000
-            return result
+    @classmethod
+    def _call_provider(
+        cls,
+        provider: str,
+        api_key: str,
+        endpoint_url: str,
+        prompt: str,
+        system_instruction: str,
+        model: str,
+        max_tokens: int,
+        temperature: float,
+    ) -> AIResult:
+        """Despacha la llamada al proveedor correcto."""
+        if provider == 'gemini':
+            return cls._call_gemini(
+                api_key=api_key,
+                prompt=prompt,
+                system_instruction=system_instruction,
+                model=model,
+                max_tokens=max_tokens,
+                temperature=temperature,
+            )
+        # DeepSeek, OpenAI y cualquier API OpenAI-compatible
+        return cls._call_openai_compatible(
+            api_key=api_key,
+            endpoint_url=endpoint_url,
+            prompt=prompt,
+            system_instruction=system_instruction,
+            model=model,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            provider=provider,
+        )
 
-        except requests.Timeout:
-            logger.warning(f'Timeout llamando a {provider}')
-            return AIResult(
-                success=False,
-                error=f'La llamada a {provider} excedió el tiempo límite ({cls.REQUEST_TIMEOUT}s).',
-                provider=provider,
-                processing_time_ms=(time.time() - start_time) * 1000,
-            )
-        except requests.RequestException as e:
-            logger.error(f'Error HTTP llamando a {provider}: {e}')
-            return AIResult(
-                success=False,
-                error=f'Error de conexión con {provider}: {str(e)}',
-                provider=provider,
-                processing_time_ms=(time.time() - start_time) * 1000,
-            )
-        except Exception as e:
-            logger.error(f'Error inesperado en GeminiService: {e}', exc_info=True)
-            return AIResult(
-                success=False,
-                error=f'Error inesperado: {str(e)}',
-                provider=provider,
-                processing_time_ms=(time.time() - start_time) * 1000,
-            )
+    @staticmethod
+    def _is_fallback_error(error_msg: str) -> bool:
+        """Determina si el error justifica intentar con otro proveedor."""
+        fallback_keywords = [
+            'cuota', 'quota', '429', 'rate limit',
+            'timeout', 'tiempo límite',
+            '500', '502', '503', '504',
+            'conexión', 'connection',
+        ]
+        error_lower = error_msg.lower()
+        return any(kw in error_lower for kw in fallback_keywords)
+
+    @staticmethod
+    def _update_stats(integration):
+        """Actualiza estadísticas de uso de la integración."""
+        try:
+            from django.utils import timezone
+            integration.ultima_conexion_exitosa = timezone.now()
+            integration.contador_llamadas = (integration.contador_llamadas or 0) + 1
+            integration.save(update_fields=['ultima_conexion_exitosa', 'contador_llamadas'])
+        except Exception:
+            pass
 
     # ═══════════════════════════════════════════════════════════════════════
     # PROVEEDORES
@@ -248,7 +359,6 @@ class GeminiService:
         base_url = 'https://generativelanguage.googleapis.com/v1beta'
         url = f'{base_url}/models/{model}:generateContent'
 
-        # Construir body
         contents = [{'parts': [{'text': prompt}]}]
         body = {
             'contents': contents,
@@ -258,7 +368,6 @@ class GeminiService:
             },
         }
 
-        # System instruction (Gemini 1.5+)
         if system_instruction:
             body['systemInstruction'] = {
                 'parts': [{'text': system_instruction}]
@@ -280,19 +389,7 @@ class GeminiService:
             except Exception:
                 error_detail = response.text[:200]
 
-            # Mensaje amigable para errores comunes
-            if response.status_code == 429:
-                friendly_error = (
-                    'Se agotó la cuota de la API de IA. '
-                    'Espera unos minutos o revisa tu plan en la consola de Google AI.'
-                )
-            elif response.status_code == 401:
-                friendly_error = 'La API key de IA es inválida. Revísala en Fundación → Integraciones.'
-            elif response.status_code == 403:
-                friendly_error = 'Sin permisos para usar la API de IA. Verifica la configuración.'
-            else:
-                friendly_error = f'Error del servicio de IA ({response.status_code}). Intenta de nuevo.'
-
+            friendly_error = cls._friendly_error(response.status_code, 'Gemini')
             logger.warning(f'Gemini API error ({response.status_code}): {error_detail}')
             return AIResult(
                 success=False,
@@ -323,7 +420,7 @@ class GeminiService:
         )
 
     @classmethod
-    def _call_openai(
+    def _call_openai_compatible(
         cls,
         api_key: str,
         endpoint_url: str,
@@ -332,8 +429,9 @@ class GeminiService:
         model: str,
         max_tokens: int,
         temperature: float,
+        provider: str = 'openai',
     ) -> AIResult:
-        """Llamada a OpenAI API (compatible)."""
+        """Llamada a API OpenAI-compatible (OpenAI, DeepSeek, etc.)."""
         url = f'{endpoint_url.rstrip("/")}/chat/completions'
 
         messages = []
@@ -342,7 +440,7 @@ class GeminiService:
         messages.append({'role': 'user', 'content': prompt})
 
         body = {
-            'model': model or 'gpt-4o-mini',
+            'model': model,
             'messages': messages,
             'max_tokens': max_tokens,
             'temperature': temperature,
@@ -360,10 +458,12 @@ class GeminiService:
 
         if response.status_code != 200:
             error_detail = response.text[:200]
+            friendly_error = cls._friendly_error(response.status_code, provider.capitalize())
+            logger.warning(f'{provider} API error ({response.status_code}): {error_detail}')
             return AIResult(
                 success=False,
-                error=f'OpenAI API error ({response.status_code}): {error_detail}',
-                provider='openai',
+                error=friendly_error,
+                provider=provider,
                 model=model,
             )
 
@@ -375,6 +475,22 @@ class GeminiService:
             success=True,
             text=text.strip(),
             tokens_used=tokens_used,
-            model=model or 'gpt-4o-mini',
-            provider='openai',
+            model=model,
+            provider=provider,
         )
+
+    @staticmethod
+    def _friendly_error(status_code: int, provider_name: str) -> str:
+        """Genera mensaje de error amigable según el código HTTP."""
+        if status_code == 429:
+            return (
+                f'Se agotó la cuota de {provider_name}. '
+                'Espera unos minutos o revisa tu plan.'
+            )
+        if status_code == 401:
+            return f'La API key de {provider_name} es inválida. Revísala en Fundación → Integraciones.'
+        if status_code == 403:
+            return f'Sin permisos para usar {provider_name}. Verifica la configuración.'
+        if status_code == 400:
+            return f'{provider_name} rechazó la solicitud. Verifica la configuración del modelo.'
+        return f'Error de {provider_name} ({status_code}). Intenta de nuevo.'

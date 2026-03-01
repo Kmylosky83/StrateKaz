@@ -236,8 +236,21 @@ jobs:
           echo "| Frontend Build | ${{ needs.frontend-build.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          if [[ "${{ needs.backend-test.result }}" == "success" ]] && [[ "${{ needs.frontend-build.result }}" == "success" ]]; then
-            echo "✅ All checks passed!" >> $GITHUB_STEP_SUMMARY
+          BACKEND="${{ needs.backend-test.result }}"
+          FRONTEND="${{ needs.frontend-build.result }}"
+
+          # Treat 'success' and 'cancelled' as acceptable (cancelled = superseded by newer push)
+          BACKEND_OK=false
+          FRONTEND_OK=false
+          [[ "$BACKEND" == "success" || "$BACKEND" == "cancelled" ]] && BACKEND_OK=true
+          [[ "$FRONTEND" == "success" || "$FRONTEND" == "cancelled" ]] && FRONTEND_OK=true
+
+          if [[ "$BACKEND_OK" == "true" ]] && [[ "$FRONTEND_OK" == "true" ]]; then
+            if [[ "$BACKEND" == "cancelled" || "$FRONTEND" == "cancelled" ]]; then
+              echo "⏭️ Some jobs were cancelled (superseded by newer push). This is OK." >> $GITHUB_STEP_SUMMARY
+            else
+              echo "✅ All checks passed!" >> $GITHUB_STEP_SUMMARY
+            fi
             exit 0
           else
             echo "❌ Some checks failed. Please review the logs." >> $GITHUB_STEP_SUMMARY

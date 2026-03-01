@@ -153,6 +153,9 @@ class Auditoria(models.Model):
         ('SEGUIMIENTO', 'Auditoría de Seguimiento'),
         ('CERTIFICACION', 'Auditoría de Certificación'),
         ('RENOVACION', 'Auditoría de Renovación'),
+        ('CONTROL_INTERNO', 'Control Interno'),
+        ('DIAGNOSTICO', 'Diagnóstico'),
+        ('PROVEEDOR', 'Auditoría a Proveedor'),
     ]
 
     NORMA_CHOICES = [
@@ -183,7 +186,7 @@ class Auditoria(models.Model):
     )
 
     codigo = models.CharField(max_length=50, blank=True)
-    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
+    tipo = models.CharField(max_length=25, choices=TIPO_CHOICES)
     norma_principal = models.CharField(max_length=20, choices=NORMA_CHOICES)
     normas_adicionales = models.JSONField(
         default=list,
@@ -341,6 +344,12 @@ class Hallazgo(models.Model):
         ('CERRADO', 'Cerrado'),
     ]
 
+    IMPACTO_CHOICES = [
+        ('ALTO', 'Alto'),
+        ('MEDIO', 'Medio'),
+        ('BAJO', 'Bajo'),
+    ]
+
     empresa_id = models.PositiveBigIntegerField(db_index=True)
     auditoria = models.ForeignKey(
         Auditoria,
@@ -374,6 +383,23 @@ class Hallazgo(models.Model):
         help_text="Ej: 7.5.1, 8.2.3"
     )
     norma_referencia = models.CharField(max_length=50, blank=True)
+
+    # Impacto y recomendación
+    impacto = models.CharField(
+        max_length=10,
+        choices=IMPACTO_CHOICES,
+        blank=True,
+        help_text="Nivel de impacto del hallazgo"
+    )
+    area_impactada = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Área específica afectada por el hallazgo"
+    )
+    recomendacion = models.TextField(
+        blank=True,
+        help_text="Recomendación de mejora asociada al hallazgo"
+    )
 
     # Responsables
     identificado_por = models.ForeignKey(

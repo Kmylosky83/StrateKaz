@@ -20,9 +20,13 @@ import type {
   CreatePlanTrabajoAnualDTO,
   UpdatePlanTrabajoAnualDTO,
   CreateActividadPlanDTO,
+  UpdateActividadPlanDTO,
   CreateObjetivoSistemaDTO,
+  UpdateObjetivoSistemaDTO,
   CreateProgramaGestionDTO,
+  UpdateProgramaGestionDTO,
   CreateActividadProgramaDTO,
+  UpdateActividadProgramaDTO,
   CreateSeguimientoCronogramaDTO,
 } from '../types/planificacion-sistema.types';
 
@@ -150,6 +154,25 @@ export function useCambiarEstadoPlanTrabajo() {
   });
 }
 
+/**
+ * Hook para eliminar un plan de trabajo
+ */
+export function useDeletePlanTrabajo() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => planTrabajoApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['planes-trabajo'] });
+      toast.success('Plan de trabajo eliminado exitosamente');
+    },
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || 'Error al eliminar el plan de trabajo');
+    },
+  });
+}
+
 // ==================== ACTIVIDAD PLAN ====================
 
 /**
@@ -197,6 +220,47 @@ export function useCreateActividadPlan() {
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Error al crear la actividad');
+    },
+  });
+}
+
+/**
+ * Hook para actualizar una actividad del plan
+ */
+export function useUpdateActividadPlan() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UpdateActividadPlanDTO }) =>
+      actividadPlanApi.update(id, data),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['actividades-plan'] });
+      queryClient.invalidateQueries({ queryKey: ['plan-trabajo', result.plan_trabajo] });
+      toast.success('Actividad actualizada exitosamente');
+    },
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || 'Error al actualizar la actividad');
+    },
+  });
+}
+
+/**
+ * Hook para eliminar una actividad del plan
+ */
+export function useDeleteActividadPlan() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => actividadPlanApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['actividades-plan'] });
+      queryClient.invalidateQueries({ queryKey: ['planes-trabajo'] });
+      toast.success('Actividad eliminada exitosamente');
+    },
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || 'Error al eliminar la actividad');
     },
   });
 }
@@ -283,6 +347,46 @@ export function useCreateObjetivoSistema() {
 }
 
 /**
+ * Hook para actualizar un objetivo del sistema
+ */
+export function useUpdateObjetivoSistema() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UpdateObjetivoSistemaDTO }) =>
+      objetivoSistemaApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['objetivos-sistema'] });
+      toast.success('Objetivo actualizado exitosamente');
+    },
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || 'Error al actualizar el objetivo');
+    },
+  });
+}
+
+/**
+ * Hook para eliminar un objetivo del sistema
+ */
+export function useDeleteObjetivoSistema() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => objetivoSistemaApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['objetivos-sistema'] });
+      queryClient.invalidateQueries({ queryKey: ['planes-trabajo'] });
+      toast.success('Objetivo eliminado exitosamente');
+    },
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || 'Error al eliminar el objetivo');
+    },
+  });
+}
+
+/**
  * Hook para actualizar cumplimiento de un objetivo
  */
 export function useActualizarCumplimientoObjetivo() {
@@ -358,6 +462,46 @@ export function useCreateProgramaGestion() {
 }
 
 /**
+ * Hook para actualizar un programa de gestión
+ */
+export function useUpdateProgramaGestion() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UpdateProgramaGestionDTO }) =>
+      programaGestionApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['programas-gestion'] });
+      toast.success('Programa actualizado exitosamente');
+    },
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || 'Error al actualizar el programa');
+    },
+  });
+}
+
+/**
+ * Hook para eliminar un programa de gestión
+ */
+export function useDeleteProgramaGestion() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => programaGestionApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['programas-gestion'] });
+      queryClient.invalidateQueries({ queryKey: ['planes-trabajo'] });
+      toast.success('Programa eliminado exitosamente');
+    },
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || 'Error al eliminar el programa');
+    },
+  });
+}
+
+/**
  * Hook para actualizar avance de un programa
  */
 export function useActualizarAvancePrograma() {
@@ -420,6 +564,46 @@ export function useCreateActividadPrograma() {
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Error al crear la actividad');
+    },
+  });
+}
+
+/**
+ * Hook para actualizar una actividad de programa
+ */
+export function useUpdateActividadPrograma() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: UpdateActividadProgramaDTO }) =>
+      actividadProgramaApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['actividades-programa'] });
+      toast.success('Actividad actualizada exitosamente');
+    },
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || 'Error al actualizar la actividad');
+    },
+  });
+}
+
+/**
+ * Hook para eliminar una actividad de programa
+ */
+export function useDeleteActividadPrograma() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => actividadProgramaApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['actividades-programa'] });
+      queryClient.invalidateQueries({ queryKey: ['programas-gestion'] });
+      toast.success('Actividad eliminada exitosamente');
+    },
+    onError: (error: unknown) => {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || 'Error al eliminar la actividad');
     },
   });
 }

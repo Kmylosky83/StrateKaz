@@ -21,6 +21,9 @@ const INITIAL_FORM: CreateHallazgoDTO = {
   proceso_area: '',
   clausula_norma: '',
   norma_referencia: '',
+  impacto: '',
+  area_impactada: '',
+  recomendacion: '',
   identificado_por: '',
   responsable_proceso: '',
   fecha_deteccion: '',
@@ -35,6 +38,13 @@ const TIPO_OPTIONS = [
   { value: 'OBSERVACION', label: 'Observación' },
   { value: 'OPORTUNIDAD_MEJORA', label: 'Oportunidad de Mejora' },
   { value: 'FORTALEZA', label: 'Fortaleza' },
+];
+
+const IMPACTO_OPTIONS = [
+  { value: '', label: 'Seleccionar impacto...' },
+  { value: 'ALTO', label: 'Alto' },
+  { value: 'MEDIO', label: 'Medio' },
+  { value: 'BAJO', label: 'Bajo' },
 ];
 
 export default function HallazgoFormModal({ item, isOpen, onClose }: HallazgoFormModalProps) {
@@ -59,6 +69,9 @@ export default function HallazgoFormModal({ item, isOpen, onClose }: HallazgoFor
         proceso_area: item.proceso_area || '',
         clausula_norma: item.clausula_norma || '',
         norma_referencia: item.norma_referencia || '',
+        impacto: item.impacto || '',
+        area_impactada: item.area_impactada || '',
+        recomendacion: item.recomendacion || '',
         identificado_por: item.identificado_por,
         responsable_proceso: item.responsable_proceso || '',
         fecha_deteccion: item.fecha_deteccion,
@@ -193,6 +206,35 @@ export default function HallazgoFormModal({ item, isOpen, onClose }: HallazgoFor
             onChange={(e) => handleChange('norma_referencia', e.target.value)}
             placeholder="Ej: ISO 9001:2015"
           />
+
+          <Select
+            label="Impacto"
+            value={formData.impacto}
+            onChange={(e) => handleChange('impacto', e.target.value)}
+          >
+            {IMPACTO_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </Select>
+
+          <Input
+            label="Área Impactada"
+            value={formData.area_impactada}
+            onChange={(e) => handleChange('area_impactada', e.target.value)}
+            placeholder="Ej: Producción, Logística, Compras"
+          />
+
+          <div className="md:col-span-2">
+            <Textarea
+              label="Recomendación"
+              value={formData.recomendacion}
+              onChange={(e) => handleChange('recomendacion', e.target.value)}
+              placeholder="Recomendación de mejora asociada al hallazgo..."
+              rows={2}
+            />
+          </div>
 
           <Input
             label="Identificado Por *"

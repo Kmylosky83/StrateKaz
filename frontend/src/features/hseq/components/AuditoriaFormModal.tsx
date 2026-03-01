@@ -34,6 +34,9 @@ const TIPO_OPTIONS = [
   { value: 'SEGUIMIENTO', label: 'Auditoría de Seguimiento' },
   { value: 'CERTIFICACION', label: 'Auditoría de Certificación' },
   { value: 'RENOVACION', label: 'Auditoría de Renovación' },
+  { value: 'CONTROL_INTERNO', label: 'Control Interno' },
+  { value: 'DIAGNOSTICO', label: 'Diagnóstico' },
+  { value: 'PROVEEDOR', label: 'Auditoría a Proveedor' },
 ];
 
 const NORMA_OPTIONS = [

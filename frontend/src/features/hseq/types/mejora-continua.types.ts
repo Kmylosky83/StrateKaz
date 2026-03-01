@@ -12,7 +12,12 @@
 // ==================== ENUMS Y TIPOS ====================
 
 // Programa de Auditoría
-export type EstadoProgramaAuditoria = 'BORRADOR' | 'APROBADO' | 'EN_EJECUCION' | 'COMPLETADO' | 'CANCELADO';
+export type EstadoProgramaAuditoria =
+  | 'BORRADOR'
+  | 'APROBADO'
+  | 'EN_EJECUCION'
+  | 'COMPLETADO'
+  | 'CANCELADO';
 
 // Auditoría
 export type TipoAuditoria =
@@ -20,7 +25,10 @@ export type TipoAuditoria =
   | 'EXTERNA'
   | 'SEGUIMIENTO'
   | 'CERTIFICACION'
-  | 'RENOVACION';
+  | 'RENOVACION'
+  | 'CONTROL_INTERNO'
+  | 'DIAGNOSTICO'
+  | 'PROVEEDOR';
 
 export type NormaAuditoria =
   | 'ISO_9001'
@@ -55,6 +63,8 @@ export type EstadoHallazgo =
   | 'VERIFICADO'
   | 'CERRADO';
 
+export type ImpactoHallazgo = 'ALTO' | 'MEDIO' | 'BAJO';
+
 // Evaluación de Cumplimiento
 export type TipoEvaluacionCumplimiento =
   | 'LEGAL'
@@ -71,12 +81,7 @@ export type ResultadoEvaluacionCumplimiento =
   | 'NO_APLICA'
   | 'EN_PROCESO';
 
-export type PeriodicidadEvaluacion =
-  | 'MENSUAL'
-  | 'BIMESTRAL'
-  | 'TRIMESTRAL'
-  | 'SEMESTRAL'
-  | 'ANUAL';
+export type PeriodicidadEvaluacion = 'MENSUAL' | 'BIMESTRAL' | 'TRIMESTRAL' | 'SEMESTRAL' | 'ANUAL';
 
 // ==================== PROGRAMA DE AUDITORÍA ====================
 
@@ -217,6 +222,10 @@ export interface Hallazgo {
   proceso_area: string;
   clausula_norma: string;
   norma_referencia: string;
+  impacto: ImpactoHallazgo | '';
+  impacto_display?: string;
+  area_impactada: string;
+  recomendacion: string;
   identificado_por: string;
   identificado_por_nombre?: string;
   responsable_proceso: string | null;
@@ -253,6 +262,10 @@ export interface HallazgoList {
   estado: EstadoHallazgo;
   titulo: string;
   proceso_area: string;
+  impacto: ImpactoHallazgo | '';
+  impacto_display?: string;
+  area_impactada: string;
+  recomendacion: string;
   responsable_proceso_nombre?: string;
   fecha_deteccion: string;
   fecha_cierre_esperada: string | null;
@@ -365,6 +378,9 @@ export interface CreateHallazgoDTO {
   proceso_area?: string;
   clausula_norma?: string;
   norma_referencia?: string;
+  impacto?: ImpactoHallazgo | '';
+  area_impactada?: string;
+  recomendacion?: string;
   identificado_por: string;
   responsable_proceso?: string;
   fecha_deteccion: string;

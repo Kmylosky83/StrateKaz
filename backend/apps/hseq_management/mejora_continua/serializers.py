@@ -205,6 +205,7 @@ class HallazgoListSerializer(serializers.ModelSerializer):
 
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
+    impacto_display = serializers.CharField(source='get_impacto_display', read_only=True)
 
     requiere_accion_correctiva = serializers.ReadOnlyField()
     dias_abierto = serializers.ReadOnlyField()
@@ -217,6 +218,7 @@ class HallazgoListSerializer(serializers.ModelSerializer):
             'titulo', 'descripcion',
             'auditoria', 'auditoria_codigo', 'auditoria_titulo',
             'proceso_area', 'clausula_norma', 'norma_referencia',
+            'impacto', 'impacto_display', 'area_impactada', 'recomendacion',
             'identificado_por', 'identificado_por_nombre',
             'responsable_proceso', 'responsable_proceso_nombre',
             'fecha_deteccion', 'fecha_cierre_esperada', 'fecha_cierre_real',
@@ -252,6 +254,7 @@ class HallazgoDetailSerializer(serializers.ModelSerializer):
 
     tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
     estado_display = serializers.CharField(source='get_estado_display', read_only=True)
+    impacto_display = serializers.CharField(source='get_impacto_display', read_only=True)
 
     requiere_accion_correctiva = serializers.ReadOnlyField()
     dias_abierto = serializers.ReadOnlyField()

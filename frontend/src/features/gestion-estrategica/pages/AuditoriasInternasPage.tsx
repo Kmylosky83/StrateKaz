@@ -4,7 +4,7 @@
  * Connected to real hooks from useMejoraContinua (HSEQ)
  * MODULE_CODE = 'sistema_gestion'
  */
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   ClipboardCheck,
   FileCheck,
@@ -18,6 +18,7 @@ import {
   Clock,
   TrendingUp,
   FileText,
+  Filter,
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
 import {
@@ -59,6 +60,8 @@ import type {
   AuditoriaList,
   HallazgoList,
   EvaluacionCumplimientoList,
+  TipoAuditoria,
+  ImpactoHallazgo,
 } from '@/features/hseq/types/mejora-continua.types';
 
 const MODULE_CODE = 'sistema_gestion';
@@ -268,6 +271,34 @@ const ProgramasAuditoriaSection = ({ onOpenModal }: ProgramasAuditoriaProps) => 
   );
 };
 
+// ==================== CONSTANTS FOR FILTERS ====================
+
+const TIPO_AUDITORIA_OPTIONS: { value: TipoAuditoria | ''; label: string }[] = [
+  { value: '', label: 'Todos los tipos' },
+  { value: 'INTERNA', label: 'Auditoría Interna' },
+  { value: 'EXTERNA', label: 'Auditoría Externa' },
+  { value: 'SEGUIMIENTO', label: 'Seguimiento' },
+  { value: 'CERTIFICACION', label: 'Certificación' },
+  { value: 'RENOVACION', label: 'Renovación' },
+  { value: 'CONTROL_INTERNO', label: 'Control Interno' },
+  { value: 'DIAGNOSTICO', label: 'Diagnóstico' },
+  { value: 'PROVEEDOR', label: 'Auditoría a Proveedor' },
+];
+
+const IMPACTO_OPTIONS: { value: ImpactoHallazgo | ''; label: string }[] = [
+  { value: '', label: 'Todos los impactos' },
+  { value: 'ALTO', label: 'Alto' },
+  { value: 'MEDIO', label: 'Medio' },
+  { value: 'BAJO', label: 'Bajo' },
+];
+
+const getImpactoBadgeVariant = (impacto: string): 'danger' | 'warning' | 'success' | 'default' => {
+  if (impacto === 'ALTO') return 'danger';
+  if (impacto === 'MEDIO') return 'warning';
+  if (impacto === 'BAJO') return 'success';
+  return 'default';
+};
+
 // ==================== AUDITORÍAS SECTION ====================
 
 interface AuditoriasProps {
@@ -275,7 +306,15 @@ interface AuditoriasProps {
 }
 
 const AuditoriasSection = ({ onOpenModal }: AuditoriasProps) => {
-  const { data, isLoading } = useAuditorias();
+  const [tipoFilter, setTipoFilter] = useState<TipoAuditoria | ''>('');
+
+  const queryParams = useMemo(() => {
+    const params: Record<string, unknown> = {};
+    if (tipoFilter) params.tipo = tipoFilter;
+    return Object.keys(params).length > 0 ? params : undefined;
+  }, [tipoFilter]);
+
+  const { data, isLoading } = useAuditorias(queryParams);
   const deleteMutation = useDeleteAuditoria();
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
@@ -341,11 +380,27 @@ const AuditoriasSection = ({ onOpenModal }: AuditoriasProps) => {
         />
       </KpiCardGrid>
 
-      {/* Actions */}
-      <SectionToolbar
-        title="Auditorías Registradas"
-        primaryAction={{ label: 'Nueva Auditoría', onClick: () => onOpenModal() }}
-      />
+      {/* Filter + Actions */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-3">
+          <Filter className="w-4 h-4 text-gray-500" />
+          <select
+            className="rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            value={tipoFilter}
+            onChange={(e) => setTipoFilter(e.target.value as TipoAuditoria | '')}
+          >
+            {TIPO_AUDITORIA_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <Button onClick={() => onOpenModal()}>
+          <Plus className="w-4 h-4 mr-2" />
+          Nueva Auditoría
+        </Button>
+      </div>
 
       {/* Table */}
       <Card>
@@ -472,7 +527,15 @@ interface HallazgosProps {
 }
 
 const HallazgosSection = ({ onOpenModal }: HallazgosProps) => {
-  const { data, isLoading } = useHallazgos();
+  const [impactoFilter, setImpactoFilter] = useState<ImpactoHallazgo | ''>('');
+
+  const queryParams = useMemo(() => {
+    const params: Record<string, unknown> = {};
+    if (impactoFilter) params.impacto = impactoFilter;
+    return Object.keys(params).length > 0 ? params : undefined;
+  }, [impactoFilter]);
+
+  const { data, isLoading } = useHallazgos(queryParams);
   const deleteMutation = useDeleteHallazgo();
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
@@ -546,11 +609,27 @@ const HallazgosSection = ({ onOpenModal }: HallazgosProps) => {
         />
       </KpiCardGrid>
 
-      {/* Actions */}
-      <SectionToolbar
-        title="Hallazgos de Auditoría"
-        primaryAction={{ label: 'Nuevo Hallazgo', onClick: () => onOpenModal() }}
-      />
+      {/* Filter + Actions */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-3">
+          <Filter className="w-4 h-4 text-gray-500" />
+          <select
+            className="rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            value={impactoFilter}
+            onChange={(e) => setImpactoFilter(e.target.value as ImpactoHallazgo | '')}
+          >
+            {IMPACTO_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <Button onClick={() => onOpenModal()}>
+          <Plus className="w-4 h-4 mr-2" />
+          Nuevo Hallazgo
+        </Button>
+      </div>
 
       {/* Table */}
       <Card>
@@ -569,6 +648,9 @@ const HallazgosSection = ({ onOpenModal }: HallazgosProps) => {
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                   Estado
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                  Impacto
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
                   Proceso/Área
@@ -606,6 +688,15 @@ const HallazgosSection = ({ onOpenModal }: HallazgosProps) => {
                       status={hallazgo.estado}
                       variant={getEstadoBadgeColor(hallazgo.estado)}
                     />
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {hallazgo.impacto ? (
+                      <Badge variant={getImpactoBadgeVariant(hallazgo.impacto)}>
+                        {hallazgo.impacto_display ?? hallazgo.impacto}
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-gray-400">--</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
                     {hallazgo.proceso_area}

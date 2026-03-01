@@ -263,8 +263,8 @@ class HallazgoViewSet(viewsets.ModelViewSet):
     """ViewSet para Hallazgos de Auditoría"""
     permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
-    filterset_fields = ['estado', 'tipo', 'auditoria']
-    search_fields = ['codigo', 'titulo', 'descripcion', 'proceso_area']
+    filterset_fields = ['estado', 'tipo', 'auditoria', 'impacto']
+    search_fields = ['codigo', 'titulo', 'descripcion', 'proceso_area', 'area_impactada']
     ordering_fields = ['fecha_deteccion', 'created_at', 'codigo', 'tipo']
     ordering = ['-fecha_deteccion']
 
@@ -282,6 +282,11 @@ class HallazgoViewSet(viewsets.ModelViewSet):
         auditoria = self.request.query_params.get('auditoria', None)
         if auditoria:
             queryset = queryset.filter(auditoria_id=auditoria)
+
+        # Filtro por impacto
+        impacto = self.request.query_params.get('impacto', None)
+        if impacto:
+            queryset = queryset.filter(impacto=impacto)
 
         # Filtro por responsable
         responsable = self.request.query_params.get('responsable', None)

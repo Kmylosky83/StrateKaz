@@ -1,6 +1,8 @@
 """
 DocumentoService - Servicio de lógica de negocio para Gestión Documental.
 Patron @classmethod consistente con EvidenciaService, WorkflowExecutionService.
+
+Integración con Centro de Notificaciones para transiciones de estado.
 """
 import logging
 from django.apps import apps
@@ -15,6 +17,27 @@ from .models import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _send_notification(tipo_codigo, usuario, titulo, mensaje, url, datos_extra=None,
+                       prioridad='normal'):
+    """
+    Envía notificación de forma segura (no falla si el servicio no está disponible).
+    """
+    try:
+        from apps.audit_system.centro_notificaciones.services import NotificationService
+
+        NotificationService.send_notification(
+            tipo_codigo=tipo_codigo,
+            usuario=usuario,
+            titulo=titulo,
+            mensaje=mensaje,
+            url=url,
+            datos_extra=datos_extra or {},
+            prioridad=prioridad,
+        )
+    except Exception as e:
+        logger.warning(f'[documental] No se pudo enviar notificación: {e}')
 
 # Mapping: TipoDocumento.codigo -> ConsecutivoConfig.codigo
 TIPO_DOC_TO_CONSECUTIVO = {
@@ -82,6 +105,26 @@ class DocumentoService:
         if revisor_id:
             doc.revisado_por_id = revisor_id
         doc.save(update_fields=['estado', 'revisado_por_id', 'updated_at'])
+
+        # Notificar al revisor asignado
+        if doc.revisado_por:
+            _send_notification(
+                tipo_codigo='DOCUMENTO_REVISION',
+                usuario=doc.revisado_por,
+                titulo=f'Documento requiere revisión: {doc.codigo}',
+                mensaje=(
+                    f'El documento "{doc.titulo}" ({doc.codigo}) ha sido '
+                    f'enviado a revisión por {usuario.get_full_name()}. '
+                    f'Por favor revísalo.'
+                ),
+                url='/sistema-gestion/gestion-documental',
+                datos_extra={
+                    'documento_id': doc.id,
+                    'codigo': doc.codigo,
+                    'titulo': doc.titulo,
+                },
+            )
+
         return doc
 
     @classmethod
@@ -97,6 +140,27 @@ class DocumentoService:
         if observaciones:
             doc.observaciones = observaciones
         doc.save()
+
+        # Notificar al elaborador que su documento fue aprobado
+        if doc.elaborado_por:
+            _send_notification(
+                tipo_codigo='DOCUMENTO_APROBADO',
+                usuario=doc.elaborado_por,
+                titulo=f'Documento aprobado: {doc.codigo}',
+                mensaje=(
+                    f'El documento "{doc.titulo}" ({doc.codigo}) ha sido '
+                    f'aprobado por {usuario.get_full_name()}. '
+                    f'Puede proceder a publicarlo.'
+                ),
+                url='/sistema-gestion/gestion-documental',
+                datos_extra={
+                    'documento_id': doc.id,
+                    'codigo': doc.codigo,
+                    'titulo': doc.titulo,
+                    'version': doc.version_actual,
+                },
+            )
+
         return doc
 
     @classmethod
@@ -143,6 +207,29 @@ class DocumentoService:
             created_by=usuario,
         )
 
+        # Notificar al elaborador y al revisor que el documento fue publicado
+        notificados = set()
+        for dest_usuario in [doc.elaborado_por, doc.revisado_por]:
+            if dest_usuario and dest_usuario.id not in notificados:
+                notificados.add(dest_usuario.id)
+                _send_notification(
+                    tipo_codigo='DOCUMENTO_PUBLICADO',
+                    usuario=dest_usuario,
+                    titulo=f'Documento publicado: {doc.codigo}',
+                    mensaje=(
+                        f'El documento "{doc.titulo}" ({doc.codigo}) ha sido '
+                        f'publicado (versión {doc.version_actual}) y está '
+                        f'disponible para consulta.'
+                    ),
+                    url='/sistema-gestion/gestion-documental',
+                    datos_extra={
+                        'documento_id': doc.id,
+                        'codigo': doc.codigo,
+                        'titulo': doc.titulo,
+                        'version': doc.version_actual,
+                    },
+                )
+
         return doc
 
     @classmethod
@@ -162,6 +249,27 @@ class DocumentoService:
             empresa_id=empresa_id,
             created_by=usuario,
         )
+
+        # Notificar al elaborador que su documento fue marcado como obsoleto
+        if doc.elaborado_por and doc.elaborado_por != usuario:
+            _send_notification(
+                tipo_codigo='DOCUMENTO_OBSOLETO',
+                usuario=doc.elaborado_por,
+                titulo=f'Documento obsoleto: {doc.codigo}',
+                mensaje=(
+                    f'El documento "{doc.titulo}" ({doc.codigo}) ha sido '
+                    f'marcado como obsoleto por {usuario.get_full_name()}. '
+                    f'Motivo: {motivo}'
+                ),
+                url='/sistema-gestion/gestion-documental',
+                datos_extra={
+                    'documento_id': doc.id,
+                    'codigo': doc.codigo,
+                    'titulo': doc.titulo,
+                    'motivo': motivo,
+                },
+            )
+
         return doc
 
     @classmethod

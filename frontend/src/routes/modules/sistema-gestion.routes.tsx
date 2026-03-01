@@ -4,7 +4,7 @@
  *
  * Pages:
  * - GestionDocumental: features/gestion-estrategica/pages/
- * - Planificacion: reutiliza features/hseq/pages/PlanificacionSistemaPage (1028 líneas)
+ * - Planificacion: features/gestion-estrategica/pages/PlanificacionSistemaPage (nuevo)
  * - Auditorías: features/gestion-estrategica/pages/ (consume hooks de hseq)
  * - Acciones Mejora: features/gestion-estrategica/pages/ (consume hooks de hseq)
  */
@@ -15,7 +15,9 @@ import { withModuleGuard } from '../helpers';
 const SGGestionDocumentalPage = lazy(
   () => import('@/features/gestion-estrategica/pages/GestionDocumentalPage')
 );
-const SGPlanificacionPage = lazy(() => import('@/features/hseq/pages/PlanificacionSistemaPage'));
+const SGPlanificacionPage = lazy(
+  () => import('@/features/gestion-estrategica/pages/PlanificacionSistemaPage')
+);
 const SGAuditoriasPage = lazy(
   () => import('@/features/gestion-estrategica/pages/AuditoriasInternasPage')
 );

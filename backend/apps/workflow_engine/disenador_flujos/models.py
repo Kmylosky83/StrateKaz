@@ -19,6 +19,8 @@ from django.core.exceptions import ValidationError
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 
+from utils.models import TenantModel
+
 
 # ============================================================================
 # CHOICES - Constantes del sistema
@@ -101,7 +103,7 @@ OPERADOR_CONDICION_CHOICES = [
 # MODELO: CategoriaFlujo
 # ============================================================================
 
-class CategoriaFlujo(models.Model):
+class CategoriaFlujo(TenantModel):
     """
     Catálogo de categorías para clasificar flujos de trabajo.
 
@@ -165,23 +167,7 @@ class CategoriaFlujo(models.Model):
         help_text='Indica si la categoría está activa'
     )
 
-    # Auditoría
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Fecha de creación'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Fecha de actualización'
-    )
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='categorias_flujo_creadas',
-        verbose_name='Creado por'
-    )
+    # Auditoría: created_at, updated_at, created_by, updated_by heredados de TenantModel
 
     class Meta:
         db_table = 'workflow_categoria_flujo'
@@ -212,7 +198,7 @@ class CategoriaFlujo(models.Model):
 # MODELO: PlantillaFlujo
 # ============================================================================
 
-class PlantillaFlujo(models.Model):
+class PlantillaFlujo(TenantModel):
     """
     Plantilla de flujo de trabajo con versionamiento.
 
@@ -343,23 +329,7 @@ class PlantillaFlujo(models.Model):
         help_text='Fecha en que esta versión fue marcada como obsoleta'
     )
 
-    # Auditoría
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Fecha de creación'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Fecha de actualización'
-    )
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='plantillas_flujo_creadas',
-        verbose_name='Creado por'
-    )
+    # Auditoría: created_at, updated_at, created_by, updated_by heredados de TenantModel
     activado_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -489,7 +459,7 @@ class PlantillaFlujo(models.Model):
 # MODELO: NodoFlujo
 # ============================================================================
 
-class NodoFlujo(models.Model):
+class NodoFlujo(TenantModel):
     """
     Nodo individual dentro de un flujo BPMN.
 
@@ -590,23 +560,7 @@ class NodoFlujo(models.Model):
         - Para GATEWAY: {"tipo_evaluacion": "todas", "timeout_horas": 48}'''
     )
 
-    # Auditoría
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Fecha de creación'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Fecha de actualización'
-    )
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='nodos_flujo_creados',
-        verbose_name='Creado por'
-    )
+    # Auditoría: created_at, updated_at, created_by, updated_by heredados de TenantModel
 
     class Meta:
         db_table = 'workflow_nodo_flujo'
@@ -670,7 +624,7 @@ class NodoFlujo(models.Model):
 # MODELO: TransicionFlujo
 # ============================================================================
 
-class TransicionFlujo(models.Model):
+class TransicionFlujo(TenantModel):
     """
     Transición (arco/flujo de secuencia) entre nodos.
 
@@ -743,23 +697,7 @@ class TransicionFlujo(models.Model):
         help_text='Orden de evaluación (mayor número = mayor prioridad). Usar en GATEWAY_EXCLUSIVO'
     )
 
-    # Auditoría
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Fecha de creación'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Fecha de actualización'
-    )
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='transiciones_flujo_creadas',
-        verbose_name='Creado por'
-    )
+    # Auditoría: created_at, updated_at, created_by, updated_by heredados de TenantModel
 
     class Meta:
         db_table = 'workflow_transicion_flujo'
@@ -893,7 +831,7 @@ class TransicionFlujo(models.Model):
 # MODELO: CampoFormulario
 # ============================================================================
 
-class CampoFormulario(models.Model):
+class CampoFormulario(TenantModel):
     """
     Definición de campo de formulario para nodos de tipo TAREA.
 
@@ -1000,23 +938,7 @@ class CampoFormulario(models.Model):
         help_text='Texto de ejemplo dentro del campo'
     )
 
-    # Auditoría
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Fecha de creación'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Fecha de actualización'
-    )
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='campos_formulario_creados',
-        verbose_name='Creado por'
-    )
+    # Auditoría: created_at, updated_at, created_by, updated_by heredados de TenantModel
 
     class Meta:
         db_table = 'workflow_campo_formulario'
@@ -1065,7 +987,7 @@ class CampoFormulario(models.Model):
 # MODELO: RolFlujo
 # ============================================================================
 
-class RolFlujo(models.Model):
+class RolFlujo(TenantModel):
     """
     Rol que puede participar en flujos de trabajo.
 
@@ -1185,23 +1107,7 @@ class RolFlujo(models.Model):
         help_text='Indica si el rol está activo'
     )
 
-    # Auditoría
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Fecha de creación'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Fecha de actualización'
-    )
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='roles_flujo_creados',
-        verbose_name='Creado por'
-    )
+    # Auditoría: created_at, updated_at, created_by, updated_by heredados de TenantModel
 
     class Meta:
         db_table = 'workflow_rol_flujo'
@@ -1299,7 +1205,7 @@ class RolFlujo(models.Model):
 # MODELO: FormularioDiligenciado
 # ============================================================================
 
-class FormularioDiligenciado(models.Model):
+class FormularioDiligenciado(TenantModel):
     """
     Instancia de un formulario diligenciado.
 
@@ -1393,23 +1299,7 @@ class FormularioDiligenciado(models.Model):
         verbose_name='Observaciones'
     )
 
-    # Auditoría
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Fecha de creación'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Fecha de actualización'
-    )
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='formularios_diligenciados_creados',
-        verbose_name='Creado por'
-    )
+    # Auditoría: created_at, updated_at, created_by, updated_by heredados de TenantModel
 
     class Meta:
         db_table = 'workflow_formulario_diligenciado'
@@ -1484,7 +1374,7 @@ class FormularioDiligenciado(models.Model):
 # MODELO: RespuestaCampo
 # ============================================================================
 
-class RespuestaCampo(models.Model):
+class RespuestaCampo(TenantModel):
     """
     Respuesta individual a un campo de formulario.
 
@@ -1559,15 +1449,7 @@ class RespuestaCampo(models.Model):
         help_text='Valor previo antes de la modificación'
     )
 
-    # Auditoría
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Fecha de creación'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Fecha de actualización'
-    )
+    # Auditoría: created_at, updated_at, created_by, updated_by heredados de TenantModel
 
     class Meta:
         db_table = 'workflow_respuesta_campo'
@@ -1650,7 +1532,7 @@ class RespuestaCampo(models.Model):
 # MODELO: AsignacionFormulario
 # ============================================================================
 
-class AsignacionFormulario(models.Model):
+class AsignacionFormulario(TenantModel):
     """
     Asignación de formularios a usuarios o áreas.
 
@@ -1772,15 +1654,7 @@ class AsignacionFormulario(models.Model):
         verbose_name='Formulario Diligenciado'
     )
 
-    # Auditoría
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Fecha de creación'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Fecha de actualización'
-    )
+    # Auditoría: created_at, updated_at, created_by, updated_by heredados de TenantModel
 
     class Meta:
         db_table = 'workflow_asignacion_formulario'

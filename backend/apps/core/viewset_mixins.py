@@ -9,10 +9,45 @@ Autor: Sistema de Gestión
 Fecha: 2025-12-30
 """
 from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter, OrderingFilter
 from django.db.models import QuerySet
 from django.core.cache import cache
 from .cache_utils import generate_cache_key, cache_list_view
 from typing import Dict, List, Optional
+
+
+class TenantModelViewSetMixin:
+    """
+    Base mixin for all tenant-model ViewSets.
+    Provides standard permissions, filtering, and soft-delete awareness.
+
+    Automatically:
+    - Requires IsAuthenticated
+    - Enables DjangoFilterBackend, SearchFilter, OrderingFilter
+    - Filters out soft-deleted records (is_deleted=False)
+    - Sets created_by on create, updated_by on update
+
+    Ejemplo:
+        class MiViewSet(TenantModelViewSetMixin, viewsets.ModelViewSet):
+            queryset = MiModelo.objects.all()
+            serializer_class = MiSerializer
+    """
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if hasattr(qs.model, 'is_deleted'):
+            qs = qs.filter(is_deleted=False)
+        return qs
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
 
 
 class OptimizedQuerySetMixin:
@@ -303,6 +338,7 @@ class ReadOnlyOptimizedViewSetMixin(
 
 
 __all__ = [
+    'TenantModelViewSetMixin',
     'OptimizedQuerySetMixin',
     'CompanyFilterMixin',
     'SoftDeleteFilterMixin',

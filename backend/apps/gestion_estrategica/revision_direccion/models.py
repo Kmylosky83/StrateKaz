@@ -12,6 +12,7 @@ from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 
 from apps.core.base_models import BaseCompanyModel, AuditModel, SoftDeleteModel, TimestampedModel
+from utils.models import TenantModel
 
 
 class ProgramaRevision(BaseCompanyModel):
@@ -84,7 +85,7 @@ class ProgramaRevision(BaseCompanyModel):
         return f"Revisión {self.periodo} - {self.get_estado_display()}"
 
 
-class ParticipanteRevision(models.Model):
+class ParticipanteRevision(TenantModel):
     """Participantes convocados a la revisión"""
 
     class RolParticipacion(models.TextChoices):
@@ -119,7 +120,7 @@ class ParticipanteRevision(models.Model):
         return f"{self.usuario.get_full_name()} - {self.get_rol_display()}"
 
 
-class TemaRevision(models.Model):
+class TemaRevision(TenantModel):
     """Temas/Elementos de entrada para la revisión (según ISO)"""
 
     class CategoriaISO(models.TextChoices):
@@ -254,7 +255,7 @@ class ActaRevision(AuditModel, SoftDeleteModel):
         return f"Acta {self.numero_acta} - {self.fecha}"
 
 
-class AnalisisTemaActa(models.Model):
+class AnalisisTemaActa(TenantModel):
     """Análisis de cada tema en el acta"""
     acta = models.ForeignKey(
         ActaRevision, on_delete=models.CASCADE, related_name='analisis_temas'

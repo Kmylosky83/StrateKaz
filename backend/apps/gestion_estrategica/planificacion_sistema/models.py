@@ -18,8 +18,10 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
+from utils.models import TenantModel
 
-class PlanTrabajoAnual(models.Model):
+
+class PlanTrabajoAnual(TenantModel):
     """
     Plan de Trabajo Anual del Sistema de Gestion
 
@@ -111,23 +113,7 @@ class PlanTrabajoAnual(models.Model):
         help_text='Observaciones adicionales'
     )
 
-    # ============ AUDITORIA ============
-    created_by = models.ForeignKey(
-        'core.User',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='planes_trabajo_creados',
-        verbose_name='Creado por'
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Fecha de Creacion'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Fecha de Actualizacion'
-    )
+    # Auditoría: created_at, updated_at, created_by, updated_by heredados de TenantModel
 
     class Meta:
         # Mantener nombre de tabla original para multi-instancia
@@ -150,7 +136,7 @@ class PlanTrabajoAnual(models.Model):
             raise ValidationError('La fecha de fin no puede ser anterior a la fecha de inicio')
 
 
-class ActividadPlan(models.Model):
+class ActividadPlan(TenantModel):
     """
     Actividades del Plan de Trabajo Anual
 
@@ -305,23 +291,7 @@ class ActividadPlan(models.Model):
         verbose_name='Observaciones'
     )
 
-    # ============ AUDITORIA ============
-    created_by = models.ForeignKey(
-        'core.User',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='actividades_plan_creadas',
-        verbose_name='Creado por'
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Fecha de Creacion'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Fecha de Actualizacion'
-    )
+    # Auditoría: created_at, updated_at, created_by, updated_by heredados de TenantModel
 
     class Meta:
         # Mantener nombre de tabla original para multi-instancia
@@ -348,7 +318,7 @@ class ActividadPlan(models.Model):
             raise ValidationError('El porcentaje de avance debe estar entre 0 y 100')
 
 
-class ObjetivoSistema(models.Model):
+class ObjetivoSistema(TenantModel):
     """
     Objetivos del Sistema de Gestion
 
@@ -510,23 +480,7 @@ class ObjetivoSistema(models.Model):
         verbose_name='Observaciones'
     )
 
-    # ============ AUDITORIA ============
-    created_by = models.ForeignKey(
-        'core.User',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='objetivos_sistema_creados',
-        verbose_name='Creado por'
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Fecha de Creacion'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Fecha de Actualizacion'
-    )
+    # Auditoría: created_at, updated_at, created_by, updated_by heredados de TenantModel
 
     class Meta:
         # Mantener nombre de tabla original para multi-instancia
@@ -550,7 +504,7 @@ class ObjetivoSistema(models.Model):
             raise ValidationError('El porcentaje de cumplimiento debe estar entre 0 y 100')
 
 
-class ProgramaGestion(models.Model):
+class ProgramaGestion(TenantModel):
     """
     Programas de Gestion del Sistema
 
@@ -688,23 +642,7 @@ class ProgramaGestion(models.Model):
         verbose_name='Observaciones'
     )
 
-    # ============ AUDITORIA ============
-    created_by = models.ForeignKey(
-        'core.User',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='programas_gestion_creados',
-        verbose_name='Creado por'
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Fecha de Creacion'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Fecha de Actualizacion'
-    )
+    # Auditoría: created_at, updated_at, created_by, updated_by heredados de TenantModel
 
     class Meta:
         # Mantener nombre de tabla original para multi-instancia
@@ -723,7 +661,7 @@ class ProgramaGestion(models.Model):
         return f"{self.codigo} - {self.nombre}"
 
 
-class ActividadPrograma(models.Model):
+class ActividadPrograma(TenantModel):
     """
     Actividades de un Programa de Gestion
 
@@ -808,23 +746,7 @@ class ActividadPrograma(models.Model):
         verbose_name='Observaciones'
     )
 
-    # ============ AUDITORIA ============
-    created_by = models.ForeignKey(
-        'core.User',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='actividades_programa_creadas',
-        verbose_name='Creado por'
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Fecha de Creacion'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Fecha de Actualizacion'
-    )
+    # Auditoría: created_at, updated_at, created_by, updated_by heredados de TenantModel
 
     class Meta:
         # Mantener nombre de tabla original para multi-instancia
@@ -843,7 +765,7 @@ class ActividadPrograma(models.Model):
         return f"{self.codigo} - {self.nombre}"
 
 
-class SeguimientoCronograma(models.Model):
+class SeguimientoCronograma(TenantModel):
     """
     Seguimiento del Cronograma de Actividades
 
@@ -978,23 +900,7 @@ class SeguimientoCronograma(models.Model):
         help_text='Recomendaciones para mejorar el desempeno'
     )
 
-    # ============ AUDITORIA ============
-    created_by = models.ForeignKey(
-        'core.User',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='seguimientos_cronograma_creados',
-        verbose_name='Creado por'
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Fecha de Creacion'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Fecha de Actualizacion'
-    )
+    # Auditoría: created_at, updated_at, created_by, updated_by heredados de TenantModel
 
     class Meta:
         # Mantener nombre de tabla original para multi-instancia

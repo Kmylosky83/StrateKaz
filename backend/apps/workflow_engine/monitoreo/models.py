@@ -1,8 +1,10 @@
 from django.db import models
 from django.conf import settings
 
+from utils.models import TenantModel
 
-class MetricaFlujo(models.Model):
+
+class MetricaFlujo(TenantModel):
     PERIODO_CHOICES = [('mensual', 'Mensual'), ('trimestral', 'Trimestral'), ('anual', 'Anual')]
     plantilla = models.ForeignKey('disenador_flujos.PlantillaFlujo', on_delete=models.CASCADE, related_name='metricas')
     periodo = models.CharField(max_length=20, choices=PERIODO_CHOICES)
@@ -17,8 +19,7 @@ class MetricaFlujo(models.Model):
     tareas_rechazadas = models.IntegerField(default=0)
     cuellos_botella = models.JSONField(default=dict)
     empresa_id = models.PositiveBigIntegerField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    # Auditoría: created_at, updated_at, created_by, updated_by heredados de TenantModel
     class Meta:
         db_table = 'workflow_metrica_flujo'
         unique_together = [['plantilla', 'periodo', 'fecha_inicio', 'empresa_id']]
@@ -26,7 +27,7 @@ class MetricaFlujo(models.Model):
         return f"{self.plantilla.nombre} - {self.periodo}"
 
 
-class AlertaFlujo(models.Model):
+class AlertaFlujo(TenantModel):
     TIPO_CHOICES = [('retraso', 'Retraso'), ('escalamiento', 'Escalamiento'), ('error', 'Error'), ('vencimiento', 'Vencimiento')]
     SEVERIDAD_CHOICES = [('baja', 'Baja'), ('media', 'Media'), ('alta', 'Alta'), ('critica', 'Crítica')]
     ESTADO_CHOICES = [('activa', 'Activa'), ('atendida', 'Atendida'), ('ignorada', 'Ignorada')]
@@ -42,13 +43,14 @@ class AlertaFlujo(models.Model):
     acciones_tomadas = models.TextField(blank=True)
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='activa')
     empresa_id = models.PositiveBigIntegerField()
+    # Auditoría: created_at, updated_at, created_by, updated_by heredados de TenantModel
     class Meta:
         db_table = 'workflow_alerta_flujo'
     def __str__(self):
         return self.titulo
 
 
-class ReglaSLA(models.Model):
+class ReglaSLA(TenantModel):
     ACCION_CHOICES = [('notificar', 'Notificar'), ('escalar', 'Escalar'), ('reasignar', 'Reasignar')]
     plantilla = models.ForeignKey('disenador_flujos.PlantillaFlujo', on_delete=models.CASCADE, related_name='reglas_sla')
     nodo = models.ForeignKey('disenador_flujos.NodoFlujo', on_delete=models.CASCADE, null=True, blank=True, related_name='reglas_sla')
@@ -59,15 +61,14 @@ class ReglaSLA(models.Model):
     destinatarios_alerta = models.TextField()
     is_active = models.BooleanField(default=True)
     empresa_id = models.PositiveBigIntegerField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    # Auditoría: created_at, updated_at, created_by, updated_by heredados de TenantModel
     class Meta:
         db_table = 'workflow_regla_sla'
     def __str__(self):
         return self.nombre
 
 
-class DashboardWidget(models.Model):
+class DashboardWidget(TenantModel):
     TIPO_CHOICES = [('kpi', 'KPI'), ('grafico', 'Gráfico'), ('lista', 'Lista'), ('tabla', 'Tabla')]
     usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='dashboard_widgets')
     tipo_widget = models.CharField(max_length=20, choices=TIPO_CHOICES)
@@ -78,15 +79,14 @@ class DashboardWidget(models.Model):
     ancho = models.IntegerField(default=4)
     alto = models.IntegerField(default=4)
     is_visible = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    # Auditoría: created_at, updated_at, created_by, updated_by heredados de TenantModel
     class Meta:
         db_table = 'workflow_dashboard_widget'
     def __str__(self):
         return self.titulo
 
 
-class ReporteAutomatico(models.Model):
+class ReporteAutomatico(TenantModel):
     FRECUENCIA_CHOICES = [('diario', 'Diario'), ('semanal', 'Semanal'), ('mensual', 'Mensual')]
     FORMATO_CHOICES = [('pdf', 'PDF'), ('excel', 'Excel'), ('csv', 'CSV')]
     nombre = models.CharField(max_length=255)
@@ -99,8 +99,7 @@ class ReporteAutomatico(models.Model):
     proximo_envio = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
     empresa_id = models.PositiveBigIntegerField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    # Auditoría: created_at, updated_at, created_by, updated_by heredados de TenantModel
     class Meta:
         db_table = 'workflow_reporte_automatico'
     def __str__(self):

@@ -18,8 +18,10 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
+from utils.models import TenantModel
 
-class InstanciaFlujo(models.Model):
+
+class InstanciaFlujo(TenantModel):
     """
     Instancia de ejecución de un flujo de trabajo (workflow instance)
 
@@ -230,22 +232,14 @@ class InstanciaFlujo(models.Model):
         help_text='Notas adicionales sobre la instancia'
     )
 
-    # ============ MULTI-TENANCY Y AUDITORÍA ============
+    # ============ MULTI-TENANCY ============
     empresa_id = models.PositiveBigIntegerField(
         db_index=True,
         verbose_name='Empresa ID',
         help_text='ID de la empresa (multi-tenancy)'
     )
 
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Fecha de creación'
-    )
-
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Fecha de actualización'
-    )
+    # Auditoría: created_at, updated_at, created_by, updated_by heredados de TenantModel
 
     class Meta:
         db_table = 'workflow_exec_instancia_flujo'
@@ -315,7 +309,7 @@ class InstanciaFlujo(models.Model):
         return round((tareas_completadas / tareas_totales) * 100, 2)
 
 
-class TareaActiva(models.Model):
+class TareaActiva(TenantModel):
     """
     Tarea activa en una instancia de flujo (active task)
 
@@ -532,32 +526,14 @@ class TareaActiva(models.Model):
         help_text='Comentarios del ejecutor de la tarea'
     )
 
-    # ============ MULTI-TENANCY Y AUDITORÍA ============
+    # ============ MULTI-TENANCY ============
     empresa_id = models.PositiveBigIntegerField(
         db_index=True,
         verbose_name='Empresa ID',
         help_text='ID de la empresa (multi-tenancy)'
     )
 
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Fecha de creación'
-    )
-
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Fecha de actualización'
-    )
-
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='workflow_tareas_creadas',
-        verbose_name='Creado por',
-        help_text='Usuario que creó la tarea (usualmente el sistema)'
-    )
+    # Auditoría: created_at, updated_at, created_by, updated_by heredados de TenantModel
 
     class Meta:
         db_table = 'workflow_exec_tarea_activa'
@@ -635,7 +611,7 @@ class TareaActiva(models.Model):
         return round(delta.total_seconds() / 3600, 2)
 
 
-class HistorialTarea(models.Model):
+class HistorialTarea(TenantModel):
     """
     Historial de transiciones y cambios en tareas (task history)
 
@@ -787,7 +763,7 @@ class HistorialTarea(models.Model):
         return f"{self.tarea.codigo_tarea} - {self.get_accion_display()} - {self.fecha_accion}"
 
 
-class ArchivoAdjunto(models.Model):
+class ArchivoAdjunto(TenantModel):
     """
     Archivos adjuntos a tareas o instancias de flujo (file attachments)
 
@@ -960,7 +936,7 @@ class ArchivoAdjunto(models.Model):
         return f"{self.tamano_bytes:.2f} PB"
 
 
-class NotificacionFlujo(models.Model):
+class NotificacionFlujo(TenantModel):
     """
     Notificaciones generadas por el workflow (workflow notifications)
 

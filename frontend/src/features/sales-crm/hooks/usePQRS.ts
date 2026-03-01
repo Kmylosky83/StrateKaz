@@ -56,8 +56,7 @@ export function useUpdatePQRS() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, datos }: { id: number; datos: UpdatePQRSDTO }) =>
-      pqrsApi.update(id, datos),
+    mutationFn: ({ id, datos }: { id: number; datos: UpdatePQRSDTO }) => pqrsApi.update(id, datos),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.pqrs() });
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.pqrsById(id) });
@@ -65,6 +64,22 @@ export function useUpdatePQRS() {
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.detail || 'Error al actualizar PQRS');
+    },
+  });
+}
+
+export function useDeletePQRS() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => pqrsApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: salesCRMKeys.pqrs() });
+      queryClient.invalidateQueries({ queryKey: salesCRMKeys.pqrsDashboard() });
+      toast.success('PQRS eliminada exitosamente');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.detail || 'Error al eliminar PQRS');
     },
   });
 }
@@ -125,8 +140,7 @@ export function useCerrarPQRS() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, datos }: { id: number; datos: CerrarPQRSDTO }) =>
-      pqrsApi.cerrar(id, datos),
+    mutationFn: ({ id, datos }: { id: number; datos: CerrarPQRSDTO }) => pqrsApi.cerrar(id, datos),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.pqrs() });
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.pqrsById(id) });
@@ -141,7 +155,9 @@ export function useCerrarPQRS() {
 
 export function useSeguimientoPQRS(params?: any) {
   return useQuery({
-    queryKey: params ? salesCRMKeys.seguimientoPQRSFiltered(params) : salesCRMKeys.seguimientoPQRS(),
+    queryKey: params
+      ? salesCRMKeys.seguimientoPQRSFiltered(params)
+      : salesCRMKeys.seguimientoPQRS(),
     queryFn: () => seguimientoPQRSApi.getAll(params),
   });
 }

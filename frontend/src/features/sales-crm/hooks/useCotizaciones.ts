@@ -5,7 +5,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { cotizacionesApi } from '../api';
 import { salesCRMKeys } from './queryKeys';
-import type { CreateCotizacionDTO, UpdateCotizacionDTO, AprobarCotizacionDTO, RechazarCotizacionDTO } from '../types';
+import type {
+  CreateCotizacionDTO,
+  UpdateCotizacionDTO,
+  AprobarCotizacionDTO,
+  RechazarCotizacionDTO,
+} from '../types';
 
 export function useCotizaciones(params?: any) {
   return useQuery({
@@ -50,6 +55,21 @@ export function useUpdateCotizacion() {
     },
     onError: (error: any) => {
       toast.error(error?.response?.data?.detail || 'Error al actualizar cotización');
+    },
+  });
+}
+
+export function useDeleteCotizacion() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => cotizacionesApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: salesCRMKeys.cotizaciones() });
+      toast.success('Cotización eliminada exitosamente');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.detail || 'Error al eliminar cotización');
     },
   });
 }

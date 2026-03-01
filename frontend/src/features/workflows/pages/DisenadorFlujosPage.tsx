@@ -1,11 +1,11 @@
 /**
- * DisenadorFlujosPage - Pagina principal del disenador de flujos BPMN
+ * DisenadorFlujosPage - Diseñador de flujos BPMN
  *
  * Dos modos:
- * 1. Lista de plantillas (cuando no hay plantilla seleccionada)
+ * 1. Lista de plantillas con KPIs, filtros, CRUD (modals)
  * 2. Canvas React Flow (cuando se selecciona una plantilla para editar)
  */
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import {
   GitBranch,
   Plus,
@@ -16,31 +16,50 @@ import {
   Edit3,
   Clock,
   FileText,
+  Tags,
+  Settings,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Badge, EmptyState, Spinner, StatusBadge } from '@/components/common';
+import {
+  Card,
+  Badge,
+  EmptyState,
+  Spinner,
+  StatusBadge,
+  KpiCard,
+  KpiCardGrid,
+  KpiCardSkeleton,
+  ConfirmDialog,
+} from '@/components/common';
 import { Button } from '@/components/common/Button';
 import { PageHeader } from '@/components/layout';
 import { NODE_CONFIG } from '../components/nodes/BpmnNodes';
 import { WorkflowDesignerCanvas } from '../components/WorkflowDesignerCanvas';
+import PlantillaFormModal from '../components/PlantillaFormModal';
+import CategoriaFormModal from '../components/CategoriaFormModal';
 import {
   usePlantillas,
   usePlantilla,
-  useCreatePlantilla,
   useActivarPlantilla,
   useDeletePlantilla,
   useCrearVersionPlantilla,
+  useCategorias,
 } from '../hooks/useWorkflows';
-import type { TipoNodo, PlantillaFlujo, EstadoPlantilla } from '../types/workflow.types';
+import type {
+  TipoNodo,
+  PlantillaFlujo,
+  EstadoPlantilla,
+  CategoriaFlujo,
+} from '../types/workflow.types';
 
 // ============================================================
-// COMPONENTES DE NODO ARRASTRABLES (sidebar)
+// COMPONENTES DE NODO ARRASTRABLES (sidebar del canvas)
 // ============================================================
 
 const DRAGGABLE_NODES: { tipo: TipoNodo; label: string }[] = [
   { tipo: 'INICIO', label: 'Inicio' },
   { tipo: 'TAREA', label: 'Tarea' },
-  { tipo: 'GATEWAY_EXCLUSIVO', label: 'Decision' },
+  { tipo: 'GATEWAY_EXCLUSIVO', label: 'Decisión' },
   { tipo: 'GATEWAY_PARALELO', label: 'Paralelo' },
   { tipo: 'EVENTO', label: 'Evento' },
   { tipo: 'FIN', label: 'Fin' },
@@ -82,24 +101,19 @@ const DraggableNode = ({ tipo, label }: DraggableNodeProps) => {
 // TARJETA DE PLANTILLA
 // ============================================================
 
-const _estadoColors: Record<EstadoPlantilla, string> = {
-  BORRADOR: 'gray',
-  ACTIVO: 'green',
-  OBSOLETO: 'yellow',
-  ARCHIVADO: 'red',
-};
-
 interface PlantillaCardProps {
   plantilla: PlantillaFlujo;
   onSelect: (id: number) => void;
+  onEdit: (plantilla: PlantillaFlujo) => void;
   onActivar: (id: number) => void;
   onNewVersion: (id: number) => void;
-  onDelete: (id: number) => void;
+  onDelete: (plantilla: PlantillaFlujo) => void;
 }
 
 const PlantillaCard = ({
   plantilla,
   onSelect,
+  onEdit,
   onActivar,
   onNewVersion,
   onDelete,
@@ -130,6 +144,18 @@ const PlantillaCard = ({
         </p>
       )}
 
+      {plantilla.categoria_detail && (
+        <div className="flex items-center gap-1.5 mb-3">
+          <div
+            className="w-3 h-3 rounded-full"
+            style={{ backgroundColor: plantilla.categoria_detail.color || '#8B5CF6' }}
+          />
+          <span className="text-xs text-gray-500 dark:text-gray-400">
+            {plantilla.categoria_detail.nombre}
+          </span>
+        </div>
+      )}
+
       <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mb-4">
         <span className="flex items-center gap-1">
           <FileText className="h-3 w-3" />
@@ -147,9 +173,13 @@ const PlantillaCard = ({
         )}
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <Button size="sm" variant="primary" onClick={() => onSelect(plantilla.id)}>
           <Edit3 className="h-3.5 w-3.5 mr-1" />
+          Diseñar
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => onEdit(plantilla)}>
+          <Settings className="h-3.5 w-3.5 mr-1" />
           Editar
         </Button>
         {plantilla.estado === 'BORRADOR' && (
@@ -161,11 +191,11 @@ const PlantillaCard = ({
         {plantilla.estado === 'ACTIVO' && (
           <Button size="sm" variant="outline" onClick={() => onNewVersion(plantilla.id)}>
             <Copy className="h-3.5 w-3.5 mr-1" />
-            Nueva Version
+            Nueva Versión
           </Button>
         )}
-        <Button size="sm" variant="outline" onClick={() => onDelete(plantilla.id)}>
-          <Trash2 className="h-3.5 w-3.5" />
+        <Button size="sm" variant="ghost" onClick={() => onDelete(plantilla)}>
+          <Trash2 className="h-3.5 w-3.5 text-red-500" />
         </Button>
       </div>
     </div>
@@ -180,38 +210,67 @@ export default function DisenadorFlujosPage() {
   const navigate = useNavigate();
   const [selectedPlantillaId, setSelectedPlantillaId] = useState<number | null>(null);
   const [filterEstado, setFilterEstado] = useState<EstadoPlantilla | ''>('');
-  const [showNewForm, setShowNewForm] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [newCode, setNewCode] = useState('');
+
+  // Modals
+  const [showPlantillaModal, setShowPlantillaModal] = useState(false);
+  const [editingPlantilla, setEditingPlantilla] = useState<PlantillaFlujo | null>(null);
+  const [showCategoriaModal, setShowCategoriaModal] = useState(false);
+  const [editingCategoria, setEditingCategoria] = useState<CategoriaFlujo | null>(null);
+  const [deletingPlantilla, setDeletingPlantilla] = useState<PlantillaFlujo | null>(null);
 
   // Queries
   const { data: plantillasData, isLoading } = usePlantillas(
     filterEstado ? { estado: filterEstado } : undefined
   );
+  const { data: allPlantillasData } = usePlantillas();
   const { data: selectedPlantilla } = usePlantilla(selectedPlantillaId);
+  const { data: categoriasData } = useCategorias();
 
   // Mutations
-  const createMutation = useCreatePlantilla();
   const activarMutation = useActivarPlantilla();
   const deleteMutation = useDeletePlantilla();
   const newVersionMutation = useCrearVersionPlantilla();
 
   const plantillas = plantillasData?.results ?? [];
+  const allPlantillas = allPlantillasData?.results ?? [];
 
-  const handleCreate = useCallback(() => {
-    if (!newName.trim() || !newCode.trim()) return;
-    createMutation.mutate(
-      { nombre: newName.trim(), codigo: newCode.trim().toUpperCase() },
-      {
-        onSuccess: (p) => {
-          setSelectedPlantillaId(p.id);
-          setShowNewForm(false);
-          setNewName('');
-          setNewCode('');
-        },
-      }
-    );
-  }, [newName, newCode, createMutation]);
+  // KPI calculations
+  const totalPlantillas = allPlantillas.length;
+  const activas = allPlantillas.filter((p) => p.estado === 'ACTIVO').length;
+  const borradores = allPlantillas.filter((p) => p.estado === 'BORRADOR').length;
+  const categorias = Array.isArray(categoriasData)
+    ? categoriasData
+    : (categoriasData?.results ?? []);
+
+  const handleOpenNew = () => {
+    setEditingPlantilla(null);
+    setShowPlantillaModal(true);
+  };
+
+  const handleEdit = (plantilla: PlantillaFlujo) => {
+    setEditingPlantilla(plantilla);
+    setShowPlantillaModal(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deletingPlantilla) return;
+    deleteMutation.mutate(deletingPlantilla.id, {
+      onSuccess: () => setDeletingPlantilla(null),
+    });
+  };
+
+  const handleOpenCategoria = () => {
+    setEditingCategoria(null);
+    setShowCategoriaModal(true);
+  };
+
+  const estadoFilters = [
+    { value: '' as const, label: 'Todos' },
+    { value: 'BORRADOR' as const, label: 'Borrador' },
+    { value: 'ACTIVO' as const, label: 'Activo' },
+    { value: 'OBSOLETO' as const, label: 'Obsoleto' },
+    { value: 'ARCHIVADO' as const, label: 'Archivado' },
+  ];
 
   // ---- MODO CANVAS (editando plantilla) ----
   if (selectedPlantilla) {
@@ -261,7 +320,7 @@ export default function DisenadorFlujosPage() {
             <WorkflowDesignerCanvas
               plantilla={selectedPlantilla}
               onEditNode={() => {
-                // TODO: Abrir modal de edicion del nodo
+                // TODO: Modal de edición de nodo
               }}
             />
           </div>
@@ -274,7 +333,7 @@ export default function DisenadorFlujosPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Disenador de Flujos"
+        title="Diseñador de Flujos"
         description="Crea y configura flujos de trabajo BPMN con el editor visual"
         actions={
           <div className="flex gap-2">
@@ -282,7 +341,11 @@ export default function DisenadorFlujosPage() {
               <ArrowLeft className="h-4 w-4 mr-2" />
               Volver
             </Button>
-            <Button variant="primary" onClick={() => setShowNewForm(true)}>
+            <Button variant="outline" onClick={handleOpenCategoria}>
+              <Tags className="h-4 w-4 mr-2" />
+              Categorías
+            </Button>
+            <Button variant="primary" onClick={handleOpenNew}>
               <Plus className="h-4 w-4 mr-2" />
               Nueva Plantilla
             </Button>
@@ -290,76 +353,38 @@ export default function DisenadorFlujosPage() {
         }
       />
 
-      {/* Formulario rapido de creacion */}
-      {showNewForm && (
-        <Card className="border-purple-200 dark:border-purple-800">
-          <div className="p-4">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
-              Nueva Plantilla de Flujo
-            </h3>
-            <div className="flex gap-3 items-end">
-              <div className="flex-1">
-                <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
-                  Codigo
-                </label>
-                <input
-                  type="text"
-                  value={newCode}
-                  onChange={(e) => setNewCode(e.target.value)}
-                  placeholder="ej: APROBACION_COMPRAS"
-                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                />
-              </div>
-              <div className="flex-[2]">
-                <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
-                  Nombre
-                </label>
-                <input
-                  type="text"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  placeholder="ej: Flujo de Aprobacion de Compras"
-                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                />
-              </div>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={handleCreate}
-                disabled={createMutation.isPending || !newName.trim() || !newCode.trim()}
-              >
-                Crear
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setShowNewForm(false);
-                  setNewName('');
-                  setNewCode('');
-                }}
-              >
-                Cancelar
-              </Button>
-            </div>
-          </div>
-        </Card>
+      {/* KPI Cards */}
+      {isLoading ? (
+        <KpiCardGrid columns={4}>
+          {[1, 2, 3, 4].map((i) => (
+            <KpiCardSkeleton key={i} />
+          ))}
+        </KpiCardGrid>
+      ) : (
+        <KpiCardGrid columns={4}>
+          <KpiCard
+            title="Total Plantillas"
+            value={totalPlantillas}
+            icon="FileText"
+            color="purple"
+          />
+          <KpiCard title="Activas" value={activas} icon="Play" color="green" />
+          <KpiCard title="En Borrador" value={borradores} icon="Edit3" color="orange" />
+          <KpiCard title="Categorías" value={categorias.length} icon="Tags" color="blue" />
+        </KpiCardGrid>
       )}
 
-      {/* Filtros */}
-      <div className="flex gap-2">
-        {(['', 'BORRADOR', 'ACTIVO', 'OBSOLETO', 'ARCHIVADO'] as const).map((estado) => (
-          <button
-            key={estado}
-            onClick={() => setFilterEstado(estado)}
-            className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-              filterEstado === estado
-                ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 font-medium'
-                : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
-            }`}
+      {/* Filtros por estado */}
+      <div className="flex gap-2 flex-wrap">
+        {estadoFilters.map((f) => (
+          <Button
+            key={f.value}
+            size="sm"
+            variant={filterEstado === f.value ? 'primary' : 'ghost'}
+            onClick={() => setFilterEstado(f.value)}
           >
-            {estado || 'Todos'}
-          </button>
+            {f.label}
+          </Button>
         ))}
       </div>
 
@@ -372,7 +397,7 @@ export default function DisenadorFlujosPage() {
         <EmptyState
           icon={<GitBranch className="h-12 w-12" />}
           title="Sin plantillas de flujo"
-          description="Crea tu primera plantilla para comenzar a disenar flujos de trabajo."
+          description="Crea tu primera plantilla para comenzar a diseñar flujos de trabajo."
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -381,13 +406,51 @@ export default function DisenadorFlujosPage() {
               key={p.id}
               plantilla={p}
               onSelect={setSelectedPlantillaId}
+              onEdit={handleEdit}
               onActivar={(id) => activarMutation.mutate(id)}
               onNewVersion={(id) => newVersionMutation.mutate(id)}
-              onDelete={(id) => deleteMutation.mutate(id)}
+              onDelete={setDeletingPlantilla}
             />
           ))}
         </div>
       )}
+
+      {/* Modal: Crear/Editar Plantilla */}
+      <PlantillaFormModal
+        item={editingPlantilla}
+        isOpen={showPlantillaModal}
+        onClose={() => {
+          setShowPlantillaModal(false);
+          setEditingPlantilla(null);
+        }}
+      />
+
+      {/* Modal: Crear/Editar Categoría */}
+      <CategoriaFormModal
+        item={editingCategoria}
+        isOpen={showCategoriaModal}
+        onClose={() => {
+          setShowCategoriaModal(false);
+          setEditingCategoria(null);
+        }}
+      />
+
+      {/* Confirm: Eliminar Plantilla */}
+      <ConfirmDialog
+        isOpen={!!deletingPlantilla}
+        onClose={() => setDeletingPlantilla(null)}
+        onConfirm={handleConfirmDelete}
+        title="Eliminar Plantilla"
+        message={
+          <>
+            ¿Estás seguro de eliminar la plantilla <strong>{deletingPlantilla?.nombre}</strong>?
+            Esta acción no se puede deshacer.
+          </>
+        }
+        confirmText="Eliminar"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 }

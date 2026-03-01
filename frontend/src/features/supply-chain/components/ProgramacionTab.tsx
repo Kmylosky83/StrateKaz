@@ -1,7 +1,8 @@
 /**
  * Tab de Programación de Abastecimiento - Supply Chain
  *
- * Gestión de programaciones, asignaciones de recursos, ejecuciones y liquidaciones
+ * Gestión de programaciones, asignaciones de recursos, ejecuciones y liquidaciones.
+ * KPIs + SectionToolbar + Table + CRUD modales.
  */
 import { useState } from 'react';
 import { Tabs } from '@/components/common/Tabs';
@@ -10,6 +11,9 @@ import { Button } from '@/components/common/Button';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Badge } from '@/components/common/Badge';
 import { Spinner } from '@/components/common/Spinner';
+import { KpiCard, KpiCardGrid } from '@/components/common/KpiCard';
+import { SectionToolbar } from '@/components/common/SectionToolbar';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import {
   Calendar,
   Truck,
@@ -19,20 +23,24 @@ import {
   Edit,
   Eye,
   Trash2,
-  RotateCcw,
   CheckCircle,
   FileText,
-  Filter,
-  Download,
+  Clock,
+  PlayCircle,
+  ListChecks,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
   useProgramaciones,
+  useDeleteProgramacion,
+  useEstadisticasProgramaciones,
   useAsignacionesRecurso,
   useEjecuciones,
   useLiquidaciones,
 } from '../hooks';
+import ProgramacionFormModal from './ProgramacionFormModal';
+import type { Programacion } from '../types';
 
 // ==================== UTILITY FUNCTIONS ====================
 
@@ -62,7 +70,38 @@ const getEstadoBadgeVariant = (
 
 const ProgramacionesSection = () => {
   const { data, isLoading } = useProgramaciones();
-  const programaciones = data?.results || [];
+  const { data: estadisticasData } = useEstadisticasProgramaciones();
+  const deleteMutation = useDeleteProgramacion();
+
+  const [selectedItem, setSelectedItem] = useState<Programacion | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const programaciones = Array.isArray(data) ? data : (data?.results ?? []);
+  const estadisticas = estadisticasData as Record<string, unknown> | undefined;
+
+  const handleCreate = () => {
+    setSelectedItem(null);
+    setIsFormOpen(true);
+  };
+
+  const handleEdit = (item: Programacion) => {
+    setSelectedItem(item);
+    setIsFormOpen(true);
+  };
+
+  const handleCloseForm = () => {
+    setIsFormOpen(false);
+    setSelectedItem(null);
+  };
+
+  const handleDelete = () => {
+    if (deleteId) {
+      deleteMutation.mutate(deleteId, {
+        onSuccess: () => setDeleteId(null),
+      });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -72,112 +111,154 @@ const ProgramacionesSection = () => {
     );
   }
 
-  if (programaciones.length === 0) {
-    return (
-      <EmptyState
-        icon={<Calendar className="w-16 h-16" />}
-        title="No hay programaciones registradas"
-        description="Comience creando programaciones de abastecimiento"
-        action={{
+  return (
+    <div className="space-y-6">
+      {/* KPIs */}
+      <KpiCardGrid columns={4}>
+        <KpiCard
+          label="Total Programaciones"
+          value={estadisticas?.total_programaciones ?? programaciones.length}
+          icon={<ListChecks className="w-5 h-5" />}
+          color="primary"
+        />
+        <KpiCard
+          label="Pendientes"
+          value={estadisticas?.programaciones_pendientes ?? 0}
+          icon={<Clock className="w-5 h-5" />}
+          color="warning"
+        />
+        <KpiCard
+          label="En Proceso"
+          value={estadisticas?.programaciones_en_proceso ?? 0}
+          icon={<PlayCircle className="w-5 h-5" />}
+          color="info"
+        />
+        <KpiCard
+          label="Completadas"
+          value={estadisticas?.programaciones_completadas ?? 0}
+          icon={<CheckCircle className="w-5 h-5" />}
+          color="success"
+        />
+      </KpiCardGrid>
+
+      {/* Toolbar */}
+      <SectionToolbar
+        title="Programaciones"
+        count={programaciones.length}
+        primaryAction={{
           label: 'Nueva Programación',
-          onClick: () => {},
+          onClick: handleCreate,
           icon: <Plus className="w-4 h-4" />,
         }}
       />
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Actions */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Programaciones</h3>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
-            Filtros
-          </Button>
-          <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-            Exportar
-          </Button>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Nueva Programación
-          </Button>
-        </div>
-      </div>
 
       {/* Table */}
-      <Card variant="bordered" padding="none">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Código
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Tipo Operación
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Fecha Programada
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Cantidad
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Estado
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {programaciones.map((prog: any) => (
-                <tr key={prog.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                    {prog.codigo}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {prog.tipo_operacion_nombre}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {prog.fecha_programada
-                      ? format(new Date(prog.fecha_programada), 'dd/MM/yyyy', { locale: es })
-                      : '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {prog.cantidad_programada} {prog.unidad_medida_codigo}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={getEstadoBadgeVariant(prog.estado_codigo)} size="sm">
-                      {formatEstado(prog.estado_nombre)}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      {prog.deleted_at ? (
-                        <Button variant="ghost" size="sm">
-                          <RotateCcw className="w-4 h-4" />
+      {programaciones.length === 0 ? (
+        <EmptyState
+          icon={<Calendar className="w-16 h-16" />}
+          title="No hay programaciones registradas"
+          description="Comience creando programaciones de abastecimiento"
+          action={{
+            label: 'Nueva Programación',
+            onClick: handleCreate,
+            icon: <Plus className="w-4 h-4" />,
+          }}
+        />
+      ) : (
+        <Card variant="bordered" padding="none">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Código
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Tipo Operación
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Fecha Programada
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Proveedor
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Estado
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Acciones
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {programaciones.map((prog: Programacion) => (
+                  <tr key={prog.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                      {prog.codigo || `PROG-${prog.id}`}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                      {prog.tipo_operacion_nombre || '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                      {prog.fecha_programada
+                        ? format(new Date(prog.fecha_programada), 'dd/MM/yyyy', { locale: es })
+                        : '-'}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                      {prog.proveedor_nombre || '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Badge
+                        variant={getEstadoBadgeVariant(
+                          prog.estado_nombre || String(prog.estado || '')
+                        )}
+                        size="sm"
+                      >
+                        {prog.estado_nombre || formatEstado(String(prog.estado || 'N/A'))}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(prog)}
+                          title="Editar"
+                        >
+                          <Edit className="w-4 h-4" />
                         </Button>
-                      ) : (
-                        <Button variant="ghost" size="sm">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeleteId(prog.id)}
+                          title="Eliminar"
+                        >
                           <Trash2 className="w-4 h-4 text-danger-600" />
                         </Button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      {/* Modal Crear/Editar */}
+      <ProgramacionFormModal item={selectedItem} isOpen={isFormOpen} onClose={handleCloseForm} />
+
+      {/* Confirmar Eliminación */}
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Eliminar Programación"
+        description="¿Está seguro de que desea eliminar esta programación? Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 };
@@ -186,7 +267,7 @@ const ProgramacionesSection = () => {
 
 const AsignacionesSection = () => {
   const { data, isLoading } = useAsignacionesRecurso();
-  const asignaciones = data?.results || [];
+  const asignaciones = Array.isArray(data) ? data : (data?.results ?? []);
 
   if (isLoading) {
     return (
@@ -196,85 +277,84 @@ const AsignacionesSection = () => {
     );
   }
 
-  if (asignaciones.length === 0) {
-    return (
-      <EmptyState
-        icon={<Truck className="w-16 h-16" />}
-        title="No hay asignaciones de recursos"
-        description="Asigne recursos a las programaciones de abastecimiento"
-        action={{
+  return (
+    <div className="space-y-6">
+      <SectionToolbar
+        title="Asignación de Recursos"
+        count={asignaciones.length}
+        primaryAction={{
           label: 'Nueva Asignación',
           onClick: () => {},
           icon: <Plus className="w-4 h-4" />,
         }}
       />
-    );
-  }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Asignación de Recursos
-        </h3>
-        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-          Nueva Asignación
-        </Button>
-      </div>
-
-      <Card variant="bordered" padding="none">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Programación
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Recurso
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Tipo
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Fecha Asignación
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {asignaciones.map((asig: any) => (
-                <tr key={asig.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                    {asig.programacion_codigo}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
-                    {asig.recurso_nombre}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {formatEstado(asig.tipo_recurso)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {format(new Date(asig.created_at), 'dd/MM/yyyy', { locale: es })}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Trash2 className="w-4 h-4 text-danger-600" />
-                      </Button>
-                    </div>
-                  </td>
+      {asignaciones.length === 0 ? (
+        <EmptyState
+          icon={<Truck className="w-16 h-16" />}
+          title="No hay asignaciones de recursos"
+          description="Asigne recursos a las programaciones de abastecimiento"
+        />
+      ) : (
+        <Card variant="bordered" padding="none">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Programación
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Recurso
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Tipo
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Fecha Asignación
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Acciones
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {asignaciones.map((asig: Record<string, unknown>) => (
+                  <tr
+                    key={asig.id as number}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                  >
+                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                      {asig.programacion_codigo as string}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                      {asig.recurso_nombre as string}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                      {formatEstado(String(asig.tipo_recurso ?? ''))}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                      {asig.created_at
+                        ? format(new Date(asig.created_at as string), 'dd/MM/yyyy', { locale: es })
+                        : '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="sm" title="Editar">
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" title="Eliminar">
+                          <Trash2 className="w-4 h-4 text-danger-600" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
     </div>
   );
 };
@@ -283,7 +363,7 @@ const AsignacionesSection = () => {
 
 const EjecucionesSection = () => {
   const { data, isLoading } = useEjecuciones();
-  const ejecuciones = data?.results || [];
+  const ejecuciones = Array.isArray(data) ? data : (data?.results ?? []);
 
   if (isLoading) {
     return (
@@ -293,93 +373,101 @@ const EjecucionesSection = () => {
     );
   }
 
-  if (ejecuciones.length === 0) {
-    return (
-      <EmptyState
-        icon={<CheckCircle className="w-16 h-16" />}
-        title="No hay ejecuciones registradas"
-        description="Registre las ejecuciones de las programaciones"
-        action={{
+  return (
+    <div className="space-y-6">
+      <SectionToolbar
+        title="Ejecuciones"
+        count={ejecuciones.length}
+        primaryAction={{
           label: 'Nueva Ejecución',
           onClick: () => {},
           icon: <Plus className="w-4 h-4" />,
         }}
       />
-    );
-  }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Ejecuciones</h3>
-        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-          Nueva Ejecución
-        </Button>
-      </div>
-
-      <Card variant="bordered" padding="none">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Programación
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Fecha Inicio
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Fecha Fin
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Cantidad Real
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Estado
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {ejecuciones.map((ejec: any) => (
-                <tr key={ejec.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                    {ejec.programacion_codigo}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {format(new Date(ejec.fecha_inicio), 'dd/MM/yyyy HH:mm', { locale: es })}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {ejec.fecha_fin
-                      ? format(new Date(ejec.fecha_fin), 'dd/MM/yyyy HH:mm', { locale: es })
-                      : '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {ejec.cantidad_real || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={getEstadoBadgeVariant(ejec.estado_codigo)} size="sm">
-                      {formatEstado(ejec.estado_nombre)}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <CheckCircle className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </td>
+      {ejecuciones.length === 0 ? (
+        <EmptyState
+          icon={<CheckCircle className="w-16 h-16" />}
+          title="No hay ejecuciones registradas"
+          description="Registre las ejecuciones de las programaciones"
+        />
+      ) : (
+        <Card variant="bordered" padding="none">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Programación
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Fecha Inicio
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Fecha Fin
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Cantidad Real
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Estado
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Acciones
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {ejecuciones.map((ejec: Record<string, unknown>) => (
+                  <tr
+                    key={ejec.id as number}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                  >
+                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                      {ejec.programacion_codigo as string}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                      {ejec.fecha_inicio
+                        ? format(new Date(ejec.fecha_inicio as string), 'dd/MM/yyyy HH:mm', {
+                            locale: es,
+                          })
+                        : '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                      {ejec.fecha_fin
+                        ? format(new Date(ejec.fecha_fin as string), 'dd/MM/yyyy HH:mm', {
+                            locale: es,
+                          })
+                        : '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                      {(ejec.cantidad_real as number) || '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Badge
+                        variant={getEstadoBadgeVariant(String(ejec.estado_codigo ?? ''))}
+                        size="sm"
+                      >
+                        {formatEstado(String(ejec.estado_nombre ?? 'N/A'))}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="sm" title="Ver">
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" title="Completar">
+                          <CheckCircle className="w-4 h-4 text-success-600" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
     </div>
   );
 };
@@ -388,7 +476,7 @@ const EjecucionesSection = () => {
 
 const LiquidacionesSection = () => {
   const { data, isLoading } = useLiquidaciones();
-  const liquidaciones = data?.results || [];
+  const liquidaciones = Array.isArray(data) ? data : (data?.results ?? []);
 
   if (isLoading) {
     return (
@@ -398,88 +486,91 @@ const LiquidacionesSection = () => {
     );
   }
 
-  if (liquidaciones.length === 0) {
-    return (
-      <EmptyState
-        icon={<DollarSign className="w-16 h-16" />}
-        title="No hay liquidaciones registradas"
-        description="Registre las liquidaciones de las ejecuciones"
-        action={{
+  return (
+    <div className="space-y-6">
+      <SectionToolbar
+        title="Liquidaciones"
+        count={liquidaciones.length}
+        primaryAction={{
           label: 'Nueva Liquidación',
           onClick: () => {},
           icon: <Plus className="w-4 h-4" />,
         }}
       />
-    );
-  }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Liquidaciones</h3>
-        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-          Nueva Liquidación
-        </Button>
-      </div>
-
-      <Card variant="bordered" padding="none">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Ejecución
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Total
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Fecha Liquidación
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Estado
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {liquidaciones.map((liq: any) => (
-                <tr key={liq.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                    {liq.ejecucion_codigo}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                    ${liq.total?.toLocaleString() || '0'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {format(new Date(liq.fecha_liquidacion), 'dd/MM/yyyy', { locale: es })}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={getEstadoBadgeVariant(liq.estado_codigo)} size="sm">
-                      {formatEstado(liq.estado_nombre)}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <FileText className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <CheckCircle className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </td>
+      {liquidaciones.length === 0 ? (
+        <EmptyState
+          icon={<DollarSign className="w-16 h-16" />}
+          title="No hay liquidaciones registradas"
+          description="Registre las liquidaciones de las ejecuciones"
+        />
+      ) : (
+        <Card variant="bordered" padding="none">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Ejecución
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Total
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Fecha Liquidación
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Estado
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Acciones
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {liquidaciones.map((liq: Record<string, unknown>) => (
+                  <tr key={liq.id as number} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                      {liq.ejecucion_codigo as string}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                      ${Number(liq.total ?? 0).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                      {liq.fecha_liquidacion
+                        ? format(new Date(liq.fecha_liquidacion as string), 'dd/MM/yyyy', {
+                            locale: es,
+                          })
+                        : '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Badge
+                        variant={getEstadoBadgeVariant(String(liq.estado_codigo ?? ''))}
+                        size="sm"
+                      >
+                        {formatEstado(String(liq.estado_nombre ?? 'N/A'))}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="sm" title="Ver">
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" title="Generar documento">
+                          <FileText className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" title="Aprobar">
+                          <CheckCircle className="w-4 h-4 text-success-600" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
     </div>
   );
 };

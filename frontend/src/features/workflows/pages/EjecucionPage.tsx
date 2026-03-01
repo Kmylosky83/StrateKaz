@@ -1,24 +1,14 @@
 /**
- * EjecucionPage - Bandeja de trabajo y gestion de tareas del workflow
+ * EjecucionPage - Bandeja de trabajo y gestión de instancias
  *
- * Conectada a APIs reales:
- * - /api/workflows/ejecucion/tareas/mis_tareas/
- * - /api/workflows/ejecucion/tareas/estadisticas/
- * - /api/workflows/ejecucion/instancias/iniciar_flujo/
+ * Tabs:
+ * 1. Bandeja de Trabajo - Tabla de tareas pendientes con acción "Resolver"
+ * 2. Instancias - Tabla de instancias de flujo con "Iniciar Flujo"
+ *
+ * Modals integrados: TareaFormModal, IniciarFlujoModal, ConfirmDialog (cancelar)
  */
 import { useState } from 'react';
-import {
-  Play,
-  ArrowLeft,
-  Clock,
-  AlertCircle,
-  CheckCircle2,
-  User,
-  Filter,
-  GitBranch,
-  ChevronRight,
-  Zap,
-} from 'lucide-react';
+import { Play, ArrowLeft, CheckCircle2, User, GitBranch, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
   Card,
@@ -29,31 +19,55 @@ import {
   KpiCard,
   KpiCardGrid,
   KpiCardSkeleton,
+  ConfirmDialog,
 } from '@/components/common';
 import { Button } from '@/components/common/Button';
 import { PageHeader } from '@/components/layout';
+import TareaFormModal from '../components/TareaFormModal';
+import IniciarFlujoModal from '../components/IniciarFlujoModal';
 import {
   useMisTareas,
   useEstadisticasTareas,
-  useCompletarTarea,
-  useRechazarTarea,
-  usePlantillasActivas,
-  useIniciarFlujo,
+  useEstadisticasInstancias,
+  useInstancias,
 } from '../hooks/useWorkflows';
-import type { TareaActiva, EstadoTarea, Prioridad } from '../types/workflow.types';
+import type {
+  TareaActiva,
+  InstanciaFlujo,
+  EstadoTarea,
+  EstadoInstancia,
+  Prioridad,
+} from '../types/workflow.types';
 
 // ============================================================
 // UTILIDADES
 // ============================================================
 
-const prioridadConfig: Record<Prioridad, { label: string; color: string }> = {
-  BAJA: { label: 'Baja', color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' },
-  NORMAL: { label: 'Normal', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' },
-  ALTA: { label: 'Alta', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' },
-  URGENTE: { label: 'Urgente', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' },
+const prioridadLabels: Record<Prioridad, string> = {
+  BAJA: 'Baja',
+  NORMAL: 'Normal',
+  ALTA: 'Alta',
+  URGENTE: 'Urgente',
 };
 
-const formatDate = (dateStr: string | null) => {
+const estadoInstanciaLabels: Record<EstadoInstancia, string> = {
+  INICIADO: 'Iniciado',
+  EN_PROCESO: 'En Proceso',
+  PAUSADO: 'Pausado',
+  COMPLETADO: 'Completado',
+  CANCELADO: 'Cancelado',
+};
+
+const tipoTareaLabels: Record<string, string> = {
+  APROBACION: 'Aprobación',
+  REVISION: 'Revisión',
+  FORMULARIO: 'Formulario',
+  NOTIFICACION: 'Notificación',
+  FIRMA: 'Firma',
+  SISTEMA: 'Sistema',
+};
+
+const formatDate = (dateStr: string | null | undefined) => {
   if (!dateStr) return '-';
   return new Date(dateStr).toLocaleDateString('es-CO', {
     day: '2-digit',
@@ -62,90 +76,7 @@ const formatDate = (dateStr: string | null) => {
   });
 };
 
-type TabType = 'PENDIENTE' | 'EN_PROGRESO' | 'COMPLETADA';
-
-// ============================================================
-// TARJETA DE TAREA
-// ============================================================
-
-interface TareaCardProps {
-  tarea: TareaActiva;
-  onCompletar: (id: number) => void;
-  onRechazar: (id: number) => void;
-}
-
-const TareaCard = ({ tarea, onCompletar, onRechazar }: TareaCardProps) => {
-  const isOverdue = tarea.esta_vencida;
-  const prioridad = prioridadConfig[tarea.instancia_detail?.prioridad as Prioridad] ?? prioridadConfig.NORMAL;
-
-  return (
-    <Card className={`hover:shadow-md transition-shadow ${
-      tarea.estado === 'EN_PROGRESO' ? 'border-l-4 border-l-blue-500' : ''
-    } ${isOverdue ? 'border-l-4 border-l-red-500' : ''}`}>
-      <div className="p-5">
-        <div className="flex items-start justify-between">
-          <div className="flex-1 space-y-2 min-w-0">
-            <div className="flex items-center gap-2">
-              <StatusBadge status={tarea.estado} />
-              <StatusBadge status={tarea.tipo_tarea} />
-              {isOverdue && (
-                <Badge variant="red" size="sm">Vencida</Badge>
-              )}
-            </div>
-            <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">
-              {tarea.nombre_tarea}
-            </h3>
-            {tarea.descripcion && (
-              <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-                {tarea.descripcion}
-              </p>
-            )}
-            <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
-              {tarea.asignado_a_detail && (
-                <span className="flex items-center gap-1">
-                  <User className="h-3.5 w-3.5" />
-                  {tarea.asignado_a_detail.first_name} {tarea.asignado_a_detail.last_name}
-                </span>
-              )}
-              <span className="flex items-center gap-1">
-                <Clock className="h-3.5 w-3.5" />
-                Vence: {formatDate(tarea.fecha_vencimiento)}
-              </span>
-              <span className="flex items-center gap-1">
-                <GitBranch className="h-3.5 w-3.5" />
-                {tarea.codigo_tarea}
-              </span>
-              <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${prioridad.color}`}>
-                {prioridad.label}
-              </span>
-            </div>
-          </div>
-          <div className="flex gap-2 ml-4 flex-shrink-0">
-            {tarea.estado !== 'COMPLETADA' && (
-              <>
-                <Button
-                  size="sm"
-                  variant="primary"
-                  onClick={() => onCompletar(tarea.id)}
-                >
-                  <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-                  Completar
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => onRechazar(tarea.id)}
-                >
-                  Rechazar
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-    </Card>
-  );
-};
+type ActiveTabType = 'bandeja' | 'instancias';
 
 // ============================================================
 // PAGINA PRINCIPAL
@@ -153,36 +84,65 @@ const TareaCard = ({ tarea, onCompletar, onRechazar }: TareaCardProps) => {
 
 export default function EjecucionPage() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<TabType>('PENDIENTE');
+  const [activeTab, setActiveTab] = useState<ActiveTabType>('bandeja');
+  const [tareaFilter, setTareaFilter] = useState<EstadoTarea | ''>('');
+  const [instanciaFilter, setInstanciaFilter] = useState<EstadoInstancia | ''>('');
+
+  // Modals
+  const [selectedTarea, setSelectedTarea] = useState<TareaActiva | null>(null);
+  const [showTareaModal, setShowTareaModal] = useState(false);
+  const [showIniciarFlujoModal, setShowIniciarFlujoModal] = useState(false);
+  const [cancellingInstancia, setCancellingInstancia] = useState<InstanciaFlujo | null>(null);
 
   // Queries
-  const { data: tareasData, isLoading: loadingTareas } = useMisTareas(activeTab);
-  const { data: stats, isLoading: loadingStats } = useEstadisticasTareas();
-  const { data: plantillasActivas } = usePlantillasActivas();
+  const { data: misTareasData, isLoading: loadingMisTareas } = useMisTareas(
+    tareaFilter || undefined
+  );
+  const { data: statsTareas, isLoading: loadingStatsTareas } = useEstadisticasTareas();
+  const { data: statsInstancias, isLoading: loadingStatsInstancias } = useEstadisticasInstancias();
+  const { data: instanciasData, isLoading: loadingInstancias } = useInstancias(
+    instanciaFilter ? { estado: instanciaFilter } : undefined
+  );
 
-  // Mutations
-  const completarMutation = useCompletarTarea();
-  const rechazarMutation = useRechazarTarea();
-  const iniciarFlujoMutation = useIniciarFlujo();
+  const misTareas = misTareasData?.tareas ?? [];
+  const instancias = Array.isArray(instanciasData)
+    ? instanciasData
+    : (instanciasData?.results ?? []);
 
-  const tareas = tareasData?.tareas ?? [];
+  const loadingStats = loadingStatsTareas || loadingStatsInstancias;
 
-  const tabs: { id: TabType; label: string; count?: number }[] = [
-    { id: 'PENDIENTE', label: 'Pendientes', count: stats?.pendientes },
-    { id: 'EN_PROGRESO', label: 'En Proceso', count: stats?.en_progreso },
-    { id: 'COMPLETADA', label: 'Completadas', count: stats?.completadas_hoy },
+  const handleResolverTarea = (tarea: TareaActiva) => {
+    setSelectedTarea(tarea);
+    setShowTareaModal(true);
+  };
+
+  const tabs = [
+    {
+      id: 'bandeja' as const,
+      label: 'Bandeja de Trabajo',
+      count: statsTareas ? statsTareas.pendientes + statsTareas.en_progreso : undefined,
+    },
+    {
+      id: 'instancias' as const,
+      label: 'Instancias',
+      count: statsInstancias?.activas,
+    },
   ];
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Ejecucion y Tareas"
-        description="Bandeja de trabajo y gestion de tareas pendientes"
+        title="Ejecución y Tareas"
+        description="Bandeja de trabajo, gestión de tareas e instancias de flujo"
         actions={
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => navigate('/workflows')}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Volver
+            </Button>
+            <Button variant="primary" onClick={() => setShowIniciarFlujoModal(true)}>
+              <Play className="h-4 w-4 mr-2" />
+              Iniciar Flujo
             </Button>
           </div>
         }
@@ -191,124 +151,396 @@ export default function EjecucionPage() {
       {/* KPI Cards */}
       {loadingStats ? (
         <KpiCardGrid columns={4}>
-          {[1, 2, 3, 4].map((i) => <KpiCardSkeleton key={i} />)}
+          {[1, 2, 3, 4].map((i) => (
+            <KpiCardSkeleton key={i} />
+          ))}
         </KpiCardGrid>
       ) : (
         <KpiCardGrid columns={4}>
           <KpiCard
-            title="Pendientes"
-            value={stats?.pendientes ?? 0}
+            title="Instancias Activas"
+            value={statsInstancias?.activas ?? 0}
+            icon="Activity"
+            color="purple"
+          />
+          <KpiCard
+            title="Tareas Pendientes"
+            value={statsTareas?.pendientes ?? 0}
             icon="Clock"
             color="orange"
           />
           <KpiCard
-            title="En Proceso"
-            value={stats?.en_progreso ?? 0}
-            icon="Play"
-            color="blue"
-          />
-          <KpiCard
             title="Completadas Hoy"
-            value={stats?.completadas_hoy ?? 0}
+            value={statsTareas?.completadas_hoy ?? 0}
             icon="CheckCircle2"
             color="green"
           />
           <KpiCard
             title="Vencidas"
-            value={stats?.vencidas ?? 0}
+            value={statsTareas?.vencidas ?? 0}
             icon="AlertCircle"
             color="red"
           />
         </KpiCardGrid>
       )}
 
-      {/* Iniciar Flujo Rapido */}
-      {plantillasActivas && (plantillasActivas as unknown[]).length > 0 && (
-        <Card>
-          <div className="p-4">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
-              <Zap className="h-4 w-4 text-purple-600" />
-              Iniciar Flujo
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {(plantillasActivas as Array<{ id: number; nombre: string; codigo: string }>).slice(0, 5).map((p) => (
-                <Button
-                  key={p.id}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => iniciarFlujoMutation.mutate({
-                    plantilla_id: p.id,
-                    titulo: `${p.nombre} - ${new Date().toLocaleDateString('es-CO')}`,
-                  })}
-                  disabled={iniciarFlujoMutation.isPending}
-                >
-                  <Play className="h-3.5 w-3.5 mr-1" />
-                  {p.nombre}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {/* Lista de tareas */}
+      {/* Tabs */}
       <Card>
-        <div className="p-5 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Bandeja de Trabajo</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400">Tareas asignadas y procesos en ejecucion</p>
-        </div>
-
-        {/* Tabs */}
         <div className="border-b border-gray-200 dark:border-gray-700">
           <div className="flex gap-1 p-2">
             {tabs.map((tab) => (
-              <button
+              <Button
                 key={tab.id}
+                size="sm"
+                variant={activeTab === tab.id ? 'primary' : 'ghost'}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 ${
-                  activeTab === tab.id
-                    ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
-                    : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
-                }`}
               >
                 {tab.label}
                 {tab.count != null && (
-                  <Badge variant={activeTab === tab.id ? 'purple' : 'gray'} size="sm">
+                  <Badge
+                    variant={activeTab === tab.id ? 'purple' : 'gray'}
+                    size="sm"
+                    className="ml-2"
+                  >
                     {tab.count}
                   </Badge>
                 )}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
 
-        {/* Contenido */}
-        <div className="p-5 space-y-3">
-          {loadingTareas ? (
-            <div className="flex items-center justify-center py-12">
-              <Spinner size="lg" />
+        {/* ---- TAB: Bandeja de Trabajo ---- */}
+        {activeTab === 'bandeja' && (
+          <div>
+            {/* Filtro de estado de tarea */}
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center gap-3">
+              <span className="text-sm text-gray-600 dark:text-gray-400">Filtrar:</span>
+              <div className="flex gap-1.5 flex-wrap">
+                {[
+                  { value: '', label: 'Todas' },
+                  { value: 'PENDIENTE', label: 'Pendientes' },
+                  { value: 'EN_PROGRESO', label: 'En Progreso' },
+                  { value: 'COMPLETADA', label: 'Completadas' },
+                ].map((f) => (
+                  <Button
+                    key={f.value}
+                    size="sm"
+                    variant={tareaFilter === f.value ? 'secondary' : 'ghost'}
+                    onClick={() => setTareaFilter(f.value as EstadoTarea | '')}
+                  >
+                    {f.label}
+                  </Button>
+                ))}
+              </div>
             </div>
-          ) : tareas.length === 0 ? (
-            <EmptyState
-              icon={<CheckCircle2 className="h-12 w-12" />}
-              title="Sin tareas"
-              description={`No hay tareas ${activeTab === 'PENDIENTE' ? 'pendientes' : activeTab === 'EN_PROGRESO' ? 'en proceso' : 'completadas hoy'}`}
-            />
-          ) : (
-            tareas.map((tarea) => (
-              <TareaCard
-                key={tarea.id}
-                tarea={tarea}
-                onCompletar={(id) => completarMutation.mutate({ id, data: {} })}
-                onRechazar={(id) => rechazarMutation.mutate({
-                  id,
-                  data: { motivo_rechazo: 'Rechazado desde bandeja' },
-                })}
-              />
-            ))
-          )}
-        </div>
+
+            {/* Tabla de tareas */}
+            {loadingMisTareas ? (
+              <div className="flex items-center justify-center py-16">
+                <Spinner size="lg" />
+              </div>
+            ) : misTareas.length === 0 ? (
+              <div className="p-8">
+                <EmptyState
+                  icon={<CheckCircle2 className="h-12 w-12" />}
+                  title="Sin tareas"
+                  description="No tienes tareas asignadas con los filtros seleccionados."
+                />
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">
+                        Tarea
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">
+                        Instancia
+                      </th>
+                      <th className="text-center py-3 px-4 text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">
+                        Tipo
+                      </th>
+                      <th className="text-center py-3 px-4 text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">
+                        Prioridad
+                      </th>
+                      <th className="text-center py-3 px-4 text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">
+                        Estado
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">
+                        Vencimiento
+                      </th>
+                      <th className="text-center py-3 px-4 text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">
+                        Acciones
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {misTareas.map((tarea) => (
+                      <tr
+                        key={tarea.id}
+                        className={`border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 ${
+                          tarea.esta_vencida ? 'bg-red-50/50 dark:bg-red-900/10' : ''
+                        }`}
+                      >
+                        <td className="py-3 px-4">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate max-w-[200px]">
+                              {tarea.nombre_tarea}
+                            </p>
+                            <p className="text-xs text-gray-500 font-mono">{tarea.codigo_tarea}</p>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <p className="text-sm text-gray-600 dark:text-gray-400 truncate max-w-[180px]">
+                            {tarea.instancia_detail?.titulo ?? '-'}
+                          </p>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <StatusBadge
+                            status={tarea.tipo_tarea}
+                            label={tipoTareaLabels[tarea.tipo_tarea] || tarea.tipo_tarea}
+                          />
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <StatusBadge
+                            status={tarea.instancia_detail?.prioridad ?? 'NORMAL'}
+                            preset="prioridad"
+                            label={
+                              prioridadLabels[tarea.instancia_detail?.prioridad as Prioridad] ??
+                              'Normal'
+                            }
+                          />
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <StatusBadge status={tarea.estado} />
+                            {tarea.esta_vencida && (
+                              <Badge variant="red" size="sm">
+                                Vencida
+                              </Badge>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">
+                          {formatDate(tarea.fecha_vencimiento)}
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          {tarea.estado !== 'COMPLETADA' && tarea.estado !== 'RECHAZADA' && (
+                            <Button
+                              size="sm"
+                              variant="primary"
+                              onClick={() => handleResolverTarea(tarea)}
+                            >
+                              <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                              Resolver
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ---- TAB: Instancias ---- */}
+        {activeTab === 'instancias' && (
+          <div>
+            {/* Filtro de estado */}
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center gap-3 flex-wrap">
+              <span className="text-sm text-gray-600 dark:text-gray-400">Filtrar:</span>
+              <div className="flex gap-1.5 flex-wrap">
+                {[
+                  { value: '', label: 'Todas' },
+                  { value: 'INICIADO', label: 'Iniciadas' },
+                  { value: 'EN_PROCESO', label: 'En Proceso' },
+                  { value: 'COMPLETADO', label: 'Completadas' },
+                  { value: 'CANCELADO', label: 'Canceladas' },
+                ].map((f) => (
+                  <Button
+                    key={f.value}
+                    size="sm"
+                    variant={instanciaFilter === f.value ? 'secondary' : 'ghost'}
+                    onClick={() => setInstanciaFilter(f.value as EstadoInstancia | '')}
+                  >
+                    {f.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Tabla de instancias */}
+            {loadingInstancias ? (
+              <div className="flex items-center justify-center py-16">
+                <Spinner size="lg" />
+              </div>
+            ) : instancias.length === 0 ? (
+              <div className="p-8">
+                <EmptyState
+                  icon={<GitBranch className="h-12 w-12" />}
+                  title="Sin instancias"
+                  description="No hay instancias de flujo con los filtros seleccionados."
+                />
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">
+                        Código
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">
+                        Título
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">
+                        Plantilla
+                      </th>
+                      <th className="text-center py-3 px-4 text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">
+                        Estado
+                      </th>
+                      <th className="text-center py-3 px-4 text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">
+                        Progreso
+                      </th>
+                      <th className="text-center py-3 px-4 text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">
+                        Prioridad
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">
+                        Inicio
+                      </th>
+                      <th className="text-center py-3 px-4 text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">
+                        Acciones
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {instancias.map((inst) => (
+                      <tr
+                        key={inst.id}
+                        className={`border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 ${
+                          inst.esta_vencida ? 'bg-red-50/50 dark:bg-red-900/10' : ''
+                        }`}
+                      >
+                        <td className="py-3 px-4">
+                          <span className="text-xs text-gray-500 font-mono">
+                            {inst.codigo_instancia}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate max-w-[200px]">
+                              {inst.titulo}
+                            </p>
+                            {inst.responsable_actual_detail && (
+                              <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                                <User className="h-3 w-3" />
+                                {inst.responsable_actual_detail.first_name}{' '}
+                                {inst.responsable_actual_detail.last_name}
+                              </p>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">
+                          {inst.plantilla_detail?.nombre ?? '-'}
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <StatusBadge
+                              status={inst.estado}
+                              label={estadoInstanciaLabels[inst.estado]}
+                            />
+                            {inst.esta_vencida && (
+                              <Badge variant="red" size="sm">
+                                Vencida
+                              </Badge>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center justify-center gap-2">
+                            <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                              <div
+                                className="bg-purple-500 h-2 rounded-full transition-all"
+                                style={{ width: `${inst.progreso_porcentaje ?? 0}%` }}
+                              />
+                            </div>
+                            <span className="text-xs text-gray-600 dark:text-gray-400 w-8 text-right">
+                              {inst.progreso_porcentaje ?? 0}%
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <StatusBadge
+                            status={inst.prioridad}
+                            preset="prioridad"
+                            label={prioridadLabels[inst.prioridad]}
+                          />
+                        </td>
+                        <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">
+                          {formatDate(inst.fecha_inicio)}
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            {(inst.estado === 'INICIADO' || inst.estado === 'EN_PROCESO') && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setCancellingInstancia(inst)}
+                              >
+                                <XCircle className="h-3.5 w-3.5 text-red-500" />
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
       </Card>
+
+      {/* Modal: Resolver Tarea */}
+      <TareaFormModal
+        tarea={selectedTarea}
+        isOpen={showTareaModal}
+        onClose={() => {
+          setShowTareaModal(false);
+          setSelectedTarea(null);
+        }}
+      />
+
+      {/* Modal: Iniciar Flujo */}
+      <IniciarFlujoModal
+        isOpen={showIniciarFlujoModal}
+        onClose={() => setShowIniciarFlujoModal(false)}
+      />
+
+      {/* Confirm: Cancelar Instancia */}
+      <ConfirmDialog
+        isOpen={!!cancellingInstancia}
+        onClose={() => setCancellingInstancia(null)}
+        onConfirm={() => {
+          // Cancelar instancia se haría via una API específica
+          // Por ahora solo cerramos el dialog
+          setCancellingInstancia(null);
+        }}
+        title="Cancelar Flujo"
+        message={
+          <>
+            ¿Estás seguro de cancelar el flujo <strong>{cancellingInstancia?.titulo}</strong>? Las
+            tareas pendientes serán canceladas automáticamente.
+          </>
+        }
+        confirmText="Cancelar Flujo"
+        variant="danger"
+      />
     </div>
   );
 }

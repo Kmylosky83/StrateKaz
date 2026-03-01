@@ -1,352 +1,300 @@
 /**
  * Página: Pipeline de Ventas - Sales CRM
- * Vista Kanban de oportunidades por etapa
+ * Gestión de oportunidades con CRUD, tabla y KPIs
  */
-import { useState } from 'react';
-import {
-  Target,
-  TrendingUp,
-  DollarSign,
-  Clock,
-  Filter,
-  Download,
-  Plus,
-  ChevronRight,
-} from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { ColumnDef } from '@tanstack/react-table';
+import { Target, DollarSign, TrendingUp, Clock, Edit, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
-import { Card } from '@/components/common/Card';
+import { KpiCard, KpiCardGrid, KpiCardSkeleton } from '@/components/common/KpiCard';
+import { SectionToolbar } from '@/components/common/SectionToolbar';
+import { Table } from '@/components/common/Table';
+import { StatusBadge } from '@/components/common/StatusBadge';
 import { Button } from '@/components/common/Button';
 import { EmptyState } from '@/components/common/EmptyState';
-import { Spinner } from '@/components/common/Spinner';
-import { Badge } from '@/components/common/Badge';
-import { usePipelineKanban, usePipelineDashboard } from '../hooks';
-import type { OportunidadList, EtapaVenta } from '../types';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import OportunidadFormModal from '../components/OportunidadFormModal';
+import { useOportunidades, useDeleteOportunidad, usePipelineDashboard } from '../hooks';
+import type { OportunidadList, Oportunidad, EtapaVenta, PrioridadOportunidad } from '../types';
 
-const _ETAPAS_CONFIG: Record<EtapaVenta, { nombre: string; color: string }> = {
-  PROSPECTO: {
-    nombre: 'Prospecto',
-    color: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200',
-  },
-  CONTACTADO: {
-    nombre: 'Contactado',
-    color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  },
-  CALIFICADO: {
-    nombre: 'Calificado',
-    color: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200',
-  },
-  PROPUESTA: {
-    nombre: 'Propuesta',
-    color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-  },
-  NEGOCIACION: {
-    nombre: 'Negociación',
-    color: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-  },
-  GANADA: {
-    nombre: 'Ganada',
-    color: 'bg-success-100 text-success-800 dark:bg-success-900 dark:text-success-200',
-  },
-  PERDIDA: {
-    nombre: 'Perdida',
-    color: 'bg-danger-100 text-danger-800 dark:bg-danger-900 dark:text-danger-200',
-  },
+const ETAPA_LABELS: Record<EtapaVenta, string> = {
+  PROSPECTO: 'Prospecto',
+  CONTACTADO: 'Contactado',
+  CALIFICADO: 'Calificado',
+  PROPUESTA: 'Propuesta',
+  NEGOCIACION: 'Negociación',
+  GANADA: 'Ganada',
+  PERDIDA: 'Perdida',
 };
 
-const PRIORIDAD_CONFIG = {
-  BAJA: { variant: 'default' as const, label: 'Baja' },
-  MEDIA: { variant: 'primary' as const, label: 'Media' },
-  ALTA: { variant: 'warning' as const, label: 'Alta' },
-  CRITICA: { variant: 'danger' as const, label: 'Crítica' },
+const PRIORIDAD_LABELS: Record<PrioridadOportunidad, string> = {
+  BAJA: 'Baja',
+  MEDIA: 'Media',
+  ALTA: 'Alta',
+  CRITICA: 'Crítica',
 };
-
-interface OportunidadCardProps {
-  oportunidad: OportunidadList;
-  onClick: (id: number) => void;
-}
-
-function OportunidadCard({ oportunidad, onClick }: OportunidadCardProps) {
-  return (
-    <Card
-      variant="bordered"
-      padding="sm"
-      className="cursor-pointer hover:shadow-md transition-shadow"
-      onClick={() => onClick(oportunidad.id)}
-    >
-      <div className="space-y-2">
-        <div className="flex items-start justify-between gap-2">
-          <h4 className="font-medium text-sm text-gray-900 dark:text-white line-clamp-2">
-            {oportunidad.titulo}
-          </h4>
-          <Badge variant={PRIORIDAD_CONFIG[oportunidad.prioridad].variant} size="xs">
-            {PRIORIDAD_CONFIG[oportunidad.prioridad].label}
-          </Badge>
-        </div>
-
-        <div className="text-xs text-gray-600 dark:text-gray-400">{oportunidad.cliente_nombre}</div>
-
-        <div className="flex items-center justify-between text-xs">
-          <div className="font-semibold text-primary-600 dark:text-primary-400">
-            ${oportunidad.valor_estimado.toLocaleString()}
-          </div>
-          <div className="text-gray-500 dark:text-gray-400">{oportunidad.probabilidad_cierre}%</div>
-        </div>
-
-        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-          <div className="flex items-center gap-1">
-            <Clock className="w-3 h-3" />
-            <span>{oportunidad.dias_en_etapa}d</span>
-          </div>
-          <div>{oportunidad.vendedor_nombre}</div>
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-interface KanbanColumnProps {
-  etapa: EtapaVenta;
-  nombre: string;
-  oportunidades: OportunidadList[];
-  valorTotal: number;
-  onOportunidadClick: (id: number) => void;
-}
-
-function KanbanColumn({
-  etapa: _etapa,
-  nombre,
-  oportunidades,
-  valorTotal,
-  onOportunidadClick,
-}: KanbanColumnProps) {
-  return (
-    <div className="flex-shrink-0 w-80 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="font-semibold text-gray-900 dark:text-white">{nombre}</h3>
-          <Badge variant="default" size="sm">
-            {oportunidades.length}
-          </Badge>
-        </div>
-        <div className="text-sm font-medium text-primary-600 dark:text-primary-400">
-          ${valorTotal.toLocaleString()}
-        </div>
-      </div>
-
-      <div className="space-y-3 max-h-[calc(100vh-300px)] overflow-y-auto">
-        {oportunidades.length === 0 ? (
-          <div className="text-center py-8 text-gray-500 dark:text-gray-400 text-sm">
-            Sin oportunidades
-          </div>
-        ) : (
-          oportunidades.map((oportunidad) => (
-            <OportunidadCard
-              key={oportunidad.id}
-              oportunidad={oportunidad}
-              onClick={onOportunidadClick}
-            />
-          ))
-        )}
-      </div>
-    </div>
-  );
-}
 
 export default function PipelinePage() {
-  const [selectedVendedor, _setSelectedVendedor] = useState<number | undefined>();
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [editingItem, setEditingItem] = useState<Oportunidad | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  const { data: kanbanData, isLoading: isLoadingKanban } = usePipelineKanban(selectedVendedor);
-  const { data: dashboard, isLoading: isLoadingDashboard } = usePipelineDashboard(selectedVendedor);
+  const { data: oportunidadesData, isLoading: isLoadingOportunidades } = useOportunidades();
+  const { data: dashboard, isLoading: isLoadingDashboard } = usePipelineDashboard();
 
-  if (isLoadingKanban || isLoadingDashboard) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Spinner />
-      </div>
-    );
-  }
+  const deleteMutation = useDeleteOportunidad();
 
-  const etapas = kanbanData?.etapas || [];
+  const oportunidades = useMemo(() => {
+    return Array.isArray(oportunidadesData)
+      ? oportunidadesData
+      : (oportunidadesData?.results ?? []);
+  }, [oportunidadesData]);
+
   const stats = dashboard || {
     total_oportunidades: 0,
     valor_pipeline_total: 0,
-    valor_ponderado: 0,
     tasa_conversion: 0,
     tiempo_promedio_cierre_dias: 0,
   };
 
-  const handleOportunidadClick = (_id: number) => {
-    // TODO: Implementar vista de oportunidad
+  // ── Handlers ────────────────────────────────────────────────────────────
+
+  const handleCreate = () => {
+    setEditingItem(null);
+    setShowFormModal(true);
   };
 
+  const handleEdit = (oportunidad: OportunidadList) => {
+    setEditingItem(oportunidad as unknown as Oportunidad);
+    setShowFormModal(true);
+  };
+
+  const handleDelete = (id: number) => {
+    setDeletingId(id);
+  };
+
+  const confirmDelete = () => {
+    if (deletingId) {
+      deleteMutation.mutate(deletingId, {
+        onSuccess: () => setDeletingId(null),
+      });
+    }
+  };
+
+  const handleCloseForm = () => {
+    setShowFormModal(false);
+    setEditingItem(null);
+  };
+
+  // Calcular oportunidades próximas a vencer (cierre en 7 días o menos)
+  const proximasVencer = useMemo(() => {
+    const hoy = new Date();
+    const en7Dias = new Date();
+    en7Dias.setDate(hoy.getDate() + 7);
+    return oportunidades.filter((o) => {
+      if (!o.fecha_estimada_cierre) return false;
+      const fecha = new Date(o.fecha_estimada_cierre);
+      return fecha <= en7Dias && fecha >= hoy && o.etapa !== 'GANADA' && o.etapa !== 'PERDIDA';
+    }).length;
+  }, [oportunidades]);
+
+  // ── Columnas ────────────────────────────────────────────────────────────
+
+  const columns = useMemo<ColumnDef<OportunidadList, unknown>[]>(
+    () => [
+      {
+        accessorKey: 'numero_oportunidad',
+        header: 'Código',
+        cell: ({ getValue }) => (
+          <span className="font-mono text-sm text-gray-600 dark:text-gray-400">
+            {getValue() as string}
+          </span>
+        ),
+        size: 130,
+      },
+      {
+        accessorKey: 'titulo',
+        header: 'Título',
+        cell: ({ row }) => (
+          <div>
+            <p className="font-medium text-gray-900 dark:text-white">{row.original.titulo}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {row.original.cliente_nombre}
+            </p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'valor_estimado',
+        header: 'Valor',
+        cell: ({ getValue }) => (
+          <span className="font-semibold text-primary-600 dark:text-primary-400">
+            ${(getValue() as number).toLocaleString()}
+          </span>
+        ),
+        size: 140,
+      },
+      {
+        accessorKey: 'etapa',
+        header: 'Etapa',
+        cell: ({ getValue }) => {
+          const etapa = getValue() as EtapaVenta;
+          return <StatusBadge status={etapa} label={ETAPA_LABELS[etapa]} preset="proceso" />;
+        },
+        size: 130,
+      },
+      {
+        accessorKey: 'prioridad',
+        header: 'Prioridad',
+        cell: ({ getValue }) => {
+          const prioridad = getValue() as PrioridadOportunidad;
+          return (
+            <StatusBadge
+              status={prioridad}
+              label={PRIORIDAD_LABELS[prioridad]}
+              preset="prioridad"
+            />
+          );
+        },
+        size: 110,
+      },
+      {
+        accessorKey: 'probabilidad_cierre',
+        header: 'Prob.',
+        cell: ({ getValue }) => (
+          <span className="text-sm text-gray-700 dark:text-gray-300">{getValue() as number}%</span>
+        ),
+        size: 80,
+      },
+      {
+        accessorKey: 'vendedor_nombre',
+        header: 'Vendedor',
+        cell: ({ getValue }) => (
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            {(getValue() as string) || '—'}
+          </span>
+        ),
+        size: 140,
+      },
+      {
+        id: 'acciones',
+        header: 'Acciones',
+        cell: ({ row }) => (
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleEdit(row.original)}
+              title="Editar"
+            >
+              <Edit className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleDelete(row.original.id)}
+              title="Eliminar"
+            >
+              <Trash2 className="w-4 h-4 text-danger-500" />
+            </Button>
+          </div>
+        ),
+        size: 100,
+      },
+    ],
+    []
+  );
+
+  // ── Render ──────────────────────────────────────────────────────────────
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <PageHeader
         title="Pipeline de Ventas"
-        description="Vista Kanban de oportunidades por etapa de venta"
+        description="Gestión de oportunidades comerciales y seguimiento del pipeline"
       />
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Oportunidades</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                {stats.total_oportunidades}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <Target className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-        </Card>
+      {isLoadingDashboard ? (
+        <KpiCardSkeleton count={4} />
+      ) : (
+        <KpiCardGrid columns={4}>
+          <KpiCard
+            label="Oportunidades Activas"
+            value={stats.total_oportunidades}
+            icon={<Target className="w-5 h-5" />}
+            color="primary"
+          />
+          <KpiCard
+            label="Valor Pipeline"
+            value={`$${(stats.valor_pipeline_total || 0).toLocaleString()}`}
+            icon={<DollarSign className="w-5 h-5" />}
+            color="success"
+          />
+          <KpiCard
+            label="Tasa Conversión"
+            value={`${(stats.tasa_conversion || 0).toFixed(1)}%`}
+            icon={<TrendingUp className="w-5 h-5" />}
+            color="warning"
+          />
+          <KpiCard
+            label="Próximas a Vencer"
+            value={proximasVencer}
+            icon={<Clock className="w-5 h-5" />}
+            color={proximasVencer > 0 ? 'danger' : 'gray'}
+            description="Cierre en 7 días o menos"
+          />
+        </KpiCardGrid>
+      )}
 
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Valor Total</p>
-              <p className="text-2xl font-bold text-success-600 dark:text-success-400 mt-1">
-                ${stats.valor_pipeline_total.toLocaleString()}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-success-100 dark:bg-success-900/30 rounded-lg flex items-center justify-center">
-              <DollarSign className="w-6 h-6 text-success-600 dark:text-success-400" />
-            </div>
-          </div>
-        </Card>
+      {/* Toolbar */}
+      <SectionToolbar
+        title="Oportunidades"
+        count={oportunidades.length}
+        primaryAction={{
+          label: 'Nueva Oportunidad',
+          onClick: handleCreate,
+        }}
+      />
 
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Valor Ponderado</p>
-              <p className="text-2xl font-bold text-primary-600 dark:text-primary-400 mt-1">
-                ${stats.valor_ponderado.toLocaleString()}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Tasa Conversión</p>
-              <p className="text-2xl font-bold text-warning-600 dark:text-warning-400 mt-1">
-                {stats.tasa_conversion.toFixed(1)}%
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-warning-100 dark:bg-warning-900/30 rounded-lg flex items-center justify-center">
-              <Target className="w-6 h-6 text-warning-600 dark:text-warning-400" />
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Tiempo Promedio</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                {stats.tiempo_promedio_cierre_dias}d
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-gray-100 dark:bg-gray-900/30 rounded-lg flex items-center justify-center">
-              <Clock className="w-6 h-6 text-gray-600 dark:text-gray-400" />
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Actions */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Pipeline de Oportunidades
-        </h3>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
-            Filtros
-          </Button>
-          <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-            Exportar
-          </Button>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Nueva Oportunidad
-          </Button>
-        </div>
-      </div>
-
-      {/* Kanban Board */}
-      {etapas.length === 0 ? (
+      {/* Table */}
+      {oportunidades.length === 0 && !isLoadingOportunidades ? (
         <EmptyState
           icon={<Target className="w-16 h-16" />}
           title="No hay oportunidades registradas"
           description="Comience agregando oportunidades a su pipeline de ventas"
           action={{
             label: 'Nueva Oportunidad',
-            onClick: () => {},
-            icon: <Plus className="w-4 h-4" />,
+            onClick: handleCreate,
           }}
         />
       ) : (
-        <div className="overflow-x-auto pb-4">
-          <div className="flex gap-4 min-w-min">
-            {etapas
-              .filter((e) => e.etapa !== 'GANADA' && e.etapa !== 'PERDIDA')
-              .map((etapa) => (
-                <KanbanColumn
-                  key={etapa.etapa}
-                  etapa={etapa.etapa as EtapaVenta}
-                  nombre={etapa.nombre}
-                  oportunidades={etapa.oportunidades}
-                  valorTotal={etapa.valor_total}
-                  onOportunidadClick={handleOportunidadClick}
-                />
-              ))}
-          </div>
-        </div>
+        <Table
+          data={oportunidades}
+          columns={columns}
+          loading={isLoadingOportunidades}
+          sorting
+          pagination
+          defaultPageSize={25}
+          hoverable
+          emptyMessage="No se encontraron oportunidades"
+        />
       )}
 
-      {/* Oportunidades Cerradas */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {etapas
-          .filter((e) => e.etapa === 'GANADA' || e.etapa === 'PERDIDA')
-          .map((etapa) => (
-            <Card key={etapa.etapa} variant="bordered" padding="md">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="font-semibold text-gray-900 dark:text-white">{etapa.nombre}</h4>
-                <div className="flex items-center gap-2">
-                  <Badge variant={etapa.etapa === 'GANADA' ? 'success' : 'danger'}>
-                    {etapa.oportunidades.length}
-                  </Badge>
-                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    ${etapa.valor_total.toLocaleString()}
-                  </span>
-                </div>
-              </div>
-              <div className="space-y-2 max-h-60 overflow-y-auto">
-                {etapa.oportunidades.slice(0, 5).map((oportunidad) => (
-                  <div
-                    key={oportunidad.id}
-                    className="flex items-center justify-between p-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
-                    onClick={() => handleOportunidadClick(oportunidad.id)}
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                        {oportunidad.titulo}
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        {oportunidad.cliente_nombre}
-                      </div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0 ml-2" />
-                  </div>
-                ))}
-              </div>
-            </Card>
-          ))}
-      </div>
+      {/* Form Modal */}
+      <OportunidadFormModal item={editingItem} isOpen={showFormModal} onClose={handleCloseForm} />
+
+      {/* Confirm Delete */}
+      <ConfirmDialog
+        isOpen={deletingId !== null}
+        onClose={() => setDeletingId(null)}
+        onConfirm={confirmDelete}
+        title="Eliminar Oportunidad"
+        message="¿Está seguro que desea eliminar esta oportunidad? Esta acción no se puede deshacer."
+        confirmText="Eliminar"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 }

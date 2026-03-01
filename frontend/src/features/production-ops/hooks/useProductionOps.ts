@@ -9,13 +9,9 @@ import type {
   // DTOs
   CreateRecepcionDTO,
   UpdateRecepcionDTO,
-  CreateDetalleRecepcionDTO,
-  CreateControlCalidadRecepcionDTO,
   CreateOrdenProduccionDTO,
   UpdateOrdenProduccionDTO,
   CreateLoteProduccionDTO,
-  CreateConsumoMateriaPrimaDTO,
-  CreateControlCalidadProcesoDTO,
   IniciarOrdenProduccionDTO,
   FinalizarOrdenProduccionDTO,
   CreateActivoProduccionDTO,
@@ -28,13 +24,11 @@ import type {
   CompletarOrdenTrabajoDTO,
   CreateCalibracionDTO,
   CreateParadaDTO,
-  UpdateParadaDTO,
   CerrarParadaDTO,
   CreateProductoTerminadoDTO,
   CreateStockProductoDTO,
   UpdateStockProductoDTO,
   CreateLiberacionDTO,
-  UpdateLiberacionDTO,
   AprobarLiberacionDTO,
   RechazarLiberacionDTO,
   CreateCertificadoCalidadDTO,
@@ -42,6 +36,12 @@ import type {
   LiberarReservaDTO,
   ConsumirCantidadDTO,
 } from '../types/production-ops.types';
+
+// Helper para extraer mensaje de error de respuestas API
+const getApiError = (error: unknown, fallback: string): string => {
+  const err = error as { response?: { data?: { detail?: string } } };
+  return err?.response?.data?.detail || fallback;
+};
 
 // ==================== QUERY KEYS ====================
 
@@ -54,9 +54,12 @@ export const productionOpsKeys = {
   puntosRecepcion: () => [...productionOpsKeys.all, 'puntos-recepcion'] as const,
   recepciones: () => [...productionOpsKeys.all, 'recepciones'] as const,
   recepcionById: (id: number) => [...productionOpsKeys.recepciones(), id] as const,
-  recepcionesFiltered: (filters: Record<string, any>) => [...productionOpsKeys.recepciones(), 'filtered', filters] as const,
-  detallesRecepcion: (recepcionId: number) => [...productionOpsKeys.recepcionById(recepcionId), 'detalles'] as const,
-  controlesCalidadRecepcion: (recepcionId: number) => [...productionOpsKeys.recepcionById(recepcionId), 'controles-calidad'] as const,
+  recepcionesFiltered: (filters: Record<string, unknown>) =>
+    [...productionOpsKeys.recepciones(), 'filtered', filters] as const,
+  detallesRecepcion: (recepcionId: number) =>
+    [...productionOpsKeys.recepcionById(recepcionId), 'detalles'] as const,
+  controlesCalidadRecepcion: (recepcionId: number) =>
+    [...productionOpsKeys.recepcionById(recepcionId), 'controles-calidad'] as const,
 
   // Procesamiento
   tiposProceso: () => [...productionOpsKeys.all, 'tipos-proceso'] as const,
@@ -64,26 +67,32 @@ export const productionOpsKeys = {
   lineasProduccion: () => [...productionOpsKeys.all, 'lineas-produccion'] as const,
   ordenesProduccion: () => [...productionOpsKeys.all, 'ordenes-produccion'] as const,
   ordenProduccionById: (id: number) => [...productionOpsKeys.ordenesProduccion(), id] as const,
-  ordenesProduccionFiltered: (filters: Record<string, any>) => [...productionOpsKeys.ordenesProduccion(), 'filtered', filters] as const,
+  ordenesProduccionFiltered: (filters: Record<string, unknown>) =>
+    [...productionOpsKeys.ordenesProduccion(), 'filtered', filters] as const,
   lotesProduccion: () => [...productionOpsKeys.all, 'lotes-produccion'] as const,
   loteProduccionById: (id: number) => [...productionOpsKeys.lotesProduccion(), id] as const,
-  lotesProduccionFiltered: (filters: Record<string, any>) => [...productionOpsKeys.lotesProduccion(), 'filtered', filters] as const,
-  consumosMateriaPrima: (loteId: number) => [...productionOpsKeys.loteProduccionById(loteId), 'consumos'] as const,
-  controlesCalidadProceso: (loteId: number) => [...productionOpsKeys.loteProduccionById(loteId), 'controles-calidad'] as const,
+  lotesProduccionFiltered: (filters: Record<string, unknown>) =>
+    [...productionOpsKeys.lotesProduccion(), 'filtered', filters] as const,
+  consumosMateriaPrima: (loteId: number) =>
+    [...productionOpsKeys.loteProduccionById(loteId), 'consumos'] as const,
+  controlesCalidadProceso: (loteId: number) =>
+    [...productionOpsKeys.loteProduccionById(loteId), 'controles-calidad'] as const,
 
   // Mantenimiento
   tiposActivo: () => [...productionOpsKeys.all, 'tipos-activo'] as const,
   tiposMantenimiento: () => [...productionOpsKeys.all, 'tipos-mantenimiento'] as const,
   activosProduccion: () => [...productionOpsKeys.all, 'activos-produccion'] as const,
   activoProduccionById: (id: number) => [...productionOpsKeys.activosProduccion(), id] as const,
-  activosProduccionFiltered: (filters: Record<string, any>) => [...productionOpsKeys.activosProduccion(), 'filtered', filters] as const,
+  activosProduccionFiltered: (filters: Record<string, unknown>) =>
+    [...productionOpsKeys.activosProduccion(), 'filtered', filters] as const,
   equiposMedicion: () => [...productionOpsKeys.all, 'equipos-medicion'] as const,
   equipoMedicionById: (id: number) => [...productionOpsKeys.equiposMedicion(), id] as const,
   planesMantenimiento: () => [...productionOpsKeys.all, 'planes-mantenimiento'] as const,
   planMantenimientoById: (id: number) => [...productionOpsKeys.planesMantenimiento(), id] as const,
   ordenesTrabajo: () => [...productionOpsKeys.all, 'ordenes-trabajo'] as const,
   ordenTrabajoById: (id: number) => [...productionOpsKeys.ordenesTrabajo(), id] as const,
-  ordenesTrabajoFiltered: (filters: Record<string, any>) => [...productionOpsKeys.ordenesTrabajo(), 'filtered', filters] as const,
+  ordenesTrabajoFiltered: (filters: Record<string, unknown>) =>
+    [...productionOpsKeys.ordenesTrabajo(), 'filtered', filters] as const,
   calibraciones: () => [...productionOpsKeys.all, 'calibraciones'] as const,
   calibracionById: (id: number) => [...productionOpsKeys.calibraciones(), id] as const,
   paradas: () => [...productionOpsKeys.all, 'paradas'] as const,
@@ -96,7 +105,8 @@ export const productionOpsKeys = {
   productoTerminadoById: (id: number) => [...productionOpsKeys.productosTerminados(), id] as const,
   stocks: () => [...productionOpsKeys.all, 'stocks'] as const,
   stockById: (id: number) => [...productionOpsKeys.stocks(), id] as const,
-  stocksFiltered: (filters: Record<string, any>) => [...productionOpsKeys.stocks(), 'filtered', filters] as const,
+  stocksFiltered: (filters: Record<string, unknown>) =>
+    [...productionOpsKeys.stocks(), 'filtered', filters] as const,
   liberaciones: () => [...productionOpsKeys.all, 'liberaciones'] as const,
   liberacionById: (id: number) => [...productionOpsKeys.liberaciones(), id] as const,
   certificados: () => [...productionOpsKeys.all, 'certificados'] as const,
@@ -105,7 +115,7 @@ export const productionOpsKeys = {
 
 // ==================== RECEPCIÓN - CATÁLOGOS ====================
 
-export function useTiposRecepcion(params?: any) {
+export function useTiposRecepcion(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: productionOpsKeys.tiposRecepcion(),
     queryFn: () => productionOpsApi.tipoRecepcion.getAll(params),
@@ -119,7 +129,7 @@ export function useTiposRecepcionActivos() {
   });
 }
 
-export function useEstadosRecepcion(params?: any) {
+export function useEstadosRecepcion(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: productionOpsKeys.estadosRecepcion(),
     queryFn: () => productionOpsApi.estadoRecepcion.getAll(params),
@@ -133,7 +143,7 @@ export function useEstadosRecepcionActivos() {
   });
 }
 
-export function usePuntosRecepcion(params?: any) {
+export function usePuntosRecepcion(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: productionOpsKeys.puntosRecepcion(),
     queryFn: () => productionOpsApi.puntoRecepcion.getAll(params),
@@ -142,9 +152,11 @@ export function usePuntosRecepcion(params?: any) {
 
 // ==================== RECEPCIÓN - PRINCIPALES ====================
 
-export function useRecepciones(params?: any) {
+export function useRecepciones(params?: Record<string, unknown>) {
   return useQuery({
-    queryKey: params ? productionOpsKeys.recepcionesFiltered(params) : productionOpsKeys.recepciones(),
+    queryKey: params
+      ? productionOpsKeys.recepcionesFiltered(params)
+      : productionOpsKeys.recepciones(),
     queryFn: () => productionOpsApi.recepcion.getAll(params),
   });
 }
@@ -166,8 +178,8 @@ export function useCreateRecepcion() {
       queryClient.invalidateQueries({ queryKey: productionOpsKeys.recepciones() });
       toast.success('Recepción creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear recepción');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al crear recepción'));
     },
   });
 }
@@ -183,8 +195,23 @@ export function useUpdateRecepcion() {
       queryClient.invalidateQueries({ queryKey: productionOpsKeys.recepcionById(id) });
       toast.success('Recepción actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar recepción');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al actualizar recepción'));
+    },
+  });
+}
+
+export function useDeleteRecepcion() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => productionOpsApi.recepcion.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: productionOpsKeys.recepciones() });
+      toast.success('Recepción eliminada exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al eliminar recepción'));
     },
   });
 }
@@ -200,15 +227,15 @@ export function useCambiarEstadoRecepcion() {
       queryClient.invalidateQueries({ queryKey: productionOpsKeys.recepcionById(id) });
       toast.success('Estado de recepción cambiado');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al cambiar estado');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al cambiar estado'));
     },
   });
 }
 
 // ==================== PROCESAMIENTO - CATÁLOGOS ====================
 
-export function useTiposProceso(params?: any) {
+export function useTiposProceso(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: productionOpsKeys.tiposProceso(),
     queryFn: () => productionOpsApi.tipoProceso.getAll(params),
@@ -222,7 +249,7 @@ export function useTiposProcesoActivos() {
   });
 }
 
-export function useEstadosProceso(params?: any) {
+export function useEstadosProceso(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: productionOpsKeys.estadosProceso(),
     queryFn: () => productionOpsApi.estadoProceso.getAll(params),
@@ -236,7 +263,7 @@ export function useEstadosProcesoActivos() {
   });
 }
 
-export function useLineasProduccion(params?: any) {
+export function useLineasProduccion(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: productionOpsKeys.lineasProduccion(),
     queryFn: () => productionOpsApi.lineaProduccion.getAll(params),
@@ -245,9 +272,11 @@ export function useLineasProduccion(params?: any) {
 
 // ==================== PROCESAMIENTO - PRINCIPALES ====================
 
-export function useOrdenesProduccion(params?: any) {
+export function useOrdenesProduccion(params?: Record<string, unknown>) {
   return useQuery({
-    queryKey: params ? productionOpsKeys.ordenesProduccionFiltered(params) : productionOpsKeys.ordenesProduccion(),
+    queryKey: params
+      ? productionOpsKeys.ordenesProduccionFiltered(params)
+      : productionOpsKeys.ordenesProduccion(),
     queryFn: () => productionOpsApi.ordenProduccion.getAll(params),
   });
 }
@@ -269,8 +298,8 @@ export function useCreateOrdenProduccion() {
       queryClient.invalidateQueries({ queryKey: productionOpsKeys.ordenesProduccion() });
       toast.success('Orden de producción creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear orden de producción');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al crear orden de producción'));
     },
   });
 }
@@ -286,8 +315,23 @@ export function useUpdateOrdenProduccion() {
       queryClient.invalidateQueries({ queryKey: productionOpsKeys.ordenProduccionById(id) });
       toast.success('Orden de producción actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar orden de producción');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al actualizar orden de producción'));
+    },
+  });
+}
+
+export function useDeleteOrdenProduccion() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => productionOpsApi.ordenProduccion.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: productionOpsKeys.ordenesProduccion() });
+      toast.success('Orden de producción eliminada exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al eliminar orden de producción'));
     },
   });
 }
@@ -303,8 +347,8 @@ export function useIniciarOrdenProduccion() {
       queryClient.invalidateQueries({ queryKey: productionOpsKeys.ordenProduccionById(id) });
       toast.success('Orden de producción iniciada');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al iniciar orden de producción');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al iniciar orden de producción'));
     },
   });
 }
@@ -320,17 +364,19 @@ export function useFinalizarOrdenProduccion() {
       queryClient.invalidateQueries({ queryKey: productionOpsKeys.ordenProduccionById(id) });
       toast.success('Orden de producción finalizada');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al finalizar orden de producción');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al finalizar orden de producción'));
     },
   });
 }
 
 // Lotes de Producción
 
-export function useLotesProduccion(params?: any) {
+export function useLotesProduccion(params?: Record<string, unknown>) {
   return useQuery({
-    queryKey: params ? productionOpsKeys.lotesProduccionFiltered(params) : productionOpsKeys.lotesProduccion(),
+    queryKey: params
+      ? productionOpsKeys.lotesProduccionFiltered(params)
+      : productionOpsKeys.lotesProduccion(),
     queryFn: () => productionOpsApi.loteProduccion.getAll(params),
   });
 }
@@ -352,15 +398,15 @@ export function useCreateLoteProduccion() {
       queryClient.invalidateQueries({ queryKey: productionOpsKeys.lotesProduccion() });
       toast.success('Lote de producción creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear lote de producción');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al crear lote de producción'));
     },
   });
 }
 
 // ==================== MANTENIMIENTO - CATÁLOGOS ====================
 
-export function useTiposActivo(params?: any) {
+export function useTiposActivo(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: productionOpsKeys.tiposActivo(),
     queryFn: () => productionOpsApi.tipoActivo.getAll(params),
@@ -374,7 +420,7 @@ export function useTiposActivoActivos() {
   });
 }
 
-export function useTiposMantenimiento(params?: any) {
+export function useTiposMantenimiento(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: productionOpsKeys.tiposMantenimiento(),
     queryFn: () => productionOpsApi.tipoMantenimiento.getAll(params),
@@ -390,9 +436,11 @@ export function useTiposMantenimientoActivos() {
 
 // ==================== MANTENIMIENTO - PRINCIPALES ====================
 
-export function useActivosProduccion(params?: any) {
+export function useActivosProduccion(params?: Record<string, unknown>) {
   return useQuery({
-    queryKey: params ? productionOpsKeys.activosProduccionFiltered(params) : productionOpsKeys.activosProduccion(),
+    queryKey: params
+      ? productionOpsKeys.activosProduccionFiltered(params)
+      : productionOpsKeys.activosProduccion(),
     queryFn: () => productionOpsApi.activoProduccion.getAll(params),
   });
 }
@@ -414,8 +462,8 @@ export function useCreateActivoProduccion() {
       queryClient.invalidateQueries({ queryKey: productionOpsKeys.activosProduccion() });
       toast.success('Activo creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear activo');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al crear activo'));
     },
   });
 }
@@ -431,15 +479,30 @@ export function useUpdateActivoProduccion() {
       queryClient.invalidateQueries({ queryKey: productionOpsKeys.activoProduccionById(id) });
       toast.success('Activo actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar activo');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al actualizar activo'));
+    },
+  });
+}
+
+export function useDeleteActivoProduccion() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => productionOpsApi.activoProduccion.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: productionOpsKeys.activosProduccion() });
+      toast.success('Activo eliminado exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al eliminar activo'));
     },
   });
 }
 
 // Equipos de Medición
 
-export function useEquiposMedicion(params?: any) {
+export function useEquiposMedicion(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: productionOpsKeys.equiposMedicion(),
     queryFn: () => productionOpsApi.equipoMedicion.getAll(params),
@@ -463,15 +526,15 @@ export function useCreateEquipoMedicion() {
       queryClient.invalidateQueries({ queryKey: productionOpsKeys.equiposMedicion() });
       toast.success('Equipo de medición creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear equipo de medición');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al crear equipo de medición'));
     },
   });
 }
 
 // Planes de Mantenimiento
 
-export function usePlanesMantenimiento(params?: any) {
+export function usePlanesMantenimiento(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: productionOpsKeys.planesMantenimiento(),
     queryFn: () => productionOpsApi.planMantenimiento.getAll(params),
@@ -490,22 +553,25 @@ export function useCreatePlanMantenimiento() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreatePlanMantenimientoDTO) => productionOpsApi.planMantenimiento.create(data),
+    mutationFn: (data: CreatePlanMantenimientoDTO) =>
+      productionOpsApi.planMantenimiento.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: productionOpsKeys.planesMantenimiento() });
       toast.success('Plan de mantenimiento creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear plan de mantenimiento');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al crear plan de mantenimiento'));
     },
   });
 }
 
 // Órdenes de Trabajo
 
-export function useOrdenesTrabajo(params?: any) {
+export function useOrdenesTrabajo(params?: Record<string, unknown>) {
   return useQuery({
-    queryKey: params ? productionOpsKeys.ordenesTrabajoFiltered(params) : productionOpsKeys.ordenesTrabajo(),
+    queryKey: params
+      ? productionOpsKeys.ordenesTrabajoFiltered(params)
+      : productionOpsKeys.ordenesTrabajo(),
     queryFn: () => productionOpsApi.ordenTrabajo.getAll(params),
   });
 }
@@ -527,8 +593,8 @@ export function useCreateOrdenTrabajo() {
       queryClient.invalidateQueries({ queryKey: productionOpsKeys.ordenesTrabajo() });
       toast.success('Orden de trabajo creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear orden de trabajo');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al crear orden de trabajo'));
     },
   });
 }
@@ -544,8 +610,23 @@ export function useUpdateOrdenTrabajo() {
       queryClient.invalidateQueries({ queryKey: productionOpsKeys.ordenTrabajoById(id) });
       toast.success('Orden de trabajo actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar orden de trabajo');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al actualizar orden de trabajo'));
+    },
+  });
+}
+
+export function useDeleteOrdenTrabajo() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => productionOpsApi.ordenTrabajo.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: productionOpsKeys.ordenesTrabajo() });
+      toast.success('Orden de trabajo eliminada exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al eliminar orden de trabajo'));
     },
   });
 }
@@ -561,8 +642,8 @@ export function useIniciarOrdenTrabajo() {
       queryClient.invalidateQueries({ queryKey: productionOpsKeys.ordenTrabajoById(id) });
       toast.success('Orden de trabajo iniciada');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al iniciar orden de trabajo');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al iniciar orden de trabajo'));
     },
   });
 }
@@ -578,15 +659,15 @@ export function useCompletarOrdenTrabajo() {
       queryClient.invalidateQueries({ queryKey: productionOpsKeys.ordenTrabajoById(id) });
       toast.success('Orden de trabajo completada');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al completar orden de trabajo');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al completar orden de trabajo'));
     },
   });
 }
 
 // Calibraciones
 
-export function useCalibraciones(params?: any) {
+export function useCalibraciones(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: productionOpsKeys.calibraciones(),
     queryFn: () => productionOpsApi.calibracion.getAll(params),
@@ -611,15 +692,15 @@ export function useCreateCalibracion() {
       queryClient.invalidateQueries({ queryKey: productionOpsKeys.equiposMedicion() });
       toast.success('Calibración registrada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al registrar calibración');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al registrar calibración'));
     },
   });
 }
 
 // Paradas
 
-export function useParadas(params?: any) {
+export function useParadas(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: productionOpsKeys.paradas(),
     queryFn: () => productionOpsApi.parada.getAll(params),
@@ -643,8 +724,8 @@ export function useCreateParada() {
       queryClient.invalidateQueries({ queryKey: productionOpsKeys.paradas() });
       toast.success('Parada registrada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al registrar parada');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al registrar parada'));
     },
   });
 }
@@ -660,15 +741,15 @@ export function useCerrarParada() {
       queryClient.invalidateQueries({ queryKey: productionOpsKeys.paradaById(id) });
       toast.success('Parada cerrada');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al cerrar parada');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al cerrar parada'));
     },
   });
 }
 
 // ==================== PRODUCTO TERMINADO - CATÁLOGOS ====================
 
-export function useTiposProducto(params?: any) {
+export function useTiposProducto(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: productionOpsKeys.tiposProducto(),
     queryFn: () => productionOpsApi.tipoProducto.getAll(params),
@@ -682,7 +763,7 @@ export function useTiposProductoActivos() {
   });
 }
 
-export function useEstadosLote(params?: any) {
+export function useEstadosLote(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: productionOpsKeys.estadosLote(),
     queryFn: () => productionOpsApi.estadoLote.getAll(params),
@@ -698,7 +779,7 @@ export function useEstadosLoteActivos() {
 
 // ==================== PRODUCTO TERMINADO - PRINCIPALES ====================
 
-export function useProductosTerminados(params?: any) {
+export function useProductosTerminados(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: productionOpsKeys.productosTerminados(),
     queryFn: () => productionOpsApi.productoTerminado.getAll(params),
@@ -717,20 +798,21 @@ export function useCreateProductoTerminado() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateProductoTerminadoDTO) => productionOpsApi.productoTerminado.create(data),
+    mutationFn: (data: CreateProductoTerminadoDTO) =>
+      productionOpsApi.productoTerminado.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: productionOpsKeys.productosTerminados() });
       toast.success('Producto terminado creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear producto terminado');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al crear producto terminado'));
     },
   });
 }
 
 // Stocks
 
-export function useStocks(params?: any) {
+export function useStocks(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: params ? productionOpsKeys.stocksFiltered(params) : productionOpsKeys.stocks(),
     queryFn: () => productionOpsApi.stockProducto.getAll(params),
@@ -754,8 +836,8 @@ export function useCreateStock() {
       queryClient.invalidateQueries({ queryKey: productionOpsKeys.stocks() });
       toast.success('Stock creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear stock');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al crear stock'));
     },
   });
 }
@@ -771,8 +853,23 @@ export function useUpdateStock() {
       queryClient.invalidateQueries({ queryKey: productionOpsKeys.stockById(id) });
       toast.success('Stock actualizado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al actualizar stock');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al actualizar stock'));
+    },
+  });
+}
+
+export function useDeleteStock() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => productionOpsApi.stockProducto.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: productionOpsKeys.stocks() });
+      toast.success('Stock eliminado exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al eliminar stock'));
     },
   });
 }
@@ -788,8 +885,8 @@ export function useReservarCantidad() {
       queryClient.invalidateQueries({ queryKey: productionOpsKeys.stockById(id) });
       toast.success('Cantidad reservada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al reservar cantidad');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al reservar cantidad'));
     },
   });
 }
@@ -805,8 +902,8 @@ export function useLiberarReserva() {
       queryClient.invalidateQueries({ queryKey: productionOpsKeys.stockById(id) });
       toast.success('Reserva liberada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al liberar reserva');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al liberar reserva'));
     },
   });
 }
@@ -822,15 +919,15 @@ export function useConsumirCantidad() {
       queryClient.invalidateQueries({ queryKey: productionOpsKeys.stockById(id) });
       toast.success('Cantidad consumida exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al consumir cantidad');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al consumir cantidad'));
     },
   });
 }
 
 // Liberaciones
 
-export function useLiberaciones(params?: any) {
+export function useLiberaciones(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: productionOpsKeys.liberaciones(),
     queryFn: () => productionOpsApi.liberacion.getAll(params),
@@ -854,8 +951,23 @@ export function useCreateLiberacion() {
       queryClient.invalidateQueries({ queryKey: productionOpsKeys.liberaciones() });
       toast.success('Solicitud de liberación creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear liberación');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al crear liberación'));
+    },
+  });
+}
+
+export function useDeleteLiberacion() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => productionOpsApi.liberacion.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: productionOpsKeys.liberaciones() });
+      toast.success('Liberación eliminada exitosamente');
+    },
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al eliminar liberación'));
     },
   });
 }
@@ -872,8 +984,8 @@ export function useAprobarLiberacion() {
       queryClient.invalidateQueries({ queryKey: productionOpsKeys.stocks() });
       toast.success('Liberación aprobada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al aprobar liberación');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al aprobar liberación'));
     },
   });
 }
@@ -890,15 +1002,15 @@ export function useRechazarLiberacion() {
       queryClient.invalidateQueries({ queryKey: productionOpsKeys.stocks() });
       toast.success('Liberación rechazada');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al rechazar liberación');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al rechazar liberación'));
     },
   });
 }
 
 // Certificados
 
-export function useCertificados(params?: any) {
+export function useCertificados(params?: Record<string, unknown>) {
   return useQuery({
     queryKey: productionOpsKeys.certificados(),
     queryFn: () => productionOpsApi.certificadoCalidad.getAll(params),
@@ -917,13 +1029,14 @@ export function useCreateCertificado() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateCertificadoCalidadDTO) => productionOpsApi.certificadoCalidad.create(data),
+    mutationFn: (data: CreateCertificadoCalidadDTO) =>
+      productionOpsApi.certificadoCalidad.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: productionOpsKeys.certificados() });
       toast.success('Certificado de calidad creado exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.detail || 'Error al crear certificado');
+    onError: (error: unknown) => {
+      toast.error(getApiError(error, 'Error al crear certificado'));
     },
   });
 }

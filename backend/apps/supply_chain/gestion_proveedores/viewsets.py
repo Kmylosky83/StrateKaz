@@ -846,6 +846,192 @@ class ProveedorViewSet(viewsets.ModelViewSet):
         serializer = EvaluacionProveedorSerializer(evaluaciones, many=True)
         return Response(serializer.data)
 
+    # ── Importación masiva ────────────────────────────────────────────────
+
+    @action(detail=False, methods=['get'], url_path='plantilla-importacion')
+    def plantilla_importacion(self, request):
+        """
+        Descarga la plantilla Excel para importación masiva de proveedores.
+        GET /api/supply-chain/proveedores/plantilla-importacion/
+        """
+        from django.http import HttpResponse
+        from .import_proveedores_utils import generate_proveedor_import_template
+
+        # Obtener datos de referencia del tenant
+        try:
+            tipos_proveedor = list(
+                TipoProveedor.objects.filter(is_active=True)
+                .values('nombre').order_by('nombre')
+            )
+        except Exception:
+            tipos_proveedor = []
+
+        try:
+            tipos_documento = list(
+                TipoDocumentoIdentidad.objects.filter(is_active=True)
+                .values('nombre').order_by('nombre')
+            )
+        except Exception:
+            tipos_documento = []
+
+        try:
+            departamentos = list(
+                Departamento.objects.filter(is_active=True)
+                .values('nombre').order_by('nombre')
+            )
+        except Exception:
+            departamentos = []
+
+        try:
+            proveedores_existentes = list(
+                Proveedor.objects.filter(deleted_at__isnull=True)
+                .values('nombre_comercial', 'codigo_interno')
+                .order_by('nombre_comercial')
+            )
+        except Exception:
+            proveedores_existentes = []
+
+        excel_bytes = generate_proveedor_import_template(
+            tipos_proveedor=tipos_proveedor,
+            tipos_documento=tipos_documento,
+            departamentos=departamentos,
+            proveedores_existentes=proveedores_existentes,
+        )
+
+        response = HttpResponse(
+            excel_bytes,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="plantilla_proveedores.xlsx"'
+        return response
+
+    @action(detail=False, methods=['post'], url_path='importar')
+    def importar(self, request):
+        """
+        Importa proveedores desde un archivo Excel.
+        POST /api/supply-chain/proveedores/importar/   multipart/form-data  campo: archivo
+
+        Procesa fila por fila — los errores NO bloquean las filas válidas.
+        Respuesta:
+        {
+          "creados": N,
+          "actualizados": N,
+          "errores": [{"fila": X, "nombre": "...", "errores": [...]}]
+        }
+        """
+        archivo = request.FILES.get('archivo')
+        if not archivo:
+            return Response(
+                {'detail': 'Se requiere el archivo Excel (.xlsx).'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        nombre = archivo.name.lower()
+        if not (nombre.endswith('.xlsx') or nombre.endswith('.xls')):
+            return Response(
+                {'detail': 'El archivo debe ser Excel (.xlsx).'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            from .import_proveedores_utils import parse_proveedor_excel, PROVEEDOR_COLUMNAS
+            contenido = archivo.read()
+            filas = parse_proveedor_excel(contenido)
+        except Exception as e:
+            logger.error('Error parseando archivo de importación de proveedores: %s', e, exc_info=True)
+            return Response(
+                {'detail': f'No se pudo leer el archivo: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not filas:
+            return Response(
+                {'detail': 'El archivo no contiene datos. Verifica que haya filas después de las cabeceras (fila 4 en adelante).'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user = request.user
+        creados = 0
+        actualizados = 0
+        errores = []
+
+        from .import_proveedores_serializer import ProveedorImportRowSerializer
+
+        for fila_raw in filas:
+            num_fila = fila_raw.pop('_fila', '?')
+            nombre_raw = str(fila_raw.get('nombre_comercial', '')).strip()
+
+            datos = {col: fila_raw.get(col, '') for col in PROVEEDOR_COLUMNAS}
+
+            serializer = ProveedorImportRowSerializer(data=datos)
+            if not serializer.is_valid():
+                msgs = []
+                for field, errs in serializer.errors.items():
+                    if isinstance(errs, list):
+                        msgs.extend([str(e) for e in errs])
+                    else:
+                        msgs.append(str(errs))
+                errores.append({
+                    'fila': num_fila,
+                    'nombre': nombre_raw or '—',
+                    'errores': msgs,
+                })
+                continue
+
+            vdata = serializer.validated_data
+            tipo_proveedor = vdata.pop('_tipo_proveedor')
+            tipo_documento = vdata.pop('_tipo_documento')
+            departamento_obj = vdata.pop('_departamento')
+
+            # Limpiar campos auxiliares
+            for key in ['tipo_proveedor_nombre', 'tipo_documento_nombre', 'departamento_nombre']:
+                vdata.pop(key, None)
+
+            proveedor_data = {
+                'tipo_proveedor': tipo_proveedor,
+                'nombre_comercial': vdata.pop('nombre_comercial'),
+                'razon_social': vdata.pop('razon_social'),
+                'tipo_documento': tipo_documento,
+                'numero_documento': vdata.pop('numero_documento'),
+                'nit': vdata.pop('nit', '') or None,
+                'telefono': vdata.pop('telefono', '') or None,
+                'email': vdata.pop('email', '') or None,
+                'direccion': vdata.pop('direccion', ''),
+                'ciudad': vdata.pop('ciudad', ''),
+                'departamento': departamento_obj,
+                'banco': vdata.pop('banco', '') or None,
+                'numero_cuenta': vdata.pop('numero_cuenta', '') or None,
+                'titular_cuenta': vdata.pop('titular_cuenta', '') or None,
+                'dias_plazo_pago': vdata.pop('dias_plazo_pago', 0),
+                'observaciones': vdata.pop('observaciones', '') or None,
+                'created_by': user,
+            }
+
+            try:
+                with transaction.atomic():
+                    prov = Proveedor(**proveedor_data)
+                    prov.full_clean()
+                    prov.save()
+                    creados += 1
+
+            except Exception as e:
+                logger.error(
+                    'Error importando proveedor fila %s (%s): %s',
+                    num_fila, nombre_raw, e, exc_info=True
+                )
+                errores.append({
+                    'fila': num_fila,
+                    'nombre': nombre_raw or '—',
+                    'errores': [str(e)],
+                })
+
+        return Response({
+            'creados': creados,
+            'actualizados': actualizados,
+            'errores': errores,
+            'total_filas': creados + actualizados + len(errores),
+        }, status=status.HTTP_200_OK if creados > 0 else status.HTTP_400_BAD_REQUEST)
+
 
 # ==============================================================================
 # VIEWSETS DE HISTORIAL Y CONDICIONES

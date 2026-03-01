@@ -1,7 +1,8 @@
 /**
  * Tab de Gestión de Almacenamiento - Supply Chain
  *
- * Gestión de inventarios, movimientos, kardex, alertas y configuración de stock
+ * Gestión de inventarios, movimientos, kardex, alertas y configuración de stock.
+ * KPIs + SectionToolbar + Table + CRUD modales.
  */
 import { useState } from 'react';
 import { Tabs } from '@/components/common/Tabs';
@@ -10,6 +11,8 @@ import { Button } from '@/components/common/Button';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Badge } from '@/components/common/Badge';
 import { Spinner } from '@/components/common/Spinner';
+import { KpiCard, KpiCardGrid } from '@/components/common/KpiCard';
+import { SectionToolbar } from '@/components/common/SectionToolbar';
 import {
   Package,
   ArrowRightLeft,
@@ -21,10 +24,9 @@ import {
   Eye,
   Trash2,
   CheckCircle,
-  Filter,
-  Download,
   TrendingDown,
-  TrendingUp,
+  DollarSign,
+  Bell,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -33,9 +35,12 @@ import {
   useMovimientosInventario,
   useAlertasStock,
   useConfiguracionesStock,
-  useStockBajo,
-  useStockCritico,
+  useEstadisticasAlmacenamiento,
+  useGenerarAlertas,
+  useMarcarAlertaLeida,
+  useResolverAlerta,
 } from '../hooks';
+import MovimientoInventarioFormModal from './MovimientoInventarioFormModal';
 
 // ==================== UTILITY FUNCTIONS ====================
 
@@ -65,9 +70,11 @@ const getEstadoBadgeVariant = (
 
 const InventariosSection = () => {
   const { data, isLoading } = useInventarios();
-  const { data: stockBajo } = useStockBajo();
-  const { data: stockCritico } = useStockCritico();
-  const inventarios = data?.results || [];
+  const { data: estadisticasData } = useEstadisticasAlmacenamiento();
+  const [isMovimientoOpen, setIsMovimientoOpen] = useState(false);
+
+  const inventarios = Array.isArray(data) ? data : (data?.results ?? []);
+  const estadisticas = estadisticasData as Record<string, unknown> | undefined;
 
   if (isLoading) {
     return (
@@ -77,153 +84,131 @@ const InventariosSection = () => {
     );
   }
 
-  const stats = {
-    total: inventarios.length,
-    stockBajo: stockBajo?.length || 0,
-    stockCritico: stockCritico?.length || 0,
-    valorTotal: inventarios.reduce((acc: number, inv: any) => acc + (inv.valor_total || 0), 0),
-  };
-
   return (
     <div className="space-y-6">
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Inventarios</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stats.total}</p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <Package className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-        </Card>
+      {/* KPIs */}
+      <KpiCardGrid columns={4}>
+        <KpiCard
+          label="Total Productos"
+          value={estadisticas?.total_productos ?? inventarios.length}
+          icon={<Package className="w-5 h-5" />}
+          color="primary"
+        />
+        <KpiCard
+          label="Stock Bajo"
+          value={estadisticas?.productos_stock_bajo ?? 0}
+          icon={<TrendingDown className="w-5 h-5" />}
+          color="warning"
+        />
+        <KpiCard
+          label="Alertas Activas"
+          value={estadisticas?.alertas_activas ?? 0}
+          icon={<Bell className="w-5 h-5" />}
+          color="danger"
+        />
+        <KpiCard
+          label="Valor Total"
+          value={`$${Number(estadisticas?.valor_total_inventario ?? 0).toLocaleString()}`}
+          icon={<DollarSign className="w-5 h-5" />}
+          color="success"
+        />
+      </KpiCardGrid>
 
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Stock Bajo</p>
-              <p className="text-2xl font-bold text-warning-600 dark:text-warning-400 mt-1">
-                {stats.stockBajo}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-warning-100 dark:bg-warning-900/30 rounded-lg flex items-center justify-center">
-              <TrendingDown className="w-6 h-6 text-warning-600 dark:text-warning-400" />
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Stock Crítico</p>
-              <p className="text-2xl font-bold text-danger-600 dark:text-danger-400 mt-1">
-                {stats.stockCritico}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-danger-100 dark:bg-danger-900/30 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-danger-600 dark:text-danger-400" />
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Valor Total</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                ${stats.valorTotal.toLocaleString()}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-success-100 dark:bg-success-900/30 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-success-600 dark:text-success-400" />
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Actions */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Inventarios</h3>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
-            Filtros
-          </Button>
-          <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-            Exportar
-          </Button>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Nuevo Inventario
-          </Button>
-        </div>
-      </div>
+      {/* Toolbar */}
+      <SectionToolbar
+        title="Inventarios"
+        count={inventarios.length}
+        primaryAction={{
+          label: 'Nuevo Movimiento',
+          onClick: () => setIsMovimientoOpen(true),
+          icon: <Plus className="w-4 h-4" />,
+        }}
+      />
 
       {/* Table */}
-      <Card variant="bordered" padding="none">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Código
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Producto
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Stock Actual
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Stock Mínimo
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Estado
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {inventarios.map((inv: any) => (
-                <tr key={inv.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                    {inv.codigo}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                    {inv.producto_nombre}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {inv.stock_actual} {inv.unidad_medida_codigo}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {inv.stock_minimo} {inv.unidad_medida_codigo}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={getEstadoBadgeVariant(inv.estado_codigo)} size="sm">
-                      {formatEstado(inv.estado_nombre)}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Trash2 className="w-4 h-4 text-danger-600" />
-                      </Button>
-                    </div>
-                  </td>
+      {inventarios.length === 0 ? (
+        <EmptyState
+          icon={<Package className="w-16 h-16" />}
+          title="No hay inventarios registrados"
+          description="Registre movimientos de inventario para comenzar"
+          action={{
+            label: 'Nuevo Movimiento',
+            onClick: () => setIsMovimientoOpen(true),
+            icon: <Plus className="w-4 h-4" />,
+          }}
+        />
+      ) : (
+        <Card variant="bordered" padding="none">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Código
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Producto
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Stock Actual
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Stock Mínimo
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Estado
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Acciones
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {inventarios.map((inv: Record<string, unknown>) => (
+                  <tr key={inv.id as number} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                      {inv.codigo as string}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                      {inv.producto_nombre as string}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                      {inv.stock_actual as number} {inv.unidad_medida_codigo as string}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                      {inv.stock_minimo as number} {inv.unidad_medida_codigo as string}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Badge
+                        variant={getEstadoBadgeVariant(String(inv.estado_codigo ?? ''))}
+                        size="sm"
+                      >
+                        {formatEstado(String(inv.estado_nombre ?? 'N/A'))}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="sm" title="Ver detalle">
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" title="Editar">
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      {/* Modal Nuevo Movimiento */}
+      <MovimientoInventarioFormModal
+        isOpen={isMovimientoOpen}
+        onClose={() => setIsMovimientoOpen(false)}
+      />
     </div>
   );
 };
@@ -232,7 +217,9 @@ const InventariosSection = () => {
 
 const MovimientosSection = () => {
   const { data, isLoading } = useMovimientosInventario();
-  const movimientos = data?.results || [];
+  const [isFormOpen, setIsFormOpen] = useState(false);
+
+  const movimientos = Array.isArray(data) ? data : (data?.results ?? []);
 
   if (isLoading) {
     return (
@@ -242,92 +229,104 @@ const MovimientosSection = () => {
     );
   }
 
-  if (movimientos.length === 0) {
-    return (
-      <EmptyState
-        icon={<ArrowRightLeft className="w-16 h-16" />}
-        title="No hay movimientos registrados"
-        description="Registre entradas, salidas y ajustes de inventario"
-        action={{
+  return (
+    <div className="space-y-6">
+      <SectionToolbar
+        title="Movimientos de Inventario"
+        count={movimientos.length}
+        primaryAction={{
           label: 'Nuevo Movimiento',
-          onClick: () => {},
+          onClick: () => setIsFormOpen(true),
           icon: <Plus className="w-4 h-4" />,
         }}
       />
-    );
-  }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Movimientos de Inventario
-        </h3>
-        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-          Nuevo Movimiento
-        </Button>
-      </div>
-
-      <Card variant="bordered" padding="none">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Fecha
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Tipo
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Inventario
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Cantidad
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Usuario
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {movimientos.map((mov: any) => (
-                <tr key={mov.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {format(new Date(mov.fecha_movimiento), 'dd/MM/yyyy HH:mm', { locale: es })}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge
-                      variant={mov.afectacion_stock === 'ENTRADA' ? 'success' : 'warning'}
-                      size="sm"
-                    >
-                      {formatEstado(mov.tipo_movimiento_nombre)}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                    {mov.inventario_producto}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                    {mov.afectacion_stock === 'ENTRADA' ? '+' : '-'}
-                    {mov.cantidad}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
-                    {mov.usuario_nombre}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <Button variant="ghost" size="sm">
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                  </td>
+      {movimientos.length === 0 ? (
+        <EmptyState
+          icon={<ArrowRightLeft className="w-16 h-16" />}
+          title="No hay movimientos registrados"
+          description="Registre entradas, salidas y ajustes de inventario"
+          action={{
+            label: 'Nuevo Movimiento',
+            onClick: () => setIsFormOpen(true),
+            icon: <Plus className="w-4 h-4" />,
+          }}
+        />
+      ) : (
+        <Card variant="bordered" padding="none">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Fecha
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Tipo
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Producto
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Cantidad
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Usuario
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Acciones
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {movimientos.map((mov: Record<string, unknown>) => (
+                  <tr key={mov.id as number} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                      {mov.fecha_movimiento
+                        ? format(new Date(mov.fecha_movimiento as string), 'dd/MM/yyyy HH:mm', {
+                            locale: es,
+                          })
+                        : mov.created_at
+                          ? format(new Date(mov.created_at as string), 'dd/MM/yyyy HH:mm', {
+                              locale: es,
+                            })
+                          : '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Badge
+                        variant={
+                          (mov.afectacion_stock as string) === 'ENTRADA' ? 'success' : 'warning'
+                        }
+                        size="sm"
+                      >
+                        {formatEstado(String(mov.tipo_movimiento_nombre ?? ''))}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                      {(mov.producto_nombre as string) || (mov.inventario_producto as string)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                      {(mov.afectacion_stock as string) === 'ENTRADA' ? '+' : '-'}
+                      {mov.cantidad as number}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                      {(mov.usuario_nombre as string) || (mov.created_by_nombre as string) || '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <Button variant="ghost" size="sm" title="Ver detalle">
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      {/* Modal Nuevo Movimiento */}
+      <MovimientoInventarioFormModal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} />
     </div>
   );
 };
@@ -348,7 +347,11 @@ const KardexSection = () => {
 
 const AlertasSection = () => {
   const { data, isLoading } = useAlertasStock();
-  const alertas = data?.results || [];
+  const generarAlertasMutation = useGenerarAlertas();
+  const marcarLeidaMutation = useMarcarAlertaLeida();
+  const resolverMutation = useResolverAlerta();
+
+  const alertas = Array.isArray(data) ? data : (data?.results ?? []);
 
   if (isLoading) {
     return (
@@ -358,88 +361,122 @@ const AlertasSection = () => {
     );
   }
 
-  if (alertas.length === 0) {
-    return (
-      <EmptyState
-        icon={<AlertTriangle className="w-16 h-16" />}
-        title="No hay alertas de stock"
-        description="Las alertas se generarán automáticamente cuando se cumplan las condiciones"
-      />
-    );
-  }
-
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Alertas de Stock</h3>
-        <Button variant="primary" size="sm">
-          Generar Alertas
-        </Button>
-      </div>
+      <SectionToolbar
+        title="Alertas de Stock"
+        count={alertas.length}
+        primaryAction={{
+          label: 'Generar Alertas',
+          onClick: () => generarAlertasMutation.mutate(),
+          icon: <Bell className="w-4 h-4" />,
+          disabled: generarAlertasMutation.isPending,
+        }}
+      />
 
-      <Card variant="bordered" padding="none">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Fecha
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Tipo
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Inventario
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Prioridad
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Estado
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {alertas.map((alerta: any) => (
-                <tr key={alerta.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {format(new Date(alerta.fecha_alerta), 'dd/MM/yyyy', { locale: es })}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                    {formatEstado(alerta.tipo_alerta_nombre)}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                    {alerta.inventario_producto}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={getEstadoBadgeVariant(alerta.prioridad)} size="sm">
-                      {formatEstado(alerta.prioridad)}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={alerta.resuelta ? 'success' : 'warning'} size="sm">
-                      {alerta.resuelta ? 'Resuelta' : alerta.leida ? 'Leída' : 'Pendiente'}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <CheckCircle className="w-4 h-4 text-success-600" />
-                      </Button>
-                    </div>
-                  </td>
+      {alertas.length === 0 ? (
+        <EmptyState
+          icon={<AlertTriangle className="w-16 h-16" />}
+          title="No hay alertas de stock"
+          description="Las alertas se generarán automáticamente cuando se cumplan las condiciones"
+        />
+      ) : (
+        <Card variant="bordered" padding="none">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Fecha
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Tipo
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Inventario
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Prioridad
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Estado
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Acciones
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {alertas.map((alerta: Record<string, unknown>) => (
+                  <tr
+                    key={alerta.id as number}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                      {alerta.fecha_alerta
+                        ? format(new Date(alerta.fecha_alerta as string), 'dd/MM/yyyy', {
+                            locale: es,
+                          })
+                        : '-'}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                      {formatEstado(String(alerta.tipo_alerta_nombre ?? ''))}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                      {alerta.inventario_producto as string}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Badge
+                        variant={getEstadoBadgeVariant(String(alerta.prioridad ?? ''))}
+                        size="sm"
+                      >
+                        {formatEstado(String(alerta.prioridad ?? 'N/A'))}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Badge
+                        variant={alerta.resuelta ? 'success' : alerta.leida ? 'warning' : 'danger'}
+                        size="sm"
+                      >
+                        {alerta.resuelta ? 'Resuelta' : alerta.leida ? 'Leída' : 'Pendiente'}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="sm" title="Ver detalle">
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        {!alerta.leida && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title="Marcar como leída"
+                            onClick={() => marcarLeidaMutation.mutate(alerta.id as number)}
+                            disabled={marcarLeidaMutation.isPending}
+                          >
+                            <Eye className="w-4 h-4 text-primary-600" />
+                          </Button>
+                        )}
+                        {!alerta.resuelta && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title="Resolver"
+                            onClick={() => resolverMutation.mutate({ id: alerta.id as number })}
+                            disabled={resolverMutation.isPending}
+                          >
+                            <CheckCircle className="w-4 h-4 text-success-600" />
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
     </div>
   );
 };
@@ -448,7 +485,7 @@ const AlertasSection = () => {
 
 const ConfiguracionSection = () => {
   const { data, isLoading } = useConfiguracionesStock();
-  const configuraciones = data?.results || [];
+  const configuraciones = Array.isArray(data) ? data : (data?.results ?? []);
 
   if (isLoading) {
     return (
@@ -458,85 +495,82 @@ const ConfiguracionSection = () => {
     );
   }
 
-  if (configuraciones.length === 0) {
-    return (
-      <EmptyState
-        icon={<Settings className="w-16 h-16" />}
-        title="No hay configuraciones de stock"
-        description="Configure los parámetros de stock para cada inventario"
-        action={{
+  return (
+    <div className="space-y-6">
+      <SectionToolbar
+        title="Configuración de Stock"
+        count={configuraciones.length}
+        primaryAction={{
           label: 'Nueva Configuración',
           onClick: () => {},
           icon: <Plus className="w-4 h-4" />,
         }}
       />
-    );
-  }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Configuración de Stock
-        </h3>
-        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-          Nueva Configuración
-        </Button>
-      </div>
-
-      <Card variant="bordered" padding="none">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Inventario
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Stock Mínimo
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Stock Máximo
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Punto Reorden
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {configuraciones.map((config: any) => (
-                <tr key={config.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                    {config.inventario_producto}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {config.stock_minimo}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {config.stock_maximo}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {config.punto_reorden}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Trash2 className="w-4 h-4 text-danger-600" />
-                      </Button>
-                    </div>
-                  </td>
+      {configuraciones.length === 0 ? (
+        <EmptyState
+          icon={<Settings className="w-16 h-16" />}
+          title="No hay configuraciones de stock"
+          description="Configure los parámetros de stock para cada inventario"
+        />
+      ) : (
+        <Card variant="bordered" padding="none">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Inventario
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Stock Mínimo
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Stock Máximo
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Punto Reorden
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Acciones
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {configuraciones.map((config: Record<string, unknown>) => (
+                  <tr
+                    key={config.id as number}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                  >
+                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                      {config.inventario_producto as string}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                      {config.stock_minimo as number}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                      {config.stock_maximo as number}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                      {config.punto_reorden as number}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="sm" title="Editar">
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" title="Eliminar">
+                          <Trash2 className="w-4 h-4 text-danger-600" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
     </div>
   );
 };

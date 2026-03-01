@@ -1,144 +1,260 @@
 /**
  * Página: Clientes - Sales CRM
- * Gestión completa de clientes, contactos y scoring
+ * Gestión completa de clientes con CRUD, tabla, KPIs e importación masiva
  */
-import { useState } from 'react';
-import { Users, UserPlus, Filter, Download, TrendingUp, Star, AlertTriangle } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { ColumnDef } from '@tanstack/react-table';
+import { Users, Star, AlertTriangle, TrendingUp, Upload, Edit, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/components/layout';
-import { Card } from '@/components/common/Card';
+import { KpiCard, KpiCardGrid, KpiCardSkeleton } from '@/components/common/KpiCard';
+import { SectionToolbar } from '@/components/common/SectionToolbar';
+import { Table } from '@/components/common/Table';
+import { StatusBadge } from '@/components/common/StatusBadge';
 import { Button } from '@/components/common/Button';
 import { EmptyState } from '@/components/common/EmptyState';
-import { Spinner } from '@/components/common/Spinner';
-import { ClienteCard } from '../components/ClienteCard';
-import { useClientes, useClienteDashboard } from '../hooks';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { ScoringBadge } from '../components/ScoringBadge';
+import ClienteFormModal from '../components/ClienteFormModal';
+import ImportClientesModal from '../components/ImportClientesModal';
+import { useClientes, useDeleteCliente, useClienteDashboard } from '../hooks';
+import type { ClienteList, Cliente } from '../types';
 
 export default function ClientesPage() {
-  const [filters, _setFilters] = useState<any>({});
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [editingItem, setEditingItem] = useState<Cliente | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  const { data: clientesData, isLoading: isLoadingClientes } = useClientes(filters);
+  const { data: clientesData, isLoading: isLoadingClientes } = useClientes();
   const { data: dashboard, isLoading: isLoadingDashboard } = useClienteDashboard();
 
-  if (isLoadingClientes || isLoadingDashboard) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Spinner />
-      </div>
-    );
-  }
+  const deleteMutation = useDeleteCliente();
 
-  const clientes = clientesData?.results || [];
+  const clientes = useMemo(() => {
+    return Array.isArray(clientesData) ? clientesData : (clientesData?.results ?? []);
+  }, [clientesData]);
+
   const stats = dashboard || {
     total_clientes: 0,
     clientes_activos: 0,
-    clientes_nuevos_mes: 0,
     clientes_alto_scoring: 0,
     total_saldo_pendiente: 0,
-    promedio_scoring: 0,
   };
 
+  // ── Handlers ────────────────────────────────────────────────────────────
+
+  const handleCreate = () => {
+    setEditingItem(null);
+    setShowFormModal(true);
+  };
+
+  const handleEdit = (cliente: ClienteList) => {
+    // Usar el registro de la lista como base para edición
+    setEditingItem(cliente as unknown as Cliente);
+    setShowFormModal(true);
+  };
+
+  const handleDelete = (id: number) => {
+    setDeletingId(id);
+  };
+
+  const confirmDelete = () => {
+    if (deletingId) {
+      deleteMutation.mutate(deletingId, {
+        onSuccess: () => setDeletingId(null),
+      });
+    }
+  };
+
+  const handleCloseForm = () => {
+    setShowFormModal(false);
+    setEditingItem(null);
+  };
+
+  // ── Columnas ────────────────────────────────────────────────────────────
+
+  const columns = useMemo<ColumnDef<ClienteList, unknown>[]>(
+    () => [
+      {
+        accessorKey: 'codigo_cliente',
+        header: 'Código',
+        cell: ({ getValue }) => (
+          <span className="font-mono text-sm text-gray-600 dark:text-gray-400">
+            {getValue() as string}
+          </span>
+        ),
+        size: 120,
+      },
+      {
+        accessorKey: 'nombre_comercial',
+        header: 'Razón Social / Nombre',
+        cell: ({ row }) => (
+          <div>
+            <p className="font-medium text-gray-900 dark:text-white">
+              {row.original.nombre_comercial}
+            </p>
+            {row.original.razon_social && (
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {row.original.razon_social}
+              </p>
+            )}
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'tipo_cliente',
+        header: 'Tipo',
+        cell: ({ getValue }) => <StatusBadge status={getValue() as string} size="sm" />,
+        size: 130,
+      },
+      {
+        accessorKey: 'scoring_cliente',
+        header: 'Scoring',
+        cell: ({ getValue }) => <ScoringBadge scoring={getValue() as number} />,
+        size: 150,
+      },
+      {
+        accessorKey: 'segmento_nombre',
+        header: 'Segmento',
+        cell: ({ getValue }) => (
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            {(getValue() as string) || '—'}
+          </span>
+        ),
+        size: 130,
+      },
+      {
+        accessorKey: 'estado',
+        header: 'Estado',
+        cell: ({ getValue }) => <StatusBadge status={getValue() as string} preset="proceso" />,
+        size: 120,
+      },
+      {
+        id: 'acciones',
+        header: 'Acciones',
+        cell: ({ row }) => (
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleEdit(row.original)}
+              title="Editar"
+            >
+              <Edit className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleDelete(row.original.id)}
+              title="Eliminar"
+            >
+              <Trash2 className="w-4 h-4 text-danger-500" />
+            </Button>
+          </div>
+        ),
+        size: 100,
+      },
+    ],
+    []
+  );
+
+  // ── Render ──────────────────────────────────────────────────────────────
+
   return (
-    <div className="space-y-8">
-      <PageHeader
-        title="Clientes"
-        description="Gestión de clientes, contactos y scoring de clientes"
-      />
+    <div className="space-y-6">
+      <PageHeader title="Clientes" description="Gestión de clientes, contactos y scoring" />
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Clientes</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                {stats.total_clientes}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center">
-              <Users className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            </div>
-          </div>
-        </Card>
+      {isLoadingDashboard ? (
+        <KpiCardSkeleton count={4} />
+      ) : (
+        <KpiCardGrid columns={4}>
+          <KpiCard
+            label="Total Clientes"
+            value={stats.total_clientes}
+            icon={<Users className="w-5 h-5" />}
+            color="primary"
+          />
+          <KpiCard
+            label="Clientes Activos"
+            value={stats.clientes_activos}
+            icon={<TrendingUp className="w-5 h-5" />}
+            color="success"
+          />
+          <KpiCard
+            label="Alto Scoring (>70)"
+            value={stats.clientes_alto_scoring}
+            icon={<Star className="w-5 h-5" />}
+            color="warning"
+          />
+          <KpiCard
+            label="Saldo Pendiente"
+            value={`$${(stats.total_saldo_pendiente || 0).toLocaleString()}`}
+            icon={<AlertTriangle className="w-5 h-5" />}
+            color="danger"
+          />
+        </KpiCardGrid>
+      )}
 
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Clientes Activos</p>
-              <p className="text-2xl font-bold text-success-600 dark:text-success-400 mt-1">
-                {stats.clientes_activos}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-success-100 dark:bg-success-900/30 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-success-600 dark:text-success-400" />
-            </div>
-          </div>
-        </Card>
+      {/* Toolbar */}
+      <SectionToolbar
+        title="Todos los Clientes"
+        count={clientes.length}
+        extraActions={[
+          {
+            label: 'Importar',
+            onClick: () => setShowImportModal(true),
+            icon: <Upload className="w-4 h-4" />,
+            variant: 'outline',
+          },
+        ]}
+        primaryAction={{
+          label: 'Nuevo Cliente',
+          onClick: handleCreate,
+        }}
+      />
 
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Alto Scoring</p>
-              <p className="text-2xl font-bold text-warning-600 dark:text-warning-400 mt-1">
-                {stats.clientes_alto_scoring}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-warning-100 dark:bg-warning-900/30 rounded-lg flex items-center justify-center">
-              <Star className="w-6 h-6 text-warning-600 dark:text-warning-400" />
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="bordered" padding="md">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Saldo Pendiente</p>
-              <p className="text-2xl font-bold text-danger-600 dark:text-danger-400 mt-1">
-                ${stats.total_saldo_pendiente.toLocaleString()}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-danger-100 dark:bg-danger-900/30 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-danger-600 dark:text-danger-400" />
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Actions */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Todos los Clientes ({clientes.length})
-        </h3>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
-            Filtros
-          </Button>
-          <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-            Exportar
-          </Button>
-          <Button variant="primary" size="sm" leftIcon={<UserPlus className="w-4 h-4" />}>
-            Nuevo Cliente
-          </Button>
-        </div>
-      </div>
-
-      {/* Clientes Grid */}
-      {clientes.length === 0 ? (
+      {/* Table */}
+      {clientes.length === 0 && !isLoadingClientes ? (
         <EmptyState
           icon={<Users className="w-16 h-16" />}
           title="No hay clientes registrados"
-          description="Comience agregando clientes a su sistema CRM"
+          description="Comience agregando clientes a su sistema CRM o importe desde Excel"
           action={{
             label: 'Nuevo Cliente',
-            onClick: () => {},
-            icon: <UserPlus className="w-4 h-4" />,
+            onClick: handleCreate,
           }}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {clientes.map((cliente) => (
-            <ClienteCard key={cliente.id} cliente={cliente} onView={() => {}} onEdit={() => {}} />
-          ))}
-        </div>
+        <Table
+          data={clientes}
+          columns={columns}
+          loading={isLoadingClientes}
+          sorting
+          pagination
+          defaultPageSize={25}
+          hoverable
+          emptyMessage="No se encontraron clientes"
+        />
       )}
+
+      {/* Form Modal */}
+      <ClienteFormModal item={editingItem} isOpen={showFormModal} onClose={handleCloseForm} />
+
+      {/* Import Modal */}
+      <ImportClientesModal isOpen={showImportModal} onClose={() => setShowImportModal(false)} />
+
+      {/* Confirm Delete */}
+      <ConfirmDialog
+        isOpen={deletingId !== null}
+        onClose={() => setDeletingId(null)}
+        onConfirm={confirmDelete}
+        title="Eliminar Cliente"
+        message="¿Está seguro que desea eliminar este cliente? Esta acción no se puede deshacer."
+        confirmText="Eliminar"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 }

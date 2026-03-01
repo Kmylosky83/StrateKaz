@@ -1,7 +1,8 @@
 /**
  * Tab de Gestión de Compras - Supply Chain
  *
- * Gestión de requisiciones, cotizaciones, órdenes de compra, contratos y recepciones
+ * Gestión de requisiciones, cotizaciones, órdenes de compra, contratos y recepciones.
+ * KPIs + SectionToolbar + Table + CRUD modales.
  */
 import { useState } from 'react';
 import { Tabs } from '@/components/common/Tabs';
@@ -10,6 +11,9 @@ import { Button } from '@/components/common/Button';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Badge } from '@/components/common/Badge';
 import { Spinner } from '@/components/common/Spinner';
+import { KpiCard, KpiCardGrid } from '@/components/common/KpiCard';
+import { SectionToolbar } from '@/components/common/SectionToolbar';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import {
   FileText,
   TrendingUp,
@@ -19,20 +23,26 @@ import {
   Plus,
   Edit,
   Eye,
+  Trash2,
   CheckCircle,
-  XCircle,
-  Filter,
   Download,
+  ClipboardList,
+  Clock,
+  DollarSign,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
   useRequisiciones,
+  useDeleteRequisicion,
+  useEstadisticasCompras,
   useCotizaciones,
   useOrdenesCompra,
   useContratos,
   useRecepcionesCompra,
 } from '../hooks';
+import RequisicionFormModal from './RequisicionFormModal';
+import type { Requisicion } from '../types';
 
 // ==================== UTILITY FUNCTIONS ====================
 
@@ -62,7 +72,38 @@ const getEstadoBadgeVariant = (
 
 const RequisicionesSection = () => {
   const { data, isLoading } = useRequisiciones();
-  const requisiciones = data?.results || [];
+  const { data: estadisticasData } = useEstadisticasCompras();
+  const deleteMutation = useDeleteRequisicion();
+
+  const [selectedItem, setSelectedItem] = useState<Requisicion | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const requisiciones = Array.isArray(data) ? data : (data?.results ?? []);
+  const estadisticas = estadisticasData as Record<string, unknown> | undefined;
+
+  const handleCreate = () => {
+    setSelectedItem(null);
+    setIsFormOpen(true);
+  };
+
+  const handleEdit = (item: Requisicion) => {
+    setSelectedItem(item);
+    setIsFormOpen(true);
+  };
+
+  const handleCloseForm = () => {
+    setIsFormOpen(false);
+    setSelectedItem(null);
+  };
+
+  const handleDelete = () => {
+    if (deleteId) {
+      deleteMutation.mutate(deleteId, {
+        onSuccess: () => setDeleteId(null),
+      });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -72,106 +113,161 @@ const RequisicionesSection = () => {
     );
   }
 
-  if (requisiciones.length === 0) {
-    return (
-      <EmptyState
-        icon={<FileText className="w-16 h-16" />}
-        title="No hay requisiciones registradas"
-        description="Comience creando requisiciones de compra"
-        action={{
+  return (
+    <div className="space-y-6">
+      {/* KPIs */}
+      <KpiCardGrid columns={4}>
+        <KpiCard
+          label="Total Requisiciones"
+          value={estadisticas?.total_requisiciones ?? requisiciones.length}
+          icon={<ClipboardList className="w-5 h-5" />}
+          color="primary"
+        />
+        <KpiCard
+          label="Pendientes Aprobación"
+          value={estadisticas?.requisiciones_pendientes ?? 0}
+          icon={<Clock className="w-5 h-5" />}
+          color="warning"
+        />
+        <KpiCard
+          label="Órdenes Activas"
+          value={estadisticas?.ordenes_activas ?? 0}
+          icon={<ShoppingCart className="w-5 h-5" />}
+          color="success"
+        />
+        <KpiCard
+          label="Monto Total"
+          value={`$${Number(estadisticas?.valor_total_ordenes ?? 0).toLocaleString()}`}
+          icon={<DollarSign className="w-5 h-5" />}
+          color="info"
+        />
+      </KpiCardGrid>
+
+      {/* Toolbar */}
+      <SectionToolbar
+        title="Requisiciones de Compra"
+        count={requisiciones.length}
+        primaryAction={{
           label: 'Nueva Requisición',
-          onClick: () => {},
+          onClick: handleCreate,
           icon: <Plus className="w-4 h-4" />,
         }}
       />
-    );
-  }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Requisiciones de Compra
-        </h3>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" leftIcon={<Filter className="w-4 h-4" />}>
-            Filtros
-          </Button>
-          <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-            Exportar
-          </Button>
-          <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-            Nueva Requisición
-          </Button>
-        </div>
-      </div>
-
-      <Card variant="bordered" padding="none">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Número
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Fecha
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Solicitante
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Prioridad
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Estado
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {requisiciones.map((req: any) => (
-                <tr key={req.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                    {req.numero}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {format(new Date(req.fecha_requisicion), 'dd/MM/yyyy', { locale: es })}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
-                    {req.solicitante_nombre}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={getEstadoBadgeVariant(req.prioridad_codigo)} size="sm">
-                      {formatEstado(req.prioridad_nombre)}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={getEstadoBadgeVariant(req.estado_codigo)} size="sm">
-                      {formatEstado(req.estado_nombre)}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <CheckCircle className="w-4 h-4 text-success-600" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <XCircle className="w-4 h-4 text-danger-600" />
-                      </Button>
-                    </div>
-                  </td>
+      {/* Table */}
+      {requisiciones.length === 0 ? (
+        <EmptyState
+          icon={<FileText className="w-16 h-16" />}
+          title="No hay requisiciones registradas"
+          description="Comience creando requisiciones de compra"
+          action={{
+            label: 'Nueva Requisición',
+            onClick: handleCreate,
+            icon: <Plus className="w-4 h-4" />,
+          }}
+        />
+      ) : (
+        <Card variant="bordered" padding="none">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Código
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Área Solicitante
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Fecha Requerida
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Prioridad
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Estado
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Acciones
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {requisiciones.map((req: Requisicion) => (
+                  <tr key={req.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                      {req.codigo || `REQ-${req.id}`}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                      {req.area_solicitante}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                      {req.fecha_requerida
+                        ? format(new Date(req.fecha_requerida), 'dd/MM/yyyy', { locale: es })
+                        : '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Badge
+                        variant={getEstadoBadgeVariant(
+                          req.prioridad_nombre || String(req.prioridad || '')
+                        )}
+                        size="sm"
+                      >
+                        {req.prioridad_nombre || formatEstado(String(req.prioridad || 'N/A'))}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Badge
+                        variant={getEstadoBadgeVariant(
+                          req.estado_nombre || String(req.estado || '')
+                        )}
+                        size="sm"
+                      >
+                        {req.estado_nombre || formatEstado(String(req.estado || 'N/A'))}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(req)}
+                          title="Editar"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeleteId(req.id)}
+                          title="Eliminar"
+                        >
+                          <Trash2 className="w-4 h-4 text-danger-600" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      {/* Modal Crear/Editar */}
+      <RequisicionFormModal item={selectedItem} isOpen={isFormOpen} onClose={handleCloseForm} />
+
+      {/* Confirmar Eliminación */}
+      <ConfirmDialog
+        isOpen={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDelete}
+        title="Eliminar Requisición"
+        description="¿Está seguro de que desea eliminar esta requisición? Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   );
 };
@@ -180,7 +276,7 @@ const RequisicionesSection = () => {
 
 const CotizacionesSection = () => {
   const { data, isLoading } = useCotizaciones();
-  const cotizaciones = data?.results || [];
+  const cotizaciones = Array.isArray(data) ? data : (data?.results ?? []);
 
   if (isLoading) {
     return (
@@ -190,94 +286,97 @@ const CotizacionesSection = () => {
     );
   }
 
-  if (cotizaciones.length === 0) {
-    return (
-      <EmptyState
-        icon={<TrendingUp className="w-16 h-16" />}
-        title="No hay cotizaciones registradas"
-        description="Solicite cotizaciones a los proveedores"
-        action={{
+  return (
+    <div className="space-y-6">
+      <SectionToolbar
+        title="Cotizaciones"
+        count={cotizaciones.length}
+        primaryAction={{
           label: 'Nueva Cotización',
           onClick: () => {},
           icon: <Plus className="w-4 h-4" />,
         }}
       />
-    );
-  }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Cotizaciones</h3>
-        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-          Nueva Cotización
-        </Button>
-      </div>
-
-      <Card variant="bordered" padding="none">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Número
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Proveedor
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Fecha
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Total
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Estado
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {cotizaciones.map((cot: any) => (
-                <tr key={cot.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                    {cot.numero}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
-                    {cot.proveedor_nombre}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {format(new Date(cot.fecha_cotizacion), 'dd/MM/yyyy', { locale: es })}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                    ${cot.total?.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={getEstadoBadgeVariant(cot.estado_codigo)} size="sm">
-                      {formatEstado(cot.estado_nombre)}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <CheckCircle className="w-4 h-4 text-success-600" />
-                      </Button>
-                    </div>
-                  </td>
+      {cotizaciones.length === 0 ? (
+        <EmptyState
+          icon={<TrendingUp className="w-16 h-16" />}
+          title="No hay cotizaciones registradas"
+          description="Solicite cotizaciones a los proveedores"
+        />
+      ) : (
+        <Card variant="bordered" padding="none">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Número
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Proveedor
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Fecha
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Total
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Estado
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Acciones
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {cotizaciones.map((cot: Record<string, unknown>) => (
+                  <tr key={cot.id as number} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                      {cot.numero as string}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                      {cot.proveedor_nombre as string}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                      {cot.fecha_cotizacion
+                        ? format(new Date(cot.fecha_cotizacion as string), 'dd/MM/yyyy', {
+                            locale: es,
+                          })
+                        : '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                      ${Number(cot.total ?? 0).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Badge
+                        variant={getEstadoBadgeVariant(String(cot.estado_codigo ?? ''))}
+                        size="sm"
+                      >
+                        {formatEstado(String(cot.estado_nombre ?? 'N/A'))}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="sm" title="Ver">
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" title="Editar">
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" title="Seleccionar">
+                          <CheckCircle className="w-4 h-4 text-success-600" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
     </div>
   );
 };
@@ -286,7 +385,7 @@ const CotizacionesSection = () => {
 
 const OrdenesCompraSection = () => {
   const { data, isLoading } = useOrdenesCompra();
-  const ordenes = data?.results || [];
+  const ordenes = Array.isArray(data) ? data : (data?.results ?? []);
 
   if (isLoading) {
     return (
@@ -296,94 +395,95 @@ const OrdenesCompraSection = () => {
     );
   }
 
-  if (ordenes.length === 0) {
-    return (
-      <EmptyState
-        icon={<ShoppingCart className="w-16 h-16" />}
-        title="No hay órdenes de compra"
-        description="Genere órdenes de compra desde las cotizaciones aprobadas"
-        action={{
-          label: 'Nueva Orden de Compra',
+  return (
+    <div className="space-y-6">
+      <SectionToolbar
+        title="Órdenes de Compra"
+        count={ordenes.length}
+        primaryAction={{
+          label: 'Nueva Orden',
           onClick: () => {},
           icon: <Plus className="w-4 h-4" />,
         }}
       />
-    );
-  }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Órdenes de Compra</h3>
-        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-          Nueva Orden
-        </Button>
-      </div>
-
-      <Card variant="bordered" padding="none">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Número
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Proveedor
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Fecha Orden
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Total
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Estado
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {ordenes.map((oc: any) => (
-                <tr key={oc.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                    {oc.numero}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
-                    {oc.proveedor_nombre}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {format(new Date(oc.fecha_orden), 'dd/MM/yyyy', { locale: es })}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                    ${oc.total?.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={getEstadoBadgeVariant(oc.estado_codigo)} size="sm">
-                      {formatEstado(oc.estado_nombre)}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Download className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <PackageCheck className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </td>
+      {ordenes.length === 0 ? (
+        <EmptyState
+          icon={<ShoppingCart className="w-16 h-16" />}
+          title="No hay órdenes de compra"
+          description="Genere órdenes de compra desde las cotizaciones aprobadas"
+        />
+      ) : (
+        <Card variant="bordered" padding="none">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Número
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Proveedor
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Fecha Orden
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Total
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Estado
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Acciones
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {ordenes.map((oc: Record<string, unknown>) => (
+                  <tr key={oc.id as number} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                      {oc.numero as string}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                      {oc.proveedor_nombre as string}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                      {oc.fecha_orden
+                        ? format(new Date(oc.fecha_orden as string), 'dd/MM/yyyy', { locale: es })
+                        : '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                      ${Number(oc.total ?? 0).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Badge
+                        variant={getEstadoBadgeVariant(String(oc.estado_codigo ?? ''))}
+                        size="sm"
+                      >
+                        {formatEstado(String(oc.estado_nombre ?? 'N/A'))}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="sm" title="Ver">
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" title="Descargar">
+                          <Download className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" title="Recepcionar">
+                          <PackageCheck className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
     </div>
   );
 };
@@ -392,7 +492,7 @@ const OrdenesCompraSection = () => {
 
 const ContratosSection = () => {
   const { data, isLoading } = useContratos();
-  const contratos = data?.results || [];
+  const contratos = Array.isArray(data) ? data : (data?.results ?? []);
 
   if (isLoading) {
     return (
@@ -402,92 +502,101 @@ const ContratosSection = () => {
     );
   }
 
-  if (contratos.length === 0) {
-    return (
-      <EmptyState
-        icon={<FileSignature className="w-16 h-16" />}
-        title="No hay contratos registrados"
-        description="Registre los contratos con proveedores"
-        action={{
+  return (
+    <div className="space-y-6">
+      <SectionToolbar
+        title="Contratos"
+        count={contratos.length}
+        primaryAction={{
           label: 'Nuevo Contrato',
           onClick: () => {},
           icon: <Plus className="w-4 h-4" />,
         }}
       />
-    );
-  }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Contratos</h3>
-        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-          Nuevo Contrato
-        </Button>
-      </div>
-
-      <Card variant="bordered" padding="none">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Número
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Proveedor
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Vigencia
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Valor
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Estado
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {contratos.map((cont: any) => (
-                <tr key={cont.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                    {cont.numero}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
-                    {cont.proveedor_nombre}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {format(new Date(cont.fecha_inicio), 'dd/MM/yyyy', { locale: es })} -{' '}
-                    {format(new Date(cont.fecha_fin), 'dd/MM/yyyy', { locale: es })}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                    ${cont.valor_total?.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge variant={getEstadoBadgeVariant(cont.estado_codigo)} size="sm">
-                      {formatEstado(cont.estado_nombre)}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Download className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </td>
+      {contratos.length === 0 ? (
+        <EmptyState
+          icon={<FileSignature className="w-16 h-16" />}
+          title="No hay contratos registrados"
+          description="Registre los contratos con proveedores"
+        />
+      ) : (
+        <Card variant="bordered" padding="none">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Número
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Proveedor
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Vigencia
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Valor
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Estado
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Acciones
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {contratos.map((cont: Record<string, unknown>) => (
+                  <tr
+                    key={cont.id as number}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                      {cont.numero as string}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                      {cont.proveedor_nombre as string}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                      {cont.fecha_inicio
+                        ? format(new Date(cont.fecha_inicio as string), 'dd/MM/yyyy', {
+                            locale: es,
+                          })
+                        : '-'}{' '}
+                      -{' '}
+                      {cont.fecha_fin
+                        ? format(new Date(cont.fecha_fin as string), 'dd/MM/yyyy', { locale: es })
+                        : '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                      ${Number(cont.valor_total ?? 0).toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Badge
+                        variant={getEstadoBadgeVariant(String(cont.estado_codigo ?? ''))}
+                        size="sm"
+                      >
+                        {formatEstado(String(cont.estado_nombre ?? 'N/A'))}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="sm" title="Ver">
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" title="Descargar">
+                          <Download className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
     </div>
   );
 };
@@ -496,7 +605,7 @@ const ContratosSection = () => {
 
 const RecepcionesSection = () => {
   const { data, isLoading } = useRecepcionesCompra();
-  const recepciones = data?.results || [];
+  const recepciones = Array.isArray(data) ? data : (data?.results ?? []);
 
   if (isLoading) {
     return (
@@ -506,90 +615,78 @@ const RecepcionesSection = () => {
     );
   }
 
-  if (recepciones.length === 0) {
-    return (
-      <EmptyState
-        icon={<PackageCheck className="w-16 h-16" />}
-        title="No hay recepciones registradas"
-        description="Registre las recepciones de las órdenes de compra"
-        action={{
-          label: 'Nueva Recepción',
-          onClick: () => {},
-          icon: <Plus className="w-4 h-4" />,
-        }}
-      />
-    );
-  }
-
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Recepciones de Compra
-        </h3>
-        <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
-          Nueva Recepción
-        </Button>
-      </div>
+      <SectionToolbar title="Recepciones de Compra" count={recepciones.length} />
 
-      <Card variant="bordered" padding="none">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Orden Compra
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Fecha Recepción
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Recibido Por
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Conforme
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {recepciones.map((rec: any) => (
-                <tr key={rec.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                    {rec.orden_compra_numero}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {format(new Date(rec.fecha_recepcion), 'dd/MM/yyyy', { locale: es })}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
-                    {rec.recibido_por_nombre}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {rec.conforme ? (
-                      <Badge variant="success" size="sm">
-                        Conforme
-                      </Badge>
-                    ) : (
-                      <Badge variant="danger" size="sm">
-                        No Conforme
-                      </Badge>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="sm">
+      {recepciones.length === 0 ? (
+        <EmptyState
+          icon={<PackageCheck className="w-16 h-16" />}
+          title="No hay recepciones registradas"
+          description="Registre las recepciones de las órdenes de compra"
+        />
+      ) : (
+        <Card variant="bordered" padding="none">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Orden Compra
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Fecha Recepción
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Recibido Por
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Conforme
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    Acciones
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {recepciones.map((rec: Record<string, unknown>) => (
+                  <tr key={rec.id as number} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                      {rec.orden_compra_numero as string}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                      {rec.fecha_recepcion
+                        ? format(new Date(rec.fecha_recepcion as string), 'dd/MM/yyyy', {
+                            locale: es,
+                          })
+                        : '-'}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                      {rec.recibido_por_nombre as string}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {rec.conforme ? (
+                        <Badge variant="success" size="sm">
+                          Conforme
+                        </Badge>
+                      ) : (
+                        <Badge variant="danger" size="sm">
+                          No Conforme
+                        </Badge>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <Button variant="ghost" size="sm" title="Ver detalle">
                         <Eye className="w-4 h-4" />
                       </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
     </div>
   );
 };

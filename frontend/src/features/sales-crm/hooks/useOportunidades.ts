@@ -77,6 +77,23 @@ export function useUpdateOportunidad() {
   });
 }
 
+export function useDeleteOportunidad() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => oportunidadesApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: salesCRMKeys.oportunidades() });
+      queryClient.invalidateQueries({ queryKey: salesCRMKeys.pipelineKanban() });
+      queryClient.invalidateQueries({ queryKey: salesCRMKeys.pipelineDashboard() });
+      toast.success('Oportunidad eliminada exitosamente');
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.detail || 'Error al eliminar oportunidad');
+    },
+  });
+}
+
 export function useCambiarEtapa() {
   const queryClient = useQueryClient();
 
@@ -160,8 +177,7 @@ export function useUpdateActividad() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, datos }: { id: number; datos: any }) =>
-      actividadesApi.update(id, datos),
+    mutationFn: ({ id, datos }: { id: number; datos: any }) => actividadesApi.update(id, datos),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: salesCRMKeys.actividades() });
       toast.success('Actividad actualizada exitosamente');

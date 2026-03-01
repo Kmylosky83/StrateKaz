@@ -411,6 +411,204 @@ class ClienteViewSet(viewsets.ModelViewSet):
             'scoring': scorings
         })
 
+    # ── Importación masiva ────────────────────────────────────────────────
+
+    @action(detail=False, methods=['get'], url_path='plantilla-importacion')
+    def plantilla_importacion(self, request):
+        """
+        Descarga la plantilla Excel para importación masiva de clientes.
+        GET /api/sales-crm/clientes/plantilla-importacion/
+        """
+        import logging
+        from django.http import HttpResponse
+        from .import_clientes_utils import generate_cliente_import_template
+
+        logger = logging.getLogger(__name__)
+
+        # Obtener datos de referencia del tenant
+        try:
+            tipos_cliente = list(
+                TipoCliente.objects.filter(activo=True)
+                .values('nombre', 'codigo').order_by('nombre')
+            )
+        except Exception:
+            tipos_cliente = []
+
+        try:
+            estados_cliente = list(
+                EstadoCliente.objects.filter(activo=True)
+                .values('nombre', 'codigo').order_by('nombre')
+            )
+        except Exception:
+            estados_cliente = []
+
+        try:
+            canales_venta = list(
+                CanalVenta.objects.filter(activo=True)
+                .values('nombre', 'codigo').order_by('nombre')
+            )
+        except Exception:
+            canales_venta = []
+
+        try:
+            clientes_existentes = list(
+                Cliente.objects.filter(is_active=True)
+                .values('razon_social', 'codigo_cliente')
+                .order_by('razon_social')
+            )
+        except Exception:
+            clientes_existentes = []
+
+        excel_bytes = generate_cliente_import_template(
+            tipos_cliente=tipos_cliente,
+            estados_cliente=estados_cliente,
+            canales_venta=canales_venta,
+            clientes_existentes=clientes_existentes,
+        )
+
+        response = HttpResponse(
+            excel_bytes,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="plantilla_clientes.xlsx"'
+        return response
+
+    @action(detail=False, methods=['post'], url_path='importar')
+    def importar(self, request):
+        """
+        Importa clientes desde un archivo Excel.
+        POST /api/sales-crm/clientes/importar/   multipart/form-data  campo: archivo
+
+        Procesa fila por fila — los errores NO bloquean las filas válidas.
+        Respuesta:
+        {
+          "creados": N,
+          "actualizados": N,
+          "errores": [{"fila": X, "nombre": "...", "errores": [...]}]
+        }
+        """
+        import logging
+        from django.db import transaction
+
+        logger = logging.getLogger(__name__)
+
+        archivo = request.FILES.get('archivo')
+        if not archivo:
+            return Response(
+                {'detail': 'Se requiere el archivo Excel (.xlsx).'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        nombre = archivo.name.lower()
+        if not (nombre.endswith('.xlsx') or nombre.endswith('.xls')):
+            return Response(
+                {'detail': 'El archivo debe ser Excel (.xlsx).'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            from .import_clientes_utils import parse_cliente_excel, CLIENTE_COLUMNAS
+            contenido = archivo.read()
+            filas = parse_cliente_excel(contenido)
+        except Exception as e:
+            logger.error('Error parseando archivo de importación de clientes: %s', e, exc_info=True)
+            return Response(
+                {'detail': f'No se pudo leer el archivo: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not filas:
+            return Response(
+                {'detail': 'El archivo no contiene datos. Verifica que haya filas después de las cabeceras (fila 4 en adelante).'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user = request.user
+        creados = 0
+        actualizados = 0
+        errores = []
+
+        from .import_clientes_serializer import ClienteImportRowSerializer
+
+        for fila_raw in filas:
+            num_fila = fila_raw.pop('_fila', '?')
+            nombre_raw = str(fila_raw.get('razon_social', '')).strip()
+
+            datos = {col: fila_raw.get(col, '') for col in CLIENTE_COLUMNAS}
+
+            serializer = ClienteImportRowSerializer(data=datos)
+            if not serializer.is_valid():
+                msgs = []
+                for field, errs in serializer.errors.items():
+                    if isinstance(errs, list):
+                        msgs.extend([str(e) for e in errs])
+                    else:
+                        msgs.append(str(errs))
+                errores.append({
+                    'fila': num_fila,
+                    'nombre': nombre_raw or '—',
+                    'errores': msgs,
+                })
+                continue
+
+            vdata = serializer.validated_data
+            tipo_cliente = vdata.pop('_tipo_cliente')
+            canal_venta = vdata.pop('_canal_venta')
+            estado_cliente = vdata.pop('_estado_cliente')
+            empresa = vdata.pop('_empresa')
+
+            # Limpiar campos auxiliares
+            for key in ['tipo_cliente_nombre', 'canal_venta_nombre']:
+                vdata.pop(key, None)
+
+            from decimal import Decimal
+
+            cliente_data = {
+                'empresa': empresa,
+                'tipo_documento': vdata.pop('tipo_documento'),
+                'numero_documento': vdata.pop('numero_documento'),
+                'razon_social': vdata.pop('razon_social'),
+                'nombre_comercial': vdata.pop('nombre_comercial', ''),
+                'tipo_cliente': tipo_cliente,
+                'estado_cliente': estado_cliente,
+                'canal_venta': canal_venta,
+                'telefono': vdata.pop('telefono', ''),
+                'email': vdata.pop('email', ''),
+                'direccion': vdata.pop('direccion', ''),
+                'ciudad': vdata.pop('ciudad', ''),
+                'departamento': vdata.pop('departamento', ''),
+                'plazo_pago_dias': vdata.pop('plazo_pago_dias', 30),
+                'cupo_credito': Decimal(vdata.pop('cupo_credito', '0.00')),
+                'descuento_comercial': Decimal(vdata.pop('descuento_comercial', '0.00')),
+                'observaciones': vdata.pop('observaciones', ''),
+                'created_by': user,
+            }
+
+            try:
+                with transaction.atomic():
+                    cli = Cliente(**cliente_data)
+                    cli.full_clean()
+                    cli.save()
+                    creados += 1
+
+            except Exception as e:
+                logger.error(
+                    'Error importando cliente fila %s (%s): %s',
+                    num_fila, nombre_raw, e, exc_info=True
+                )
+                errores.append({
+                    'fila': num_fila,
+                    'nombre': nombre_raw or '—',
+                    'errores': [str(e)],
+                })
+
+        return Response({
+            'creados': creados,
+            'actualizados': actualizados,
+            'errores': errores,
+            'total_filas': creados + actualizados + len(errores),
+        }, status=status.HTTP_200_OK if creados > 0 else status.HTTP_400_BAD_REQUEST)
+
 
 # ==============================================================================
 # VIEWSETS DE CONTACTOS

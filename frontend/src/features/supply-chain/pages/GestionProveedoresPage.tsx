@@ -3,7 +3,7 @@
  * Sistema de Gestión StrateKaz
  *
  * Tabs:
- * 1. Proveedores - Lista, crear, editar proveedores
+ * 1. Proveedores - Lista, crear, editar proveedores + Importación masiva + KPIs
  * 2. Precios - Gestión de precios por tipo materia prima
  * 3. Pruebas Acidez - Registro de pruebas con cálculo automático de calidad
  * 4. Evaluaciones - Evaluación periódica de proveedores
@@ -13,19 +13,32 @@
 import { useState } from 'react';
 import { PageHeader } from '@/components/layout';
 import { PageTabs } from '@/components/layout';
-import { Users, DollarSign, FlaskConical, ClipboardCheck, Settings, Building2 } from 'lucide-react';
+import { KpiCard, KpiCardGrid } from '@/components/common/KpiCard';
+import { Button } from '@/components/common/Button';
+import { Card } from '@/components/common/Card';
+import {
+  Users,
+  DollarSign,
+  FlaskConical,
+  ClipboardCheck,
+  Settings,
+  Building2,
+  Upload,
+  UserCheck,
+  UserX,
+  TrendingUp,
+} from 'lucide-react';
 import { ProveedoresTable } from '../components/ProveedoresTable';
 import { ProveedorForm } from '../components/ProveedorForm';
+import ImportProveedoresModal from '../components/ImportProveedoresModal';
 import { PreciosTab } from '../components/PreciosTab';
 import { PruebaAcidezTable } from '../components/PruebaAcidezTable';
 import { PruebaAcidezForm } from '../components/PruebaAcidezForm';
 import { EvaluacionesTab } from '../components/EvaluacionesTab';
 import { CatalogosTab } from '../components/CatalogosTab';
 import { UnidadesNegocioTab } from '../components/UnidadesNegocioTab';
-import { useProveedor } from '../hooks/useProveedores';
+import { useProveedor, useEstadisticasProveedores } from '../hooks/useProveedores';
 import type { ProveedorList, PruebaAcidez } from '../types';
-
-import { Card } from '@/components/common/Card';
 
 // ==================== TABS CONFIGURATION ====================
 
@@ -106,6 +119,72 @@ function PruebasAcidezTab() {
   );
 }
 
+// ==================== PROVEEDORES TAB (con KPIs) ====================
+
+function ProveedoresTabContent({
+  onNew,
+  onEdit,
+  onImport,
+}: {
+  onNew: () => void;
+  onEdit: (proveedor: ProveedorList) => void;
+  onImport: () => void;
+}) {
+  const { data: estadisticasData } = useEstadisticasProveedores();
+  const estadisticas = estadisticasData as Record<string, unknown> | undefined;
+
+  return (
+    <div className="space-y-6">
+      {/* KPIs */}
+      <KpiCardGrid columns={4}>
+        <KpiCard
+          label="Total Proveedores"
+          value={estadisticas?.total_proveedores ?? 0}
+          icon={<Users className="w-5 h-5" />}
+          color="primary"
+        />
+        <KpiCard
+          label="Activos"
+          value={estadisticas?.proveedores_activos ?? 0}
+          icon={<UserCheck className="w-5 h-5" />}
+          color="success"
+        />
+        <KpiCard
+          label="Inactivos"
+          value={estadisticas?.proveedores_inactivos ?? 0}
+          icon={<UserX className="w-5 h-5" />}
+          color="warning"
+        />
+        <KpiCard
+          label="Calificación Promedio"
+          value={
+            estadisticas?.calificacion_promedio
+              ? `${Number(estadisticas.calificacion_promedio).toFixed(1)}%`
+              : 'N/A'
+          }
+          icon={<TrendingUp className="w-5 h-5" />}
+          color="info"
+        />
+      </KpiCardGrid>
+
+      {/* Botón Importar */}
+      <div className="flex justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onImport}
+          leftIcon={<Upload className="w-4 h-4" />}
+        >
+          Importar Proveedores
+        </Button>
+      </div>
+
+      {/* Tabla de Proveedores */}
+      <ProveedoresTable onNew={onNew} onEdit={onEdit} />
+    </div>
+  );
+}
+
 // ==================== MAIN PAGE COMPONENT ====================
 
 export default function GestionProveedoresPage() {
@@ -114,6 +193,7 @@ export default function GestionProveedoresPage() {
   // ==================== ESTADO FORMULARIO PROVEEDOR ====================
   const [showProveedorForm, setShowProveedorForm] = useState(false);
   const [editProveedorId, setEditProveedorId] = useState<number | null>(null);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   // Fetch detalle completo del proveedor cuando se edita
   const { data: proveedorDetalle } = useProveedor(editProveedorId ?? 0);
@@ -154,7 +234,11 @@ export default function GestionProveedoresPage() {
 
       {/* Renderizado condicional de tabs */}
       {activeTab === 'proveedores' && (
-        <ProveedoresTable onNew={handleNewProveedor} onEdit={handleEditProveedor} />
+        <ProveedoresTabContent
+          onNew={handleNewProveedor}
+          onEdit={handleEditProveedor}
+          onImport={() => setShowImportModal(true)}
+        />
       )}
       {activeTab === 'precios' && <PreciosTab />}
       {activeTab === 'pruebas-acidez' && <PruebasAcidezTab />}
@@ -168,6 +252,9 @@ export default function GestionProveedoresPage() {
         proveedor={editProveedorId ? proveedorDetalle : undefined}
         onClose={handleCloseForm}
       />
+
+      {/* Modal Importar Proveedores */}
+      <ImportProveedoresModal isOpen={showImportModal} onClose={() => setShowImportModal(false)} />
     </div>
   );
 }

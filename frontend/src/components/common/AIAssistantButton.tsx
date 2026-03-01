@@ -5,7 +5,7 @@
  * "dónde estoy y qué puedo hacer" en cada sección del sistema.
  *
  * Uso:
- *   <AIAssistantButton moduleCode="planeacion_estrategica" tabCode="objetivos" />
+ *   <AIAssistantButton />
  */
 import { useState } from 'react';
 import { Sparkles } from 'lucide-react';
@@ -44,16 +44,15 @@ export const AIAssistantButton = ({
           onClick={() => setIsOpen(true)}
           className={cn(
             'relative p-2 rounded-lg transition-colors',
-            'hover:bg-purple-50 dark:hover:bg-purple-900/20',
-            'focus:outline-none focus:ring-2 focus:ring-purple-500',
-            'group',
+            'hover:bg-gray-100 dark:hover:bg-gray-700',
+            'focus:outline-none focus:ring-2 focus:ring-primary-500',
             className
           )}
-          aria-label="Asistente de IA"
+          title="Asistente IA"
         >
-          <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors" />
-          {/* Indicador "AI activo" */}
-          <span className="absolute top-1 right-1 h-2 w-2 bg-purple-500 rounded-full animate-pulse" />
+          <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+          {/* Indicador "IA activa" */}
+          <span className="absolute top-1 right-1 h-2 w-2 bg-purple-500 rounded-full" />
         </button>
       </Tooltip>
 
